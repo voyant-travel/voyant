@@ -43,7 +43,8 @@ import {
   resolveDocumentDownloadUrl,
 } from "@voyant-travel/storage/runtime"
 import type { StorageProvider, StorageProviderResolver } from "@voyant-travel/storage/types"
-import { scopesForRole } from "@voyant-travel/types/member-roles"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
@@ -312,6 +313,7 @@ export async function loadVoyantNodeRuntime(
     env,
     auth: options.app?.auth ?? options.auth,
     activeModules,
+    accessCatalog: options.app?.accessCatalog ?? options.graphRuntime.accessCatalog,
   })
   const resources = { ...(options.providers ?? {}), ...(options.resources ?? {}) }
   const graphComposition = await composeVoyantGraphRuntime({
@@ -435,6 +437,7 @@ export function createVoyantNodeApp(options: {
     env: options.env,
     auth: options.app?.auth ?? options.auth,
     activeModules: options.activeModules,
+    accessCatalog: options.app?.accessCatalog,
   })
   const workflows = createVoyantNodeWorkflowConfig({
     deployment: options.deployment,
@@ -501,14 +504,16 @@ function resolveVoyantNodeAuthIntegration(options: {
   auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
   /** Active module ids surfaced on `/auth/bootstrap-status` for admin gating (voyant#3063). */
   activeModules?: readonly string[]
+  accessCatalog?: AccessCatalog
 }): VoyantAuthIntegration<VoyantNodeRuntimeEnv> | undefined {
   if (options.auth) return options.auth
   if (!isManagedVoyantCloudAuthMode(options.env)) return undefined
-  return createManagedCloudAdminAuthIntegration(options.activeModules ?? [])
+  return createManagedCloudAdminAuthIntegration(options.activeModules ?? [], options.accessCatalog)
 }
 
 function createManagedCloudAdminAuthIntegration(
   activeModules: readonly string[],
+  accessCatalog: AccessCatalog | undefined,
 ): VoyantAuthIntegration<VoyantNodeRuntimeEnv> {
   return {
     handler: () => {
@@ -543,7 +548,7 @@ function createManagedCloudAdminAuthIntegration(
         organizationId: null,
         callerType: "session",
         actor: "staff",
-        scopes: await resolveManagedCloudMemberScopes(db, session.user.id),
+        scopes: await resolveManagedCloudMemberScopes(db, session.user.id, accessCatalog),
         email: session.user.email ?? null,
       }
     },
@@ -849,13 +854,20 @@ function getManagedCloudAuthRevalidateConfig(env: VoyantNodeRuntimeEnv) {
   }
 }
 
-async function resolveManagedCloudMemberScopes(db: VoyantDb, userId: string): Promise<string[]> {
+async function resolveManagedCloudMemberScopes(
+  db: VoyantDb,
+  userId: string,
+  accessCatalog: AccessCatalog | undefined,
+): Promise<string[]> {
   const [link] = await db
     .select({ scopes: cloudAuthUserLinks.scopes, roleSlug: cloudAuthUserLinks.roleSlug })
     .from(cloudAuthUserLinks)
     .where(eq(cloudAuthUserLinks.userId, userId))
     .limit(1)
-  return link?.scopes ?? scopesForRole(link?.roleSlug) ?? MANAGED_FULL_ACCESS_SCOPES
+  const fullAccessScopes =
+    accessCatalogScopesForRole("admin", accessCatalog) ?? MANAGED_FULL_ACCESS_SCOPES
+  const roleScopes = accessCatalogScopesForRole(link?.roleSlug, accessCatalog) ?? fullAccessScopes
+  return isFullAccessRole(link?.roleSlug) ? roleScopes : (link?.scopes ?? roleScopes)
 }
 
 function isManagedCloudAllowedBetterAuthRoute(request: Request): boolean {

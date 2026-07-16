@@ -11,6 +11,7 @@
  * docs/architecture/member-rbac-rfc.md (voyant#2085).
  */
 import {
+  type AccessCatalog,
   type ApiKeyPermissionString,
   type ApiKeyPermissions,
   hasApiKeyPermission,
@@ -129,6 +130,39 @@ export function permissionsForRole(role: string | null | undefined): ApiKeyPermi
 export function scopesForRole(role: string | null | undefined): ApiKeyPermissionString[] | null {
   const permissions = permissionsForRole(role)
   return permissions ? permissionsToStrings(permissions) : null
+}
+
+function accessCatalogScope(resource: string, action: string): ApiKeyPermissionString {
+  return `${resource}:${action}` as ApiKeyPermissionString
+}
+
+function explicitAccessCatalogScopes(
+  catalog: AccessCatalog | null | undefined,
+): ApiKeyPermissionString[] {
+  return (
+    catalog?.resources.flatMap((resource) =>
+      resource.wildcard === "explicit-resource"
+        ? resource.actions.map((action) => accessCatalogScope(resource.resource, action.action))
+        : resource.actions
+            .filter((action) => action.wildcard === "explicit")
+            .map((action) => accessCatalogScope(resource.resource, action.action)),
+    ) ?? []
+  )
+}
+
+/**
+ * Resolve a role slug to runtime session scopes. Full-access roles include the
+ * explicit catalog grants that `*` intentionally does not satisfy, such as
+ * team-management resources.
+ */
+export function accessCatalogScopesForRole(
+  role: string | null | undefined,
+  catalog: AccessCatalog | null | undefined,
+): ApiKeyPermissionString[] | null {
+  const roleScopes = scopesForRole(role)
+  if (!roleScopes) return null
+  if (!isFullAccessRole(role)) return roleScopes
+  return Array.from(new Set([...roleScopes, ...explicitAccessCatalogScopes(catalog)])).sort()
 }
 
 /** True when a role slug grants full (manage-everything) access. */

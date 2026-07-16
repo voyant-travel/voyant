@@ -1,12 +1,46 @@
 import { describe, expect, it } from "vitest"
 
-import { hasApiKeyPermission } from "../src/api-keys.js"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "../src/api-keys.js"
 import {
+  accessCatalogScopesForRole,
   isFullAccessRole,
   MEMBER_ROLE_PRESETS,
   permissionsForRole,
   scopesForRole,
 } from "../src/member-roles.js"
+
+const teamAccessCatalog = {
+  resources: [
+    {
+      id: "@voyant-travel/auth#access.team",
+      unitId: "@voyant-travel/auth#team",
+      resource: "team",
+      label: "Team",
+      description: "Manage staff team members and their access.",
+      wildcard: "explicit-resource",
+      actions: [
+        {
+          action: "read",
+          label: "View team",
+          description: "View staff team members.",
+        },
+        {
+          action: "write",
+          label: "Manage team",
+          description: "Invite staff and update roles or access.",
+          wildcard: "explicit",
+        },
+        {
+          action: "delete",
+          label: "Remove team access",
+          description: "Revoke invitations or deactivate staff team members.",
+          wildcard: "explicit",
+        },
+      ],
+    },
+  ],
+  presets: [],
+} as const
 
 describe("permissionsForRole", () => {
   it("maps owner/admin/super-admin to full access", () => {
@@ -55,6 +89,28 @@ describe("scopesForRole", () => {
 
   it("returns null for slugs without a preset", () => {
     expect(scopesForRole("custom")).toBeNull()
+  })
+})
+
+describe("accessCatalogScopesForRole", () => {
+  it("expands admin roles with explicit catalog grants for managed-cloud sessions", () => {
+    const scopes = accessCatalogScopesForRole("admin", teamAccessCatalog)
+    const permissions = permissionStringsToPermissions(scopes ?? [])
+
+    expect(scopes).toEqual(["*", "team:delete", "team:read", "team:write"])
+    expect(hasApiKeyPermission(permissions, "team", "read", teamAccessCatalog)).toBe(true)
+    expect(hasApiKeyPermission(permissions, "team", "write", teamAccessCatalog)).toBe(true)
+    expect(
+      hasApiKeyPermission(permissionStringsToPermissions(["*"]), "team", "read", teamAccessCatalog),
+    ).toBe(false)
+  })
+
+  it("does not add team-management grants to non-admin managed-cloud roles", () => {
+    const scopes = accessCatalogScopesForRole("member", teamAccessCatalog) ?? []
+    const permissions = permissionStringsToPermissions(scopes)
+
+    expect(hasApiKeyPermission(permissions, "team", "write", teamAccessCatalog)).toBe(false)
+    expect(scopes).not.toContain("team:write")
   })
 })
 
