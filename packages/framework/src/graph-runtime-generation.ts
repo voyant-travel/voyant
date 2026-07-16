@@ -36,6 +36,7 @@ export interface GeneratedRuntimeUnitDefinition {
   providers: VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: string[]
   runtimePorts: string[]
+  customFieldTargets: ResolvedVoyantGraphUnit["customFieldTargets"]
   manyRuntimePorts: string[]
   requiredRuntimePorts: string[]
   accessScopes: string[]
@@ -174,6 +175,7 @@ export function lowerGraphRuntimeUnits(
           .map((port) => port.id)
           .sort(),
         runtimePorts: (unit.runtimePorts ?? []).map((port) => port.id).sort(),
+        customFieldTargets: unit.customFieldTargets,
         manyRuntimePorts: (unit.runtimePorts ?? [])
           .filter((port) => port.cardinality === "many")
           .map((port) => port.id)

@@ -1,14 +1,10 @@
+import { customFieldDefinitions } from "@voyant-travel/custom-fields/schema"
 import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-
-import { customFieldDefinitions } from "../schema.js"
 import type {
-  customFieldDefinitionListQuerySchema,
   customFieldValueListQuerySchema,
-  insertCustomFieldDefinitionSchema,
-  updateCustomFieldDefinitionSchema,
   upsertCustomFieldValueSchema,
 } from "../validation.js"
 import {
@@ -19,119 +15,11 @@ import {
   type TypedValueColumns,
   typedFromJsonbValue,
 } from "./custom-fields-value-mapping.js"
-import { duplicateRelationshipsValueError } from "./duplicate-errors.js"
-import { paginate } from "./helpers.js"
 
-type CustomFieldDefinitionListQuery = z.infer<typeof customFieldDefinitionListQuerySchema>
-type CreateCustomFieldDefinitionInput = z.infer<typeof insertCustomFieldDefinitionSchema>
-type UpdateCustomFieldDefinitionInput = z.infer<typeof updateCustomFieldDefinitionSchema>
 type CustomFieldValueListQuery = z.infer<typeof customFieldValueListQuerySchema>
 type UpsertCustomFieldValueInput = z.infer<typeof upsertCustomFieldValueSchema>
 
 export const customFieldsService = {
-  async listCustomFieldDefinitions(db: PostgresJsDatabase, query: CustomFieldDefinitionListQuery) {
-    const where = query.entityType
-      ? eq(customFieldDefinitions.entityType, query.entityType)
-      : undefined
-    return paginate(
-      db
-        .select()
-        .from(customFieldDefinitions)
-        .where(where)
-        .limit(query.limit)
-        .offset(query.offset)
-        .orderBy(customFieldDefinitions.entityType, customFieldDefinitions.label),
-      db.select({ count: sql<number>`count(*)::int` }).from(customFieldDefinitions).where(where),
-      query.limit,
-      query.offset,
-    )
-  },
-
-  async getCustomFieldDefinitionById(db: PostgresJsDatabase, id: string) {
-    const [row] = await db
-      .select()
-      .from(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.id, id))
-      .limit(1)
-    return row ?? null
-  },
-
-  async createCustomFieldDefinition(
-    db: PostgresJsDatabase,
-    data: CreateCustomFieldDefinitionInput,
-  ) {
-    const [row] = await db
-      .insert(customFieldDefinitions)
-      .values(data)
-      .onConflictDoNothing({
-        target: [customFieldDefinitions.entityType, customFieldDefinitions.key],
-      })
-      .returning()
-
-    if (!row) {
-      throw duplicateRelationshipsValueError({
-        code: "duplicate_custom_field_key",
-        message: "Custom field key already exists for this entity type",
-        resource: "custom_field_definition",
-        fields: [["key"]],
-      })
-    }
-
-    return row
-  },
-
-  async updateCustomFieldDefinition(
-    db: PostgresJsDatabase,
-    id: string,
-    data: UpdateCustomFieldDefinitionInput,
-  ) {
-    // The definition update and the entity JSON-key rewrite are ONE transaction:
-    // values live under the definition's `key` in each entity row's
-    // `custom_fields` jsonb, so a rename that updates the definition but fails to
-    // rewrite the values would orphan them (invisible to listing/search/export).
-    // Wrapping both makes a key rename all-or-nothing.
-    return db.transaction(async (tx) => {
-      const [existing] = await tx
-        .select()
-        .from(customFieldDefinitions)
-        .where(eq(customFieldDefinitions.id, id))
-        .limit(1)
-      if (!existing) return null
-
-      const [row] = await tx
-        .update(customFieldDefinitions)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(customFieldDefinitions.id, id))
-        .returning()
-
-      if (row && data.key && data.key !== existing.key) {
-        const table = entityTableName(existing.entityType)
-        if (table) {
-          const oldKey = existing.key
-          const newKey = data.key
-          await tx.execute(
-            sql`UPDATE ${sql.identifier(table)}
-                SET custom_fields =
-                      (custom_fields - ${oldKey})
-                      || jsonb_build_object(${newKey}::text, custom_fields -> ${oldKey}),
-                    updated_at = now()
-                WHERE custom_fields ? ${oldKey}`,
-          )
-        }
-      }
-
-      return row ?? null
-    })
-  },
-
-  async deleteCustomFieldDefinition(db: PostgresJsDatabase, id: string) {
-    const [row] = await db
-      .delete(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.id, id))
-      .returning({ id: customFieldDefinitions.id })
-    return row ?? null
-  },
-
   // ---- Values: unified storage on the entity's `custom_fields` jsonb column ----
   // (custom_field_values is retired — see the custom-fields unification ADR.)
 

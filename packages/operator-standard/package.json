@@ -89,6 +89,8 @@
     "@voyant-travel/core": "workspace:*",
     "@voyant-travel/cruises": "workspace:*",
     "@voyant-travel/cruises-react": "workspace:*",
+    "@voyant-travel/custom-fields": "workspace:*",
+    "@voyant-travel/custom-fields-react": "workspace:*",
     "@voyant-travel/db": "workspace:*",
     "@voyant-travel/distribution": "workspace:*",
     "@voyant-travel/distribution-react": "workspace:*",

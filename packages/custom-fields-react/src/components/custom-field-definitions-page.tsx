@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Alert,
   AlertDescription,
@@ -30,12 +31,12 @@ import { AlertCircle, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "luci
 import { useState } from "react"
 import { useCustomFieldDefinitionMutation } from "../hooks/use-custom-field-definition-mutation.js"
 import { useCustomFieldDefinitions } from "../hooks/use-custom-field-definitions.js"
-import { useCrmUiI18nOrDefault } from "../i18n/index.js"
+import { useCustomFieldTargets } from "../hooks/use-custom-field-targets.js"
+import { useCustomFieldsUiI18nOrDefault } from "../i18n/index.js"
 import type { CustomFieldDefinitionRecord } from "../schemas.js"
 import {
   CustomFieldDefinitionSheet,
-  type EntityType,
-  entityTypes,
+  getCustomFieldTypeLabels,
 } from "./custom-field-definition-sheet.js"
 
 const PAGE_SIZE = 25
@@ -50,14 +51,14 @@ export function CustomFieldDefinitionsPage({
   className,
   pageSize = PAGE_SIZE,
 }: CustomFieldDefinitionsPageProps = {}) {
-  const { formatMessage, messages } = useCrmUiI18nOrDefault()
-  const customFields = messages.customFields
+  const { messages } = useCustomFieldsUiI18nOrDefault()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<CustomFieldDefinitionRecord | undefined>()
   const [deleting, setDeleting] = useState<CustomFieldDefinitionRecord | undefined>()
-  const [entityFilter, setEntityFilter] = useState<EntityType | typeof ALL_ENTITIES>(ALL_ENTITIES)
+  const [entityFilter, setEntityFilter] = useState<string>(ALL_ENTITIES)
   const [pageIndex, setPageIndex] = useState(0)
   const { remove } = useCustomFieldDefinitionMutation()
+  const targets = useCustomFieldTargets()
 
   const query = useCustomFieldDefinitions({
     entityType: entityFilter === ALL_ENTITIES ? undefined : entityFilter,
@@ -68,10 +69,10 @@ export function CustomFieldDefinitionsPage({
   const definitions = query.data?.data ?? []
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
-  const entityLabels: Record<EntityType, string> = {
-    ...messages.common.entityTypeLabels,
-    booking: "Booking",
-  }
+  const entityLabels = Object.fromEntries(
+    (targets.data?.data ?? []).map((target) => [target.id, target.label]),
+  )
+  const fieldTypeLabels = getCustomFieldTypeLabels(messages)
 
   return (
     <div
@@ -80,29 +81,30 @@ export function CustomFieldDefinitionsPage({
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <h2 className="text-lg font-semibold tracking-tight">{customFields.title}</h2>
-          <p className="text-sm text-muted-foreground">{customFields.description}</p>
+          <h2 className="text-lg font-semibold tracking-tight">{messages.page.title}</h2>
+          <p className="text-sm text-muted-foreground">{messages.page.description}</p>
         </div>
         <Button
           size="sm"
+          disabled={targets.isPending || (targets.data?.data.length ?? 0) === 0}
           onClick={() => {
             setEditing(undefined)
             setSheetOpen(true)
           }}
         >
           <Plus className="mr-1.5 size-3.5" />
-          {customFields.addField}
+          {messages.page.addField}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {customFields.entity}
+          {messages.page.entity}
         </Label>
         <Select
           value={entityFilter}
           onValueChange={(value) => {
-            setEntityFilter((value ?? ALL_ENTITIES) as EntityType | typeof ALL_ENTITIES)
+            setEntityFilter(value ?? ALL_ENTITIES)
             setPageIndex(0)
           }}
         >
@@ -110,10 +112,10 @@ export function CustomFieldDefinitionsPage({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_ENTITIES}>{customFields.allEntities}</SelectItem>
-            {entityTypes.map((entityType) => (
-              <SelectItem key={entityType} value={entityType}>
-                {entityLabels[entityType]}
+            <SelectItem value={ALL_ENTITIES}>{messages.page.allEntities}</SelectItem>
+            {(targets.data?.data ?? []).map((target) => (
+              <SelectItem key={target.id} value={target.id}>
+                {target.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -124,8 +126,8 @@ export function CustomFieldDefinitionsPage({
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>
-            {customFields.loadFailed}{" "}
-            {query.error instanceof Error ? query.error.message : customFields.requestFailed}
+            {messages.page.loadFailed}{" "}
+            {query.error instanceof Error ? query.error.message : messages.page.requestFailed}
           </AlertDescription>
         </Alert>
       ) : query.isPending ? (
@@ -134,9 +136,9 @@ export function CustomFieldDefinitionsPage({
         <div className="rounded-md border bg-card text-card-foreground shadow-sm">
           {definitions.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-              <p className="text-sm font-medium">{customFields.emptyTitle}</p>
+              <p className="text-sm font-medium">{messages.page.emptyTitle}</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                {customFields.emptyDescription}
+                {messages.page.emptyDescription}
               </p>
             </div>
           ) : (
@@ -149,26 +151,28 @@ export function CustomFieldDefinitionsPage({
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium">{definition.label}</span>
-                      <Badge variant="outline">{entityLabels[definition.entityType]}</Badge>
-                      <Badge variant="secondary">
-                        {customFields.fieldTypeLabels[definition.fieldType]}
+                      <Badge variant="outline">
+                        {entityLabels[definition.entityType] ?? definition.entityType}
                       </Badge>
-                      {definition.isRequired ? <Badge>{customFields.required}</Badge> : null}
+                      <Badge variant="secondary">
+                        {fieldTypeLabels[definition.fieldType] ?? definition.fieldType}
+                      </Badge>
+                      {definition.isRequired ? <Badge>{messages.page.required}</Badge> : null}
                       {definition.isSearchable ? (
-                        <Badge variant="outline">{customFields.searchable}</Badge>
+                        <Badge variant="outline">{messages.page.searchable}</Badge>
                       ) : null}
                       {definition.isExportable ? (
-                        <Badge variant="outline">{customFields.exportable}</Badge>
+                        <Badge variant="outline">{messages.page.exportable}</Badge>
                       ) : null}
                       {definition.isInvoiceable ? (
-                        <Badge variant="outline">{customFields.invoiceable}</Badge>
+                        <Badge variant="outline">{messages.page.invoiceable}</Badge>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span className="font-mono">{definition.key}</span>
                       {definition.options?.length ? (
                         <span>
-                          {formatMessage(customFields.optionsCount, {
+                          {formatMessage(messages.page.optionsCount, {
                             count: definition.options.length,
                           })}
                         </span>
@@ -190,7 +194,7 @@ export function CustomFieldDefinitionsPage({
                         }}
                       >
                         <Pencil className="size-4" />
-                        {customFields.edit}
+                        {messages.page.edit}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -199,7 +203,7 @@ export function CustomFieldDefinitionsPage({
                         onClick={() => setDeleting(definition)}
                       >
                         <Trash2 className="size-4" />
-                        {customFields.delete}
+                        {messages.page.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -211,7 +215,12 @@ export function CustomFieldDefinitionsPage({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-        <span>{formatMessage(customFields.showing, { shown: definitions.length, total })}</span>
+        <span>
+          {formatMessage(messages.page.paginationSummary, {
+            shown: definitions.length,
+            total,
+          })}
+        </span>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -219,10 +228,10 @@ export function CustomFieldDefinitionsPage({
             disabled={pageIndex === 0}
             onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
           >
-            {messages.common.previous}
+            {messages.page.previous}
           </Button>
           <span>
-            {messages.common.page} {pageIndex + 1} / {pageCount}
+            {formatMessage(messages.page.paginationPage, { page: pageIndex + 1, pageCount })}
           </span>
           <Button
             variant="outline"
@@ -230,7 +239,7 @@ export function CustomFieldDefinitionsPage({
             disabled={(pageIndex + 1) * pageSize >= total}
             onClick={() => setPageIndex((current) => current + 1)}
           >
-            {messages.common.next}
+            {messages.page.next}
           </Button>
         </div>
       </div>
@@ -239,6 +248,7 @@ export function CustomFieldDefinitionsPage({
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         definition={editing}
+        targets={targets.data?.data ?? []}
         onSuccess={() => {
           setSheetOpen(false)
           setEditing(undefined)
@@ -252,14 +262,14 @@ export function CustomFieldDefinitionsPage({
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>{customFields.deleteTitle}</AlertDialogTitle>
+            <AlertDialogTitle>{messages.page.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {formatMessage(customFields.deleteDescription, { label: deleting?.label ?? "" })}
+              {formatMessage(messages.page.deleteDescription, { label: deleting?.label ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={remove.isPending}>
-              {messages.common.cancel}
+              {messages.page.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
@@ -272,7 +282,7 @@ export function CustomFieldDefinitionsPage({
               }}
             >
               {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {customFields.delete}
+              {messages.page.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

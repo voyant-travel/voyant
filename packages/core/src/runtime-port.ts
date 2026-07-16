@@ -18,6 +18,29 @@ export interface CustomFieldsRuntime {
   ): Promise<Record<string, unknown>> | Record<string, unknown>
 }
 
+/** Additive owner read capability used by the generic custom-fields runtime. */
+export interface CustomFieldValueReaderRuntime {
+  resolveVisibleValues(
+    db: unknown,
+    entity: string,
+    entityId: string,
+    channel: CustomFieldVisibilityChannel,
+  ): Promise<Record<string, unknown> | undefined> | Record<string, unknown> | undefined
+}
+
+export const customFieldValueReaderRuntimePort = definePort<CustomFieldValueReaderRuntime>({
+  id: "custom-fields.value-reader",
+  test(provider) {
+    if (
+      !provider ||
+      typeof provider !== "object" ||
+      typeof provider.resolveVisibleValues !== "function"
+    ) {
+      throw new Error("custom-fields.value-reader provider must implement resolveVisibleValues().")
+    }
+  },
+})
+
 export const customFieldsRuntimePort = definePort<CustomFieldsRuntime>({
   id: "custom-fields.runtime",
   test(provider) {

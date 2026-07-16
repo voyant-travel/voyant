@@ -4,9 +4,12 @@ import {
 } from "@voyant-travel/bookings/runtime-port"
 import {
   type CustomFieldsRuntime,
+  type CustomFieldValueReaderRuntime,
   customFieldsRuntimePort,
   customFieldsVisibleIn,
+  customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/custom-fields"
+import type { VoyantPort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import {
@@ -14,7 +17,6 @@ import {
   relationshipsMiceRuntimePort,
   relationshipsRouteRuntimePort,
 } from "./runtime-port.js"
-import { loadCustomFieldRegistry } from "./service/custom-fields-registry.js"
 import { relationshipsService } from "./service/index.js"
 import { createStorefrontIntakePersistence } from "./storefront-intake-runtime.js"
 
@@ -22,12 +24,18 @@ const storefrontIntakeRuntimePortReference = {
   id: "storefront.intake.runtime",
 } as const
 
+interface RelationshipsRuntimeContributorHost {
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
+}
+
 /** Package-owned registration map for Relationships deployment adapters. */
 export function createRelationshipsRuntimePortContribution(
-  _host: unknown,
+  host: RelationshipsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const customFields: CustomFieldsRuntime = {
-    resolveRegistry: (db) => loadCustomFieldRegistry(db as PostgresJsDatabase),
+  const customFieldsRuntime = Promise.resolve(
+    host.getRuntimePort<CustomFieldsRuntime>(customFieldsRuntimePort),
+  )
+  const customFields: CustomFieldValueReaderRuntime = {
     async resolveVisibleValues(db, entity, entityId, channel) {
       const database = db as PostgresJsDatabase
       const row =
@@ -40,7 +48,7 @@ export function createRelationshipsRuntimePortContribution(
 
       const values = row.customFields ?? {}
       const definitions = customFieldsVisibleIn(
-        await customFields.resolveRegistry(database),
+        await (await customFieldsRuntime).resolveRegistry(database),
         entity,
         channel,
       )
@@ -53,9 +61,10 @@ export function createRelationshipsRuntimePortContribution(
   }
   return {
     [storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence(),
-    [customFieldsRuntimePort.id]: customFields,
+    [customFieldValueReaderRuntimePort.id]: customFields,
     [relationshipsRouteRuntimePort.id]: {
-      customFields: customFields.resolveRegistry,
+      customFields: async (db) =>
+        (await customFieldsRuntime).resolveRegistry(db as PostgresJsDatabase),
     } satisfies RelationshipsRouteRuntimeOptions,
     [relationshipsMiceRuntimePort.id]: {
       personExists: async (db, personId) =>

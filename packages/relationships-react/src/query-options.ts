@@ -9,7 +9,6 @@ import type { UsePeopleOptions } from "./hooks/use-people.js"
 import { relationshipsQueryKeys } from "./query-keys.js"
 import {
   activityListResponse,
-  customFieldDefinitionListResponse,
   organizationListResponse,
   organizationSingleResponse,
   personListResponse,
@@ -156,30 +155,6 @@ export function getOrganizationQueryOptions(client: FetchWithValidationOptions, 
         { baseUrl: client.baseUrl, fetcher: client.fetcher },
       )
       return data
-    },
-  })
-}
-
-export function getCustomFieldDefinitionsQueryOptions(
-  client: FetchWithValidationOptions,
-  options: Parameters<typeof relationshipsQueryKeys.customFieldDefinitionsList>[0] = {},
-) {
-  const filters = options ?? {}
-
-  return queryOptions({
-    queryKey: relationshipsQueryKeys.customFieldDefinitionsList(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (filters.entityType) params.set("entityType", filters.entityType)
-      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
-      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
-      const qs = params.toString()
-
-      return fetchWithValidation(
-        `${basePath}/custom-fields${qs ? `?${qs}` : ""}`,
-        customFieldDefinitionListResponse,
-        { baseUrl: client.baseUrl, fetcher: client.fetcher },
-      )
     },
   })
 }

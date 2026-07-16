@@ -69,10 +69,10 @@ The authority chain is:
 1. Selected package manifests declare their runtime and required typed ports.
 2. Generated graph composition loads only the selected package runtime
    contributors.
-3. Relationships loads `custom_field_definitions` through
+3. `@voyant-travel/custom-fields` loads `custom_field_definitions` through
    `loadCustomFieldRegistry(db)` on each request.
-4. Relationships exposes that database-backed resolver through its route runtime
-   and the typed Bookings/Relationships port.
+4. The generic package exposes that database-backed resolver through the typed
+   custom-fields runtime port.
 5. Bookings, Relationships, search, export, and invoice consumers use the same
    persisted definition shape.
 
@@ -104,6 +104,8 @@ provider or package-specific starter branch must not be reintroduced.
 - Persisted definitions are the sole runtime authority.
 - Runtime packages request custom fields through declared ports only.
 - Project code cannot inject, merge, or shadow effective definitions.
+- Target capabilities are authoritative: unsupported search, export, and
+  invoice flags are stored as `false`.
 - Unknown fields fail closed on writes.
 - Visibility defaults remain conservative: export on, invoice and search off.
 - Adding or updating an operator field requires no rebuild or restart.

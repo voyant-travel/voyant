@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while resolver, diagnostics, hashing, and compatibility behavior share one harness.
 
+import type { VoyantGraphCustomFieldTargetDeclaration } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -19,6 +20,79 @@ import {
 import { assertPortConforms, definePort, providePort, requirePort } from "./ports.js"
 
 describe("deployment graph v1", () => {
+  it("validates and lowers selected custom-field targets with one owner", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-bookings",
+      customFieldTargets: [
+        {
+          id: "booking",
+          label: "Booking",
+          fieldTypes: ["text", "boolean", "text"],
+          capabilities: ["write", "read"],
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual([])
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [module] }),
+    })
+    expect(graph.modules[0]?.customFieldTargets).toEqual([
+      {
+        id: "booking",
+        label: "Booking",
+        fieldTypes: ["boolean", "text"],
+        capabilities: ["read", "write"],
+        ownerUnitId: "@acme/voyant-bookings",
+      },
+    ])
+  })
+
+  it("rejects invalid and duplicate selected custom-field target authorities", async () => {
+    const invalidTarget = {
+      id: "Booking",
+      label: "",
+      fieldTypes: [],
+      capabilities: ["vendor-specific"],
+    } as unknown as VoyantGraphCustomFieldTargetDeclaration
+
+    expect(
+      validateGraphUnitManifest({
+        ...defineModule({ id: "@acme/voyant-invalid" }),
+        customFieldTargets: [invalidTarget],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET" }),
+      ]),
+    )
+
+    const target = {
+      id: "booking",
+      label: "Booking",
+      fieldTypes: ["text"],
+      capabilities: ["read"] as const,
+    }
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({ id: "@acme/voyant-bookings", customFieldTargets: [target] }),
+          defineModule({ id: "@acme/voyant-orders", customFieldTargets: [target] }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET",
+          facet: "customFieldTargets",
+        }),
+      ]),
+    )
+  })
+
   it("defines closed module, extension, and plugin manifests", () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
@@ -1680,6 +1754,7 @@ describe("deployment graph v1", () => {
     expect(Object.keys(VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY)).toEqual([
       "VOYANT_GRAPH_ARTIFACT_MISSING",
       "VOYANT_GRAPH_ARTIFACT_STALE",
+      "VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
       "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",
       "VOYANT_GRAPH_DUPLICATE_EVENT_VERSION",
@@ -1687,6 +1762,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA",
       "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE",
       "VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN",
+      "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
       "VOYANT_GRAPH_INVALID_FACET",
       "VOYANT_GRAPH_INVALID_ID",

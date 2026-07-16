@@ -136,8 +136,8 @@ export { createQueryContext, createQueryRunner, queryGraph } from "./query.js"
 export type { RegistryOptions } from "./registry.js"
 export { createRegistry } from "./registry.js"
 export type { VoyantRuntimeHostPrimitives } from "./runtime-host.js"
-export type { CustomFieldsRuntime } from "./runtime-port.js"
-export { customFieldsRuntimePort } from "./runtime-port.js"
+export type { CustomFieldsRuntime, CustomFieldValueReaderRuntime } from "./runtime-port.js"
+export { customFieldsRuntimePort, customFieldValueReaderRuntimePort } from "./runtime-port.js"
 export type {
   StepBuilder,
   StepCompensateFn,

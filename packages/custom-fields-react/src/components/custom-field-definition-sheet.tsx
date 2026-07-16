@@ -1,5 +1,7 @@
 "use client"
 
+import type { customFieldTypeSchema } from "@voyant-travel/custom-fields/contracts"
+import { normalizeCustomFieldVisibility } from "@voyant-travel/custom-fields/target-capabilities"
 import {
   Button,
   Input,
@@ -20,31 +22,18 @@ import {
 import { Loader2, Plus, Trash2 } from "lucide-react"
 import type { FormEvent } from "react"
 import { useEffect, useMemo, useState } from "react"
+import type { z } from "zod"
 import {
   type CreateCustomFieldDefinitionInput,
   type UpdateCustomFieldDefinitionInput,
   useCustomFieldDefinitionMutation,
 } from "../hooks/use-custom-field-definition-mutation.js"
-import { crmUiEn, useCrmUiI18nOrDefault } from "../i18n/index.js"
-import type { CustomFieldDefinitionRecord } from "../schemas.js"
+import { useCustomFieldsUiI18nOrDefault } from "../i18n/index.js"
+import type { CustomFieldsUiMessages } from "../i18n/messages.js"
+import type { CustomFieldDefinitionRecord, CustomFieldTargetRecord } from "../schemas.js"
 
-export const entityTypes = ["organization", "person", "quote", "activity", "booking"] as const
-const fieldTypes = [
-  "varchar",
-  "text",
-  "double",
-  "monetary",
-  "date",
-  "boolean",
-  "enum",
-  "set",
-  "json",
-  "address",
-  "phone",
-] as const
-
-export type EntityType = (typeof entityTypes)[number]
-type FieldType = (typeof fieldTypes)[number]
+export type CustomFieldTarget = CustomFieldTargetRecord
+type FieldType = z.infer<typeof customFieldTypeSchema>
 
 type OptionRow = {
   rowKey: string
@@ -53,7 +42,7 @@ type OptionRow = {
 }
 
 type FormValues = {
-  entityType: EntityType
+  entityType: string
   fieldType: FieldType
   key: string
   label: string
@@ -68,41 +57,56 @@ type FormErrors = Partial<Record<"key" | "label" | "options", string>>
 let optionSeq = 0
 const nextOptionKey = () => `custom-field-option-${++optionSeq}`
 
-const defaultFormValues: FormValues = {
-  entityType: "person",
-  fieldType: "text",
-  key: "",
-  label: "",
-  isSearchable: false,
-  isExportable: true,
-  isInvoiceable: false,
-  options: [],
+export function normalizeCustomFieldDefinitionFormValues(
+  target: CustomFieldTarget | undefined,
+  values: Pick<FormValues, "isSearchable" | "isExportable" | "isInvoiceable">,
+) {
+  const visibility = normalizeCustomFieldVisibility(target, values)
+  return {
+    isSearchable: visibility.isSearchable ?? false,
+    isExportable: visibility.isExportable ?? false,
+    isInvoiceable: visibility.isInvoiceable ?? false,
+  }
 }
 
-export const fieldTypeLabels: Record<FieldType, string> = {
-  ...crmUiEn.customFields.fieldTypeLabels,
+export const defaultFormValues = (target?: CustomFieldTarget): FormValues => ({
+  entityType: target?.id ?? "",
+  fieldType: (target?.fieldTypes[0] as FieldType | undefined) ?? "text",
+  key: "",
+  label: "",
+  ...normalizeCustomFieldDefinitionFormValues(target, {
+    isSearchable: false,
+    isExportable: true,
+    isInvoiceable: false,
+  }),
+  options: [],
+})
+
+export function getCustomFieldTypeLabels(messages: CustomFieldsUiMessages): Record<string, string> {
+  return messages.sheet.fieldTypeLabels
 }
 
 export function CustomFieldDefinitionSheet({
   open,
   onOpenChange,
   definition,
+  targets,
   onSuccess,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   definition?: CustomFieldDefinitionRecord
+  targets: readonly CustomFieldTarget[]
   onSuccess: () => void
 }) {
-  const { messages } = useCrmUiI18nOrDefault()
-  const customFields = messages.customFields
+  const { messages } = useCustomFieldsUiI18nOrDefault()
   const isEditing = Boolean(definition)
   const { create, update } = useCustomFieldDefinitionMutation()
-  const [values, setValues] = useState<FormValues>(defaultFormValues)
+  const [values, setValues] = useState<FormValues>(() => defaultFormValues(targets[0]))
   const [errors, setErrors] = useState<FormErrors>({})
-  const entityLabels = useMemo<Record<EntityType, string>>(
-    () => ({ ...messages.common.entityTypeLabels, booking: "Booking" }),
-    [messages.common.entityTypeLabels],
+  const entityLabels = useMemo(
+    () => Object.fromEntries(targets.map((target) => [target.id, target.label])),
+    [targets],
   )
 
   useEffect(() => {
@@ -110,31 +114,37 @@ export function CustomFieldDefinitionSheet({
     setErrors({})
 
     if (!definition) {
-      setValues(defaultFormValues)
+      setValues(defaultFormValues(targets[0]))
       return
     }
 
+    const target = targets.find((candidate) => candidate.id === definition.entityType)
     setValues({
       entityType: definition.entityType,
-      fieldType: definition.fieldType,
+      fieldType: definition.fieldType as FieldType,
       key: definition.key,
       label: definition.label,
-      isSearchable: definition.isSearchable,
-      isExportable: definition.isExportable,
-      isInvoiceable: definition.isInvoiceable,
+      ...normalizeCustomFieldDefinitionFormValues(target, definition),
       options: definition.options?.map((option) => ({ ...option, rowKey: nextOptionKey() })) ?? [],
     })
-  }, [definition, open])
+  }, [definition, open, targets])
 
   const supportsOptions = values.fieldType === "enum" || values.fieldType === "set"
   const isSubmitting = create.isPending || update.isPending
   const entityItems = useMemo(
-    () => entityTypes.map((value) => ({ value, label: entityLabels[value] })),
-    [entityLabels],
+    () => targets.map(({ id, label }) => ({ value: id, label })),
+    [targets],
   )
+  const fieldTypeLabels = getCustomFieldTypeLabels(messages)
   const fieldTypeItems = useMemo(
-    () => fieldTypes.map((value) => ({ value, label: customFields.fieldTypeLabels[value] })),
-    [customFields.fieldTypeLabels],
+    () =>
+      (targets.find((target) => target.id === values.entityType)?.fieldTypes ?? []).map(
+        (value) => ({ value, label: fieldTypeLabels[value] ?? value }),
+      ),
+    [fieldTypeLabels, targets, values.entityType],
+  )
+  const selectedCapabilities = new Set(
+    targets.find((target) => target.id === values.entityType)?.capabilities ?? [],
   )
 
   const setValue = <TKey extends keyof FormValues>(key: TKey, value: FormValues[TKey]) =>
@@ -148,7 +158,7 @@ export function CustomFieldDefinitionSheet({
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const nextErrors = validateForm(values, supportsOptions, customFields.validation)
+    const nextErrors = validateForm(values, supportsOptions, messages)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
@@ -158,14 +168,15 @@ export function CustomFieldDefinitionSheet({
           value: option.value.trim(),
         }))
       : null
+    const visibility = normalizeCustomFieldDefinitionFormValues(
+      targets.find((target) => target.id === values.entityType),
+      values,
+    )
 
     if (isEditing && definition) {
       const payload: UpdateCustomFieldDefinitionInput = {
-        key: values.key.trim(),
         label: values.label.trim(),
-        isSearchable: values.isSearchable,
-        isExportable: values.isExportable,
-        isInvoiceable: values.isInvoiceable,
+        ...visibility,
         options,
       }
       await update.mutateAsync({ id: definition.id, input: payload })
@@ -176,9 +187,7 @@ export function CustomFieldDefinitionSheet({
         key: values.key.trim(),
         label: values.label.trim(),
         isRequired: false,
-        isSearchable: values.isSearchable,
-        isExportable: values.isExportable,
-        isInvoiceable: values.isInvoiceable,
+        ...visibility,
         options,
       }
       await create.mutateAsync(payload)
@@ -191,22 +200,35 @@ export function CustomFieldDefinitionSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" size="lg">
         <SheetHeader>
-          <SheetTitle>
-            {isEditing ? customFields.sheet.editTitle : customFields.sheet.newTitle}
-          </SheetTitle>
+          <SheetTitle>{isEditing ? messages.sheet.editTitle : messages.sheet.newTitle}</SheetTitle>
         </SheetHeader>
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <SheetBody className="grid gap-5">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label>{customFields.sheet.entity}</Label>
+                <Label>{messages.sheet.entity}</Label>
                 {isEditing ? (
-                  <ReadOnlyPill>{entityLabels[values.entityType]}</ReadOnlyPill>
+                  <ReadOnlyPill>
+                    {entityLabels[values.entityType] ?? values.entityType}
+                  </ReadOnlyPill>
                 ) : (
                   <Select
                     items={entityItems}
                     value={values.entityType}
-                    onValueChange={(value) => setValue("entityType", value as EntityType)}
+                    onValueChange={(value) => {
+                      const entityType = value ?? targets[0]?.id ?? ""
+                      const fieldType =
+                        targets.find((target) => target.id === entityType)?.fieldTypes[0] ?? "text"
+                      setValues((current) => ({
+                        ...current,
+                        entityType,
+                        fieldType: fieldType as FieldType,
+                        ...normalizeCustomFieldDefinitionFormValues(
+                          targets.find((target) => target.id === entityType),
+                          current,
+                        ),
+                      }))
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -223,9 +245,11 @@ export function CustomFieldDefinitionSheet({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>{customFields.sheet.fieldType}</Label>
+                <Label>{messages.sheet.fieldType}</Label>
                 {isEditing ? (
-                  <ReadOnlyPill>{customFields.fieldTypeLabels[values.fieldType]}</ReadOnlyPill>
+                  <ReadOnlyPill>
+                    {fieldTypeLabels[values.fieldType] ?? values.fieldType}
+                  </ReadOnlyPill>
                 ) : (
                   <Select
                     items={fieldTypeItems}
@@ -249,25 +273,26 @@ export function CustomFieldDefinitionSheet({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="custom-field-label">{customFields.sheet.label}</Label>
+                <Label htmlFor="custom-field-label">{messages.sheet.label}</Label>
                 <Input
                   id="custom-field-label"
                   value={values.label}
                   onChange={(event) => setValue("label", event.target.value)}
-                  placeholder={customFields.sheet.labelPlaceholder}
+                  placeholder={messages.sheet.labelPlaceholder}
                   autoFocus
                 />
                 {errors.label ? <p className="text-xs text-destructive">{errors.label}</p> : null}
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="custom-field-key">{customFields.sheet.key}</Label>
+                <Label htmlFor="custom-field-key">{messages.sheet.key}</Label>
                 <Input
                   id="custom-field-key"
                   value={values.key}
                   onChange={(event) => setValue("key", event.target.value)}
-                  placeholder="lead_source"
+                  placeholder={messages.sheet.keyPlaceholder}
                   className="font-mono"
+                  disabled={isEditing}
                 />
                 {errors.key ? <p className="text-xs text-destructive">{errors.key}</p> : null}
               </div>
@@ -275,21 +300,24 @@ export function CustomFieldDefinitionSheet({
 
             <div className="grid gap-3 rounded-md border p-4">
               <ToggleRow
-                label={customFields.sheet.searchable}
-                description={customFields.sheet.searchableDescription}
+                label={messages.sheet.searchable}
+                description={messages.sheet.searchableDescription}
                 checked={values.isSearchable}
+                disabled={!selectedCapabilities.has("search")}
                 onCheckedChange={(checked) => setValue("isSearchable", checked)}
               />
               <ToggleRow
-                label={customFields.sheet.exportable}
-                description={customFields.sheet.exportableDescription}
+                label={messages.sheet.exportable}
+                description={messages.sheet.exportableDescription}
                 checked={values.isExportable}
+                disabled={!selectedCapabilities.has("export")}
                 onCheckedChange={(checked) => setValue("isExportable", checked)}
               />
               <ToggleRow
-                label={customFields.sheet.invoiceable}
-                description={customFields.sheet.invoiceableDescription}
+                label={messages.sheet.invoiceable}
+                description={messages.sheet.invoiceableDescription}
                 checked={values.isInvoiceable}
+                disabled={!selectedCapabilities.has("invoice")}
                 onCheckedChange={(checked) => setValue("isInvoiceable", checked)}
               />
             </div>
@@ -297,9 +325,9 @@ export function CustomFieldDefinitionSheet({
             {supportsOptions ? (
               <div className="grid gap-3">
                 <div>
-                  <Label>{customFields.sheet.options}</Label>
+                  <Label>{messages.sheet.options}</Label>
                   <p className="text-xs text-muted-foreground">
-                    {customFields.sheet.optionsDescription}
+                    {messages.sheet.optionsDescription}
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -310,14 +338,14 @@ export function CustomFieldDefinitionSheet({
                         onChange={(event) =>
                           updateOption(option.rowKey, { label: event.target.value })
                         }
-                        placeholder={customFields.sheet.optionLabelPlaceholder}
+                        placeholder={messages.sheet.optionLabelPlaceholder}
                       />
                       <Input
                         value={option.value}
                         onChange={(event) =>
                           updateOption(option.rowKey, { value: event.target.value })
                         }
-                        placeholder="value"
+                        placeholder={messages.sheet.optionValuePlaceholder}
                         className="font-mono"
                       />
                       <Button
@@ -353,18 +381,18 @@ export function CustomFieldDefinitionSheet({
                   }
                 >
                   <Plus className="mr-1.5 size-3.5" />
-                  {customFields.sheet.addOption}
+                  {messages.sheet.addOption}
                 </Button>
               </div>
             ) : null}
           </SheetBody>
           <SheetFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              {messages.common.cancel}
+              {messages.sheet.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              {isEditing ? messages.common.saveChanges : customFields.sheet.createField}
+              {isEditing ? messages.sheet.saveChanges : messages.sheet.createField}
             </Button>
           </SheetFooter>
         </form>
@@ -377,11 +405,13 @@ function ToggleRow({
   label,
   description,
   checked,
+  disabled = false,
   onCheckedChange,
 }: {
   label: string
   description: string
   checked: boolean
+  disabled?: boolean
   onCheckedChange: (checked: boolean) => void
 }) {
   return (
@@ -390,7 +420,7 @@ function ToggleRow({
         <Label>{label}</Label>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} />
     </div>
   )
 }
@@ -406,18 +436,18 @@ function ReadOnlyPill({ children }: { children: string }) {
 function validateForm(
   values: FormValues,
   supportsOptions: boolean,
-  validation: { labelRequired: string; keyRequired: string; optionRequired: string },
+  messages: CustomFieldsUiMessages,
 ): FormErrors {
   const errors: FormErrors = {}
-  if (!values.label.trim()) errors.label = validation.labelRequired
-  if (!values.key.trim()) errors.key = validation.keyRequired
+  if (!values.label.trim()) errors.label = messages.sheet.labelRequired
+  if (!values.key.trim()) errors.key = messages.sheet.keyRequired
 
   if (supportsOptions) {
     const validOptions = values.options.filter(
       (option) => option.label.trim() && option.value.trim(),
     )
     if (validOptions.length !== values.options.length || validOptions.length === 0) {
-      errors.options = validation.optionRequired
+      errors.options = messages.sheet.optionsRequired
     }
   }
 

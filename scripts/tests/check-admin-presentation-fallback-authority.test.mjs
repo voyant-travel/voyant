@@ -43,8 +43,8 @@ function createFixture() {
   write(root, "packages/admin-app/src/core-extension/index.tsx", providers)
   write(
     root,
-    "packages/relationships-react/src/admin/index.tsx",
-    "routeMessagesProvider: relationshipsRouteMessagesProvider\n",
+    "packages/custom-fields-react/src/admin.tsx",
+    "routeMessagesProvider: customFieldsRouteMessagesProvider\n",
   )
   return root
 }

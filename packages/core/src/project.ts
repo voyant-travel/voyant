@@ -56,6 +56,27 @@ export interface VoyantGraphCapabilityDeclaration {
   ports?: readonly VoyantGraphPortDeclaration[]
 }
 
+export type VoyantGraphCustomFieldCapability =
+  | "read"
+  | "write"
+  | "search"
+  | "export"
+  | "invoice"
+  | "presentation"
+
+/** An entity-owner declaration that Settings may expose as a custom-field target. */
+export interface VoyantGraphCustomFieldTargetDeclaration {
+  id: string
+  label: string
+  fieldTypes: readonly string[]
+  capabilities: readonly VoyantGraphCustomFieldCapability[]
+}
+
+/** A selected target declaration lowered with its owning graph unit. */
+export interface VoyantGraphCustomFieldTarget extends VoyantGraphCustomFieldTargetDeclaration {
+  ownerUnitId: string
+}
+
 export interface VoyantGraphPortDeclaration {
   id: string
   optional?: boolean
@@ -132,6 +153,8 @@ export const voyantWorkflowServiceContributionsPort = definePort<VoyantWorkflowS
 export interface VoyantGraphRuntimeFactoryGraph {
   /** Explicit deployment provider selections keyed by provider role. */
   readonly providerSelections: Readonly<Record<string, string>>
+  /** Read-only custom-field targets lowered from the selected entity manifests. */
+  readonly customFieldTargets?: readonly VoyantGraphCustomFieldTarget[]
   readonly accessCatalog: {
     readonly resources: readonly {
       readonly id: string
@@ -352,6 +375,7 @@ export interface VoyantGraphUnitManifest {
   runtime?: VoyantGraphRuntimeReference
   /** Deployment-supplied ports available only to this unit's runtime factories. */
   runtimePorts?: readonly VoyantGraphPortDeclaration[]
+  customFieldTargets?: readonly VoyantGraphCustomFieldTargetDeclaration[]
   provides?: VoyantGraphCapabilityDeclaration
   requires?: VoyantGraphCapabilityDeclaration
   api?: readonly VoyantGraphRouteBundle[]

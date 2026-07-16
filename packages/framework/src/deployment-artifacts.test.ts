@@ -151,6 +151,14 @@ describe("deployment graph artifacts", () => {
       defineModule({
         id: "@acme/voyant-loyalty",
         runtimePorts: [{ id: "loyalty.provider", optional: true, cardinality: "many" }],
+        customFieldTargets: [
+          {
+            id: "person",
+            label: "Person",
+            fieldTypes: ["text"],
+            capabilities: ["read"],
+          },
+        ],
       }),
     ])
     const graph = {
@@ -184,6 +192,10 @@ describe("deployment graph artifacts", () => {
     )
     expect(source).toContain("hasRuntimePort(port: { id: string }): boolean")
     expect(source).toContain("getRuntimePort(port: { id: string })")
+    expect(source).toContain("customFieldTargets: GENERATED_GRAPH_RUNTIME_CUSTOM_FIELD_TARGETS")
+    expect(source).toContain("GENERATED_GRAPH_RUNTIME_CUSTOM_FIELD_TARGETS")
+    expect(source).toContain('"id": "person"')
+    expect(source).toContain('"ownerUnitId": "@acme/voyant-loyalty"')
     expect(source).toContain("contributor(contributorHost)")
     expect(source).toContain("has multiple static contributors")
     expect(source).toContain(

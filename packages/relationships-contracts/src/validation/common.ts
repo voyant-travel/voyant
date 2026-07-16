@@ -6,13 +6,7 @@ export const paginationSchema = z.object({
 })
 
 export const entityTypeSchema = z.enum(["organization", "person", "quote", "activity"])
-export const customFieldTargetSchema = z.enum([
-  "organization",
-  "person",
-  "quote",
-  "activity",
-  "booking",
-])
+export const customFieldTargetSchema = z.string().min(1)
 
 export const recordStatusSchema = z.enum(["active", "inactive", "archived"])
 export const relationTypeSchema = z.enum(["client", "partner", "supplier", "other"])
@@ -28,20 +22,6 @@ export const communicationDirectionSchema = z.enum(["inbound", "outbound"])
 export const activityTypeSchema = z.enum(["call", "email", "meeting", "task", "follow_up", "note"])
 export const activityStatusSchema = z.enum(["planned", "done", "cancelled"])
 export const activityLinkRoleSchema = z.enum(["primary", "related"])
-export const customFieldTypeSchema = z.enum([
-  "varchar",
-  "text",
-  "double",
-  "monetary",
-  "date",
-  "boolean",
-  "enum",
-  "set",
-  "json",
-  "address",
-  "phone",
-])
-
 export const nullableTrimmedStringSchema = z
   .string()
   .nullable()

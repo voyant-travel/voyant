@@ -25,6 +25,11 @@ async function fixture(deploymentResources) {
   await write(root, "packages/runtime/src/deployment-resources.ts", deploymentResources)
   await write(
     root,
+    "packages/custom-fields/src/runtime-contributor.ts",
+    "customFieldsRuntimePort.id\n",
+  )
+  await write(
+    root,
     "packages/auth/src/runtime-contributor.ts",
     "host.primitives.config.read\ncloudAdminMembersConfigFromRevalidate\nauth.invitation\n",
   )
@@ -41,7 +46,7 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "packages/relationships/src/runtime-contributor.ts",
-    "customFieldsRuntimePort.id\nrelationshipsMiceRuntimePort.id\n",
+    "customFieldValueReaderRuntimePort.id\nrelationshipsMiceRuntimePort.id\n",
   )
   await write(
     root,
@@ -54,7 +59,7 @@ async function fixture(deploymentResources) {
 it("accepts package bindings derived from primitives and static ports", async () => {
   const root = await fixture("return options.createRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
+  assert.match(result.stdout, /6 package bindings derived from primitives and static ports/)
 })
 
 it("accepts provider-neutral graph ports as contributor inputs", async () => {
@@ -66,7 +71,7 @@ it("accepts provider-neutral graph ports as contributor inputs", async () => {
     })
   `)
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
+  assert.match(result.stdout, /6 package bindings derived from primitives and static ports/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {

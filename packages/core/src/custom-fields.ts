@@ -116,8 +116,8 @@ export type CustomFieldRegistryResolver = (
 
 export type CustomFieldVisibilityChannel = keyof CustomFieldVisibility
 
-export type { CustomFieldsRuntime } from "./runtime-port.js"
-export { customFieldsRuntimePort } from "./runtime-port.js"
+export type { CustomFieldsRuntime, CustomFieldValueReaderRuntime } from "./runtime-port.js"
+export { customFieldsRuntimePort, customFieldValueReaderRuntimePort } from "./runtime-port.js"
 
 const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
   export: true,

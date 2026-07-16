@@ -26,6 +26,24 @@ export const quotesVoyantModule = defineModule({
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
   runtimePorts: [requirePort(quotesRuntimePort), requirePort(tripsRoutesRuntimePort)],
+  customFieldTargets: [
+    {
+      id: "quote",
+      label: "Quote",
+      fieldTypes: [
+        "varchar",
+        "text",
+        "double",
+        "monetary",
+        "date",
+        "boolean",
+        "enum",
+        "set",
+        "json",
+      ],
+      capabilities: ["read", "write", "presentation"],
+    },
+  ],
   provides: {
     ports: [providePort(checkoutInquiryRuntimePort), providePort(quotesRuntimePort)],
   },

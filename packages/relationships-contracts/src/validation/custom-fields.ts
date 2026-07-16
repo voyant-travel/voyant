@@ -1,34 +1,6 @@
 import { z } from "zod"
 
-import { customFieldTargetSchema, customFieldTypeSchema, paginationSchema } from "./common.js"
-
-export const customFieldDefinitionCoreSchema = z.object({
-  entityType: customFieldTargetSchema,
-  key: z.string().min(1),
-  label: z.string().min(1),
-  fieldType: customFieldTypeSchema,
-  isRequired: z.boolean().default(false),
-  isSearchable: z.boolean().default(false),
-  isExportable: z.boolean().default(true),
-  isInvoiceable: z.boolean().default(false),
-  options: z
-    .array(z.object({ label: z.string(), value: z.string() }))
-    .nullable()
-    .optional(),
-})
-
-export const insertCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema
-// `entityType` and `fieldType` are immutable after creation: changing the entity
-// type would point the definition at a different physical table (orphaning every
-// stored value), and changing the field type would reinterpret already-stored
-// JSON values under the wrong type. They are omitted from the update surface
-// (renaming `key` is allowed — the service migrates the JSON keys in lockstep).
-export const updateCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema
-  .omit({ entityType: true, fieldType: true })
-  .partial()
-export const customFieldDefinitionListQuerySchema = paginationSchema.extend({
-  entityType: customFieldTargetSchema.optional(),
-})
+import { customFieldTargetSchema, paginationSchema } from "./common.js"
 
 export const upsertCustomFieldValueSchema = z.object({
   entityType: customFieldTargetSchema,

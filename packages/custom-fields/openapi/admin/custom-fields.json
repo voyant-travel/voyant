@@ -1,0 +1,18 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Voyant Custom Fields API", "version": "1.0.0" },
+  "paths": {
+    "/v1/admin/custom-fields/targets": {
+      "get": { "summary": "List selected target and field-type capabilities" }
+    },
+    "/v1/admin/custom-fields": {
+      "get": { "summary": "List selected-target custom-field definitions" },
+      "post": { "summary": "Create a custom-field definition" }
+    },
+    "/v1/admin/custom-fields/{id}": {
+      "get": { "summary": "Get a custom-field definition" },
+      "patch": { "summary": "Update a custom-field definition" },
+      "delete": { "summary": "Delete a custom-field definition" }
+    }
+  }
+}

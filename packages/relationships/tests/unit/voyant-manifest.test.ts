@@ -1,6 +1,9 @@
 import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { createContainer, createEventBus } from "@voyant-travel/core"
-import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
+import {
+  customFieldsRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "@voyant-travel/core/custom-fields"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import { createRelationshipsVoyantRuntime, relationshipsRouteRuntimePort } from "../../src/index.js"
@@ -18,13 +21,13 @@ describe("relationships deployment manifest", () => {
       provides: {
         ports: [
           { id: "storefront.intake.runtime" },
-          { id: customFieldsRuntimePort.id },
           { id: relationshipsMiceRuntimePort.id },
           { id: bookingsRelationshipsRuntimePort.id },
           { id: relationshipsRouteRuntimePort.id },
+          { id: customFieldValueReaderRuntimePort.id },
         ],
       },
-      runtimePorts: [{ id: "relationships.route-runtime" }],
+      runtimePorts: [{ id: customFieldsRuntimePort.id }, { id: "relationships.route-runtime" }],
       api: [
         {
           id: "@voyant-travel/relationships#api.admin",

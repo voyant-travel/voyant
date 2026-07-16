@@ -2,6 +2,7 @@ import { createEventBus } from "@voyant-travel/core"
 import {
   type CustomFieldsRuntime,
   customFieldsRuntimePort,
+  customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/custom-fields"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { handleApiError } from "@voyant-travel/hono"
@@ -11,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { BOOKING_ROUTE_RUNTIME_CONTAINER_KEY } from "../../../bookings/src/route-runtime.js"
 import { bookingRoutes } from "../../../bookings/src/routes.js"
 import { bookingsService } from "../../../bookings/src/service.js"
+import { createCustomFieldsRuntimePortContribution } from "../../../custom-fields/src/runtime-contributor.js"
 import { RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { accountRoutes } from "../../src/routes/accounts.js"
 import { createRelationshipsRuntimePortContribution } from "../../src/runtime-contributor.js"
@@ -54,11 +56,39 @@ function fakeDb() {
   return { select: () => ({ from: () => Promise.resolve(rows) }) }
 }
 
-const contributions = createRelationshipsRuntimePortContribution({})
+const runtimePorts: Record<string, unknown> = {}
+const customFields = createCustomFieldsRuntimePortContribution({
+  customFieldTargets: [
+    {
+      id: "booking",
+      label: "Booking",
+      fieldTypes: ["double"],
+      capabilities: ["read", "write", "export"],
+      ownerUnitId: "@voyant-travel/bookings",
+    },
+    {
+      id: "person",
+      label: "Person",
+      fieldTypes: ["enum"],
+      capabilities: ["read", "write", "search", "export", "invoice"],
+      ownerUnitId: "@voyant-travel/relationships",
+    },
+  ],
+  getRuntimePorts: <T>(port: { id: string }) =>
+    (port.id === customFieldValueReaderRuntimePort.id &&
+    runtimePorts[customFieldValueReaderRuntimePort.id]
+      ? [runtimePorts[customFieldValueReaderRuntimePort.id]]
+      : []) as unknown as readonly T[],
+})[customFieldsRuntimePort.id] as CustomFieldsRuntime
+runtimePorts[customFieldsRuntimePort.id] = customFields
+const contributions = createRelationshipsRuntimePortContribution({
+  getRuntimePort: <T>(port: { id: string }) => runtimePorts[port.id] as T,
+})
+runtimePorts[customFieldValueReaderRuntimePort.id] =
+  contributions[customFieldValueReaderRuntimePort.id]
 const relationshipsRuntime = contributions[relationshipsRouteRuntimePort.id] as {
   customFields: (db: unknown) => Promise<unknown>
 }
-const customFields = contributions[customFieldsRuntimePort.id] as CustomFieldsRuntime
 
 function bookingApp() {
   return new Hono()

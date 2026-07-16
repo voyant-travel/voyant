@@ -23,8 +23,6 @@ import {
   customerSignalKindSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
-  customFieldTargetSchema,
-  customFieldTypeSchema,
   entityTypeSchema,
   personDocumentTypeSchema,
   personRelationshipKindSchema,
@@ -75,23 +73,6 @@ export const activityParticipantSchema = z.object({
   personId: z.string(),
   isPrimary: z.boolean(),
   createdAt: isoTimestamp,
-})
-
-// --- custom fields ----------------------------------------------------------
-
-export const customFieldDefinitionSchema = z.object({
-  id: z.string(),
-  entityType: customFieldTargetSchema,
-  key: z.string(),
-  label: z.string(),
-  fieldType: customFieldTypeSchema,
-  isRequired: z.boolean(),
-  isSearchable: z.boolean(),
-  isExportable: z.boolean(),
-  isInvoiceable: z.boolean(),
-  options: z.array(z.object({ label: z.string(), value: z.string() })).nullable(),
-  createdAt: isoTimestamp,
-  updatedAt: isoTimestamp,
 })
 
 /**

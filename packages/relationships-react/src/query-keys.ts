@@ -45,12 +45,6 @@ export interface ActivitiesListFilters {
   offset?: number | undefined
 }
 
-export interface CustomFieldDefinitionListFilters {
-  entityType?: "organization" | "person" | "quote" | "activity" | "booking" | undefined
-  limit?: number | undefined
-  offset?: number | undefined
-}
-
 export interface CustomerSignalsListFilters {
   personId?: string | undefined
   assignedToUserId?: string | undefined
@@ -127,10 +121,4 @@ export const relationshipsQueryKeys = {
   activity: (id: string) => [...relationshipsQueryKeys.activities(), "detail", id] as const,
   activityLinks: (activityId: string) =>
     [...relationshipsQueryKeys.activity(activityId), "links"] as const,
-
-  customFields: () => [...relationshipsQueryKeys.all, "custom-fields"] as const,
-  customFieldDefinitionsList: (filters: CustomFieldDefinitionListFilters = {}) =>
-    [...relationshipsQueryKeys.customFields(), "definitions", filters] as const,
-  customFieldDefinition: (id: string) =>
-    [...relationshipsQueryKeys.customFields(), "definition", id] as const,
 } as const

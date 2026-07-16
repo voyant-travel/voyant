@@ -33,6 +33,7 @@ import {
   optionUnitPriceRules,
   priceCatalogs,
 } from "@voyant-travel/commerce"
+import { customFieldDefinitions } from "@voyant-travel/custom-fields/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import {
@@ -108,7 +109,6 @@ import {
   activityLinks,
   activityParticipants,
   communicationLog,
-  customFieldDefinitions,
   organizationNotes,
   organizations,
   people,

@@ -6,8 +6,6 @@ import {
   activityLinkRoleEnum,
   activityStatusEnum,
   activityTypeEnum,
-  customFieldTargetEnum,
-  customFieldTypeEnum,
   entityTypeEnum,
 } from "./schema-shared.js"
 
@@ -81,29 +79,6 @@ export const activityParticipants = pgTable(
   ],
 )
 
-export const customFieldDefinitions = pgTable(
-  "custom_field_definitions",
-  {
-    id: typeId("custom_field_definitions"),
-    entityType: customFieldTargetEnum("entity_type").notNull(),
-    key: text("key").notNull(),
-    label: text("label").notNull(),
-    fieldType: customFieldTypeEnum("field_type").notNull(),
-    isRequired: boolean("is_required").notNull().default(false),
-    isSearchable: boolean("is_searchable").notNull().default(false),
-    isExportable: boolean("is_exportable").notNull().default(true),
-    isInvoiceable: boolean("is_invoiceable").notNull().default(false),
-    options: jsonb("options").$type<Array<{ label: string; value: string }>>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("idx_custom_field_definitions_entity").on(table.entityType),
-    index("idx_custom_field_definitions_entity_label").on(table.entityType, table.label),
-    uniqueIndex("uidx_custom_field_definitions_key").on(table.entityType, table.key),
-  ],
-)
-
 // `custom_field_values` (the EAV value side table) was retired by the
 // custom-fields unification — values now live on each entity's `custom_fields`
 // jsonb column. See docs/architecture/custom-fields-unification-adr.md.
@@ -114,5 +89,3 @@ export type ActivityLink = typeof activityLinks.$inferSelect
 export type NewActivityLink = typeof activityLinks.$inferInsert
 export type ActivityParticipant = typeof activityParticipants.$inferSelect
 export type NewActivityParticipant = typeof activityParticipants.$inferInsert
-export type CustomFieldDefinition = typeof customFieldDefinitions.$inferSelect
-export type NewCustomFieldDefinition = typeof customFieldDefinitions.$inferInsert

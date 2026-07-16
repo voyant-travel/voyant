@@ -2,17 +2,17 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
-  insertCustomFieldDefinitionSchema,
+  customFieldDefinitionInputSchema,
   updateCustomFieldDefinitionSchema,
-} from "@voyant-travel/relationships/validation"
+} from "@voyant-travel/custom-fields/contracts"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantContext } from "../provider.js"
-import { relationshipsQueryKeys } from "../query-keys.js"
+import { customFieldsQueryKeys } from "../query-keys.js"
 import { customFieldDefinitionSingleResponse, successEnvelope } from "../schemas.js"
 
-export type CreateCustomFieldDefinitionInput = z.infer<typeof insertCustomFieldDefinitionSchema>
+export type CreateCustomFieldDefinitionInput = z.infer<typeof customFieldDefinitionInputSchema>
 export type UpdateCustomFieldDefinitionInput = z.infer<typeof updateCustomFieldDefinitionSchema>
 
 export function useCustomFieldDefinitionMutation() {
@@ -22,7 +22,7 @@ export function useCustomFieldDefinitionMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateCustomFieldDefinitionInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/admin/relationships/custom-fields",
+        "/v1/admin/custom-fields",
         customFieldDefinitionSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -30,15 +30,15 @@ export function useCustomFieldDefinitionMutation() {
       return data
     },
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: relationshipsQueryKeys.customFields() })
-      queryClient.setQueryData(relationshipsQueryKeys.customFieldDefinition(data.id), data)
+      void queryClient.invalidateQueries({ queryKey: customFieldsQueryKeys.definitions() })
+      queryClient.setQueryData(customFieldsQueryKeys.definition(data.id), data)
     },
   })
 
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateCustomFieldDefinitionInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/admin/relationships/custom-fields/${id}`,
+        `/v1/admin/custom-fields/${id}`,
         customFieldDefinitionSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -46,22 +46,22 @@ export function useCustomFieldDefinitionMutation() {
       return data
     },
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: relationshipsQueryKeys.customFields() })
-      queryClient.setQueryData(relationshipsQueryKeys.customFieldDefinition(data.id), data)
+      void queryClient.invalidateQueries({ queryKey: customFieldsQueryKeys.definitions() })
+      queryClient.setQueryData(customFieldsQueryKeys.definition(data.id), data)
     },
   })
 
   const remove = useMutation({
     mutationFn: (id: string) =>
       fetchWithValidation(
-        `/v1/admin/relationships/custom-fields/${id}`,
+        `/v1/admin/custom-fields/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
       ),
     onSuccess: (_data, id) => {
-      void queryClient.invalidateQueries({ queryKey: relationshipsQueryKeys.customFields() })
-      queryClient.removeQueries({ queryKey: relationshipsQueryKeys.customFieldDefinition(id) })
+      void queryClient.invalidateQueries({ queryKey: customFieldsQueryKeys.definitions() })
+      queryClient.removeQueries({ queryKey: customFieldsQueryKeys.definition(id) })
     },
   })
 

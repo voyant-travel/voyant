@@ -53,7 +53,7 @@ on the entity. `custom_field_values` is retired.**
    registry + read the column — no joins, nothing invisible.
 2. **One definition source behind `CustomFieldRegistry`.**
    - Runtime DB: `custom_field_definitions` rows (operator-created at runtime via
-     the existing admin CRUD + UI).
+     the generic `@voyant-travel/custom-fields` Settings CRUD + UI).
    - `loadCustomFieldRegistry(db)` reads and maps persisted definitions on each
      request. Project-local declarations are deprecated compatibility surface
      only and cannot shadow database definitions.

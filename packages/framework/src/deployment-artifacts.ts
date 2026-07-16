@@ -387,6 +387,9 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
   const manyRuntimePorts = [
     ...new Set([...modules, ...extensions, ...plugins].flatMap((unit) => unit.manyRuntimePorts)),
   ].sort((left, right) => left.localeCompare(right))
+  const customFieldTargets = [...modules, ...extensions, ...plugins]
+    .flatMap((unit) => unit.customFieldTargets)
+    .sort((left, right) => left.id.localeCompare(right.id))
   const command = input.command ?? "voyant deployment graph emit"
   const contributors = input.graph.packageRecords
     .flatMap((record) => {
@@ -459,6 +462,10 @@ export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
 export const GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = ${formatConstArray(manyRuntimePorts)}
+export const GENERATED_GRAPH_RUNTIME_CUSTOM_FIELD_TARGETS = ${formatGeneratedValue(
+    customFieldTargets,
+    0,
+  )} as const
 export const GENERATED_GRAPH_RUNTIME_EVENT_CATALOG = ${formatGeneratedValue(
     input.graph.eventCatalog,
     0,
@@ -476,7 +483,7 @@ ${contributorFactories}
 
 export type GeneratedGraphRuntimeContributorHost = Omit<
   VoyantGraphRuntimeContributorHost,
-  "getRuntimePort"
+  "customFieldTargets" | "getRuntimePort" | "getRuntimePorts"
 > & {
   /** Selected graph providers and project-owned overrides available to contributors. */
   runtimePorts?: VoyantGraphRuntimePorts
@@ -498,6 +505,7 @@ export function createGeneratedGraphRuntimePorts(
   const manyPortIds = new Set<string>(GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS)
   const contributorHost = {
     ...contributorHostInput,
+    customFieldTargets: GENERATED_GRAPH_RUNTIME_CUSTOM_FIELD_TARGETS,
     hasRuntimePort(port: { id: string }): boolean {
       return Object.hasOwn(ports, port.id)
     },
@@ -508,6 +516,11 @@ export function createGeneratedGraphRuntimePorts(
         )
       }
       return ports[port.id]
+    },
+    getRuntimePorts(port: { id: string }): readonly unknown[] {
+      if (!Object.hasOwn(ports, port.id)) return []
+      const value = ports[port.id]
+      return manyPortIds.has(port.id) ? value as readonly unknown[] : [value]
     },
   }
   assertResolvedContributorHost(contributorHost)

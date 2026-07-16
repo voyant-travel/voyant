@@ -17,13 +17,13 @@ const failures = []
 const hostPresentationPath = "packages/admin-host/src/admin-presentation.ts"
 const hostPackagePath = "packages/admin-host/package.json"
 const coreExtensionPath = "packages/admin-app/src/core-extension/index.tsx"
-const relationshipsAdminPath = "packages/relationships-react/src/admin/index.tsx"
+const customFieldsAdminPath = "packages/custom-fields-react/src/admin.tsx"
 
 for (const path of [
   hostPresentationPath,
   hostPackagePath,
   coreExtensionPath,
-  relationshipsAdminPath,
+  customFieldsAdminPath,
 ]) {
   if (!existsSync(resolve(root, path))) failures.push(`${path} is required`)
 }
@@ -32,7 +32,7 @@ if (failures.length === 0) {
   const hostPresentation = read(hostPresentationPath)
   const hostPackage = JSON.parse(read(hostPackagePath))
   const coreExtension = read(coreExtensionPath)
-  const relationshipsAdmin = read(relationshipsAdminPath)
+  const customFieldsAdmin = read(customFieldsAdminPath)
   const firstPartyMessagePackages = [
     "@voyant-travel/auth-react",
     "@voyant-travel/commerce-react",
@@ -40,6 +40,7 @@ if (failures.length === 0) {
     "@voyant-travel/finance-react",
     "@voyant-travel/inventory-react",
     "@voyant-travel/relationships-react",
+    "@voyant-travel/custom-fields-react",
   ]
 
   for (const token of ["coreRouteMessagesProviders", "loadProvider", "withCoreRouteMessages"]) {
@@ -80,8 +81,8 @@ if (failures.length === 0) {
   if (routeProviderCount < 9) {
     failures.push(`${coreExtensionPath} must retain at least 9 route-local message providers`)
   }
-  if (!relationshipsAdmin.includes("routeMessagesProvider: relationshipsRouteMessagesProvider")) {
-    failures.push(`${relationshipsAdminPath} must own custom-fields route copy metadata`)
+  if (!customFieldsAdmin.includes("routeMessagesProvider: customFieldsRouteMessagesProvider")) {
+    failures.push(`${customFieldsAdminPath} must own custom-fields route copy metadata`)
   }
 }
 

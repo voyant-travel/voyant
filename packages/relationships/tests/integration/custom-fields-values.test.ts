@@ -77,25 +77,6 @@ describe.skipIf(!DB_AVAILABLE)("custom-field values on the entity column", () =>
     expect(stored[0].custom_fields.budget.amountCents).toBe(1500)
   })
 
-  it("renaming a definition key migrates stored values in lockstep", async () => {
-    // `budget` still holds the monetary value from the list test above.
-    await relationshipsService.updateCustomFieldDefinition(db, dMoney, { key: "trip_budget" })
-
-    const stored = await db.execute(sql`SELECT custom_fields FROM people WHERE id = ${pid}`)
-    expect(stored[0].custom_fields.budget).toBeUndefined()
-    expect(stored[0].custom_fields.trip_budget.amountCents).toBe(1500)
-
-    // The value is reachable under the new key (not orphaned).
-    const list = await relationshipsService.listCustomFieldValues(db, {
-      entityType: "person",
-      entityId: pid,
-      limit: 50,
-      offset: 0,
-    })
-    const budget = list.data.find((v) => v.definitionId === dMoney)
-    expect(budget?.monetaryValueCents).toBe(1500)
-  })
-
   it("rejects an upsert whose entityType disagrees with the definition", async () => {
     // `dEnum` is a person definition; writing it as an organization must fail
     // rather than land a value where listing would never surface it.

@@ -13,6 +13,7 @@
     "@voyant-travel/charters": "workspace:^",
     "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/custom-fields": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",
     "@voyant-travel/finance": "workspace:^",

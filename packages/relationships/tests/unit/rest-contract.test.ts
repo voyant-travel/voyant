@@ -7,7 +7,6 @@ import {
   activityParticipantSchema,
   activitySchema,
   customerSignalSchema,
-  customFieldDefinitionSchema,
   customFieldValueSchema,
   personDocumentRevealSchema,
   personDocumentSchema,
@@ -19,7 +18,6 @@ import type {
   activities,
   activityLinks,
   activityParticipants,
-  customFieldDefinitions,
 } from "../../src/schema-activities.js"
 import type { customerSignals } from "../../src/schema-signals.js"
 
@@ -71,21 +69,6 @@ const activityParticipantRow: InferSelectModel<typeof activityParticipants> = {
   personId: "people_000000000000000000000000",
   isPrimary: true,
   createdAt,
-}
-
-const customFieldDefinitionRow: InferSelectModel<typeof customFieldDefinitions> = {
-  id: "custom_field_definitions_0000000000",
-  entityType: "person",
-  key: "loyalty_tier",
-  label: "Loyalty tier",
-  fieldType: "enum",
-  isRequired: false,
-  isSearchable: true,
-  isExportable: true,
-  isInvoiceable: false,
-  options: [{ label: "Gold", value: "gold" }],
-  createdAt,
-  updatedAt,
 }
 
 // The value API row is synthetic (no table); assert its declared shape directly.
@@ -176,7 +159,6 @@ const singleCases = [
   ["activity", activitySchema, activityRow],
   ["activity link", activityLinkSchema, activityLinkRow],
   ["activity participant", activityParticipantSchema, activityParticipantRow],
-  ["custom field definition", customFieldDefinitionSchema, customFieldDefinitionRow],
   ["custom field value", customFieldValueSchema, customFieldValueRow],
   ["customer signal", customerSignalSchema, customerSignalRow],
   ["person document", personDocumentSchema, personDocumentRow],
@@ -196,11 +178,10 @@ describe("relationships rest single-entity response contracts", () => {
 })
 
 describe("relationships rest list response contracts", () => {
-  // Activities, custom-field definitions/values, and customer signals are the
+  // Activities, custom-field values, and customer signals are the
   // offset-paginated list surfaces.
   const listCases = [
     ["activity", activitySchema, activityRow],
-    ["custom field definition", customFieldDefinitionSchema, customFieldDefinitionRow],
     ["custom field value", customFieldValueSchema, customFieldValueRow],
     ["customer signal", customerSignalSchema, customerSignalRow],
   ] as const

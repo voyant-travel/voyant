@@ -29,7 +29,6 @@ export {
   communicationChannelSchema,
   communicationDirectionSchema,
   customFieldTargetSchema,
-  customFieldTypeSchema,
   entityTypeSchema,
   recordStatusSchema,
   relationTypeSchema,
@@ -39,11 +38,7 @@ export {
   insertCommunicationLogSchema,
 } from "./validation/communication-log.js"
 export {
-  customFieldDefinitionCoreSchema,
-  customFieldDefinitionListQuerySchema,
   customFieldValueListQuerySchema,
-  insertCustomFieldDefinitionSchema,
-  updateCustomFieldDefinitionSchema,
   upsertCustomFieldValueSchema,
 } from "./validation/custom-fields.js"
 export type {

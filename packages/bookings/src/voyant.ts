@@ -263,6 +263,24 @@ export const bookingsVoyantModule = defineModule({
     requirePort(bookingsFinanceRuntimePort),
     requirePort(bookingsRelationshipsRuntimePort),
   ],
+  customFieldTargets: [
+    {
+      id: "booking",
+      label: "Booking",
+      fieldTypes: [
+        "varchar",
+        "text",
+        "double",
+        "monetary",
+        "date",
+        "boolean",
+        "enum",
+        "set",
+        "json",
+      ],
+      capabilities: ["read", "write", "presentation"],
+    },
+  ],
   provides: {
     capabilities: ["bookings.data-owner"],
     ports: [providePort(actionLedgerBookingDriftRuntimePort)],

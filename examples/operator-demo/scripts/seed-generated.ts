@@ -34,6 +34,7 @@ import {
   bookingRedemptionEvents,
 } from "../../../packages/bookings/src/schema-items.ts"
 import { bookingOrigins } from "../../../packages/bookings/src/schema-origin.ts"
+import { customFieldDefinitions } from "../../../packages/custom-fields/src/schema.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
 import { authMember, authOrganization, authUser } from "../../../packages/db/src/schema/iam/auth.ts"
 import { userProfilesTable } from "../../../packages/db/src/schema/iam/user_profiles.ts"
@@ -116,7 +117,6 @@ import {
   activities,
   activityLinks,
   activityParticipants,
-  customFieldDefinitions,
 } from "../../../packages/relationships/src/schema-activities.ts"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

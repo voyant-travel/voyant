@@ -3,53 +3,10 @@ import { describe, expect, it } from "vitest"
 import {
   activityListQuerySchema,
   communicationListQuerySchema,
-  customFieldDefinitionListQuerySchema,
-  insertCustomFieldDefinitionSchema,
   organizationListQuerySchema,
   personListQuerySchema,
   upsertCustomFieldValueSchema,
 } from "../../src/validation.js"
-
-describe("Custom field definition schemas", () => {
-  const validDef = {
-    entityType: "organization",
-    key: "industry_code",
-    label: "Industry Code",
-    fieldType: "varchar",
-  }
-
-  it("requires entityType, key, label, fieldType", () => {
-    const result = insertCustomFieldDefinitionSchema.parse(validDef)
-    expect(result.entityType).toBe("organization")
-    expect(result.key).toBe("industry_code")
-    expect(result.isRequired).toBe(false)
-    expect(result.isSearchable).toBe(false)
-    expect(result.isExportable).toBe(true)
-    expect(result.isInvoiceable).toBe(false)
-  })
-
-  it("rejects missing entityType", () => {
-    expect(() =>
-      insertCustomFieldDefinitionSchema.parse({
-        key: "k",
-        label: "L",
-        fieldType: "varchar",
-      }),
-    ).toThrow()
-  })
-
-  it("accepts options array shape", () => {
-    const result = insertCustomFieldDefinitionSchema.parse({
-      ...validDef,
-      fieldType: "enum",
-      options: [
-        { label: "Option A", value: "a" },
-        { label: "Option B", value: "b" },
-      ],
-    })
-    expect(result.options).toHaveLength(2)
-  })
-})
 
 describe("Custom field value upsert schema", () => {
   it("requires entityType and entityId", () => {
@@ -130,14 +87,6 @@ describe("Pagination defaults", () => {
     })
     expect(result.type).toBe("call")
     expect(result.status).toBe("planned")
-    expect(result.limit).toBe(50)
-  })
-
-  it("works for custom field definition list query", () => {
-    const result = customFieldDefinitionListQuerySchema.parse({
-      entityType: "organization",
-    })
-    expect(result.entityType).toBe("organization")
     expect(result.limit).toBe(50)
   })
 })
