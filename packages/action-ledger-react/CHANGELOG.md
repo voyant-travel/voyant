@@ -1,5 +1,21 @@
 # @voyant-travel/action-ledger-react
 
+## 0.50.0
+
+### Minor Changes
+
+- 5941d2c: Remove the unused action-ledger relay outbox schema, service, HTTP route, tool,
+  and entry-detail UI. Ledger canaries now verify the append-only write path, and
+  future exports/projections use cursor checkpoints while work-queue consumers use
+  the framework's generic durable event outbox.
+
+### Patch Changes
+
+- Updated dependencies [5941d2c]
+  - @voyant-travel/action-ledger@0.111.0
+  - @voyant-travel/i18n@0.111.2
+  - @voyant-travel/bookings-react@0.162.1
+
 ## 0.49.0
 
 ### Patch Changes

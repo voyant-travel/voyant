@@ -1,5 +1,13 @@
 # @voyant-travel/crm
 
+## 0.130.1
+
+### Patch Changes
+
+- Updated dependencies [5941d2c]
+  - @voyant-travel/action-ledger@0.111.0
+  - @voyant-travel/relationships@0.127.1
+
 ## 0.130.0
 
 ### Minor Changes
