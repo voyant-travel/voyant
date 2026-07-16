@@ -43,11 +43,16 @@ import {
   resolveDocumentDownloadUrl,
 } from "@voyant-travel/storage/runtime"
 import type { StorageProvider, StorageProviderResolver } from "@voyant-travel/storage/types"
-import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
+
+// Derived from the member-roles helper so this file keeps zero first-party
+// PRODUCT imports (architecture gate): the node runtime only threads the
+// catalog through to scope derivation, never interprets it.
+type AccessCatalog = NonNullable<Parameters<typeof accessCatalogScopesForRole>[1]>
+
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
