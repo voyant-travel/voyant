@@ -27,7 +27,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 import { toast } from "sonner"
-import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
+import { useProductsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type ProductRecord,
   type ProductsListSortDir,
@@ -63,26 +63,35 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   archived: "secondary",
 }
 
-function formatAmount(cents: number | null, currency: string, fallback: string): string {
+function formatAmount(
+  cents: number | null,
+  currency: string,
+  fallback: string,
+  locale: string,
+): string {
   if (cents == null) return fallback
   const amount = cents / 100
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(amount)
   } catch {
     // Unknown/invalid ISO currency — fall back to a plain amount + code.
     return `${amount.toFixed(2)} ${currency}`
   }
 }
 
-function formatDepartureDate(value: string | null | undefined, fallback: string): string {
+function formatDepartureDate(
+  value: string | null | undefined,
+  fallback: string,
+  locale: string,
+): string {
   if (!value) return fallback
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return fallback
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(parsed)
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(parsed)
 }
 
 export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps = {}) {
-  const messages = useProductsUiMessagesOrDefault()
+  const { locale, messages } = useProductsUiI18nOrDefault()
   const productMessages = messages.productList
   const { create } = useProductMutation()
   const [search, setSearch] = React.useState("")
@@ -434,6 +443,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                       product.sellAmountCents,
                       product.sellCurrency,
                       productMessages.noValue,
+                      locale,
                     )}
                   </TableCell>
                   <TableCell>{product.productTypeName ?? productMessages.noValue}</TableCell>
@@ -441,7 +451,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                     {messages.common.productBookingModeLabels[product.bookingMode]}
                   </TableCell>
                   <TableCell>
-                    {formatDepartureDate(product.nextDeparture, productMessages.noValue)}
+                    {formatDepartureDate(product.nextDeparture, productMessages.noValue, locale)}
                   </TableCell>
                 </TableRow>
               ))

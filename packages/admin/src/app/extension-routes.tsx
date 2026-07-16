@@ -143,9 +143,9 @@ function withRouteMessagesProvider(
   const LazyProvider = React.lazy(loadProvider)
 
   function AdminExtensionRouteMessagesProvider() {
-    const { resolvedLocale } = useLocale()
+    const { resolvedLocale, timeZone } = useLocale()
     return (
-      <LazyProvider locale={resolvedLocale}>
+      <LazyProvider locale={resolvedLocale} timeZone={timeZone}>
         <WrappedComponent />
       </LazyProvider>
     )

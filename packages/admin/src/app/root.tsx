@@ -1,4 +1,5 @@
 import { HeadContent, Scripts } from "@tanstack/react-router"
+import { adminChromeMessages } from "@voyant-travel/i18n"
 import { Button, Toaster } from "@voyant-travel/ui/components"
 import { Alert, AlertDescription, AlertTitle } from "@voyant-travel/ui/components/alert"
 import {
@@ -94,7 +95,7 @@ export interface AdminRootErrorBoundaryProps {
 export function AdminRootErrorBoundary({
   error,
   reset,
-  fallbackMessage = "Something went wrong while loading this page.",
+  fallbackMessage = adminChromeMessages.en.somethingWentWrongDetail,
   homeHref = "/",
 }: AdminRootErrorBoundaryProps) {
   const message = error instanceof Error && error.message ? error.message : fallbackMessage
@@ -107,17 +108,17 @@ export function AdminRootErrorBoundary({
             <EmptyMedia variant="icon">
               <RefreshCcw className="size-5" />
             </EmptyMedia>
-            <EmptyTitle>Something went wrong</EmptyTitle>
+            <EmptyTitle>{adminChromeMessages.en.somethingWentWrong}</EmptyTitle>
           </EmptyHeader>
           <EmptyContent>
             <Alert variant="destructive" className="text-left">
-              <AlertTitle>Request failed</AlertTitle>
+              <AlertTitle>{adminChromeMessages.en.requestFailed}</AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </Alert>
             <div className="flex items-center gap-3">
-              <Button onClick={() => reset()}>Try again</Button>
+              <Button onClick={() => reset()}>{adminChromeMessages.en.retry}</Button>
               <Button variant="outline" onClick={() => window.location.assign(homeHref)}>
-                Go to dashboard
+                {adminChromeMessages.en.goToDashboard}
               </Button>
             </div>
           </EmptyContent>

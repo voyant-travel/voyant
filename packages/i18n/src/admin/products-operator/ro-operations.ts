@@ -394,7 +394,7 @@ export const operatorAdminProductsMessagesRoOperations = {
   },
   dayRows: {
     title: "Ziua {dayNumber}",
-    photoCount: "{count} media",
+    photoCount: "{count, plural, one {# fotografie} few {# fotografii} other {# de fotografii}}",
     editAction: "Editeaza",
     addServiceAction: "Adauga serviciu",
     deleteAction: "Sterge",

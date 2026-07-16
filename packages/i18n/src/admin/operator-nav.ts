@@ -32,6 +32,11 @@ export type OperatorAdminNavMessages = {
   suppliers: string
   people: string
   organizations: string
+  customFields: string
+  team: string
+  markets: string
+  navigation: string
+  eventCatalog: string
   availability: string
   resources: string
   finance: string
@@ -87,6 +92,11 @@ export const operatorAdminNavMessages = {
       suppliers: "Suppliers",
       people: "People",
       organizations: "Organizations",
+      customFields: "Custom fields",
+      team: "Team",
+      markets: "Markets",
+      navigation: "Navigation",
+      eventCatalog: "Event catalog",
       availability: "Availability",
       resources: "Resources",
       finance: "Finance",
@@ -140,7 +150,12 @@ export const operatorAdminNavMessages = {
       notificationPreview: "Previzualizare",
       suppliers: "Furnizori",
       people: "Persoane",
-      organizations: "Organizatii",
+      organizations: "Organizații",
+      customFields: "Câmpuri personalizate",
+      team: "Echipă",
+      markets: "Piețe",
+      navigation: "Navigare",
+      eventCatalog: "Catalog de evenimente",
       availability: "Disponibilitate",
       resources: "Resurse",
       finance: "Financiar",

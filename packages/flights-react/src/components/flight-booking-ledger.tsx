@@ -215,8 +215,9 @@ function LegBlock({
             {airportName?.(last.arrival.iataCode) ?? last.arrival.iataCode}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            {formatDate(first.departure.at)} · {formatTime(first.departure.at)} –{" "}
-            {formatTime(last.arrival.at)} · {formatStops(stops, messages)}
+            {formatDate(first.departure.at, i18n.locale)} ·{" "}
+            {formatTime(first.departure.at, i18n.locale)} –{" "}
+            {formatTime(last.arrival.at, i18n.locale)} · {formatStops(stops, messages)}
           </span>
         </div>
       </div>
@@ -324,10 +325,10 @@ function formatMoney(
   return i18n.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+  return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(d)
 }
 
 function formatStops(
@@ -343,10 +344,10 @@ function formatStops(
   )
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

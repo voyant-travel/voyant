@@ -24,7 +24,11 @@ import {
 } from "@voyant-travel/ui/components/sheet"
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
-import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/provider.js"
 import {
   type BookingTravelerDocumentRecord,
   type BookingTravelerRecord,
@@ -389,10 +393,10 @@ function TravelerDobCell({
   const person = usePerson(traveler.personId ?? undefined, {
     enabled: Boolean(traveler.personId),
   }).data
-  const messages = useBookingsUiMessagesOrDefault()
+  const { locale, messages } = useBookingsUiI18nOrDefault()
   if (loading) return <RowLoading />
   const dob = travelDetails?.dateOfBirth ?? person?.dateOfBirth ?? null
-  return <>{formatDobAge(dob, messages.travelerList.values.fieldUnavailable)}</>
+  return <>{formatDobAge(dob, messages.travelerList.values.fieldUnavailable, locale)}</>
 }
 
 function RolePills({ traveler }: { traveler: BookingTravelerRecord }) {
@@ -480,7 +484,7 @@ function TravelerSnapshotBody({
   traveler: BookingTravelerRecord
   documents: BookingTravelerDocumentRecord[]
 }) {
-  const messages = useBookingsUiMessagesOrDefault()
+  const { locale, messages } = useBookingsUiI18nOrDefault()
   const labels = messages.travelerList.snapshot
   const empty = labels.empty
   const { display, travelDetails, loading } = useRevealed(bookingId, traveler, true)
@@ -537,12 +541,12 @@ function TravelerSnapshotBody({
       </SnapshotSection>
 
       <SnapshotSection title={labels.sectionTravel}>
-        <SnapshotRow label={labels.dobLabel} value={formatDobAge(dob, empty)} />
+        <SnapshotRow label={labels.dobLabel} value={formatDobAge(dob, empty, locale)} />
         <SnapshotRow label={labels.nationalityLabel} value={travelDetails?.nationality || empty} />
         <SnapshotRow label={labels.documentLabel} value={documentValue} />
         <SnapshotRow
           label={labels.documentExpiryLabel}
-          value={formatDateValue(travelDetails?.documentExpiry) ?? empty}
+          value={formatDateValue(travelDetails?.documentExpiry, locale) ?? empty}
         />
         <SnapshotRow
           label={labels.dietaryLabel}
@@ -581,11 +585,11 @@ function TravelerSnapshotBody({
       <SnapshotSection title={labels.sectionMeta}>
         <SnapshotRow
           label={labels.createdAtLabel}
-          value={formatTimestamp(traveler.createdAt) ?? empty}
+          value={formatTimestamp(traveler.createdAt, locale) ?? empty}
         />
         <SnapshotRow
           label={labels.updatedAtLabel}
-          value={formatTimestamp(traveler.updatedAt) ?? empty}
+          value={formatTimestamp(traveler.updatedAt, locale) ?? empty}
         />
       </SnapshotSection>
     </div>
@@ -638,12 +642,12 @@ function MiniPill({ children }: { children: React.ReactNode }) {
   )
 }
 
-function formatTimestamp(iso: string | null | undefined): string | null {
+function formatTimestamp(iso: string | null | undefined, locale: string): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (!Number.isFinite(d.getTime())) return null
   try {
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -655,7 +659,11 @@ function formatTimestamp(iso: string | null | undefined): string | null {
   }
 }
 
-function formatDobAge(value: string | null | undefined, unavailable: string): string {
+function formatDobAge(
+  value: string | null | undefined,
+  unavailable: string,
+  locale: string,
+): string {
   if (!value) return unavailable
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
@@ -665,14 +673,14 @@ function formatDobAge(value: string | null | undefined, unavailable: string): st
     today.getMonth() > date.getMonth() ||
     (today.getMonth() === date.getMonth() && today.getDate() >= date.getDate())
   if (!birthdayPassed) age -= 1
-  return `${formatDateValue(value)} · ${age}`
+  return `${formatDateValue(value, locale)} · ${age}`
 }
 
-function formatDateValue(value: string | null | undefined): string | null {
+function formatDateValue(value: string | null | undefined, locale: string): string | null {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })
 }
 
 /**

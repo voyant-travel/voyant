@@ -66,10 +66,12 @@ export function getNotificationsUiI18n({
 export function NotificationsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: NotificationsUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function NotificationsUiMessagesProvider({
       definitions={notificationsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

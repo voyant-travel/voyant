@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, Loader2, Pencil } from "lucide-react"
 import { lazy, Suspense, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   useNotificationDeliveries,
   useNotificationTemplate,
@@ -52,7 +52,8 @@ export interface NotificationTemplateDetailHostProps {
  * the `notificationTemplate.list` semantic destination.
  */
 export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetailHostProps) {
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useNotificationsUiI18nOrDefault()
+  const table = messages.admin.common.table
   const t = messages.admin.templateDetail
   const common = messages.admin.common
   const [editOpen, setEditOpen] = useState(false)
@@ -182,7 +183,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetaCard label={t.metaChannel} value={template.channel} />
         <MetaCard label={t.metaFrom} value={template.fromAddress ?? common.defaultSender} />
-        <MetaCard label={t.metaUpdated} value={new Date(template.updatedAt).toLocaleString()} />
+        <MetaCard label={t.metaUpdated} value={formatDateTime(template.updatedAt)} />
       </div>
 
       <Tabs defaultValue="overview">
@@ -321,11 +322,11 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                   <table className="w-full text-sm">
                     <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-3">Recipient</th>
-                        <th className="px-4 py-3">Provider</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Created</th>
-                        <th className="px-4 py-3 text-right">View</th>
+                        <th className="px-4 py-3">{table.recipient}</th>
+                        <th className="px-4 py-3">{table.provider}</th>
+                        <th className="px-4 py-3">{table.status}</th>
+                        <th className="px-4 py-3">{table.created}</th>
+                        <th className="px-4 py-3 text-right">{table.view}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -353,9 +354,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                               {delivery.status}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3">
-                            {new Date(delivery.createdAt).toLocaleString()}
-                          </td>
+                          <td className="px-4 py-3">{formatDateTime(delivery.createdAt)}</td>
                           <td className="px-4 py-3 text-right">
                             <Button
                               variant="ghost"

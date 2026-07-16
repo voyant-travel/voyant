@@ -67,10 +67,12 @@ export function getDistributionUiI18n({
 export function DistributionUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: DistributionUiMessageOverrides | null
 }) {
   return (
@@ -78,6 +80,7 @@ export function DistributionUiMessagesProvider({
       definitions={distributionUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

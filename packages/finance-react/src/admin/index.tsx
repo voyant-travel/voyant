@@ -38,6 +38,7 @@ import * as React from "react"
 // engine) out of the workspace-chrome chunk that evaluates this factory.
 import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
 import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
+import { financeFiscalSetupMessageDefinitions } from "../i18n/setup.js"
 import type { BookingInvoicesWidgetProps } from "./booking-invoices-widget.js"
 import type { BookingPaymentPolicyWidgetProps } from "./booking-payment-policy-widget.js"
 import type { BookingPendingPaymentSessionsWidgetProps } from "./booking-pending-payment-sessions-widget.js"
@@ -450,18 +451,7 @@ export function createSelectedFinanceAdminExtension({
         order: 40,
         skippable: true,
         href: "/settings/taxes",
-        messages: {
-          en: {
-            title: "Fiscal settings",
-            description: "Review tax classes and regimes before issuing customer documents.",
-            action: "Open tax settings",
-          },
-          ro: {
-            title: "Setari fiscale",
-            description: "Verifica clasele si regimurile fiscale inainte de emiterea documentelor.",
-            action: "Deschide setarile fiscale",
-          },
-        },
+        messages: financeFiscalSetupMessageDefinitions,
         isComplete: hasFiscalSettings,
       },
     ],

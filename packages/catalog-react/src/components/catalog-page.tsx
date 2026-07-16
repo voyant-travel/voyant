@@ -3,7 +3,7 @@
 import { cn } from "@voyant-travel/ui/lib/utils"
 import type { ReactNode } from "react"
 import { useMemo } from "react"
-import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { useCatalogUiI18nOrDefault } from "../i18n/index.js"
 import type { CatalogSearchHit } from "../index.js"
 import type {
   CatalogDetailEnrichment,
@@ -163,7 +163,8 @@ export function CatalogPage({
   title,
   className,
 }: CatalogPageProps) {
-  const messages = useCatalogUiMessagesOrDefault().catalogPage
+  const { locale, messages: rootMessages } = useCatalogUiI18nOrDefault()
+  const messages = rootMessages.catalogPage
   const resolvedLoadProductDetail = useMemo(
     () => onLoadProductDetail ?? enrichmentFetchers?.loadProductDetail,
     [onLoadProductDetail, enrichmentFetchers],
@@ -199,9 +200,9 @@ export function CatalogPage({
       id: "products",
       label: messages.tabs.products,
       vertical: "products",
-      columns: makeProductColumns(formatSupplier, messages),
-      filterFields: makeProductFilters(formatSupplier, messages),
-      card: makeProductCard(formatSupplier, messages),
+      columns: makeProductColumns(formatSupplier, messages, locale),
+      filterFields: makeProductFilters(formatSupplier, messages, locale),
+      card: makeProductCard(formatSupplier, messages, locale),
       sorts: ["price-asc", "price-desc", "departure-asc", "newest"],
       detailFormatters: {
         supplierId: supplierFormatter,
@@ -255,10 +256,10 @@ export function CatalogPage({
       id: "cruises",
       label: messages.tabs.cruises,
       vertical: "cruises",
-      columns: makeCruiseColumns(formatSupplier, messages),
-      filterFields: makeCruiseFilters(formatSupplier, messages),
+      columns: makeCruiseColumns(formatSupplier, messages, locale),
+      filterFields: makeCruiseFilters(formatSupplier, messages, locale),
       imageField: "thumbnailUrl",
-      card: makeCruiseCard(formatSupplier, messages),
+      card: makeCruiseCard(formatSupplier, messages, locale),
       detailFormatters: {
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -270,10 +271,10 @@ export function CatalogPage({
       id: "charters",
       label: messages.tabs.charters,
       vertical: "charters",
-      columns: makeCharterColumns(formatSupplier, messages),
+      columns: makeCharterColumns(formatSupplier, messages, locale),
       filterFields: makeCharterFilters(formatSupplier, messages),
       imageField: "heroImageUrl",
-      card: makeCharterCard(formatSupplier),
+      card: makeCharterCard(formatSupplier, locale),
       sorts: ["price-asc", "price-desc", "newest"],
       detailFormatters: {
         lineSupplierId: supplierFormatter,
@@ -285,9 +286,9 @@ export function CatalogPage({
       id: "accommodations",
       label: messages.tabs.accommodations,
       vertical: "accommodations",
-      columns: makeAccommodationColumns(formatSupplier, messages),
+      columns: makeAccommodationColumns(formatSupplier, messages, locale),
       filterFields: makeAccommodationFilters(formatSupplier, messages),
-      card: makeAccommodationCard(formatSupplier),
+      card: makeAccommodationCard(formatSupplier, locale),
       detailFormatters: {
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,

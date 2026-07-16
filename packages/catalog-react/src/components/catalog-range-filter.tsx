@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@voyant-travel/ui/compo
 import { Separator } from "@voyant-travel/ui/components/separator"
 import { PlusCircle } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { useCatalogUiI18nOrDefault } from "../i18n/index.js"
 
 export interface CatalogRangeFilterValue {
   gte?: number
@@ -53,7 +53,8 @@ export function CatalogRangeFilter({
   format = "number",
   currency,
 }: CatalogRangeFilterProps) {
-  const messages = useCatalogUiMessagesOrDefault().catalogPage.filtersUi
+  const { locale, messages: rootMessages } = useCatalogUiI18nOrDefault()
+  const messages = rootMessages.catalogPage.filtersUi
   const resolvedMinPlaceholder = minPlaceholder ?? messages.min
   const resolvedMaxPlaceholder = maxPlaceholder ?? messages.max
   // Track local string state so users can type freely without the parent
@@ -83,7 +84,7 @@ export function CatalogRangeFilter({
   }
 
   const active = value?.gte != null || value?.lte != null
-  const display = active ? formatRange(value, format, currency) : null
+  const display = active ? formatRange(value, format, currency, locale) : null
 
   return (
     <Popover>
@@ -152,17 +153,18 @@ function formatRange(
   v: CatalogRangeFilterValue | undefined,
   format: "number" | "currency",
   currency: string | undefined,
+  locale: string,
 ): string | null {
   if (!v) return null
   const fmt = (n: number) => {
     if (format === "currency" && currency) {
-      return new Intl.NumberFormat(undefined, {
+      return new Intl.NumberFormat(locale, {
         style: "currency",
         currency,
         maximumFractionDigits: 0,
       }).format(n)
     }
-    return new Intl.NumberFormat().format(n)
+    return new Intl.NumberFormat(locale).format(n)
   }
   if (v.gte != null && v.lte != null) return `${fmt(v.gte)} – ${fmt(v.lte)}`
   if (v.gte != null) return `≥ ${fmt(v.gte)}`

@@ -21,7 +21,10 @@ const operatorAdminMessagesContext =
 export function getOperatorAdminMessageOverridesFromUiPrefs(
   uiPrefs: unknown,
 ): OperatorAdminMessageOverrides | undefined {
-  return getLocaleMessageOverridesFromUiPrefs<OperatorAdminMessages>(uiPrefs)
+  return getLocaleMessageOverridesFromUiPrefs<OperatorAdminMessages>(
+    uiPrefs,
+    operatorAdminMessageDefinitions,
+  )
 }
 
 export function OperatorAdminMessagesProvider({

@@ -6,7 +6,7 @@ import { cn } from "@voyant-travel/ui/lib/utils"
 import { Check, Copy, ExternalLink, Loader2, Minus, Plus, X } from "lucide-react"
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react"
 
-import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
 import type { CatalogDetailEnrichment, CatalogSearchHit } from "../index.js"
 import type { CatalogDetailSheetWidth } from "./catalog-detail-sheet.js"
@@ -27,6 +27,7 @@ export function ProductPriceFrom({
   fields: Record<string, unknown>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
+  const { locale } = useCatalogUiI18nOrDefault()
   const departureMin = (enrichment?.departures ?? []).reduce<{
     amount: number
     currency: string | null
@@ -54,7 +55,7 @@ export function ProductPriceFrom({
         {messages.priceFromLabel}
       </span>
       <span className="font-semibold text-base tabular-nums">
-        {formatPriceCents(amount, currency ?? undefined)}
+        {formatPriceCents(amount, currency ?? undefined, locale)}
       </span>
     </div>
   )
@@ -140,13 +141,19 @@ export function AttributeList({
   messages: CatalogUiMessages["catalogPage"]
   renderSupplierLink?: (supplierId: string, displayName: string) => ReactNode
 }) {
+  const { locale } = useCatalogUiI18nOrDefault()
   return (
     <div className="divide-y rounded-lg border">
       {entries.map(([key, value]) => (
         <div key={key} className="grid grid-cols-[140px_1fr] items-baseline gap-4 px-3 py-2.5">
           <span className="text-xs text-muted-foreground">{attributeLabel(key, messages)}</span>
           <span className="text-sm break-words">
-            {renderAttributeValue(key, value, { formatters, messages, renderSupplierLink })}
+            {renderAttributeValue(key, value, {
+              formatters,
+              messages,
+              renderSupplierLink,
+              locale,
+            })}
           </span>
         </div>
       ))}
@@ -168,9 +175,10 @@ function renderAttributeValue(
     formatters?: Record<string, (value: unknown) => ReactNode>
     messages: CatalogUiMessages["catalogPage"]
     renderSupplierLink?: (supplierId: string, displayName: string) => ReactNode
+    locale: string
   },
 ): ReactNode {
-  const { formatters, messages, renderSupplierLink } = ctx
+  const { formatters, messages, renderSupplierLink, locale } = ctx
 
   // Synthetic "Sell amount" — value is `{ amountCents, currency }`,
   // emitted by the attribute-reshaping pass above.
@@ -181,7 +189,7 @@ function renderAttributeValue(
     if (!Number.isFinite(cents)) return <span className="text-muted-foreground">—</span>
     return (
       <span className="font-medium tabular-nums">
-        {formatPriceCents(cents, typeof currency === "string" ? currency : undefined)}
+        {formatPriceCents(cents, typeof currency === "string" ? currency : undefined, locale)}
       </span>
     )
   }
@@ -205,7 +213,7 @@ function renderAttributeValue(
     )
   }
 
-  return formatters?.[key] ? formatters[key]!(value) : defaultFormat(key, value, messages)
+  return formatters?.[key] ? formatters[key]!(value) : defaultFormat(key, value, messages, locale)
 }
 
 export function ArrayBadges({ value }: { value: unknown }) {
@@ -358,6 +366,7 @@ export function defaultFormat(
   field: string,
   value: unknown,
   messages: CatalogUiMessages["catalogPage"],
+  locale: string,
 ): ReactNode {
   if (value == null || value === "") {
     return <span className="text-muted-foreground">—</span>
@@ -403,7 +412,7 @@ export function defaultFormat(
       if (!Number.isNaN(d.getTime())) {
         return (
           <time dateTime={stripped} className="text-sm">
-            {new Intl.DateTimeFormat(undefined, {
+            {new Intl.DateTimeFormat(locale, {
               year: "numeric",
               month: "short",
               day: "numeric",
@@ -423,7 +432,7 @@ export function defaultFormat(
     if (Number.isFinite(num)) {
       return (
         <span className="font-medium text-sm">
-          {new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(num / 100)}
+          {new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(num / 100)}
         </span>
       )
     }
@@ -473,11 +482,15 @@ export function stringOr<T>(value: unknown, fallback: T): string | T {
   return typeof value === "string" && value.length > 0 ? value : fallback
 }
 
-export function formatPriceCents(cents: number, currency?: string | null): string {
+export function formatPriceCents(
+  cents: number,
+  currency: string | null | undefined,
+  locale: string,
+): string {
   if (!currency) {
-    return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(cents / 100)
   }
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

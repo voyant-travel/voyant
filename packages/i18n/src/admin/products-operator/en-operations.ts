@@ -394,7 +394,7 @@ export const operatorAdminProductsMessagesEnOperations = {
   },
   dayRows: {
     title: "Day {dayNumber}",
-    photoCount: "{count} photo{suffix}",
+    photoCount: "{count, plural, one {# photo} other {# photos}}",
     editAction: "Edit",
     addServiceAction: "Add Service",
     deleteAction: "Delete",

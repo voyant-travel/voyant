@@ -6,7 +6,7 @@ import { Card, CardContent } from "@voyant-travel/ui/components/card"
 import { AlertTriangle, CalendarClock, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { useWorkflowRunsUiMessagesOrDefault, type WorkflowRunsUiMessages } from "../i18n/index.js"
+import { useWorkflowRunsUiI18nOrDefault, type WorkflowRunsUiMessages } from "../i18n/index.js"
 import type {
   ListWorkflowSchedulesResponse,
   WorkflowScheduleDecl,
@@ -44,7 +44,7 @@ export function WorkflowSchedulesPage({
   pollIntervalMs = 30_000,
   className,
 }: WorkflowSchedulesPageProps) {
-  const rootMessages = useWorkflowRunsUiMessagesOrDefault()
+  const { locale, messages: rootMessages } = useWorkflowRunsUiI18nOrDefault()
   const messages = rootMessages.schedules
   const [response, setResponse] = useState<ListWorkflowSchedulesResponse | null>(null)
   const [lastRuns, setLastRuns] = useState<Record<string, WorkflowRun | null>>({})
@@ -220,6 +220,7 @@ export function WorkflowSchedulesPage({
                     onTriggerNow={onTriggerNow ? () => void triggerRow(row) : undefined}
                     envFlagDisabled={showEnvFlag && !envFlagOn}
                     rootMessages={rootMessages}
+                    locale={locale}
                   />
                 ))}
               </tbody>
@@ -238,6 +239,7 @@ function ScheduleRow({
   onTriggerNow,
   envFlagDisabled,
   rootMessages,
+  locale,
 }: {
   row: WorkflowScheduleSummary
   lastRun: WorkflowRun | null
@@ -245,6 +247,7 @@ function ScheduleRow({
   onTriggerNow?: () => void
   envFlagDisabled: boolean
   rootMessages: WorkflowRunsUiMessages
+  locale: string
 }) {
   const messages = rootMessages.schedules
 
@@ -253,9 +256,11 @@ function ScheduleRow({
       <td className="px-3 py-2 font-mono text-xs">{row.workflowId}</td>
       <td className="px-3 py-2 font-mono text-xs">{formatScheduleDecl(row.schedule, messages)}</td>
       <td className="px-3 py-2 text-xs text-muted-foreground">
-        {formatNextRun(row, messages, rootMessages)}
+        {formatNextRun(row, messages, rootMessages, locale)}
       </td>
-      <td className="px-3 py-2 text-xs">{formatLastRun(lastRun, row, messages, rootMessages)}</td>
+      <td className="px-3 py-2 text-xs">
+        {formatLastRun(lastRun, row, messages, rootMessages, locale)}
+      </td>
       <td className="px-3 py-2">
         <StatusPill row={row} envFlagDisabled={envFlagDisabled} messages={messages} />
       </td>
@@ -327,10 +332,11 @@ function formatNextRun(
   row: WorkflowScheduleSummary,
   messages: SchedulesMessages,
   rootMessages: WorkflowRunsUiMessages,
+  locale: string,
 ): string {
   if (!row.enabled || row.nextRunAt === null) return messages.notScheduled
   const delta = row.nextRunAt - Date.now()
-  const relative = formatRelative(new Date(row.nextRunAt).toISOString(), rootMessages)
+  const relative = formatRelative(new Date(row.nextRunAt).toISOString(), rootMessages, locale)
   return delta >= 0 ? messages.inFuture(relative) : messages.inPast(relative)
 }
 
@@ -339,9 +345,10 @@ function formatLastRun(
   row: WorkflowScheduleSummary,
   messages: SchedulesMessages,
   rootMessages: WorkflowRunsUiMessages,
+  locale: string,
 ) {
   if (lastRun) {
-    const relative = formatRelative(lastRun.startedAt, rootMessages)
+    const relative = formatRelative(lastRun.startedAt, rootMessages, locale)
     const label = lastRunLabel(lastRun.status, relative, messages)
     return (
       <span className="inline-flex items-center gap-1.5">
@@ -351,7 +358,7 @@ function formatLastRun(
     )
   }
   if (row.lastError && row.lastFireAt !== undefined && row.lastFireAt !== null) {
-    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages)
+    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages, locale)
     return (
       <span className="inline-flex items-center gap-1.5" title={row.lastError}>
         <StatusIcon status="failed" />
@@ -360,7 +367,11 @@ function formatLastRun(
     )
   }
   if (row.lastSuccessfulRunAt !== undefined && row.lastSuccessfulRunAt !== null) {
-    const relative = formatRelative(new Date(row.lastSuccessfulRunAt).toISOString(), rootMessages)
+    const relative = formatRelative(
+      new Date(row.lastSuccessfulRunAt).toISOString(),
+      rootMessages,
+      locale,
+    )
     return (
       <span className="inline-flex items-center gap-1.5">
         <StatusIcon status="succeeded" />
@@ -369,7 +380,7 @@ function formatLastRun(
     )
   }
   if (row.lastFireAt !== undefined && row.lastFireAt !== null) {
-    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages)
+    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages, locale)
     return (
       <span className="inline-flex items-center gap-1.5">
         <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />

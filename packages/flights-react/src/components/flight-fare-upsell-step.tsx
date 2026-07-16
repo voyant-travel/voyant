@@ -12,7 +12,7 @@ import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Briefcase, Check, Crown, Luggage, Sparkles, X } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type FareBundlePicks = NonNullable<AncillarySelection["fareBundle"]>
 type FareBundlePick = FareBundlePicks[number]
@@ -289,10 +289,11 @@ function BundleCard({
   onPick: () => void
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   const delta = Number(bundle.priceDelta.amount)
   const deltaLabel =
     delta > 0
-      ? `+${formatMoney(bundle.priceDelta.amount, bundle.priceDelta.currency)}`
+      ? `+${formatMoney(bundle.priceDelta.amount, bundle.priceDelta.currency, locale)}`
       : messages.common.included
   const showActiveRing = selected || isBasicByDefault
 
@@ -475,10 +476,10 @@ function nameOrFallback(
   return `${messages.common.passengerTypeLabels[p.type]} ${idx + 1}`
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(amount: string, currency: string, locale: string): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

@@ -38,9 +38,9 @@ export function composeAdminRouteMessagesProviders(
       ...loaders.map((load) => load()),
     ])
     const providers = modules.map((module) => module.default)
-    const ComposedProvider: AdminRouteMessagesProvider = ({ children, locale }) =>
+    const ComposedProvider: AdminRouteMessagesProvider = ({ children, locale, timeZone }) =>
       providers.reduceRight<React.ReactNode>(
-        (content, Provider) => createElement(Provider, { children: content, locale }),
+        (content, Provider) => createElement(Provider, { children: content, locale, timeZone }),
         children,
       )
 

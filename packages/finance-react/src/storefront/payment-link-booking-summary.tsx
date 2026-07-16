@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
 import { CalendarClock, Package, Users } from "lucide-react"
 
+import { useCheckoutUiI18nOrDefault } from "../checkout-i18n/provider.js"
 import { useVoyantFinanceContext } from "../provider.js"
 
 export interface PaymentLinkBookingSummaryMessages {
@@ -97,6 +98,7 @@ function BookingSummaryCard({
   booking: BookingSummary
   messages: PaymentLinkBookingSummaryMessages
 }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   const partial =
     booking.chargeAmountCents != null &&
     booking.bookingTotalAmountCents != null &&
@@ -137,7 +139,7 @@ function BookingSummaryCard({
                 <span className="block text-muted-foreground text-xs">× {item.quantity}</span>
               ) : null}
               <span className="font-medium tabular-nums">
-                {formatMoney(item.amountCents, item.currency)}
+                {formatMoney(item.amountCents, item.currency, locale)}
               </span>
             </div>
           </li>
@@ -156,7 +158,7 @@ function BookingSummaryCard({
           <div className="flex items-baseline justify-between text-muted-foreground text-xs">
             <span className="uppercase tracking-wider">{messages.bookingTotal}</span>
             <span className="font-mono tabular-nums">
-              {formatMoney(booking.bookingTotalAmountCents, booking.bookingCurrency)}
+              {formatMoney(booking.bookingTotalAmountCents, booking.bookingCurrency, locale)}
             </span>
           </div>
         ) : null}
@@ -165,7 +167,7 @@ function BookingSummaryCard({
             {partial ? messages.dueNow : messages.totalPayable}
           </span>
           <span className="font-semibold text-base tabular-nums">
-            {formatMoney(booking.chargeAmountCents, booking.currency)}
+            {formatMoney(booking.chargeAmountCents, booking.currency, locale)}
           </span>
         </div>
       </div>
@@ -174,8 +176,11 @@ function BookingSummaryCard({
 }
 
 function ScheduleLine({ item }: { item: BookingSummaryItem }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   const label =
-    item.departureLabel ?? formatScheduleRange(item.startsAt, item.endsAt) ?? item.serviceDate
+    item.departureLabel ??
+    formatScheduleRange(item.startsAt, item.endsAt, locale) ??
+    item.serviceDate
   if (!label) return null
   return (
     <span className="flex items-center gap-1 text-muted-foreground text-xs">
@@ -208,28 +213,36 @@ function BookingSummarySkeleton() {
   )
 }
 
-function formatMoney(amountCents: number | null | undefined, currency: string | null | undefined) {
+function formatMoney(
+  amountCents: number | null | undefined,
+  currency: string | null | undefined,
+  locale: string,
+) {
   if (amountCents == null) return "—"
-  return (amountCents / 100).toLocaleString(undefined, {
+  return (amountCents / 100).toLocaleString(locale, {
     style: "currency",
     currency: currency ?? "EUR",
   })
 }
 
-function formatScheduleRange(startsAt: string | null, endsAt: string | null): string | null {
+function formatScheduleRange(
+  startsAt: string | null,
+  endsAt: string | null,
+  locale: string,
+): string | null {
   if (!startsAt) return null
-  const start = formatDateTime(startsAt)
+  const start = formatDateTime(startsAt, locale)
   if (!start) return null
   if (!endsAt || endsAt === startsAt) return start
-  const end = formatDateTime(endsAt)
+  const end = formatDateTime(endsAt, locale)
   if (!end) return start
   return `${start} → ${end}`
 }
 
-function formatDateTime(value: string): string | null {
+function formatDateTime(value: string, locale: string): string | null {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     hour: "2-digit",

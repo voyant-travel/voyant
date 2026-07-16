@@ -10,7 +10,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
-import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import { type UseNotificationReminderRunsOptions, useNotificationReminderRuns } from "../index.js"
 
 /**
@@ -19,8 +19,9 @@ import { type UseNotificationReminderRunsOptions, useNotificationReminderRuns } 
  * there is no cross-route navigation.
  */
 export function NotificationReminderRunsHost() {
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useNotificationsUiI18nOrDefault()
   const t = messages.admin.reminderRunsPage
+  const table = messages.admin.common.table
   const common = messages.admin.common
   const [status, setStatus] = useState<UseNotificationReminderRunsOptions["status"] | "all">("all")
   const { data, isPending } = useNotificationReminderRuns({
@@ -69,11 +70,11 @@ export function NotificationReminderRunsHost() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Rule</th>
-                <th className="px-4 py-3">Target</th>
-                <th className="px-4 py-3">Recipient</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Processed</th>
+                <th className="px-4 py-3">{table.rule}</th>
+                <th className="px-4 py-3">{table.target}</th>
+                <th className="px-4 py-3">{table.recipient}</th>
+                <th className="px-4 py-3">{table.status}</th>
+                <th className="px-4 py-3">{table.processed}</th>
               </tr>
             </thead>
             <tbody>
@@ -103,7 +104,7 @@ export function NotificationReminderRunsHost() {
                       {run.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{new Date(run.processedAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatDateTime(run.processedAt)}</td>
                 </tr>
               ))}
             </tbody>

@@ -145,10 +145,26 @@ describe("package i18n helpers", () => {
   })
 
   it("creates explicit locale formatters without a React provider", () => {
-    const formatters = createLocaleFormatters("en-US")
+    const formatters = createLocaleFormatters("en-US", "America/New_York")
 
     expect(formatters.formatCurrency(1234, "USD")).toBe(
       new Intl.NumberFormat("en-US", { currency: "USD", style: "currency" }).format(1234),
     )
+    expect(formatters.timeZone).toBe("America/New_York")
+    expect(
+      formatters.formatDateTime("2026-04-28T01:00:00Z", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }),
+    ).toBe(
+      new Intl.DateTimeFormat("en-US", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "America/New_York",
+      }).format(new Date("2026-04-28T01:00:00Z")),
+    )
+    expect(
+      formatters.formatMessage("{count, plural, one {# item} other {# items}}", { count: 2 }),
+    ).toBe("2 items")
   })
 })

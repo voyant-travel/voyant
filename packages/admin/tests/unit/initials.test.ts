@@ -1,3 +1,4 @@
+import { adminChromeMessages } from "@voyant-travel/i18n"
 import { describe, expect, it } from "vitest"
 
 import { getDisplayName, getInitials } from "../../src/lib/initials.js"
@@ -63,10 +64,10 @@ describe("getDisplayName", () => {
     expect(getDisplayName({ email: "bob@example.com" })).toBe("bob@example.com")
   })
 
-  it("returns 'Unknown User' when nothing is set", () => {
-    expect(getDisplayName({})).toBe("Unknown User")
+  it("uses the catalog fallback when nothing is set", () => {
+    expect(getDisplayName({})).toBe(adminChromeMessages.en.unknownUser)
     expect(getDisplayName({ firstName: "", lastName: "", name: "", email: "" })).toBe(
-      "Unknown User",
+      adminChromeMessages.en.unknownUser,
     )
   })
 

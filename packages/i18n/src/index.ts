@@ -93,6 +93,17 @@ export {
 } from "./admin/suppliers-operator.js"
 export { type AdminTeamMessages, adminTeamMessages } from "./admin/team.js"
 export {
+  canonicalizeLocale,
+  canonicalizeTimeZone,
+  localeHierarchy,
+} from "./locale.js"
+export {
+  formatIcuMessage,
+  type MessageFormatOptions,
+  type MessageValue,
+  type MessageValues,
+} from "./message-format.js"
+export {
   createLocaleFormatters,
   type LocaleFormatters,
 } from "./package-formatters.js"

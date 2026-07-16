@@ -17,6 +17,7 @@ export type AdminChildProvider = React.ComponentType<
 export interface AdminDomainMessagesProviderProps {
   children: React.ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
 }
 
 export type AdminDomainMessagesProvider = React.ComponentType<
@@ -49,11 +50,11 @@ export function AdminDomainMessagesProviderStack({
   children,
   providers = [],
 }: AdminDomainMessagesProviderStackProps) {
-  const { resolvedLocale } = useLocale()
+  const { resolvedLocale, timeZone } = useLocale()
 
   return providers.reduceRight(
     (content, Provider) => (
-      <Provider key={getProviderKey(Provider)} locale={resolvedLocale}>
+      <Provider key={getProviderKey(Provider)} locale={resolvedLocale} timeZone={timeZone}>
         {content}
       </Provider>
     ),

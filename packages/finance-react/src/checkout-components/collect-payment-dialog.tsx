@@ -25,7 +25,10 @@ import { CheckCircle2, Copy, ExternalLink, Loader2, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useCheckoutPaymentLinkConfig, useCollectPayment } from "../checkout-hooks/index.js"
-import { useCheckoutUiMessagesOrDefault } from "../checkout-i18n/provider.js"
+import {
+  useCheckoutUiI18nOrDefault,
+  useCheckoutUiMessagesOrDefault,
+} from "../checkout-i18n/provider.js"
 import { useBookingPaymentSchedules } from "../hooks/use-booking-payment-schedules.js"
 import type { BookingPaymentScheduleRecord } from "../schemas.js"
 
@@ -88,13 +91,14 @@ export function CollectPaymentDialog({
   cancelUrl,
   cardProvider,
 }: CollectPaymentDialogProps) {
-  const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
+  const { locale, messages: rootMessages } = useCheckoutUiI18nOrDefault()
+  const messages = rootMessages.collectPaymentDialog
   const [amountCents, setAmountCents] = useState<number>(defaultAmountCents ?? 0)
   const [scheduleId, setScheduleId] = useState<string>(FULL_AMOUNT_VALUE)
   const [currency, setCurrency] = useState<string>(defaultCurrency)
   const [result, setResult] = useState<InitiatedCheckoutCollectionRecord | null>(null)
   const fullAmountLabel = formatMessage(messages.scheduleFullAmount, {
-    amount: formatAmount(defaultAmountCents ?? 0, defaultCurrency),
+    amount: formatAmount(defaultAmountCents ?? 0, defaultCurrency, locale),
   })
 
   const schedulesQuery = useBookingPaymentSchedules(bookingId, { enabled: open })
@@ -200,7 +204,7 @@ export function CollectPaymentDialog({
                       <SelectItem value={FULL_AMOUNT_VALUE}>{fullAmountLabel}</SelectItem>
                       {schedules.map((schedule) => (
                         <SelectItem key={schedule.id} value={schedule.id}>
-                          {formatScheduleOption(schedule, messages.scheduleTypeLabels)}
+                          {formatScheduleOption(schedule, messages.scheduleTypeLabels, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -270,10 +274,10 @@ export function CollectPaymentDialog({
   )
 }
 
-function formatAmount(cents: number, currency: string): string {
+function formatAmount(cents: number, currency: string, locale: string): string {
   if (cents <= 0) return `0 ${currency}`
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
@@ -282,9 +286,10 @@ function formatAmount(cents: number, currency: string): string {
 function formatScheduleOption(
   schedule: BookingPaymentScheduleRecord,
   typeLabels: Record<string, string>,
+  locale: string,
 ): string {
   const typeLabel = typeLabels[schedule.scheduleType] ?? schedule.scheduleType
-  const amount = formatAmount(schedule.amountCents, schedule.currency)
+  const amount = formatAmount(schedule.amountCents, schedule.currency, locale)
   return `${typeLabel} • ${amount} • ${schedule.dueDate}`
 }
 

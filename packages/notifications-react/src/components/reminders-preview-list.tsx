@@ -13,7 +13,7 @@ import {
 } from "@voyant-travel/ui/components/table"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
-import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import { useRemindersPreview } from "../index.js"
 
 function todayIso() {
@@ -26,7 +26,7 @@ export interface RemindersPreviewListProps {
 }
 
 export function RemindersPreviewList({ ruleId, targetId }: RemindersPreviewListProps) {
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useNotificationsUiI18nOrDefault()
   const [date, setDate] = useState<string>(todayIso())
   const { data, isFetching } = useRemindersPreview({ date, ruleId, targetId })
 
@@ -71,7 +71,7 @@ export function RemindersPreviewList({ ruleId, targetId }: RemindersPreviewListP
                   <TableCell className="font-mono text-xs">{row.targetId}</TableCell>
                   <TableCell>{row.anchor}</TableCell>
                   <TableCell className="font-mono text-xs">
-                    {new Date(row.scheduledAt).toLocaleString()}
+                    {formatDateTime(row.scheduledAt)}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{row.reasoning}</TableCell>
                 </TableRow>

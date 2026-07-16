@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   beforeLoad: vi.fn(),
   initialUser: undefined as unknown,
   navigate: vi.fn(),
+  refetch: vi.fn(),
   shellProps: undefined as Record<string, unknown> | undefined,
 }))
 
@@ -36,7 +37,7 @@ vi.mock("@voyant-travel/admin-react", async () => {
         mocks.initialUser = initialUser
         return React.createElement(React.Fragment, null, children)
       },
-      useUser: () => ({ user: mocks.initialUser, isLoading: false }),
+      useUser: () => ({ user: mocks.initialUser, isLoading: false, refetch: mocks.refetch }),
     }),
   }
 })
@@ -58,6 +59,7 @@ describe("createAdminHostWorkspace", () => {
     mocks.beforeLoad.mockReset()
     mocks.initialUser = undefined
     mocks.navigate.mockReset()
+    mocks.refetch.mockReset()
     mocks.shellProps = undefined
     host = document.createElement("div")
     document.body.appendChild(host)
@@ -71,6 +73,7 @@ describe("createAdminHostWorkspace", () => {
 
   it("composes user, realtime, presentation, destinations, and children", async () => {
     const signOut = vi.fn()
+    const updateCurrentUserPreferences = vi.fn(async () => ({ ...user, locale: "ro" }))
     const realtimeProps: Array<Record<string, unknown>> = []
     const createExtensions = vi.fn(() => [{ id: "selected" }])
     const fetcher = vi.fn()
@@ -86,6 +89,7 @@ describe("createAdminHostWorkspace", () => {
         getBootstrapStatus: vi.fn(async () => ({ hasUsers: true })),
         cloudAuthStartHref: () => "/api/auth/cloud/start",
         signOut,
+        updateCurrentUserPreferences,
       },
       presentation: { extensions: [{ id: "selected" }], createExtensions },
       api: { getBaseUrl: () => "/api", fetcher },
@@ -118,6 +122,12 @@ describe("createAdminHostWorkspace", () => {
     }) => unknown
     expect(extensions({ nav: { bookings: "Bookings" } })).toEqual([{ id: "selected" }])
     expect(createExtensions).toHaveBeenCalledWith({ bookings: "Bookings" })
+
+    await (mocks.shellProps?.onPreferenceChange as (value: unknown) => Promise<void>)({
+      locale: "ro",
+    })
+    expect(updateCurrentUserPreferences).toHaveBeenCalledWith({ locale: "ro" })
+    expect(mocks.refetch).toHaveBeenCalledOnce()
 
     await (mocks.shellProps?.onSignOut as () => Promise<void>)()
     expect(signOut).toHaveBeenCalledOnce()

@@ -65,10 +65,12 @@ export function getPricingUiI18n({
 export function PricingUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: PricingUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function PricingUiMessagesProvider({
       definitions={pricingUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

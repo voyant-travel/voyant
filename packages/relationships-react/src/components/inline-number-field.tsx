@@ -5,7 +5,7 @@ import { Button, Input } from "@voyant-travel/ui/components"
 import { Check, Loader2, Pencil, X } from "lucide-react"
 import { type ComponentType, type KeyboardEvent, useState } from "react"
 
-import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 
 export interface InlineNumberFieldProps {
   icon?: ComponentType<{ className?: string }>
@@ -28,7 +28,8 @@ export function InlineNumberField({
   max,
   onSave,
 }: InlineNumberFieldProps) {
-  const messages = useCrmUiMessagesOrDefault().inlineEditor
+  const { formatNumber, messages: rootMessages } = useCrmUiI18nOrDefault()
+  const messages = rootMessages.inlineEditor
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value != null ? String(value) : "")
   const [saving, setSaving] = useState(false)
@@ -121,7 +122,7 @@ export function InlineNumberField({
           <div className="flex items-center gap-2">
             <div className="flex-1 truncate text-sm">
               {value != null ? (
-                value.toLocaleString()
+                formatNumber(value)
               ) : (
                 <span className="text-muted-foreground italic">
                   {placeholder || messages.notSet}

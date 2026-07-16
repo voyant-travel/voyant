@@ -232,6 +232,7 @@ export function createSelectedRelationshipsAdminExtension({
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   const peopleLabel = navMessages.people ?? "People"
   const organizationsLabel = navMessages.organizations ?? "Organizations"
+  const customFieldsLabel = navMessages.customFields ?? navMessages.settings ?? peopleLabel
   const extension = withAdminRouteMessagesProvider(
     createRelationshipsAdminExtension({
       labels: {
@@ -262,8 +263,8 @@ export function createSelectedRelationshipsAdminExtension({
       {
         id: "custom-fields",
         path: "/custom-fields",
-        title: "Custom Fields",
-        label: "Custom fields",
+        title: customFieldsLabel,
+        label: customFieldsLabel,
         icon: SlidersHorizontal,
         group: "general",
         order: 75,

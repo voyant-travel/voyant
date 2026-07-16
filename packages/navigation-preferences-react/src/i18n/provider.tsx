@@ -26,10 +26,12 @@ const context = createPackageMessagesContext<NavigationPreferencesMessages>(
 export function NavigationPreferencesMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: NavigationPreferencesMessageOverrides | null
 }) {
   return (
@@ -37,6 +39,7 @@ export function NavigationPreferencesMessagesProvider({
       definitions={navigationPreferencesMessageDefinitions}
       fallbackLocale="en"
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

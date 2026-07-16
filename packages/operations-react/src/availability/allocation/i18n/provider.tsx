@@ -461,10 +461,12 @@ export function getAllocationUiI18n({
 export function AllocationUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: AllocationUiMessageOverrides | null
 }) {
   return (
@@ -472,6 +474,7 @@ export function AllocationUiMessagesProvider({
       definitions={allocationUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

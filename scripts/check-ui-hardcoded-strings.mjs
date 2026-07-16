@@ -1,53 +1,56 @@
 import { access, readdir, readFile } from "node:fs/promises"
 import path from "node:path"
 
+import ts from "typescript"
+
 const rootDir = process.cwd()
 
-const filePatterns = [".ts", ".tsx"]
-const ignoredDirectoryNames = new Set(["dist", "i18n", "node_modules"])
+const ignoredDirectoryNames = new Set(["dist", "node_modules"])
 const ignoredFileSuffixes = [".d.ts", ".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx"]
-const ignoredLineStarts = ["import ", "export "]
-const ignoredLineIncludes = [
-  ">=",
-  "<=",
-  "=> Promise",
-  "Promise<",
-  "Record<string",
-  "Resolver<",
-  "z.literal(",
-  "z.coerce",
-  "function stripUndefined<",
-  "function bucketBy<",
-  "useForm<",
-  "fetchJson<",
-  "setField(",
-  // TanStack Query / fetch-helper shapes — the JSX-text heuristic mis-fires
-  // on `=> api.get<Type>(...)`, queryKey arrays, and bare `method: "PATCH"`
-  // wire-protocol strings. These are network plumbing, not user-facing copy.
-  "queryFn:",
-  "queryKey:",
-  "mutationFn:",
-  "mutationKey:",
-  "api.get<",
-  "api.post<",
-  "api.patch<",
-  "api.put<",
-  "api.delete<",
-  "= useQuery(",
-  "= useMutation(",
-  "= useInfiniteQuery(",
-  'method: "',
-  "method: '",
-  "headers: {",
-  "function useEditingToggle<",
-  // react-hook-form plumbing — `.setValue("field", "Default")` and
-  // `.register("field")` keep field names as quoted identifiers that
-  // can collide with the multi-word string heuristic.
-  ".setValue(",
-  ".register(",
-  ".getValues(",
-  ".watch(",
-]
+const localeSensitiveIntlConstructors = new Set([
+  "Collator",
+  "DateTimeFormat",
+  "DisplayNames",
+  "ListFormat",
+  "NumberFormat",
+  "PluralRules",
+  "RelativeTimeFormat",
+  "Segmenter",
+])
+const localeSensitiveMethods = new Set([
+  "localeCompare",
+  "toLocaleDateString",
+  "toLocaleLowerCase",
+  "toLocaleString",
+  "toLocaleTimeString",
+  "toLocaleUpperCase",
+])
+const userFacingPropertyNames = new Set([
+  "aria-description",
+  "aria-label",
+  "ariaDescription",
+  "ariaLabel",
+  "badge",
+  "breadcrumb",
+  "buttonLabel",
+  "caption",
+  "confirmLabel",
+  "description",
+  "emptyMessage",
+  "errorMessage",
+  "groupLabel",
+  "heading",
+  "helpText",
+  "label",
+  "message",
+  "noun",
+  "placeholder",
+  "setupSteps",
+  "subtitle",
+  "text",
+  "title",
+  "tooltip",
+])
 const nonUserFacingLiterals = new Set([
   "",
   "-",
@@ -59,45 +62,31 @@ const nonUserFacingLiterals = new Set([
   "USD",
   "UTC",
   "Europe/Bucharest",
+  "Voyant",
   "FREQ=DAILY;INTERVAL=1",
-  // HTTP methods (PATCH, DELETE, OPTIONS are >4 chars so they slip past the
-  // generic uppercase fallback).
   "PATCH",
   "DELETE",
   "OPTIONS",
-  // RRULE frequency tokens used in product-schedule-form and elsewhere.
   "DAILY",
   "WEEKLY",
   "MONTHLY",
   "YEARLY",
 ])
 
-const suspiciousPatterns = [
-  // Negative lookbehind on `=` skips arrow-function bodies like
-  // `([a, b]) => (map.get(a) ?? 0) < b` where the `>` belongs to `=>`
-  // and the `<` is a comparison, not JSX.
-  /(?<!=)>\s*[^<{]*[A-Za-z][^<{]*</,
-  /\b(?:title|placeholder|label|description|emptyMessage|buttonLabel|confirmLabel|aria-label)\s*=\s*(?:"[^"]*[A-Za-z][^"]*"|'[^']*[A-Za-z][^']*'|`[^`]*[A-Za-z][^`]*`)/,
-  /(?:\?\s*|:\s*|return\s+)(?:"(?:[^"\n]* [^"\n]*|[A-Z][A-Za-z][^"\n]*)"|'(?:[^'\n]* [^'\n]*|[A-Z][A-Za-z][^'\n]*)')/,
-]
+function isCatalogDirectory(name) {
+  return name === "i18n" || name.endsWith("-i18n")
+}
 
-function extractQuotedStrings(line) {
-  return [...line.matchAll(/(?:"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`)/g)].map(
-    (match) => match[1] ?? match[2] ?? match[3] ?? "",
-  )
+function isCatalogFile(filePath) {
+  return /^i18n\.tsx?$/.test(path.basename(filePath))
 }
 
 function looksLikeTailwindUtility(value) {
-  // Template-literal class lists embed conditional expressions like
-  // `mt-1 ${mono ? "font-mono" : "font-medium"}`. Strip the ${...} chunks
-  // before tokenizing so the remaining Tailwind utility names still pass.
   const stripped = value
     .replace(/\$\{[^}]*\}/g, "")
     .replace(/[`"']/g, "")
     .trim()
-  if (!stripped) {
-    return false
-  }
+  if (!stripped) return false
 
   return stripped.split(/\s+/).every((token) => {
     const bareToken = token.replace(/^[a-z0-9_-]+:/i, "")
@@ -113,97 +102,69 @@ function looksLikeTailwindUtility(value) {
   })
 }
 
+function looksLikeProtocolOrIdentifier(value) {
+  return (
+    /^\{[A-Za-z_$][\w$]*\}$/.test(value) ||
+    /^&[a-z]+;$/.test(value) ||
+    /^@[a-z0-9-]+\/[a-z0-9-]+#[a-z0-9._-]+$/i.test(value) ||
+    /^__[a-z0-9_-]+__$/i.test(value) ||
+    /^[A-Z0-9]{2,6}$/.test(value) ||
+    /^\d+-[a-z]+$/i.test(value) ||
+    /^(?:ft|m|cm|km)[²³]?$/.test(value) ||
+    /^(?:https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/.test(value) ||
+    /^(?:[a-z]+:)?\/\//i.test(value) ||
+    /^(?:[a-z][a-z0-9]*)(?:[._:/-][a-z0-9]+)+$/i.test(value) ||
+    /^[a-z][A-Za-z0-9]*$/.test(value) ||
+    /^--[a-z0-9-]+$/.test(value) ||
+    /^#[0-9a-f]{3,8}$/i.test(value) ||
+    /^(?:rgb|hsl|oklch)a?\(/i.test(value)
+  )
+}
+
 function isKnownNonUserFacingLiteral(value) {
-  return nonUserFacingLiterals.has(value) || /^[A-Z]{2,4}$/.test(value)
-}
-
-function shouldIgnoreLine(trimmed) {
+  const normalized = value.replace(/\s+/g, " ").trim()
   return (
-    !trimmed ||
-    trimmed.includes("i18n-literal-ok") ||
-    ignoredLineStarts.some((prefix) => trimmed.startsWith(prefix)) ||
-    trimmed.startsWith("//") ||
-    trimmed.startsWith("*") ||
-    trimmed.startsWith("/*")
+    nonUserFacingLiterals.has(normalized) ||
+    /^[A-Z]{2,4}$/.test(normalized) ||
+    looksLikeTailwindUtility(normalized) ||
+    looksLikeProtocolOrIdentifier(normalized)
   )
 }
 
-function shouldIgnoreSuspiciousLine(trimmed) {
-  if (ignoredLineIncludes.some((fragment) => trimmed.includes(fragment))) {
-    return true
-  }
-
-  const quotedStrings = extractQuotedStrings(trimmed)
-  if (quotedStrings.length === 0) {
-    return false
-  }
-
-  return quotedStrings.every(
-    (value) => isKnownNonUserFacingLiteral(value) || looksLikeTailwindUtility(value),
-  )
+function isSuspiciousCopy(value) {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  return /[\p{L}]/u.test(normalized) && !isKnownNonUserFacingLiteral(normalized)
 }
 
-function normalizeJsxText(value) {
-  return value.replace(/\s+/g, " ").trim()
-}
-
-function getPreviousMeaningfulLine(lines, startIndex) {
-  for (let index = startIndex - 1; index >= 0; index -= 1) {
-    const trimmed = lines[index].trim()
-    if (trimmed) {
-      return trimmed
-    }
+function propertyNameText(name) {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
+    return name.text
   }
-
-  return ""
+  return null
 }
 
-function getNextMeaningfulLine(lines, startIndex) {
-  for (let index = startIndex + 1; index < lines.length; index += 1) {
-    const trimmed = lines[index].trim()
-    if (trimmed) {
-      return trimmed
-    }
-  }
-
-  return ""
+function literalText(node) {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text
+  return null
 }
 
-function looksLikeJsxOpeningContext(trimmed) {
+function isAmbientLocaleArgument(node) {
   return (
-    trimmed === ">" ||
-    /^<[A-Z_a-z][^>]*>$/.test(trimmed) ||
-    /[({]\s*<[A-Z_a-z][^>]*>$/.test(trimmed) ||
-    /^[A-Za-z_$][\w$]*=.*>$/.test(trimmed)
+    node === undefined ||
+    node.kind === ts.SyntaxKind.NullKeyword ||
+    (ts.isIdentifier(node) && node.text === "undefined")
   )
 }
 
-function looksLikeJsxClosingContext(trimmed) {
-  return (
-    trimmed.startsWith("</") ||
-    trimmed.startsWith("<") ||
-    trimmed.startsWith("{") ||
-    trimmed.startsWith(")")
-  )
-}
-
-function looksLikeStandaloneJsxText(lines, index) {
-  const text = normalizeJsxText(lines[index])
-
+function intlConstructorName(expression) {
   if (
-    !/[A-Za-z]/.test(text) ||
-    /[<>{}`=;]/.test(text) ||
-    !/^[A-Za-z][A-Za-z0-9 '&/+.-]*[.!?]?$/.test(text) ||
-    isKnownNonUserFacingLiteral(text) ||
-    looksLikeTailwindUtility(text)
+    ts.isPropertyAccessExpression(expression) &&
+    ts.isIdentifier(expression.expression) &&
+    expression.expression.text === "Intl"
   ) {
-    return false
+    return expression.name.text
   }
-
-  const previous = getPreviousMeaningfulLine(lines, index)
-  const next = getNextMeaningfulLine(lines, index)
-
-  return looksLikeJsxOpeningContext(previous) && looksLikeJsxClosingContext(next)
+  return null
 }
 
 async function exists(filePath) {
@@ -215,26 +176,37 @@ async function exists(filePath) {
   }
 }
 
-async function collectOptInRoots() {
-  const roots = []
-  const packagesDir = path.join(rootDir, "packages")
-  const packageNames = await readdir(packagesDir)
-
-  for (const packageName of packageNames) {
-    if (!packageName.endsWith("-ui")) {
+async function containsI18nSeam(rootPath) {
+  const entries = await readdir(rootPath, { withFileTypes: true })
+  for (const entry of entries) {
+    if (ignoredDirectoryNames.has(entry.name)) continue
+    const filePath = path.join(rootPath, entry.name)
+    if (entry.isDirectory()) {
+      if (await containsI18nSeam(filePath)) return true
       continue
     }
 
-    const i18nEntry = path.join(packagesDir, packageName, "src", "i18n", "index.ts")
-    if (await exists(i18nEntry)) {
-      roots.push(path.join(packagesDir, packageName, "src"))
+    const parentName = path.basename(path.dirname(filePath))
+    if (
+      (entry.name === "index.ts" && isCatalogDirectory(parentName)) ||
+      /^i18n\.tsx?$/.test(entry.name)
+    ) {
+      return true
     }
   }
+  return false
+}
 
-  // Starters opt in to the scan via their admin-i18n shim. We only walk
-  // `components/voyant/**` — custom voyant components are pure UI. Server
-  // routes (api/, workflows.ts), shadcn ui/ copies, the api-client lib, and
-  // TanStack Router page files mix non-UI concerns and would produce noise.
+async function collectOptInRoots() {
+  const roots = []
+  const packagesDir = path.join(rootDir, "packages")
+  const packageNames = await readdir(packagesDir).catch(() => [])
+
+  for (const packageName of packageNames) {
+    const sourceRoot = path.join(packagesDir, packageName, "src")
+    if ((await exists(sourceRoot)) && (await containsI18nSeam(sourceRoot))) roots.push(sourceRoot)
+  }
+
   const startersDir = path.join(rootDir, "starters")
   const starterNames = await readdir(startersDir).catch(() => [])
 
@@ -243,46 +215,29 @@ async function collectOptInRoots() {
     if (!(await exists(adminI18nEntry))) continue
 
     const voyantComponents = path.join(startersDir, starterName, "src", "components", "voyant")
-    if (await exists(voyantComponents)) {
-      roots.push(voyantComponents)
-    }
+    if (await exists(voyantComponents)) roots.push(voyantComponents)
   }
 
   return roots.sort()
 }
-
-/**
- * Files inside opted-in roots that still contain hardcoded English copy and
- * haven't been threaded through the i18n bundle yet. Listed here so the
- * scanner gates new drift in the rest of the operator starter while we work
- * through the backlog. Remove entries as each file is translated.
- *
- * The list is dominated by surfaces that pre-date the i18n migration in the
- * operator starter — settings dialogs, the trips, resource detail
- * pages — and by `.ts` query helpers whose `queryFn: () => api.get<Type>(...)`
- * shape produces false positives from the JSX-text heuristic. Translate the
- * UI strings and rerun the scanner to confirm before removing an entry.
- */
-const HARDCODED_FILE_ALLOWLIST = new Set([].map((relative) => path.join(rootDir, relative)))
 
 async function collectSourceFiles(rootPath) {
   const results = []
 
   async function walk(currentPath) {
     const entries = await readdir(currentPath, { withFileTypes: true })
-
     for (const entry of entries) {
       const nextPath = path.join(currentPath, entry.name)
-
       if (entry.isDirectory()) {
-        if (!ignoredDirectoryNames.has(entry.name)) {
+        if (!ignoredDirectoryNames.has(entry.name) && !isCatalogDirectory(entry.name)) {
           await walk(nextPath)
         }
         continue
       }
 
       if (
-        filePatterns.some((suffix) => entry.name.endsWith(suffix)) &&
+        /\.tsx?$/.test(entry.name) &&
+        !isCatalogFile(nextPath) &&
         !ignoredFileSuffixes.some((suffix) => entry.name.endsWith(suffix))
       ) {
         results.push(nextPath)
@@ -294,50 +249,133 @@ async function collectSourceFiles(rootPath) {
   return results.sort()
 }
 
-async function findSuspiciousLines(filePath) {
+function findSuspiciousNodes(filePath, source) {
   const findings = []
-  const source = await readFile(filePath, "utf8")
+  const seen = new Set()
   const lines = source.split("\n")
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  )
 
-  for (const [index, line] of lines.entries()) {
-    const trimmed = line.trim()
-    if (
-      shouldIgnoreLine(trimmed) ||
-      shouldIgnoreSuspiciousLine(trimmed) ||
-      (index > 0 && lines[index - 1].includes("i18n-literal-ok"))
-    ) {
-      continue
-    }
-
-    if (
-      suspiciousPatterns.some((pattern) => pattern.test(line)) ||
-      looksLikeStandaloneJsxText(lines, index)
-    ) {
-      findings.push({
-        filePath,
-        line: index + 1,
-        text: normalizeJsxText(trimmed),
-      })
-    }
+  function isSuppressed(line, marker) {
+    return lines[line]?.includes(marker) || (line > 0 && lines[line - 1]?.includes(marker))
   }
 
-  return findings
+  function addDiagnostic(node, text, suppressionMarker) {
+    const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile))
+    if (isSuppressed(line, suppressionMarker)) return
+
+    const key = `${line}:${text}`
+    if (seen.has(key)) return
+    seen.add(key)
+    findings.push({ filePath, line: line + 1, text })
+  }
+
+  function addFinding(node, value) {
+    const normalized = value.replace(/\s+/g, " ").trim()
+    if (!isSuspiciousCopy(normalized)) return
+
+    const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile))
+    if (isSuppressed(line, "i18n-literal-ok")) return
+
+    const key = `${line}:${normalized}`
+    if (seen.has(key)) return
+    seen.add(key)
+    findings.push({ filePath, line: line + 1, text: normalized })
+  }
+
+  function addLiteralTree(node) {
+    const value = literalText(node)
+    if (value !== null) addFinding(node, value)
+    ts.forEachChild(node, addLiteralTree)
+  }
+
+  function visit(node, insideJsxExpression = false) {
+    if (ts.isJsxText(node)) {
+      addFinding(node, node.text)
+      return
+    }
+
+    if (ts.isJsxAttribute(node)) {
+      const name = node.name.getText(sourceFile)
+      if (userFacingPropertyNames.has(name) && node.initializer) {
+        addLiteralTree(node.initializer)
+      }
+      return
+    }
+
+    if (ts.isJsxExpression(node)) {
+      if (node.expression) visit(node.expression, true)
+      return
+    }
+
+    if (insideJsxExpression) {
+      const value = literalText(node)
+      if (value !== null) addFinding(node, value)
+    }
+
+    if (ts.isPropertyAssignment(node)) {
+      const name = propertyNameText(node.name)
+      if (name && userFacingPropertyNames.has(name)) addLiteralTree(node.initializer)
+    }
+
+    if (ts.isReturnStatement(node) && node.expression && literalText(node.expression) !== null) {
+      addLiteralTree(node.expression)
+    }
+
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      localeSensitiveMethods.has(node.expression.name.text) &&
+      isAmbientLocaleArgument(node.arguments[0])
+    ) {
+      addDiagnostic(
+        node,
+        `ambient locale formatting: ${node.expression.name.text}() requires an explicit locale`,
+        "i18n-format-ok",
+      )
+    }
+
+    if (ts.isNewExpression(node) || ts.isCallExpression(node)) {
+      const constructorName = intlConstructorName(node.expression)
+      if (
+        constructorName &&
+        localeSensitiveIntlConstructors.has(constructorName) &&
+        isAmbientLocaleArgument(node.arguments?.[0])
+      ) {
+        addDiagnostic(
+          node,
+          `ambient locale formatting: Intl.${constructorName} requires an explicit locale`,
+          "i18n-format-ok",
+        )
+      }
+    }
+
+    ts.forEachChild(node, (child) => visit(child, insideJsxExpression))
+  }
+
+  visit(sourceFile)
+  return findings.sort((left, right) => left.line - right.line)
+}
+
+async function findSuspiciousLines(filePath) {
+  return findSuspiciousNodes(filePath, await readFile(filePath, "utf8"))
 }
 
 async function main() {
   const roots = await collectOptInRoots()
-
   if (roots.length === 0) {
-    console.log("ui hardcoded string scan skipped: no package-owned i18n entrypoints found.")
-    process.exit(0)
+    console.error("ui hardcoded string scan failed: no package-owned i18n entrypoints found.")
+    process.exit(1)
   }
 
   const findings = []
-
   for (const rootPath of roots) {
-    const sourceFiles = await collectSourceFiles(rootPath)
-    for (const filePath of sourceFiles) {
-      if (HARDCODED_FILE_ALLOWLIST.has(filePath)) continue
+    for (const filePath of await collectSourceFiles(rootPath)) {
       findings.push(...(await findSuspiciousLines(filePath)))
     }
   }

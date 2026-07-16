@@ -237,7 +237,8 @@ export function ScheduleForm({ productId, rule, onSuccess, onCancel }: ScheduleF
 
   const defaultTz =
     typeof Intl !== "undefined"
-      ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC")
+      ? (Intl.DateTimeFormat() // i18n-format-ok -- timezone discovery does not render output.
+          .resolvedOptions().timeZone ?? "UTC")
       : "UTC"
 
   const form = useForm<ScheduleFormValues, unknown, ScheduleFormOutput>({

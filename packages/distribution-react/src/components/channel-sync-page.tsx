@@ -33,6 +33,7 @@ import { useDistributionUiMessagesOrDefault } from "../i18n/index.js"
 import { defaultFetcher, useVoyantDistributionContext } from "../index.js"
 import { AutoRefreshIndicator, ReconcileMenu } from "./channel-sync-controls.js"
 import { DeliveriesDrawer } from "./channel-sync-deliveries-drawer.js"
+import { buildRetryFeedback, type OperationFeedback } from "./channel-sync-feedback.js"
 import {
   type BookingRecord,
   type BookingsResponse,
@@ -41,7 +42,6 @@ import {
   type ChannelSyncPageProps,
   type ChannelsResponse,
   channelPushAdminPaths,
-  classifyRetryResult,
   fetchJson,
   formatChannelKind,
   formatRelative,
@@ -50,7 +50,6 @@ import {
   type LinksResponse,
   type PushStatus,
   type ReconcilerResult,
-  type RetryFeedbackKind,
   type RetryPushResult,
   STATUS_TILES,
   STATUS_VARIANTS,
@@ -64,12 +63,6 @@ export type { ChannelSyncPageProps } from "./channel-sync-page-utils.js"
 
 interface ProductMappingsReadinessResponse {
   data: unknown[]
-}
-
-type OperationFeedback = {
-  tone: "success" | "error"
-  title: string
-  body: string
 }
 
 // Page
@@ -593,55 +586,4 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
       />
     </div>
   )
-}
-
-function buildRetryFeedback(
-  result: RetryPushResult,
-  row: ChannelBookingLinkRow,
-  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"],
-): OperationFeedback {
-  const kind = classifyRetryResult(result)
-  const tone = kind === "processed" || kind === "ok" ? "success" : "error"
-  const body = retryFeedbackBody(kind, result, row, messages)
-
-  return {
-    tone,
-    title: messages.feedback.retry.title,
-    body,
-  }
-}
-
-function retryFeedbackBody(
-  kind: RetryFeedbackKind,
-  result: RetryPushResult,
-  row: ChannelBookingLinkRow,
-  messages: ReturnType<typeof useDistributionUiMessagesOrDefault>["channelSync"],
-): string {
-  const bookingId = result.bookingId || row.link.bookingId
-  switch (kind) {
-    case "processed":
-      return formatTemplate(messages.feedback.retry.processed, {
-        attempted: result.attempted ?? 0,
-        succeeded: result.succeeded ?? 0,
-        failed: result.failed ?? 0,
-        compensated: result.compensated ?? 0,
-      })
-    case "booking_missing":
-      return formatTemplate(messages.feedback.retry.bookingMissing, { bookingId })
-    case "no_pending_links":
-      return formatTemplate(messages.feedback.retry.noPendingLinks, { bookingId })
-    case "no_targets":
-      return formatTemplate(messages.feedback.retry.noTargets, { bookingId })
-    case "no_adapter":
-      return messages.feedback.retry.noAdapter
-    case "no_mapping":
-      return messages.feedback.retry.noMapping
-    case "failed":
-      return formatTemplate(messages.feedback.retry.failed, {
-        bookingId,
-        message: result.outcomes?.find((outcome) => outcome.error)?.error ?? "unknown error",
-      })
-    case "ok":
-      return formatTemplate(messages.feedback.retry.ok, { bookingId })
-  }
 }

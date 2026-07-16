@@ -178,6 +178,26 @@ export type NotificationsUiMessages = {
       directTemplate: string
       defaultSender: string
       previewDataNotObject: string
+      table: {
+        to: string
+        template: string
+        channel: string
+        provider: string
+        status: string
+        created: string
+        logs: string
+        rule: string
+        target: string
+        actions: string
+        recipient: string
+        processed: string
+        view: string
+        updated: string
+      }
+      templateSlugLabel: string
+      templateIdLabel: string
+      deliveryQueuedStatus: string
+      templateResolutionHint: string
       previewInvalidJson: string
       previewFailed: string
     }

@@ -3,12 +3,18 @@ import {
   type AdminRouteLoaderContext,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin/extensions"
 import { PanelLeft } from "lucide-react"
 
 import { loadNavigationPreferences, navigationPreferencesQueryKey } from "./client.js"
+import { navigationSetupMessageDefinitions } from "./i18n/setup.js"
 
-export function createSelectedNavigationPreferencesAdminExtension(): AdminExtension {
+export function createSelectedNavigationPreferencesAdminExtension(
+  context?: SelectedAdminExtensionFactoryContext,
+): AdminExtension {
+  const label =
+    context?.navMessages.navigation ?? navigationSetupMessageDefinitions.en.navigationLabel
   return defineAdminExtension({
     id: "navigation-preferences",
     navigationPreferences: {
@@ -19,8 +25,8 @@ export function createSelectedNavigationPreferencesAdminExtension(): AdminExtens
       {
         id: "navigation",
         path: "/navigation",
-        title: "Navigation",
-        label: "Navigation",
+        title: label,
+        label,
         icon: PanelLeft,
         group: "general",
         order: 15,
@@ -40,18 +46,7 @@ export function createSelectedNavigationPreferencesAdminExtension(): AdminExtens
         order: 50,
         skippable: true,
         href: "/settings/navigation",
-        messages: {
-          en: {
-            title: "Workspace navigation",
-            description: "Choose which product areas your team sees in the main navigation.",
-            action: "Choose navigation",
-          },
-          ro: {
-            title: "Navigarea spatiului de lucru",
-            description: "Alege zonele de produs afisate echipei in navigarea principala.",
-            action: "Alege navigarea",
-          },
-        },
+        messages: navigationSetupMessageDefinitions,
         isComplete: hasOrganizationNavigation,
       },
     ],

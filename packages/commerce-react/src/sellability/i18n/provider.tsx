@@ -66,10 +66,12 @@ export function getSellabilityUiI18n({
 export function SellabilityUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: SellabilityUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function SellabilityUiMessagesProvider({
       definitions={sellabilityUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}
