@@ -1,5 +1,13 @@
 # Voyant Payments Architecture
 
+> **Proposed provider direction:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) classifies payment
+> processors as deployment-selected payment adapters rather than installable
+> apps. Netopia, Voyant Payments, and future processors implement one selected
+> adapter port and conformance suite. Accounting integrations follow the remote
+> OAuth app model instead. This document describes the current payment stack;
+> its plugin terminology will migrate with that RFC.
+
 This guide defines how Voyant should treat payments as a universal
 infrastructure capability — shared across every vertical that takes money
 from a customer (flights, owned products, accommodations, cruises / charters,

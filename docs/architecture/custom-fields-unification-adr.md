@@ -1,5 +1,12 @@
 # ADR: Unify custom fields — one registry, two definition sources, values on the entity
 
+> **Proposed successor:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) retains
+> entity-local JSONB values but replaces the two-source registry with one
+> database authority and introduces operator/app ownership plus collision-proof
+> namespaces. This ADR remains the record of the currently implemented
+> unification.
+
 - **Status:** Accepted (implementation in phases)
 - **Date:** 2026-06-17
 - **Supersedes:** the split between `@voyant-travel/core/custom-fields` (registry + `custom_fields` jsonb column, adopted on `booking`) and the relationships EAV custom-fields system (`custom_field_definitions` + `custom_field_values`).
