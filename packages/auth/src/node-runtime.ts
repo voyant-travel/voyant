@@ -24,7 +24,7 @@ import {
 } from "@voyant-travel/hono/middleware/error-boundary"
 import { getRequestId } from "@voyant-travel/hono/observability"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
-import { scopesForRole } from "@voyant-travel/types/member-roles"
+import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import {
@@ -397,7 +397,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   const FULL_ACCESS_SCOPES = ["*"]
 
   function scopesForOperatorRole(role: string | null | undefined): string[] | null {
-    const base = scopesForRole(role)
+    const base = accessCatalogScopesForRole(role, runtimeOptions.accessCatalog)
     if (!base) return null
     const normalizedRole = (role ?? "").trim().toLowerCase()
     const presetId =
@@ -431,7 +431,9 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         .from(cloudAuthUserLinks)
         .where(eq(cloudAuthUserLinks.userId, userId))
         .limit(1)
-      return link?.scopes ?? scopesForOperatorRole(link?.roleSlug) ?? FULL_ACCESS_SCOPES
+      const fullAccessScopes = scopesForOperatorRole("admin") ?? FULL_ACCESS_SCOPES
+      const roleScopes = scopesForOperatorRole(link?.roleSlug) ?? fullAccessScopes
+      return isFullAccessRole(link?.roleSlug) ? roleScopes : (link?.scopes ?? roleScopes)
     }
 
     const [profile] = await db

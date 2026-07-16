@@ -1,7 +1,41 @@
+import { accessCatalogScopesForRole } from "@voyant-travel/types/member-roles"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
 import { requireActor } from "../../src/middleware/require-actor.js"
+
+const teamAccessCatalog = {
+  resources: [
+    {
+      id: "@voyant-travel/auth#access.team",
+      unitId: "@voyant-travel/auth#team",
+      resource: "team",
+      label: "Team",
+      description: "Manage staff team members and their access.",
+      wildcard: "explicit-resource",
+      actions: [
+        {
+          action: "read",
+          label: "View team",
+          description: "View staff team members.",
+        },
+        {
+          action: "write",
+          label: "Manage team",
+          description: "Invite staff and update roles or access.",
+          wildcard: "explicit",
+        },
+        {
+          action: "delete",
+          label: "Remove team access",
+          description: "Revoke invitations or deactivate staff team members.",
+          wildcard: "explicit",
+        },
+      ],
+    },
+  ],
+  presets: [],
+} as const
 
 function makeApp(
   setVars: (c: {
@@ -475,6 +509,24 @@ describe("requireActor — staff session RBAC scopes (voyant#2085)", () => {
     expect(
       (await allowed.request("/v1/admin/team/members/m_1/permissions", { method: "POST" })).status,
     ).toBe(200)
+  })
+
+  it("admits managed-cloud admin role scopes to the packaged Team route with a catalog", async () => {
+    const adminScopes = accessCatalogScopesForRole("admin", teamAccessCatalog) ?? []
+    const admin = staffSession(adminScopes)
+    admin.use("*", requireActor({ accessCatalog: teamAccessCatalog }, "staff"))
+    admin.get("/v1/admin/team/members", (c) => c.json({ ok: true }))
+
+    expect((await admin.request("/v1/admin/team/members")).status).toBe(200)
+
+    const memberScopes = accessCatalogScopesForRole("member", teamAccessCatalog) ?? []
+    const member = staffSession(memberScopes)
+    member.use("*", requireActor({ accessCatalog: teamAccessCatalog }, "staff"))
+    member.post("/v1/admin/team/members/member_1/role", (c) => c.json({ ok: true }))
+
+    expect(
+      (await member.request("/v1/admin/team/members/member_1/role", { method: "POST" })).status,
+    ).toBe(403)
   })
 
   it("still lets a restricted member read _meta", async () => {
