@@ -6,6 +6,7 @@ import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
   type ProjectConventionApiRoute,
+  type ProjectConventionDiscovery,
   type ProjectConventionRouteSurface,
 } from "./project-conventions.js"
 
@@ -68,6 +69,8 @@ export interface ProjectApiConventionCompilation {
 
 export interface ProjectApiConventionsOptions {
   projectRoot: string
+  /** Reuse an authoritative discovery snapshot instead of scanning the project again. */
+  discovery?: ProjectConventionDiscovery
 }
 
 export class ProjectApiConventionError extends Error {
@@ -83,13 +86,15 @@ export class ProjectApiConventionError extends Error {
 export async function analyzeProjectApiConventions(
   options: ProjectApiConventionsOptions,
 ): Promise<ProjectApiConventionAnalysis> {
-  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
-  const realProjectRoot = await realpath(projectRoot)
-  const discovery = await discoverProjectConventions(projectRoot)
+  const discovery = options.discovery ?? (await discoverProjectConventions(projectRoot))
   const discoveredRoutes = discovery.contributions.filter(
     (contribution): contribution is ProjectConventionApiRoute => contribution.kind === "api-route",
   )
+  if (discoveredRoutes.length === 0) return { routes: [], diagnostics: [] }
+
+  await loadTypeScript()
+  const realProjectRoot = await realpath(projectRoot)
   const routes: ProjectApiConventionRoute[] = []
   const diagnostics: ProjectApiConventionDiagnostic[] = []
 

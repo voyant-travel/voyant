@@ -67,14 +67,16 @@ export class ProjectAdminConventionError extends Error {
 export async function analyzeProjectAdminConventions(
   input: AnalyzeProjectAdminConventionsInput,
 ): Promise<ProjectAdminConventionAnalysis> {
-  await loadTypeScript()
   const projectRoot = path.resolve(input.projectRoot)
-  const realProjectRoot = await realpath(projectRoot)
   const entries: ProjectAdminConventionEntry[] = []
   const diagnostics: ProjectAdminConventionDiagnostic[] = []
   const adminContributions = input.contributions
     .filter((contribution) => contribution.kind === "admin")
     .sort((left, right) => compareStrings(left.sourcePath, right.sourcePath))
+  if (adminContributions.length === 0) return { entries, diagnostics }
+
+  await loadTypeScript()
+  const realProjectRoot = await realpath(projectRoot)
 
   for (const contribution of adminContributions) {
     const sourcePath = normalizeProjectPath(contribution.sourcePath)

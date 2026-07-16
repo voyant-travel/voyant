@@ -171,15 +171,18 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   assertPathInside(projectRoot, configPath, "configPath")
   const conventions = await discoverProjectConventions({ projectRoot })
   assertProjectConventionDiagnostics(conventions)
+  // Published/source-free applications have no project-local contributions.
+  // Reusing this snapshot lets every compiler emit its deterministic empty
+  // artifact without loading the TypeScript compiler in production.
   const [projectApi, projectAdmin, projectWorkflowJobs, projectSubscriberLinks] = await Promise.all(
     [
-      compileProjectApiConventions({ projectRoot }),
+      compileProjectApiConventions({ projectRoot, discovery: conventions }),
       compileProjectAdminConventions({
         projectRoot,
         contributions: conventions.contributions,
       }),
-      compileProjectWorkflowJobConventions({ projectRoot }),
-      compileProjectSubscriberLinkConventions({ projectRoot }),
+      compileProjectWorkflowJobConventions({ projectRoot, discovery: conventions }),
+      compileProjectSubscriberLinkConventions({ projectRoot, discovery: conventions }),
     ],
   )
 
