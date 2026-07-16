@@ -107,7 +107,6 @@ const frameworkDependencies = {
   "drizzle-orm": "catalog:",
   hono: "catalog:",
   pg: "^8.22.0",
-  typescript: "catalog:",
 }
 
 // BOM dependencies include every standard product selection owner, not only
