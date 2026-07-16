@@ -102,13 +102,25 @@ export class MigrationImmutabilityError extends Error {
 
 const contentHash = (sql: string) => createHash("sha256").update(sql).digest("hex")
 
-// `db/0001_db_baseline` originally shipped a plain `ADD COLUMN scopes`; it is
-// equivalent after narrowing to `ADD COLUMN IF NOT EXISTS` for framework-bundle
-// replay safety. Keep this exception exact so migration immutability remains the default.
+// `db/0001_db_baseline` originally shipped plain `ADD COLUMN` statements; both
+// columns are narrowed to `ADD COLUMN IF NOT EXISTS` for framework-bundle
+// replay safety (`scopes` first, then `permissions` — the frozen bundle also
+// materialises `user_profiles.permissions`, so adopted databases replay the
+// migration against an existing column). Keep these exceptions exact so
+// migration immutability remains the default.
 const EQUIVALENT_MIGRATION_HASHES = new Map<string, ReadonlySet<string>>([
+  // scopes-only rewrite (older shipped content, kept for images still carrying it).
   [
     "db/0001_db_baseline/073492f087f0b3035aa7215cbb03560e910712dd08f28b41a5ef0daa8f9d0e10",
     new Set(["a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f"]),
+  ],
+  // scopes + permissions rewrite (current content).
+  [
+    "db/0001_db_baseline/32dea1b446ddecb3c8231c89b45ce8782962e27e84e3c81de4b7b94cd514d75f",
+    new Set([
+      "073492f087f0b3035aa7215cbb03560e910712dd08f28b41a5ef0daa8f9d0e10",
+      "a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f",
+    ]),
   ],
   // `framework/0004_framework_baseline` originally shipped a guarded
   // `custom_field_values` drop (refuse while rows remain); it was rewritten to a
