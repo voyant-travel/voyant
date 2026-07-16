@@ -7,7 +7,6 @@ import {
   actionApprovals,
   actionLedgerEntries,
   actionLedgerPayloads,
-  actionLedgerRelayOutbox,
   actionMutationDetails,
   actionSensitiveReadDetails,
 } from "../schema.js"
@@ -18,7 +17,7 @@ export async function insertEntry(
   db: AnyDrizzleDb,
   input: AppendActionLedgerEntryInput,
 ): Promise<AppendActionLedgerEntryResult> {
-  const { enqueueRelay, mutationDetail, payloads, sensitiveReadDetail, ...entryInput } = input
+  const { mutationDetail, payloads, sensitiveReadDetail, ...entryInput } = input
   const [entry] = await db
     .insert(actionLedgerEntries)
     .values({
@@ -52,16 +51,6 @@ export async function insertEntry(
         ...payload,
       })),
     )
-  }
-
-  if (enqueueRelay) {
-    const payloadRef = typeof enqueueRelay === "object" ? enqueueRelay.payloadRef : null
-    await db.insert(actionLedgerRelayOutbox).values({
-      actionId: entry.id,
-      organizationId: entry.organizationId,
-      payloadRef: payloadRef ?? null,
-      relayStatus: "pending",
-    })
   }
 
   return { entry, replayed: false }

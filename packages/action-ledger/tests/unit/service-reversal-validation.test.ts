@@ -225,7 +225,6 @@ describe("actionLedgerService.validateApprovedAction", () => {
       "action_mutation_details",
       "action_sensitive_read_details",
       "action_ledger_payloads",
-      "action_ledger_outbox",
       "action_ledger_entries:list",
     ])
   })

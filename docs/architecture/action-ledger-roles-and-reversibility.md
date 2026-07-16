@@ -136,33 +136,30 @@ transaction as the domain mutation:
    database transaction.
 3. If the ledger entry cannot be written for a ledger-required action, the
    domain command fails.
-4. A relay marker/outbox row may be written in the same transaction when
-   payload hydration, search projection, or external audit export is needed.
-5. A relay hydrates payload references, search projections, and external audit
-   exports asynchronously.
+4. External audit exporters and search projections tail the append-only ledger
+   with a durable `(occurred_at, id)` checkpoint owned by each consumer.
+5. Payload hydration or redaction work is emitted as a durable event through
+   the generic transactional event outbox in `@voyant-travel/db/outbox` and the
+   always-on `outbox-drain` managed job.
 
 This does not remove all write-path coupling. The domain mutation is still
 coupled to writing the small ledger entry in the primary transaction. That is
 the intended tradeoff for high-risk actions: if Voyant cannot durably record
 the action, it should not commit the action.
 
-What the outbox decouples is the availability of the heavier ledger store,
-search projection, external audit export, or payload hydrator from the domain
-write path.
+The append-only ledger is its own export stream. Cursor consumers get
+at-least-once delivery by committing their checkpoint only after downstream
+delivery succeeds. Every consumer owns an independent checkpoint, so adding a
+SIEM exporter does not couple its progress to a search projection. Search
+projections remain rebuildable by resetting their checkpoint and replaying the
+ledger.
 
 The durable audit truth is `action_ledger_entries` plus its committed profile
-details and payload references. The relay/outbox is operational state, not the
-source of audit truth. Operators must be able to query committed ledger entries
-whose enrichment is still pending when the relay is delayed or failing. Relay
-failures should retry with status, attempt count, next retry time, and last
-error metadata visible to operational dashboards.
-
-Action status and relay status are separate. `action_ledger_entries.status`
-describes the domain/control outcome (`awaiting_approval`, `denied`,
-`succeeded`, `failed`, `reversed`, etc.). Relay status describes enrichment or
-export health (`pending`, `processing`, `succeeded`, `failed`, `dead_letter`).
-Relay failure must not rewrite a successfully committed domain action as a
-failed action.
+details and payload references. Cursor checkpoints and the generic event
+delivery tables are operational state, not audit truth. Operators observe
+export and projection health through per-consumer checkpoint lag, and observe
+hydration/redaction delivery through the generic event-outbox metrics. A lagging
+consumer must not rewrite a successfully committed domain action as failed.
 
 ### Best-effort optional logging
 
@@ -696,7 +693,8 @@ ledger grows large:
 - by trace: `correlation_id`, `causation_action_id`
 - by control state: `evaluated_risk`, `status`, approval id, reversal state
 - by capability: `capability_id`, `capability_version`
-- by enrichment health: relay/enrichment status and age
+- by consumer progress: checkpoint lag and last successful export/projection
+  time, reported by the owning consumer
 
 Routes should paginate by stable cursor, usually `(occurred_at, id)`, and avoid
 unbounded cross-ledger scans. Large deployments may need time partitioning or
@@ -742,8 +740,9 @@ new fragmentation.
 Before shipping AI agents that mutate production state, Voyant should have:
 
 1. A shared action-ledger package or service.
-2. Same-transaction ledger entries for ledger-required actions, plus relay
-   outbox records where enrichment/export is needed.
+2. Same-transaction ledger entries for ledger-required actions, with durable
+   cursor checkpoints for exports/projections and generic durable events for
+   hydration/redaction work.
 3. A capability registry consumed by route/tool guards.
 4. Agent service-principal identity with delegated authority.
 5. Mandatory tool-call ledger records.
@@ -764,18 +763,6 @@ If any of those are missing, AI should stay read-only or draft-only.
 Subject to refinement:
 
 ```txt
-action_ledger_outbox
-  id
-  action_id
-  organization_id
-  relay_status
-  payload_ref
-  attempt_count
-  next_retry_at
-  last_error
-  created_at
-  processed_at
-
 action_ledger_entries
   id
   occurred_at
@@ -883,16 +870,22 @@ compensations, approval decisions, and duplicate attempts create related
 entries. Projection columns may be updated for operator ergonomics, but must be
 rebuildable from append-only entries.
 
+Exporters and projections store one durable `(occurred_at, id)` checkpoint per
+consumer in infrastructure owned by that consumer. The action-ledger schema
+does not own per-delivery state. Work-queue-shaped hydration and redaction jobs
+use durable events on the framework's generic transactional event outbox.
+
 ## 18. MVP slices
 
 ### Slice 1a: schema and write path
 
 - Add a framework-owned `@voyant-travel/action-ledger` or equivalent package.
-- Define the shared spine, profile schemas, payload refs, and transactional
-  outbox/relay contract.
+- Define the shared spine, profile schemas, and payload refs.
 - Add append-only write APIs.
 - Define `correlation_id`, `causation_action_id`, and idempotency semantics.
 - Define the durable ledger entry as the audit source of truth.
+- Document cursor checkpoint ownership for exporters/projections and generic
+  durable-event delivery for hydration/redaction jobs.
 
 ### Slice 1b: read API and helpers
 
@@ -927,7 +920,7 @@ rebuildable from append-only entries.
 - Link from booking detail, catalog entity detail, payment/session detail, and
   workflow run detail.
 - Add drift checks for state changes without required ledger rows.
-- Add synthetic-action canaries for the ledger write and relay path.
+- Add synthetic-action canaries for the ledger write path.
 
 ### Slice 5: approval inbox and reversal metadata
 

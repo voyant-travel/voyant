@@ -1,14 +1,14 @@
 # `@voyant-travel/action-ledger`
 
-Append-only action audit records, approval state, delegation provenance, relay
-state, and idempotency primitives for Voyant control surfaces.
+Append-only action audit records, approval state, delegation provenance, and
+idempotency primitives for Voyant control surfaces.
 
 ## Agent Tools
 
 The package owns staff-only Tools for filtered audit inspection, exact-target
-timelines, entry details, approval inspection, delegation inspection, and relay
-delivery inspection. Detail Tools return metadata and storage references; they
-never dereference retained payload contents.
+timelines, entry details, approval inspection, and delegation inspection.
+Detail Tools return metadata and storage references; they never dereference
+retained payload contents.
 
 Approval requests and decisions use `action-ledger:approve`. A request can name
 only an executable Tool action admitted by the selected deployment graph with
@@ -43,6 +43,9 @@ effect that may never have happened. Add a reversal Tool only after a selected
 provider can execute and attest the command before the ledger projection is
 updated.
 
-Relay claiming and success/failure mutation are transport-worker lifecycle
-operations, not agent capabilities. Tools can inspect relay state but cannot
-claim or mutate relay work.
+## Downstream delivery
+
+External audit exporters and search projections tail ledger entries with their
+own durable `(occurred_at, id)` checkpoints. Work-queue-shaped payload hydration
+and redaction use durable events on the framework's generic transactional event
+outbox and managed drain job.

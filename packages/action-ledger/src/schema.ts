@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm"
 import {
   boolean,
   index,
-  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -52,14 +51,6 @@ export const actionLedgerPrincipalTypeEnum = pgEnum("action_ledger_principal_typ
   "agent",
   "workflow",
   "system",
-])
-
-export const actionLedgerRelayStatusEnum = pgEnum("action_ledger_relay_status", [
-  "pending",
-  "processing",
-  "succeeded",
-  "failed",
-  "dead_letter",
 ])
 
 export const actionLedgerRedactionStatusEnum = pgEnum("action_ledger_redaction_status", [
@@ -184,28 +175,6 @@ export const actionLedgerEntries = pgTable(
   ],
 )
 
-export const actionLedgerRelayOutbox = pgTable(
-  "action_ledger_outbox",
-  {
-    id: typeId("action_ledger_outbox"),
-    actionId: text("action_id")
-      .notNull()
-      .references(() => actionLedgerEntries.id, { onDelete: "cascade" }),
-    organizationId: text("organization_id"),
-    relayStatus: actionLedgerRelayStatusEnum("relay_status").notNull().default("pending"),
-    payloadRef: text("payload_ref"),
-    attemptCount: integer("attempt_count").notNull().default(0),
-    nextRetryAt: timestamp("next_retry_at", { withTimezone: true }),
-    lastError: text("last_error"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    processedAt: timestamp("processed_at", { withTimezone: true }),
-  },
-  (table) => [
-    index("idx_action_ledger_outbox_action").on(table.actionId),
-    index("idx_action_ledger_outbox_status_retry").on(table.relayStatus, table.nextRetryAt),
-  ],
-)
-
 export const actionDelegations = pgTable(
   "action_delegations",
   {
@@ -315,8 +284,6 @@ export const actionLedgerPayloads = pgTable(
 
 export type ActionLedgerEntry = typeof actionLedgerEntries.$inferSelect
 export type NewActionLedgerEntry = typeof actionLedgerEntries.$inferInsert
-export type ActionLedgerRelayOutbox = typeof actionLedgerRelayOutbox.$inferSelect
-export type NewActionLedgerRelayOutbox = typeof actionLedgerRelayOutbox.$inferInsert
 export type ActionDelegation = typeof actionDelegations.$inferSelect
 export type NewActionDelegation = typeof actionDelegations.$inferInsert
 export type ActionMutationDetail = typeof actionMutationDetails.$inferSelect

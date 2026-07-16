@@ -23,7 +23,6 @@ import {
   makeEntry,
   makeMutationDetail,
   makePayload,
-  makeRelayOutbox,
   makeSensitiveReadDetail,
 } from "./service-fixtures.js"
 
@@ -49,7 +48,7 @@ const selectedAction: VoyantGraphActionDeclaration = {
 afterEach(() => vi.restoreAllMocks())
 
 describe("action-ledger Tool definitions", () => {
-  it("publishes separate audit, approval, delegation, relay, request, and decision capabilities", () => {
+  it("publishes separate audit, approval, delegation, request, and decision capabilities", () => {
     expect(actionLedgerTools.map(({ name }) => name)).toEqual([
       "list_action_ledger_entries",
       "get_action_ledger_entry",
@@ -58,15 +57,14 @@ describe("action-ledger Tool definitions", () => {
       "get_action_approval",
       "list_action_delegations",
       "get_action_delegation",
-      "list_action_relay_outbox",
       "request_action_approval",
       "approve_action_approval",
       "deny_action_approval",
     ])
-    expect(actionLedgerTools.slice(0, 8).every(({ tier }) => tier === "sensitive")).toBe(true)
+    expect(actionLedgerTools.slice(0, 7).every(({ tier }) => tier === "sensitive")).toBe(true)
     expect(
       actionLedgerTools
-        .slice(0, 8)
+        .slice(0, 7)
         .every(({ requiredScopes }) => requiredScopes[0] === "action-ledger:read"),
     ).toBe(true)
     expect(requestActionApprovalTool.requiredScopes).toEqual(["action-ledger:approve"])
@@ -102,7 +100,6 @@ describe("action-ledger Tool services", () => {
       mutationDetail: makeMutationDetail(),
       sensitiveReadDetail: makeSensitiveReadDetail(),
       payloads: [makePayload()],
-      relayOutbox: [makeRelayOutbox()],
     })
     const services = createServices()
 
@@ -112,7 +109,6 @@ describe("action-ledger Tool services", () => {
       occurredAt: "2026-05-15T10:00:00.000Z",
       mutationDetail: { summary: "Booking status changed from on_hold to confirmed" },
       payloads: [{ storageRef: "blob://action-ledger/alge_1/input" }],
-      relayOutbox: [{ createdAt: "2026-05-15T10:00:00.000Z" }],
     })
     expect(JSON.parse(JSON.stringify(result))).toEqual(result)
   })
@@ -127,7 +123,6 @@ describe("action-ledger Tool services", () => {
       mutationDetail: makeMutationDetail({ summary: "status changed" }),
       sensitiveReadDetail: null,
       payloads: [],
-      relayOutbox: [],
     })
 
     const result = await createServices().getTargetTimeline({
@@ -229,7 +224,6 @@ describe("action-ledger Tool services", () => {
         mutationDetail: null,
         sensitiveReadDetail: null,
         payloads: [],
-        relayOutbox: [],
       },
     })
     vi.spyOn(actionLedgerService, "decideApproval").mockResolvedValue({
@@ -266,7 +260,6 @@ describe("action-ledger Tool services", () => {
       mutationDetail: null,
       sensitiveReadDetail: null,
       payloads: [],
-      relayOutbox: [],
     }
     const getApproval = vi.spyOn(actionLedgerService, "getApproval")
 
@@ -295,9 +288,8 @@ describe("action-ledger Tool services", () => {
     ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
   })
 
-  it("keeps relay worker lifecycle methods outside the Tool service", () => {
+  it("keeps mutation-only methods outside the Tool service", () => {
     const services = createServices()
-    expect("claimRelayOutbox" in services).toBe(false)
     expect("recordReversal" in services).toBe(false)
   })
 
@@ -361,7 +353,6 @@ function noopServices(): ActionLedgerToolServices {
     getApproval: vi.fn(),
     listDelegations: vi.fn().mockResolvedValue({ data: [makeDelegation()], nextCursor: null }),
     getDelegation: vi.fn(),
-    listRelayOutbox: vi.fn(),
     requestApproval: vi.fn(),
     decideApproval: vi.fn(),
   }

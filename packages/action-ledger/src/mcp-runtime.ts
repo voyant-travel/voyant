@@ -20,7 +20,6 @@ import type {
   ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
-  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "./schema.js"
@@ -32,7 +31,6 @@ import type {
   ActionDelegationDto,
   ActionLedgerEntryDetailDto,
   ActionLedgerEntryDto,
-  ActionLedgerRelayDto,
   ActionLedgerToolServices,
   ListActionLedgerEntriesToolInput,
   RequestActionApprovalToolInput,
@@ -143,10 +141,6 @@ export function createActionLedgerToolServices(input: {
     async getDelegation(id) {
       const result = await actionLedgerService.getDelegation(input.db, id)
       return result ? delegationDto(result.delegation) : null
-    },
-    async listRelayOutbox(query) {
-      const result = await actionLedgerService.listRelayOutbox(input.db, query)
-      return { data: result.rows.map(relayDto), nextCursor: result.nextCursor }
     },
     async requestApproval(request: RequestActionApprovalToolInput) {
       const currentPrincipal = writePrincipal(input.requestContext)
@@ -362,15 +356,6 @@ function entryDto(entry: ActionLedgerEntry): ActionLedgerEntryDto {
   return { ...entry, occurredAt: iso(entry.occurredAt), createdAt: iso(entry.createdAt) }
 }
 
-function relayDto(row: ActionLedgerRelayOutbox): ActionLedgerRelayDto {
-  return {
-    ...row,
-    createdAt: iso(row.createdAt),
-    nextRetryAt: nullableIso(row.nextRetryAt),
-    processedAt: nullableIso(row.processedAt),
-  }
-}
-
 function approvalDto(row: ActionApproval): ActionApprovalDto {
   return {
     ...row,
@@ -393,14 +378,12 @@ function entryDetailDto(result: {
   mutationDetail: ActionMutationDetail | null
   sensitiveReadDetail: ActionSensitiveReadDetail | null
   payloads: ActionLedgerPayload[]
-  relayOutbox: ActionLedgerRelayOutbox[]
 }): ActionLedgerEntryDetailDto {
   return {
     ...entryDto(result.entry),
     mutationDetail: result.mutationDetail,
     sensitiveReadDetail: result.sensitiveReadDetail,
     payloads: result.payloads.map(payloadDto),
-    relayOutbox: result.relayOutbox.map(relayDto),
   }
 }
 

@@ -1,24 +1,17 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { asc, desc } from "drizzle-orm"
 
-import {
-  actionApprovals,
-  actionDelegations,
-  actionLedgerEntries,
-  actionLedgerRelayOutbox,
-} from "../schema.js"
+import { actionApprovals, actionDelegations, actionLedgerEntries } from "../schema.js"
 import {
   normalizeListLimit,
   toActionApprovalListCursor,
   toActionDelegationListCursor,
   toActionLedgerListCursor,
-  toActionLedgerRelayOutboxListCursor,
 } from "./cursors.js"
 import {
   buildActionApprovalsPredicate,
   buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
-  buildActionLedgerRelayOutboxPredicate,
 } from "./predicates.js"
 import type {
   ListActionApprovalsInput,
@@ -27,8 +20,6 @@ import type {
   ListActionDelegationsResult,
   ListActionLedgerEntriesInput,
   ListActionLedgerEntriesResult,
-  ListActionLedgerRelayOutboxInput,
-  ListActionLedgerRelayOutboxResult,
 } from "./types.js"
 
 export async function listEntries(
@@ -54,32 +45,6 @@ export async function listEntries(
     nextCursor:
       rows.length > limit && entries.length > 0
         ? toActionLedgerListCursor(entries[entries.length - 1]!)
-        : null,
-  }
-}
-
-export async function listRelayOutbox(
-  db: AnyDrizzleDb,
-  input: ListActionLedgerRelayOutboxInput = {},
-): Promise<ListActionLedgerRelayOutboxResult> {
-  const limit = normalizeListLimit(input.limit)
-  const predicate = buildActionLedgerRelayOutboxPredicate(input)
-
-  let query = db.select().from(actionLedgerRelayOutbox).$dynamic()
-  if (predicate) {
-    query = query.where(predicate)
-  }
-
-  const rows = await query
-    .orderBy(desc(actionLedgerRelayOutbox.createdAt), desc(actionLedgerRelayOutbox.id))
-    .limit(limit + 1)
-
-  const visibleRows = rows.slice(0, limit)
-  return {
-    rows: visibleRows,
-    nextCursor:
-      rows.length > limit && visibleRows.length > 0
-        ? toActionLedgerRelayOutboxListCursor(visibleRows[visibleRows.length - 1]!)
         : null,
   }
 }

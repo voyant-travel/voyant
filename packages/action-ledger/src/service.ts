@@ -11,7 +11,6 @@ import {
   toActionApprovalListCursor,
   toActionDelegationListCursor,
   toActionLedgerListCursor,
-  toActionLedgerRelayOutboxListCursor,
 } from "./service/cursors.js"
 import {
   assertSameFingerprint,
@@ -24,19 +23,13 @@ import {
   ActionApprovalDecisionConflictError,
   ActionLedgerReversalTargetError,
 } from "./service/errors.js"
-import { listApprovals, listDelegations, listEntries, listRelayOutbox } from "./service/listing.js"
+import { listApprovals, listDelegations, listEntries } from "./service/listing.js"
 import {
   buildActionApprovalsPredicate,
   buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
-  buildActionLedgerRelayOutboxPredicate,
 } from "./service/predicates.js"
 import { getApproval, getDelegation, getEntry } from "./service/records.js"
-import {
-  claimRelayOutbox,
-  markRelayOutboxFailed,
-  markRelayOutboxSucceeded,
-} from "./service/relay-lifecycle.js"
 import type {
   AppendActionLedgerEntryInput,
   AppendActionLedgerEntryResult,
@@ -60,11 +53,8 @@ export type {
   ActionApprovalListCursor,
   ActionDelegationListCursor,
   ActionLedgerListCursor,
-  ActionLedgerRelayOutboxListCursor,
   AppendActionLedgerEntryInput,
   AppendActionLedgerEntryResult,
-  ClaimActionLedgerRelayOutboxInput,
-  ClaimActionLedgerRelayOutboxResult,
   DecideActionApprovalInput,
   DecideActionApprovalResult,
   GetActionApprovalResult,
@@ -76,10 +66,6 @@ export type {
   ListActionDelegationsResult,
   ListActionLedgerEntriesInput,
   ListActionLedgerEntriesResult,
-  ListActionLedgerRelayOutboxInput,
-  ListActionLedgerRelayOutboxResult,
-  MarkActionLedgerRelayOutboxFailedInput,
-  MarkActionLedgerRelayOutboxSucceededInput,
   RecordActionLedgerReversalInput,
   RecordActionLedgerReversalResult,
   RequestActionApprovalInput,
@@ -279,7 +265,6 @@ export const actionLedgerService = {
   },
 
   listEntries,
-  listRelayOutbox,
   listApprovals,
   listDelegations,
   getApproval,
@@ -398,10 +383,6 @@ export const actionLedgerService = {
 
   getDelegation,
 
-  claimRelayOutbox,
-  markRelayOutboxSucceeded,
-  markRelayOutboxFailed,
-
   getEntry,
 }
 
@@ -409,11 +390,9 @@ export const __test__ = {
   buildActionApprovalsPredicate,
   buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
-  buildActionLedgerRelayOutboxPredicate,
   withOptionalTransaction,
   normalizeListLimit,
   toActionApprovalListCursor,
   toActionDelegationListCursor,
   toActionLedgerListCursor,
-  toActionLedgerRelayOutboxListCursor,
 }

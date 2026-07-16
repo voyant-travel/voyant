@@ -42,8 +42,7 @@
                   "sampleLimit": { "type": "integer", "minimum": 1 },
                   "organizationId": { "type": "string" },
                   "principalId": { "type": "string" },
-                  "idempotencyKey": { "type": "string" },
-                  "payloadRef": { "type": "string" }
+                  "idempotencyKey": { "type": "string" }
                 }
               }
             }

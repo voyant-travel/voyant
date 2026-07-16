@@ -79,7 +79,6 @@ const actionLedgerHealthCheckBodySchema = actionLedgerHealthQuerySchema.extend({
   organizationId: z.string().trim().min(1).optional(),
   principalId: z.string().trim().min(1).optional(),
   idempotencyKey: z.string().trim().min(1).optional(),
-  payloadRef: z.string().trim().min(1).optional(),
 })
 
 const actionLedgerDriftCheckResultSchema = z.object({
@@ -102,7 +101,6 @@ const actionLedgerHealthResponseSchema = z.object({
         actionId: z.string(),
         replayed: z.boolean(),
         observedWrite: z.boolean(),
-        observedRelay: z.boolean(),
       })
       .nullable(),
     bookingDrift: actionLedgerDriftCheckResultSchema,
@@ -256,7 +254,6 @@ export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutes
         organizationId: body.organizationId ?? c.get("organizationId") ?? null,
         principalId: body.principalId ?? c.get("userId") ?? "operator-action-ledger-health",
         idempotencyKey: body.idempotencyKey ?? null,
-        payloadRef: body.payloadRef ?? null,
       },
       runCanary: true,
       checkBookingDrift,

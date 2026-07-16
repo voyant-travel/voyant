@@ -47,7 +47,7 @@ export const actionLedgerVoyantModule = defineModule({
           {
             action: "read",
             label: "Read action ledger",
-            description: "Read action records, approval state, delegations, and relay status.",
+            description: "Read action records, approval state, and delegations.",
             sensitive: true,
             wildcard: "explicit",
           },
@@ -148,17 +148,6 @@ export const actionLedgerVoyantModule = defineModule({
       risk: "high",
     },
     {
-      id: "@voyant-travel/action-ledger#tool.list-relay-outbox",
-      name: "list_action_relay_outbox",
-      runtime: {
-        entry: "@voyant-travel/action-ledger/tools",
-        export: "listActionRelayOutboxTool",
-      },
-      requiredScopes: ["action-ledger:read"],
-      context: ["actionLedger"],
-      risk: "high",
-    },
-    {
       id: "@voyant-travel/action-ledger#tool.request-approval",
       name: "request_action_approval",
       runtime: {
@@ -210,7 +199,6 @@ export const actionLedgerVoyantModule = defineModule({
           "@voyant-travel/action-ledger#tool.list-entries",
           "@voyant-travel/action-ledger#tool.get-entry",
           "@voyant-travel/action-ledger#tool.target-timeline",
-          "@voyant-travel/action-ledger#tool.list-relay-outbox",
         ],
       },
     },

@@ -3,7 +3,7 @@ import type { LocaleMessageSchema } from "../runtime.js"
 /**
  * Operator-side strings for the central action ledger surface — list
  * page (filters + table) and per-entry sheet (actor, target, mutation,
- * sensitive-read, payloads, relay outbox). The booking-detail panel
+ * sensitive-read, and payloads). The booking-detail panel
  * uses `bookings.detail.actionLedger`; this surface is the
  * cross-booking explorer.
  */
@@ -111,7 +111,7 @@ export const operatorAdminActionLedgerMessages = {
       entrySheet: {
         title: "Action details",
         description:
-          "Ledger context, idempotency, mutation detail, sensitive-read detail, and relay state.",
+          "Ledger context, idempotency, mutation detail, sensitive-read detail, and payloads.",
         loading: "Loading action details...",
         notFound: "Action ledger entry not found.",
         noValue: "-",
@@ -178,16 +178,6 @@ export const operatorAdminActionLedgerMessages = {
           redaction: "Redaction",
           retention: "Retention",
           hash: "Hash",
-        },
-        relay: {
-          title: "Relay Outbox",
-          empty: "No relay rows recorded.",
-          status: "Status",
-          payloadRef: "Payload ref",
-          attempts: "Attempts",
-          nextRetry: "Next retry",
-          processed: "Processed",
-          lastError: "Last error",
         },
       },
     },
@@ -296,7 +286,7 @@ export const operatorAdminActionLedgerMessages = {
       entrySheet: {
         title: "Detalii actiune",
         description:
-          "Context jurnal, idempotenta, detalii mutatie, citire sensibila si stare relay.",
+          "Context jurnal, idempotenta, detalii mutatie, citire sensibila si payload-uri.",
         loading: "Se incarca detaliile actiunii...",
         notFound: "Inregistrarea de jurnal nu a fost gasita.",
         noValue: "-",
@@ -363,16 +353,6 @@ export const operatorAdminActionLedgerMessages = {
           redaction: "Redactare",
           retention: "Retentie",
           hash: "Hash",
-        },
-        relay: {
-          title: "Outbox relay",
-          empty: "Nu sunt inregistrate randuri de relay.",
-          status: "Status",
-          payloadRef: "Ref payload",
-          attempts: "Incercari",
-          nextRetry: "Urmatoarea reincercare",
-          processed: "Procesat",
-          lastError: "Ultima eroare",
         },
       },
     },

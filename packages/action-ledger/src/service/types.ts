@@ -3,7 +3,6 @@ import type {
   ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
-  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
   NewActionLedgerEntry,
@@ -18,7 +17,6 @@ export interface AppendActionLedgerEntryInput
   mutationDetail?: Omit<NewActionMutationDetail, "actionId">
   sensitiveReadDetail?: Omit<NewActionSensitiveReadDetail, "actionId">
   payloads?: Omit<NewActionLedgerPayload, "id" | "actionId">[]
-  enqueueRelay?: boolean | { payloadRef?: string | null }
 }
 
 export interface AppendActionLedgerEntryResult {
@@ -103,11 +101,6 @@ export interface ActionLedgerListCursor {
   id: string
 }
 
-export interface ActionLedgerRelayOutboxListCursor {
-  createdAt: string
-  id: string
-}
-
 export interface ActionApprovalListCursor {
   createdAt: string
   id: string
@@ -168,24 +161,6 @@ export interface ListActionLedgerEntriesResult {
   nextCursor: ActionLedgerListCursor | null
 }
 
-export interface ListActionLedgerRelayOutboxInput {
-  actionId?: string | null
-  organizationId?: string | null
-  relayStatus?: ActionLedgerRelayOutbox["relayStatus"] | ActionLedgerRelayOutbox["relayStatus"][]
-  dueBefore?: Date | string | null
-  createdAtFrom?: Date | string | null
-  createdAtTo?: Date | string | null
-  processedAtFrom?: Date | string | null
-  processedAtTo?: Date | string | null
-  cursor?: ActionLedgerRelayOutboxListCursor | null
-  limit?: number
-}
-
-export interface ListActionLedgerRelayOutboxResult {
-  rows: ActionLedgerRelayOutbox[]
-  nextCursor: ActionLedgerRelayOutboxListCursor | null
-}
-
 export interface ListActionApprovalsInput {
   requestedActionId?: string | null
   status?: ActionApproval["status"] | ActionApproval["status"][]
@@ -235,35 +210,11 @@ export interface ListActionDelegationsResult {
   nextCursor: ActionDelegationListCursor | null
 }
 
-export interface ClaimActionLedgerRelayOutboxInput {
-  organizationId?: string | null
-  dueAt?: Date | string | null
-  limit?: number
-}
-
-export interface ClaimActionLedgerRelayOutboxResult {
-  rows: ActionLedgerRelayOutbox[]
-}
-
-export interface MarkActionLedgerRelayOutboxSucceededInput {
-  id: string
-  processedAt?: Date | string | null
-}
-
-export interface MarkActionLedgerRelayOutboxFailedInput {
-  id: string
-  lastError: string
-  nextRetryAt?: Date | string | null
-  deadLetter?: boolean
-  processedAt?: Date | string | null
-}
-
 export interface GetActionLedgerEntryResult {
   entry: ActionLedgerEntry
   mutationDetail: ActionMutationDetail | null
   sensitiveReadDetail: ActionSensitiveReadDetail | null
   payloads: ActionLedgerPayload[]
-  relayOutbox: ActionLedgerRelayOutbox[]
 }
 
 export interface GetActionApprovalResult {

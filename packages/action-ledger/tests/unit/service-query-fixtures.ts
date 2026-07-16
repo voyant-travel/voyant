@@ -4,7 +4,6 @@ import type {
   ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
-  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
   NewActionLedgerEntry,
@@ -17,7 +16,6 @@ export function makeGetEntryDb(input: {
   mutationDetail?: ActionMutationDetail
   sensitiveReadDetail?: ActionSensitiveReadDetail
   payloads?: ActionLedgerPayload[]
-  relayOutbox?: ActionLedgerRelayOutbox[]
 }) {
   const calls: string[] = []
   const selectRows = [
@@ -25,14 +23,12 @@ export function makeGetEntryDb(input: {
     input.mutationDetail ? [input.mutationDetail] : [],
     input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
     input.payloads ?? [],
-    input.relayOutbox ?? [],
   ]
   const callLabels = [
     "action_ledger_entries",
     "action_mutation_details",
     "action_sensitive_read_details",
     "action_ledger_payloads",
-    "action_ledger_outbox",
   ]
   let selectIndex = 0
 
@@ -72,7 +68,7 @@ export function makeReversalDb(input: {
   const entries = [input.entry]
   const insertedMutationDetails: unknown[] = []
   const updatedMutationDetails: unknown[] = []
-  const selectRows = [[input.entry], [input.mutationDetail], [], [], []]
+  const selectRows = [[input.entry], [input.mutationDetail], [], []]
   let selectIndex = 0
 
   const db = {
@@ -170,7 +166,6 @@ export function makeGetApprovalDb(input: {
   mutationDetail?: ActionMutationDetail
   sensitiveReadDetail?: ActionSensitiveReadDetail
   payloads?: ActionLedgerPayload[]
-  relayOutbox?: ActionLedgerRelayOutbox[]
 }) {
   const calls: string[] = []
   const selectRows = [
@@ -179,7 +174,6 @@ export function makeGetApprovalDb(input: {
     input.mutationDetail ? [input.mutationDetail] : [],
     input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
     input.payloads ?? [],
-    input.relayOutbox ?? [],
   ]
   const callLabels = [
     "action_approvals",
@@ -187,7 +181,6 @@ export function makeGetApprovalDb(input: {
     "action_mutation_details",
     "action_sensitive_read_details",
     "action_ledger_payloads",
-    "action_ledger_outbox",
   ]
   let selectIndex = 0
 
@@ -226,7 +219,6 @@ export function makeValidateApprovedActionDb(input: {
   mutationDetail?: ActionMutationDetail
   sensitiveReadDetail?: ActionSensitiveReadDetail
   payloads?: ActionLedgerPayload[]
-  relayOutbox?: ActionLedgerRelayOutbox[]
   existingExecutions?: ActionLedgerEntry[]
 }) {
   const calls: string[] = []
@@ -236,7 +228,6 @@ export function makeValidateApprovedActionDb(input: {
     input.mutationDetail ? [input.mutationDetail] : [],
     input.sensitiveReadDetail ? [input.sensitiveReadDetail] : [],
     input.payloads ?? [],
-    input.relayOutbox ?? [],
   ]
   const callLabels = [
     "action_approvals",
@@ -244,7 +235,6 @@ export function makeValidateApprovedActionDb(input: {
     "action_mutation_details",
     "action_sensitive_read_details",
     "action_ledger_payloads",
-    "action_ledger_outbox",
   ]
   let selectIndex = 0
 

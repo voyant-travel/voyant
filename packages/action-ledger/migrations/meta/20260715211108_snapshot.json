@@ -1,0 +1,1257 @@
+{
+  "id": "1625a30d-bd71-4b10-bf29-f7fe5ba951c2",
+  "prevId": "e1a545d4-deb2-48b3-a66b-b248ae558730",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.action_approvals": {
+      "name": "action_approvals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "requested_action_id": {
+          "name": "requested_action_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "action_ledger_approval_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "requested_by_principal_id": {
+          "name": "requested_by_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_to_principal_id": {
+          "name": "assigned_to_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_by_principal_id": {
+          "name": "decided_by_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delegated_from_principal_id": {
+          "name": "delegated_from_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "policy_name": {
+          "name": "policy_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "policy_version": {
+          "name": "policy_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_snapshot_ref": {
+          "name": "target_snapshot_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_snapshot": {
+          "name": "risk_snapshot",
+          "type": "action_ledger_risk",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_action_approvals_requested_action": {
+          "name": "idx_action_approvals_requested_action",
+          "columns": [
+            {
+              "expression": "requested_action_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_approvals_status_expires": {
+          "name": "idx_action_approvals_status_expires",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_approvals_assignee": {
+          "name": "idx_action_approvals_assignee",
+          "columns": [
+            {
+              "expression": "assigned_to_principal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "action_approvals_requested_action_id_action_ledger_entries_id_fk": {
+          "name": "action_approvals_requested_action_id_action_ledger_entries_id_fk",
+          "tableFrom": "action_approvals",
+          "tableTo": "action_ledger_entries",
+          "columnsFrom": [
+            "requested_action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.action_delegations": {
+      "name": "action_delegations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "root_principal_type": {
+          "name": "root_principal_type",
+          "type": "action_ledger_principal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "root_principal_id": {
+          "name": "root_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_principal_type": {
+          "name": "parent_principal_type",
+          "type": "action_ledger_principal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_principal_id": {
+          "name": "parent_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "child_principal_type": {
+          "name": "child_principal_type",
+          "type": "action_ledger_principal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "child_principal_id": {
+          "name": "child_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grant_source": {
+          "name": "grant_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capability_scope_ref": {
+          "name": "capability_scope_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "budget_scope_ref": {
+          "name": "budget_scope_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_action_delegations_root": {
+          "name": "idx_action_delegations_root",
+          "columns": [
+            {
+              "expression": "root_principal_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "root_principal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_delegations_child": {
+          "name": "idx_action_delegations_child",
+          "columns": [
+            {
+              "expression": "child_principal_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "child_principal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_delegations_parent": {
+          "name": "idx_action_delegations_parent",
+          "columns": [
+            {
+              "expression": "parent_principal_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "parent_principal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.action_ledger_entries": {
+      "name": "action_ledger_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "action_name": {
+          "name": "action_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_version": {
+          "name": "action_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_kind": {
+          "name": "action_kind",
+          "type": "action_ledger_action_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "action_ledger_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluated_risk": {
+          "name": "evaluated_risk",
+          "type": "action_ledger_risk",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "principal_type": {
+          "name": "principal_type",
+          "type": "action_ledger_principal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "principal_id": {
+          "name": "principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "principal_subtype": {
+          "name": "principal_subtype",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_token_id": {
+          "name": "api_token_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "internal_request": {
+          "name": "internal_request",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "delegated_by_principal_type": {
+          "name": "delegated_by_principal_type",
+          "type": "action_ledger_principal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delegated_by_principal_id": {
+          "name": "delegated_by_principal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delegation_id": {
+          "name": "delegation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "caller_type": {
+          "name": "caller_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "route_or_tool_name": {
+          "name": "route_or_tool_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "workflow_run_id": {
+          "name": "workflow_run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "workflow_step_id": {
+          "name": "workflow_step_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correlation_id": {
+          "name": "correlation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "causation_action_id": {
+          "name": "causation_action_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempotency_scope": {
+          "name": "idempotency_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempotency_fingerprint": {
+          "name": "idempotency_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capability_id": {
+          "name": "capability_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capability_version": {
+          "name": "capability_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "authorization_source": {
+          "name": "authorization_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_id": {
+          "name": "approval_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amends_action_id": {
+          "name": "amends_action_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_action_ledger_entries_principal": {
+          "name": "idx_action_ledger_entries_principal",
+          "columns": [
+            {
+              "expression": "principal_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "principal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_api_token": {
+          "name": "idx_action_ledger_entries_api_token",
+          "columns": [
+            {
+              "expression": "api_token_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_session": {
+          "name": "idx_action_ledger_entries_session",
+          "columns": [
+            {
+              "expression": "session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_target": {
+          "name": "idx_action_ledger_entries_target",
+          "columns": [
+            {
+              "expression": "target_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_workflow": {
+          "name": "idx_action_ledger_entries_workflow",
+          "columns": [
+            {
+              "expression": "workflow_run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_step_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_correlation": {
+          "name": "idx_action_ledger_entries_correlation",
+          "columns": [
+            {
+              "expression": "correlation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_causation": {
+          "name": "idx_action_ledger_entries_causation",
+          "columns": [
+            {
+              "expression": "causation_action_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_control_state": {
+          "name": "idx_action_ledger_entries_control_state",
+          "columns": [
+            {
+              "expression": "evaluated_risk",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_capability": {
+          "name": "idx_action_ledger_entries_capability",
+          "columns": [
+            {
+              "expression": "capability_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "capability_version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_entries_idempotency": {
+          "name": "idx_action_ledger_entries_idempotency",
+          "columns": [
+            {
+              "expression": "idempotency_scope",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "action_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\n        \"action_ledger_entries\".\"idempotency_key\" IS NOT NULL\n      ",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.action_ledger_payloads": {
+      "name": "action_ledger_payloads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "action_id": {
+          "name": "action_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_kind": {
+          "name": "payload_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_tag": {
+          "name": "schema_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redaction_status": {
+          "name": "redaction_status",
+          "type": "action_ledger_redaction_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "retention_policy": {
+          "name": "retention_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_ref": {
+          "name": "storage_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_action_ledger_payloads_action": {
+          "name": "idx_action_ledger_payloads_action",
+          "columns": [
+            {
+              "expression": "action_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_ledger_payloads_expiry": {
+          "name": "idx_action_ledger_payloads_expiry",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "action_ledger_payloads_action_id_action_ledger_entries_id_fk": {
+          "name": "action_ledger_payloads_action_id_action_ledger_entries_id_fk",
+          "tableFrom": "action_ledger_payloads",
+          "tableTo": "action_ledger_entries",
+          "columnsFrom": [
+            "action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.action_mutation_details": {
+      "name": "action_mutation_details",
+      "schema": "",
+      "columns": {
+        "action_id": {
+          "name": "action_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "command_input_ref": {
+          "name": "command_input_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "command_result_ref": {
+          "name": "command_result_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_kind": {
+          "name": "reversal_kind",
+          "type": "action_ledger_reversal_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "reversal_command_id": {
+          "name": "reversal_command_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_command_version": {
+          "name": "reversal_command_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_args_ref": {
+          "name": "reversal_args_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_state_projection": {
+          "name": "reversal_state_projection",
+          "type": "action_ledger_reversal_state",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversal_outcome_projection": {
+          "name": "reversal_outcome_projection",
+          "type": "action_ledger_reversal_outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reverses_action_id": {
+          "name": "reverses_action_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversed_by_action_id_projection": {
+          "name": "reversed_by_action_id_projection",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_action_mutation_details_reverses": {
+          "name": "idx_action_mutation_details_reverses",
+          "columns": [
+            {
+              "expression": "reverses_action_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_action_mutation_details_reversal_state": {
+          "name": "idx_action_mutation_details_reversal_state",
+          "columns": [
+            {
+              "expression": "reversal_state_projection",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "action_mutation_details_action_id_action_ledger_entries_id_fk": {
+          "name": "action_mutation_details_action_id_action_ledger_entries_id_fk",
+          "tableFrom": "action_mutation_details",
+          "tableTo": "action_ledger_entries",
+          "columnsFrom": [
+            "action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.action_sensitive_read_details": {
+      "name": "action_sensitive_read_details",
+      "schema": "",
+      "columns": {
+        "action_id": {
+          "name": "action_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disclosed_field_set": {
+          "name": "disclosed_field_set",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disclosure_summary": {
+          "name": "disclosure_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_policy": {
+          "name": "decision_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "action_sensitive_read_details_action_id_action_ledger_entries_id_fk": {
+          "name": "action_sensitive_read_details_action_id_action_ledger_entries_id_fk",
+          "tableFrom": "action_sensitive_read_details",
+          "tableTo": "action_ledger_entries",
+          "columnsFrom": [
+            "action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.action_ledger_action_kind": {
+      "name": "action_ledger_action_kind",
+      "schema": "public",
+      "values": [
+        "read",
+        "create",
+        "update",
+        "delete",
+        "execute",
+        "approve",
+        "reject",
+        "reverse",
+        "compensate",
+        "duplicate"
+      ]
+    },
+    "public.action_ledger_approval_status": {
+      "name": "action_ledger_approval_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "approved",
+        "denied",
+        "expired",
+        "cancelled",
+        "superseded"
+      ]
+    },
+    "public.action_ledger_principal_type": {
+      "name": "action_ledger_principal_type",
+      "schema": "public",
+      "values": [
+        "user",
+        "api_key",
+        "agent",
+        "workflow",
+        "system"
+      ]
+    },
+    "public.action_ledger_redaction_status": {
+      "name": "action_ledger_redaction_status",
+      "schema": "public",
+      "values": [
+        "none",
+        "redacted",
+        "tombstoned",
+        "crypto_shredded"
+      ]
+    },
+    "public.action_ledger_reversal_kind": {
+      "name": "action_ledger_reversal_kind",
+      "schema": "public",
+      "values": [
+        "none",
+        "revert",
+        "compensate",
+        "domain_command"
+      ]
+    },
+    "public.action_ledger_reversal_outcome": {
+      "name": "action_ledger_reversal_outcome",
+      "schema": "public",
+      "values": [
+        "full",
+        "partial",
+        "failed"
+      ]
+    },
+    "public.action_ledger_reversal_state": {
+      "name": "action_ledger_reversal_state",
+      "schema": "public",
+      "values": [
+        "not_reversible",
+        "available",
+        "requested",
+        "running",
+        "completed",
+        "failed",
+        "expired"
+      ]
+    },
+    "public.action_ledger_risk": {
+      "name": "action_ledger_risk",
+      "schema": "public",
+      "values": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "public.action_ledger_status": {
+      "name": "action_ledger_status",
+      "schema": "public",
+      "values": [
+        "requested",
+        "awaiting_approval",
+        "approved",
+        "denied",
+        "succeeded",
+        "failed",
+        "reversed",
+        "compensated",
+        "expired",
+        "cancelled",
+        "superseded"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -104,7 +104,6 @@ export interface BuildActionLedgerApprovalDecisionInput extends ActionLedgerRequ
   idempotencyKey?: string | null
   idempotencyFingerprint?: string | null
   payloads?: AppendActionLedgerEntryInput["payloads"]
-  enqueueRelay?: AppendActionLedgerEntryInput["enqueueRelay"]
   organizationId?: string | null
   workflowRunId?: string | null
   workflowStepId?: string | null
@@ -142,7 +141,6 @@ interface CommonActionLedgerRouteInput {
   idempotencyKey?: string | null
   idempotencyFingerprint?: string | null
   payloads?: AppendActionLedgerEntryInput["payloads"]
-  enqueueRelay?: AppendActionLedgerEntryInput["enqueueRelay"]
   organizationId?: string | null
   workflowRunId?: string | null
   workflowStepId?: string | null
@@ -272,7 +270,6 @@ export function buildActionLedgerSensitiveReadEntryInput(
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,
     payloads: input.payloads,
-    enqueueRelay: input.enqueueRelay,
     organizationId: input.organizationId ?? actorFields.organizationId,
     workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
     workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,
@@ -332,7 +329,6 @@ export function buildActionLedgerMutationEntryInput(
     idempotencyKey: input.idempotencyKey ?? null,
     idempotencyFingerprint: input.idempotencyFingerprint ?? null,
     payloads: input.payloads,
-    enqueueRelay: input.enqueueRelay,
     organizationId: input.organizationId ?? actorFields.organizationId,
     workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
     workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,
@@ -405,7 +401,6 @@ export function buildActionLedgerApprovalDecisionInput(
       idempotencyKey: input.idempotencyKey ?? null,
       idempotencyFingerprint: input.idempotencyFingerprint ?? null,
       payloads: input.payloads,
-      enqueueRelay: input.enqueueRelay,
       organizationId: input.organizationId ?? actorFields.organizationId,
       workflowRunId: input.workflowRunId ?? actorFields.workflowRunId,
       workflowStepId: input.workflowStepId ?? actorFields.workflowStepId,

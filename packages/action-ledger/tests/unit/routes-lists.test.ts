@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 
 import { __test__ } from "../../src/routes.js"
 import { actionLedgerService } from "../../src/service.js"
-import { makeApp, makeApproval, makeEntry, makeRelayOutbox } from "./routes-fixtures.js"
+import { makeApp, makeApproval, makeEntry } from "./routes-fixtures.js"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -124,65 +124,6 @@ describe("actionLedgerAdminRoutes", () => {
 
     expect(parsed.success).toBe(false)
     expect(parsed.error?.issues[0]?.path).toEqual(["targetIds"])
-  })
-
-  test("lists relay outbox rows with health filters and cursor pagination", async () => {
-    const db = {} as AnyDrizzleDb
-    const spy = vi.spyOn(actionLedgerService, "listRelayOutbox").mockResolvedValue({
-      rows: [makeRelayOutbox()],
-      nextCursor: {
-        createdAt: "2026-05-15T10:00:00.000Z",
-        id: "alro_1",
-      },
-    })
-
-    const app = makeApp(db)
-    const response = await app.request(
-      "/relay-outbox?actionId=alge_1&organizationId=org_1&relayStatus=pending,failed&dueBefore=2026-05-15T10%3A05%3A00.000Z&createdAtFrom=2026-05-15T09%3A00%3A00.000Z&createdAtTo=2026-05-15T10%3A00%3A00.000Z&processedAtFrom=2026-05-15T10%3A15%3A00.000Z&processedAtTo=2026-05-15T10%3A30%3A00.000Z&cursorCreatedAt=2026-05-15T10%3A00%3A00.000Z&cursorId=alro_cursor&limit=25",
-    )
-
-    expect(spy).toHaveBeenCalledWith(db, {
-      actionId: "alge_1",
-      organizationId: "org_1",
-      relayStatus: ["pending", "failed"],
-      dueBefore: new Date("2026-05-15T10:05:00.000Z"),
-      createdAtFrom: new Date("2026-05-15T09:00:00.000Z"),
-      createdAtTo: new Date("2026-05-15T10:00:00.000Z"),
-      processedAtFrom: new Date("2026-05-15T10:15:00.000Z"),
-      processedAtTo: new Date("2026-05-15T10:30:00.000Z"),
-      cursor: {
-        createdAt: "2026-05-15T10:00:00.000Z",
-        id: "alro_cursor",
-      },
-      limit: 25,
-    })
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toMatchObject({
-      data: [
-        {
-          id: "alro_1",
-          relayStatus: "pending",
-          createdAt: "2026-05-15T10:00:00.000Z",
-          nextRetryAt: "2026-05-15T10:05:00.000Z",
-          processedAt: null,
-        },
-      ],
-      pageInfo: {
-        nextCursor: {
-          createdAt: "2026-05-15T10:00:00.000Z",
-          id: "alro_1",
-        },
-      },
-    })
-  })
-
-  test("rejects relay outbox cursor halves", () => {
-    const parsed = __test__.actionLedgerRelayOutboxListQuerySchema.safeParse({
-      cursorCreatedAt: "2026-05-15T10:00:00.000Z",
-    })
-
-    expect(parsed.success).toBe(false)
-    expect(parsed.error?.issues[0]?.path).toEqual(["cursorId"])
   })
 
   test("lists approvals with inbox filters and cursor pagination", async () => {

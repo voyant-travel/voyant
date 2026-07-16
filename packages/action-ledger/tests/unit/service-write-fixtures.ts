@@ -15,7 +15,6 @@ export function makeApprovalLifecycleDb(
   const approvals = [...(input.approvals ?? [])]
   const insertedMutationDetails: unknown[] = []
   const insertedPayloads: unknown[] = []
-  const insertedRelayOutbox: unknown[] = []
   const insertedSensitiveReadDetails: unknown[] = []
   const transactionCalls: string[] = []
 
@@ -55,11 +54,6 @@ export function makeApprovalLifecycleDb(
 
           if ("payloadKind" in values) {
             insertedPayloads.push(values)
-            return {}
-          }
-
-          if ("relayStatus" in values) {
-            insertedRelayOutbox.push(values)
             return {}
           }
 
@@ -156,7 +150,6 @@ export function makeApprovalLifecycleDb(
     approvals,
     insertedMutationDetails,
     insertedPayloads,
-    insertedRelayOutbox,
     insertedSensitiveReadDetails,
     transactionCalls,
   }
@@ -166,7 +159,6 @@ export function makeAppendDb() {
   const entries: ActionLedgerEntry[] = []
   const insertedMutationDetails: unknown[] = []
   const insertedPayloads: unknown[] = []
-  const insertedRelayOutbox: unknown[] = []
   const insertedSensitiveReadDetails: unknown[] = []
   const transactionCalls: string[] = []
   const db = {
@@ -206,11 +198,6 @@ export function makeAppendDb() {
 
           if ("payloadKind" in values) {
             insertedPayloads.push(values)
-            return {}
-          }
-
-          if ("relayStatus" in values) {
-            insertedRelayOutbox.push(values)
             return {}
           }
 
@@ -269,7 +256,6 @@ export function makeAppendDb() {
     entries,
     insertedMutationDetails,
     insertedPayloads,
-    insertedRelayOutbox,
     insertedSensitiveReadDetails,
     transactionCalls,
   }

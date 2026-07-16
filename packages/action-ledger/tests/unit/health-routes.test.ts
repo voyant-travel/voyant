@@ -30,7 +30,6 @@ const okCanary: RunActionLedgerCanaryResult = {
   actionId: "alge_canary",
   replayed: false,
   observedWrite: true,
-  observedRelay: true,
 }
 
 describe("action-ledger health runtime", () => {

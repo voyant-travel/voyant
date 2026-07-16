@@ -10,7 +10,6 @@ import {
   makeEntry,
   makeMutationDetail,
   makePayload,
-  makeRelayOutbox,
   makeSensitiveReadDetail,
 } from "./routes-fixtures.js"
 
@@ -102,7 +101,6 @@ describe("actionLedgerAdminRoutes", () => {
         mutationDetail: makeMutationDetail({ actionId: approval.requestedActionId }),
         sensitiveReadDetail: null,
         payloads: [makePayload({ actionId: approval.requestedActionId })],
-        relayOutbox: [makeRelayOutbox({ actionId: approval.requestedActionId })],
       },
     })
 
@@ -127,12 +125,6 @@ describe("actionLedgerAdminRoutes", () => {
           },
           sensitiveReadDetail: null,
           payloads: [
-            {
-              actionId: "alge_requested",
-              createdAt: "2026-05-15T10:00:00.000Z",
-            },
-          ],
-          relayOutbox: [
             {
               actionId: "alge_requested",
               createdAt: "2026-05-15T10:00:00.000Z",
@@ -201,7 +193,6 @@ describe("actionLedgerAdminRoutes", () => {
       mutationDetail: makeMutationDetail(),
       sensitiveReadDetail: makeSensitiveReadDetail(),
       payloads: [makePayload()],
-      relayOutbox: [makeRelayOutbox()],
     })
 
     const app = makeApp(db)
@@ -230,15 +221,6 @@ describe("actionLedgerAdminRoutes", () => {
             createdAt: "2026-05-15T10:00:00.000Z",
             expiresAt: "2026-06-15T10:00:00.000Z",
             storageRef: "blob://action-ledger/alge_1/input",
-          },
-        ],
-        relayOutbox: [
-          {
-            id: "alro_1",
-            relayStatus: "pending",
-            createdAt: "2026-05-15T10:00:00.000Z",
-            nextRetryAt: "2026-05-15T10:05:00.000Z",
-            processedAt: null,
           },
         ],
       },

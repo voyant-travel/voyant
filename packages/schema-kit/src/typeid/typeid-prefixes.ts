@@ -26,7 +26,6 @@ export const PREFIXES = {
   event_outbox: "evob",
   write_intents: "wint",
   action_ledger_entries: "alge",
-  action_ledger_outbox: "algo",
   action_ledger_payloads: "algp",
   action_delegations: "aldg",
   action_mutation_details: "almd",

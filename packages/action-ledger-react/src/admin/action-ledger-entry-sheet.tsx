@@ -270,7 +270,6 @@ function ActionLedgerEntryDetail({
       {entry.mutationDetail ? <MutationDetail entry={entry} messages={messages} /> : null}
       {entry.sensitiveReadDetail ? <SensitiveReadDetail entry={entry} messages={messages} /> : null}
       <PayloadRefs entry={entry} messages={messages} />
-      <RelayRows entry={entry} messages={messages} />
     </div>
   )
 }
@@ -409,60 +408,6 @@ function PayloadRefs({
                 label={messages.payloads.hash}
                 value={payload.hash}
                 mono
-                noValue={messages.noValue}
-              />
-            </DetailGrid>
-          ))}
-        </div>
-      )}
-    </DetailSection>
-  )
-}
-
-function RelayRows({
-  entry,
-  messages,
-}: {
-  entry: ActionLedgerEntryDetailResponse
-  messages: EntrySheetMessages
-}) {
-  return (
-    <DetailSection title={messages.relay.title} icon={<ScrollText className="h-4 w-4" />}>
-      {entry.relayOutbox.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{messages.relay.empty}</p>
-      ) : (
-        <div className="space-y-3">
-          {entry.relayOutbox.map((row) => (
-            <DetailGrid key={row.id}>
-              <DetailField
-                label={messages.relay.status}
-                value={row.relayStatus}
-                noValue={messages.noValue}
-              />
-              <DetailField
-                label={messages.relay.payloadRef}
-                value={row.payloadRef}
-                mono
-                noValue={messages.noValue}
-              />
-              <DetailField
-                label={messages.relay.attempts}
-                value={String(row.attemptCount)}
-                noValue={messages.noValue}
-              />
-              <DetailField
-                label={messages.relay.nextRetry}
-                value={row.nextRetryAt}
-                noValue={messages.noValue}
-              />
-              <DetailField
-                label={messages.relay.processed}
-                value={row.processedAt}
-                noValue={messages.noValue}
-              />
-              <DetailField
-                label={messages.relay.lastError}
-                value={row.lastError}
                 noValue={messages.noValue}
               />
             </DetailGrid>

@@ -1,9 +1,4 @@
-import type {
-  ActionApproval,
-  ActionDelegation,
-  ActionLedgerEntry,
-  ActionLedgerRelayOutbox,
-} from "../schema.js"
+import type { ActionApproval, ActionDelegation, ActionLedgerEntry } from "../schema.js"
 
 const DEFAULT_LIST_LIMIT = 50
 const MAX_LIST_LIMIT = 200
@@ -18,15 +13,6 @@ function toActionLedgerListCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | 
   return {
     occurredAt: serializeCursorDate(entry.occurredAt),
     id: entry.id,
-  }
-}
-
-function toActionLedgerRelayOutboxListCursor(
-  row: Pick<ActionLedgerRelayOutbox, "createdAt" | "id">,
-) {
-  return {
-    createdAt: serializeCursorDate(row.createdAt),
-    id: row.id,
   }
 }
 
@@ -66,5 +52,4 @@ export {
   toActionApprovalListCursor,
   toActionDelegationListCursor,
   toActionLedgerListCursor,
-  toActionLedgerRelayOutboxListCursor,
 }

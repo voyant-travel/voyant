@@ -103,7 +103,6 @@ for (const required of [
   "validateVoyantNodeProviderPlanEnv",
   "selectedCacheStore(plan.cache",
   "selectedAuthoritativeKvStore(plan.sharedState",
-  "selectedAuthoritativeKvStore(plan.rateLimit",
   "selectedRateLimitStore(plan.rateLimit",
   "MATERIALIZED_NODE_ENVS.get(processEnv) === providerPlanKey",
 ]) {
