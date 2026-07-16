@@ -1,5 +1,20 @@
 # @voyant-travel/bookings-contracts
 
+## 0.109.0
+
+### Minor Changes
+
+- 52352c4: Store custom-field values exclusively as `custom_fields[namespace][key]`.
+  Owner-scoped value operations derive namespaces from trusted definition
+  context, ordinary entity routes preserve non-operator namespaces, and
+  definition rename/delete cleanup is delegated to the package that owns each
+  entity table.
+
+### Patch Changes
+
+- Updated dependencies [52352c4]
+  - @voyant-travel/schema-kit@0.113.0
+
 ## 0.108.1
 
 ### Patch Changes

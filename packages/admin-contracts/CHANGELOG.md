@@ -1,5 +1,19 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.13
+
+### Patch Changes
+
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+  - @voyant-travel/relationships-contracts@0.109.0
+  - @voyant-travel/bookings-contracts@0.109.0
+  - @voyant-travel/finance-contracts@0.106.2
+  - @voyant-travel/legal-contracts@0.106.11
+  - @voyant-travel/products-contracts@0.107.3
+
 ## 0.104.12
 
 ### Patch Changes

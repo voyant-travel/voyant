@@ -1,5 +1,37 @@
 # @voyant-travel/relationships-contracts
 
+## 0.109.0
+
+### Minor Changes
+
+- 52352c4: Move custom-field definition Settings ownership to the generic custom-fields
+  package. Selected entity manifests now declare the targets and field types that
+  the canonical API may accept. The unused Relationships definition API and
+  Settings surfaces are removed without compatibility adapters.
+
+  Target capability declarations now constrain searchable, exportable, and
+  invoiceable settings end to end, and unsupported flags are stored as false.
+
+- 52352c4: Store custom-field values exclusively as `custom_fields[namespace][key]`.
+  Owner-scoped value operations derive namespaces from trusted definition
+  context, ordinary entity routes preserve non-operator namespaces, and
+  definition rename/delete cleanup is delegated to the package that owns each
+  entity table.
+- 52352c4: Remove project-local TypeScript custom-field declarations, discovery globs,
+  executable validation callbacks, and code/database merge helpers. The generic
+  custom-fields package now owns canonical value routes and dispatches operations
+  to selected entity-owning packages through typed runtime contributions, with no
+  Relationships compatibility adapter.
+
+### Patch Changes
+
+- 52352c4: Resolve custom-field definitions exclusively from persisted Settings records.
+  Bookings and Relationships now share the package-owned database resolver.
+  Project-local TypeScript authoring is removed by the completed custom-fields
+  cutline.
+- Updated dependencies [52352c4]
+  - @voyant-travel/schema-kit@0.113.0
+
 ## 0.108.13
 
 ### Patch Changes
