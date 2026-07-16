@@ -4,16 +4,17 @@
 - **Tracking:** `voyant#3395`
 - **Audience:** framework, Operator, Cloud, security, finance, and integration maintainers
 - **Decision type:** product architecture and platform contract
-- **Target:** one remote-only installation model for apps, separate from deployment-time modules and adapters
+- **Target:** one remote app runtime model with managed-catalog and npm release
+  delivery, separate from deployment-time modules and adapters
 
 ## Executive Decision
 
-Voyant will treat an **app** as a separately deployed service that an operator
-installs at runtime through OAuth. App code never executes inside the Operator
+Voyant will treat an **app** as a separately deployed service activated for a
+deployment through OAuth. App backend code never executes inside the Operator
 process and an app never contributes database migrations to a Voyant
 deployment.
 
-There will be two discovery paths but one installation model:
+There will be two creation and discovery paths:
 
 1. **Marketplace discovery:** an operator selects a reviewed listing and grants
    its requested permissions.
@@ -27,9 +28,32 @@ A custom app does not require a marketplace listing, marketplace review, or
 publication. Marketplace submission is an optional later distribution choice,
 not a prerequisite for app creation or installation.
 
-Npm remains a deployment mechanism for trusted code selected by the developer:
-Voyant modules, project modules, infrastructure providers, and deeply integrated
-adapters. These packages are not runtime-installed apps.
+Each app release is an immutable, signed release artifact. The Voyant catalog
+is the canonical registry for marketplace releases; a restricted managed or
+deployment-local registry is canonical for a private custom app. The same
+release artifact can be acquired through two deployment channels:
+
+1. **Self-hosted Voyant:** a developer installs an exact app-package version
+   through npm or a compatible registry and pins it in the project lockfile.
+2. **Voyant managed runtime:** the platform acquires the catalog release and
+   applies compatible updates according to installation policy.
+
+The npm package is a declarative integration capsule, not a local app backend.
+It may contain the manifest, sandboxed admin UI assets, localization catalogs,
+custom-field definitions, permissions, event subscriptions, protocol versions,
+and integrity metadata. It may not contain Operator runtime factories, routes,
+migrations, providers, subscribers, or app server implementation.
+
+Acquisition and activation are separate. Acquiring a release makes it available
+to a deployment. OAuth consent and activation create or upgrade the same
+durable app installation aggregate regardless of delivery channel. There is no
+hybrid app split between local and remote behavior.
+
+Npm also remains a deployment mechanism for trusted executable code selected by
+the developer: Voyant modules, project modules, infrastructure providers, and
+deeply integrated adapters. Executable deployment components and declarative
+app release packages use different manifests, validation, and runtime
+authority.
 
 Payment processing stays on the deployment side of this boundary. Netopia,
 Voyant Payments, and future processors implement one payment adapter contract,
@@ -49,10 +73,12 @@ own namespace through an alias; they cannot submit, claim, or write another
 app's physical namespace. Custom-field identity is `(target, namespace, key)`,
 so two apps can safely use the same key on the same entity type.
 
-Each app owns its remote UI and its localization resources. Voyant passes the
-active locale to app extensions, while app releases provide validated localized
-metadata for the small amount of app text rendered by the Voyant host, such as
-navigation labels and extension titles.
+Each app owns its sandboxed UI and localization resources. An app release may
+carry immutable static UI and locale assets that Voyant stores and serves from
+an isolated app origin without compiling or executing them in the admin origin.
+Voyant passes the active locale to app extensions, while app releases provide
+validated localized metadata for the small amount of app text rendered by the
+Voyant host, such as navigation labels and extension titles.
 
 ## Problem Statement
 
@@ -65,9 +91,11 @@ Voyant currently uses “plugin” for several different concepts:
 - and, prospectively, something an operator installs from a marketplace.
 
 Those concepts have incompatible trust, versioning, lifecycle, and data
-ownership models. An npm package is selected and pinned by a developer, while a
-marketplace app must be installable and removable by an operator without a
-build, deployment, migration, or process restart.
+ownership models. Executable npm code is selected and pinned by a developer,
+while an operator must be able to activate, pause, and remove an app without
+executing ecosystem code or migrations. Self-hosters additionally need
+lockfile-controlled app releases, while managed deployments need safe,
+policy-driven updates from the same release lineage.
 
 The existing custom-fields system compounds the problem. Definitions may come
 from deployment-local TypeScript or the database, code wins collisions, the
@@ -81,7 +109,8 @@ search, export, invoice, and workflow surfaces cannot understand.
 
 ## Goals
 
-1. Let an operator install or uninstall an app without deploying Voyant.
+1. Let an operator activate, pause, or uninstall an acquired app without
+   executing ecosystem code, migrations, or graph changes.
 2. Use the same runtime contract for marketplace and custom apps.
 3. Keep all app execution outside the Operator process.
 4. Give apps least-privilege access through versioned APIs and OAuth grants.
@@ -104,10 +133,18 @@ search, export, invoice, and workflow surfaces cannot understand.
     without marketplace publication.
 15. Let every app own its UI, translations, supported locales, and fallback
     locale without adding app strings to Voyant translation catalogs.
+16. Publish one immutable app release artifact through both managed and npm
+    delivery channels.
+17. Give self-hosters explicit package and lockfile control over app upgrades.
+18. Let managed deployments automatically apply compatible app updates without
+    silently granting scopes or crossing compatibility boundaries.
+19. Make the installed app release visible to the remote backend on every
+    authenticated request.
 
 ## Non-Goals
 
-- Runtime npm installation, dynamic imports, or mutable `install(app)` hooks.
+- Runtime package-manager execution, dynamic imports, or mutable
+  `install(app)` hooks inside the Operator.
 - Allowing remote apps to contribute Drizzle schemas or migrations.
 - Running remote app callbacks inside a Voyant database transaction.
 - Providing a general-purpose hosted relational database for apps.
@@ -116,7 +153,8 @@ search, export, invoice, and workflow surfaces cannot understand.
   operator-installable marketplace apps.
 - Supporting arbitrary remote JavaScript or React in the admin origin.
 - Requiring a custom app to be listed, reviewed, or published in a marketplace.
-- Hosting or compiling an app's iframe UI or in-frame translation bundles.
+- Compiling, modifying, or executing app UI in the admin origin. Voyant may
+  store and serve immutable app-provided assets from an isolated app origin.
 - Guaranteeing ordered or exactly-once webhook delivery.
 - Allowing custom validation functions in custom-field definitions.
 - Migrating every existing integration in the first implementation phase.
@@ -125,15 +163,17 @@ search, export, invoice, and workflow surfaces cannot understand.
 
 | Term | Meaning |
 | --- | --- |
-| **App** | A separately deployed service installed at runtime through OAuth. |
+| **App** | A separately deployed service activated for a Voyant deployment through OAuth. |
 | **App registration** | The stable global identity, credentials, redirect URIs, ownership, and distribution policy of an app. |
 | **App release** | An immutable, validated snapshot of an app manifest and its declared capabilities. |
+| **App release artifact** | The signed, content-addressed package for one app release, containing declarative integration metadata and optional sandboxed static UI assets, but no app backend or Operator runtime code. |
+| **Release acquisition** | Making an app release artifact available to one deployment through its npm lockfile or the managed catalog. |
 | **App installation** | The deployment-local relationship between one app registration and one Voyant deployment. |
 | **Marketplace app** | An app discovered through a reviewed marketplace listing. |
 | **Custom app** | A private app created directly by an authorized developer or operator and installed without marketplace publication. |
 | **Admin extension** | A remote page or slot contribution rendered through the sandboxed admin extension host. |
 | **App locale catalog** | App-owned translations for the app's remote UI and validated localized metadata for host-rendered app labels. |
-| **Deployment component** | Trusted npm-selected module, adapter, or provider included in the resolved deployment graph. |
+| **Deployment component** | Trusted executable npm-selected module, adapter, or provider included in the resolved deployment graph. |
 | **Payment adapter** | A deployment component implementing the canonical payment processor contract. |
 | **Custom-field target** | A Voyant entity type whose owning module supports namespaced custom fields. |
 | **Operator-owned field** | A definition created and structurally controlled by an operator in Settings. |
@@ -141,8 +181,9 @@ search, export, invoice, and workflow surfaces cannot understand.
 | **Reserved app namespace** | An immutable physical namespace assigned by Voyant to one app registration. |
 
 The word **plugin** should not be used for a runtime-installed product. Existing
-npm plugin bundles should be reclassified by their actual deployment role:
-module, extension, adapter, or provider.
+executable npm plugin bundles should be reclassified by their actual deployment
+role: module, extension, adapter, or provider. A declarative app release package
+is an app distribution artifact, not a plugin or graph unit.
 
 ## Product Classification
 
@@ -160,8 +201,8 @@ module, extension, adapter, or provider.
 
 ## User Stories
 
-1. As an operator, I want to install an app without redeploying Voyant, so that
-   I can add integrations without developer intervention.
+1. As an operator, I want to activate an app release already available to my
+   deployment, so that consent and lifecycle do not execute ecosystem code.
 2. As an operator, I want to review requested permissions before installation,
    so that I understand which data and actions the app can access.
 3. As an operator, I want to deny optional permissions, so that an app receives
@@ -256,14 +297,39 @@ module, extension, adapter, or provider.
 44. As a staff user, I want an app extension and its host-rendered labels to use
     my active locale with deterministic fallbacks, so that the embedded
     experience is linguistically consistent with the admin.
+45. As a self-hosted developer, I want to install an exact app release through
+    npm and commit the lockfile, so that publishing a newer release cannot
+    silently change my deployment.
+46. As a managed-runtime operator, I want compatible app updates applied
+    automatically according to policy, so that I receive fixes without
+    redeploying Voyant.
+47. As an operator, I want new scopes, incompatible protocol changes, and major
+    releases to require approval, so that automatic updates cannot expand
+    access or break an installation.
+48. As an app developer, I want one validated release artifact to serve
+    self-hosted and managed deployments, so that I do not maintain two app
+    architectures.
+49. As a custom app developer, I want to publish through a private registry or
+    upload the same release artifact privately, so that npm delivery does not
+    require public marketplace publication.
+50. As an app backend developer, I want each request to identify the installed
+    app release and protocol versions, so that I can honor compatibility for
+    deployments that upgrade on different schedules.
 
 ## Architecture
 
 ### 1. Trust Boundary
 
-The Operator graph remains immutable at runtime. Installing an app changes
-database state only; it does not add graph units, routes, migrations, imports,
-providers, or executable server code.
+The Operator graph remains immutable at runtime. Activating or upgrading an app
+installation changes database state and sandboxed asset registrations only; it
+does not add graph units, routes, migrations, imports, providers, or executable
+server code.
+
+On self-hosted deployments, acquiring a release through npm is a normal
+developer-controlled build and deployment change. The package is validated and
+lowered into a release catalog artifact during the build; it is never imported
+as executable runtime code. On managed deployments, the control plane performs
+the equivalent acquisition without mutating the Operator graph.
 
 Remote apps interact with Voyant through five public contract families:
 
@@ -294,6 +360,7 @@ The registration records:
 - requested and optional scopes;
 - supported Voyant API range;
 - current released manifest version;
+- release signing identity and allowed distribution channels;
 - review and suspension state.
 
 A marketplace listing references an approved app registration but is not the
@@ -325,7 +392,7 @@ or app-administration permission. Managed deployments may store the registration
 in a managed control plane and self-hosted deployments may store it locally, but
 both must expose the same app and installation semantics.
 
-### 3. App Manifest And Releases
+### 3. App Manifest, Artifact, And Releases
 
 The manifest is closed, versioned, declarative data. It may declare:
 
@@ -343,16 +410,67 @@ The manifest is closed, versioned, declarative data. It may declare:
 It may not declare schemas, migrations, host routes, runtime factories,
 subscribers, infrastructure providers, or arbitrary executable hooks.
 
-Releasing a manifest creates an immutable app release. Existing installations
-move to a new release only after compatibility checks. Newly required scopes
-require renewed operator consent before activation. A remote web deployment is
-the app developer's responsibility and is intentionally separate from manifest
-release history.
+Releasing a manifest creates an immutable app release artifact. The artifact is
+content-addressed, signed, and includes:
+
+- the canonical manifest snapshot;
+- host-rendered localized metadata;
+- optional static iframe UI and in-frame locale assets;
+- integrity hashes and provenance;
+- declared API, event, extension-protocol, and Voyant compatibility ranges;
+- generated metadata needed for deterministic reconciliation.
+
+The artifact may reference app backend endpoints, but it may not contain or
+install the backend implementation. Any included JavaScript, CSS, fonts, images,
+or locale catalogs are treated as untrusted static iframe assets. They are
+served only from a sandbox-compatible isolated origin and never imported by the
+Operator or admin bundle.
+
+An npm artifact exposes a closed `voyant.app-release.v1` envelope in package
+metadata. The build reads that envelope and declared artifact files as data; it
+does not resolve a runtime export or execute a package lifecycle hook. Direct
+app-release dependencies are discoverable without adding them to the executable
+deployment graph.
+
+The Voyant app catalog is the canonical release registry for marketplace apps.
+A managed private registry or the self-hosted deployment's app registry performs
+the same role for a custom app. Publication validates and signs the release
+once, then exposes the identical artifact through:
+
+- the managed-runtime installer;
+- an authenticated npm-compatible registry for self-hosted deployments;
+- a private registry or restricted artifact upload for custom apps.
+
+Public npm may be a mirror, but package name or registry state is not app
+identity or release authority. A catalog release cannot be replaced in place.
+Yanking a release prevents new acquisition where policy permits, but does not
+invalidate an already pinned and verified installation artifact.
+
+A self-hosted project installs an exact package version and commits its
+lockfile. Its build verifies the catalog signature, package identity, release
+digest, and compatibility metadata, then emits the same normalized release
+record used by managed deployments. Package publication alone never upgrades a
+self-hosted deployment.
+
+Managed deployments acquire releases from the catalog and may advance active
+installations automatically only when release and tenant update policy allow
+it. New required scopes always require renewed operator consent. Incompatible
+protocol changes, unsupported Voyant ranges, and releases outside the accepted
+update policy remain pending rather than activating.
+
+Existing installations move to a new release only after compatibility,
+integrity, consent, and custom-field reconciliation checks. The app's remote
+backend deployment remains the app developer's responsibility, but the backend
+must honor the installed release contract for its declared support period.
 
 Marketplace manifests are read from the reviewed registry. Custom manifests
 must be fetched over HTTPS with response-size, redirect, DNS-rebinding, timeout,
 content-type, and signature protections. Voyant stores the validated snapshot
 used for each installation; it never executes content from a manifest response.
+
+Direct HTTPS manifest submission is a development and private-publication
+ingress, not a mutable runtime source of truth. Once released, both managed and
+self-hosted installations consume the immutable artifact and digest.
 
 ### 4. App Installation Lifecycle
 
@@ -361,16 +479,25 @@ An app installation is a deployment-local aggregate with these states:
 `pending`, `authorizing`, `active`, `paused`, `degraded`, `revoked`, and
 `uninstalled`.
 
-Installation is idempotent and follows this order:
+Release acquisition precedes installation:
+
+- self-hosted deployments acquire the release through their package manifest
+  and lockfile, then redeploy;
+- managed deployments acquire it from the catalog automatically or on operator
+  request.
+
+Acquisition makes a release available but grants no data access. Installation
+or upgrade is idempotent and follows this order:
 
 1. Resolve an approved app release.
-2. Validate deployment and API compatibility.
-3. Present required and optional grants.
-4. Complete OAuth authorization.
-5. Create the installation and credentials atomically.
-6. Reconcile safe manifest declarations.
-7. Activate webhook subscriptions and admin extensions.
-8. Emit an auditable installation event.
+2. Verify release signature, digest, provenance, and deployment availability.
+3. Validate Voyant, API, event, extension, and custom-field compatibility.
+4. Present required and optional grants.
+5. Complete OAuth authorization.
+6. Create or upgrade the installation and credentials atomically.
+7. Reconcile safe manifest declarations and immutable assets.
+8. Activate webhook subscriptions and admin extensions.
+9. Emit an auditable installation or upgrade event.
 
 Pausing disables API credentials, webhook delivery, and extension mounting but
 retains installation state. Uninstall additionally removes active webhook and
@@ -398,6 +525,7 @@ Two access modes are required:
 
 Refresh and rotation behavior must support immediate revocation. Access tokens
 must include or resolve to the app ID, installation ID, deployment audience,
+installed app release ID, negotiated API and extension-protocol versions,
 grants, issue time, expiry, and credential generation.
 
 The app cannot request a scope merely because it appears in its manifest. The
@@ -406,14 +534,21 @@ apps, and be granted by an authorized operator.
 
 ### 6. Remote Admin Extensions
 
-Remote UI uses the existing sandboxed iframe and versioned message protocol.
-The runtime installation store replaces the static self-hosted descriptor list
-as the source for operator-installed extensions.
+App UI uses the existing sandboxed iframe and versioned message protocol. The
+runtime installation store replaces the static self-hosted descriptor list as
+the source for activated extensions.
 
 The app owns all UI rendered inside its iframe: framework, components, styling,
-content, accessibility, and localization. Voyant neither bundles app UI nor
-requires app strings to be added to a Voyant package. This is equally true for
-marketplace and custom apps.
+content, accessibility, and localization. Voyant does not compile or modify app
+UI and does not require app strings to be added to a Voyant package. A release
+may include immutable static UI assets that Voyant stores and serves byte-for-
+byte from an isolated app asset origin. Alternatively, a release may declare an
+immutable, integrity-bound app-owned asset origin when deployment policy allows
+it. This is equally true for marketplace and custom apps.
+
+The installed release, not the app's mutable default URL, determines which UI
+artifact is mounted. Rollback selects a previous compatible app release; it
+never mutates an existing release in place.
 
 Extensions may contribute:
 
@@ -451,11 +586,12 @@ The app manifest declares:
 - optional localized custom-field labels and descriptions;
 - the location or release digest of app-owned in-frame locale catalogs.
 
-The iframe fetches and renders its own locale catalog from the app's origin.
-Voyant does not proxy, merge, compile, or become the source of truth for
-in-frame translations. The manifest's localized host metadata is different:
-Voyant validates and pins it with the app release because the host renders those
-strings outside the iframe.
+The iframe fetches and renders its own release-pinned locale catalog from the
+isolated release assets or an integrity-bound app origin. Voyant may store and
+serve the bytes, but it does not merge, compile, or become the authoring source
+of truth for in-frame translations. The manifest's localized host metadata is
+different: Voyant validates and pins it with the app release because the host
+renders those strings outside the iframe.
 
 Locale resolution is deterministic:
 
@@ -735,15 +871,23 @@ design, but ownership and uniqueness are decisions of this RFC.
 - `app_credentials`: client and signing-key generations, never raw public API
   tokens.
 - `app_releases`: immutable validated manifest snapshots, default locale, and
-  supported locales.
+  supported locales, compatibility ranges, support window, and lifecycle state.
+- `app_release_artifacts`: immutable digest, signature, provenance, registry
+  coordinates, asset inventory, and availability state.
 - `app_release_localizations`: validated host-rendered strings keyed by release,
   locale, surface, and message key.
+- `app_release_channels`: managed, npm-compatible, and private distribution
+  coordinates for the same artifact digest.
 - `app_listings`: marketplace metadata and review state.
 
 ### Installation
 
 - `app_installations`: app, deployment, release, status, namespace assignment,
-  installed actor, and lifecycle timestamps.
+  installed actor, update policy, last compatible release check, and lifecycle
+  timestamps.
+- `app_release_acquisitions`: deployment, app release, delivery channel,
+  verified digest, package or catalog provenance, acquisition time, and
+  availability state.
 - `app_grants`: requested, granted, optional, and revoked scopes.
 - `app_access_credentials`: hashed or encrypted credential metadata and
   generations.
@@ -800,6 +944,7 @@ scope alone does not bypass approval or action-ledger requirements.
 
 The platform versions these surfaces independently:
 
+- app release artifact format and signature profile;
 - app manifest schema;
 - Voyant App API;
 - event payload schema per event type;
@@ -812,9 +957,86 @@ there is no overlap. Breaking API versions have an announced support window and
 an installation-visible deadline. Event subscriptions pin a supported event
 version rather than silently receiving a new shape.
 
-Remote app web deployments do not automatically change the stored manifest.
+Remote app backend deployments do not automatically change the stored manifest.
 Capabilities visible to Voyant change only through an app release, preserving
 reviewability and rollback.
+
+#### Release Delivery And Update Policy
+
+One app release has one identity and digest across every delivery channel.
+Managed and npm delivery must never produce semantically different artifacts
+for the same release ID.
+
+Self-hosted deployments control acquisition through the project package
+manifest and lockfile:
+
+```json
+{
+  "dependencies": {
+    "@smartbill/voyant-app": "2.3.1"
+  }
+}
+```
+
+The app package is an exact release input to the build. Publishing `2.3.2`
+changes nothing until the developer updates the dependency, verifies the
+lockfile diff, and redeploys. Voyant must expose installed, available, and
+incompatible release state without performing package-manager operations at
+runtime.
+
+Managed installations have an explicit update policy:
+
+- `manual`: never advance without operator approval;
+- `compatible`: automatically advance releases within the current major version
+  that require no new consent and remain within all declared compatibility
+  ranges;
+- `patch`: a stricter compatible policy limited to patch releases;
+- `pinned`: remain on one release until explicitly unpinned.
+
+The managed default should be `compatible`, subject to platform rollback and
+release suspension controls. An organization may choose a stricter policy.
+Semantic version alone is insufficient evidence of compatibility; manifest
+diffing and platform contract checks are authoritative.
+
+An update cannot activate automatically when it:
+
+- requests a new required scope or expands sensitive data access;
+- crosses the installed app release's major-version boundary;
+- changes an immutable custom-field identity or tightens validation without an
+  accepted migration posture;
+- requires unsupported Voyant, API, event, artifact, or extension versions;
+- changes a reviewed high-risk endpoint or data-retention declaration;
+- has been suspended, revoked, or fails integrity verification.
+
+Such a release remains available but pending, with a human-readable explanation
+and required action. Compatible release rollback follows the same artifact and
+consent checks; rollback never rewrites release history.
+
+#### Remote Backend Compatibility
+
+The immutable artifact controls Voyant-visible capabilities and UI, but the app
+developer still deploys the remote backend. Every authenticated API request,
+session-token exchange, webhook, and lifecycle callback therefore includes or
+cryptographically binds:
+
+- app ID;
+- installation ID;
+- installed app release ID and digest;
+- negotiated Voyant App API version;
+- event schema version where applicable;
+- admin extension protocol version where applicable.
+
+The app provider must honor each release for its declared support period.
+Marketplace publication requires a minimum support policy and a declared
+end-of-support date or rolling support rule. Backend changes must remain
+compatible with every supported installed release.
+
+Voyant cannot technically prevent a remote provider from breaking its backend.
+It can detect incompatible responses or explicit unsupported-release signals,
+mark the installation degraded, stop mounting unsafe extensions, pause failing
+subscriptions, and preserve native admin operation. Managed catalog governance
+may suspend new installs or updates when a provider violates its support
+contract.
 
 ## Security And Privacy Requirements
 
@@ -843,6 +1065,12 @@ reviewability and rollback.
     app-supplied tenant parameter.
 17. Localized host metadata treated as untrusted plain text with strict schema
     and length validation.
+18. Release artifacts require signature, digest, provenance, and package-to-app
+    identity verification before acquisition or activation.
+19. Static app assets are served from an isolated origin with restrictive
+    content security policy and cannot become admin-origin code.
+20. Package lifecycle events such as yanking or deprecation never silently
+    replace or invalidate an already verified artifact.
 
 ## Reliability And Operational Requirements
 
@@ -855,6 +1083,12 @@ reviewability and rollback.
 - Delivery replay is privileged, audited, and idempotency-preserving.
 - App status pages show grant drift, release compatibility, webhook health,
   recent errors, and paused subscriptions.
+- App status pages show delivery channel, pinned or active release, available
+  updates, update policy, backend support deadline, and why an update is
+  blocked.
+- Managed compatible updates are reversible to the previous verified release.
+- Self-hosted deployments remain operational when their package registry is
+  unavailable after a release has been built and acquired.
 - Remote app outages do not prevent Operator boot, migration, or native finance
   operations.
 - Payment adapter failures use the finance/payment state machine and are not
@@ -864,26 +1098,29 @@ reviewability and rollback.
 
 Implementation should prefer these independently testable modules:
 
-1. **App Registry:** registration, distribution, releases, review, and immutable
-   app identity.
-2. **Installation Service:** consent, state machine, grants, pause, uninstall,
-   reinstall, and purge planning.
-3. **Manifest Compiler:** closed-schema validation and deterministic
+1. **App Registry:** registration, releases, review, support policy, and
+   immutable app identity.
+2. **Release Distribution:** signing, content addressing, managed acquisition,
+   npm-compatible publication, private artifacts, provenance, and rollback.
+3. **Installation Service:** consent, state machine, grants, update policy,
+   upgrade, pause, uninstall, reinstall, and purge planning.
+4. **Manifest Compiler:** closed-schema validation and deterministic
    reconciliation into installation capabilities and localized host metadata.
-4. **App Authorization Server:** OAuth codes, offline credentials, online token
+5. **App Authorization Server:** OAuth codes, offline credentials, online token
    exchange, rotation, revocation, and scope intersection.
-5. **Remote App Gateway:** version negotiation, rate limits, authenticated
-   service context, and app-safe resource APIs.
-6. **Admin Extension Broker:** installed descriptors, iframe session tokens,
-   token exchange, locale context, host-label resolution, and fail-soft hosting.
-7. **Webhook Delivery Service:** subscription resolution, signing, durable
+6. **Remote App Gateway:** release-aware version negotiation, rate limits,
+   authenticated service context, and app-safe resource APIs.
+7. **Admin Extension Broker:** installed release assets and descriptors, iframe
+   session tokens, token exchange, locale context, host-label resolution, and
+   fail-soft hosting.
+8. **Webhook Delivery Service:** subscription resolution, signing, durable
    attempts, retry, replay, and health.
-8. **Custom Fields Module:** targets, namespaces, definitions, values,
+9. **Custom Fields Module:** targets, namespaces, definitions, values,
    validation, visibility, reconciliation, and migration.
-9. **Payment Adapter Contract:** provider selection, capability contract,
+10. **Payment Adapter Contract:** provider selection, capability contract,
    conformance suite, and canonical callback mapping.
-10. **App Governance UI:** listings, installs, grants, health, audit, Settings
-    integration, and data-retention actions.
+11. **App Governance UI:** listings, acquisitions, installs, update policy,
+    grants, health, audit, Settings integration, and data-retention actions.
 
 No generic module should import a specific accounting app, payment processor,
 or marketplace listing.
@@ -912,6 +1149,13 @@ or marketplace listing.
 ### Phase 2: App registry and OAuth installation
 
 - Add app registration, release, installation, grants, and lifecycle services.
+- Define and sign the immutable app release artifact.
+- Publish identical release digests through managed, npm-compatible, and
+  private distribution channels.
+- Add the self-hosted build step that verifies installed app packages and
+  lowers them into non-executable release records.
+- Add managed acquisition, update-policy evaluation, rollback, and blocked-
+  update explanations.
 - Build custom app creation in Apps developer or Settings UI without a
   marketplace dependency.
 - Implement optional marketplace discovery over the same release model.
@@ -961,8 +1205,9 @@ or marketplace listing.
 - Remove deployment-local TypeScript custom-field support and documentation.
 - Reclassify remaining npm plugin bundles by module/adapter/provider role.
 - Remove static installed-app lists once the installation service owns them.
-- Add mechanical checks that prevent remote apps from appearing in the
-  deployment graph and prevent deployment packages from registering as apps.
+- Add mechanical checks that prevent app release packages from appearing as
+  executable deployment graph units and prevent executable deployment packages
+  from registering as apps.
 
 ## Testing Decisions
 
@@ -982,6 +1227,11 @@ function shape.
 - Definition ownership and value-policy matrices.
 - Declarative custom-field validation and visibility.
 - App-release compatibility and renewed-consent rules.
+- Artifact signature, digest, provenance, channel-equivalence, and yanking
+  behavior.
+- Managed `manual`, `compatible`, `patch`, and `pinned` update policies.
+- Self-hosted exact-version and lockfile behavior.
+- Release-aware token and request context.
 - Webhook signing, duplicate delivery IDs, retry scheduling, and terminal
   failure.
 - Admin session token audience, context, expiry, and replay posture.
@@ -993,6 +1243,12 @@ function shape.
 
 - Directly created custom apps and marketplace-discovered apps produce
   equivalent installation aggregates.
+- The same release delivered through npm and managed acquisition produces the
+  same release ID, digest, manifest, assets, and reconciliation result.
+- Publishing a new app package does not change a self-hosted installation until
+  its dependency and lockfile are updated and the deployment is rebuilt.
+- A managed compatible update activates automatically, while new scopes or
+  incompatible contracts leave the update pending.
 - Creating and installing a custom app never creates or requires a marketplace
   listing.
 - OAuth install, API call, token refresh/rotation, pause, and uninstall.
@@ -1015,6 +1271,12 @@ function shape.
 
 - Consent accurately displays effective required and optional grants.
 - Native admin remains usable when the app origin is slow, invalid, or down.
+- Tampered, unsigned, mismatched, or replaced release artifacts fail before
+  activation.
+- App static assets cannot execute in the admin origin or escape iframe sandbox
+  policy.
+- An app backend receives and honors the installed release context; an explicit
+  unsupported-release response degrades only that installation.
 - Missing non-default app translations fall back deterministically, while an
   incomplete default locale fails release validation.
 - Third-party cookie blocking does not break embedded app authentication.
@@ -1034,46 +1296,59 @@ the prior art. New tests should use the same package-owned contract style.
 
 ## Acceptance Criteria
 
-1. Installing an app changes no package, graph artifact, migration plan, or
-   Operator process code.
-2. An authorized actor can create, release, and install a custom app without a
+1. Activating or upgrading an app never adds executable code, graph units,
+   routes, providers, schemas, migrations, or app backend code to the Operator.
+2. Self-hosted acquisition may change the project package manifest and lockfile,
+   but the acquired app artifact is declarative and lowered without executable
+   imports.
+3. An authorized actor can create, release, and install a custom app without a
    marketplace listing, publication, or review.
-3. Marketplace-discovered and directly created custom apps use one installation
+4. Marketplace-discovered and directly created custom apps use one installation
    aggregate and OAuth flow.
-4. No remote app manifest can declare schema, migrations, providers, or runtime
+5. No remote app manifest can declare schema, migrations, providers, or runtime
    code.
-5. Installed app UI is always app-owned, remote, and sandboxed.
-6. Every app can declare its default locale, supported locales, and localized
+6. One immutable release ID and digest is used across managed, npm-compatible,
+   and private delivery channels.
+7. A self-hosted app release is controlled by an exact dependency and lockfile;
+   publishing a newer release does not silently update it.
+8. Managed releases update only according to explicit policy, compatibility,
+   integrity, and consent checks.
+9. New required scopes always require operator consent, including on managed
+   deployments with automatic compatible updates.
+10. Installed app UI is always app-owned, release-pinned, and sandboxed.
+11. Every app can declare its default locale, supported locales, and localized
    host-rendered metadata without adding strings to Voyant packages.
-7. The iframe receives the active locale, resolved app locale, and text
+12. The iframe receives the active locale, resolved app locale, and text
    direction, and the app remains authoritative for its in-frame translations.
-8. Host-rendered app labels use deterministic locale fallback and a
+13. Host-rendered app labels use deterministic locale fallback and a
    release-pinned, complete default locale.
-9. The iframe receives no installation credential and can authenticate through
+14. The iframe receives no installation credential and can authenticate through
    a short-lived session-token flow.
-10. Every app API request resolves an active installation and effective scopes.
-11. Every app has an immutable platform-assigned namespace.
-12. An app cannot name, claim, read, define, or write another app namespace.
-13. Two apps can define the same key on the same target without collision.
-14. Operator-owned fields and app-owned fields have distinct definition and
+15. Every app API request resolves an active installation, installed release,
+   negotiated contract versions, and effective scopes.
+16. Every app has an immutable platform-assigned namespace.
+17. An app cannot name, claim, read, define, or write another app namespace.
+18. Two apps can define the same key on the same target without collision.
+19. Operator-owned fields and app-owned fields have distinct definition and
     value controls.
-15. Custom-field definitions have one database authority; project TypeScript
+20. Custom-field definitions have one database authority; project TypeScript
     declarations are unsupported.
-16. Custom-field targets come from selected entity-owning modules rather than a
+21. Custom-field targets come from selected entity-owning modules rather than a
     Relationships-owned enum.
-17. Uninstall revokes access and extensions immediately while retaining values
+22. Uninstall revokes access and extensions immediately while retaining values
     by default.
-18. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
+23. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
     observable, and replayable.
-19. Remote app outages cannot block Operator boot or native admin pages.
-20. Accounting integrations can operate through the App API and event surface
+24. Remote app outages or unsupported backend releases cannot block Operator
+    boot or native admin pages.
+25. Accounting integrations can operate through the App API and event surface
     without in-process code.
-21. Netopia and Voyant Payments implement the same selected payment adapter
+26. Netopia and Voyant Payments implement the same selected payment adapter
     contract and pass its conformance suite.
-22. Environment variables never implicitly select a payment adapter.
-23. High-impact app actions remain subject to Voyant approval and action-ledger
+27. Environment variables never implicitly select a payment adapter.
+28. High-impact app actions remain subject to Voyant approval and action-ledger
     policy.
-24. Architecture checks prevent vocabulary and authority from drifting back to
+29. Architecture checks prevent vocabulary and authority from drifting back to
     runtime-installed npm plugins.
 
 ## Consequences
@@ -1081,8 +1356,12 @@ the prior art. New tests should use the same package-owned contract style.
 ### Benefits
 
 - Clear trust and ownership boundary.
-- Runtime install/uninstall without deployment mutation.
+- Runtime OAuth activation, pause, and uninstall without executable deployment
+  mutation.
 - One model for managed and self-hosted operators.
+- Deterministic lockfile-controlled releases for self-hosters.
+- Safe policy-driven updates and rollback for managed deployments.
+- One signed app artifact and compatibility contract across both channels.
 - App failures isolated from the Operator process.
 - App developers own their runtime, database, and release cadence.
 - Collision-proof extensible entity data.
@@ -1093,7 +1372,12 @@ the prior art. New tests should use the same package-owned contract style.
 ### Costs
 
 - Voyant must operate an authorization server, app registry, installation
-  service, token broker, webhook delivery plane, and review process.
+  service, signed release registry, npm-compatible distribution channel, token
+  broker, webhook delivery plane, and review process.
+- Managed update policy, rollback, artifact retention, signing, and provenance
+  add operational complexity.
+- Remote app providers must support multiple installed releases concurrently
+  for their declared support window.
 - Remote calls add latency and failure modes.
 - Apps cannot participate in native transactions.
 - App APIs and event schemas require long-term compatibility discipline.
@@ -1102,16 +1386,34 @@ the prior art. New tests should use the same package-owned contract style.
   migration rather than mechanical package renaming.
 
 These costs are preferred to executing ecosystem code and migrations inside the
-Operator or maintaining two app delivery models.
+Operator. Managed and npm acquisition are two delivery channels for one app
+release and runtime architecture, not two app models.
 
 ## Resolved Decisions
 
-- Apps are remote-only.
+- App backends are remote-only; release artifacts are declarative.
 - Custom apps can be created and installed without marketplace listing,
   publication, or review.
 - Marketplace and custom discovery converge on one OAuth installation model.
-- Npm remains for deployment components and is not an app installation mode.
+- Every app release is an immutable signed artifact with one identity and digest
+  across delivery channels.
+- Self-hosted deployments acquire app releases through exact npm-compatible
+  packages and lockfiles.
+- Managed deployments acquire the same releases from the catalog and may apply
+  compatible updates according to explicit installation policy.
+- The Voyant catalog is canonical for marketplace releases; a restricted
+  managed or deployment-local app registry is canonical for private custom
+  releases. Npm-compatible registries and private uploads are delivery
+  channels, not release identity.
+- An app release package is declarative and may contain sandboxed static UI
+  assets, but never backend implementation or executable Operator code.
+- Acquisition and OAuth activation are separate operations.
 - There is no hybrid app mode.
+- New required scopes always require renewed consent.
+- Every app request and callback is bound to the installed release and
+  negotiated contract versions.
+- App providers must honor installed releases for their declared support
+  periods; unsupported backends degrade the app rather than the Operator.
 - Remote apps own complex records in their own database.
 - Custom fields are the native attachment seam, not a replacement for an app
   database.

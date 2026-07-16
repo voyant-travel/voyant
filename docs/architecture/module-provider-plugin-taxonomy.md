@@ -2,10 +2,12 @@
 
 > **Proposed evolution:**
 > [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) reserves **app**
-> for separately deployed OAuth installations and removes npm as an app delivery
-> mode. Npm bundles remain deployment-time modules, extensions, adapters, or
-> providers. This guide remains normative for the current package graph until
-> that RFC is accepted.
+> for separately deployed OAuth installations. An app may publish an immutable,
+> declarative npm release artifact for self-hosted acquisition, but that package
+> is never executable Operator code or a deployment graph unit. Executable npm
+> bundles remain deployment-time modules, extensions, adapters, or providers.
+> This guide remains normative for the current package graph until that RFC is
+> accepted.
 
 This guide defines how Voyant should classify reusable packages and extension
 surfaces.
