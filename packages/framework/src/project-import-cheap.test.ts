@@ -29,4 +29,13 @@ describe("framework project import boundary", () => {
       expect(source).not.toContain("starters\\")
     }
   })
+
+  it("keeps TypeScript out of the production framework dependency graph", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+
+    expect(packageJson.dependencies?.typescript).toBeUndefined()
+    expect(packageJson.devDependencies?.typescript).toBeDefined()
+  })
 })

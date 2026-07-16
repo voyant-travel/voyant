@@ -70,8 +70,7 @@
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "pg": "^8.22.0",
-    "typescript": "catalog:"
+    "pg": "^8.22.0"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
@@ -85,6 +84,7 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.15.6",
     "hono": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "publishConfig": {
