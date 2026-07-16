@@ -1,5 +1,21 @@
 # @voyant-travel/admin-host
 
+## 0.12.1
+
+### Patch Changes
+
+- 7a7fd97: Strengthen the internationalization platform across the operator and package UI.
+
+  Add ICU message formatting, explicit locale and time-zone formatters, hierarchical
+  locale fallback, validated runtime overrides, account-authoritative preferences,
+  localized setup and navigation surfaces, and fail-closed catalog and UI-literal
+  checks. Package message providers now accept an optional time zone and expose the
+  shared formatting capabilities to package-owned UI.
+
+- Updated dependencies [7a7fd97]
+  - @voyant-travel/admin@0.126.1
+  - @voyant-travel/admin-react@0.126.1
+
 ## 0.12.0
 
 ### Patch Changes

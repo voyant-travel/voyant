@@ -1,5 +1,23 @@
 # @voyant-travel/navigation-preferences-react
 
+## 0.5.1
+
+### Patch Changes
+
+- 7a7fd97: Strengthen the internationalization platform across the operator and package UI.
+
+  Add ICU message formatting, explicit locale and time-zone formatters, hierarchical
+  locale fallback, validated runtime overrides, account-authoritative preferences,
+  localized setup and navigation surfaces, and fail-closed catalog and UI-literal
+  checks. Package message providers now accept an optional time zone and expose the
+  shared formatting capabilities to package-owned UI.
+
+- Updated dependencies [7a7fd97]
+  - @voyant-travel/admin@0.126.1
+  - @voyant-travel/auth-react@0.132.2
+  - @voyant-travel/i18n@0.111.3
+  - @voyant-travel/navigation-preferences@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

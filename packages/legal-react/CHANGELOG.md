@@ -1,5 +1,27 @@
 # @voyant-travel/legal-react
 
+## 0.162.2
+
+### Patch Changes
+
+- 7a7fd97: Strengthen the internationalization platform across the operator and package UI.
+
+  Add ICU message formatting, explicit locale and time-zone formatters, hierarchical
+  locale fallback, validated runtime overrides, account-authoritative preferences,
+  localized setup and navigation surfaces, and fail-closed catalog and UI-literal
+  checks. Package message providers now accept an optional time zone and expose the
+  shared formatting capabilities to package-owned UI.
+
+- Updated dependencies [7a7fd97]
+  - @voyant-travel/admin@0.126.1
+  - @voyant-travel/bookings-react@0.162.2
+  - @voyant-travel/commerce-react@0.44.1
+  - @voyant-travel/distribution-react@0.152.1
+  - @voyant-travel/i18n@0.111.3
+  - @voyant-travel/inventory-react@0.44.1
+  - @voyant-travel/relationships-react@0.162.1
+  - @voyant-travel/legal@0.162.2
+
 ## 0.162.1
 
 ### Patch Changes

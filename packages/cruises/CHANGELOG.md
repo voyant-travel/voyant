@@ -1,5 +1,14 @@
 # @voyant-travel/cruises
 
+## 0.161.1
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.162.2
+- @voyant-travel/catalog@0.160.1
+- @voyant-travel/finance@0.162.2
+- @voyant-travel/workflows@0.122.1
+
 ## 0.161.0
 
 ### Minor Changes
