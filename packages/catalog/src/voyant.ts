@@ -130,6 +130,11 @@ export const catalogVoyantModule = defineModule({
       key: "TYPESENSE_HOST",
       required: false,
     },
+    {
+      id: "@voyant-travel/catalog#config.typesense-collection-prefix",
+      key: "TYPESENSE_COLLECTION_PREFIX",
+      required: false,
+    },
   ],
   secrets: [
     {
@@ -146,7 +151,10 @@ export const catalogVoyantModule = defineModule({
       port: "catalog.indexer",
       selection: { role: "search", value: "typesense" },
       uses: {
-        config: ["@voyant-travel/catalog#config.typesense-host"],
+        config: [
+          "@voyant-travel/catalog#config.typesense-host",
+          "@voyant-travel/catalog#config.typesense-collection-prefix",
+        ],
         secrets: ["@voyant-travel/catalog#secret.typesense-api-key"],
       },
       runtime: {
