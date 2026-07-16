@@ -429,8 +429,21 @@ Operator or admin bundle.
 An npm artifact exposes a closed `voyant.app-release.v1` envelope in package
 metadata. The build reads that envelope and declared artifact files as data; it
 does not resolve a runtime export or execute a package lifecycle hook. Direct
-app-release dependencies are discoverable without adding them to the executable
-deployment graph.
+app-release package entries in the self-hosted project are discoverable without
+adding them to the executable deployment graph.
+
+An app release package has no executable package-manager surface. Publication
+rejects an artifact whose package metadata contains:
+
+- lifecycle or other package scripts;
+- dependencies, optional dependencies, peer dependencies, bundled
+  dependencies, or installable development dependencies;
+- binary entries, native addons, or executable package exports;
+- files outside the declared release envelope and asset inventory.
+
+Static JavaScript included in the asset inventory is iframe content, not a Node
+package export. It cannot import packages from the self-hosted project's
+dependency graph.
 
 The Voyant app catalog is the canonical release registry for marketplace apps.
 A managed private registry or the self-hosted deployment's app registry performs
@@ -451,6 +464,21 @@ lockfile. Its build verifies the catalog signature, package identity, release
 digest, and compatibility metadata, then emits the same normalized release
 record used by managed deployments. Package publication alone never upgrades a
 self-hosted deployment.
+
+Package-manager script execution must be disabled or deny-by-default before an
+app release is downloaded, unpacked, linked, or inspected. The official
+self-hosted acquisition command and CI workflow use `--ignore-scripts` or an
+equivalent package-manager policy that proves the app package and its dependency
+closure cannot execute lifecycle scripts. Voyant starters must commit that
+policy, and acquisition fails closed when the active package manager cannot
+enforce it.
+
+This pre-install control is required even though publication rejects scripts.
+Signature and digest verification occur after bytes have been acquired and
+therefore cannot prevent a package manager from executing a malicious
+substitution during installation. After acquisition, the build independently
+rejects any package script or dependency metadata before interpreting the
+release envelope.
 
 Managed deployments acquire releases from the catalog and may advance active
 installations automatically only when release and tenant update policy allow
@@ -1071,6 +1099,13 @@ contract.
     content security policy and cannot become admin-origin code.
 20. Package lifecycle events such as yanking or deprecation never silently
     replace or invalidate an already verified artifact.
+21. App release publication rejects scripts, dependency declarations, binaries,
+    native addons, executable exports, and undeclared files.
+22. Self-hosted acquisition disables or deny-lists lifecycle scripts at the
+    package-manager boundary before artifact bytes are materialized or
+    inspected.
+23. Acquisition fails closed if the package manager or project policy cannot
+    prove that app packages and their dependency closure cannot execute.
 
 ## Reliability And Operational Requirements
 
@@ -1152,8 +1187,12 @@ or marketplace listing.
 - Define and sign the immutable app release artifact.
 - Publish identical release digests through managed, npm-compatible, and
   private distribution channels.
+- Reject scripts, dependencies, binaries, native addons, executable exports,
+  and undeclared files during app release publication.
 - Add the self-hosted build step that verifies installed app packages and
   lowers them into non-executable release records.
+- Add a self-hosted acquisition command and starter policy that disable or deny
+  package lifecycle scripts before install.
 - Add managed acquisition, update-policy evaluation, rollback, and blocked-
   update explanations.
 - Build custom app creation in Apps developer or Settings UI without a
@@ -1229,6 +1268,10 @@ function shape.
 - App-release compatibility and renewed-consent rules.
 - Artifact signature, digest, provenance, channel-equivalence, and yanking
   behavior.
+- Release-package rejection for scripts, dependency declarations, binaries,
+  native addons, executable exports, and undeclared files.
+- Package-manager policy detection that fails closed when lifecycle scripts are
+  not disabled or deny-by-default.
 - Managed `manual`, `compatible`, `patch`, and `pinned` update policies.
 - Self-hosted exact-version and lockfile behavior.
 - Release-aware token and request context.
@@ -1245,6 +1288,8 @@ function shape.
   equivalent installation aggregates.
 - The same release delivered through npm and managed acquisition produces the
   same release ID, digest, manifest, assets, and reconciliation result.
+- Self-hosted acquisition cannot run lifecycle scripts from an app package or a
+  malicious dependency closure before release validation.
 - Publishing a new app package does not change a self-hosted installation until
   its dependency and lockfile are updated and the deployment is rebuilt.
 - A managed compatible update activates automatically, while new scopes or
@@ -1273,6 +1318,11 @@ function shape.
 - Native admin remains usable when the app origin is slow, invalid, or down.
 - Tampered, unsigned, mismatched, or replaced release artifacts fail before
   activation.
+- A package containing any package script, dependency declaration, binary,
+  native addon, executable export, or undeclared file is rejected without
+  executing it.
+- Acquisition fails before package installation when lifecycle-script policy is
+  absent, disabled, or cannot be verified.
 - App static assets cannot execute in the admin origin or escape iframe sandbox
   policy.
 - An app backend receives and honors the installed release context; an explicit
@@ -1309,46 +1359,50 @@ the prior art. New tests should use the same package-owned contract style.
    code.
 6. One immutable release ID and digest is used across managed, npm-compatible,
    and private delivery channels.
-7. A self-hosted app release is controlled by an exact dependency and lockfile;
+7. App release packages contain no lifecycle scripts, dependency declarations,
+   binaries, native addons, executable exports, or undeclared files.
+8. Self-hosted acquisition disables or deny-lists package lifecycle scripts
+   before downloading, unpacking, linking, or inspecting an app release.
+9. A self-hosted app release is controlled by an exact dependency and lockfile;
    publishing a newer release does not silently update it.
-8. Managed releases update only according to explicit policy, compatibility,
+10. Managed releases update only according to explicit policy, compatibility,
    integrity, and consent checks.
-9. New required scopes always require operator consent, including on managed
+11. New required scopes always require operator consent, including on managed
    deployments with automatic compatible updates.
-10. Installed app UI is always app-owned, release-pinned, and sandboxed.
-11. Every app can declare its default locale, supported locales, and localized
+12. Installed app UI is always app-owned, release-pinned, and sandboxed.
+13. Every app can declare its default locale, supported locales, and localized
    host-rendered metadata without adding strings to Voyant packages.
-12. The iframe receives the active locale, resolved app locale, and text
+14. The iframe receives the active locale, resolved app locale, and text
    direction, and the app remains authoritative for its in-frame translations.
-13. Host-rendered app labels use deterministic locale fallback and a
+15. Host-rendered app labels use deterministic locale fallback and a
    release-pinned, complete default locale.
-14. The iframe receives no installation credential and can authenticate through
+16. The iframe receives no installation credential and can authenticate through
    a short-lived session-token flow.
-15. Every app API request resolves an active installation, installed release,
+17. Every app API request resolves an active installation, installed release,
    negotiated contract versions, and effective scopes.
-16. Every app has an immutable platform-assigned namespace.
-17. An app cannot name, claim, read, define, or write another app namespace.
-18. Two apps can define the same key on the same target without collision.
-19. Operator-owned fields and app-owned fields have distinct definition and
+18. Every app has an immutable platform-assigned namespace.
+19. An app cannot name, claim, read, define, or write another app namespace.
+20. Two apps can define the same key on the same target without collision.
+21. Operator-owned fields and app-owned fields have distinct definition and
     value controls.
-20. Custom-field definitions have one database authority; project TypeScript
+22. Custom-field definitions have one database authority; project TypeScript
     declarations are unsupported.
-21. Custom-field targets come from selected entity-owning modules rather than a
+23. Custom-field targets come from selected entity-owning modules rather than a
     Relationships-owned enum.
-22. Uninstall revokes access and extensions immediately while retaining values
+24. Uninstall revokes access and extensions immediately while retaining values
     by default.
-23. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
+25. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
     observable, and replayable.
-24. Remote app outages or unsupported backend releases cannot block Operator
+26. Remote app outages or unsupported backend releases cannot block Operator
     boot or native admin pages.
-25. Accounting integrations can operate through the App API and event surface
+27. Accounting integrations can operate through the App API and event surface
     without in-process code.
-26. Netopia and Voyant Payments implement the same selected payment adapter
+28. Netopia and Voyant Payments implement the same selected payment adapter
     contract and pass its conformance suite.
-27. Environment variables never implicitly select a payment adapter.
-28. High-impact app actions remain subject to Voyant approval and action-ledger
+29. Environment variables never implicitly select a payment adapter.
+30. High-impact app actions remain subject to Voyant approval and action-ledger
     policy.
-29. Architecture checks prevent vocabulary and authority from drifting back to
+31. Architecture checks prevent vocabulary and authority from drifting back to
     runtime-installed npm plugins.
 
 ## Consequences
@@ -1407,6 +1461,10 @@ release and runtime architecture, not two app models.
   channels, not release identity.
 - An app release package is declarative and may contain sandboxed static UI
   assets, but never backend implementation or executable Operator code.
+- App release packages have no scripts, dependency declarations, binaries,
+  native addons, executable exports, or undeclared files.
+- Self-hosted acquisition blocks lifecycle scripts before package bytes are
+  materialized and fails closed when that policy cannot be verified.
 - Acquisition and OAuth activation are separate operations.
 - There is no hybrid app mode.
 - New required scopes always require renewed consent.
