@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.47.3
+
+### Patch Changes
+
+- bbfb2f8: Load TypeScript only when project convention source is analyzed so production
+  runtime imports do not require the compiler to be installed.
+
 ## 0.47.2
 
 ### Patch Changes
