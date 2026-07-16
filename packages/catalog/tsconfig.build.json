@@ -543,6 +543,7 @@
       "@voyant-travel/core/project": ["../core/dist/project.d.ts"],
       "@voyant-travel/core/query": ["../core/dist/query.d.ts"],
       "@voyant-travel/core/registry": ["../core/dist/registry.d.ts"],
+      "@voyant-travel/core/runtime-port": ["../core/dist/runtime-port.d.ts"],
       "@voyant-travel/core/workflows": ["../core/dist/workflows.d.ts"],
       "@voyant-travel/cruises": ["../cruises/dist/index.d.ts"],
       "@voyant-travel/cruises-contracts": ["../cruises-contracts/dist/index.d.ts"],
@@ -608,6 +609,30 @@
       "@voyant-travel/cruises/tools": ["../cruises/dist/mcp-runtime.d.ts"],
       "@voyant-travel/cruises/validation": ["../cruises/dist/validation.d.ts"],
       "@voyant-travel/cruises/voyant": ["../cruises/dist/voyant.d.ts"],
+      "@voyant-travel/custom-fields": ["../custom-fields/dist/index.d.ts"],
+      "@voyant-travel/custom-fields-react": ["../custom-fields-react/dist/index.d.ts"],
+      "@voyant-travel/custom-fields-react/admin": ["../custom-fields-react/dist/admin.d.ts"],
+      "@voyant-travel/custom-fields-react/hooks": ["../custom-fields-react/dist/hooks/index.d.ts"],
+      "@voyant-travel/custom-fields-react/i18n": ["../custom-fields-react/dist/i18n/index.d.ts"],
+      "@voyant-travel/custom-fields-react/i18n/en": ["../custom-fields-react/dist/i18n/en.d.ts"],
+      "@voyant-travel/custom-fields-react/i18n/ro": ["../custom-fields-react/dist/i18n/ro.d.ts"],
+      "@voyant-travel/custom-fields-react/query-keys": [
+        "../custom-fields-react/dist/query-keys.d.ts"
+      ],
+      "@voyant-travel/custom-fields-react/query-options": [
+        "../custom-fields-react/dist/query-options.d.ts"
+      ],
+      "@voyant-travel/custom-fields/api-runtime": ["../custom-fields/dist/api-runtime.d.ts"],
+      "@voyant-travel/custom-fields/contracts": ["../custom-fields/dist/contracts.d.ts"],
+      "@voyant-travel/custom-fields/routes": ["../custom-fields/dist/routes.d.ts"],
+      "@voyant-travel/custom-fields/runtime-contributor": [
+        "../custom-fields/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/custom-fields/schema": ["../custom-fields/dist/schema.d.ts"],
+      "@voyant-travel/custom-fields/target-capabilities": [
+        "../custom-fields/dist/target-capabilities.d.ts"
+      ],
+      "@voyant-travel/custom-fields/voyant": ["../custom-fields/dist/voyant.d.ts"],
       "@voyant-travel/db": ["../db/dist/index.d.ts"],
       "@voyant-travel/db/aggregate-snapshots": ["../db/dist/aggregate-snapshots.d.ts"],
       "@voyant-travel/db/columns": ["../db/dist/columns/index.d.ts"],
@@ -1558,9 +1583,6 @@
       "@voyant-travel/relationships-react/ui": ["../relationships-react/dist/ui.d.ts"],
       "@voyant-travel/relationships/action-ledger-capabilities": [
         "../relationships/dist/action-ledger-capabilities.d.ts"
-      ],
-      "@voyant-travel/relationships/custom-fields-registry": [
-        "../relationships/dist/service/custom-fields-registry.d.ts"
       ],
       "@voyant-travel/relationships/events": ["../relationships/dist/events.d.ts"],
       "@voyant-travel/relationships/linkables": ["../relationships/dist/linkables.d.ts"],

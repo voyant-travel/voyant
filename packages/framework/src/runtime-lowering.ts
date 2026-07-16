@@ -166,6 +166,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts?: readonly string[]
   runtimePorts?: readonly string[]
+  customFieldTargets?: readonly import("@voyant-travel/core/project").VoyantGraphCustomFieldTarget[]
   manyRuntimePorts?: readonly string[]
   requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
@@ -249,6 +250,7 @@ export interface VoyantGraphRuntimeWebhookPlan extends VoyantGraphWebhookPlan {
 export interface VoyantGraphRuntime {
   graphHash: string
   providerSelections: Readonly<Record<string, string>>
+  customFieldTargets: readonly import("@voyant-travel/core/project").VoyantGraphCustomFieldTarget[]
   modules: readonly VoyantGraphRuntimeUnitLoader[]
   extensions: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
@@ -313,6 +315,14 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const resources = units.flatMap((unit) => unit.resources)
   const providers = units.flatMap((unit) => unit.providers)
   const requiredPorts = sortedUnique(units.flatMap((unit) => unit.requiredPorts))
+  const customFieldTargets = Object.freeze(
+    units
+      .flatMap((unit) => unit.customFieldTargets ?? [])
+      .map((target) =>
+        Object.freeze({ ...target, fieldTypes: Object.freeze([...target.fieldTypes]) }),
+      )
+      .sort((left, right) => left.id.localeCompare(right.id)),
+  )
   const accessScopes = sortedUnique(units.flatMap((unit) => unit.accessScopes))
   const tools = units.flatMap((unit) => unit.tools)
   const workflows = units.flatMap((unit) => unit.workflows)
@@ -325,6 +335,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   return {
     graphHash: input.graphHash,
     providerSelections: { ...(input.providerSelections ?? {}) },
+    customFieldTargets,
     modules,
     extensions,
     plugins,
@@ -500,6 +511,7 @@ function normalizeRuntimeUnitDefinition(
     providers: [...(unit.providers ?? [])],
     requiredPorts: sortedUnique(unit.requiredPorts ?? []),
     runtimePorts,
+    customFieldTargets: [...(unit.customFieldTargets ?? [])],
     manyRuntimePorts: sortedUnique(unit.manyRuntimePorts ?? []),
     requiredRuntimePorts:
       unit.requiredRuntimePorts === undefined
@@ -605,6 +617,7 @@ function createRuntimeUnitLoader(
     providers,
     requiredPorts: unit.requiredPorts,
     runtimePorts: unit.runtimePorts,
+    customFieldTargets: unit.customFieldTargets,
     manyRuntimePorts: unit.manyRuntimePorts,
     requiredRuntimePorts: unit.requiredRuntimePorts,
     accessScopes: unit.accessScopes,

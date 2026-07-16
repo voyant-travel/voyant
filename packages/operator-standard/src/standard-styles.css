@@ -5,11 +5,11 @@
 @source "../../admin/dist/**/*.{js,mjs}";
 @source "../../auth-react/dist/**/*.{js,mjs}";
 @source "../../ui/dist/**/*.{js,mjs}";
-@source "../../{operations,bookings,catalog,commerce,relationships,finance,flights,legal,inventory,distribution,mice}-react/dist/**/*.{js,mjs}";
+@source "../../{operations,bookings,catalog,commerce,custom-fields,relationships,finance,flights,legal,inventory,distribution,mice}-react/dist/**/*.{js,mjs}";
 @source "../../admin/src/**/*.{ts,tsx}";
 @source "../../auth-react/src/**/*.{ts,tsx}";
 @source "../../ui/src/**/*.{ts,tsx}";
-@source "../../{operations,bookings,catalog,commerce,relationships,finance,flights,legal,inventory,distribution,mice}-react/src/**/*.{ts,tsx}";
+@source "../../{operations,bookings,catalog,commerce,custom-fields,relationships,finance,flights,legal,inventory,distribution,mice}-react/src/**/*.{ts,tsx}";
 
 @import "@voyant-travel/ui/styles.css";
 @import "@voyant-travel/admin/styles.css";
@@ -17,6 +17,7 @@
 @import "@voyant-travel/operations-react/availability/styles.css";
 @import "@voyant-travel/bookings-react/styles.css";
 @import "@voyant-travel/commerce-react/styles.css";
+@import "@voyant-travel/custom-fields-react/styles.css";
 @import "@voyant-travel/relationships-react/styles.css";
 @import "@voyant-travel/finance-react/styles.css";
 @import "@voyant-travel/legal-react/styles.css";

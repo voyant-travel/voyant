@@ -1,3 +1,4 @@
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
@@ -86,7 +87,7 @@ export const bookings = pgTable(
      * Validated at the write boundary against the deployment's custom-field
      * registry; `{}` when none are declared. Keys are the registered field keys.
      */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     holdExpiresAt: timestamp("hold_expires_at", { withTimezone: true }),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     expiredAt: timestamp("expired_at", { withTimezone: true }),

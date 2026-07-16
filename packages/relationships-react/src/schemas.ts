@@ -1,4 +1,3 @@
-import { customFieldDefinitionCoreSchema } from "@voyant-travel/relationships/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -92,19 +91,6 @@ export const personListResponse = paginatedEnvelope(personRecordSchema)
 export const personSingleResponse = singleEnvelope(personRecordSchema)
 export const organizationListResponse = paginatedEnvelope(organizationRecordSchema)
 export const organizationSingleResponse = singleEnvelope(organizationRecordSchema)
-
-export const customFieldDefinitionRecordSchema = customFieldDefinitionCoreSchema.extend({
-  id: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-
-export type CustomFieldDefinitionRecord = z.infer<typeof customFieldDefinitionRecordSchema>
-
-export const customFieldDefinitionListResponse = paginatedEnvelope(
-  customFieldDefinitionRecordSchema,
-)
-export const customFieldDefinitionSingleResponse = singleEnvelope(customFieldDefinitionRecordSchema)
 
 /**
  * Relationship activity schemas mirror the Relationships API. Timestamps

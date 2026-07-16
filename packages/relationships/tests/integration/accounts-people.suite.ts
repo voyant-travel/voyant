@@ -75,8 +75,8 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       await db.execute(sql`
           UPDATE people
           SET custom_fields = CASE id
-            WHEN ${keep.id} THEN '{"merge_person_pref":"window"}'::jsonb
-            WHEN ${merge.id} THEN '{"merge_person_pref":"aisle","merge_person_note":"quiet"}'::jsonb
+            WHEN ${keep.id} THEN '{"custom":{"merge_person_pref":"window"},"app--keep":{"flag":true}}'::jsonb
+            WHEN ${merge.id} THEN '{"custom":{"merge_person_pref":"aisle","merge_person_note":"quiet"},"app--merge":{"flag":true}}'::jsonb
           END
           WHERE id IN (${keep.id}, ${merge.id})
         `)
@@ -117,7 +117,11 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
       expect(customFieldRows).toEqual([
         {
           id: keep.id,
-          custom_fields: { merge_person_note: "quiet", merge_person_pref: "window" },
+          custom_fields: {
+            custom: { merge_person_note: "quiet", merge_person_pref: "window" },
+            "app--keep": { flag: true },
+            "app--merge": { flag: true },
+          },
         },
       ])
     })

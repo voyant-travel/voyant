@@ -1,6 +1,12 @@
 import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "@voyant-travel/core/custom-fields"
 import { assertPortConforms } from "@voyant-travel/core/project"
+import { customFieldValueOperationsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { describe, expect, it, vi } from "vitest"
 import { createRelationshipsVoyantRuntime, relationshipsRouteRuntimePort } from "../../src/index.js"
 import { RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
@@ -20,9 +26,12 @@ describe("relationships deployment manifest", () => {
           { id: relationshipsMiceRuntimePort.id },
           { id: bookingsRelationshipsRuntimePort.id },
           { id: relationshipsRouteRuntimePort.id },
+          { id: customFieldValueReaderRuntimePort.id },
+          { id: customFieldValueLifecycleRuntimePort.id },
+          { id: customFieldValueOperationsRuntimePort.id },
         ],
       },
-      runtimePorts: [{ id: "relationships.route-runtime" }],
+      runtimePorts: [{ id: customFieldsRuntimePort.id }, { id: "relationships.route-runtime" }],
       api: [
         {
           id: "@voyant-travel/relationships#api.admin",
@@ -81,13 +90,22 @@ describe("relationships deployment manifest", () => {
   })
 
   it("ships a typed route runtime port and package-owned graph factory", async () => {
-    const customFields = vi.fn(async () => [])
+    const customFields = vi.fn(async () => ({
+      all: () => [],
+      entities: () => [],
+      field: () => undefined,
+      forEntity: () => [],
+    }))
+    const customFieldsForWrite = vi.fn(customFields)
     await expect(
-      assertPortConforms(relationshipsRouteRuntimePort, { customFields }),
+      assertPortConforms(relationshipsRouteRuntimePort, { customFields, customFieldsForWrite }),
     ).resolves.toBeUndefined()
     await expect(
       assertPortConforms(relationshipsRouteRuntimePort, { customFields: true } as never),
     ).rejects.toThrow(/customFields/)
+    await expect(
+      assertPortConforms(relationshipsRouteRuntimePort, { customFieldsForWrite: true } as never),
+    ).rejects.toThrow(/customFieldsForWrite/)
 
     const module = await createRelationshipsVoyantRuntime({
       unitId: relationshipsVoyantModule.id,
@@ -103,7 +121,7 @@ describe("relationships deployment manifest", () => {
       },
       runtimePorts: {},
       hasPort: () => true,
-      getPort: vi.fn(async () => ({ customFields })) as never,
+      getPort: vi.fn(async () => ({ customFields, customFieldsForWrite })) as never,
       getPorts: vi.fn(async () => []) as never,
     })
     const container = createContainer()
@@ -113,6 +131,7 @@ describe("relationships deployment manifest", () => {
     expect(module.adminRoutes).toBe(relationshipsRoutes)
     expect(container.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY)).toMatchObject({
       customFields,
+      customFieldsForWrite,
     })
   })
 

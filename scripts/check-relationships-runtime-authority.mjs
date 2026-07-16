@@ -19,6 +19,7 @@ const retiredAdapterPath = pathOption(
   join(ROOT, "starters/operator/src/api/runtime/runtime-adapter.ts"),
 )
 const relationshipsRoot = pathOption("--relationships-root", join(ROOT, "packages/relationships"))
+const customFieldsRoot = pathOption("--custom-fields-root", join(ROOT, "packages/custom-fields"))
 const violations = []
 
 function readRequired(path) {
@@ -30,6 +31,9 @@ const manifest = readRequired(join(relationshipsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(relationshipsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(relationshipsRoot, "src/runtime-port.ts"))
 const runtimeContributor = readRequired(join(relationshipsRoot, "src/runtime-contributor.ts"))
+const customFieldsRuntimeContributor = readRequired(
+  join(customFieldsRoot, "src/runtime-contributor.ts"),
+)
 const composition = readRequired(compositionPath)
 
 if (existsSync(retiredAdapterPath)) {
@@ -37,7 +41,8 @@ if (existsSync(retiredAdapterPath)) {
 }
 
 if (
-  !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||
+  !manifest.includes("requirePort(customFieldsRuntimePort)") ||
+  !manifest.includes("requirePort(relationshipsRouteRuntimePort)") ||
   !manifest.includes('export: "createRelationshipsVoyantRuntime"') ||
   !manifest.includes("relationshipsMiceRuntimePort")
 ) {
@@ -61,10 +66,24 @@ if (packageIndex.includes("relationshipsApiModule")) {
 }
 if (
   runtimeContributor.includes("host.capabilities") ||
-  !runtimeContributor.includes('host.primitives.config.read(db, "customFields")') ||
+  runtimeContributor.includes('config.read(db, "customFields")') ||
+  !runtimeContributor.includes("customFieldsRuntimePort") ||
+  !runtimeContributor.includes("[customFieldValueReaderRuntimePort.id]") ||
+  !runtimeContributor.includes("resolveRegistry") ||
+  !runtimeContributor.includes("resolveVisibleValues") ||
   !runtimeContributor.includes("[relationshipsMiceRuntimePort.id]")
 ) {
-  violations.push("Relationships must compose custom fields and MICE lookup package-side")
+  violations.push(
+    "Relationships must contribute database-backed custom-field values and MICE lookup package-side",
+  )
+}
+if (
+  !customFieldsRuntimeContributor.includes("loadCustomFieldRegistry") ||
+  !customFieldsRuntimeContributor.includes("[customFieldsRuntimePort.id]") ||
+  !customFieldsRuntimeContributor.includes("resolveRegistry:") ||
+  !customFieldsRuntimeContributor.includes("resolveVisibleValues")
+) {
+  violations.push("Generic custom-fields must own the database-backed definition runtime")
 }
 const genericContributorInputs =
   composition.includes("options.createRuntimePorts({ primitives })") ||

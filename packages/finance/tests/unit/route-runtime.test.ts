@@ -10,16 +10,19 @@ describe("buildFinanceRouteRuntime", () => {
   it("exposes invoice-from-booking resolver options", async () => {
     const descriptionResolver = () => "Custom legal line"
     const invoiceDueDateResolver = () => "2026-05-23"
+    const resolveCustomFields = async () => ({ loyalty_tier: "gold" })
     const runtime = buildFinanceRouteRuntime(
       {},
       {
         descriptionResolver,
         invoiceDueDateResolver,
+        resolveCustomFields,
         paymentScheduleLineDescriptionFormat: "product_only",
       },
     )
 
     expect(runtime.paymentScheduleLineDescriptionFormat).toBe("product_only")
+    expect(runtime.resolveCustomFields).toBe(resolveCustomFields)
     expect(
       runtime.invoiceDueDateResolver?.({
         issueDate: "2026-05-23",

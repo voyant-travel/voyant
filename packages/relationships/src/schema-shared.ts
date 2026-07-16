@@ -29,17 +29,3 @@ export const activityTypeEnum = pgEnum("activity_type", [
 export const activityStatusEnum = pgEnum("activity_status", ["planned", "done", "cancelled"])
 
 export const activityLinkRoleEnum = pgEnum("activity_link_role", ["primary", "related"])
-
-export const customFieldTypeEnum = pgEnum("custom_field_type", [
-  "varchar",
-  "text",
-  "double",
-  "monetary",
-  "date",
-  "boolean",
-  "enum",
-  "set",
-  "json",
-  "address",
-  "phone",
-])

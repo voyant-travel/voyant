@@ -15,6 +15,7 @@ import {
   type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
   type VoyantGraphConfigDeclaration,
+  type VoyantGraphCustomFieldTarget,
   type VoyantGraphEvent,
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
@@ -85,6 +86,8 @@ export {
   type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
   type VoyantGraphConfigDeclaration,
+  type VoyantGraphCustomFieldTarget,
+  type VoyantGraphCustomFieldTargetDeclaration,
   type VoyantGraphEvent,
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
@@ -140,6 +143,10 @@ export const VOYANT_GRAPH_RESERVED_FACETS = [
 export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_ARTIFACT_MISSING: "A generated deployment graph artifact is missing.",
   VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
+  VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER:
+    "Two selected graph units claim authority for the same custom-field namespace.",
+  VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET:
+    "Two selected graph units claim authority for the same custom-field target.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
   VOYANT_GRAPH_DUPLICATE_EVENT_TYPE:
     "Two selected graph units claim authority for the same emitted event type.",
@@ -152,6 +159,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "A selected package does not admit upgrades from the previous package version.",
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
     "A provides/requires capability token does not match v1 namespace rules.",
+  VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET:
+    "A custom-field target declaration does not match the closed selected-graph contract.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
   VOYANT_GRAPH_INVALID_FACET: "A supported v1 facet does not match its closed metadata contract.",
   VOYANT_GRAPH_INVALID_ID: "A graph unit id is missing or is not a canonical package graph id.",
@@ -346,6 +355,7 @@ export interface ResolvedVoyantGraphUnit {
   projectConfig?: VoyantGraphJsonObject
   runtime?: VoyantGraphRuntimeReference
   runtimePorts?: readonly VoyantGraphPortDeclaration[]
+  customFieldTargets: readonly VoyantGraphCustomFieldTarget[]
   provides: {
     capabilities: readonly string[]
     ports: readonly VoyantGraphPortDeclaration[]
@@ -434,6 +444,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "packageName",
   "runtime",
   "runtimePorts",
+  "customFieldTargets",
   "provides",
   "requires",
   "api",
@@ -626,6 +637,7 @@ export function validateGraphUnitManifest(
     validateRuntimeReference(input.runtime, "runtime", source, diagnostics)
   }
   diagnostics.push(...validateRuntimePortDeclarations(input.runtimePorts, source))
+  diagnostics.push(...validateCustomFieldTargets(input.customFieldTargets, source))
   diagnostics.push(...validateRouteBundles(input.api, source))
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
@@ -691,6 +703,7 @@ export async function resolveDeploymentGraph(
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
     ...validateDuplicateEventTypes(selectedUnits),
+    ...validateDuplicateCustomFieldTargets(selectedUnits),
     ...validateFacetReferences(selectedUnits),
     ...validateCapabilityClosure(selectedUnits),
     ...validatePortClosure(selectedUnits),
@@ -1069,6 +1082,15 @@ function resolveUnit(
     ...(projectConfig ? { projectConfig } : {}),
     ...(unit.runtime ? { runtime: unit.runtime } : {}),
     runtimePorts: sortPorts(unit.runtimePorts ?? []),
+    customFieldTargets: [...(unit.customFieldTargets ?? [])]
+      .map((target) => ({
+        ...target,
+        namespace: target.namespace.trim(),
+        ownerUnitId: unit.id,
+        fieldTypes: sortedUnique(target.fieldTypes),
+        capabilities: sortedUnique(target.capabilities),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
     provides: {
       capabilities: sortedUnique(unit.provides?.capabilities ?? []),
       ports: sortPorts(unit.provides?.ports ?? []),
@@ -1191,6 +1213,118 @@ function validateRuntimePortDeclarations(
           source,
           facet: `runtimePorts[${index}].cardinality`,
           message: 'Runtime port declaration cardinality must be "many" when provided.',
+        }),
+      )
+    }
+  }
+  return diagnostics
+}
+
+const CUSTOM_FIELD_CAPABILITIES = new Set([
+  "read",
+  "write",
+  "search",
+  "export",
+  "invoice",
+  "presentation",
+])
+
+function validateCustomFieldTargets(
+  value: unknown,
+  source: string | undefined,
+): VoyantGraphDiagnostic[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) {
+    return [
+      diagnostic({
+        code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+        source,
+        facet: "customFieldTargets",
+        message: "Custom-field targets must be an array of closed target declarations.",
+      }),
+    ]
+  }
+
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  for (let index = 0; index < value.length; index += 1) {
+    const target = value[index]
+    const facet = `customFieldTargets[${index}]`
+    if (!isRecord(target)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet,
+          message: "Custom-field target declarations must be objects.",
+        }),
+      )
+      continue
+    }
+    if (typeof target.id !== "string" || !/^[a-z][a-z0-9-]*$/.test(target.id)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.id`,
+          message: "Custom-field target ids must use stable lower-case kebab identifiers.",
+        }),
+      )
+    }
+    if (
+      typeof target.namespace !== "string" ||
+      !/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/.test(target.namespace) ||
+      target.namespace === "custom" ||
+      target.namespace.startsWith("app--")
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.namespace`,
+          message:
+            "Custom-field target namespaces must be non-reserved stable lower-case dot-case identifiers.",
+        }),
+      )
+    }
+    if (typeof target.label !== "string" || target.label.trim().length === 0) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.label`,
+          message: "Custom-field targets must declare a non-empty operator label.",
+        }),
+      )
+    }
+    if (
+      !Array.isArray(target.fieldTypes) ||
+      target.fieldTypes.length === 0 ||
+      target.fieldTypes.some((fieldType) => typeof fieldType !== "string" || !fieldType.trim())
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.fieldTypes`,
+          message: "Custom-field targets must declare at least one supported field type.",
+        }),
+      )
+    }
+    if (
+      !Array.isArray(target.capabilities) ||
+      target.capabilities.length === 0 ||
+      target.capabilities.some(
+        (capability) =>
+          typeof capability !== "string" || !CUSTOM_FIELD_CAPABILITIES.has(capability),
+      )
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.capabilities`,
+          message:
+            "Custom-field target capabilities must use the supported read/write/search/export/invoice/presentation vocabulary.",
         }),
       )
     }
@@ -2262,6 +2396,45 @@ function validateDuplicateGraphIds(
         message: `Graph id "${id}" is selected more than once. V1 allows one instance per graph id.`,
       }),
     )
+}
+
+function validateDuplicateCustomFieldTargets(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphDiagnostic[] {
+  const owners = new Map<string, string[]>()
+  const namespaceOwners = new Map<string, string[]>()
+  for (const unit of units) {
+    for (const target of unit.customFieldTargets) {
+      const targetOwners = owners.get(target.id) ?? []
+      targetOwners.push(unit.id)
+      owners.set(target.id, targetOwners)
+      const unitIds = namespaceOwners.get(target.namespace) ?? []
+      unitIds.push(unit.id)
+      namespaceOwners.set(target.namespace, unitIds)
+    }
+  }
+
+  const duplicateTargetDiagnostics = [...owners.entries()]
+    .filter(([, unitIds]) => unitIds.length > 1)
+    .map(([target, unitIds]) =>
+      diagnostic({
+        code: "VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET",
+        source: sortedUnique(unitIds).join(", "),
+        facet: "customFieldTargets",
+        message: `Custom-field target "${target}" is declared by more than one selected graph unit.`,
+      }),
+    )
+  const conflictingNamespaceDiagnostics = [...namespaceOwners.entries()]
+    .filter(([, unitIds]) => new Set(unitIds).size > 1)
+    .map(([namespace, unitIds]) =>
+      diagnostic({
+        code: "VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER",
+        source: sortedUnique(unitIds).join(", "),
+        facet: "customFieldTargets",
+        message: `Custom-field namespace "${namespace}" is claimed by more than one selected graph unit.`,
+      }),
+    )
+  return [...duplicateTargetDiagnostics, ...conflictingNamespaceDiagnostics]
 }
 
 function validateDuplicateEventTypes(
@@ -3340,7 +3513,7 @@ function isFirstPartyPackage(packageName: string | undefined): boolean {
   return packageName?.startsWith("@voyant-travel/") ?? false
 }
 
-function sortedUnique(values: readonly string[]): string[] {
+function sortedUnique<T extends string>(values: readonly T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b))
 }
 

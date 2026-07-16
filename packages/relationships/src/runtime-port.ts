@@ -16,6 +16,11 @@ export const relationshipsRouteRuntimePort = definePort<RelationshipsRouteRuntim
     if (provider.customFields && typeof provider.customFields !== "function") {
       throw new Error("relationships.route-runtime provider customFields must be a function.")
     }
+    if (provider.customFieldsForWrite && typeof provider.customFieldsForWrite !== "function") {
+      throw new Error(
+        "relationships.route-runtime provider customFieldsForWrite must be a function.",
+      )
+    }
     if (provider.resolveKmsProvider && typeof provider.resolveKmsProvider !== "function") {
       throw new Error("relationships.route-runtime provider resolveKmsProvider must be a function.")
     }

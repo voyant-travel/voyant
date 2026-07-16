@@ -62,8 +62,8 @@ integrations, including SmartBill, move to the remote app model because they can
 integrate through scoped finance APIs, events, webhooks, app-owned custom fields,
 and remote admin UI.
 
-Deployment-local TypeScript custom-field declarations will be retired. The
-database becomes the only runtime authority for custom-field definitions:
+Deployment-local TypeScript custom-field declarations are unsupported. The
+database is the only runtime authority for custom-field definitions:
 operator-owned definitions are created in Settings, while app-owned definitions
 are reconciled from the installed app manifest or app API and displayed in the
 same Settings surface.
@@ -97,11 +97,12 @@ executing ecosystem code or migrations. Self-hosters additionally need
 lockfile-controlled app releases, while managed deployments need safe,
 policy-driven updates from the same release lineage.
 
-The existing custom-fields system compounds the problem. Definitions may come
-from deployment-local TypeScript or the database, code wins collisions, the
-runtime table and UI are owned by Relationships, and the database target enum
-supports only a small fixed entity set. Definitions have no durable app owner
-or collision-proof namespace.
+The previous custom-fields system compounded the problem. Definitions could
+come from deployment-local TypeScript or the database, code won collisions, the
+runtime table and UI were owned by Relationships, and the database target enum
+supported only a small fixed entity set. The current generic module uses
+database-only definitions, selected-graph targets, durable ownership, and
+collision-proof namespaces.
 
 Without a clearer boundary, remote apps would either need unsafe access to the
 Voyant runtime and schema or would invent disconnected storage that the admin,
@@ -1242,6 +1243,7 @@ or marketplace listing.
 ### Phase 7: Retire legacy plugin and custom-field seams
 
 - Remove deployment-local TypeScript custom-field support and documentation.
+  ✅ Custom-field portion complete.
 - Reclassify remaining npm plugin bundles by module/adapter/provider role.
 - Remove static installed-app lists once the installation service owns them.
 - Add mechanical checks that prevent app release packages from appearing as

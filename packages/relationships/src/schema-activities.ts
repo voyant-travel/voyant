@@ -1,3 +1,4 @@
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { boolean, index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
@@ -6,7 +7,6 @@ import {
   activityLinkRoleEnum,
   activityStatusEnum,
   activityTypeEnum,
-  customFieldTypeEnum,
   entityTypeEnum,
 } from "./schema-shared.js"
 
@@ -23,7 +23,7 @@ export const activities = pgTable(
     location: text("location"),
     description: text("description"),
     /** Unified custom fields — see the custom-fields unification ADR. */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -80,36 +80,9 @@ export const activityParticipants = pgTable(
   ],
 )
 
-export const customFieldDefinitions = pgTable(
-  "custom_field_definitions",
-  {
-    id: typeId("custom_field_definitions"),
-    entityType: entityTypeEnum("entity_type").notNull(),
-    key: text("key").notNull(),
-    label: text("label").notNull(),
-    fieldType: customFieldTypeEnum("field_type").notNull(),
-    isRequired: boolean("is_required").notNull().default(false),
-    isSearchable: boolean("is_searchable").notNull().default(false),
-    options: jsonb("options").$type<Array<{ label: string; value: string }>>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("idx_custom_field_definitions_entity").on(table.entityType),
-    index("idx_custom_field_definitions_entity_label").on(table.entityType, table.label),
-    uniqueIndex("uidx_custom_field_definitions_key").on(table.entityType, table.key),
-  ],
-)
-
-// `custom_field_values` (the EAV value side table) was retired by the
-// custom-fields unification — values now live on each entity's `custom_fields`
-// jsonb column. See docs/architecture/custom-fields-unification-adr.md.
-
 export type Activity = typeof activities.$inferSelect
 export type NewActivity = typeof activities.$inferInsert
 export type ActivityLink = typeof activityLinks.$inferSelect
 export type NewActivityLink = typeof activityLinks.$inferInsert
 export type ActivityParticipant = typeof activityParticipants.$inferSelect
 export type NewActivityParticipant = typeof activityParticipants.$inferInsert
-export type CustomFieldDefinition = typeof customFieldDefinitions.$inferSelect
-export type NewCustomFieldDefinition = typeof customFieldDefinitions.$inferInsert

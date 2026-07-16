@@ -4,6 +4,7 @@ import {
   appendActionLedgerMutation,
 } from "@voyant-travel/action-ledger"
 import type { EventBus } from "@voyant-travel/core"
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { authUser } from "@voyant-travel/db/schema/iam"
 import {
@@ -3186,12 +3187,15 @@ export const bookingsService = {
 
     return db.transaction(async (tx) => {
       const rows = await tx.execute(
-        sql`SELECT status
+        sql`SELECT status, custom_fields
             FROM ${bookings}
             WHERE ${bookings.id} = ${id}
             FOR UPDATE`,
       )
-      const existing = toRows<{ status: BookingStatus }>(rows)[0]
+      const existing = toRows<{
+        status: BookingStatus
+        custom_fields: NamespacedCustomFieldValues
+      }>(rows)[0]
 
       if (!existing) return null
 
@@ -3218,6 +3222,15 @@ export const bookingsService = {
           }
           updateData = rest
           shouldRecomputeTotals = true
+        }
+      }
+      if (updateData.customFields !== undefined) {
+        updateData = {
+          ...updateData,
+          customFields: {
+            ...existing.custom_fields,
+            custom: updateData.customFields.custom ?? {},
+          },
         }
       }
 

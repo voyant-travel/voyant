@@ -23,7 +23,6 @@ import {
   customerSignalKindSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
-  customFieldTypeSchema,
   entityTypeSchema,
   personDocumentTypeSchema,
   personRelationshipKindSchema,
@@ -39,6 +38,7 @@ export {
 const isoTimestamp = z.string()
 const isoDate = z.string()
 const jsonRecord = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonRecord)
 /** KMS envelopes are opaque jsonb objects; only their presence/absence matters. */
 const encryptedEnvelope = z.unknown()
 
@@ -54,7 +54,7 @@ export const activitySchema = z.object({
   completedAt: isoTimestamp.nullable(),
   location: z.string().nullable(),
   description: z.string().nullable(),
-  customFields: jsonRecord,
+  customFields: namespacedCustomFields,
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })
@@ -74,41 +74,6 @@ export const activityParticipantSchema = z.object({
   personId: z.string(),
   isPrimary: z.boolean(),
   createdAt: isoTimestamp,
-})
-
-// --- custom fields ----------------------------------------------------------
-
-export const customFieldDefinitionSchema = z.object({
-  id: z.string(),
-  entityType: entityTypeSchema,
-  key: z.string(),
-  label: z.string(),
-  fieldType: customFieldTypeSchema,
-  isRequired: z.boolean(),
-  isSearchable: z.boolean(),
-  options: z.array(z.object({ label: z.string(), value: z.string() })).nullable(),
-  createdAt: isoTimestamp,
-  updatedAt: isoTimestamp,
-})
-
-/**
- * Custom-field values no longer have their own rows (custom-fields unification
- * ADR); the value API reconstructs this synthetic shape from each entity's
- * `custom_fields` jsonb. `id` is the `entityType::entityId::definitionId`
- * synthetic key; exactly one typed column is populated per `fieldType`.
- */
-export const customFieldValueSchema = z.object({
-  id: z.string(),
-  definitionId: z.string(),
-  entityType: z.string(),
-  entityId: z.string(),
-  textValue: z.string().nullable(),
-  numberValue: z.number().nullable(),
-  dateValue: z.string().nullable(),
-  booleanValue: z.boolean().nullable(),
-  monetaryValueCents: z.number().int().nullable(),
-  currencyCode: z.string().nullable(),
-  jsonValue: z.union([jsonRecord, z.array(z.string())]).nullable(),
 })
 
 // --- customer signals -------------------------------------------------------

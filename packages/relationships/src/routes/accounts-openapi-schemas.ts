@@ -35,6 +35,7 @@ export const segmentIdParamSchema = z.object({ segmentId: idSchema })
 const isoTimestamp = z.string()
 const isoDate = z.string()
 const jsonRecord = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonRecord)
 /** KMS envelopes are opaque jsonb objects; only their presence/absence matters. */
 const encryptedEnvelope = z.unknown()
 
@@ -56,7 +57,7 @@ export const organizationSchema = z.object({
   source: z.string().nullable(),
   sourceRef: z.string().nullable(),
   tags: z.array(z.string()),
-  customFields: jsonRecord,
+  customFields: namespacedCustomFields,
   notes: z.string().nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
@@ -81,7 +82,7 @@ export const personSchema = z.object({
   source: z.string().nullable(),
   sourceRef: z.string().nullable(),
   tags: z.array(z.string()),
-  customFields: jsonRecord,
+  customFields: namespacedCustomFields,
   dateOfBirth: isoDate.nullable(),
   notes: z.string().nullable(),
   accessibilityEncrypted: encryptedEnvelope,

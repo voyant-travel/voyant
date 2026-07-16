@@ -1,0 +1,47 @@
+import { describe, expect, it } from "vitest"
+import {
+  customFieldDefinitionInputSchema,
+  customFieldDefinitionListQuerySchema,
+  updateCustomFieldDefinitionSchema,
+} from "./contracts.js"
+
+describe("custom-field definition contracts", () => {
+  it("defaults visibility and admits graph-validated target ids", () => {
+    expect(
+      customFieldDefinitionInputSchema.parse({
+        entityType: "booking",
+        key: "group_size",
+        label: "Group size",
+        fieldType: "double",
+      }),
+    ).toMatchObject({
+      entityType: "booking",
+      isRequired: false,
+      isSearchable: false,
+      isExportable: true,
+      isInvoiceable: false,
+    })
+  })
+
+  it("keeps target and type immutable while allowing a namespace-scoped key rename", () => {
+    expect(updateCustomFieldDefinitionSchema.parse({ label: "Updated" })).toEqual({
+      label: "Updated",
+    })
+    expect(updateCustomFieldDefinitionSchema.parse({ key: "renamed" })).toEqual({ key: "renamed" })
+  })
+
+  it("rejects submitted physical ownership and supports ownership-aware reads", () => {
+    expect(() =>
+      customFieldDefinitionInputSchema.parse({
+        entityType: "booking",
+        key: "external_id",
+        label: "External ID",
+        fieldType: "text",
+        namespace: "app--foreign",
+      }),
+    ).toThrow()
+    expect(
+      customFieldDefinitionListQuerySchema.parse({ ownerKind: "app", lifecycleState: "active" }),
+    ).toMatchObject({ ownerKind: "app", lifecycleState: "active" })
+  })
+})

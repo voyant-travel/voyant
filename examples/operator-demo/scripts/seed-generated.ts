@@ -34,6 +34,7 @@ import {
   bookingRedemptionEvents,
 } from "../../../packages/bookings/src/schema-items.ts"
 import { bookingOrigins } from "../../../packages/bookings/src/schema-origin.ts"
+import { customFieldDefinitions } from "../../../packages/custom-fields/src/schema.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
 import { authMember, authOrganization, authUser } from "../../../packages/db/src/schema/iam/auth.ts"
 import { userProfilesTable } from "../../../packages/db/src/schema/iam/user_profiles.ts"
@@ -116,7 +117,6 @@ import {
   activities,
   activityLinks,
   activityParticipants,
-  customFieldDefinitions,
 } from "../../../packages/relationships/src/schema-activities.ts"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -849,6 +849,11 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
     .values({
       id: newId("custom_field_definitions"),
       entityType: "organization",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-generated-seed" },
       key: `travel_style_${ctx.labelSlug}`,
       label: "Travel Style",
       fieldType: "text",
@@ -876,8 +881,10 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
         sourceRef: ctx.labelSlug,
         tags: ["seeded", ctx.labelSlug, index === 0 ? "vip" : "standard"],
         customFields: {
-          [customFieldDefinition.key]:
-            index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
+          custom: {
+            [customFieldDefinition.key]:
+              index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
+          },
         },
         notes: customer.notes,
       })

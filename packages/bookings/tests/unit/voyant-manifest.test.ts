@@ -22,13 +22,14 @@ describe("bookings deployment manifest", () => {
         capabilities: ["bookings.data-owner"],
         ports: [
           { id: "action-ledger.booking-drift-runtime" },
-          { id: "bookings.configuration.runtime" },
+          { id: "custom-fields.value-lifecycle" },
+          { id: "custom-fields.value-operations" },
         ],
       },
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
       runtimePorts: [
-        { id: "bookings.configuration.runtime" },
         { id: "bookings.accommodation.runtime" },
+        { id: "custom-fields.runtime" },
         { id: "bookings.finance.runtime" },
         { id: "bookings.relationships.runtime" },
       ],
@@ -212,8 +213,22 @@ describe("bookings deployment manifest", () => {
       hasPort: () => true,
       getPort: async <TProvider>(port: { id: string }) => {
         const providers: Record<string, unknown> = {
-          "bookings.configuration.runtime": { readConfig: () => undefined },
           "bookings.accommodation.runtime": { enrichOverviewItems: async () => [] },
+          "custom-fields.runtime": {
+            resolveRegistry: async () => ({
+              all: () => [],
+              entities: () => [],
+              field: () => undefined,
+              forEntity: () => [],
+            }),
+            resolveRegistryForWrite: async () => ({
+              all: () => [],
+              entities: () => [],
+              field: () => undefined,
+              forEntity: () => [],
+            }),
+            resolveVisibleValues: async () => ({}),
+          },
           "bookings.finance.runtime": { createStaleBookingHoldsRuntime: () => ({}) },
           "bookings.relationships.runtime": {
             loadPersonTravelSnapshot: async () => null,

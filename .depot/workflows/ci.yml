@@ -232,8 +232,7 @@ jobs:
               NODE_OPTIONS="--conditions=development --import=tsx --max-old-space-size=8192" \
                 pnpm --filter operator db:migrate
               pnpm --filter @voyant-travel/relationships exec vitest run \
-                tests/integration/custom-fields.test.ts \
-                tests/integration/custom-fields-values.test.ts
+                tests/integration/generic-custom-field-values.test.ts
               ;;
           esac
 

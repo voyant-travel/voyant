@@ -7,23 +7,21 @@
  * The free-form `metadata` jsonb most entities already carry is the unstructured
  * escape hatch (Medusa's model); this registry turns a *declared* subset of that
  * space into fields that are:
- *   - **validated** on write (type / required / options / custom rule),
+ *   - **validated** on write (type / required / options),
  *   - **visibility-aware** — each field declares whether it surfaces in exports,
  *     invoices, and search, so those readers can consult the registry instead of
  *     dumping or hiding everything,
  *   - **PII-aware** — flagged fields can be encrypted at rest / redacted in logs.
  *
- * The registry is **deployment config**: a deployment declares its fields (often
- * discovered from `src/custom-fields/*` via {@link customFieldsFromGlob}) and the
- * framework injects the registry into the services that read/write entities.
- * This module is intentionally dependency-free (no zod / drizzle) so it can live
- * in `@voyant-travel/core` and be imported anywhere.
+ * Runtime definitions are persisted in `custom_field_definitions` and resolved
+ * from the database on each request. This module remains dependency-free and
+ * owns the registry, validation, and visibility primitives shared by consumers.
  */
 
 /**
- * The supported types a custom field can hold — the canonical superset across
- * code-declared and runtime (DB-defined) fields (see the custom-fields
- * unification ADR). Runtime equivalents map in: `varchar`→`text`, `double`→
+ * The supported types a custom field can hold — the canonical persisted
+ * definition model (see the custom-fields unification ADR). Runtime equivalents
+ * map in: `varchar`→`text`, `double`→
  * `number`, `enum`→`select`, `set`→`multiselect`, `address`/`phone`→`json`.
  */
 export type CustomFieldType =
@@ -63,6 +61,8 @@ export interface CustomFieldVisibility {
 export interface CustomFieldDefinition {
   /** Entity the field attaches to, e.g. `"booking"`, `"person"`, `"product"`. */
   entity: string
+  /** Physical owner namespace. Together with entity + key this is the identity. */
+  namespace: string
   /** Stable key within the entity's custom-field namespace (typo-proof). */
   key: string
   type: CustomFieldType
@@ -75,24 +75,14 @@ export interface CustomFieldDefinition {
   /** Sensitive data — the deployment should encrypt at rest / redact in logs. */
   pii?: boolean
   visibility?: CustomFieldVisibility
-  /**
-   * Extra validation beyond type/required/options. Return an error message to
-   * reject, or `null` to accept. Runs only when a value is present.
-   */
-  validate?: (value: unknown) => string | null
-}
-
-/** Identity helper for authoring a field with full type-checking. */
-export function defineCustomField<T extends CustomFieldDefinition>(definition: T): T {
-  return definition
 }
 
 /** A resolved, indexed set of custom-field declarations. */
 export interface CustomFieldRegistry {
   /** All fields declared for `entity`, in declaration order. */
   forEntity(entity: string): CustomFieldDefinition[]
-  /** A single field by `(entity, key)`, or `undefined`. */
-  field(entity: string, key: string): CustomFieldDefinition | undefined
+  /** A single field by `(entity, namespace, key)`, or `undefined`. */
+  field(entity: string, namespace: string, key: string): CustomFieldDefinition | undefined
   /** Entities that have at least one field. */
   entities(): string[]
   /** Every declared field. */
@@ -100,16 +90,33 @@ export interface CustomFieldRegistry {
 }
 
 /**
- * Resolve the registry for a request. The unified system's definitions come
- * from two sources (code-declared + the runtime `custom_field_definitions`
- * table), and the runtime set is read from the DB — so the registry is resolved
- * per request from a `db` handle rather than being a boot-time constant. `db` is
- * `unknown` to keep `core` free of a Drizzle dependency; the deployment's
- * resolver casts it. See the custom-fields unification ADR.
+ * Resolve the registry for a request. Runtime definitions come exclusively from
+ * the `custom_field_definitions` table, so the registry is resolved per request
+ * from a `db` handle rather than being a boot-time constant. `db` is `unknown`
+ * to keep `core` free of a Drizzle dependency.
  */
 export type CustomFieldRegistryResolver = (
   db: unknown,
 ) => CustomFieldRegistry | Promise<CustomFieldRegistry>
+
+export type CustomFieldVisibilityChannel = keyof CustomFieldVisibility
+
+export type {
+  CustomFieldsRuntime,
+  CustomFieldValueDefinitionContext,
+  CustomFieldValueDefinitionIdentity,
+  CustomFieldValueEntityValues,
+  CustomFieldValueLifecycleRuntime,
+  CustomFieldValueOperationsRuntime,
+  CustomFieldValueOwnerContext,
+  CustomFieldValueReaderRuntime,
+} from "./runtime-port.js"
+export {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "./runtime-port.js"
 
 const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
   export: true,
@@ -119,7 +126,7 @@ const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
 
 /**
  * Build a {@link CustomFieldRegistry} from declarations. Throws on a duplicate
- * `(entity, key)` — a collision is a config bug, not something to resolve
+ * `(entity, namespace, key)` — a collision is a config bug, not something to resolve
  * silently.
  */
 export function createCustomFieldRegistry(
@@ -128,7 +135,7 @@ export function createCustomFieldRegistry(
   const byEntity = new Map<string, CustomFieldDefinition[]>()
   const seen = new Set<string>()
   for (const def of definitions) {
-    const id = `${def.entity}.${def.key}`
+    const id = `${def.entity}.${def.namespace}.${def.key}`
     if (seen.has(id)) {
       throw new Error(`[voyant-custom-fields] duplicate custom field "${id}"`)
     }
@@ -139,39 +146,11 @@ export function createCustomFieldRegistry(
   }
   return {
     forEntity: (entity) => [...(byEntity.get(entity) ?? [])],
-    field: (entity, key) => byEntity.get(entity)?.find((f) => f.key === key),
+    field: (entity, namespace, key) =>
+      byEntity.get(entity)?.find((f) => f.namespace === namespace && f.key === key),
     entities: () => [...byEntity.keys()],
     all: () => [...definitions],
   }
-}
-
-/**
- * Merge custom-field declarations from several sources into one duplicate-free
- * list (feed it to {@link createCustomFieldRegistry}). On a `(entity, key)`
- * collision the **earlier** source wins — pass code-declared fields before
- * runtime/DB-defined ones so the framework contract is authoritative. The
- * `onShadow` callback (if given) is notified of each dropped collision.
- *
- * The unification's single registry is built as
- * `createCustomFieldRegistry(mergeCustomFieldDefinitions(codeFields, dbFields))`.
- */
-export function mergeCustomFieldDefinitions(
-  sources: ReadonlyArray<ReadonlyArray<CustomFieldDefinition>>,
-  onShadow?: (shadowed: CustomFieldDefinition, winner: CustomFieldDefinition) => void,
-): CustomFieldDefinition[] {
-  const winners = new Map<string, CustomFieldDefinition>()
-  for (const source of sources) {
-    for (const def of source) {
-      const id = `${def.entity}.${def.key}`
-      const existing = winners.get(id)
-      if (existing) {
-        onShadow?.(def, existing)
-        continue
-      }
-      winners.set(id, def)
-    }
-  }
-  return [...winners.values()]
 }
 
 /** Fields of `entity` visible in `channel` (export / invoice / search). */
@@ -187,6 +166,7 @@ export function customFieldsVisibleIn(
 
 /** One field's validation failure. */
 export interface CustomFieldError {
+  namespace: string
   key: string
   message: string
 }
@@ -195,7 +175,7 @@ export interface CustomFieldError {
 export interface CustomFieldValidationResult {
   ok: boolean
   /** Validated values, unknown/absent keys dropped. Only meaningful when `ok`. */
-  value: Record<string, unknown>
+  value: NamespacedCustomFieldValues
   errors: CustomFieldError[]
 }
 
@@ -249,76 +229,58 @@ function checkType(def: CustomFieldDefinition, value: unknown): string | null {
 /**
  * Validate a custom-fields payload for `entity` against the registry. Unknown
  * keys are rejected (typo-proofing), missing required fields error, present
- * values are type/options/custom-rule checked. `null`/`undefined` values for a
+ * values are type/options checked. `null`/`undefined` values for a
  * non-required field are treated as "omitted". Returns the cleaned value and any
  * errors — callers persist `value` (e.g. into the entity's `custom_fields` or
  * `metadata` jsonb) only when `ok`.
  */
+export type NamespacedCustomFieldValues = Record<string, Record<string, unknown>>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 export function validateCustomFields(
   registry: CustomFieldRegistry,
   entity: string,
-  input: Record<string, unknown> | null | undefined,
+  input: NamespacedCustomFieldValues | null | undefined,
 ): CustomFieldValidationResult {
   const provided = input ?? {}
   const fields = registry.forEntity(entity)
-  const known = new Set(fields.map((f) => f.key))
+  const known = new Set(fields.map((f) => `${f.namespace}.${f.key}`))
   const errors: CustomFieldError[] = []
-  const value: Record<string, unknown> = {}
+  const value: NamespacedCustomFieldValues = {}
 
-  for (const key of Object.keys(provided)) {
-    if (!known.has(key)) {
-      errors.push({ key, message: `unknown custom field for "${entity}"` })
+  for (const [namespace, fieldsForNamespace] of Object.entries(provided)) {
+    if (!isRecord(fieldsForNamespace)) {
+      errors.push({ namespace, key: "", message: "must be an object keyed by custom-field key" })
+      continue
+    }
+    for (const key of Object.keys(fieldsForNamespace)) {
+      if (!known.has(`${namespace}.${key}`)) {
+        errors.push({ namespace, key, message: `unknown custom field for "${entity}"` })
+      }
     }
   }
 
   for (const def of fields) {
-    const raw = provided[def.key]
+    const raw = provided[def.namespace]?.[def.key]
     const absent = raw === null || raw === undefined
     if (absent) {
       if (def.required) {
-        errors.push({ key: def.key, message: "is required" })
+        errors.push({ namespace: def.namespace, key: def.key, message: "is required" })
       }
       continue
     }
     const typeError = checkType(def, raw)
     if (typeError) {
-      errors.push({ key: def.key, message: typeError })
+      errors.push({ namespace: def.namespace, key: def.key, message: typeError })
       continue
     }
-    const customError = def.validate?.(raw)
-    if (customError) {
-      errors.push({ key: def.key, message: customError })
-      continue
-    }
-    value[def.key] = raw
+    const namespaceValues = value[def.namespace] ?? {}
+    namespaceValues[def.key] = raw
+    value[def.namespace] = namespaceValues
   }
 
   return { ok: errors.length === 0, value, errors }
-}
-
-/**
- * Discover deployment-local custom-field declarations from a Vite
- * `import.meta.glob` (eager) of `src/custom-fields/*.ts` files — the custom-field
- * half of the "extend without forking" seam (mirrors `modulesFromGlob` etc.).
- * Each file's `default` export is a {@link CustomFieldDefinition} or an array of
- * them; the results flatten into one list to feed
- * {@link createCustomFieldRegistry}. Empty until a deployment adds one.
- *
- * @throws if a matched file has no default export.
- */
-export function customFieldsFromGlob(glob: Record<string, unknown>): CustomFieldDefinition[] {
-  return Object.entries(glob)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .flatMap(([path, namespace]) => {
-      const declaration = (namespace as { default?: unknown }).default
-      if (declaration == null) {
-        throw new Error(
-          `[voyant-custom-fields] "${path}" has no default export — ` +
-            "export default defineCustomField(...) (or an array of them)",
-        )
-      }
-      return Array.isArray(declaration)
-        ? (declaration as CustomFieldDefinition[])
-        : [declaration as CustomFieldDefinition]
-    })
 }

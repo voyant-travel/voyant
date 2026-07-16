@@ -99,8 +99,8 @@ cross-cutting module is simply `isRequired`. The edges stay available for a futu
 module that is genuinely optional-with-dependents.
 
 **3. CRM is required, not pluggable.** `relationships` is `isRequired`.
-Deployments extend it with custom fields (`customFieldDefinitions` — already
-supported); they do not swap it for an external CRM. The cross-module surface a
+Deployments extend it with persisted custom-field definitions through Settings;
+they do not swap it for an external CRM. The cross-module surface a
 swap would have to satisfy (person/org read + upsert + travel-snapshot) is small,
 but decoupling every consumer (`legal`, storefront customer-portal, the bookings
 billing/traveler resolvers) onto a port — and keeping a parallel DTO contract in

@@ -20,15 +20,6 @@ export {
   useActivityMutation,
 } from "./hooks/use-activity-mutation.js"
 export {
-  type CreateCustomFieldDefinitionInput,
-  type UpdateCustomFieldDefinitionInput,
-  useCustomFieldDefinitionMutation,
-} from "./hooks/use-custom-field-definition-mutation.js"
-export {
-  type UseCustomFieldDefinitionsOptions,
-  useCustomFieldDefinitions,
-} from "./hooks/use-custom-field-definitions.js"
-export {
   type UseCustomerSignalOptions,
   useCustomerSignal,
 } from "./hooks/use-customer-signal.js"
@@ -121,7 +112,6 @@ export {
 export {
   type ActivitiesListFilters,
   type CustomerSignalsListFilters,
-  type CustomFieldDefinitionListFilters,
   type OrganizationsListFilters,
   type OrganizationsListSortDir,
   type OrganizationsListSortField,
@@ -135,7 +125,6 @@ export {
 } from "./query-keys.js"
 export {
   getActivitiesQueryOptions,
-  getCustomFieldDefinitionsQueryOptions,
   getOrganizationQueryOptions,
   getOrganizationsQueryOptions,
   getPeopleQueryOptions,
@@ -155,7 +144,6 @@ export {
   type CustomerSignalRecord,
   type CustomerSignalSource,
   type CustomerSignalStatus,
-  type CustomFieldDefinitionRecord,
   communicationChannelSchema,
   communicationDirectionSchema,
   communicationLogListResponse,
@@ -165,7 +153,6 @@ export {
   customerSignalRecordSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
-  customFieldDefinitionRecordSchema,
   type KmsEnvelopeRecord,
   kmsEnvelopeRecordSchema,
   type OrganizationRecord,

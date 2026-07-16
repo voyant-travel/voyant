@@ -1,13 +1,10 @@
-# ADR: Unify custom fields — one registry, two definition sources, values on the entity
+# ADR: Unify custom fields — database definitions and values on the entity
 
-> **Proposed successor:**
-> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) retains
-> entity-local JSONB values but replaces the two-source registry with one
-> database authority and introduces operator/app ownership plus collision-proof
-> namespaces. This ADR remains the record of the currently implemented
-> unification.
+[`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) extends this
+decision with database-only authority, operator/app ownership, and
+collision-proof namespaces.
 
-- **Status:** Accepted (implementation in phases)
+- **Status:** Accepted and implemented
 - **Date:** 2026-06-17
 - **Supersedes:** the split between `@voyant-travel/core/custom-fields` (registry + `custom_fields` jsonb column, adopted on `booking`) and the relationships EAV custom-fields system (`custom_field_definitions` + `custom_field_values`).
 - **Context:** consolidated-deployments RFC — "custom fields without forking" (the 20%).
@@ -17,7 +14,8 @@
 Voyant grew **two** custom-field mechanisms with the same name and overlapping purpose:
 
 1. **Registry + jsonb column** (`@voyant-travel/core/custom-fields`, on `booking`).
-   - Definitions **declared in code** (`src/custom-fields/*`, build-time discovery).
+   - Definitions were historically declared in code (`src/custom-fields/*`,
+     build-time discovery); that source is now retired from runtime authority.
    - Values in a **`custom_fields` jsonb column on the entity row**.
    - Typed validation, per-channel **visibility** (export/invoice/search), PII flags.
    - ✅ Reader-visible (export/invoice/search read the row), typed, upgrade-safe.
@@ -39,31 +37,27 @@ Each picked the wrong trade-off on one of **two independent axes**:
 | Axis | Registry | EAV | **Unified choice** |
 | --- | --- | --- | --- |
 | **Value storage** | jsonb on entity ✅ | side table ❌ | **jsonb on entity** |
-| **Definition source** | code only ❌ | runtime DB ✅ | **code + runtime DB** |
+| **Definition source** | code only ❌ | runtime DB ✅ | **runtime DB only** |
 
 ## Decision
 
-**One custom-field system. Definitions come from both a code registry and the
-runtime `custom_field_definitions` table; values live in a `custom_fields` jsonb
-column on the entity. `custom_field_values` is retired.**
+**One custom-field system. Definitions come exclusively from the runtime
+`custom_field_definitions` table; values live in a `custom_fields` jsonb column
+on the entity. `custom_field_values` is retired.**
 
 1. **Single value store — `custom_fields jsonb` on the entity** (`{}` default),
    exactly as `booking` already has. Readers (export/invoice/search) consult the
    registry + read the column — no joins, nothing invisible.
-2. **Two definition sources behind one `CustomFieldRegistry`.**
-   - Code: `customFieldsFromGlob(import.meta.glob("src/custom-fields/*"))`
-     (framework/standard fields, validated, shipped with the deployment).
+2. **One definition source behind `CustomFieldRegistry`.**
    - Runtime DB: `custom_field_definitions` rows (operator-created at runtime via
-     the existing admin CRUD + UI — kept).
-   - `loadCustomFieldRegistry(db)` reads the DB definitions, maps them to
-     `CustomFieldDefinition`s, and merges with the code-declared set into one
-     registry. Code definitions win on a `(entity, key)` collision (they're the
-     contract); a `log` surfaces the shadow.
-3. **The registry is resolved per request** — `customFields` injection becomes a
-   resolver `(db) => Promise<CustomFieldRegistry>` (cached per isolate with a
-   short TTL; definitions change rarely). `booking` moves from its static
-   registry to this resolver. Validation/visibility are then identical for code-
-   and DB-defined fields.
+     the generic `@voyant-travel/custom-fields` Settings CRUD + UI).
+   - `loadCustomFieldRegistry(db)` reads and maps persisted definitions on each
+     request. Project-local declarations, discovery globs, and code/database
+     merge helpers do not exist.
+3. **The registry is resolved per request** through the typed
+   `custom-fields.runtime` graph port. The provider reads persisted definitions;
+   Bookings, Relationships, and Finance consume the same runtime without host
+   configuration or project-local declarations.
 4. **Canonical type model = the EAV superset.** `core`'s `CustomFieldType` grows
    to cover the runtime types: `text` (`varchar`/`text`), `number` (`double`),
    `monetary` (`{ amountCents, currency }`), `date`, `boolean`, `select`
@@ -71,66 +65,89 @@ column on the entity. `custom_field_values` is retired.**
    structured `json` for now (dedicated validators are a follow-up).
    `validateCustomFields` gains the new cases. EAV → registry type map is fixed
    in the loader.
-5. **Visibility.** `isSearchable` → `visibility.search`. Add `is_exportable` +
-   `is_invoiceable` to `custom_field_definitions` (admin-editable; default
-   `export=true`, `invoice=false`) so runtime fields are visibility-aware too.
+5. **Visibility.** `is_searchable`, `is_exportable`, and `is_invoiceable` map
+   directly onto registry visibility (admin-editable; defaults
+   `export=true`, `invoice=false`, `search=false`).
+6. **Definition ownership and namespaces.** Definitions now persist a physical
+   namespace, owner kind/id, lifecycle, and provenance. Uniqueness is
+   `(entity_type, namespace, key)`. Because definitions had no production
+   adoption, the migration discards pre-cutline rows instead of assigning
+   unverifiable ownership. Settings shows app-owned rows but can mutate only
+   operator rows.
+7. **Namespaced entity values.** Every supported entity stores values as
+   `custom_fields[namespace][key]`. Active definitions from every owner enter
+   the runtime registry. Ordinary operator routes accept only `custom`, while
+   trusted owner-scoped value operations derive app/platform namespaces from
+   server context. Definition rename/delete side effects are delegated to the
+   package that owns the target table.
+8. **Generic value API ownership.** The generic custom-fields module owns the
+   canonical definition and value routes. Entity-owning packages contribute
+   typed list/upsert/delete operations through the selected deployment graph;
+   Relationships has no forwarding route or service adapter.
 
 ## Migration
 
 1. Add `custom_fields jsonb default '{}'` to `people`, `organizations`, and the
    other EAV entities (`quotes`, `activities`). (Schema + framework bundle.)
-2. **Backfill** — for each `custom_field_values` row, group by
-   `(entityType, entityId)`, map each typed value column to its scalar/struct
-   form (`text_value`→string, `number_value`→number, `date_value`→ISO,
-   `boolean_value`→bool, `monetary_value_cents`+`currency_code`→`{amountCents,
-   currency}`, `json_value`→as-is), key by the definition's `key`, and write the
-   object into the entity's `custom_fields` column. One data migration, idempotent.
-3. **Repoint the value API** — `upsertCustomFieldValue` / `listCustomFieldValues`
-   / `deleteCustomFieldValue` read+write the entity's `custom_fields` column
-   instead of `custom_field_values`. The admin "set value" UX is unchanged.
-4. **Retire `custom_field_values`** once backfill + repoint ship and bake
-   (drop the table in a later migration). `custom_field_definitions` stays.
+2. **Repoint the generic value API** to read and write the entity's
+   `custom_fields[namespace][key]` value.
+3. **Retire `custom_field_values` directly.** Custom fields had no production
+   adoption, so the cutline intentionally has no EAV backfill, compatibility
+   reader, or transitional adapter. `custom_field_definitions` stays.
+4. **Wrap pre-cutline entity JSON under `custom`.** The owning Bookings, Quotes,
+   and Relationships packages each migrate only their own tables. Custom fields
+   had no production adoption at this cutline, so this is a one-way migration
+   with no flat compatibility reader or telemetry seam.
 
 ## Phases (each its own PR)
 
-1. **Type model + registry merge (no storage change). ✅ landed.**
+1. **Type model + registry projection (no storage change). ✅ landed.**
    - 1a — `core`'s `CustomFieldType` superset (`multiselect`/`monetary`/`json`) +
-     `validateCustomFields` + `mergeCustomFieldDefinitions`.
+     `validateCustomFields`.
    - 1b — `loadCustomFieldDefinitions(db)` in relationships (DB→registry mapping);
      `customFields` injection becomes a per-request `CustomFieldRegistryResolver`
-     (`(db) ⇒ code ∪ DB`, cached per isolate); `booking` moved onto it. Pure
-     addition; nothing migrated yet.
+     backed exclusively by the database; `booking` moved onto it. Pure addition;
+     nothing migrated yet.
 2. **Columns + write/read on person/organization. ✅ landed.** `custom_fields`
    jsonb column on `people`/`organizations` (framework bundle `0002`); the
    accounts route validates person/org writes against the resolved registry
    (`validateRelationshipsCustomFields`); reads return the column. The
    relationships factory moved Tier 1 → 2 to receive `capabilities.customFields`.
-3. **Repoint the value API + backfill. ✅ landed.**
+3. **Repoint the generic value API. ✅ landed.**
    - 3a — `custom_fields` column on `quotes` + `activities` (bundle `0003`).
-   - 3b — `upsert/list/deleteCustomFieldValue` read/write the entity column
-     (synthetic value-ids `entityType::entityId::definitionId`; bidirectional
-     typed↔jsonb mapping; cross-table writes via `sql.identifier`). Round-trip
-     integration-tested.
-   - 3c — package-owned post-cutline data migration (merge-safe `backfilled ||
-     current`), applied automatically during the graph migration plan.
+   - 3b — the generic custom-fields package owns list/upsert/delete orchestration
+     and namespace-bearing synthetic ids; entity packages contribute only their
+     own table operations.
 4. **Retire `custom_field_values`** + export/invoice/search consume
    `customFieldsVisibleIn`.
-   - 4a — table removed from the schema. The package-owned migration copies and
-     validates every legacy row before dropping the table in the same
-     transaction; unknown entity types, missing definitions, missing target
-     tables, and orphaned entity ids abort without data loss. The older bundle
-     guard remains immutable migration history. ✅ landed.
+   - 4a — the unused table is removed directly, with no backfill or compatibility
+     fallback. ✅ landed.
    - 4b — readers consume `customFieldsVisibleIn`.
      - **Export ✅** — the people CSV export appends a column per export-visible
        custom field (`exportPeopleCsv` + `resolveVisibleCustomFields`).
-     - **Search ✅** — the people search ORs a `custom_fields ->> key ILIKE term`
-       per search-visible field.
+     - **Search ✅** — the people search ORs a
+       `custom_fields -> namespace ->> key ILIKE term` condition per
+       search-visible field.
      - **Invoice ✅ (seam)** — `InvoiceDocumentRuntimeOptions.resolveCustomFields`
        populates a `customFields` template variable. Finance just exposes the
        hook (decoupled from `relationships`); the deployment wires the resolver
        where it builds the invoice-generation runtime (it holds the registry +
        reads the entity's `custom_fields`) and the template references
-       `{{customFields.<key>}}`.
+       `{{customFields.<namespace>.<key>}}`.
+5. **Namespaced values + owner isolation. ✅ landed.**
+   - Entity schemas, contracts, write validation, value APIs, search, export,
+     and invoice resolution use the nested value shape only.
+   - Synthetic value ids include namespace identity.
+   - Same-key values in two namespaces round-trip independently.
+   - Package-owned lifecycle providers perform namespace-scoped definition
+     rename/delete cleanup.
+6. **Retire local authoring and compatibility seams. ✅ landed.**
+   - Removed project-local TypeScript declarations, discovery globs, executable
+     validation callbacks, and code/database merge precedence.
+   - Moved value routes and orchestration from Relationships to the generic
+     custom-fields package.
+   - Added architecture checks that reject restored authoring conventions,
+     Relationships adapters, and flat-value paths.
 
 ## Consequences
 

@@ -33,6 +33,7 @@ import {
   optionUnitPriceRules,
   priceCatalogs,
 } from "@voyant-travel/commerce"
+import { customFieldDefinitions } from "@voyant-travel/custom-fields/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { authAccount, authUser, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import {
@@ -108,7 +109,6 @@ import {
   activityLinks,
   activityParticipants,
   communicationLog,
-  customFieldDefinitions,
   organizationNotes,
   organizations,
   people,
@@ -1329,6 +1329,11 @@ async function seedCrm() {
     {
       id: cfVipId,
       entityType: "person",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-seed" },
       key: "vip_tier",
       label: "VIP Tier",
       fieldType: "enum",
@@ -1337,6 +1342,11 @@ async function seedCrm() {
     {
       id: cfPrefId,
       entityType: "person",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-seed" },
       key: "travel_preferences",
       label: "Travel preferences",
       fieldType: "text",

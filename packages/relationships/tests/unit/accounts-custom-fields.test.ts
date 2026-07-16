@@ -10,9 +10,18 @@ import { relationshipsService } from "../../src/service/index.js"
 const registry = createCustomFieldRegistry([
   {
     entity: "person",
+    namespace: "custom",
     key: "loyalty_tier",
     type: "select",
     label: "Tier",
+    options: ["gold", "silver"],
+  },
+  {
+    entity: "person",
+    namespace: "app--test",
+    key: "loyalty_tier",
+    type: "select",
+    label: "App tier",
     options: ["gold", "silver"],
   },
 ])
@@ -26,12 +35,18 @@ function app(withRegistry = true) {
   return new Hono()
     .onError(handleApiError)
     .use("*", async (c, next) => {
-      c.set("db" as never, {})
+      const db = {
+        transaction: async (callback: (tx: unknown) => unknown) => callback({}),
+      }
+      c.set("db" as never, db)
       c.set("userId" as never, "u")
       c.set("container" as never, {
         resolve: (key: string) =>
           key === RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: withRegistry ? () => registry : undefined }
+            ? {
+                customFields: withRegistry ? () => registry : undefined,
+                customFieldsForWrite: withRegistry ? () => registry : undefined,
+              }
             : undefined,
       })
       await next()
@@ -46,7 +61,7 @@ describe("relationships person custom-fields validation", () => {
     const spy = vi.spyOn(relationshipsService, "updatePerson")
     const res = await app().request("/people/pers_x", {
       method: "PATCH",
-      ...json({ customFields: { typo: 1 } }),
+      ...json({ customFields: { custom: { typo: 1 } } }),
     })
     expect(res.status).toBe(400)
     expect(spy).not.toHaveBeenCalled()
@@ -58,21 +73,31 @@ describe("relationships person custom-fields validation", () => {
       .mockResolvedValue({ id: "pers_x" } as never)
     const res = await app().request("/people/pers_x", {
       method: "PATCH",
-      ...json({ customFields: { loyalty_tier: "gold" } }),
+      ...json({ customFields: { custom: { loyalty_tier: "gold" } } }),
     })
     expect(res.status).toBe(200)
     expect(spy).toHaveBeenCalledWith(
       expect.anything(),
       "pers_x",
-      expect.objectContaining({ customFields: { loyalty_tier: "gold" } }),
+      expect.objectContaining({ customFields: { custom: { loyalty_tier: "gold" } } }),
     )
+  })
+
+  it("rejects app-owned namespaces on ordinary person routes", async () => {
+    const spy = vi.spyOn(relationshipsService, "updatePerson")
+    const res = await app().request("/people/pers_x", {
+      method: "PATCH",
+      ...json({ customFields: { "app--test": { loyalty_tier: "gold" } } }),
+    })
+    expect(res.status).toBe(400)
+    expect(spy).not.toHaveBeenCalled()
   })
 
   it("rejects custom fields when the deployment declares none (400)", async () => {
     const spy = vi.spyOn(relationshipsService, "updatePerson")
     const res = await app(false).request("/people/pers_x", {
       method: "PATCH",
-      ...json({ customFields: { anything: 1 } }),
+      ...json({ customFields: { custom: { anything: 1 } } }),
     })
     expect(res.status).toBe(400)
     expect(spy).not.toHaveBeenCalled()
@@ -93,20 +118,48 @@ describe("relationships person custom-fields validation", () => {
 
 // A registry where one person field is `required` — exercises create-time enforcement.
 const requiredRegistry = createCustomFieldRegistry([
-  { entity: "person", key: "loyalty_tier", type: "select", label: "Tier", options: ["gold"] },
-  { entity: "person", key: "passport_no", type: "text", label: "Passport", required: true },
+  {
+    entity: "person",
+    namespace: "custom",
+    key: "loyalty_tier",
+    type: "select",
+    label: "Tier",
+    options: ["gold"],
+  },
+  {
+    entity: "person",
+    namespace: "custom",
+    key: "passport_no",
+    type: "text",
+    label: "Passport",
+    required: true,
+  },
+  {
+    entity: "person",
+    namespace: "app--test",
+    key: "app_required",
+    type: "text",
+    label: "App required",
+    required: true,
+  },
 ])
 
 function requiredApp() {
   return new Hono()
     .onError(handleApiError)
     .use("*", async (c, next) => {
-      c.set("db" as never, {})
+      const db = {
+        transaction: async (callback: (tx: unknown) => unknown) => callback({}),
+      }
+      c.set("db" as never, db)
       c.set("userId" as never, "u")
       c.set("container" as never, {
         resolve: (key: string) =>
           key === RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: () => requiredRegistry }
+            ? {
+                customFields: () => requiredRegistry,
+                customFieldsForWrite: () => requiredRegistry,
+              }
             : undefined,
       })
       await next()
@@ -131,7 +184,11 @@ describe("relationships custom-fields required-on-create enforcement", () => {
     const spy = vi.spyOn(relationshipsService, "createPerson")
     const res = await requiredApp().request("/people", {
       method: "POST",
-      ...json({ firstName: "Jo", lastName: "Doe", customFields: { loyalty_tier: "gold" } }),
+      ...json({
+        firstName: "Jo",
+        lastName: "Doe",
+        customFields: { custom: { loyalty_tier: "gold" } },
+      }),
     })
     expect(res.status).toBe(400)
     expect(spy).not.toHaveBeenCalled()
@@ -143,12 +200,16 @@ describe("relationships custom-fields required-on-create enforcement", () => {
       .mockResolvedValue({ id: "pers_new" } as never)
     const res = await requiredApp().request("/people", {
       method: "POST",
-      ...json({ firstName: "Jo", lastName: "Doe", customFields: { passport_no: "X123" } }),
+      ...json({
+        firstName: "Jo",
+        lastName: "Doe",
+        customFields: { custom: { passport_no: "X123" } },
+      }),
     })
     expect(res.status).toBe(201)
     expect(spy).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ customFields: { passport_no: "X123" } }),
+      expect.objectContaining({ customFields: { custom: { passport_no: "X123" } } }),
     )
   })
 })

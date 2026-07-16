@@ -1,3 +1,4 @@
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import {
   type AnyPgColumn,
@@ -88,7 +89,7 @@ export const quotes = pgTable(
     lostReason: text("lost_reason"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     /** Unified custom fields — see the custom-fields unification ADR. */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     /** Free-text proposal description shown to the client; snapshotted into version notes. */
     description: text("description"),
     /** Audit: the acting user (staff id) who created / last changed the quote. */

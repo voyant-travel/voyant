@@ -15,6 +15,13 @@
       "when": 1784116800000,
       "tag": "0001_proposal_delivery_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784192581000,
+      "tag": "20260716000301_namespace_custom_field_values",
+      "breakpoints": true
     }
   ]
 }

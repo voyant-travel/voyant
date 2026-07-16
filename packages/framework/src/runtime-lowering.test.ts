@@ -1,4 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; runtime catalog, selected facet, lazy loading, and validation cases share one lowering harness.
+
+import type { VoyantGraphCustomFieldTarget } from "@voyant-travel/core/project"
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
 import {
@@ -88,6 +90,37 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("exposes selected custom-field targets to graph runtime factories", () => {
+    const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
+    const runtime = createVoyantGraphRuntime({
+      ...input,
+      modules: input.modules.map((module) => ({
+        ...module,
+        customFieldTargets: [
+          {
+            id: "person",
+            namespace: "loyalty",
+            label: "Person",
+            fieldTypes: ["text"],
+            capabilities: ["read", "write"],
+            ownerUnitId: "@acme/voyant-loyalty",
+          } satisfies VoyantGraphCustomFieldTarget,
+        ],
+      })),
+    })
+
+    expect(runtime.customFieldTargets).toEqual([
+      {
+        id: "person",
+        namespace: "loyalty",
+        label: "Person",
+        fieldTypes: ["text"],
+        capabilities: ["read", "write"],
+        ownerUnitId: "@acme/voyant-loyalty",
+      },
+    ])
+  })
+
   it("exposes a selected-owner event catalog to graph runtime factories", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
     const runtime = createVoyantGraphRuntime({

@@ -9,13 +9,11 @@ export type {
   CustomFieldType,
   CustomFieldValidationResult,
   CustomFieldVisibility,
+  CustomFieldVisibilityChannel,
 } from "./custom-fields.js"
 export {
   createCustomFieldRegistry,
-  customFieldsFromGlob,
   customFieldsVisibleIn,
-  defineCustomField,
-  mergeCustomFieldDefinitions,
   validateCustomFields,
 } from "./custom-fields.js"
 export type {
@@ -135,6 +133,20 @@ export { createQueryContext, createQueryRunner, queryGraph } from "./query.js"
 export type { RegistryOptions } from "./registry.js"
 export { createRegistry } from "./registry.js"
 export type { VoyantRuntimeHostPrimitives } from "./runtime-host.js"
+export type {
+  CustomFieldsRuntime,
+  CustomFieldValueDefinitionContext,
+  CustomFieldValueEntityValues,
+  CustomFieldValueOperationsRuntime,
+  CustomFieldValueOwnerContext,
+  CustomFieldValueReaderRuntime,
+} from "./runtime-port.js"
+export {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "./runtime-port.js"
 export type {
   StepBuilder,
   StepCompensateFn,

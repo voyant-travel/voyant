@@ -8,6 +8,7 @@ import type {
 } from "@voyant-travel/core"
 import {
   isGraphRuntimeFactory,
+  type VoyantGraphCustomFieldTarget,
   type VoyantGraphRuntimeFactoryContext,
   type VoyantPort,
 } from "@voyant-travel/core/project"
@@ -41,11 +42,14 @@ export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
 export interface VoyantGraphRuntimePortResolver {
   hasRuntimePort?(port: Pick<VoyantPort<unknown>, "id">): boolean
   getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
+  getRuntimePorts?<T>(port: Pick<VoyantPort<T>, "id">): readonly T[] | Promise<readonly T[]>
 }
 
 /** Stable host surface available to every statically selected runtime contributor. */
 export interface VoyantGraphRuntimeContributorHost extends VoyantGraphRuntimePortResolver {
   primitives: VoyantRuntimeHostPrimitives
+  /** Immutable custom-field target authority lowered from the selected graph. */
+  customFieldTargets: readonly VoyantGraphCustomFieldTarget[]
 }
 
 /** Build-time selected package hook that maps host resources to graph runtime ports. */
@@ -111,6 +115,7 @@ function runtimePortStub(id: string): unknown {
     createService: () => runtimeServiceStub(id),
     resolveRuntime: unavailableAsync,
     resolveRegistry: unavailableAsync,
+    resolveRegistryForWrite: unavailableAsync,
     resolveSourceAdapterRegistry: unavailableAsync,
     ensureSourceRegistry: unavailableAsync,
     getSourceRegistryFromContext: unavailable,

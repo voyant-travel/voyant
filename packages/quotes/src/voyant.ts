@@ -4,6 +4,10 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
+import {
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
 import { tripsRoutesRuntimePort } from "@voyant-travel/trips/runtime-port"
 import {
@@ -26,8 +30,32 @@ export const quotesVoyantModule = defineModule({
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
   runtimePorts: [requirePort(quotesRuntimePort), requirePort(tripsRoutesRuntimePort)],
+  customFieldTargets: [
+    {
+      id: "quote",
+      namespace: "quotes",
+      label: "Quote",
+      fieldTypes: [
+        "varchar",
+        "text",
+        "double",
+        "monetary",
+        "date",
+        "boolean",
+        "enum",
+        "set",
+        "json",
+      ],
+      capabilities: ["read", "write", "presentation"],
+    },
+  ],
   provides: {
-    ports: [providePort(checkoutInquiryRuntimePort), providePort(quotesRuntimePort)],
+    ports: [
+      providePort(checkoutInquiryRuntimePort),
+      providePort(quotesRuntimePort),
+      providePort(customFieldValueLifecycleRuntimePort),
+      providePort(customFieldValueOperationsRuntimePort),
+    ],
   },
   api: [
     {

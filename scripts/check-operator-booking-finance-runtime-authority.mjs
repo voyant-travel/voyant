@@ -18,7 +18,7 @@ const [deploymentResources, bookingsContributor, financeContributor, quotesContr
   ])
 
 const packagePorts = {
-  bookings: ["bookingsConfigurationRuntimePort"],
+  bookings: ["actionLedgerBookingDriftRuntimePort"],
   finance: ["financeHostRuntimePort", "bookingsFinanceRuntimePort"],
   quotes: ["quotesRuntimePort", "quotesProposalRuntimePort", "quotesSnapshotRuntimePort"],
 }

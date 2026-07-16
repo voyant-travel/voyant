@@ -4,7 +4,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { accountRoutes } from "./accounts.js"
 import { activityRoutes } from "./activities.js"
-import { customFieldRoutes } from "./custom-fields.js"
 import { customerSignalRoutes } from "./customer-signals.js"
 import { personDocumentRoutes } from "./person-documents.js"
 import { personRelationshipRoutes } from "./person-relationships.js"
@@ -17,7 +16,7 @@ type Env = {
 }
 
 // An `OpenAPIHono` parent serves the still-plain-Hono children (activities,
-// custom-fields, customer-signals, person-documents, person-relationships)
+// customer-signals, person-documents, person-relationships)
 // unchanged AND surfaces the OpenAPI definitions of the converted children
 // (accounts.ts — voyant#2276 step 3.5, stage A). The remaining files convert in
 // a later stage; they stay undocumented but fully served until then.
@@ -27,6 +26,5 @@ export const relationshipsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVa
   .route("/", personRelationshipRoutes)
   .route("/", customerSignalRoutes)
   .route("/", activityRoutes)
-  .route("/", customFieldRoutes)
 
 export type RelationshipsRoutes = typeof relationshipsRoutes

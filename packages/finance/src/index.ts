@@ -2,6 +2,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
 import type { Module } from "@voyant-travel/core"
+import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
@@ -200,6 +201,7 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
     const configured = createFinanceApiModule(
       createFinanceRuntime(
         await getPort(financeHostRuntimePort),
+        await getPort(customFieldsRuntimePort),
         await getPort(financeNotificationsRuntimePort),
         hasPort(financeCheckoutPaymentStartersRuntimePort)
           ? await getPort(financeCheckoutPaymentStartersRuntimePort)

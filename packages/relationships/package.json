@@ -6,7 +6,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./linkables": "./src/linkables.ts",
-    "./custom-fields-registry": "./src/service/custom-fields-registry.ts",
     "./events": "./src/events.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
@@ -31,6 +30,7 @@
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/custom-fields": "workspace:^",
     "@voyant-travel/relationships-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -65,11 +65,6 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
-      },
-      "./custom-fields-registry": {
-        "types": "./dist/service/custom-fields-registry.d.ts",
-        "import": "./dist/service/custom-fields-registry.js",
-        "default": "./dist/service/custom-fields-registry.js"
       },
       "./events": {
         "types": "./dist/events.d.ts",

@@ -9,14 +9,16 @@ function argument(name, fallback) {
 
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
-const [deploymentResources, auth, mice, quotes, relationships, trips] = await Promise.all([
-  read("packages/runtime/src/deployment-resources.ts"),
-  read("packages/auth/src/runtime-contributor.ts"),
-  read("packages/mice/src/runtime-contributor.ts"),
-  read("packages/quotes/src/runtime-contributor.ts"),
-  read("packages/relationships/src/runtime-contributor.ts"),
-  read("packages/trips/src/runtime-contributor.ts"),
-])
+const [deploymentResources, auth, customFields, mice, quotes, relationships, trips] =
+  await Promise.all([
+    read("packages/runtime/src/deployment-resources.ts"),
+    read("packages/auth/src/runtime-contributor.ts"),
+    read("packages/custom-fields/src/runtime-contributor.ts"),
+    read("packages/mice/src/runtime-contributor.ts"),
+    read("packages/quotes/src/runtime-contributor.ts"),
+    read("packages/relationships/src/runtime-contributor.ts"),
+    read("packages/trips/src/runtime-contributor.ts"),
+  ])
 
 const violations = []
 if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
@@ -57,10 +59,11 @@ const contributorRequirements = [
     ["host.getRuntimePort(relationshipsMiceRuntimePort)", "resolveDelegatePersonById"],
   ],
   ["quotes", quotes, ["host.getRuntimePort(tripsRoutesRuntimePort)", "createQuotesRuntime(host"]],
+  ["custom-fields", customFields, ["customFieldsRuntimePort.id"]],
   [
     "relationships",
     relationships,
-    ["host.primitives.config.read", "relationshipsMiceRuntimePort.id"],
+    ["customFieldValueReaderRuntimePort.id", "relationshipsMiceRuntimePort.id"],
   ],
   ["trips", trips, ["host.primitives", "host.getRuntimePort(catalogRuntimeServicesPort)"]],
 ]
@@ -76,6 +79,7 @@ for (const [packageName, source, requirements] of contributorRequirements) {
 
 for (const [packageName, source] of [
   ["auth", auth],
+  ["custom-fields", customFields],
   ["mice", mice],
   ["quotes", quotes],
   ["relationships", relationships],
@@ -88,6 +92,11 @@ for (const [packageName, source] of [
 if (deploymentResources.includes("createDeploymentCapabilities")) {
   violations.push("deployment-resources.ts must not define a capability container")
 }
+if (relationships.includes("host.primitives.config.read")) {
+  violations.push(
+    "relationships runtime contributor must not restore deployment-configured custom fields",
+  )
+}
 
 if (violations.length > 0) {
   throw new Error(
@@ -96,5 +105,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-capability-derived-runtime-bindings: OK (5 package bindings derived from primitives and static ports)",
+  "check-operator-capability-derived-runtime-bindings: OK (6 package bindings derived from primitives and static ports)",
 )

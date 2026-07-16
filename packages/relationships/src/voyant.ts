@@ -1,5 +1,12 @@
+// agent-quality: file-size exception -- owner: relationships; the import-cheap package manifest remains centralized until #3398 moves custom-field API and Settings facets to their generic owner.
 import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 import { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
 
 export {
@@ -75,9 +82,12 @@ export const relationshipsVoyantModule = defineModule({
       providePort(relationshipsMiceRuntimePort),
       providePort(bookingsRelationshipsRuntimePort),
       providePort(relationshipsRouteRuntimePort),
+      providePort(customFieldValueReaderRuntimePort),
+      providePort(customFieldValueLifecycleRuntimePort),
+      providePort(customFieldValueOperationsRuntimePort),
     ],
   },
-  runtimePorts: [requirePort(relationshipsRouteRuntimePort)],
+  runtimePorts: [requirePort(customFieldsRuntimePort), requirePort(relationshipsRouteRuntimePort)],
   api: [
     {
       id: "@voyant-travel/relationships#api.admin",
@@ -564,6 +574,53 @@ export const relationshipsVoyantModule = defineModule({
       from: { routes: ["@voyant-travel/relationships#api.admin"] },
     },
   ],
+  customFieldTargets: [
+    {
+      id: "organization",
+      namespace: "relationships",
+      label: "Organization",
+      fieldTypes: [
+        "varchar",
+        "text",
+        "double",
+        "monetary",
+        "date",
+        "boolean",
+        "enum",
+        "set",
+        "json",
+        "address",
+        "phone",
+      ],
+      capabilities: ["read", "write", "search", "export", "invoice", "presentation"],
+    },
+    {
+      id: "person",
+      namespace: "relationships",
+      label: "Person",
+      fieldTypes: [
+        "varchar",
+        "text",
+        "double",
+        "monetary",
+        "date",
+        "boolean",
+        "enum",
+        "set",
+        "json",
+        "address",
+        "phone",
+      ],
+      capabilities: ["read", "write", "search", "export", "invoice", "presentation"],
+    },
+    {
+      id: "activity",
+      namespace: "relationships",
+      label: "Activity",
+      fieldTypes: ["varchar", "text", "double", "date", "boolean", "enum", "set", "json"],
+      capabilities: ["read", "write", "presentation"],
+    },
+  ],
   admin: {
     compositionOrder: 20,
     runtime: {
@@ -603,12 +660,6 @@ export const relationshipsVoyantModule = defineModule({
       {
         id: "@voyant-travel/relationships#admin.route.organizations-detail",
         path: "/organizations/$id",
-        requiredScopes: ["crm:read"],
-        runtime: relationshipsAdminRuntime,
-      },
-      {
-        id: "@voyant-travel/relationships#admin.route.custom-fields",
-        path: "/settings/custom-fields",
         requiredScopes: ["crm:read"],
         runtime: relationshipsAdminRuntime,
       },

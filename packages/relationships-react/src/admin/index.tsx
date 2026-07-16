@@ -7,7 +7,7 @@ import {
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
-import { Building, SlidersHorizontal, Users } from "lucide-react"
+import { Building, Users } from "lucide-react"
 
 // Lean statics only: the client module (fetcher) and the skeletons. Query
 // options resolve via dynamic import inside the loaders so the data layer
@@ -232,7 +232,6 @@ export function createSelectedRelationshipsAdminExtension({
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   const peopleLabel = navMessages.people ?? "People"
   const organizationsLabel = navMessages.organizations ?? "Organizations"
-  const customFieldsLabel = navMessages.customFields ?? navMessages.settings ?? peopleLabel
   const extension = withAdminRouteMessagesProvider(
     createRelationshipsAdminExtension({
       labels: {
@@ -257,29 +256,6 @@ export function createSelectedRelationshipsAdminExtension({
             icon: Building,
           },
         ],
-      },
-    ],
-    settingsPages: [
-      {
-        id: "custom-fields",
-        path: "/custom-fields",
-        title: customFieldsLabel,
-        label: customFieldsLabel,
-        icon: SlidersHorizontal,
-        group: "general",
-        order: 75,
-        ssr: "data-only",
-        routeMessagesProvider: relationshipsRouteMessagesProvider,
-        page: () =>
-          import("../components/custom-field-definitions-page.js").then((module) =>
-            adminRoutePageModule(module.CustomFieldDefinitionsPage),
-          ),
-        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
-          const { getCustomFieldDefinitionsQueryOptions } = await import("../query-options.js")
-          return queryClient.ensureQueryData(
-            getCustomFieldDefinitionsQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
-          )
-        },
       },
     ],
   }

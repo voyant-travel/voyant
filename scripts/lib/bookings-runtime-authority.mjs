@@ -50,10 +50,11 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
   const coreHost = files.get("packages/core/src/runtime-host.ts") ?? ""
 
   for (const required of [
-    "bookingsConfigurationRuntimePort",
+    "actionLedgerBookingDriftRuntimePort",
     "createBookingsRuntime",
     "createBookingRequirementsRuntime",
     "relationships.upsertPersonFromContact",
+    "customFields.resolveRegistry",
     "accommodation.enrichOverviewItems",
     "finance.createStaleBookingHoldsRuntime",
     "inventory.resolveProductSnapshot",

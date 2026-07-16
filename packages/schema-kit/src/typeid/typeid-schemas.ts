@@ -129,7 +129,6 @@ export const typeIdSchemas = {
   activityLink: typeIdSchema("activity_links"),
   activityParticipant: typeIdSchema("activity_participants"),
   customFieldDefinition: typeIdSchema("custom_field_definitions"),
-  customFieldValue: typeIdSchema("custom_field_values"),
   invoice: typeIdSchema("invoices"),
   paymentInstrument: typeIdSchema("payment_instruments"),
   paymentSession: typeIdSchema("payment_sessions"),
