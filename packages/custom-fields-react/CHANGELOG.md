@@ -1,5 +1,11 @@
 # @voyant-travel/custom-fields-react
 
+## 0.2.3
+
+### Patch Changes
+
+- 70a39fc: Declare the repository field so npm provenance verification accepts the publish (0.2.1 was rejected with E422: repository.url "" did not match the GitHub Actions provenance).
+
 ## 0.2.2
 
 ### Patch Changes
