@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.6.12
+
+### Patch Changes
+
+- Updated dependencies [e042457]
+  - @voyant-travel/framework-migrations@0.10.3
+
 ## 0.6.11
 
 ### Patch Changes
