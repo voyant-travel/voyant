@@ -3,7 +3,7 @@
 
 import { useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useAdminNavigate, useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
@@ -423,6 +423,7 @@ function ContractDateCell({
   contract: LegalContractRecord
   messages: DocumentsTableMessages
 }) {
+  const { resolvedLocale } = useLocale()
   const generationFailure = resolveContractGenerationFailure(contract)
   const attachmentsQuery = useLegalContractAttachments({ contractId: contract.id })
   const attachments = (attachmentsQuery.data ?? []).filter(
@@ -439,7 +440,7 @@ function ContractDateCell({
   return (
     <span className="text-muted-foreground text-xs">
       <span className="opacity-60">{dateLabel} </span>
-      {formatDate(dateIso)}
+      {formatDate(dateIso, resolvedLocale)}
     </span>
   )
 }
@@ -451,13 +452,14 @@ function TravelerDateCell({
   doc: TravelerDocPayload
   messages: DocumentsTableMessages
 }) {
+  const { resolvedLocale } = useLocale()
   const dateIso = doc.expiresAt ?? doc.createdAt ?? null
   const dateLabel = doc.expiresAt ? messages.travelerExpiresLabel : messages.travelerUploadedLabel
   if (!dateIso) return <span className="text-muted-foreground text-xs">—</span>
   return (
     <span className="text-muted-foreground text-xs">
       <span className="opacity-60">{dateLabel} </span>
-      {formatDate(dateIso)}
+      {formatDate(dateIso, resolvedLocale)}
     </span>
   )
 }
@@ -573,11 +575,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   try {
     const d = new Date(iso)
     if (!Number.isFinite(d.getTime())) return iso
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+    return d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
   } catch {
     return iso
   }

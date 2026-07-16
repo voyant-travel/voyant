@@ -181,6 +181,11 @@ const adminAuthRuntime: AdminAuthRuntime<StandardOperatorCurrentUser> = {
   signOut: async () => {
     await authClient.signOut()
   },
+  updateCurrentUserPreferences: (preferences) =>
+    apiCall<StandardOperatorCurrentUser>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(preferences),
+    }),
 }
 
 async function apiCall<T>(path: string, options: RequestInit = {}): Promise<T> {

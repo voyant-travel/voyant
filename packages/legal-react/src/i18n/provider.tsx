@@ -65,10 +65,12 @@ export function getLegalUiI18n({
 export function LegalUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: LegalUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function LegalUiMessagesProvider({
       definitions={legalUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

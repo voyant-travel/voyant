@@ -230,6 +230,7 @@ function Endpoint({
   iata: string
   align?: "start" | "end"
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   return (
     <div
       className={cn(
@@ -237,7 +238,7 @@ function Endpoint({
         align === "end" ? "items-end" : "items-start",
       )}
     >
-      <span className="font-semibold text-base tabular-nums">{formatTime(at)}</span>
+      <span className="font-semibold text-base tabular-nums">{formatTime(at, locale)}</span>
       <span className="font-mono text-muted-foreground text-xs">{iata}</span>
     </div>
   )
@@ -253,10 +254,10 @@ function formatMoney(
   return i18n.formatCurrency(n, currency, { maximumFractionDigits: 0 })
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+  return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(d)
 }
 
 function formatDuration(iso: string | undefined): string {

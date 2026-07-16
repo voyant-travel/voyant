@@ -1,6 +1,5 @@
 "use client"
 
-import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
   Dialog,
@@ -24,7 +23,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
-import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type NotificationTemplateRecord,
   useNotificationTemplateAuthoring,
@@ -74,7 +73,7 @@ function NotificationTemplateDialogInner({
   onSuccess,
 }: NotificationTemplateDialogProps) {
   const isEditing = Boolean(template)
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatMessage, messages } = useNotificationsUiI18nOrDefault()
   const t = messages.admin.templateDialog
   const common = messages.admin.common
   const { create, update } = useNotificationTemplateMutation()
@@ -479,8 +478,10 @@ function NotificationTemplateDialogInner({
 
                       {testSend.data ? (
                         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-                          Delivery queued with status <strong>{testSend.data.status}</strong>
-                          {testSend.data.provider ? ` via ${testSend.data.provider}` : ""}.
+                          {formatMessage(common.deliveryQueuedStatus, {
+                            status: testSend.data.status,
+                            provider: testSend.data.provider ?? "none",
+                          })}
                         </div>
                       ) : null}
                     </div>

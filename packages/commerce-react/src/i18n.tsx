@@ -25,19 +25,29 @@ export interface CommerceUiMessageOverrides {
 export interface CommerceUiMessagesProviderProps {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: CommerceUiMessageOverrides | null
 }
 
 export function CommerceUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: CommerceUiMessagesProviderProps) {
   return (
-    <MarketsUiMessagesProvider locale={locale} overrides={overrides?.markets}>
-      <PricingUiMessagesProvider locale={locale} overrides={overrides?.pricing}>
-        <SellabilityUiMessagesProvider locale={locale} overrides={overrides?.sellability}>
-          <PromotionsUiMessagesProvider locale={locale} overrides={overrides?.promotions}>
+    <MarketsUiMessagesProvider locale={locale} timeZone={timeZone} overrides={overrides?.markets}>
+      <PricingUiMessagesProvider locale={locale} timeZone={timeZone} overrides={overrides?.pricing}>
+        <SellabilityUiMessagesProvider
+          locale={locale}
+          timeZone={timeZone}
+          overrides={overrides?.sellability}
+        >
+          <PromotionsUiMessagesProvider
+            locale={locale}
+            timeZone={timeZone}
+            overrides={overrides?.promotions}
+          >
             {children}
           </PromotionsUiMessagesProvider>
         </SellabilityUiMessagesProvider>

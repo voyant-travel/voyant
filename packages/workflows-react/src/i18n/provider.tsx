@@ -66,10 +66,12 @@ export function getWorkflowRunsUiI18n({
 export function WorkflowRunsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: WorkflowRunsUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function WorkflowRunsUiMessagesProvider({
       definitions={workflowRunsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

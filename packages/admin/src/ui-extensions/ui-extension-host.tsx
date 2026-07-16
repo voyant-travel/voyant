@@ -27,6 +27,7 @@ import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 
+import { useOperatorAdminI18n } from "../providers/operator-admin-messages.js"
 import { isUiExtensionCompatible } from "./compat.js"
 
 /** Sandbox tokens the frame is allowed — never `allow-same-origin`. */
@@ -85,9 +86,15 @@ function UiExtensionStateCard({
   )
 }
 
-function UiExtensionLoadingCard({ displayName }: { displayName: string }) {
+function UiExtensionLoadingCard({
+  displayName,
+  description,
+}: {
+  displayName: string
+  description: string
+}) {
   return (
-    <UiExtensionStateCard title={displayName} description="Loading extension…">
+    <UiExtensionStateCard title={displayName} description={description}>
       <div className="space-y-2">
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-4 w-1/2" />
@@ -96,23 +103,30 @@ function UiExtensionLoadingCard({ displayName }: { displayName: string }) {
   )
 }
 
-function UiExtensionErrorCard({ displayName }: { displayName: string }) {
+function UiExtensionErrorCard({
+  displayName,
+  description,
+}: {
+  displayName: string
+  description: string
+}) {
   return (
     <UiExtensionStateCard
       title={displayName}
-      description="This extension could not be loaded and was skipped."
+      description={description}
       className="border-destructive/40"
     />
   )
 }
 
-function UiExtensionIncompatibleCard({ descriptor }: { descriptor: UiExtensionDescriptor }) {
-  return (
-    <UiExtensionStateCard
-      title={descriptor.displayName}
-      description={`This extension is incompatible with this admin version (requires ${descriptor.extensionApi}, admin provides ${ADMIN_UI_EXTENSION_API_VERSION}).`}
-    />
-  )
+function UiExtensionIncompatibleCard({
+  descriptor,
+  description,
+}: {
+  descriptor: UiExtensionDescriptor
+  description: string
+}) {
+  return <UiExtensionStateCard title={descriptor.displayName} description={description} />
 }
 
 type FrameStatus = "loading" | "ready" | "error"
@@ -126,6 +140,7 @@ function UiExtensionFrame({
   className,
   timeoutMs = UI_EXTENSION_HANDSHAKE_TIMEOUT_MS,
 }: UiExtensionHostProps) {
+  const { messages } = useOperatorAdminI18n()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [status, setStatus] = useState<FrameStatus>("loading")
   const [height, setHeight] = useState<number>()
@@ -206,7 +221,12 @@ function UiExtensionFrame({
   }, [context, status])
 
   if (status === "error") {
-    return <UiExtensionErrorCard displayName={descriptor.displayName} />
+    return (
+      <UiExtensionErrorCard
+        displayName={descriptor.displayName}
+        description={messages.extensionLoadFailed}
+      />
+    )
   }
 
   // The frame stays laid out (not `sr-only`) while loading — a hidden,
@@ -226,7 +246,10 @@ function UiExtensionFrame({
       />
       {status === "loading" ? (
         <div className="absolute inset-0" data-slot="ui-extension-loading">
-          <UiExtensionLoadingCard displayName={descriptor.displayName} />
+          <UiExtensionLoadingCard
+            displayName={descriptor.displayName}
+            description={messages.extensionLoading}
+          />
         </div>
       ) : null}
     </div>
@@ -234,7 +257,7 @@ function UiExtensionFrame({
 }
 
 class UiExtensionErrorBoundary extends Component<
-  { displayName: string; children: ReactNode },
+  { displayName: string; errorDescription: string; children: ReactNode },
   { failed: boolean }
 > {
   state = { failed: false }
@@ -249,7 +272,12 @@ class UiExtensionErrorBoundary extends Component<
 
   render() {
     if (this.state.failed) {
-      return <UiExtensionErrorCard displayName={this.props.displayName} />
+      return (
+        <UiExtensionErrorCard
+          displayName={this.props.displayName}
+          description={this.props.errorDescription}
+        />
+      )
     }
     return this.props.children
   }
@@ -266,17 +294,29 @@ class UiExtensionErrorBoundary extends Component<
  * can never break the surrounding admin.
  */
 export function UiExtensionHost(props: UiExtensionHostProps) {
+  const { formatMessage, messages } = useOperatorAdminI18n()
   const compatible = useMemo(
     () => isUiExtensionCompatible(props.descriptor.extensionApi),
     [props.descriptor.extensionApi],
   )
 
   if (!compatible) {
-    return <UiExtensionIncompatibleCard descriptor={props.descriptor} />
+    return (
+      <UiExtensionIncompatibleCard
+        descriptor={props.descriptor}
+        description={formatMessage(messages.extensionIncompatible, {
+          required: props.descriptor.extensionApi,
+          provided: ADMIN_UI_EXTENSION_API_VERSION,
+        })}
+      />
+    )
   }
 
   return (
-    <UiExtensionErrorBoundary displayName={props.descriptor.displayName}>
+    <UiExtensionErrorBoundary
+      displayName={props.descriptor.displayName}
+      errorDescription={messages.extensionLoadFailed}
+    >
       <UiExtensionFrame {...props} />
     </UiExtensionErrorBoundary>
   )

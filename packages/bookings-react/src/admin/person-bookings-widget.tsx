@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminNavigate, useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useAdminNavigate, useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
 import type { PersonDetailBookingsTabContext } from "@voyant-travel/relationships-react/admin"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
@@ -26,6 +26,7 @@ export type PersonBookingsWidgetProps = PersonDetailBookingsTabContext
  * semantic `booking.detail` destination.
  */
 export function PersonBookingsWidget({ personId }: PersonBookingsWidgetProps) {
+  const { resolvedLocale } = useLocale()
   const adminMessages = useOperatorAdminMessages()
   const messages = adminMessages.bookings.list
   const navigateTo = useAdminNavigate()
@@ -100,7 +101,9 @@ export function PersonBookingsWidget({ personId }: PersonBookingsWidgetProps) {
                     : `${(booking.sellAmountCents / 100).toFixed(2)} ${booking.sellCurrency}`}
                 </TableCell>
                 <TableCell>{booking.pax ?? "—"}</TableCell>
-                <TableCell>{formatBookingDate(booking.startsAt ?? booking.startDate)}</TableCell>
+                <TableCell>
+                  {formatBookingDate(booking.startsAt ?? booking.startDate, resolvedLocale)}
+                </TableCell>
               </TableRow>
             )
           })}
@@ -110,9 +113,9 @@ export function PersonBookingsWidget({ personId }: PersonBookingsWidgetProps) {
   )
 }
 
-function formatBookingDate(value: string | null | undefined): string {
+function formatBookingDate(value: string | null | undefined, locale: string): string {
   if (!value) return "—"
   const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value)
   if (Number.isNaN(date.getTime())) return "—"
-  return date.toLocaleDateString()
+  return date.toLocaleDateString(locale)
 }

@@ -2,6 +2,14 @@
 
 import { createContext, type ReactNode, useContext, useMemo } from "react"
 
+import { canonicalizeLocale, localeHierarchy } from "./locale.js"
+import {
+  formatIcuMessage,
+  isCompatibleIcuOverride,
+  type MessageFormatOptions,
+  type MessageValues,
+} from "./message-format.js"
+
 export type DeepPartial<T> = T extends readonly unknown[]
   ? T
   : T extends object
@@ -25,19 +33,7 @@ export type LocaleMessageSchema<T> = T extends string
         ? { [K in keyof T]: LocaleMessageSchema<T[K]> }
         : T
 
-function normalizeLocaleTag(value: string | null | undefined): string {
-  return (value ?? "").trim().toLowerCase()
-}
-
-function localeCandidates(locale: string | null | undefined): string[] {
-  const normalized = normalizeLocaleTag(locale)
-  if (!normalized) {
-    return []
-  }
-
-  const language = normalized.split("-")[0]
-  return language && language !== normalized ? [normalized, language] : [normalized]
-}
+const UNSAFE_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"])
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -45,6 +41,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 export function getLocaleMessageOverridesFromUiPrefs<T extends Record<string, unknown>>(
   uiPrefs: unknown,
+  definitions?: LocaleMessageDefinitions<T>,
 ): LocaleMessageOverrides<T> | undefined {
   if (!isPlainObject(uiPrefs)) {
     return undefined
@@ -55,7 +52,71 @@ export function getLocaleMessageOverridesFromUiPrefs<T extends Record<string, un
     return undefined
   }
 
-  return isPlainObject(i18n.admin) ? (i18n.admin as LocaleMessageOverrides<T>) : undefined
+  if (!isPlainObject(i18n.admin)) return undefined
+
+  const schema = definitions ? Object.values(definitions)[0] : undefined
+  const result: LocaleMessageOverrides<T> = {}
+  const shared = sanitizeOverrideNode(schema, i18n.admin.shared)
+  if (shared && isPlainObject(shared) && Object.keys(shared).length > 0) {
+    result.shared = shared as DeepPartial<T>
+  }
+
+  if (isPlainObject(i18n.admin.locales)) {
+    const locales: Record<string, DeepPartial<T>> = {}
+    for (const [locale, override] of Object.entries(i18n.admin.locales)) {
+      const sanitized = sanitizeOverrideNode(schema, override)
+      if (sanitized && isPlainObject(sanitized) && Object.keys(sanitized).length > 0) {
+        locales[canonicalizeLocale(locale)] = sanitized as DeepPartial<T>
+      }
+    }
+    if (Object.keys(locales).length > 0) result.locales = locales
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined
+}
+
+function sanitizeOverrideNode(schema: unknown, value: unknown): unknown {
+  if (value === undefined || value === null) return undefined
+
+  if (schema === undefined) {
+    if (typeof value === "string") return value
+    if (Array.isArray(value)) {
+      const sanitized = value.map((item) => sanitizeOverrideNode(undefined, item))
+      return sanitized.every((item) => item !== undefined) ? sanitized : undefined
+    }
+    if (!isPlainObject(value)) return undefined
+    const result: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value)) {
+      if (UNSAFE_OBJECT_KEYS.has(key)) continue
+      const sanitized = sanitizeOverrideNode(undefined, child)
+      if (sanitized !== undefined) result[key] = sanitized
+    }
+    return Object.keys(result).length > 0 ? result : undefined
+  }
+
+  if (typeof schema === "string") {
+    return typeof value === "string" && isCompatibleIcuOverride(schema, value) ? value : undefined
+  }
+
+  if (Array.isArray(schema)) {
+    if (!Array.isArray(value)) return undefined
+    if (schema.length === 0)
+      return value.every((item) => typeof item === "string") ? value : undefined
+    const sanitized = value
+      .map((item) => sanitizeOverrideNode(schema[0], item))
+      .filter((item) => item !== undefined)
+    return sanitized.length === value.length ? sanitized : undefined
+  }
+
+  if (!isPlainObject(schema) || !isPlainObject(value)) return undefined
+
+  const result: Record<string, unknown> = {}
+  for (const [key, child] of Object.entries(value)) {
+    if (UNSAFE_OBJECT_KEYS.has(key) || !(key in schema)) continue
+    const sanitized = sanitizeOverrideNode(schema[key], child)
+    if (sanitized !== undefined) result[key] = sanitized
+  }
+  return Object.keys(result).length > 0 ? result : undefined
 }
 
 function mergeDeep<T>(base: T, override?: DeepPartial<T> | null): T {
@@ -70,7 +131,7 @@ function mergeDeep<T>(base: T, override?: DeepPartial<T> | null): T {
   const result: Record<string, unknown> = { ...base }
 
   for (const [key, value] of Object.entries(override)) {
-    if (value === undefined) {
+    if (value === undefined || UNSAFE_OBJECT_KEYS.has(key)) {
       continue
     }
 
@@ -84,42 +145,50 @@ function mergeDeep<T>(base: T, override?: DeepPartial<T> | null): T {
   return result as T
 }
 
-function resolveRecordByLocale<T>(
-  locale: string | null | undefined,
-  record: Partial<Record<string, T>> | null | undefined,
-): T | undefined {
-  if (!record) {
-    return undefined
+function sanitizeOverrides<T extends Record<string, unknown>>(
+  schema: T,
+  overrides: LocaleMessageOverrides<T> | null | undefined,
+): LocaleMessageOverrides<T> | undefined {
+  if (!overrides) return undefined
+
+  const result: LocaleMessageOverrides<T> = {}
+  const shared = sanitizeOverrideNode(schema, overrides.shared)
+  if (shared && isPlainObject(shared) && Object.keys(shared).length > 0) {
+    result.shared = shared as DeepPartial<T>
   }
 
-  const entries = Object.entries(record)
-  for (const candidate of localeCandidates(locale)) {
-    const match = entries.find(([key]) => normalizeLocaleTag(key) === candidate)
-    if (match) {
-      return match[1]
+  if (isPlainObject(overrides.locales)) {
+    const locales: Record<string, DeepPartial<T>> = {}
+    for (const [locale, override] of Object.entries(overrides.locales)) {
+      const sanitized = sanitizeOverrideNode(schema, override)
+      if (sanitized && isPlainObject(sanitized) && Object.keys(sanitized).length > 0) {
+        locales[canonicalizeLocale(locale)] = sanitized as DeepPartial<T>
+      }
     }
+    if (Object.keys(locales).length > 0) result.locales = locales
   }
 
-  return undefined
+  return Object.keys(result).length > 0 ? result : undefined
 }
 
-function resolveDefinitionLocale<T extends Record<string, unknown>>(
+function findLocaleEntry<T>(record: Partial<Record<string, T>>, locale: string): T | undefined {
+  const canonical = canonicalizeLocale(locale).toLowerCase()
+  return Object.entries(record).find(
+    ([key]) => canonicalizeLocale(key).toLowerCase() === canonical,
+  )?.[1]
+}
+
+function resolveDefinitionKeys<T extends Record<string, unknown>>(
   locale: string | null | undefined,
   definitions: LocaleMessageDefinitions<T>,
-  fallbackLocale: string,
-): string {
+): string[] {
   const keys = Object.keys(definitions)
-  for (const candidate of localeCandidates(locale)) {
-    const match = keys.find((key) => normalizeLocaleTag(key) === candidate)
-    if (match) {
-      return match
-    }
-  }
-
-  const fallbackMatch = keys.find(
-    (key) => normalizeLocaleTag(key) === normalizeLocaleTag(fallbackLocale),
-  )
-  return fallbackMatch ?? keys[0] ?? fallbackLocale
+  const matches = localeHierarchy(locale)
+    .map((candidate) =>
+      keys.find((key) => canonicalizeLocale(key).toLowerCase() === candidate.toLowerCase()),
+    )
+    .filter((key): key is string => Boolean(key))
+  return [...new Set(matches)]
 }
 
 export function resolveLocaleMessages<T extends Record<string, unknown>>({
@@ -133,18 +202,28 @@ export function resolveLocaleMessages<T extends Record<string, unknown>>({
   definitions: LocaleMessageDefinitions<T>
   overrides?: LocaleMessageOverrides<T> | null
 }): T {
-  const fallbackKey = resolveDefinitionLocale(fallbackLocale, definitions, fallbackLocale)
-  const localeKey = resolveDefinitionLocale(locale, definitions, fallbackKey)
+  const definitionKeys = Object.keys(definitions)
+  if (definitionKeys.length === 0) {
+    throw new Error("resolveLocaleMessages requires at least one locale definition")
+  }
 
-  const fallbackMessages = definitions[fallbackKey]!
-  const localeMessages = definitions[localeKey]
+  const fallbackKey =
+    resolveDefinitionKeys(fallbackLocale, definitions).at(-1) ?? definitionKeys[0]!
+  const sanitizedOverrides = sanitizeOverrides(definitions[fallbackKey]!, overrides)
+  const localeKeys = resolveDefinitionKeys(locale, definitions)
+  const selectedKeys = localeKeys.length > 0 ? localeKeys : [fallbackKey]
 
-  const localeOverride =
-    localeKey === fallbackKey ? undefined : (localeMessages as DeepPartial<T> | undefined)
+  let resolved: T = definitions[fallbackKey]!
+  for (const key of selectedKeys) {
+    if (key !== fallbackKey) resolved = mergeDeep(resolved, definitions[key] as DeepPartial<T>)
+  }
+  resolved = mergeDeep(resolved, sanitizedOverrides?.shared)
 
-  let resolved: T = mergeDeep<T>(fallbackMessages as T, localeOverride)
-  resolved = mergeDeep(resolved, overrides?.shared)
-  resolved = mergeDeep(resolved, resolveRecordByLocale(localeKey, overrides?.locales))
+  const overrideLocales =
+    localeKeys.length > 0 ? localeHierarchy(locale) : localeHierarchy(fallbackKey)
+  for (const candidate of overrideLocales) {
+    resolved = mergeDeep(resolved, findLocaleEntry(sanitizedOverrides?.locales ?? {}, candidate))
+  }
 
   return resolved
 }
@@ -192,12 +271,10 @@ export function composeLocaleMessageDefinitions<T extends Record<string, unknown
 
 export function formatMessage(
   template: string,
-  values: Record<string, string | number | null | undefined>,
+  values: MessageValues,
+  options?: MessageFormatOptions,
 ): string {
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
-    const value = values[key]
-    return value === null || value === undefined ? "" : String(value)
-  })
+  return formatIcuMessage(template, values, options)
 }
 
 const MessagesContext = createContext<Record<string, unknown> | undefined>(undefined)

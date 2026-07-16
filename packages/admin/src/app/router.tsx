@@ -1,5 +1,6 @@
 import { type DehydratedState, dehydrate, hydrate, QueryClient } from "@tanstack/react-query"
 import { type AnyRoute, createRouter as createTanStackRouter, Link } from "@tanstack/react-router"
+import { adminChromeMessages } from "@voyant-travel/i18n"
 import { buttonVariants } from "@voyant-travel/ui/components/button"
 import {
   Empty,
@@ -80,10 +81,10 @@ export function AdminPendingFallback() {
         className="flex flex-col items-center gap-4 text-muted-foreground"
         role="status"
         aria-live="polite"
-        aria-label="Loading admin workspace"
+        aria-label={adminChromeMessages.en.loadingAdminWorkspace}
       >
         <Loader2 className="size-8 animate-spin" aria-hidden="true" />
-        <span className="text-sm">Loading workspace</span>
+        <span className="text-sm">{adminChromeMessages.en.loadingWorkspace}</span>
       </div>
     </div>
   )
@@ -97,14 +98,12 @@ export function AdminNotFound() {
           <EmptyMedia variant="icon">
             <SearchX />
           </EmptyMedia>
-          <EmptyTitle>Page not found</EmptyTitle>
-          <EmptyDescription>
-            The page you requested does not exist or is no longer available.
-          </EmptyDescription>
+          <EmptyTitle>{adminChromeMessages.en.pageNotFound}</EmptyTitle>
+          <EmptyDescription>{adminChromeMessages.en.pageNotFoundDescription}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Link to="/" className={buttonVariants({ variant: "default" })}>
-            Go to dashboard
+            {adminChromeMessages.en.goToDashboard}
           </Link>
         </EmptyContent>
       </Empty>

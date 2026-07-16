@@ -21,6 +21,7 @@ import { ExternalLink, Package } from "lucide-react"
 // evaluates this factory.
 import { defaultFetcher } from "../client.js"
 import { ProductDetailSkeleton } from "../components/product-detail/product-detail-skeleton.js"
+import { inventoryFirstProductSetupMessageDefinitions } from "../i18n/setup.js"
 import { ProductsListSkeleton } from "./products-list-skeleton.js"
 
 /**
@@ -234,18 +235,7 @@ export function createSelectedInventoryAdminExtension({
         order: 70,
         skippable: true,
         actionComponent: FirstProductSetupAction,
-        messages: {
-          en: {
-            title: "Create your first product",
-            description: "Continue in Products to create the first sellable travel product.",
-            action: "Open products",
-          },
-          ro: {
-            title: "Creeaza primul produs",
-            description: "Continua in Produse pentru a crea primul produs de calatorie vandabil.",
-            action: "Deschide produsele",
-          },
-        },
+        messages: inventoryFirstProductSetupMessageDefinitions,
         isComplete: hasInventoryProduct,
       },
     ],

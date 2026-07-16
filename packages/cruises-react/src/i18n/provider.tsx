@@ -65,10 +65,12 @@ export function getCruisesUiI18n({
 export function CruisesUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: CruisesUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function CruisesUiMessagesProvider({
       definitions={cruisesUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

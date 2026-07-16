@@ -270,7 +270,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
             />
             <KpiCard
               title={messages.dashboard.totalTravelersTitle}
-              value={totalPax.toLocaleString()}
+              value={totalPax.toLocaleString(resolvedLocale)}
               description={messages.dashboard.totalTravelersDescription}
               icon={<Users className="h-4 w-4 text-muted-foreground" />}
               empty={totalPax === 0 && (bookings?.total ?? 0) === 0}

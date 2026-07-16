@@ -79,6 +79,7 @@ export interface AdminRoutePageModule {
 export interface AdminRouteMessagesProviderProps {
   children: React.ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
 }
 
 export type AdminRouteMessagesProvider = React.ComponentType<AdminRouteMessagesProviderProps>

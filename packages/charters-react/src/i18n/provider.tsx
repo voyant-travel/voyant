@@ -65,10 +65,12 @@ export function getChartersUiI18n({
 export function ChartersUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: ChartersUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function ChartersUiMessagesProvider({
       definitions={chartersUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

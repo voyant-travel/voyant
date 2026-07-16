@@ -7,7 +7,7 @@
  * customers. Wired into `<BookingJourneyHost />` via `renderTravelCreditPicker`.
  */
 
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { type TravelCreditRecord, useTravelCredits } from "@voyant-travel/finance-react"
 import {
   Combobox,
@@ -23,22 +23,27 @@ import { useEffect, useState } from "react"
 
 import type { TravelCreditPickerProps } from "../journey/index.js"
 
-function formatMoney(cents: number, currency: string): string {
+function formatMoney(cents: number, currency: string, locale: string): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
 }
 
-function travelCreditLabel(travelCredit: TravelCreditRecord): string {
-  return `${travelCredit.code} · ${formatMoney(travelCredit.remainingAmountCents, travelCredit.currency)}`
+function travelCreditLabel(travelCredit: TravelCreditRecord, locale: string): string {
+  return `${travelCredit.code} · ${formatMoney(
+    travelCredit.remainingAmountCents,
+    travelCredit.currency,
+    locale,
+  )}`
 }
 
 export function JourneyTravelCreditPicker({
   value,
   onApply,
 }: TravelCreditPickerProps): React.ReactElement {
+  const { resolvedLocale } = useLocale()
   const t = useOperatorAdminMessages().bookings.detail.bookingJourney
   const [inputValue, setInputValue] = useState("")
   const [search, setSearch] = useState("")
@@ -59,9 +64,9 @@ export function JourneyTravelCreditPicker({
   // Reflect a pre-selected Travel Credit's label once its record loads.
   useEffect(() => {
     if (selectedId && byId.has(selectedId)) {
-      setInputValue(travelCreditLabel(byId.get(selectedId)!))
+      setInputValue(travelCreditLabel(byId.get(selectedId)!, resolvedLocale))
     }
-  }, [selectedId, byId])
+  }, [selectedId, byId, resolvedLocale])
 
   return (
     <div className="space-y-1">
@@ -73,7 +78,7 @@ export function JourneyTravelCreditPicker({
         autoHighlight
         itemToStringLabel={(id) => {
           const v = byId.get(id as string)
-          return v ? travelCreditLabel(v) : (id as string)
+          return v ? travelCreditLabel(v, resolvedLocale) : (id as string)
         }}
         itemToStringValue={(id) => id as string}
         onInputValueChange={(next) => {
@@ -91,7 +96,7 @@ export function JourneyTravelCreditPicker({
           const v = byId.get(id)
           if (v) {
             onApply({ travelCreditId: v.id, amountCents: v.remainingAmountCents })
-            setInputValue(travelCreditLabel(v))
+            setInputValue(travelCreditLabel(v, resolvedLocale))
           }
         }}
       >
@@ -108,7 +113,7 @@ export function JourneyTravelCreditPicker({
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{v.code}</span>
                       <span className="truncate text-muted-foreground text-xs">
-                        {formatMoney(v.remainingAmountCents, v.currency)}
+                        {formatMoney(v.remainingAmountCents, v.currency, resolvedLocale)}
                       </span>
                     </div>
                   </ComboboxItem>

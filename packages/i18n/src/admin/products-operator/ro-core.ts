@@ -122,6 +122,7 @@ export const operatorAdminProductsMessagesRoCore = {
   departuresEmpty: "Nu exista plecari momentan. Adauga o plecare sau creeaza un program recurent.",
   departureStartColumn: "Start",
   departureEndColumn: "Sfarsit",
+  departureItineraryColumn: "Itinerariu",
   departureDurationColumn: "Durata",
   departureStatusColumn: "Status",
   departureCapacityColumn: "Capacitate",
@@ -186,6 +187,7 @@ export const operatorAdminProductsMessagesRoCore = {
   itineraryOptionsLabel: "Optiuni itinerariu",
   itineraryRowOptionsLabel: "Optiuni {name}",
   noItinerariesYet: "Nu exista niciun itinerariu. Creeaza unul pentru a adauga zile.",
+  itinerariesLoadFailed: "Itinerariile nu au putut fi încărcate.",
   deleteItineraryTitle: "Stergi itinerariul?",
   deleteItineraryDescription:
     '"{name}" si toate zilele si serviciile sale vor fi sterse definitiv.',

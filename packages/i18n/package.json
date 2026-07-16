@@ -11,6 +11,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "check:parity": "node --import tsx ../../scripts/check-i18n-parity.ts",
     "prepack": "pnpm run build",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/"
   },
@@ -18,13 +19,17 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "dependencies": {
+    "intl-messageformat": "catalog:"
+  },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "repository": {
     "type": "git",

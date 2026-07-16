@@ -3,7 +3,7 @@
 import type { FlightOffer } from "@voyant-travel/flights/contract/types"
 import { Button } from "@voyant-travel/ui/components/button"
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import type { FlightFiltersValue } from "./flight-filters-bar.js"
 import { FlightItinerary } from "./flight-itinerary.js"
 
@@ -20,7 +20,8 @@ export function PickedLegBanner({
   airportName: (code: string) => string | undefined
   onChange: () => void
 }) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
+  const { formatCurrency, messages: rootMessages } = useFlightsUiI18nOrDefault()
+  const messages = rootMessages.flightsPage
   const itinerary = offer.itineraries[0]
   if (!itinerary) return null
   return (
@@ -31,7 +32,9 @@ export function PickedLegBanner({
         </span>
         <div className="flex items-center gap-3">
           <span className="font-semibold text-base tabular-nums">
-            {formatMoney(offer.totalPrice.amount, offer.totalPrice.currency)}
+            {formatCurrency(offer.totalPrice.amount, offer.totalPrice.currency, {
+              maximumFractionDigits: 0,
+            })}
           </span>
           <Button variant="ghost" size="sm" onClick={onChange}>
             <Pencil className="mr-1 h-3.5 w-3.5" />
@@ -66,7 +69,8 @@ export function ReadyToBookPanel({
   onChangeReturn: () => void
   onContinue: () => void
 }) {
-  const messages = useFlightsUiMessagesOrDefault().flightsPage
+  const { formatCurrency, messages: rootMessages } = useFlightsUiI18nOrDefault()
+  const messages = rootMessages.flightsPage
   const total = Number(outbound.totalPrice.amount) + Number(returnLeg.totalPrice.amount)
   const currency = outbound.totalPrice.currency
   return (
@@ -93,7 +97,7 @@ export function ReadyToBookPanel({
             {messages.tripTotal}
           </span>
           <span className="font-semibold text-2xl tabular-nums">
-            {formatMoney(total.toFixed(2), currency)}
+            {formatCurrency(total, currency, { maximumFractionDigits: 0 })}
           </span>
           <span className="text-muted-foreground text-xs">{messages.tripTotalDescription}</span>
         </div>
@@ -130,14 +134,4 @@ export function NoResults({ hasFilters }: { hasFilters: boolean }) {
 
 export function hasActiveFilters(filters: FlightFiltersValue): boolean {
   return filters.carriers.length > 0 || filters.maxStops != null || filters.maxPrice != null
-}
-
-function formatMoney(amount: string, currency: string): string {
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n)
 }

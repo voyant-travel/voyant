@@ -14,7 +14,7 @@ import {
   useSidebar,
 } from "@voyant-travel/ui/components"
 import * as React from "react"
-
+import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import { type BETA, COMING_SOON, type NavItem } from "../types.js"
 import { type AdminNavLinkComponent, DefaultAdminNavLink } from "./admin-nav-link.js"
 
@@ -43,20 +43,23 @@ function isActivePath(currentPath: string, url: string) {
   return false
 }
 
-function renderBadge(status?: typeof COMING_SOON | typeof BETA) {
+function renderBadge(
+  status: typeof COMING_SOON | typeof BETA | undefined,
+  labels: { soon: string; beta: string },
+) {
   if (!status) return null
 
   if (status === COMING_SOON) {
     return (
       <Badge variant="outline" className="ml-auto text-xs">
-        Soon
+        {labels.soon}
       </Badge>
     )
   }
 
   return (
     <Badge variant="secondary" className="ml-auto text-xs">
-      Beta
+      {labels.beta}
     </Badge>
   )
 }
@@ -69,6 +72,8 @@ export function AdminNavGroup({
   linkComponent: LinkComponent = DefaultAdminNavLink,
 }: AdminNavGroupProps) {
   const { isMobile, setOpenMobile } = useSidebar()
+  const messages = useOperatorAdminMessages()
+  const badgeLabels = { soon: messages.soon, beta: messages.beta }
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -100,7 +105,7 @@ export function AdminNavGroup({
                     <span>
                       {icon}
                       <span>{item.title}</span>
-                      {renderBadge(item.status)}
+                      {renderBadge(item.status, badgeLabels)}
                     </span>
                   ) : (
                     <LinkComponent
@@ -110,7 +115,7 @@ export function AdminNavGroup({
                     >
                       {icon}
                       <span>{item.title}</span>
-                      {renderBadge(item.status)}
+                      {renderBadge(item.status, badgeLabels)}
                     </LinkComponent>
                   )}
                 </SidebarMenuButton>
@@ -123,7 +128,7 @@ export function AdminNavGroup({
                             className={cn(subItem.status === COMING_SOON && "opacity-50")}
                           >
                             <span>{subItem.title}</span>
-                            {renderBadge(subItem.status)}
+                            {renderBadge(subItem.status, badgeLabels)}
                           </SidebarMenuSubButton>
                         ) : (
                           <SidebarMenuSubButton
@@ -138,7 +143,7 @@ export function AdminNavGroup({
                               target={subItem.target ?? "_self"}
                             >
                               <span>{subItem.title}</span>
-                              {renderBadge(subItem.status)}
+                              {renderBadge(subItem.status, badgeLabels)}
                             </LinkComponent>
                           </SidebarMenuSubButton>
                         )}
@@ -156,7 +161,7 @@ export function AdminNavGroup({
                 <SidebarMenuButton tooltip={item.title} disabled>
                   {icon}
                   <span>{item.title}</span>
-                  {renderBadge(item.status)}
+                  {renderBadge(item.status, badgeLabels)}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )
@@ -176,7 +181,7 @@ export function AdminNavGroup({
                 >
                   {icon}
                   <span>{item.title}</span>
-                  {renderBadge(item.status)}
+                  {renderBadge(item.status, badgeLabels)}
                 </LinkComponent>
               </SidebarMenuButton>
             </SidebarMenuItem>

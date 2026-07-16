@@ -65,10 +65,12 @@ export function getCatalogUiI18n({
 export function CatalogUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: CatalogUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function CatalogUiMessagesProvider({
       definitions={catalogUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

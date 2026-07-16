@@ -189,7 +189,9 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
         {itineraryQuery.isPending ? (
           <EmptyState message="…" />
         ) : itineraryQuery.isError ? (
-          <p className="py-6 text-center text-sm text-destructive">Failed to load itineraries.</p>
+          <p className="py-6 text-center text-sm text-destructive">
+            {productMessages.itinerariesLoadFailed}
+          </p>
         ) : itineraries.length === 0 ? (
           <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-6">
             <p className="text-sm text-muted-foreground">{productMessages.noItinerariesYet}</p>

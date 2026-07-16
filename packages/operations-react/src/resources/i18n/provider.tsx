@@ -65,10 +65,12 @@ export function getResourcesUiI18n({
 export function ResourcesUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: ResourcesUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function ResourcesUiMessagesProvider({
       definitions={resourcesUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, CalendarClock, ImageOff } from "lucide-react"
 
+import { useCheckoutUiI18nOrDefault } from "../checkout-i18n/provider.js"
 import { useVoyantFinanceContext } from "../provider.js"
 
 export interface PaymentLinkTripSummaryMessages {
@@ -87,6 +88,7 @@ function TripSummaryCard({
   trip: TripSummary
   messages: PaymentLinkTripSummaryMessages
 }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   const hasFx = trip.components.some((component) => component.fx)
   return (
     <section
@@ -119,7 +121,7 @@ function TripSummaryCard({
           {messages.totalPayable}
         </span>
         <span className="font-semibold text-base tabular-nums">
-          {formatMoney(trip.totalAmountCents, trip.currency)}
+          {formatMoney(trip.totalAmountCents, trip.currency, locale)}
         </span>
       </div>
       {hasFx ? <FxRatesBlock trip={trip} messages={messages} /> : null}
@@ -149,8 +151,9 @@ function ComponentThumbnail({ component }: { component: TripSummaryComponent }) 
 }
 
 function ScheduleLine({ startsAt, endsAt }: { startsAt: string | null; endsAt: string | null }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   if (!startsAt) return null
-  const label = formatScheduleRange(startsAt, endsAt)
+  const label = formatScheduleRange(startsAt, endsAt, locale)
   if (!label) return null
   return (
     <span className="flex items-center gap-1 text-muted-foreground text-xs">
@@ -161,6 +164,7 @@ function ScheduleLine({ startsAt, endsAt }: { startsAt: string | null; endsAt: s
 }
 
 function ComponentAmount({ component }: { component: TripSummaryComponent }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   const showFxLine =
     component.fx &&
     component.sourceAmountCents != null &&
@@ -172,18 +176,18 @@ function ComponentAmount({ component }: { component: TripSummaryComponent }) {
     return (
       <div className="flex items-center justify-end gap-1.5">
         <span className="text-muted-foreground line-through tabular-nums">
-          {formatMoney(component.sourceAmountCents, component.sourceCurrency)}
+          {formatMoney(component.sourceAmountCents, component.sourceCurrency, locale)}
         </span>
         <ArrowRight className="size-3 text-muted-foreground" aria-hidden />
         <span className="font-medium tabular-nums">
-          {formatMoney(component.targetAmountCents, component.targetCurrency)}
+          {formatMoney(component.targetAmountCents, component.targetCurrency, locale)}
         </span>
       </div>
     )
   }
   const amount = component.targetAmountCents ?? component.sourceAmountCents
   const currency = component.targetCurrency ?? component.sourceCurrency
-  return <span className="font-medium tabular-nums">{formatMoney(amount, currency)}</span>
+  return <span className="font-medium tabular-nums">{formatMoney(amount, currency, locale)}</span>
 }
 
 function FxRatesBlock({
@@ -193,6 +197,7 @@ function FxRatesBlock({
   trip: TripSummary
   messages: PaymentLinkTripSummaryMessages
 }) {
+  const { locale } = useCheckoutUiI18nOrDefault()
   const lines = trip.components
     .filter(
       (component): component is TripSummaryComponent & { fx: { rate: number; quotedAt: string } } =>
@@ -203,7 +208,7 @@ function FxRatesBlock({
     )
     .map((component, index) => ({
       id: `${component.id}-${index}`,
-      text: `${component.sourceCurrency} → ${component.targetCurrency}: ${component.fx.rate.toFixed(4)} quoted ${formatDateOnly(component.fx.quotedAt)}`,
+      text: `${component.sourceCurrency} → ${component.targetCurrency}: ${component.fx.rate.toFixed(4)} quoted ${formatDateOnly(component.fx.quotedAt, locale)}`,
     }))
   // Drop duplicate pair lines (common when several components share the same
   // currency conversion) so the FX block stays clean.
@@ -249,27 +254,31 @@ function TripSummarySkeleton() {
   )
 }
 
-function formatMoney(amountCents: number | null | undefined, currency: string | null | undefined) {
+function formatMoney(
+  amountCents: number | null | undefined,
+  currency: string | null | undefined,
+  locale: string,
+) {
   if (amountCents == null) return "—"
-  return (amountCents / 100).toLocaleString(undefined, {
+  return (amountCents / 100).toLocaleString(locale, {
     style: "currency",
     currency: currency ?? "EUR",
   })
 }
 
-function formatScheduleRange(startsAt: string, endsAt: string | null): string {
-  const start = formatDateTime(startsAt)
+function formatScheduleRange(startsAt: string, endsAt: string | null, locale: string): string {
+  const start = formatDateTime(startsAt, locale)
   if (!start) return ""
   if (!endsAt || endsAt === startsAt) return start
-  const end = formatDateTime(endsAt)
+  const end = formatDateTime(endsAt, locale)
   if (!end) return start
   return `${start} → ${end}`
 }
 
-function formatDateTime(value: string): string {
+function formatDateTime(value: string, locale: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -277,10 +286,10 @@ function formatDateTime(value: string): string {
   }).format(date)
 }
 
-function formatDateOnly(value: string): string {
+function formatDateOnly(value: string, locale: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

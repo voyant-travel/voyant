@@ -65,10 +65,12 @@ export function getFlightsUiI18n({
 export function FlightsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: FlightsUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function FlightsUiMessagesProvider({
       definitions={flightsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

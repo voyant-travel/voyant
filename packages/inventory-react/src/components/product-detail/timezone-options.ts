@@ -15,8 +15,12 @@ function buildTimezoneOptions(): TimezoneOption[] {
     }
   }
   // Include the browser-resolved zone if not already present
+  // Locale does not affect timezone discovery; this formatter never renders output.
   const browserZone =
-    typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : null
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat() // i18n-format-ok
+          .resolvedOptions().timeZone
+      : null
   if (browserZone && !seen.has(browserZone)) {
     seen.set(browserZone, { id: browserZone, label: browserZone, offset: 0 })
   }

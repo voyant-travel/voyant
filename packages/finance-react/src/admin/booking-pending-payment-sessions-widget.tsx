@@ -66,7 +66,7 @@ export function BookingPendingPaymentSessionsWidget({
   onGenerateLink,
 }: BookingPendingPaymentSessionsWidgetProps): React.ReactElement {
   const t = useOperatorAdminMessages().bookings.detail.paymentSessions
-  const { formatDateTime } = useBookingsUiI18nOrDefault()
+  const { formatCurrency, formatDateTime } = useBookingsUiI18nOrDefault()
   const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
   const bookingId = booking.id
@@ -148,7 +148,7 @@ export function BookingPendingPaymentSessionsWidget({
         header: t.columnAmount,
         cell: ({ row }) => (
           <span className="font-mono font-medium">
-            {formatMoney(row.original.amountCents, row.original.currency)}
+            {formatCurrency(row.original.amountCents / 100, row.original.currency)}
           </span>
         ),
       },
@@ -200,7 +200,15 @@ export function BookingPendingPaymentSessionsWidget({
         },
       },
     ],
-    [formatDateTime, complete.isPending, complete.variables, markReceived, paymentLinkConfig, t],
+    [
+      formatCurrency,
+      formatDateTime,
+      complete.isPending,
+      complete.variables,
+      markReceived,
+      paymentLinkConfig,
+      t,
+    ],
   )
 
   return (
@@ -282,13 +290,5 @@ async function copyPaymentLink(
     toast.success(messages.paymentLinkCopied)
   } catch {
     toast.error(messages.paymentLinkCopyFailed)
-  }
-}
-
-function formatMoney(cents: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
-  } catch {
-    return `${(cents / 100).toFixed(2)} ${currency}`
   }
 }

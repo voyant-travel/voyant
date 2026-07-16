@@ -62,10 +62,12 @@ export function getAuthUiI18n({
 export function AuthUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: AuthUiMessageOverrides | null
 }) {
   return (
@@ -73,6 +75,7 @@ export function AuthUiMessagesProvider({
       definitions={authUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

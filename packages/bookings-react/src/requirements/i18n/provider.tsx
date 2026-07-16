@@ -68,10 +68,12 @@ export function getBookingRequirementsUiI18n({
 export function BookingRequirementsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: BookingRequirementsUiMessageOverrides | null
 }) {
   return (
@@ -79,6 +81,7 @@ export function BookingRequirementsUiMessagesProvider({
       definitions={bookingRequirementsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

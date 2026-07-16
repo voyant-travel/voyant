@@ -66,10 +66,12 @@ export function getFacilitiesUiI18n({
 export function FacilitiesUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: FacilitiesUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function FacilitiesUiMessagesProvider({
       definitions={facilitiesUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

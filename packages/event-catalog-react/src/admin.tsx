@@ -6,6 +6,7 @@ import {
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import { BookOpenText } from "lucide-react"
+import { eventCatalogUiEn } from "./i18n.js"
 
 export interface CreateEventCatalogAdminExtensionOptions {
   path?: string
@@ -18,7 +19,7 @@ export function createEventCatalogAdminExtension(
   options: CreateEventCatalogAdminExtensionOptions = {},
 ): AdminExtension {
   const path = options.path ?? "/docs/events"
-  const title = options.title ?? "Event catalog"
+  const title = options.title ?? eventCatalogUiEn.navigation.title
 
   return withAdminRouteMessagesProvider(
     defineAdminExtension({
@@ -54,6 +55,6 @@ export function createSelectedEventCatalogAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   return createEventCatalogAdminExtension({
-    title: navMessages.eventCatalog ?? "Event catalog",
+    title: navMessages.eventCatalog ?? eventCatalogUiEn.navigation.title,
   })
 }

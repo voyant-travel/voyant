@@ -47,4 +47,12 @@ export interface AdminAuthRuntime<TUser> {
   cloudAuthStartHref: (next?: string) => string
   /** Clear the current session. Navigation after sign-out is the caller's concern. */
   signOut: () => Promise<void>
+  /**
+   * Persist account-owned display preferences. Optional for read-only hosts;
+   * the standard operator implements it with `PATCH /auth/me`.
+   */
+  updateCurrentUserPreferences?: (preferences: {
+    locale?: string
+    timezone?: string | null
+  }) => Promise<TUser>
 }

@@ -92,7 +92,7 @@ export function createAdminHostWorkspace<
   }
 
   function WorkspaceContent({ children }: { children: ReactNode }) {
-    const { user, isLoading } = useUser()
+    const { user, isLoading, refetch } = useUser()
     const navigate = useNavigate()
 
     return (
@@ -102,6 +102,14 @@ export function createAdminHostWorkspace<
         icons={icons}
         extensions={(messages) => presentation.createExtensions(messages.nav)}
         destinations={destinations}
+        onPreferenceChange={
+          auth.updateCurrentUserPreferences
+            ? async (preference) => {
+                await auth.updateCurrentUserPreferences?.(preference)
+                await refetch()
+              }
+            : undefined
+        }
         onSignOut={async () => {
           await auth.signOut()
           void navigate({ to: signInPath })

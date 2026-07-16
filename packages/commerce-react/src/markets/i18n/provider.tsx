@@ -65,10 +65,12 @@ export function getMarketsUiI18n({
 export function MarketsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: MarketsUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function MarketsUiMessagesProvider({
       definitions={marketsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

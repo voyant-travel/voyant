@@ -23,7 +23,7 @@ import { CurrencyInput } from "@voyant-travel/ui/components/currency-input"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Loader2, Paperclip, Plus, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { useFinanceUiI18nOrDefault } from "../i18n/index.js"
 import {
   type BookingPaymentScheduleRecord,
   type InvoiceRecord,
@@ -112,9 +112,9 @@ function formatScheduleDate(iso: string, locale: string | undefined): string {
   }
 }
 
-function formatMoney(cents: number, currency: string): string {
+function formatMoney(cents: number, currency: string, locale: string): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
@@ -181,7 +181,7 @@ export function BookingInvoiceDialog({
 }: BookingInvoiceDialogProps) {
   const { createFromBooking } = useInvoiceMutation()
   const { baseUrl, fetcher } = useVoyantFinanceContext()
-  const messages = useFinanceUiMessagesOrDefault()
+  const { locale, messages } = useFinanceUiI18nOrDefault()
   const dialog = messages.invoiceDialog
 
   const [invoiceType, setInvoiceType] = useState<InvoiceTypeChoice>("invoice")
@@ -551,7 +551,7 @@ export function BookingInvoiceDialog({
                       unpaidSchedules.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
                           {formatScheduleDate(s.dueDate, undefined)} ·{" "}
-                          {formatMoney(s.amountCents, s.currency)}
+                          {formatMoney(s.amountCents, s.currency, locale)}
                         </SelectItem>
                       ))
                     )}
@@ -722,7 +722,7 @@ export function BookingInvoiceDialog({
                               <Label className="text-xs">{dialog.lineItems.lineTotal}</Label>
                             ) : null}
                             <div className="px-2 py-1.5 text-right font-mono text-sm">
-                              {formatMoney(lineTotal, currency)}
+                              {formatMoney(lineTotal, currency, locale)}
                             </div>
                           </div>
                           {scheduleLocked ? (

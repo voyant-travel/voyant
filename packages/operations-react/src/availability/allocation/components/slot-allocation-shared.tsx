@@ -10,7 +10,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyant-tra
 import { Accessibility, CircleAlert, Crown, History, UtensilsCrossed } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
+import { useAllocationUiI18nOrDefault, useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import { flagString, type ValidationIssue } from "./slot-allocation-model.js"
 
 /**
@@ -202,7 +202,7 @@ export function SeatPositionBadge({ seat }: { seat: AllocationResource }) {
 }
 
 export function AuditLogCard({ entries }: { entries: AllocationAuditLogEntry[] }) {
-  const messages = useAllocationUiMessagesOrDefault()
+  const { formatDateTime, messages } = useAllocationUiI18nOrDefault()
   if (entries.length === 0) return null
 
   return (
@@ -217,9 +217,7 @@ export function AuditLogCard({ entries }: { entries: AllocationAuditLogEntry[] }
       <CardContent className="flex flex-col gap-2">
         {entries.slice(0, 8).map((entry) => (
           <div key={entry.id} className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-muted-foreground">
-              {new Date(entry.createdAt).toLocaleString()}
-            </span>
+            <span className="text-muted-foreground">{formatDateTime(entry.createdAt)}</span>
             <Badge variant="outline">{messages.auditActions[entry.action] ?? entry.action}</Badge>
             <span className="min-w-0 flex-1 truncate text-muted-foreground">
               {entryDetail(entry)}

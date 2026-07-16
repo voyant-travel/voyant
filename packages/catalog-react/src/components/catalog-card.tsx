@@ -4,7 +4,7 @@ import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { Card } from "@voyant-travel/ui/components/card"
 import { Image as ImageIcon } from "lucide-react"
-import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { useCatalogUiI18nOrDefault } from "../i18n/index.js"
 import type { CatalogSearchHit } from "../index.js"
 import {
   asString,
@@ -88,7 +88,8 @@ export function CatalogCard({
   fallbackTitle,
   onOpen,
 }: CatalogCardProps) {
-  const card = useCatalogUiMessagesOrDefault().catalogPage.card
+  const { locale, messages } = useCatalogUiI18nOrDefault()
+  const card = messages.catalogPage.card
   const fields = hit.document.fields
   const imageField = config.imageField ?? imageFallbackField ?? "thumbnailUrl"
   const imageUrl = asString(fields[imageField])
@@ -102,6 +103,7 @@ export function CatalogCard({
     hit,
     config.priceAmountField,
     config.priceCurrencyField,
+    locale,
     config.priceUnit,
     config.priceUnitField,
   )
@@ -194,6 +196,7 @@ function resolveCardPrice(
   hit: CatalogSearchHit,
   amountField: string | string[] | undefined,
   currencyField: string | string[] | undefined,
+  locale: string,
   unit: PriceUnit = "minor",
   unitField?: string,
 ): string | null {
@@ -203,7 +206,7 @@ function resolveCardPrice(
   const currencies = Array.isArray(currencyField) ? currencyField : [currencyField]
   for (const amount of amounts) {
     for (const currency of currencies) {
-      const formatted = formatHitPrice(hit, amount, currency, resolvedUnit)
+      const formatted = formatHitPrice(hit, amount, currency, locale, resolvedUnit)
       if (formatted) return formatted
     }
   }

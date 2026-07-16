@@ -9,15 +9,16 @@ import type { CatalogPageMessages } from "./catalog-page-config.js"
 export function makeProductCard(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): CatalogCardConfig {
   return {
     imageField: "thumbnailUrl",
     // Prefer the computed lowest price; fall back to the headline sell price.
     priceAmountField: ["priceFromAmountCents", "priceFromAmountMinor", "sellAmountCents"],
     priceCurrencyField: ["priceFromCurrency", "sellCurrency"],
-    subtitle: productSubtitle,
+    subtitle: (fields) => productSubtitle(fields, locale),
     meta: (fields) => durationMeta(fields, messages),
-    footerNote: (fields) => departureNote(fields, messages),
+    footerNote: (fields) => departureNote(fields, messages, locale),
     // Transport + board basis lead the chips, then categories/themes.
     chips: (fields) =>
       [
@@ -32,9 +33,9 @@ export function makeProductCard(
 }
 
 /** Product card subtitle: star rating + location (e.g. "4.5★ · Belek · Turkey"). */
-function productSubtitle(fields: Record<string, unknown>): string | null {
-  const parts = [formatStars(fields.stars), locationSubtitle(fields)].filter((v): v is string =>
-    Boolean(v),
+function productSubtitle(fields: Record<string, unknown>, locale: string): string | null {
+  const parts = [formatStars(fields.stars), locationSubtitle(fields, locale)].filter(
+    (v): v is string => Boolean(v),
   )
   return parts.length > 0 ? parts.join(" · ") : null
 }
@@ -65,6 +66,7 @@ export function formatStars(value: unknown): string | null {
 export function makeCruiseCard(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): CatalogCardConfig {
   return {
     // Newly indexed cruise docs declare `lowestPriceUnit: "minor"`; legacy
@@ -74,12 +76,12 @@ export function makeCruiseCard(
     priceCurrencyField: "lowestPriceCurrencyCached",
     priceUnit: "major",
     priceUnitField: "lowestPriceUnit",
-    subtitle: locationSubtitle,
+    subtitle: (fields) => locationSubtitle(fields, locale),
     meta: (fields) => nightsMeta(fields, messages),
     // Next departure + how many sailings — sourced from the per-cruise sailing
     // rollup (`earliestDepartureCached` / `departureCount`).
     footerNote: (fields) =>
-      departureNote(fields, messages, {
+      departureNote(fields, messages, locale, {
         dateField: "earliestDepartureCached",
         countField: "departureCount",
         withYear: true,
@@ -92,12 +94,13 @@ export function makeCruiseCard(
 
 export function makeCharterCard(
   formatSupplier: (id: string | number) => string,
+  locale: string,
 ): CatalogCardConfig {
   return {
     imageField: "heroImageUrl",
     priceAmountField: "lowestPriceCachedAmount",
     priceCurrencyField: "lowestPriceCachedCurrency",
-    subtitle: locationSubtitle,
+    subtitle: (fields) => locationSubtitle(fields, locale),
     chips: (fields) =>
       [...asStringArray(fields.themes), ...asStringArray(fields.regions)].slice(0, 3),
     badges: (fields) => supplierBadge(fields, "lineSupplierId", formatSupplier),
@@ -106,6 +109,7 @@ export function makeCharterCard(
 
 export function makeAccommodationCard(
   formatSupplier: (id: string | number) => string,
+  _locale: string,
 ): CatalogCardConfig {
   return {
     imageField: "thumbnailUrl",
@@ -114,7 +118,7 @@ export function makeAccommodationCard(
   }
 }
 
-function locationSubtitle(fields: Record<string, unknown>): string | null {
+function locationSubtitle(fields: Record<string, unknown>, locale: string): string | null {
   const cities = asStringArray(fields.cities)
   const regions = asStringArray(fields.regions)
   const countries = asStringArray(fields.countries)
@@ -122,17 +126,20 @@ function locationSubtitle(fields: Record<string, unknown>): string | null {
   // sourced rows carry raw `destinations` + ISO `countryCodes` from the upstream
   // search document, so fall back to those and resolve the code to a name.
   const place = cities[0] ?? regions[0] ?? asStringArray(fields.destinations)[0] ?? null
-  const country = countries[0] ?? asStringArray(fields.countryCodes).map(formatCountry)[0] ?? null
+  const country =
+    countries[0] ??
+    asStringArray(fields.countryCodes).map((code) => formatCountry(code, locale))[0] ??
+    null
   const parts = [...new Set([place, country].filter((v): v is string => Boolean(v)))]
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
 /** Resolve an ISO 3166 alpha-2 country code to a localized name (e.g. TR → Turkey). */
-export function formatCountry(value: string | number): string {
+export function formatCountry(value: string | number, locale: string): string {
   const code = String(value)
   if (!/^[A-Za-z]{2}$/.test(code)) return code
   try {
-    return new Intl.DisplayNames(undefined, { type: "region" }).of(code.toUpperCase()) ?? code
+    return new Intl.DisplayNames(locale, { type: "region" }).of(code.toUpperCase()) ?? code
   } catch {
     return code
   }
@@ -159,13 +166,16 @@ function nightsMeta(fields: Record<string, unknown>, messages: CatalogPageMessag
 function departureNote(
   fields: Record<string, unknown>,
   messages: CatalogPageMessages,
+  locale: string,
   opts: { dateField?: string; countField?: string; withYear?: boolean } = {},
 ): string | null {
   const next = asString(fields[opts.dateField ?? "nextDepartureDate"])
   const count = asNumber(fields[opts.countField ?? "availableDeparturesCount"])
   const parts: string[] = []
   if (next)
-    parts.push(messages.card.nextDeparture.replace("{date}", formatShortDate(next, opts.withYear)))
+    parts.push(
+      messages.card.nextDeparture.replace("{date}", formatShortDate(next, locale, opts.withYear)),
+    )
   if (count != null && count > 0) {
     parts.push(
       count === 1
@@ -189,10 +199,10 @@ function supplierBadge(
   return [{ label: formatSupplier(id), variant: "secondary" }]
 }
 
-function formatShortDate(iso: string, withYear = false): string {
+function formatShortDate(iso: string, locale: string, withYear = false): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     ...(withYear ? { year: "numeric" } : {}),
@@ -204,11 +214,11 @@ function formatShortDate(iso: string, withYear = false): string {
  * label (e.g. `2027-03` → "Mar 2027"). Falls back to the raw value when it
  * isn't a parseable month key.
  */
-export function formatDepartureMonth(value: unknown): string {
+export function formatDepartureMonth(value: unknown, locale: string): string {
   const raw = String(value)
   const match = /^(\d{4})-(\d{2})$/.exec(raw)
   if (!match) return raw
   const date = new Date(Number(match[1]), Number(match[2]) - 1, 1)
   if (Number.isNaN(date.getTime())) return raw
-  return new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" }).format(date)
+  return new Intl.DateTimeFormat(locale, { month: "short", year: "numeric" }).format(date)
 }

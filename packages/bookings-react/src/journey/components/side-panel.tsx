@@ -9,7 +9,11 @@ import {
 } from "@voyant-travel/ui/components/accordion"
 import { Card, CardContent } from "@voyant-travel/ui/components/card"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
-import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 
 /**
@@ -36,7 +40,7 @@ export function PriceSidePanel({
    *  pricing, where they're most in context. */
   pricingExtras?: React.ReactNode
 }): React.ReactElement {
-  const messages = useBookingsUiMessagesOrDefault()
+  const { locale, messages } = useBookingsUiI18nOrDefault()
   // Only surface pricing once the user has configured what actually drives
   // the price — otherwise the quote's baseline shows a misleading total
   // (e.g. a per-pax "from" price before any room is picked). Room products
@@ -53,7 +57,7 @@ export function PriceSidePanel({
     : messages.bookingJourney.sidePanel.pricingHint
   // Departure shows directly under the product title — it's the most-glanced
   // fact, so it doesn't belong buried in the recap accordion.
-  const departureText = draft ? stepHeadline("departure", draft, messages) : ""
+  const departureText = draft ? stepHeadline("departure", draft, messages, locale) : ""
 
   return (
     <Card className={className}>
@@ -98,7 +102,7 @@ export function PriceSidePanel({
                       <span className="text-muted-foreground"> × {line.quantity}</span>
                     ) : null}
                   </span>
-                  <span>{formatMoney(line.totalAmount, pricing.currency)}</span>
+                  <span>{formatMoney(line.totalAmount, pricing.currency, locale)}</span>
                 </li>
               ))}
             </ul>
@@ -110,14 +114,14 @@ export function PriceSidePanel({
                       {tax.label}
                       {tax.rate > 0 ? ` (${formatTaxRate(tax.rate)})` : ""}
                     </span>
-                    <span>{formatMoney(tax.amount, pricing.currency)}</span>
+                    <span>{formatMoney(tax.amount, pricing.currency, locale)}</span>
                   </li>
                 ))}
               </ul>
             ) : null}
             <div className="flex justify-between border-t pt-2 font-medium">
               <span>{messages.bookingJourney.sidePanel.total}</span>
-              <span>{formatMoney(pricing.total, pricing.currency)}</span>
+              <span>{formatMoney(pricing.total, pricing.currency, locale)}</span>
             </div>
           </div>
         ) : null}
@@ -204,8 +208,8 @@ function StepSummaryLine({
   step: JourneyStep
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement | null {
-  const messages = useBookingsUiMessagesOrDefault()
-  const text = stepHeadline(step, draft, messages)
+  const { locale, messages } = useBookingsUiI18nOrDefault()
+  const text = stepHeadline(step, draft, messages, locale)
   if (!text) return null
   return <span className="text-muted-foreground text-xs">{text}</span>
 }
@@ -214,15 +218,19 @@ export function stepHeadline(
   step: JourneyStep,
   draft: NonNullable<SidePanelState["draft"]>,
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+  locale: string,
 ): string {
   switch (step) {
     case "departure": {
       const range = draft.configure?.dateRange
       if (range?.checkIn && range?.checkOut)
-        return `${formatConfigureDate(range.checkIn)} → ${formatConfigureDate(range.checkOut)}`
+        return `${formatConfigureDate(range.checkIn, locale)} → ${formatConfigureDate(
+          range.checkOut,
+          locale,
+        )}`
       // Never surface the raw slot id — show the departure date.
       return draft.configure?.departureDate
-        ? formatConfigureDate(draft.configure.departureDate)
+        ? formatConfigureDate(draft.configure.departureDate, locale)
         : ""
     }
     case "options": {
@@ -322,7 +330,7 @@ function DepartureDetails({
 }: {
   draft: NonNullable<SidePanelState["draft"]>
 }): React.ReactElement {
-  const messages = useBookingsUiMessagesOrDefault()
+  const { locale, messages } = useBookingsUiI18nOrDefault()
   const cfg = draft.configure ?? {}
   const range = cfg.dateRange
   return (
@@ -331,19 +339,19 @@ function DepartureDetails({
       {cfg.departureDate ? (
         <Row
           label={messages.bookingJourney.sidePanel.departure}
-          value={formatConfigureDate(cfg.departureDate)}
+          value={formatConfigureDate(cfg.departureDate, locale)}
         />
       ) : null}
       {range?.checkIn ? (
         <Row
           label={messages.bookingJourney.sidePanel.checkIn}
-          value={formatConfigureDate(range.checkIn)}
+          value={formatConfigureDate(range.checkIn, locale)}
         />
       ) : null}
       {range?.checkOut ? (
         <Row
           label={messages.bookingJourney.sidePanel.checkOut}
-          value={formatConfigureDate(range.checkOut)}
+          value={formatConfigureDate(range.checkOut, locale)}
         />
       ) : null}
     </dl>
@@ -570,9 +578,9 @@ function stepLabel(
   return messages.bookingJourney.steps[step]
 }
 
-function formatMoney(cents: number, currency: string): string {
+function formatMoney(cents: number, currency: string, locale: string): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
@@ -585,13 +593,13 @@ function formatTaxRate(rate: number): string {
 
 /** Format an ISO date (YYYY-MM-DD or full ISO) for the recap, falling back
  *  to the raw value when unparseable. Never surfaces a raw slot id. */
-function formatConfigureDate(iso: string): string {
+function formatConfigureDate(iso: string, locale: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
   // Date-only strings parse as UTC midnight; render them in UTC so the
   // calendar date is not shifted for viewers in timezones west of UTC.
   const timeZone = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? "UTC" : undefined
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",

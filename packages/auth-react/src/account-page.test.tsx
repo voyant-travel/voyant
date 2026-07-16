@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { LocaleProvider, OperatorAdminMessagesProvider } from "@voyant-travel/admin"
 import type { ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
@@ -27,11 +28,15 @@ function renderWithProviders(element: ReactNode) {
   const fetcher: VoyantFetcher = async () => new Response(null, { status: 204 })
 
   return renderToStaticMarkup(
-    <QueryClientProvider client={new QueryClient()}>
-      <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
-        {element}
-      </VoyantAuthProvider>
-    </QueryClientProvider>,
+    <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+      <OperatorAdminMessagesProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
+            {element}
+          </VoyantAuthProvider>
+        </QueryClientProvider>
+      </OperatorAdminMessagesProvider>
+    </LocaleProvider>,
   )
 }
 

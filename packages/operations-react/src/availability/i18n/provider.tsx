@@ -157,10 +157,12 @@ export function getAvailabilityUiI18n({
 export function AvailabilityUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: AvailabilityUiMessageOverrides | null
 }) {
   return (
@@ -168,6 +170,7 @@ export function AvailabilityUiMessagesProvider({
       definitions={availabilityUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

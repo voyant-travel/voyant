@@ -1,3 +1,5 @@
+import { adminChromeMessages } from "@voyant-travel/i18n"
+
 /**
  * Derives a two-character uppercase initials string from a user's name or
  * email address. Used by avatar fallbacks.
@@ -36,17 +38,20 @@ export function getInitials(
 
 /**
  * Computes display name for a user, preferring `firstName + lastName`, falling
- * back to `name`, then `email`, then "Unknown User".
+ * back to `name`, then `email`, then the default English catalog value.
  */
-export function getDisplayName(user: {
-  firstName?: string | null
-  lastName?: string | null
-  name?: string | null
-  email?: string | null
-}): string {
+export function getDisplayName(
+  user: {
+    firstName?: string | null
+    lastName?: string | null
+    name?: string | null
+    email?: string | null
+  },
+  fallback = adminChromeMessages.en.unknownUser,
+): string {
   const combined = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
   if (combined) return combined
   if (user.name?.trim()) return user.name.trim()
   if (user.email?.trim()) return user.email.trim()
-  return "Unknown User"
+  return fallback
 }

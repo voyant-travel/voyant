@@ -65,10 +65,12 @@ export function getProductsUiI18n({
 export function ProductsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: ProductsUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function ProductsUiMessagesProvider({
       definitions={productsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

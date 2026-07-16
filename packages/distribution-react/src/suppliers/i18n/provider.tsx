@@ -65,10 +65,12 @@ export function getSuppliersUiI18n({
 export function SuppliersUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: SuppliersUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function SuppliersUiMessagesProvider({
       definitions={suppliersUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

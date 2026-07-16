@@ -152,7 +152,7 @@ export function BookingPaymentsSummary({
   const publicQuery = usePublicBookingPayments(bookingId, { enabled: variant === "public" })
   const adminQuery = useAdminBookingPayments(bookingId, { enabled: variant === "admin" })
   const data = variant === "admin" ? adminQuery.data : publicQuery.data
-  const { formatDateTime } = useBookingsUiI18nOrDefault()
+  const { formatDateTime, locale } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
   const card = messages.bookingPaymentsSummary
 
@@ -225,7 +225,7 @@ export function BookingPaymentsSummary({
         header: card.columns.amount,
         cell: ({ row }) => (
           <span className="font-mono font-medium">
-            {formatMoney(row.original.amountCents, row.original.currency)}
+            {formatMoney(row.original.amountCents, row.original.currency, locale)}
           </span>
         ),
       },
@@ -243,7 +243,7 @@ export function BookingPaymentsSummary({
           }
           return (
             <span className="font-mono text-xs">
-              ≈ {formatMoney(baseAmountCents, baseCurrency)}
+              ≈ {formatMoney(baseAmountCents, baseCurrency, locale)}
             </span>
           )
         },
@@ -381,6 +381,7 @@ export function BookingPaymentsSummary({
   }, [
     card,
     formatDateTime,
+    locale,
     getInvoiceHref,
     onInvoiceOpen,
     onConvertProforma,
@@ -419,7 +420,7 @@ export function BookingPaymentsSummary({
                 {deleteTarget
                   ? card.deleteConfirm.description.replace(
                       "{amount}",
-                      formatMoney(deleteTarget.amountCents, deleteTarget.currency),
+                      formatMoney(deleteTarget.amountCents, deleteTarget.currency, locale),
                     )
                   : ""}
               </AlertDialogDescription>
@@ -443,15 +444,15 @@ export function BookingPaymentsSummary({
   )
 }
 
-function formatMoney(cents: number, currency: string | null | undefined): string {
+function formatMoney(cents: number, currency: string | null | undefined, locale: string): string {
   if (!currency) {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(cents / 100)
   }
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }

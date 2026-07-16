@@ -66,10 +66,12 @@ export function getPromotionsUiI18n({
 export function PromotionsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: PromotionsUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function PromotionsUiMessagesProvider({
       definitions={promotionsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}
