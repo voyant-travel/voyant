@@ -1,5 +1,5 @@
 import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
-import ts from "typescript"
+import ts from "./lazy-typescript.js"
 
 export function statementIdentifierName(statement: ts.Statement): string | undefined {
   if (

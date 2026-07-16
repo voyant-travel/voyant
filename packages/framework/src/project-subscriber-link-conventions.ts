@@ -5,8 +5,8 @@ import type {
   VoyantGraphLinkDeclaration,
   VoyantGraphSubscriber,
 } from "@voyant-travel/core/project"
-import ts from "typescript"
 
+import ts, { loadTypeScript } from "./lazy-typescript.js"
 import {
   hasModifier,
   inspectModuleSpecifiers,
@@ -132,6 +132,7 @@ export class ProjectSubscriberLinkConventionError extends Error {
 export async function analyzeProjectSubscriberLinkConventions(
   options: ProjectSubscriberLinkConventionsOptions,
 ): Promise<ProjectSubscriberLinkConventionAnalysis> {
+  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
   const realProjectRoot = await realpath(projectRoot)
   const discovery = await discoverProjectConventions(projectRoot)

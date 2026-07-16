@@ -5,6 +5,10 @@ vi.mock("./project-resolver.js", () => {
   throw new Error("project resolver implementation loaded eagerly")
 })
 
+vi.mock("typescript", () => {
+  throw new Error("TypeScript compiler loaded eagerly")
+})
+
 describe("framework project import boundary", () => {
   it("keeps authoring exports available without evaluating the resolver implementation", async () => {
     const authoring = await import("./project.js")

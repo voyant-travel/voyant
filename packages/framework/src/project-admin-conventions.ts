@@ -1,8 +1,7 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
 
-import ts from "typescript"
-
+import ts, { loadTypeScript } from "./lazy-typescript.js"
 import type { ProjectConventionContribution } from "./project-conventions.js"
 
 export const VOYANT_PROJECT_ADMIN_GENERATED_FILE = "admin/project-admin.generated.ts" as const
@@ -68,6 +67,7 @@ export class ProjectAdminConventionError extends Error {
 export async function analyzeProjectAdminConventions(
   input: AnalyzeProjectAdminConventionsInput,
 ): Promise<ProjectAdminConventionAnalysis> {
+  await loadTypeScript()
   const projectRoot = path.resolve(input.projectRoot)
   const realProjectRoot = await realpath(projectRoot)
   const entries: ProjectAdminConventionEntry[] = []

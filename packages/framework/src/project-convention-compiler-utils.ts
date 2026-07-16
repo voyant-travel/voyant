@@ -1,5 +1,5 @@
 import path from "node:path"
-import ts from "typescript"
+import ts from "./lazy-typescript.js"
 
 export function inspectModuleSpecifiers(
   sourceFile: ts.SourceFile,

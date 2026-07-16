@@ -1,7 +1,7 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
 import type { VoyantGraphRouteBundle, VoyantGraphRouteMethod } from "@voyant-travel/core/project"
-import ts from "typescript"
+import ts, { loadTypeScript } from "./lazy-typescript.js"
 import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
@@ -83,6 +83,7 @@ export class ProjectApiConventionError extends Error {
 export async function analyzeProjectApiConventions(
   options: ProjectApiConventionsOptions,
 ): Promise<ProjectApiConventionAnalysis> {
+  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
   const realProjectRoot = await realpath(projectRoot)
   const discovery = await discoverProjectConventions(projectRoot)
