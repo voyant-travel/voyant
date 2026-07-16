@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.47.2
+
+### Patch Changes
+
+- b4941e2: Remove TypeScript from framework production dependencies so snapshot-driven runtimes do not require the compiler.
+
 ## 0.47.1
 
 ### Patch Changes
