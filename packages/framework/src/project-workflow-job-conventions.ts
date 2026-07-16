@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- reason: workflow and job convention parsing share one static-analysis contract and diagnostic model; split only through a dedicated parser refactor.
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
 import type {
@@ -5,7 +6,7 @@ import type {
   VoyantGraphJsonValue,
   VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
-import ts from "typescript"
+import ts, { loadTypeScript } from "./lazy-typescript.js"
 import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
@@ -111,6 +112,7 @@ export class ProjectWorkflowJobConventionError extends Error {
 export async function analyzeProjectWorkflowJobConventions(
   options: ProjectWorkflowJobConventionsOptions,
 ): Promise<ProjectWorkflowJobConventionAnalysis> {
+  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
   const realProjectRoot = await realpath(projectRoot)
   const discovery = await discoverProjectConventions(projectRoot)
