@@ -1,5 +1,14 @@
 # @voyant-travel/schema-kit
 
+## 0.112.2
+
+### Patch Changes
+
+- 5941d2c: Remove the unused action-ledger relay outbox schema, service, HTTP route, tool,
+  and entry-detail UI. Ledger canaries now verify the append-only write path, and
+  future exports/projections use cursor checkpoints while work-queue consumers use
+  the framework's generic durable event outbox.
+
 ## 0.112.1
 
 ### Patch Changes
