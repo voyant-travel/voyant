@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.10.2
+
+### Patch Changes
+
+- 9bf0b26: Make `db/0001_db_baseline`'s `user_profiles.permissions` column replay-safe (`ADD COLUMN IF NOT EXISTS`) and register the rewritten content hash as equivalent: the frozen framework bundle also materialises the column, so adopted managed databases replay the migration against an existing column and fail with 42701.
+
 ## 0.10.1
 
 ### Patch Changes
