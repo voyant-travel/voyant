@@ -1,5 +1,11 @@
 # @voyant-travel/custom-fields-react
 
+## 0.2.1
+
+### Patch Changes
+
+- 1add58a: Republish with compiled output: 0.2.0 was packed without `prepack`, so the tarball shipped no `dist/` and its entry points were unresolvable for consumers.
+
 ## 0.2.0
 
 ### Minor Changes

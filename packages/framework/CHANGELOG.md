@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.48.1
+
+### Patch Changes
+
+- 4b6145d: The typesense search provider's deployment requirements now advertise the optional `TYPESENSE_COLLECTION_PREFIX` variable, so requirement-driven env provisioning surfaces it alongside `TYPESENSE_HOST` and `TYPESENSE_API_KEY`.
+  - @voyant-travel/operator-standard@0.6.7
+  - @voyant-travel/cruises@0.163.0
+
 ## 0.48.0
 
 ### Minor Changes
