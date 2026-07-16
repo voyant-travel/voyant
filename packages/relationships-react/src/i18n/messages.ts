@@ -661,6 +661,8 @@ export type CrmUiMessages = {
     emptyDescription: string
     required: string
     searchable: string
+    exportable: string
+    invoiceable: string
     optionsCount: string
     showing: string
     edit: string
@@ -677,6 +679,10 @@ export type CrmUiMessages = {
       key: string
       searchable: string
       searchableDescription: string
+      exportable: string
+      exportableDescription: string
+      invoiceable: string
+      invoiceableDescription: string
       options: string
       optionsDescription: string
       optionLabelPlaceholder: string

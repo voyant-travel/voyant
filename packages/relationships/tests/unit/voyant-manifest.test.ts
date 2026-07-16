@@ -1,5 +1,6 @@
 import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import { createRelationshipsVoyantRuntime, relationshipsRouteRuntimePort } from "../../src/index.js"
@@ -17,6 +18,7 @@ describe("relationships deployment manifest", () => {
       provides: {
         ports: [
           { id: "storefront.intake.runtime" },
+          { id: customFieldsRuntimePort.id },
           { id: relationshipsMiceRuntimePort.id },
           { id: bookingsRelationshipsRuntimePort.id },
           { id: relationshipsRouteRuntimePort.id },
@@ -81,7 +83,12 @@ describe("relationships deployment manifest", () => {
   })
 
   it("ships a typed route runtime port and package-owned graph factory", async () => {
-    const customFields = vi.fn(async () => [])
+    const customFields = vi.fn(async () => ({
+      all: () => [],
+      entities: () => [],
+      field: () => undefined,
+      forEntity: () => [],
+    }))
     await expect(
       assertPortConforms(relationshipsRouteRuntimePort, { customFields }),
     ).resolves.toBeUndefined()

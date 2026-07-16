@@ -23,6 +23,7 @@ import {
   customerSignalKindSchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
+  customFieldTargetSchema,
   customFieldTypeSchema,
   entityTypeSchema,
   personDocumentTypeSchema,
@@ -80,12 +81,14 @@ export const activityParticipantSchema = z.object({
 
 export const customFieldDefinitionSchema = z.object({
   id: z.string(),
-  entityType: entityTypeSchema,
+  entityType: customFieldTargetSchema,
   key: z.string(),
   label: z.string(),
   fieldType: customFieldTypeSchema,
   isRequired: z.boolean(),
   isSearchable: z.boolean(),
+  isExportable: z.boolean(),
+  isInvoiceable: z.boolean(),
   options: z.array(z.object({ label: z.string(), value: z.string() })).nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,

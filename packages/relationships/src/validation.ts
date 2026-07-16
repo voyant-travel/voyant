@@ -30,6 +30,7 @@ export {
   customerSignalStatusSchema,
   customFieldDefinitionCoreSchema,
   customFieldDefinitionListQuerySchema,
+  customFieldTargetSchema,
   customFieldTypeSchema,
   customFieldValueListQuerySchema,
   entityTypeSchema,

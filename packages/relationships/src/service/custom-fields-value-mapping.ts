@@ -12,6 +12,7 @@ const ENTITY_TABLE: Record<string, string> = {
   person: "people",
   organization: "organizations",
   activity: "activities",
+  booking: "bookings",
   quote: "quotes",
 }
 

@@ -39,7 +39,11 @@ import {
 } from "./route-runtime.js"
 import { invoiceRenditionSchema } from "./routes-invoice-schemas.js"
 import { financeService } from "./service.js"
-import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
+import {
+  financeDocumentsService,
+  type InvoiceDocumentGenerator,
+  type InvoiceDocumentRuntimeOptions,
+} from "./service-documents.js"
 import { generateInvoiceDocumentInputSchema } from "./validation.js"
 
 type Env = {
@@ -53,6 +57,7 @@ type Env = {
 
 export interface FinanceDocumentRouteOptions {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
+  resolveCustomFields?: InvoiceDocumentRuntimeOptions["resolveCustomFields"]
   resolveInvoiceDocumentGenerator?: (
     bindings: Record<string, unknown>,
   ) => InvoiceDocumentGenerator | undefined
@@ -196,7 +201,12 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         c.get("db"),
         c.req.valid("param").id,
         input,
-        { generator, bindings: c.env, eventBus: runtime.eventBus },
+        {
+          generator,
+          bindings: c.env,
+          eventBus: runtime.eventBus,
+          resolveCustomFields: runtime.resolveCustomFields,
+        },
       )
 
       if (result.status === "not_found") return c.json({ error: "Invoice not found" }, 404)
@@ -221,7 +231,12 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         c.get("db"),
         c.req.valid("param").id,
         input,
-        { generator, bindings: c.env, eventBus: runtime.eventBus },
+        {
+          generator,
+          bindings: c.env,
+          eventBus: runtime.eventBus,
+          resolveCustomFields: runtime.resolveCustomFields,
+        },
       )
 
       if (result.status === "not_found") return c.json({ error: "Invoice not found" }, 404)

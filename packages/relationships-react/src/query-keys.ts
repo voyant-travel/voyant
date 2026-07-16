@@ -46,7 +46,7 @@ export interface ActivitiesListFilters {
 }
 
 export interface CustomFieldDefinitionListFilters {
-  entityType?: "organization" | "person" | "quote" | "activity" | undefined
+  entityType?: "organization" | "person" | "quote" | "activity" | "booking" | undefined
   limit?: number | undefined
   offset?: number | undefined
 }

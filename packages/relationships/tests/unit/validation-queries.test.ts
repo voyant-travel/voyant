@@ -24,6 +24,8 @@ describe("Custom field definition schemas", () => {
     expect(result.key).toBe("industry_code")
     expect(result.isRequired).toBe(false)
     expect(result.isSearchable).toBe(false)
+    expect(result.isExportable).toBe(true)
+    expect(result.isInvoiceable).toBe(false)
   })
 
   it("rejects missing entityType", () => {

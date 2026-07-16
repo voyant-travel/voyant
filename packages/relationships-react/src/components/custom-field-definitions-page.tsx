@@ -68,7 +68,10 @@ export function CustomFieldDefinitionsPage({
   const definitions = query.data?.data ?? []
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
-  const entityLabels = messages.common.entityTypeLabels
+  const entityLabels: Record<EntityType, string> = {
+    ...messages.common.entityTypeLabels,
+    booking: "Booking",
+  }
 
   return (
     <div
@@ -153,6 +156,12 @@ export function CustomFieldDefinitionsPage({
                       {definition.isRequired ? <Badge>{customFields.required}</Badge> : null}
                       {definition.isSearchable ? (
                         <Badge variant="outline">{customFields.searchable}</Badge>
+                      ) : null}
+                      {definition.isExportable ? (
+                        <Badge variant="outline">{customFields.exportable}</Badge>
+                      ) : null}
+                      {definition.isInvoiceable ? (
+                        <Badge variant="outline">{customFields.invoiceable}</Badge>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

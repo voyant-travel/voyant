@@ -1,5 +1,7 @@
+// agent-quality: file-size exception -- owner: relationships; the import-cheap package manifest remains centralized until #3398 moves custom-field API and Settings facets to their generic owner.
 import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
 
 export {
@@ -72,6 +74,7 @@ export const relationshipsVoyantModule = defineModule({
   provides: {
     ports: [
       storefrontIntakeRuntimePortReference,
+      providePort(customFieldsRuntimePort),
       providePort(relationshipsMiceRuntimePort),
       providePort(bookingsRelationshipsRuntimePort),
       providePort(relationshipsRouteRuntimePort),

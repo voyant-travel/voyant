@@ -1,7 +1,10 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it } from "vitest"
 
-import { loadCustomFieldDefinitions } from "../../src/service/custom-fields-registry.js"
+import {
+  loadCustomFieldDefinitions,
+  loadCustomFieldRegistry,
+} from "../../src/service/custom-fields-registry.js"
 
 /** Minimal stub: `db.select().from(table)` resolves to the given rows. */
 function fakeDb(rows: unknown[]): PostgresJsDatabase {
@@ -18,6 +21,8 @@ describe("loadCustomFieldDefinitions", () => {
         label: "Tier",
         isRequired: true,
         isSearchable: true,
+        isExportable: true,
+        isInvoiceable: true,
         options: [
           { label: "Gold", value: "gold" },
           { label: "Silver", value: "silver" },
@@ -30,6 +35,8 @@ describe("loadCustomFieldDefinitions", () => {
         label: "Budget",
         isRequired: false,
         isSearchable: false,
+        isExportable: false,
+        isInvoiceable: false,
         options: null,
       },
       {
@@ -39,6 +46,8 @@ describe("loadCustomFieldDefinitions", () => {
         label: "Address",
         isRequired: false,
         isSearchable: false,
+        isExportable: true,
+        isInvoiceable: false,
         options: null,
       },
     ]
@@ -52,7 +61,7 @@ describe("loadCustomFieldDefinitions", () => {
       label: "Tier",
       required: true,
       options: ["gold", "silver"], // {label,value}[] → value[]
-      visibility: { search: true }, // isSearchable → search
+      visibility: { export: true, invoice: true, search: true },
     })
     expect(defs[1]).toMatchObject({ entity: "organization", type: "monetary" })
     expect(defs[2]).toMatchObject({ type: "json" }) // address → json
@@ -61,5 +70,29 @@ describe("loadCustomFieldDefinitions", () => {
 
   it("returns an empty list when there are no definitions", async () => {
     expect(await loadCustomFieldDefinitions(fakeDb([]))).toEqual([])
+  })
+
+  it("builds the effective registry and preserves visibility semantics", async () => {
+    const registry = await loadCustomFieldRegistry(
+      fakeDb([
+        {
+          entityType: "person",
+          key: "searchable",
+          fieldType: "varchar",
+          label: "Searchable",
+          isRequired: false,
+          isSearchable: true,
+          isExportable: true,
+          isInvoiceable: false,
+          options: null,
+        },
+      ]),
+    )
+
+    expect(registry.field("person", "searchable")).toMatchObject({
+      type: "text",
+      visibility: { export: true, invoice: false, search: true },
+    })
+    expect(registry.forEntity("person")).toHaveLength(1)
   })
 })

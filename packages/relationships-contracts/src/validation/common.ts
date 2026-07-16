@@ -6,6 +6,13 @@ export const paginationSchema = z.object({
 })
 
 export const entityTypeSchema = z.enum(["organization", "person", "quote", "activity"])
+export const customFieldTargetSchema = z.enum([
+  "organization",
+  "person",
+  "quote",
+  "activity",
+  "booking",
+])
 
 export const recordStatusSchema = z.enum(["active", "inactive", "archived"])
 export const relationTypeSchema = z.enum(["client", "partner", "supplier", "other"])

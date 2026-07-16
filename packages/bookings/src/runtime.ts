@@ -1,10 +1,10 @@
+import type { CustomFieldsRuntime } from "@voyant-travel/core/custom-fields"
 import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
 import { createDbClient } from "@voyant-travel/db/runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type {
   BookingsAccommodationRuntime,
-  BookingsConfigurationRuntime,
   BookingsFinanceRuntime,
   BookingsInventoryRuntime,
   BookingsRelationshipsRuntime,
@@ -13,8 +13,8 @@ import type {
 import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "./workflow-entry.js"
 
 interface BookingsRuntimeRequirements {
-  configuration: BookingsConfigurationRuntime
   accommodation: BookingsAccommodationRuntime
+  customFields: CustomFieldsRuntime
   finance: BookingsFinanceRuntime
   relationships: BookingsRelationshipsRuntime
 }
@@ -23,10 +23,7 @@ interface BookingsRuntimeRequirements {
 export function createBookingsRuntime(
   requirements: BookingsRuntimeRequirements,
 ): BookingsRuntimeProvider {
-  const { configuration, accommodation, finance, relationships } = requirements
-  const customFields = configuration.readConfig(undefined, "customFields") as
-    | BookingsRuntimeProvider["options"]["customFields"]
-    | undefined
+  const { accommodation, customFields, finance, relationships } = requirements
 
   return {
     options: {
@@ -51,7 +48,7 @@ export function createBookingsRuntime(
         (await relationships.getPersonById(db, personId)) != null,
       resolveBillingOrganizationById: async (db, organizationId) =>
         (await relationships.getOrganizationById(db, organizationId)) != null,
-      customFields,
+      customFields: customFields.resolveRegistry,
       overviewItemEnrichers: { accommodation: accommodation.enrichOverviewItems },
     },
     registerWorkflowService: ({ container, bindings }) => {

@@ -60,7 +60,7 @@ const contributorRequirements = [
   [
     "relationships",
     relationships,
-    ["host.primitives.config.read", "relationshipsMiceRuntimePort.id"],
+    ["customFieldsRuntimePort.id", "relationshipsMiceRuntimePort.id"],
   ],
   ["trips", trips, ["host.primitives", "host.getRuntimePort(catalogRuntimeServicesPort)"]],
 ]
@@ -87,6 +87,11 @@ for (const [packageName, source] of [
 }
 if (deploymentResources.includes("createDeploymentCapabilities")) {
   violations.push("deployment-resources.ts must not define a capability container")
+}
+if (relationships.includes("host.primitives.config.read")) {
+  violations.push(
+    "relationships runtime contributor must not restore deployment-configured custom fields",
+  )
 }
 
 if (violations.length > 0) {

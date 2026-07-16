@@ -1,4 +1,9 @@
-import type { CustomFieldDefinition, CustomFieldType } from "@voyant-travel/core/custom-fields"
+import {
+  type CustomFieldDefinition,
+  type CustomFieldRegistry,
+  type CustomFieldType,
+  createCustomFieldRegistry,
+} from "@voyant-travel/core/custom-fields"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { customFieldDefinitions } from "../schema.js"
@@ -23,17 +28,12 @@ const TYPE_MAP: Record<string, CustomFieldType> = {
 }
 
 /**
- * Load the deployment's runtime-defined custom fields — the
- * `custom_field_definitions` table (admin-created at runtime) — as registry
- * definitions. This is the DB half of the unified custom-fields system; merge it
- * with the code-declared set via `mergeCustomFieldDefinitions` (code wins), e.g.
+ * Load the deployment's custom fields from the persisted
+ * `custom_field_definitions` table. Persisted definitions are the sole runtime
+ * authority; compatibility authoring helpers in `@voyant-travel/core` do not
+ * participate in registry resolution.
  *
- *     createCustomFieldRegistry(
- *       mergeCustomFieldDefinitions([codeFields, await loadCustomFieldDefinitions(db)]),
- *     )
- *
- * `isSearchable` maps to `visibility.search`; export/invoice fall back to the
- * registry defaults (export on, invoice off) until those columns are added.
+ * Persisted visibility flags map directly onto the shared registry contract.
  */
 export async function loadCustomFieldDefinitions(
   db: PostgresJsDatabase,
@@ -46,6 +46,17 @@ export async function loadCustomFieldDefinitions(
     label: row.label,
     required: row.isRequired,
     options: row.options?.map((option) => option.value),
-    visibility: { search: row.isSearchable },
+    visibility: {
+      export: row.isExportable,
+      invoice: row.isInvoiceable,
+      search: row.isSearchable,
+    },
   }))
+}
+
+/** Resolve the effective runtime registry directly from persisted definitions. */
+export async function loadCustomFieldRegistry(
+  db: PostgresJsDatabase,
+): Promise<CustomFieldRegistry> {
+  return createCustomFieldRegistry(await loadCustomFieldDefinitions(db))
 }

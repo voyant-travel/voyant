@@ -28,6 +28,7 @@ export {
   activityTypeSchema,
   communicationChannelSchema,
   communicationDirectionSchema,
+  customFieldTargetSchema,
   customFieldTypeSchema,
   entityTypeSchema,
   recordStatusSchema,

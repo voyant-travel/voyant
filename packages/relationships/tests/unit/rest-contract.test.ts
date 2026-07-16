@@ -81,6 +81,8 @@ const customFieldDefinitionRow: InferSelectModel<typeof customFieldDefinitions> 
   fieldType: "enum",
   isRequired: false,
   isSearchable: true,
+  isExportable: true,
+  isInvoiceable: false,
   options: [{ label: "Gold", value: "gold" }],
   createdAt,
   updatedAt,

@@ -12,6 +12,7 @@ import type { InvoiceDocumentGenerator } from "./service-documents.js"
 
 export type FinanceRouteRuntime = {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
+  resolveCustomFields?: FinanceDocumentRouteOptions["resolveCustomFields"]
   resolveDocumentDownloadUrl?: FinanceDocumentRouteOptions["resolveDocumentDownloadUrl"]
   invoiceSettlementPollers: Record<string, InvoiceSettlementPoller>
   eventBus?: EventBus
@@ -38,6 +39,7 @@ export function buildFinanceRouteRuntime(
   return {
     invoiceDocumentGenerator:
       options.resolveInvoiceDocumentGenerator?.(bindings) ?? options.invoiceDocumentGenerator,
+    resolveCustomFields: options.resolveCustomFields,
     resolveDocumentDownloadUrl: options.resolveDocumentDownloadUrl,
     invoiceSettlementPollers:
       options.resolveInvoiceSettlementPollers?.(bindings) ?? options.invoiceSettlementPollers ?? {},

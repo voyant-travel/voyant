@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-runtime-binding-final.mjs")
 const contributors = {
-  bookings: "bookingsConfigurationRuntimePort",
+  bookings: "actionLedgerBookingDriftRuntimePort",
   catalog: "createCatalogRuntime",
   commerce: "createCommerceRuntime",
   distribution: "createDistributionRuntime",

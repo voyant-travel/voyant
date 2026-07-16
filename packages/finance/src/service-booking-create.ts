@@ -37,7 +37,11 @@ import {
   buildBookingCreateRejectedActionLedgerInput,
   buildBookingCreateSucceededActionLedgerInput,
 } from "./service-action-ledger.js"
-import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
+import {
+  financeDocumentsService,
+  type InvoiceDocumentGenerator,
+  type InvoiceDocumentRuntimeOptions,
+} from "./service-documents.js"
 import { TravelCreditServiceError, travelCreditsService } from "./service-travel-credits.js"
 import {
   paymentMethodSchema,
@@ -441,6 +445,7 @@ export type BookingCreateTravelerInput = z.infer<typeof travelerInputSchema>
  */
 export interface BookingCreateRuntime extends FinanceServiceRuntime {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
+  resolveCustomFields?: InvoiceDocumentRuntimeOptions["resolveCustomFields"]
   bindings?: Record<string, unknown>
 }
 
@@ -1596,6 +1601,7 @@ export async function createBooking(
               generator: runtime.invoiceDocumentGenerator,
               eventBus: runtime.eventBus,
               bindings: runtime.bindings,
+              resolveCustomFields: runtime.resolveCustomFields,
             },
           )
           invoiceDocument =

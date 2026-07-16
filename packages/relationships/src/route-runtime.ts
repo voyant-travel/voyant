@@ -19,7 +19,7 @@ export interface RelationshipsRouteRuntime {
    * require KMS gracefully reject with a 503 in that case.
    */
   getKmsProvider(): Promise<KmsProvider | null>
-  /** Resolves the custom-field registry (code ∪ runtime DB) for a request. */
+  /** Resolves the custom-field registry from persisted definitions for a request. */
   customFields?: CustomFieldRegistryResolver
 }
 

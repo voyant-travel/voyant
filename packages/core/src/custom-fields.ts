@@ -13,11 +13,11 @@
  *     dumping or hiding everything,
  *   - **PII-aware** — flagged fields can be encrypted at rest / redacted in logs.
  *
- * The registry is **deployment config**: a deployment declares its fields (often
- * discovered from `src/custom-fields/*` via {@link customFieldsFromGlob}) and the
- * framework injects the registry into the services that read/write entities.
- * This module is intentionally dependency-free (no zod / drizzle) so it can live
- * in `@voyant-travel/core` and be imported anywhere.
+ * Runtime definitions are persisted in `custom_field_definitions` and resolved
+ * from the database on each request. This module remains dependency-free and
+ * owns the registry, validation, and visibility primitives shared by consumers.
+ * Legacy project-authoring helpers remain temporarily for source compatibility,
+ * but they have no runtime authority.
  */
 
 /**
@@ -82,7 +82,12 @@ export interface CustomFieldDefinition {
   validate?: (value: unknown) => string | null
 }
 
-/** Identity helper for authoring a field with full type-checking. */
+/**
+ * Identity helper retained temporarily for source compatibility.
+ *
+ * @deprecated Project-local TypeScript definitions have no runtime authority.
+ * Create operator definitions through Settings.
+ */
 export function defineCustomField<T extends CustomFieldDefinition>(definition: T): T {
   return definition
 }
@@ -100,16 +105,19 @@ export interface CustomFieldRegistry {
 }
 
 /**
- * Resolve the registry for a request. The unified system's definitions come
- * from two sources (code-declared + the runtime `custom_field_definitions`
- * table), and the runtime set is read from the DB — so the registry is resolved
- * per request from a `db` handle rather than being a boot-time constant. `db` is
- * `unknown` to keep `core` free of a Drizzle dependency; the deployment's
- * resolver casts it. See the custom-fields unification ADR.
+ * Resolve the registry for a request. Runtime definitions come exclusively from
+ * the `custom_field_definitions` table, so the registry is resolved per request
+ * from a `db` handle rather than being a boot-time constant. `db` is `unknown`
+ * to keep `core` free of a Drizzle dependency.
  */
 export type CustomFieldRegistryResolver = (
   db: unknown,
 ) => CustomFieldRegistry | Promise<CustomFieldRegistry>
+
+export type CustomFieldVisibilityChannel = keyof CustomFieldVisibility
+
+export type { CustomFieldsRuntime } from "./runtime-port.js"
+export { customFieldsRuntimePort } from "./runtime-port.js"
 
 const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
   export: true,
@@ -147,13 +155,11 @@ export function createCustomFieldRegistry(
 
 /**
  * Merge custom-field declarations from several sources into one duplicate-free
- * list (feed it to {@link createCustomFieldRegistry}). On a `(entity, key)`
- * collision the **earlier** source wins — pass code-declared fields before
- * runtime/DB-defined ones so the framework contract is authoritative. The
- * `onShadow` callback (if given) is notified of each dropped collision.
+ * list. Retained only for source compatibility; runtime registry composition
+ * must load persisted definitions directly.
  *
- * The unification's single registry is built as
- * `createCustomFieldRegistry(mergeCustomFieldDefinitions(codeFields, dbFields))`.
+ * @deprecated Runtime custom-field definitions are database-owned. This helper
+ * will be removed with the legacy local-definition surface.
  */
 export function mergeCustomFieldDefinitions(
   sources: ReadonlyArray<ReadonlyArray<CustomFieldDefinition>>,
@@ -304,6 +310,7 @@ export function validateCustomFields(
  * them; the results flatten into one list to feed
  * {@link createCustomFieldRegistry}. Empty until a deployment adds one.
  *
+ * @deprecated Project-local TypeScript definitions have no runtime authority.
  * @throws if a matched file has no default export.
  */
 export function customFieldsFromGlob(glob: Record<string, unknown>): CustomFieldDefinition[] {

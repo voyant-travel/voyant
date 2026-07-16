@@ -47,12 +47,10 @@ export interface InvoiceDocumentRuntimeOptions {
   generator: InvoiceDocumentGenerator
   eventBus?: EventBus
   /**
-   * Optional: resolve the invoice-visible custom fields for this invoice's
-   * customer, exposed to the template as the `customFields` variable. The
-   * deployment wires this — it holds the custom-field registry and reads the
-   * entity's `custom_fields` column — keeping `finance` decoupled from
-   * `relationships`. Filter with `customFieldsVisibleIn(registry, entity,
-   * "invoice")`. See docs/architecture/custom-fields-unification-adr.md.
+   * Resolve invoice-visible custom fields for this invoice's customer, exposed
+   * to the template as `customFields`. Selected graph runtimes receive this
+   * from the database-backed `custom-fields.runtime` port; optionality remains
+   * only for direct low-level service callers.
    */
   resolveCustomFields?: (
     db: PostgresJsDatabase,

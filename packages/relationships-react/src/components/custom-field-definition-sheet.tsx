@@ -28,7 +28,7 @@ import {
 import { crmUiEn, useCrmUiI18nOrDefault } from "../i18n/index.js"
 import type { CustomFieldDefinitionRecord } from "../schemas.js"
 
-export const entityTypes = ["organization", "person", "quote", "activity"] as const
+export const entityTypes = ["organization", "person", "quote", "activity", "booking"] as const
 const fieldTypes = [
   "varchar",
   "text",
@@ -58,6 +58,8 @@ type FormValues = {
   key: string
   label: string
   isSearchable: boolean
+  isExportable: boolean
+  isInvoiceable: boolean
   options: OptionRow[]
 }
 
@@ -72,6 +74,8 @@ const defaultFormValues: FormValues = {
   key: "",
   label: "",
   isSearchable: false,
+  isExportable: true,
+  isInvoiceable: false,
   options: [],
 }
 
@@ -96,7 +100,10 @@ export function CustomFieldDefinitionSheet({
   const { create, update } = useCustomFieldDefinitionMutation()
   const [values, setValues] = useState<FormValues>(defaultFormValues)
   const [errors, setErrors] = useState<FormErrors>({})
-  const entityLabels = messages.common.entityTypeLabels
+  const entityLabels = useMemo<Record<EntityType, string>>(
+    () => ({ ...messages.common.entityTypeLabels, booking: "Booking" }),
+    [messages.common.entityTypeLabels],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -113,6 +120,8 @@ export function CustomFieldDefinitionSheet({
       key: definition.key,
       label: definition.label,
       isSearchable: definition.isSearchable,
+      isExportable: definition.isExportable,
+      isInvoiceable: definition.isInvoiceable,
       options: definition.options?.map((option) => ({ ...option, rowKey: nextOptionKey() })) ?? [],
     })
   }, [definition, open])
@@ -155,6 +164,8 @@ export function CustomFieldDefinitionSheet({
         key: values.key.trim(),
         label: values.label.trim(),
         isSearchable: values.isSearchable,
+        isExportable: values.isExportable,
+        isInvoiceable: values.isInvoiceable,
         options,
       }
       await update.mutateAsync({ id: definition.id, input: payload })
@@ -166,6 +177,8 @@ export function CustomFieldDefinitionSheet({
         label: values.label.trim(),
         isRequired: false,
         isSearchable: values.isSearchable,
+        isExportable: values.isExportable,
+        isInvoiceable: values.isInvoiceable,
         options,
       }
       await create.mutateAsync(payload)
@@ -266,6 +279,18 @@ export function CustomFieldDefinitionSheet({
                 description={customFields.sheet.searchableDescription}
                 checked={values.isSearchable}
                 onCheckedChange={(checked) => setValue("isSearchable", checked)}
+              />
+              <ToggleRow
+                label={customFields.sheet.exportable}
+                description={customFields.sheet.exportableDescription}
+                checked={values.isExportable}
+                onCheckedChange={(checked) => setValue("isExportable", checked)}
+              />
+              <ToggleRow
+                label={customFields.sheet.invoiceable}
+                description={customFields.sheet.invoiceableDescription}
+                checked={values.isInvoiceable}
+                onCheckedChange={(checked) => setValue("isInvoiceable", checked)}
               />
             </div>
 

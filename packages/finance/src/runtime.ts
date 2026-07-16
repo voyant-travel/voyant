@@ -1,3 +1,4 @@
+import type { CustomFieldsRuntime } from "@voyant-travel/core/custom-fields"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { FinanceApiModuleOptions } from "./index.js"
@@ -22,6 +23,7 @@ import type { InvoiceSettlementPoller } from "./service-settlement.js"
 /** Compose Finance's main HTTP runtime from generic host and selected providers. */
 export function createFinanceRuntime(
   host: FinanceHostRuntime,
+  customFields: CustomFieldsRuntime,
   notifications: FinanceNotificationsRuntime,
   checkoutPaymentStarters?: FinanceCheckoutPaymentStartersRuntime,
   invoiceSettlementPollerProviders: readonly FinanceInvoiceSettlementPollerProvider[] = [],
@@ -29,6 +31,20 @@ export function createFinanceRuntime(
   const { primitives } = host
   return {
     resolveDocumentDownloadUrl: primitives.storage.downloadUrl,
+    resolveCustomFields: async (db, invoice) => {
+      if (invoice.organizationId) {
+        return customFields.resolveVisibleValues(
+          db,
+          "organization",
+          invoice.organizationId,
+          "invoice",
+        )
+      }
+      if (invoice.personId) {
+        return customFields.resolveVisibleValues(db, "person", invoice.personId, "invoice")
+      }
+      return {}
+    },
     resolveInvoiceExchangeRateResolver: (bindings) =>
       createExchangeRateResolver(primitives, bindings),
     invoiceSettlementPollers: aggregateFinanceInvoiceSettlementPollers(

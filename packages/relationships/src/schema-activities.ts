@@ -6,6 +6,7 @@ import {
   activityLinkRoleEnum,
   activityStatusEnum,
   activityTypeEnum,
+  customFieldTargetEnum,
   customFieldTypeEnum,
   entityTypeEnum,
 } from "./schema-shared.js"
@@ -84,12 +85,14 @@ export const customFieldDefinitions = pgTable(
   "custom_field_definitions",
   {
     id: typeId("custom_field_definitions"),
-    entityType: entityTypeEnum("entity_type").notNull(),
+    entityType: customFieldTargetEnum("entity_type").notNull(),
     key: text("key").notNull(),
     label: text("label").notNull(),
     fieldType: customFieldTypeEnum("field_type").notNull(),
     isRequired: boolean("is_required").notNull().default(false),
     isSearchable: boolean("is_searchable").notNull().default(false),
+    isExportable: boolean("is_exportable").notNull().default(true),
+    isInvoiceable: boolean("is_invoiceable").notNull().default(false),
     options: jsonb("options").$type<Array<{ label: string; value: string }>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

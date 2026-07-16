@@ -61,10 +61,16 @@ if (packageIndex.includes("relationshipsApiModule")) {
 }
 if (
   runtimeContributor.includes("host.capabilities") ||
-  !runtimeContributor.includes('host.primitives.config.read(db, "customFields")') ||
+  runtimeContributor.includes('config.read(db, "customFields")') ||
+  !runtimeContributor.includes("loadCustomFieldRegistry") ||
+  !runtimeContributor.includes("[customFieldsRuntimePort.id]") ||
+  !runtimeContributor.includes("resolveRegistry:") ||
+  !runtimeContributor.includes("resolveVisibleValues") ||
   !runtimeContributor.includes("[relationshipsMiceRuntimePort.id]")
 ) {
-  violations.push("Relationships must compose custom fields and MICE lookup package-side")
+  violations.push(
+    "Relationships must compose database-backed custom fields and MICE lookup package-side",
+  )
 }
 const genericContributorInputs =
   composition.includes("options.createRuntimePorts({ primitives })") ||

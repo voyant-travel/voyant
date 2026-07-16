@@ -24,6 +24,7 @@ describe("finance deployment manifest", () => {
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
       runtimePorts: [
         { id: "finance.host.runtime" },
+        { id: "custom-fields.runtime" },
         { id: "finance.notifications.runtime" },
         { id: "finance.checkout-payment-starters.runtime", optional: true },
         { id: "finance.invoice-settlement-poller", optional: true, cardinality: "many" },
@@ -138,6 +139,15 @@ describe("finance deployment manifest", () => {
               env: () => ({}),
               storage: { downloadUrl: () => undefined },
             },
+          },
+          "custom-fields.runtime": {
+            resolveRegistry: async () => ({
+              all: () => [],
+              entities: () => [],
+              field: () => undefined,
+              forEntity: () => [],
+            }),
+            resolveVisibleValues: async () => ({}),
           },
           "finance.notifications.runtime": {
             resolveNotificationDispatcher: () => undefined,

@@ -1,14 +1,16 @@
 import { z } from "zod"
 
-import { customFieldTypeSchema, entityTypeSchema, paginationSchema } from "./common.js"
+import { customFieldTargetSchema, customFieldTypeSchema, paginationSchema } from "./common.js"
 
 export const customFieldDefinitionCoreSchema = z.object({
-  entityType: entityTypeSchema,
+  entityType: customFieldTargetSchema,
   key: z.string().min(1),
   label: z.string().min(1),
   fieldType: customFieldTypeSchema,
   isRequired: z.boolean().default(false),
   isSearchable: z.boolean().default(false),
+  isExportable: z.boolean().default(true),
+  isInvoiceable: z.boolean().default(false),
   options: z
     .array(z.object({ label: z.string(), value: z.string() }))
     .nullable()
@@ -25,11 +27,11 @@ export const updateCustomFieldDefinitionSchema = customFieldDefinitionCoreSchema
   .omit({ entityType: true, fieldType: true })
   .partial()
 export const customFieldDefinitionListQuerySchema = paginationSchema.extend({
-  entityType: entityTypeSchema.optional(),
+  entityType: customFieldTargetSchema.optional(),
 })
 
 export const upsertCustomFieldValueSchema = z.object({
-  entityType: entityTypeSchema,
+  entityType: customFieldTargetSchema,
   entityId: z.string(),
   textValue: z.string().nullable().optional(),
   numberValue: z.number().int().nullable().optional(),
@@ -41,7 +43,7 @@ export const upsertCustomFieldValueSchema = z.object({
 })
 
 export const customFieldValueListQuerySchema = paginationSchema.extend({
-  entityType: entityTypeSchema.optional(),
+  entityType: customFieldTargetSchema.optional(),
   entityId: z.string().optional(),
   definitionId: z.string().optional(),
 })

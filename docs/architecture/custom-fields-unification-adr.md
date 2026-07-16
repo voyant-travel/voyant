@@ -1,4 +1,4 @@
-# ADR: Unify custom fields — one registry, two definition sources, values on the entity
+# ADR: Unify custom fields — database definitions and values on the entity
 
 > **Proposed successor:**
 > [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) retains
@@ -17,7 +17,8 @@
 Voyant grew **two** custom-field mechanisms with the same name and overlapping purpose:
 
 1. **Registry + jsonb column** (`@voyant-travel/core/custom-fields`, on `booking`).
-   - Definitions **declared in code** (`src/custom-fields/*`, build-time discovery).
+   - Definitions were historically declared in code (`src/custom-fields/*`,
+     build-time discovery); that source is now retired from runtime authority.
    - Values in a **`custom_fields` jsonb column on the entity row**.
    - Typed validation, per-channel **visibility** (export/invoice/search), PII flags.
    - ✅ Reader-visible (export/invoice/search read the row), typed, upgrade-safe.
@@ -39,31 +40,27 @@ Each picked the wrong trade-off on one of **two independent axes**:
 | Axis | Registry | EAV | **Unified choice** |
 | --- | --- | --- | --- |
 | **Value storage** | jsonb on entity ✅ | side table ❌ | **jsonb on entity** |
-| **Definition source** | code only ❌ | runtime DB ✅ | **code + runtime DB** |
+| **Definition source** | code only ❌ | runtime DB ✅ | **runtime DB only** |
 
 ## Decision
 
-**One custom-field system. Definitions come from both a code registry and the
-runtime `custom_field_definitions` table; values live in a `custom_fields` jsonb
-column on the entity. `custom_field_values` is retired.**
+**One custom-field system. Definitions come exclusively from the runtime
+`custom_field_definitions` table; values live in a `custom_fields` jsonb column
+on the entity. `custom_field_values` is retired.**
 
 1. **Single value store — `custom_fields jsonb` on the entity** (`{}` default),
    exactly as `booking` already has. Readers (export/invoice/search) consult the
    registry + read the column — no joins, nothing invisible.
-2. **Two definition sources behind one `CustomFieldRegistry`.**
-   - Code: `customFieldsFromGlob(import.meta.glob("src/custom-fields/*"))`
-     (framework/standard fields, validated, shipped with the deployment).
+2. **One definition source behind `CustomFieldRegistry`.**
    - Runtime DB: `custom_field_definitions` rows (operator-created at runtime via
-     the existing admin CRUD + UI — kept).
-   - `loadCustomFieldRegistry(db)` reads the DB definitions, maps them to
-     `CustomFieldDefinition`s, and merges with the code-declared set into one
-     registry. Code definitions win on a `(entity, key)` collision (they're the
-     contract); a `log` surfaces the shadow.
-3. **The registry is resolved per request** — `customFields` injection becomes a
-   resolver `(db) => Promise<CustomFieldRegistry>` (cached per isolate with a
-   short TTL; definitions change rarely). `booking` moves from its static
-   registry to this resolver. Validation/visibility are then identical for code-
-   and DB-defined fields.
+     the existing admin CRUD + UI).
+   - `loadCustomFieldRegistry(db)` reads and maps persisted definitions on each
+     request. Project-local declarations are deprecated compatibility surface
+     only and cannot shadow database definitions.
+3. **The registry is resolved per request** through the typed
+   `custom-fields.runtime` graph port. The provider reads persisted definitions;
+   Bookings, Relationships, and Finance consume the same runtime without host
+   configuration or project-local declarations.
 4. **Canonical type model = the EAV superset.** `core`'s `CustomFieldType` grows
    to cover the runtime types: `text` (`varchar`/`text`), `number` (`double`),
    `monetary` (`{ amountCents, currency }`), `date`, `boolean`, `select`
@@ -71,9 +68,9 @@ column on the entity. `custom_field_values` is retired.**
    structured `json` for now (dedicated validators are a follow-up).
    `validateCustomFields` gains the new cases. EAV → registry type map is fixed
    in the loader.
-5. **Visibility.** `isSearchable` → `visibility.search`. Add `is_exportable` +
-   `is_invoiceable` to `custom_field_definitions` (admin-editable; default
-   `export=true`, `invoice=false`) so runtime fields are visibility-aware too.
+5. **Visibility.** `is_searchable`, `is_exportable`, and `is_invoiceable` map
+   directly onto registry visibility (admin-editable; defaults
+   `export=true`, `invoice=false`, `search=false`).
 
 ## Migration
 
@@ -95,11 +92,12 @@ column on the entity. `custom_field_values` is retired.**
 
 1. **Type model + registry merge (no storage change). ✅ landed.**
    - 1a — `core`'s `CustomFieldType` superset (`multiselect`/`monetary`/`json`) +
-     `validateCustomFields` + `mergeCustomFieldDefinitions`.
+     `validateCustomFields`; the historical merge helper remains deprecated
+     compatibility surface until #3401.
    - 1b — `loadCustomFieldDefinitions(db)` in relationships (DB→registry mapping);
      `customFields` injection becomes a per-request `CustomFieldRegistryResolver`
-     (`(db) ⇒ code ∪ DB`, cached per isolate); `booking` moved onto it. Pure
-     addition; nothing migrated yet.
+     backed exclusively by the database; `booking` moved onto it. Pure addition;
+     nothing migrated yet.
 2. **Columns + write/read on person/organization. ✅ landed.** `custom_fields`
    jsonb column on `people`/`organizations` (framework bundle `0002`); the
    accounts route validates person/org writes against the resolved registry

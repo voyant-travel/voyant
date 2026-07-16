@@ -2,6 +2,14 @@ import { pgEnum } from "drizzle-orm/pg-core"
 
 export const entityTypeEnum = pgEnum("entity_type", ["organization", "person", "quote", "activity"])
 
+export const customFieldTargetEnum = pgEnum("custom_field_target", [
+  "organization",
+  "person",
+  "quote",
+  "activity",
+  "booking",
+])
+
 export const relationTypeEnum = pgEnum("relation_type", ["client", "partner", "supplier", "other"])
 
 export const communicationChannelEnum = pgEnum("communication_channel", [

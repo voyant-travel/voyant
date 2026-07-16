@@ -29,25 +29,24 @@ JSONB column. Custom fields do not introduce a cross-domain value table.
 
 ## Registry Primitive
 
-`@voyant-travel/core/custom-fields` is dependency-free and owns declaration,
-merge, validation, and visibility helpers:
+`@voyant-travel/core/custom-fields` is dependency-free and owns registry,
+validation, and visibility helpers:
 
 ```ts
 import {
   createCustomFieldRegistry,
   customFieldsVisibleIn,
-  defineCustomField,
   validateCustomFields,
 } from "@voyant-travel/core/custom-fields"
 
 const registry = createCustomFieldRegistry([
-  defineCustomField({
+  {
     entity: "booking",
     key: "group_size",
     type: "number",
     label: "Group size",
     required: true,
-  }),
+  },
 ])
 
 const result = validateCustomFields(registry, "booking", input.customFields)
@@ -65,81 +64,22 @@ Custom-field injection follows the selected deployment graph. It does not use
 `FrameworkProviders.customFields` and the generic Operator host does not import
 Bookings or Relationships to wire their route options.
 
-The current authority chain is:
+The authority chain is:
 
 1. Selected package manifests declare their runtime and required typed ports.
 2. Generated graph composition loads only the selected package runtime
    contributors.
-3. The Node host exposes domain-neutral configuration through
-   `VoyantRuntimeHostPrimitives.config.read`.
-4. The Bookings contributor exposes that input through
-   `bookings.configuration.runtime`; the Bookings package composes it into its
-   own route runtime.
-5. The Relationships contributor exposes a resolver through
-   `relationships.route-runtime`; the Relationships package consumes it in its
-   own routes.
+3. Relationships loads `custom_field_definitions` through
+   `loadCustomFieldRegistry(db)` on each request.
+4. Relationships exposes that database-backed resolver through its route runtime
+   and the typed Bookings/Relationships port.
+5. Bookings, Relationships, search, export, and invoice consumers use the same
+   persisted definition shape.
 
-This keeps package behavior package-owned while allowing the application to
-supply deployment-specific field declarations.
-
-## Project Declarations
-
-`src/custom-fields/` is the recommended source layout, but it is not a runtime
-scan and it is not currently one of the graph's automatic project conventions.
-The project assembles declarations at build time and supplies one
-`CustomFieldRegistryResolver` through the generic host configuration.
-
-For example, a field file may default-export one declaration or an array:
-
-```ts
-// src/custom-fields/booking.ts
-import { defineCustomField } from "@voyant-travel/core/custom-fields"
-
-export default defineCustomField({
-  entity: "booking",
-  key: "tour_guide",
-  type: "text",
-  label: "Tour guide",
-})
-```
-
-The project server can collect those files with Vite's eager, build-time glob
-and merge them with definitions managed through Relationships:
-
-```ts
-// src/server.ts
-import {
-  createCustomFieldRegistry,
-  customFieldsFromGlob,
-  mergeCustomFieldDefinitions,
-  type CustomFieldRegistryResolver,
-} from "@voyant-travel/core/custom-fields"
-import { loadCustomFieldDefinitions } from "@voyant-travel/relationships/custom-fields-registry"
-import { createVoyantProjectServerEntry } from "@voyant-travel/runtime"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-const codeFields = customFieldsFromGlob(
-  import.meta.glob("./custom-fields/*.ts", { eager: true }),
-)
-
-const customFields: CustomFieldRegistryResolver = async (database) =>
-  createCustomFieldRegistry(
-    mergeCustomFieldDefinitions([
-      codeFields,
-      await loadCustomFieldDefinitions(database as PostgresJsDatabase),
-    ]),
-  )
-
-const server = createVoyantProjectServerEntry({
-  host: { config: { customFields } },
-})
-
-export default { fetch: server.fetch }
-```
-
-Code declarations are passed first, so they win when a database-managed
-definition has the same `(entity, key)`. The eager glob is compiled by Vite; no
-filesystem scan occurs after the application starts.
+Operator-owned definitions are created and edited in Settings. Project-local
+TypeScript authoring helpers remain deprecated compatibility exports until
+#3401, but they are not connected to runtime composition and cannot shadow a
+persisted `(entity, key)` definition.
 
 ## Entity Adoption
 
@@ -161,9 +101,9 @@ provider or package-specific starter branch must not be reintroduced.
 ## Invariants
 
 - Packages never import project code.
-- The project supplies one resolver, not per-package route options.
+- Persisted definitions are the sole runtime authority.
 - Runtime packages request custom fields through declared ports only.
-- Code and database definitions merge deterministically.
+- Project code cannot inject, merge, or shadow effective definitions.
 - Unknown fields fail closed on writes.
 - Visibility defaults remain conservative: export on, invoice and search off.
-- Adding custom fields must not require forking a standard package.
+- Adding or updating an operator field requires no rebuild or restart.

@@ -6,6 +6,7 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
+import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
@@ -42,6 +43,7 @@ export const financeVoyantModule = defineModule({
   runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
   runtimePorts: [
     requirePort(financeHostRuntimePort),
+    requirePort(customFieldsRuntimePort),
     requirePort(financeNotificationsRuntimePort),
     requirePort(financeCheckoutPaymentStartersRuntimePort, { optional: true }),
     requirePort(financeInvoiceSettlementPollerRuntimePort, {

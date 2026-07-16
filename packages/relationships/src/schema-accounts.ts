@@ -80,7 +80,7 @@ export const organizations = pgTable(
     /**
      * Deployment-declared custom fields (unified custom-fields system — see the
      * ADR). Validated at the write boundary against the resolved registry
-     * (code ∪ runtime `custom_field_definitions`); `{}` when none are set.
+     * (persisted in `custom_field_definitions`); `{}` when none are set.
      */
     customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     notes: text("notes"),
@@ -123,7 +123,7 @@ export const people = pgTable(
     /**
      * Deployment-declared custom fields (unified custom-fields system — see the
      * ADR). Validated at the write boundary against the resolved registry
-     * (code ∪ runtime `custom_field_definitions`); `{}` when none are set.
+     * (persisted in `custom_field_definitions`); `{}` when none are set.
      */
     customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
     dateOfBirth: date("date_of_birth"),

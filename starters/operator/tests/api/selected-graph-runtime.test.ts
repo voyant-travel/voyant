@@ -6,7 +6,6 @@ import {
 } from "@voyant-travel/action-ledger/graph-runtime"
 import {
   bookingsAccommodationRuntimePort,
-  bookingsConfigurationRuntimePort,
   bookingsFinanceRuntimePort,
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
@@ -25,6 +24,7 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
+import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import {
   CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
   channelPushRuntimePort,
@@ -685,7 +685,6 @@ describe("selected Operator graph runtime composition", () => {
         actionLedgerInventoryDriftRuntimePort.id,
         bookingMaintenanceRuntimePort.id,
         bookingsAccommodationRuntimePort.id,
-        bookingsConfigurationRuntimePort.id,
         bookingsFinanceRuntimePort.id,
         bookingsInventoryRuntimePort.id,
         bookingsRelationshipsRuntimePort.id,
@@ -694,6 +693,7 @@ describe("selected Operator graph runtime composition", () => {
         catalogOffersRuntimePort.id,
         catalogSearchRuntimePort.id,
         catalogCheckoutApiRuntimePort.id,
+        customFieldsRuntimePort.id,
         financeAccommodationsPaymentPolicyRuntimePort.id,
         financeCruisesPaymentPolicyRuntimePort.id,
         financeDistributionPaymentPolicyRuntimePort.id,

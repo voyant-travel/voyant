@@ -10557,7 +10557,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["organization", "person", "quote", "activity"]
+              "enum": ["organization", "person", "quote", "activity", "booking"]
             },
             "required": false,
             "name": "entityType",
@@ -10582,7 +10582,7 @@
                           },
                           "entityType": {
                             "type": "string",
-                            "enum": ["organization", "person", "quote", "activity"]
+                            "enum": ["organization", "person", "quote", "activity", "booking"]
                           },
                           "key": {
                             "type": "string"
@@ -10610,6 +10610,12 @@
                             "type": "boolean"
                           },
                           "isSearchable": {
+                            "type": "boolean"
+                          },
+                          "isExportable": {
+                            "type": "boolean"
+                          },
+                          "isInvoiceable": {
                             "type": "boolean"
                           },
                           "options": {
@@ -10642,6 +10648,8 @@
                           "fieldType",
                           "isRequired",
                           "isSearchable",
+                          "isExportable",
+                          "isInvoiceable",
                           "options",
                           "createdAt",
                           "updatedAt"
@@ -10683,7 +10691,7 @@
                 "properties": {
                   "entityType": {
                     "type": "string",
-                    "enum": ["organization", "person", "quote", "activity"]
+                    "enum": ["organization", "person", "quote", "activity", "booking"]
                   },
                   "key": {
                     "type": "string",
@@ -10714,6 +10722,14 @@
                     "default": false
                   },
                   "isSearchable": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "isExportable": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "isInvoiceable": {
                     "type": "boolean",
                     "default": false
                   },
@@ -10754,7 +10770,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": ["organization", "person", "quote", "activity"]
+                          "enum": ["organization", "person", "quote", "activity", "booking"]
                         },
                         "key": {
                           "type": "string"
@@ -10782,6 +10798,12 @@
                           "type": "boolean"
                         },
                         "isSearchable": {
+                          "type": "boolean"
+                        },
+                        "isExportable": {
+                          "type": "boolean"
+                        },
+                        "isInvoiceable": {
                           "type": "boolean"
                         },
                         "options": {
@@ -10814,6 +10836,8 @@
                         "fieldType",
                         "isRequired",
                         "isSearchable",
+                        "isExportable",
+                        "isInvoiceable",
                         "options",
                         "createdAt",
                         "updatedAt"
@@ -10880,7 +10904,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": ["organization", "person", "quote", "activity"]
+                          "enum": ["organization", "person", "quote", "activity", "booking"]
                         },
                         "key": {
                           "type": "string"
@@ -10908,6 +10932,12 @@
                           "type": "boolean"
                         },
                         "isSearchable": {
+                          "type": "boolean"
+                        },
+                        "isExportable": {
+                          "type": "boolean"
+                        },
+                        "isInvoiceable": {
                           "type": "boolean"
                         },
                         "options": {
@@ -10940,6 +10970,8 @@
                         "fieldType",
                         "isRequired",
                         "isSearchable",
+                        "isExportable",
+                        "isInvoiceable",
                         "options",
                         "createdAt",
                         "updatedAt"
@@ -11011,6 +11043,14 @@
                     "type": "boolean",
                     "default": false
                   },
+                  "isExportable": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "isInvoiceable": {
+                    "type": "boolean",
+                    "default": false
+                  },
                   "options": {
                     "type": ["array", "null"],
                     "items": {
@@ -11047,7 +11087,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": ["organization", "person", "quote", "activity"]
+                          "enum": ["organization", "person", "quote", "activity", "booking"]
                         },
                         "key": {
                           "type": "string"
@@ -11075,6 +11115,12 @@
                           "type": "boolean"
                         },
                         "isSearchable": {
+                          "type": "boolean"
+                        },
+                        "isExportable": {
+                          "type": "boolean"
+                        },
+                        "isInvoiceable": {
                           "type": "boolean"
                         },
                         "options": {
@@ -11107,6 +11153,8 @@
                         "fieldType",
                         "isRequired",
                         "isSearchable",
+                        "isExportable",
+                        "isInvoiceable",
                         "options",
                         "createdAt",
                         "updatedAt"
@@ -11243,7 +11291,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["organization", "person", "quote", "activity"]
+              "enum": ["organization", "person", "quote", "activity", "booking"]
             },
             "required": false,
             "name": "entityType",
@@ -11389,7 +11437,7 @@
                 "properties": {
                   "entityType": {
                     "type": "string",
-                    "enum": ["organization", "person", "quote", "activity"]
+                    "enum": ["organization", "person", "quote", "activity", "booking"]
                   },
                   "entityId": {
                     "type": "string"

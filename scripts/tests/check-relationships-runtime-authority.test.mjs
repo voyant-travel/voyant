@@ -21,7 +21,7 @@ async function createFixture(overrides = {}) {
     "relationships/src/runtime-port.ts":
       'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\ndefinePort<RelationshipsMiceRuntime>({ id: "relationships.mice.runtime" })\n',
     "relationships/src/runtime-contributor.ts":
-      'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
+      "loadCustomFieldRegistry\n[customFieldsRuntimePort.id]\nresolveRegistry:\nresolveVisibleValues\n[relationshipsMiceRuntimePort.id]\n",
     "runtime/src/deployment-resources.ts":
       "function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\n",
     ...overrides,
@@ -85,6 +85,18 @@ describe("check-relationships-runtime-authority", () => {
       assert.match(error.stderr, /must adapt its graph runtime factory through its typed port/)
       assert.match(error.stderr, /must not retain the preconfigured compatibility module export/)
       assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
+      return true
+    })
+  })
+
+  it("rejects host-config custom-field authority", async () => {
+    const root = await createFixture({
+      "relationships/src/runtime-contributor.ts":
+        'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /database-backed custom fields/)
       return true
     })
   })

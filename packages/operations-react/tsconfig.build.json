@@ -629,6 +629,7 @@
       "@voyant-travel/core/project": ["../core/dist/project.d.ts"],
       "@voyant-travel/core/query": ["../core/dist/query.d.ts"],
       "@voyant-travel/core/registry": ["../core/dist/registry.d.ts"],
+      "@voyant-travel/core/runtime-port": ["../core/dist/runtime-port.d.ts"],
       "@voyant-travel/core/workflows": ["../core/dist/workflows.d.ts"],
       "@voyant-travel/cruises": ["../cruises/dist/index.d.ts"],
       "@voyant-travel/cruises-contracts": ["../cruises-contracts/dist/index.d.ts"],

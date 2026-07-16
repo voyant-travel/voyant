@@ -1,4 +1,4 @@
-import type { BootstrapContext, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { BootstrapContext } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -15,10 +15,6 @@ import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime
 export interface BookingsRuntimeProvider {
   options: BookingsApiModuleOptions
   registerWorkflowService?(context: BootstrapContext): Promise<void> | void
-}
-
-export interface BookingsConfigurationRuntime {
-  readConfig: VoyantRuntimeHostPrimitives["config"]["read"]
 }
 
 export interface BookingsAccommodationRuntime {
@@ -79,10 +75,6 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
 })
 export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsApiModuleOptions>(
   "bookings.requirements.runtime",
-)
-export const bookingsConfigurationRuntimePort = objectPort<BookingsConfigurationRuntime>(
-  "bookings.configuration.runtime",
-  ["readConfig"],
 )
 export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodationRuntime>(
   "bookings.accommodation.runtime",

@@ -41,7 +41,7 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "packages/relationships/src/runtime-contributor.ts",
-    "host.primitives.config.read\nrelationshipsMiceRuntimePort.id\n",
+    "customFieldsRuntimePort.id\nrelationshipsMiceRuntimePort.id\n",
   )
   await write(
     root,

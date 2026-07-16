@@ -1,4 +1,5 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
+import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import { resolveBookingFinancialLifecycle } from "./financial-lifecycle.js"
@@ -13,7 +14,6 @@ import { publicBookingRoutes } from "./routes-public.js"
 import { createBookingsRuntime } from "./runtime.js"
 import {
   bookingsAccommodationRuntimePort,
-  bookingsConfigurationRuntimePort,
   bookingsFinanceRuntimePort,
   bookingsRelationshipsRuntimePort,
 } from "./runtime-port.js"
@@ -159,15 +159,15 @@ export const bookingsApiModule: ApiModule = createBookingsApiModule()
 
 /** Package-owned adapter from graph ports to the complete Bookings runtime. */
 export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const [configuration, accommodation, finance, relationships] = await Promise.all([
-    getPort(bookingsConfigurationRuntimePort),
+  const [accommodation, customFields, finance, relationships] = await Promise.all([
     getPort(bookingsAccommodationRuntimePort),
+    getPort(customFieldsRuntimePort),
     getPort(bookingsFinanceRuntimePort),
     getPort(bookingsRelationshipsRuntimePort),
   ])
   const provider = createBookingsRuntime({
-    configuration,
     accommodation,
+    customFields,
     finance,
     relationships,
   })
@@ -223,7 +223,6 @@ export type { BookingsRuntimeProvider } from "./runtime-port.js"
 export {
   bookingRequirementsRuntimePort,
   bookingsAccommodationRuntimePort,
-  bookingsConfigurationRuntimePort,
   bookingsFinanceRuntimePort,
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,

@@ -40,8 +40,9 @@ adapter over the package-owned `AccountantPortal` finance UI.
   cannot return;
 - package storefront subpaths and thin route adapters remain connected;
 - generated selected-graph admin loading remains authoritative; and
-- `src/admin`, `src/custom-fields`, `src/extensions`, and `src/modules` remain
-  available for project overrides.
+- `src/admin`, `src/extensions`, and `src/modules` remain available for project
+  overrides. `src/custom-fields` is a deprecated source-compatibility location
+  only; persisted Settings definitions are the sole runtime authority.
 
 New generic product UI must deepen an existing package React/admin surface and
 lower this ratchet when starter files are removed. Framework Node runtime, auth

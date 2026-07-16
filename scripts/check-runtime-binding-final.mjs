@@ -10,7 +10,7 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
-  bookings: "bookingsConfigurationRuntimePort",
+  bookings: "actionLedgerBookingDriftRuntimePort",
   catalog: "createCatalogRuntime",
   commerce: "createCommerceRuntime",
   distribution: "createDistributionRuntime",

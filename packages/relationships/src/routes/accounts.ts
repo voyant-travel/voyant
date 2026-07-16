@@ -121,10 +121,10 @@ function optionalHydratedPersonField(row: object, field: "email" | "phone" | "we
 
 /**
  * Validate a person/organization write's `customFields` against the resolved
- * custom-field registry (code ∪ runtime `custom_field_definitions`) and replace
+ * database-backed custom-field registry and replace
  * the payload with the cleaned value. No-op when the write carries none. Rejects
  * (400) unknown keys / missing required / bad types, or any `customFields` when
- * the deployment declares none. See the custom-fields unification ADR.
+ * no persisted definition exists. See the custom-fields architecture guide.
  */
 async function validateRelationshipsCustomFields(
   c: Context<Env>,
