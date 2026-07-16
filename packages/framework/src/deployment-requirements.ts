@@ -124,6 +124,11 @@ function envForProvider(
       ? [
           variable("TYPESENSE_HOST", "Typesense host URL."),
           secret("TYPESENSE_API_KEY", "Typesense API key."),
+          variable(
+            "TYPESENSE_COLLECTION_PREFIX",
+            "Optional collection-name prefix for multi-tenant shared clusters.",
+            false,
+          ),
         ]
       : [
           variable("ALGOLIA_APP_ID", "Algolia application id."),
