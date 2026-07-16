@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { MigrationClient, MigrationSource } from "./collector.js"
-import { detectExisting, expectedSchema } from "./deployment-runner.js"
+import { detectExisting, expectedSchema, runDeploymentMigrations } from "./deployment-runner.js"
 
 const src = (name: string, sqls: string[]): MigrationSource => ({
   name,
@@ -59,6 +59,62 @@ describe("expectedSchema", () => {
     expect(e.tables.has("tmp")).toBe(false)
     expect(e.dropped.has("tmp")).toBe(true)
     expect([...e.columns].some((c) => c.startsWith("tmp."))).toBe(false)
+  })
+})
+
+describe("runDeploymentMigrations on a partially adopted database", () => {
+  it("does not re-assert cutline schema for already-recorded entries", async () => {
+    // Ledger state: adoption already recorded action-ledger's covered baseline,
+    // and an applied post-cutline increment legitimately DROPPED its outbox
+    // table. A rerun must not demand the cutline-era outbox schema again.
+    const ledgerRows = [
+      { source: "framework", tag: "0000_framework_baseline", content_hash: "h-framework" },
+      { source: "action-ledger", tag: "0000_action_ledger_baseline", content_hash: "h-covered" },
+      {
+        source: "action-ledger",
+        tag: "0001_remove_outbox",
+        content_hash: "b48b95e2b1ec55da472472782e63f89a5f6f8e0f5f26c8f24825ffe7dad5d33c",
+      },
+    ]
+    const client: MigrationClient = {
+      async query(sql: string, params: unknown[] = []) {
+        if (sql.startsWith("SELECT to_regclass")) return { rows: [{ reg: String(params[0]) }] }
+        if (sql.includes("count(*)")) return { rows: [{ n: "1" }] }
+        if (sql.includes('SELECT "source", "tag" FROM')) {
+          return { rows: ledgerRows.map(({ source, tag }) => ({ source, tag })) }
+        }
+        if (sql.includes('SELECT "content_hash", "source" FROM')) {
+          // applyMigrations per-migration lookup: report both recorded rows.
+          return { rows: [] }
+        }
+        if (sql.includes("information_schema.tables")) {
+          return { rows: [] } // outbox (and everything else) absent
+        }
+        if (sql.includes("information_schema.columns")) return { rows: [] }
+        if (sql.includes("pg_constraint")) return { rows: [] }
+        return { rows: [] }
+      },
+    }
+
+    const sources = [
+      {
+        name: "action-ledger",
+        priority: 1,
+        migrations: [
+          {
+            tag: "0000_action_ledger_baseline",
+            sql: 'CREATE TABLE "action_ledger_outbox" ("id" text PRIMARY KEY);',
+          },
+        ],
+      },
+    ]
+    const cutline = { "action-ledger": ["0000_action_ledger_baseline"] }
+
+    // Without the recorded-entry filter this throws "NOT at the cutline schema"
+    // (the outbox table is gone). With it, the covered entry is already
+    // recorded, nothing is left to parity-gate, and the run proceeds.
+    const result = await runDeploymentMigrations(client, sources, cutline)
+    expect(result.existing).toBe(true)
   })
 })
 
