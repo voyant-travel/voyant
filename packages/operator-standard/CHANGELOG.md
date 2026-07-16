@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.6.8
+
+### Patch Changes
+
+- Updated dependencies [f7c68ae]
+  - @voyant-travel/custom-fields@0.2.1
+
 ## 0.6.7
 
 ### Patch Changes
