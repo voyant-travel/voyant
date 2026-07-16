@@ -254,6 +254,33 @@ function cutlineCovered(sources: MigrationSource[], cutline: Cutline): Migration
 }
 
 /**
+ * Drop migrations already recorded in the ledger (under the source's stable OR
+ * legacy names). The baseline parity gate must only assert the schema of
+ * cutline entries it is ABOUT to import-baseline: once an entry is recorded,
+ * later post-cutline migrations may legitimately have altered or dropped its
+ * objects (e.g. a recorded source's outbox table retired by its own
+ * increment), so re-asserting the cutline-era schema on every run would wedge
+ * a partially-adopted database forever.
+ */
+async function withoutRecordedMigrations(
+  client: MigrationClient,
+  sources: MigrationSource[],
+): Promise<MigrationSource[]> {
+  if (sources.length === 0) return sources
+  const ledger = `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}"."${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}"`
+  const recordedRows = await client.query(`SELECT "source", "tag" FROM ${ledger}`)
+  const recorded = new Set(
+    recordedRows.rows.map((row) => `${row.source as string}\0${row.tag as string}`),
+  )
+  const isRecorded = (source: MigrationSource, tag: string) =>
+    [source.name, ...(source.legacyNames ?? [])].some((name) => recorded.has(`${name}\0${tag}`))
+
+  return sources
+    .map((s) => ({ ...s, migrations: s.migrations.filter((m) => !isRecorded(s, m.tag)) }))
+    .filter((s) => s.migrations.length > 0)
+}
+
+/**
  * Run the deployment's migrations against `client`'s ledger. Detects FRESH vs
  * EXISTING, gates the EXISTING baseline with a parity check, and applies.
  */
@@ -265,7 +292,11 @@ export async function runDeploymentMigrations(
 ): Promise<RunResult> {
   const existing = await detectExisting(client)
   if (existing) {
-    await assertSchemaAtBaseline(client, cutlineCovered(sources, cutline))
+    // Parity-gate only the cutline entries this run will import-baseline;
+    // already-recorded entries' objects may have been legitimately reshaped by
+    // applied post-cutline migrations.
+    const pending = await withoutRecordedMigrations(client, cutlineCovered(sources, cutline))
+    if (pending.length > 0) await assertSchemaAtBaseline(client, pending)
   }
   const { executed, baselined } = await applyMigrations(client, sources, {
     cutline,
