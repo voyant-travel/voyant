@@ -24,6 +24,7 @@ import {
 } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
+  type ProjectConventionDiscovery,
   type ProjectConventionFileContribution,
 } from "./project-conventions.js"
 import {
@@ -117,6 +118,8 @@ export interface ProjectSubscriberLinkConventionCompilation {
 
 export interface ProjectSubscriberLinkConventionsOptions {
   projectRoot: string
+  /** Reuse an authoritative discovery snapshot instead of scanning the project again. */
+  discovery?: ProjectConventionDiscovery
 }
 
 export class ProjectSubscriberLinkConventionError extends Error {
@@ -132,10 +135,8 @@ export class ProjectSubscriberLinkConventionError extends Error {
 export async function analyzeProjectSubscriberLinkConventions(
   options: ProjectSubscriberLinkConventionsOptions,
 ): Promise<ProjectSubscriberLinkConventionAnalysis> {
-  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
-  const realProjectRoot = await realpath(projectRoot)
-  const discovery = await discoverProjectConventions(projectRoot)
+  const discovery = options.discovery ?? (await discoverProjectConventions(projectRoot))
   const subscribers: ProjectSubscriberConvention[] = []
   const links: ProjectLinkConvention[] = []
   const diagnostics: ProjectSubscriberLinkDiagnostic[] = []
@@ -158,6 +159,10 @@ export async function analyzeProjectSubscriberLinkConventions(
         message: diagnostic.message,
       })),
   )
+  if (contributions.length === 0) return { subscribers, links, diagnostics }
+
+  await loadTypeScript()
+  const realProjectRoot = await realpath(projectRoot)
 
   for (const contribution of contributions) {
     const sourceFilePath = resolveInsideProject(projectRoot, contribution.sourcePath)

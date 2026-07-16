@@ -10,6 +10,7 @@ import ts, { loadTypeScript } from "./lazy-typescript.js"
 import { statementIdentifierName } from "./project-convention-static-data.js"
 import {
   discoverProjectConventions,
+  type ProjectConventionDiscovery,
   type ProjectConventionFileContribution,
 } from "./project-conventions.js"
 import {
@@ -97,6 +98,8 @@ export interface ProjectWorkflowJobConventionCompilation {
 
 export interface ProjectWorkflowJobConventionsOptions {
   projectRoot: string
+  /** Reuse an authoritative discovery snapshot instead of scanning the project again. */
+  discovery?: ProjectConventionDiscovery
 }
 
 export class ProjectWorkflowJobConventionError extends Error {
@@ -112,10 +115,8 @@ export class ProjectWorkflowJobConventionError extends Error {
 export async function analyzeProjectWorkflowJobConventions(
   options: ProjectWorkflowJobConventionsOptions,
 ): Promise<ProjectWorkflowJobConventionAnalysis> {
-  await loadTypeScript()
   const projectRoot = path.resolve(options.projectRoot)
-  const realProjectRoot = await realpath(projectRoot)
-  const discovery = await discoverProjectConventions(projectRoot)
+  const discovery = options.discovery ?? (await discoverProjectConventions(projectRoot))
   const discoveredWorkflows = discovery.contributions.filter(
     (contribution): contribution is DiscoveredWorkflowConvention =>
       contribution.kind === "workflow",
@@ -129,6 +130,12 @@ export async function analyzeProjectWorkflowJobConventions(
     ...findIdCollisions(discoveredWorkflows, "workflow"),
     ...findIdCollisions(discoveredJobs, "job"),
   ]
+  if (discoveredWorkflows.length === 0 && discoveredJobs.length === 0) {
+    return { workflows, jobs, diagnostics }
+  }
+
+  await loadTypeScript()
+  const realProjectRoot = await realpath(projectRoot)
 
   for (const workflow of discoveredWorkflows) {
     const sourceFile = await readConventionSource(

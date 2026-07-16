@@ -227,6 +227,13 @@ Resolution has one authority chain:
 8. The resident Node host validates the artifacts and deployment requirements
    before serving traffic or running migrations.
 
+Convention discovery is filesystem-only and import-cheap. Static TypeScript
+analysis runs only for project-local source contributions that discovery
+actually found. A source-free or dist-only application composes from published
+package manifests and still receives deterministic empty project-local
+artifacts; it must not require the TypeScript compiler in its production
+dependency graph.
+
 Canonical graph JSON has stable ordering, no timestamps or host-specific
 absolute paths, and a content hash calculated over the canonical data. Generated
 entry modules carry the same hash. The same project and lockfile must therefore
