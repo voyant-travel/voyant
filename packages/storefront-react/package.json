@@ -38,7 +38,7 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@voyant-travel/admin": "workspace:^",
-    "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-router": "^1.170.18",
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
@@ -79,7 +79,7 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.101.2",
-    "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-router": "^1.170.18",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
@@ -91,7 +91,7 @@
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "typescript": "catalog:",

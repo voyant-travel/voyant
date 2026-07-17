@@ -50,7 +50,7 @@
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
-    "@voyant-travel/data-sdk": "^0.7.1",
+    "@voyant-travel/data-sdk": "^0.8.0",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/finance-contracts": "workspace:^",
