@@ -9,11 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@voyant-travel/ui/components"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
@@ -87,22 +82,6 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
         "/v1/admin/finance/tax-policy-rules?limit=100",
       ),
   })
-  const invoicingSettingsQuery = useQuery({
-    queryKey: ["booking-tax-settings"],
-    queryFn: () =>
-      api.get<{ data: { invoicingMode: "direct" | "proforma-first" } }>(
-        "/v1/admin/bookings/tax-settings",
-      ),
-  })
-  const invoicingModeMutation = useMutation({
-    mutationFn: (invoicingMode: "direct" | "proforma-first") =>
-      api.patch("/v1/admin/bookings/tax-settings", { invoicingMode }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["booking-tax-settings"] })
-    },
-  })
-  const invoicingMode = invoicingSettingsQuery.data?.data.invoicingMode ?? "direct"
-
   const regimesById = useMemo(
     () => new Map((taxRegimesQuery.data?.data ?? []).map((regime) => [regime.id, regime])),
     [taxRegimesQuery.data],
@@ -168,40 +147,6 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
   return (
     <TaxesPageApiContext.Provider value={api}>
       <div className="flex flex-col gap-6 p-6">
-        <div className="flex flex-col gap-3 rounded-md border bg-card p-6 text-card-foreground shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">
-              {taxMessages.invoicingModeTitle}
-            </h2>
-            <p className="text-sm text-muted-foreground">{taxMessages.invoicingModeDescription}</p>
-          </div>
-          <div className="max-w-sm">
-            <Select
-              value={invoicingMode}
-              onValueChange={(value) => {
-                if (value === "direct" || value === "proforma-first") {
-                  invoicingModeMutation.mutate(value)
-                }
-              }}
-              disabled={invoicingSettingsQuery.isPending || invoicingModeMutation.isPending}
-            >
-              <SelectTrigger id="invoicing-mode" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="direct">{taxMessages.invoicingModeDirect}</SelectItem>
-                <SelectItem value="proforma-first">
-                  {taxMessages.invoicingModeProformaFirst}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {invoicingMode === "proforma-first"
-                ? taxMessages.invoicingModeProformaFirstHint
-                : taxMessages.invoicingModeDirectHint}
-            </p>
-          </div>
-        </div>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">{taxMessages.title}</h2>

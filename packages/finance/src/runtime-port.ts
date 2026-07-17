@@ -3,7 +3,7 @@ import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { BookingTaxRouteOptions } from "./booking-tax.js"
+import type { BookingTaxRouteOptions, FxReferenceSource } from "./booking-tax.js"
 import type { CheckoutRoutesOptions } from "./checkout-routes.js"
 import type { CheckoutPaymentStarter } from "./checkout-service.js"
 import type { PaymentPolicy } from "./payment-policy.js"
@@ -48,11 +48,53 @@ export interface FinanceOperatorSettingsRuntime {
    * settled proforma should be auto-converted to a fiscal invoice.
    */
   resolveInvoicingMode: (db: PostgresJsDatabase) => Promise<"direct" | "proforma-first">
+  /**
+   * Resolve the operator's official FX reference-rate source
+   * (`ecb` | `bnr`, default `ecb`). Read by the finance fx-reference
+   * helper to pick the host-provided rate source for the operator.
+   */
+  resolveFxReferenceSource: (db: PostgresJsDatabase) => Promise<FxReferenceSource>
 }
 
 export interface FinanceNotificationsRuntime {
   resolveNotificationDispatcher: NonNullable<CheckoutRoutesOptions["resolveNotificationDispatcher"]>
   listBookingReminderRuns: NonNullable<CheckoutRoutesOptions["listBookingReminderRuns"]>
+}
+
+/** Request for one official FX reference rate on a given date. */
+export interface FxReferenceRateRequest {
+  /** Currency to convert from, e.g. `EUR` (ISO 4217). */
+  base: string
+  /** Currency to convert into, e.g. `RON` (ISO 4217). */
+  quote: string
+  /** Reference date in `YYYY-MM-DD`. Defaults to the host's latest published rate. */
+  date?: string
+}
+
+/** One resolved official FX reference rate. */
+export interface FxReferenceRate {
+  /** Units of `quote` per one unit of `base`. */
+  rate: number
+  /** The reference source that published the rate, e.g. `ecb` or `bnr`. */
+  source: FxReferenceSource
+  /** Date the returned rate was published (`YYYY-MM-DD`). */
+  asOf: string
+}
+
+/**
+ * Host-provided official FX reference-rate source. Finance defines the
+ * seam only; hosts/deployments wire it to their own FX data source. No
+ * HTTP client or API key lives inside finance.
+ */
+export interface FinanceFxReferenceRuntime {
+  /**
+   * Resolve one official reference rate. `source` is the operator's
+   * configured reference source (e.g. `ecb`, `bnr`); the host uses it
+   * to pick the correct published series.
+   */
+  resolveReferenceRate(
+    request: FxReferenceRateRequest & { source: FxReferenceSource },
+  ): Promise<FxReferenceRate>
 }
 
 export interface FinanceDistributionPaymentPolicyRuntime {
@@ -119,12 +161,62 @@ export const financeOperatorSettingsRuntimePort = objectPort<FinanceOperatorSett
     "resolveBookingTaxSettings",
     "updateBookingTaxSettings",
     "resolveInvoicingMode",
+    "resolveFxReferenceSource",
   ],
 )
 export const financeNotificationsRuntimePort = objectPort<FinanceNotificationsRuntime>(
   "finance.notifications.runtime",
   ["resolveNotificationDispatcher", "listBookingReminderRuns"],
 )
+export const financeFxReferenceRuntimePort = objectPort<FinanceFxReferenceRuntime>(
+  "finance.fx-reference.runtime",
+  ["resolveReferenceRate"],
+)
+
+/**
+ * Raised when a caller explicitly requests an official FX reference
+ * rate but no `finance.fx-reference.runtime` provider is wired. Callers
+ * that never request a reference rate are unaffected — the seam is
+ * inert until used.
+ */
+export class FinanceFxReferenceSourceUnavailableError extends Error {
+  readonly code = "finance_fx_reference_source_unavailable"
+
+  constructor(source: FxReferenceSource) {
+    super(
+      `No FX reference-rate source is configured for "${source}". A host must provide the finance.fx-reference.runtime port.`,
+    )
+    this.name = "FinanceFxReferenceSourceUnavailableError"
+  }
+}
+
+export interface ResolveReferenceRateHelperInput {
+  base: string
+  quote: string
+  date?: string
+  /** The operator's configured reference source (e.g. `ecb`, `bnr`). */
+  source: FxReferenceSource
+  /** Host-provided implementation. Absent → typed unavailable error. */
+  provider?: FinanceFxReferenceRuntime | null
+}
+
+/**
+ * Typed helper that resolves an official FX reference rate for an
+ * operator's configured source by delegating to the host-provided
+ * `finance.fx-reference.runtime` implementation. When no provider is
+ * wired, throws {@link FinanceFxReferenceSourceUnavailableError} — a
+ * clear, typed signal rather than a silent fallback. Finance holds no
+ * FX data itself.
+ */
+export function resolveReferenceRate(
+  input: ResolveReferenceRateHelperInput,
+): Promise<FxReferenceRate> {
+  const { provider, source, base, quote, date } = input
+  if (!provider) {
+    throw new FinanceFxReferenceSourceUnavailableError(source)
+  }
+  return provider.resolveReferenceRate({ base, quote, date, source })
+}
 export const financeDistributionPaymentPolicyRuntimePort =
   objectPort<FinanceDistributionPaymentPolicyRuntime>(
     "finance.distribution-payment-policy.runtime",

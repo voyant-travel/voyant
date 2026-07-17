@@ -15,6 +15,13 @@
       "when": 1784282549297,
       "tag": "0001_proforma_invoicing_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784291076524,
+      "tag": "0002_fx_reference_source",
+      "breakpoints": true
     }
   ]
 }

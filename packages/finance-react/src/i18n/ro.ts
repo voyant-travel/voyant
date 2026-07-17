@@ -3,6 +3,7 @@ import { common, invoiceDetailPage, invoiceDialog, invoicesPage } from "./ro/inv
 import {
   invoiceNumberSeriesDialog,
   invoiceNumberSeriesPage,
+  invoicingPage,
   paymentDetailPage,
   paymentPolicy,
   paymentsPage,
@@ -29,6 +30,7 @@ export const financeUiRo = {
   invoiceDetailPage,
   paymentPolicy,
   taxesPage,
+  invoicingPage,
   supplierPaymentDialog,
   recordBookingPaymentDialog,
   profitability,
