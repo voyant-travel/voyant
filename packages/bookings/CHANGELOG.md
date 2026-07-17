@@ -1,5 +1,7 @@
 # @voyant-travel/bookings
 
+## 0.167.0
+
 ## 0.166.0
 
 ### Patch Changes
