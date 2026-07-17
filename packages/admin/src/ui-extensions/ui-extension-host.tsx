@@ -7,6 +7,7 @@ import {
   createContextMessage,
   createErrorMessage,
   createInitMessage,
+  createTokenMessage,
   isNavigateMessage,
   isReadyMessage,
   isRequestTokenMessage,
@@ -30,6 +31,22 @@ import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 
 import { useOperatorAdminI18n } from "../providers/operator-admin-messages.js"
 import { isUiExtensionCompatible } from "./compat.js"
 
+/** A short-lived admin session token the host delivers in answer to `request-token`. */
+export interface UiExtensionSessionTokenGrant {
+  token: string
+  tokenId: string
+  /** Expiry as epoch milliseconds. */
+  expiresAt: number
+}
+
+/**
+ * Broker a session token for a frame. Resolves with a grant to deliver, or
+ * `null` to answer `unavailable` (issuance declined). The host binds the
+ * current entity/slot context; the callback maps it to an installation and
+ * mints a token via the apps module. Absence answers `not-supported`.
+ */
+export type UiExtensionRequestTokenHandler = () => Promise<UiExtensionSessionTokenGrant | null>
+
 /** Sandbox tokens the frame is allowed — never `allow-same-origin`. */
 const UI_EXTENSION_SANDBOX = "allow-scripts allow-forms allow-popups"
 /** Handshake budget before the host degrades to an error card. */
@@ -45,7 +62,18 @@ export interface UiExtensionHostProps {
   onNavigate?: (to: string) => void
   /** Invoked when the extension raises a toast (message already length-capped). */
   onToast?: (intent: UiExtensionToastIntent, message: string) => void
+  /**
+   * Broker for the reserved `request-token` message. When omitted the host
+   * answers `not-supported`, preserving the prior behavior for hosts without a
+   * session-token backend.
+   */
+  onRequestToken?: UiExtensionRequestTokenHandler
   className?: string
+  /**
+   * Render as a full-page extension (app-owned admin route) instead of a slot
+   * widget: the frame fills the available height and is not resize-driven.
+   */
+  fill?: boolean
   /** Handshake timeout override, primarily for tests. */
   timeoutMs?: number
 }
@@ -137,7 +165,9 @@ function UiExtensionFrame({
   context,
   onNavigate,
   onToast,
+  onRequestToken,
   className,
+  fill = false,
   timeoutMs = UI_EXTENSION_HANDSHAKE_TIMEOUT_MS,
 }: UiExtensionHostProps) {
   const { messages } = useOperatorAdminI18n()
@@ -153,6 +183,8 @@ function UiExtensionFrame({
   onNavigateRef.current = onNavigate
   const onToastRef = useRef(onToast)
   onToastRef.current = onToast
+  const onRequestTokenRef = useRef(onRequestToken)
+  onRequestTokenRef.current = onRequestToken
   const configRef = useRef(descriptor.config)
   configRef.current = descriptor.config
 
@@ -203,7 +235,31 @@ function UiExtensionFrame({
         return
       }
       if (isRequestTokenMessage(event.data)) {
-        source.postMessage(createErrorMessage("not-supported"), "*")
+        const requestId = event.data.payload?.requestId
+        const handler = onRequestTokenRef.current
+        if (!handler) {
+          source.postMessage(createErrorMessage("not-supported", requestId), "*")
+          return
+        }
+        // The token flows only to the frame that requested it; a slow or failed
+        // broker degrades to `unavailable` and never blocks the host.
+        handler()
+          .then((grant) => {
+            const frameWindow = iframeRef.current?.contentWindow
+            if (!frameWindow) return
+            frameWindow.postMessage(
+              grant
+                ? createTokenMessage({ ...grant, requestId })
+                : createErrorMessage("unavailable", requestId),
+              "*",
+            )
+          })
+          .catch(() => {
+            iframeRef.current?.contentWindow?.postMessage(
+              createErrorMessage("unavailable", requestId),
+              "*",
+            )
+          })
       }
     }
 
@@ -232,8 +288,19 @@ function UiExtensionFrame({
   // The frame stays laid out (not `sr-only`) while loading — a hidden,
   // zero-area `loading="lazy"` iframe would never fetch and so never complete
   // the handshake. The loading card is overlaid until the frame is ready.
+  // A full-page extension fills the available height instead of following the
+  // frame's self-reported resize height.
+  const frameHeight = fill
+    ? "100%"
+    : status === "ready"
+      ? (height ?? 0)
+      : UI_EXTENSION_LOADING_HEIGHT
+
   return (
-    <div className={cn("relative w-full", className)} data-slot="ui-extension-host">
+    <div
+      className={cn("relative w-full", fill && "h-full min-h-[480px]", className)}
+      data-slot="ui-extension-host"
+    >
       <iframe
         ref={iframeRef}
         src={descriptor.entryUrl}
@@ -242,7 +309,7 @@ function UiExtensionFrame({
         referrerPolicy="no-referrer"
         loading="lazy"
         className="block w-full border-0"
-        style={{ height: status === "ready" ? (height ?? 0) : UI_EXTENSION_LOADING_HEIGHT }}
+        style={{ height: frameHeight }}
       />
       {status === "loading" ? (
         <div className="absolute inset-0" data-slot="ui-extension-loading">

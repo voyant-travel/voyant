@@ -21,6 +21,8 @@ const context: UiExtensionContext = {
   entity: null,
   theme: "light",
   locale: "en",
+  appLocale: "en",
+  direction: "ltr",
 }
 
 function descriptor(overrides: Partial<UiExtensionDescriptor> = {}): UiExtensionDescriptor {
@@ -82,7 +84,7 @@ describe("UiExtensionHost", () => {
     })
     const initMessage = post.mock.calls[0]?.[0] as { type: string; payload: { apiVersion: string } }
     expect(initMessage.type).toBe("voyant:ext:init")
-    expect(initMessage.payload.apiVersion).toBe("1.0.0")
+    expect(initMessage.payload.apiVersion).toBe("1.1.0")
   })
 
   it("renders a quiet incompatible card and never mounts a frame", () => {
@@ -152,6 +154,63 @@ describe("UiExtensionHost", () => {
         (call) => (call[0] as { type: string }).type === "voyant:ext:error",
       )
       expect(error?.[0]).toMatchObject({ payload: { code: "not-supported" } })
+    })
+  })
+
+  it("delivers a brokered session token to the requesting frame", async () => {
+    const onRequestToken = vi.fn().mockResolvedValue({
+      token: "test-session-abc",
+      tokenId: "st_1",
+      expiresAt: 42,
+    })
+    renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-1"))
+    await waitFor(() => {
+      const token = post.mock.calls.find(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:session-token",
+      )
+      expect(token?.[0]).toMatchObject({
+        payload: { token: "test-session-abc", tokenId: "st_1", requestId: "tok-1" },
+      })
+    })
+    expect(onRequestToken).toHaveBeenCalledTimes(1)
+  })
+
+  it("answers unavailable when the broker declines or throws", async () => {
+    const onRequestToken = vi.fn().mockResolvedValue(null)
+    renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-9"))
+    await waitFor(() => {
+      const error = post.mock.calls.find(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:error",
+      )
+      expect(error?.[0]).toMatchObject({ payload: { code: "unavailable", requestId: "tok-9" } })
     })
   })
 

@@ -6,6 +6,7 @@ import type {
   UiExtensionDescriptor,
   UiExtensionEntity,
   UiExtensionOrg,
+  UiExtensionTextDirection,
   UiExtensionToastIntent,
   UiExtensionViewer,
 } from "@voyant-travel/admin-extension-sdk"
@@ -15,12 +16,57 @@ import { type AdminExtension, defineAdminExtension } from "../extensions.js"
 import { useLocale } from "../providers/locale.js"
 import { useTheme } from "../providers/theme.js"
 import { ADMIN_UI_EXTENSION_SLOTS } from "./registry.js"
-import { UiExtensionHost } from "./ui-extension-host.js"
+import { UiExtensionHost, type UiExtensionSessionTokenGrant } from "./ui-extension-host.js"
+
+/**
+ * A resolved descriptor as the installation-backed client returns it: the SDK
+ * descriptor shape plus the host-resolved app locale/direction and the owning
+ * installation. Static self-hosted descriptors omit the extra fields and fall
+ * back to the active locale / `ltr`.
+ */
+export interface InstalledUiExtension extends UiExtensionDescriptor {
+  /** Owning installation, used to broker a session token for the frame. */
+  installationId?: string
+  /** App locale the host resolved from the release's declared locales. */
+  appLocale?: string
+  /** Text direction for {@link appLocale}. */
+  direction?: UiExtensionTextDirection
+}
 
 /** Read-side dependency the factory uses to list an org's installed extensions. */
 export interface UiExtensionsClient {
-  list(): Promise<UiExtensionDescriptor[]>
+  list(): Promise<InstalledUiExtension[]>
+  /** Full-page app extensions mounted under the app-owned admin route. */
+  listPages?(): Promise<AppPageDescriptor[]>
 }
+
+/** A resolved full-page app extension (app-owned admin route + nav entry). */
+export interface AppPageDescriptor {
+  /** Stable per-installation key. */
+  key: string
+  installationId?: string
+  /** App-owned admin sub-path (mounted under the apps route segment). */
+  path: string
+  entryUrl: string
+  /** Host-rendered page title (locale-resolved). */
+  title: string
+  /** Host-rendered navigation label. */
+  navLabel: string
+  appLocale?: string
+  direction?: UiExtensionTextDirection
+}
+
+/** Context the host passes when brokering a session token for a frame. */
+export interface UiExtensionTokenRequest {
+  descriptor: InstalledUiExtension
+  slot: string
+  entity?: UiExtensionEntity | null
+}
+
+/** Brokers a short-lived session token for a frame (null answers `unavailable`). */
+export type UiExtensionTokenBroker = (
+  request: UiExtensionTokenRequest,
+) => Promise<UiExtensionSessionTokenGrant | null>
 
 /**
  * Ambient wiring an extension host needs that is NOT derivable from the theme
@@ -33,6 +79,12 @@ export interface UiExtensionEnvironment {
   entity?: UiExtensionEntity | null
   onNavigate?: (to: string) => void
   onToast?: (intent: UiExtensionToastIntent, message: string) => void
+  /**
+   * Brokers a session token when a frame sends `request-token`. When omitted,
+   * the host answers `not-supported`. The platform wiring supplies this to mint
+   * a token via the apps module for the descriptor's installation and context.
+   */
+  requestToken?: UiExtensionTokenBroker
 }
 
 const UiExtensionEnvironmentContext = createContext<UiExtensionEnvironment | undefined>(undefined)
@@ -62,10 +114,23 @@ export function useUiExtensionEnvironment(): UiExtensionEnvironment | undefined 
  * than fetched. The cloud platform supplies a fetching client instead.
  */
 export function createStaticUiExtensionsClient(
-  descriptors: ReadonlyArray<UiExtensionDescriptor>,
+  descriptors: ReadonlyArray<InstalledUiExtension>,
 ): UiExtensionsClient {
   const snapshot = [...descriptors]
   return { list: async () => snapshot }
+}
+
+/**
+ * Installation-backed client: the cloud/apps layer resolves activated
+ * descriptors from `app_extension_installations` (active installations only,
+ * compatibility-filtered, host labels + app locale/direction resolved) and this
+ * client just fetches that snapshot. Pausing/uninstalling an app drops it from
+ * the fetched list, so its frames unmount on the next refetch.
+ */
+export function createInstallationUiExtensionsClient(
+  fetchInstalled: () => Promise<InstalledUiExtension[]>,
+): UiExtensionsClient {
+  return { list: fetchInstalled }
 }
 
 /** Shared query key so every slot widget reads a single `client.list()` result. */
@@ -101,26 +166,35 @@ function SlotUiExtensions({ client, slot }: { client: UiExtensionsClient; slot: 
   const descriptors = query.data.filter((descriptor) => descriptor.slots.includes(slot))
   if (descriptors.length === 0) return null
 
-  const context: UiExtensionContext = {
-    org: environment.org,
-    viewer: environment.viewer,
-    entity: environment.entity ?? null,
-    theme: resolvedTheme,
-    locale: resolvedLocale,
-  }
+  const entity = environment.entity ?? null
 
   return (
     <>
-      {descriptors.map((descriptor) => (
-        <UiExtensionHost
-          key={descriptor.key}
-          descriptor={descriptor}
-          slot={slot}
-          context={context}
-          onNavigate={environment.onNavigate}
-          onToast={environment.onToast}
-        />
-      ))}
+      {descriptors.map((descriptor) => {
+        // The app locale/direction are per-app (release-pinned); a static
+        // descriptor without them falls back to the active locale / ltr.
+        const context: UiExtensionContext = {
+          org: environment.org,
+          viewer: environment.viewer,
+          entity,
+          theme: resolvedTheme,
+          locale: resolvedLocale,
+          appLocale: descriptor.appLocale ?? resolvedLocale,
+          direction: descriptor.direction ?? "ltr",
+        }
+        const broker = environment.requestToken
+        return (
+          <UiExtensionHost
+            key={descriptor.key}
+            descriptor={descriptor}
+            slot={slot}
+            context={context}
+            onNavigate={environment.onNavigate}
+            onToast={environment.onToast}
+            onRequestToken={broker ? () => broker({ descriptor, slot, entity }) : undefined}
+          />
+        )
+      })}
     </>
   )
 }
