@@ -1,5 +1,16 @@
 import { defineModule } from "@voyant-travel/core/project"
 
+const appInstallationLifecyclePayloadSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["appId", "installationId", "deploymentId"],
+  properties: {
+    appId: { type: "string" },
+    installationId: { type: "string" },
+    deploymentId: { type: "string" },
+  },
+} as const
+
 export const appsVoyantModule = defineModule({
   id: "@voyant-travel/apps",
   packageName: "@voyant-travel/apps",
@@ -27,6 +38,48 @@ export const appsVoyantModule = defineModule({
     {
       id: "@voyant-travel/apps#migrations",
       source: "./migrations",
+    },
+  ],
+  events: [
+    {
+      id: "@voyant-travel/apps#event.installation-active",
+      eventType: "app.installation.active",
+      version: "1.0.0",
+      payloadSchema: appInstallationLifecyclePayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "apps", category: "internal" },
+    },
+    {
+      id: "@voyant-travel/apps#event.installation-upgraded",
+      eventType: "app.installation.upgraded",
+      version: "1.0.0",
+      payloadSchema: appInstallationLifecyclePayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "apps", category: "internal" },
+    },
+    {
+      id: "@voyant-travel/apps#event.installation-upgrade-pending",
+      eventType: "app.installation.upgrade_pending",
+      version: "1.0.0",
+      payloadSchema: appInstallationLifecyclePayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "apps", category: "internal" },
+    },
+    {
+      id: "@voyant-travel/apps#event.installation-paused",
+      eventType: "app.installation.paused",
+      version: "1.0.0",
+      payloadSchema: appInstallationLifecyclePayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "apps", category: "internal" },
+    },
+    {
+      id: "@voyant-travel/apps#event.installation-uninstalled",
+      eventType: "app.installation.uninstalled",
+      version: "1.0.0",
+      payloadSchema: appInstallationLifecyclePayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "apps", category: "internal" },
     },
   ],
   access: {
