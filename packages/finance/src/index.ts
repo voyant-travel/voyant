@@ -267,7 +267,6 @@ export {
   createBookingTaxApiExtension,
   createBookingTaxRoutes,
   createBookingTaxVoyantRuntime,
-  type InvoicingMode,
   loadProductTaxFacts,
   matchesTaxPolicyCondition,
   mountBookingTaxRoutes,

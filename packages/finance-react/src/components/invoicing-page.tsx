@@ -64,7 +64,7 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
       void queryClient.invalidateQueries({ queryKey: ["booking-tax-settings"] })
     },
   })
-  const invoicingMode = settingsQuery.data?.data.invoicingMode ?? "direct"
+  const invoicingMode = settingsQuery.data?.data.invoicingMode ?? "proforma-first"
   const fxReferenceSource = settingsQuery.data?.data.fxReferenceSource ?? "ecb"
   // Both selects PATCH the same settings row (merge-on-read server side),
   // so while either write is in flight the other control must not fire a
@@ -104,16 +104,16 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="direct">{invoicingMessages.invoicingModeDirect}</SelectItem>
               <SelectItem value="proforma-first">
                 {invoicingMessages.invoicingModeProformaFirst}
               </SelectItem>
+              <SelectItem value="direct">{invoicingMessages.invoicingModeDirect}</SelectItem>
             </SelectContent>
           </Select>
           <p className="mt-2 text-xs text-muted-foreground">
-            {invoicingMode === "proforma-first"
-              ? invoicingMessages.invoicingModeProformaFirstHint
-              : invoicingMessages.invoicingModeDirectHint}
+            {invoicingMode === "direct"
+              ? invoicingMessages.invoicingModeDirectHint
+              : invoicingMessages.invoicingModeProformaFirstHint}
           </p>
         </div>
       </div>

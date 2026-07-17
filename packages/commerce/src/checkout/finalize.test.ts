@@ -154,10 +154,8 @@ describe("dispatchCheckoutFinalize", () => {
     )
   })
 
-  describe("invoicing mode", () => {
-    async function runFinalize(
-      resolveInvoicingMode?: (db: unknown) => Promise<"direct" | "proforma-first">,
-    ) {
+  describe("invoice issuance", () => {
+    async function runFinalize() {
       const db = createCheckoutFinalizeDb()
       await dispatchCheckoutFinalize({
         db: db as never,
@@ -166,25 +164,15 @@ describe("dispatchCheckoutFinalize", () => {
         trigger: "payment.completed",
         correlationId: "ps_card",
         tags: [],
-        resolveInvoicingMode,
       })
       return db
     }
 
-    it("issues a proforma when the operator runs proforma-first", async () => {
-      await runFinalize(async () => "proforma-first")
-
-      expect(issueProformaFromBooking).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ bookingId: "book_card", invoiceType: "proforma" }),
-        expect.any(Object),
-        expect.any(Object),
-      )
-      expect(issueInvoiceFromBooking).not.toHaveBeenCalled()
-    })
-
-    it("issues a fiscal invoice in direct mode (unchanged)", async () => {
-      await runFinalize(async () => "direct")
+    it("always issues the fiscal invoice at finalize (payment has settled)", async () => {
+      // Finalize runs on payment.completed. The document flow is decided
+      // earlier, at order placement, and only for the deferred bank-transfer
+      // path — never here. A fresh finalize always mints the fiscal invoice.
+      await runFinalize()
 
       expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
         expect.anything(),
@@ -195,23 +183,10 @@ describe("dispatchCheckoutFinalize", () => {
       expect(issueProformaFromBooking).not.toHaveBeenCalled()
     })
 
-    it("falls back to direct when no invoicing-mode resolver is wired", async () => {
-      await runFinalize(undefined)
-
-      expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ invoiceType: "invoice" }),
-        expect.any(Object),
-        expect.any(Object),
-      )
-      expect(issueProformaFromBooking).not.toHaveBeenCalled()
-    })
-
-    it("converts an existing proforma regardless of the operator mode", async () => {
-      // A bank-transfer checkout already minted a proforma; the finalize
-      // step then converts it to a fiscal invoice. That conversion path
-      // must win over the mode default — proforma-first never re-issues a
-      // second proforma on top of the one being settled.
+    it("converts an existing proforma instead of issuing a fresh invoice", async () => {
+      // A bank-transfer checkout in proforma-first mode already minted a
+      // proforma; the finalize step converts it to the fiscal invoice
+      // rather than issuing a new document.
       mocks.runCheckoutFinalize.mockImplementationOnce(async (input, deps) => {
         await deps.confirmBooking(input.bookingId)
         await deps.issueInvoice({ bookingId: input.bookingId, convertedFromInvoiceId: "pro_1" })
@@ -221,7 +196,7 @@ describe("dispatchCheckoutFinalize", () => {
         invoice: { id: "inv_from_pro" },
       })
 
-      await runFinalize(async () => "proforma-first")
+      await runFinalize()
 
       expect(mocks.convertProformaToInvoice).toHaveBeenCalledWith(
         expect.anything(),

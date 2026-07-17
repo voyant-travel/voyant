@@ -37,9 +37,11 @@ export type BookingTaxSettings = {
   taxPriceMode?: "inclusive" | "exclusive" | null
   taxPolicyProfileId?: string | null
   /**
-   * Operator invoicing mode. `direct` bills the fiscal invoice
-   * straight away; `proforma-first` issues a proforma and converts it
-   * to a fiscal invoice on full settlement. Absent/null → `direct`.
+   * Operator invoicing mode for the deferred bank-transfer path.
+   * `proforma-first` issues a proforma at order placement and converts it
+   * to a fiscal invoice on full settlement; `direct` issues the fiscal
+   * invoice at order placement. Card payments always invoice directly and
+   * never consult this. Absent/null → `proforma-first`.
    */
   invoicingMode?: InvoicingMode | null
   /**
@@ -221,22 +223,9 @@ async function resolveBookingTaxSettingsOrDefault(
   return {
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
-    invoicingMode: settings?.invoicingMode === "proforma-first" ? "proforma-first" : "direct",
+    invoicingMode: settings?.invoicingMode === "direct" ? "direct" : "proforma-first",
     fxReferenceSource: settings?.fxReferenceSource === "bnr" ? "bnr" : "ecb",
   }
-}
-
-/**
- * Resolve just the operator invoicing mode, defaulting to `direct`
- * when no settings row exists. Shared by the proforma-conversion
- * subscriber so it never converts unless the operator opted in.
- */
-export async function resolveInvoicingModeOrDefault(
-  db: PostgresJsDatabase,
-  options: ResolveBookingSellTaxRateOptions = {},
-): Promise<InvoicingMode> {
-  const settings = await resolveBookingTaxSettingsOrDefault(db, options)
-  return settings.invoicingMode
 }
 
 export function computeBookingItemTaxLine(
