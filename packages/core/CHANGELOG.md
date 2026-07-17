@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.125.1
+
+### Patch Changes
+
+- 9fc7801: Add remote app OAuth authorization, token, rotation, revocation, and app-token auth context support.
+
 ## 0.125.0
 
 ### Minor Changes

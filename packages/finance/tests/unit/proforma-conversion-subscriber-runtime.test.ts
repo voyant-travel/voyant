@@ -19,7 +19,6 @@ const {
 } = await import("../../src/proforma-conversion-runtime.js")
 
 interface HarnessOptions {
-  invoicingMode?: "direct" | "proforma-first"
   invoice?: { id: string; invoiceType: string; balanceDueCents: number } | null
   registerRuntime?: boolean
 }
@@ -27,7 +26,6 @@ interface HarnessOptions {
 function setup(options: HarnessOptions = {}) {
   const db = {} as never
   const bindings = { DATABASE_URL: "postgres://finance" }
-  const resolveInvoicingMode = vi.fn(async () => options.invoicingMode ?? "proforma-first")
   const withDb = vi.fn(async (_bindings: unknown, operation: (db: never) => Promise<unknown>) =>
     operation(db),
   )
@@ -35,7 +33,6 @@ function setup(options: HarnessOptions = {}) {
   const container = createContainer()
   if (options.registerRuntime !== false) {
     container.register(PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY, {
-      resolveInvoicingMode,
       withDb,
       eventBus,
     })
@@ -47,7 +44,7 @@ function setup(options: HarnessOptions = {}) {
   })
   getInvoiceById.mockResolvedValue(options.invoice ?? null)
   convertProformaToInvoice.mockResolvedValue({ status: "ok", invoice: { id: "inv_final" } })
-  return { bindings, container, eventBus, handlers, resolveInvoicingMode, withDb }
+  return { bindings, container, eventBus, handlers, withDb }
 }
 
 const settledEnvelope = (invoiceId: string): EventEnvelope => ({
@@ -80,9 +77,11 @@ describe("finance proforma-conversion subscriber runtime", () => {
     )
   })
 
-  it("converts a fully-paid proforma when the operator runs proforma-first", async () => {
+  it("converts any fully-paid proforma regardless of the operator mode", async () => {
+    // The conversion is not gated on the invoicing mode: a fully-paid
+    // proforma should always mint its fiscal invoice, so a proforma left
+    // outstanding after a mode switch still converts.
     const harness = setup({
-      invoicingMode: "proforma-first",
       invoice: { id: "inv_proforma", invoiceType: "proforma", balanceDueCents: 0 },
     })
     const descriptor = createProformaConversionSubscriberRuntime()
@@ -90,7 +89,6 @@ describe("finance proforma-conversion subscriber runtime", () => {
 
     await harness.handlers[0]?.(settledEnvelope("inv_proforma"))
 
-    expect(harness.resolveInvoicingMode).toHaveBeenCalled()
     expect(getInvoiceById).toHaveBeenCalledWith(expect.anything(), "inv_proforma")
     expect(convertProformaToInvoice).toHaveBeenCalledWith(
       expect.anything(),
@@ -100,23 +98,8 @@ describe("finance proforma-conversion subscriber runtime", () => {
     )
   })
 
-  it("does not convert when the operator runs direct mode", async () => {
-    const harness = setup({
-      invoicingMode: "direct",
-      invoice: { id: "inv_proforma", invoiceType: "proforma", balanceDueCents: 0 },
-    })
-    const descriptor = createProformaConversionSubscriberRuntime()
-    await descriptor.register(harness)
-
-    await harness.handlers[0]?.(settledEnvelope("inv_proforma"))
-
-    expect(getInvoiceById).not.toHaveBeenCalled()
-    expect(convertProformaToInvoice).not.toHaveBeenCalled()
-  })
-
   it("ignores non-proforma invoices and partially-paid proformas", async () => {
     const finalInvoice = setup({
-      invoicingMode: "proforma-first",
       invoice: { id: "inv_final", invoiceType: "invoice", balanceDueCents: 0 },
     })
     const finalDescriptor = createProformaConversionSubscriberRuntime()
@@ -125,7 +108,6 @@ describe("finance proforma-conversion subscriber runtime", () => {
     expect(convertProformaToInvoice).not.toHaveBeenCalled()
 
     const partial = setup({
-      invoicingMode: "proforma-first",
       invoice: { id: "inv_partial", invoiceType: "proforma", balanceDueCents: 500 },
     })
     const partialDescriptor = createProformaConversionSubscriberRuntime()
@@ -134,7 +116,7 @@ describe("finance proforma-conversion subscriber runtime", () => {
     expect(convertProformaToInvoice).not.toHaveBeenCalled()
   })
 
-  it("no-ops when the runtime is not registered (settings runtime absent → direct)", async () => {
+  it("no-ops when the runtime is not registered (finance settlement absent)", async () => {
     const harness = setup({ registerRuntime: false })
     const descriptor = createProformaConversionSubscriberRuntime()
     await descriptor.register(harness)
@@ -146,7 +128,6 @@ describe("finance proforma-conversion subscriber runtime", () => {
 
   it("logs conversion failures without rejecting event delivery", async () => {
     const harness = setup({
-      invoicingMode: "proforma-first",
       invoice: { id: "inv_proforma", invoiceType: "proforma", balanceDueCents: 0 },
     })
     convertProformaToInvoice.mockRejectedValueOnce(new Error("db down"))

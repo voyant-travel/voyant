@@ -357,14 +357,15 @@ export const invoicingPage = {
   title: "Facturare",
   description:
     "Controleaza cum se emit facturile si ce cursuri oficiale convertesc sumele in valuta.",
-  invoicingModeTitle: "Mod de facturare",
+  invoicingModeTitle: "Facturare prin transfer bancar",
   invoicingModeDescription:
-    "Alege cum se emit facturile pentru rezervarile noi. Facturile existente nu sunt afectate.",
-  invoicingModeDirect: "Factura directa",
-  invoicingModeDirectHint: "Emite factura fiscala direct din rezervare.",
-  invoicingModeProformaFirst: "Proforma mai intai",
+    "Alege ce document se emite cand clientul plateste prin transfer bancar. Platile cu cardul emit intotdeauna direct factura fiscala. Facturile existente nu sunt afectate.",
+  invoicingModeProformaFirst: "Proforma mai intai (recomandat)",
   invoicingModeProformaFirstHint:
-    "Emite o proforma, apoi genereaza automat factura fiscala dupa ce este achitata integral.",
+    "Emite o proforma la plasarea comenzii, apoi genereaza automat factura fiscala dupa ce transferul este incasat integral.",
+  invoicingModeDirect: "Factura directa",
+  invoicingModeDirectHint:
+    "Emite factura fiscala la plasarea comenzii si incaseaza transferul bancar pe baza ei. Nu se emite proforma.",
   fxReferenceSourceTitle: "Cursuri valutare de referinta",
   fxReferenceSourceDescription:
     "Cursul de referinta oficial folosit la conversia sumelor in valuta pe facturi.",

@@ -536,11 +536,9 @@ export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
             resolveRoutesOptions: () => provider.options,
             withDb: provider.withDb,
           })
-          // Same host/settings wiring powers the proforma-conversion
-          // subscriber: it reads the operator invoicing mode and, in
-          // proforma-first mode, mints the fiscal invoice on settlement.
+          // Same host wiring powers the proforma-conversion subscriber:
+          // when a fully-paid proforma settles it mints the fiscal invoice.
           container.register(PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY, {
-            resolveInvoicingMode: operatorSettings.resolveInvoicingMode,
             withDb: provider.withDb,
             eventBus,
           })

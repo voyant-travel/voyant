@@ -15,7 +15,7 @@ import { InvoicingPage, type InvoicingPageApi } from "./components/invoicing-pag
 type Settings = { invoicingMode: "direct" | "proforma-first"; fxReferenceSource: "ecb" | "bnr" }
 
 function makeApi(
-  settings: Settings = { invoicingMode: "direct", fxReferenceSource: "ecb" },
+  settings: Settings = { invoicingMode: "proforma-first", fxReferenceSource: "ecb" },
   overrides: Partial<InvoicingPageApi> = {},
 ): InvoicingPageApi {
   return {
@@ -45,7 +45,7 @@ describe("InvoicingPage", () => {
       </QueryClientProvider>,
     )
 
-    expect(html).toContain("Invoicing mode")
+    expect(html).toContain("Bank transfer invoicing")
     // The reference-exchange-rate select lives here, not on the Taxes page.
     expect(html).toContain("Reference exchange rates")
     expect(html).toContain("Recommended for most EU operators")
@@ -88,7 +88,7 @@ describe("InvoicingPage", () => {
       expect(fxTrigger?.textContent).toContain("National Bank of Romania (BNR)")
     })
 
-    it("defaults both selects to direct/ecb when the settings row is empty", async () => {
+    it("renders the direct/ecb selection from the fetched settings row", async () => {
       const queryClient = await seededClient({ invoicingMode: "direct", fxReferenceSource: "ecb" })
 
       await act(async () => {

@@ -146,14 +146,16 @@ export const bookingTaxSettings = pgTable("booking_tax_settings", {
   taxPriceMode: text("tax_price_mode").notNull().default("inclusive"),
   taxPolicyProfileId: text("tax_policy_profile_id"),
   /**
-   * Operator invoicing mode. `direct` (default) issues the fiscal
-   * invoice straight from the booking. `proforma-first` issues a
-   * proforma at checkout and mints the fiscal invoice once the
-   * proforma is fully settled (see the finance proforma-conversion
-   * subscriber). Stored here because `booking_tax_settings` is the
-   * finance operator-settings singleton row.
+   * Operator invoicing mode for the deferred bank-transfer payment path.
+   * `proforma-first` (default) issues a proforma at order placement and
+   * mints the fiscal invoice once the proforma is fully settled (see the
+   * finance proforma-conversion subscriber). `direct` issues the fiscal
+   * invoice at order placement and collects the transfer against it. Card
+   * payments always invoice directly and never consult this setting.
+   * Stored here because `booking_tax_settings` is the finance
+   * operator-settings singleton row.
    */
-  invoicingMode: text("invoicing_mode").notNull().default("direct"),
+  invoicingMode: text("invoicing_mode").notNull().default("proforma-first"),
   /**
    * Official FX reference-rate source used when an amount must be
    * converted at a jurisdiction's mandated reference rate (e.g. `ecb`

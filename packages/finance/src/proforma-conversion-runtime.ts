@@ -1,24 +1,29 @@
 import type { EventBus, ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { InvoicingMode } from "./booking-tax.js"
 import { financeService } from "./service.js"
 import { convertProformaToInvoice } from "./service-issue.js"
 
 /**
  * Standard proforma → fiscal invoice conversion.
  *
- * When the operator runs `invoicing.mode: "proforma-first"`, a proforma
- * is issued at checkout and the fiscal invoice is minted once the
- * proforma is fully settled. This subscriber watches settlement signals
- * (`invoice.settled` from the settlement poller and
- * `invoice.payment.recorded` from manual/processed payments) and, in
- * proforma-first mode only, converts a fully-paid proforma to its fiscal
- * invoice via {@link convertProformaToInvoice} (which copies lines,
- * assigns the fiscal number, links both documents, and voids the
- * proforma). `direct` mode is a no-op — zero behaviour change for
- * existing deployments — and the conversion is idempotent (the service
- * guards against double-conversion under an advisory lock).
+ * A proforma is issued for deferred (bank-transfer) checkouts when the
+ * operator runs the `proforma-first` invoicing mode, or by the manual
+ * `POST /invoices/{id}/convert-to-invoice` flow. This subscriber watches
+ * settlement signals (`invoice.settled` from the settlement poller and
+ * `invoice.payment.recorded` from manual/processed payments) and converts
+ * a fully-paid proforma to its fiscal invoice via
+ * {@link convertProformaToInvoice} (which copies lines, assigns the fiscal
+ * number, links both documents, and voids the proforma).
+ *
+ * The conversion is not gated on the invoicing mode: any fully-paid
+ * proforma should mint its fiscal invoice, and the `invoiceType ===
+ * "proforma"` guard already scopes it to proformas. Gating on the current
+ * mode would strand a proforma that is still outstanding when an operator
+ * switches from `proforma-first` to `direct`. When no proforma exists
+ * (card checkouts, or bank transfer in `direct` mode) the subscriber
+ * simply never fires. The conversion is idempotent (the service guards
+ * against double-conversion under an advisory lock).
  */
 
 export const FINANCE_PROFORMA_CONVERSION_SUBSCRIBER_ID =
@@ -27,8 +32,6 @@ export const PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY =
   "finance.proformaConversionSubscriberRuntime"
 
 export interface ProformaConversionSubscriberRuntime {
-  /** Operator invoicing mode; defaults to `direct` when unconfigured. */
-  resolveInvoicingMode(db: PostgresJsDatabase): Promise<InvoicingMode>
   /** Resolve the deployment database and retain ownership of its lifecycle. */
   withDb<T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>): Promise<T>
   /** Event bus used to re-emit conversion events for downstream plugins. */
@@ -62,14 +65,12 @@ export function createProformaConversionSubscriberRuntime(
     eventType: "invoice.settled",
     register: ({ bindings, container, eventBus }) => {
       const handler = async ({ data }: { data: SettlementSignalPayload }) => {
-        // Runtime is only registered when the operator-settings port is
-        // available. Absent → treat as `direct` mode → no-op.
+        // Runtime is registered by the finance booking-schedule host wiring.
+        // Absent → the deployment did not mount finance settlement → no-op.
         if (!container.has(PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY)) return
         const runtime = resolveProformaConversionSubscriberRuntime(container)
         try {
           await runtime.withDb(bindings, async (db) => {
-            if ((await runtime.resolveInvoicingMode(db)) !== "proforma-first") return
-
             const invoice = await financeService.getInvoiceById(db, data.invoiceId)
             if (!invoice) return
             // Only fully-settled proformas convert. Partial payments leave
