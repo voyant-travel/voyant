@@ -248,6 +248,27 @@ function envForProvider(
       ),
     ]
   }
+  if (role === "payments") {
+    if (provider === "voyant-payments") {
+      return [
+        secret("VOYANT_PAYMENTS_API_KEY", "Voyant Payments API key."),
+        variable(
+          "VOYANT_PAYMENTS_API_URL",
+          "Optional Voyant Payments API base URL.",
+          false,
+          "http-url",
+        ),
+      ]
+    }
+    if (provider === "netopia") {
+      return [
+        variable("NETOPIA_MERCHANT_ID", "Netopia merchant id."),
+        secret("NETOPIA_PRIVATE_KEY", "Netopia private key used to initiate payments."),
+        secret("NETOPIA_PUBLIC_KEY", "Netopia public key used to verify signed callbacks."),
+        variable("NETOPIA_SANDBOX", "Set to true for Netopia sandbox mode.", false),
+      ]
+    }
+  }
   return []
 }
 
