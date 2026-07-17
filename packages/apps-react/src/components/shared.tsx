@@ -1,5 +1,6 @@
 "use client"
 
+import type { LocaleFormatters } from "@voyant-travel/i18n"
 import { Badge } from "@voyant-travel/ui/components"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import type { ReactNode } from "react"
@@ -29,12 +30,13 @@ export function StatusBadge({
   return <Badge variant={STATUS_VARIANT[status]}>{messages.statuses[status]}</Badge>
 }
 
-/** Render an ISO timestamp compactly; falls back to the raw string on parse failure. */
-export function formatDate(value: string | null | undefined): string {
+/** Render an ISO timestamp compactly using the active locale's formatter. */
+export function formatWhen(
+  value: string | null | undefined,
+  formatDateTime: LocaleFormatters["formatDateTime"],
+): string {
   if (!value) return "—"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(undefined, {
+  return formatDateTime(value, {
     year: "numeric",
     month: "short",
     day: "numeric",

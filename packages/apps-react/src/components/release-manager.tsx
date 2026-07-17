@@ -22,7 +22,7 @@ import { useAppMutations } from "../hooks/use-app-mutations.js"
 import { useAppReleases } from "../hooks/use-apps.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
 import type { AppRecord } from "../schemas.js"
-import { formatDate, MonoText, SectionEmpty } from "./shared.js"
+import { formatWhen, MonoText, SectionEmpty } from "./shared.js"
 
 export interface ReleaseManagerProps {
   app: AppRecord
@@ -30,7 +30,8 @@ export interface ReleaseManagerProps {
 }
 
 export function ReleaseManager({ app, actorId }: ReleaseManagerProps) {
-  const { messages } = useAppsUiI18nOrDefault()
+  const i18n = useAppsUiI18nOrDefault()
+  const { messages } = i18n
   const t = messages.developer
   const releases = useAppReleases(app.id)
   const { createReleaseFromUpload, createReleaseFromFetch } = useAppMutations()
@@ -199,7 +200,7 @@ export function ReleaseManager({ app, actorId }: ReleaseManagerProps) {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <MonoText>{release.manifestDigest.slice(0, 12)}</MonoText>
-                    <span>{formatDate(release.createdAt)}</span>
+                    <span>{formatWhen(release.createdAt, i18n.formatDateTime)}</span>
                   </div>
                 </li>
               ))}

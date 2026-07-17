@@ -27,7 +27,7 @@ import { useAppsUiI18nOrDefault } from "../i18n/index.js"
 import type { AppInstallationSummary } from "../schemas.js"
 import { ConsentScreen } from "./consent-screen.js"
 import { InstallationDetail } from "./installation-detail.js"
-import { formatDate, StatusBadge } from "./shared.js"
+import { formatWhen, StatusBadge } from "./shared.js"
 
 const STATUSES = ["active", "paused", "degraded", "pending", "revoked", "uninstalled"] as const
 const ALL = "all"
@@ -45,7 +45,8 @@ export function InstalledAppsPage({
   customFieldsHref,
   className,
 }: InstalledAppsPageProps = {}) {
-  const { messages } = useAppsUiI18nOrDefault()
+  const i18n = useAppsUiI18nOrDefault()
+  const { messages } = i18n
   const [statusFilter, setStatusFilter] = useState<string>(ALL)
   const [pageIndex, setPageIndex] = useState(0)
   const [selected, setSelected] = useState<string | undefined>()
@@ -145,6 +146,7 @@ export function InstalledAppsPage({
                   key={installation.id}
                   installation={installation}
                   messages={messages}
+                  formatDateTime={i18n.formatDateTime}
                   onView={() => setSelected(installation.id)}
                 />
               ))}
@@ -193,10 +195,12 @@ export function InstalledAppsPage({
 function InstallationRow({
   installation,
   messages,
+  formatDateTime,
   onView,
 }: {
   installation: AppInstallationSummary
   messages: ReturnType<typeof useAppsUiI18nOrDefault>["messages"]
+  formatDateTime: ReturnType<typeof useAppsUiI18nOrDefault>["formatDateTime"]
   onView: () => void
 }) {
   return (
@@ -221,7 +225,7 @@ function InstallationRow({
         )}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
-        {formatDate(installation.installedAt)}
+        {formatWhen(installation.installedAt, formatDateTime)}
       </TableCell>
       <TableCell className="text-right">
         <Button

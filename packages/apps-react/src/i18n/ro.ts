@@ -162,7 +162,8 @@ export const appsUiRo = {
     manifestUpload: "Lipește manifestul",
     manifestFetch: "Preia din URL",
     manifestJson: "Manifest JSON",
-    manifestJsonPlaceholder: '{ "schemaVersion": "voyant.app-manifest.v1", ... }',
+    manifestJsonPlaceholder:
+      'Lipește manifestul JSON: schemaVersion "voyant.app-manifest.v1", releaseVersion, scopes, locales…',
     manifestUrl: "URL manifest",
     manifestUrlPlaceholder: "https://app.example.com/voyant/manifest.json",
     createRelease: "Validează și creează versiunea",

@@ -159,7 +159,8 @@ export const appsUiEn = {
     manifestUpload: "Paste manifest",
     manifestFetch: "Fetch from URL",
     manifestJson: "Manifest JSON",
-    manifestJsonPlaceholder: '{ "schemaVersion": "voyant.app-manifest.v1", ... }',
+    manifestJsonPlaceholder:
+      'Paste the app manifest JSON: schemaVersion "voyant.app-manifest.v1", releaseVersion, scopes, locales…',
     manifestUrl: "Manifest URL",
     manifestUrlPlaceholder: "https://app.example.com/voyant/manifest.json",
     createRelease: "Validate & create release",
