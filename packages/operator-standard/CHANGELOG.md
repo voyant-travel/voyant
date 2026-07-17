@@ -1,5 +1,83 @@
 # @voyant-travel/operator-standard
 
+## 0.7.0
+
+### Minor Changes
+
+- 158c3a0: Move the finance tax-settings admin surface and drop the operator FX reference-source setting.
+
+  - **Tax settings moved to the finance surface.** `GET`/`PATCH /tax-settings`
+    now serve from `/v1/admin/finance/tax-settings` instead of
+    `/v1/admin/bookings/tax-settings`. On the managed operator runtime admin
+    routes dispatch per-unit with prefix-first-match, so the bookings package's
+    `GET /{id}` route was capturing `/tax-settings` (id = "tax-settings") and
+    returning 404 — leaving the Settings → Invoicing controls permanently
+    disabled. The booking-tax extension now splits into two separate
+    extensions — `finance.booking-tax-settings-extension` (module `finance`,
+    the `GET`/`PATCH tax-settings` routes on `mount: "finance"`) and
+    `finance.booking-tax-preview-extension` (module `bookings`, the
+    `POST /v1/admin/bookings/tax-preview` route, where it does not collide and
+    `bookings-react` consumes it). They must be distinct extensions because the
+    selected-graph composition yields one composed extension per `defineExtension`
+    (keyed on localId); collapsing both facets into one extension dropped the
+    preview route. The operator standard distribution registers both, attributing
+    settings to finance + operator-settings and preview to finance + bookings.
+  - **Operator FX reference-source setting removed.** The FX reference _source_
+    is not an operator choice: Voyant Cloud serves managed FX by default,
+    self-hosters supply their own adapter through the `finance.fx-reference.runtime`
+    port, and for jurisdictions like RO the source (BNR) is legally mandated. The
+    operator-facing "Reference exchange rates" control, the `fxReferenceSource`
+    field on the tax-settings surface, and the `fx_reference_source` column are
+    removed (additive drop migration). The `finance.fx-reference.runtime` port and
+    its `resolveReferenceRate` helper are kept as the self-host/managed adapter
+    seam; the source is now the host adapter's own and reported only as an output
+    label on the returned rate.
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/finance-react@0.168.0
+  - @voyant-travel/operator-settings@0.9.0
+  - @voyant-travel/accommodations@0.128.0
+  - @voyant-travel/bookings-react@0.168.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/commerce@0.39.1
+  - @voyant-travel/cruises@0.167.0
+  - @voyant-travel/distribution@0.158.0
+  - @voyant-travel/flights@0.168.0
+  - @voyant-travel/flights-react@0.168.0
+  - @voyant-travel/inventory@0.13.5
+  - @voyant-travel/inventory-react@0.50.0
+  - @voyant-travel/legal@0.168.0
+  - @voyant-travel/notifications@0.130.8
+  - @voyant-travel/operator-settings-react@0.21.0
+  - @voyant-travel/storefront@0.170.0
+  - @voyant-travel/trips@0.159.0
+  - @voyant-travel/trips-react@0.159.0
+  - @voyant-travel/admin-app@0.60.0
+  - @voyant-travel/quotes@0.131.5
+  - @voyant-travel/action-ledger-react@0.56.0
+  - @voyant-travel/distribution-react@0.158.0
+  - @voyant-travel/identity-react@0.168.0
+  - @voyant-travel/legal-react@0.168.0
+  - @voyant-travel/operations-react@0.49.0
+  - @voyant-travel/catalog-react@0.166.0
+  - @voyant-travel/commerce-react@0.50.0
+  - @voyant-travel/admin-host@0.18.0
+  - @voyant-travel/relationships-react@0.168.0
+  - @voyant-travel/cruises-react@0.167.0
+  - @voyant-travel/storefront-react@0.170.0
+  - @voyant-travel/mice-react@0.36.0
+  - @voyant-travel/quotes-react@0.166.0
+  - @voyant-travel/bookings@0.168.0
+  - @voyant-travel/charters@0.166.0
+  - @voyant-travel/identity@0.168.0
+  - @voyant-travel/notifications-react@0.130.8
+  - @voyant-travel/operations@0.8.6
+  - @voyant-travel/mice@0.24.0
+  - @voyant-travel/relationships@0.128.5
+
 ## 0.6.17
 
 ### Patch Changes
