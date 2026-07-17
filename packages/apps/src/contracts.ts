@@ -1,4 +1,5 @@
 import { customFieldDefinitionInputSchema } from "@voyant-travel/custom-fields/contracts"
+import { assertOutboundWebhookEndpointUrl } from "@voyant-travel/webhook-delivery"
 import { z } from "zod"
 
 export const APP_MANIFEST_SCHEMA_VERSION = "voyant.app-manifest.v1" as const
@@ -59,6 +60,17 @@ const httpsUrlSchema = z
   .refine((value) => new URL(value).protocol === "https:", {
     message: "URL must use https.",
   })
+const webhookEndpointUrlSchema = httpsUrlSchema.refine(
+  (value) => {
+    try {
+      assertOutboundWebhookEndpointUrl(value)
+      return true
+    } catch {
+      return false
+    }
+  },
+  { message: "Webhook endpoint URL must be HTTPS and must not target local or private hosts." },
+)
 const extensionSlotSchema = z.enum(APP_ADMIN_EXTENSION_SLOTS)
 const dataClassificationSchema = z.enum([
   "public",
@@ -107,7 +119,7 @@ const webhookSubscriptionSchema = z
   .object({
     eventType: z.string().trim().min(1).max(160),
     eventVersion: semverLikeSchema,
-    endpointUrl: httpsUrlSchema,
+    endpointUrl: webhookEndpointUrlSchema,
   })
   .strict()
 
@@ -221,8 +233,18 @@ export const appListQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().default(0),
 })
 
+export const appWebhookReplaySchema = z
+  .object({
+    deliveryId: z.string().trim().min(1),
+    actorId: z.string().trim().min(1).max(160),
+    signingKeyId: z.string().trim().min(1).max(160),
+    signingSecret: z.string().min(32),
+  })
+  .strict()
+
 export type AppManifest = z.infer<typeof appManifestSchema>
 export type CreateCustomAppRegistrationInput = z.infer<typeof createCustomAppRegistrationSchema>
 export type ReleaseManifestUploadInput = z.infer<typeof releaseManifestUploadSchema>
 export type ReleaseManifestFetchInput = z.infer<typeof releaseManifestFetchSchema>
 export type AppListQuery = z.infer<typeof appListQuerySchema>
+export type AppWebhookReplayInput = z.infer<typeof appWebhookReplaySchema>
