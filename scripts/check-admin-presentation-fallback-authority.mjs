@@ -65,7 +65,7 @@ if (failures.length === 0) {
   const ownedProviderCounts = new Map([
     ['import("@voyant-travel/auth-react/i18n")', 2],
     ['import("@voyant-travel/distribution-react/i18n")', 1],
-    ['import("@voyant-travel/finance-react/i18n")', 2],
+    ['import("@voyant-travel/finance-react/i18n")', 3],
     ['import("@voyant-travel/commerce-react/i18n")', 2],
     ['import("@voyant-travel/inventory-react/i18n")', 2],
   ])
