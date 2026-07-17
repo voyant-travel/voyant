@@ -15,6 +15,7 @@ import {
   appAuditEvents,
   appExtensionInstallations,
   appGrants,
+  appOAuthRefreshTokens,
   appWebhookSubscriptions,
 } from "./schema.js"
 
@@ -133,6 +134,10 @@ export async function deactivateRuntimeState(
     .update(appAccessCredentials)
     .set({ status: "inactive", deactivatedAt: now })
     .where(eq(appAccessCredentials.installationId, installation.id))
+  await db
+    .update(appOAuthRefreshTokens)
+    .set({ status: "revoked", revokedAt: now })
+    .where(eq(appOAuthRefreshTokens.installationId, installation.id))
   await deactivateResolvedRegistrations(db, installation)
 }
 
@@ -189,7 +194,7 @@ export async function audit(
   db: PostgresJsDatabase,
   installation: AppInstallation,
   actorId: string,
-  kind: "lifecycle" | "grant" | "credential" | "reconciliation" | "purge",
+  kind: "lifecycle" | "grant" | "consent" | "credential" | "token" | "reconciliation" | "purge",
   action: string,
   details: Record<string, unknown>,
 ) {
