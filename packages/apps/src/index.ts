@@ -32,3 +32,11 @@ export {
   appWebhookSubscriptions,
 } from "./schema.js"
 export { createAppsService } from "./service.js"
+export type { AppWebhookDeliveryOptions } from "./webhook-delivery.js"
+export {
+  createAppWebhookDeliveryStore,
+  createAppWebhookEventQueue,
+  enqueueAppWebhookEvent,
+  listAppWebhookHealth,
+  replayAppWebhookDelivery,
+} from "./webhook-delivery.js"
