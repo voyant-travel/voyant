@@ -2745,6 +2745,7 @@ function compileAccessCatalog(
           label: resource.label ?? titleFromPermissionName(resource.resource),
           description: resource.description ?? `Access ${resource.resource} resources.`,
           wildcard: resource.wildcard ?? "allow",
+          ...(resource.remoteSafe ? { remoteSafe: true as const } : {}),
           actions: resource.actions
             .map((action) => {
               const name = accessActionName(action)
@@ -2762,6 +2763,9 @@ function compileAccessCatalog(
                       `${titleFromPermissionName(name)} access to ${resource.resource}.`),
                 ...(typeof action !== "string" && action.sensitive
                   ? { sensitive: true as const }
+                  : {}),
+                ...(typeof action !== "string" && action.remoteSafe
+                  ? { remoteSafe: true as const }
                   : {}),
                 ...(typeof action !== "string" && action.wildcard === "explicit"
                   ? { wildcard: "explicit" as const }

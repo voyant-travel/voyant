@@ -50,6 +50,8 @@ export interface VoyantGraphAccessAction {
   description?: string
   /** Destructive, financial, PII, or otherwise privileged action surfaced distinctly to editors. */
   sensitive?: boolean
+  /** Safe for remote app OAuth consent and token grants. */
+  remoteSafe?: boolean
   /** Explicit actions are never satisfied by wildcard grants. */
   wildcard?: "allow" | "explicit"
 }
@@ -60,6 +62,8 @@ export interface VoyantGraphAccessResource extends VoyantGraphFacetEntity {
   description?: string
   /** Explicit resources are never satisfied by a wildcard on another resource. */
   wildcard?: "allow" | "explicit-resource"
+  /** Safe for remote app OAuth consent and token grants. */
+  remoteSafe?: boolean
   actions: readonly (string | VoyantGraphAccessAction)[]
   /** Accepted for stored-token compatibility but omitted from permission editors. */
   legacyActions?: readonly string[]
