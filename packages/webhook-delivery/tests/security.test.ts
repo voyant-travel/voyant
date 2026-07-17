@@ -1,15 +1,56 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  assertOutboundWebhookEndpointUrl,
   hashWebhookPayload,
   redactWebhookHeaders,
   signWebhookPayload,
+  verifyWebhookPayloadSignature,
   webhookBodyExcerpt,
 } from "../src/security.js"
 
 describe("webhook delivery security", () => {
   it("uses a versioned SHA-256 HMAC signature", () => {
     expect(signWebhookPayload("secret", "123", '{"ok":true}')).toMatch(/^sha256=[a-f0-9]{64}$/)
+  })
+
+  it("verifies exact bytes with timestamp tolerance and rotated keys", () => {
+    const body = '{"ok":true}'
+    const timestamp = "1783771200"
+    const oldKey = `old-${"x".repeat(32)}`
+    const newKey = `new-${"x".repeat(32)}`
+    const signature = signWebhookPayload(newKey, timestamp, body)
+
+    expect(
+      verifyWebhookPayloadSignature({
+        body,
+        timestamp,
+        signature,
+        keys: [
+          { id: "old", secret: oldKey },
+          { id: "new", secret: newKey },
+        ],
+        now: new Date("2026-07-11T12:00:30.000Z"),
+      }),
+    ).toEqual({ ok: true, keyId: "new" })
+    expect(
+      verifyWebhookPayloadSignature({
+        body: '{"ok": false}',
+        timestamp,
+        signature,
+        keys: [{ id: "new", secret: newKey }],
+        now: new Date("2026-07-11T12:00:30.000Z"),
+      }),
+    ).toEqual({ ok: false, reason: "signature_mismatch" })
+    expect(
+      verifyWebhookPayloadSignature({
+        body,
+        timestamp,
+        signature,
+        keys: [{ id: "new", secret: newKey }],
+        now: new Date("2026-07-11T12:10:01.000Z"),
+      }),
+    ).toEqual({ ok: false, reason: "timestamp_outside_tolerance" })
   })
 
   it("uses a cryptographic body fingerprint", () => {
@@ -31,5 +72,13 @@ describe("webhook delivery security", () => {
     expect(
       Buffer.byteLength(webhookBodyExcerpt("x".repeat(10_000)) ?? "", "utf8"),
     ).toBeLessThanOrEqual(4 * 1024)
+  })
+
+  it("rejects non-HTTPS and local webhook endpoints", () => {
+    expect(() => assertOutboundWebhookEndpointUrl("http://app.example.test/hook")).toThrow(/HTTPS/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://localhost/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://127.0.0.1/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://[::1]/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://app.example.test/hook")).not.toThrow()
   })
 })
