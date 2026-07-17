@@ -3,11 +3,17 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { commerceOperatorSettingsRuntimePort } from "../runtime-port.js"
+
 import {
   type AcceptanceSignatureLegalPort,
   persistAcceptanceSignature,
 } from "./acceptance-signature.js"
-import { type CatalogCheckoutContractPdfGenerator, dispatchCheckoutFinalize } from "./finalize.js"
+import {
+  type CatalogCheckoutContractPdfGenerator,
+  type CatalogCheckoutInvoicingModeResolver,
+  dispatchCheckoutFinalize,
+} from "./finalize.js"
 import { registerCheckoutFinalizeWorkflowRunner } from "./runner-runtime.js"
 import {
   type CatalogCheckoutDatabaseRuntime,
@@ -49,6 +55,7 @@ export interface AcceptanceSignatureSubscriberRuntimeOptions<TBindings = unknown
 export interface CheckoutFinalizeSubscriberRuntimeOptions<TBindings = unknown>
   extends CatalogCheckoutRuntimeDatabase<TBindings> {
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
+  resolveInvoicingMode?: CatalogCheckoutInvoicingModeResolver
   dispatchFinalize?: typeof dispatchCheckoutFinalize
 }
 
@@ -126,6 +133,7 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
                   ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
                 ],
                 generateContractPdf: options.generateContractPdf,
+                resolveInvoicingMode: options.resolveInvoicingMode,
               }),
             )
           } catch {
@@ -149,12 +157,24 @@ export const createAcceptanceSignatureSubscriberGraphRuntime = defineGraphRuntim
 
 /** Selected-graph factory for inline payment finalization and dashboard runner registration. */
 export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFactory(
-  async ({ getPort }) => {
-    const [database, contractPdf, registry] = await Promise.all([
+  async ({ getPort, hasPort }) => {
+    const [database, contractPdf, registry, operatorSettings] = await Promise.all([
       getPort(catalogCheckoutDatabaseRuntimePort),
       getPort(catalogCheckoutContractPdfRuntimePort),
       getPort(workflowRunnerRegistryRuntimePort),
+      hasPort(commerceOperatorSettingsRuntimePort)
+        ? getPort(commerceOperatorSettingsRuntimePort)
+        : undefined,
     ])
+    // The invoicing mode drives whether checkout mints a fiscal invoice
+    // (`direct`) or a proforma (`proforma-first`). Read it off the same
+    // operator-settings port that supplies the booking tax settings, so
+    // no new port is invented. The port is optional: without it the
+    // finalize saga keeps the historical `direct` behaviour.
+    const resolveInvoicingMode: CatalogCheckoutInvoicingModeResolver | undefined = operatorSettings
+      ? async (db) =>
+          (await operatorSettings.resolveBookingTaxSettings(db)).invoicingMode ?? "direct"
+      : undefined
     return {
       id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
       eventType: "payment.completed",
@@ -164,6 +184,7 @@ export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFa
         const descriptor = createCheckoutFinalizeSubscriberRuntime({
           ...database,
           generateContractPdf,
+          resolveInvoicingMode,
         })
         await descriptor.register(context)
         registerCheckoutFinalizeWorkflowRunner({
@@ -172,6 +193,7 @@ export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFa
           eventBus: context.eventBus,
           ...database,
           generateContractPdf,
+          resolveInvoicingMode,
         })
       },
     }
