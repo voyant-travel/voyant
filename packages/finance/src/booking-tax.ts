@@ -24,14 +24,23 @@ export type ResolvedBookingSellTaxRate = {
   priceMode: "inclusive" | "exclusive"
 }
 
+export type InvoicingMode = "direct" | "proforma-first"
+
 export type BookingTaxSettings = {
   taxPriceMode?: "inclusive" | "exclusive" | null
   taxPolicyProfileId?: string | null
+  /**
+   * Operator invoicing mode. `direct` bills the fiscal invoice
+   * straight away; `proforma-first` issues a proforma and converts it
+   * to a fiscal invoice on full settlement. Absent/null → `direct`.
+   */
+  invoicingMode?: InvoicingMode | null
 }
 
 type ResolvedBookingTaxSettings = {
   taxPriceMode: "inclusive" | "exclusive"
   taxPolicyProfileId: string | null
+  invoicingMode: InvoicingMode
 }
 
 export type ResolveBookingTaxSettings = (
@@ -47,12 +56,14 @@ const taxPreviewBodySchema = z.object({
 const bookingTaxSettingsPatchSchema = z.object({
   taxPriceMode: z.enum(["inclusive", "exclusive"]).optional(),
   taxPolicyProfileId: z.string().min(1).nullable().optional(),
+  invoicingMode: z.enum(["direct", "proforma-first"]).optional(),
 })
 
 const bookingTaxSettingsResponseSchema = z.object({
   data: z.object({
     taxPriceMode: z.enum(["inclusive", "exclusive"]),
     taxPolicyProfileId: z.string().nullable(),
+    invoicingMode: z.enum(["direct", "proforma-first"]),
   }),
 })
 
@@ -196,7 +207,21 @@ async function resolveBookingTaxSettingsOrDefault(
   return {
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
+    invoicingMode: settings?.invoicingMode === "proforma-first" ? "proforma-first" : "direct",
   }
+}
+
+/**
+ * Resolve just the operator invoicing mode, defaulting to `direct`
+ * when no settings row exists. Shared by the proforma-conversion
+ * subscriber so it never converts unless the operator opted in.
+ */
+export async function resolveInvoicingModeOrDefault(
+  db: PostgresJsDatabase,
+  options: ResolveBookingSellTaxRateOptions = {},
+): Promise<InvoicingMode> {
+  const settings = await resolveBookingTaxSettingsOrDefault(db, options)
+  return settings.invoicingMode
 }
 
 export function computeBookingItemTaxLine(
@@ -402,6 +427,7 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
           patch.taxPolicyProfileId === undefined
             ? current.taxPolicyProfileId
             : patch.taxPolicyProfileId,
+        invoicingMode: patch.invoicingMode ?? current.invoicingMode,
       })
 
       return c.json(

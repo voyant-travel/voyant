@@ -42,6 +42,7 @@ import {
   resolveEffectivePaymentPolicy,
 } from "../payment-policy.js"
 import type { PaymentPolicyEntityContext } from "../payment-policy-cascade.js"
+import { PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY } from "../proforma-conversion-runtime.js"
 import { createFinanceBookingScheduleRuntime } from "../runtime.js"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
@@ -517,9 +518,10 @@ export function createBookingScheduleApiExtension(
 
 export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
+    const operatorSettings = await getPort(financeOperatorSettingsRuntimePort)
     const provider = createFinanceBookingScheduleRuntime(
       await getPort(financeHostRuntimePort),
-      await getPort(financeOperatorSettingsRuntimePort),
+      operatorSettings,
       await getPort(financeDistributionPaymentPolicyRuntimePort),
       await getPort(financeAccommodationsPaymentPolicyRuntimePort),
       await getPort(financeCruisesPaymentPolicyRuntimePort),
@@ -529,10 +531,18 @@ export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
     const selected: ApiExtension = {
       extension: {
         ...configured.extension,
-        bootstrap: async ({ container }) => {
+        bootstrap: async ({ container, eventBus }) => {
           container.register(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY, {
             resolveRoutesOptions: () => provider.options,
             withDb: provider.withDb,
+          })
+          // Same host/settings wiring powers the proforma-conversion
+          // subscriber: it reads the operator invoicing mode and, in
+          // proforma-first mode, mints the fiscal invoice on settlement.
+          container.register(PROFORMA_CONVERSION_SUBSCRIBER_RUNTIME_KEY, {
+            resolveInvoicingMode: operatorSettings.resolveInvoicingMode,
+            withDb: provider.withDb,
+            eventBus,
           })
         },
       },

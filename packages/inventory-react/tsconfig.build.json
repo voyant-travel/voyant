@@ -947,6 +947,9 @@
       "@voyant-travel/finance/payment-policy-cascade": [
         "../finance/dist/payment-policy-cascade.d.ts"
       ],
+      "@voyant-travel/finance/proforma-conversion-subscriber": [
+        "../finance/dist/proforma-conversion-runtime.d.ts"
+      ],
       "@voyant-travel/finance/public-routes": ["../finance/dist/routes-public.d.ts"],
       "@voyant-travel/finance/public-validation": ["../finance/dist/validation-public.d.ts"],
       "@voyant-travel/finance/routes": ["../finance/dist/routes.d.ts"],

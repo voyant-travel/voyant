@@ -41,6 +41,13 @@ export interface FinanceOperatorSettingsRuntime {
   resolveOperatorDefaultPaymentPolicy: BookingScheduleRoutesOptions["resolveOperatorDefaultPaymentPolicy"]
   resolveBookingTaxSettings: NonNullable<BookingTaxRouteOptions["resolveBookingTaxSettings"]>
   updateBookingTaxSettings: NonNullable<BookingTaxRouteOptions["updateBookingTaxSettings"]>
+  /**
+   * Resolve the operator's invoicing mode (`direct` | `proforma-first`).
+   * Defaults to `direct` when unconfigured. The finance
+   * proforma-conversion subscriber reads this to decide whether a
+   * settled proforma should be auto-converted to a fiscal invoice.
+   */
+  resolveInvoicingMode: (db: PostgresJsDatabase) => Promise<"direct" | "proforma-first">
 }
 
 export interface FinanceNotificationsRuntime {
@@ -107,7 +114,12 @@ export interface FinanceBookingScheduleRuntime {
 export const financeHostRuntimePort = objectPort<FinanceHostRuntime>("finance.host.runtime")
 export const financeOperatorSettingsRuntimePort = objectPort<FinanceOperatorSettingsRuntime>(
   "finance.operator-settings.runtime",
-  ["resolveOperatorDefaultPaymentPolicy", "resolveBookingTaxSettings", "updateBookingTaxSettings"],
+  [
+    "resolveOperatorDefaultPaymentPolicy",
+    "resolveBookingTaxSettings",
+    "updateBookingTaxSettings",
+    "resolveInvoicingMode",
+  ],
 )
 export const financeNotificationsRuntimePort = objectPort<FinanceNotificationsRuntime>(
   "finance.notifications.runtime",

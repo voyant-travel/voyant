@@ -178,6 +178,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: null,
+        invoicingMode: "direct",
       },
     })
 
@@ -195,6 +196,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
+        invoicingMode: "direct",
       },
     })
   })
@@ -222,6 +224,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
+        invoicingMode: "direct",
       },
     })
   })
