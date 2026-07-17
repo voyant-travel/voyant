@@ -17,7 +17,6 @@ function stubOptions(overrides: Partial<CheckoutStartOptions> = {}): CheckoutSta
       taxPriceMode: "inclusive",
       taxPolicyProfileId: null,
       invoicingMode: "proforma-first",
-      fxReferenceSource: "ecb",
     }),
     getOwnedProductName: vi.fn().mockResolvedValue(null),
     resolveBankTransferInstructions: vi
@@ -460,7 +459,6 @@ describe("startCatalogCheckout", () => {
           taxPriceMode: "inclusive",
           taxPolicyProfileId: null,
           invoicingMode: "direct",
-          fxReferenceSource: "ecb",
         }),
       })
 
@@ -494,7 +492,6 @@ describe("startCatalogCheckout", () => {
           taxPriceMode: "inclusive",
           taxPolicyProfileId: null,
           invoicingMode: "direct",
-          fxReferenceSource: "ecb",
         }),
       })
 

@@ -355,8 +355,7 @@ export const taxesPage = {
 
 export const invoicingPage = {
   title: "Facturare",
-  description:
-    "Controleaza cum se emit facturile si ce cursuri oficiale convertesc sumele in valuta.",
+  description: "Controleaza cum se emit facturile.",
   invoicingModeTitle: "Facturare prin transfer bancar",
   invoicingModeDescription:
     "Alege ce document se emite cand clientul plateste prin transfer bancar. Platile cu cardul emit intotdeauna direct factura fiscala. Facturile existente nu sunt afectate.",
@@ -366,15 +365,6 @@ export const invoicingPage = {
   invoicingModeDirect: "Factura directa",
   invoicingModeDirectHint:
     "Emite factura fiscala la plasarea comenzii si incaseaza transferul bancar pe baza ei. Nu se emite proforma.",
-  fxReferenceSourceTitle: "Cursuri valutare de referinta",
-  fxReferenceSourceDescription:
-    "Cursul de referinta oficial folosit la conversia sumelor in valuta pe facturi.",
-  fxReferenceSourceEcb: "Banca Centrala Europeana (BCE)",
-  fxReferenceSourceEcbHint:
-    "Foloseste cursurile de referinta ale BCE. Recomandat pentru majoritatea operatorilor din UE.",
-  fxReferenceSourceBnr: "Banca Nationala a Romaniei (BNR)",
-  fxReferenceSourceBnrHint:
-    "Foloseste cursurile de referinta BNR, conform cerintelor de facturare din Romania.",
 }
 
 export const recordBookingPaymentDialog = {

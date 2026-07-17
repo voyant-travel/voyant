@@ -3,7 +3,8 @@ import { createFinanceVoyantRuntime } from "../../src/index.js"
 import {
   financeBookingScheduleVoyantPlugin,
   financeBookingsCreateVoyantPlugin,
-  financeBookingTaxVoyantPlugin,
+  financeBookingTaxPreviewVoyantPlugin,
+  financeBookingTaxSettingsVoyantPlugin,
   financeVoyantModule,
 } from "../../src/voyant.js"
 
@@ -171,21 +172,51 @@ describe("finance deployment manifest", () => {
   })
 
   it("owns the finance extensions", () => {
-    expect([financeBookingTaxVoyantPlugin, financeBookingsCreateVoyantPlugin]).toMatchObject([
+    expect([
+      financeBookingTaxSettingsVoyantPlugin,
+      financeBookingTaxPreviewVoyantPlugin,
+      financeBookingsCreateVoyantPlugin,
+    ]).toMatchObject([
       {
         schemaVersion: "voyant.extension.v1",
-        id: "@voyant-travel/finance#booking-tax-extension",
-        runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
+        id: "@voyant-travel/finance#booking-tax-settings-extension",
+        localId: "finance.booking-tax-settings-extension",
+        runtime: {
+          entry: "@voyant-travel/finance",
+          export: "createBookingTaxSettingsVoyantRuntime",
+        },
         runtimePorts: [{ id: "finance.operator-settings.runtime" }],
         api: [
           {
-            id: "@voyant-travel/finance#booking-tax-extension.api",
+            id: "@voyant-travel/finance#booking-tax-settings-extension.api",
             surface: "admin",
-            mount: "bookings",
-            openapi: { document: "booking-tax" },
+            mount: "finance",
+            openapi: { document: "booking-tax-settings" },
             runtime: {
               entry: "@voyant-travel/finance",
-              export: "createBookingTaxApiExtension",
+              export: "createBookingTaxSettingsApiExtension",
+            },
+          },
+        ],
+      },
+      {
+        schemaVersion: "voyant.extension.v1",
+        id: "@voyant-travel/finance#booking-tax-preview-extension",
+        localId: "finance.booking-tax-preview-extension",
+        runtime: {
+          entry: "@voyant-travel/finance",
+          export: "createBookingTaxPreviewVoyantRuntime",
+        },
+        runtimePorts: [{ id: "finance.operator-settings.runtime" }],
+        api: [
+          {
+            id: "@voyant-travel/finance#booking-tax-preview-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "booking-tax-preview" },
+            runtime: {
+              entry: "@voyant-travel/finance",
+              export: "createBookingTaxPreviewApiExtension",
             },
           },
         ],

@@ -395,22 +395,59 @@ export const financeVoyantModule = defineModule({
   },
 })
 
-export const financeBookingTaxVoyantPlugin = defineExtension({
-  id: "@voyant-travel/finance#booking-tax-extension",
+// The booking-tax facets are two independent extensions so the selected-graph
+// composition keeps them as separate composed extensions. Each `defineExtension`
+// yields one composed extension keyed on its localId; declaring both api facets
+// under a single extension would collapse them and drop the preview facet.
+//
+// Tax settings (GET/PATCH /tax-settings) live on the finance admin surface. On
+// the managed runtime admin routes dispatch per-unit with prefix-first-match,
+// so mounting them under `bookings` let the bookings `GET /{id}` route swallow
+// `/tax-settings`; the finance surface already serves `/v1/admin/finance/*`
+// settings safely.
+export const financeBookingTaxSettingsVoyantPlugin = defineExtension({
+  id: "@voyant-travel/finance#booking-tax-settings-extension",
   packageName: "@voyant-travel/finance",
-  localId: "finance.booking-tax-extension",
-  runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
+  localId: "finance.booking-tax-settings-extension",
+  runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxSettingsVoyantRuntime" },
   runtimePorts: [requirePort(financeOperatorSettingsRuntimePort)],
   api: [
     {
-      id: "@voyant-travel/finance#booking-tax-extension.api",
+      id: "@voyant-travel/finance#booking-tax-settings-extension.api",
       surface: "admin",
-      mount: "bookings",
-      openapi: { document: "booking-tax" },
+      mount: "finance",
+      openapi: { document: "booking-tax-settings" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createBookingTaxApiExtension",
+        export: "createBookingTaxSettingsApiExtension",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+// Tax preview (POST /tax-preview) stays on the bookings admin surface — POST
+// does not collide with the bookings `GET /{id}` route and bookings-react
+// consumes it at `/v1/admin/bookings/tax-preview`.
+export const financeBookingTaxPreviewVoyantPlugin = defineExtension({
+  id: "@voyant-travel/finance#booking-tax-preview-extension",
+  packageName: "@voyant-travel/finance",
+  localId: "finance.booking-tax-preview-extension",
+  runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxPreviewVoyantRuntime" },
+  runtimePorts: [requirePort(financeOperatorSettingsRuntimePort)],
+  api: [
+    {
+      id: "@voyant-travel/finance#booking-tax-preview-extension.api",
+      surface: "admin",
+      mount: "bookings",
+      openapi: { document: "booking-tax-preview" },
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/finance",
+        export: "createBookingTaxPreviewApiExtension",
       },
     },
   ],

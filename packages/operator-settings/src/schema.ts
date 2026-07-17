@@ -156,16 +156,6 @@ export const bookingTaxSettings = pgTable("booking_tax_settings", {
    * operator-settings singleton row.
    */
   invoicingMode: text("invoicing_mode").notNull().default("proforma-first"),
-  /**
-   * Official FX reference-rate source used when an amount must be
-   * converted at a jurisdiction's mandated reference rate (e.g. `ecb`
-   * for most EU operators, `bnr` for Romania). A setting, not
-   * per-country code: the finance fx-reference port reads this to pick
-   * the host-provided rate source. Stored here because
-   * `booking_tax_settings` is the finance operator-settings singleton
-   * row.
-   */
-  fxReferenceSource: text("fx_reference_source").notNull().default("ecb"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

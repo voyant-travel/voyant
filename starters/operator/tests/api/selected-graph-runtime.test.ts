@@ -118,7 +118,8 @@ describe("selected Operator graph runtime composition", () => {
     expect(moduleNames).toContain("finance")
     expect(moduleNames).toContain("catalog")
     expect(extensionNames).toContain("bookings-suppliers")
-    expect(extensionNames).toContain("booking-tax")
+    expect(extensionNames).toContain("booking-tax-settings")
+    expect(extensionNames).toContain("booking-tax-preview")
     expect(moduleNames).not.toContain("smartbill")
     expect(moduleNames).not.toContain("plugin-smartbill.graph-runtime")
     const duplicateModules = composed.modules
@@ -668,8 +669,10 @@ describe("selected Operator graph runtime composition", () => {
 
     expect(byName("channel-push")?.extension.module).toBe("distribution")
     expect(byName("channel-push")?.adminRoutes).toBeDefined()
-    expect(byName("booking-tax")?.extension.module).toBe("bookings")
-    expect(byName("booking-tax")?.adminRoutes).toBeDefined()
+    expect(byName("booking-tax-settings")?.extension.module).toBe("finance")
+    expect(byName("booking-tax-settings")?.adminRoutes).toBeDefined()
+    expect(byName("booking-tax-preview")?.extension.module).toBe("bookings")
+    expect(byName("booking-tax-preview")?.adminRoutes).toBeDefined()
     expect(byName("mice-booking")?.extension.module).toBe("bookings")
     expect(byName("booking-schedule")?.publicPath).toBe("payment-policy")
     expect(byName("proposal")?.publicPath).toBe("proposals")

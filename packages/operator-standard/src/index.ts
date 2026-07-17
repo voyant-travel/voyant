@@ -239,12 +239,12 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
       owners: ["@voyant-travel/distribution"],
     },
     {
-      resolve: "@voyant-travel/finance/booking-tax-extension",
-      owners: [
-        "@voyant-travel/finance",
-        "@voyant-travel/bookings",
-        "@voyant-travel/operator-settings",
-      ],
+      resolve: "@voyant-travel/finance/booking-tax-settings-extension",
+      owners: ["@voyant-travel/finance", "@voyant-travel/operator-settings"],
+    },
+    {
+      resolve: "@voyant-travel/finance/booking-tax-preview-extension",
+      owners: ["@voyant-travel/finance", "@voyant-travel/bookings"],
     },
     {
       resolve: "@voyant-travel/inventory/content-extension",

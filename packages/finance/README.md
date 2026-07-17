@@ -114,14 +114,19 @@ Mounted Finance routes include:
 ## Booking Tax Preview
 
 Booking creation UIs can show the same tax line that booking finalization will
-persist by mounting the booking-tax extension:
+persist by mounting the booking-tax extensions. The surface is split in two:
+tax **settings** live on the finance admin surface, and tax **preview** lives on
+the bookings admin surface:
 
 ```typescript
-import { createBookingTaxApiExtension } from "@voyant-travel/finance/booking-tax"
+import {
+  createBookingTaxSettingsApiExtension,
+  createBookingTaxPreviewApiExtension,
+} from "@voyant-travel/finance/booking-tax"
 
 createApp({
   extensions: [
-    createBookingTaxApiExtension({
+    createBookingTaxSettingsApiExtension({
       resolveBookingTaxSettings: async (db) => {
         const settings = await getTaxSettings(db)
         return {
@@ -129,6 +134,10 @@ createApp({
           taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
         }
       },
+      updateBookingTaxSettings: async (db, next) => saveTaxSettings(db, next),
+    }),
+    createBookingTaxPreviewApiExtension({
+      resolveBookingTaxSettings: async (db) => getTaxSettings(db),
     }),
   ],
 })
@@ -139,16 +148,21 @@ settings table, KV, environment configuration, or any other deployment-owned
 store, while `@voyant-travel/finance` owns the tax policy rule walker, tax-regime
 lookup, product tax-class fallback, and inclusive/exclusive math.
 
-Templates that already mount custom routes can call `mountBookingTaxRoutes(...)`
-from the same entrypoint instead of using the API extension.
+Templates that already mount custom routes can call
+`mountBookingTaxSettingsRoutes(...)` / `mountBookingTaxPreviewRoutes(...)` from
+the same entrypoint instead of using the API extensions.
 
-Mounting this route registers:
+Mounting these routes registers:
 
-- `GET /v1/admin/bookings/tax-settings`
-- `PATCH /v1/admin/bookings/tax-settings` when `updateBookingTaxSettings` is supplied
+- `GET /v1/admin/finance/tax-settings`
+- `PATCH /v1/admin/finance/tax-settings` when `updateBookingTaxSettings` is supplied
 - `POST /v1/admin/bookings/tax-preview`
 
-The preview endpoint is consumed by `@voyant-travel/bookings-react` tax-preview
+Tax settings sit on the finance admin surface (alongside tax regimes, policy
+rules, and invoice-fx) so the managed runtime's per-unit, prefix-first-match
+admin dispatch does not let the bookings `GET /{id}` route swallow
+`/tax-settings`. The preview endpoint is consumed by
+`@voyant-travel/bookings-react` tax-preview
 hooks. Consumers that use the booking-create dialog without mounting the route
 will silently lose tax rows in the dialog summary because the client treats a
 missing preview as "no tax to show".
