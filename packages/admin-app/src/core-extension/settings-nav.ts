@@ -1,5 +1,5 @@
 import type { OperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
-import { Coins, Hash, KeyRound, Layers, Package, Percent, Tag, Tags } from "lucide-react"
+import { Coins, FileText, Hash, KeyRound, Layers, Package, Percent, Tag, Tags } from "lucide-react"
 import type * as React from "react"
 
 /**
@@ -13,6 +13,7 @@ import type * as React from "react"
 export type AdminCoreSettingsPageId =
   | "api-tokens"
   | "channels"
+  | "invoicing"
   | "taxes"
   | "cost-categories"
   | "pricing-categories"
@@ -61,6 +62,15 @@ export const adminCoreSettingsNavEntries: ReadonlyArray<AdminCoreSettingsNavEntr
     order: 40,
     label: (settings) => settings.channels,
     defaultTitle: "Channels",
+  },
+  {
+    id: "invoicing",
+    path: "/invoicing",
+    icon: FileText,
+    group: "general",
+    order: 45,
+    label: (settings) => settings.invoicing,
+    defaultTitle: "Invoicing",
   },
   {
     id: "taxes",

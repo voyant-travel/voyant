@@ -26,6 +26,13 @@ export type ResolvedBookingSellTaxRate = {
 
 export type InvoicingMode = "direct" | "proforma-first"
 
+/**
+ * Official FX reference-rate source. `ecb` (default) covers most EU
+ * operators; `bnr` is the National Bank of Romania. A setting, not
+ * per-country code — new jurisdictions add values here, not modules.
+ */
+export type FxReferenceSource = "ecb" | "bnr"
+
 export type BookingTaxSettings = {
   taxPriceMode?: "inclusive" | "exclusive" | null
   taxPolicyProfileId?: string | null
@@ -35,12 +42,17 @@ export type BookingTaxSettings = {
    * to a fiscal invoice on full settlement. Absent/null → `direct`.
    */
   invoicingMode?: InvoicingMode | null
+  /**
+   * Operator's official FX reference-rate source. Absent/null → `ecb`.
+   */
+  fxReferenceSource?: FxReferenceSource | null
 }
 
 type ResolvedBookingTaxSettings = {
   taxPriceMode: "inclusive" | "exclusive"
   taxPolicyProfileId: string | null
   invoicingMode: InvoicingMode
+  fxReferenceSource: FxReferenceSource
 }
 
 export type ResolveBookingTaxSettings = (
@@ -57,6 +69,7 @@ const bookingTaxSettingsPatchSchema = z.object({
   taxPriceMode: z.enum(["inclusive", "exclusive"]).optional(),
   taxPolicyProfileId: z.string().min(1).nullable().optional(),
   invoicingMode: z.enum(["direct", "proforma-first"]).optional(),
+  fxReferenceSource: z.enum(["ecb", "bnr"]).optional(),
 })
 
 const bookingTaxSettingsResponseSchema = z.object({
@@ -64,6 +77,7 @@ const bookingTaxSettingsResponseSchema = z.object({
     taxPriceMode: z.enum(["inclusive", "exclusive"]),
     taxPolicyProfileId: z.string().nullable(),
     invoicingMode: z.enum(["direct", "proforma-first"]),
+    fxReferenceSource: z.enum(["ecb", "bnr"]),
   }),
 })
 
@@ -208,6 +222,7 @@ async function resolveBookingTaxSettingsOrDefault(
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
     invoicingMode: settings?.invoicingMode === "proforma-first" ? "proforma-first" : "direct",
+    fxReferenceSource: settings?.fxReferenceSource === "bnr" ? "bnr" : "ecb",
   }
 }
 
@@ -428,6 +443,7 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
             ? current.taxPolicyProfileId
             : patch.taxPolicyProfileId,
         invoicingMode: patch.invoicingMode ?? current.invoicingMode,
+        fxReferenceSource: patch.fxReferenceSource ?? current.fxReferenceSource,
       })
 
       return c.json(

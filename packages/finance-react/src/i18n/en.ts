@@ -2,6 +2,7 @@ import { common, invoiceDetailPage, invoiceDialog, invoicesPage } from "./en/inv
 import {
   invoiceNumberSeriesDialog,
   invoiceNumberSeriesPage,
+  invoicingPage,
   paymentDetailPage,
   paymentPolicy,
   paymentsPage,
@@ -29,6 +30,7 @@ export const financeUiEn = {
   invoiceDetailPage,
   paymentPolicy,
   taxesPage,
+  invoicingPage,
   supplierPaymentDialog,
   recordBookingPaymentDialog,
   profitability,

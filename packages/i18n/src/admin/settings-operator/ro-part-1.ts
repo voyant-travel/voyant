@@ -7,6 +7,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
   team: "Echipa",
   apiTokens: "Tokenuri API",
   channels: "Canale",
+  invoicing: "Facturare",
   taxes: "Taxe",
   costCategories: "Categorii de cost",
   pricingCategories: "Categorii de tarifare",

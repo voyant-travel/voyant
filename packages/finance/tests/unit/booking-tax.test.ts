@@ -147,15 +147,40 @@ describe("booking tax helpers", () => {
     })
   })
 
+  it("defaults and normalizes the FX reference source through the settings route", async () => {
+    const db = {} as PostgresJsDatabase
+    const buildApp = (settings: Record<string, unknown>) =>
+      new Hono()
+        .use("*", async (c, next) => {
+          c.set("db", db)
+          await next()
+        })
+        .route("/", createBookingTaxRoutes({ resolveBookingTaxSettings: () => settings }))
+
+    // Absent → defaults to ecb.
+    const missing = await buildApp({ taxPriceMode: "inclusive" }).request("/tax-settings")
+    await expect(missing.json()).resolves.toMatchObject({ data: { fxReferenceSource: "ecb" } })
+
+    // Unknown/legacy value → normalized to ecb.
+    const unknown = await buildApp({ fxReferenceSource: "boe" }).request("/tax-settings")
+    await expect(unknown.json()).resolves.toMatchObject({ data: { fxReferenceSource: "ecb" } })
+
+    // Explicit bnr → preserved.
+    const bnr = await buildApp({ fxReferenceSource: "bnr" }).request("/tax-settings")
+    await expect(bnr.json()).resolves.toMatchObject({ data: { fxReferenceSource: "bnr" } })
+  })
+
   it("serves booking tax settings through the configured storage callbacks", async () => {
     let settings = {
       taxPriceMode: "inclusive" as const,
       taxPolicyProfileId: null as string | null,
+      fxReferenceSource: "ecb" as "ecb" | "bnr",
     }
     const updateBookingTaxSettings = vi.fn(async (_db: PostgresJsDatabase, next) => {
       settings = {
         taxPriceMode: next.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
         taxPolicyProfileId: next.taxPolicyProfileId ?? null,
+        fxReferenceSource: next.fxReferenceSource === "bnr" ? "bnr" : "ecb",
       }
       return settings
     })
@@ -179,6 +204,7 @@ describe("booking tax helpers", () => {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: null,
         invoicingMode: "direct",
+        fxReferenceSource: "ecb",
       },
     })
 
@@ -188,6 +214,7 @@ describe("booking tax helpers", () => {
       body: JSON.stringify({
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
+        fxReferenceSource: "bnr",
       }),
     })
 
@@ -197,6 +224,7 @@ describe("booking tax helpers", () => {
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
         invoicingMode: "direct",
+        fxReferenceSource: "bnr",
       },
     })
   })
@@ -225,6 +253,7 @@ describe("booking tax helpers", () => {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
         invoicingMode: "direct",
+        fxReferenceSource: "ecb",
       },
     })
   })
