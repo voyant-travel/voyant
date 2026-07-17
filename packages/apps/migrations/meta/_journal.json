@@ -8,6 +8,13 @@
       "when": 1784250060000,
       "tag": "20260717000100_app_registry_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784287178252,
+      "tag": "20260717111938_breezy_karma",
+      "breakpoints": true
     }
   ]
 }

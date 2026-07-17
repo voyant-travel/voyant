@@ -9,6 +9,7 @@
     "./compiler": "./src/compiler.ts",
     "./contracts": "./src/contracts.ts",
     "./ingestion": "./src/ingestion.ts",
+    "./installation-service": "./src/installation-service.ts",
     "./routes": "./src/routes.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
@@ -73,6 +74,11 @@
         "types": "./dist/ingestion.d.ts",
         "import": "./dist/ingestion.js",
         "default": "./dist/ingestion.js"
+      },
+      "./installation-service": {
+        "types": "./dist/installation-service.d.ts",
+        "import": "./dist/installation-service.js",
+        "default": "./dist/installation-service.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

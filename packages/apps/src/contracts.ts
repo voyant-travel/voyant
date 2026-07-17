@@ -1,8 +1,17 @@
-import { ADMIN_UI_EXTENSION_SLOTS } from "@voyant-travel/admin/ui-extensions/registry"
 import { customFieldDefinitionInputSchema } from "@voyant-travel/custom-fields/contracts"
 import { z } from "zod"
 
 export const APP_MANIFEST_SCHEMA_VERSION = "voyant.app-manifest.v1" as const
+export const APP_ADMIN_EXTENSION_SLOTS = [
+  "dashboard.header",
+  "dashboard.after-kpis",
+  "dashboard.footer",
+  "booking.details.header",
+  "booking.details.after-summary",
+  "invoice.details.header",
+  "invoice.details.after-summary",
+  "workspace.header.actions",
+] as const
 
 const disallowedManifestKeys = {
   schemas: "Database schemas are deployment-package authority and cannot appear in app manifests.",
@@ -50,7 +59,7 @@ const httpsUrlSchema = z
   .refine((value) => new URL(value).protocol === "https:", {
     message: "URL must use https.",
   })
-const extensionSlotSchema = z.enum(ADMIN_UI_EXTENSION_SLOTS)
+const extensionSlotSchema = z.enum(APP_ADMIN_EXTENSION_SLOTS)
 const dataClassificationSchema = z.enum([
   "public",
   "internal",
