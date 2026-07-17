@@ -1,5 +1,12 @@
 # @voyant-travel/operations
 
+## 0.8.4
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.164.0
+- @voyant-travel/identity@0.166.0
+
 ## 0.8.3
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @voyant-travel/commerce
 
+## 0.38.0
+
+### Minor Changes
+
+- c3bdcbc: Wire checkout finalization to the operator invoicing mode. When an operator runs `proforma-first`, a fresh checkout now issues a proforma instead of a fiscal invoice; the fiscal invoice is minted later once the proforma settles. `direct` mode is unchanged, an explicitly requested proforma conversion always wins over the mode default, and deployments without an operator-settings runtime fall back to `direct`.
+
+### Patch Changes
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/distribution@0.156.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/bookings@0.166.0
+  - @voyant-travel/workflow-runs@0.122.3
+  - @voyant-travel/workflows@0.122.3
+
 ## 0.37.3
 
 ### Patch Changes
