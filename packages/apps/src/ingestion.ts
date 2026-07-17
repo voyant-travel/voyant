@@ -1,5 +1,6 @@
 import { lookup } from "node:dns/promises"
-import { isIP } from "node:net"
+import { request as httpsRequest } from "node:https"
+import { isIP, type LookupFunction } from "node:net"
 
 export interface ManifestFetchOptions {
   fetch?: typeof fetch
@@ -20,13 +21,15 @@ export interface FetchedManifest {
 const DEFAULT_MAX_BYTES = 256 * 1024
 const DEFAULT_MAX_REDIRECTS = 3
 const DEFAULT_TIMEOUT_MS = 5000
+/** Hard transport-level body cap; the caller enforces the tighter manifest cap. */
+const TRANSPORT_MAX_BODY_BYTES = 1024 * 1024
 const DEFAULT_CONTENT_TYPES = ["application/json", "application/manifest+json"] as const
 
 export async function fetchProtectedManifest(
   inputUrl: string,
   options: ManifestFetchOptions = {},
 ): Promise<FetchedManifest> {
-  const fetcher = options.fetch ?? fetch
+  const fetcher = options.fetch ?? createPinnedFetch(options.resolveHost)
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES
   const maxRedirects = options.maxRedirects ?? DEFAULT_MAX_REDIRECTS
   const allowedContentTypes = options.allowedContentTypes ?? DEFAULT_CONTENT_TYPES
@@ -136,6 +139,95 @@ async function assertPublicHostname(
 async function defaultResolveHost(hostname: string): Promise<string[]> {
   const result = await lookup(hostname, { all: true, verbatim: true })
   return result.map((entry: { address: string }) => entry.address)
+}
+
+/**
+ * A fetch-compatible transport whose socket connects only to addresses that
+ * were validated inside the same DNS resolution. `assertPublicHostname` alone
+ * is a time-of-check/time-of-use guard: a publisher-controlled name can
+ * rebind between the check and the connect. Pinning validation into the
+ * connection `lookup` closes that window.
+ */
+function createPinnedFetch(resolveHost: ManifestFetchOptions["resolveHost"]): typeof fetch {
+  const pinnedLookup: LookupFunction = (hostname, lookupOptions, callback) => {
+    const resolve = async () => {
+      const addresses = resolveHost
+        ? (await resolveHost(hostname)).map((address) => ({
+            address,
+            family: isIP(address) === 6 ? 6 : 4,
+          }))
+        : await lookup(hostname, { all: true, verbatim: true })
+      if (addresses.length === 0) {
+        throw new Error("Manifest URL host did not resolve.")
+      }
+      for (const entry of addresses) {
+        if (isPrivateAddress(entry.address)) {
+          throw new Error("Manifest URL resolved to a private or reserved address.")
+        }
+      }
+      return addresses
+    }
+    resolve().then(
+      (addresses) => {
+        if (lookupOptions.all) {
+          callback(null, addresses)
+          return
+        }
+        const first = addresses[0] as { address: string; family: number }
+        callback(null, first.address, first.family)
+      },
+      (error) => callback(error as NodeJS.ErrnoException, "", 4),
+    )
+  }
+
+  return (input, init) =>
+    new Promise<Response>((resolvePromise, rejectPromise) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
+      )
+      const headers: Record<string, string> = {}
+      if (init?.headers && !Array.isArray(init.headers) && !(init.headers instanceof Headers)) {
+        Object.assign(headers, init.headers)
+      }
+      const request = httpsRequest(
+        {
+          host: url.hostname,
+          port: url.port === "" ? 443 : Number(url.port),
+          path: `${url.pathname}${url.search}`,
+          method: init?.method ?? "GET",
+          headers,
+          signal: init?.signal ?? undefined,
+          lookup: pinnedLookup,
+        },
+        (incoming) => {
+          const status = incoming.statusCode ?? 0
+          const responseHeaders = new Headers()
+          for (const [name, value] of Object.entries(incoming.headers)) {
+            if (typeof value === "string") responseHeaders.set(name, value)
+            else if (Array.isArray(value)) responseHeaders.set(name, value.join(", "))
+          }
+          const chunks: Buffer[] = []
+          let received = 0
+          incoming.on("data", (chunk: Buffer) => {
+            received += chunk.byteLength
+            if (received > TRANSPORT_MAX_BODY_BYTES) {
+              incoming.destroy()
+              rejectPromise(new Error("Manifest response exceeded the maximum allowed size."))
+              return
+            }
+            chunks.push(chunk)
+          })
+          incoming.on("end", () => {
+            const body =
+              status === 204 || status === 304 ? null : new Uint8Array(Buffer.concat(chunks))
+            resolvePromise(new Response(body, { status, headers: responseHeaders }))
+          })
+          incoming.on("error", rejectPromise)
+        },
+      )
+      request.on("error", rejectPromise)
+      request.end()
+    })
 }
 
 function isRedirect(status: number): boolean {

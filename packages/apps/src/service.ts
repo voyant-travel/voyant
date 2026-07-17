@@ -142,6 +142,18 @@ async function createRelease(
     if (!existingApp) {
       throw new ApiHttpError("App registration not found", { status: 404, code: "app_not_found" })
     }
+    const releaseVersion = input.compiled.manifest.releaseVersion
+    const versionRow = await selectReleaseByVersion(tx, appId, releaseVersion)
+    if (
+      versionRow &&
+      versionRow.releaseVersion === releaseVersion &&
+      versionRow.manifestDigest !== input.compiled.digest
+    ) {
+      throw new ApiHttpError(
+        `Release version ${releaseVersion} already exists with different content; releases are immutable, publish a new version instead`,
+        { status: 409, code: "app_release_version_conflict" },
+      )
+    }
     const manifestSnapshot = JSON.parse(input.compiled.canonicalJson) as Record<string, unknown>
     const normalizedRecord: Record<string, unknown> = JSON.parse(
       JSON.stringify(input.compiled.normalizedRelease),
@@ -199,6 +211,15 @@ async function createRelease(
 
 async function selectAppForUpdate(db: PostgresJsDatabase, appId: string) {
   const [row] = await db.select().from(apps).where(eq(apps.id, appId)).for("update").limit(1)
+  return row ?? null
+}
+
+async function selectReleaseByVersion(db: PostgresJsDatabase, appId: string, version: string) {
+  const [row] = await db
+    .select()
+    .from(appReleases)
+    .where(and(eq(appReleases.appId, appId), eq(appReleases.releaseVersion, version)))
+    .limit(1)
   return row ?? null
 }
 

@@ -143,6 +143,36 @@ describe("apps service", () => {
     expect(Object.keys(service)).not.toContain("updateRelease")
   })
 
+  it("rejects reusing a release version with different content", async () => {
+    const { db, rows } = createRegistryDb()
+    const service = createAppsService()
+    const app = await service.createCustomApp(db, {
+      ownerId: "owner_1",
+      displayName: "Acme Sync",
+      slug: "acme-sync",
+      redirectUris: [],
+      createdBy: "user_1",
+    })
+
+    await service.releaseFromUpload(db, app.id, {
+      manifest: validManifest,
+      createdBy: "user_1",
+      provenance: { source: "test" },
+    })
+
+    await expect(
+      service.releaseFromUpload(db, app.id, {
+        manifest: {
+          ...validManifest,
+          scopes: { requested: ["bookings:read", "invoices:read"], optional: [] },
+        },
+        createdBy: "user_1",
+        provenance: { source: "test" },
+      }),
+    ).rejects.toMatchObject({ status: 409 })
+    expect(rows.releases).toHaveLength(1)
+  })
+
   it("fetch ingestion stores only the validated snapshot", async () => {
     const { db, rows } = createRegistryDb()
     const fetcher = vi.fn(
