@@ -14,7 +14,9 @@ import {
   createResizeMessage,
   createToastMessage,
   isContextMessage,
+  isErrorMessage,
   isInitMessage,
+  isTokenMessage,
   type UiExtensionOutboundMessage,
 } from "./protocol.js"
 import type { UiExtensionContext, UiExtensionToastIntent } from "./types.js"
@@ -41,6 +43,16 @@ export interface InitUiExtensionOptions {
   resizeTarget?: Element | null
 }
 
+/** A short-lived admin session token delivered by the host for the current context. */
+export interface UiExtensionSessionToken {
+  /** Opaque session token to relay to the app backend for actor-token exchange. */
+  token: string
+  /** Unique token id (matches the signed `jti` claim). */
+  tokenId: string
+  /** Expiry as epoch milliseconds. */
+  expiresAt: number
+}
+
 export interface UiExtensionActions {
   /** Ask the host to navigate to a RELATIVE admin path (validated host-side). */
   navigate(to: string): void
@@ -48,6 +60,13 @@ export interface UiExtensionActions {
   toast(intent: UiExtensionToastIntent, message: string): void
   /** Report a desired content height (clamped to the host's bounds). */
   resize(px: number): void
+  /**
+   * Request a short-lived admin session token for the current entity/slot
+   * context. Resolves with the token or rejects if the host declines
+   * (`not-supported`/`unavailable`) or the request times out. The token is not
+   * a Voyant API credential; relay it to the app backend to exchange it.
+   */
+  requestToken(): Promise<UiExtensionSessionToken>
 }
 
 export interface UiExtensionHandle {
@@ -84,6 +103,11 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
     let context: UiExtensionContext | undefined
     let settled = false
     let resizeObserver: ResizeObserver | undefined
+    const pendingTokens = new Map<
+      string,
+      { resolve: (token: UiExtensionSessionToken) => void; reject: (error: Error) => void }
+    >()
+    let tokenRequestSeq = 0
 
     const post = (message: UiExtensionOutboundMessage) => {
       parent.postMessage(message, "*")
@@ -98,7 +122,19 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       win.removeEventListener("message", onMessage)
       stopObserving()
       win.clearTimeout(timer)
+      for (const pending of pendingTokens.values()) {
+        pending.reject(new Error("[voyant-ext] Extension host torn down before token arrived."))
+      }
+      pendingTokens.clear()
     }
+
+    const requestToken = () =>
+      new Promise<UiExtensionSessionToken>((resolveToken, rejectToken) => {
+        tokenRequestSeq += 1
+        const requestId = `tok-${tokenRequestSeq}`
+        pendingTokens.set(requestId, { resolve: resolveToken, reject: rejectToken })
+        post(createRequestTokenMessage(requestId))
+      })
 
     const startObserving = () => {
       const target =
@@ -115,6 +151,7 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       navigate: (to) => post(createNavigateMessage(to)),
       toast: (intent, message) => post(createToastMessage(intent, message)),
       resize: (px) => post(createResizeMessage(px)),
+      requestToken,
     }
 
     function onMessage(event: MessageEvent) {
@@ -144,7 +181,31 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       if (isContextMessage(event.data) && settled) {
         context = event.data.payload.context
         for (const listener of listeners) listener(context)
+        return
       }
+      if (isTokenMessage(event.data)) {
+        const { requestId, token, tokenId, expiresAt } = event.data.payload
+        const pending = resolvePendingToken(requestId)
+        pending?.resolve({ token, tokenId, expiresAt })
+        return
+      }
+      if (isErrorMessage(event.data)) {
+        const pending = resolvePendingToken(event.data.payload.requestId)
+        pending?.reject(new Error(`[voyant-ext] Token request failed: ${event.data.payload.code}`))
+      }
+    }
+
+    /**
+     * Match an inbound token/error to its pending request. A response without a
+     * `requestId` (older host) settles the oldest outstanding request so a
+     * single in-flight `requestToken()` still resolves.
+     */
+    function resolvePendingToken(requestId: string | undefined) {
+      const key = requestId ?? pendingTokens.keys().next().value
+      if (key === undefined) return undefined
+      const pending = pendingTokens.get(key)
+      pendingTokens.delete(key)
+      return pending
     }
 
     const timer = win.setTimeout(() => {

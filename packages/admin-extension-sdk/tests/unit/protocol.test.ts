@@ -8,15 +8,19 @@ import {
   createInitMessage,
   createNavigateMessage,
   createReadyMessage,
+  createRequestTokenMessage,
   createResizeMessage,
   createToastMessage,
+  createTokenMessage,
   isContextMessage,
   isErrorMessage,
   isInitMessage,
   isNavigateMessage,
   isReadyMessage,
+  isRequestTokenMessage,
   isResizeMessage,
   isToastMessage,
+  isTokenMessage,
   isUiExtensionEnvelope,
   UI_EXTENSION_MAX_HEIGHT,
   UI_EXTENSION_MIN_HEIGHT,
@@ -30,6 +34,8 @@ const context: UiExtensionContext = {
   entity: null,
   theme: "light",
   locale: "en",
+  appLocale: "en",
+  direction: "ltr",
 }
 
 describe("clampUiExtensionHeight", () => {
@@ -79,6 +85,34 @@ describe("type guards", () => {
     ).toBe(true)
     expect(isContextMessage(createContextMessage(context))).toBe(true)
     expect(isErrorMessage(createErrorMessage("not-supported"))).toBe(true)
+    expect(isRequestTokenMessage(createRequestTokenMessage())).toBe(true)
+    expect(isRequestTokenMessage(createRequestTokenMessage("tok-1"))).toBe(true)
+    expect(
+      isTokenMessage(
+        createTokenMessage({
+          token: "vsess_x",
+          tokenId: "st_1",
+          expiresAt: 1000,
+          requestId: "tok-1",
+        }),
+      ),
+    ).toBe(true)
+  })
+
+  it("carry and echo the request correlation id", () => {
+    expect(createRequestTokenMessage("tok-7").payload).toEqual({ requestId: "tok-7" })
+    expect(createRequestTokenMessage().payload).toEqual({})
+    expect(createErrorMessage("unavailable", "tok-7").payload).toEqual({
+      code: "unavailable",
+      requestId: "tok-7",
+    })
+  })
+
+  it("reject malformed token envelopes", () => {
+    expect(
+      isTokenMessage({ v: 1, type: "voyant:ext:session-token", payload: { token: "x" } }),
+    ).toBe(false)
+    expect(isTokenMessage(createContextMessage(context))).toBe(false)
   })
 
   it("reject foreign, wrong-version, and malformed envelopes", () => {

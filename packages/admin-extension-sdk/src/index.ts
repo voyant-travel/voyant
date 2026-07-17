@@ -18,6 +18,7 @@ export type {
   UiExtensionHandle,
 } from "./client.js"
 export { initUiExtension, UI_EXTENSION_HANDSHAKE_TIMEOUT_MS } from "./client.js"
+export { isUiExtensionCompatible } from "./compat.js"
 export {
   capUiExtensionToastMessage,
   clampUiExtensionHeight,
@@ -29,6 +30,7 @@ export {
   createRequestTokenMessage,
   createResizeMessage,
   createToastMessage,
+  createTokenMessage,
   isContextMessage,
   isErrorMessage,
   isInitMessage,
@@ -37,6 +39,7 @@ export {
   isRequestTokenMessage,
   isResizeMessage,
   isToastMessage,
+  isTokenMessage,
   isUiExtensionEnvelope,
   UI_EXTENSION_MAX_HEIGHT,
   UI_EXTENSION_MIN_HEIGHT,
@@ -55,6 +58,7 @@ export {
   type UiExtensionRequestTokenMessage,
   type UiExtensionResizeMessage,
   type UiExtensionToastMessage,
+  type UiExtensionTokenMessage,
   uiExtensionMessageTypes,
 } from "./protocol.js"
 export type {
@@ -62,6 +66,7 @@ export type {
   UiExtensionDescriptor,
   UiExtensionEntity,
   UiExtensionOrg,
+  UiExtensionTextDirection,
   UiExtensionTheme,
   UiExtensionToastIntent,
   UiExtensionViewer,

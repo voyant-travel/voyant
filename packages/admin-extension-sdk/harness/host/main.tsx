@@ -6,6 +6,8 @@ import type {
 import { useState } from "react"
 import { createRoot } from "react-dom/client"
 
+import { LocaleProvider } from "../../../admin/src/providers/locale.js"
+import { OperatorAdminMessagesProvider } from "../../../admin/src/providers/operator-admin-messages.js"
 import { UiExtensionHost } from "../../../admin/src/ui-extensions/ui-extension-host.js"
 
 const context: UiExtensionContext = {
@@ -14,6 +16,8 @@ const context: UiExtensionContext = {
   entity: { type: "booking", id: "book_1029" },
   theme: "light",
   locale: "en-GB",
+  appLocale: "en",
+  direction: "ltr",
 }
 
 const compatible: UiExtensionDescriptor = {
@@ -50,6 +54,16 @@ function Harness() {
   const onToast = (intent: UiExtensionToastIntent, message: string) =>
     push("toast", `${intent}: ${message}`)
 
+  // Demo broker: mints a fake short-lived grant. In the product this calls the
+  // apps module to issue a signed admin session token for the installation.
+  let tokenSeq = 0
+  const onRequestToken = async () => {
+    tokenSeq += 1
+    const tokenId = `st_demo_${tokenSeq}`
+    push("token", `issued ${tokenId}`)
+    return { token: `test-session-${tokenId}`, tokenId, expiresAt: Date.now() + 120_000 }
+  }
+
   return (
     <div className="page">
       <header>
@@ -58,7 +72,7 @@ function Harness() {
       </header>
 
       <section>
-        <h2>1 · Rendered with context</h2>
+        <h2>1 · Rendered with context + session-token broker</h2>
         <div className="host" data-scenario="rendered">
           <UiExtensionHost
             descriptor={compatible}
@@ -66,6 +80,7 @@ function Harness() {
             context={context}
             onNavigate={onNavigate}
             onToast={onToast}
+            onRequestToken={onRequestToken}
           />
         </div>
       </section>
@@ -82,13 +97,28 @@ function Harness() {
       </section>
 
       <section>
-        <h2>3 · Handshake timeout</h2>
+        <h2>3 · Handshake timeout (fail-soft)</h2>
         <div className="host" data-scenario="timeout">
           <UiExtensionHost
             descriptor={slow}
             slot="dashboard.after-kpis"
             context={context}
             timeoutMs={2500}
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2>4 · Full-page app extension (RTL app locale)</h2>
+        <div className="host" data-scenario="page">
+          <UiExtensionHost
+            descriptor={{ ...compatible, key: "acme-page", displayName: "Acme Settings" }}
+            slot="page:/settings"
+            context={{ ...context, locale: "ar", appLocale: "ar", direction: "rtl" }}
+            fill
+            onNavigate={onNavigate}
+            onToast={onToast}
+            onRequestToken={onRequestToken}
           />
         </div>
       </section>
@@ -110,4 +140,11 @@ function Harness() {
 }
 
 const container = document.getElementById("root")
-if (container) createRoot(container).render(<Harness />)
+if (container)
+  createRoot(container).render(
+    <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+      <OperatorAdminMessagesProvider>
+        <Harness />
+      </OperatorAdminMessagesProvider>
+    </LocaleProvider>,
+  )

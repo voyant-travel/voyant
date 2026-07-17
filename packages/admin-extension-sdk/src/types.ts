@@ -28,6 +28,9 @@ export interface UiExtensionEntity {
 
 export type UiExtensionTheme = "light" | "dark"
 
+/** Text direction the host resolved for the active/app locale. */
+export type UiExtensionTextDirection = "ltr" | "rtl"
+
 /**
  * Read-only host context handed to an extension at init and on every update.
  * Never carries secrets — the frame is cross-origin and source-checked only.
@@ -37,7 +40,18 @@ export interface UiExtensionContext {
   viewer: UiExtensionViewer
   entity: UiExtensionEntity | null
   theme: UiExtensionTheme
+  /**
+   * The staff member's active admin locale as a canonical BCP 47 tag. The app
+   * may localize its in-frame UI more precisely than the host resolves below.
+   */
   locale: string
+  /**
+   * The locale the host resolved against the installed release's declared
+   * locales (exact → language → app default). Host-rendered labels use this.
+   */
+  appLocale: string
+  /** Text direction resolved for {@link appLocale}, so the app need not infer it. */
+  direction: UiExtensionTextDirection
 }
 
 /**
