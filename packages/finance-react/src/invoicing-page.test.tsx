@@ -12,10 +12,10 @@ import { InvoicingPage, type InvoicingPageApi } from "./components/invoicing-pag
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true
 
-type Settings = { invoicingMode: "direct" | "proforma-first"; fxReferenceSource: "ecb" | "bnr" }
+type Settings = { invoicingMode: "direct" | "proforma-first" }
 
 function makeApi(
-  settings: Settings = { invoicingMode: "proforma-first", fxReferenceSource: "ecb" },
+  settings: Settings = { invoicingMode: "proforma-first" },
   overrides: Partial<InvoicingPageApi> = {},
 ): InvoicingPageApi {
   return {
@@ -37,7 +37,7 @@ async function seededClient(settings: Settings) {
 }
 
 describe("InvoicingPage", () => {
-  it("renders both the invoicing-mode and reference-rate settings", () => {
+  it("renders only the invoicing-mode control (no reference-rate source)", () => {
     const queryClient = new QueryClient()
     const html = renderToStaticMarkup(
       <QueryClientProvider client={queryClient}>
@@ -46,9 +46,9 @@ describe("InvoicingPage", () => {
     )
 
     expect(html).toContain("Bank transfer invoicing")
-    // The reference-exchange-rate select lives here, not on the Taxes page.
-    expect(html).toContain("Reference exchange rates")
-    expect(html).toContain("Recommended for most EU operators")
+    // The FX reference-source setting was removed: managed/adapter-provided FX,
+    // not an operator choice. No reference-exchange-rate control remains.
+    expect(html).not.toContain("Reference exchange rates")
   })
 
   describe("shared tax-settings surface", () => {
@@ -66,43 +66,35 @@ describe("InvoicingPage", () => {
       container.remove()
     })
 
-    it("hydrates both selects from the fetched settings row", async () => {
-      const queryClient = await seededClient({
-        invoicingMode: "proforma-first",
-        fxReferenceSource: "bnr",
-      })
+    it("hydrates the mode select from the fetched settings row", async () => {
+      const queryClient = await seededClient({ invoicingMode: "proforma-first" })
 
       await act(async () => {
         root.render(
           <QueryClientProvider client={queryClient}>
-            <InvoicingPage
-              api={makeApi({ invoicingMode: "proforma-first", fxReferenceSource: "bnr" })}
-            />
+            <InvoicingPage api={makeApi({ invoicingMode: "proforma-first" })} />
           </QueryClientProvider>,
         )
       })
 
       const modeTrigger = container.querySelector("#invoicing-mode")
-      const fxTrigger = container.querySelector("#fx-reference-source")
       expect(modeTrigger?.textContent).toContain("Proforma first")
-      expect(fxTrigger?.textContent).toContain("National Bank of Romania (BNR)")
+      expect(container.querySelector("#fx-reference-source")).toBeNull()
     })
 
-    it("renders the direct/ecb selection from the fetched settings row", async () => {
-      const queryClient = await seededClient({ invoicingMode: "direct", fxReferenceSource: "ecb" })
+    it("renders the direct selection from the fetched settings row", async () => {
+      const queryClient = await seededClient({ invoicingMode: "direct" })
 
       await act(async () => {
         root.render(
           <QueryClientProvider client={queryClient}>
-            <InvoicingPage api={makeApi()} />
+            <InvoicingPage api={makeApi({ invoicingMode: "direct" })} />
           </QueryClientProvider>,
         )
       })
 
       const modeTrigger = container.querySelector("#invoicing-mode")
-      const fxTrigger = container.querySelector("#fx-reference-source")
       expect(modeTrigger?.textContent).toContain("Direct invoice")
-      expect(fxTrigger?.textContent).toContain("European Central Bank (ECB)")
     })
   })
 })

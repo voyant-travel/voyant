@@ -15,14 +15,14 @@ import type { TaxesPageApi, TaxesPageProps } from "./taxes-page/shared.js"
 import { createTaxesPageApi } from "./taxes-page/shared.js"
 
 type InvoicingMode = "direct" | "proforma-first"
-type FxReferenceSource = "ecb" | "bnr"
 
 /**
- * Dedicated Invoicing settings page. Owns the operator's invoicing
- * mode and official FX reference-rate source. Both read/write the
- * shared finance `/v1/admin/bookings/tax-settings` GET/PATCH surface —
- * the storage row is shared with the Taxes settings; the split here is
- * presentational.
+ * Dedicated Invoicing settings page. Owns the operator's invoicing mode
+ * (the one operator-facing invoicing knob). The FX reference source is
+ * not an operator choice — managed FX on Voyant Cloud, a self-host
+ * adapter otherwise, or a legally mandated source per jurisdiction — so
+ * it has no control here. Reads/writes the finance
+ * `/v1/admin/finance/tax-settings` GET/PATCH surface.
  */
 export function InvoicingPage({ api: apiProp }: TaxesPageProps = {}) {
   if (apiProp) return <InvoicingPageContent api={apiProp} />
@@ -46,33 +46,18 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
       api.get<{
         data: {
           invoicingMode: InvoicingMode
-          fxReferenceSource: FxReferenceSource
         }
-      }>("/v1/admin/bookings/tax-settings"),
+      }>("/v1/admin/finance/tax-settings"),
   })
   const invoicingModeMutation = useMutation({
     mutationFn: (invoicingMode: InvoicingMode) =>
-      api.patch("/v1/admin/bookings/tax-settings", { invoicingMode }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["booking-tax-settings"] })
-    },
-  })
-  const fxReferenceSourceMutation = useMutation({
-    mutationFn: (fxReferenceSource: FxReferenceSource) =>
-      api.patch("/v1/admin/bookings/tax-settings", { fxReferenceSource }),
+      api.patch("/v1/admin/finance/tax-settings", { invoicingMode }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["booking-tax-settings"] })
     },
   })
   const invoicingMode = settingsQuery.data?.data.invoicingMode ?? "proforma-first"
-  const fxReferenceSource = settingsQuery.data?.data.fxReferenceSource ?? "ecb"
-  // Both selects PATCH the same settings row (merge-on-read server side),
-  // so while either write is in flight the other control must not fire a
-  // concurrent PATCH that could clobber it.
-  const settingsBusy =
-    settingsQuery.isPending ||
-    invoicingModeMutation.isPending ||
-    fxReferenceSourceMutation.isPending
+  const settingsBusy = settingsQuery.isPending || invoicingModeMutation.isPending
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -114,41 +99,6 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
             {invoicingMode === "direct"
               ? invoicingMessages.invoicingModeDirectHint
               : invoicingMessages.invoicingModeProformaFirstHint}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-md border bg-card p-6 text-card-foreground shadow-sm">
-        <div>
-          <h3 className="text-base font-semibold tracking-tight">
-            {invoicingMessages.fxReferenceSourceTitle}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {invoicingMessages.fxReferenceSourceDescription}
-          </p>
-        </div>
-        <div className="max-w-sm">
-          <Select
-            value={fxReferenceSource}
-            onValueChange={(value) => {
-              if (value === "ecb" || value === "bnr") {
-                fxReferenceSourceMutation.mutate(value)
-              }
-            }}
-            disabled={settingsBusy}
-          >
-            <SelectTrigger id="fx-reference-source" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ecb">{invoicingMessages.fxReferenceSourceEcb}</SelectItem>
-              <SelectItem value="bnr">{invoicingMessages.fxReferenceSourceBnr}</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {fxReferenceSource === "bnr"
-              ? invoicingMessages.fxReferenceSourceBnrHint
-              : invoicingMessages.fxReferenceSourceEcbHint}
           </p>
         </div>
       </div>

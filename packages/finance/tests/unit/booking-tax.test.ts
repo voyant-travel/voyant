@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   computeBookingItemTaxLine,
-  createBookingTaxRoutes,
+  createBookingTaxPreviewRoutes,
+  createBookingTaxSettingsRoutes,
   matchesTaxPolicyCondition,
 } from "../../src/booking-tax.js"
 import { createFinanceApiModule } from "../../src/index.js"
@@ -113,7 +114,7 @@ describe("booking tax helpers", () => {
       })
       .route(
         "/",
-        createBookingTaxRoutes({
+        createBookingTaxPreviewRoutes({
           settings: {
             taxPriceMode: "exclusive",
             taxPolicyProfileId: "profile_1",
@@ -147,7 +148,7 @@ describe("booking tax helpers", () => {
     })
   })
 
-  it("defaults and normalizes the FX reference source through the settings route", async () => {
+  it("defaults and normalizes the invoicing mode through the settings route", async () => {
     const db = {} as PostgresJsDatabase
     const buildApp = (settings: Record<string, unknown>) =>
       new Hono()
@@ -155,32 +156,30 @@ describe("booking tax helpers", () => {
           c.set("db", db)
           await next()
         })
-        .route("/", createBookingTaxRoutes({ resolveBookingTaxSettings: () => settings }))
+        .route("/", createBookingTaxSettingsRoutes({ resolveBookingTaxSettings: () => settings }))
 
-    // Absent → defaults to ecb.
+    // Absent → defaults to proforma-first.
     const missing = await buildApp({ taxPriceMode: "inclusive" }).request("/tax-settings")
-    await expect(missing.json()).resolves.toMatchObject({ data: { fxReferenceSource: "ecb" } })
+    await expect(missing.json()).resolves.toMatchObject({
+      data: { invoicingMode: "proforma-first" },
+    })
 
-    // Unknown/legacy value → normalized to ecb.
-    const unknown = await buildApp({ fxReferenceSource: "boe" }).request("/tax-settings")
-    await expect(unknown.json()).resolves.toMatchObject({ data: { fxReferenceSource: "ecb" } })
-
-    // Explicit bnr → preserved.
-    const bnr = await buildApp({ fxReferenceSource: "bnr" }).request("/tax-settings")
-    await expect(bnr.json()).resolves.toMatchObject({ data: { fxReferenceSource: "bnr" } })
+    // Explicit direct → preserved.
+    const direct = await buildApp({ invoicingMode: "direct" }).request("/tax-settings")
+    await expect(direct.json()).resolves.toMatchObject({ data: { invoicingMode: "direct" } })
   })
 
   it("serves booking tax settings through the configured storage callbacks", async () => {
     let settings = {
       taxPriceMode: "inclusive" as const,
       taxPolicyProfileId: null as string | null,
-      fxReferenceSource: "ecb" as "ecb" | "bnr",
+      invoicingMode: "proforma-first" as "direct" | "proforma-first",
     }
     const updateBookingTaxSettings = vi.fn(async (_db: PostgresJsDatabase, next) => {
       settings = {
         taxPriceMode: next.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
         taxPolicyProfileId: next.taxPolicyProfileId ?? null,
-        fxReferenceSource: next.fxReferenceSource === "bnr" ? "bnr" : "ecb",
+        invoicingMode: next.invoicingMode === "direct" ? "direct" : "proforma-first",
       }
       return settings
     })
@@ -192,7 +191,7 @@ describe("booking tax helpers", () => {
       })
       .route(
         "/",
-        createBookingTaxRoutes({
+        createBookingTaxSettingsRoutes({
           resolveBookingTaxSettings: () => settings,
           updateBookingTaxSettings,
         }),
@@ -204,7 +203,6 @@ describe("booking tax helpers", () => {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: null,
         invoicingMode: "proforma-first",
-        fxReferenceSource: "ecb",
       },
     })
 
@@ -214,7 +212,7 @@ describe("booking tax helpers", () => {
       body: JSON.stringify({
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
-        fxReferenceSource: "bnr",
+        invoicingMode: "direct",
       }),
     })
 
@@ -223,8 +221,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
-        invoicingMode: "proforma-first",
-        fxReferenceSource: "bnr",
+        invoicingMode: "direct",
       },
     })
   })
@@ -253,7 +250,6 @@ describe("booking tax helpers", () => {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
         invoicingMode: "proforma-first",
-        fxReferenceSource: "ecb",
       },
     })
   })

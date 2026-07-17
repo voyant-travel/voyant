@@ -1,14 +1,14 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Booking Tax API",
+    "title": "Booking Tax Settings API",
     "version": "1.0.0"
   },
   "paths": {
-    "/v1/admin/bookings/tax-settings": {
+    "/v1/admin/finance/tax-settings": {
       "get": {
         "summary": "Get booking tax settings",
-        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-settings-extension.api",
         "responses": {
           "200": {
             "description": "The effective booking tax settings",
@@ -26,7 +26,7 @@
       },
       "patch": {
         "summary": "Update booking tax settings",
-        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-settings-extension.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -36,8 +36,7 @@
                 "properties": {
                   "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
                   "taxPolicyProfileId": { "type": ["string", "null"] },
-                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] },
-                  "fxReferenceSource": { "type": "string", "enum": ["ecb", "bnr"] }
+                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
                 }
               }
             }
@@ -48,41 +47,17 @@
           "409": { "description": "This deployment does not support tax setting updates" }
         }
       }
-    },
-    "/v1/admin/bookings/tax-preview": {
-      "post": {
-        "summary": "Preview tax for a booking item subtotal",
-        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["productId", "subtotalCents", "currency"],
-                "properties": {
-                  "productId": { "type": "string", "minLength": 1 },
-                  "subtotalCents": { "type": "integer", "minimum": 0 },
-                  "currency": { "type": "string", "minLength": 3, "maxLength": 8 }
-                }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "The calculated tax preview" } }
-      }
     }
   },
   "components": {
     "schemas": {
       "BookingTaxSettings": {
         "type": "object",
-        "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode", "fxReferenceSource"],
+        "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode"],
         "properties": {
           "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
           "taxPolicyProfileId": { "type": ["string", "null"] },
-          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] },
-          "fxReferenceSource": { "type": "string", "enum": ["ecb", "bnr"] }
+          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
         }
       }
     }

@@ -352,7 +352,7 @@ export const taxesPage = {
 
 export const invoicingPage = {
   title: "Invoicing",
-  description: "Control how invoices are issued and which official rates convert foreign currency.",
+  description: "Control how invoices are issued.",
   invoicingModeTitle: "Bank transfer invoicing",
   invoicingModeDescription:
     "Choose which document is issued when a customer pays by bank transfer. Card payments always issue the fiscal invoice directly. Existing invoices are unaffected.",
@@ -362,13 +362,6 @@ export const invoicingPage = {
   invoicingModeDirect: "Direct invoice",
   invoicingModeDirectHint:
     "Issue the fiscal invoice when the order is placed and collect the bank transfer against it. No proforma is issued.",
-  fxReferenceSourceTitle: "Reference exchange rates",
-  fxReferenceSourceDescription:
-    "Official reference rate used when converting foreign-currency amounts on invoices.",
-  fxReferenceSourceEcb: "European Central Bank (ECB)",
-  fxReferenceSourceEcbHint: "Use the ECB euro reference rates. Recommended for most EU operators.",
-  fxReferenceSourceBnr: "National Bank of Romania (BNR)",
-  fxReferenceSourceBnrHint: "Use the BNR reference rates, as required for Romanian invoicing.",
 }
 
 export const recordBookingPaymentDialog = {

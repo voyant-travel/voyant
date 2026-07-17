@@ -175,17 +175,30 @@ describe("finance deployment manifest", () => {
       {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#booking-tax-extension",
-        runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
+        runtime: {
+          entry: "@voyant-travel/finance",
+          export: "createBookingTaxSettingsVoyantRuntime",
+        },
         runtimePorts: [{ id: "finance.operator-settings.runtime" }],
         api: [
           {
-            id: "@voyant-travel/finance#booking-tax-extension.api",
+            id: "@voyant-travel/finance#booking-tax-settings-extension.api",
             surface: "admin",
-            mount: "bookings",
-            openapi: { document: "booking-tax" },
+            mount: "finance",
+            openapi: { document: "booking-tax-settings" },
             runtime: {
               entry: "@voyant-travel/finance",
-              export: "createBookingTaxApiExtension",
+              export: "createBookingTaxSettingsApiExtension",
+            },
+          },
+          {
+            id: "@voyant-travel/finance#booking-tax-preview-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "booking-tax-preview" },
+            runtime: {
+              entry: "@voyant-travel/finance",
+              export: "createBookingTaxPreviewApiExtension",
             },
           },
         ],
