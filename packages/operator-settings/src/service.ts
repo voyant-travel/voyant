@@ -199,11 +199,16 @@ export async function resolveBookingTaxSettings(
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
     invoicingMode: normalizeInvoicingMode(settings?.invoicingMode),
+    fxReferenceSource: normalizeFxReferenceSource(settings?.fxReferenceSource),
   }
 }
 
 function normalizeInvoicingMode(value: string | null | undefined): "direct" | "proforma-first" {
   return value === "proforma-first" ? "proforma-first" : "direct"
+}
+
+function normalizeFxReferenceSource(value: string | null | undefined): "ecb" | "bnr" {
+  return value === "bnr" ? "bnr" : "ecb"
 }
 
 /**
@@ -217,6 +222,17 @@ export async function resolveInvoicingMode(
 ): Promise<"direct" | "proforma-first"> {
   const settings = await resolveBookingTaxSettings(db)
   return normalizeInvoicingMode(settings.invoicingMode)
+}
+
+/**
+ * Resolve just the operator's official FX reference-rate source.
+ * Defaults to `ecb` when no settings row exists. Provided through the
+ * finance operator-settings runtime port so the finance fx-reference
+ * helper can pick the host-provided rate source for the operator.
+ */
+export async function resolveFxReferenceSource(db: PostgresJsDatabase): Promise<"ecb" | "bnr"> {
+  const settings = await resolveBookingTaxSettings(db)
+  return normalizeFxReferenceSource(settings.fxReferenceSource)
 }
 
 export async function updateBookingTaxSettings(
@@ -236,12 +252,14 @@ export async function updateBookingTaxSettings(
         taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
         taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
         invoicingMode: normalizeInvoicingMode(patch.invoicingMode),
+        fxReferenceSource: normalizeFxReferenceSource(patch.fxReferenceSource),
       })
       .returning()
     return {
       taxPriceMode: created?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
       taxPolicyProfileId: created?.taxPolicyProfileId ?? null,
       invoicingMode: normalizeInvoicingMode(created?.invoicingMode),
+      fxReferenceSource: normalizeFxReferenceSource(created?.fxReferenceSource),
     }
   }
 
@@ -251,6 +269,7 @@ export async function updateBookingTaxSettings(
       taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
       taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
       invoicingMode: normalizeInvoicingMode(patch.invoicingMode),
+      fxReferenceSource: normalizeFxReferenceSource(patch.fxReferenceSource),
       updatedAt: new Date(),
     })
     .where(eq(bookingTaxSettings.id, existing.id))
@@ -260,6 +279,7 @@ export async function updateBookingTaxSettings(
     taxPriceMode: updated?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: updated?.taxPolicyProfileId ?? null,
     invoicingMode: normalizeInvoicingMode(updated?.invoicingMode),
+    fxReferenceSource: normalizeFxReferenceSource(updated?.fxReferenceSource),
   }
 }
 

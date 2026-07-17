@@ -351,6 +351,12 @@ export const taxesPage = {
     "Conditia trebuie sa includa cel putin un rand valid. Tarile trebuie sa fie coduri ISO din doua litere.",
   savePolicyProfileFailed: "Profilul de politica fiscala nu a putut fi salvat",
   savePolicyRuleFailed: "Regula fiscala nu a putut fi salvata",
+}
+
+export const invoicingPage = {
+  title: "Facturare",
+  description:
+    "Controleaza cum se emit facturile si ce cursuri oficiale convertesc sumele in valuta.",
   invoicingModeTitle: "Mod de facturare",
   invoicingModeDescription:
     "Alege cum se emit facturile pentru rezervarile noi. Facturile existente nu sunt afectate.",
@@ -359,6 +365,15 @@ export const taxesPage = {
   invoicingModeProformaFirst: "Proforma mai intai",
   invoicingModeProformaFirstHint:
     "Emite o proforma, apoi genereaza automat factura fiscala dupa ce este achitata integral.",
+  fxReferenceSourceTitle: "Cursuri valutare de referinta",
+  fxReferenceSourceDescription:
+    "Cursul de referinta oficial folosit la conversia sumelor in valuta pe facturi.",
+  fxReferenceSourceEcb: "Banca Centrala Europeana (BCE)",
+  fxReferenceSourceEcbHint:
+    "Foloseste cursurile de referinta ale BCE. Recomandat pentru majoritatea operatorilor din UE.",
+  fxReferenceSourceBnr: "Banca Nationala a Romaniei (BNR)",
+  fxReferenceSourceBnrHint:
+    "Foloseste cursurile de referinta BNR, conform cerintelor de facturare din Romania.",
 }
 
 export const recordBookingPaymentDialog = {

@@ -1,5 +1,24 @@
 # @voyant-travel/flights-react
 
+## 0.166.0
+
+### Minor Changes
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [0868f18]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/admin@0.126.2
+  - @voyant-travel/finance-react@0.166.0
+  - @voyant-travel/i18n@0.112.0
+  - @voyant-travel/flights@0.166.0
+  - @voyant-travel/relationships-react@0.166.0
+
 ## 0.165.0
 
 ### Patch Changes

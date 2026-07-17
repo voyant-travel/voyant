@@ -11,7 +11,9 @@ import {
 import type { EventBus } from "@voyant-travel/core"
 import {
   convertProformaToInvoice,
+  type InvoicingMode,
   issueInvoiceFromBooking,
+  issueProformaFromBooking,
   settleCoveredBookingPaymentSchedules,
 } from "@voyant-travel/finance"
 import { beginWorkflowRun, type WorkflowRunRecorder } from "@voyant-travel/workflow-runs"
@@ -32,11 +34,23 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
   force?: boolean
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
+/**
+ * Resolves the operator invoicing mode for the finalize saga. Injected
+ * from the deployment (via the finance operator-settings port). When
+ * absent — no operator-settings runtime wired — the mode is treated as
+ * `direct`, keeping the historical behaviour of minting a fiscal invoice
+ * straight from checkout.
+ */
+export type CatalogCheckoutInvoicingModeResolver = (
+  db: PostgresJsDatabase,
+) => Promise<InvoicingMode>
+
 function buildCheckoutFinalizeDeps(
   db: PostgresJsDatabase,
   eventBus: EventBus,
   recorder: WorkflowRunRecorder,
   generateContractPdf?: CatalogCheckoutContractPdfGenerator,
+  resolveInvoicingMode?: CatalogCheckoutInvoicingModeResolver,
 ): CheckoutFinalizeDeps {
   return {
     db,
@@ -94,13 +108,22 @@ function buildCheckoutFinalizeDeps(
       const today = new Date().toISOString().slice(0, 10)
       const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-      const invoice = await issueInvoiceFromBooking(
+      // In `proforma-first` mode a fresh checkout issues a proforma; the
+      // fiscal invoice is minted later, once the proforma is fully
+      // settled (the finance proforma-conversion subscriber does that).
+      // `direct` mode issues the fiscal invoice straight away — unchanged
+      // from before. When no resolver is wired the mode is `direct`.
+      const invoicingMode = resolveInvoicingMode ? await resolveInvoicingMode(db) : "direct"
+      const issueFromBooking =
+        invoicingMode === "proforma-first" ? issueProformaFromBooking : issueInvoiceFromBooking
+
+      const invoice = await issueFromBooking(
         db,
         {
           bookingId,
           issueDate: today,
           dueDate,
-          invoiceType: "invoice",
+          invoiceType: invoicingMode === "proforma-first" ? "proforma" : "invoice",
           convertedFromInvoiceId,
           notes: convertedFromInvoiceId
             ? `Converted from proforma ${convertedFromInvoiceId}`
@@ -223,6 +246,7 @@ export interface DispatchCheckoutFinalizeParams {
   resumeFromStep?: string
   seedResults?: Record<string, unknown>
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
+  resolveInvoicingMode?: CatalogCheckoutInvoicingModeResolver
 }
 
 function checkoutFinalizeInputRecord(input: CheckoutFinalizeInput): Record<string, unknown> {
@@ -289,6 +313,7 @@ export async function dispatchCheckoutFinalize(
     params.eventBus,
     recorder,
     params.generateContractPdf,
+    params.resolveInvoicingMode,
   )
   try {
     await runCheckoutFinalize(params.input, deps, {

@@ -3,6 +3,7 @@ import { runCheckoutFinalize } from "@voyant-travel/catalog/booking-engine"
 import {
   financeService,
   issueInvoiceFromBooking,
+  issueProformaFromBooking,
   settleCoveredBookingPaymentSchedules,
 } from "@voyant-travel/finance"
 import { beginWorkflowRun } from "@voyant-travel/workflow-runs"
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   confirmBooking: vi.fn(),
   recoverExpiredPaidBooking: vi.fn(),
   issueInvoiceFromBooking: vi.fn(),
+  issueProformaFromBooking: vi.fn(),
   convertProformaToInvoice: vi.fn(),
   createPayment: vi.fn(),
   settleCoveredBookingPaymentSchedules: vi.fn(),
@@ -35,6 +37,7 @@ vi.mock("@voyant-travel/catalog/booking-engine", () => ({
 vi.mock("@voyant-travel/finance", () => ({
   convertProformaToInvoice: mocks.convertProformaToInvoice,
   issueInvoiceFromBooking: mocks.issueInvoiceFromBooking,
+  issueProformaFromBooking: mocks.issueProformaFromBooking,
   settleCoveredBookingPaymentSchedules: mocks.settleCoveredBookingPaymentSchedules,
   financeService: {
     createPayment: mocks.createPayment,
@@ -50,6 +53,7 @@ describe("dispatchCheckoutFinalize", () => {
     vi.clearAllMocks()
     mocks.confirmBooking.mockResolvedValue({ status: "ok" })
     mocks.issueInvoiceFromBooking.mockResolvedValue({ id: "inv_final" })
+    mocks.issueProformaFromBooking.mockResolvedValue({ id: "pro_final" })
     mocks.createPayment.mockResolvedValue({ id: "pay_card" })
     mocks.settleCoveredBookingPaymentSchedules.mockResolvedValue([])
     mocks.beginWorkflowRun.mockResolvedValue(createRecorder())
@@ -148,6 +152,86 @@ describe("dispatchCheckoutFinalize", () => {
         correlationId: "ps_card",
       }),
     )
+  })
+
+  describe("invoicing mode", () => {
+    async function runFinalize(
+      resolveInvoicingMode?: (db: unknown) => Promise<"direct" | "proforma-first">,
+    ) {
+      const db = createCheckoutFinalizeDb()
+      await dispatchCheckoutFinalize({
+        db: db as never,
+        eventBus: { emit: vi.fn() } as never,
+        input: { bookingId: "book_card", paymentSessionId: "ps_card", paymentIntent: "card" },
+        trigger: "payment.completed",
+        correlationId: "ps_card",
+        tags: [],
+        resolveInvoicingMode,
+      })
+      return db
+    }
+
+    it("issues a proforma when the operator runs proforma-first", async () => {
+      await runFinalize(async () => "proforma-first")
+
+      expect(issueProformaFromBooking).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ bookingId: "book_card", invoiceType: "proforma" }),
+        expect.any(Object),
+        expect.any(Object),
+      )
+      expect(issueInvoiceFromBooking).not.toHaveBeenCalled()
+    })
+
+    it("issues a fiscal invoice in direct mode (unchanged)", async () => {
+      await runFinalize(async () => "direct")
+
+      expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ bookingId: "book_card", invoiceType: "invoice" }),
+        expect.any(Object),
+        expect.any(Object),
+      )
+      expect(issueProformaFromBooking).not.toHaveBeenCalled()
+    })
+
+    it("falls back to direct when no invoicing-mode resolver is wired", async () => {
+      await runFinalize(undefined)
+
+      expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ invoiceType: "invoice" }),
+        expect.any(Object),
+        expect.any(Object),
+      )
+      expect(issueProformaFromBooking).not.toHaveBeenCalled()
+    })
+
+    it("converts an existing proforma regardless of the operator mode", async () => {
+      // A bank-transfer checkout already minted a proforma; the finalize
+      // step then converts it to a fiscal invoice. That conversion path
+      // must win over the mode default — proforma-first never re-issues a
+      // second proforma on top of the one being settled.
+      mocks.runCheckoutFinalize.mockImplementationOnce(async (input, deps) => {
+        await deps.confirmBooking(input.bookingId)
+        await deps.issueInvoice({ bookingId: input.bookingId, convertedFromInvoiceId: "pro_1" })
+      })
+      mocks.convertProformaToInvoice.mockResolvedValue({
+        status: "ok",
+        invoice: { id: "inv_from_pro" },
+      })
+
+      await runFinalize(async () => "proforma-first")
+
+      expect(mocks.convertProformaToInvoice).toHaveBeenCalledWith(
+        expect.anything(),
+        "pro_1",
+        {},
+        expect.any(Object),
+      )
+      expect(issueProformaFromBooking).not.toHaveBeenCalled()
+      expect(issueInvoiceFromBooking).not.toHaveBeenCalled()
+    })
   })
 })
 

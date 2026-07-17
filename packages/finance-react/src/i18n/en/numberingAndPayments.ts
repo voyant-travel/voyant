@@ -348,6 +348,11 @@ export const taxesPage = {
     "Condition must include at least one valid row. Country values must be two-letter ISO codes.",
   savePolicyProfileFailed: "Failed to save tax policy profile",
   savePolicyRuleFailed: "Failed to save tax policy rule",
+}
+
+export const invoicingPage = {
+  title: "Invoicing",
+  description: "Control how invoices are issued and which official rates convert foreign currency.",
   invoicingModeTitle: "Invoicing mode",
   invoicingModeDescription:
     "Choose how invoices are issued for new bookings. Existing invoices are unaffected.",
@@ -356,6 +361,13 @@ export const taxesPage = {
   invoicingModeProformaFirst: "Proforma first",
   invoicingModeProformaFirstHint:
     "Issue a proforma, then mint the fiscal invoice automatically once it is paid in full.",
+  fxReferenceSourceTitle: "Reference exchange rates",
+  fxReferenceSourceDescription:
+    "Official reference rate used when converting foreign-currency amounts on invoices.",
+  fxReferenceSourceEcb: "European Central Bank (ECB)",
+  fxReferenceSourceEcbHint: "Use the ECB euro reference rates. Recommended for most EU operators.",
+  fxReferenceSourceBnr: "National Bank of Romania (BNR)",
+  fxReferenceSourceBnrHint: "Use the BNR reference rates, as required for Romanian invoicing.",
 }
 
 export const recordBookingPaymentDialog = {

@@ -36,7 +36,8 @@
                 "properties": {
                   "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
                   "taxPolicyProfileId": { "type": ["string", "null"] },
-                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
+                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] },
+                  "fxReferenceSource": { "type": "string", "enum": ["ecb", "bnr"] }
                 }
               }
             }
@@ -76,11 +77,12 @@
     "schemas": {
       "BookingTaxSettings": {
         "type": "object",
-        "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode"],
+        "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode", "fxReferenceSource"],
         "properties": {
           "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
           "taxPolicyProfileId": { "type": ["string", "null"] },
-          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
+          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] },
+          "fxReferenceSource": { "type": "string", "enum": ["ecb", "bnr"] }
         }
       }
     }

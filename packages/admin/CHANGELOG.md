@@ -1,5 +1,13 @@
 # @voyant-travel/admin
 
+## 0.126.2
+
+### Patch Changes
+
+- 0868f18: Add the app registry foundation with closed manifest validation, deterministic release compilation, protected manifest ingestion, and admin API wiring.
+- Updated dependencies [3062a73]
+  - @voyant-travel/i18n@0.112.0
+
 ## 0.126.1
 
 ### Patch Changes
