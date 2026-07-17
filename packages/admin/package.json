@@ -39,7 +39,8 @@
     "./lib/i18n": "./src/lib/i18n.tsx",
     "./lib/initials": "./src/lib/initials.ts",
     "./types": "./src/types.ts",
-    "./ui-extensions": "./src/ui-extensions/index.ts"
+    "./ui-extensions": "./src/ui-extensions/index.ts",
+    "./ui-extensions/registry": "./src/ui-extensions/registry.ts"
   },
   "scripts": {
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
@@ -259,6 +260,11 @@
         "types": "./dist/ui-extensions/index.d.ts",
         "import": "./dist/ui-extensions/index.js",
         "default": "./dist/ui-extensions/index.js"
+      },
+      "./ui-extensions/registry": {
+        "types": "./dist/ui-extensions/registry.d.ts",
+        "import": "./dist/ui-extensions/registry.js",
+        "default": "./dist/ui-extensions/registry.js"
       }
     },
     "main": "./dist/index.js",

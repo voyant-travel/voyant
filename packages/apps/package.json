@@ -1,0 +1,127 @@
+{
+  "name": "@voyant-travel/apps",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./api-runtime": "./src/api-runtime.ts",
+    "./compiler": "./src/compiler.ts",
+    "./contracts": "./src/contracts.ts",
+    "./ingestion": "./src/ingestion.ts",
+    "./routes": "./src/routes.ts",
+    "./schema": "./src/schema.ts",
+    "./service": "./src/service.ts",
+    "./voyant": "./src/voyant.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/admin-extension-sdk": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/custom-fields": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./api-runtime": {
+        "types": "./dist/api-runtime.d.ts",
+        "import": "./dist/api-runtime.js",
+        "default": "./dist/api-runtime.js"
+      },
+      "./compiler": {
+        "types": "./dist/compiler.d.ts",
+        "import": "./dist/compiler.js",
+        "default": "./dist/compiler.js"
+      },
+      "./contracts": {
+        "types": "./dist/contracts.d.ts",
+        "import": "./dist/contracts.js",
+        "default": "./dist/contracts.js"
+      },
+      "./ingestion": {
+        "types": "./dist/ingestion.d.ts",
+        "import": "./dist/ingestion.js",
+        "default": "./dist/ingestion.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/apps"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "runtime": {
+      "entry": "./api-runtime",
+      "export": "createAppsApiModule"
+    },
+    "compatibleWith": {
+      "framework": ">=0.44.0",
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    },
+    "schema": "./schema"
+  }
+}
