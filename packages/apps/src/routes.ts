@@ -1,4 +1,9 @@
-import { parseJsonBody, parseQuery, RequestValidationError } from "@voyant-travel/hono"
+import {
+  parseJsonBody,
+  parseQuery,
+  RequestValidationError,
+  requireUserId,
+} from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -8,6 +13,8 @@ import {
   appListQuerySchema,
   appOAuthAuthorizeQuerySchema,
   appOAuthTokenSchema,
+  appSessionTokenExchangeSchema,
+  appSessionTokenIssueSchema,
   appWebhookReplaySchema,
   createCustomAppRegistrationSchema,
   releaseManifestFetchSchema,
@@ -15,6 +22,7 @@ import {
 } from "./contracts.js"
 import { createAppOAuthService } from "./oauth-service.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
+import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
 
 type Env = {
@@ -31,12 +39,30 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
     accessCatalog: AccessCatalog
     deploymentId: string
   }
+  /**
+   * Enables the iframe session-token broker. Requires {@link oauth} for the
+   * deployment audience and the actor-token-exchange primitive. `secret` is the
+   * root secret the signing key is HKDF-derived from.
+   */
+  sessionToken?: {
+    secret: string
+    ttlSeconds?: number
+  }
 }
 
 export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const routes = new Hono<Env>()
   const service = createAppsService(options)
   const oauth = options.oauth ? createAppOAuthService(options.oauth) : null
+  const sessionTokens =
+    oauth && options.oauth && options.sessionToken
+      ? createAppSessionTokenService({
+          secret: options.sessionToken.secret,
+          ttlSeconds: options.sessionToken.ttlSeconds,
+          deploymentId: options.oauth.deploymentId,
+          oauth,
+        })
+      : null
 
   routes.get("/", async (c) => {
     const query = parseQuery(c, appListQuerySchema)
@@ -110,6 +136,38 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       body.actorId,
     )
     return c.json(result, 200)
+  })
+
+  // Staff-authenticated: the admin host requests a short-lived session token for
+  // the current viewer + entity/slot context. The viewer is taken from the
+  // authenticated session, never from the frame.
+  routes.post("/installations/:installationId/session-token", async (c) => {
+    if (!sessionTokens) return c.json({ error: "App session tokens are not configured" }, 501)
+    const { installationId } = parseInstallationParams(c.req.param())
+    const viewerId = requireUserId(c)
+    const body = await parseJsonBody(c, appSessionTokenIssueSchema)
+    const issued = await sessionTokens.issue(c.get("db"), {
+      installationId,
+      viewerId,
+      entity: body.entity ?? null,
+      slot: body.slot ?? null,
+    })
+    return c.json({ data: issued }, 201)
+  })
+
+  // App-backend-facing: exchange a presented session token for online actor
+  // access. Client-authenticated; bounded by viewer ∩ app grants.
+  routes.post("/oauth/session-token/exchange", async (c) => {
+    if (!sessionTokens) return c.json({ error: "App session tokens are not configured" }, 501)
+    const body = await parseJsonBody(c, appSessionTokenExchangeSchema)
+    const token = await sessionTokens.exchange(c.get("db"), {
+      token: body.session_token,
+      clientId: body.client_id,
+      clientSecret: body.client_secret,
+      viewerScopes: body.viewer_scopes,
+      contextualScopes: body.contextual_scopes,
+    })
+    return c.json(token, 200)
   })
 
   routes.get("/:appId", async (c) => {

@@ -10,13 +10,17 @@
     "./compiler": "./src/compiler.ts",
     "./contracts": "./src/contracts.ts",
     "./consent": "./src/consent.ts",
+    "./extension-resolution": "./src/extension-resolution.ts",
     "./ingestion": "./src/ingestion.ts",
+    "./locale-resolution": "./src/locale-resolution.ts",
     "./installation-service": "./src/installation-service.ts",
     "./oauth-crypto": "./src/oauth-crypto.ts",
     "./oauth-service": "./src/oauth-service.ts",
     "./routes": "./src/routes.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
+    "./session-token": "./src/session-token.ts",
+    "./session-token-service": "./src/session-token-service.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -86,10 +90,20 @@
         "import": "./dist/consent.js",
         "default": "./dist/consent.js"
       },
+      "./extension-resolution": {
+        "types": "./dist/extension-resolution.d.ts",
+        "import": "./dist/extension-resolution.js",
+        "default": "./dist/extension-resolution.js"
+      },
       "./ingestion": {
         "types": "./dist/ingestion.d.ts",
         "import": "./dist/ingestion.js",
         "default": "./dist/ingestion.js"
+      },
+      "./locale-resolution": {
+        "types": "./dist/locale-resolution.d.ts",
+        "import": "./dist/locale-resolution.js",
+        "default": "./dist/locale-resolution.js"
       },
       "./installation-service": {
         "types": "./dist/installation-service.d.ts",
@@ -120,6 +134,16 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./session-token": {
+        "types": "./dist/session-token.d.ts",
+        "import": "./dist/session-token.js",
+        "default": "./dist/session-token.js"
+      },
+      "./session-token-service": {
+        "types": "./dist/session-token-service.d.ts",
+        "import": "./dist/session-token-service.js",
+        "default": "./dist/session-token-service.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

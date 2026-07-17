@@ -2,8 +2,10 @@ export * from "./access-boundary.js"
 export * from "./compiler.js"
 export * from "./consent.js"
 export * from "./contracts.js"
+export * from "./extension-resolution.js"
 export * from "./ingestion.js"
 export * from "./installation-service.js"
+export * from "./locale-resolution.js"
 export * from "./oauth-crypto.js"
 export * from "./oauth-service.js"
 export { createAppsAdminRoutes } from "./routes.js"
@@ -34,11 +36,14 @@ export {
   appReleaseStateEnum,
   appReleases,
   appSecretReferences,
+  appSessionTokens,
   apps,
   appWebhookSubscriptionStatusEnum,
   appWebhookSubscriptions,
 } from "./schema.js"
 export { createAppsService } from "./service.js"
+export * from "./session-token.js"
+export * from "./session-token-service.js"
 export type { AppWebhookDeliveryOptions } from "./webhook-delivery.js"
 export {
   createAppWebhookDeliveryStore,

@@ -145,6 +145,7 @@ export const typeIdSchemas = {
   appExtensionInstallation: typeIdSchema("app_extension_installations"),
   appWebhookSubscription: typeIdSchema("app_webhook_subscriptions"),
   appAuditEvent: typeIdSchema("app_audit_events"),
+  appSessionToken: typeIdSchema("app_session_tokens"),
   invoice: typeIdSchema("invoices"),
   paymentInstrument: typeIdSchema("payment_instruments"),
   paymentSession: typeIdSchema("payment_sessions"),
