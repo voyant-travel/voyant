@@ -22,7 +22,7 @@ export const createAppsApiModule = defineGraphRuntimeFactory(async ({ getPorts, 
     module: { name: "apps" },
     adminRoutes: createAppsAdminRoutes({ eventCatalog: graph.eventCatalog }),
     lazyRoutes: {
-      paths: ["/v1/app"],
+      paths: ["/v1/app", "/v1/app/*"],
       load: async () =>
         createAppsAppApiRoutes({
           customFieldTargets,

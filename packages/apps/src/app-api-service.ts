@@ -258,6 +258,19 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     requiredScopes: readonly string[],
   ) {
     enforceRateLimit(context)
+    // The token's own scopes are the authority: for online tokens this is the
+    // narrowed viewer/context intersection minted at exchange, so an endpoint
+    // must not be reachable just because the installation was granted its
+    // scope. The installation-grant check below stays as defense in depth.
+    const tokenScopes = new Set(context.scopes)
+    const missingFromToken = requiredScopes.filter((scope) => !tokenScopes.has(scope))
+    if (missingFromToken.length > 0) {
+      throw new ApiHttpError("App token is missing required scopes", {
+        status: 403,
+        code: "app_api_token_scope_missing",
+        details: { scopes: [...missingFromToken].sort() },
+      })
+    }
     const installation = await assertActiveAppInstallationAccess(db, {
       installationId: context.installationId,
       requiredScopes,

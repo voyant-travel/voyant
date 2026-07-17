@@ -45,6 +45,9 @@ type Env = {
   }
 }
 
+/** Absolute mount prefix for the versioned App API surface. */
+export const APP_API_BASE_PATH = "/v1/app"
+
 const idParamSchema = z.object({ id: z.string().min(1) })
 const entityParamSchema = z.object({ entity: z.string().min(1) })
 const definitionBodySchema = z
@@ -239,7 +242,13 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
     )
   })
 
-  return routes
+  // Lazy route families forward the original absolute URL, so the loaded
+  // sub-app must expose absolute paths. Mount the relative handlers under the
+  // App API prefix; the matchers in api-runtime install `/v1/app` and
+  // `/v1/app/*` up front.
+  const app = new Hono<Env>()
+  app.route(APP_API_BASE_PATH, routes)
+  return app
 }
 
 function appContext(c: Context<Env>): AppApiAccessContext {

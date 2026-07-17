@@ -72,18 +72,34 @@ describe("App API service boundary", () => {
     await expect(
       service.requireAccess(
         createAccessDb({ status: "paused", scopes: ["app-installation:read"] }),
-        context,
+        { ...context, scopes: ["app-installation:read"] },
         ["app-installation:read"],
       ),
     ).rejects.toMatchObject({ status: 403, code: "app_installation_not_active" })
   })
 
-  it("rejects direct service calls when required scopes are not granted", async () => {
+  it("rejects when the installation grant is missing even if the token carries the scope", async () => {
     const service = createAppApiService()
 
     await expect(
-      service.requireAccess(createAccessDb({ scopes: [] }), context, ["app-installation:read"]),
+      service.requireAccess(
+        createAccessDb({ scopes: [] }),
+        { ...context, scopes: ["app-installation:read"] },
+        ["app-installation:read"],
+      ),
     ).rejects.toMatchObject({ status: 403, code: "app_installation_scope_missing" })
+  })
+
+  it("rejects when a narrowed online token lacks the scope the installation was granted", async () => {
+    const service = createAppApiService()
+
+    await expect(
+      service.requireAccess(
+        createAccessDb({ scopes: ["app-installation:read", "finance-documents:read"] }),
+        { ...context, tokenMode: "online", scopes: ["app-installation:read"] },
+        ["finance-documents:read"],
+      ),
+    ).rejects.toMatchObject({ status: 403, code: "app_api_token_scope_missing" })
   })
 
   it("fails closed when the requested API version is outside the installed release range", async () => {
@@ -95,7 +111,7 @@ describe("App API service boundary", () => {
           scopes: ["app-installation:read"],
           releaseRange: { min: "2026-08-01", max: "2026-12-31" },
         }),
-        context,
+        { ...context, scopes: ["app-installation:read"] },
         ["app-installation:read"],
       ),
     ).rejects.toMatchObject({ status: 426, code: "app_api_version_out_of_range" })
@@ -108,11 +124,15 @@ describe("App API service boundary", () => {
     })
 
     await expect(
-      service.executeFinanceAction(createAccessDb({ scopes: ["finance-actions:issue"] }), context, {
-        action: "issue",
-        idempotencyKey: "idem_1",
-        payload: {},
-      }),
+      service.executeFinanceAction(
+        createAccessDb({ scopes: ["finance-actions:issue"] }),
+        { ...context, scopes: ["finance-actions:issue"] },
+        {
+          action: "issue",
+          idempotencyKey: "idem_1",
+          payload: {},
+        },
+      ),
     ).rejects.toMatchObject({ status: 403, code: "app_api_finance_approval_required" })
     expect(executeAction).not.toHaveBeenCalled()
   })

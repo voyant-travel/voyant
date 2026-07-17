@@ -86,4 +86,29 @@ describe("app OAuth consent computation", () => {
       }),
     ).toThrow("Required app scopes are not grantable")
   })
+
+  it("grants App API scopes marked remoteSafe on the resource without a matching preset", () => {
+    const withRemoteSafe: AccessCatalog = {
+      ...catalog,
+      resources: [
+        ...catalog.resources,
+        {
+          id: "app-installation",
+          unitId: "apps",
+          resource: "app-installation",
+          label: "App installation",
+          description: "Self",
+          wildcard: "explicit-resource",
+          remoteSafe: true,
+          actions: [{ action: "read", label: "Read", description: "Read" }],
+        },
+      ],
+    }
+    const consent = computeAppConsent({
+      release: release(["app-installation:read"], []),
+      accessCatalog: withRemoteSafe,
+      operatorGrantedScopes: ["app-installation:read"],
+    })
+    expect(consent.grantedScopes).toEqual(["app-installation:read"])
+  })
 })
