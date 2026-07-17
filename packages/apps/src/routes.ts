@@ -1,3 +1,5 @@
+import type { EventBus } from "@voyant-travel/core/events"
+import type { createCustomFieldsService } from "@voyant-travel/custom-fields"
 import {
   parseJsonBody,
   parseQuery,
@@ -9,7 +11,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 import {
+  activateInstallationBodySchema,
   appCredentialRevocationSchema,
+  appInstallationAuditQuerySchema,
+  appInstallationListQuerySchema,
   appListQuerySchema,
   appOAuthAuthorizeQuerySchema,
   appOAuthTokenSchema,
@@ -17,13 +22,24 @@ import {
   appSessionTokenIssueSchema,
   appWebhookReplaySchema,
   createCustomAppRegistrationSchema,
+  installAppSchema,
+  lifecycleActionBodySchema,
   releaseManifestFetchSchema,
   releaseManifestUploadSchema,
 } from "./contracts.js"
+import {
+  listAppReleases,
+  listInstallationAudit,
+  listInstallationSummaries,
+  loadInstallationDetail,
+} from "./installation-read-model.js"
+import { createAppInstallationService } from "./installation-service.js"
 import { createAppOAuthService } from "./oauth-service.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
+
+type CustomFieldsService = ReturnType<typeof createCustomFieldsService>
 
 type Env = {
   Variables: {
@@ -48,11 +64,26 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
     secret: string
     ttlSeconds?: number
   }
+  /**
+   * Deployment identity used when installing over HTTP. Falls back to
+   * {@link oauth}'s deployment id when omitted.
+   */
+  deploymentId?: string
+  /** Platform API version used to gate release compatibility. */
+  platformApiVersion?: string
+  eventBus?: EventBus
+  customFields?: CustomFieldsService
 }
 
 export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const routes = new Hono<Env>()
   const service = createAppsService(options)
+  const installations = createAppInstallationService({
+    deploymentId: options.oauth?.deploymentId ?? options.deploymentId,
+    platformApiVersion: options.platformApiVersion,
+    eventBus: options.eventBus,
+    customFields: options.customFields,
+  })
   const oauth = options.oauth ? createAppOAuthService(options.oauth) : null
   const sessionTokens =
     oauth && options.oauth && options.sessionToken
@@ -173,10 +204,99 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json(token, 200)
   })
 
+  routes.post("/install", async (c) => {
+    const body = await parseJsonBody(c, installAppSchema)
+    const result = await installations.install(c.get("db"), {
+      appId: body.appId,
+      releaseId: body.releaseId,
+      actorId: body.actorId,
+      grantedOptionalScopes: body.grantedOptionalScopes,
+      updatePolicy: body.updatePolicy,
+      deploymentId: body.deploymentId,
+    })
+    return c.json({ data: result }, 201)
+  })
+
+  routes.get("/installations", async (c) => {
+    const query = parseQuery(c, appInstallationListQuerySchema)
+    return c.json(await listInstallationSummaries(c.get("db"), query), 200)
+  })
+
+  routes.get("/installations/:installationId", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const detail = await loadInstallationDetail(c.get("db"), installationId, {
+      platformApiVersion: options.platformApiVersion,
+    })
+    return detail
+      ? c.json({ data: detail }, 200)
+      : c.json({ error: "App installation not found" }, 404)
+  })
+
+  routes.get("/installations/:installationId/audit", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const query = parseQuery(c, appInstallationAuditQuerySchema)
+    const data = await listInstallationAudit(c.get("db"), installationId, query.limit)
+    return c.json({ data }, 200)
+  })
+
+  routes.post("/installations/:installationId/pause", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const body = await parseJsonBody(c, lifecycleActionBodySchema)
+    const result = await installations.pause(c.get("db"), { installationId, actorId: body.actorId })
+    return c.json({ data: result }, 200)
+  })
+
+  routes.post("/installations/:installationId/resume", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const body = await parseJsonBody(c, lifecycleActionBodySchema)
+    const result = await installations.resume(c.get("db"), {
+      installationId,
+      actorId: body.actorId,
+    })
+    return c.json({ data: result }, 200)
+  })
+
+  routes.post("/installations/:installationId/uninstall", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const body = await parseJsonBody(c, lifecycleActionBodySchema)
+    const result = await installations.uninstall(c.get("db"), {
+      installationId,
+      actorId: body.actorId,
+    })
+    return c.json({ data: result }, 200)
+  })
+
+  routes.post("/installations/:installationId/activate", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const body = await parseJsonBody(c, activateInstallationBodySchema)
+    const result = await installations.upgrade(c.get("db"), {
+      installationId,
+      releaseId: body.releaseId,
+      actorId: body.actorId,
+    })
+    return c.json({ data: result }, 200)
+  })
+
+  routes.post("/installations/:installationId/purge-preview", async (c) => {
+    const { installationId } = parseInstallationParams(c.req.param())
+    const body = await parseJsonBody(c, lifecycleActionBodySchema)
+    const result = await installations.purgePreview(c.get("db"), {
+      installationId,
+      actorId: body.actorId,
+    })
+    return c.json({ data: result }, 200)
+  })
+
   routes.get("/:appId", async (c) => {
     const { appId } = parseParams(c.req.param())
     const app = await service.get(c.get("db"), appId)
     return app ? c.json({ data: app }, 200) : c.json({ error: "App not found" }, 404)
+  })
+
+  routes.get("/:appId/releases", async (c) => {
+    const { appId } = parseParams(c.req.param())
+    const data = await listAppReleases(c.get("db"), appId)
+    return c.json({ data }, 200)
   })
 
   routes.post("/:appId/releases", async (c) => {
