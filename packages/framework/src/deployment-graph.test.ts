@@ -1806,6 +1806,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_INVALID_ENTITY_ID",
       "VOYANT_GRAPH_INVALID_FACET",
       "VOYANT_GRAPH_INVALID_ID",
+      "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
       "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
       "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
       "VOYANT_GRAPH_INVALID_SCOPE",
@@ -1930,6 +1931,97 @@ describe("deployment graph v1", () => {
     })
 
     expect(() => deployment.doctor.expectClean()).toThrow(/VOYANT_GRAPH_MISSING_CAPABILITY/)
+  })
+
+  it("requires exactly one explicit payment adapter for payment-capable graphs", async () => {
+    const financeModule = defineModule({
+      id: "@voyant-travel/finance",
+      provides: { capabilities: ["finance.payment-sessions"] },
+    })
+    const netopiaAdapter = definePlugin({
+      id: "@acme/payment-netopia",
+      providers: [
+        {
+          id: "@acme/payment-netopia#provider",
+          port: "payments.adapter.runtime",
+          selection: { role: "payments", value: "netopia" },
+          runtime: { entry: "@acme/payment-netopia", export: "createPaymentAdapter" },
+        },
+      ],
+    })
+
+    const missing = await resolveDeploymentGraph({
+      project: defineProject({ modules: [financeModule], plugins: [netopiaAdapter] }),
+      deployment: {
+        target: "node",
+        providers: { payments: "none" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(missing.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+          facet: "deployment.providers.payments",
+        }),
+      ]),
+    )
+
+    const selected = await resolveDeploymentGraph({
+      project: defineProject({ modules: [financeModule], plugins: [netopiaAdapter] }),
+      deployment: {
+        target: "node",
+        providers: { payments: "netopia" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(selected.diagnostics).toEqual([])
+
+    const duplicate = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [financeModule],
+        plugins: [
+          netopiaAdapter,
+          definePlugin({
+            id: "@acme/payment-netopia-secondary",
+            providers: [
+              {
+                id: "@acme/payment-netopia-secondary#provider",
+                port: "payments.adapter.runtime",
+                selection: { role: "payments", value: "netopia" },
+                runtime: {
+                  entry: "@acme/payment-netopia-secondary",
+                  export: "createPaymentAdapter",
+                },
+              },
+            ],
+          }),
+        ],
+      }),
+      deployment: {
+        target: "node",
+        providers: { payments: "netopia" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(duplicate.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+          facet: "providers.selection",
+        }),
+      ]),
+    )
+
+    const custom = await resolveDeploymentGraph({
+      project: defineProject({ modules: [financeModule] }),
+      deployment: {
+        target: "node",
+        providers: { payments: "custom" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(custom.diagnostics).toEqual([])
   })
 
   it("compiles a deterministic catalog and rejects duplicate access authorities", async () => {

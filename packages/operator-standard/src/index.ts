@@ -109,6 +109,7 @@ export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
     scheduledJobs: "none",
     workflows: "self-hosted",
     outboundWebhooks: "postgres",
+    payments: "custom",
   },
 }
 

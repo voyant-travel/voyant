@@ -1480,6 +1480,8 @@
       "@voyant-travel/operator-standard/standard-route-files": [
         "../operator-standard/dist/standard-route-files.d.ts"
       ],
+      "@voyant-travel/payments": ["../payments/dist/index.d.ts"],
+      "@voyant-travel/payments/conformance": ["../payments/dist/conformance.d.ts"],
       "@voyant-travel/plugin-sanity-cms": ["../plugins/sanity-cms/dist/index.d.ts"],
       "@voyant-travel/plugin-sanity-cms/client": ["../plugins/sanity-cms/dist/client.d.ts"],
       "@voyant-travel/plugin-sanity-cms/plugin": ["../plugins/sanity-cms/dist/plugin.d.ts"],

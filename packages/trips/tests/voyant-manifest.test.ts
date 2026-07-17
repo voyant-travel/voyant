@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs"
+import { commerceCardPaymentRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import {
+  PAYMENT_ADAPTER_CONTRACT_VERSION,
+  type PaymentAdapter,
+  paymentAdapterRuntimePort,
+} from "@voyant-travel/payments"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -11,6 +17,7 @@ import {
   tripsRoutesRuntimePort,
 } from "../src/index.js"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "../src/payment-subscriber-runtime.js"
+import { createTripsRuntimePortContribution } from "../src/runtime-contributor.js"
 import { tripsVoyantModule } from "../src/voyant.js"
 
 describe("trips deployment manifest", () => {
@@ -30,6 +37,7 @@ describe("trips deployment manifest", () => {
       runtimePorts: [
         { id: "trips.routes-runtime" },
         { id: "trips.database-runtime" },
+        { id: "payments.adapter.runtime", optional: true },
         { id: "catalog.runtime-services" },
         { id: "commerce.checkout-api-options" },
         { id: "flights.runtime" },
@@ -68,6 +76,35 @@ describe("trips deployment manifest", () => {
 
   it("owns the executable payment completion runtime reference", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
+  })
+
+  it("publishes the Commerce card-payment bridge only for a selected payment adapter", () => {
+    const primitives = {
+      database: { transaction: vi.fn() },
+    } as never
+    const adapter = stubPaymentAdapter()
+
+    const withoutAdapter = createTripsRuntimePortContribution({
+      primitives,
+      hasRuntimePort: () => false,
+      getRuntimePort: vi.fn(),
+    })
+    expect(withoutAdapter).not.toHaveProperty(commerceCardPaymentRuntimePort.id)
+
+    const withHostCommerce = createTripsRuntimePortContribution({
+      primitives,
+      hasRuntimePort: (port) =>
+        port.id === commerceCardPaymentRuntimePort.id || port.id === paymentAdapterRuntimePort.id,
+      getRuntimePort: vi.fn(async () => adapter) as never,
+    })
+    expect(withHostCommerce).not.toHaveProperty(commerceCardPaymentRuntimePort.id)
+
+    const withAdapter = createTripsRuntimePortContribution({
+      primitives,
+      hasRuntimePort: (port) => port.id === paymentAdapterRuntimePort.id,
+      getRuntimePort: vi.fn(async () => adapter) as never,
+    })
+    expect(withAdapter).toHaveProperty(commerceCardPaymentRuntimePort.id)
   })
 
   it("scopes selected Trips navigation, routes, and contributions", () => {
@@ -235,4 +272,36 @@ function publicOperationApiIds(document: unknown): unknown[] {
       (operation) => (operation as Record<string, unknown>)["x-voyant-api-id"],
     ),
   )
+}
+
+function stubPaymentAdapter(): PaymentAdapter {
+  return {
+    id: "test-payments",
+    label: "Test Payments",
+    contractVersion: PAYMENT_ADAPTER_CONTRACT_VERSION,
+    mode: "test",
+    capabilities: {
+      hostedCheckout: true,
+      redirectCheckout: true,
+      authorize: false,
+      capture: false,
+      void: false,
+      refund: false,
+      status: false,
+      callbackSignatureVerification: true,
+      idempotencyKeys: true,
+      retrySafeInitiation: true,
+    },
+    initiate: vi.fn(async (_context, input) => ({
+      nextState: "requires_redirect",
+      idempotencyKey: input.idempotencyKey,
+      checkout: { kind: "redirect", url: "https://payments.example/checkout" },
+      processorSessionId: "processor_session_1",
+    })),
+    verifyCallback: vi.fn(async () => ({ verified: false, reason: "malformed" })),
+    health: vi.fn(async () => ({
+      status: "ok",
+      checkedAt: "2026-07-17T00:00:00.000Z",
+    })),
+  }
 }

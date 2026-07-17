@@ -1,12 +1,12 @@
 /** Standard statically composed payment-link runtime selected by Storefront. */
 
 import type { CommerceCardPaymentRuntime } from "@voyant-travel/commerce/runtime-port"
-import type { CardPaymentStarter } from "@voyant-travel/finance/card-payment"
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
+import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
@@ -17,52 +17,45 @@ import type { Context } from "hono"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import { tripsService } from "./service.js"
 
-let cardPaymentStarterPromise: Promise<CardPaymentStarter | null> | undefined
+const FINANCE_CARD_PAYMENT_MODULE = "@voyant-travel/finance/card-payment"
 
-function resolveCardPaymentStarter(): Promise<CardPaymentStarter | null> {
-  cardPaymentStarterPromise ??= import("@voyant-travel/plugin-netopia")
-    .then((module) => module.netopiaCardPaymentStarter())
-    .catch((error: unknown) => {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ERR_MODULE_NOT_FOUND" &&
-        /Cannot find (?:package|module) ['"]@voyant-travel\/plugin-netopia['"]/.test(error.message)
-      ) {
-        return null
-      }
-      throw error
-    })
-  return cardPaymentStarterPromise
-}
+type StartCardPayment = ReturnType<CommerceCardPaymentRuntime["createStartCardPayment"]>
+type CardPaymentStartArgs = Parameters<NonNullable<StartCardPayment>>[0]
+type CardPaymentStartResult = Awaited<ReturnType<NonNullable<StartCardPayment>>>
+type PaymentAdapterCardPaymentStarterFactory = (
+  adapter: PaymentAdapter,
+  options: {
+    resolveContext(c: Context): PaymentAdapterRuntimeContext
+    resolveRuntime(c: Context): { eventBus?: unknown }
+    idempotencyKey(sessionId: string): string
+  },
+) => (context: Context, args: CardPaymentStartArgs) => Promise<CardPaymentStartResult>
 
 /** Standard selected payment provider exposed through Commerce's neutral port. */
-export function createCommerceCardPaymentRuntime(): CommerceCardPaymentRuntime {
+export function createCommerceCardPaymentRuntime(
+  adapter: PaymentAdapter,
+): CommerceCardPaymentRuntime {
   return {
-    createStartCardPayment:
-      (context) =>
-      async ({ db, sessionId, billing, description, returnUrl }) => {
-        const cardPaymentStarter = await resolveCardPaymentStarter()
-        if (!cardPaymentStarter) return null
-        return cardPaymentStarter(context, {
-          db,
-          sessionId,
-          billing: {
-            email: billing.email,
-            phone: "0000000000",
-            firstName: billing.firstName,
-            lastName: billing.lastName,
-            city: "TBD",
-            country: 642,
-            state: "TBD",
-            postalCode: "00000",
-            details: "Pending — customer to confirm at payment.",
-          },
-          description,
-          returnUrl,
-        })
-      },
+    createStartCardPayment: (context) => (args) => startAdapterCardPayment(adapter, context, args),
   }
+}
+
+async function startAdapterCardPayment(
+  adapter: PaymentAdapter,
+  context: Context,
+  args: CardPaymentStartArgs,
+): Promise<CardPaymentStartResult> {
+  const { createPaymentAdapterCardPaymentStarter } = (await import(
+    FINANCE_CARD_PAYMENT_MODULE
+  )) as {
+    createPaymentAdapterCardPaymentStarter: PaymentAdapterCardPaymentStarterFactory
+  }
+  const starter = createPaymentAdapterCardPaymentStarter(adapter, {
+    resolveContext: (c) => ({ env: c.env }),
+    resolveRuntime: (c) => ({ eventBus: c.var.eventBus }),
+    idempotencyKey: (sessionId) => `payment:${sessionId}`,
+  })
+  return starter(context, args)
 }
 
 interface PaymentConfigBindings {
@@ -121,35 +114,9 @@ async function resolveBankTransferDetails(c: Context) {
 }
 
 /** Start a fresh card payment via this deployment's processor, or report it isn't configured. */
-const startCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async (c, session) => {
-  const cardPaymentStarter = await resolveCardPaymentStarter()
-  if (!cardPaymentStarter) return { configured: false }
-  const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
-  const last = rest.length > 0 ? rest.join(" ") : "Customer"
-  const result = await cardPaymentStarter(c, {
-    db: getDb(c),
-    sessionId: session.id,
-    billing: {
-      email: session.payerEmail ?? "tbd@example.com",
-      phone: "0000000000",
-      firstName: first || "Customer",
-      lastName: last,
-      city: "TBD",
-      country: 642,
-      state: "TBD",
-      postalCode: "00000",
-      details: "Pending - customer to confirm at payment.",
-    },
-    description: session.notes ?? `Payment ${session.id}`,
-  })
-  if (!result) {
-    return { configured: false }
-  }
-  return {
-    configured: true,
-    redirectUrl: result.redirectUrl,
-  }
-}
+const startCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async () => ({
+  configured: false,
+})
 
 /**
  * Resolve a trip envelope (+ reconcile a paid checkout) and its visible
