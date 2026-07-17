@@ -157,19 +157,24 @@ export const createAcceptanceSignatureSubscriberGraphRuntime = defineGraphRuntim
 
 /** Selected-graph factory for inline payment finalization and dashboard runner registration. */
 export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFactory(
-  async ({ getPort }) => {
+  async ({ getPort, hasPort }) => {
     const [database, contractPdf, registry, operatorSettings] = await Promise.all([
       getPort(catalogCheckoutDatabaseRuntimePort),
       getPort(catalogCheckoutContractPdfRuntimePort),
       getPort(workflowRunnerRegistryRuntimePort),
-      getPort(commerceOperatorSettingsRuntimePort),
+      hasPort(commerceOperatorSettingsRuntimePort)
+        ? getPort(commerceOperatorSettingsRuntimePort)
+        : undefined,
     ])
     // The invoicing mode drives whether checkout mints a fiscal invoice
     // (`direct`) or a proforma (`proforma-first`). Read it off the same
     // operator-settings port that supplies the booking tax settings, so
-    // no new port is invented.
-    const resolveInvoicingMode: CatalogCheckoutInvoicingModeResolver = async (db) =>
-      (await operatorSettings.resolveBookingTaxSettings(db)).invoicingMode ?? "direct"
+    // no new port is invented. The port is optional: without it the
+    // finalize saga keeps the historical `direct` behaviour.
+    const resolveInvoicingMode: CatalogCheckoutInvoicingModeResolver | undefined = operatorSettings
+      ? async (db) =>
+          (await operatorSettings.resolveBookingTaxSettings(db)).invoicingMode ?? "direct"
+      : undefined
     return {
       id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
       eventType: "payment.completed",
