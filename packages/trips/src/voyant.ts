@@ -6,6 +6,7 @@ import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port
 const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
 const catalogCheckoutApiRuntimePortReference = { id: "commerce.checkout-api-options" } as const
 const flightsRuntimePortReference = { id: "flights.runtime" } as const
+const paymentAdapterRuntimePortReference = { id: "payments.adapter.runtime" } as const
 
 export {
   type TripsDatabaseRuntime,
@@ -29,6 +30,7 @@ export const tripsVoyantModule = defineModule({
   runtimePorts: [
     requirePort(tripsRoutesRuntimePort),
     requirePort(tripsDatabaseRuntimePort),
+    { ...paymentAdapterRuntimePortReference, optional: true },
     catalogRuntimeServicesPortReference,
     catalogCheckoutApiRuntimePortReference,
     flightsRuntimePortReference,

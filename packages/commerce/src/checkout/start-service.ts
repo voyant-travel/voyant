@@ -384,7 +384,7 @@ async function startCardCheckout(
       bookingId: booking.id,
       paymentSessionId: session.id,
       redirectUrl: `/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending&session=${encodeURIComponent(session.id)}`,
-      note: "Netopia not configured — falling back to a confirmation-page poll.",
+      note: "Card payment adapter not configured — falling back to a confirmation-page poll.",
     }
   }
 

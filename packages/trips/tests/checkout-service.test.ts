@@ -104,7 +104,7 @@ describe("startTripCheckout", () => {
     expect(sessionInput.targetId).toBe("trip_abc")
     expect(sessionInput.amountCents).toBe(10000)
     expect(sessionInput.currency).toBe("EUR")
-    expect(sessionInput.provider).toBe("netopia")
+    expect(sessionInput.provider).toBeNull()
     expect(sessionInput.payerName).toBe("Diego Muller")
     expect(sessionInput.payerEmail).toBe("diego@example.com")
 

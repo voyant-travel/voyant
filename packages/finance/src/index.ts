@@ -229,6 +229,30 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
   },
 )
 
+export type {
+  PaymentAdapter,
+  PaymentAdapterCapabilities,
+  PaymentAdapterConformanceHarness,
+  PaymentAdapterConformanceResult,
+  PaymentAdapterDiagnostics,
+  PaymentAdapterRuntimeContext,
+  PaymentCallbackEvent,
+  PaymentCallbackRequest,
+  PaymentCallbackVerificationResult,
+  PaymentInitiationInput,
+  PaymentInitiationResult,
+  PaymentMoney,
+  PaymentOperationInput,
+  PaymentOperationResult,
+  PaymentStatusInput,
+  PaymentStatusResult,
+} from "@voyant-travel/payments"
+export {
+  PAYMENT_ADAPTER_CONTRACT_VERSION,
+  PAYMENT_ADAPTER_RUNTIME_PORT_ID,
+  paymentAdapterRuntimePort,
+  runPaymentAdapterConformance,
+} from "@voyant-travel/payments"
 export {
   type BookingCancellationSettlementInput,
   buildPaidBookingCancellationSettlementNote,
@@ -259,7 +283,9 @@ export type {
   CardPaymentStartArgs,
   CardPaymentStarter,
   CardPaymentStartResult,
+  PaymentAdapterCardPaymentStarterOptions,
 } from "./card-payment.js"
+export { createPaymentAdapterCardPaymentStarter } from "./card-payment.js"
 export {
   type DocumentDownloadEnvelope,
   type DocumentDownloadResolution,
@@ -295,6 +321,7 @@ export {
   type OrderPaymentSessionTargetType,
   type StartOrderPaymentProvider,
 } from "./order-payment-sessions.js"
+export { applyPaymentAdapterCallbackEvent } from "./payment-adapter-events.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,
