@@ -171,14 +171,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21",
+    "@voyant-travel/plugin-netopia": "^0.105.23",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21"
+    "@voyant-travel/plugin-netopia": "^0.105.23"
   },
   "peerDependenciesMeta": {
     "@voyant-travel/plugin-netopia": {
