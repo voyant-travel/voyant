@@ -1,10 +1,17 @@
 // agent-quality: file-size exception -- reason: durable claim, dispatch, retry, and audit transitions form one state machine.
 import type { EventEnvelope } from "@voyant-travel/core"
 import { isExternalWebhookPayloadSchema } from "@voyant-travel/core/project"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
 
+import {
+  type AppWebhookDeliveryEnvelope,
+  createAppWebhookDeliveryEnvelope,
+  isAppWebhookDeliveryEnvelope,
+} from "./app-envelope.js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 import {
+  assertOutboundWebhookEndpointUrl,
   hashWebhookPayload,
   redactWebhookHeaders,
   signWebhookPayload,
@@ -75,7 +82,7 @@ export function createWebhookDeliveryWorker(
       return abandon(delivery, startedAt, "webhook subscription is unavailable or inactive")
     }
 
-    const body = JSON.stringify(hydrated.event)
+    const body = JSON.stringify(hydrated.payload)
     if (hashWebhookPayload(body) !== delivery.requestBodyHash) {
       return abandon(delivery, startedAt, "persisted webhook payload hash does not match")
     }
@@ -114,10 +121,9 @@ export function createWebhookDeliveryWorker(
     if (mayRetry) {
       const retry = retryInput(
         delivery,
-        hydrated.event,
+        hydrated.payload,
         hydrated.contract,
         subscription,
-        body,
         finishedAt,
         baseDelayMs,
         maxDelayMs,
@@ -179,22 +185,39 @@ export function createWebhookDeliveryWorker(
 
 interface HydratedAttempt {
   event: EventEnvelope
+  payload: EventEnvelope | AppWebhookDeliveryEnvelope
   contract: ExternalWebhookEventContract
 }
 
 function hydrateAttempt(
   delivery: InfraWebhookDelivery,
 ): ({ ok: true } & HydratedAttempt) | { ok: false; reason: string } {
-  if (!isEventEnvelope(delivery.requestPayload)) {
-    return { ok: false, reason: "pending webhook delivery has no complete request payload" }
-  }
   if (!isExternalContract(delivery.deliveryContract)) {
     return { ok: false, reason: "pending webhook delivery has no valid contract snapshot" }
+  }
+  if (isAppWebhookDeliveryEnvelope(delivery.requestPayload)) {
+    if (delivery.requestPayload.event.type !== delivery.deliveryContract.eventType) {
+      return { ok: false, reason: "persisted webhook payload and contract event types differ" }
+    }
+    return {
+      ok: true,
+      event: eventFromAppEnvelope(delivery.requestPayload),
+      payload: delivery.requestPayload,
+      contract: delivery.deliveryContract,
+    }
+  }
+  if (!isEventEnvelope(delivery.requestPayload)) {
+    return { ok: false, reason: "pending webhook delivery has no complete request payload" }
   }
   if (delivery.requestPayload.name !== delivery.deliveryContract.eventType) {
     return { ok: false, reason: "persisted webhook payload and contract event types differ" }
   }
-  return { ok: true, event: delivery.requestPayload, contract: delivery.deliveryContract }
+  return {
+    ok: true,
+    event: delivery.requestPayload,
+    payload: delivery.requestPayload,
+    contract: delivery.deliveryContract,
+  }
 }
 
 function isEventEnvelope(value: unknown): value is EventEnvelope {
@@ -216,6 +239,15 @@ function isExternalContract(value: unknown): value is ExternalWebhookEventContra
   )
 }
 
+function eventFromAppEnvelope(envelope: AppWebhookDeliveryEnvelope): EventEnvelope {
+  return {
+    name: envelope.event.type,
+    data: envelope.payload,
+    emittedAt: envelope.event.occurredAt,
+    metadata: envelope.metadata,
+  }
+}
+
 interface DispatchResult {
   succeeded: boolean
   retryable: boolean
@@ -233,7 +265,7 @@ async function dispatch(
   body: string,
   timeoutMs: number,
 ): Promise<DispatchResult> {
-  assertWebhookUrl(url)
+  assertOutboundWebhookEndpointUrl(url)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -281,16 +313,33 @@ async function dispatch(
 
 function retryInput(
   delivery: InfraWebhookDelivery,
-  event: EventEnvelope,
+  payload: EventEnvelope | AppWebhookDeliveryEnvelope,
   contract: ExternalWebhookEventContract,
   subscription: WebhookSubscription,
-  body: string,
   now: Date,
   baseDelayMs: number,
   maxDelayMs: number,
 ): EnqueueWebhookAttemptInput {
   const nextAttempt = delivery.attemptNumber + 1
+  const deliveryId = newId("webhook_deliveries")
+  const retryPayload = isAppWebhookDeliveryEnvelope(payload)
+    ? createAppWebhookDeliveryEnvelope({
+        deliveryId,
+        installationId: payload.installationId,
+        appId: payload.appId,
+        event: eventFromAppEnvelope(payload),
+        contract,
+        deliveredAt: now,
+        attemptNumber: nextAttempt,
+        maxRetries: subscription.maxRetries,
+        idempotencyKey: delivery.idempotencyKey ?? delivery.id,
+        originalDeliveryId: payload.attempt.originalDeliveryId ?? payload.deliveryId,
+        parentDeliveryId: delivery.id,
+      })
+    : payload
+  const body = JSON.stringify(retryPayload)
   return {
+    id: deliveryId,
     sourceModule: delivery.sourceModule,
     sourceEvent: delivery.sourceEvent,
     sourceEntityModule: delivery.sourceEntityModule,
@@ -301,7 +350,7 @@ function retryInput(
     requestHeaders: delivery.requestHeaders ?? {},
     requestBodyHash: hashWebhookPayload(body),
     requestBodyExcerpt: webhookBodyExcerpt(body),
-    requestPayload: event,
+    requestPayload: retryPayload,
     deliveryContract: contract,
     attemptNumber: nextAttempt,
     parentDeliveryId: delivery.id,
@@ -349,6 +398,13 @@ function signedHeaders(
     "x-voyant-event-contract": contract.eventId,
     "x-voyant-event-version": contract.eventVersion,
     "x-voyant-timestamp": timestamp,
+    ...(subscription.keyId ? { "x-voyant-key-id": subscription.keyId } : {}),
+    ...(subscription.app
+      ? {
+          "x-voyant-app-id": subscription.app.appId,
+          "x-voyant-installation-id": subscription.app.installationId,
+        }
+      : {}),
     "x-voyant-signature": signWebhookPayload(subscription.secret, timestamp, body),
   }
 }
@@ -428,13 +484,6 @@ function positiveInteger(value: number | undefined, fallback: number): number {
 
 function boundedMessage(message: string): string {
   return message.slice(0, MAX_ERROR_MESSAGE_LENGTH)
-}
-
-function assertWebhookUrl(value: string): void {
-  const url = new URL(value)
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error(`Webhook URL must use HTTP(S): ${value}`)
-  }
 }
 
 function stringMetadata(event: EventEnvelope, key: string): string | null {

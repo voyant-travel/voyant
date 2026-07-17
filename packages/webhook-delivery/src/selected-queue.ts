@@ -1,6 +1,8 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import { isExternalWebhookPayloadSchema } from "@voyant-travel/core/project"
+import { newId } from "@voyant-travel/db/lib/typeid"
 
+import { createAppWebhookDeliveryEnvelope } from "./app-envelope.js"
 import { type ExternalWebhookEventContract, prepareExternalWebhookEvent } from "./contracts.js"
 import { hashWebhookPayload, redactWebhookHeaders, webhookBodyExcerpt } from "./security.js"
 import type {
@@ -29,49 +31,69 @@ export function createSelectedExternalWebhookQueue(
         throw new Error(`Event "${input.name}" is not in the selected external catalog.`)
       }
       const event = prepareExternalWebhookEvent(input, contract)
-      const body = JSON.stringify(event)
       const subscriptions = await options.store.listActiveSubscriptions(event.name)
 
       return Promise.all(
-        subscriptions.map(async (subscription): Promise<WebhookEnqueueOutcome> => {
-          const idempotencyKey = `graph-webhook:${eventId}:${subscription.id}`
-          const enqueued = await options.store.enqueueAttempt({
-            sourceModule:
-              stringMetadata(input, "graphEventSourceModule") ?? "graph-outbound-webhooks",
-            sourceEvent: event.name,
-            ...sourceEntity(event.data),
-            subscriptionId: subscription.id,
-            targetUrl: subscription.url,
-            requestMethod: "POST",
-            requestHeaders:
-              redactWebhookHeaders({
-                ...(subscription.headers ?? {}),
-                "content-type": "application/json",
-                "idempotency-key": idempotencyKey,
-                "x-voyant-event": event.name,
-                "x-voyant-event-id": eventId,
-                "x-voyant-event-contract": contract.eventId,
-                "x-voyant-event-version": contract.eventVersion,
-              }) ?? {},
-            requestBodyHash: hashWebhookPayload(body),
-            requestBodyExcerpt: webhookBodyExcerpt(body),
-            requestPayload: event,
-            deliveryContract: contract,
-            attemptNumber: 1,
-            parentDeliveryId: null,
-            idempotencyKey,
-            scheduledFor: now(),
-          })
-          return {
-            status: enqueued.created
-              ? "pending"
-              : isTerminal(enqueued.attempt.status)
-                ? "already_completed"
-                : "already_pending",
-            subscriptionId: subscription.id,
-            delivery: enqueued.attempt,
-          }
-        }),
+        subscriptions
+          .filter(
+            (subscription) =>
+              !subscription.app || subscription.app.eventVersion === contract.eventVersion,
+          )
+          .map(async (subscription): Promise<WebhookEnqueueOutcome> => {
+            const deliveryId = newId("webhook_deliveries")
+            const idempotencyKey = `graph-webhook:${eventId}:${subscription.id}`
+            const payload = subscription.app
+              ? createAppWebhookDeliveryEnvelope({
+                  deliveryId,
+                  installationId: subscription.app.installationId,
+                  appId: subscription.app.appId,
+                  event,
+                  contract,
+                  deliveredAt: now(),
+                  attemptNumber: 1,
+                  maxRetries: subscription.maxRetries,
+                  idempotencyKey,
+                })
+              : event
+            const body = JSON.stringify(payload)
+            const enqueued = await options.store.enqueueAttempt({
+              id: deliveryId,
+              sourceModule:
+                stringMetadata(input, "graphEventSourceModule") ?? "graph-outbound-webhooks",
+              sourceEvent: event.name,
+              ...sourceEntity(event.data),
+              subscriptionId: subscription.id,
+              targetUrl: subscription.url,
+              requestMethod: "POST",
+              requestHeaders:
+                redactWebhookHeaders({
+                  ...(subscription.headers ?? {}),
+                  "content-type": "application/json",
+                  "idempotency-key": idempotencyKey,
+                  "x-voyant-event": event.name,
+                  "x-voyant-event-id": eventId,
+                  "x-voyant-event-contract": contract.eventId,
+                  "x-voyant-event-version": contract.eventVersion,
+                }) ?? {},
+              requestBodyHash: hashWebhookPayload(body),
+              requestBodyExcerpt: webhookBodyExcerpt(body),
+              requestPayload: payload,
+              deliveryContract: contract,
+              attemptNumber: 1,
+              parentDeliveryId: null,
+              idempotencyKey,
+              scheduledFor: now(),
+            })
+            return {
+              status: enqueued.created
+                ? "pending"
+                : isTerminal(enqueued.attempt.status)
+                  ? "already_completed"
+                  : "already_pending",
+              subscriptionId: subscription.id,
+              delivery: enqueued.attempt,
+            }
+          }),
       )
     },
   }

@@ -264,6 +264,7 @@ function toWebhookSubscription(row: {
     id: row.id,
     url: row.url,
     secret: row.secret,
+    keyId: null,
     headers: row.headers ?? null,
     maxRetries: row.maxRetries,
     active: row.active,
@@ -320,7 +321,7 @@ function requireSubscription(row: unknown, operation: string): InfraWebhookSubsc
 
 function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {
   return {
-    id: newId("webhook_deliveries"),
+    id: input.id ?? newId("webhook_deliveries"),
     sourceModule: input.sourceModule,
     sourceEvent: input.sourceEvent,
     sourceEntityModule: input.sourceEntityModule,
