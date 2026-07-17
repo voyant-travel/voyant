@@ -1,4 +1,5 @@
 import { createHash, createHmac } from "node:crypto"
+import { isIP } from "node:net"
 
 const DEFAULT_EXCERPT_BYTES = 4 * 1024
 const REDACTION_MARKER = "[REDACTED]"
@@ -56,8 +57,60 @@ export function signWebhookPayload(secret: string, timestamp: string, body: stri
   return `sha256=${createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex")}`
 }
 
+export interface WebhookSigningKey {
+  id: string
+  secret: string
+}
+
+export function verifyWebhookPayloadSignature(input: {
+  body: string
+  timestamp: string
+  signature: string
+  keys: readonly WebhookSigningKey[]
+  now?: Date
+  toleranceSeconds?: number
+}): { ok: true; keyId: string } | { ok: false; reason: string } {
+  const timestampSeconds = Number(input.timestamp)
+  if (!Number.isInteger(timestampSeconds)) return { ok: false, reason: "invalid_timestamp" }
+  const nowSeconds = Math.floor((input.now ?? new Date()).getTime() / 1_000)
+  const tolerance = input.toleranceSeconds ?? 300
+  if (Math.abs(nowSeconds - timestampSeconds) > tolerance) {
+    return { ok: false, reason: "timestamp_outside_tolerance" }
+  }
+  for (const key of input.keys) {
+    if (signWebhookPayload(key.secret, input.timestamp, input.body) === input.signature) {
+      return { ok: true, keyId: key.id }
+    }
+  }
+  return { ok: false, reason: "signature_mismatch" }
+}
+
 export function hashWebhookPayload(body: string): string {
   return createHash("sha256").update(body).digest("hex")
+}
+
+export function assertOutboundWebhookEndpointUrl(value: string): void {
+  const url = new URL(value)
+  if (url.protocol !== "https:") {
+    throw new Error(`Webhook URL must use HTTPS: ${value}`)
+  }
+  const hostname = url.hostname.toLowerCase()
+  const address =
+    hostname.startsWith("[") && hostname.endsWith("]") ? hostname.slice(1, -1) : hostname
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname === "metadata.google.internal"
+  ) {
+    throw new Error(`Webhook URL host is not allowed: ${hostname}`)
+  }
+  const ipVersion = isIP(address)
+  if (ipVersion === 4 && isPrivateIpv4(address)) {
+    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+  }
+  if (ipVersion === 6 && isPrivateIpv6(address)) {
+    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+  }
 }
 
 export function redactWebhookHeaders(
@@ -109,4 +162,27 @@ function redactValue(value: unknown): unknown {
 
 function redactString(value: string): string {
   return value.replace(EMAIL_PATTERN, REDACTION_MARKER).replace(PHONE_PATTERN, REDACTION_MARKER)
+}
+
+function isPrivateIpv4(value: string): boolean {
+  const [a = 0, b = 0] = value.split(".").map((part) => Number(part))
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    a === 0
+  )
+}
+
+function isPrivateIpv6(value: string): boolean {
+  const normalized = value.toLowerCase()
+  return (
+    normalized === "::1" ||
+    normalized === "::" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:")
+  )
 }

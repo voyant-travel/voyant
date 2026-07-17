@@ -19,6 +19,15 @@ export const invoiceStatusVariant: Record<
   void: "destructive",
 }
 
+export const invoiceTypeVariant: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  invoice: "default",
+  proforma: "outline",
+  credit_note: "destructive",
+}
+
 export function formatInvoiceAmount(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`
 }

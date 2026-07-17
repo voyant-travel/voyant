@@ -145,6 +145,15 @@ export const bookingTaxSettings = pgTable("booking_tax_settings", {
   id: typeId("booking_tax_settings"),
   taxPriceMode: text("tax_price_mode").notNull().default("inclusive"),
   taxPolicyProfileId: text("tax_policy_profile_id"),
+  /**
+   * Operator invoicing mode. `direct` (default) issues the fiscal
+   * invoice straight from the booking. `proforma-first` issues a
+   * proforma at checkout and mints the fiscal invoice once the
+   * proforma is fully settled (see the finance proforma-conversion
+   * subscriber). Stored here because `booking_tax_settings` is the
+   * finance operator-settings singleton row.
+   */
+  invoicingMode: text("invoicing_mode").notNull().default("direct"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

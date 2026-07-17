@@ -1,3 +1,5 @@
+export type { AppWebhookDeliveryEnvelope } from "./app-envelope.js"
+export { createAppWebhookDeliveryEnvelope, isAppWebhookDeliveryEnvelope } from "./app-envelope.js"
 export type {
   ExternalWebhookEventContract,
   WebhookSubscriptionEventInput,
@@ -13,10 +15,13 @@ export type {
   ResolveOutboundWebhookDeliveryEnqueuerOptions,
 } from "./provider.js"
 export { resolveOutboundWebhookDeliveryEnqueuer } from "./provider.js"
+export type { WebhookSigningKey } from "./security.js"
 export {
+  assertOutboundWebhookEndpointUrl,
   hashWebhookPayload,
   redactWebhookHeaders,
   signWebhookPayload,
+  verifyWebhookPayloadSignature,
   webhookBodyExcerpt,
 } from "./security.js"
 export type { CreateSelectedExternalWebhookQueueOptions } from "./selected-queue.js"

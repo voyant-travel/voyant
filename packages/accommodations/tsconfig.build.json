@@ -122,7 +122,17 @@
       "@voyant-travel/admin/providers/theme": ["../admin/dist/providers/theme.d.ts"],
       "@voyant-travel/admin/types": ["../admin/dist/types.d.ts"],
       "@voyant-travel/admin/ui-extensions": ["../admin/dist/ui-extensions/index.d.ts"],
+      "@voyant-travel/admin/ui-extensions/registry": ["../admin/dist/ui-extensions/registry.d.ts"],
       "@voyant-travel/allotments": ["../allotments/dist/index.d.ts"],
+      "@voyant-travel/apps": ["../apps/dist/index.d.ts"],
+      "@voyant-travel/apps/api-runtime": ["../apps/dist/api-runtime.d.ts"],
+      "@voyant-travel/apps/compiler": ["../apps/dist/compiler.d.ts"],
+      "@voyant-travel/apps/contracts": ["../apps/dist/contracts.d.ts"],
+      "@voyant-travel/apps/ingestion": ["../apps/dist/ingestion.d.ts"],
+      "@voyant-travel/apps/routes": ["../apps/dist/routes.d.ts"],
+      "@voyant-travel/apps/schema": ["../apps/dist/schema.d.ts"],
+      "@voyant-travel/apps/service": ["../apps/dist/service.d.ts"],
+      "@voyant-travel/apps/voyant": ["../apps/dist/voyant.d.ts"],
       "@voyant-travel/auth": ["../auth/dist/index.d.ts"],
       "@voyant-travel/auth-react": ["../auth-react/dist/index.d.ts"],
       "@voyant-travel/auth-react/account": ["../auth-react/dist/components/account-page.d.ts"],
@@ -893,6 +903,9 @@
       "@voyant-travel/finance/payment-policy": ["../finance/dist/payment-policy.d.ts"],
       "@voyant-travel/finance/payment-policy-cascade": [
         "../finance/dist/payment-policy-cascade.d.ts"
+      ],
+      "@voyant-travel/finance/proforma-conversion-subscriber": [
+        "../finance/dist/proforma-conversion-runtime.d.ts"
       ],
       "@voyant-travel/finance/public-routes": ["../finance/dist/routes-public.d.ts"],
       "@voyant-travel/finance/public-validation": ["../finance/dist/validation-public.d.ts"],

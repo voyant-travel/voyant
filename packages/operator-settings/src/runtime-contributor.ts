@@ -11,6 +11,7 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
+  resolveInvoicingMode,
   resolveOperatorDefaultPaymentPolicy,
   updateBookingTaxSettings,
 } from "./service.js"
@@ -53,6 +54,7 @@ export function createOperatorSettingsRuntimePortContribution(
       resolveOperatorDefaultPaymentPolicy,
       resolveBookingTaxSettings,
       updateBookingTaxSettings,
+      resolveInvoicingMode,
     } satisfies FinanceOperatorSettingsRuntime,
   }
 }

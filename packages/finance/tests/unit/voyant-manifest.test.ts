@@ -268,6 +268,15 @@ describe("finance deployment manifest", () => {
             export: "bookingScheduleConfirmedSubscriber",
           },
         },
+        {
+          id: "@voyant-travel/finance#subscriber.proforma-conversion",
+          eventType: "invoice.settled",
+          source: "@voyant-travel/finance/proforma-conversion-subscriber",
+          runtime: {
+            entry: "@voyant-travel/finance/proforma-conversion-subscriber",
+            export: "proformaConversionSubscriber",
+          },
+        },
       ],
     })
   })
