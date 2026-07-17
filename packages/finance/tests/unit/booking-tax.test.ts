@@ -203,7 +203,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: null,
-        invoicingMode: "direct",
+        invoicingMode: "proforma-first",
         fxReferenceSource: "ecb",
       },
     })
@@ -223,7 +223,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
-        invoicingMode: "direct",
+        invoicingMode: "proforma-first",
         fxReferenceSource: "bnr",
       },
     })
@@ -252,7 +252,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
-        invoicingMode: "direct",
+        invoicingMode: "proforma-first",
         fxReferenceSource: "ecb",
       },
     })
