@@ -66,6 +66,13 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
   })
   const invoicingMode = settingsQuery.data?.data.invoicingMode ?? "direct"
   const fxReferenceSource = settingsQuery.data?.data.fxReferenceSource ?? "ecb"
+  // Both selects PATCH the same settings row (merge-on-read server side),
+  // so while either write is in flight the other control must not fire a
+  // concurrent PATCH that could clobber it.
+  const settingsBusy =
+    settingsQuery.isPending ||
+    invoicingModeMutation.isPending ||
+    fxReferenceSourceMutation.isPending
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -91,7 +98,7 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
                 invoicingModeMutation.mutate(value)
               }
             }}
-            disabled={settingsQuery.isPending || invoicingModeMutation.isPending}
+            disabled={settingsBusy}
           >
             <SelectTrigger id="invoicing-mode" className="w-full">
               <SelectValue />
@@ -128,7 +135,7 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
                 fxReferenceSourceMutation.mutate(value)
               }
             }}
-            disabled={settingsQuery.isPending || fxReferenceSourceMutation.isPending}
+            disabled={settingsBusy}
           >
             <SelectTrigger id="fx-reference-source" className="w-full">
               <SelectValue />
