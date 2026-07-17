@@ -176,6 +176,7 @@
       "@voyant-travel/apps/compiler": ["../apps/dist/compiler.d.ts"],
       "@voyant-travel/apps/contracts": ["../apps/dist/contracts.d.ts"],
       "@voyant-travel/apps/ingestion": ["../apps/dist/ingestion.d.ts"],
+      "@voyant-travel/apps/installation-service": ["../apps/dist/installation-service.d.ts"],
       "@voyant-travel/apps/routes": ["../apps/dist/routes.d.ts"],
       "@voyant-travel/apps/schema": ["../apps/dist/schema.d.ts"],
       "@voyant-travel/apps/service": ["../apps/dist/service.d.ts"],
