@@ -353,14 +353,15 @@ export const taxesPage = {
 export const invoicingPage = {
   title: "Invoicing",
   description: "Control how invoices are issued and which official rates convert foreign currency.",
-  invoicingModeTitle: "Invoicing mode",
+  invoicingModeTitle: "Bank transfer invoicing",
   invoicingModeDescription:
-    "Choose how invoices are issued for new bookings. Existing invoices are unaffected.",
-  invoicingModeDirect: "Direct invoice",
-  invoicingModeDirectHint: "Issue the fiscal invoice straight from the booking.",
-  invoicingModeProformaFirst: "Proforma first",
+    "Choose which document is issued when a customer pays by bank transfer. Card payments always issue the fiscal invoice directly. Existing invoices are unaffected.",
+  invoicingModeProformaFirst: "Proforma first (recommended)",
   invoicingModeProformaFirstHint:
-    "Issue a proforma, then mint the fiscal invoice automatically once it is paid in full.",
+    "Issue a proforma when the order is placed, then mint the fiscal invoice automatically once the transfer is received in full.",
+  invoicingModeDirect: "Direct invoice",
+  invoicingModeDirectHint:
+    "Issue the fiscal invoice when the order is placed and collect the bank transfer against it. No proforma is issued.",
   fxReferenceSourceTitle: "Reference exchange rates",
   fxReferenceSourceDescription:
     "Official reference rate used when converting foreign-currency amounts on invoices.",

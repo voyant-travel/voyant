@@ -9,6 +9,7 @@ import {
   computePaymentSchedule,
   financeService,
   InvoiceNumberAllocationError,
+  issueInvoiceFromBooking,
   issueProformaFromBooking,
   type PaymentPolicy,
   type PaymentPolicySource,
@@ -133,7 +134,7 @@ export async function startCatalogCheckout(
       {
         beforeMaterialize:
           body.paymentIntent === "bank_transfer"
-            ? () => ensureBankTransferProformaPrerequisites(db)
+            ? () => ensureBankTransferInvoicingPrerequisites(context)
             : undefined,
       },
     )
@@ -402,7 +403,7 @@ async function startBankTransferCheckout(
   body: CheckoutStartInput,
 ): Promise<CatalogCheckoutStartResult> {
   const db = context.db
-  await ensureBankTransferProformaPrerequisites(db)
+  await ensureBankTransferInvoicingPrerequisites(context)
   const paymentTerms = await snapshotAcceptedPaymentTerms(context, booking)
 
   await recordCheckoutActivity(db, booking.id, "Storefront bank-transfer checkout started", {
@@ -428,18 +429,29 @@ async function startBankTransferCheckout(
     })
   }
 
-  // Issue a proforma synchronously so the customer leaves with a
-  // document reference. SmartBill (subscribing to
-  // invoice.proforma.issued) will sync to its proforma endpoint.
+  // Bank transfer is the deferred-payment path: the customer leaves with a
+  // document reference and pays against it. Which document is issued here,
+  // at order placement, is the operator-configurable invoicing mode:
+  //   - `proforma-first` (default): issue a proforma; the fiscal invoice is
+  //     minted later, on settlement, by the finance proforma-conversion
+  //     subscriber. SmartBill (subscribing to invoice.proforma.issued) syncs
+  //     it to its proforma endpoint.
+  //   - `direct`: issue the fiscal invoice straight away and collect the
+  //     bank transfer against it; no later conversion happens.
+  // The mode is read off the same operator tax-settings the checkout
+  // already resolves — absent/null → proforma-first, the historical
+  // bank-transfer behaviour.
+  const taxSettings = await context.options.resolveBookingTaxSettings(db)
+  const issueDirectInvoice = taxSettings.invoicingMode === "direct"
   const issueDate = new Date().toISOString().slice(0, 10)
   const dueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const eventBus = context.eventBus
 
-  const proformaInput: CreateInvoiceFromBookingInput = {
+  const documentInput: CreateInvoiceFromBookingInput = {
     bookingId: booking.id,
     issueDate,
     dueDate,
-    invoiceType: "proforma",
+    invoiceType: issueDirectInvoice ? "invoice" : "proforma",
     notes: null,
   }
 
@@ -451,11 +463,12 @@ async function startBankTransferCheckout(
     .from(bookingItems)
     .where(eq(bookingItems.bookingId, booking.id))
 
+  const issueDocument = issueDirectInvoice ? issueInvoiceFromBooking : issueProformaFromBooking
   let proforma: Awaited<ReturnType<typeof issueProformaFromBooking>>
   try {
-    proforma = await issueProformaFromBooking(
+    proforma = await issueDocument(
       db,
-      proformaInput,
+      documentInput,
       {
         booking: {
           id: booking.id,
@@ -479,8 +492,13 @@ async function startBankTransferCheckout(
       { eventBus },
     )
   } catch (err) {
-    if (err instanceof InvoiceNumberAllocationError && err.scope === "proforma") {
-      throw bankTransferProformaSeriesError()
+    if (err instanceof InvoiceNumberAllocationError) {
+      if (!issueDirectInvoice && err.scope === "proforma") {
+        throw bankTransferInvoiceSeriesError("proforma")
+      }
+      if (issueDirectInvoice && err.scope === "invoice") {
+        throw bankTransferInvoiceSeriesError("invoice")
+      }
     }
     throw err
   }
@@ -596,11 +614,23 @@ async function recordCheckoutActivity(
   })
 }
 
-async function ensureBankTransferProformaPrerequisites(db: PostgresJsDatabase): Promise<void> {
-  const series = await financeService.resolveDefaultInvoiceNumberSeries(db, "proforma")
-  if (!series) throw bankTransferProformaSeriesError()
+async function ensureBankTransferInvoicingPrerequisites(
+  context: CatalogCheckoutStartContext,
+): Promise<void> {
+  const db = context.db
+  // Direct mode issues the fiscal invoice at placement, so it needs an
+  // `invoice` series; proforma-first (default) needs the `proforma` series.
+  const settings = await context.options.resolveBookingTaxSettings(db)
+  const scope = settings.invoicingMode === "direct" ? "invoice" : "proforma"
+  const series = await financeService.resolveDefaultInvoiceNumberSeries(db, scope)
+  if (!series) throw bankTransferInvoiceSeriesError(scope)
 }
 
-function bankTransferProformaSeriesError(): CatalogCheckoutStartError {
-  return new CatalogCheckoutStartError("bank_transfer_proforma_number_series_missing", 422)
+function bankTransferInvoiceSeriesError(scope: "invoice" | "proforma"): CatalogCheckoutStartError {
+  return new CatalogCheckoutStartError(
+    scope === "invoice"
+      ? "bank_transfer_invoice_number_series_missing"
+      : "bank_transfer_proforma_number_series_missing",
+    422,
+  )
 }
