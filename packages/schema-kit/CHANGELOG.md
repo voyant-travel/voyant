@@ -1,5 +1,11 @@
 # @voyant-travel/schema-kit
 
+## 0.113.2
+
+### Patch Changes
+
+- 9fc7801: Add remote app OAuth authorization, token, rotation, revocation, and app-token auth context support.
+
 ## 0.113.1
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @voyant-travel/apps
 
+## 0.3.0
+
+### Minor Changes
+
+- 9fc7801: Add remote app OAuth authorization, token, rotation, revocation, and app-token auth context support.
+
+### Patch Changes
+
+- Updated dependencies [9fc7801]
+  - @voyant-travel/core@0.125.1
+  - @voyant-travel/hono@0.128.2
+
 ## 0.2.0
 
 ### Minor Changes
