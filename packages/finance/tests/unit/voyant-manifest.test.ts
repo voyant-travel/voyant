@@ -3,7 +3,8 @@ import { createFinanceVoyantRuntime } from "../../src/index.js"
 import {
   financeBookingScheduleVoyantPlugin,
   financeBookingsCreateVoyantPlugin,
-  financeBookingTaxVoyantPlugin,
+  financeBookingTaxPreviewVoyantPlugin,
+  financeBookingTaxSettingsVoyantPlugin,
   financeVoyantModule,
 } from "../../src/voyant.js"
 
@@ -171,10 +172,15 @@ describe("finance deployment manifest", () => {
   })
 
   it("owns the finance extensions", () => {
-    expect([financeBookingTaxVoyantPlugin, financeBookingsCreateVoyantPlugin]).toMatchObject([
+    expect([
+      financeBookingTaxSettingsVoyantPlugin,
+      financeBookingTaxPreviewVoyantPlugin,
+      financeBookingsCreateVoyantPlugin,
+    ]).toMatchObject([
       {
         schemaVersion: "voyant.extension.v1",
-        id: "@voyant-travel/finance#booking-tax-extension",
+        id: "@voyant-travel/finance#booking-tax-settings-extension",
+        localId: "finance.booking-tax-settings-extension",
         runtime: {
           entry: "@voyant-travel/finance",
           export: "createBookingTaxSettingsVoyantRuntime",
@@ -191,6 +197,18 @@ describe("finance deployment manifest", () => {
               export: "createBookingTaxSettingsApiExtension",
             },
           },
+        ],
+      },
+      {
+        schemaVersion: "voyant.extension.v1",
+        id: "@voyant-travel/finance#booking-tax-preview-extension",
+        localId: "finance.booking-tax-preview-extension",
+        runtime: {
+          entry: "@voyant-travel/finance",
+          export: "createBookingTaxPreviewVoyantRuntime",
+        },
+        runtimePorts: [{ id: "finance.operator-settings.runtime" }],
+        api: [
           {
             id: "@voyant-travel/finance#booking-tax-preview-extension.api",
             surface: "admin",
