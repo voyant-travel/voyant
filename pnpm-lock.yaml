@@ -4884,6 +4884,9 @@ importers:
       '@voyant-travel/operator-settings':
         specifier: workspace:^
         version: link:../operator-settings
+      '@voyant-travel/payments':
+        specifier: workspace:^
+        version: link:../payments
       '@voyant-travel/storefront':
         specifier: workspace:^
         version: link:../storefront

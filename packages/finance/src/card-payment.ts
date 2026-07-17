@@ -16,6 +16,9 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { paymentSessions } from "./schema/payment-sessions.js"
+import { financePaymentSessionCompletionService } from "./service-payment-session-completion.js"
+import { financePaymentSessionService } from "./service-payment-sessions.js"
+import type { FinanceServiceRuntime } from "./service-shared.js"
 
 /**
  * Billing details a card processor needs to start a hosted payment.
@@ -67,6 +70,7 @@ export type CardPaymentStarter = (
 
 export interface PaymentAdapterCardPaymentStarterOptions {
   resolveContext?(c: Context): PaymentAdapterRuntimeContext
+  resolveRuntime?(c: Context): FinanceServiceRuntime
   idempotencyKey?(sessionId: string): string
 }
 
@@ -98,18 +102,38 @@ export function createPaymentAdapterCardPaymentStarter(
       },
     })
 
-    await args.db
-      .update(paymentSessions)
-      .set({
+    const providerData = {
+      providerSessionId: result.processorSessionId ?? undefined,
+      providerPaymentId: result.processorPaymentId ?? undefined,
+      providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
+      metadata: { paymentAdapterInitiationIdempotencyKey: result.idempotencyKey },
+    }
+
+    if (result.nextState === "paid" || result.nextState === "authorized") {
+      await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
         provider: adapter.id,
-        providerSessionId: result.processorSessionId ?? undefined,
-        providerPaymentId: result.processorPaymentId ?? undefined,
         redirectUrl: result.checkout?.url ?? undefined,
-        status: result.nextState,
         idempotencyKey,
-        updatedAt: new Date(),
       })
-      .where(eq(paymentSessions.id, session.id))
+      await financePaymentSessionCompletionService.completePaymentSession(
+        args.db,
+        session.id,
+        {
+          status: result.nextState,
+          captureMode: "automatic",
+          ...providerData,
+        },
+        options.resolveRuntime?.(c),
+      )
+    } else {
+      await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
+        provider: adapter.id,
+        status: result.nextState,
+        redirectUrl: result.checkout?.url ?? undefined,
+        idempotencyKey,
+        ...providerData,
+      })
+    }
 
     return { redirectUrl: result.checkout?.url ?? null }
   }

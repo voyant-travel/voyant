@@ -6,6 +6,7 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
+import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
@@ -16,11 +17,45 @@ import type { Context } from "hono"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import { tripsService } from "./service.js"
 
+const FINANCE_CARD_PAYMENT_MODULE = "@voyant-travel/finance/card-payment"
+
+type StartCardPayment = ReturnType<CommerceCardPaymentRuntime["createStartCardPayment"]>
+type CardPaymentStartArgs = Parameters<NonNullable<StartCardPayment>>[0]
+type CardPaymentStartResult = Awaited<ReturnType<NonNullable<StartCardPayment>>>
+type PaymentAdapterCardPaymentStarterFactory = (
+  adapter: PaymentAdapter,
+  options: {
+    resolveContext(c: Context): PaymentAdapterRuntimeContext
+    resolveRuntime(c: Context): { eventBus?: unknown }
+    idempotencyKey(sessionId: string): string
+  },
+) => (context: Context, args: CardPaymentStartArgs) => Promise<CardPaymentStartResult>
+
 /** Standard selected payment provider exposed through Commerce's neutral port. */
-export function createCommerceCardPaymentRuntime(): CommerceCardPaymentRuntime {
+export function createCommerceCardPaymentRuntime(
+  adapter: PaymentAdapter,
+): CommerceCardPaymentRuntime {
   return {
-    createStartCardPayment: () => async () => null,
+    createStartCardPayment: (context) => (args) => startAdapterCardPayment(adapter, context, args),
   }
+}
+
+async function startAdapterCardPayment(
+  adapter: PaymentAdapter,
+  context: Context,
+  args: CardPaymentStartArgs,
+): Promise<CardPaymentStartResult> {
+  const { createPaymentAdapterCardPaymentStarter } = (await import(
+    FINANCE_CARD_PAYMENT_MODULE
+  )) as {
+    createPaymentAdapterCardPaymentStarter: PaymentAdapterCardPaymentStarterFactory
+  }
+  const starter = createPaymentAdapterCardPaymentStarter(adapter, {
+    resolveContext: (c) => ({ env: c.env }),
+    resolveRuntime: (c) => ({ eventBus: c.var.eventBus }),
+    idempotencyKey: (sessionId) => `payment:${sessionId}`,
+  })
+  return starter(context, args)
 }
 
 interface PaymentConfigBindings {

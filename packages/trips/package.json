@@ -68,6 +68,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
