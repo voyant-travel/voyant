@@ -932,8 +932,8 @@ identity. They are intentionally absent from this repository's data model.
   installed actor, update policy, last compatible release check, and lifecycle
   timestamps.
 - `app_release_acquisitions`: deployment, app release, delivery channel,
-  verified digest, package or catalog provenance, acquisition time, and
-  availability state.
+  verified digest, catalog or private upload/manifest-source provenance,
+  acquisition time, and availability state.
 - `app_grants`: requested, granted, optional, and revoked scopes.
 - `app_access_credentials`: hashed or encrypted credential metadata and
   generations.
