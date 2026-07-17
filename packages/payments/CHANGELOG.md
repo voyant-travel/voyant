@@ -1,5 +1,13 @@
 # @voyant-travel/payments
 
+## 0.2.1
+
+### Patch Changes
+
+- 0916962: Republish with resolved dependency ranges. The 0.2.0 tarball on npm carries a
+  raw `workspace:^` specifier for `@voyant-travel/core` and cannot be installed
+  by consumers.
+
 ## 0.2.0
 
 ### Minor Changes
