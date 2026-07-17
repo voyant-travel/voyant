@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./access-boundary": "./src/access-boundary.ts",
+    "./app-api-contracts": "./src/app-api-contracts.ts",
+    "./app-api-routes": "./src/app-api-routes.ts",
+    "./app-api-service": "./src/app-api-service.ts",
     "./api-runtime": "./src/api-runtime.ts",
     "./compiler": "./src/compiler.ts",
     "./contracts": "./src/contracts.ts",
@@ -65,6 +68,21 @@
         "types": "./dist/access-boundary.d.ts",
         "import": "./dist/access-boundary.js",
         "default": "./dist/access-boundary.js"
+      },
+      "./app-api-contracts": {
+        "types": "./dist/app-api-contracts.d.ts",
+        "import": "./dist/app-api-contracts.js",
+        "default": "./dist/app-api-contracts.js"
+      },
+      "./app-api-routes": {
+        "types": "./dist/app-api-routes.d.ts",
+        "import": "./dist/app-api-routes.js",
+        "default": "./dist/app-api-routes.js"
+      },
+      "./app-api-service": {
+        "types": "./dist/app-api-service.d.ts",
+        "import": "./dist/app-api-service.js",
+        "default": "./dist/app-api-service.js"
       },
       "./api-runtime": {
         "types": "./dist/api-runtime.d.ts",
