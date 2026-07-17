@@ -51,6 +51,7 @@ export const appAccessCredentialStatusEnum = pgEnum("app_access_credential_statu
   "inactive",
   "revoked",
 ])
+export const appAccessTokenModeEnum = pgEnum("app_access_token_mode", ["offline", "online"])
 export const appInstallationRegistrationStatusEnum = pgEnum(
   "app_installation_registration_status",
   ["active", "inactive"],
@@ -63,7 +64,9 @@ export const appWebhookSubscriptionStatusEnum = pgEnum("app_webhook_subscription
 export const appAuditEventKindEnum = pgEnum("app_audit_event_kind", [
   "lifecycle",
   "grant",
+  "consent",
   "credential",
+  "token",
   "reconciliation",
   "purge",
 ])
@@ -211,6 +214,7 @@ export const appInstallations = pgTable(
     status: appInstallationStatusEnum("status").notNull().default("pending"),
     namespace: text("namespace").notNull(),
     installedBy: text("installed_by").notNull(),
+    credentialGeneration: integer("credential_generation").notNull().default(0),
     updatePolicy: appInstallationUpdatePolicyEnum("update_policy").notNull().default("compatible"),
     lastCompatibleReleaseCheckAt: timestamp("last_compatible_release_check_at", {
       withTimezone: true,
@@ -265,19 +269,77 @@ export const appAccessCredentials = pgTable(
       .notNull()
       .references(() => appInstallations.id, { onDelete: "cascade" }),
     generation: integer("generation").notNull(),
+    tokenMode: appAccessTokenModeEnum("token_mode").notNull().default("offline"),
     credentialHash: text("credential_hash").notNull(),
     encryptedMetadata: jsonb("encrypted_metadata").$type<Record<string, unknown>>().notNull(),
     status: appAccessCredentialStatusEnum("status").notNull().default("active"),
+    actorId: text("actor_id"),
+    viewerId: text("viewer_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   },
   (table) => [
     index("idx_app_access_credentials_installation").on(table.installationId, table.status),
-    uniqueIndex("uidx_app_access_credentials_generation").on(
+    index("idx_app_access_credentials_generation").on(
       table.installationId,
+      table.tokenMode,
       table.generation,
     ),
+  ],
+)
+
+export const appOAuthAuthorizationCodes = pgTable(
+  "app_oauth_authorization_codes",
+  {
+    id: typeId("app_oauth_authorization_codes"),
+    appId: text("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => appInstallations.id, { onDelete: "cascade" }),
+    releaseId: text("release_id")
+      .notNull()
+      .references(() => appReleases.id, { onDelete: "cascade" }),
+    deploymentId: text("deployment_id").notNull(),
+    codeHash: text("code_hash").notNull(),
+    stateHash: text("state_hash").notNull(),
+    redirectUri: text("redirect_uri").notNull(),
+    codeChallenge: text("code_challenge").notNull(),
+    codeChallengeMethod: text("code_challenge_method").notNull(),
+    requestedScopes: jsonb("requested_scopes").$type<string[]>().notNull(),
+    grantedScopes: jsonb("granted_scopes").$type<string[]>().notNull(),
+    deniedOptionalScopes: jsonb("denied_optional_scopes").$type<string[]>().notNull(),
+    actorId: text("actor_id").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_app_oauth_codes_hash").on(table.codeHash),
+    index("idx_app_oauth_codes_installation").on(table.installationId, table.expiresAt),
+  ],
+)
+
+export const appOAuthRefreshTokens = pgTable(
+  "app_oauth_refresh_tokens",
+  {
+    id: typeId("app_oauth_refresh_tokens"),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => appInstallations.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    generation: integer("generation").notNull(),
+    status: appAccessCredentialStatusEnum("status").notNull().default("active"),
+    rotatedFromId: text("rotated_from_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("uidx_app_oauth_refresh_tokens_hash").on(table.tokenHash),
+    index("idx_app_oauth_refresh_tokens_installation").on(table.installationId, table.status),
   ],
 )
 
@@ -393,3 +455,4 @@ export type AppRelease = typeof appReleases.$inferSelect
 export type NewAppRelease = typeof appReleases.$inferInsert
 export type AppInstallation = typeof appInstallations.$inferSelect
 export type NewAppInstallation = typeof appInstallations.$inferInsert
+export type AppAccessCredential = typeof appAccessCredentials.$inferSelect

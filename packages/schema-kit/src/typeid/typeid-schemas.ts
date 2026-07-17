@@ -138,6 +138,8 @@ export const typeIdSchemas = {
   appInstallation: typeIdSchema("app_installations"),
   appGrant: typeIdSchema("app_grants"),
   appAccessCredential: typeIdSchema("app_access_credentials"),
+  appOAuthAuthorizationCode: typeIdSchema("app_oauth_authorization_codes"),
+  appOAuthRefreshToken: typeIdSchema("app_oauth_refresh_tokens"),
   appInstallationSetting: typeIdSchema("app_installation_settings"),
   appSecretReference: typeIdSchema("app_secret_references"),
   appExtensionInstallation: typeIdSchema("app_extension_installations"),

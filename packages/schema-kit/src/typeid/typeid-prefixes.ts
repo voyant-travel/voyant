@@ -129,6 +129,8 @@ export const PREFIXES = {
   app_installations: "apin",
   app_grants: "apgr",
   app_access_credentials: "apac",
+  app_oauth_authorization_codes: "apoc",
+  app_oauth_refresh_tokens: "aprt",
   app_installation_settings: "apis",
   app_secret_references: "apsr",
   app_extension_installations: "apei",

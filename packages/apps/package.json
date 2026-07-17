@@ -5,11 +5,15 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./access-boundary": "./src/access-boundary.ts",
     "./api-runtime": "./src/api-runtime.ts",
     "./compiler": "./src/compiler.ts",
     "./contracts": "./src/contracts.ts",
+    "./consent": "./src/consent.ts",
     "./ingestion": "./src/ingestion.ts",
     "./installation-service": "./src/installation-service.ts",
+    "./oauth-crypto": "./src/oauth-crypto.ts",
+    "./oauth-service": "./src/oauth-service.ts",
     "./routes": "./src/routes.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
@@ -31,6 +35,7 @@
     "@voyant-travel/custom-fields": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
@@ -55,6 +60,11 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./access-boundary": {
+        "types": "./dist/access-boundary.d.ts",
+        "import": "./dist/access-boundary.js",
+        "default": "./dist/access-boundary.js"
+      },
       "./api-runtime": {
         "types": "./dist/api-runtime.d.ts",
         "import": "./dist/api-runtime.js",
@@ -70,6 +80,11 @@
         "import": "./dist/contracts.js",
         "default": "./dist/contracts.js"
       },
+      "./consent": {
+        "types": "./dist/consent.d.ts",
+        "import": "./dist/consent.js",
+        "default": "./dist/consent.js"
+      },
       "./ingestion": {
         "types": "./dist/ingestion.d.ts",
         "import": "./dist/ingestion.js",
@@ -79,6 +94,16 @@
         "types": "./dist/installation-service.d.ts",
         "import": "./dist/installation-service.js",
         "default": "./dist/installation-service.js"
+      },
+      "./oauth-crypto": {
+        "types": "./dist/oauth-crypto.d.ts",
+        "import": "./dist/oauth-crypto.js",
+        "default": "./dist/oauth-crypto.js"
+      },
+      "./oauth-service": {
+        "types": "./dist/oauth-service.d.ts",
+        "import": "./dist/oauth-service.js",
+        "default": "./dist/oauth-service.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

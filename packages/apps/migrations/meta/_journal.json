@@ -15,6 +15,13 @@
       "when": 1784287178252,
       "tag": "20260717111938_breezy_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784298600000,
+      "tag": "20260717143000_app_oauth_authorization",
+      "breakpoints": true
     }
   ]
 }
