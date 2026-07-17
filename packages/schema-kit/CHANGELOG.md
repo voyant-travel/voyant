@@ -1,5 +1,12 @@
 # @voyant-travel/schema-kit
 
+## 0.113.1
+
+### Patch Changes
+
+- 0868f18: Add the app registry foundation with closed manifest validation, deterministic release compilation, protected manifest ingestion, and admin API wiring.
+- 027ca08: Add the app installation aggregate, lifecycle service, reconciliation tables, and TypeID prefixes for app installation records.
+
 ## 0.113.0
 
 ### Minor Changes

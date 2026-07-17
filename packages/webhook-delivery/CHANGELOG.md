@@ -1,5 +1,11 @@
 # @voyant-travel/webhook-delivery
 
+## 0.4.0
+
+### Minor Changes
+
+- 04b031d: Deliver installed app webhook subscriptions through the durable webhook delivery plane with app envelopes, signing key rotation support, lifecycle-aware health, and replay helpers.
+
 ## 0.3.4
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @voyant-travel/framework
 
+## 0.49.0
+
+### Minor Changes
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+
+### Patch Changes
+
+- Updated dependencies [926ea47]
+  - @voyant-travel/operator-standard@0.6.15
+  - @voyant-travel/cruises@0.165.0
+  - @voyant-travel/auth@0.132.5
+  - @voyant-travel/workflows@0.122.3
+  - @voyant-travel/workflows-orchestrator@0.122.3
+
 ## 0.48.3
 
 ### Patch Changes
