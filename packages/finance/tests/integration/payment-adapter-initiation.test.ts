@@ -140,6 +140,7 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       .insert(invoices)
       .values({
         invoiceNumber: next("INV"),
+        bookingId: next("book"),
         invoiceType: "invoice",
         status: "issued",
         currency: "EUR",
@@ -159,7 +160,7 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       amountCents,
       currency: invoice.currency,
       status: "pending",
-      paymentMethod: "card",
+      paymentMethod: "credit_card",
       notes: "Adapter initiation test",
       targetType: "invoice",
       targetId: invoice.id,
