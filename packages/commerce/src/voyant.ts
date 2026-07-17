@@ -478,6 +478,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
     requirePort(catalogCheckoutDatabaseRuntimePort),
     requirePort(catalogCheckoutLegalRuntimePort),
     requirePort(catalogCheckoutContractPdfRuntimePort),
+    requirePort(commerceOperatorSettingsRuntimePort),
     requirePort(workflowRunnerRegistryRuntimePort),
   ],
   api: [

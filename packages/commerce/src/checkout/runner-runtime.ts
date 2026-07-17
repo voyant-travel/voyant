@@ -2,6 +2,7 @@ import type { EventBus } from "@voyant-travel/core"
 import type { WorkflowRunner } from "@voyant-travel/workflow-runs"
 import type {
   CatalogCheckoutContractPdfGenerator,
+  CatalogCheckoutInvoicingModeResolver,
   DispatchCheckoutFinalizeParams,
 } from "./finalize.js"
 import { dispatchCheckoutFinalize } from "./finalize.js"
@@ -17,6 +18,7 @@ export interface CheckoutFinalizeRunnerRegistrationOptions<TBindings = unknown>
   eventBus: EventBus
   registry: CheckoutFinalizeRunnerRegistry
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
+  resolveInvoicingMode?: CatalogCheckoutInvoicingModeResolver
   dispatchFinalize?: typeof dispatchCheckoutFinalize
 }
 
@@ -52,6 +54,7 @@ export function createCheckoutFinalizeWorkflowRunner<TBindings = unknown>(
           parentRunId: context.parentRunId,
           triggeredByUserId: context.triggeredByUserId,
           generateContractPdf: options.generateContractPdf,
+          resolveInvoicingMode: options.resolveInvoicingMode,
         }),
       )
     },
@@ -70,6 +73,7 @@ export function createCheckoutFinalizeWorkflowRunner<TBindings = unknown>(
           resumeFromStep: context.resumeFromStep,
           seedResults: context.seedResults,
           generateContractPdf: options.generateContractPdf,
+          resolveInvoicingMode: options.resolveInvoicingMode,
         }),
       )
     },

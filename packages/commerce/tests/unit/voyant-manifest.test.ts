@@ -209,6 +209,7 @@ describe("commerce deployment manifest", () => {
         { id: catalogCheckoutDatabaseRuntimePort.id },
         { id: catalogCheckoutLegalRuntimePort.id },
         { id: catalogCheckoutContractPdfRuntimePort.id },
+        { id: commerceOperatorSettingsRuntimePort.id },
         { id: workflowRunnerRegistryRuntimePort.id },
       ],
       api: [
