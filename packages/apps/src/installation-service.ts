@@ -1,7 +1,7 @@
 import type { EventBus } from "@voyant-travel/core/events"
 import type { createCustomFieldsService } from "@voyant-travel/custom-fields"
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   audit,
@@ -425,10 +425,28 @@ function assertApiCompatible(release: AppRelease, platformApiVersion?: string) {
 function lifecyclePatch(to: AppInstallationStatus, now: Date) {
   const base = { status: to, updatedAt: now }
   if (to === "active") return { ...base, activatedAt: now }
-  if (to === "paused") return { ...base, pausedAt: now }
+  if (to === "paused") {
+    return {
+      ...base,
+      pausedAt: now,
+      credentialGeneration: sql`${appInstallations.credentialGeneration} + 1`,
+    }
+  }
   if (to === "degraded") return { ...base, degradedAt: now }
-  if (to === "revoked") return { ...base, revokedAt: now }
-  if (to === "uninstalled") return { ...base, uninstalledAt: now }
+  if (to === "revoked") {
+    return {
+      ...base,
+      revokedAt: now,
+      credentialGeneration: sql`${appInstallations.credentialGeneration} + 1`,
+    }
+  }
+  if (to === "uninstalled") {
+    return {
+      ...base,
+      uninstalledAt: now,
+      credentialGeneration: sql`${appInstallations.credentialGeneration} + 1`,
+    }
+  }
   return base
 }
 

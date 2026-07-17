@@ -148,6 +148,14 @@ function applyAuthContext(
   if (auth.isInternalRequest !== undefined) c.set("isInternalRequest", auth.isInternalRequest)
   if (auth.apiTokenId) c.set("apiTokenId", auth.apiTokenId)
   if (auth.apiKeyId) c.set("apiKeyId", auth.apiKeyId)
+  if (auth.appId) c.set("appId", auth.appId)
+  if (auth.appInstallationId) c.set("appInstallationId", auth.appInstallationId)
+  if (auth.appReleaseId) c.set("appReleaseId", auth.appReleaseId)
+  if (auth.appCredentialGeneration !== undefined) {
+    c.set("appCredentialGeneration", auth.appCredentialGeneration)
+  }
+  if (auth.appTokenMode) c.set("appTokenMode", auth.appTokenMode)
+  if (auth.appViewerId) c.set("appViewerId", auth.appViewerId)
 }
 
 export function requireAuth<TBindings extends VoyantBindings>(
@@ -304,7 +312,30 @@ export function requireAuth<TBindings extends VoyantBindings>(
       }
     }
 
-    // Strategy 3: App-provided auth resolution (cookies, provider tokens, etc.)
+    // Strategy 3: Remote app access token support
+    if (token && opts?.auth?.resolveAppToken) {
+      const lease = acquireRequestDb(c, dbFactory)
+      try {
+        const resolved = await opts.auth.resolveAppToken({
+          request: c.req.raw,
+          env: c.env,
+          db: lease.db,
+          // Guarded: Hono throws on `executionCtx` access outside Workers.
+          ctx: tryGetExecutionCtx(c),
+          token,
+        })
+
+        if (resolved?.callerType === "app" && resolved.appInstallationId) {
+          applyAuthContext(c, resolved)
+          // `await` is load-bearing — see strategy 2.
+          return await next()
+        }
+      } finally {
+        await lease.release()
+      }
+    }
+
+    // Strategy 4: App-provided auth resolution (cookies, provider tokens, etc.)
     if (opts?.auth?.resolve) {
       const lease = acquireRequestDb(c, dbFactory)
       try {
@@ -328,7 +359,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
       }
     }
 
-    // Strategy 4: Generic session-claims bearer token support
+    // Strategy 5: Generic session-claims bearer token support
     const sessionSecret = c.env.SESSION_CLAIMS_SECRET
 
     if (token && sessionSecret && token.includes(".")) {

@@ -190,6 +190,11 @@ export interface VoyantAuthResolveArgs<TBindings extends VoyantBindings = Voyant
   ctx?: VoyantExecutionContext
 }
 
+export interface VoyantAuthAppTokenResolveArgs<TBindings extends VoyantBindings = VoyantBindings>
+  extends VoyantAuthResolveArgs<TBindings> {
+  token: string
+}
+
 export interface VoyantAuthPermissionArgs<TBindings extends VoyantBindings = VoyantBindings>
   extends VoyantAuthResolveArgs<TBindings> {
   permission: VoyantPermission
@@ -227,6 +232,9 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
   resolve?: (
     args: VoyantAuthResolveArgs<TBindings>,
   ) => Promise<VoyantRequestAuthContext | null> | VoyantRequestAuthContext | null
+  resolveAppToken?: (
+    args: VoyantAuthAppTokenResolveArgs<TBindings>,
+  ) => Promise<VoyantAuthContext | null> | VoyantAuthContext | null
   hasPermission?: (args: VoyantAuthPermissionArgs<TBindings>) => Promise<boolean> | boolean
   validateApiKey?: (args: VoyantAuthApiKeyValidationArgs<TBindings>) => Promise<boolean> | boolean
   onUnauthorized?: (

@@ -1,14 +1,19 @@
 import { parseJsonBody, parseQuery, RequestValidationError } from "@voyant-travel/hono"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 import {
+  appCredentialRevocationSchema,
   appListQuerySchema,
+  appOAuthAuthorizeQuerySchema,
+  appOAuthTokenSchema,
   appWebhookReplaySchema,
   createCustomAppRegistrationSchema,
   releaseManifestFetchSchema,
   releaseManifestUploadSchema,
 } from "./contracts.js"
+import { createAppOAuthService } from "./oauth-service.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
 
@@ -21,9 +26,17 @@ type Env = {
 const appIdParamSchema = z.object({ appId: z.string().min(1) })
 const installationIdParamSchema = z.object({ installationId: z.string().min(1) })
 
-export function createAppsAdminRoutes(options: AppsServiceOptions = {}) {
+export interface AppsAdminRouteOptions extends AppsServiceOptions {
+  oauth?: {
+    accessCatalog: AccessCatalog
+    deploymentId: string
+  }
+}
+
+export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const routes = new Hono<Env>()
   const service = createAppsService(options)
+  const oauth = options.oauth ? createAppOAuthService(options.oauth) : null
 
   routes.get("/", async (c) => {
     const query = parseQuery(c, appListQuerySchema)
@@ -34,6 +47,72 @@ export function createAppsAdminRoutes(options: AppsServiceOptions = {}) {
     const body = await parseJsonBody(c, createCustomAppRegistrationSchema)
     const app = await service.createCustomApp(c.get("db"), body)
     return c.json({ data: app }, 201)
+  })
+
+  // Consent approval mutates state (installation, grants, authorization code),
+  // so it must never be reachable through read-scoped GET requests. The admin
+  // consent UI submits the approval and performs the redirect itself.
+  routes.post("/oauth/authorize", async (c) => {
+    if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
+    const body = await parseJsonBody(c, appOAuthAuthorizeQuerySchema)
+    const result = await oauth.authorize(c.get("db"), {
+      appId: body.client_id,
+      releaseId: body.release_id,
+      redirectUri: body.redirect_uri,
+      state: body.state,
+      codeChallenge: body.code_challenge,
+      codeChallengeMethod: body.code_challenge_method,
+      actorId: body.actor_id,
+      operatorGrantedScopes: splitScopes(body.operator_scopes),
+      grantedOptionalScopes: splitScopes(body.optional_scopes),
+    })
+    const redirectUrl = new URL(result.redirectUri)
+    redirectUrl.searchParams.set("code", result.code)
+    redirectUrl.searchParams.set("state", result.state)
+    return c.json({ data: { redirectUrl: redirectUrl.toString(), state: result.state } }, 200)
+  })
+
+  routes.post("/oauth/token", async (c) => {
+    if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
+    const body = await parseJsonBody(c, appOAuthTokenSchema)
+    const token =
+      body.grant_type === "authorization_code"
+        ? await oauth.token(c.get("db"), {
+            grantType: "authorization_code",
+            code: body.code,
+            redirectUri: body.redirect_uri,
+            codeVerifier: body.code_verifier,
+            clientId: body.client_id,
+            clientSecret: body.client_secret,
+          })
+        : body.grant_type === "refresh_token"
+          ? await oauth.token(c.get("db"), {
+              grantType: "refresh_token",
+              refreshToken: body.refresh_token,
+              clientId: body.client_id,
+              clientSecret: body.client_secret,
+            })
+          : await oauth.token(c.get("db"), {
+              grantType: "urn:voyant:params:oauth:grant-type:actor-token-exchange",
+              installationId: body.installation_id,
+              viewerId: body.viewer_id,
+              viewerScopes: body.viewer_scopes,
+              contextualScopes: body.contextual_scopes,
+              clientId: body.client_id,
+              clientSecret: body.client_secret,
+            })
+    return c.json(token, 200)
+  })
+
+  routes.post("/oauth/revoke-installation", async (c) => {
+    if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
+    const body = await parseJsonBody(c, appCredentialRevocationSchema)
+    const result = await oauth.revokeInstallationCredentials(
+      c.get("db"),
+      body.installationId,
+      body.actorId,
+    )
+    return c.json(result, 200)
   })
 
   routes.get("/:appId", async (c) => {
@@ -73,6 +152,13 @@ export function createAppsAdminRoutes(options: AppsServiceOptions = {}) {
   })
 
   return routes
+}
+
+function splitScopes(value: string): string[] {
+  return value
+    .split(/[,\s]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean)
 }
 
 function parseParams(input: Record<string, string | undefined>) {

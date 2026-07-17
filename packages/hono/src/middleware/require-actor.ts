@@ -177,7 +177,11 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
 
-    if (c.get("callerType") === "api_key" || c.get("callerType") === "internal") {
+    if (
+      c.get("callerType") === "api_key" ||
+      c.get("callerType") === "app" ||
+      c.get("callerType") === "internal"
+    ) {
       const pathname = normalizePathname(new URL(c.req.url).pathname, {
         basePath: options.basePath,
       })
@@ -200,7 +204,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
         return next()
       }
 
-      return c.json({ error: "Forbidden: API key missing required permission" }, 403)
+      return c.json({ error: "Forbidden: token missing required permission" }, 403)
     }
 
     const actor = c.get("actor") as Actor | undefined

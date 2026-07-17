@@ -20,7 +20,7 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm --workspace-concurrency=1 --filter @voyant-travel/custom-fields... run build"
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",

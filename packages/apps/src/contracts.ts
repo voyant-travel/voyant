@@ -242,9 +242,64 @@ export const appWebhookReplaySchema = z
   })
   .strict()
 
+export const appOAuthAuthorizeQuerySchema = z
+  .object({
+    response_type: z.literal("code"),
+    client_id: z.string().trim().min(1),
+    release_id: z.string().trim().min(1),
+    redirect_uri: z.string().url(),
+    state: z.string().trim().min(1),
+    code_challenge: z.string().trim().min(1),
+    code_challenge_method: z.literal("S256"),
+    actor_id: z.string().trim().min(1),
+    operator_scopes: z.string().trim().default(""),
+    optional_scopes: z.string().trim().default(""),
+  })
+  .strict()
+
+export const appOAuthTokenSchema = z
+  .discriminatedUnion("grant_type", [
+    z.object({
+      grant_type: z.literal("authorization_code"),
+      code: z.string().trim().min(1),
+      redirect_uri: z.string().url(),
+      code_verifier: z.string().trim().min(43).max(128),
+      client_id: z.string().trim().min(1),
+      client_secret: z.string().trim().optional(),
+    }),
+    z.object({
+      grant_type: z.literal("refresh_token"),
+      refresh_token: z.string().trim().min(1),
+      client_id: z.string().trim().min(1),
+      client_secret: z.string().trim().optional(),
+    }),
+    z.object({
+      grant_type: z.literal("urn:voyant:params:oauth:grant-type:actor-token-exchange"),
+      installation_id: z.string().trim().min(1),
+      viewer_id: z.string().trim().min(1),
+      viewer_scopes: z.array(scopeSchema).default([]),
+      contextual_scopes: z.array(scopeSchema).optional(),
+      client_id: z.string().trim().min(1),
+      client_secret: z.string().trim().optional(),
+    }),
+  ])
+  .transform((input) => ({
+    ...input,
+    client_secret: input.client_secret?.trim() || undefined,
+  }))
+
+export const appCredentialRevocationSchema = z
+  .object({
+    installationId: z.string().trim().min(1),
+    actorId: z.string().trim().min(1),
+  })
+  .strict()
+
 export type AppManifest = z.infer<typeof appManifestSchema>
 export type CreateCustomAppRegistrationInput = z.infer<typeof createCustomAppRegistrationSchema>
 export type ReleaseManifestUploadInput = z.infer<typeof releaseManifestUploadSchema>
 export type ReleaseManifestFetchInput = z.infer<typeof releaseManifestFetchSchema>
 export type AppListQuery = z.infer<typeof appListQuerySchema>
 export type AppWebhookReplayInput = z.infer<typeof appWebhookReplaySchema>
+export type AppOAuthAuthorizeQuery = z.infer<typeof appOAuthAuthorizeQuerySchema>
+export type AppOAuthTokenInput = z.infer<typeof appOAuthTokenSchema>
