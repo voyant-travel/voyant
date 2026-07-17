@@ -52,4 +52,18 @@ describe("protected manifest ingestion", () => {
       }),
     ).rejects.toThrow(/maximum allowed size/)
   })
+
+  it("rejects DNS rebinding between the public pre-check and the pinned connect", async () => {
+    let resolutions = 0
+    await expect(
+      fetchProtectedManifest("https://app.example.invalid/manifest.json", {
+        timeoutMs: 2000,
+        resolveHost: async () => {
+          resolutions += 1
+          return resolutions === 1 ? ["203.0.113.10"] : ["10.0.0.7"]
+        },
+      }),
+    ).rejects.toThrow(/private or reserved/)
+    expect(resolutions).toBeGreaterThanOrEqual(2)
+  })
 })
