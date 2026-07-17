@@ -28,7 +28,7 @@ import type {
   AppPurgePreview,
 } from "../schemas.js"
 import { PurgeDialog, UninstallDialog } from "./installation-dialogs.js"
-import { formatDate, MonoText, SectionEmpty, StatusBadge } from "./shared.js"
+import { formatWhen, MonoText, SectionEmpty, StatusBadge } from "./shared.js"
 
 export interface InstallationDetailProps {
   installationId: string
@@ -87,6 +87,7 @@ function DetailView({
   customFieldsHref: string
 }) {
   const t = messages.detail
+  const { formatDateTime } = useAppsUiI18nOrDefault()
   const { installation, app, activeRelease, pendingRelease } = detail
   const actions = useInstallationActions()
   const [confirm, setConfirm] = useState<"uninstall" | "purge" | null>(null)
@@ -161,7 +162,10 @@ function DetailView({
                 <Row label={t.updatePolicy} value={installation.updatePolicy} />
                 <Row label={t.namespace} mono value={installation.namespace} />
                 <Row label={t.installedBy} mono value={installation.installedBy} />
-                <Row label={t.installedAt} value={formatDate(installation.installedAt)} />
+                <Row
+                  label={t.installedAt}
+                  value={formatWhen(installation.installedAt, formatDateTime)}
+                />
               </CardContent>
             </Card>
             <Card>
@@ -249,7 +253,8 @@ function DetailView({
                           {t.webhookFailures}: {webhook.failureCount}
                         </span>
                         <span>
-                          {t.webhookLastDelivery}: {formatDate(webhook.lastDeliveryAt)}
+                          {t.webhookLastDelivery}:{" "}
+                          {formatWhen(webhook.lastDeliveryAt, formatDateTime)}
                         </span>
                       </div>
                     </li>
@@ -268,7 +273,7 @@ function DetailView({
               ) : (
                 <ul className="divide-y">
                   {detail.recentAudit.map((event) => (
-                    <AuditRow key={event.id} event={event} />
+                    <AuditRow key={event.id} event={event} formatDateTime={formatDateTime} />
                   ))}
                 </ul>
               )}
@@ -467,14 +472,22 @@ function AvailableUpdates({
   )
 }
 
-function AuditRow({ event }: { event: AppAuditEventRecord }) {
+function AuditRow({
+  event,
+  formatDateTime,
+}: {
+  event: AppAuditEventRecord
+  formatDateTime: ReturnType<typeof useAppsUiI18nOrDefault>["formatDateTime"]
+}) {
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
       <div className="flex items-center gap-2">
         <Badge variant="outline">{event.kind}</Badge>
         <MonoText>{event.action}</MonoText>
       </div>
-      <span className="text-xs text-muted-foreground">{formatDate(event.createdAt)}</span>
+      <span className="text-xs text-muted-foreground">
+        {formatWhen(event.createdAt, formatDateTime)}
+      </span>
     </li>
   )
 }
