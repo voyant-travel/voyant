@@ -1,18 +1,26 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
 
+import type { AppWebhookDeliveryEnvelope } from "./app-envelope.js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 
 export interface WebhookSubscription {
   id: string
   url: string
   secret: string
+  keyId?: string | null
   headers: Record<string, string> | null
   maxRetries: number
   active: boolean
+  app?: {
+    installationId: string
+    appId: string
+    eventVersion: string
+  }
 }
 
 export interface EnqueueWebhookAttemptInput {
+  id?: string
   sourceModule: string
   sourceEvent: string
   sourceEntityModule: string | null
@@ -23,7 +31,7 @@ export interface EnqueueWebhookAttemptInput {
   requestHeaders: Record<string, string>
   requestBodyHash: string
   requestBodyExcerpt: string | null
-  requestPayload: EventEnvelope
+  requestPayload: EventEnvelope | AppWebhookDeliveryEnvelope
   deliveryContract: ExternalWebhookEventContract
   attemptNumber: number
   parentDeliveryId: string | null

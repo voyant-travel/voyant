@@ -41,10 +41,21 @@ const CONTRACT = {
 const SUBSCRIPTION: WebhookSubscription = {
   id: newId("webhook_subscriptions"),
   url: "https://partner.example.test/hooks",
-  secret: "a-secret-that-is-at-least-thirty-two-characters",
+  secret: "s".repeat(40),
   headers: { Authorization: "Bearer private" },
   maxRetries: 2,
   active: true,
+}
+
+const APP_SUBSCRIPTION: WebhookSubscription = {
+  ...SUBSCRIPTION,
+  id: newId("app_webhook_subscriptions"),
+  keyId: "signing-key-2",
+  app: {
+    installationId: "appinst_1",
+    appId: "app_1",
+    eventVersion: "1.0.0",
+  },
 }
 
 describe("durable external webhook delivery", () => {
@@ -86,6 +97,30 @@ describe("durable external webhook delivery", () => {
     )
   })
 
+  it("delivers installed app subscriptions with the RFC envelope and signing key id", async () => {
+    const store = new MemoryWebhookDeliveryStore([APP_SUBSCRIPTION])
+    await createSelectedExternalWebhookQueue({ contracts: [CONTRACT], store }).enqueue(EVENT)
+    expect(store.records[0]?.requestPayload).toMatchObject({
+      schema: "voyant.app-webhook.delivery.v1",
+      installationId: "appinst_1",
+      appId: "app_1",
+      event: { type: "booking.created", schemaVersion: "1.0.0" },
+      payload: { entityModule: "bookings", entityId: "book_1" },
+    })
+    const fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const headers = new Headers(init?.headers)
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>
+      expect(headers.get("x-voyant-key-id")).toBe("signing-key-2")
+      expect(headers.get("x-voyant-installation-id")).toBe("appinst_1")
+      expect(body.deliveryId).toBe(store.records[0]?.id)
+      return new Response(null, { status: 204 })
+    })
+
+    const worker = createWebhookDeliveryWorker({ store, fetch: fetch as typeof globalThis.fetch })
+
+    await expect(worker.runNext()).resolves.toMatchObject({ status: "succeeded" })
+  })
+
   it("persists retry backoff and lets a later worker resume it", async () => {
     const store = await queuedStore()
     let clock = new Date("2026-07-11T12:00:00.000Z").getTime()
@@ -107,6 +142,33 @@ describe("durable external webhook delivery", () => {
     clock += 1_000
     await expect(worker.runNext()).resolves.toMatchObject({ status: "succeeded" })
     expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("gives app retries a new delivery id that references the original", async () => {
+    const store = new MemoryWebhookDeliveryStore([APP_SUBSCRIPTION])
+    await createSelectedExternalWebhookQueue({
+      contracts: [CONTRACT],
+      store,
+      now: () => new Date("2026-07-11T12:00:00.000Z"),
+    }).enqueue(EVENT)
+    const originalPayload = store.records[0]?.requestPayload as Record<string, unknown>
+    const worker = createWebhookDeliveryWorker({
+      store,
+      fetch: vi.fn(async () => new Response("down", { status: 503 })) as typeof globalThis.fetch,
+      retry: { baseDelayMs: 1_000 },
+      now: () => new Date("2026-07-11T12:00:00.000Z"),
+    })
+
+    await expect(worker.runNext()).resolves.toMatchObject({ status: "retry_scheduled" })
+
+    const retryPayload = store.records[1]?.requestPayload as {
+      deliveryId: string
+      attempt: { originalDeliveryId: string | null; parentDeliveryId: string | null }
+    }
+    expect(retryPayload.deliveryId).toBe(store.records[1]?.id)
+    expect(retryPayload.deliveryId).not.toBe(originalPayload.deliveryId)
+    expect(retryPayload.attempt.originalDeliveryId).toBe(originalPayload.deliveryId)
+    expect(retryPayload.attempt.parentDeliveryId).toBe(store.records[0]?.id)
   })
 
   it("dead-letters legacy pending rows without complete payloads and never dispatches", async () => {
@@ -133,6 +195,17 @@ describe("durable external webhook delivery", () => {
       status: "dead_lettered",
       delivery: { status: "abandoned", errorClass: "4xx" },
     })
+  })
+
+  it("halts pending deliveries when an app subscription is paused or uninstalled", async () => {
+    const pausedSubscription = { ...APP_SUBSCRIPTION, active: false }
+    const store = new MemoryWebhookDeliveryStore([pausedSubscription])
+    await createSelectedExternalWebhookQueue({ contracts: [CONTRACT], store }).enqueue(EVENT)
+    const fetch = vi.fn()
+    const worker = createWebhookDeliveryWorker({ store, fetch: fetch as typeof globalThis.fetch })
+
+    await expect(worker.runNext()).resolves.toMatchObject({ status: "dead_lettered" })
+    expect(fetch).not.toHaveBeenCalled()
   })
 })
 
@@ -227,7 +300,7 @@ type DeliveryRecordInput = Partial<
 function deliveryRecord(input: DeliveryRecordInput = {}): InfraWebhookDelivery {
   const timestamp = new Date("2026-07-11T12:00:00.000Z")
   return {
-    id: newId("webhook_deliveries"),
+    id: input.id ?? newId("webhook_deliveries"),
     sourceModule: input.sourceModule ?? "bookings",
     sourceEvent: input.sourceEvent ?? EVENT.name,
     sourceEntityModule: input.sourceEntityModule ?? null,
@@ -240,8 +313,8 @@ function deliveryRecord(input: DeliveryRecordInput = {}): InfraWebhookDelivery {
     requestHeaders: input.requestHeaders ?? {},
     requestBodyHash: input.requestBodyHash ?? null,
     requestBodyExcerpt: input.requestBodyExcerpt ?? null,
-    requestPayload: (input.requestPayload as unknown as Record<string, unknown>) ?? null,
-    deliveryContract: (input.deliveryContract as unknown as Record<string, unknown>) ?? null,
+    requestPayload: input.requestPayload ? objectRecord(input.requestPayload) : null,
+    deliveryContract: input.deliveryContract ? objectRecord(input.deliveryContract) : null,
     responseStatus: null,
     responseHeaders: null,
     responseBodyExcerpt: null,
@@ -258,4 +331,8 @@ function deliveryRecord(input: DeliveryRecordInput = {}): InfraWebhookDelivery {
     createdAt: timestamp,
     updatedAt: timestamp,
   }
+}
+
+function objectRecord(value: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value))
 }

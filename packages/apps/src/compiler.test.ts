@@ -78,5 +78,42 @@ describe("app manifest compiler", () => {
         },
       }),
     ).toThrow(/not an external event contract/)
+
+    expect(() =>
+      compileAppManifest(validManifest, {
+        eventCatalog: {
+          schemaVersion: "voyant.event-catalog.v1",
+          events: [
+            {
+              key: "booking.created@1.0.0",
+              id: "event.booking.created",
+              unitId: "@voyant-travel/bookings",
+              packageName: "@voyant-travel/bookings",
+              eventType: "booking.created",
+              version: "1.0.0",
+              payloadSchema: { type: "object", properties: {} },
+              visibility: "internal",
+              audit: { sourceModule: "@voyant-travel/bookings", category: "domain" },
+              redactedFields: [],
+            },
+          ],
+        },
+      }),
+    ).toThrow(/not an external event contract/)
+  })
+
+  it("rejects webhook endpoints that target local infrastructure", () => {
+    expect(() =>
+      compileAppManifest({
+        ...validManifest,
+        webhooks: [
+          {
+            eventType: "booking.created",
+            eventVersion: "1.0.0",
+            endpointUrl: "https://127.0.0.1/webhooks/voyant",
+          },
+        ],
+      }),
+    ).toThrow(/local or private hosts/)
   })
 })

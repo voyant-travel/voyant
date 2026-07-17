@@ -345,6 +345,8 @@ async function reconcileWebhooks(
         eventVersion: webhook.eventVersion,
         endpointUrl: webhook.endpointUrl,
         status: "active",
+        failureCount: 0,
+        pausedAt: null,
         deactivatedAt: null,
       })
       .onConflictDoUpdate({
@@ -354,7 +356,13 @@ async function reconcileWebhooks(
           appWebhookSubscriptions.eventVersion,
           appWebhookSubscriptions.endpointUrl,
         ],
-        set: { releaseId: release.id, status: "active", deactivatedAt: null },
+        set: {
+          releaseId: release.id,
+          status: "active",
+          failureCount: 0,
+          pausedAt: null,
+          deactivatedAt: null,
+        },
       })
   }
 }

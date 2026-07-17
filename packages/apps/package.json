@@ -31,6 +31,7 @@
     "@voyant-travel/custom-fields": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/webhook-delivery": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
