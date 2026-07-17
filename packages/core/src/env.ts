@@ -1,4 +1,4 @@
-export type VoyantCallerType = "session" | "api_key" | "internal"
+export type VoyantCallerType = "session" | "api_key" | "internal" | "app"
 
 /**
  * Who the request represents. Routes under `/v1/admin/*` expect `"staff"`;
@@ -26,6 +26,12 @@ export interface VoyantAuthContext {
   isInternalRequest?: boolean
   apiTokenId?: string
   apiKeyId?: string
+  appId?: string
+  appInstallationId?: string
+  appReleaseId?: string
+  appCredentialGeneration?: number
+  appTokenMode?: "offline" | "online"
+  appViewerId?: string
   email?: string | null
 }
 
