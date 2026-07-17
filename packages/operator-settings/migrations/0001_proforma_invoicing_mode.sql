@@ -1,0 +1,1 @@
+ALTER TABLE "booking_tax_settings" ADD COLUMN "invoicing_mode" text DEFAULT 'direct' NOT NULL;

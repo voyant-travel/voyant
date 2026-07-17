@@ -35,7 +35,8 @@
                 "type": "object",
                 "properties": {
                   "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
-                  "taxPolicyProfileId": { "type": ["string", "null"] }
+                  "taxPolicyProfileId": { "type": ["string", "null"] },
+                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
                 }
               }
             }
@@ -75,10 +76,11 @@
     "schemas": {
       "BookingTaxSettings": {
         "type": "object",
-        "required": ["taxPriceMode", "taxPolicyProfileId"],
+        "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode"],
         "properties": {
           "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
-          "taxPolicyProfileId": { "type": ["string", "null"] }
+          "taxPolicyProfileId": { "type": ["string", "null"] },
+          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
         }
       }
     }

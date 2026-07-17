@@ -351,6 +351,14 @@ export const taxesPage = {
     "Conditia trebuie sa includa cel putin un rand valid. Tarile trebuie sa fie coduri ISO din doua litere.",
   savePolicyProfileFailed: "Profilul de politica fiscala nu a putut fi salvat",
   savePolicyRuleFailed: "Regula fiscala nu a putut fi salvata",
+  invoicingModeTitle: "Mod de facturare",
+  invoicingModeDescription:
+    "Alege cum se emit facturile pentru rezervarile noi. Facturile existente nu sunt afectate.",
+  invoicingModeDirect: "Factura directa",
+  invoicingModeDirectHint: "Emite factura fiscala direct din rezervare.",
+  invoicingModeProformaFirst: "Proforma mai intai",
+  invoicingModeProformaFirstHint:
+    "Emite o proforma, apoi genereaza automat factura fiscala dupa ce este achitata integral.",
 }
 
 export const recordBookingPaymentDialog = {

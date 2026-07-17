@@ -33,6 +33,17 @@ describe("@voyant-travel/finance package exports", () => {
     })
   })
 
+  it("publishes the proforma-conversion subscriber runtime subpath", () => {
+    expect(packageJson.exports["./proforma-conversion-subscriber"]).toBe(
+      "./src/proforma-conversion-runtime.ts",
+    )
+    expect(packageJson.publishConfig.exports["./proforma-conversion-subscriber"]).toEqual({
+      types: "./dist/proforma-conversion-runtime.d.ts",
+      import: "./dist/proforma-conversion-runtime.js",
+      default: "./dist/proforma-conversion-runtime.js",
+    })
+  })
+
   it("publishes the Travel Credit service and graph-declared setup subpaths", () => {
     expect(packageJson.exports["./travel-credits"]).toBe("./src/service-travel-credits.ts")
     expect(packageJson.publishConfig.exports["./travel-credits"]).toEqual({

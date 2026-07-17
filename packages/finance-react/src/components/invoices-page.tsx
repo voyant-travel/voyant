@@ -40,6 +40,7 @@ import {
   formatInvoiceAmount,
   InvoiceRowSkeleton,
   invoiceStatusVariant,
+  invoiceTypeVariant,
   PaginationBar,
   SortHeader,
 } from "./invoice-table-parts.js"
@@ -400,7 +401,20 @@ export function InvoicesPage({ className, onOpenInvoice }: InvoicesPageProps = {
                         onCheckedChange={(checked) => setInvoiceSelected(row.id, Boolean(checked))}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{row.invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        {row.invoiceNumber}
+                        {row.invoiceType && row.invoiceType !== "invoice" ? (
+                          <Badge
+                            data-slot="invoice-type-badge"
+                            data-invoice-type={row.invoiceType}
+                            variant={invoiceTypeVariant[row.invoiceType] ?? "secondary"}
+                          >
+                            {messages.invoiceDetailPage.invoiceTypeLabels[row.invoiceType]}
+                          </Badge>
+                        ) : null}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={invoiceStatusVariant[row.status] ?? "secondary"}

@@ -348,6 +348,14 @@ export const taxesPage = {
     "Condition must include at least one valid row. Country values must be two-letter ISO codes.",
   savePolicyProfileFailed: "Failed to save tax policy profile",
   savePolicyRuleFailed: "Failed to save tax policy rule",
+  invoicingModeTitle: "Invoicing mode",
+  invoicingModeDescription:
+    "Choose how invoices are issued for new bookings. Existing invoices are unaffected.",
+  invoicingModeDirect: "Direct invoice",
+  invoicingModeDirectHint: "Issue the fiscal invoice straight from the booking.",
+  invoicingModeProformaFirst: "Proforma first",
+  invoicingModeProformaFirstHint:
+    "Issue a proforma, then mint the fiscal invoice automatically once it is paid in full.",
 }
 
 export const recordBookingPaymentDialog = {

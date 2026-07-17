@@ -198,7 +198,25 @@ export async function resolveBookingTaxSettings(
   return {
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
+    invoicingMode: normalizeInvoicingMode(settings?.invoicingMode),
   }
+}
+
+function normalizeInvoicingMode(value: string | null | undefined): "direct" | "proforma-first" {
+  return value === "proforma-first" ? "proforma-first" : "direct"
+}
+
+/**
+ * Resolve just the operator invoicing mode. Defaults to `direct`
+ * (zero behaviour change) when no settings row exists. Provided
+ * through the finance operator-settings runtime port so the finance
+ * proforma-conversion subscriber can gate auto-conversion on it.
+ */
+export async function resolveInvoicingMode(
+  db: PostgresJsDatabase,
+): Promise<"direct" | "proforma-first"> {
+  const settings = await resolveBookingTaxSettings(db)
+  return normalizeInvoicingMode(settings.invoicingMode)
 }
 
 export async function updateBookingTaxSettings(
@@ -217,11 +235,13 @@ export async function updateBookingTaxSettings(
       .values({
         taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
         taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
+        invoicingMode: normalizeInvoicingMode(patch.invoicingMode),
       })
       .returning()
     return {
       taxPriceMode: created?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
       taxPolicyProfileId: created?.taxPolicyProfileId ?? null,
+      invoicingMode: normalizeInvoicingMode(created?.invoicingMode),
     }
   }
 
@@ -230,6 +250,7 @@ export async function updateBookingTaxSettings(
     .set({
       taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
       taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
+      invoicingMode: normalizeInvoicingMode(patch.invoicingMode),
       updatedAt: new Date(),
     })
     .where(eq(bookingTaxSettings.id, existing.id))
@@ -238,6 +259,7 @@ export async function updateBookingTaxSettings(
   return {
     taxPriceMode: updated?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: updated?.taxPolicyProfileId ?? null,
+    invoicingMode: normalizeInvoicingMode(updated?.invoicingMode),
   }
 }
 
