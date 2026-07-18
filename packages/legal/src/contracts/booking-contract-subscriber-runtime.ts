@@ -149,6 +149,10 @@ function logNonSuccessResult(
   bookingId: string,
   result: AutoGenerateContractResult,
 ) {
+  // Contract generation is opt-in through persisted operator settings. A
+  // fresh deployment has no template/series by design, so absence is a quiet
+  // readiness state rather than a runtime failure on every confirmed booking.
+  if (result.status === "template_not_found" || result.status === "series_not_found") return
   if (result.status !== "ok") {
     logger.error(
       `[legal] auto-generate contract skipped for booking ${bookingId}: ${result.status}`,

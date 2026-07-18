@@ -215,7 +215,7 @@ describe("Legal booking-contract subscriber runtime", () => {
     )
   })
 
-  it("logs ineligible generation outcomes and thrown failures without rejecting delivery", async () => {
+  it("keeps missing operator configuration quiet and logs thrown failures", async () => {
     const skipped = harness()
     const logger = { error: vi.fn() }
     const generateContract = vi
@@ -234,12 +234,9 @@ describe("Legal booking-contract subscriber runtime", () => {
 
     await expect(skipped.handler()?.(bookingEvent)).resolves.toBeUndefined()
     await expect(skipped.handler()?.(bookingEvent)).resolves.toBeUndefined()
+    expect(logger.error).toHaveBeenCalledTimes(1)
     expect(logger.error).toHaveBeenNthCalledWith(
       1,
-      "[legal] auto-generate contract skipped for booking booking_1: template_not_found",
-    )
-    expect(logger.error).toHaveBeenNthCalledWith(
-      2,
       "[legal] auto-generate contract failed for booking booking_1: database unavailable",
     )
   })

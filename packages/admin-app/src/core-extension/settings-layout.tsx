@@ -116,7 +116,7 @@ export function AdminCoreSettingsLayout({
           ))}
         </nav>
       </aside>
-      <div className="flex-1 md:overflow-y-auto">
+      <div className="min-w-0 flex-1 md:overflow-y-auto">
         <Outlet />
       </div>
     </div>

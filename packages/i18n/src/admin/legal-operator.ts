@@ -152,6 +152,9 @@ export const operatorAdminLegalMessages = {
         bodyHelp:
           "Editing the body automatically creates a new version. Metadata-only changes (name, scope, description) update in place without versioning.",
         activeLabel: "Active",
+        defaultLabel: "Use automatically",
+        defaultHelp:
+          "Use this template for automatic contract generation in this scope and language.",
         scopeOptions: {
           customer: "Customer",
           supplier: "Supplier",
@@ -234,6 +237,8 @@ export const operatorAdminLegalMessages = {
         resetStrategyLabel: "Reset Strategy",
         scopeLabel: "Scope",
         activeLabel: "Active",
+        defaultLabel: "Default series",
+        defaultHelp: "Use this series when contracts in this scope are generated automatically.",
         conflictMessage:
           'An active series with prefix "{prefix}" and scope "{scope}" already exists ("{name}"). Save will fail unless you archive it first.',
         resetStrategyOptions: {
@@ -400,6 +405,9 @@ export const operatorAdminLegalMessages = {
         bodyHelp:
           "Editarea continutului creeaza automat o versiune noua. Modificarile doar pe metadate (nume, domeniu, descriere) se aplica fara versionare.",
         activeLabel: "Activ",
+        defaultLabel: "Foloseste automat",
+        defaultHelp:
+          "Foloseste acest sablon pentru generarea automata a contractelor in acest domeniu si aceasta limba.",
         scopeOptions: {
           customer: "Client",
           supplier: "Furnizor",
@@ -482,6 +490,9 @@ export const operatorAdminLegalMessages = {
         resetStrategyLabel: "Strategie de resetare",
         scopeLabel: "Domeniu",
         activeLabel: "Activa",
+        defaultLabel: "Serie implicita",
+        defaultHelp:
+          "Foloseste aceasta serie cand contractele din acest domeniu sunt generate automat.",
         conflictMessage:
           'Exista deja o serie activa cu prefixul "{prefix}" si domeniul "{scope}" ("{name}"). Salvarea va esua daca nu o arhivezi mai intai.',
         resetStrategyOptions: {

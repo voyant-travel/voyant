@@ -34,7 +34,7 @@ export async function resolveContractGenerationVariables(
   event: BookingConfirmedLikeEvent,
   options: AutoGenerateContractOptions,
   runtime: AutoGenerateContractRuntime,
-  template: { id: string; language?: string | null; seriesLabel?: string | null },
+  template: { id: string; slug: string; language?: string | null; seriesLabel?: string | null },
 ): Promise<Record<string, unknown>> {
   const travelers = await bookingsService.listTravelers(db, event.bookingId)
   const travelerTravelDetails = await resolveTravelerTravelDetails(
@@ -313,6 +313,10 @@ export async function resolveContractGenerationVariables(
       phone: "",
       email: "",
       website: "",
+      logoUrl: "",
+      logoDarkUrl: "",
+      iconUrl: "",
+      iconDarkUrl: "",
       iban: "",
       bank: "",
       license: "",
@@ -326,7 +330,7 @@ export async function resolveContractGenerationVariables(
       userAgent: "",
       acceptedAt: "",
       marketingConsent: false,
-      templateSlug: options.templateSlug,
+      templateSlug: template.slug,
       templateId: template.id,
     },
   }

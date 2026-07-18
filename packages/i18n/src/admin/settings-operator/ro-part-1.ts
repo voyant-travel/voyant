@@ -230,6 +230,32 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     savedToast: "Profilul operatorului a fost salvat",
     saveFailed: "Salvarea a esuat",
     saveChanges: "Salveaza modificarile",
+    branding: {
+      title: "Elemente de brand",
+      description:
+        "Identitatea vizuala reutilizabila a operatorului pentru documente, storefront si administrare.",
+      horizontalLogoTitle: "Logo orizontal",
+      horizontalLogoDescription:
+        "Logo-ul orizontal complet, inclusiv denumirea grafica atunci cand este cazul.",
+      iconTitle: "Pictograma",
+      iconDescription: "Simbolul compact al brandului pentru spatii patrate sau restranse.",
+      lightModeLabel: "Mod luminos",
+      lightModeHelp: "Afisat pe fundaluri deschise.",
+      darkModeLabel: "Mod intunecat",
+      darkModeHelp: "Afisat pe fundaluri inchise.",
+      assetHelp:
+        "PNG, JPEG, WebP sau GIF de maximum 2 MB fiecare. Sunt recomandate fisiere PNG sau WebP transparente.",
+      drop: "Trage si plaseaza o imagine aici",
+      dropActive: "Plaseaza imaginea pentru incarcare",
+      replace: "Trage aici o imagine noua",
+      clickHelp: "sau apasa oriunde in aceasta zona pentru a alege un fisier",
+      remove: "Elimina",
+      uploading: "Se incarca…",
+      uploaded: "Elementul de brand a fost incarcat. Salveaza modificarile pentru a-l aplica.",
+      uploadFailed: "Incarcarea elementului de brand a esuat",
+      imageOnly: "Alege un fisier imagine",
+      tooLarge: "Fiecare element de brand trebuie sa aiba maximum 2 MB",
+    },
     identity: {
       title: "Identitate",
       description: "Numele comercial, denumirea legala si codurile fiscale.",

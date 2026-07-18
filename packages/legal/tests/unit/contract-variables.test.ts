@@ -201,6 +201,10 @@ function makeDefaults(): DefaultContractVariables {
       phone: "",
       email: "",
       website: "",
+      logoUrl: "",
+      logoDarkUrl: "",
+      iconUrl: "",
+      iconDarkUrl: "",
       iban: "",
       bank: "",
       license: "",
@@ -238,8 +242,20 @@ type AnyRecord = Record<string, any>
 describe("buildContractVariableBindings", () => {
   it("folds payment schedule, rooms, operator profile and documents url onto defaults", async () => {
     const resolve = buildContractVariableBindings({
-      resolveOperatorProfile: () => ({ name: "Acme Travel", vatId: "RO123", iban: null }),
+      resolveOperatorProfile: () => ({
+        name: "Acme Travel",
+        vatId: "RO123",
+        logoLightAssetKey: "uploads/logo-light.png",
+        logoLightMimeType: "image/png",
+        logoDarkAssetKey: "uploads/logo-dark.png",
+        logoDarkMimeType: "image/png",
+        iconLightAssetKey: "uploads/icon-light.png",
+        iconLightMimeType: "image/png",
+        iconDarkAssetKey: "uploads/icon-dark.png",
+        iconDarkMimeType: "image/png",
+      }),
       resolveOperatorPaymentInstructions: () => ({ iban: "RO99BANK", bank: "Acme Bank" }),
+      resolveOperatorBrandAssetUrl: ({ assetKey }) => `data:image/png;base64,${assetKey}`,
     })
 
     const db = stubDb({
@@ -282,6 +298,10 @@ describe("buildContractVariableBindings", () => {
     expect(result.operator.legalName).toBe("Acme Travel")
     expect(result.operator.iban).toBe("RO99BANK")
     expect(result.operator.bank).toBe("Acme Bank")
+    expect(result.operator.logoUrl).toBe("data:image/png;base64,uploads/logo-light.png")
+    expect(result.operator.logoDarkUrl).toBe("data:image/png;base64,uploads/logo-dark.png")
+    expect(result.operator.iconUrl).toBe("data:image/png;base64,uploads/icon-light.png")
+    expect(result.operator.iconDarkUrl).toBe("data:image/png;base64,uploads/icon-dark.png")
     expect(result.documents).toEqual({
       baseUrl: "https://docs.example.com",
       base_url: "https://docs.example.com",

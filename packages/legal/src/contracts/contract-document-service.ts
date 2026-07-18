@@ -4,7 +4,7 @@
  * Generating a booking's contract PDF is a fixed legal-domain pipeline:
  *
  *   1. resolve the document generator (deployment-supplied),
- *   2. lazy-seed the default contract number series,
+ *   2. resolve the operator-authored default contract number series,
  *   3. look up the booking's number,
  *   4. (optional) reset any prior rendered document for a forced regenerate,
  *   5. run `autoGenerateContractForBooking` (template lookup → variable
@@ -22,8 +22,8 @@
  *   - `autoGenerateOptions` — the `AutoGenerateContractOptions` carrying the
  *     template slug / scope / series identity and the operator-injected
  *     `resolveVariables` binding (see `buildContractVariableBindings`).
- *   - `defaultSeries` — the canonical series identity and display label seeded
- *     by `ensureDefaultContractSeries`.
+ *   - `defaultSeries` — an optional legacy compatibility seed. Standard
+ *     deployments omit it and require an operator-configured default series.
  *   - `resolveBindings()` — the runtime env bindings forwarded into
  *     `resolveVariables` (e.g. `DOCUMENTS_BASE_URL`).
  *   - `resolveBookingPiiService()` — the deployment's KMS-backed traveler
@@ -69,8 +69,8 @@ export interface ContractDocumentServiceOptions {
    * operator-injected `resolveVariables` binding).
    */
   autoGenerateOptions: AutoGenerateContractOptions
-  /** Canonical identity and display label of the series to lazy-seed. */
-  defaultSeries: DefaultContractSeries
+  /** @deprecated Legacy compatibility seed. Standard deployments omit this. */
+  defaultSeries?: DefaultContractSeries
   /**
    * Runtime env bindings forwarded into `resolveVariables` (e.g.
    * `DOCUMENTS_BASE_URL`, `APP_URL`). Optional.
@@ -128,8 +128,9 @@ export function createContractDocumentService(
       const generator = resolveGenerator()
       if (!generator) return null
 
-      // Lazy seed — creates the default series on the first contract generation.
-      await ensureDefaultContractSeries(db, defaultSeries)
+      // Compatibility only: standard deployments never synthesize operator
+      // numbering policy and instead resolve the persisted default series.
+      if (defaultSeries) await ensureDefaultContractSeries(db, defaultSeries)
 
       const [bookingRow] = await db
         .select({ bookingNumber: bookings.bookingNumber })

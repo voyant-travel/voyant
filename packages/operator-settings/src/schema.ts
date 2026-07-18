@@ -89,6 +89,17 @@ export const operatorProfile = pgTable("operator_profile", {
   phone: text("phone"),
   email: text("email"),
   website: text("website"),
+  // Reusable operator brand identity. "Logo" means the horizontal logo/lockup;
+  // "icon" means the compact mark. Light/dark name the UI mode each asset is
+  // intended for, not the dominant colour of the uploaded image.
+  logoLightAssetKey: text("logo_light_asset_key"),
+  logoLightMimeType: text("logo_light_mime_type"),
+  logoDarkAssetKey: text("logo_dark_asset_key"),
+  logoDarkMimeType: text("logo_dark_mime_type"),
+  iconLightAssetKey: text("icon_light_asset_key"),
+  iconLightMimeType: text("icon_light_mime_type"),
+  iconDarkAssetKey: text("icon_dark_asset_key"),
+  iconDarkMimeType: text("icon_dark_mime_type"),
   license: text("license"),
   licenseAuthority: text("license_authority"),
   signatoryName: text("signatory_name"),

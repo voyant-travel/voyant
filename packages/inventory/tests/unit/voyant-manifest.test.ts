@@ -63,7 +63,7 @@ describe("inventory deployment manifests", () => {
           },
         },
       ],
-      runtimePorts: [{ id: "inventory.runtime" }],
+      runtimePorts: [{ id: "inventory.runtime" }, { id: "documents.renderer", optional: true }],
       schema: [{ id: "@voyant-travel/inventory#schema" }],
       migrations: [{ id: "@voyant-travel/inventory#migrations" }],
       links: [
