@@ -1,5 +1,19 @@
 # @voyant-travel/finance
 
+## 0.170.0
+
+### Patch Changes
+
+- Updated dependencies [117fa05]
+  - @voyant-travel/core@0.127.0
+  - @voyant-travel/action-ledger@0.111.3
+  - @voyant-travel/bookings@0.170.0
+  - @voyant-travel/db@0.114.13
+  - @voyant-travel/hono@0.128.6
+  - @voyant-travel/payments@0.2.3
+  - @voyant-travel/public-document-delivery@0.4.3
+  - @voyant-travel/storage@0.111.3
+
 ## 0.169.2
 
 ### Patch Changes

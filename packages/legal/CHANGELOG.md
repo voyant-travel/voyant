@@ -1,5 +1,28 @@
 # @voyant-travel/legal
 
+## 0.170.0
+
+### Minor Changes
+
+- 117fa05: Generate managed-deployment contracts from operator-authored default templates and number series without deployment-specific workflows. Add reusable light- and dark-mode horizontal logo and icon assets to Operator Profile, expose them to contract templates, and provide accessible drag-and-drop upload controls. Introduce a shared document-renderer port and zero-code HTTP adapter so managed deployments can use a private platform renderer while self-hosters can swap in their own renderer for contracts and brochures.
+
+### Patch Changes
+
+- Updated dependencies [117fa05]
+  - @voyant-travel/core@0.127.0
+  - @voyant-travel/inventory@0.14.0
+  - @voyant-travel/operator-settings@0.10.0
+  - @voyant-travel/action-ledger@0.111.3
+  - @voyant-travel/bookings@0.170.0
+  - @voyant-travel/commerce@0.39.4
+  - @voyant-travel/db@0.114.13
+  - @voyant-travel/distribution@0.160.0
+  - @voyant-travel/finance@0.170.0
+  - @voyant-travel/hono@0.128.6
+  - @voyant-travel/public-document-delivery@0.4.3
+  - @voyant-travel/relationships@0.128.8
+  - @voyant-travel/storage@0.111.3
+
 ## 0.169.1
 
 ### Patch Changes

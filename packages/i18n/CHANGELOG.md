@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.112.1
+
+### Patch Changes
+
+- 117fa05: Generate managed-deployment contracts from operator-authored default templates and number series without deployment-specific workflows. Add reusable light- and dark-mode horizontal logo and icon assets to Operator Profile, expose them to contract templates, and provide accessible drag-and-drop upload controls. Introduce a shared document-renderer port and zero-code HTTP adapter so managed deployments can use a private platform renderer while self-hosters can swap in their own renderer for contracts and brochures.
+
 ## 0.112.0
 
 ### Minor Changes

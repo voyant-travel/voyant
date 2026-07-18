@@ -282,6 +282,7 @@ function acceptanceEnvironment() {
   return {
     ...process.env,
     BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
+    BETTER_AUTH_CUSTOMER_SECRET: "starter-acceptance-customer-auth-secret",
     DATABASE_URL:
       process.env.TEST_DATABASE_URL ??
       ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant_starter_acceptance"].join(""),
