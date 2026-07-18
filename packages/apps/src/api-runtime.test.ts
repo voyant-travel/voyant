@@ -1,7 +1,7 @@
 import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import { createAppsApiModule } from "./api-runtime.js"
-import { appsManagedAuthRuntimePort } from "./runtime-port.js"
+import { appsManagedAuthRuntimePort, appsManagedMarketplaceRuntimePort } from "./runtime-port.js"
 
 const graph = {
   providerSelections: {},
@@ -13,25 +13,41 @@ const graph = {
   setupSteps: [],
 } as const
 
-function context(managedAuth?: {
-  runtimeAudience: string
-  installationAuthority: {
-    workloadEnvironmentId: string
-    resolveInstallationContract: () => Promise<{ contractGeneration: number }>
-  }
-  sessionTokenSigningSecret: string
-  sessionTokenTtlSeconds?: number
-}): VoyantGraphRuntimeFactoryContext {
+function context(
+  managedAuth?: {
+    runtimeAudience: string
+    installationAuthority: {
+      workloadEnvironmentId: string
+      resolveInstallationContract: () => Promise<{ contractGeneration: number }>
+    }
+    sessionTokenSigningSecret: string
+    sessionTokenTtlSeconds?: number
+  },
+  managedMarketplace?: {
+    acquisitionResolver: {
+      resolveAcquisitionIntent: () => Promise<null>
+      createSetupHandoff: () => Promise<{ redirectUrl: string }>
+    }
+  },
+): VoyantGraphRuntimeFactoryContext {
   return {
     unitId: "@voyant-travel/apps",
     projectConfig: {},
     getUnitProjectConfig: () => undefined,
     api: [],
     graph,
-    runtimePorts: managedAuth ? { [appsManagedAuthRuntimePort.id]: managedAuth } : {},
-    hasPort: (port) => port.id === appsManagedAuthRuntimePort.id && managedAuth !== undefined,
+    runtimePorts: {
+      ...(managedAuth ? { [appsManagedAuthRuntimePort.id]: managedAuth } : {}),
+      ...(managedMarketplace ? { [appsManagedMarketplaceRuntimePort.id]: managedMarketplace } : {}),
+    },
+    hasPort: (port) =>
+      (port.id === appsManagedAuthRuntimePort.id && managedAuth !== undefined) ||
+      (port.id === appsManagedMarketplaceRuntimePort.id && managedMarketplace !== undefined),
     getPort: async (port) => {
       if (port.id === appsManagedAuthRuntimePort.id && managedAuth) return managedAuth as never
+      if (port.id === appsManagedMarketplaceRuntimePort.id && managedMarketplace) {
+        return managedMarketplace as never
+      }
       throw new Error(`missing ${port.id}`)
     },
     getPorts: async () => [],
@@ -72,5 +88,21 @@ describe("createAppsApiModule", () => {
         token: "test-token",
       }),
     ).resolves.toBeNull()
+  })
+
+  it("composes managed acquisition independently from OAuth authority", async () => {
+    const module = await createAppsApiModule(
+      context(undefined, {
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+        },
+      }),
+    )
+
+    expect(module.adminRoutes).toBeDefined()
+    expect(module.clientAuthenticated).toBeUndefined()
   })
 })

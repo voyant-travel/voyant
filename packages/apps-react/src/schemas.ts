@@ -205,3 +205,62 @@ export const auditListResponse = collection(appAuditEventSchema)
 export const webhookHealthResponse = collection(appWebhookSubscriptionSchema)
 export const lifecycleResponse = single(lifecycleOutcomeSchema)
 export const purgePreviewResponse = single(purgePreviewSchema)
+
+export const marketplaceInstallIntentResponse = z.object({
+  data: z.object({
+    appId: z.string(),
+    releaseId: z.string(),
+    acquisitionId: z.string(),
+    created: z.boolean(),
+  }),
+})
+export type MarketplaceInstallIntentResult = z.infer<
+  typeof marketplaceInstallIntentResponse
+>["data"]
+
+export const marketplaceSetupHandoffResponse = z.object({
+  data: z.object({ redirectUrl: z.string().url() }),
+})
+
+export const normalizedReleaseConsentSchema = z.object({
+  requestedScopes: z.array(z.string()),
+  optionalScopes: z.array(z.string()),
+  webhooks: z.array(
+    z.object({
+      eventType: z.string(),
+      eventVersion: z.string(),
+      endpointUrl: z.string().url(),
+    }),
+  ),
+  adminPages: z.array(
+    z.object({
+      key: z.string(),
+      titleKey: z.string(),
+      path: z.string(),
+      entryUrl: z.string().url(),
+    }),
+  ),
+  slotExtensions: z.array(
+    z.object({
+      key: z.string(),
+      titleKey: z.string(),
+      version: z.string(),
+      extensionApi: z.string(),
+      entryUrl: z.string().url(),
+      slots: z.array(z.string()),
+    }),
+  ),
+  urls: z.object({
+    setup: z.string().url().optional(),
+    health: z.string().url(),
+    launch: z.string().url(),
+    privacy: z.string().url(),
+    support: z.string().url(),
+  }),
+  data: z.object({
+    classifications: z.array(z.string()),
+    retention: z.string(),
+    storesSecrets: z.boolean(),
+  }),
+})
+export type NormalizedReleaseConsent = z.infer<typeof normalizedReleaseConsentSchema>

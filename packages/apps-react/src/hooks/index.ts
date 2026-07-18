@@ -17,3 +17,4 @@ export {
   useInstallationAudit,
   useInstallations,
 } from "./use-installations.js"
+export { useMarketplaceInstallIntent } from "./use-marketplace-install-intent.js"

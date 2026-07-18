@@ -52,12 +52,20 @@ export function InstalledAppsPage({
   const [selected, setSelected] = useState<string | undefined>()
   const [consentOpen, setConsentOpen] = useState(false)
   const [consentAppId, setConsentAppId] = useState<string | undefined>()
+  const [installIntent, setInstallIntent] = useState<string | undefined>()
 
   // A restricted install link (`/apps?installApp=<id>`) drops the recipient
   // straight into the app-preselected consent flow.
   useEffect(() => {
     if (typeof window === "undefined") return
-    const installApp = new URLSearchParams(window.location.search).get("installApp")
+    const params = new URLSearchParams(window.location.search)
+    const managedIntent = params.get("installIntent")
+    const installApp = params.get("installApp")
+    if (managedIntent) {
+      setInstallIntent(managedIntent)
+      setConsentOpen(true)
+      return
+    }
     if (installApp) {
       setConsentAppId(installApp)
       setConsentOpen(true)
@@ -198,14 +206,16 @@ export function InstalledAppsPage({
         // ConsentScreen seeds its selected app from `appId` only at mount, so
         // key it on the preselected app to re-seed when a restricted install
         // link supplies one.
-        key={consentAppId ?? "manual"}
+        key={installIntent ? `intent:${installIntent}` : (consentAppId ?? "manual")}
         open={consentOpen}
         onOpenChange={(open) => {
           setConsentOpen(open)
           if (!open) setConsentAppId(undefined)
+          if (!open) setInstallIntent(undefined)
         }}
         actorId={actorId}
         appId={consentAppId}
+        installIntent={installIntent}
         onInstalled={() => void query.refetch()}
       />
     </div>

@@ -21,13 +21,14 @@ import {
   SelectValue,
 } from "@voyant-travel/ui/components"
 import { AlertCircle, Loader2, ShieldCheck } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useAppReleases, useApps } from "../hooks/use-apps.js"
 import { useInstallationActions } from "../hooks/use-installation-actions.js"
+import { useMarketplaceInstallIntent } from "../hooks/use-marketplace-install-intent.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
 import type { AppReleaseRecord } from "../schemas.js"
-import { readScopeArray } from "./shared.js"
+import { ConsentDisclosures, readConsentDisclosures } from "./consent-disclosures.js"
 
 const UPDATE_POLICIES = ["compatible", "patch", "manual", "pinned"] as const
 
@@ -37,7 +38,9 @@ export interface ConsentScreenProps {
   actorId: string
   /** Pre-select an app (e.g. reinstalling from its detail page). */
   appId?: string
-  onInstalled?: () => void
+  /** Opaque host-issued Marketplace intent. No app coordinates are read from the URL. */
+  installIntent?: string
+  onInstalled?: (installationId: string) => void
 }
 
 export function ConsentScreen({
@@ -45,6 +48,7 @@ export function ConsentScreen({
   onOpenChange,
   actorId,
   appId: initialAppId,
+  installIntent,
   onInstalled,
 }: ConsentScreenProps) {
   const { messages } = useAppsUiI18nOrDefault()
@@ -56,18 +60,31 @@ export function ConsentScreen({
   const [updatePolicy, setUpdatePolicy] = useState<(typeof UPDATE_POLICIES)[number]>("compatible")
   const releases = useAppReleases(appId)
   const { install } = useInstallationActions()
+  const marketplace = useMarketplaceInstallIntent()
+  const resolvedIntent = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!open || !installIntent || resolvedIntent.current === installIntent) return
+    resolvedIntent.current = installIntent
+    marketplace.resolveIntent.mutate(installIntent, {
+      onSuccess: (result) => {
+        setAppId(result.appId)
+        setReleaseId(result.releaseId)
+        void apps.refetch()
+      },
+    })
+  }, [apps.refetch, installIntent, open, marketplace.resolveIntent.mutate])
 
   const selectedApp = apps.data?.data.find((app) => app.id === appId)
   const release: AppReleaseRecord | undefined = releases.data?.data.find(
     (candidate) => candidate.id === releaseId,
   )
-  const { required, optional } = useMemo(() => {
-    if (!release) return { required: [] as string[], optional: [] as string[] }
-    return {
-      required: readScopeArray(release.normalizedRecord, "requestedScopes"),
-      optional: readScopeArray(release.normalizedRecord, "optionalScopes"),
-    }
-  }, [release])
+  const disclosure = useMemo(
+    () => (release ? readConsentDisclosures(release.normalizedRecord) : null),
+    [release],
+  )
+  const required = disclosure?.requestedScopes ?? []
+  const optional = disclosure?.optionalScopes ?? []
 
   const grantedOptional = optional.filter((scope) => !denied.has(scope))
   const grantedCount = required.length + grantedOptional.length
@@ -85,18 +102,30 @@ export function ConsentScreen({
     setDenied(new Set())
     setReleaseId(undefined)
     install.reset()
+    marketplace.resolveIntent.reset()
+    marketplace.createSetupHandoff.reset()
+    resolvedIntent.current = null
   }
 
   const handleApprove = async () => {
     if (!appId || !releaseId) return
-    await install.mutateAsync({
+    const result = await install.mutateAsync({
       appId,
       releaseId,
       actorId,
       grantedOptionalScopes: grantedOptional,
       updatePolicy,
     })
-    onInstalled?.()
+    onInstalled?.(result.installation.id)
+    if ((installIntent || selectedApp?.distribution === "marketplace") && disclosure?.urls.setup) {
+      try {
+        const handoff = await marketplace.createSetupHandoff.mutateAsync(result.installation.id)
+        if (typeof window !== "undefined") window.location.assign(handoff.redirectUrl)
+        return
+      } catch {
+        return
+      }
+    }
     onOpenChange(false)
     reset()
   }
@@ -127,6 +156,7 @@ export function ConsentScreen({
             <Label>{t.selectApp}</Label>
             <Select
               value={appId}
+              disabled={Boolean(installIntent)}
               onValueChange={(value) => {
                 setAppId(value ?? undefined)
                 setReleaseId(undefined)
@@ -149,7 +179,7 @@ export function ConsentScreen({
             <Select
               value={releaseId}
               onValueChange={(value) => setReleaseId(value ?? undefined)}
-              disabled={!appId}
+              disabled={!appId || Boolean(installIntent)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t.selectRelease} />
@@ -166,6 +196,13 @@ export function ConsentScreen({
             </Select>
           </div>
         </div>
+
+        {marketplace.resolveIntent.isPending ? (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-4 text-sm">
+            <Loader2 className="size-4 animate-spin" />
+            {t.resolvingIntent}
+          </div>
+        ) : null}
 
         {release ? (
           <div className="space-y-5">
@@ -259,17 +296,33 @@ export function ConsentScreen({
                 ) : null}
               </div>
             </div>
+
+            {disclosure ? <ConsentDisclosures disclosure={disclosure} messages={messages} /> : null}
           </div>
         ) : null}
 
-        {install.isError ? (
+        {release && !disclosure ? (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{messages.common.loadFailed}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {install.isError || marketplace.resolveIntent.isError ? (
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertDescription>
-              {install.error instanceof Error
-                ? install.error.message
+              {(install.error ?? marketplace.resolveIntent.error) instanceof Error
+                ? (install.error ?? marketplace.resolveIntent.error)?.message
                 : messages.common.requestFailed}
             </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {marketplace.createSetupHandoff.isError ? (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{t.setupFailed}</AlertDescription>
           </Alert>
         ) : null}
 
@@ -281,9 +334,22 @@ export function ConsentScreen({
           >
             {messages.common.cancel}
           </Button>
-          <Button onClick={handleApprove} disabled={!releaseId || install.isPending}>
-            {install.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {install.isPending ? t.approving : t.approve}
+          <Button
+            onClick={handleApprove}
+            disabled={
+              !releaseId ||
+              !disclosure ||
+              install.isPending ||
+              marketplace.resolveIntent.isPending ||
+              marketplace.createSetupHandoff.isPending
+            }
+          >
+            {install.isPending || marketplace.createSetupHandoff.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : null}
+            {install.isPending || marketplace.createSetupHandoff.isPending
+              ? t.approving
+              : t.approve}
           </Button>
         </DialogFooter>
       </DialogContent>

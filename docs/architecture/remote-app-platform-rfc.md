@@ -177,6 +177,49 @@ Custom app creation must:
 
 An arbitrary URL can never choose an app ID or reserved namespace.
 
+### Managed acquisition and consent handoff
+
+A managed host may offer an admitted release through the optional
+`apps.managed-marketplace` runtime port. The browser supplies only an opaque,
+single-purpose install intent. The host authenticates the deployment, resolves
+that intent, verifies its private catalog admission and provenance, and adapts
+the result to `voyant.runtime-marketplace-acquisition.v1`. This managed
+acquisition path never accepts catalog records, artifact locations, publisher
+claims, app IDs, release IDs, manifests, or OAuth coordinates directly from
+query parameters or request JSON.
+
+The deployment-local runtime independently validates the closed acquisition
+envelope, compiles the manifest against the selected graph, compares the
+canonical digest, and idempotently stores the verified snapshot. Host app and
+release IDs remain the local `apps.id` and `app_releases.id` so managed contract
+generation has one stable identity; only the reserved `app--...` namespace is
+generated locally. Marketplace identity, owner, version, and digest conflicts
+fail closed. No private artifact storage coordinate is persisted.
+
+Acquisition returns only local app and release IDs. The native Apps page then
+renders consent from the admitted normalized release: required and optional
+scopes, data classifications, external secret-custody disclosure, retention,
+webhooks, admin pages and slots, privacy policy, and support. The existing
+installation mutation remains the sole final approval and reconciliation path.
+
+After an active Marketplace installation is created, a host may create a
+one-time setup handoff. The public runtime sends only `installationId`, `appId`,
+and `releaseId` to host authority. The host owns OAuth coordinates and signs a
+short-lived assertion with JWT type `voyant-marketplace-setup+jwt` and claims
+schema `voyant.marketplace-setup-assertion.v1`. Its `sub` equals
+`installationId`, `aud` equals `appId`, and its positive lifetime is at most 300
+seconds. It includes `iss`, `jti`, `iat`, `exp`, the three stable identities,
+and exact HTTPS `authorizationUrl`, `tokenUrl`, and admitted `redirectUri`.
+The host sends the assertion server-to-server with `POST` to the exact admitted
+manifest `urls.setup`, `Authorization: Bearer <assertion>`,
+`Accept: application/json`, and an empty body. The first use returns `201`; an
+identical-`jti` retry returns `200`. Both return exactly
+`{ "redirectUrl": "https://<setup-origin>/setup/start?code=<opaque>" }` with
+`Cache-Control: no-store`. The browser receives only that opaque redirect URL;
+it never chooses or edits assertion claims or OAuth endpoints. The public
+runtime also requires the returned redirect to be HTTPS and to share the
+admitted manifest setup origin.
+
 ## Manifest And Release Artifact
 
 The manifest is closed, versioned, declarative data. It may declare:

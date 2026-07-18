@@ -49,4 +49,6 @@ export type {
   AppReleaseCreateResult,
   AppReleaseRecord,
   AppWebhookSubscriptionRecord,
+  MarketplaceInstallIntentResult,
+  NormalizedReleaseConsent,
 } from "./schemas.js"

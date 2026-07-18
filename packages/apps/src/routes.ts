@@ -40,12 +40,17 @@ import {
   loadInstallationDetail,
 } from "./installation-read-model.js"
 import { createAppInstallationService } from "./installation-service.js"
+import {
+  createMarketplaceAcquisitionService,
+  resolveMarketplaceInstallIntentSchema,
+} from "./marketplace-acquisition.js"
 import { createAppOAuthService } from "./oauth-service.js"
 import {
   activateAppInstallationRoute,
   authorizeAppOAuthRoute,
   createAppReleaseRoute,
   createCustomAppRoute,
+  createMarketplaceSetupHandoffRoute,
   exchangeAppSessionTokenRoute,
   fetchAppReleaseRoute,
   getAppInstallationRoute,
@@ -61,11 +66,15 @@ import {
   pauseAppInstallationRoute,
   previewAppInstallationPurgeRoute,
   replayAppWebhookRoute,
+  resolveMarketplaceInstallIntentRoute,
   resumeAppInstallationRoute,
   revokeAppInstallationCredentialsRoute,
   uninstallAppInstallationRoute,
 } from "./routes-openapi.js"
-import type { ManagedAppInstallationAuthority } from "./runtime-port.js"
+import type {
+  ManagedAppInstallationAuthority,
+  ManagedMarketplaceAcquisitionResolver,
+} from "./runtime-port.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
@@ -105,11 +114,20 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
   platformApiVersion?: string
   eventBus?: EventBus
   customFields?: CustomFieldsService
+  /** Host-verified Marketplace acquisition and setup authority. */
+  managedMarketplace?: ManagedMarketplaceAcquisitionResolver
 }
 
 export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   const service = createAppsService(options)
+  const marketplace = options.managedMarketplace
+    ? createMarketplaceAcquisitionService({
+        eventCatalog: options.eventCatalog,
+        resolveAcquisitionIntent: options.managedMarketplace.resolveAcquisitionIntent,
+        createSetupHandoff: options.managedMarketplace.createSetupHandoff,
+      })
+    : null
   const installations = createAppInstallationService({
     deploymentId: options.oauth?.deploymentId ?? options.deploymentId,
     managedInstallation: options.oauth?.managedInstallation,
@@ -254,6 +272,24 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       deploymentId,
     })
     return c.json({ data: result }, 201)
+  })
+
+  routes.openapi(resolveMarketplaceInstallIntentRoute, async (c) => {
+    if (!marketplace) return c.json({ error: "Managed Marketplace is not configured" }, 501)
+    const body = await parseJsonBody(c, resolveMarketplaceInstallIntentSchema)
+    const data = await marketplace.resolveAndAcquire(c.get("db"), {
+      intent: body.intent,
+      actorId: requireUserId(c),
+    })
+    return c.json({ data }, 201)
+  })
+
+  routes.openapi(createMarketplaceSetupHandoffRoute, async (c) => {
+    if (!marketplace) return c.json({ error: "Managed Marketplace is not configured" }, 501)
+    requireUserId(c)
+    const { installationId } = parseInstallationParams(c.req.param())
+    const data = await marketplace.createSetupHandoff(c.get("db"), installationId)
+    return c.json({ data }, 201)
   })
 
   routes.openapi(listAppInstallationsRoute, async (c) => {

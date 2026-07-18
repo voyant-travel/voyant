@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { createAppsRuntimePortContribution } from "./runtime-contributor.js"
-import { appsManagedAuthRuntimePort } from "./runtime-port.js"
+import { appsManagedAuthRuntimePort, appsManagedMarketplaceRuntimePort } from "./runtime-port.js"
 
 function host(values: Readonly<Record<string, unknown>>) {
   return {
@@ -65,5 +65,23 @@ describe("createAppsRuntimePortContribution", () => {
         releaseId: "release_2",
       }),
     ).resolves.toEqual({ contractGeneration: 9 })
+  })
+
+  it("requires both opaque acquisition resolution and trusted setup handoff", () => {
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+        },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
+        acquisitionResolver: { resolveAcquisitionIntent: async () => null },
+      } as never),
+    ).toThrow(/createSetupHandoff/)
   })
 })

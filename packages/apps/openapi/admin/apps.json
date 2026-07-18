@@ -25,6 +25,9 @@
     "/v1/admin/apps/install": {
       "post": { "summary": "Install an app release" }
     },
+    "/v1/admin/apps/marketplace/install-intents/resolve": {
+      "post": { "summary": "Resolve and admit an opaque Marketplace install intent" }
+    },
     "/v1/admin/apps/installations": {
       "get": { "summary": "List app installations" }
     },
@@ -51,6 +54,9 @@
     },
     "/v1/admin/apps/installations/{installationId}/session-token": {
       "post": { "summary": "Issue an app extension session token" }
+    },
+    "/v1/admin/apps/installations/{installationId}/setup-handoff": {
+      "post": { "summary": "Create a one-time Marketplace app setup handoff" }
     },
     "/v1/admin/apps/installations/{installationId}/webhooks": {
       "get": { "summary": "List app webhook delivery health" }

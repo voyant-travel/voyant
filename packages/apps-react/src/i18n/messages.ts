@@ -124,6 +124,23 @@ export type AppsUiMessages = {
     selectRelease: string
     noOptional: string
     installPolicy: string
+    dataHeading: string
+    classifications: string
+    retention: string
+    storesSecrets: string
+    storesSecretsYes: string
+    storesSecretsNo: string
+    webhooksHeading: string
+    noWebhooks: string
+    extensionsHeading: string
+    noExtensions: string
+    pageExtension: string
+    slotExtension: string
+    policiesHeading: string
+    privacyPolicy: string
+    support: string
+    resolvingIntent: string
+    setupFailed: string
   }
   developer: {
     title: string
