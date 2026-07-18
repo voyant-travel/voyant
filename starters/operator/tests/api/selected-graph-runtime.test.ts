@@ -670,9 +670,14 @@ describe("selected Operator graph runtime composition", () => {
     expect(byName("channel-push")?.extension.module).toBe("distribution")
     expect(byName("channel-push")?.adminRoutes).toBeDefined()
     expect(byName("booking-tax-settings")?.extension.module).toBe("finance")
-    expect(byName("booking-tax-settings")?.adminRoutes).toBeDefined()
+    // Tax settings now mount via lazy routes that resolve the container-wired
+    // options at request time (mirrors booking-schedule), so the graph factory
+    // no longer eagerly builds a full adminRoutes app.
+    expect(byName("booking-tax-settings")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(byName("booking-tax-settings")?.adminRoutes).toBeUndefined()
     expect(byName("booking-tax-preview")?.extension.module).toBe("bookings")
-    expect(byName("booking-tax-preview")?.adminRoutes).toBeDefined()
+    expect(byName("booking-tax-preview")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(byName("booking-tax-preview")?.adminRoutes).toBeUndefined()
     expect(byName("mice-booking")?.extension.module).toBe("bookings")
     expect(byName("booking-schedule")?.publicPath).toBe("payment-policy")
     expect(byName("proposal")?.publicPath).toBe("proposals")

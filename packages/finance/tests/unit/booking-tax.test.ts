@@ -1,14 +1,36 @@
+import type { ModuleContainer } from "@voyant-travel/core"
+import { handleApiError } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-
 import {
+  type BookingTaxRouteOptions,
   computeBookingItemTaxLine,
   createBookingTaxPreviewRoutes,
+  createBookingTaxSettingsApiExtension,
   createBookingTaxSettingsRoutes,
   matchesTaxPolicyCondition,
 } from "../../src/booking-tax.js"
+import {
+  BOOKING_TAX_SETTINGS_RUNTIME_KEY,
+  type BookingTaxRuntime,
+} from "../../src/booking-tax-runtime.js"
 import { createFinanceApiModule } from "../../src/index.js"
+
+/** Minimal in-memory container mirroring the app runtime's registry. */
+function makeContainer(): ModuleContainer {
+  const services = new Map<string, unknown>()
+  return {
+    register: (name, service) => {
+      services.set(name, service)
+    },
+    resolve: <T>(name: string): T => {
+      if (!services.has(name)) throw new Error(`unregistered: ${name}`)
+      return services.get(name) as T
+    },
+    has: (name) => services.has(name),
+  }
+}
 
 describe("booking tax helpers", () => {
   it("computes exclusive tax lines", () => {
@@ -252,5 +274,127 @@ describe("booking tax helpers", () => {
         invoicingMode: "proforma-first",
       },
     })
+  })
+})
+
+describe("booking tax settings runtime-container wiring (managed runtime)", () => {
+  /**
+   * Build the exact managed-runtime scenario: the api-facet plain export is
+   * invoked with EMPTY options (no `updateBookingTaxSettings`), but the graph
+   * factory's bootstrap registered the WIRED options into the container under
+   * BOOKING_TAX_SETTINGS_RUNTIME_KEY. The routes must read the wired options
+   * from the container at request time.
+   */
+  function buildManagedApp(runtime: BookingTaxRuntime, db: PostgresJsDatabase) {
+    const container = makeContainer()
+    container.register(BOOKING_TAX_SETTINGS_RUNTIME_KEY, runtime)
+    // Empty-options plain api-facet export (the managed-runtime NO-ARGS call).
+    const extension = createBookingTaxSettingsApiExtension()
+    return {
+      container,
+      request: async (path: string, init?: RequestInit) => {
+        const routes = await extension.lazyAdminRoutes!()
+        const app = new Hono()
+          .use("*", async (c, next) => {
+            c.set("db", db)
+            c.set("container", container)
+            await next()
+          })
+          .route("/", routes)
+        app.onError(handleApiError)
+        return app.request(path, init)
+      },
+    }
+  }
+
+  it("exposes lazy admin routes and no eager adminRoutes on the api-facet export", () => {
+    const extension = createBookingTaxSettingsApiExtension()
+    expect(extension.extension).toMatchObject({ name: "booking-tax-settings", module: "finance" })
+    expect(extension.lazyAdminRoutes).toBeTypeOf("function")
+    expect(extension.adminRoutes).toBeUndefined()
+  })
+
+  it("serves the wired resolve on GET even when the api-facet export got empty options", async () => {
+    const wired: BookingTaxRouteOptions = {
+      resolveBookingTaxSettings: () => ({ taxPriceMode: "exclusive", invoicingMode: "direct" }),
+    }
+    const managed = buildManagedApp({ resolveRoutesOptions: () => wired }, {} as PostgresJsDatabase)
+
+    const response = await managed.request("/tax-settings")
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        taxPriceMode: "exclusive",
+        taxPolicyProfileId: null,
+        invoicingMode: "direct",
+      },
+    })
+  })
+
+  it("makes PATCH tax-settings succeed via the container-wired updateBookingTaxSettings", async () => {
+    let settings = {
+      taxPriceMode: "inclusive" as "inclusive" | "exclusive",
+      taxPolicyProfileId: null as string | null,
+      invoicingMode: "proforma-first" as "direct" | "proforma-first",
+    }
+    const updateBookingTaxSettings = vi.fn(async (_db: PostgresJsDatabase, next) => {
+      settings = {
+        taxPriceMode: next.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+        taxPolicyProfileId: next.taxPolicyProfileId ?? null,
+        invoicingMode: next.invoicingMode === "direct" ? "direct" : "proforma-first",
+      }
+      return settings
+    })
+    const wired: BookingTaxRouteOptions = {
+      resolveBookingTaxSettings: () => settings,
+      updateBookingTaxSettings,
+    }
+    const managed = buildManagedApp({ resolveRoutesOptions: () => wired }, {} as PostgresJsDatabase)
+
+    const response = await managed.request("/tax-settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoicingMode: "direct" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(updateBookingTaxSettings).toHaveBeenCalledOnce()
+    await expect(response.json()).resolves.toMatchObject({
+      data: { invoicingMode: "direct" },
+    })
+  })
+
+  it("still 409s when the container-wired runtime lacks updateBookingTaxSettings", async () => {
+    const wired: BookingTaxRouteOptions = {
+      resolveBookingTaxSettings: () => ({ taxPriceMode: "inclusive" }),
+    }
+    const managed = buildManagedApp({ resolveRoutesOptions: () => wired }, {} as PostgresJsDatabase)
+
+    const response = await managed.request("/tax-settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoicingMode: "direct" }),
+    })
+
+    expect(response.status).toBe(409)
+  })
+
+  it("falls back to closure options when no container runtime is registered", async () => {
+    // Standard (non-managed) caller path: options passed directly, no container.
+    const app = new Hono()
+      .use("*", async (c, next) => {
+        c.set("db", {} as PostgresJsDatabase)
+        await next()
+      })
+      .route(
+        "/",
+        createBookingTaxSettingsRoutes({
+          resolveBookingTaxSettings: () => ({ invoicingMode: "direct" }),
+        }),
+      )
+
+    const response = await app.request("/tax-settings")
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({ data: { invoicingMode: "direct" } })
   })
 })

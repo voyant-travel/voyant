@@ -1,14 +1,16 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import type { Extension } from "@voyant-travel/core"
-import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import type { Extension, ModuleContainer } from "@voyant-travel/core"
 import { ApiHttpError, openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiExtension } from "@voyant-travel/hono/module"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 
-import { createFinanceBookingTaxRuntime } from "./runtime.js"
-import { financeOperatorSettingsRuntimePort } from "./runtime-port.js"
+import {
+  BOOKING_TAX_PREVIEW_RUNTIME_KEY,
+  BOOKING_TAX_SETTINGS_RUNTIME_KEY,
+  resolveBookingTaxRouteOptions,
+} from "./booking-tax-runtime.js"
 import { taxClasses, taxPolicyProfiles, taxPolicyRules, taxRegimes } from "./schema.js"
 import { executeBoundaryRows } from "./service-boundary-sql.js"
 
@@ -399,27 +401,30 @@ export function createBookingTaxSettingsRoutes(options: BookingTaxRouteOptions =
   const routes = new OpenAPIHono<{
     Variables: {
       db: PostgresJsDatabase
+      container?: ModuleContainer
     }
   }>({ defaultHook: openApiValidationHook })
     .openapi(getBookingTaxSettingsRoute, async (c) => {
+      const opts = resolveBookingTaxRouteOptions(c, BOOKING_TAX_SETTINGS_RUNTIME_KEY, options)
       return c.json(
         {
-          data: await resolveBookingTaxSettingsOrDefault(c.get("db"), options),
+          data: await resolveBookingTaxSettingsOrDefault(c.get("db"), opts),
         },
         200,
       )
     })
     .openapi(updateBookingTaxSettingsRoute, async (c) => {
-      if (!options.updateBookingTaxSettings) {
+      const opts = resolveBookingTaxRouteOptions(c, BOOKING_TAX_SETTINGS_RUNTIME_KEY, options)
+      if (!opts.updateBookingTaxSettings) {
         throw new ApiHttpError("Booking tax settings updates are not configured", {
           status: 409,
           code: "booking_tax_settings_update_not_configured",
         })
       }
 
-      const current = await resolveBookingTaxSettingsOrDefault(c.get("db"), options)
+      const current = await resolveBookingTaxSettingsOrDefault(c.get("db"), opts)
       const patch = c.req.valid("json")
-      const next = await options.updateBookingTaxSettings(c.get("db"), {
+      const next = await opts.updateBookingTaxSettings(c.get("db"), {
         taxPriceMode: patch.taxPriceMode ?? current.taxPriceMode,
         taxPolicyProfileId:
           patch.taxPolicyProfileId === undefined
@@ -453,13 +458,15 @@ export function createBookingTaxPreviewRoutes(options: BookingTaxRouteOptions = 
   const routes = new OpenAPIHono<{
     Variables: {
       db: PostgresJsDatabase
+      container?: ModuleContainer
     }
   }>({ defaultHook: openApiValidationHook }).openapi(previewBookingTaxRoute, async (c) => {
     const body = c.req.valid("json")
+    const opts = resolveBookingTaxRouteOptions(c, BOOKING_TAX_PREVIEW_RUNTIME_KEY, options)
     const taxRate = await resolveBookingSellTaxRate(
       c.get("db"),
       { productId: body.productId },
-      options,
+      opts,
     )
     const taxLine = computeBookingItemTaxLine(taxRate, body.subtotalCents, body.currency)
 
@@ -535,7 +542,7 @@ export function createBookingTaxSettingsApiExtension(
 
   return {
     extension,
-    adminRoutes: createBookingTaxSettingsRoutes(options),
+    lazyAdminRoutes: async () => createBookingTaxSettingsRoutes(options),
   }
 }
 
@@ -549,22 +556,6 @@ export function createBookingTaxPreviewApiExtension(
 
   return {
     extension,
-    adminRoutes: createBookingTaxPreviewRoutes(options),
+    lazyAdminRoutes: async () => createBookingTaxPreviewRoutes(options),
   }
 }
-
-export const createBookingTaxSettingsVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ getPort }) => {
-    return createBookingTaxSettingsApiExtension(
-      createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
-    )
-  },
-)
-
-export const createBookingTaxPreviewVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ getPort }) => {
-    return createBookingTaxPreviewApiExtension(
-      createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
-    )
-  },
-)
