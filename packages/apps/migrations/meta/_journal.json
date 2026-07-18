@@ -29,6 +29,13 @@
       "when": 1784298600000,
       "tag": "20260717143000_app_oauth_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784300400000,
+      "tag": "20260717150000_app_session_tokens",
+      "breakpoints": true
     }
   ]
 }

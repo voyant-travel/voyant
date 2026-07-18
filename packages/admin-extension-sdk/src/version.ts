@@ -7,4 +7,4 @@
  * the resolved-descriptor shape changes in a breaking way; bump the MINOR when
  * adding backwards-compatible surface (e.g. a new slot).
  */
-export const ADMIN_UI_EXTENSION_API_VERSION = "1.0.0"
+export const ADMIN_UI_EXTENSION_API_VERSION = "1.1.0"

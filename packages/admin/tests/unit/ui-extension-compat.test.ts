@@ -3,18 +3,30 @@ import { describe, expect, it } from "vitest"
 import { ADMIN_UI_EXTENSION_API_VERSION, isUiExtensionCompatible } from "../../src/index.js"
 
 describe("isUiExtensionCompatible", () => {
-  it("pins the implemented version to 1.0.0", () => {
-    expect(ADMIN_UI_EXTENSION_API_VERSION).toBe("1.0.0")
+  it("pins the implemented version to 1.1.0", () => {
+    expect(ADMIN_UI_EXTENSION_API_VERSION).toBe("1.1.0")
   })
 
-  it("accepts ranges that include 1.0.0", () => {
-    for (const range of ["^1", "^1.0", "^1.0.0", "1.x", "1.0.x", "1", "1.0", "1.0.0", "*", "x"]) {
+  it("accepts ranges that include 1.1.0", () => {
+    for (const range of [
+      "^1",
+      "^1.0",
+      "^1.1",
+      "^1.1.0",
+      "1.x",
+      "1.1.x",
+      "1",
+      "1.1",
+      "1.1.0",
+      "*",
+      "x",
+    ]) {
       expect(isUiExtensionCompatible(range)).toBe(true)
     }
   })
 
-  it("rejects ranges that exclude 1.0.0", () => {
-    for (const range of ["^2", "^1.1", "^0.9", "2.x", "1.1.x", "0", "2.0.0", "1.0.1", "0.9.0"]) {
+  it("rejects ranges that exclude 1.1.0", () => {
+    for (const range of ["^2", "^1.2", "^0.9", "2.x", "1.0.x", "0", "2.0.0", "1.1.1", "1.0.0"]) {
       expect(isUiExtensionCompatible(range)).toBe(false)
     }
   })

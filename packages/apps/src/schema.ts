@@ -453,6 +453,38 @@ export const appAuditEvents = pgTable(
   ],
 )
 
+/**
+ * Issued admin session tokens for iframe extensions. Each row is the durable
+ * record of one short-lived, single-use session token: it makes issuance and
+ * exchange auditable and provides the replay guard — a token's `jti` may be
+ * consumed at most once (unique index + a conditional update on `consumedAt`).
+ * The token bytes are never stored; only the signed claim identity.
+ */
+export const appSessionTokens = pgTable(
+  "app_session_tokens",
+  {
+    id: typeId("app_session_tokens"),
+    installationId: text("installation_id")
+      .notNull()
+      .references(() => appInstallations.id, { onDelete: "cascade" }),
+    appId: text("app_id").notNull(),
+    deploymentId: text("deployment_id").notNull(),
+    jti: text("jti").notNull(),
+    viewerId: text("viewer_id").notNull(),
+    entityType: text("entity_type"),
+    entityId: text("entity_id"),
+    slot: text("slot"),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    consumedByActorId: text("consumed_by_actor_id"),
+  },
+  (table) => [
+    uniqueIndex("uidx_app_session_tokens_jti").on(table.jti),
+    index("idx_app_session_tokens_installation").on(table.installationId, table.expiresAt),
+  ],
+)
+
 export type AppRegistration = typeof apps.$inferSelect
 export type NewAppRegistration = typeof apps.$inferInsert
 export type AppRelease = typeof appReleases.$inferSelect
@@ -460,3 +492,5 @@ export type NewAppRelease = typeof appReleases.$inferInsert
 export type AppInstallation = typeof appInstallations.$inferSelect
 export type NewAppInstallation = typeof appInstallations.$inferInsert
 export type AppAccessCredential = typeof appAccessCredentials.$inferSelect
+export type AppSessionTokenRow = typeof appSessionTokens.$inferSelect
+export type NewAppSessionTokenRow = typeof appSessionTokens.$inferInsert

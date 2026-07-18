@@ -14,13 +14,16 @@ import {
   createResizeMessage,
   createToastMessage,
   isContextMessage,
+  isErrorMessage,
   isInitMessage,
+  isTokenMessage,
   type UiExtensionOutboundMessage,
 } from "./protocol.js"
 import type { UiExtensionContext, UiExtensionToastIntent } from "./types.js"
 
 /** Default handshake budget before `initUiExtension` rejects. */
 export const UI_EXTENSION_HANDSHAKE_TIMEOUT_MS = 10_000
+export const UI_EXTENSION_TOKEN_TIMEOUT_MS = 10_000
 
 /**
  * The `ResizeObserver` constructor is a global, not a member of the `Window`
@@ -34,11 +37,23 @@ export interface InitUiExtensionOptions {
   window?: Window
   /** Milliseconds to wait for the host `init` before rejecting. Defaults to 10s. */
   timeoutMs?: number
+  /** Milliseconds to wait for a session-token reply before rejecting. Defaults to 10s. */
+  tokenTimeoutMs?: number
   /**
    * Element observed for automatic height reporting. Defaults to
    * `document.documentElement`. Pass `null` to disable automatic reporting.
    */
   resizeTarget?: Element | null
+}
+
+/** A short-lived admin session token delivered by the host for the current context. */
+export interface UiExtensionSessionToken {
+  /** Opaque session token to relay to the app backend for actor-token exchange. */
+  token: string
+  /** Unique token id (matches the signed `jti` claim). */
+  tokenId: string
+  /** Expiry as epoch milliseconds. */
+  expiresAt: number
 }
 
 export interface UiExtensionActions {
@@ -48,6 +63,13 @@ export interface UiExtensionActions {
   toast(intent: UiExtensionToastIntent, message: string): void
   /** Report a desired content height (clamped to the host's bounds). */
   resize(px: number): void
+  /**
+   * Request a short-lived admin session token for the current entity/slot
+   * context. Resolves with the token or rejects if the host declines
+   * (`not-supported`/`unavailable`) or the request times out. The token is not
+   * a Voyant API credential; relay it to the app backend to exchange it.
+   */
+  requestToken(): Promise<UiExtensionSessionToken>
 }
 
 export interface UiExtensionHandle {
@@ -78,12 +100,22 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
   const win: Window = ambient
   const parent = win.parent
   const timeoutMs = options.timeoutMs ?? UI_EXTENSION_HANDSHAKE_TIMEOUT_MS
+  const tokenTimeoutMs = options.tokenTimeoutMs ?? UI_EXTENSION_TOKEN_TIMEOUT_MS
 
   return new Promise<UiExtensionHandle>((resolve, reject) => {
     const listeners = new Set<(context: UiExtensionContext) => void>()
     let context: UiExtensionContext | undefined
     let settled = false
     let resizeObserver: ResizeObserver | undefined
+    const pendingTokens = new Map<
+      string,
+      {
+        resolve: (token: UiExtensionSessionToken) => void
+        reject: (error: Error) => void
+        timer: ReturnType<Window["setTimeout"]>
+      }
+    >()
+    let tokenRequestSeq = 0
 
     const post = (message: UiExtensionOutboundMessage) => {
       parent.postMessage(message, "*")
@@ -98,7 +130,26 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       win.removeEventListener("message", onMessage)
       stopObserving()
       win.clearTimeout(timer)
+      for (const pending of pendingTokens.values()) {
+        win.clearTimeout(pending.timer)
+        pending.reject(new Error("[voyant-ext] Extension host torn down before token arrived."))
+      }
+      pendingTokens.clear()
     }
+
+    const requestToken = () =>
+      new Promise<UiExtensionSessionToken>((resolveToken, rejectToken) => {
+        tokenRequestSeq += 1
+        const requestId = `tok-${tokenRequestSeq}`
+        // Contract: a token request settles or times out; without this the
+        // promise would hang forever if the host never replies.
+        const timer = win.setTimeout(() => {
+          pendingTokens.delete(requestId)
+          rejectToken(new Error("[voyant-ext] Timed out waiting for a session token."))
+        }, tokenTimeoutMs)
+        pendingTokens.set(requestId, { resolve: resolveToken, reject: rejectToken, timer })
+        post(createRequestTokenMessage(requestId))
+      })
 
     const startObserving = () => {
       const target =
@@ -115,6 +166,7 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       navigate: (to) => post(createNavigateMessage(to)),
       toast: (intent, message) => post(createToastMessage(intent, message)),
       resize: (px) => post(createResizeMessage(px)),
+      requestToken,
     }
 
     function onMessage(event: MessageEvent) {
@@ -144,7 +196,32 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       if (isContextMessage(event.data) && settled) {
         context = event.data.payload.context
         for (const listener of listeners) listener(context)
+        return
       }
+      if (isTokenMessage(event.data)) {
+        const { requestId, token, tokenId, expiresAt } = event.data.payload
+        const pending = resolvePendingToken(requestId)
+        pending?.resolve({ token, tokenId, expiresAt })
+        return
+      }
+      if (isErrorMessage(event.data)) {
+        const pending = resolvePendingToken(event.data.payload.requestId)
+        pending?.reject(new Error(`[voyant-ext] Token request failed: ${event.data.payload.code}`))
+      }
+    }
+
+    /**
+     * Match an inbound token/error to its pending request. A response without a
+     * `requestId` (older host) settles the oldest outstanding request so a
+     * single in-flight `requestToken()` still resolves.
+     */
+    function resolvePendingToken(requestId: string | undefined) {
+      const key = requestId ?? pendingTokens.keys().next().value
+      if (key === undefined) return undefined
+      const pending = pendingTokens.get(key)
+      pendingTokens.delete(key)
+      if (pending) win.clearTimeout(pending.timer)
+      return pending
     }
 
     const timer = win.setTimeout(() => {

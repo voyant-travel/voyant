@@ -21,6 +21,8 @@ const context: UiExtensionContext = {
   entity: null,
   theme: "light",
   locale: "en",
+  appLocale: "en",
+  direction: "ltr",
 }
 
 function descriptor(overrides: Partial<UiExtensionDescriptor> = {}): UiExtensionDescriptor {
@@ -82,7 +84,7 @@ describe("UiExtensionHost", () => {
     })
     const initMessage = post.mock.calls[0]?.[0] as { type: string; payload: { apiVersion: string } }
     expect(initMessage.type).toBe("voyant:ext:init")
-    expect(initMessage.payload.apiVersion).toBe("1.0.0")
+    expect(initMessage.payload.apiVersion).toBe("1.1.0")
   })
 
   it("renders a quiet incompatible card and never mounts a frame", () => {
@@ -152,6 +154,102 @@ describe("UiExtensionHost", () => {
         (call) => (call[0] as { type: string }).type === "voyant:ext:error",
       )
       expect(error?.[0]).toMatchObject({ payload: { code: "not-supported" } })
+    })
+  })
+
+  it("delivers a brokered session token to the requesting frame", async () => {
+    const onRequestToken = vi.fn().mockResolvedValue({
+      token: "test-session-abc",
+      tokenId: "st_1",
+      expiresAt: 42,
+    })
+    renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-1"))
+    await waitFor(() => {
+      const token = post.mock.calls.find(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:session-token",
+      )
+      expect(token?.[0]).toMatchObject({
+        payload: { token: "test-session-abc", tokenId: "st_1", requestId: "tok-1" },
+      })
+    })
+    expect(onRequestToken).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not post a brokered token once the requesting frame is gone", async () => {
+    let releaseToken: (grant: { token: string; tokenId: string; expiresAt: number }) => void =
+      () => {}
+    const onRequestToken = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        releaseToken = resolve
+      }),
+    )
+    const view = renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-nav"))
+    await waitFor(() => expect(onRequestToken).toHaveBeenCalledTimes(1))
+
+    // The frame is torn down before the broker settles; the grant must not be
+    // posted to the now-detached document.
+    view.unmount()
+    await act(async () => {
+      releaseToken({ token: "leaked", tokenId: "st_leak", expiresAt: 1 })
+      await Promise.resolve()
+    })
+    expect(
+      post.mock.calls.some(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:session-token",
+      ),
+    ).toBe(false)
+  })
+
+  it("answers unavailable when the broker declines or throws", async () => {
+    const onRequestToken = vi.fn().mockResolvedValue(null)
+    renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-9"))
+    await waitFor(() => {
+      const error = post.mock.calls.find(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:error",
+      )
+      expect(error?.[0]).toMatchObject({ payload: { code: "unavailable", requestId: "tok-9" } })
     })
   })
 

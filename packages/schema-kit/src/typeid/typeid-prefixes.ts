@@ -136,6 +136,7 @@ export const PREFIXES = {
   app_extension_installations: "apei",
   app_webhook_subscriptions: "apws",
   app_audit_events: "apae",
+  app_session_tokens: "apst",
   person_payment_methods: "pmth",
   invoices: "inv",
   payment_instruments: "pmin",

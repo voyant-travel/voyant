@@ -11,7 +11,7 @@ async function main() {
   root.innerHTML = `<p class="status">Connecting to admin host…</p>`
 
   const handle = await initUiExtension()
-  const { org, viewer, entity, theme, locale } = handle.context
+  let tokenStatus = "Not requested"
 
   const render = () => {
     const context = handle.context
@@ -23,11 +23,15 @@ async function main() {
         ${line("Viewer", `${context.viewer.displayName} · ${context.viewer.id}`)}
         ${line("Entity", context.entity ? `${context.entity.type} · ${context.entity.id}` : "—")}
         ${line("Theme", context.theme)}
-        ${line("Locale", context.locale)}
+        ${line("Active locale", context.locale)}
+        ${line("App locale", context.appLocale)}
+        ${line("Direction", context.direction)}
+        ${line("Session token", tokenStatus)}
       </div>
       <div class="actions">
         <button id="toast">Send success toast</button>
         <button id="nav">Navigate to /bookings</button>
+        <button id="token">Request session token</button>
       </div>
     `
     document.getElementById("toast")?.addEventListener("click", () => {
@@ -36,12 +40,24 @@ async function main() {
     document.getElementById("nav")?.addEventListener("click", () => {
       handle.actions.navigate("/bookings")
     })
+    document.getElementById("token")?.addEventListener("click", () => {
+      tokenStatus = "Requesting…"
+      render()
+      handle.actions
+        .requestToken()
+        .then((grant) => {
+          tokenStatus = `Granted · id ${grant.tokenId}`
+          render()
+        })
+        .catch((error: unknown) => {
+          tokenStatus = `Declined · ${error instanceof Error ? error.message : "error"}`
+          render()
+        })
+    })
   }
 
   render()
   handle.onContextChange(render)
-  // Keep the reported height honest even though the SDK auto-reports.
-  void { org, viewer, entity, theme, locale }
 }
 
 void main()

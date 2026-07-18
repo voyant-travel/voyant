@@ -20,21 +20,39 @@ export {
   type UiExtensionToastIntent,
   type UiExtensionViewer,
 } from "@voyant-travel/admin-extension-sdk"
+export {
+  APP_PAGES_QUERY_KEY,
+  AppExtensionPage,
+  type AppExtensionPageProps,
+  type AppPageNavEntry,
+  useAppPageNavEntries,
+  useInstalledAppPages,
+} from "./app-pages.js"
 export { isUiExtensionCompatible } from "./compat.js"
 export {
   ADMIN_UI_EXTENSION_SLOTS,
   type AdminUiExtensionSlot,
   isAdminUiExtensionSlot,
 } from "./registry.js"
-export { UiExtensionHost, type UiExtensionHostProps } from "./ui-extension-host.js"
 export {
+  UiExtensionHost,
+  type UiExtensionHostProps,
+  type UiExtensionRequestTokenHandler,
+  type UiExtensionSessionTokenGrant,
+} from "./ui-extension-host.js"
+export {
+  type AppPageDescriptor,
   type CreateUiExtensionsAdminExtensionOptions,
+  createInstallationUiExtensionsClient,
   createStaticUiExtensionsClient,
   createUiExtensionsAdminExtension,
+  type InstalledUiExtension,
   UI_EXTENSIONS_QUERY_KEY,
   type UiExtensionEnvironment,
   UiExtensionEnvironmentProvider,
   type UiExtensionEnvironmentProviderProps,
   type UiExtensionsClient,
+  type UiExtensionTokenBroker,
+  type UiExtensionTokenRequest,
   useUiExtensionEnvironment,
 } from "./ui-extensions-extension.js"

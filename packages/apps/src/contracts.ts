@@ -295,6 +295,34 @@ export const appCredentialRevocationSchema = z
   })
   .strict()
 
+const sessionTokenEntitySchema = z
+  .object({
+    type: z.string().trim().min(1).max(80),
+    id: z.string().trim().min(1).max(200),
+  })
+  .strict()
+
+export const appSessionTokenIssueSchema = z
+  .object({
+    entity: sessionTokenEntitySchema.optional(),
+    slot: z.string().trim().min(1).max(80).optional(),
+  })
+  .strict()
+
+export const appSessionTokenExchangeSchema = z
+  .object({
+    session_token: z.string().trim().min(1),
+    client_id: z.string().trim().min(1),
+    client_secret: z.string().trim().optional(),
+    viewer_scopes: z.array(scopeSchema).default([]),
+    contextual_scopes: z.array(scopeSchema).optional(),
+  })
+  .strict()
+  .transform((input) => ({
+    ...input,
+    client_secret: input.client_secret?.trim() || undefined,
+  }))
+
 export type AppManifest = z.infer<typeof appManifestSchema>
 export type CreateCustomAppRegistrationInput = z.infer<typeof createCustomAppRegistrationSchema>
 export type ReleaseManifestUploadInput = z.infer<typeof releaseManifestUploadSchema>
@@ -303,3 +331,5 @@ export type AppListQuery = z.infer<typeof appListQuerySchema>
 export type AppWebhookReplayInput = z.infer<typeof appWebhookReplaySchema>
 export type AppOAuthAuthorizeQuery = z.infer<typeof appOAuthAuthorizeQuerySchema>
 export type AppOAuthTokenInput = z.infer<typeof appOAuthTokenSchema>
+export type AppSessionTokenIssueInput = z.infer<typeof appSessionTokenIssueSchema>
+export type AppSessionTokenExchangeInput = z.infer<typeof appSessionTokenExchangeSchema>

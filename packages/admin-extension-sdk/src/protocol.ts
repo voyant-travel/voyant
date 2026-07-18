@@ -23,12 +23,20 @@ export const uiExtensionMessageTypes = {
   navigate: "voyant:ext:navigate",
   /** extension → host: raise a toast in the admin shell. */
   toast: "voyant:ext:toast",
-  /** extension → host: RESERVED — the host answers `error` with `not-supported`. */
+  /**
+   * extension → host: request a short-lived admin session token for the
+   * current entity/slot context. The host answers with `token` (or `error`
+   * with `not-supported`/`unavailable` when no broker is wired or issuance
+   * fails). The token is NOT a Voyant API credential — the frame relays it to
+   * its own backend, which exchanges it for online actor access.
+   */
   requestToken: "voyant:ext:request-token",
   /** host → extension: initial context handed back after `ready`. */
   init: "voyant:ext:init",
   /** host → extension: context update (theme/locale/entity change). */
   context: "voyant:ext:context",
+  /** host → extension: a short-lived admin session token (answers `request-token`). */
+  sessionToken: "voyant:ext:session-token",
   /** host → extension: an error response (e.g. an unsupported request). */
   error: "voyant:ext:error",
 } as const
@@ -58,7 +66,10 @@ export type UiExtensionToastMessage = UiExtensionEnvelope<
   "voyant:ext:toast",
   { intent: UiExtensionToastIntent; message: string }
 >
-export type UiExtensionRequestTokenMessage = UiExtensionEnvelope<"voyant:ext:request-token">
+export type UiExtensionRequestTokenMessage = UiExtensionEnvelope<
+  "voyant:ext:request-token",
+  { requestId?: string }
+>
 
 export type UiExtensionOutboundMessage =
   | UiExtensionReadyMessage
@@ -82,11 +93,24 @@ export type UiExtensionContextMessage = UiExtensionEnvelope<
   "voyant:ext:context",
   { context: UiExtensionContext }
 >
-export type UiExtensionErrorMessage = UiExtensionEnvelope<"voyant:ext:error", { code: string }>
+/**
+ * The short-lived admin session token delivered in response to `request-token`.
+ * `expiresAt` is epoch milliseconds; `requestId` echoes the request when the
+ * extension supplied one so concurrent requests can be correlated.
+ */
+export type UiExtensionTokenMessage = UiExtensionEnvelope<
+  "voyant:ext:session-token",
+  { token: string; tokenId: string; expiresAt: number; requestId?: string }
+>
+export type UiExtensionErrorMessage = UiExtensionEnvelope<
+  "voyant:ext:error",
+  { code: string; requestId?: string }
+>
 
 export type UiExtensionInboundMessage =
   | UiExtensionInitMessage
   | UiExtensionContextMessage
+  | UiExtensionTokenMessage
   | UiExtensionErrorMessage
 
 export type UiExtensionMessage = UiExtensionOutboundMessage | UiExtensionInboundMessage
@@ -143,12 +167,18 @@ export function createToastMessage(
   }
 }
 
-export function createRequestTokenMessage(): UiExtensionRequestTokenMessage {
+export function createRequestTokenMessage(requestId?: string): UiExtensionRequestTokenMessage {
   return {
     v: UI_EXTENSION_PROTOCOL_VERSION,
     type: uiExtensionMessageTypes.requestToken,
-    payload: undefined,
+    payload: requestId ? { requestId } : {},
   }
+}
+
+export function createTokenMessage(
+  payload: UiExtensionTokenMessage["payload"],
+): UiExtensionTokenMessage {
+  return { v: UI_EXTENSION_PROTOCOL_VERSION, type: uiExtensionMessageTypes.sessionToken, payload }
 }
 
 export function createInitMessage(
@@ -165,11 +195,11 @@ export function createContextMessage(context: UiExtensionContext): UiExtensionCo
   }
 }
 
-export function createErrorMessage(code: string): UiExtensionErrorMessage {
+export function createErrorMessage(code: string, requestId?: string): UiExtensionErrorMessage {
   return {
     v: UI_EXTENSION_PROTOCOL_VERSION,
     type: uiExtensionMessageTypes.error,
-    payload: { code },
+    payload: requestId ? { code, requestId } : { code },
   }
 }
 
@@ -246,6 +276,16 @@ export function isContextMessage(value: unknown): value is UiExtensionContextMes
     isMessageOfType<UiExtensionContextMessage>(value, uiExtensionMessageTypes.context) &&
     isRecord(value.payload) &&
     isRecord(value.payload.context)
+  )
+}
+
+export function isTokenMessage(value: unknown): value is UiExtensionTokenMessage {
+  return (
+    isMessageOfType<UiExtensionTokenMessage>(value, uiExtensionMessageTypes.sessionToken) &&
+    isRecord(value.payload) &&
+    typeof value.payload.token === "string" &&
+    typeof value.payload.tokenId === "string" &&
+    typeof value.payload.expiresAt === "number"
   )
 }
 
