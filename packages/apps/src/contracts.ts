@@ -165,6 +165,7 @@ export const appManifestSchema = manifestDisallowedKeySchema.pipe(
       urls: z
         .object({
           setup: httpsUrlSchema.optional(),
+          lifecycle: httpsUrlSchema.optional(),
           health: httpsUrlSchema,
           launch: httpsUrlSchema,
           privacy: httpsUrlSchema,

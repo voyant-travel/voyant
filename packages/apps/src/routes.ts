@@ -13,6 +13,7 @@ import {
   hasApiKeyPermission,
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 import { grantableRemoteAppScopes } from "./consent.js"
@@ -76,6 +77,7 @@ import type {
   ManagedAppInstallationAuthority,
   ManagedMarketplaceAcquisitionResolver,
 } from "./runtime-port.js"
+import { apps } from "./schema.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
@@ -342,6 +344,22 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       installationId,
       actorId: body.actorId,
     })
+    if (options.managedMarketplace) {
+      const [registration] = await c
+        .get("db")
+        .select({ distribution: apps.distribution })
+        .from(apps)
+        .where(eq(apps.id, result.installation.appId))
+        .limit(1)
+      if (registration?.distribution === "marketplace") {
+        await options.managedMarketplace.notifyInstallationLifecycle({
+          event: "uninstalled",
+          installationId: result.installation.id,
+          appId: result.installation.appId,
+          releaseId: result.installation.releaseId,
+        })
+      }
+    }
     return c.json({ data: result }, 200)
   })
 

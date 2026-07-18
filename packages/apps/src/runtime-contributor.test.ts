@@ -75,6 +75,7 @@ describe("createAppsRuntimePortContribution", () => {
           createSetupHandoff: async () => ({
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
+          notifyInstallationLifecycle: async () => undefined,
         },
       }),
     ).not.toThrow()
@@ -83,5 +84,15 @@ describe("createAppsRuntimePortContribution", () => {
         acquisitionResolver: { resolveAcquisitionIntent: async () => null },
       } as never),
     ).toThrow(/createSetupHandoff/)
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+        },
+      } as never),
+    ).toThrow(/notifyInstallationLifecycle/)
   })
 })

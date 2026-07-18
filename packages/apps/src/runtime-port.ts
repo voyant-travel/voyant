@@ -96,6 +96,14 @@ export interface ManagedMarketplaceAcquisitionResolver {
     appId: string
     releaseId: string
   }): Promise<{ redirectUrl: string }>
+
+  /** Deliver an idempotent host-signed lifecycle assertion to the publisher. */
+  notifyInstallationLifecycle(input: {
+    event: "uninstalled"
+    installationId: string
+    appId: string
+    releaseId: string
+  }): Promise<void>
 }
 
 export interface AppsManagedMarketplaceRuntime {
@@ -116,6 +124,11 @@ export const appsManagedMarketplaceRuntimePort = definePort<AppsManagedMarketpla
     if (typeof runtime.acquisitionResolver.createSetupHandoff !== "function") {
       throw new TypeError(
         "apps.managed-marketplace acquisitionResolver.createSetupHandoff must be a function.",
+      )
+    }
+    if (typeof runtime.acquisitionResolver.notifyInstallationLifecycle !== "function") {
+      throw new TypeError(
+        "apps.managed-marketplace acquisitionResolver.notifyInstallationLifecycle must be a function.",
       )
     }
   },

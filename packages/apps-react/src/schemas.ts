@@ -275,6 +275,7 @@ export const normalizedReleaseConsentSchema = z.object({
   ),
   urls: z.object({
     setup: z.string().url().optional(),
+    lifecycle: z.string().url().optional(),
     health: z.string().url(),
     launch: z.string().url(),
     privacy: z.string().url(),

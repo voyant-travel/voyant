@@ -27,6 +27,7 @@ function context(
     acquisitionResolver: {
       resolveAcquisitionIntent: () => Promise<null>
       createSetupHandoff: () => Promise<{ redirectUrl: string }>
+      notifyInstallationLifecycle: () => Promise<void>
     }
   },
 ): VoyantGraphRuntimeFactoryContext {
@@ -98,6 +99,7 @@ describe("createAppsApiModule", () => {
           createSetupHandoff: async () => ({
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
+          notifyInstallationLifecycle: async () => undefined,
         },
       }),
     )
