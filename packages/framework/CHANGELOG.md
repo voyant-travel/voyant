@@ -1,5 +1,16 @@
 # @voyant-travel/framework
 
+## 0.53.0
+
+### Minor Changes
+
+- 16e2c2c: Mount the isolated customer Better Auth realm in managed Node runtimes while keeping Voyant Cloud as the admin broker. Resolve managed storefront auth configuration asynchronously, use its public API base for OAuth callbacks and password-reset links, and export the standard Voyant Cloud auth email sender for host composition.
+
+### Patch Changes
+
+- @voyant-travel/operator-standard@0.8.2
+- @voyant-travel/cruises@0.172.0
+
 ## 0.52.0
 
 ### Minor Changes

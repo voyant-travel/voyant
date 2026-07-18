@@ -1,5 +1,7 @@
 # @voyant-travel/bookings
 
+## 0.173.0
+
 ## 0.172.0
 
 ### Minor Changes
