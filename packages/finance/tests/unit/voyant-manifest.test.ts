@@ -98,6 +98,12 @@ describe("finance deployment manifest", () => {
       ],
     })
     expectConcreteEventSchemas(financeVoyantModule.events)
+    expect(
+      financeVoyantModule.reporting?.widgets?.every(
+        (widget) =>
+          !Object.values(widget.visualization.options ?? {}).some((value) => value === undefined),
+      ),
+    ).toBe(true)
   })
 
   it("declares Finance access and destructive tool authority", () => {

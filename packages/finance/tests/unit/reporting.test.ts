@@ -152,6 +152,25 @@ describe("Finance receivables query compiler", () => {
       }),
     ).toThrow(FinanceReportingQueryError)
   })
+
+  it("rejects filters with missing parameter values", () => {
+    expect(() =>
+      compileFinanceReceivablesQuery({
+        query: {
+          ...groupedOutstandingQuery,
+          filters: [
+            {
+              field: "currency",
+              operator: "equal",
+              value: { kind: "parameter", name: "currency" },
+            },
+          ],
+        },
+        parameters: {},
+        maximumRows: 100,
+      }),
+    ).toThrow('Missing query parameter "currency"')
+  })
 })
 
 describe("Finance receivables executor", () => {
