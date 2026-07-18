@@ -201,6 +201,7 @@
       "@voyant-travel/apps/oauth-crypto": ["../apps/dist/oauth-crypto.d.ts"],
       "@voyant-travel/apps/oauth-service": ["../apps/dist/oauth-service.d.ts"],
       "@voyant-travel/apps/routes": ["../apps/dist/routes.d.ts"],
+      "@voyant-travel/apps/runtime-contributor": ["../apps/dist/runtime-contributor.d.ts"],
       "@voyant-travel/apps/schema": ["../apps/dist/schema.d.ts"],
       "@voyant-travel/apps/service": ["../apps/dist/service.d.ts"],
       "@voyant-travel/apps/session-token": ["../apps/dist/session-token.d.ts"],
