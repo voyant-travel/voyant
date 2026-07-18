@@ -81,9 +81,9 @@
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "marked": "^18.0.5",
+    "marked": "^18.0.6",
     "pdf-lib": "^1.17.1",
-    "sanitize-html": "^2.17.5",
+    "sanitize-html": "^2.17.6",
     "zod": "catalog:",
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^"
