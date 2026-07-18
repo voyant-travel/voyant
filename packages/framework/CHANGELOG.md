@@ -1,5 +1,27 @@
 # @voyant-travel/framework
 
+## 0.50.0
+
+### Minor Changes
+
+- 698ddb6: Add first-class adapter and provider graph-unit kinds while keeping plugin
+  manifests recognized for backward compatibility.
+
+### Patch Changes
+
+- Updated dependencies [698ddb6]
+  - @voyant-travel/core@0.126.0
+  - @voyant-travel/action-ledger@0.111.2
+  - @voyant-travel/auth@0.133.1
+  - @voyant-travel/cruises@0.168.1
+  - @voyant-travel/db@0.114.11
+  - @voyant-travel/hono@0.128.4
+  - @voyant-travel/mcp@0.4.2
+  - @voyant-travel/operator-standard@0.7.6
+  - @voyant-travel/storage@0.111.2
+  - @voyant-travel/workflows@0.122.4
+  - @voyant-travel/workflows-orchestrator@0.122.4
+
 ## 0.49.4
 
 ### Patch Changes
