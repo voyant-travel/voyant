@@ -1,3 +1,4 @@
+import { prepareExternalWebhookEvent } from "@voyant-travel/webhook-delivery"
 import { describe, expect, it } from "vitest"
 import { createFinanceVoyantRuntime } from "../../src/index.js"
 import {
@@ -20,6 +21,7 @@ describe("finance deployment manifest", () => {
           { id: "action-ledger.finance-drift-runtime" },
           { id: "bookings.finance.runtime" },
           { id: "finance.host.runtime" },
+          { id: "finance.app-api.runtime" },
         ],
       },
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
@@ -124,6 +126,62 @@ describe("finance deployment manifest", () => {
         from: { tools: ["@voyant-travel/finance#tool.void-invoice"] },
       }),
     )
+  })
+
+  it("projects issued invoice events to stable external document references", () => {
+    const issued = financeVoyantModule.events.find((event) => event.eventType === "invoice.issued")
+    const proformaIssued = financeVoyantModule.events.find(
+      (event) => event.eventType === "invoice.proforma.issued",
+    )
+    expect(issued).toMatchObject({ visibility: "external", version: "1.0.0" })
+    expect(proformaIssued).toMatchObject({
+      visibility: "external",
+      version: "1.0.0",
+      payloadSchema: issued?.payloadSchema,
+    })
+    expect(financeVoyantModule.webhooks).toEqual([
+      {
+        id: "@voyant-travel/finance#webhook.invoice-issued",
+        direction: "outbound",
+        eventId: "@voyant-travel/finance#event.invoice.issued",
+      },
+      {
+        id: "@voyant-travel/finance#webhook.invoice-proforma-issued",
+        direction: "outbound",
+        eventId: "@voyant-travel/finance#event.invoice.proforma.issued",
+      },
+    ])
+
+    const projected = prepareExternalWebhookEvent(
+      {
+        name: "invoice.issued",
+        data: {
+          invoiceId: "inv_1",
+          invoiceType: "invoice",
+          skipExternalSync: false,
+          clientEmail: "private@example.test",
+          lineItems: [{ description: "Internal line detail" }],
+          externalProvider: "internal-routing-hint",
+        },
+        emittedAt: new Date("2026-07-18T10:00:00.000Z"),
+        metadata: {
+          graphEventId: "@voyant-travel/finance#event.invoice.issued",
+          graphEventVersion: "1.0.0",
+        },
+      },
+      {
+        eventId: issued!.id,
+        eventType: issued!.eventType!,
+        eventVersion: issued!.version!,
+        payloadSchema: issued!.payloadSchema!,
+      },
+    )
+
+    expect(projected.data).toEqual({
+      invoiceId: "inv_1",
+      invoiceType: "invoice",
+      skipExternalSync: false,
+    })
   })
 
   it("mounts only selected Finance API surfaces", async () => {

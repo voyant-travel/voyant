@@ -7,6 +7,7 @@ import {
   requirePort,
 } from "@voyant-travel/core/project"
 import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
+import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
@@ -26,7 +27,7 @@ import {
   bookingDualCreatedPayloadSchema,
   bookingPaymentSchedulePaidPayloadSchema,
   invoiceDocumentGeneratedPayloadSchema,
-  invoiceIssuedPayloadSchema,
+  invoiceIssuanceExternalPayloadSchema,
   invoicePaymentRecordedPayloadSchema,
   invoiceProformaConvertedPayloadSchema,
   invoiceRenderedPayloadSchema,
@@ -57,6 +58,7 @@ export const financeVoyantModule = defineModule({
       providePort(actionLedgerFinanceDriftRuntimePort),
       providePort(bookingsFinanceRuntimePort),
       providePort(financeHostRuntimePort),
+      providePort(financeAppApiRuntimePort),
     ],
   },
   api: [
@@ -129,16 +131,16 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.issued",
       eventType: "invoice.issued",
       version: "1.0.0",
-      payloadSchema: invoiceIssuedPayloadSchema,
-      visibility: "internal",
+      payloadSchema: invoiceIssuanceExternalPayloadSchema,
+      visibility: "external",
       audit: { sourceModule: "finance", category: "domain" },
     },
     {
       id: "@voyant-travel/finance#event.invoice.proforma.issued",
       eventType: "invoice.proforma.issued",
       version: "1.0.0",
-      payloadSchema: invoiceIssuedPayloadSchema,
-      visibility: "internal",
+      payloadSchema: invoiceIssuanceExternalPayloadSchema,
+      visibility: "external",
       audit: { sourceModule: "finance", category: "domain" },
     },
     {
@@ -236,6 +238,18 @@ export const financeVoyantModule = defineModule({
       payloadSchema: bookingPaymentSchedulePaidPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
+    },
+  ],
+  webhooks: [
+    {
+      id: "@voyant-travel/finance#webhook.invoice-issued",
+      direction: "outbound",
+      eventId: "@voyant-travel/finance#event.invoice.issued",
+    },
+    {
+      id: "@voyant-travel/finance#webhook.invoice-proforma-issued",
+      direction: "outbound",
+      eventId: "@voyant-travel/finance#event.invoice.proforma.issued",
     },
   ],
   setupMigrations: [

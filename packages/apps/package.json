@@ -42,6 +42,7 @@
     "@voyant-travel/admin-extension-sdk": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/custom-fields": "workspace:^",
+    "@voyant-travel/finance-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/types": "workspace:^",

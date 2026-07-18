@@ -3,6 +3,7 @@ import {
   customFieldValueLifecycleRuntimePort,
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
+import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
 
 const appsAdminRuntime = {
   entry: "@voyant-travel/apps-react/admin",
@@ -33,6 +34,7 @@ export const appsVoyantModule = defineModule({
       optional: true,
       cardinality: "many",
     }),
+    requirePort(financeAppApiRuntimePort, { optional: true }),
   ],
   api: [
     {
@@ -259,6 +261,45 @@ export const appsVoyantModule = defineModule({
             action: "reconcile",
             label: "Reconcile finance documents",
             description: "Request approved finance document reconciliation.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-external-references",
+        resource: "finance-external-references",
+        label: "Finance external references",
+        description: "Read and record provider-owned finance document references.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "read",
+            label: "Read external references",
+            description: "Read the app provider's reference for a finance document.",
+          },
+          {
+            action: "write",
+            label: "Write external references",
+            description: "Idempotently record the app provider's finance document reference.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-external-allocation",
+        resource: "finance-external-allocation",
+        label: "External finance number allocation",
+        description: "Write a provider-owned number to a pending finance document.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "write",
+            label: "Allocate external finance number",
+            description: "Atomically finalize a pending provider-owned document number.",
             sensitive: true,
             wildcard: "explicit",
           },

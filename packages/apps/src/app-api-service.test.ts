@@ -1,6 +1,8 @@
+import { FinanceAppApiNumberConflictError } from "@voyant-travel/finance-contracts/app-api"
 import { ApiHttpError } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it, vi } from "vitest"
+import { appApiFinanceExternalReferenceUpsertSchema } from "./app-api-contracts.js"
 import {
   type AppApiAccessContext,
   assertAppNamespaceAlias,
@@ -137,6 +139,64 @@ describe("App API service boundary", () => {
     expect(executeAction).not.toHaveBeenCalled()
   })
 
+  it("hydrates one finance document through the stable App API identifier", async () => {
+    const getIssuanceDocument = vi.fn().mockResolvedValue({ id: "inv_1" })
+    const service = createAppApiService({
+      finance: { listDocuments: vi.fn(), executeAction: vi.fn(), getIssuanceDocument },
+    })
+
+    await expect(
+      service.getFinanceIssuanceDocument(
+        createAccessDb({ scopes: ["finance-documents:read"] }),
+        { ...context, scopes: ["finance-documents:read"] },
+        "inv_1",
+      ),
+    ).resolves.toEqual({ data: { id: "inv_1" } })
+    expect(getIssuanceDocument).toHaveBeenCalledWith(expect.anything(), "inv_1")
+  })
+
+  it("maps a provider-owned invoice number conflict to a stable App API conflict", async () => {
+    const upsertExternalReference = vi
+      .fn()
+      .mockRejectedValue(new FinanceAppApiNumberConflictError("SB-42"))
+    const service = createAppApiService({ finance: { upsertExternalReference } })
+    const db = createAccessDb({
+      scopes: ["finance-external-references:write", "finance-external-allocation:write"],
+    })
+    Object.assign(db, {
+      transaction: (callback: (tx: PostgresJsDatabase) => unknown) => callback(db),
+    })
+
+    await expect(
+      service.upsertFinanceExternalReference(
+        db,
+        {
+          ...context,
+          scopes: ["finance-external-references:write", "finance-external-allocation:write"],
+        },
+        "inv_1",
+        {
+          reference: {
+            externalId: null,
+            externalNumber: null,
+            externalUrl: null,
+            status: null,
+            metadata: null,
+            syncedAt: null,
+            syncError: null,
+          },
+          allocation: { invoiceNumber: "SB-42" },
+        },
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "app_api_finance_number_conflict" })
+    expect(upsertExternalReference).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_1",
+      "app_1",
+      expect.anything(),
+    )
+  })
+
   it("isolates rate limits per installation", async () => {
     const service = createAppApiService({
       rateLimit: { installationLimit: 1, appLimit: 10, windowMs: 60_000 },
@@ -165,5 +225,24 @@ describe("App API service boundary", () => {
     expect(() =>
       assertCompatibleVersion("2027-01-01", { min: "2026-07-01", max: "2026-12-31" }),
     ).toThrow(ApiHttpError)
+  })
+
+  it("requires a complete bounded external-reference replacement", () => {
+    expect(appApiFinanceExternalReferenceUpsertSchema.safeParse({ reference: {} }).success).toBe(
+      false,
+    )
+    expect(
+      appApiFinanceExternalReferenceUpsertSchema.safeParse({
+        reference: {
+          externalId: null,
+          externalNumber: null,
+          externalUrl: null,
+          status: null,
+          metadata: { payload: "x".repeat(17_000) },
+          syncedAt: null,
+          syncError: null,
+        },
+      }).success,
+    ).toBe(false)
   })
 })

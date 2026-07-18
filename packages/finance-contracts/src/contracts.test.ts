@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-
 import {
+  financeAppApiRuntimePort,
   insertBookingItemCommissionSchema,
   insertBookingItemTaxLineSchema,
   insertPaymentAuthorizationSchema,
@@ -16,8 +16,17 @@ import {
   updatePaymentSchema,
   updateTaxRegimeSchema,
 } from "./index.js"
+import { financeAppApiRuntimePort as importCheapFinanceAppApiRuntimePort } from "./runtime-port.js"
 
 describe("finance-contracts", () => {
+  it("keeps the finance App API runtime seam provider-neutral and closed", () => {
+    expect(financeAppApiRuntimePort.id).toBe("finance.app-api.runtime")
+    expect(financeAppApiRuntimePort).toBe(importCheapFinanceAppApiRuntimePort)
+    expect(() =>
+      financeAppApiRuntimePort.test({ getIssuanceDocument: async () => null } as never),
+    ).toThrow(/getExternalReference/)
+  })
+
   it("accepts valid enum values", () => {
     expect(invoiceStatusSchema.parse("issued")).toBe("issued")
     expect(paymentMethodSchema.parse("bank_transfer")).toBe("bank_transfer")

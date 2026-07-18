@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./app-api": "./src/app-api.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./validation": "./src/validation.ts",
     "./travel-credits": "./src/validation-travel-credits.ts"
   },
@@ -27,6 +29,16 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./app-api": {
+        "types": "./dist/app-api.d.ts",
+        "import": "./dist/app-api.js",
+        "default": "./dist/app-api.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
       "./validation": {
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
@@ -43,6 +55,7 @@
   },
   "dependencies": {
     "@voyant-travel/schema-kit": "workspace:^",
+    "drizzle-orm": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
