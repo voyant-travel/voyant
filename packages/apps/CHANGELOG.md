@@ -1,5 +1,11 @@
 # @voyant-travel/apps
 
+## 0.6.1
+
+### Patch Changes
+
+- 5498853: Mount the apps module in the standard operator distribution and publish its runtime contributor and admin OpenAPI coverage.
+
 ## 0.6.0
 
 ### Minor Changes

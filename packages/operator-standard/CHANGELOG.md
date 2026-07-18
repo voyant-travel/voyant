@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.7.5
+
+### Patch Changes
+
+- 5498853: Mount the apps module in the standard operator distribution and publish its runtime contributor and admin OpenAPI coverage.
+- Updated dependencies [5498853]
+  - @voyant-travel/apps@0.6.1
+
 ## 0.7.4
 
 ### Patch Changes
