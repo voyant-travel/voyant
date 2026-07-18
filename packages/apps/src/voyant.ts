@@ -4,6 +4,11 @@ import {
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 
+const appsAdminRuntime = {
+  entry: "@voyant-travel/apps-react/admin",
+  export: "createSelectedAppsAdminExtension",
+} as const
+
 const appInstallationLifecyclePayloadSchema = {
   type: "object",
   additionalProperties: false,
@@ -125,8 +130,11 @@ export const appsVoyantModule = defineModule({
         wildcard: "explicit-resource",
       },
       {
-        id: "@voyant-travel/apps#access.webhooks",
-        resource: "webhooks",
+        id: "@voyant-travel/apps#access.app-webhooks",
+        // Namespaced `app-webhooks` (not `webhooks`) to avoid a duplicate
+        // access-resource authority with @voyant-travel/workflow-runs, which
+        // owns the deployment `webhooks` resource.
+        resource: "app-webhooks",
         label: "App webhooks",
         description: "Read webhook health and request replay.",
         remoteSafe: true,
@@ -191,6 +199,49 @@ export const appsVoyantModule = defineModule({
             sensitive: true,
           },
         ],
+      },
+    ],
+  },
+  admin: {
+    compositionOrder: 170,
+    runtime: appsAdminRuntime,
+    copy: [
+      {
+        id: "@voyant-travel/apps#admin.copy",
+        namespace: "apps.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/apps-react/i18n",
+          export: "appsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/apps#admin.route.installed",
+        path: "/apps",
+        requiredScopes: ["apps:read"],
+        runtime: appsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/apps#admin.route.developer",
+        path: "/apps/developer",
+        requiredScopes: ["apps:write"],
+        runtime: appsAdminRuntime,
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/apps#admin.nav.installed",
+        routeId: "@voyant-travel/apps#admin.route.installed",
+        label: { namespace: "apps.admin", key: "navigation.title" },
+        order: 170,
+      },
+      {
+        id: "@voyant-travel/apps#admin.nav.developer",
+        routeId: "@voyant-travel/apps#admin.route.developer",
+        label: { namespace: "apps.admin", key: "navigation.developerTitle" },
+        order: 171,
       },
     ],
   },

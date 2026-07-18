@@ -233,6 +233,54 @@ export const appListQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().default(0),
 })
 
+const appInstallationStatusValues = [
+  "pending",
+  "authorizing",
+  "active",
+  "paused",
+  "degraded",
+  "revoked",
+  "uninstalled",
+] as const
+
+const appInstallationUpdatePolicyValues = ["manual", "compatible", "patch", "pinned"] as const
+
+export const appInstallationListQuerySchema = z.object({
+  appId: z.string().trim().min(1).optional(),
+  status: z.enum(appInstallationStatusValues).optional(),
+  deploymentId: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).default(25),
+  offset: z.coerce.number().int().nonnegative().default(0),
+})
+
+export const appInstallationAuditQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(200).default(50),
+})
+
+export const installAppSchema = z
+  .object({
+    appId: z.string().trim().min(1),
+    releaseId: z.string().trim().min(1),
+    actorId: z.string().trim().min(1).max(160),
+    grantedOptionalScopes: z.array(scopeSchema).optional(),
+    updatePolicy: z.enum(appInstallationUpdatePolicyValues).optional(),
+    deploymentId: z.string().trim().min(1).optional(),
+  })
+  .strict()
+
+export const lifecycleActionBodySchema = z
+  .object({
+    actorId: z.string().trim().min(1).max(160),
+  })
+  .strict()
+
+export const activateInstallationBodySchema = z
+  .object({
+    releaseId: z.string().trim().min(1),
+    actorId: z.string().trim().min(1).max(160),
+  })
+  .strict()
+
 export const appWebhookReplaySchema = z
   .object({
     deliveryId: z.string().trim().min(1),
@@ -328,6 +376,11 @@ export type CreateCustomAppRegistrationInput = z.infer<typeof createCustomAppReg
 export type ReleaseManifestUploadInput = z.infer<typeof releaseManifestUploadSchema>
 export type ReleaseManifestFetchInput = z.infer<typeof releaseManifestFetchSchema>
 export type AppListQuery = z.infer<typeof appListQuerySchema>
+export type AppInstallationListQuery = z.infer<typeof appInstallationListQuerySchema>
+export type AppInstallationAuditQuery = z.infer<typeof appInstallationAuditQuerySchema>
+export type InstallAppRequest = z.infer<typeof installAppSchema>
+export type LifecycleActionBody = z.infer<typeof lifecycleActionBodySchema>
+export type ActivateInstallationBody = z.infer<typeof activateInstallationBodySchema>
 export type AppWebhookReplayInput = z.infer<typeof appWebhookReplaySchema>
 export type AppOAuthAuthorizeQuery = z.infer<typeof appOAuthAuthorizeQuerySchema>
 export type AppOAuthTokenInput = z.infer<typeof appOAuthTokenSchema>

@@ -1,0 +1,112 @@
+{
+  "name": "@voyant-travel/apps-react",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.tsx",
+    "./hooks": "./src/hooks/index.ts",
+    "./query-keys": "./src/query-keys.ts",
+    "./query-options": "./src/query-options.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@voyant-travel/admin": {
+      "optional": true
+    },
+    "@voyant-travel/ui": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
+    "lucide-react": "^1.23.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.101.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/i18n": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js"
+      },
+      "./hooks": {
+        "types": "./dist/hooks/index.d.ts",
+        "import": "./dist/hooks/index.js"
+      },
+      "./query-keys": {
+        "types": "./dist/query-keys.d.ts",
+        "import": "./dist/query-keys.js"
+      },
+      "./query-options": {
+        "types": "./dist/query-options.d.ts",
+        "import": "./dist/query-options.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/apps-react"
+  }
+}

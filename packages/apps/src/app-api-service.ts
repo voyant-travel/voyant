@@ -210,7 +210,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
   }
 
   async function listWebhookHealth(db: PostgresJsDatabase, context: AppApiAccessContext) {
-    await requireAccess(db, context, ["webhooks:read"])
+    await requireAccess(db, context, ["app-webhooks:read"])
     const data = await db
       .select()
       .from(appWebhookSubscriptions)

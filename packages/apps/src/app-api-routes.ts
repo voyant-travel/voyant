@@ -200,7 +200,7 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
   )
 
   routes.post("/webhooks/replay", async (c) => {
-    await service.requireAccess(c.get("db"), appContext(c), ["webhooks:replay"])
+    await service.requireAccess(c.get("db"), appContext(c), ["app-webhooks:replay"])
     const body = await parseJsonBody(c, appApiWebhookReplaySchema)
     return run(
       c,
