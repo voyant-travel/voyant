@@ -148,6 +148,18 @@ jobs:
         if: steps.release_plan.outputs.publish_pending == 'true'
         # Hard outer bound so a stalled publish can never burn a full job slot.
         timeout-minutes: 50
+        env:
+          # changesets 2.31 publishes up to 10 packages concurrently. Several
+          # packages `clean` their dist in prepack (`pnpm run clean && tsc`),
+          # so a concurrent republish of a dependency (e.g. `@voyant-travel/admin`)
+          # can delete its `dist` while a dependent's prepack `tsc` is resolving
+          # it, failing with "Cannot find module '@voyant-travel/admin'". The
+          # "Build pending publish workspaces" (Turbo) and "Verify publish
+          # tarballs" steps already produced and validated fresh `dist`, so
+          # publish must consume those artifacts immutably rather than rebuild
+          # them under fan-out. Disabling lifecycle scripts skips the racy
+          # prepack rebuild entirely.
+          npm_config_ignore_scripts: "true"
         run: |
           # `pnpm release` is `changeset publish`, which is idempotent: it
           # checks npm per package and skips versions already published, so it

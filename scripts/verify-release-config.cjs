@@ -3,8 +3,71 @@ const path = require("node:path")
 
 const { read } = require("@changesets/config")
 const { getPackages } = require("@manypkg/get-packages")
+const { parse: parseYaml } = require("yaml")
 
 const { getPublishablePackages } = require("./release-utils.cjs")
+
+const RELEASE_WORKFLOW_PATH = ".github/workflows/release.yml"
+const BUILD_STEP = "Build pending publish workspaces"
+const TARBALL_STEP = "Verify publish tarballs"
+const PUBLISH_STEP = "Publish pending packages"
+
+// Publish must consume the Turbo-built, tarball-verified `dist` immutably.
+// Several packages `clean` their dist in prepack, so a concurrent publish
+// (changesets fans out to ~10) can delete a dependency's dist mid-build. The
+// publish step therefore (a) must run after the build + tarball-verify steps
+// and (b) must disable lifecycle scripts so prepack never rebuilds under
+// fan-out. This guards that invariant from silently regressing.
+function collectReleaseWorkflowProblems(cwd) {
+  const problems = []
+  const workflowPath = path.join(cwd, RELEASE_WORKFLOW_PATH)
+
+  let workflow
+  try {
+    workflow = parseYaml(readFileSync(workflowPath, "utf8"))
+  } catch (error) {
+    return [`${RELEASE_WORKFLOW_PATH}: could not read or parse workflow (${error.message})`]
+  }
+
+  const releaseJob = workflow?.jobs?.release
+  const steps = Array.isArray(releaseJob?.steps) ? releaseJob.steps : null
+  if (!steps) {
+    return [`${RELEASE_WORKFLOW_PATH}: missing jobs.release.steps`]
+  }
+
+  const indexOfStep = (name) => steps.findIndex((step) => step?.name === name)
+  const buildIdx = indexOfStep(BUILD_STEP)
+  const tarballIdx = indexOfStep(TARBALL_STEP)
+  const publishIdx = indexOfStep(PUBLISH_STEP)
+
+  for (const [label, idx] of [
+    [BUILD_STEP, buildIdx],
+    [TARBALL_STEP, tarballIdx],
+    [PUBLISH_STEP, publishIdx],
+  ]) {
+    if (idx === -1) problems.push(`${RELEASE_WORKFLOW_PATH}: missing "${label}" step`)
+  }
+
+  if (publishIdx !== -1) {
+    if (buildIdx !== -1 && buildIdx > publishIdx) {
+      problems.push(`${RELEASE_WORKFLOW_PATH}: "${BUILD_STEP}" must precede "${PUBLISH_STEP}"`)
+    }
+    if (tarballIdx !== -1 && tarballIdx > publishIdx) {
+      problems.push(`${RELEASE_WORKFLOW_PATH}: "${TARBALL_STEP}" must precede "${PUBLISH_STEP}"`)
+    }
+
+    const publishEnv = steps[publishIdx].env ?? {}
+    const ignoreScripts = publishEnv.npm_config_ignore_scripts
+    if (String(ignoreScripts) !== "true") {
+      problems.push(
+        `${RELEASE_WORKFLOW_PATH}: "${PUBLISH_STEP}" must set env.npm_config_ignore_scripts: "true" ` +
+          "so publish consumes verified dist immutably instead of racing prepack rebuilds",
+      )
+    }
+  }
+
+  return problems
+}
 
 const DEPENDENCY_FIELDS = [
   "dependencies",
@@ -93,6 +156,7 @@ async function main() {
   }
 
   problems.push(...collectWorkspaceRangeProblems(packages))
+  problems.push(...collectReleaseWorkflowProblems(cwd))
 
   if (problems.length > 0) {
     console.error("Release configuration verification failed:\n")
