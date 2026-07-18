@@ -150,6 +150,21 @@ describe("finance deployment manifest", () => {
         direction: "outbound",
         eventId: "@voyant-travel/finance#event.invoice.proforma.issued",
       },
+      {
+        id: "@voyant-travel/finance#webhook.invoice-proforma-converted",
+        direction: "outbound",
+        eventId: "@voyant-travel/finance#event.invoice.proforma.converted",
+      },
+      {
+        id: "@voyant-travel/finance#webhook.invoice-voided",
+        direction: "outbound",
+        eventId: "@voyant-travel/finance#event.invoice.voided",
+      },
+      {
+        id: "@voyant-travel/finance#webhook.invoice-payment-recorded",
+        direction: "outbound",
+        eventId: "@voyant-travel/finance#event.invoice.payment.recorded",
+      },
     ])
 
     const projected = prepareExternalWebhookEvent(
@@ -182,6 +197,175 @@ describe("finance deployment manifest", () => {
       invoiceType: "invoice",
       skipExternalSync: false,
     })
+  })
+
+  it("projects lifecycle events to minimal PII-free external facts", () => {
+    const converted = financeVoyantModule.events.find(
+      (event) => event.eventType === "invoice.proforma.converted",
+    )
+    const voided = financeVoyantModule.events.find((event) => event.eventType === "invoice.voided")
+    const paymentRecorded = financeVoyantModule.events.find(
+      (event) => event.eventType === "invoice.payment.recorded",
+    )
+    const settled = financeVoyantModule.events.find(
+      (event) => event.eventType === "invoice.settled",
+    )
+
+    expect(converted).toMatchObject({
+      version: "2.0.0",
+      visibility: "external",
+      payloadSchema: {
+        required: ["invoiceId", "invoiceType", "occurredAt", "lineage"],
+        additionalProperties: false,
+      },
+    })
+    expect(voided).toMatchObject({
+      version: "2.0.0",
+      visibility: "external",
+      payloadSchema: {
+        required: ["invoiceId", "invoiceType", "occurredAt"],
+        additionalProperties: false,
+      },
+    })
+    expect(paymentRecorded).toMatchObject({
+      version: "2.0.0",
+      visibility: "external",
+      payloadSchema: {
+        required: [
+          "invoiceId",
+          "invoiceType",
+          "invoiceCurrency",
+          "invoiceTotalCents",
+          "invoicePaidCents",
+          "invoiceBalanceDueCents",
+          "paymentId",
+          "amountCents",
+          "currency",
+          "baseCurrency",
+          "baseAmountCents",
+          "paymentMethod",
+          "paymentDate",
+          "occurredAt",
+        ],
+        additionalProperties: false,
+      },
+    })
+    expect(settled).toMatchObject({ visibility: "internal" })
+    expect(Object.keys(converted!.payloadSchema!.properties as object).sort()).toEqual([
+      "invoiceId",
+      "invoiceType",
+      "lineage",
+      "occurredAt",
+    ])
+    expect(Object.keys(voided!.payloadSchema!.properties as object).sort()).toEqual([
+      "invoiceId",
+      "invoiceType",
+      "occurredAt",
+    ])
+    expect(Object.keys(paymentRecorded!.payloadSchema!.properties as object).sort()).toEqual([
+      "amountCents",
+      "baseAmountCents",
+      "baseCurrency",
+      "currency",
+      "invoiceBalanceDueCents",
+      "invoiceCurrency",
+      "invoiceId",
+      "invoicePaidCents",
+      "invoiceTotalCents",
+      "invoiceType",
+      "occurredAt",
+      "paymentDate",
+      "paymentId",
+      "paymentMethod",
+    ])
+
+    const projected = prepareExternalWebhookEvent(
+      {
+        name: "invoice.proforma.converted",
+        data: {
+          invoiceId: "invoice_1",
+          invoiceType: "invoice",
+          occurredAt: "2026-07-18T10:00:00.000Z",
+          lineage: {
+            sourceDocumentId: "proforma_1",
+            successorDocumentId: "invoice_1",
+          },
+          clientEmail: "private@example.test",
+          lineItems: [{ description: "Private line" }],
+        },
+        emittedAt: new Date("2026-07-18T10:00:00.000Z"),
+        metadata: {
+          graphEventId: "@voyant-travel/finance#event.invoice.proforma.converted",
+          graphEventVersion: "2.0.0",
+        },
+      },
+      {
+        eventId: converted!.id,
+        eventType: converted!.eventType!,
+        eventVersion: converted!.version!,
+        payloadSchema: converted!.payloadSchema!,
+      },
+    )
+
+    expect(projected.data).toEqual({
+      invoiceId: "invoice_1",
+      invoiceType: "invoice",
+      occurredAt: "2026-07-18T10:00:00.000Z",
+      lineage: {
+        sourceDocumentId: "proforma_1",
+        successorDocumentId: "invoice_1",
+      },
+    })
+
+    for (const [declaration, data] of [
+      [
+        voided,
+        {
+          invoiceId: "credit_1",
+          invoiceType: "credit_note",
+          occurredAt: "2026-07-18T11:00:00.000Z",
+        },
+      ],
+      [
+        paymentRecorded,
+        {
+          invoiceId: "credit_1",
+          invoiceType: "credit_note",
+          invoiceCurrency: "RON",
+          invoiceTotalCents: 10000,
+          invoicePaidCents: 2500,
+          invoiceBalanceDueCents: 7500,
+          paymentId: "payment_1",
+          amountCents: 2500,
+          currency: "RON",
+          baseCurrency: null,
+          baseAmountCents: null,
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-07-18",
+          occurredAt: "2026-07-18T11:00:00.000Z",
+        },
+      ],
+    ] as const) {
+      expect(
+        prepareExternalWebhookEvent(
+          {
+            name: declaration!.eventType!,
+            data,
+            emittedAt: new Date("2026-07-18T11:00:00.000Z"),
+            metadata: {
+              graphEventId: declaration!.id,
+              graphEventVersion: declaration!.version!,
+            },
+          },
+          {
+            eventId: declaration!.id,
+            eventType: declaration!.eventType!,
+            eventVersion: declaration!.version!,
+            payloadSchema: declaration!.payloadSchema!,
+          },
+        ).data,
+      ).toEqual(data)
+    }
   })
 
   it("mounts only selected Finance API surfaces", async () => {

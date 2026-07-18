@@ -78,9 +78,146 @@ export interface FinanceAppApiExternalReference {
   metadata: Record<string, unknown> | null
   syncedAt: string | null
   syncError: string | null
+  sync: FinanceAppApiExternalSyncState | null
   createdAt: string
   updatedAt: string
 }
+
+export type FinanceAppApiExternalSyncStatus = "succeeded" | "retryable_failure" | "terminal_failure"
+
+export interface FinanceAppApiExternalSyncStateInput {
+  operationId: string
+  status: FinanceAppApiExternalSyncStatus
+  occurredAt: string
+  error: { code: string; message: string } | null
+  metadata: Record<string, unknown> | null
+}
+
+export interface FinanceAppApiExternalSyncState extends FinanceAppApiExternalSyncStateInput {
+  provider: string
+  documentId: string
+}
+
+export type FinanceAppApiExternalSyncMutationResult =
+  | {
+      status: "ok"
+      outcome: "created" | "updated" | "unchanged"
+      sync: FinanceAppApiExternalSyncState
+    }
+  | { status: "not_found" }
+  | {
+      status: "conflict"
+      reason: "idempotency_key_reused" | "out_of_order"
+      current: FinanceAppApiExternalSyncState
+    }
+
+export type FinanceAppApiExternalLifecycleState = "converted" | "voided"
+
+export interface FinanceAppApiDocumentLineage {
+  sourceDocumentId: string
+  successorDocumentId: string
+}
+
+export interface FinanceAppApiExternalLifecycleStateInput {
+  operationId: string
+  state: FinanceAppApiExternalLifecycleState
+  occurredAt: string
+  lineage: FinanceAppApiDocumentLineage | null
+}
+
+export interface FinanceAppApiExternalLifecycleObservation
+  extends FinanceAppApiExternalLifecycleStateInput {
+  provider: string
+  documentId: string
+}
+
+export type FinanceAppApiExternalLifecycleMutationResult =
+  | {
+      status: "ok"
+      outcome: "created" | "unchanged"
+      lifecycle: FinanceAppApiExternalLifecycleObservation
+    }
+  | { status: "not_found" }
+  | {
+      status: "conflict"
+      reason:
+        | "idempotency_key_reused"
+        | "lineage_mismatch"
+        | "native_state_mismatch"
+        | "out_of_order"
+        | "terminal_transition"
+      current: FinanceAppApiExternalLifecycleObservation | null
+    }
+
+export type FinanceAppApiSettlementObservationStatus = "partial" | "paid"
+
+export interface FinanceAppApiSettlementTotals {
+  totalCents: number
+  paidCents: number
+  balanceDueCents: number
+}
+
+export interface FinanceAppApiSettlementObservationInput {
+  operationId: string
+  occurredAt: string
+  status: FinanceAppApiSettlementObservationStatus
+  currency: string
+  totals: FinanceAppApiSettlementTotals
+  paymentIdentifiers: readonly string[]
+}
+
+export interface FinanceAppApiSettlementObservation
+  extends FinanceAppApiSettlementObservationInput {
+  provider: string
+  documentId: string
+}
+
+export type FinanceAppApiSettlementObservationMutationResult =
+  | {
+      status: "ok"
+      outcome: "created" | "unchanged"
+      observation: FinanceAppApiSettlementObservation
+    }
+  | { status: "not_found" }
+  | {
+      status: "conflict"
+      reason:
+        | "idempotency_key_reused"
+        | "native_document_mismatch"
+        | "out_of_order"
+        | "payment_identifier_conflict"
+        | "settlement_regression"
+        | "terminal_transition"
+      current: FinanceAppApiSettlementObservation | null
+      paymentIdentifier?: string
+    }
+
+export interface FinanceAppApiPdfArtifactInput {
+  bytes: Uint8Array
+  contentType: "application/pdf"
+  fileName: string
+  idempotencyKey: string
+}
+
+export interface FinanceAppApiPdfArtifact {
+  id: string
+  documentId: string
+  provider: string
+  fileName: string
+  byteSize: number
+  checksum: string
+  createdAt: string
+}
+
+export type FinanceAppApiPdfArtifactMutationResult =
+  | {
+      status: "ok"
+      outcome: "created" | "unchanged"
+      artifact: FinanceAppApiPdfArtifact
+    }
+  | { status: "not_found" }
+  | { status: "not_configured" }
+  | { status: "conflict"; reason: "idempotency_key_reused" }
 
 export type FinanceAppApiReferenceMutationResult =
   | {
@@ -115,6 +252,31 @@ export interface FinanceAppApiRuntime {
     provider: string,
     input: FinanceAppApiExternalReferenceUpsertInput,
   ): Promise<FinanceAppApiReferenceMutationResult>
+  attachPdfArtifact(
+    db: PostgresJsDatabase,
+    environment: unknown,
+    documentId: string,
+    provider: string,
+    input: FinanceAppApiPdfArtifactInput,
+  ): Promise<FinanceAppApiPdfArtifactMutationResult>
+  updateExternalSyncState(
+    db: PostgresJsDatabase,
+    documentId: string,
+    provider: string,
+    input: FinanceAppApiExternalSyncStateInput,
+  ): Promise<FinanceAppApiExternalSyncMutationResult>
+  updateExternalLifecycleState(
+    db: PostgresJsDatabase,
+    documentId: string,
+    provider: string,
+    input: FinanceAppApiExternalLifecycleStateInput,
+  ): Promise<FinanceAppApiExternalLifecycleMutationResult>
+  recordSettlementObservation(
+    db: PostgresJsDatabase,
+    documentId: string,
+    provider: string,
+    input: FinanceAppApiSettlementObservationInput,
+  ): Promise<FinanceAppApiSettlementObservationMutationResult>
 }
 
 /** Typed runtime view of the exact object used by import-cheap manifests. */

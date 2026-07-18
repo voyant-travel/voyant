@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest"
 import {
   createAppOAuthService,
   intersectAppTokenScopes,
+  readStoredAppContextConstraint,
   readStoredScopes,
 } from "./oauth-service.js"
-import { appReleases } from "./schema.js"
+import { appCredentials, appReleases } from "./schema.js"
 
 describe("app OAuth online token scope intersection", () => {
   it("never exceeds either app grants, viewer grants, or contextual restrictions", () => {
@@ -35,6 +36,29 @@ describe("stored online token scopes", () => {
     expect(readStoredScopes({ scopes: ["bookings:read", 7, null] })).toEqual(["bookings:read"])
     expect(readStoredScopes({ scopeCount: 2 })).toBeNull()
     expect(readStoredScopes({ scopes: "bookings:read" })).toBeNull()
+  })
+
+  it("fails closed unless immutable extension context metadata is complete", () => {
+    expect(
+      readStoredAppContextConstraint({
+        contextConstraint: {
+          entity: { type: "invoice", id: "invoice_1" },
+          slot: "invoice.details.after-summary",
+        },
+      }),
+    ).toEqual({
+      entity: { type: "invoice", id: "invoice_1" },
+      slot: "invoice.details.after-summary",
+    })
+    expect(readStoredAppContextConstraint({})).toBeNull()
+    expect(
+      readStoredAppContextConstraint({ contextConstraint: { entity: { type: "invoice" } } }),
+    ).toBeNull()
+    expect(
+      readStoredAppContextConstraint({
+        contextConstraint: { entity: { type: "invoice", id: "invoice_1" }, slot: "" },
+      }),
+    ).toBeNull()
   })
 })
 
@@ -79,5 +103,30 @@ describe("authorization release lifecycle", () => {
     await expect(service.authorize(dbWithRelease(state), authorizeInput)).rejects.toMatchObject({
       status: 409,
     })
+  })
+})
+
+describe("managed client authentication", () => {
+  it("fails closed when confidential-client provisioning is absent", async () => {
+    const db = Object.assign(Object.create(null), {
+      select: () => ({
+        from: (table: unknown) => ({
+          where: () => ({ limit: async () => (table === appCredentials ? [] : []) }),
+        }),
+      }),
+    }) as PostgresJsDatabase
+    const service = createAppOAuthService({
+      accessCatalog: { resources: [], presets: [] },
+      deploymentId: "dep_1",
+      clientAuthentication: "required",
+    })
+
+    await expect(
+      service.token(db, {
+        grantType: "refresh_token",
+        refreshToken: "app_refresh_fixture",
+        clientId: "app_1",
+      }),
+    ).rejects.toMatchObject({ status: 401, code: "invalid_client" })
   })
 })

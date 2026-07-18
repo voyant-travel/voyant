@@ -1,8 +1,17 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { createFinanceAppApiRuntime } from "../../src/app-api-runtime.js"
-import { invoiceLineItems, invoiceNumberSeries, invoices, taxRegimes } from "../../src/schema.js"
+import {
+  invoiceExternalPaymentIdentifiers,
+  invoiceExternalSyncObservations,
+  invoiceLineItems,
+  invoiceNumberSeries,
+  invoiceRenditions,
+  invoices,
+  taxRegimes,
+} from "../../src/schema.js"
+import { financeService } from "../../src/service.js"
 
 function postgresStub(implementation: object): PostgresJsDatabase {
   const db = Object.create(null) as PostgresJsDatabase
@@ -11,6 +20,8 @@ function postgresStub(implementation: object): PostgresJsDatabase {
 }
 
 describe("finance App API runtime", () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it("hydrates provider-neutral accounting fields required for remote issuance", async () => {
     const rows = new Map<unknown, unknown[]>([
       [
@@ -242,5 +253,700 @@ describe("finance App API runtime", () => {
       referenceOutcome: "unchanged",
       allocationOutcome: "already_applied",
     })
+  })
+
+  it("compensates storage when a PDF cannot be bound", async () => {
+    const upload = vi.fn().mockResolvedValue({ key: "ignored", url: "" })
+    const remove = vi.fn().mockResolvedValue(undefined)
+    vi.spyOn(financeService, "bindInvoiceRendition").mockResolvedValue({ status: "not_found" })
+    const db = postgresStub({
+      select: () => ({
+        from: (table: unknown) => {
+          expect(table).toBe(invoiceRenditions)
+          return { where: () => ({ limit: async () => [] }) }
+        },
+      }),
+    })
+    const runtime = createFinanceAppApiRuntime({
+      storage: {
+        resolve: () => ({
+          name: "test:documents",
+          upload,
+          delete: remove,
+          get: vi.fn(),
+        }),
+      },
+    })
+
+    const result = await runtime.attachPdfArtifact(db, {}, "inv_1", "app_1", {
+      bytes: new TextEncoder().encode("%PDF-test"),
+      contentType: "application/pdf",
+      fileName: "invoice.pdf",
+      idempotencyKey: "operation-1",
+    })
+
+    expect(result).toEqual({ status: "not_found" })
+    expect(upload).toHaveBeenCalledOnce()
+    expect(remove).toHaveBeenCalledOnce()
+  })
+
+  it("compensates the requested key after an ambiguous storage upload failure", async () => {
+    const upload = vi.fn().mockRejectedValue(new Error("ambiguous upload"))
+    const remove = vi.fn().mockResolvedValue(undefined)
+    const db = postgresStub({
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [] }) }),
+      }),
+    })
+    const runtime = createFinanceAppApiRuntime({
+      storage: {
+        resolve: () => ({
+          name: "test:documents",
+          upload,
+          delete: remove,
+          get: vi.fn(),
+        }),
+      },
+    })
+
+    await expect(
+      runtime.attachPdfArtifact(db, {}, "inv_1", "app_1", {
+        bytes: new TextEncoder().encode("%PDF-test"),
+        contentType: "application/pdf",
+        fileName: "invoice.pdf",
+        idempotencyKey: "operation-1",
+      }),
+    ).rejects.toThrow("ambiguous upload")
+
+    const requestedKey = upload.mock.calls[0]?.[1]?.key
+    expect(requestedKey).toMatch(/^finance\/app-artifacts\//)
+    expect(remove).toHaveBeenCalledWith(requestedKey)
+  })
+
+  it("rejects an out-of-order external sync observation", async () => {
+    const currentTime = new Date("2026-07-18T10:00:00.000Z")
+    const current = {
+      id: "ref_1",
+      invoiceId: "inv_1",
+      provider: "app_1",
+      externalId: null,
+      externalNumber: null,
+      externalUrl: null,
+      status: null,
+      metadata: null,
+      syncedAt: null,
+      syncError: "Provider timed out.",
+      syncState: "retryable_failure",
+      syncOperationId: "operation-2",
+      syncOccurredAt: currentTime,
+      syncErrorCode: "provider_timeout",
+      syncErrorMessage: "Provider timed out.",
+      syncMetadata: null,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    }
+    const db = postgresStub({
+      execute: async () => [{ id: "inv_1" }],
+      select: () => ({
+        from: (table: unknown) => {
+          const rows = table === invoiceExternalSyncObservations ? [] : [current]
+          return { where: () => ({ limit: async () => rows }) }
+        },
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalSyncState(
+      db,
+      "inv_1",
+      "app_1",
+      {
+        operationId: "operation-1",
+        status: "succeeded",
+        occurredAt: "2026-07-18T09:00:00.000Z",
+        error: null,
+        metadata: null,
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "out_of_order" })
+  })
+
+  it("recognizes an older exact sync replay after current state has advanced", async () => {
+    const occurredAt = new Date("2026-07-18T09:00:00.000Z")
+    const replay = {
+      invoiceId: "inv_1",
+      provider: "app_1",
+      operationId: "operation-1",
+      status: "succeeded",
+      occurredAt,
+      errorCode: null,
+      errorMessage: null,
+      metadata: { artifact: { checksum: "abc", id: "rend_1" }, outcome: "created" },
+      createdAt: occurredAt,
+    }
+    const db = postgresStub({
+      execute: async () => [{ id: "inv_1" }],
+      select: () => ({
+        from: (table: unknown) => {
+          expect(table).toBe(invoiceExternalSyncObservations)
+          return { where: () => ({ limit: async () => [replay] }) }
+        },
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalSyncState(
+      db,
+      "inv_1",
+      "app_1",
+      {
+        operationId: "operation-1",
+        status: "succeeded",
+        occurredAt: occurredAt.toISOString(),
+        error: null,
+        metadata: { outcome: "created", artifact: { id: "rend_1", checksum: "abc" } },
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "unchanged" })
+  })
+
+  it("records a conversion lifecycle only when native lineage is durable", async () => {
+    const insertValues = vi.fn().mockResolvedValue(undefined)
+    const db = postgresStub({
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([{ id: "proforma_1", invoice_type: "proforma", status: "void" }])
+        .mockResolvedValueOnce([
+          {
+            id: "invoice_1",
+            invoice_type: "invoice",
+            status: "issued",
+            converted_from_invoice_id: "proforma_1",
+          },
+        ]),
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [],
+            orderBy: () => ({ limit: async () => [] }),
+          }),
+        }),
+      }),
+      insert: () => ({ values: insertValues }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalLifecycleState(
+      db,
+      "proforma_1",
+      "app_1",
+      {
+        operationId: "conversion-1",
+        state: "converted",
+        occurredAt: "2026-07-18T10:00:00.000Z",
+        lineage: {
+          sourceDocumentId: "proforma_1",
+          successorDocumentId: "invoice_1",
+        },
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "created" })
+    expect(insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invoiceId: "proforma_1",
+        provider: "app_1",
+        operationId: "conversion-1",
+        state: "converted",
+        successorInvoiceId: "invoice_1",
+      }),
+    )
+  })
+
+  it("accepts an exact lifecycle replay without appending another operation", async () => {
+    const insertValues = vi.fn()
+    const occurredAt = new Date("2026-07-18T10:00:00.000Z")
+    const db = postgresStub({
+      execute: async () => [{ id: "invoice_1", invoice_type: "invoice", status: "void" }],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [
+              {
+                invoiceId: "invoice_1",
+                provider: "app_1",
+                operationId: "void-1",
+                state: "voided",
+                occurredAt,
+                successorInvoiceId: null,
+                createdAt: occurredAt,
+              },
+            ],
+          }),
+        }),
+      }),
+      insert: () => ({ values: insertValues }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalLifecycleState(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "void-1",
+        state: "voided",
+        occurredAt: occurredAt.toISOString(),
+        lineage: null,
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "unchanged" })
+    expect(insertValues).not.toHaveBeenCalled()
+  })
+
+  it("records settlement evidence without creating a native payment", async () => {
+    const insertedTables: unknown[] = []
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "issued",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [],
+            orderBy: () => ({ limit: async () => [] }),
+          }),
+        }),
+      }),
+      insert: (table: unknown) => {
+        insertedTables.push(table)
+        return { values: async () => undefined }
+      },
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-1",
+        occurredAt: "2026-07-18T11:00:00.000Z",
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "created" })
+    expect(insertedTables).toHaveLength(2)
+    expect(insertedTables).not.toContain(invoices)
+  })
+
+  it("does not let an external payment identifier move between documents", async () => {
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_2",
+          invoice_type: "invoice",
+          status: "issued",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: (table: unknown) => ({
+          where: () => ({
+            limit: async () =>
+              table === invoiceExternalPaymentIdentifiers
+                ? [
+                    {
+                      provider: "app_1",
+                      paymentIdentifier: "payment-1",
+                      invoiceId: "invoice_1",
+                    },
+                  ]
+                : [],
+            orderBy: () => ({ limit: async () => [] }),
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_2",
+      "app_1",
+      {
+        operationId: "settlement-2",
+        occurredAt: "2026-07-18T12:00:00.000Z",
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({
+      status: "conflict",
+      reason: "payment_identifier_conflict",
+      paymentIdentifier: "payment-1",
+    })
+  })
+
+  it("rejects an out-of-order lifecycle operation after native validation", async () => {
+    const currentTime = new Date("2026-07-18T12:00:00.000Z")
+    let selectCount = 0
+    const db = postgresStub({
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([{ id: "invoice_1", invoice_type: "invoice", status: "void" }])
+        .mockResolvedValueOnce([]),
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => {
+              selectCount += 1
+              return selectCount === 1
+                ? []
+                : [
+                    {
+                      invoiceId: "invoice_1",
+                      provider: "app_1",
+                      operationId: "void-2",
+                      state: "voided",
+                      occurredAt: currentTime,
+                      successorInvoiceId: null,
+                      createdAt: currentTime,
+                    },
+                  ]
+            },
+            orderBy: () => ({
+              limit: async () => {
+                selectCount += 1
+                return [
+                  {
+                    invoiceId: "invoice_1",
+                    provider: "app_1",
+                    operationId: "void-2",
+                    state: "voided",
+                    occurredAt: currentTime,
+                    successorInvoiceId: null,
+                    createdAt: currentTime,
+                  },
+                ]
+              },
+            }),
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalLifecycleState(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "void-1",
+        state: "voided",
+        occurredAt: "2026-07-18T11:00:00.000Z",
+        lineage: null,
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "out_of_order" })
+  })
+
+  it("recognizes an exact settlement replay without claiming identifiers again", async () => {
+    const occurredAt = new Date("2026-07-18T11:00:00.000Z")
+    const insert = vi.fn()
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "issued",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [
+              {
+                invoiceId: "invoice_1",
+                provider: "app_1",
+                operationId: "settlement-1",
+                occurredAt,
+                status: "paid",
+                currency: "EUR",
+                totalCents: 1000,
+                paidCents: 1000,
+                balanceDueCents: 0,
+                paymentIdentifiers: ["payment-1"],
+                createdAt: occurredAt,
+              },
+            ],
+          }),
+        }),
+      }),
+      insert,
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-1",
+        occurredAt: occurredAt.toISOString(),
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "unchanged" })
+    expect(insert).not.toHaveBeenCalled()
+  })
+
+  it("rejects settlement observations before a document is issued", async () => {
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "draft",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [] }) }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-draft",
+        occurredAt: "2026-07-18T11:00:00.000Z",
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "native_document_mismatch" })
+  })
+
+  it("rejects a reused lifecycle operation id with different content", async () => {
+    const occurredAt = new Date("2026-07-18T10:00:00.000Z")
+    const db = postgresStub({
+      execute: async () => [{ id: "invoice_1", invoice_type: "invoice", status: "void" }],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [
+              {
+                invoiceId: "invoice_1",
+                provider: "app_1",
+                operationId: "void-1",
+                state: "voided",
+                occurredAt,
+                successorInvoiceId: null,
+                createdAt: occurredAt,
+              },
+            ],
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalLifecycleState(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "void-1",
+        state: "voided",
+        occurredAt: "2026-07-18T10:01:00.000Z",
+        lineage: null,
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "idempotency_key_reused" })
+  })
+
+  it("rejects a reused settlement operation id with different content", async () => {
+    const occurredAt = new Date("2026-07-18T11:00:00.000Z")
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "issued",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [
+              {
+                invoiceId: "invoice_1",
+                provider: "app_1",
+                operationId: "settlement-1",
+                occurredAt,
+                status: "partial",
+                currency: "EUR",
+                totalCents: 1000,
+                paidCents: 500,
+                balanceDueCents: 500,
+                paymentIdentifiers: ["payment-1"],
+                createdAt: occurredAt,
+              },
+            ],
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-1",
+        occurredAt: occurredAt.toISOString(),
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "idempotency_key_reused" })
+  })
+
+  it("rejects a later settlement snapshot that regresses cumulative evidence", async () => {
+    const occurredAt = new Date("2026-07-18T11:00:00.000Z")
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "partially_paid",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [],
+            orderBy: () => ({
+              limit: async () => [
+                {
+                  invoiceId: "invoice_1",
+                  provider: "app_1",
+                  operationId: "settlement-1",
+                  occurredAt,
+                  status: "partial",
+                  currency: "EUR",
+                  totalCents: 1000,
+                  paidCents: 600,
+                  balanceDueCents: 400,
+                  paymentIdentifiers: ["payment-1", "payment-2"],
+                  createdAt: occurredAt,
+                },
+              ],
+            }),
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-2",
+        occurredAt: "2026-07-18T12:00:00.000Z",
+        status: "partial",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 500, balanceDueCents: 500 },
+        paymentIdentifiers: ["payment-2"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "settlement_regression" })
+  })
+
+  it("treats an accepted paid settlement observation as terminal", async () => {
+    const occurredAt = new Date("2026-07-18T11:00:00.000Z")
+    const db = postgresStub({
+      execute: async () => [
+        {
+          id: "invoice_1",
+          invoice_type: "invoice",
+          status: "paid",
+          currency: "EUR",
+          total_cents: 1000,
+        },
+      ],
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [],
+            orderBy: () => ({
+              limit: async () => [
+                {
+                  invoiceId: "invoice_1",
+                  provider: "app_1",
+                  operationId: "settlement-1",
+                  occurredAt,
+                  status: "paid",
+                  currency: "EUR",
+                  totalCents: 1000,
+                  paidCents: 1000,
+                  balanceDueCents: 0,
+                  paymentIdentifiers: ["payment-1"],
+                  createdAt: occurredAt,
+                },
+              ],
+            }),
+          }),
+        }),
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().recordSettlementObservation(
+      db,
+      "invoice_1",
+      "app_1",
+      {
+        operationId: "settlement-2",
+        occurredAt: "2026-07-18T12:00:00.000Z",
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "terminal_transition" })
   })
 })

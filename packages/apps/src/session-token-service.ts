@@ -13,7 +13,7 @@
  * Both paths write `app_audit_events` so issuance and exchange are auditable.
  */
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq, gt, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { createAppOAuthService } from "./oauth-service.js"
 import {
@@ -45,6 +45,8 @@ export interface AppSessionTokenServiceOptions {
 export interface IssueAppSessionTokenInput {
   installationId: string
   viewerId: string
+  /** Current host-authenticated viewer permissions. */
+  viewerScopes?: readonly string[]
   entity?: AppSessionTokenEntity | null
   slot?: string | null
 }
@@ -79,6 +81,7 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
       installationId: installation.id,
       deploymentId: installation.deploymentId,
       viewerId: input.viewerId,
+      viewerScopes: input.viewerScopes ?? [],
       entity: input.entity ?? null,
       slot: input.slot ?? null,
     }
@@ -118,37 +121,68 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
       })
     }
     const { claims } = verified
-    // Single-use: consume the jti atomically. A row that is missing or already
-    // consumed is a replay and is refused before any credential is minted.
-    const consumed = await db
-      .update(appSessionTokens)
-      .set({ consumedAt: now(), consumedByActorId: claims.sub })
-      .where(and(eq(appSessionTokens.jti, claims.jti), isNull(appSessionTokens.consumedAt)))
-      .returning({ id: appSessionTokens.id })
-    if (consumed.length === 0) {
-      throw new ApiHttpError("Session token has already been used", {
-        status: 401,
-        code: "app_session_token_replayed",
+    return db.transaction(async (tx) => {
+      const installation = await requireActiveInstallation(tx, claims.installationId)
+      if (installation.appId !== claims.aud || installation.deploymentId !== claims.deploymentId) {
+        throw new ApiHttpError("Session token installation context changed", {
+          status: 401,
+          code: "app_session_token_installation_mismatch",
+        })
+      }
+
+      // Client authentication and token construction happen before consumption,
+      // but in the same transaction. If authentication/minting fails, or another
+      // exchange wins the JTI race, every credential side effect rolls back.
+      const tokens = await options.oauth.token(tx, {
+        grantType: "urn:voyant:params:oauth:grant-type:actor-token-exchange",
+        installationId: installation.id,
+        viewerId: claims.sub,
+        viewerScopes: intersectRequestedScopes(claims.viewerScopes, input.viewerScopes),
+        contextualScopes: input.contextualScopes,
+        contextConstraint: { entity: claims.entity, slot: claims.slot },
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
       })
-    }
-    const installation = await requireActiveInstallation(db, claims.installationId)
-    const tokens = await options.oauth.token(db, {
-      grantType: "urn:voyant:params:oauth:grant-type:actor-token-exchange",
-      installationId: installation.id,
-      viewerId: claims.sub,
-      viewerScopes: input.viewerScopes,
-      contextualScopes: input.contextualScopes,
-      clientId: input.clientId,
-      clientSecret: input.clientSecret,
+      const consumed = await tx
+        .update(appSessionTokens)
+        .set({ consumedAt: now(), consumedByActorId: claims.sub })
+        .where(
+          and(
+            eq(appSessionTokens.jti, claims.jti),
+            eq(appSessionTokens.installationId, installation.id),
+            eq(appSessionTokens.appId, claims.aud),
+            eq(appSessionTokens.deploymentId, claims.deploymentId),
+            eq(appSessionTokens.viewerId, claims.sub),
+            isNull(appSessionTokens.consumedAt),
+            gt(appSessionTokens.expiresAt, now()),
+          ),
+        )
+        .returning({ id: appSessionTokens.id })
+      if (consumed.length === 0) {
+        throw new ApiHttpError("Session token has already been used", {
+          status: 401,
+          code: "app_session_token_replayed",
+        })
+      }
+      await audit(tx, installation, claims.sub, "session-token.exchanged", {
+        jti: claims.jti,
+        slot: claims.slot,
+        entityType: claims.entity?.type ?? null,
+        entityId: claims.entity?.id ?? null,
+      })
+      return tokens
     })
-    await audit(db, installation, claims.sub, "session-token.exchanged", {
-      jti: claims.jti,
-      slot: claims.slot,
-    })
-    return tokens
   }
 
   return { issue, exchange }
+}
+
+function intersectRequestedScopes(
+  trustedViewerScopes: readonly string[],
+  requestedScopes: readonly string[],
+) {
+  const trusted = new Set(trustedViewerScopes)
+  return Array.from(new Set(requestedScopes.filter((scope) => trusted.has(scope)))).sort()
 }
 
 async function requireActiveInstallation(

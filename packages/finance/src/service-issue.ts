@@ -149,6 +149,13 @@ export interface InvoiceProformaConvertedEvent extends InvoiceIssuedEvent {
   id: string
   proformaId: string
   proformaInvoiceNumber: string
+  /** Canonical emitters always set this; optional preserves the v1 source contract. */
+  occurredAt?: string
+  /** Canonical emitters always set this; optional preserves the v1 source contract. */
+  lineage?: {
+    sourceDocumentId: string
+    successorDocumentId: string
+  }
 }
 
 /**
@@ -387,6 +394,11 @@ async function emitProformaConverted(
     id: issuedEvent.invoiceId,
     proformaId: proforma.id,
     proformaInvoiceNumber: proforma.invoiceNumber,
+    occurredAt: new Date().toISOString(),
+    lineage: {
+      sourceDocumentId: proforma.id,
+      successorDocumentId: invoice.id,
+    },
   }
   await runtime.eventBus.emit(ISSUED_EVENT, issuedEvent)
   await runtime.eventBus.emit(PROFORMA_CONVERTED_EVENT, payload)

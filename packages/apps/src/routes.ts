@@ -8,9 +8,14 @@ import {
   RequestValidationError,
   requireUserId,
 } from "@voyant-travel/hono"
-import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import {
+  type AccessCatalog,
+  hasApiKeyPermission,
+  permissionStringsToPermissions,
+} from "@voyant-travel/types/api-keys"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
+import { grantableRemoteAppScopes } from "./consent.js"
 import {
   activateInstallationBodySchema,
   appCredentialRevocationSchema,
@@ -67,13 +72,7 @@ import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delive
 type CustomFieldsService = ReturnType<typeof createCustomFieldsService>
 
 type Env = {
-  Bindings: {
-    /** Deployment identity; the install lifecycle is scoped to it. */
-    VOYANT_CLOUD_DEPLOYMENT_ID?: string
-  }
-  Variables: {
-    db: PostgresJsDatabase
-  }
+  Variables: { db: PostgresJsDatabase; scopes?: string[] }
 }
 
 const appIdParamSchema = z.object({ appId: z.string().min(1) })
@@ -83,6 +82,7 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
   oauth?: {
     accessCatalog: AccessCatalog
     deploymentId: string
+    clientAuthentication?: "optional" | "required"
   }
   /**
    * Enables the iframe session-token broker. Requires {@link oauth} for the
@@ -114,6 +114,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     customFields: options.customFields,
   })
   const oauth = options.oauth ? createAppOAuthService(options.oauth) : null
+  const oauthAccessCatalog = options.oauth?.accessCatalog
   const sessionTokens =
     oauth && options.oauth && options.sessionToken
       ? createAppSessionTokenService({
@@ -139,7 +140,9 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   // so it must never be reachable through read-scoped GET requests. The admin
   // consent UI submits the approval and performs the redirect itself.
   routes.openapi(authorizeAppOAuthRoute, async (c) => {
-    if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
+    if (!oauth || !oauthAccessCatalog) {
+      return c.json({ error: "App OAuth is not configured" }, 501)
+    }
     const body = await parseJsonBody(c, appOAuthAuthorizeQuerySchema)
     const result = await oauth.authorize(c.get("db"), {
       appId: body.client_id,
@@ -148,8 +151,11 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       state: body.state,
       codeChallenge: body.code_challenge,
       codeChallengeMethod: body.code_challenge_method,
-      actorId: body.actor_id,
-      operatorGrantedScopes: splitScopes(body.operator_scopes),
+      actorId: requireUserId(c),
+      operatorGrantedScopes: resolveOperatorGrantableRemoteAppScopes(
+        c.get("scopes") ?? [],
+        oauthAccessCatalog,
+      ),
       grantedOptionalScopes: splitScopes(body.optional_scopes),
     })
     const redirectUrl = new URL(result.redirectUri)
@@ -171,22 +177,12 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
             clientId: body.client_id,
             clientSecret: body.client_secret,
           })
-        : body.grant_type === "refresh_token"
-          ? await oauth.token(c.get("db"), {
-              grantType: "refresh_token",
-              refreshToken: body.refresh_token,
-              clientId: body.client_id,
-              clientSecret: body.client_secret,
-            })
-          : await oauth.token(c.get("db"), {
-              grantType: "urn:voyant:params:oauth:grant-type:actor-token-exchange",
-              installationId: body.installation_id,
-              viewerId: body.viewer_id,
-              viewerScopes: body.viewer_scopes,
-              contextualScopes: body.contextual_scopes,
-              clientId: body.client_id,
-              clientSecret: body.client_secret,
-            })
+        : await oauth.token(c.get("db"), {
+            grantType: "refresh_token",
+            refreshToken: body.refresh_token,
+            clientId: body.client_id,
+            clientSecret: body.client_secret,
+          })
     return c.json(token, 200)
   })
 
@@ -212,6 +208,10 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     const issued = await sessionTokens.issue(c.get("db"), {
       installationId,
       viewerId,
+      viewerScopes: resolveViewerRemoteAppScopes(
+        c.get("scopes") ?? [],
+        options.oauth?.accessCatalog,
+      ),
       entity: body.entity ?? null,
       slot: body.slot ?? null,
     })
@@ -235,12 +235,10 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
 
   routes.openapi(installAppRoute, async (c) => {
     const body = await parseJsonBody(c, installAppSchema)
-    // The deployment id is a runtime value (not known at graph-composition
-    // time), so resolve it per request: explicit body → runtime env →
-    // construction option. Without this the standard runtime mounts these
-    // routes with no deployment id and every install 400s (app_deployment_required).
-    const deploymentId =
-      body.deploymentId ?? c.env?.VOYANT_CLOUD_DEPLOYMENT_ID?.trim() ?? options.deploymentId
+    // A configured managed runtime audience is authoritative so installation
+    // identity cannot diverge from later OAuth token audiences. Direct/custom
+    // hosts without managed auth may still supply an explicit deployment ID.
+    const deploymentId = options.oauth?.deploymentId ?? body.deploymentId ?? options.deploymentId
     const result = await installations.install(c.get("db"), {
       appId: body.appId,
       releaseId: body.releaseId,
@@ -365,6 +363,45 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   })
 
   return routes
+}
+
+export function resolveViewerRemoteAppScopes(
+  scopes: readonly string[],
+  catalog: AccessCatalog | undefined,
+) {
+  if (!catalog) return []
+  const permissions = permissionStringsToPermissions(scopes)
+  return catalog.resources
+    .flatMap((resource) =>
+      resource.actions
+        .filter(
+          (action) =>
+            (resource.remoteSafe || action.remoteSafe) &&
+            hasApiKeyPermission(permissions, resource.resource, action.action, catalog),
+        )
+        .map((action) => `${resource.resource}:${action.action}`),
+    )
+    .sort()
+}
+
+export function resolveOperatorGrantableRemoteAppScopes(
+  scopes: readonly string[],
+  catalog: AccessCatalog,
+) {
+  const grantable = grantableRemoteAppScopes(catalog)
+  const permissions = permissionStringsToPermissions(scopes)
+  return [...grantable]
+    .filter((scope) => {
+      const separator = scope.lastIndexOf(":")
+      if (separator <= 0) return false
+      return hasApiKeyPermission(
+        permissions,
+        scope.slice(0, separator),
+        scope.slice(separator + 1),
+        catalog,
+      )
+    })
+    .sort()
 }
 
 function splitScopes(value: string): string[] {

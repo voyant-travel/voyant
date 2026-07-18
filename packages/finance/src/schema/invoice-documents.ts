@@ -2,10 +2,12 @@ import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -135,6 +137,9 @@ export const invoiceRenditions = pgTable(
     language: text("language"),
     errorMessage: text("error_message"),
     generatedAt: timestamp("generated_at", { withTimezone: true }),
+    appProvider: text("app_provider"),
+    appIdempotencyDigest: text("app_idempotency_digest"),
+    appFileName: text("app_file_name"),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -145,6 +150,11 @@ export const invoiceRenditions = pgTable(
     index("idx_invoice_renditions_template").on(table.templateId),
     index("idx_invoice_renditions_status").on(table.status),
     index("idx_invoice_renditions_format").on(table.format),
+    uniqueIndex("uq_invoice_renditions_app_idempotency").on(
+      table.invoiceId,
+      table.appProvider,
+      table.appIdempotencyDigest,
+    ),
   ],
 )
 
@@ -195,6 +205,12 @@ export const invoiceExternalRefs = pgTable(
     metadata: jsonb("metadata"),
     syncedAt: timestamp("synced_at", { withTimezone: true }),
     syncError: text("sync_error"),
+    syncState: text("sync_state"),
+    syncOperationId: text("sync_operation_id"),
+    syncOccurredAt: timestamp("sync_occurred_at", { withTimezone: true }),
+    syncErrorCode: text("sync_error_code"),
+    syncErrorMessage: text("sync_error_message"),
+    syncMetadata: jsonb("sync_metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -208,3 +224,141 @@ export const invoiceExternalRefs = pgTable(
 
 export type InvoiceExternalRef = typeof invoiceExternalRefs.$inferSelect
 export type NewInvoiceExternalRef = typeof invoiceExternalRefs.$inferInsert
+
+// ---------- invoice_external_sync_observations ----------
+
+export const invoiceExternalSyncObservations = pgTable(
+  "invoice_external_sync_observations",
+  {
+    invoiceId: typeIdRef("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    operationId: text("operation_id").notNull(),
+    status: text("status").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: "pk_invoice_external_sync_observations",
+      columns: [table.invoiceId, table.provider, table.operationId],
+    }),
+    index("idx_invoice_external_sync_observations_current").on(
+      table.invoiceId,
+      table.provider,
+      table.occurredAt,
+    ),
+  ],
+)
+
+export type InvoiceExternalSyncObservation = typeof invoiceExternalSyncObservations.$inferSelect
+
+// ---------- invoice_external_lifecycle_operations ----------
+
+export const invoiceExternalLifecycleOperations = pgTable(
+  "invoice_external_lifecycle_operations",
+  {
+    invoiceId: typeIdRef("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    operationId: text("operation_id").notNull(),
+    state: text("state").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    successorInvoiceId: typeIdRef("successor_invoice_id").references(() => invoices.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: "pk_invoice_external_lifecycle_operations",
+      columns: [table.invoiceId, table.provider, table.operationId],
+    }),
+    index("idx_invoice_external_lifecycle_current").on(
+      table.invoiceId,
+      table.provider,
+      table.occurredAt,
+    ),
+    check("ck_invoice_external_lifecycle_state", sql`${table.state} IN ('converted', 'voided')`),
+    check(
+      "ck_invoice_external_lifecycle_lineage",
+      sql`(${table.state} = 'converted' AND ${table.successorInvoiceId} IS NOT NULL) OR (${table.state} = 'voided' AND ${table.successorInvoiceId} IS NULL)`,
+    ),
+  ],
+)
+
+export type InvoiceExternalLifecycleOperation =
+  typeof invoiceExternalLifecycleOperations.$inferSelect
+
+// ---------- invoice_external_settlement_observations ----------
+
+export const invoiceExternalSettlementObservations = pgTable(
+  "invoice_external_settlement_observations",
+  {
+    invoiceId: typeIdRef("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    operationId: text("operation_id").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull(),
+    currency: text("currency").notNull(),
+    totalCents: integer("total_cents").notNull(),
+    paidCents: integer("paid_cents").notNull(),
+    balanceDueCents: integer("balance_due_cents").notNull(),
+    paymentIdentifiers: jsonb("payment_identifiers").$type<string[]>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: "pk_invoice_external_settlement_observations",
+      columns: [table.invoiceId, table.provider, table.operationId],
+    }),
+    index("idx_invoice_external_settlement_current").on(
+      table.invoiceId,
+      table.provider,
+      table.occurredAt,
+    ),
+    check("ck_invoice_external_settlement_status", sql`${table.status} IN ('partial', 'paid')`),
+    check(
+      "ck_invoice_external_settlement_totals",
+      sql`${table.totalCents} >= 0 AND ${table.paidCents} > 0 AND ${table.balanceDueCents} >= 0 AND ${table.paidCents} + ${table.balanceDueCents} = ${table.totalCents}`,
+    ),
+    check(
+      "ck_invoice_external_settlement_state_totals",
+      sql`(${table.status} = 'partial' AND ${table.balanceDueCents} > 0) OR (${table.status} = 'paid' AND ${table.balanceDueCents} = 0)`,
+    ),
+  ],
+)
+
+export type InvoiceExternalSettlementObservation =
+  typeof invoiceExternalSettlementObservations.$inferSelect
+
+// ---------- invoice_external_payment_identifiers ----------
+
+export const invoiceExternalPaymentIdentifiers = pgTable(
+  "invoice_external_payment_identifiers",
+  {
+    provider: text("provider").notNull(),
+    paymentIdentifier: text("payment_identifier").notNull(),
+    invoiceId: typeIdRef("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "restrict" }),
+    firstOperationId: text("first_operation_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: "pk_invoice_external_payment_identifiers",
+      columns: [table.provider, table.paymentIdentifier],
+    }),
+    index("idx_invoice_external_payment_identifiers_invoice").on(table.invoiceId, table.provider),
+  ],
+)
+
+export type InvoiceExternalPaymentIdentifier = typeof invoiceExternalPaymentIdentifiers.$inferSelect

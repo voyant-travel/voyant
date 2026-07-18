@@ -299,7 +299,9 @@ export const appOAuthAuthorizeQuerySchema = z
     state: z.string().trim().min(1),
     code_challenge: z.string().trim().min(1),
     code_challenge_method: z.literal("S256"),
-    actor_id: z.string().trim().min(1),
+    /** Deprecated input; the route derives the actor from the staff session. */
+    actor_id: z.string().trim().min(1).optional(),
+    /** Deprecated input; the route derives the grant ceiling from staff scopes. */
     operator_scopes: z.string().trim().default(""),
     optional_scopes: z.string().trim().default(""),
   })
@@ -318,15 +320,6 @@ export const appOAuthTokenSchema = z
     z.object({
       grant_type: z.literal("refresh_token"),
       refresh_token: z.string().trim().min(1),
-      client_id: z.string().trim().min(1),
-      client_secret: z.string().trim().optional(),
-    }),
-    z.object({
-      grant_type: z.literal("urn:voyant:params:oauth:grant-type:actor-token-exchange"),
-      installation_id: z.string().trim().min(1),
-      viewer_id: z.string().trim().min(1),
-      viewer_scopes: z.array(scopeSchema).default([]),
-      contextual_scopes: z.array(scopeSchema).optional(),
       client_id: z.string().trim().min(1),
       client_secret: z.string().trim().optional(),
     }),

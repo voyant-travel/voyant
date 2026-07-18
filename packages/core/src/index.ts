@@ -30,6 +30,7 @@ export {
 } from "./document-rendering.js"
 export type {
   Actor,
+  VoyantAppContextConstraint,
   VoyantAuthContext,
   VoyantCallerType,
   VoyantPermission,

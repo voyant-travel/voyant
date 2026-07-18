@@ -31,6 +31,96 @@ export const invoiceIssuanceExternalPayloadSchema = {
   additionalProperties: false,
 } as const
 
+/** Minimal app-facing fact for a durable proforma-to-invoice conversion. */
+export const invoiceProformaConvertedExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType", "occurredAt", "lineage"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: { enum: ["invoice"] },
+    occurredAt: { type: "string", format: "date-time" },
+    lineage: {
+      type: "object",
+      required: ["sourceDocumentId", "successorDocumentId"],
+      properties: {
+        sourceDocumentId: { type: "string" },
+        successorDocumentId: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  additionalProperties: false,
+} as const
+
+/** Minimal app-facing fact for a durable finance-document void. */
+export const invoiceVoidedExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType", "occurredAt"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: invoiceTypeSchema,
+    occurredAt: { type: "string", format: "date-time" },
+  },
+  additionalProperties: false,
+} as const
+
+/**
+ * Minimal app-facing input for mirroring a durable native payment.
+ *
+ * The projection carries only the monetary facts an external accounting app
+ * needs to create the corresponding provider payment and report cumulative
+ * settlement evidence. Customer, booking, invoice-number, and free-text
+ * reference fields remain private to Finance.
+ */
+export const invoicePaymentRecordedExternalPayloadSchema = {
+  type: "object",
+  required: [
+    "invoiceId",
+    "invoiceType",
+    "invoiceCurrency",
+    "invoiceTotalCents",
+    "invoicePaidCents",
+    "invoiceBalanceDueCents",
+    "paymentId",
+    "amountCents",
+    "currency",
+    "baseCurrency",
+    "baseAmountCents",
+    "paymentMethod",
+    "paymentDate",
+    "occurredAt",
+  ],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: invoiceTypeSchema,
+    invoiceCurrency: { type: "string" },
+    invoiceTotalCents: { type: "integer" },
+    invoicePaidCents: { type: "integer" },
+    invoiceBalanceDueCents: { type: "integer" },
+    paymentId: { type: "string" },
+    amountCents: { type: "integer" },
+    currency: { type: "string" },
+    baseCurrency: nullableStringSchema,
+    baseAmountCents: { type: ["integer", "null"] },
+    paymentMethod: {
+      enum: [
+        "bank_transfer",
+        "credit_card",
+        "debit_card",
+        "cash",
+        "cheque",
+        "wallet",
+        "direct_bill",
+        "travel_credit",
+        "other",
+      ],
+    },
+    paymentDate: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
+  },
+  additionalProperties: false,
+} as const
+
 export const invoiceIssuedPayloadSchema = {
   type: "object",
   required: ["invoiceId", "invoiceNumber", "invoiceType", "bookingId", "totalCents", "currency"],
@@ -109,12 +199,21 @@ export const invoiceIssuedPayloadSchema = {
 
 export const invoiceProformaConvertedPayloadSchema = {
   ...invoiceIssuedPayloadSchema,
-  required: [...invoiceIssuedPayloadSchema.required, "id", "proformaId", "proformaInvoiceNumber"],
+  required: [
+    ...invoiceIssuedPayloadSchema.required,
+    "id",
+    "proformaId",
+    "proformaInvoiceNumber",
+    "occurredAt",
+    "lineage",
+  ],
   properties: {
     ...invoiceIssuedPayloadSchema.properties,
     id: { type: "string" },
     proformaId: { type: "string" },
     proformaInvoiceNumber: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
+    lineage: invoiceProformaConvertedExternalPayloadSchema.properties.lineage,
   },
 } as const
 
@@ -129,6 +228,7 @@ export const invoiceVoidedPayloadSchema = {
     "currency",
     "reason",
     "voidedAt",
+    "occurredAt",
   ],
   properties: {
     invoiceId: { type: "string" },
@@ -139,9 +239,7 @@ export const invoiceVoidedPayloadSchema = {
     currency: { type: "string" },
     reason: nullableStringSchema,
     voidedAt: { type: "string", format: "date-time" },
-    externalProvider: nullableStringSchema,
-    externalNumber: nullableStringSchema,
-    externalSeriesName: nullableStringSchema,
+    occurredAt: { type: "string", format: "date-time" },
   },
   additionalProperties: false,
 } as const
@@ -237,6 +335,7 @@ export const invoicePaymentRecordedPayloadSchema = {
     "status",
     "referenceNumber",
     "paymentDate",
+    "occurredAt",
   ],
   properties: {
     invoiceId: { type: "string" },
@@ -268,6 +367,7 @@ export const invoicePaymentRecordedPayloadSchema = {
     status: { enum: ["pending", "completed", "failed", "refunded"] },
     referenceNumber: nullableStringSchema,
     paymentDate: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
   },
   additionalProperties: false,
 } as const

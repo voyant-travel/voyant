@@ -12,6 +12,10 @@ export const financeAppApiRuntimePort = Object.freeze({
       "getIssuanceDocument",
       "getExternalReference",
       "upsertExternalReference",
+      "attachPdfArtifact",
+      "updateExternalSyncState",
+      "updateExternalLifecycleState",
+      "recordSettlementObservation",
     ]) {
       if (typeof Reflect.get(provider, method) !== "function") {
         throw new Error(`finance.app-api.runtime provider must implement ${method}().`)

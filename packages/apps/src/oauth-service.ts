@@ -1,4 +1,4 @@
-import type { VoyantAuthContext } from "@voyant-travel/core"
+import type { VoyantAppContextConstraint, VoyantAuthContext } from "@voyant-travel/core"
 import { ApiHttpError } from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { and, eq } from "drizzle-orm"
@@ -35,6 +35,8 @@ const REFRESH_TTL_MS = 90 * 24 * 60 * 60 * 1000
 export interface AppOAuthServiceOptions {
   accessCatalog: AccessCatalog
   deploymentId: string
+  /** Managed confidential runtimes fail closed unless a client secret is registered. */
+  clientAuthentication?: "optional" | "required"
   now?: () => Date
 }
 
@@ -72,6 +74,8 @@ export interface TokenExchangeInput {
   viewerId: string
   viewerScopes: readonly string[]
   contextualScopes?: readonly string[]
+  /** Immutable host context signed into the extension session token. */
+  contextConstraint: VoyantAppContextConstraint
   clientId: string
   clientSecret?: string
 }
@@ -128,7 +132,12 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
   }
 
   async function token(db: PostgresJsDatabase, input: AppTokenInput) {
-    await authenticateClient(db, input.clientId, input.clientSecret)
+    await authenticateClient(
+      db,
+      input.clientId,
+      input.clientSecret,
+      options.clientAuthentication === "required",
+    )
     if (input.grantType === "authorization_code") return exchangeCode(db, input)
     if (input.grantType === "refresh_token") return refresh(db, input)
     return exchangeActorToken(db, input)
@@ -160,6 +169,13 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       credential.tokenMode === "online"
         ? (readStoredScopes(credential.encryptedMetadata) ?? [])
         : await grantedScopes(db, installation.id)
+    const appContextConstraint =
+      credential.tokenMode === "online"
+        ? readStoredAppContextConstraint(credential.encryptedMetadata)
+        : undefined
+    // Every online actor token is minted from an extension session. Missing or
+    // malformed context metadata must invalidate it rather than silently widen it.
+    if (credential.tokenMode === "online" && !appContextConstraint) return null
     return {
       callerType: "app",
       actor: "staff",
@@ -170,6 +186,7 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       appCredentialGeneration: credential.generation,
       appTokenMode: credential.tokenMode,
       appViewerId: credential.viewerId ?? undefined,
+      ...(appContextConstraint ? { appContextConstraint } : {}),
       scopes,
     }
   }
@@ -285,7 +302,11 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       credentialHash: sha256Hex(accessToken),
       // Online tokens are intentionally narrowed; the resolver must honor the
       // minted set rather than recomputing from installation grants.
-      encryptedMetadata: { scopeCount: scopes.length, scopes: [...scopes] },
+      encryptedMetadata: {
+        scopeCount: scopes.length,
+        scopes: [...scopes],
+        contextConstraint: input.contextConstraint,
+      },
       status: "active",
       actorId: input.viewerId,
       viewerId: input.viewerId,
@@ -357,13 +378,17 @@ async function authenticateClient(
   db: PostgresJsDatabase,
   appId: string,
   clientSecret: string | undefined,
+  required: boolean,
 ) {
   const [secret] = await db
     .select()
     .from(appCredentials)
     .where(and(eq(appCredentials.appId, appId), eq(appCredentials.kind, "client_secret")))
     .limit(1)
-  if (!secret) return
+  if (!secret) {
+    if (required) throw oauthError("invalid_client", "Client authentication failed", 401)
+    return
+  }
   if (!clientSecret || !secret.kmsKeyRef.startsWith("sha256:")) {
     throw oauthError("invalid_client", "Client authentication failed", 401)
   }
@@ -518,6 +543,29 @@ export function readStoredScopes(metadata: Record<string, unknown>): string[] | 
   const stored = metadata.scopes
   if (!Array.isArray(stored)) return null
   return stored.filter((scope): scope is string => typeof scope === "string")
+}
+
+export function readStoredAppContextConstraint(
+  metadata: Record<string, unknown>,
+): VoyantAppContextConstraint | null {
+  const value = metadata.contextConstraint
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  const slot = record.slot
+  if (slot !== null && (typeof slot !== "string" || slot.length === 0)) return null
+  const entity = record.entity
+  if (entity === null) return { entity: null, slot }
+  if (!entity || typeof entity !== "object" || Array.isArray(entity)) return null
+  const entityRecord = entity as Record<string, unknown>
+  if (
+    typeof entityRecord.type !== "string" ||
+    entityRecord.type.length === 0 ||
+    typeof entityRecord.id !== "string" ||
+    entityRecord.id.length === 0
+  ) {
+    return null
+  }
+  return { entity: { type: entityRecord.type, id: entityRecord.id }, slot }
 }
 
 function oauthError(error: string, description: string, status = 400) {

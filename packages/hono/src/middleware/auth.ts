@@ -7,6 +7,8 @@ import type { MiddlewareHandler } from "hono"
 
 import { constantTimeEqual, sha256Base64Url, sha256Hex } from "../auth/crypto.js"
 import { extractBearerToken, verifySession } from "../auth/session-jwt.js"
+import type { AbsoluteClientAuthenticatedRoute } from "../client-authenticated-routes.js"
+import { matchesClientAuthenticatedRoute } from "../client-authenticated-routes.js"
 import { tryGetExecutionCtx } from "../lib/execution-ctx.js"
 import { matchesPublicPath, normalizePathname } from "../lib/public-paths.js"
 import {
@@ -156,12 +158,14 @@ function applyAuthContext(
   }
   if (auth.appTokenMode) c.set("appTokenMode", auth.appTokenMode)
   if (auth.appViewerId) c.set("appViewerId", auth.appViewerId)
+  if (auth.appContextConstraint) c.set("appContextConstraint", auth.appContextConstraint)
 }
 
 export function requireAuth<TBindings extends VoyantBindings>(
   dbSource: DbSource<TBindings>,
   opts?: {
     publicPaths?: string[]
+    clientAuthenticatedRoutes?: readonly AbsoluteClientAuthenticatedRoute[]
     basePath?: string
     auth?: VoyantAuthIntegration<TBindings>
   },
@@ -183,6 +187,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
     const isHealthCheck = p === "/health"
 
     if (isPublicAuth || isHealthCheck) return next()
+
+    if (matchesClientAuthenticatedRoute(c.req.method, p, opts?.clientAuthenticatedRoutes ?? [])) {
+      return next()
+    }
 
     if (matchesPublicPath(p, publicPaths)) {
       if (p.startsWith("/v1/public/")) {
@@ -312,8 +320,11 @@ export function requireAuth<TBindings extends VoyantBindings>(
       }
     }
 
-    // Strategy 3: Remote app access token support
-    if (token && opts?.auth?.resolveAppToken) {
+    // Strategy 3: Remote app access token support. App grants authorize only
+    // the installation-scoped App API; never resolve them on admin/public
+    // surfaces where similarly named scopes may protect broader host routes.
+    const isAppApi = p === "/v1/app" || p.startsWith("/v1/app/")
+    if (token && isAppApi && opts?.auth?.resolveAppToken) {
       const lease = acquireRequestDb(c, dbFactory)
       try {
         const resolved = await opts.auth.resolveAppToken({

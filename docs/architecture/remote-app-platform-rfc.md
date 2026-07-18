@@ -276,6 +276,10 @@ Two access modes are supported:
   effective permission is the intersection of installation grants, viewer
   grants, and contextual restrictions.
 
+Online actor access is minted only from a verified, single-use extension
+session token. Public OAuth and App API request bodies cannot assert a viewer ID
+or viewer permission set to invoke the internal actor-token exchange primitive.
+
 Refresh, rotation, pause, and revoke must invalidate credential generations
 immediately. Tokens include or resolve to the app, installation, deployment
 audience, installed release, negotiated API version, grants, issue time, expiry,
@@ -296,9 +300,45 @@ validated context. Full entity payloads and installation credentials are not
 sent through iframe initialization messages.
 
 The host issues short-lived, audience-bound session tokens for an extension.
+The host-authenticated viewer scope set is captured inside the signed token at
+issuance. At exchange, an app may only narrow that set; app-supplied scope names
+are never accepted as evidence of viewer authority.
 The iframe sends the token to its own backend, which exchanges it for online
 actor access. Effective access remains bounded by the app, installation,
 release, viewer, entity context, and current grants.
+The online credential retains the signed entity and slot constraint. A
+Finance document-scoped App API action must match that exact entity ID;
+collection operations and other entity kinds fail closed. Client
+authentication, online credential minting, and single-use session-token
+consumption share one database transaction, so invalid client credentials or a
+failed mint never burn the session token.
+
+Managed-auth wiring remains a readiness blocker. The host must provide the
+optional `apps.managed-auth` runtime port with a stable app-runtime audience and
+host-owned session-token signing material. Session-token lifetime defaults to
+120 seconds and a host override is capped at 300 seconds. The Apps package
+composes OAuth, session-token issuance, session-token exchange, and app
+access-token resolution from that port without replacing the host's staff
+authentication integration. When configured, the managed runtime audience is
+also authoritative for installation identity and cannot be overridden by an
+installation request body.
+Remote-app bearer resolution is attempted only for `/v1/app` routes; app scopes
+cannot authorize admin or public route families with similarly named resources.
+Managed authorization derives the consenting actor and grantable scope ceiling
+from the authenticated staff context, never request body claims. Managed token
+and session exchanges also require an explicitly provisioned client secret;
+missing credential state fails closed.
+If the port is absent, this composition stays off and the protocol endpoints
+remain unavailable or staff-only.
+
+Only `POST /v1/admin/apps/oauth/token` and `POST
+/v1/admin/apps/oauth/session-token/exchange` use the exact
+client-authenticated route posture. Their handlers retain client-credential,
+PKCE, redirect, replay, and transactional exchange authority, and the framework
+applies its public-write rate limit. OAuth authorization, extension
+session-token issuance, installation management, and every other Apps admin
+route remain staff-authenticated. Other methods, sibling paths, and child paths
+never inherit the exception.
 
 Extensions fail soft. A slow, invalid, or unavailable app origin cannot block a
 native admin page.
@@ -342,12 +382,62 @@ Finance integrations use provider-neutral document contracts:
   the complete, size-bounded reference document under
   `finance-external-references:write`. An optional `allocation.invoiceNumber`
   requires the additional `finance-external-allocation:write` scope.
+- `PUT /v1/app/finance/documents/:id/artifacts/provider-pdf` accepts an exact
+  `application/pdf` body under `finance-document-artifacts:write`. The default
+  limit is 10 MiB, both declared and streamed size are enforced, and the body
+  must begin with the PDF signature. `Idempotency-Key` and
+  `X-Voyant-Artifact-Name` are required and bounded. A replay returns
+  `unchanged`; reusing the key with different bytes or a different name returns
+  a conflict. The response contains the rendition ID and an authenticated
+  Voyant document URL, never a bucket, binding, or storage key.
+- `PUT /v1/app/finance/documents/:id/external-sync-state` records
+  `succeeded`, `retryable_failure`, or `terminal_failure` under
+  `finance-external-sync:write`. Each observation carries a bounded operation
+  ID, timestamp, optional provider-neutral metadata, and a bounded error for
+  failures. Exact replay is unchanged, reuse with different content conflicts,
+  and an observation at or before the current timestamp is rejected as out of
+  order.
+- `PUT /v1/app/finance/documents/:id/external-lifecycle-state` records a
+  terminal `converted` or `voided` fact under
+  `finance-external-lifecycle:write`. Conversion requires explicit lineage
+  from the route's source proforma to its successor invoice and is accepted
+  only after that native relationship is durable. Void observations are
+  accepted only for a natively void document that was not converted. The
+  append-only operation ledger treats exact replay as unchanged, rejects a
+  reused operation ID with different content, and rejects out-of-order or
+  post-terminal transitions.
+- `POST /v1/app/finance/documents/:id/settlement-observations` records `partial`
+  or `paid` evidence under `finance-settlement-observations:write`. Each
+  observation contains a bounded operation ID and timestamp, ISO currency,
+  balanced document totals, and a bounded set of external payment identifiers.
+  It validates the native document currency and total but never inserts a
+  payment, changes paid totals, or marks the native document paid.
+  Only issued, overdue, partially paid, or paid native documents accept
+  observations. Reported status and paid balance describe the external system
+  and may intentionally differ from the native settlement state; `created`
+  means the evidence was recorded, not that native reconciliation succeeded.
+  Payment identifiers are a cumulative set. Later partial observations cannot
+  reduce paid cents, increase the balance, or drop a previously reported
+  identifier, and a paid observation is terminal.
 
 The allocation and reference write share one database transaction and one app
 audit record. Replaying the same allocation succeeds as `already_applied`;
 attempting to replace it or reuse an occupied number returns a stable conflict.
 Reference ownership is derived from the authenticated immutable app ID. A
 caller cannot select, discover, read, or overwrite another app's provider key.
+Artifact storage is selected by the deployment-local Finance runtime. Upload is
+compensated when the referenced document cannot be bound or persistence fails;
+an unbound object is never returned through the App API. Document links resolve
+through Voyant's authenticated rendition route so storage authority stays with
+the host. External-sync state is current-state data on the app-owned external
+reference and does not grant broader finance mutation access.
+Lifecycle operations and settlement observations are append-only. External
+payment identifiers are normalized and owned by authenticated app identity;
+one identifier cannot move between finance documents for the same app. The
+document row and each identifier ownership key are locked before mutation so
+concurrent requests preserve the same ordering and ownership rules. All
+document routes enforce an online token's signed entity constraint before
+resolving scopes or invoking Finance.
 The provider-neutral DTOs and runtime port are owned by `finance-contracts`;
 Finance implements that port and the Apps gateway consumes it without either
 package importing the other's implementation.
@@ -366,6 +456,18 @@ series, or provider configuration in the webhook payload.
 `skipExternalSync` is an issuance-scoped decision that is not persisted on the
 document; the webhook projection is authoritative and a Worker must stop before
 hydration when it is true.
+
+`invoice.proforma.converted`, `invoice.voided`, and
+`invoice.payment.recorded` are also externally deliverable through dedicated
+version 2 minimal projections. Lifecycle projections expose stable document
+IDs, document type, occurrence time, and conversion lineage where relevant.
+The payment projection additionally exposes only the bounded amounts,
+currencies, method, and date required to mirror the completed payment at an
+external accounting provider. Customer identity, booking identity, line items,
+free-text reasons and payment references, numbering, and routing fields stay
+inside Finance. `invoice.settled` remains an internal event: an app reports
+external settlement evidence through the scoped observation endpoint instead
+of subscribing to an internal reconciliation signal.
 
 Delivery is durable, signed, at-least-once, idempotency-friendly, retried with
 bounded backoff, observable, and replayable where retention policy permits.
