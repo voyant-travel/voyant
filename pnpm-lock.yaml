@@ -412,6 +412,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/reporting-contracts':
+        specifier: workspace:^
+        version: link:../reporting-contracts
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
