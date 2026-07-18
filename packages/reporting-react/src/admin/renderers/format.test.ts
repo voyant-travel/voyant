@@ -19,6 +19,16 @@ describe("formatReportValue", () => {
     )
   })
 
+  it("formats explicitly declared minor-unit currencies", () => {
+    expect(
+      formatReportValue(12_345, "currency", {
+        currency: "EUR",
+        locale: "en-IE",
+        minorUnit: true,
+      }),
+    ).toContain("123.45")
+  })
+
   it("formats booleans, dates, and json", () => {
     expect(formatReportValue(true, "boolean")).toBe("Yes")
     expect(formatReportValue(false, "boolean")).toBe("No")

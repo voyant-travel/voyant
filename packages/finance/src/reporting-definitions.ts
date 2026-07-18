@@ -157,7 +157,12 @@ export const financeReportingWidgets = [
     },
     visualization: {
       type: "bar",
-      options: { category: "currency", value: "outstandingBalanceCents" },
+      options: {
+        category: "currency",
+        value: "outstandingBalanceCents",
+        currencyField: "currency",
+        minorUnit: true,
+      },
     },
     defaultSize: { width: 4, height: 3 },
     minimumSize: { width: 3, height: 2 },
@@ -191,7 +196,13 @@ export const financeReportingWidgets = [
     },
     visualization: {
       type: "line",
-      options: { x: "issueMonth", y: "netIssuedCents", series: "currency" },
+      options: {
+        x: "issueMonth",
+        y: "netIssuedCents",
+        series: "currency",
+        currencyField: "currency",
+        minorUnit: true,
+      },
     },
     defaultSize: { width: 8, height: 3 },
     minimumSize: { width: 4, height: 3 },
@@ -235,7 +246,10 @@ export const financeReportingWidgets = [
       orderBy: [{ by: "settledCents", direction: "descending" }],
       limit: 20,
     },
-    visualization: { type: "table", options: {} },
+    visualization: {
+      type: "table",
+      options: { currencyField: "currency", minorUnit: true },
+    },
     defaultSize: { width: 4, height: 3 },
     minimumSize: { width: 4, height: 2 },
     maximumSize: { width: 12, height: 8 },

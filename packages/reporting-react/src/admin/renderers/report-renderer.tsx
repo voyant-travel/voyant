@@ -72,6 +72,7 @@ export function ReportVisualizationView({
   const formatOptions: FormatOptions = {
     ...format,
     currency: readString(options.currency) ?? format.currency,
+    minorUnit: readBoolean(options.minorUnit) ?? format.minorUnit,
   }
 
   if (result.rows.length === 0) {
@@ -82,7 +83,7 @@ export function ReportVisualizationView({
     case "kpi":
       return <KpiView result={result} options={options} format={formatOptions} />
     case "table":
-      return <TableView result={result} format={formatOptions} />
+      return <TableView result={result} options={options} format={formatOptions} />
     case "line":
       return <SeriesChart kind="line" result={result} options={options} format={formatOptions} />
     case "bar":
@@ -90,7 +91,7 @@ export function ReportVisualizationView({
     case "pie":
       return <PieView result={result} options={options} format={formatOptions} />
     default:
-      return <TableView result={result} format={formatOptions} />
+      return <TableView result={result} options={options} format={formatOptions} />
   }
 }
 
@@ -104,25 +105,39 @@ function KpiView({
   format: FormatOptions
 }): ReactNode {
   const valueColumn =
-    findColumn(result, readString(options.valueField)) ??
+    findColumn(result, readFirstString(options, "valueField", "value")) ??
     firstNumericColumn(result) ??
     result.columns[0]
   if (!valueColumn) return <p className="text-muted-foreground text-sm">No value to display.</p>
   const row = result.rows[0] ?? {}
   const raw = row[valueColumn.id]
+  const currencyField = readFirstString(options, "currencyField")
+  const rowFormat = {
+    ...format,
+    currency: readString(currencyField ? row[currencyField] : undefined) ?? format.currency,
+  }
   return (
     <Card size="sm" className="h-full">
       <CardHeader>
         <CardDescription>{readString(options.label) ?? valueColumn.label}</CardDescription>
         <CardTitle className="text-3xl tabular-nums">
-          {formatReportValue(raw, valueColumn.valueType, format)}
+          {formatReportValue(raw, valueColumn.valueType, rowFormat)}
         </CardTitle>
       </CardHeader>
     </Card>
   )
 }
 
-function TableView({ result, format }: { result: ReportResult; format: FormatOptions }): ReactNode {
+function TableView({
+  result,
+  options,
+  format,
+}: {
+  result: ReportResult
+  options: ReportVisualization["options"]
+  format: FormatOptions
+}): ReactNode {
+  const currencyField = readFirstString(options, "currencyField")
   return (
     <Table>
       <TableHeader>
@@ -140,7 +155,11 @@ function TableView({ result, format }: { result: ReportResult; format: FormatOpt
           <TableRow key={rowIndex}>
             {result.columns.map((column) => (
               <TableCell key={column.id}>
-                {formatReportValue(row[column.id], column.valueType, format)}
+                {formatReportValue(row[column.id], column.valueType, {
+                  ...format,
+                  currency:
+                    readString(currencyField ? row[currencyField] : undefined) ?? format.currency,
+                })}
               </TableCell>
             ))}
           </TableRow>
@@ -162,12 +181,14 @@ function SeriesChart({
   format: FormatOptions
 }): ReactNode {
   const categoryColumn =
-    findColumn(result, readString(options.xField)) ??
+    findColumn(result, readFirstString(options, "xField", "x", "categoryField", "category")) ??
     firstCategoryColumn(result) ??
     result.columns[0]
-  if (!categoryColumn) return <TableView result={result} format={format} />
+  if (!categoryColumn) return <TableView result={result} options={options} format={format} />
 
-  const requested = readStringArray(options.yFields)
+  const requested =
+    readStringArray(options.yFields) ??
+    optionalArray(readFirstString(options, "yField", "y", "valueField", "value"))
   const seriesColumns = (
     requested
       ? requested
@@ -176,23 +197,64 @@ function SeriesChart({
       : numericColumns(result).filter((column) => column.id !== categoryColumn.id)
   ).slice(0, CHART_COLORS.length)
 
-  if (seriesColumns.length === 0) return <TableView result={result} format={format} />
+  if (seriesColumns.length === 0) {
+    return <TableView result={result} options={options} format={format} />
+  }
 
-  const config: ChartConfig = {}
-  seriesColumns.forEach((column, index) => {
-    config[column.id] = { label: column.label, color: CHART_COLORS[index % CHART_COLORS.length] }
-  })
-
-  const data = result.rows.map((row) => {
-    const point: Record<string, unknown> = {
-      [categoryColumn.id]: formatReportValue(
+  const seriesDimension = findColumn(result, readFirstString(options, "seriesField", "series"))
+  let chartSeriesColumns = seriesColumns
+  let data: Record<string, unknown>[]
+  if (seriesDimension && seriesColumns.length === 1) {
+    const valueColumn = seriesColumns[0]!
+    const keysByLabel = new Map<string, string>()
+    const pointsByCategory = new Map<string, Record<string, unknown>>()
+    for (const row of result.rows) {
+      const category = formatReportValue(
         row[categoryColumn.id],
         categoryColumn.valueType,
         format,
-      ),
+      )
+      const seriesLabel = formatReportValue(
+        row[seriesDimension.id],
+        seriesDimension.valueType,
+        format,
+      )
+      let seriesKey = keysByLabel.get(seriesLabel)
+      if (!seriesKey) {
+        if (keysByLabel.size >= CHART_COLORS.length) continue
+        seriesKey = `series${keysByLabel.size + 1}`
+        keysByLabel.set(seriesLabel, seriesKey)
+      }
+      const point = pointsByCategory.get(category) ?? { [categoryColumn.id]: category }
+      point[seriesKey] = chartNumber(row[valueColumn.id], valueColumn.valueType, format)
+      pointsByCategory.set(category, point)
     }
-    for (const column of seriesColumns) point[column.id] = toNumber(row[column.id]) ?? 0
-    return point
+    chartSeriesColumns = [...keysByLabel].map(([label, id]) => ({
+      id,
+      label,
+      valueType: valueColumn.valueType,
+    }))
+    data = [...pointsByCategory.values()]
+  } else {
+    data = result.rows.map((row) => {
+      const point: Record<string, unknown> = {
+        [categoryColumn.id]: formatReportValue(
+          row[categoryColumn.id],
+          categoryColumn.valueType,
+          format,
+        ),
+      }
+      for (const column of chartSeriesColumns) {
+        point[column.id] = chartNumber(row[column.id], column.valueType, format)
+      }
+      return point
+    })
+  }
+  if (readBoolean(options.reverseCategoryOrder)) data = [...data].reverse()
+
+  const config: ChartConfig = {}
+  chartSeriesColumns.forEach((column, index) => {
+    config[column.id] = { label: column.label, color: CHART_COLORS[index % CHART_COLORS.length] }
   })
 
   return (
@@ -203,8 +265,8 @@ function SeriesChart({
           <XAxis dataKey={categoryColumn.id} tickLine={false} axisLine={false} tickMargin={8} />
           <YAxis tickLine={false} axisLine={false} width={48} />
           <ChartTooltip content={<ChartTooltipContent />} />
-          {seriesColumns.length > 1 ? <ChartLegend content={<ChartLegendContent />} /> : null}
-          {seriesColumns.map((column) => (
+          {chartSeriesColumns.length > 1 ? <ChartLegend content={<ChartLegendContent />} /> : null}
+          {chartSeriesColumns.map((column) => (
             <Line
               key={column.id}
               dataKey={column.id}
@@ -221,8 +283,8 @@ function SeriesChart({
           <XAxis dataKey={categoryColumn.id} tickLine={false} axisLine={false} tickMargin={8} />
           <YAxis tickLine={false} axisLine={false} width={48} />
           <ChartTooltip content={<ChartTooltipContent />} />
-          {seriesColumns.length > 1 ? <ChartLegend content={<ChartLegendContent />} /> : null}
-          {seriesColumns.map((column) => (
+          {chartSeriesColumns.length > 1 ? <ChartLegend content={<ChartLegendContent />} /> : null}
+          {chartSeriesColumns.map((column) => (
             <Bar
               key={column.id}
               dataKey={column.id}
@@ -246,16 +308,19 @@ function PieView({
   format: FormatOptions
 }): ReactNode {
   const categoryColumn =
-    findColumn(result, readString(options.categoryField)) ??
+    findColumn(result, readFirstString(options, "categoryField", "category")) ??
     firstCategoryColumn(result) ??
     result.columns[0]
   const valueColumn =
-    findColumn(result, readString(options.valueField)) ?? firstNumericColumn(result)
-  if (!categoryColumn || !valueColumn) return <TableView result={result} format={format} />
+    findColumn(result, readFirstString(options, "valueField", "value")) ??
+    firstNumericColumn(result)
+  if (!categoryColumn || !valueColumn) {
+    return <TableView result={result} options={options} format={format} />
+  }
 
   const data = result.rows.map((row, index) => ({
     name: formatReportValue(row[categoryColumn.id], categoryColumn.valueType, format),
-    value: toNumber(row[valueColumn.id]) ?? 0,
+    value: chartNumber(row[valueColumn.id], valueColumn.valueType, format),
     fill: CHART_COLORS[index % CHART_COLORS.length],
   }))
 
@@ -304,4 +369,32 @@ function readStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   const strings = value.filter((item): item is string => typeof item === "string")
   return strings.length > 0 ? strings : undefined
+}
+
+function readBoolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined
+}
+
+function readFirstString(
+  options: ReportVisualization["options"],
+  ...keys: string[]
+): string | undefined {
+  for (const key of keys) {
+    const value = readString(options[key])
+    if (value) return value
+  }
+  return undefined
+}
+
+function optionalArray(value: string | undefined): string[] | undefined {
+  return value ? [value] : undefined
+}
+
+function chartNumber(
+  value: unknown,
+  valueType: ReportFieldValueType,
+  format: FormatOptions,
+): number {
+  const numeric = toNumber(value) ?? 0
+  return valueType === "currency" && format.minorUnit ? numeric / 100 : numeric
 }

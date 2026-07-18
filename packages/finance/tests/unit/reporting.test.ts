@@ -60,6 +60,13 @@ describe("Finance reporting definitions", () => {
         widget.query.groupBy.some((group) => group.field === "currency"),
       ),
     ).toBe(true)
+    expect(
+      monetaryWidgets.every(
+        (widget) =>
+          widget.visualization.options.minorUnit === true &&
+          widget.visualization.options.currencyField === "currency",
+      ),
+    ).toBe(true)
   })
 })
 

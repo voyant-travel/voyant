@@ -70,6 +70,9 @@ export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
         "products:read",
         "quotes:read",
         "quotes:write",
+        "reports:export",
+        "reports:read",
+        "reports:write",
         "suppliers:read",
         "trips:read",
         "trips:write",
@@ -87,7 +90,7 @@ export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
       id: "editor",
       kind: "staff",
       label: "Editor",
-      grants: ["bookings:read", "bookings:write"],
+      grants: ["bookings:read", "bookings:write", "reports:read", "reports:write"],
     },
   ],
 }
