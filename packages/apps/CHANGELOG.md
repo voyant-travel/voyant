@@ -1,5 +1,16 @@
 # @voyant-travel/apps
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [f6f22e7]
+  - @voyant-travel/core@0.128.0
+  - @voyant-travel/hono@0.130.0
+  - @voyant-travel/custom-fields@0.2.5
+  - @voyant-travel/db@0.114.14
+  - @voyant-travel/webhook-delivery@0.4.3
+
 ## 0.9.0
 
 ### Minor Changes
