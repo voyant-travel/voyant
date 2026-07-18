@@ -196,6 +196,13 @@ generation has one stable identity; only the reserved `app--...` namespace is
 generated locally. Marketplace identity, owner, version, and digest conflicts
 fail closed. No private artifact storage coordinate is persisted.
 
+Confidential OAuth client authentication follows the same boundary. The
+publisher retains a high-entropy client secret in its own broker. The private
+catalog and deployment receive only its SHA-256 verifier through the
+host-verified acquisition envelope; the deployment stores that verifier as the
+active client credential. The raw secret never enters the catalog, artifact,
+setup assertion, browser, or Voyant database.
+
 Acquisition returns only local app and release IDs. The native Apps page then
 renders consent from the admitted normalized release: required and optional
 scopes, data classifications, external secret-custody disclosure, retention,
@@ -220,6 +227,20 @@ it never chooses or edits assertion claims or OAuth endpoints. The public
 runtime also requires the returned redirect to be HTTPS and to share the
 admitted manifest setup origin.
 
+The assertion `authorizationUrl` targets the authenticated admin page
+`/apps/oauth/authorize`, not the mutation API. A browser GET only renders the
+verified app, release, and scopes. Explicit approval POSTs the request to the
+Apps OAuth API, which validates the exact redirect URI and preserves PKCE,
+state, and a constrained optional nonce before redirecting to the app.
+
+Marketplace uninstall performs local revocation first and then invokes managed
+authority with the immutable installation, app, and release IDs. Authority
+signs a short-lived, purpose-specific lifecycle assertion and POSTs it to the
+exact admitted `urls.lifecycle`. Publisher cleanup is idempotent and
+retry-safe: all installation-scoped OAuth, provider, setup, and webhook secrets
+are revoked before publisher state is marked revoked. Lifecycle assertions use
+a key and JWKS distinct from setup and admin-auth signing keys.
+
 ## Manifest And Release Artifact
 
 The manifest is closed, versioned, declarative data. It may declare:
@@ -232,7 +253,7 @@ The manifest is closed, versioned, declarative data. It may declare:
 - webhook event subscriptions and event versions;
 - app-owned custom-field definitions;
 - setup and configuration descriptors;
-- health, launch, privacy, and support URLs;
+- health, launch, lifecycle, privacy, and support URLs;
 - data classification and retention declarations.
 
 It may not declare:
