@@ -1,9 +1,10 @@
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import {
   customFieldValueLifecycleRuntimePort,
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
+import { appsManagedAuthRuntimePort } from "./runtime-port.js"
 
 const appsAdminRuntime = {
   entry: "@voyant-travel/apps-react/admin",
@@ -35,7 +36,11 @@ export const appsVoyantModule = defineModule({
       cardinality: "many",
     }),
     requirePort(financeAppApiRuntimePort, { optional: true }),
+    requirePort(appsManagedAuthRuntimePort, { optional: true }),
   ],
+  provides: {
+    ports: [providePort(appsManagedAuthRuntimePort)],
+  },
   api: [
     {
       id: "@voyant-travel/apps#api.admin",
@@ -60,6 +65,27 @@ export const appsVoyantModule = defineModule({
     {
       id: "@voyant-travel/apps#migrations",
       source: "./migrations",
+    },
+  ],
+  config: [
+    {
+      id: "@voyant-travel/apps#config.runtime-audience",
+      key: "VOYANT_APP_RUNTIME_AUDIENCE",
+      required: false,
+    },
+    {
+      id: "@voyant-travel/apps#config.session-token-ttl-seconds",
+      key: "VOYANT_APP_SESSION_TOKEN_TTL_SECONDS",
+      required: false,
+    },
+  ],
+  secrets: [
+    {
+      id: "@voyant-travel/apps#secret.session-token-signing-secret",
+      key: "VOYANT_APP_SESSION_TOKEN_SIGNING_SECRET",
+      required: false,
+      description: "Signing material for short-lived remote extension session tokens.",
+      rotation: "replace-only",
     },
   ],
   events: [

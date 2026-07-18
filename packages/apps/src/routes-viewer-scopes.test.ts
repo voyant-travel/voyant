@@ -1,6 +1,6 @@
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { describe, expect, it } from "vitest"
-import { resolveViewerRemoteAppScopes } from "./routes.js"
+import { resolveOperatorGrantableRemoteAppScopes, resolveViewerRemoteAppScopes } from "./routes.js"
 
 const catalog: AccessCatalog = {
   resources: [
@@ -43,5 +43,16 @@ describe("viewer scope projection for remote extensions", () => {
 
   it("does not treat a generic wildcard as an explicit sensitive action", () => {
     expect(resolveViewerRemoteAppScopes(["*"], catalog)).toEqual([])
+  })
+
+  it("derives consent authority from the staff grants and remote-safe catalog", () => {
+    expect(resolveOperatorGrantableRemoteAppScopes(["*"], catalog)).toEqual([])
+    expect(
+      resolveOperatorGrantableRemoteAppScopes(
+        ["finance-document-artifacts:write", "apps:write"],
+        catalog,
+      ),
+    ).toEqual(["finance-document-artifacts:write"])
+    expect(resolveOperatorGrantableRemoteAppScopes(["apps:write"], catalog)).toEqual([])
   })
 })

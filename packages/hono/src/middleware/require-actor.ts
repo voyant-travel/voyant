@@ -5,7 +5,8 @@ import {
   permissionStringsToPermissions,
 } from "@voyant-travel/types/api-keys"
 import type { MiddlewareHandler } from "hono"
-
+import type { AbsoluteClientAuthenticatedRoute } from "../client-authenticated-routes.js"
+import { matchesClientAuthenticatedRoute } from "../client-authenticated-routes.js"
 import { normalizePathname } from "../lib/public-paths.js"
 import type { VoyantBindings, VoyantVariables } from "../types.js"
 
@@ -109,6 +110,8 @@ export interface RequireActorOptions {
     authorization?: "coarse" | "route"
   }[]
   accessCatalog?: AccessCatalog
+  /** Exact admin protocol routes that authenticate their client in-band. */
+  clientAuthenticatedRoutes?: readonly AbsoluteClientAuthenticatedRoute[]
 }
 
 function isRequireActorOptions(value: unknown): value is RequireActorOptions {
@@ -177,14 +180,24 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
 
+    const pathname = normalizePathname(new URL(c.req.url).pathname, {
+      basePath: options.basePath,
+    })
+    if (
+      matchesClientAuthenticatedRoute(
+        c.req.method,
+        pathname,
+        options.clientAuthenticatedRoutes ?? [],
+      )
+    ) {
+      return next()
+    }
+
     if (
       c.get("callerType") === "api_key" ||
       c.get("callerType") === "app" ||
       c.get("callerType") === "internal"
     ) {
-      const pathname = normalizePathname(new URL(c.req.url).pathname, {
-        basePath: options.basePath,
-      })
       const { resource, authorization } = authorizationForRequest(pathname, options)
 
       // Coarse-guard-exempt surfaces. `_meta` (capability discovery) and `mcp`
@@ -231,9 +244,6 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
     // resource (e.g. `_meta`) stay open until a module is explicitly covered.
     if (actor === "staff" && c.get("callerType") === "session" && isStaffRbacEnforced(c.env)) {
       const scopes = c.get("scopes")
-      const pathname = normalizePathname(new URL(c.req.url).pathname, {
-        basePath: options.basePath,
-      })
       const { resource, authorization } = authorizationForRequest(pathname, options)
       if (resource && authorization !== "route" && !isCoarseGuardExempt(resource)) {
         const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
