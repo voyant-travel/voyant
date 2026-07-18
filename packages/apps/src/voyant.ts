@@ -130,8 +130,11 @@ export const appsVoyantModule = defineModule({
         wildcard: "explicit-resource",
       },
       {
-        id: "@voyant-travel/apps#access.webhooks",
-        resource: "webhooks",
+        id: "@voyant-travel/apps#access.app-webhooks",
+        // Namespaced `app-webhooks` (not `webhooks`) to avoid a duplicate
+        // access-resource authority with @voyant-travel/workflow-runs, which
+        // owns the deployment `webhooks` resource.
+        resource: "app-webhooks",
         label: "App webhooks",
         description: "Read webhook health and request replay.",
         remoteSafe: true,
