@@ -1,5 +1,13 @@
 # @voyant-travel/event-catalog-react
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [117fa05]
+  - @voyant-travel/core@0.127.0
+  - @voyant-travel/i18n@0.112.1
+
 ## 0.7.0
 
 ### Patch Changes
