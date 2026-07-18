@@ -1,5 +1,12 @@
 # @voyant-travel/core
 
+## 0.126.0
+
+### Minor Changes
+
+- 698ddb6: Add first-class adapter and provider graph-unit kinds while keeping plugin
+  manifests recognized for backward compatibility.
+
 ## 0.125.2
 
 ### Patch Changes

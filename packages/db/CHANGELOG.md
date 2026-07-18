@@ -1,5 +1,13 @@
 # @voyant-travel/db
 
+## 0.114.11
+
+### Patch Changes
+
+- Updated dependencies [698ddb6]
+  - @voyant-travel/core@0.126.0
+  - @voyant-travel/workflows@0.122.4
+
 ## 0.114.10
 
 ### Patch Changes
