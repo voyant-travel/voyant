@@ -1,5 +1,12 @@
 # @voyant-travel/auth
 
+## 0.133.4
+
+### Patch Changes
+
+- Updated dependencies [96c91b9]
+  - @voyant-travel/hono@0.129.0
+
 ## 0.133.3
 
 ### Patch Changes

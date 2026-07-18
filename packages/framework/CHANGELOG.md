@@ -1,5 +1,25 @@
 # @voyant-travel/framework
 
+## 0.51.0
+
+### Minor Changes
+
+- 96c91b9: Compose provider-neutral remote-app OAuth and session exchange from host-owned
+  runtime inputs, add exact client-authenticated route posture, and augment app
+  access-token resolution without replacing staff authentication.
+
+### Patch Changes
+
+- Updated dependencies [96c91b9]
+  - @voyant-travel/hono@0.129.0
+  - @voyant-travel/operator-standard@0.7.10
+  - @voyant-travel/action-ledger@0.111.4
+  - @voyant-travel/auth@0.133.4
+  - @voyant-travel/cruises@0.170.1
+  - @voyant-travel/mcp@0.4.4
+  - @voyant-travel/workflows@0.122.6
+  - @voyant-travel/workflows-orchestrator@0.122.6
+
 ## 0.50.3
 
 ### Patch Changes
