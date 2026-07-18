@@ -1,5 +1,11 @@
 # @voyant-travel/hono
 
+## 0.129.1
+
+### Patch Changes
+
+- 1881293: Require realm-specific Better Auth secrets, remove the legacy shared-secret path, and reject existing customer sessions when customer authentication is disabled.
+
 ## 0.129.0
 
 ### Minor Changes
