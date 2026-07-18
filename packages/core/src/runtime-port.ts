@@ -5,6 +5,13 @@ import type {
 } from "./custom-fields.js"
 import { definePort } from "./project.js"
 
+export type {
+  DocumentRenderer,
+  PdfPageFormat,
+  PdfRenderRequest,
+} from "./document-rendering-runtime-port.js"
+export { documentRendererPort } from "./document-rendering-runtime-port.js"
+
 /**
  * Database-backed custom-field runtime shared by graph-selected consumers.
  *

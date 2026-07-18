@@ -58,10 +58,7 @@ export interface InventoryRuntimeContributorHost {
   getRuntimePort?<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
-function createInventoryRuntime(
-  primitives: VoyantRuntimeHostPrimitives,
-  configuredRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
-): InventoryRuntime {
+function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): InventoryRuntime {
   return {
     bootstrap: ({ container, bindings }) => {
       const env = primitives.env(bindings)
@@ -69,15 +66,12 @@ function createInventoryRuntime(
         PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
         createProductsGeneratePdfWorkflowRuntime({
           resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
-          resolvePrinter: () =>
-            configuredRenderer
-              ? createProductBrochurePrinter(configuredRenderer)
-              : (() => {
-                  const renderer = createHttpDocumentRendererFromEnv(env)
-                  return renderer
-                    ? createProductBrochurePrinter(renderer)
-                    : createBasicPdfProductBrochurePrinter()
-                })(),
+          resolvePrinter: () => {
+            const renderer = createHttpDocumentRendererFromEnv(env)
+            return renderer
+              ? createProductBrochurePrinter(renderer)
+              : createBasicPdfProductBrochurePrinter()
+          },
         }),
       )
     },
@@ -92,7 +86,7 @@ export function createInventoryRuntimePortContribution(
     host.hasRuntimePort?.(documentRendererPort) && host.getRuntimePort
       ? host.getRuntimePort<DocumentRenderer>(documentRendererPort)
       : null
-  const inventory = createInventoryRuntime(host.primitives, renderer)
+  const inventory = createInventoryRuntime(host.primitives)
   const brochure = createInventoryBrochureRuntime(host.primitives, renderer)
   return {
     [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,

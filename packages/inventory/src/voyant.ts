@@ -4,13 +4,13 @@ import { bookingsInventoryRuntimePort } from "@voyant-travel/bookings/runtime-po
 import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { commerceInventoryRuntimePort } from "@voyant-travel/commerce/runtime-port"
-import { documentRendererPort } from "@voyant-travel/core/document-rendering"
 import {
   defineExtension,
   defineModule,
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
+import { documentRendererPort } from "@voyant-travel/core/runtime-port"
 import { financeInventoryPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"

@@ -550,6 +550,7 @@
       "@voyant-travel/core": ["../core/dist/index.d.ts"],
       "@voyant-travel/core/container": ["../core/dist/container.d.ts"],
       "@voyant-travel/core/custom-fields": ["../core/dist/custom-fields.d.ts"],
+      "@voyant-travel/core/document-rendering": ["../core/dist/document-rendering.d.ts"],
       "@voyant-travel/core/env": ["../core/dist/env.d.ts"],
       "@voyant-travel/core/events": ["../core/dist/events.d.ts"],
       "@voyant-travel/core/hooks": ["../core/dist/hooks.d.ts"],

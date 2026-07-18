@@ -14,11 +14,10 @@
     "application/octet-stream"
   ],
   "brochureRuntimeTokens": [
-    "VOYANT_API_KEY",
-    "VOYANT_CLOUD_API_KEY",
-    "VOYANT_CLOUD_API_URL",
-    "VOYANT_CLOUD_USER_AGENT",
-    "voyant-cloud-browser",
+    "DocumentRenderer",
+    "createHttpDocumentRendererFromEnv",
+    "renderPdf",
+    "renderer.name",
     "brochureBodyToHtml"
   ]
 }
