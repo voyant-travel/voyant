@@ -1,8 +1,10 @@
 import { handleApiError } from "@voyant-travel/hono"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import { createAppsAdminRoutes } from "./routes.js"
+import { apps } from "./schema.js"
 import { createAppsService } from "./service.js"
 import { validManifest } from "./test-fixtures.js"
 
@@ -225,5 +227,49 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
     }
     expect(body.data.installation.status).toBe("active")
     expect(body.data.outcome).toBe("created")
+  })
+
+  it("notifies managed authority after a Marketplace uninstall", async () => {
+    const { appId, releaseV1 } = await seedAppWithReleases()
+    await db.update(apps).set({ distribution: "marketplace" }).where(eq(apps.id, appId))
+    const notifyInstallationLifecycle = vi.fn(async () => undefined)
+    const managedApp = new Hono()
+    managedApp.onError((err, c) => handleApiError(err, c))
+    managedApp.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    managedApp.route(
+      "/",
+      createAppsAdminRoutes({
+        deploymentId: DEPLOYMENT_ID,
+        managedMarketplace: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle,
+        },
+      }),
+    )
+    const installed = await managedApp.request(
+      "/install",
+      json({ appId, releaseId: releaseV1.id, actorId: "actor_1" }),
+    )
+    const installationId = ((await installed.json()) as { data: { installation: { id: string } } })
+      .data.installation.id
+
+    const response = await managedApp.request(
+      `/installations/${installationId}/uninstall`,
+      json({ actorId: "actor_1" }),
+    )
+
+    expect(response.status).toBe(200)
+    expect(notifyInstallationLifecycle).toHaveBeenCalledWith({
+      event: "uninstalled",
+      installationId,
+      appId,
+      releaseId: releaseV1.id,
+    })
   })
 })

@@ -1,7 +1,7 @@
 import type { VoyantAppContextConstraint, VoyantAuthContext } from "@voyant-travel/core"
 import { ApiHttpError } from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
-import { and, eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { computeAppConsent } from "./consent.js"
 import {
@@ -478,7 +478,13 @@ async function authenticateClient(
   const [secret] = await db
     .select()
     .from(appCredentials)
-    .where(and(eq(appCredentials.appId, appId), eq(appCredentials.kind, "client_secret")))
+    .where(
+      and(
+        eq(appCredentials.appId, appId),
+        eq(appCredentials.kind, "client_secret"),
+        isNull(appCredentials.retiredAt),
+      ),
+    )
     .limit(1)
   if (!secret) {
     if (required) throw oauthError("invalid_client", "Client authentication failed", 401)

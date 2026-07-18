@@ -51,6 +51,17 @@ export function createAppsAdminExtension(
       ],
       routes: [
         {
+          id: "apps-oauth-authorize",
+          path: `${path}/oauth/authorize`,
+          title: appsUiEn.authorization.title,
+          ssr: "data-only",
+          capability: "apps:write",
+          page: () =>
+            import("./components/oauth-authorization-page.js").then((module) =>
+              adminRoutePageModule(module.OAuthAuthorizationPage),
+            ),
+        },
+        {
           id: "apps-index",
           path,
           title,

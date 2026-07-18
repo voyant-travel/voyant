@@ -11,7 +11,12 @@ import type { ApiModule } from "@voyant-travel/hono/module"
 import { createAppsAppApiRoutes } from "./app-api-routes.js"
 import { createAppOAuthService } from "./oauth-service.js"
 import { createAppsAdminRoutes } from "./routes.js"
-import { type AppsManagedAuthRuntime, appsManagedAuthRuntimePort } from "./runtime-port.js"
+import {
+  type AppsManagedAuthRuntime,
+  type AppsManagedMarketplaceRuntime,
+  appsManagedAuthRuntimePort,
+  appsManagedMarketplaceRuntimePort,
+} from "./runtime-port.js"
 
 export const createAppsApiModule = defineGraphRuntimeFactory(
   async ({ getPort, getPorts, graph, hasPort }) => {
@@ -28,6 +33,19 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
     const managedAuth = hasPort(appsManagedAuthRuntimePort)
       ? await getPort<AppsManagedAuthRuntime>(appsManagedAuthRuntimePort)
       : undefined
+    const managedMarketplace = hasPort(appsManagedMarketplaceRuntimePort)
+      ? await getPort<AppsManagedMarketplaceRuntime>(appsManagedMarketplaceRuntimePort)
+      : undefined
+    if (
+      managedAuth &&
+      managedMarketplace &&
+      managedAuth.runtimeAudience !== managedMarketplace.deploymentId
+    ) {
+      throw new TypeError(
+        "apps.managed-auth runtimeAudience must match apps.managed-marketplace deploymentId.",
+      )
+    }
+    const deploymentId = managedAuth?.runtimeAudience ?? managedMarketplace?.deploymentId
     const oauthOptions = managedAuth
       ? {
           accessCatalog: graph.accessCatalog,
@@ -41,6 +59,10 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
       module: { name: "apps" },
       adminRoutes: createAppsAdminRoutes({
         eventCatalog: graph.eventCatalog,
+        ...(deploymentId ? { deploymentId } : {}),
+        ...(managedMarketplace
+          ? { managedMarketplace: managedMarketplace.acquisitionResolver }
+          : {}),
         ...(oauthOptions ? { oauth: oauthOptions } : {}),
         ...(managedAuth
           ? {

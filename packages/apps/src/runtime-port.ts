@@ -1,4 +1,5 @@
 import { definePort } from "@voyant-travel/core/project"
+import type { HostVerifiedMarketplaceAcquisition } from "./marketplace-acquisition.js"
 
 /** Persisted host contract for one managed app installation. */
 export interface ManagedAppInstallationBinding {
@@ -70,6 +71,69 @@ export const appsManagedAuthRuntimePort = definePort<AppsManagedAuthRuntime>({
     ) {
       throw new TypeError(
         "apps.managed-auth sessionTokenTtlSeconds must be an integer from 1 through 300 when provided.",
+      )
+    }
+  },
+})
+
+export interface ManagedMarketplaceAcquisitionResolver {
+  /**
+   * Resolve an opaque, single-purpose install intent through host authority.
+   * The public runtime never accepts catalog coordinates, artifact URLs, or
+   * publisher assertions from the browser.
+   */
+  resolveAcquisitionIntent(input: {
+    intent: string
+  }): Promise<HostVerifiedMarketplaceAcquisition | null>
+
+  /**
+   * Mint and deliver a short-lived, host-signed setup assertion. The browser
+   * receives only the resulting one-time redirect and never chooses OAuth
+   * coordinates or assertion claims.
+   */
+  createSetupHandoff(input: {
+    installationId: string
+    appId: string
+    releaseId: string
+  }): Promise<{ redirectUrl: string }>
+
+  /** Deliver an idempotent host-signed lifecycle assertion to the publisher. */
+  notifyInstallationLifecycle(input: {
+    event: "uninstalled"
+    installationId: string
+    appId: string
+    releaseId: string
+  }): Promise<void>
+}
+
+export interface AppsManagedMarketplaceRuntime {
+  /** Stable host deployment identity used for deployment-local installation rows. */
+  deploymentId: string
+  acquisitionResolver: ManagedMarketplaceAcquisitionResolver
+}
+
+export const appsManagedMarketplaceRuntimePort = definePort<AppsManagedMarketplaceRuntime>({
+  id: "apps.managed-marketplace",
+  test(runtime) {
+    if (!runtime || typeof runtime !== "object") {
+      throw new TypeError("apps.managed-marketplace must be an object.")
+    }
+    if (typeof runtime.deploymentId !== "string" || runtime.deploymentId.trim().length === 0) {
+      throw new TypeError("apps.managed-marketplace deploymentId must be a non-empty string.")
+    }
+    if (typeof runtime.acquisitionResolver?.resolveAcquisitionIntent !== "function") {
+      throw new TypeError(
+        "apps.managed-marketplace acquisitionResolver.resolveAcquisitionIntent must be a function.",
+      )
+    }
+    if (typeof runtime.acquisitionResolver.createSetupHandoff !== "function") {
+      throw new TypeError(
+        "apps.managed-marketplace acquisitionResolver.createSetupHandoff must be a function.",
+      )
+    }
+    if (typeof runtime.acquisitionResolver.notifyInstallationLifecycle !== "function") {
+      throw new TypeError(
+        "apps.managed-marketplace acquisitionResolver.notifyInstallationLifecycle must be a function.",
       )
     }
   },

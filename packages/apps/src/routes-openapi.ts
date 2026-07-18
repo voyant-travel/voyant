@@ -16,6 +16,11 @@ import {
   releaseManifestFetchSchema,
   releaseManifestUploadSchema,
 } from "./contracts.js"
+import {
+  marketplaceInstallIntentResultSchema,
+  marketplaceSetupHandoffResultSchema,
+  resolveMarketplaceInstallIntentSchema,
+} from "./marketplace-acquisition.js"
 
 const appIdParamSchema = z.object({ appId: z.string().min(1) })
 const installationIdParamSchema = z.object({ installationId: z.string().min(1) })
@@ -129,6 +134,28 @@ export const installAppRoute = createRoute({
   path: "/install",
   request: { body: requiredJsonBody(installAppSchema) },
   responses: { 201: jsonContent(dataEnvelopeSchema, "Installed app") },
+})
+
+export const resolveMarketplaceInstallIntentRoute = createRoute({
+  method: "post",
+  path: "/marketplace/install-intents/resolve",
+  request: { body: requiredJsonBody(resolveMarketplaceInstallIntentSchema) },
+  responses: {
+    201: jsonContent(marketplaceInstallIntentResultSchema, "Admitted Marketplace install intent"),
+    404: jsonContent(errorSchema, "Install intent unavailable"),
+    501: jsonContent(errorSchema, "Managed Marketplace is not configured"),
+  },
+})
+
+export const createMarketplaceSetupHandoffRoute = createRoute({
+  method: "post",
+  path: "/installations/{installationId}/setup-handoff",
+  request: { params: installationIdParamSchema },
+  responses: {
+    201: jsonContent(marketplaceSetupHandoffResultSchema, "Created one-time app setup handoff"),
+    404: jsonContent(errorSchema, "Marketplace installation unavailable"),
+    501: jsonContent(errorSchema, "Managed Marketplace is not configured"),
+  },
 })
 
 export const listAppInstallationsRoute = createRoute({

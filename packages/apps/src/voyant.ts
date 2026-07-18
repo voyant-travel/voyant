@@ -4,7 +4,7 @@ import {
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
-import { appsManagedAuthRuntimePort } from "./runtime-port.js"
+import { appsManagedAuthRuntimePort, appsManagedMarketplaceRuntimePort } from "./runtime-port.js"
 
 const appsAdminRuntime = {
   entry: "@voyant-travel/apps-react/admin",
@@ -37,9 +37,13 @@ export const appsVoyantModule = defineModule({
     }),
     requirePort(financeAppApiRuntimePort, { optional: true }),
     requirePort(appsManagedAuthRuntimePort, { optional: true }),
+    requirePort(appsManagedMarketplaceRuntimePort, { optional: true }),
   ],
   provides: {
-    ports: [providePort(appsManagedAuthRuntimePort)],
+    ports: [
+      providePort(appsManagedAuthRuntimePort),
+      providePort(appsManagedMarketplaceRuntimePort),
+    ],
   },
   api: [
     {

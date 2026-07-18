@@ -16,6 +16,7 @@
     "./extension-resolution": "./src/extension-resolution.ts",
     "./ingestion": "./src/ingestion.ts",
     "./locale-resolution": "./src/locale-resolution.ts",
+    "./marketplace-acquisition": "./src/marketplace-acquisition.ts",
     "./installation-service": "./src/installation-service.ts",
     "./oauth-crypto": "./src/oauth-crypto.ts",
     "./oauth-service": "./src/oauth-service.ts",
@@ -127,6 +128,11 @@
         "types": "./dist/locale-resolution.d.ts",
         "import": "./dist/locale-resolution.js",
         "default": "./dist/locale-resolution.js"
+      },
+      "./marketplace-acquisition": {
+        "types": "./dist/marketplace-acquisition.d.ts",
+        "import": "./dist/marketplace-acquisition.js",
+        "default": "./dist/marketplace-acquisition.js"
       },
       "./installation-service": {
         "types": "./dist/installation-service.d.ts",

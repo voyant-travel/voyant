@@ -122,8 +122,38 @@ export type AppsUiMessages = {
     approving: string
     selectApp: string
     selectRelease: string
+    verifiedApp: string
+    verifiedVersion: string
+    verifyingIdentity: string
+    verifiedMarketplaceIdentity: string
     noOptional: string
     installPolicy: string
+    dataHeading: string
+    classifications: string
+    retention: string
+    storesSecrets: string
+    storesSecretsYes: string
+    storesSecretsNo: string
+    webhooksHeading: string
+    noWebhooks: string
+    extensionsHeading: string
+    noExtensions: string
+    pageExtension: string
+    slotExtension: string
+    policiesHeading: string
+    privacyPolicy: string
+    support: string
+    resolvingIntent: string
+    setupFailed: string
+  }
+  authorization: {
+    title: string
+    description: string
+    accessHeading: string
+    approve: string
+    approving: string
+    invalidRequest: string
+    failed: string
   }
   developer: {
     title: string

@@ -12,6 +12,20 @@ describe("app manifest compiler", () => {
     expect(parsed.data.storesSecrets).toBe(true)
   })
 
+  it("admits an explicit HTTPS managed lifecycle endpoint", () => {
+    const parsed = appManifestSchema.parse({
+      ...validManifest,
+      urls: { ...validManifest.urls, lifecycle: "https://app.example.com/lifecycle" },
+    })
+    expect(parsed.urls.lifecycle).toBe("https://app.example.com/lifecycle")
+    expect(() =>
+      appManifestSchema.parse({
+        ...validManifest,
+        urls: { ...validManifest.urls, lifecycle: "http://app.example.com/lifecycle" },
+      }),
+    ).toThrow(/https/i)
+  })
+
   it("accepts a closed v1 manifest and produces a stable digest", () => {
     const first = compileAppManifest(validManifest)
     const second = compileAppManifest({

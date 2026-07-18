@@ -145,6 +145,7 @@
       "@voyant-travel/apps/ingestion": ["../apps/dist/ingestion.d.ts"],
       "@voyant-travel/apps/installation-service": ["../apps/dist/installation-service.d.ts"],
       "@voyant-travel/apps/locale-resolution": ["../apps/dist/locale-resolution.d.ts"],
+      "@voyant-travel/apps/marketplace-acquisition": ["../apps/dist/marketplace-acquisition.d.ts"],
       "@voyant-travel/apps/oauth-crypto": ["../apps/dist/oauth-crypto.d.ts"],
       "@voyant-travel/apps/oauth-service": ["../apps/dist/oauth-service.d.ts"],
       "@voyant-travel/apps/routes": ["../apps/dist/routes.d.ts"],
