@@ -143,12 +143,21 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 - schemas, migrations, links, and setup migrations
 - workflows, schedules, subscribers, and events
 - admin routes, pages, slots, and contributions
+- reporting datasets, preset widgets, and cross-module grid templates
 - access resources, tools, webhooks, actions, and lifecycle metadata
 - configuration, secrets, resources, and provider requirements
 
 Executable code is referenced through symbolic package exports and remains
 behind lazy imports. Importing `./voyant` must not load route trees, schemas, UI,
 workflow implementations, or infrastructure clients.
+
+Reporting declarations follow the same boundary. Dataset descriptors, preset
+queries, visualizations, and grid templates are source-free JSON metadata;
+dataset execution is a named lazy runtime reference owned by the contributing
+package. The resolved graph composes a deterministic reporting catalog. A
+widget or template whose dataset or widget requirement is not selected remains
+in that catalog as unavailable metadata instead of invalidating the deployment,
+so persisted customer layouts can omit or remove unavailable widget instances.
 
 Link declarations are closed metadata: `kind: "linkable"` advertises an entity
 that can participate in links, while `kind: "definition"` identifies an

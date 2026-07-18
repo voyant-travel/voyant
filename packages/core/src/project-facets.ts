@@ -152,6 +152,92 @@ export interface VoyantGraphPresentationDeclaration extends VoyantGraphFacetEnti
   runtime: VoyantGraphRuntimeReference
 }
 
+export interface VoyantGraphReportingGridSize {
+  width: number
+  height: number
+}
+
+export interface VoyantGraphReportingGridPlacement extends VoyantGraphReportingGridSize {
+  x: number
+  y: number
+}
+
+/** Package-owned semantic dataset metadata. Executable query behavior stays behind runtime. */
+export interface VoyantGraphReportingDataset extends VoyantGraphFacetEntity {
+  version: number
+  label: string
+  description?: string
+  descriptor: VoyantGraphJsonObject
+  runtime: VoyantGraphRuntimeReference
+  requiredScopes?: readonly string[]
+}
+
+/** A reusable, package-owned query and visualization preset. */
+export interface VoyantGraphReportingWidget extends VoyantGraphFacetEntity {
+  version: number
+  label: string
+  description?: string
+  datasetId: string
+  query: VoyantGraphJsonObject
+  visualization: VoyantGraphJsonObject
+  defaultSize: VoyantGraphReportingGridSize
+  minSize?: VoyantGraphReportingGridSize
+  maxSize?: VoyantGraphReportingGridSize
+}
+
+export type VoyantGraphReportingRequirementKind = "dataset" | "widget"
+
+export interface VoyantGraphReportingRequirement {
+  kind: VoyantGraphReportingRequirementKind
+  id: string
+}
+
+export interface VoyantGraphReportTemplateWidget {
+  /** Template-local stable instance id used by persisted layouts. */
+  id: string
+  widgetId: string
+  layout: VoyantGraphReportingGridPlacement
+  config?: VoyantGraphJsonObject
+}
+
+/** A complete grid page which may compose widgets contributed by several selected units. */
+export interface VoyantGraphReportTemplate extends VoyantGraphFacetEntity {
+  version: number
+  label: string
+  description?: string
+  requirements?: readonly VoyantGraphReportingRequirement[]
+  widgets: readonly VoyantGraphReportTemplateWidget[]
+}
+
+export interface VoyantGraphReportingDeclaration {
+  datasets?: readonly VoyantGraphReportingDataset[]
+  widgets?: readonly VoyantGraphReportingWidget[]
+  templates?: readonly VoyantGraphReportTemplate[]
+}
+
+export interface VoyantGraphResolvedReportingDataset extends VoyantGraphReportingDataset {
+  ownerUnitId: string
+  runtimeReferenceId: string
+}
+
+export interface VoyantGraphResolvedReportingWidget extends VoyantGraphReportingWidget {
+  ownerUnitId: string
+  available: boolean
+  missingRequirements: readonly VoyantGraphReportingRequirement[]
+}
+
+export interface VoyantGraphResolvedReportTemplate extends VoyantGraphReportTemplate {
+  ownerUnitId: string
+  available: boolean
+  missingRequirements: readonly VoyantGraphReportingRequirement[]
+}
+
+export interface VoyantGraphReportingCatalog {
+  datasets: readonly VoyantGraphResolvedReportingDataset[]
+  widgets: readonly VoyantGraphResolvedReportingWidget[]
+  templates: readonly VoyantGraphResolvedReportTemplate[]
+}
+
 export interface VoyantGraphToolDeclaration extends VoyantGraphFacetEntity {
   name: string
   runtime: VoyantGraphRuntimeReference

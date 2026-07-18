@@ -577,6 +577,7 @@ function validateGraph(
     !isRecord(value.requirements) ||
     !isRecord(value.capabilities) ||
     !isRecord(value.accessCatalog) ||
+    !isRecord(value.reportingCatalog) ||
     !isRecord(value.webhookPlan) ||
     !isRecord(value.provisioning)
   ) {
@@ -585,7 +586,7 @@ function validateGraph(
       issues,
       "VOYANT_EXPORT_INVALID_GRAPH",
       "$.resolvedGraph",
-      "resolvedGraph is missing required project, deployment, provider, requirement, capability, access, webhook, or provisioning objects.",
+      "resolvedGraph is missing required project, deployment, provider, requirement, capability, access, reporting, webhook, or provisioning objects.",
     )
   }
   if (isRecord(value.deployment)) {
