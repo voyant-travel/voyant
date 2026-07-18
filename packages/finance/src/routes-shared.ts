@@ -9,7 +9,6 @@ export type Env = {
     VOYANT_CHECKOUT_CAPABILITY_TTL_SECONDS: string
     CHECKOUT_CAPABILITY_TTL_SECONDS: string
     SESSION_CLAIMS_SECRET: string
-    BETTER_AUTH_SECRET: string
   }>
   Variables: {
     db: PostgresJsDatabase

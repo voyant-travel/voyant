@@ -58,7 +58,7 @@ pnpm install
 
 # 3. Configure the app
 cp .env.example .env
-# set your secrets (DATABASE_URL, BETTER_AUTH_SECRET, …) in .env
+# set your secrets (DATABASE_URL, BETTER_AUTH_ADMIN_SECRET, …) in .env
 
 # 4. Run the app
 pnpm db:migrate

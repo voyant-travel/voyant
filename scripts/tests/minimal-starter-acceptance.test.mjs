@@ -281,7 +281,7 @@ function spawnVoyant(app, mode, port) {
 function acceptanceEnvironment() {
   return {
     ...process.env,
-    BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
+    BETTER_AUTH_ADMIN_SECRET: "starter-acceptance-admin-auth-secret",
     BETTER_AUTH_CUSTOMER_SECRET: "starter-acceptance-customer-auth-secret",
     DATABASE_URL:
       process.env.TEST_DATABASE_URL ??

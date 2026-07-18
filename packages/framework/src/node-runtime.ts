@@ -72,6 +72,7 @@ import {
   type VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
+import { requireNodeAdminBetterAuthSecret } from "./node-auth-secrets.js"
 import {
   resolveVoyantNodeProviderPlan,
   type VoyantNodeKvProvider,
@@ -113,7 +114,6 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
   SESSION_CLAIMS_SECRET?: string
-  BETTER_AUTH_SECRET?: string
   BETTER_AUTH_ADMIN_SECRET?: string
   BETTER_AUTH_CUSTOMER_SECRET?: string
   VOYANT_CLOUD_WORKFLOWS_URL?: string
@@ -794,7 +794,7 @@ function createManagedBetterAuth(env: VoyantNodeRuntimeEnv, db: VoyantDb) {
 
   return createBetterAuth({
     db: authDb,
-    secret: env.BETTER_AUTH_SECRET,
+    secret: requireNodeAdminBetterAuthSecret(env),
     baseURL: getManagedAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getManagedTrustedOrigins(env),

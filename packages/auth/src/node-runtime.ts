@@ -52,8 +52,6 @@ export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   API_BASE_URL?: string
   APP_URL?: string
   AUTH_COOKIE_DOMAIN?: string
-  /** @deprecated Use BETTER_AUTH_ADMIN_SECRET. */
-  BETTER_AUTH_SECRET?: string
   BETTER_AUTH_ADMIN_SECRET?: string
   BETTER_AUTH_CUSTOMER_SECRET?: string
   CORS_ALLOWLIST?: string
@@ -422,17 +420,15 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
    * pool. The Better Auth instance is not cached independently of that owner.
    */
   function requireAdminAuthSecret(env: Env): string {
-    const secret = env.BETTER_AUTH_ADMIN_SECRET?.trim() || env.BETTER_AUTH_SECRET?.trim()
+    const secret = env.BETTER_AUTH_ADMIN_SECRET?.trim()
     if (!secret) throw new Error("Admin auth requires BETTER_AUTH_ADMIN_SECRET")
     return secret
   }
 
   function requireCustomerAuthSecret(env: Env): string {
     const secret = env.BETTER_AUTH_CUSTOMER_SECRET?.trim()
-    if (secret) return secret
-    // Compatibility bridge for deployments created before realm-specific
-    // secrets. The suffix gives the customer cookie an independent signature.
-    return `${requireAdminAuthSecret(env)}:voyant-customer-realm`
+    if (!secret) throw new Error("Customer auth requires BETTER_AUTH_CUSTOMER_SECRET")
+    return secret
   }
 
   function envEnabled(value: string | undefined, fallback: boolean): boolean {
@@ -723,9 +719,13 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     request: Request,
     env: Env,
   ): Promise<VoyantRequestAuthContext | null> {
+    const customerSurface = new URL(request.url).pathname.includes("/v1/public/")
+    if (customerSurface && env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return null
+    }
+
     const { db, dispose } = openDatabase(env)
     try {
-      const customerSurface = new URL(request.url).pathname.includes("/v1/public/")
       const auth = customerSurface
         ? buildCustomerBetterAuth(env, db, request)
         : buildAdminBetterAuth(env, db)

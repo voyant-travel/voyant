@@ -39,7 +39,7 @@ COPY --from=build /repo/starters/operator/dist ./dist
 COPY --from=build /deploy/node_modules ./node_modules
 COPY --from=build /repo/starters/operator/package.json ./package.json
 
-# The platform supplies env (DATABASE_URL / DATABASE_URL_DIRECT, BETTER_AUTH_SECRET,
+# The platform supplies env (DATABASE_URL / DATABASE_URL_DIRECT, realm auth secrets,
 # SESSION_CLAIMS_SECRET, INTERNAL_API_KEY, ORIGIN_TRUST_SECRET, APP_URL, …). The
 # server reads PORT (default 8080) and exposes /healthz for container probes.
 ENV PORT=8080

@@ -28,10 +28,10 @@ import { expandTrustedOrigins, getTrustedOrigins } from "./trusted-origins.js"
 import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
 
 export function getAuthSecret(): string {
-  const secret = process.env.BETTER_AUTH_SECRET || ""
+  const secret = process.env.BETTER_AUTH_ADMIN_SECRET || ""
 
   if (!secret || secret.length < 32) {
-    throw new Error("Missing BETTER_AUTH_SECRET with at least 32 characters")
+    throw new Error("Missing BETTER_AUTH_ADMIN_SECRET with at least 32 characters")
   }
 
   return secret

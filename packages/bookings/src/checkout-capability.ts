@@ -39,7 +39,6 @@ export function resolveCheckoutCapabilitySecret(env: Record<string, string | und
     env.VOYANT_CHECKOUT_CAPABILITY_SECRET ??
     env.CHECKOUT_CAPABILITY_SECRET ??
     env.SESSION_CLAIMS_SECRET ??
-    env.BETTER_AUTH_SECRET ??
     ""
   )
 }

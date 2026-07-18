@@ -28,9 +28,9 @@ compatibility window so an older runtime can still read a new graph.
   `vault://` credential references and resolve credentials through the runtime
   customer-auth context adapter.
 
-`BETTER_AUTH_SECRET` remains an admin-secret alias. When no customer secret is
-present, the Node runtime derives a distinct compatibility secret, but this is
-only a migration bridge; production deployments should set both secrets.
+`BETTER_AUTH_ADMIN_SECRET` and `BETTER_AUTH_CUSTOMER_SECRET` are required as
+separate values. The runtime does not accept the old shared secret or derive one
+realm's secret from the other.
 
 ## Identity data migration
 
