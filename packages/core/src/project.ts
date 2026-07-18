@@ -202,7 +202,11 @@ export interface VoyantGraphRuntimeFactoryGraph {
   readonly actions?: readonly VoyantGraphActionDeclaration[]
   readonly references: readonly {
     readonly id: string
+    readonly unitId: string
+    readonly facet: string
+    readonly entityId: string
     readonly importEntry: string
+    load<T = unknown>(): Promise<T>
     loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
   }[]
   readonly setupSteps: readonly {

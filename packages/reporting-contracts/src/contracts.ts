@@ -1,6 +1,7 @@
 import { z } from "zod"
 
-const identifierPattern = /^[a-z0-9][a-z0-9._/-]*$/
+// Graph entity ids commonly include scoped package names and a `#facet.entity` suffix.
+const identifierPattern = /^[a-z0-9@][a-z0-9._/@#-]*$/
 
 export const reportingIdentifierSchema = z.string().trim().min(1).max(160).regex(identifierPattern)
 export const reportingVersionSchema = z.number().int().positive()

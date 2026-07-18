@@ -22,12 +22,17 @@ export interface ReportDatasetExecutionInput {
   maximumRows: number
 }
 
-export interface ReportDatasetContribution {
-  definition: ReportDatasetDefinition
+/** Executable half of a manifest-declared dataset. */
+export interface ReportDatasetRuntime {
   execute(
     context: ReportDatasetExecutionContext,
     input: ReportDatasetExecutionInput,
   ): Promise<ReportResult> | ReportResult
+}
+
+/** Programmatic contribution shape for datasets which do not come from a package manifest. */
+export interface ReportDatasetContribution extends ReportDatasetRuntime {
+  definition: ReportDatasetDefinition
 }
 
 /** One module-owned contribution to the reporting catalog. */
