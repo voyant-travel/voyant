@@ -641,6 +641,15 @@ function normalizeProjectDeployment(
       }
       providers[role] = provider
     }
+    // `auth` is the pre-realm deployment role. Keep accepting it for one
+    // migration cycle, but emit only the realm-specific provider contract.
+    if (providers.auth) {
+      providers.adminAuth ??= providers.auth
+      providers.customerAuth ??= "better-auth"
+    }
+    // Emit the v1 alias so older runtimes can still consume newly-authored
+    // graphs during the compatibility window.
+    if (providers.adminAuth) providers.auth ??= providers.adminAuth
   }
 
   const migrations = (input.migrations ?? [])

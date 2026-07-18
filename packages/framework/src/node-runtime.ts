@@ -66,10 +66,10 @@ import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
-import type {
-  VoyantDeploymentEnvRequirement,
-  VoyantDeploymentMode,
-  VoyantDeploymentProviders,
+import type { VoyantDeploymentEnvRequirement, VoyantDeploymentMode } from "./deployment-types.js"
+import {
+  resolveDeploymentAuthProviders,
+  type VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
 import {
@@ -101,6 +101,7 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   REDIS_URL?: string
   RATE_LIMIT_STORE?: RateLimitStore
   VOYANT_ADMIN_AUTH_MODE?: string
+  VOYANT_CUSTOMER_AUTH_MODE?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ADMIN_AUTH_START_URL?: string
   VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?: string
@@ -110,6 +111,8 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
   SESSION_CLAIMS_SECRET?: string
   BETTER_AUTH_SECRET?: string
+  BETTER_AUTH_ADMIN_SECRET?: string
+  BETTER_AUTH_CUSTOMER_SECRET?: string
   VOYANT_CLOUD_WORKFLOWS_URL?: string
   VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?: string
   VOYANT_CLOUD_APP_SLUG?: string
@@ -262,7 +265,8 @@ const MANAGED_CLOUD_AUTH_REQUIRED_ENV = [
   "VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL",
   "VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN",
   "SESSION_CLAIMS_SECRET",
-  "BETTER_AUTH_SECRET",
+  "BETTER_AUTH_ADMIN_SECRET",
+  "BETTER_AUTH_CUSTOMER_SECRET",
 ] as const
 const MANAGED_FULL_ACCESS_SCOPES = ["*"]
 const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
@@ -285,11 +289,11 @@ const MATERIALIZED_NODE_ENVS = new WeakMap<object, string>()
 function selectedNodeAuthMode(
   providers: Readonly<Record<string, string>>,
 ): "local" | "voyant-cloud" {
-  const provider = providers.auth
+  const provider = resolveDeploymentAuthProviders(providers).adminAuth
   if (provider === "better-auth") return "local"
   if (provider === "voyant-cloud") return "voyant-cloud"
   throw new Error(
-    `Unsupported deployment.providers.auth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
+    `Unsupported deployment.providers.adminAuth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
   )
 }
 
@@ -301,6 +305,10 @@ export async function loadVoyantNodeRuntime(
   const providerEnv = {
     ...Object.fromEntries(Object.entries(options.env ?? process.env)),
     VOYANT_ADMIN_AUTH_MODE: selectedNodeAuthMode(options.deployment.providers),
+    VOYANT_CUSTOMER_AUTH_MODE:
+      resolveDeploymentAuthProviders(options.deployment.providers).customerAuth === "disabled"
+        ? "disabled"
+        : "better-auth",
   }
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, providerEnv)
   if (providerIssues.length > 0) {

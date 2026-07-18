@@ -168,6 +168,8 @@ export function resolveDbFactoryResult(value: VoyantDb | DisposableDb): {
 export type VoyantRequestAuthContext = Omit<VoyantAuthContext, "actor"> & {
   userId: string
   actor: Actor
+  /** Explicit security realm for session identities. */
+  realm?: "admin" | "customer"
 }
 
 export interface LogEntry {

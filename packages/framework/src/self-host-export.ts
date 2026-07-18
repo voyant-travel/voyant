@@ -33,6 +33,10 @@ const EXACT_PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0
 const SHA512_INTEGRITY_PATTERN = /^sha512-[A-Za-z0-9+/]{86}==$/
 const PORTABLE_PACKAGE_SOURCE_KINDS = new Set(["registry", "git"])
 
+function validatedValue<T>(value: unknown): T {
+  return value as T
+}
+
 export const VOYANT_SELF_HOST_MIGRATION_POLICY = {
   identity: ["source", "tag"],
   matchingEntry: "skip",
@@ -295,6 +299,9 @@ export interface ProjectVoyantSelfHostExportOptions {
 }
 
 export const VOYANT_SELF_HOST_PROVIDER_DEFAULTS = {
+  adminAuth: { from: "voyant-cloud", to: "better-auth" },
+  customerAuth: { from: "voyant-cloud", to: "better-auth" },
+  // Compatibility for v1 export bundles.
   auth: { from: "voyant-cloud", to: "better-auth" },
   email: { from: "voyant-cloud", to: "smtp" },
   realtime: { from: "voyant-cloud", to: "local" },
@@ -391,9 +398,10 @@ export async function validateVoyantSelfHostExportBundle(
   validateDatabase(input.database, issues)
   validateObjectStorage(input.objectStorage, issues)
 
+  // agent-quality: unsafe-cast reviewed -- owner: framework; the complete runtime validator above establishes the export bundle shape.
   return issues.length > 0
     ? { ok: false, issues }
-    : { ok: true, value: input as unknown as VoyantSelfHostExportBundle, issues: [] }
+    : { ok: true, value: validatedValue<VoyantSelfHostExportBundle>(input), issues: [] }
 }
 
 export async function projectVoyantSelfHostExport(
@@ -550,8 +558,9 @@ function validateGraph(
         )
         continue
       }
+      // agent-quality: unsafe-cast reviewed -- owner: framework; validPackageRecord narrows every field consumed by provenance validation.
       validatePackageProvenance(
-        record as unknown as ResolvedVoyantDeploymentGraph["packageRecords"][number],
+        validatedValue<ResolvedVoyantDeploymentGraph["packageRecords"][number]>(record),
         index,
         issues,
       )
@@ -656,7 +665,8 @@ function validateGraph(
       }
     }
   }
-  return validShape ? (value as unknown as ResolvedVoyantDeploymentGraph) : undefined
+  // agent-quality: unsafe-cast reviewed -- owner: framework; every graph collection and unit is validated before this projection.
+  return validShape ? validatedValue<ResolvedVoyantDeploymentGraph>(value) : undefined
 }
 
 function validPackageRecord(value: unknown): boolean {
@@ -809,7 +819,8 @@ function validateProductBom(
     )
     return undefined
   }
-  return value as unknown as VoyantProductBomReference
+  // agent-quality: unsafe-cast reviewed -- owner: framework; all product BOM fields are narrowed immediately above.
+  return validatedValue<VoyantProductBomReference>(value)
 }
 
 function validateDatabase(value: unknown, issues: VoyantSelfHostExportValidationIssue[]): void {

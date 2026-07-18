@@ -84,7 +84,8 @@ async function main(): Promise<void> {
     first.deployment.mode !== "self-hosted" ||
     first.deployment.providers.database !== "postgres" ||
     first.deployment.providers.storage !== "memory" ||
-    first.deployment.providers.auth === "voyant-cloud" ||
+    first.deployment.providers.adminAuth === "voyant-cloud" ||
+    first.deployment.providers.customerAuth !== "better-auth" ||
     first.deployment.providers.workflows === "voyant-cloud"
   ) {
     failures.push("expected standard Operator graph to preserve self-hosted provider defaults")

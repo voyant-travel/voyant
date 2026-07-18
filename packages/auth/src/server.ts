@@ -6,6 +6,10 @@ import {
   authSession,
   authUser,
   authVerification,
+  customerAuthAccount,
+  customerAuthSession,
+  customerAuthUser,
+  customerAuthVerification,
 } from "@voyant-travel/db/schema/iam"
 import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
@@ -73,10 +77,9 @@ type VoyantBetterAuthPlugins = [
   ReturnType<typeof createLocalMemberAccessPlugin>,
 ]
 
-type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
-  Plugins extends BetterAuthPlugin[]
-    ? [...VoyantBetterAuthPlugins, ...Plugins]
-    : VoyantBetterAuthPlugins
+type ResolvedBetterAuthPlugins<_Plugins extends BetterAuthPlugin[] | undefined> =
+  | VoyantBetterAuthPlugins
+  | BetterAuthPlugin[]
 
 const DEFAULT_SIGNUP_BLOCK_SURFACES = ["admin"] as const
 const CUSTOMER_SIGNUP_ENDPOINT_SUFFIXES = [
@@ -196,6 +199,31 @@ type ResolvedCreateBetterAuthOptions<
 
 export type BetterAuthDrizzleSchema = Record<string, AnyPgTable>
 
+export type VoyantAuthRealm = "admin" | "customer"
+
+export interface BetterAuthRealmTables {
+  user: AnyPgTable
+  session: AnyPgTable
+  account: AnyPgTable
+  verification: AnyPgTable
+  apikey?: AnyPgTable
+}
+
+const ADMIN_AUTH_TABLES: BetterAuthRealmTables = {
+  user: authUser,
+  session: authSession,
+  account: authAccount,
+  verification: authVerification,
+  apikey: apikeyTable,
+}
+
+const CUSTOMER_AUTH_TABLES: BetterAuthRealmTables = {
+  user: customerAuthUser,
+  session: customerAuthSession,
+  account: customerAuthAccount,
+  verification: customerAuthVerification,
+}
+
 export interface CreateBetterAuthOptions<
   UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
   Plugins extends BetterAuthPlugin[] | undefined = BetterAuthPlugin[] | undefined,
@@ -205,6 +233,10 @@ export interface CreateBetterAuthOptions<
   baseURL?: string
   basePath?: string
   trustedOrigins?: string[]
+  /** Security realm. Existing callers default to the isolated admin realm. */
+  realm?: VoyantAuthRealm
+  /** Override only when an adapter owns a compatible Better Auth schema. */
+  realmTables?: BetterAuthRealmTables
   /**
    * Additional Drizzle tables for Better Auth plugins. The consuming app owns
    * matching migrations for every table passed here.
@@ -212,6 +244,10 @@ export interface CreateBetterAuthOptions<
   extraSchema?: BetterAuthDrizzleSchema
   plugins?: Plugins
   user?: UserOptions
+  /** Resolved credentials; the auth package never persists provider secrets. */
+  socialProviders?: BetterAuthOptions["socialProviders"]
+  emailCodeEnabled?: boolean
+  emailPasswordEnabled?: boolean
   /**
    * Surfaces stamped on Better Auth customer self-signups before the bundled
    * single-tenant signup guard evaluates the new user. Applies to Better
@@ -272,15 +308,14 @@ export function createBetterAuth<
     baseURL,
   )
   const extraPlugins = options.plugins ?? []
+  const realm = options.realm ?? "admin"
+  const realmTables =
+    options.realmTables ?? (realm === "customer" ? CUSTOMER_AUTH_TABLES : ADMIN_AUTH_TABLES)
   const signupBlockSurfaces = normalizeSignupBlockSurfaces(options.disableSignupWhenUsersExist)
   const signupBlockEnabled = isSignupBlockEnabled(options.disableSignupWhenUsersExist)
   const customerSignupSurfaces = normalizeSurfaceList(options.customerSignupSurfaces)
   const schema = {
-    user: authUser,
-    session: authSession,
-    account: authAccount,
-    verification: authVerification,
-    apikey: apikeyTable,
+    ...realmTables,
     ...(options.extraSchema ?? {}),
   } satisfies BetterAuthDrizzleSchema
   const rateLimit =
@@ -316,7 +351,7 @@ export function createBetterAuth<
           },
         }),
     emailAndPassword: {
-      enabled: true,
+      enabled: options.emailPasswordEnabled !== false,
       minPasswordLength: 8,
       maxPasswordLength: 128,
       requireEmailVerification: true,
@@ -341,106 +376,177 @@ export function createBetterAuth<
         ...options.user?.changeEmail,
       },
     } as ResolvedBetterAuthUserOptions<UserOptions>,
-    socialProviders: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID || "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        enabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      },
-    },
+    socialProviders: options.socialProviders ?? {},
     trustedOrigins,
     plugins: [
-      apiKey({
-        defaultPrefix: "voy_",
-        apiKeyHeaders: ["authorization"],
-        requireName: true,
-        keyExpiration: {
-          defaultExpiresIn: null,
-        },
-      }),
-      emailOTP({
-        // eslint-disable-next-line @typescript-eslint/require-await -- owner: auth; existing suppression is intentional pending typed cleanup.
-        sendVerificationOTP:
-          options.sendVerificationOTP ??
-          (async ({ email, otp, type }) => {
-            console.warn(`[Auth] OTP for ${email}: ${otp} (${type})`)
-          }),
-        otpLength: 6,
-        expiresIn: 600,
-        sendVerificationOnSignUp: true,
-        changeEmail: {
-          enabled: true,
-        },
-      }),
-      createLocalMemberAccessPlugin({
-        isEmailDeactivated: (email) => isLocalMemberEmailDeactivated(db, email),
-        isSessionActive: (sessionId, userId) => isLocalMemberSessionActive(db, sessionId, userId),
-        isUserDeactivated: (userId) => isLocalMemberDeactivated(db, userId),
-      }),
+      ...(realm === "admin"
+        ? [
+            apiKey({
+              defaultPrefix: "voy_",
+              apiKeyHeaders: ["authorization"],
+              requireName: true,
+              keyExpiration: {
+                defaultExpiresIn: null,
+              },
+            }),
+          ]
+        : []),
+      ...(options.emailCodeEnabled === false
+        ? []
+        : [
+            emailOTP({
+              // eslint-disable-next-line @typescript-eslint/require-await -- owner: auth; existing suppression is intentional pending typed cleanup.
+              sendVerificationOTP:
+                options.sendVerificationOTP ??
+                (async ({ email, otp, type }) => {
+                  console.warn(`[Auth] OTP for ${email}: ${otp} (${type})`)
+                }),
+              otpLength: 6,
+              expiresIn: 600,
+              sendVerificationOnSignUp: true,
+              changeEmail: {
+                enabled: true,
+              },
+            }),
+          ]),
+      ...(realm === "admin"
+        ? [
+            createLocalMemberAccessPlugin({
+              isEmailDeactivated: (email) => isLocalMemberEmailDeactivated(db, email),
+              isSessionActive: (sessionId, userId) =>
+                isLocalMemberSessionActive(db, sessionId, userId),
+              isUserDeactivated: (userId) => isLocalMemberDeactivated(db, userId),
+            }),
+          ]
+        : []),
       ...extraPlugins,
     ] as ResolvedBetterAuthPlugins<Plugins>,
-    databaseHooks: {
-      user: {
-        create: {
-          // Single-tenant: once a user exists, reject any new-user creation.
-          // Covers email sign-up AND social-provider sign-up (Google would
-          // otherwise auto-create a user on first OAuth callback). Existing
-          // social sign-ins still work because this hook only fires on CREATE.
-          // Seed scripts do raw drizzle inserts, so they bypass this hook —
-          // which is intentional.
-          before: async (user, context): Promise<BetterAuthCreateBeforeResult> => {
-            const normalizedUser = stampCustomerSignupSurfaces(
-              user as SignupBlockUserPayload,
-              context as BetterAuthHookContext | null,
-              customerSignupSurfaces,
-            )
+    ...(realm === "admin"
+      ? {
+          databaseHooks: {
+            user: {
+              create: {
+                // Single-tenant: once a user exists, reject any new-user creation.
+                // Covers email sign-up AND social-provider sign-up (Google would
+                // otherwise auto-create a user on first OAuth callback). Existing
+                // social sign-ins still work because this hook only fires on CREATE.
+                // Seed scripts do raw drizzle inserts, so they bypass this hook —
+                // which is intentional.
+                before: async (user, context): Promise<BetterAuthCreateBeforeResult> => {
+                  const normalizedUser = stampCustomerSignupSurfaces(
+                    user as SignupBlockUserPayload,
+                    context as BetterAuthHookContext | null,
+                    customerSignupSurfaces,
+                  )
 
-            if (
-              !signupBlockEnabled ||
-              !signupBlockAppliesToUser(normalizedUser, signupBlockSurfaces)
-            ) {
-              if (normalizedUser === user) {
-                return
-              }
-              return { data: normalizedUser as Record<string, unknown> }
-            }
+                  if (
+                    !signupBlockEnabled ||
+                    !signupBlockAppliesToUser(normalizedUser, signupBlockSurfaces)
+                  ) {
+                    if (normalizedUser === user) {
+                      return
+                    }
+                    return { data: normalizedUser as Record<string, unknown> }
+                  }
 
-            const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-            if ((row?.count ?? 0) > 0) {
-              throw new Error("Sign-up is disabled. Ask an admin to invite you.")
-            }
+                  const [row] = await db
+                    .select({ count: sql<number>`count(*)::int` })
+                    .from(realmTables.user)
+                  if ((row?.count ?? 0) > 0) {
+                    throw new Error("Sign-up is disabled. Ask an admin to invite you.")
+                  }
 
-            if (normalizedUser !== user) {
-              return { data: normalizedUser as Record<string, unknown> }
-            }
+                  if (normalizedUser !== user) {
+                    return { data: normalizedUser as Record<string, unknown> }
+                  }
+                },
+                after: async (user, context) => {
+                  if (
+                    customerSignupSurfaces.length > 0 &&
+                    isCustomerSignupCreate(context as BetterAuthHookContext | null)
+                  ) {
+                    return
+                  }
+
+                  // Single-tenant bootstrap: the very first user to register becomes
+                  // the super-admin. Runs atomically after the `user` row is
+                  // inserted, so a simple COUNT(*) = 1 check identifies them.
+                  await provisionCurrentUserProfile(db, {
+                    userId: user.id,
+                    name: user.name,
+                    image: user.image,
+                    isSuperAdmin: await isFirstAuthUser(db),
+                  })
+                },
+              },
+            },
           },
-          after: async (user, context) => {
-            if (
-              customerSignupSurfaces.length > 0 &&
-              isCustomerSignupCreate(context as BetterAuthHookContext | null)
-            ) {
-              return
-            }
-
-            // Single-tenant bootstrap: the very first user to register becomes
-            // the super-admin. Runs atomically after the `user` row is
-            // inserted, so a simple COUNT(*) = 1 check identifies them.
-            await provisionCurrentUserProfile(db, {
-              userId: user.id,
-              name: user.name,
-              image: user.image,
-              isSuperAdmin: await isFirstAuthUser(db),
-            })
-          },
-        },
-      },
-    },
+        }
+      : {}),
     advanced: {
       ...options.advanced,
+      cookiePrefix:
+        options.advanced?.cookiePrefix ??
+        (realm === "customer" ? "voyant-customer" : "voyant-admin"),
       useSecureCookies:
         options.advanced?.useSecureCookies ?? process.env.NODE_ENV !== "development",
     },
   } as ResolvedCreateBetterAuthOptions<UserOptions, Plugins>
 
   return betterAuth<ResolvedCreateBetterAuthOptions<UserOptions, Plugins>>(authOptions)
+}
+
+export type CreateAdminBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined = BetterAuthPlugin[] | undefined,
+> = Omit<CreateBetterAuthOptions<UserOptions, Plugins>, "realm" | "realmTables">
+
+export function createAdminBetterAuth<
+  const UserOptions extends BetterAuthOptions["user"] = undefined,
+  const Plugins extends BetterAuthPlugin[] | undefined = undefined,
+>(options: CreateAdminBetterAuthOptions<UserOptions, Plugins> = {}) {
+  return createBetterAuth({
+    ...options,
+    realm: "admin",
+    realmTables: ADMIN_AUTH_TABLES,
+    basePath: options.basePath ?? "/auth/admin",
+  })
+}
+
+export interface CustomerAuthMethods {
+  emailCode?: boolean
+  emailPassword?: boolean
+  /** Better Auth provider configs such as google, facebook, and apple. */
+  socialProviders?: BetterAuthOptions["socialProviders"]
+}
+
+export type CreateCustomerBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined = BetterAuthPlugin[] | undefined,
+> = Omit<
+  CreateBetterAuthOptions<UserOptions, Plugins>,
+  | "realm"
+  | "realmTables"
+  | "customerSignupSurfaces"
+  | "disableSignupWhenUsersExist"
+  | "socialProviders"
+  | "emailCodeEnabled"
+  | "emailPasswordEnabled"
+> & { methods?: CustomerAuthMethods }
+
+/** Storefront realm factory with isolated tables, cookies, secret, and routes. */
+export function createCustomerBetterAuth<
+  const UserOptions extends BetterAuthOptions["user"] = undefined,
+  const Plugins extends BetterAuthPlugin[] | undefined = undefined,
+>(options: CreateCustomerBetterAuthOptions<UserOptions, Plugins> = {}) {
+  return createBetterAuth({
+    ...options,
+    realm: "customer",
+    realmTables: CUSTOMER_AUTH_TABLES,
+    basePath: options.basePath ?? "/auth/customer",
+    disableSignupWhenUsersExist: { enabled: false },
+    emailCodeEnabled: options.methods?.emailCode ?? true,
+    emailPasswordEnabled: options.methods?.emailPassword ?? true,
+    socialProviders: options.methods?.socialProviders,
+  })
 }

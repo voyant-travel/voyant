@@ -5,6 +5,40 @@ export type VoyantFetcher = (url: string, init?: RequestInit) => Promise<Respons
 export const defaultFetcher: VoyantFetcher = (url, init) =>
   fetch(url, { credentials: "include", ...init })
 
+function trimTrailingSlash(value: string): string {
+  return value.endsWith("/") ? value.slice(0, -1) : value
+}
+
+function normalizePath(value: string): string {
+  const path = value.startsWith("/") ? value : `/${value}`
+  return trimTrailingSlash(path)
+}
+
+/**
+ * Routes auth-react requests to a specific auth realm without changing other API calls.
+ * The replacement is deliberately scoped to the configured API base URL so a customer
+ * provider cannot accidentally rewrite an unrelated or admin-auth URL.
+ */
+export function createAuthBasePathFetcher(
+  fetcher: VoyantFetcher,
+  options: { baseUrl: string; authBasePath: string },
+): VoyantFetcher {
+  const baseUrl = trimTrailingSlash(options.baseUrl)
+  const defaultAuthBaseUrl = `${baseUrl}/auth`
+  const realmAuthBaseUrl = `${baseUrl}${normalizePath(options.authBasePath)}`
+
+  return (url, init) => {
+    const isDefaultAuthRequest =
+      url === defaultAuthBaseUrl ||
+      url.startsWith(`${defaultAuthBaseUrl}/`) ||
+      url.startsWith(`${defaultAuthBaseUrl}?`)
+    const target = isDefaultAuthRequest
+      ? `${realmAuthBaseUrl}${url.slice(defaultAuthBaseUrl.length)}`
+      : url
+    return fetcher(target, init)
+  }
+}
+
 export class VoyantApiError extends Error {
   readonly status: number
   readonly body: unknown

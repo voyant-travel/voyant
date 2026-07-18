@@ -171,7 +171,7 @@ function envForProvider(
       ]
     }
   }
-  if (role === "auth" && provider === "voyant-cloud") {
+  if (role === "adminAuth" && provider === "voyant-cloud") {
     return [
       variable("VOYANT_CLOUD_DEPLOYMENT_ID", "Voyant Cloud deployment id."),
       variable("VOYANT_CLOUD_ADMIN_AUTH_START_URL", "Cloud admin auth start URL."),
@@ -180,13 +180,28 @@ function envForProvider(
       variable("VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL", "Cloud admin auth revalidation URL."),
       secret("VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN", "Cloud admin auth client token."),
       secret("SESSION_CLAIMS_SECRET", "Session claim signing secret."),
-      secret("BETTER_AUTH_SECRET", "Better Auth secret."),
+      secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth admin-realm secret.", true, [
+        "BETTER_AUTH_SECRET",
+      ]),
     ]
   }
-  if (role === "auth" && provider === "better-auth") {
+  if (role === "adminAuth" && provider === "better-auth") {
     return [
-      secret("BETTER_AUTH_SECRET", "Better Auth secret used to sign local auth sessions."),
+      secret(
+        "BETTER_AUTH_ADMIN_SECRET",
+        "Better Auth secret used to sign local admin sessions.",
+        true,
+        ["BETTER_AUTH_SECRET"],
+      ),
       secret("SESSION_CLAIMS_SECRET", "Session claims signing secret."),
+    ]
+  }
+  if (role === "customerAuth" && provider === "better-auth") {
+    return [
+      secret(
+        "BETTER_AUTH_CUSTOMER_SECRET",
+        "Better Auth secret used only for storefront customer sessions.",
+      ),
     ]
   }
   if (role === "realtime" && provider === "voyant-cloud") {

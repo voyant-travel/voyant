@@ -21,7 +21,8 @@ if (existsSync(join(root, retiredCookiePolicyPath))) {
 }
 
 for (const token of [
-  "createBetterAuth(",
+  "createAdminBetterAuth(",
+  "createCustomerBetterAuth(",
   "createCloudAdminAuthStart(",
   "revalidateVoyantCloudAdminAuthSession(",
   'auth.all("/auth/',
@@ -40,7 +41,8 @@ if (!existsSync(join(root, runtimePath))) {
   for (const token of [
     "createOperatorAuthNodeRuntime",
     "buildBetterAuthCookieAdvancedOptions",
-    "createBetterAuth(",
+    "createAdminBetterAuth(",
+    "createCustomerBetterAuth(",
     "createCloudAdminAuthStart(",
     "revalidateVoyantCloudAdminAuthSession(",
     'auth.all("/auth/*"',

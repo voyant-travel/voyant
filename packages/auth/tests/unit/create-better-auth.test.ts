@@ -1,9 +1,15 @@
+// agent-quality: file-size exception -- owner: auth; this factory suite keeps shared Better Auth mocks and realm-isolation assertions together.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { CreateBetterAuthOptions } from "../../src/server.js"
 
 type BetterAuthConfig = {
+  basePath?: string
+  databaseHooks?: unknown
+  plugins: Array<{ id?: string }>
+  socialProviders?: Record<string, unknown>
   advanced: {
+    cookiePrefix?: string
     crossSubDomainCookies?: {
       enabled: boolean
       domain?: string
@@ -49,6 +55,10 @@ vi.mock("@voyant-travel/db/schema/iam", () => ({
   authSession: { name: "session" },
   authUser: { name: "user" },
   authVerification: { name: "verification" },
+  customerAuthAccount: { name: "customerAccount" },
+  customerAuthSession: { name: "customerSession" },
+  customerAuthUser: { name: "customerUser" },
+  customerAuthVerification: { name: "customerVerification" },
   userProfilesTable: { name: "userProfiles" },
 }))
 
@@ -101,6 +111,47 @@ describe("createBetterAuth", () => {
       select,
     }
   }
+
+  it("isolates the customer realm from admin tables, cookies, and plugins", async () => {
+    const { createCustomerBetterAuth } = await import("../../src/server.js")
+
+    createCustomerBetterAuth({
+      db: { id: "db" } as never,
+      secret: "c".repeat(32),
+      baseURL: "https://shop.example.com",
+      methods: {
+        socialProviders: {
+          google: { clientId: "google-id", clientSecret: "google-secret" },
+          facebook: { clientId: "facebook-id", clientSecret: "facebook-secret" },
+          apple: { clientId: "apple-id", clientSecret: "apple-secret" },
+        },
+      },
+    })
+
+    const config = latestBetterAuthConfig()
+    expect(config.basePath).toBe("/auth/customer")
+    expect(config.advanced).toMatchObject({ cookiePrefix: "voyant-customer" })
+    expect(config.databaseHooks).toBeUndefined()
+    expect(config.plugins.some((plugin) => plugin.id === "apiKey")).toBe(false)
+    expect(config.socialProviders).toEqual(
+      expect.objectContaining({
+        google: expect.any(Object),
+        facebook: expect.any(Object),
+        apple: expect.any(Object),
+      }),
+    )
+    expect(drizzleAdapterMock).toHaveBeenLastCalledWith(
+      { id: "db" },
+      expect.objectContaining({
+        schema: expect.objectContaining({
+          user: { name: "customerUser" },
+          session: { name: "customerSession" },
+          account: { name: "customerAccount" },
+          verification: { name: "customerVerification" },
+        }),
+      }),
+    )
+  })
 
   it("defaults secure cookies on outside explicit local development", async () => {
     const { createBetterAuth } = await import("../../src/server.js")

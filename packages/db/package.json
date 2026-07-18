@@ -38,6 +38,8 @@
     "./schema/iam/apikey": "./src/schema/iam/apikey.ts",
     "./schema/iam/auth": "./src/schema/iam/auth.ts",
     "./schema/iam/cloud_auth": "./src/schema/iam/cloud_auth.ts",
+    "./schema/iam/customer_auth": "./src/schema/iam/customer_auth.ts",
+    "./schema/iam/customer_profiles": "./src/schema/iam/customer_profiles.ts",
     "./schema/iam/invitations": "./src/schema/iam/invitations.ts",
     "./schema/iam/kms": "./src/schema/iam/kms.ts",
     "./schema/iam/roles": "./src/schema/iam/roles.ts",
@@ -218,6 +220,16 @@
         "types": "./dist/schema/iam/cloud_auth.d.ts",
         "import": "./dist/schema/iam/cloud_auth.js",
         "default": "./dist/schema/iam/cloud_auth.js"
+      },
+      "./schema/iam/customer_auth": {
+        "types": "./dist/schema/iam/customer_auth.d.ts",
+        "import": "./dist/schema/iam/customer_auth.js",
+        "default": "./dist/schema/iam/customer_auth.js"
+      },
+      "./schema/iam/customer_profiles": {
+        "types": "./dist/schema/iam/customer_profiles.d.ts",
+        "import": "./dist/schema/iam/customer_profiles.js",
+        "default": "./dist/schema/iam/customer_profiles.js"
       },
       "./schema/iam/invitations": {
         "types": "./dist/schema/iam/invitations.d.ts",

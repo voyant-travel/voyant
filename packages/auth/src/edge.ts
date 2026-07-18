@@ -13,13 +13,30 @@
  */
 
 import { getDb } from "@voyant-travel/db"
-import { authSession, authUser } from "@voyant-travel/db/schema/iam"
+import {
+  authSession,
+  authUser,
+  customerAuthSession,
+  customerAuthUser,
+} from "@voyant-travel/db/schema/iam"
 import { and, eq, gt } from "drizzle-orm"
 
-const SESSION_COOKIE_NAME = "better-auth.session_token"
+export interface EdgeAuthRealmOptions {
+  realm?: "admin" | "customer"
+  cookieName?: string
+  secret?: string
+}
 
-function getAuthSecret(): string {
-  return process.env.BETTER_AUTH_SECRET || process.env.SESSION_CLAIMS_SECRET || ""
+function getAuthSecret(realm: "admin" | "customer"): string {
+  if (realm === "customer") {
+    return process.env.BETTER_AUTH_CUSTOMER_SECRET || ""
+  }
+  return (
+    process.env.BETTER_AUTH_ADMIN_SECRET ||
+    process.env.BETTER_AUTH_SECRET ||
+    process.env.SESSION_CLAIMS_SECRET ||
+    ""
+  )
 }
 
 /**
@@ -60,7 +77,7 @@ async function unsignCookie(rawCookieValue: string, secret: string): Promise<str
   return valid ? value : null
 }
 
-function getRawCookieValue(headers: Headers): string | null {
+function getRawCookieValue(headers: Headers, cookieNames: readonly string[]): string | null {
   const cookieHeader = headers.get("cookie")
   if (!cookieHeader) return null
 
@@ -69,7 +86,7 @@ function getRawCookieValue(headers: Headers): string | null {
     const eqIdx = trimmed.indexOf("=")
     if (eqIdx === -1) continue
     const name = trimmed.slice(0, eqIdx).trim()
-    if (name === SESSION_COOKIE_NAME) {
+    if (cookieNames.includes(name)) {
       return trimmed.slice(eqIdx + 1).trim() || null
     }
   }
@@ -95,11 +112,20 @@ const EMPTY: AuthContext = {
  * Returns `userId` which is Better Auth's `user.id` — the single
  * canonical user identifier after the identity table collapse.
  */
-export async function getAuthContextFromHeaders(headers: Headers): Promise<AuthContext> {
-  const rawCookie = getRawCookieValue(headers)
+export async function getAuthContextFromHeaders(
+  headers: Headers,
+  options: EdgeAuthRealmOptions = {},
+): Promise<AuthContext> {
+  const realm = options.realm ?? "admin"
+  const cookieNames = options.cookieName
+    ? [options.cookieName]
+    : realm === "customer"
+      ? ["voyant-customer.session_token"]
+      : ["voyant-admin.session_token", "better-auth.session_token"]
+  const rawCookie = getRawCookieValue(headers, cookieNames)
   if (!rawCookie) return EMPTY
 
-  const secret = getAuthSecret()
+  const secret = options.secret ?? getAuthSecret(realm)
   if (!secret) return EMPTY
 
   const token = await unsignCookie(rawCookie, secret)
@@ -107,16 +133,33 @@ export async function getAuthContextFromHeaders(headers: Headers): Promise<AuthC
 
   const db = getDb("edge")
 
-  const [row] = await db
-    .select({
-      sessionId: authSession.id,
-      userId: authSession.userId,
-      email: authUser.email,
-    })
-    .from(authSession)
-    .innerJoin(authUser, eq(authUser.id, authSession.userId))
-    .where(and(eq(authSession.token, token), gt(authSession.expiresAt, new Date())))
-    .limit(1)
+  const [row] =
+    realm === "customer"
+      ? await db
+          .select({
+            sessionId: customerAuthSession.id,
+            userId: customerAuthSession.userId,
+            email: customerAuthUser.email,
+          })
+          .from(customerAuthSession)
+          .innerJoin(customerAuthUser, eq(customerAuthUser.id, customerAuthSession.userId))
+          .where(
+            and(
+              eq(customerAuthSession.token, token),
+              gt(customerAuthSession.expiresAt, new Date()),
+            ),
+          )
+          .limit(1)
+      : await db
+          .select({
+            sessionId: authSession.id,
+            userId: authSession.userId,
+            email: authUser.email,
+          })
+          .from(authSession)
+          .innerJoin(authUser, eq(authUser.id, authSession.userId))
+          .where(and(eq(authSession.token, token), gt(authSession.expiresAt, new Date())))
+          .limit(1)
 
   if (!row) return EMPTY
 
