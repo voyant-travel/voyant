@@ -8,6 +8,8 @@ export interface FormatOptions {
   locale?: string
   /** ISO currency code used when the value type is `currency`. */
   currency?: string
+  /** Whether currency values are expressed in minor units (for example cents). */
+  minorUnit?: boolean
   /** IANA time zone for date/datetime formatting. */
   timeZone?: string
 }
@@ -23,7 +25,7 @@ export function formatReportValue(
   options: FormatOptions = {},
 ): string {
   if (value === null || value === undefined) return "—"
-  const { locale, currency = "USD", timeZone } = options
+  const { locale, currency = "USD", minorUnit = false, timeZone } = options
 
   switch (valueType) {
     case "integer":
@@ -34,7 +36,9 @@ export function formatReportValue(
     case "currency": {
       const numeric = toNumber(value)
       if (numeric === undefined) return String(value)
-      return new Intl.NumberFormat(locale, { style: "currency", currency }).format(numeric)
+      return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
+        minorUnit ? numeric / 100 : numeric,
+      )
     }
     case "boolean":
       return value ? "Yes" : "No"
