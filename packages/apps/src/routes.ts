@@ -44,6 +44,7 @@ import {
   createMarketplaceAcquisitionService,
   resolveMarketplaceInstallIntentSchema,
 } from "./marketplace-acquisition.js"
+import { buildAppOAuthCallbackUrl } from "./oauth-redirect.js"
 import { createAppOAuthService } from "./oauth-service.js"
 import {
   activateAppInstallationRoute,
@@ -182,9 +183,12 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       ),
       grantedOptionalScopes: splitScopes(body.optional_scopes),
     })
-    const redirectUrl = new URL(result.redirectUri)
-    redirectUrl.searchParams.set("code", result.code)
-    redirectUrl.searchParams.set("state", result.state)
+    const redirectUrl = buildAppOAuthCallbackUrl({
+      redirectUri: result.redirectUri,
+      code: result.code,
+      state: result.state,
+      ...(body.nonce ? { nonce: body.nonce } : {}),
+    })
     return c.json({ data: { redirectUrl: redirectUrl.toString(), state: result.state } }, 200)
   })
 

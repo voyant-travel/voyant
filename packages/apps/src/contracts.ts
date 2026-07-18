@@ -297,6 +297,8 @@ export const appOAuthAuthorizeQuerySchema = z
     release_id: z.string().trim().min(1),
     redirect_uri: z.string().url(),
     state: z.string().trim().min(1),
+    /** Optional app-generated ceremony binding echoed to the redirect URI. */
+    nonce: z.string().trim().min(43).max(128).optional(),
     code_challenge: z.string().trim().min(1),
     code_challenge_method: z.literal("S256"),
     /** Deprecated input; the route derives the actor from the staff session. */
