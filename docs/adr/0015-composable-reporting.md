@@ -30,13 +30,16 @@ code would bypass package ownership, access policy, and deployment composition.
    imports another module's database schema and never invents domain measures.
 3. Custom widget queries target one named dataset and compile to a validated,
    versioned query AST. V1 supports selection, filters, parameters, grouping,
-   time buckets, ordering, limits, and formulas over selected measures. It does
+   time buckets, ordering, and limits. It does
    not support raw SQL, arbitrary code, mutations, free-form joins, or network
    access.
 4. A report is a persisted customer-owned composition. Starting from a template
    creates a local snapshot; later package or gallery updates do not overwrite
    operator changes. Mutable drafts autosave with optimistic concurrency, while
-   published versions and export runs are immutable.
+   published versions and execution runs are immutable. Publishing materializes
+   every preset into an embedded widget definition and pins its dataset version;
+   packages must retain any published dataset runtime version while saved report
+   versions still depend on it.
 5. Report layouts use library-neutral grid coordinates, not pixels. The
    canonical editor is a compacting, non-overlapping 12-column grid with widget
    minimum sizes. Narrow layouts are derived deterministically unless a future
@@ -46,10 +49,14 @@ code would bypass package ownership, access policy, and deployment composition.
    whose contributed definition is unavailable is omitted in view mode and is
    represented by a removable placeholder in edit mode so a temporarily missing
    module does not make the saved report unusable.
-7. Generic Reporting exports ordinary tabular and grid-composed CSV/XLSX
-   artifacts. Exact statutory layouts, jurisdiction-specific filing workflows,
-   and bespoke validation remain custom application or plugin concerns. Those
-   consumers may reuse the same datasets, query contracts, and export helpers.
+7. A report draft contains at most 50 widgets. Dataset definitions impose row
+   limits, database clients impose statement timeouts, request cancellation is
+   propagated, and an interactive report run has a 60-second cooperative
+   deadline. Moving execution to a durable background workflow is a future
+   extension, not part of the initial synchronous API.
+8. Exact statutory layouts, jurisdiction-specific filing workflows, and bespoke
+   validation remain custom application or plugin concerns. Those consumers may
+   reuse the same datasets and query contracts.
 
 ## Consequences
 
