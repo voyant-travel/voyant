@@ -14,8 +14,22 @@ const revenueDataset = {
   label: "Revenue",
   descriptor: {
     grain: "invoice",
-    dimensions: [{ id: "issued-at", type: "date" }],
-    measures: [{ id: "gross", type: "money" }],
+    fields: [
+      {
+        id: "issued-at",
+        label: "Issued at",
+        role: "dimension",
+        valueType: "date",
+        aggregations: [],
+      },
+      {
+        id: "gross",
+        label: "Gross",
+        role: "measure",
+        valueType: "currency",
+        aggregations: ["sum"],
+      },
+    ],
   },
   runtime: {
     entry: "@acme/finance/reporting-runtime-body-must-stay-lazy",
@@ -28,7 +42,13 @@ const revenueWidget = {
   version: 1,
   label: "Monthly revenue",
   datasetId: revenueDataset.id,
-  query: { groupBy: ["issued-at"], measures: ["gross"] },
+  query: {
+    select: [
+      { kind: "field", field: "issued-at" },
+      { kind: "aggregate", operation: "sum", field: "gross", as: "gross" },
+    ],
+    groupBy: [{ field: "issued-at", timeGrain: "month" }],
+  },
   visualization: { type: "line" },
   defaultSize: { width: 6, height: 4 },
   minSize: { width: 4, height: 3 },

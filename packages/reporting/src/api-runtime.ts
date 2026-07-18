@@ -5,15 +5,17 @@ import {
   reportingContributionRuntimePort,
 } from "@voyant-travel/reporting-contracts/runtime-port"
 
-import { ReportingRegistry } from "./registry.js"
+import { createReportingRegistryFromGraph } from "./graph-registry.js"
 import { createReportingRoutes } from "./routes.js"
 
-export const createReportingApiModule = defineGraphRuntimeFactory(async ({ getPorts }) => {
+export const createReportingApiModule = defineGraphRuntimeFactory(async ({ getPorts, graph }) => {
   const contributions = await getPorts<ReportingContributionRuntime>(
     reportingContributionRuntimePort,
   )
   return {
     module: { name: "reporting" },
-    adminRoutes: createReportingRoutes(new ReportingRegistry(contributions)),
+    adminRoutes: createReportingRoutes(
+      await createReportingRegistryFromGraph({ graph, contributions }),
+    ),
   } satisfies ApiModule
 })

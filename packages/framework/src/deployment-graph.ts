@@ -2167,6 +2167,20 @@ function validateReportingFacet(
     diagnostics,
     (entry, facet) => {
       validateReportingVersionAndLabel(entry, facet, source, diagnostics)
+      if (entry.parameters !== undefined) {
+        if (!Array.isArray(entry.parameters)) {
+          invalidReportingFacet(
+            `${facet}.parameters`,
+            source,
+            diagnostics,
+            "Reporting template parameters must be an array.",
+          )
+        } else {
+          entry.parameters.forEach((parameter, index) => {
+            requireReportingString(parameter, `${facet}.parameters[${index}]`, source, diagnostics)
+          })
+        }
+      }
       if (entry.requirements !== undefined) {
         if (!Array.isArray(entry.requirements)) {
           invalidReportingFacet(
@@ -2234,13 +2248,8 @@ function validateReportingFacet(
         }
         requireReportingString(widget.widgetId, `${widgetFacet}.widgetId`, source, diagnostics)
         validateReportingGridPlacement(widget.layout, `${widgetFacet}.layout`, source, diagnostics)
-        if (widget.config !== undefined && !isRecord(widget.config)) {
-          invalidReportingFacet(
-            `${widgetFacet}.config`,
-            source,
-            diagnostics,
-            "Reporting template widget config must be a JSON object.",
-          )
+        if (widget.title !== undefined) {
+          requireReportingString(widget.title, `${widgetFacet}.title`, source, diagnostics)
         }
       })
     },
