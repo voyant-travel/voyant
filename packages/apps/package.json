@@ -21,6 +21,7 @@
     "./oauth-service": "./src/oauth-service.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./session-token": "./src/session-token.ts",
@@ -151,6 +152,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

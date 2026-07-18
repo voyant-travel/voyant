@@ -313,12 +313,32 @@ authentication, online credential minting, and single-use session-token
 consumption share one database transaction, so invalid client credentials or a
 failed mint never burn the session token.
 
-Deployment broker wiring and route admission remain a readiness blocker. The
-public module does not provision a signing secret or make the
-client-authenticated exchange route anonymous by default. A deployment that
-enables extensions must wire the broker and explicitly admit only the exchange
-endpoint before iframe sessions can be used; otherwise the routes remain
-unavailable or staff-only.
+Managed-auth wiring remains a readiness blocker. The host must provide the
+optional `apps.managed-auth` runtime port with a stable app-runtime audience and
+host-owned session-token signing material. Session-token lifetime defaults to
+120 seconds and a host override is capped at 300 seconds. The Apps package
+composes OAuth, session-token issuance, session-token exchange, and app
+access-token resolution from that port without replacing the host's staff
+authentication integration. When configured, the managed runtime audience is
+also authoritative for installation identity and cannot be overridden by an
+installation request body.
+Remote-app bearer resolution is attempted only for `/v1/app` routes; app scopes
+cannot authorize admin or public route families with similarly named resources.
+Managed authorization derives the consenting actor and grantable scope ceiling
+from the authenticated staff context, never request body claims. Managed token
+and session exchanges also require an explicitly provisioned client secret;
+missing credential state fails closed.
+If the port is absent, this composition stays off and the protocol endpoints
+remain unavailable or staff-only.
+
+Only `POST /v1/admin/apps/oauth/token` and `POST
+/v1/admin/apps/oauth/session-token/exchange` use the exact
+client-authenticated route posture. Their handlers retain client-credential,
+PKCE, redirect, replay, and transactional exchange authority, and the framework
+applies its public-write rate limit. OAuth authorization, extension
+session-token issuance, installation management, and every other Apps admin
+route remain staff-authenticated. Other methods, sibling paths, and child paths
+never inherit the exception.
 
 Extensions fail soft. A slow, invalid, or unavailable app origin cannot block a
 native admin page.

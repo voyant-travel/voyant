@@ -299,7 +299,9 @@ export const appOAuthAuthorizeQuerySchema = z
     state: z.string().trim().min(1),
     code_challenge: z.string().trim().min(1),
     code_challenge_method: z.literal("S256"),
-    actor_id: z.string().trim().min(1),
+    /** Deprecated input; the route derives the actor from the staff session. */
+    actor_id: z.string().trim().min(1).optional(),
+    /** Deprecated input; the route derives the grant ceiling from staff scopes. */
     operator_scopes: z.string().trim().default(""),
     optional_scopes: z.string().trim().default(""),
   })
