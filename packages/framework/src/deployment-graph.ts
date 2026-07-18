@@ -2182,6 +2182,12 @@ function validateReportingFacet(
   validateEntityArray(value.widgets, "reporting.widgets", source, diagnostics, (entry, facet) => {
     validateReportingVersionAndLabel(entry, facet, source, diagnostics)
     requireReportingString(entry.datasetId, `${facet}.datasetId`, source, diagnostics)
+    validateOptionalReportingVersion(
+      entry.datasetVersion,
+      `${facet}.datasetVersion`,
+      source,
+      diagnostics,
+    )
     for (const property of ["query", "visualization"] as const) {
       if (!isRecord(entry[property])) {
         invalidReportingFacet(
@@ -2288,6 +2294,12 @@ function validateReportingFacet(
           instanceIds.add(widget.id)
         }
         requireReportingString(widget.widgetId, `${widgetFacet}.widgetId`, source, diagnostics)
+        validateOptionalReportingVersion(
+          widget.widgetVersion,
+          `${widgetFacet}.widgetVersion`,
+          source,
+          diagnostics,
+        )
         validateReportingGridPlacement(widget.layout, `${widgetFacet}.layout`, source, diagnostics)
         if (widget.title !== undefined) {
           requireReportingString(widget.title, `${widgetFacet}.title`, source, diagnostics)
@@ -2295,6 +2307,23 @@ function validateReportingFacet(
       })
     },
   )
+}
+
+function validateOptionalReportingVersion(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (value === undefined) return
+  if (!Number.isSafeInteger(value) || Number(value) <= 0) {
+    invalidReportingFacet(
+      facet,
+      source,
+      diagnostics,
+      "Reporting references must use positive safe integer versions.",
+    )
+  }
 }
 
 function validateReportingVersionAndLabel(

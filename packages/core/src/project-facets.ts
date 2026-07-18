@@ -262,6 +262,8 @@ export interface VoyantGraphReportingWidget extends VoyantGraphFacetEntity {
   label: string
   description?: string
   datasetId: string
+  /** Dataset contract version used by this preset. Omit only to deliberately follow latest. */
+  datasetVersion?: number
   query: VoyantGraphReportingQuery
   visualization: VoyantGraphReportingVisualization
   defaultSize: VoyantGraphReportingGridSize
@@ -280,6 +282,8 @@ export interface VoyantGraphReportTemplateWidget {
   /** Template-local stable instance id used by persisted layouts. */
   id: string
   widgetId: string
+  /** Widget preset version used by this template. Omit only to deliberately follow latest. */
+  widgetVersion?: number
   layout: VoyantGraphReportingGridPlacement
   title?: string
 }

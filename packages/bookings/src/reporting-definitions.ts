@@ -107,6 +107,7 @@ export const bookingsReportingDeclaration = {
       label: "Total bookings",
       description: "Total booking records matching the report filters.",
       datasetId: BOOKINGS_ACTIVITY_DATASET_ID,
+      datasetVersion: 1,
       query: {
         select: [{ kind: "aggregate", operation: "count", as: "totalBookings" }],
         filters: [],
@@ -125,6 +126,7 @@ export const bookingsReportingDeclaration = {
       label: "Monthly booking trend",
       description: "Booking records created in each of the latest 24 represented months.",
       datasetId: BOOKINGS_ACTIVITY_DATASET_ID,
+      datasetVersion: 1,
       query: {
         select: [
           { kind: "field", field: "createdAt", as: "month" },
@@ -153,6 +155,7 @@ export const bookingsReportingDeclaration = {
       label: "Bookings by status",
       description: "Current booking records grouped by lifecycle status.",
       datasetId: BOOKINGS_ACTIVITY_DATASET_ID,
+      datasetVersion: 1,
       query: {
         select: [
           { kind: "field", field: "status" },
@@ -185,16 +188,19 @@ export const bookingsReportingDeclaration = {
         {
           id: "total-bookings",
           widgetId: BOOKINGS_TOTAL_WIDGET_ID,
+          widgetVersion: 1,
           layout: { x: 0, y: 0, width: 3, height: 2 },
         },
         {
           id: "monthly-booking-trend",
           widgetId: BOOKINGS_MONTHLY_TREND_WIDGET_ID,
+          widgetVersion: 1,
           layout: { x: 0, y: 2, width: 7, height: 4 },
         },
         {
           id: "booking-status-breakdown",
           widgetId: BOOKINGS_STATUS_BREAKDOWN_WIDGET_ID,
+          widgetVersion: 1,
           layout: { x: 7, y: 2, width: 5, height: 4 },
         },
       ],

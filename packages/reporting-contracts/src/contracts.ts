@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 // Graph entity ids commonly include scoped package names and a `#facet.entity` suffix.
-const identifierPattern = /^[a-z0-9@][a-z0-9._/@#-]*$/
+const identifierPattern = /^[A-Za-z0-9@][A-Za-z0-9._/@#-]*$/
 
 export const reportingIdentifierSchema = z.string().trim().min(1).max(160).regex(identifierPattern)
 export const reportingVersionSchema = z.number().int().positive()
@@ -237,7 +237,7 @@ export const reportTemplateDefinitionSchema = z
     label: z.string().trim().min(1).max(160),
     description: z.string().trim().max(2_000).optional(),
     parameters: z.array(reportingIdentifierSchema).max(50).default([]),
-    widgets: z.array(reportWidgetInstanceSchema).max(200),
+    widgets: z.array(reportWidgetInstanceSchema).max(50),
   })
   .strict()
 export type ReportTemplateDefinition = z.infer<typeof reportTemplateDefinitionSchema>
@@ -245,7 +245,7 @@ export type ReportTemplateDefinition = z.infer<typeof reportTemplateDefinitionSc
 export const reportDraftSchema = z
   .object({
     parameters: reportParametersSchema.default({}),
-    widgets: z.array(reportWidgetInstanceSchema).max(200).default([]),
+    widgets: z.array(reportWidgetInstanceSchema).max(50).default([]),
   })
   .strict()
   .superRefine((draft, context) => {

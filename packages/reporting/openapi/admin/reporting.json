@@ -1,6 +1,135 @@
 {
-  "openapi": "3.0.0",
-  "info": { "title": "Reporting Admin API", "version": "1.0.0" },
-  "components": { "schemas": {}, "parameters": {} },
-  "paths": {}
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Reporting Admin API",
+    "version": "1.0.0",
+    "description": "Composable report catalog, drafts, immutable versions, and bounded execution."
+  },
+  "components": {
+    "schemas": {
+      "ReportingResponse": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "responses": {
+      "ReportingResponse": {
+        "description": "Reporting API response",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ReportingResponse" }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/admin/reporting/catalog": {
+      "get": {
+        "operationId": "getReportingCatalog",
+        "summary": "List available datasets, widget presets, and page templates",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/queries/parse": {
+      "post": {
+        "operationId": "parseReportingQuery",
+        "summary": "Parse the bounded reporting query language",
+        "description": "Requires reports:read. The language does not permit joins, mutations, or arbitrary code.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/queries/preview": {
+      "post": {
+        "operationId": "previewReportingQuery",
+        "summary": "Execute a bounded query preview",
+        "description": "Requires reports:read and every scope declared by the selected dataset fields.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/reports": {
+      "get": {
+        "operationId": "listReports",
+        "summary": "List saved report drafts",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      },
+      "post": {
+        "operationId": "createReport",
+        "summary": "Create a report draft",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "responses": { "201": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/reports/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": {
+        "operationId": "getReport",
+        "summary": "Get a saved report draft",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      },
+      "patch": {
+        "operationId": "updateReport",
+        "summary": "Save an optimistic-concurrency report edit",
+        "description": "Requires reports:write and the current draft revision.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" }, "409": { "description": "Revision conflict" } }
+      },
+      "delete": {
+        "operationId": "deleteReport",
+        "summary": "Delete a report without retained runs",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/templates/{id}/instantiate": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "operationId": "instantiateReportTemplate",
+        "summary": "Create an editable report from an available page template",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "responses": { "201": { "$ref": "#/components/responses/ReportingResponse" } }
+      }
+    },
+    "/v1/admin/reporting/reports/{id}/versions": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "operationId": "publishReportVersion",
+        "summary": "Publish an immutable report snapshot",
+        "description": "Requires reports:write and the current draft revision.",
+        "tags": ["Reporting"],
+        "responses": { "201": { "$ref": "#/components/responses/ReportingResponse" }, "409": { "description": "Revision conflict" } }
+      }
+    },
+    "/v1/admin/reporting/versions/{id}/runs": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "operationId": "runReportVersion",
+        "summary": "Execute an immutable report version",
+        "description": "Requires reports:export and every source dataset scope used by the version.",
+        "tags": ["Reporting"],
+        "responses": { "201": { "$ref": "#/components/responses/ReportingResponse" }, "403": { "description": "Missing source scope" } }
+      }
+    },
+    "/v1/admin/reporting/runs/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": {
+        "operationId": "getReportRun",
+        "summary": "Get persisted report results",
+        "description": "Requires reports:export and every source dataset scope recorded on the run.",
+        "tags": ["Reporting"],
+        "responses": { "200": { "$ref": "#/components/responses/ReportingResponse" }, "403": { "description": "Missing source scope" } }
+      }
+    }
+  }
 }

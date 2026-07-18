@@ -124,6 +124,9 @@ export const financeVoyantModule = defineModule({
       label: widget.label,
       description: widget.description,
       datasetId: widget.query.dataset.id,
+      ...(widget.query.dataset.version
+        ? { datasetVersion: widget.query.dataset.version }
+        : {}),
       query: {
         select: widget.query.select,
         filters: widget.query.filters,
@@ -147,7 +150,14 @@ export const financeVoyantModule = defineModule({
       })),
       widgets: template.widgets.flatMap((widget) =>
         widget.source.kind === "preset"
-          ? [{ id: widget.id, widgetId: widget.source.widgetId, layout: widget.layout }]
+          ? [
+              {
+                id: widget.id,
+                widgetId: widget.source.widgetId,
+                ...(widget.source.version ? { widgetVersion: widget.source.version } : {}),
+                layout: widget.layout,
+              },
+            ]
           : [],
       ),
     })),
