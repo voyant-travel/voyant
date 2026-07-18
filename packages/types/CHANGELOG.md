@@ -1,5 +1,14 @@
 # @voyant-travel/types
 
+## 0.109.4
+
+### Patch Changes
+
+- 3a90c27: Publish the first versioned remote App API surface with app-token routing,
+  service-boundary installation and scope checks, custom-field owner isolation,
+  finance action approval enforcement, webhook/audit self-read endpoints, and
+  runtime app-token resolution.
+
 ## 0.109.3
 
 ### Patch Changes

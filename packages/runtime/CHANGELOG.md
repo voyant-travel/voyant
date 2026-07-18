@@ -1,5 +1,21 @@
 # @voyant-travel/runtime
 
+## 0.11.11
+
+### Patch Changes
+
+- 3a90c27: Publish the first versioned remote App API surface with app-token routing,
+  service-boundary installation and scope checks, custom-field owner isolation,
+  finance action approval enforcement, webhook/audit self-read endpoints, and
+  runtime app-token resolution.
+- Updated dependencies [3a90c27]
+- Updated dependencies [3a90c27]
+- Updated dependencies [3a90c27]
+  - @voyant-travel/apps@0.4.0
+  - @voyant-travel/core@0.125.2
+  - @voyant-travel/framework@0.49.3
+  - @voyant-travel/hono@0.128.3
+
 ## 0.11.10
 
 ### Patch Changes
