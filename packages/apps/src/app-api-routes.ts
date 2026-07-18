@@ -36,6 +36,9 @@ import {
 import { replayAppWebhookDelivery } from "./webhook-delivery.js"
 
 type Env = {
+  Bindings: {
+    API_BASE_URL?: string
+  }
   Variables: {
     db: PostgresJsDatabase
     appId?: string
@@ -435,10 +438,11 @@ async function readBoundedArtifactBody(c: Context<Env>, maxBytes: number) {
 }
 
 function financeArtifactDocumentUrl(c: Context<Env>, artifactId: string) {
-  return new URL(
-    `/v1/admin/finance/invoice-renditions/${encodeURIComponent(artifactId)}/download`,
-    c.req.url,
-  ).toString()
+  const path = `/v1/admin/finance/invoice-renditions/${encodeURIComponent(artifactId)}/download`
+  const configuredApiBaseUrl = c.env.API_BASE_URL?.trim().replace(/\/+$/, "")
+  return configuredApiBaseUrl
+    ? `${configuredApiBaseUrl}${path}`
+    : new URL(path, c.req.url).toString()
 }
 
 async function run<T>(

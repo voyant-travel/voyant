@@ -8,6 +8,9 @@ import { createAppsAppApiRoutes } from "./app-api-routes.js"
 import { appGrants, appInstallations, appReleases } from "./schema.js"
 
 type TestEnv = {
+  Bindings: {
+    API_BASE_URL?: string
+  }
   Variables: {
     db: PostgresJsDatabase
     callerType: string
@@ -294,6 +297,7 @@ describe("finance App API routes", () => {
         },
         body: "%PDF-test",
       },
+      { API_BASE_URL: "https://operator.example/api/" },
     )
 
     expect(response.status).toBe(200)
@@ -304,14 +308,14 @@ describe("finance App API routes", () => {
         artifact: expect.objectContaining({
           id: "rend_1",
           documentUrl:
-            "https://operator.example/v1/admin/finance/invoice-renditions/rend_1/download",
+            "https://operator.example/api/v1/admin/finance/invoice-renditions/rend_1/download",
         }),
       },
     })
     expect(JSON.stringify(payload)).not.toContain("storageKey")
     expect(attachPdfArtifact).toHaveBeenCalledWith(
       expect.anything(),
-      undefined,
+      expect.objectContaining({ API_BASE_URL: "https://operator.example/api/" }),
       "inv_1",
       "app_1",
       expect.objectContaining({ idempotencyKey: "pdf:operation-1" }),

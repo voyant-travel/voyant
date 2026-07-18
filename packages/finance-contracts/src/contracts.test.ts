@@ -27,6 +27,32 @@ describe("finance-contracts", () => {
     ).toThrow(/getExternalReference/)
   })
 
+  it("requires every lifecycle and settlement method on the Finance App API runtime", () => {
+    const provider = {
+      getIssuanceDocument: async () => null,
+      getExternalReference: async () => null,
+      upsertExternalReference: async () => null,
+      attachPdfArtifact: async () => null,
+      updateExternalSyncState: async () => null,
+      updateExternalLifecycleState: async () => null,
+      recordSettlementObservation: async () => null,
+    }
+
+    expect(() => financeAppApiRuntimePort.test(provider as never)).not.toThrow()
+    expect(() =>
+      financeAppApiRuntimePort.test({
+        ...provider,
+        updateExternalLifecycleState: undefined,
+      } as never),
+    ).toThrow(/updateExternalLifecycleState/)
+    expect(() =>
+      financeAppApiRuntimePort.test({
+        ...provider,
+        recordSettlementObservation: undefined,
+      } as never),
+    ).toThrow(/recordSettlementObservation/)
+  })
+
   it("accepts valid enum values", () => {
     expect(invoiceStatusSchema.parse("issued")).toBe("issued")
     expect(paymentMethodSchema.parse("bank_transfer")).toBe("bank_transfer")
