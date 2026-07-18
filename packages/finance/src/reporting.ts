@@ -219,16 +219,19 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
     aliases.add(selection.id)
   }
 
-  const moneyAggregated = query.select.some(
-    (selection) =>
-      selection.kind === "aggregate" &&
-      selection.operation === "sum" &&
-      selection.field !== undefined &&
-      MONEY_FIELDS.has(selection.field),
+  const moneySelections = query.select.filter(
+    (selection) => selection.field !== undefined && MONEY_FIELDS.has(selection.field),
   )
-  if (moneyAggregated && !groups.has("currency") && !hasSingleCurrencyFilter(query, parameters)) {
+  const currencyIsExplicit = aggregateQuery
+    ? groups.has("currency")
+    : query.select.some((selection) => selection.kind === "field" && selection.field === "currency")
+  if (
+    moneySelections.length > 0 &&
+    !currencyIsExplicit &&
+    !hasSingleCurrencyFilter(query, parameters)
+  ) {
     throw new FinanceReportingQueryError(
-      "Currency measures must be grouped by currency or filtered to exactly one currency.",
+      "Currency measures must include or group by currency, or be filtered to exactly one currency.",
     )
   }
 

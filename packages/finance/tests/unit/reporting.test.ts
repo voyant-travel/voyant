@@ -99,7 +99,7 @@ describe("Finance receivables query compiler", () => {
         parameters: {},
         maximumRows: 100,
       }),
-    ).toThrow("grouped by currency or filtered to exactly one currency")
+    ).toThrow("include or group by currency")
   })
 
   it("allows a single parameter-bound currency and rejects unsupported measure filters", () => {
