@@ -20,6 +20,22 @@ describe("reporting manifest", () => {
     )
   })
 
+  it("wires the reporting-react admin extension runtime", () => {
+    expect(reportingVoyantModule.admin?.runtime).toEqual({
+      entry: "@voyant-travel/reporting-react/admin",
+      export: "createSelectedReportingAdminExtension",
+    })
+    const paths = reportingVoyantModule.admin?.routes?.map((route) => route.path)
+    expect(paths).toEqual(["/reporting", "/reporting/$id"])
+    for (const route of reportingVoyantModule.admin?.routes ?? []) {
+      expect(route.requiredScopes).toEqual(["reports:read"])
+      expect(route.runtime).toEqual({
+        entry: "@voyant-travel/reporting-react/admin",
+        export: "createReportingAdminExtension",
+      })
+    }
+  })
+
   it("contributes a cross-module operator overview template", () => {
     expect(reportingVoyantModule.reporting?.templates).toEqual([
       expect.objectContaining({

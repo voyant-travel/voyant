@@ -210,6 +210,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/availability" },
     { resolve: "@voyant-travel/catalog-authoring" },
     { resolve: "@voyant-travel/workflow-runs" },
+    { resolve: "@voyant-travel/reporting" },
   ],
   extensions: [
     {
