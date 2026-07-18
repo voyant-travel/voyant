@@ -266,10 +266,8 @@ export {
   computeBookingItemTaxLine,
   createBookingTaxPreviewApiExtension,
   createBookingTaxPreviewRoutes,
-  createBookingTaxPreviewVoyantRuntime,
   createBookingTaxSettingsApiExtension,
   createBookingTaxSettingsRoutes,
-  createBookingTaxSettingsVoyantRuntime,
   loadProductTaxFacts,
   matchesTaxPolicyCondition,
   mountBookingTaxPreviewRoutes,
@@ -282,6 +280,13 @@ export {
   type TaxPolicyCondition,
   type UpdateBookingTaxSettings,
 } from "./booking-tax.js"
+export {
+  BOOKING_TAX_PREVIEW_RUNTIME_KEY,
+  BOOKING_TAX_SETTINGS_RUNTIME_KEY,
+  type BookingTaxRuntime,
+  createBookingTaxPreviewVoyantRuntime,
+  createBookingTaxSettingsVoyantRuntime,
+} from "./booking-tax-runtime.js"
 export type {
   CardPaymentBilling,
   CardPaymentStartArgs,
