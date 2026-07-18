@@ -162,14 +162,98 @@ export interface VoyantGraphReportingGridPlacement extends VoyantGraphReportingG
   y: number
 }
 
+export type VoyantGraphReportingFieldValueType =
+  | "string"
+  | "integer"
+  | "number"
+  | "boolean"
+  | "date"
+  | "datetime"
+  | "currency"
+  | "json"
+
+export type VoyantGraphReportingAggregation =
+  | "count"
+  | "countDistinct"
+  | "sum"
+  | "average"
+  | "minimum"
+  | "maximum"
+
+export interface VoyantGraphReportingDatasetField {
+  id: string
+  label: string
+  description?: string
+  role: "dimension" | "measure"
+  valueType: VoyantGraphReportingFieldValueType
+  sensitivity?: "public" | "internal" | "pii" | "sensitive"
+  requiredScopes?: readonly string[]
+  aggregations?: readonly VoyantGraphReportingAggregation[]
+}
+
+/** Serializable dataset definition fields; identity and scopes live on the facet entity. */
+export interface VoyantGraphReportingDatasetDescriptor {
+  grain: string
+  fields: readonly VoyantGraphReportingDatasetField[]
+  defaultLimit?: number
+  maximumLimit?: number
+}
+
 /** Package-owned semantic dataset metadata. Executable query behavior stays behind runtime. */
 export interface VoyantGraphReportingDataset extends VoyantGraphFacetEntity {
   version: number
   label: string
   description?: string
-  descriptor: VoyantGraphJsonObject
+  descriptor: VoyantGraphReportingDatasetDescriptor
   runtime: VoyantGraphRuntimeReference
   requiredScopes?: readonly string[]
+}
+
+export type VoyantGraphReportingScalar = string | number | boolean | null
+
+export type VoyantGraphReportingValueReference =
+  | {
+      kind: "literal"
+      value: VoyantGraphReportingScalar | readonly VoyantGraphReportingScalar[]
+    }
+  | { kind: "parameter"; name: string }
+
+export interface VoyantGraphReportingFilter {
+  field: string
+  operator:
+    | "equal"
+    | "notEqual"
+    | "in"
+    | "notIn"
+    | "greaterThan"
+    | "greaterThanOrEqual"
+    | "lessThan"
+    | "lessThanOrEqual"
+    | "between"
+    | "contains"
+    | "isNull"
+    | "isNotNull"
+  value?: VoyantGraphReportingValueReference
+}
+
+export type VoyantGraphReportingSelection =
+  | { kind: "field"; field: string; as?: string }
+  | { kind: "aggregate"; operation: VoyantGraphReportingAggregation; field?: string; as: string }
+
+export interface VoyantGraphReportingQuery {
+  select: readonly VoyantGraphReportingSelection[]
+  filters?: readonly VoyantGraphReportingFilter[]
+  groupBy?: readonly {
+    field: string
+    timeGrain?: "day" | "week" | "month" | "quarter" | "year"
+  }[]
+  orderBy?: readonly { by: string; direction?: "ascending" | "descending" }[]
+  limit?: number
+}
+
+export interface VoyantGraphReportingVisualization {
+  type: "kpi" | "table" | "line" | "bar" | "pie"
+  options?: VoyantGraphJsonObject
 }
 
 /** A reusable, package-owned query and visualization preset. */
@@ -178,8 +262,8 @@ export interface VoyantGraphReportingWidget extends VoyantGraphFacetEntity {
   label: string
   description?: string
   datasetId: string
-  query: VoyantGraphJsonObject
-  visualization: VoyantGraphJsonObject
+  query: VoyantGraphReportingQuery
+  visualization: VoyantGraphReportingVisualization
   defaultSize: VoyantGraphReportingGridSize
   minSize?: VoyantGraphReportingGridSize
   maxSize?: VoyantGraphReportingGridSize
@@ -197,7 +281,7 @@ export interface VoyantGraphReportTemplateWidget {
   id: string
   widgetId: string
   layout: VoyantGraphReportingGridPlacement
-  config?: VoyantGraphJsonObject
+  title?: string
 }
 
 /** A complete grid page which may compose widgets contributed by several selected units. */
@@ -205,6 +289,7 @@ export interface VoyantGraphReportTemplate extends VoyantGraphFacetEntity {
   version: number
   label: string
   description?: string
+  parameters?: readonly string[]
   requirements?: readonly VoyantGraphReportingRequirement[]
   widgets: readonly VoyantGraphReportTemplateWidget[]
 }
