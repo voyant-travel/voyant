@@ -153,6 +153,15 @@ export const appsUiEn = {
     resolvingIntent: "Verifying this Marketplace installation…",
     setupFailed: "The app was installed, but its secure setup handoff could not be started.",
   },
+  authorization: {
+    title: "Authorize app access",
+    description: "Allow {name} to use the access granted during installation.",
+    accessHeading: "Access this app will use",
+    approve: "Authorize & continue",
+    approving: "Authorizing…",
+    invalidRequest: "This authorization request is invalid or incomplete.",
+    failed: "The app could not be authorized.",
+  },
   developer: {
     title: "App developer",
     description: "Create custom app registrations, cut releases, and manage credentials.",

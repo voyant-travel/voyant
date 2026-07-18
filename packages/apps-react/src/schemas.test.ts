@@ -3,12 +3,19 @@ import { describe, expect, it } from "vitest"
 import { appsUiEn } from "./i18n/en.js"
 import { resolveAppsUiMessages } from "./i18n/provider.js"
 import { appsUiRo } from "./i18n/ro.js"
-import { installationDetailResponse, installationListResponse } from "./schemas.js"
+import {
+  appOAuthAuthorizationRequestSchema,
+  installationDetailResponse,
+  installationListResponse,
+} from "./schemas.js"
 
 describe("apps-react i18n", () => {
   it("keeps en and ro navigation keys in parity", () => {
     expect(Object.keys(appsUiRo.navigation).sort()).toEqual(Object.keys(appsUiEn.navigation).sort())
     expect(Object.keys(appsUiRo.statuses).sort()).toEqual(Object.keys(appsUiEn.statuses).sort())
+    expect(Object.keys(appsUiRo.authorization).sort()).toEqual(
+      Object.keys(appsUiEn.authorization).sort(),
+    )
   })
 
   it("resolves ro then falls back to en", () => {
@@ -53,6 +60,22 @@ describe("apps-react response schemas", () => {
     createdAt: "2026-07-17T00:00:00.000Z",
     updatedAt: "2026-07-17T00:00:00.000Z",
   }
+
+  it("parses the browser OAuth request with PKCE, state, and nonce", () => {
+    const parsed = appOAuthAuthorizationRequestSchema.parse({
+      response_type: "code",
+      client_id: "app_1",
+      release_id: "rel_1",
+      redirect_uri: "https://app.example.com/oauth/callback",
+      state: "state_1",
+      nonce: "n".repeat(43),
+      code_challenge: "challenge_1",
+      code_challenge_method: "S256",
+    })
+
+    expect(parsed.nonce).toHaveLength(43)
+    expect(parsed.optional_scopes).toBe("")
+  })
 
   it("parses the installation summary list envelope, tolerating extra row columns", () => {
     const parsed = installationListResponse.parse({

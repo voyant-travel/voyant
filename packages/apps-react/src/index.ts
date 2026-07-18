@@ -14,6 +14,7 @@ export {
   InstalledAppsPage,
   type InstalledAppsPageProps,
 } from "./components/installed-apps-page.js"
+export { OAuthAuthorizationPage } from "./components/oauth-authorization-page.js"
 export { ReleaseManager, type ReleaseManagerProps } from "./components/release-manager.js"
 export * from "./hooks/index.js"
 export {

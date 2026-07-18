@@ -146,6 +146,15 @@ export type AppsUiMessages = {
     resolvingIntent: string
     setupFailed: string
   }
+  authorization: {
+    title: string
+    description: string
+    accessHeading: string
+    approve: string
+    approving: string
+    invalidRequest: string
+    failed: string
+  }
   developer: {
     title: string
     description: string

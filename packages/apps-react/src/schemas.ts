@@ -222,6 +222,29 @@ export const marketplaceSetupHandoffResponse = z.object({
   data: z.object({ redirectUrl: z.string().url() }),
 })
 
+export const appOAuthAuthorizationRequestSchema = z
+  .object({
+    response_type: z.literal("code"),
+    client_id: z.string().trim().min(1),
+    release_id: z.string().trim().min(1),
+    redirect_uri: z.string().url(),
+    state: z.string().trim().min(1),
+    nonce: z.string().trim().min(43).max(128).optional(),
+    code_challenge: z.string().trim().min(1),
+    code_challenge_method: z.literal("S256"),
+    optional_scopes: z.string().trim().default(""),
+  })
+  .strict()
+
+export type AppOAuthAuthorizationRequest = z.infer<typeof appOAuthAuthorizationRequestSchema>
+
+export const appOAuthAuthorizationResponseSchema = z.object({
+  data: z.object({
+    redirectUrl: z.string().url(),
+    state: z.string(),
+  }),
+})
+
 export const normalizedReleaseConsentSchema = z.object({
   requestedScopes: z.array(z.string()),
   optionalScopes: z.array(z.string()),

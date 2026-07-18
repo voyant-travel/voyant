@@ -155,6 +155,15 @@ export const appsUiRo = {
     resolvingIntent: "Se verifică această instalare Marketplace…",
     setupFailed: "Aplicația a fost instalată, dar configurarea securizată nu a putut fi pornită.",
   },
+  authorization: {
+    title: "Autorizează accesul aplicației",
+    description: "Permite aplicației {name} să folosească accesul acordat la instalare.",
+    accessHeading: "Accesul folosit de această aplicație",
+    approve: "Autorizează și continuă",
+    approving: "Se autorizează…",
+    invalidRequest: "Această cerere de autorizare este invalidă sau incompletă.",
+    failed: "Aplicația nu a putut fi autorizată.",
+  },
   developer: {
     title: "Dezvoltator aplicații",
     description:
