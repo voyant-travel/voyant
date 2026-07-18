@@ -31,12 +31,7 @@ function getAuthSecret(realm: "admin" | "customer"): string {
   if (realm === "customer") {
     return process.env.BETTER_AUTH_CUSTOMER_SECRET || ""
   }
-  return (
-    process.env.BETTER_AUTH_ADMIN_SECRET ||
-    process.env.BETTER_AUTH_SECRET ||
-    process.env.SESSION_CLAIMS_SECRET ||
-    ""
-  )
+  return process.env.BETTER_AUTH_ADMIN_SECRET || ""
 }
 
 /**

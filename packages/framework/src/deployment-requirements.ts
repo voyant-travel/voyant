@@ -180,19 +180,12 @@ function envForProvider(
       variable("VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL", "Cloud admin auth revalidation URL."),
       secret("VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN", "Cloud admin auth client token."),
       secret("SESSION_CLAIMS_SECRET", "Session claim signing secret."),
-      secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth admin-realm secret.", true, [
-        "BETTER_AUTH_SECRET",
-      ]),
+      secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth admin-realm secret."),
     ]
   }
   if (role === "adminAuth" && provider === "better-auth") {
     return [
-      secret(
-        "BETTER_AUTH_ADMIN_SECRET",
-        "Better Auth secret used to sign local admin sessions.",
-        true,
-        ["BETTER_AUTH_SECRET"],
-      ),
+      secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth secret used to sign local admin sessions."),
       secret("SESSION_CLAIMS_SECRET", "Session claims signing secret."),
     ]
   }

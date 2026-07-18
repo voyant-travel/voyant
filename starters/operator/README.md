@@ -25,7 +25,7 @@ than adding them to the generated starter.
 ## Quick start
 
 ```bash
-cp .env.example .env          # fill in DATABASE_URL, BETTER_AUTH_SECRET, …
+cp .env.example .env          # fill in DATABASE_URL and realm-specific auth secrets
 pnpm -F operator dev          # Voyant development server + SSR (port 3300)
 ```
 
@@ -141,7 +141,7 @@ gcloud run deploy operator \
   --image="$IMAGE" \
   --region=REGION --port=8080 --min-instances=1 --cpu-boost \
   --set-env-vars="APP_URL=https://operator.example/api,DASH_BASE_URL=https://operator.example,VOYANT_ADMIN_AUTH_MODE=local" \
-  --set-secrets="DATABASE_URL_DIRECT=operator-db-direct:latest,BETTER_AUTH_SECRET=operator-auth:latest,SESSION_CLAIMS_SECRET=operator-session:latest,INTERNAL_API_KEY=operator-internal-key:latest,ORIGIN_TRUST_SECRET=operator-origin-trust:latest"
+  --set-secrets="DATABASE_URL_DIRECT=operator-db-direct:latest,BETTER_AUTH_ADMIN_SECRET=operator-admin-auth:latest,BETTER_AUTH_CUSTOMER_SECRET=operator-customer-auth:latest,SESSION_CLAIMS_SECRET=operator-session:latest,INTERNAL_API_KEY=operator-internal-key:latest,ORIGIN_TRUST_SECRET=operator-origin-trust:latest"
 ```
 
 `/healthz` is the container/liveness probe. Set `ORIGIN_TRUST_SECRET` when a

@@ -338,17 +338,23 @@ describe("createBetterAuth", () => {
     )
   })
 
-  it("does not fall back to SESSION_CLAIMS_SECRET for Better Auth", async () => {
+  it("requires the realm-specific admin secret without legacy or claims fallbacks", async () => {
     const { getAuthSecret } = await import("../../src/server.js")
+    const originalAdminAuthSecret = process.env.BETTER_AUTH_ADMIN_SECRET
     const originalBetterAuthSecret = process.env.BETTER_AUTH_SECRET
     const originalSessionClaimsSecret = process.env.SESSION_CLAIMS_SECRET
     try {
-      delete process.env.BETTER_AUTH_SECRET
+      delete process.env.BETTER_AUTH_ADMIN_SECRET
+      process.env.BETTER_AUTH_SECRET = "b".repeat(40)
       process.env.SESSION_CLAIMS_SECRET = "s".repeat(40)
-      expect(() => getAuthSecret()).toThrow(/BETTER_AUTH_SECRET/)
+      expect(() => getAuthSecret()).toThrow(/BETTER_AUTH_ADMIN_SECRET/)
     } finally {
-      process.env.BETTER_AUTH_SECRET = originalBetterAuthSecret
-      process.env.SESSION_CLAIMS_SECRET = originalSessionClaimsSecret
+      if (originalAdminAuthSecret === undefined) delete process.env.BETTER_AUTH_ADMIN_SECRET
+      else process.env.BETTER_AUTH_ADMIN_SECRET = originalAdminAuthSecret
+      if (originalBetterAuthSecret === undefined) delete process.env.BETTER_AUTH_SECRET
+      else process.env.BETTER_AUTH_SECRET = originalBetterAuthSecret
+      if (originalSessionClaimsSecret === undefined) delete process.env.SESSION_CLAIMS_SECRET
+      else process.env.SESSION_CLAIMS_SECRET = originalSessionClaimsSecret
     }
   })
 

@@ -32,7 +32,8 @@ export interface VoyantBindings {
   INTERNAL_API_KEY?: string
   INTERNAL_API_KEY_SCOPES?: string
   SESSION_CLAIMS_SECRET?: string
-  BETTER_AUTH_SECRET?: string
+  BETTER_AUTH_ADMIN_SECRET?: string
+  BETTER_AUTH_CUSTOMER_SECRET?: string
   DATABASE_URL: string
   CORS_ALLOWLIST?: string
   APP_URL?: string
