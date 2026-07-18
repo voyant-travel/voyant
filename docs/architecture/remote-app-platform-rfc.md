@@ -276,6 +276,10 @@ Two access modes are supported:
   effective permission is the intersection of installation grants, viewer
   grants, and contextual restrictions.
 
+Online actor access is minted only from a verified, single-use extension
+session token. Public OAuth and App API request bodies cannot assert a viewer ID
+or viewer permission set to invoke the internal actor-token exchange primitive.
+
 Refresh, rotation, pause, and revoke must invalidate credential generations
 immediately. Tokens include or resolve to the app, installation, deployment
 audience, installed release, negotiated API version, grants, issue time, expiry,
@@ -296,9 +300,25 @@ validated context. Full entity payloads and installation credentials are not
 sent through iframe initialization messages.
 
 The host issues short-lived, audience-bound session tokens for an extension.
+The host-authenticated viewer scope set is captured inside the signed token at
+issuance. At exchange, an app may only narrow that set; app-supplied scope names
+are never accepted as evidence of viewer authority.
 The iframe sends the token to its own backend, which exchanges it for online
 actor access. Effective access remains bounded by the app, installation,
 release, viewer, entity context, and current grants.
+The online credential retains the signed entity and slot constraint. A
+Finance document-scoped App API action must match that exact entity ID;
+collection operations and other entity kinds fail closed. Client
+authentication, online credential minting, and single-use session-token
+consumption share one database transaction, so invalid client credentials or a
+failed mint never burn the session token.
+
+Deployment broker wiring and route admission remain a readiness blocker. The
+public module does not provision a signing secret or make the
+client-authenticated exchange route anonymous by default. A deployment that
+enables extensions must wire the broker and explicitly admit only the exchange
+endpoint before iframe sessions can be used; otherwise the routes remain
+unavailable or staff-only.
 
 Extensions fail soft. A slow, invalid, or unavailable app origin cannot block a
 native admin page.
@@ -342,12 +362,33 @@ Finance integrations use provider-neutral document contracts:
   the complete, size-bounded reference document under
   `finance-external-references:write`. An optional `allocation.invoiceNumber`
   requires the additional `finance-external-allocation:write` scope.
+- `PUT /v1/app/finance/documents/:id/artifacts/provider-pdf` accepts an exact
+  `application/pdf` body under `finance-document-artifacts:write`. The default
+  limit is 10 MiB, both declared and streamed size are enforced, and the body
+  must begin with the PDF signature. `Idempotency-Key` and
+  `X-Voyant-Artifact-Name` are required and bounded. A replay returns
+  `unchanged`; reusing the key with different bytes or a different name returns
+  a conflict. The response contains the rendition ID and an authenticated
+  Voyant document URL, never a bucket, binding, or storage key.
+- `PUT /v1/app/finance/documents/:id/external-sync-state` records
+  `succeeded`, `retryable_failure`, or `terminal_failure` under
+  `finance-external-sync:write`. Each observation carries a bounded operation
+  ID, timestamp, optional provider-neutral metadata, and a bounded error for
+  failures. Exact replay is unchanged, reuse with different content conflicts,
+  and an observation at or before the current timestamp is rejected as out of
+  order.
 
 The allocation and reference write share one database transaction and one app
 audit record. Replaying the same allocation succeeds as `already_applied`;
 attempting to replace it or reuse an occupied number returns a stable conflict.
 Reference ownership is derived from the authenticated immutable app ID. A
 caller cannot select, discover, read, or overwrite another app's provider key.
+Artifact storage is selected by the deployment-local Finance runtime. Upload is
+compensated when the referenced document cannot be bound or persistence fails;
+an unbound object is never returned through the App API. Document links resolve
+through Voyant's authenticated rendition route so storage authority stays with
+the host. External-sync state is current-state data on the app-owned external
+reference and does not grant broader finance mutation access.
 The provider-neutral DTOs and runtime port are owned by `finance-contracts`;
 Finance implements that port and the Apps gateway consumes it without either
 package importing the other's implementation.

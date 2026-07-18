@@ -1,3 +1,4 @@
+import type { VoyantAppContextConstraint } from "@voyant-travel/core"
 import type {
   CustomFieldValueLifecycleRuntime,
   CustomFieldValueOperationsRuntime,
@@ -21,6 +22,8 @@ import type {
   AppApiFinanceActionInput,
   AppApiFinanceDocumentQuery,
   AppApiFinanceExternalReferenceUpsertInput,
+  AppApiFinanceExternalSyncStateInput,
+  AppApiFinancePdfArtifactHeaders,
 } from "./app-api-contracts.js"
 import { APP_API_VERSION } from "./app-api-contracts.js"
 import { audit } from "./installation-reconciliation.js"
@@ -32,6 +35,7 @@ export interface AppApiAccessContext {
   releaseId: string
   tokenMode: "offline" | "online"
   viewerId?: string
+  contextConstraint?: VoyantAppContextConstraint
   scopes: readonly string[]
   apiVersion?: string
 }
@@ -129,6 +133,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     context: AppApiAccessContext,
     query: AppApiFinanceDocumentQuery,
   ) {
+    assertUnconstrainedFinanceContext(context)
     await requireAccess(db, context, ["finance-documents:read"])
     if (!options.finance) throw notSupported("Finance App API runtime is not configured.")
     if (!options.finance.listDocuments)
@@ -141,6 +146,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     context: AppApiAccessContext,
     documentId: string,
   ) {
+    assertFinanceDocumentContext(context, documentId)
     await requireAccess(db, context, ["finance-documents:read"])
     const getDocument = options.finance?.getIssuanceDocument
     if (!getDocument) throw notSupported("Finance document hydration is unavailable.")
@@ -154,6 +160,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     context: AppApiAccessContext,
     input: AppApiFinanceActionInput,
   ) {
+    assertFinanceDocumentContext(context, input.invoiceId)
     await requireAccess(db, context, [`finance-actions:${input.action}`])
     if (!options.finance) throw notSupported("Finance App API runtime is not configured.")
     if (!options.finance.executeAction) throw notSupported("Finance actions are unavailable.")
@@ -171,6 +178,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     context: AppApiAccessContext,
     documentId: string,
   ) {
+    assertFinanceDocumentContext(context, documentId)
     await requireAccess(db, context, ["finance-external-references:read"])
     const getReference = options.finance?.getExternalReference
     if (!getReference) throw notSupported("Finance external references are unavailable.")
@@ -185,6 +193,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     documentId: string,
     input: AppApiFinanceExternalReferenceUpsertInput,
   ) {
+    assertFinanceDocumentContext(context, documentId)
     const scopes = ["finance-external-references:write"]
     if (input.allocation) scopes.push("finance-external-allocation:write")
     const access = await requireAccess(db, context, scopes)
@@ -230,6 +239,98 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
       throw new ApiHttpError("Finance document has already received a different allocation.", {
         status: 409,
         code: "app_api_finance_allocation_conflict",
+        details: result,
+      })
+    }
+    return { data: result }
+  }
+
+  async function attachFinancePdfArtifact(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+    environment: unknown,
+    headers: AppApiFinancePdfArtifactHeaders,
+    bytes: Uint8Array,
+  ) {
+    assertFinanceDocumentContext(context, documentId)
+    const access = await requireAccess(db, context, ["finance-document-artifacts:write"])
+    const attachArtifact = options.finance?.attachPdfArtifact
+    if (!attachArtifact) throw notSupported("Finance document artifact writes are unavailable.")
+    const result = await attachArtifact(db, environment, documentId, context.appId, {
+      bytes,
+      contentType: "application/pdf",
+      fileName: headers.fileName,
+      idempotencyKey: headers.idempotencyKey,
+    })
+    if (result.status === "not_found") throw notFound("Finance document not found.")
+    if (result.status === "not_configured") {
+      throw new ApiHttpError("Finance document storage is unavailable.", {
+        status: 503,
+        code: "app_api_finance_artifact_storage_unavailable",
+      })
+    }
+    if (result.status === "conflict") {
+      throw new ApiHttpError("Artifact idempotency key was reused with different content.", {
+        status: 409,
+        code: "app_api_finance_artifact_idempotency_conflict",
+      })
+    }
+    await audit(
+      db,
+      access.installation,
+      `app:${context.appId}`,
+      "reconciliation",
+      "finance.document-artifact.attached",
+      {
+        documentId,
+        provider: context.appId,
+        artifactId: result.artifact.id,
+        outcome: result.outcome,
+        releaseId: context.releaseId,
+        tokenMode: context.tokenMode,
+      },
+    )
+    return { data: result }
+  }
+
+  async function updateFinanceExternalSyncState(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+    input: AppApiFinanceExternalSyncStateInput,
+  ) {
+    assertFinanceDocumentContext(context, documentId)
+    const access = await requireAccess(db, context, ["finance-external-sync:write"])
+    const updateSyncState = options.finance?.updateExternalSyncState
+    if (!updateSyncState) throw notSupported("Finance external sync writes are unavailable.")
+    const result = await db.transaction(async (tx) => {
+      const mutation = await updateSyncState(tx, documentId, context.appId, input)
+      if (mutation.status === "ok") {
+        await audit(
+          tx,
+          access.installation,
+          `app:${context.appId}`,
+          "reconciliation",
+          "finance.external-sync.updated",
+          {
+            documentId,
+            provider: context.appId,
+            operationId: input.operationId,
+            syncStatus: input.status,
+            outcome: mutation.outcome,
+            releaseId: context.releaseId,
+            tokenMode: context.tokenMode,
+          },
+        )
+      }
+      return mutation
+    })
+    if (result.status === "not_found") throw notFound("Finance document not found.")
+    if (result.status === "conflict") {
+      throw new ApiHttpError("External sync state conflicts with the current observation.", {
+        status: 409,
+        code: `app_api_finance_external_sync_${result.reason}`,
         details: result,
       })
     }
@@ -336,6 +437,8 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     executeFinanceAction,
     getFinanceExternalReference,
     upsertFinanceExternalReference,
+    attachFinancePdfArtifact,
+    updateFinanceExternalSyncState,
     listCustomFieldDefinitions,
     createCustomFieldDefinition,
     updateCustomFieldDefinition,
@@ -440,6 +543,28 @@ export function assertCompatibleVersion(requested: string, range: { min: string;
       details: { requested, supported: range },
     })
   }
+}
+
+function assertFinanceDocumentContext(
+  context: AppApiAccessContext,
+  documentId: string | undefined,
+) {
+  const constraint = context.contextConstraint
+  if (!constraint) return
+  if (constraint.entity?.type !== "invoice" || !documentId || constraint.entity.id !== documentId) {
+    throw new ApiHttpError("Online app token is not bound to this finance document.", {
+      status: 403,
+      code: "app_api_entity_context_mismatch",
+    })
+  }
+}
+
+function assertUnconstrainedFinanceContext(context: AppApiAccessContext) {
+  if (!context.contextConstraint) return
+  throw new ApiHttpError("Entity-bound online app tokens cannot list finance documents.", {
+    status: 403,
+    code: "app_api_entity_context_mismatch",
+  })
 }
 
 export async function withAppApiDeadline<T>(promise: Promise<T>, timeoutMs = 5_000): Promise<T> {

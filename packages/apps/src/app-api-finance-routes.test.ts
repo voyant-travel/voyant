@@ -1,6 +1,9 @@
+import type { VoyantAppContextConstraint } from "@voyant-travel/core"
+import { handleApiError } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
+import type { AppApiFinanceIssuanceDocument } from "./app-api-contracts.js"
 import { createAppsAppApiRoutes } from "./app-api-routes.js"
 import { appGrants, appInstallations, appReleases } from "./schema.js"
 
@@ -12,6 +15,7 @@ type TestEnv = {
     appInstallationId: string
     appReleaseId: string
     appTokenMode: "offline" | "online"
+    appContextConstraint?: VoyantAppContextConstraint
     scopes: string[]
   }
 }
@@ -19,6 +23,8 @@ type TestEnv = {
 function accessDb(scopes: readonly string[] = ["finance-documents:read"]): PostgresJsDatabase {
   const db = Object.create(null) as PostgresJsDatabase
   Object.assign(db, {
+    transaction: (callback: (tx: PostgresJsDatabase) => unknown) => callback(db),
+    insert: () => ({ values: async () => undefined }),
     select: () => ({
       from: (table: unknown) => ({
         where: () => {
@@ -60,9 +66,39 @@ function accessDb(scopes: readonly string[] = ["finance-documents:read"]): Postg
   return db
 }
 
+function issuanceDocument(id: string): AppApiFinanceIssuanceDocument {
+  return {
+    id,
+    documentType: "invoice",
+    number: "INV-1",
+    status: "issued",
+    booking: { id: "booking_1", number: "B-1" },
+    billing: {
+      name: "Example Customer",
+      email: null,
+      phone: null,
+      address: null,
+      city: null,
+      region: null,
+      country: null,
+      vatCode: null,
+      registrationNumber: null,
+    },
+    currency: { document: "EUR", base: null },
+    fx: null,
+    totals: { subtotalCents: 1000, taxCents: 0, totalCents: 1000 },
+    dates: { issuedOn: "2026-07-18", dueOn: null },
+    language: "en",
+    taxRegime: null,
+    series: null,
+    allocation: { required: false, pending: false, placeholderNumber: null },
+    lines: [],
+  }
+}
+
 describe("finance App API routes", () => {
   it("hydrates a finance issuance document by stable id", async () => {
-    const getIssuanceDocument = vi.fn().mockResolvedValue({ id: "inv_1" })
+    const getIssuanceDocument = vi.fn().mockResolvedValue(issuanceDocument("inv_1"))
     const app = new Hono<TestEnv>()
     app.use("*", async (c, next) => {
       c.set("db", accessDb())
@@ -79,7 +115,43 @@ describe("finance App API routes", () => {
     const response = await app.request("/v1/app/finance/documents/inv_1")
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ data: { id: "inv_1" } })
+    await expect(response.json()).resolves.toEqual({ data: issuanceDocument("inv_1") })
+  })
+
+  it("fails closed when an online extension token targets another finance document", async () => {
+    const getIssuanceDocument = vi.fn(async (_db: unknown, documentId: string) =>
+      issuanceDocument(documentId),
+    )
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb())
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "online")
+      c.set("appContextConstraint", {
+        entity: { type: "invoice", id: "inv_1" },
+        slot: "invoice.details.after-summary",
+      })
+      c.set("scopes", ["finance-documents:read"])
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { getIssuanceDocument } }))
+
+    const allowed = await app.request("/v1/app/finance/documents/inv_1")
+    expect(allowed.status).toBe(200)
+    expect(getIssuanceDocument).toHaveBeenCalledWith(expect.anything(), "inv_1")
+    getIssuanceDocument.mockClear()
+
+    const response = await app.request("/v1/app/finance/documents/inv_other")
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toMatchObject({
+      code: "app_api_entity_context_mismatch",
+    })
+    expect(getIssuanceDocument).not.toHaveBeenCalled()
   })
 
   it("does not expose a caller-selected provider reference route", async () => {
@@ -179,6 +251,213 @@ describe("finance App API routes", () => {
         appId: "app_1",
         action: "finance.external-reference.upserted",
       }),
+    )
+  })
+
+  it("attaches a bounded PDF and returns an app-safe rendition URL", async () => {
+    const scopes = ["finance-document-artifacts:write"]
+    const attachPdfArtifact = vi.fn().mockResolvedValue({
+      status: "ok",
+      outcome: "created",
+      artifact: {
+        id: "rend_1",
+        documentId: "inv_1",
+        provider: "app_1",
+        fileName: "invoice.pdf",
+        byteSize: 9,
+        checksum: "checksum",
+        storageKey: "must-not-cross-app-api-boundary",
+        createdAt: "2026-07-18T09:00:00.000Z",
+      },
+    })
+    const app = new Hono<TestEnv>()
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { attachPdfArtifact } }))
+
+    const response = await app.request(
+      "https://operator.example/v1/app/finance/documents/inv_1/artifacts/provider-pdf",
+      {
+        method: "PUT",
+        headers: {
+          "content-type": "application/pdf",
+          "idempotency-key": "pdf:operation-1",
+          "x-voyant-artifact-name": "invoice.pdf",
+        },
+        body: "%PDF-test",
+      },
+    )
+
+    expect(response.status).toBe(200)
+    const payload = await response.json()
+    expect(payload).toEqual({
+      data: {
+        outcome: "created",
+        artifact: expect.objectContaining({
+          id: "rend_1",
+          documentUrl:
+            "https://operator.example/v1/admin/finance/invoice-renditions/rend_1/download",
+        }),
+      },
+    })
+    expect(JSON.stringify(payload)).not.toContain("storageKey")
+    expect(attachPdfArtifact).toHaveBeenCalledWith(
+      expect.anything(),
+      undefined,
+      "inv_1",
+      "app_1",
+      expect.objectContaining({ idempotencyKey: "pdf:operation-1" }),
+    )
+  })
+
+  it("rejects unsupported artifact content before invoking Finance", async () => {
+    const attachPdfArtifact = vi.fn()
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(["finance-document-artifacts:write"]))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", ["finance-document-artifacts:write"])
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { attachPdfArtifact } }))
+
+    const response = await app.request("/v1/app/finance/documents/inv_1/artifacts/provider-pdf", {
+      method: "PUT",
+      headers: {
+        "content-type": "text/plain",
+        "idempotency-key": "pdf:operation-1",
+        "x-voyant-artifact-name": "invoice.pdf",
+      },
+      body: "not a pdf",
+    })
+
+    expect(response.status).toBe(415)
+    expect(attachPdfArtifact).not.toHaveBeenCalled()
+  })
+
+  it("stops reading an artifact stream when its actual bytes exceed the limit", async () => {
+    const attachPdfArtifact = vi.fn()
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(["finance-document-artifacts:write"]))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", ["finance-document-artifacts:write"])
+      await next()
+    })
+    app.route(
+      "/",
+      createAppsAppApiRoutes({ finance: { attachPdfArtifact }, maxFinanceArtifactBytes: 8 }),
+    )
+
+    const response = await app.request("/v1/app/finance/documents/inv_1/artifacts/provider-pdf", {
+      method: "PUT",
+      headers: {
+        "content-type": "application/pdf",
+        "idempotency-key": "pdf:operation-1",
+        "x-voyant-artifact-name": "invoice.pdf",
+      },
+      body: "%PDF-test",
+    })
+
+    expect(response.status).toBe(413)
+    expect(attachPdfArtifact).not.toHaveBeenCalled()
+  })
+
+  it("rejects artifact writes whose token does not match the deployment installation", async () => {
+    const scopes = ["finance-document-artifacts:write"]
+    const attachPdfArtifact = vi.fn()
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_from_another_deployment")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { attachPdfArtifact } }))
+
+    const response = await app.request("/v1/app/finance/documents/inv_1/artifacts/provider-pdf", {
+      method: "PUT",
+      headers: {
+        "content-type": "application/pdf",
+        "idempotency-key": "pdf:operation-1",
+        "x-voyant-artifact-name": "invoice.pdf",
+      },
+      body: "%PDF-test",
+    })
+
+    expect(response.status).toBe(403)
+    expect(attachPdfArtifact).not.toHaveBeenCalled()
+  })
+
+  it("reports ordered provider-neutral external sync state", async () => {
+    const scopes = ["finance-external-sync:write"]
+    const updateExternalSyncState = vi.fn().mockResolvedValue({
+      status: "ok",
+      outcome: "updated",
+      sync: {
+        provider: "app_1",
+        documentId: "inv_1",
+        operationId: "operation-1",
+        status: "retryable_failure",
+        occurredAt: "2026-07-18T09:00:00.000Z",
+        error: { code: "provider_timeout", message: "Provider timed out." },
+        metadata: null,
+      },
+    })
+    const app = new Hono<TestEnv>()
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { updateExternalSyncState } }))
+
+    const response = await app.request("/v1/app/finance/documents/inv_1/external-sync-state", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        operationId: "operation-1",
+        status: "retryable_failure",
+        occurredAt: "2026-07-18T09:00:00.000Z",
+        error: { code: "provider_timeout", message: "Provider timed out." },
+        metadata: null,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(updateExternalSyncState).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_1",
+      "app_1",
+      expect.objectContaining({ operationId: "operation-1" }),
     )
   })
 })

@@ -18,6 +18,7 @@ export {
 } from "./custom-fields.js"
 export type {
   Actor,
+  VoyantAppContextConstraint,
   VoyantAuthContext,
   VoyantCallerType,
   VoyantPermission,

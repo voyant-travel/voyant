@@ -22,7 +22,7 @@ export function createFinanceRuntimePortContribution(
   host: FinanceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   return {
-    [financeAppApiRuntimePort.id]: createFinanceAppApiRuntime(),
+    [financeAppApiRuntimePort.id]: createFinanceAppApiRuntime(host.primitives),
     [actionLedgerFinanceDriftRuntimePort.id]: {
       checkFinanceDrift: checkFinanceActionLedgerDrift,
     } satisfies ActionLedgerFinanceDriftRuntime,

@@ -9,6 +9,12 @@ export type VoyantCallerType = "session" | "api_key" | "internal" | "app"
  */
 export type Actor = "staff" | "customer" | "partner" | "supplier"
 
+/** Immutable host context carried by an online token minted for an app extension. */
+export interface VoyantAppContextConstraint {
+  entity: { type: string; id: string } | null
+  slot: string | null
+}
+
 export interface VoyantAuthContext {
   userId?: string
   sessionId?: string
@@ -32,6 +38,7 @@ export interface VoyantAuthContext {
   appCredentialGeneration?: number
   appTokenMode?: "offline" | "online"
   appViewerId?: string
+  appContextConstraint?: VoyantAppContextConstraint
   email?: string | null
 }
 

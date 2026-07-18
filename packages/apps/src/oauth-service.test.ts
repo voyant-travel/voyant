@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   createAppOAuthService,
   intersectAppTokenScopes,
+  readStoredAppContextConstraint,
   readStoredScopes,
 } from "./oauth-service.js"
 import { appReleases } from "./schema.js"
@@ -35,6 +36,29 @@ describe("stored online token scopes", () => {
     expect(readStoredScopes({ scopes: ["bookings:read", 7, null] })).toEqual(["bookings:read"])
     expect(readStoredScopes({ scopeCount: 2 })).toBeNull()
     expect(readStoredScopes({ scopes: "bookings:read" })).toBeNull()
+  })
+
+  it("fails closed unless immutable extension context metadata is complete", () => {
+    expect(
+      readStoredAppContextConstraint({
+        contextConstraint: {
+          entity: { type: "invoice", id: "invoice_1" },
+          slot: "invoice.details.after-summary",
+        },
+      }),
+    ).toEqual({
+      entity: { type: "invoice", id: "invoice_1" },
+      slot: "invoice.details.after-summary",
+    })
+    expect(readStoredAppContextConstraint({})).toBeNull()
+    expect(
+      readStoredAppContextConstraint({ contextConstraint: { entity: { type: "invoice" } } }),
+    ).toBeNull()
+    expect(
+      readStoredAppContextConstraint({
+        contextConstraint: { entity: { type: "invoice", id: "invoice_1" }, slot: "" },
+      }),
+    ).toBeNull()
   })
 })
 

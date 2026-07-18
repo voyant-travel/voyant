@@ -12,6 +12,7 @@ const context: AppSessionTokenContext = {
   installationId: "apin_1",
   deploymentId: "dep_1",
   viewerId: "usr_1",
+  viewerScopes: ["finance-documents:read", "finance-document-artifacts:write"],
   entity: { type: "booking", id: "book_1" },
   slot: "booking.details.header",
 }
@@ -35,6 +36,10 @@ describe("app session token", () => {
     expect(result.claims.installationId).toBe("apin_1")
     expect(result.claims.entity).toEqual({ type: "booking", id: "book_1" })
     expect(result.claims.slot).toBe("booking.details.header")
+    expect(result.claims.viewerScopes).toEqual([
+      "finance-document-artifacts:write",
+      "finance-documents:read",
+    ])
     expect(result.claims.jti).toMatch(/^st_/)
   })
 

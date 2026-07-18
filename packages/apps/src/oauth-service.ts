@@ -1,4 +1,4 @@
-import type { VoyantAuthContext } from "@voyant-travel/core"
+import type { VoyantAppContextConstraint, VoyantAuthContext } from "@voyant-travel/core"
 import { ApiHttpError } from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { and, eq } from "drizzle-orm"
@@ -72,6 +72,8 @@ export interface TokenExchangeInput {
   viewerId: string
   viewerScopes: readonly string[]
   contextualScopes?: readonly string[]
+  /** Immutable host context signed into the extension session token. */
+  contextConstraint: VoyantAppContextConstraint
   clientId: string
   clientSecret?: string
 }
@@ -160,6 +162,13 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       credential.tokenMode === "online"
         ? (readStoredScopes(credential.encryptedMetadata) ?? [])
         : await grantedScopes(db, installation.id)
+    const appContextConstraint =
+      credential.tokenMode === "online"
+        ? readStoredAppContextConstraint(credential.encryptedMetadata)
+        : undefined
+    // Every online actor token is minted from an extension session. Missing or
+    // malformed context metadata must invalidate it rather than silently widen it.
+    if (credential.tokenMode === "online" && !appContextConstraint) return null
     return {
       callerType: "app",
       actor: "staff",
@@ -170,6 +179,7 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       appCredentialGeneration: credential.generation,
       appTokenMode: credential.tokenMode,
       appViewerId: credential.viewerId ?? undefined,
+      ...(appContextConstraint ? { appContextConstraint } : {}),
       scopes,
     }
   }
@@ -285,7 +295,11 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       credentialHash: sha256Hex(accessToken),
       // Online tokens are intentionally narrowed; the resolver must honor the
       // minted set rather than recomputing from installation grants.
-      encryptedMetadata: { scopeCount: scopes.length, scopes: [...scopes] },
+      encryptedMetadata: {
+        scopeCount: scopes.length,
+        scopes: [...scopes],
+        contextConstraint: input.contextConstraint,
+      },
       status: "active",
       actorId: input.viewerId,
       viewerId: input.viewerId,
@@ -518,6 +532,29 @@ export function readStoredScopes(metadata: Record<string, unknown>): string[] | 
   const stored = metadata.scopes
   if (!Array.isArray(stored)) return null
   return stored.filter((scope): scope is string => typeof scope === "string")
+}
+
+export function readStoredAppContextConstraint(
+  metadata: Record<string, unknown>,
+): VoyantAppContextConstraint | null {
+  const value = metadata.contextConstraint
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  const slot = record.slot
+  if (slot !== null && (typeof slot !== "string" || slot.length === 0)) return null
+  const entity = record.entity
+  if (entity === null) return { entity: null, slot }
+  if (!entity || typeof entity !== "object" || Array.isArray(entity)) return null
+  const entityRecord = entity as Record<string, unknown>
+  if (
+    typeof entityRecord.type !== "string" ||
+    entityRecord.type.length === 0 ||
+    typeof entityRecord.id !== "string" ||
+    entityRecord.id.length === 0
+  ) {
+    return null
+  }
+  return { entity: { type: entityRecord.type, id: entityRecord.id }, slot }
 }
 
 function oauthError(error: string, description: string, status = 400) {

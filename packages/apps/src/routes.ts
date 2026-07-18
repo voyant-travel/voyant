@@ -8,7 +8,11 @@ import {
   RequestValidationError,
   requireUserId,
 } from "@voyant-travel/hono"
-import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import {
+  type AccessCatalog,
+  hasApiKeyPermission,
+  permissionStringsToPermissions,
+} from "@voyant-travel/types/api-keys"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 import {
@@ -71,9 +75,7 @@ type Env = {
     /** Deployment identity; the install lifecycle is scoped to it. */
     VOYANT_CLOUD_DEPLOYMENT_ID?: string
   }
-  Variables: {
-    db: PostgresJsDatabase
-  }
+  Variables: { db: PostgresJsDatabase; scopes?: string[] }
 }
 
 const appIdParamSchema = z.object({ appId: z.string().min(1) })
@@ -171,22 +173,12 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
             clientId: body.client_id,
             clientSecret: body.client_secret,
           })
-        : body.grant_type === "refresh_token"
-          ? await oauth.token(c.get("db"), {
-              grantType: "refresh_token",
-              refreshToken: body.refresh_token,
-              clientId: body.client_id,
-              clientSecret: body.client_secret,
-            })
-          : await oauth.token(c.get("db"), {
-              grantType: "urn:voyant:params:oauth:grant-type:actor-token-exchange",
-              installationId: body.installation_id,
-              viewerId: body.viewer_id,
-              viewerScopes: body.viewer_scopes,
-              contextualScopes: body.contextual_scopes,
-              clientId: body.client_id,
-              clientSecret: body.client_secret,
-            })
+        : await oauth.token(c.get("db"), {
+            grantType: "refresh_token",
+            refreshToken: body.refresh_token,
+            clientId: body.client_id,
+            clientSecret: body.client_secret,
+          })
     return c.json(token, 200)
   })
 
@@ -212,6 +204,10 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     const issued = await sessionTokens.issue(c.get("db"), {
       installationId,
       viewerId,
+      viewerScopes: resolveViewerRemoteAppScopes(
+        c.get("scopes") ?? [],
+        options.oauth?.accessCatalog,
+      ),
       entity: body.entity ?? null,
       slot: body.slot ?? null,
     })
@@ -365,6 +361,25 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   })
 
   return routes
+}
+
+export function resolveViewerRemoteAppScopes(
+  scopes: readonly string[],
+  catalog: AccessCatalog | undefined,
+) {
+  if (!catalog) return []
+  const permissions = permissionStringsToPermissions(scopes)
+  return catalog.resources
+    .flatMap((resource) =>
+      resource.actions
+        .filter(
+          (action) =>
+            (resource.remoteSafe || action.remoteSafe) &&
+            hasApiKeyPermission(permissions, resource.resource, action.action, catalog),
+        )
+        .map((action) => `${resource.resource}:${action.action}`),
+    )
+    .sort()
 }
 
 function splitScopes(value: string): string[] {
