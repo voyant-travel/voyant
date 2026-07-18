@@ -321,15 +321,6 @@ export const appOAuthTokenSchema = z
       client_id: z.string().trim().min(1),
       client_secret: z.string().trim().optional(),
     }),
-    z.object({
-      grant_type: z.literal("urn:voyant:params:oauth:grant-type:actor-token-exchange"),
-      installation_id: z.string().trim().min(1),
-      viewer_id: z.string().trim().min(1),
-      viewer_scopes: z.array(scopeSchema).default([]),
-      contextual_scopes: z.array(scopeSchema).optional(),
-      client_id: z.string().trim().min(1),
-      client_secret: z.string().trim().optional(),
-    }),
   ])
   .transform((input) => ({
     ...input,

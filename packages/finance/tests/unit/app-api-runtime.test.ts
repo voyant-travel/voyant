@@ -1,8 +1,16 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { createFinanceAppApiRuntime } from "../../src/app-api-runtime.js"
-import { invoiceLineItems, invoiceNumberSeries, invoices, taxRegimes } from "../../src/schema.js"
+import {
+  invoiceExternalSyncObservations,
+  invoiceLineItems,
+  invoiceNumberSeries,
+  invoiceRenditions,
+  invoices,
+  taxRegimes,
+} from "../../src/schema.js"
+import { financeService } from "../../src/service.js"
 
 function postgresStub(implementation: object): PostgresJsDatabase {
   const db = Object.create(null) as PostgresJsDatabase
@@ -11,6 +19,8 @@ function postgresStub(implementation: object): PostgresJsDatabase {
 }
 
 describe("finance App API runtime", () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it("hydrates provider-neutral accounting fields required for remote issuance", async () => {
     const rows = new Map<unknown, unknown[]>([
       [
@@ -242,5 +252,160 @@ describe("finance App API runtime", () => {
       referenceOutcome: "unchanged",
       allocationOutcome: "already_applied",
     })
+  })
+
+  it("compensates storage when a PDF cannot be bound", async () => {
+    const upload = vi.fn().mockResolvedValue({ key: "ignored", url: "" })
+    const remove = vi.fn().mockResolvedValue(undefined)
+    vi.spyOn(financeService, "bindInvoiceRendition").mockResolvedValue({ status: "not_found" })
+    const db = postgresStub({
+      select: () => ({
+        from: (table: unknown) => {
+          expect(table).toBe(invoiceRenditions)
+          return { where: () => ({ limit: async () => [] }) }
+        },
+      }),
+    })
+    const runtime = createFinanceAppApiRuntime({
+      storage: {
+        resolve: () => ({
+          name: "test:documents",
+          upload,
+          delete: remove,
+          get: vi.fn(),
+        }),
+      },
+    })
+
+    const result = await runtime.attachPdfArtifact(db, {}, "inv_1", "app_1", {
+      bytes: new TextEncoder().encode("%PDF-test"),
+      contentType: "application/pdf",
+      fileName: "invoice.pdf",
+      idempotencyKey: "operation-1",
+    })
+
+    expect(result).toEqual({ status: "not_found" })
+    expect(upload).toHaveBeenCalledOnce()
+    expect(remove).toHaveBeenCalledOnce()
+  })
+
+  it("compensates the requested key after an ambiguous storage upload failure", async () => {
+    const upload = vi.fn().mockRejectedValue(new Error("ambiguous upload"))
+    const remove = vi.fn().mockResolvedValue(undefined)
+    const db = postgresStub({
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [] }) }),
+      }),
+    })
+    const runtime = createFinanceAppApiRuntime({
+      storage: {
+        resolve: () => ({
+          name: "test:documents",
+          upload,
+          delete: remove,
+          get: vi.fn(),
+        }),
+      },
+    })
+
+    await expect(
+      runtime.attachPdfArtifact(db, {}, "inv_1", "app_1", {
+        bytes: new TextEncoder().encode("%PDF-test"),
+        contentType: "application/pdf",
+        fileName: "invoice.pdf",
+        idempotencyKey: "operation-1",
+      }),
+    ).rejects.toThrow("ambiguous upload")
+
+    const requestedKey = upload.mock.calls[0]?.[1]?.key
+    expect(requestedKey).toMatch(/^finance\/app-artifacts\//)
+    expect(remove).toHaveBeenCalledWith(requestedKey)
+  })
+
+  it("rejects an out-of-order external sync observation", async () => {
+    const currentTime = new Date("2026-07-18T10:00:00.000Z")
+    const current = {
+      id: "ref_1",
+      invoiceId: "inv_1",
+      provider: "app_1",
+      externalId: null,
+      externalNumber: null,
+      externalUrl: null,
+      status: null,
+      metadata: null,
+      syncedAt: null,
+      syncError: "Provider timed out.",
+      syncState: "retryable_failure",
+      syncOperationId: "operation-2",
+      syncOccurredAt: currentTime,
+      syncErrorCode: "provider_timeout",
+      syncErrorMessage: "Provider timed out.",
+      syncMetadata: null,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    }
+    const db = postgresStub({
+      execute: async () => [{ id: "inv_1" }],
+      select: () => ({
+        from: (table: unknown) => {
+          const rows = table === invoiceExternalSyncObservations ? [] : [current]
+          return { where: () => ({ limit: async () => rows }) }
+        },
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalSyncState(
+      db,
+      "inv_1",
+      "app_1",
+      {
+        operationId: "operation-1",
+        status: "succeeded",
+        occurredAt: "2026-07-18T09:00:00.000Z",
+        error: null,
+        metadata: null,
+      },
+    )
+
+    expect(result).toMatchObject({ status: "conflict", reason: "out_of_order" })
+  })
+
+  it("recognizes an older exact sync replay after current state has advanced", async () => {
+    const occurredAt = new Date("2026-07-18T09:00:00.000Z")
+    const replay = {
+      invoiceId: "inv_1",
+      provider: "app_1",
+      operationId: "operation-1",
+      status: "succeeded",
+      occurredAt,
+      errorCode: null,
+      errorMessage: null,
+      metadata: { artifact: { checksum: "abc", id: "rend_1" }, outcome: "created" },
+      createdAt: occurredAt,
+    }
+    const db = postgresStub({
+      execute: async () => [{ id: "inv_1" }],
+      select: () => ({
+        from: (table: unknown) => {
+          expect(table).toBe(invoiceExternalSyncObservations)
+          return { where: () => ({ limit: async () => [replay] }) }
+        },
+      }),
+    })
+
+    const result = await createFinanceAppApiRuntime().updateExternalSyncState(
+      db,
+      "inv_1",
+      "app_1",
+      {
+        operationId: "operation-1",
+        status: "succeeded",
+        occurredAt: occurredAt.toISOString(),
+        error: null,
+        metadata: { outcome: "created", artifact: { id: "rend_1", checksum: "abc" } },
+      },
+    )
+
+    expect(result).toMatchObject({ status: "ok", outcome: "unchanged" })
   })
 })

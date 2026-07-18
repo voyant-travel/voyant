@@ -156,6 +156,7 @@ function applyAuthContext(
   }
   if (auth.appTokenMode) c.set("appTokenMode", auth.appTokenMode)
   if (auth.appViewerId) c.set("appViewerId", auth.appViewerId)
+  if (auth.appContextConstraint) c.set("appContextConstraint", auth.appContextConstraint)
 }
 
 export function requireAuth<TBindings extends VoyantBindings>(

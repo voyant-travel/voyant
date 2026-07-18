@@ -217,6 +217,9 @@ export const financeInvoiceArtifactService = {
           checksum: data.checksum ?? null,
           language: data.language ?? null,
           generatedAt: toTimestamp(data.generatedAt),
+          appProvider: data.appProvider ?? null,
+          appIdempotencyDigest: data.appIdempotencyDigest ?? null,
+          appFileName: data.appFileName ?? null,
           metadata: {
             ...(data.metadata ?? {}),
             contentType: data.contentType,

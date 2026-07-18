@@ -1134,6 +1134,9 @@ export interface BindInvoiceRenditionInput {
   checksum?: string | null
   language?: string | null
   generatedAt?: string | null
+  appProvider?: string | null
+  appIdempotencyDigest?: string | null
+  appFileName?: string | null
   metadata?: Record<string, unknown> | null
   replaceExisting?: boolean
 }

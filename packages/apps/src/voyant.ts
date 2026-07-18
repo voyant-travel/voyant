@@ -307,6 +307,40 @@ export const appsVoyantModule = defineModule({
         wildcard: "explicit-resource",
       },
       {
+        id: "@voyant-travel/apps#access.finance-document-artifacts",
+        resource: "finance-document-artifacts",
+        label: "Finance document artifacts",
+        description: "Attach private provider-generated renditions to finance documents.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "write",
+            label: "Attach finance document artifacts",
+            description: "Upload and bind a bounded provider-generated finance document PDF.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-external-sync",
+        resource: "finance-external-sync",
+        label: "Finance external synchronization",
+        description: "Report provider-neutral synchronization outcomes for finance documents.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "write",
+            label: "Report finance synchronization",
+            description: "Record ordered success, retryable-failure, or terminal-failure state.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
         id: "@voyant-travel/apps#access.apps",
         resource: "apps",
         label: "Apps",
