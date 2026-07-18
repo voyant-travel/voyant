@@ -12,6 +12,7 @@ import {
 } from "@voyant-travel/core/runtime-port"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
+import { bookingsReportingDeclaration } from "./reporting-definitions.js"
 import {
   bookingsAccommodationRuntimePort,
   bookingsFinanceRuntimePort,
@@ -294,6 +295,7 @@ export const bookingsVoyantModule = defineModule({
       providePort(customFieldValueOperationsRuntimePort),
     ],
   },
+  reporting: bookingsReportingDeclaration,
   api: [
     {
       id: "@voyant-travel/bookings#api.admin",
