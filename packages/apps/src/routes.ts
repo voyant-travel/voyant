@@ -42,6 +42,10 @@ import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delive
 type CustomFieldsService = ReturnType<typeof createCustomFieldsService>
 
 type Env = {
+  Bindings: {
+    /** Deployment identity; the install lifecycle is scoped to it. */
+    VOYANT_CLOUD_DEPLOYMENT_ID?: string
+  }
   Variables: {
     db: PostgresJsDatabase
   }
@@ -206,13 +210,19 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
 
   routes.post("/install", async (c) => {
     const body = await parseJsonBody(c, installAppSchema)
+    // The deployment id is a runtime value (not known at graph-composition
+    // time), so resolve it per request: explicit body → runtime env →
+    // construction option. Without this the standard runtime mounts these
+    // routes with no deployment id and every install 400s (app_deployment_required).
+    const deploymentId =
+      body.deploymentId ?? c.env?.VOYANT_CLOUD_DEPLOYMENT_ID?.trim() ?? options.deploymentId
     const result = await installations.install(c.get("db"), {
       appId: body.appId,
       releaseId: body.releaseId,
       actorId: body.actorId,
       grantedOptionalScopes: body.grantedOptionalScopes,
       updatePolicy: body.updatePolicy,
-      deploymentId: body.deploymentId,
+      deploymentId,
     })
     return c.json({ data: result }, 201)
   })

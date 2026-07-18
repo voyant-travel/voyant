@@ -20,7 +20,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { AlertCircle, Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useInstallations } from "../hooks/use-installations.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
@@ -51,6 +51,18 @@ export function InstalledAppsPage({
   const [pageIndex, setPageIndex] = useState(0)
   const [selected, setSelected] = useState<string | undefined>()
   const [consentOpen, setConsentOpen] = useState(false)
+  const [consentAppId, setConsentAppId] = useState<string | undefined>()
+
+  // A restricted install link (`/apps?installApp=<id>`) drops the recipient
+  // straight into the app-preselected consent flow.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const installApp = new URLSearchParams(window.location.search).get("installApp")
+    if (installApp) {
+      setConsentAppId(installApp)
+      setConsentOpen(true)
+    }
+  }, [])
 
   const query = useInstallations({
     status: statusFilter === ALL ? undefined : statusFilter,
@@ -183,9 +195,17 @@ export function InstalledAppsPage({
       </div>
 
       <ConsentScreen
+        // ConsentScreen seeds its selected app from `appId` only at mount, so
+        // key it on the preselected app to re-seed when a restricted install
+        // link supplies one.
+        key={consentAppId ?? "manual"}
         open={consentOpen}
-        onOpenChange={setConsentOpen}
+        onOpenChange={(open) => {
+          setConsentOpen(open)
+          if (!open) setConsentAppId(undefined)
+        }}
         actorId={actorId}
+        appId={consentAppId}
         onInstalled={() => void query.refetch()}
       />
     </div>
