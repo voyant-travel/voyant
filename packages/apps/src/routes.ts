@@ -1,6 +1,8 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core/events"
 import type { createCustomFieldsService } from "@voyant-travel/custom-fields"
 import {
+  openApiValidationHook,
   parseJsonBody,
   parseQuery,
   RequestValidationError,
@@ -8,7 +10,6 @@ import {
 } from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import { z } from "zod"
 import {
   activateInstallationBodySchema,
@@ -35,6 +36,30 @@ import {
 } from "./installation-read-model.js"
 import { createAppInstallationService } from "./installation-service.js"
 import { createAppOAuthService } from "./oauth-service.js"
+import {
+  activateAppInstallationRoute,
+  authorizeAppOAuthRoute,
+  createAppReleaseRoute,
+  createCustomAppRoute,
+  exchangeAppSessionTokenRoute,
+  fetchAppReleaseRoute,
+  getAppInstallationRoute,
+  getAppRoute,
+  installAppRoute,
+  issueAppOAuthTokenRoute,
+  issueAppSessionTokenRoute,
+  listAppInstallationAuditRoute,
+  listAppInstallationsRoute,
+  listAppReleasesRoute,
+  listAppsRoute,
+  listAppWebhooksRoute,
+  pauseAppInstallationRoute,
+  previewAppInstallationPurgeRoute,
+  replayAppWebhookRoute,
+  resumeAppInstallationRoute,
+  revokeAppInstallationCredentialsRoute,
+  uninstallAppInstallationRoute,
+} from "./routes-openapi.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
@@ -80,7 +105,7 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
 }
 
 export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
-  const routes = new Hono<Env>()
+  const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   const service = createAppsService(options)
   const installations = createAppInstallationService({
     deploymentId: options.oauth?.deploymentId ?? options.deploymentId,
@@ -99,12 +124,12 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
         })
       : null
 
-  routes.get("/", async (c) => {
+  routes.openapi(listAppsRoute, async (c) => {
     const query = parseQuery(c, appListQuerySchema)
     return c.json(await service.list(c.get("db"), query), 200)
   })
 
-  routes.post("/", async (c) => {
+  routes.openapi(createCustomAppRoute, async (c) => {
     const body = await parseJsonBody(c, createCustomAppRegistrationSchema)
     const app = await service.createCustomApp(c.get("db"), body)
     return c.json({ data: app }, 201)
@@ -113,7 +138,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   // Consent approval mutates state (installation, grants, authorization code),
   // so it must never be reachable through read-scoped GET requests. The admin
   // consent UI submits the approval and performs the redirect itself.
-  routes.post("/oauth/authorize", async (c) => {
+  routes.openapi(authorizeAppOAuthRoute, async (c) => {
     if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
     const body = await parseJsonBody(c, appOAuthAuthorizeQuerySchema)
     const result = await oauth.authorize(c.get("db"), {
@@ -133,7 +158,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: { redirectUrl: redirectUrl.toString(), state: result.state } }, 200)
   })
 
-  routes.post("/oauth/token", async (c) => {
+  routes.openapi(issueAppOAuthTokenRoute, async (c) => {
     if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
     const body = await parseJsonBody(c, appOAuthTokenSchema)
     const token =
@@ -165,7 +190,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json(token, 200)
   })
 
-  routes.post("/oauth/revoke-installation", async (c) => {
+  routes.openapi(revokeAppInstallationCredentialsRoute, async (c) => {
     if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
     const body = await parseJsonBody(c, appCredentialRevocationSchema)
     const result = await oauth.revokeInstallationCredentials(
@@ -179,7 +204,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   // Staff-authenticated: the admin host requests a short-lived session token for
   // the current viewer + entity/slot context. The viewer is taken from the
   // authenticated session, never from the frame.
-  routes.post("/installations/:installationId/session-token", async (c) => {
+  routes.openapi(issueAppSessionTokenRoute, async (c) => {
     if (!sessionTokens) return c.json({ error: "App session tokens are not configured" }, 501)
     const { installationId } = parseInstallationParams(c.req.param())
     const viewerId = requireUserId(c)
@@ -195,7 +220,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
 
   // App-backend-facing: exchange a presented session token for online actor
   // access. Client-authenticated; bounded by viewer ∩ app grants.
-  routes.post("/oauth/session-token/exchange", async (c) => {
+  routes.openapi(exchangeAppSessionTokenRoute, async (c) => {
     if (!sessionTokens) return c.json({ error: "App session tokens are not configured" }, 501)
     const body = await parseJsonBody(c, appSessionTokenExchangeSchema)
     const token = await sessionTokens.exchange(c.get("db"), {
@@ -208,7 +233,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json(token, 200)
   })
 
-  routes.post("/install", async (c) => {
+  routes.openapi(installAppRoute, async (c) => {
     const body = await parseJsonBody(c, installAppSchema)
     // The deployment id is a runtime value (not known at graph-composition
     // time), so resolve it per request: explicit body → runtime env →
@@ -227,12 +252,12 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: result }, 201)
   })
 
-  routes.get("/installations", async (c) => {
+  routes.openapi(listAppInstallationsRoute, async (c) => {
     const query = parseQuery(c, appInstallationListQuerySchema)
     return c.json(await listInstallationSummaries(c.get("db"), query), 200)
   })
 
-  routes.get("/installations/:installationId", async (c) => {
+  routes.openapi(getAppInstallationRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const detail = await loadInstallationDetail(c.get("db"), installationId, {
       platformApiVersion: options.platformApiVersion,
@@ -242,21 +267,21 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       : c.json({ error: "App installation not found" }, 404)
   })
 
-  routes.get("/installations/:installationId/audit", async (c) => {
+  routes.openapi(listAppInstallationAuditRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const query = parseQuery(c, appInstallationAuditQuerySchema)
     const data = await listInstallationAudit(c.get("db"), installationId, query.limit)
     return c.json({ data }, 200)
   })
 
-  routes.post("/installations/:installationId/pause", async (c) => {
+  routes.openapi(pauseAppInstallationRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, lifecycleActionBodySchema)
     const result = await installations.pause(c.get("db"), { installationId, actorId: body.actorId })
     return c.json({ data: result }, 200)
   })
 
-  routes.post("/installations/:installationId/resume", async (c) => {
+  routes.openapi(resumeAppInstallationRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, lifecycleActionBodySchema)
     const result = await installations.resume(c.get("db"), {
@@ -266,7 +291,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: result }, 200)
   })
 
-  routes.post("/installations/:installationId/uninstall", async (c) => {
+  routes.openapi(uninstallAppInstallationRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, lifecycleActionBodySchema)
     const result = await installations.uninstall(c.get("db"), {
@@ -276,7 +301,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: result }, 200)
   })
 
-  routes.post("/installations/:installationId/activate", async (c) => {
+  routes.openapi(activateAppInstallationRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, activateInstallationBodySchema)
     const result = await installations.upgrade(c.get("db"), {
@@ -287,7 +312,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: result }, 200)
   })
 
-  routes.post("/installations/:installationId/purge-preview", async (c) => {
+  routes.openapi(previewAppInstallationPurgeRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, lifecycleActionBodySchema)
     const result = await installations.purgePreview(c.get("db"), {
@@ -297,38 +322,38 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: result }, 200)
   })
 
-  routes.get("/:appId", async (c) => {
+  routes.openapi(getAppRoute, async (c) => {
     const { appId } = parseParams(c.req.param())
     const app = await service.get(c.get("db"), appId)
     return app ? c.json({ data: app }, 200) : c.json({ error: "App not found" }, 404)
   })
 
-  routes.get("/:appId/releases", async (c) => {
+  routes.openapi(listAppReleasesRoute, async (c) => {
     const { appId } = parseParams(c.req.param())
     const data = await listAppReleases(c.get("db"), appId)
     return c.json({ data }, 200)
   })
 
-  routes.post("/:appId/releases", async (c) => {
+  routes.openapi(createAppReleaseRoute, async (c) => {
     const { appId } = parseParams(c.req.param())
     const body = await parseJsonBody(c, releaseManifestUploadSchema)
     const result = await service.releaseFromUpload(c.get("db"), appId, body)
     return c.json({ data: result.release, digest: result.digest, created: result.created }, 201)
   })
 
-  routes.post("/:appId/releases/fetch", async (c) => {
+  routes.openapi(fetchAppReleaseRoute, async (c) => {
     const { appId } = parseParams(c.req.param())
     const body = await parseJsonBody(c, releaseManifestFetchSchema)
     const result = await service.releaseFromFetch(c.get("db"), appId, body)
     return c.json({ data: result.release, digest: result.digest, created: result.created }, 201)
   })
 
-  routes.get("/installations/:installationId/webhooks", async (c) => {
+  routes.openapi(listAppWebhooksRoute, async (c) => {
     const { installationId } = parseInstallationParams(c.req.param())
     return c.json(await listAppWebhookHealth(c.get("db"), installationId), 200)
   })
 
-  routes.post("/installations/:installationId/webhooks/replay", async (c) => {
+  routes.openapi(replayAppWebhookRoute, async (c) => {
     parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, appWebhookReplaySchema)
     const delivery = await replayAppWebhookDelivery(c.get("db"), {

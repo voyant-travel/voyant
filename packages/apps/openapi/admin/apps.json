@@ -1,0 +1,72 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Apps API",
+    "version": "1.0.0",
+    "description": "Operator app registration, release, installation, consent, token, and webhook governance routes."
+  },
+  "paths": {
+    "/v1/admin/apps": {
+      "get": { "summary": "List app registrations" },
+      "post": { "summary": "Create a custom app registration" }
+    },
+    "/v1/admin/apps/oauth/authorize": {
+      "post": { "summary": "Approve app OAuth consent" }
+    },
+    "/v1/admin/apps/oauth/token": {
+      "post": { "summary": "Issue an app OAuth token" }
+    },
+    "/v1/admin/apps/oauth/revoke-installation": {
+      "post": { "summary": "Revoke installation credentials" }
+    },
+    "/v1/admin/apps/oauth/session-token/exchange": {
+      "post": { "summary": "Exchange an app session token" }
+    },
+    "/v1/admin/apps/install": {
+      "post": { "summary": "Install an app release" }
+    },
+    "/v1/admin/apps/installations": {
+      "get": { "summary": "List app installations" }
+    },
+    "/v1/admin/apps/installations/{installationId}": {
+      "get": { "summary": "Get app installation detail" }
+    },
+    "/v1/admin/apps/installations/{installationId}/audit": {
+      "get": { "summary": "List app installation audit events" }
+    },
+    "/v1/admin/apps/installations/{installationId}/pause": {
+      "post": { "summary": "Pause an app installation" }
+    },
+    "/v1/admin/apps/installations/{installationId}/resume": {
+      "post": { "summary": "Resume an app installation" }
+    },
+    "/v1/admin/apps/installations/{installationId}/uninstall": {
+      "post": { "summary": "Uninstall an app installation" }
+    },
+    "/v1/admin/apps/installations/{installationId}/activate": {
+      "post": { "summary": "Activate an app installation release" }
+    },
+    "/v1/admin/apps/installations/{installationId}/purge-preview": {
+      "post": { "summary": "Preview app installation purge impact" }
+    },
+    "/v1/admin/apps/installations/{installationId}/session-token": {
+      "post": { "summary": "Issue an app extension session token" }
+    },
+    "/v1/admin/apps/installations/{installationId}/webhooks": {
+      "get": { "summary": "List app webhook delivery health" }
+    },
+    "/v1/admin/apps/installations/{installationId}/webhooks/replay": {
+      "post": { "summary": "Replay an app webhook delivery" }
+    },
+    "/v1/admin/apps/{appId}": {
+      "get": { "summary": "Get an app registration" }
+    },
+    "/v1/admin/apps/{appId}/releases": {
+      "get": { "summary": "List app releases" },
+      "post": { "summary": "Create an app release from an uploaded manifest" }
+    },
+    "/v1/admin/apps/{appId}/releases/fetch": {
+      "post": { "summary": "Create an app release from a fetched manifest" }
+    }
+  }
+}

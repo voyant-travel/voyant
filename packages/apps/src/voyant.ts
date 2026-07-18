@@ -39,6 +39,7 @@ export const appsVoyantModule = defineModule({
       id: "@voyant-travel/apps#api.admin",
       surface: "admin",
       mount: "apps",
+      openapi: { document: "apps" },
       resource: "apps",
       transactional: true,
       runtime: {
@@ -117,7 +118,18 @@ export const appsVoyantModule = defineModule({
         label: "Own custom-field definitions",
         description: "Read and write custom-field definitions owned by the app.",
         remoteSafe: true,
-        actions: ["read", "write"],
+        actions: [
+          {
+            action: "read",
+            label: "Read custom-field definitions",
+            description: "Read definitions owned by the app.",
+          },
+          {
+            action: "write",
+            label: "Write custom-field definitions",
+            description: "Create and update definitions owned by the app.",
+          },
+        ],
         wildcard: "explicit-resource",
       },
       {
@@ -126,7 +138,38 @@ export const appsVoyantModule = defineModule({
         label: "Own custom-field values",
         description: "Read and write app-owned custom-field values by target.",
         remoteSafe: true,
-        actions: ["read", "write", "booking", "person", "organization", "invoice"],
+        actions: [
+          {
+            action: "read",
+            label: "Read custom-field values",
+            description: "Read custom-field values owned by the app.",
+          },
+          {
+            action: "write",
+            label: "Write custom-field values",
+            description: "Write custom-field values owned by the app.",
+          },
+          {
+            action: "booking",
+            label: "Booking custom fields",
+            description: "Access app-owned custom-field values on bookings.",
+          },
+          {
+            action: "person",
+            label: "Person custom fields",
+            description: "Access app-owned custom-field values on people.",
+          },
+          {
+            action: "organization",
+            label: "Organization custom fields",
+            description: "Access app-owned custom-field values on organizations.",
+          },
+          {
+            action: "invoice",
+            label: "Invoice custom fields",
+            description: "Access app-owned custom-field values on invoices.",
+          },
+        ],
         wildcard: "explicit-resource",
       },
       {
@@ -139,7 +182,11 @@ export const appsVoyantModule = defineModule({
         description: "Read webhook health and request replay.",
         remoteSafe: true,
         actions: [
-          "read",
+          {
+            action: "read",
+            label: "Read app webhooks",
+            description: "Read app webhook subscription and delivery health.",
+          },
           { action: "replay", label: "Replay webhooks", description: "Replay deliveries." },
         ],
       },
@@ -149,7 +196,13 @@ export const appsVoyantModule = defineModule({
         label: "App audit history",
         description: "Read audit history owned by the app.",
         remoteSafe: true,
-        actions: ["read"],
+        actions: [
+          {
+            action: "read",
+            label: "Read app audit history",
+            description: "Read audit events owned by the app.",
+          },
+        ],
       },
       {
         id: "@voyant-travel/apps#access.online-token",
@@ -157,7 +210,14 @@ export const appsVoyantModule = defineModule({
         label: "Online token exchange",
         description: "Exchange admin session context for online app access.",
         remoteSafe: true,
-        actions: [{ action: "exchange", wildcard: "explicit" }],
+        actions: [
+          {
+            action: "exchange",
+            label: "Exchange online token",
+            description: "Exchange admin session context for online app access.",
+            wildcard: "explicit",
+          },
+        ],
       },
       {
         id: "@voyant-travel/apps#access.finance-documents",
@@ -165,7 +225,13 @@ export const appsVoyantModule = defineModule({
         label: "Finance documents",
         description: "Read finance documents visible to remote accounting apps.",
         remoteSafe: true,
-        actions: ["read"],
+        actions: [
+          {
+            action: "read",
+            label: "Read finance documents",
+            description: "Read finance documents visible to the app.",
+          },
+        ],
         wildcard: "explicit-resource",
       },
       {
@@ -175,9 +241,27 @@ export const appsVoyantModule = defineModule({
         description: "Request approved finance document actions.",
         remoteSafe: true,
         actions: [
-          { action: "issue", sensitive: true, wildcard: "explicit" },
-          { action: "retry", sensitive: true, wildcard: "explicit" },
-          { action: "reconcile", sensitive: true, wildcard: "explicit" },
+          {
+            action: "issue",
+            label: "Issue finance documents",
+            description: "Request approved finance document issuance.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+          {
+            action: "retry",
+            label: "Retry finance actions",
+            description: "Request approved finance action retry.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+          {
+            action: "reconcile",
+            label: "Reconcile finance documents",
+            description: "Request approved finance document reconciliation.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
         ],
         wildcard: "explicit-resource",
       },

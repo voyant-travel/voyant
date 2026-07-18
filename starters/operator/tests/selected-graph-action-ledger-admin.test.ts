@@ -40,6 +40,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "mice",
       "realtime",
       "action-ledger",
+      "apps",
       "event-catalog",
     ])
   })
