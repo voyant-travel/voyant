@@ -111,10 +111,9 @@ describe("createReportingRegistryFromGraph", () => {
       },
     })
 
-    expect(load).toHaveBeenCalledOnce()
+    expect(load).not.toHaveBeenCalled()
     expect(registry.getWidget(widgetId)).toMatchObject({
       query: { dataset: { id: datasetId } },
-      minimumSize: undefined,
     })
     expect(registry.getTemplate("@acme/finance#reporting.template.overview")?.widgets).toHaveLength(
       2,
@@ -133,6 +132,7 @@ describe("createReportingRegistryFromGraph", () => {
         },
       }),
     ).resolves.toMatchObject({ rows: [{ gross: 1200 }] })
+    expect(load).toHaveBeenCalledOnce()
 
     const template = registry.getTemplate("@acme/finance#reporting.template.overview")!
     const draft = { parameters: {}, widgets: template.widgets }
@@ -146,21 +146,33 @@ describe("createReportingRegistryFromGraph", () => {
   })
 
   it("rejects a dataset runtime export which does not implement execute", async () => {
+    const registry = await createReportingRegistryFromGraph({
+      graph: {
+        reportingCatalog: catalog,
+        references: [
+          {
+            id: datasetReferenceId,
+            unitId: "@acme/finance",
+            facet: "reporting.datasets.runtime",
+            entityId: datasetId,
+            importEntry: "@acme/finance/reporting",
+            load: async () => ({ wrong: true }),
+            loadModule: vi.fn(),
+          },
+        ],
+      },
+    })
+
     await expect(
-      createReportingRegistryFromGraph({
-        graph: {
-          reportingCatalog: catalog,
-          references: [
-            {
-              id: datasetReferenceId,
-              unitId: "@acme/finance",
-              facet: "reporting.datasets.runtime",
-              entityId: datasetId,
-              importEntry: "@acme/finance/reporting",
-              load: async () => ({ wrong: true }),
-              loadModule: vi.fn(),
-            },
-          ],
+      registry.executeQuery({
+        db: {},
+        grantedScopes: ["finance:read"],
+        query: {
+          dataset: { id: datasetId },
+          select: [{ kind: "aggregate", operation: "sum", field: "gross", as: "gross" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
         },
       }),
     ).rejects.toThrow(ReportingRegistryError)

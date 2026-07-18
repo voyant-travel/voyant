@@ -31,40 +31,42 @@ export async function createReportingRegistryFromGraph(input: {
   if (!catalog) return new ReportingRegistry(input.contributions ?? [])
 
   const references = new Map(input.graph.references.map((reference) => [reference.id, reference]))
-  const datasets = await Promise.all(
-    catalog.datasets.map(async (dataset): Promise<ReportDatasetContribution> => {
-      const reference = references.get(dataset.runtimeReferenceId)
-      if (
-        reference?.facet !== "reporting.datasets.runtime" ||
-        reference.entityId !== dataset.id ||
-        reference.unitId !== dataset.ownerUnitId
-      ) {
-        throw new ReportingRegistryError(
-          `Dataset ${JSON.stringify(dataset.id)} has no matching admitted runtime reference.`,
-        )
-      }
+  const datasets = catalog.datasets.map((dataset): ReportDatasetContribution => {
+    const reference = references.get(dataset.runtimeReferenceId)
+    if (
+      reference?.facet !== "reporting.datasets.runtime" ||
+      reference.entityId !== dataset.id ||
+      reference.unitId !== dataset.ownerUnitId
+    ) {
+      throw new ReportingRegistryError(
+        `Dataset ${JSON.stringify(dataset.id)} has no matching admitted runtime reference.`,
+      )
+    }
 
-      const runtime = await reference.load<unknown>()
-      if (!isDatasetRuntime(runtime)) {
+    const definition = reportDatasetDefinitionSchema.parse({
+      id: dataset.id,
+      version: dataset.version,
+      label: dataset.label,
+      ...(dataset.description ? { description: dataset.description } : {}),
+      ...dataset.descriptor,
+      requiredScopes: dataset.requiredScopes ?? [],
+    })
+    let runtimePromise: Promise<ReportDatasetRuntime> | undefined
+    const loadRuntime = () => {
+      runtimePromise ??= reference.load<unknown>().then((runtime) => {
+        if (isDatasetRuntime(runtime)) return runtime
         throw new ReportingRegistryError(
           `Dataset ${JSON.stringify(dataset.id)} runtime must export an object with execute().`,
         )
-      }
-
-      const definition = reportDatasetDefinitionSchema.parse({
-        id: dataset.id,
-        version: dataset.version,
-        label: dataset.label,
-        ...(dataset.description ? { description: dataset.description } : {}),
-        ...dataset.descriptor,
-        requiredScopes: dataset.requiredScopes ?? [],
       })
-      return {
-        definition,
-        execute: (context, executionInput) => runtime.execute(context, executionInput),
-      }
-    }),
-  )
+      return runtimePromise
+    }
+    return {
+      definition,
+      execute: async (context, executionInput) =>
+        (await loadRuntime()).execute(context, executionInput),
+    }
+  })
 
   const widgets = catalog.widgets.map((widget) =>
     reportWidgetDefinitionSchema.parse({
