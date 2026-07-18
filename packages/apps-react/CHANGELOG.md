@@ -1,5 +1,13 @@
 # @voyant-travel/apps-react
 
+## 0.3.1
+
+### Patch Changes
+
+- 0f9bd93: Share host-owned human-readable permission labels between Marketplace discovery and managed consent.
+- Updated dependencies [0f9bd93]
+  - @voyant-travel/types@0.109.5
+
 ## 0.3.0
 
 ### Minor Changes

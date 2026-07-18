@@ -1,5 +1,11 @@
 # @voyant-travel/types
 
+## 0.109.5
+
+### Patch Changes
+
+- 0f9bd93: Share host-owned human-readable permission labels between Marketplace discovery and managed consent.
+
 ## 0.109.4
 
 ### Patch Changes
