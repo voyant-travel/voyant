@@ -3125,13 +3125,17 @@ function compileReportingCatalog(
         runtimeReferenceId: reportingDatasetRuntimeReferenceId(unit.id, dataset.id),
       })),
     )
-    .sort((left, right) => left.id.localeCompare(right.id))
+    .sort(compareReportingVersionedEntity)
+  const datasetVersions = new Set(datasets.map(({ id, version }) => `${id}\0${version}`))
   const datasetIds = new Set(datasets.map(({ id }) => id))
 
   const widgets = units
     .flatMap((unit) =>
       (unit.reporting?.widgets ?? []).map((widget) => {
-        const missingRequirements = datasetIds.has(widget.datasetId)
+        const datasetAvailable = widget.datasetVersion
+          ? datasetVersions.has(`${widget.datasetId}\0${widget.datasetVersion}`)
+          : datasetIds.has(widget.datasetId)
+        const missingRequirements = datasetAvailable
           ? []
           : [{ kind: "dataset" as const, id: widget.datasetId }]
         return {
@@ -3142,24 +3146,46 @@ function compileReportingCatalog(
         }
       }),
     )
-    .sort((left, right) => left.id.localeCompare(right.id))
-  const widgetsById = new Map(widgets.map((widget) => [widget.id, widget]))
+    .sort(compareReportingVersionedEntity)
+  const widgetsById = new Map<string, (typeof widgets)[number][]>()
+  for (const widget of widgets) {
+    const versions = widgetsById.get(widget.id) ?? []
+    versions.push(widget)
+    widgetsById.set(widget.id, versions)
+  }
 
   const templates = units
     .flatMap((unit) =>
       (unit.reporting?.templates ?? []).map((template) => {
         const requirements = [
           ...(template.requirements ?? []),
-          ...template.widgets.map(
-            ({ widgetId }): VoyantGraphReportingRequirement => ({ kind: "widget", id: widgetId }),
-          ),
+          ...template.widgets.map(({ widgetId }): VoyantGraphReportingRequirement => ({
+            kind: "widget",
+            id: widgetId,
+          })),
         ]
-        const missingRequirements = uniqueReportingRequirements(
-          requirements.filter((requirement) => {
+        const missingRequirements = uniqueReportingRequirements([
+          ...requirements.filter((requirement) => {
             if (requirement.kind === "dataset") return !datasetIds.has(requirement.id)
-            return widgetsById.get(requirement.id)?.available !== true
+            return !widgetsById.get(requirement.id)?.some((widget) => widget.available)
           }),
-        )
+          ...template.widgets
+            .filter(
+              (placement) =>
+                placement.widgetVersion !== undefined &&
+                !widgetsById
+                  .get(placement.widgetId)
+                  ?.some(
+                    (widget) => widget.version === placement.widgetVersion && widget.available,
+                  ),
+            )
+            .map(
+              ({ widgetId }): VoyantGraphReportingRequirement => ({
+                kind: "widget",
+                id: widgetId,
+              }),
+            ),
+        ])
         return {
           ...template,
           ownerUnitId: unit.id,
@@ -3168,9 +3194,16 @@ function compileReportingCatalog(
         }
       }),
     )
-    .sort((left, right) => left.id.localeCompare(right.id))
+    .sort(compareReportingVersionedEntity)
 
   return { datasets, widgets, templates }
+}
+
+function compareReportingVersionedEntity(
+  left: { id: string; version: number },
+  right: { id: string; version: number },
+): number {
+  return left.id.localeCompare(right.id) || left.version - right.version
 }
 
 function uniqueReportingRequirements(

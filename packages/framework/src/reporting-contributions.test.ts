@@ -153,6 +153,40 @@ describe("reporting graph contributions", () => {
     })
   })
 
+  it("treats pinned dataset and widget versions as availability requirements", async () => {
+    const graph = await graphFor([
+      defineModule({
+        id: "@acme/versioned-reporting",
+        reporting: {
+          datasets: [revenueDataset],
+          widgets: [{ ...revenueWidget, datasetVersion: 2 }],
+          templates: [
+            {
+              ...overview.reporting!.templates![0]!,
+              widgets: [
+                {
+                  id: "monthly-revenue",
+                  widgetId: revenueWidget.id,
+                  widgetVersion: 2,
+                  layout: { x: 0, y: 0, width: 6, height: 4 },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ])
+
+    expect(graph.reportingCatalog.widgets[0]).toMatchObject({
+      available: false,
+      missingRequirements: [{ kind: "dataset", id: revenueDataset.id }],
+    })
+    expect(graph.reportingCatalog.templates[0]).toMatchObject({
+      available: false,
+      missingRequirements: [{ kind: "widget", id: revenueWidget.id }],
+    })
+  })
+
   it("reports conflicting reporting identities through stable graph diagnostics", async () => {
     const graph = await graphFor([
       finance,
