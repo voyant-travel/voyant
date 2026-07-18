@@ -189,6 +189,45 @@ describe("UiExtensionHost", () => {
     expect(onRequestToken).toHaveBeenCalledTimes(1)
   })
 
+  it("does not post a brokered token once the requesting frame is gone", async () => {
+    let releaseToken: (grant: { token: string; tokenId: string; expiresAt: number }) => void =
+      () => {}
+    const onRequestToken = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        releaseToken = resolve
+      }),
+    )
+    const view = renderWithAdminMessages(
+      <UiExtensionHost
+        descriptor={descriptor()}
+        slot="dashboard.header"
+        context={context}
+        onRequestToken={onRequestToken}
+      />,
+    )
+    const source = getFrame().contentWindow as Window
+    const post = vi.spyOn(source, "postMessage")
+    deliver(source, createReadyMessage())
+    await waitFor(() => expect(post).toHaveBeenCalled())
+
+    post.mockClear()
+    deliver(source, createRequestTokenMessage("tok-nav"))
+    await waitFor(() => expect(onRequestToken).toHaveBeenCalledTimes(1))
+
+    // The frame is torn down before the broker settles; the grant must not be
+    // posted to the now-detached document.
+    view.unmount()
+    await act(async () => {
+      releaseToken({ token: "leaked", tokenId: "st_leak", expiresAt: 1 })
+      await Promise.resolve()
+    })
+    expect(
+      post.mock.calls.some(
+        (call) => (call[0] as { type: string }).type === "voyant:ext:session-token",
+      ),
+    ).toBe(false)
+  })
+
   it("answers unavailable when the broker declines or throws", async () => {
     const onRequestToken = vi.fn().mockResolvedValue(null)
     renderWithAdminMessages(

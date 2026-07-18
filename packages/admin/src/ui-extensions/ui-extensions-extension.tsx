@@ -129,8 +129,12 @@ export function createStaticUiExtensionsClient(
  */
 export function createInstallationUiExtensionsClient(
   fetchInstalled: () => Promise<InstalledUiExtension[]>,
+  fetchPages?: () => Promise<AppPageDescriptor[]>,
 ): UiExtensionsClient {
-  return { list: fetchInstalled }
+  // Without a page fetcher `useInstalledAppPages` would return [] and the
+  // installation-sourced full-page app extensions/navigation added here would
+  // be unreachable through this factory.
+  return fetchPages ? { list: fetchInstalled, listPages: fetchPages } : { list: fetchInstalled }
 }
 
 /** Shared query key so every slot widget reads a single `client.list()` result. */

@@ -186,6 +186,25 @@ describe("initUiExtension", () => {
     h.dispose()
   })
 
+  it("rejects requestToken when the host never replies within the token timeout", async () => {
+    vi.useFakeTimers()
+    try {
+      const h = makeHarness()
+      const promise = initUiExtension({ window: h.win, tokenTimeoutMs: 50 })
+      h.deliver(createInitMessage({ apiVersion: "1.1.0", slot: "s", context, config: {} }))
+      const handle = await promise
+
+      const tokenPromise = handle.actions.requestToken()
+      const rejection = expect(tokenPromise).rejects.toThrow(/[Tt]imed out/)
+      vi.advanceTimersByTime(60)
+      await rejection
+      handle.destroy()
+      h.dispose()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it("rejects requestToken when the host declines with an error", async () => {
     const h = makeHarness()
     const promise = initUiExtension({ window: h.win })

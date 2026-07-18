@@ -23,6 +23,7 @@ import type { UiExtensionContext, UiExtensionToastIntent } from "./types.js"
 
 /** Default handshake budget before `initUiExtension` rejects. */
 export const UI_EXTENSION_HANDSHAKE_TIMEOUT_MS = 10_000
+export const UI_EXTENSION_TOKEN_TIMEOUT_MS = 10_000
 
 /**
  * The `ResizeObserver` constructor is a global, not a member of the `Window`
@@ -36,6 +37,8 @@ export interface InitUiExtensionOptions {
   window?: Window
   /** Milliseconds to wait for the host `init` before rejecting. Defaults to 10s. */
   timeoutMs?: number
+  /** Milliseconds to wait for a session-token reply before rejecting. Defaults to 10s. */
+  tokenTimeoutMs?: number
   /**
    * Element observed for automatic height reporting. Defaults to
    * `document.documentElement`. Pass `null` to disable automatic reporting.
@@ -97,6 +100,7 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
   const win: Window = ambient
   const parent = win.parent
   const timeoutMs = options.timeoutMs ?? UI_EXTENSION_HANDSHAKE_TIMEOUT_MS
+  const tokenTimeoutMs = options.tokenTimeoutMs ?? UI_EXTENSION_TOKEN_TIMEOUT_MS
 
   return new Promise<UiExtensionHandle>((resolve, reject) => {
     const listeners = new Set<(context: UiExtensionContext) => void>()
@@ -105,7 +109,11 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
     let resizeObserver: ResizeObserver | undefined
     const pendingTokens = new Map<
       string,
-      { resolve: (token: UiExtensionSessionToken) => void; reject: (error: Error) => void }
+      {
+        resolve: (token: UiExtensionSessionToken) => void
+        reject: (error: Error) => void
+        timer: ReturnType<Window["setTimeout"]>
+      }
     >()
     let tokenRequestSeq = 0
 
@@ -123,6 +131,7 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       stopObserving()
       win.clearTimeout(timer)
       for (const pending of pendingTokens.values()) {
+        win.clearTimeout(pending.timer)
         pending.reject(new Error("[voyant-ext] Extension host torn down before token arrived."))
       }
       pendingTokens.clear()
@@ -132,7 +141,13 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       new Promise<UiExtensionSessionToken>((resolveToken, rejectToken) => {
         tokenRequestSeq += 1
         const requestId = `tok-${tokenRequestSeq}`
-        pendingTokens.set(requestId, { resolve: resolveToken, reject: rejectToken })
+        // Contract: a token request settles or times out; without this the
+        // promise would hang forever if the host never replies.
+        const timer = win.setTimeout(() => {
+          pendingTokens.delete(requestId)
+          rejectToken(new Error("[voyant-ext] Timed out waiting for a session token."))
+        }, tokenTimeoutMs)
+        pendingTokens.set(requestId, { resolve: resolveToken, reject: rejectToken, timer })
         post(createRequestTokenMessage(requestId))
       })
 
@@ -205,6 +220,7 @@ export function initUiExtension(options: InitUiExtensionOptions = {}): Promise<U
       if (key === undefined) return undefined
       const pending = pendingTokens.get(key)
       pendingTokens.delete(key)
+      if (pending) win.clearTimeout(pending.timer)
       return pending
     }
 

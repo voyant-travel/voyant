@@ -241,24 +241,27 @@ function UiExtensionFrame({
           source.postMessage(createErrorMessage("not-supported", requestId), "*")
           return
         }
-        // The token flows only to the frame that requested it; a slow or failed
-        // broker degrades to `unavailable` and never blocks the host.
+        // The token flows only to the exact document that requested it. The
+        // grant can be exchanged for online app access, so if the frame
+        // navigated or reloaded before the broker settled (its contentWindow
+        // no longer equals the requester) the reply is dropped rather than
+        // posted to a different document. A slow or failed broker degrades to
+        // `unavailable` and never blocks the host.
+        const requester = source
+        const postToRequester = (message: unknown) => {
+          if (iframeRef.current?.contentWindow !== requester) return
+          requester.postMessage(message, "*")
+        }
         handler()
           .then((grant) => {
-            const frameWindow = iframeRef.current?.contentWindow
-            if (!frameWindow) return
-            frameWindow.postMessage(
+            postToRequester(
               grant
                 ? createTokenMessage({ ...grant, requestId })
                 : createErrorMessage("unavailable", requestId),
-              "*",
             )
           })
           .catch(() => {
-            iframeRef.current?.contentWindow?.postMessage(
-              createErrorMessage("unavailable", requestId),
-              "*",
-            )
+            postToRequester(createErrorMessage("unavailable", requestId))
           })
       }
     }
