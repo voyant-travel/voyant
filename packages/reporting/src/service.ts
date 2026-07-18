@@ -8,7 +8,7 @@ import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { type ReportingRegistry, requireReportingScopes } from "./registry.js"
+import type { ReportingRegistry } from "./registry.js"
 import {
   type ReportDefinitionRow,
   type ReportRunOutput,
@@ -120,18 +120,29 @@ export function createReportingService(registry: ReportingRegistry) {
     },
 
     async remove(db: PostgresJsDatabase, id: string): Promise<boolean> {
-      const [retainedRun] = await db
-        .select({ id: reportRuns.id })
-        .from(reportRuns)
-        .innerJoin(reportVersions, eq(reportRuns.reportVersionId, reportVersions.id))
-        .where(eq(reportVersions.reportDefinitionId, id))
-        .limit(1)
-      if (retainedRun) throw new ReportDefinitionRetentionConflictError()
-      const rows = await db
-        .delete(reportDefinitions)
-        .where(eq(reportDefinitions.id, id))
-        .returning({ id: reportDefinitions.id })
-      return rows.length > 0
+      return db.transaction(async (transaction) => {
+        const [definition] = await transaction
+          .select({ id: reportDefinitions.id })
+          .from(reportDefinitions)
+          .where(eq(reportDefinitions.id, id))
+          .limit(1)
+          .for("update")
+        if (!definition) return false
+        await transaction
+          .select({ id: reportVersions.id })
+          .from(reportVersions)
+          .where(eq(reportVersions.reportDefinitionId, id))
+          .for("update")
+        const [retainedRun] = await transaction
+          .select({ id: reportRuns.id })
+          .from(reportRuns)
+          .innerJoin(reportVersions, eq(reportRuns.reportVersionId, reportVersions.id))
+          .where(eq(reportVersions.reportDefinitionId, id))
+          .limit(1)
+        if (retainedRun) throw new ReportDefinitionRetentionConflictError()
+        await transaction.delete(reportDefinitions).where(eq(reportDefinitions.id, id))
+        return true
+      })
     },
 
     async createVersion(
@@ -179,21 +190,26 @@ export function createReportingService(registry: ReportingRegistry) {
       parameters: ReportParameters,
       context: { actorId?: string; grantedScopes: readonly string[]; signal?: AbortSignal },
     ) {
-      const [version] = await db
-        .select()
-        .from(reportVersions)
-        .where(eq(reportVersions.id, versionId))
-        .limit(1)
-      if (!version) throw new ReportingRecordNotFoundError("Report version")
-      for (const resolved of registry.resolveDraft(version.snapshot, "edit")) {
-        if (resolved.status === "missing" || !resolved.definition) continue
-        registry.validateQuery(resolved.definition.query, context.grantedScopes)
-      }
-      const [run] = await db
-        .insert(reportRuns)
-        .values({ reportVersionId: versionId, parameters, triggeredByUserId: context.actorId })
-        .returning()
-      if (!run) throw new Error("Report run insert returned no row.")
+      const execution = await db.transaction(async (transaction) => {
+        const [version] = await transaction
+          .select()
+          .from(reportVersions)
+          .where(eq(reportVersions.id, versionId))
+          .limit(1)
+          .for("share")
+        if (!version) throw new ReportingRecordNotFoundError("Report version")
+        for (const resolved of registry.resolveDraft(version.snapshot, "edit")) {
+          if (resolved.status === "missing" || !resolved.definition) continue
+          registry.validateQuery(resolved.definition.query, context.grantedScopes)
+        }
+        const [run] = await transaction
+          .insert(reportRuns)
+          .values({ reportVersionId: versionId, parameters, triggeredByUserId: context.actorId })
+          .returning()
+        if (!run) throw new Error("Report run insert returned no row.")
+        return { run, version }
+      })
+      const { run, version } = execution
 
       try {
         const executionSignal = context.signal
@@ -232,7 +248,7 @@ export function createReportingService(registry: ReportingRegistry) {
         const requiredScopes = [
           ...new Set(run.output?.widgets.flatMap((widget) => widget.requiredScopes ?? []) ?? []),
         ]
-        requireReportingScopes(requiredScopes, grantedScopes)
+        registry.requireScopes(requiredScopes, grantedScopes)
       }
       return run ?? null
     },

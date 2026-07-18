@@ -10,11 +10,13 @@ import {
   reportTemplateDefinitionSchema,
   reportWidgetDefinitionSchema,
 } from "@voyant-travel/reporting-contracts"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 import { ReportingRegistry, ReportingRegistryError } from "./registry.js"
 
 export interface ReportingRegistryGraphView {
   reportingCatalog?: VoyantGraphReportingCatalog
+  accessCatalog?: AccessCatalog
   references: VoyantGraphRuntimeFactoryGraph["references"]
 }
 
@@ -28,7 +30,7 @@ export async function createReportingRegistryFromGraph(input: {
   contributions?: readonly ReportingContributionRuntime[]
 }): Promise<ReportingRegistry> {
   const catalog = input.graph.reportingCatalog
-  if (!catalog) return new ReportingRegistry(input.contributions ?? [])
+  if (!catalog) return new ReportingRegistry(input.contributions ?? [], input.graph.accessCatalog)
 
   const references = new Map(input.graph.references.map((reference) => [reference.id, reference]))
   const datasets = catalog.datasets.map((dataset): ReportDatasetContribution => {
@@ -114,15 +116,18 @@ export async function createReportingRegistryFromGraph(input: {
     }),
   )
 
-  return new ReportingRegistry([
-    {
-      namespace: "deployment-graph",
-      datasets,
-      widgets,
-      templates,
-    },
-    ...(input.contributions ?? []),
-  ])
+  return new ReportingRegistry(
+    [
+      {
+        namespace: "deployment-graph",
+        datasets,
+        widgets,
+        templates,
+      },
+      ...(input.contributions ?? []),
+    ],
+    input.graph.accessCatalog,
+  )
 }
 
 function isDatasetRuntime(value: unknown): value is ReportDatasetRuntime {
