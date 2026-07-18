@@ -65,6 +65,7 @@ import {
   revokeAppInstallationCredentialsRoute,
   uninstallAppInstallationRoute,
 } from "./routes-openapi.js"
+import type { ManagedAppInstallationAuthority } from "./runtime-port.js"
 import { type AppsServiceOptions, createAppsService } from "./service.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 import { listAppWebhookHealth, replayAppWebhookDelivery } from "./webhook-delivery.js"
@@ -82,6 +83,7 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
   oauth?: {
     accessCatalog: AccessCatalog
     deploymentId: string
+    managedInstallation?: ManagedAppInstallationAuthority
     clientAuthentication?: "optional" | "required"
   }
   /**
@@ -91,6 +93,7 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
    */
   sessionToken?: {
     secret: string
+    managedInstallation?: ManagedAppInstallationAuthority
     ttlSeconds?: number
   }
   /**
@@ -109,6 +112,7 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const service = createAppsService(options)
   const installations = createAppInstallationService({
     deploymentId: options.oauth?.deploymentId ?? options.deploymentId,
+    managedInstallation: options.oauth?.managedInstallation,
     platformApiVersion: options.platformApiVersion,
     eventBus: options.eventBus,
     customFields: options.customFields,
@@ -121,6 +125,8 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
           secret: options.sessionToken.secret,
           ttlSeconds: options.sessionToken.ttlSeconds,
           deploymentId: options.oauth.deploymentId,
+          managedInstallation:
+            options.sessionToken.managedInstallation ?? options.oauth.managedInstallation,
           oauth,
         })
       : null

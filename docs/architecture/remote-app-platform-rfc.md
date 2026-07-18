@@ -225,6 +225,12 @@ A release cannot be replaced in place. Marking a release unavailable prevents
 new acquisition where policy permits but does not silently rewrite an already
 verified installation.
 
+The data declaration truthfully states whether the remote app retains secrets
+in its own custody. `storesSecrets: true` is valid for provider integrations
+that retain encrypted installation or provider credentials outside Voyant. It
+is a review and disclosure signal, never permission to put secrets in the
+manifest, iframe context, custom fields, logs, or host database payloads.
+
 Direct HTTPS manifest submission is an ingress path, not a mutable runtime
 source of truth. Fetching must enforce HTTPS, response-size, redirect,
 DNS-rebinding, timeout, content-type, and signature protections. The deployment
@@ -315,13 +321,20 @@ failed mint never burn the session token.
 
 Managed-auth wiring remains a readiness blocker. The host must provide the
 optional `apps.managed-auth` runtime port with a stable app-runtime audience and
-host-owned session-token signing material. Session-token lifetime defaults to
+host-owned session-token signing material. The port also supplies one stable
+workload-environment ID plus a provider-neutral resolver for the current
+contract generation of each `(app, release)`. Generations are per installation,
+not global runtime configuration: two apps in one workload environment may
+legitimately be on different generations. Session-token lifetime defaults to
 120 seconds and a host override is capped at 300 seconds. The Apps package
 composes OAuth, session-token issuance, session-token exchange, and app
 access-token resolution from that port without replacing the host's staff
-authentication integration. When configured, the managed runtime audience is
-also authoritative for installation identity and cannot be overridden by an
-installation request body.
+authentication integration. In managed mode, the workload-environment ID and
+resolved per-app contract generation are authoritative for installation and
+credential identity. A rollout-local deployment revision is retained only as
+operational provenance and cannot invalidate an authorization code, refresh
+token, access token, or extension session token. Direct/self-hosted runtimes
+without this port preserve deployment-local binding.
 Remote-app bearer resolution is attempted only for `/v1/app` routes; app scopes
 cannot authorize admin or public route families with similarly named resources.
 Managed authorization derives the consenting actor and grantable scope ceiling
@@ -586,6 +599,9 @@ or native operation.
     executable exports, and undeclared files.
 18. Protected HTTPS manifest fetch with size, redirect, DNS-rebinding, timeout,
     content-type, and signature checks.
+19. Apps declaring `storesSecrets: true` remain responsible for encrypted
+    publisher custody, rotation, least-privilege access, and breach response;
+    the declaration grants no host secret-storage capability.
 
 ## Module Ownership
 

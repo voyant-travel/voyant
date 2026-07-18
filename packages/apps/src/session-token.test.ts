@@ -17,6 +17,12 @@ const context: AppSessionTokenContext = {
   slot: "booking.details.header",
 }
 
+const managedContext: AppSessionTokenContext = {
+  ...context,
+  workloadEnvironmentId: "workload_environment_1",
+  contractGeneration: 3,
+}
+
 const at = (iso: string) => () => new Date(iso)
 
 describe("app session token", () => {
@@ -76,6 +82,70 @@ describe("app session token", () => {
       now: at("2026-07-17T10:01:00Z"),
     })
     expect(result).toEqual({ ok: false, reason: "deployment_mismatch" })
+  })
+
+  it("uses the stable workload environment rather than deployment revision in managed mode", () => {
+    const signed = signAppSessionToken(
+      { ...managedContext, deploymentId: "deployment_revision_1" },
+      secret,
+      { now: at("2026-07-17T10:00:00Z") },
+    )
+    const result = verifyAppSessionToken(signed.token, secret, {
+      audience: "app_1",
+      workloadEnvironmentId: "workload_environment_1",
+      contractGeneration: 3,
+      now: at("2026-07-17T10:01:00Z"),
+    })
+    expect(result.ok).toBe(true)
+  })
+
+  it("fails closed across managed workload environments and stale contract generations", () => {
+    const signed = signAppSessionToken(managedContext, secret, {
+      now: at("2026-07-17T10:00:00Z"),
+    })
+    expect(
+      verifyAppSessionToken(signed.token, secret, {
+        workloadEnvironmentId: "workload_environment_other",
+        contractGeneration: 3,
+        now: at("2026-07-17T10:01:00Z"),
+      }),
+    ).toEqual({ ok: false, reason: "workload_environment_mismatch" })
+    expect(
+      verifyAppSessionToken(signed.token, secret, {
+        workloadEnvironmentId: "workload_environment_1",
+        contractGeneration: 4,
+        now: at("2026-07-17T10:01:00Z"),
+      }),
+    ).toEqual({ ok: false, reason: "contract_generation_mismatch" })
+  })
+
+  it("supports independent app contract generations in one workload environment", () => {
+    const first = signAppSessionToken(
+      { ...managedContext, appId: "app_1", contractGeneration: 2 },
+      secret,
+      { now: at("2026-07-17T10:00:00Z") },
+    )
+    const second = signAppSessionToken(
+      { ...managedContext, appId: "app_2", contractGeneration: 9 },
+      secret,
+      { now: at("2026-07-17T10:00:00Z") },
+    )
+    expect(
+      verifyAppSessionToken(first.token, secret, {
+        audience: "app_1",
+        workloadEnvironmentId: "workload_environment_1",
+        contractGeneration: 2,
+        now: at("2026-07-17T10:01:00Z"),
+      }).ok,
+    ).toBe(true)
+    expect(
+      verifyAppSessionToken(second.token, secret, {
+        audience: "app_2",
+        workloadEnvironmentId: "workload_environment_1",
+        contractGeneration: 9,
+        now: at("2026-07-17T10:01:00Z"),
+      }).ok,
+    ).toBe(true)
   })
 
   it("rejects a tampered signature", () => {

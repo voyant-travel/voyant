@@ -14,17 +14,31 @@ import {
   verifyPkceS256,
 } from "./oauth-crypto.js"
 import {
+  assertActiveInstallation,
+  assertManagedBinding,
+  assertManagedInstallationAuthority,
+  assertTokenClient,
+  ensureAuthorizedInstallation,
+  grantedScopes,
+  isInstallationUsable,
+  managedBindingMatches,
+  requireInstallation,
+  selectInstallation,
+} from "./oauth-installation.js"
+import type {
+  ManagedAppInstallationAuthority,
+  ManagedAppInstallationBinding,
+} from "./runtime-port.js"
+import {
   type AppInstallation,
   appAccessCredentials,
   appAuditEvents,
   appCredentials,
-  appGrants,
   appInstallations,
   appOAuthAuthorizationCodes,
   appOAuthRefreshTokens,
   appRedirectUris,
   appReleases,
-  apps,
 } from "./schema.js"
 
 const CODE_TTL_MS = 5 * 60 * 1000
@@ -35,6 +49,8 @@ const REFRESH_TTL_MS = 90 * 24 * 60 * 60 * 1000
 export interface AppOAuthServiceOptions {
   accessCatalog: AccessCatalog
   deploymentId: string
+  /** Stable host identity required only for managed workload environments. */
+  managedInstallation?: ManagedAppInstallationAuthority
   /** Managed confidential runtimes fail closed unless a client secret is registered. */
   clientAuthentication?: "optional" | "required"
   now?: () => Date
@@ -83,6 +99,7 @@ export interface TokenExchangeInput {
 export type AppTokenInput = TokenCodeInput | RefreshTokenInput | TokenExchangeInput
 
 export function createAppOAuthService(options: AppOAuthServiceOptions) {
+  assertManagedInstallationAuthority(options.managedInstallation)
   const now = () => options.now?.() ?? new Date()
 
   async function authorize(db: PostgresJsDatabase, input: AuthorizeAppInput) {
@@ -98,10 +115,12 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       operatorGrantedScopes: input.operatorGrantedScopes,
       grantedOptionalScopes: input.grantedOptionalScopes,
     })
+    const managedBinding = await resolveManagedBinding(input.appId, input.releaseId)
     const installation = await ensureAuthorizedInstallation(db, {
       appId: input.appId,
       releaseId: input.releaseId,
       deploymentId: options.deploymentId,
+      managedBinding,
       actorId: input.actorId,
       grantedScopes: consent.grantedScopes,
       deniedOptionalScopes: consent.deniedOptionalScopes,
@@ -113,6 +132,8 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       installationId: installation.id,
       releaseId: input.releaseId,
       deploymentId: options.deploymentId,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       codeHash: sha256Hex(code),
       stateHash: sha256Hex(input.state),
       redirectUri: input.redirectUri,
@@ -160,7 +181,20 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       .limit(1)
     if (!credential || (credential.expiresAt && credential.expiresAt <= now())) return null
     const installation = await selectInstallation(db, credential.installationId)
-    if (!installation || !isInstallationUsable(installation, credential.generation)) return null
+    if (!installation) return null
+    const managedBinding = await resolveManagedBindingOrNull(
+      installation.appId,
+      installation.releaseId,
+    )
+    if (options.managedInstallation && !managedBinding) return null
+    const effectiveManagedBinding = managedBinding ?? undefined
+    if (
+      !isInstallationUsable(installation, credential.generation) ||
+      !managedBindingMatches(installation, effectiveManagedBinding) ||
+      !managedBindingMatches(credential, effectiveManagedBinding)
+    ) {
+      return null
+    }
     // Online tokens resolve to the scope set minted at exchange (viewer/context
     // intersection); recomputing from grants would silently widen them. Offline
     // tokens track live grants so revoking a scope applies immediately. A
@@ -184,6 +218,12 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       appInstallationId: installation.id,
       appReleaseId: installation.releaseId,
       appCredentialGeneration: credential.generation,
+      ...(effectiveManagedBinding
+        ? {
+            appWorkloadEnvironmentId: effectiveManagedBinding.workloadEnvironmentId,
+            appContractGeneration: effectiveManagedBinding.contractGeneration,
+          }
+        : {}),
       appTokenMode: credential.tokenMode,
       appViewerId: credential.viewerId ?? undefined,
       ...(appContextConstraint ? { appContextConstraint } : {}),
@@ -198,6 +238,8 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
   ) {
     return db.transaction(async (tx) => {
       const installation = await requireInstallation(tx, installationId)
+      const managedBinding = await resolveManagedBinding(installation.appId, installation.releaseId)
+      assertManagedBinding(installation, managedBinding)
       const generation = installation.credentialGeneration + 1
       await tx
         .update(appInstallations)
@@ -236,13 +278,26 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       if (!verifyPkceS256(input.codeVerifier, code.codeChallenge)) {
         throw oauthError("invalid_grant", "PKCE verifier does not match the authorization code")
       }
+      if (!options.managedInstallation && code.deploymentId !== options.deploymentId) {
+        throw oauthError("invalid_grant", "Authorization code belongs to a different runtime")
+      }
+      const managedBinding = await resolveManagedBinding(code.appId, code.releaseId)
+      assertManagedBinding(code, managedBinding)
       await tx
         .update(appOAuthAuthorizationCodes)
         .set({ consumedAt: now() })
         .where(eq(appOAuthAuthorizationCodes.id, code.id))
       const installation = await requireInstallation(tx, code.installationId)
       assertActiveInstallation(installation)
-      const tokens = await mintTokens(tx, installation, code.actorId, null, code.grantedScopes)
+      assertManagedBinding(installation, managedBinding)
+      const tokens = await mintTokens(
+        tx,
+        installation,
+        code.actorId,
+        null,
+        code.grantedScopes,
+        managedBinding,
+      )
       await audit(tx, installation, code.actorId, "token", "oauth.code.exchanged", {})
       return tokens
     })
@@ -260,8 +315,11 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
         throw oauthError("invalid_grant", "Refresh token is invalid")
       }
       const installation = await requireInstallation(tx, tokenRow.installationId)
+      const managedBinding = await resolveManagedBinding(installation.appId, installation.releaseId)
       assertTokenClient(installation, input.clientId)
       assertActiveInstallation(installation)
+      assertManagedBinding(tokenRow, managedBinding)
+      assertManagedBinding(installation, managedBinding)
       if (installation.credentialGeneration !== tokenRow.generation) {
         throw oauthError("invalid_grant", "Refresh token generation was revoked")
       }
@@ -275,6 +333,7 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
         "app",
         null,
         await grantedScopes(tx, installation.id),
+        managedBinding,
         {
           rotatedFromId: tokenRow.id,
         },
@@ -288,8 +347,10 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
 
   async function exchangeActorToken(db: PostgresJsDatabase, input: TokenExchangeInput) {
     const installation = await requireInstallation(db, input.installationId)
+    const managedBinding = await resolveManagedBinding(installation.appId, installation.releaseId)
     assertTokenClient(installation, input.clientId)
     assertActiveInstallation(installation)
+    assertManagedBinding(installation, managedBinding)
     const grants = await grantedScopes(db, installation.id)
     const contextual = input.contextualScopes ?? grants
     const scopes = intersectAppTokenScopes(grants, input.viewerScopes, contextual)
@@ -298,6 +359,8 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
     await db.insert(appAccessCredentials).values({
       installationId: installation.id,
       generation: installation.credentialGeneration,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       tokenMode: "online",
       credentialHash: sha256Hex(accessToken),
       // Online tokens are intentionally narrowed; the resolver must honor the
@@ -324,6 +387,7 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
     actorId: string,
     viewerId: string | null,
     scopes: readonly string[],
+    managedBinding: ManagedAppInstallationBinding | undefined,
     refreshOptions: { rotatedFromId?: string } = {},
   ) {
     const accessToken = randomToken(APP_ACCESS_TOKEN_PREFIX)
@@ -334,6 +398,8 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
     await db.insert(appAccessCredentials).values({
       installationId: installation.id,
       generation,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       tokenMode: "offline",
       credentialHash: sha256Hex(accessToken),
       encryptedMetadata: { scopeCount: scopes.length },
@@ -346,6 +412,8 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       installationId: installation.id,
       tokenHash: sha256Hex(refreshToken),
       generation,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       rotatedFromId: refreshOptions.rotatedFromId,
       expiresAt: refreshExpiresAt,
     })
@@ -354,6 +422,33 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
 
   function isExpired(expiresAt: Date | null) {
     return Boolean(expiresAt && expiresAt <= now())
+  }
+
+  async function resolveManagedBinding(appId: string, releaseId: string) {
+    if (!options.managedInstallation) return undefined
+    const contract = await options.managedInstallation.resolveInstallationContract({
+      appId,
+      releaseId,
+    })
+    if (
+      !contract ||
+      !Number.isSafeInteger(contract.contractGeneration) ||
+      contract.contractGeneration <= 0
+    ) {
+      throw oauthError("invalid_grant", "Managed app installation contract is unavailable")
+    }
+    return {
+      workloadEnvironmentId: options.managedInstallation.workloadEnvironmentId,
+      contractGeneration: contract.contractGeneration,
+    }
+  }
+
+  async function resolveManagedBindingOrNull(appId: string, releaseId: string) {
+    try {
+      return await resolveManagedBinding(appId, releaseId)
+    } catch {
+      return null
+    }
   }
 }
 
@@ -418,116 +513,6 @@ async function requireExactRedirectUri(db: PostgresJsDatabase, appId: string, re
     .where(and(eq(appRedirectUris.appId, appId), eq(appRedirectUris.redirectUri, redirectUri)))
     .limit(1)
   if (!row) throw oauthError("invalid_request", "Redirect URI is not registered for this app")
-}
-
-async function ensureAuthorizedInstallation(
-  db: PostgresJsDatabase,
-  input: {
-    appId: string
-    releaseId: string
-    deploymentId: string
-    actorId: string
-    grantedScopes: readonly string[]
-    deniedOptionalScopes: readonly string[]
-  },
-) {
-  return db.transaction(async (tx) => {
-    const [app] = await tx.select().from(apps).where(eq(apps.id, input.appId)).limit(1)
-    if (!app) throw oauthError("invalid_request", "App registration not found", 404)
-    const [existing] = await tx
-      .select()
-      .from(appInstallations)
-      .where(
-        and(
-          eq(appInstallations.deploymentId, input.deploymentId),
-          eq(appInstallations.appId, input.appId),
-        ),
-      )
-      .limit(1)
-    const installation =
-      existing ??
-      (
-        await tx
-          .insert(appInstallations)
-          .values({
-            appId: input.appId,
-            deploymentId: input.deploymentId,
-            releaseId: input.releaseId,
-            status: "active",
-            namespace: app.platformNamespace,
-            installedBy: input.actorId,
-            authorizedAt: new Date(),
-            activatedAt: new Date(),
-          })
-          .returning()
-      )[0]
-    if (!installation) throw oauthError("server_error", "Could not create installation", 500)
-    for (const scope of input.grantedScopes) {
-      await tx
-        .insert(appGrants)
-        .values({
-          installationId: installation.id,
-          scope,
-          status: "granted",
-          optional: false,
-          grantedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [appGrants.installationId, appGrants.scope],
-          set: { status: "granted", grantedAt: new Date(), revokedAt: null },
-        })
-    }
-    for (const scope of input.deniedOptionalScopes) {
-      await tx
-        .insert(appGrants)
-        .values({ installationId: installation.id, scope, status: "optional", optional: true })
-        .onConflictDoUpdate({
-          target: [appGrants.installationId, appGrants.scope],
-          set: { status: "optional", optional: true },
-        })
-    }
-    return installation
-  })
-}
-
-async function requireInstallation(db: PostgresJsDatabase, installationId: string) {
-  const installation = await selectInstallation(db, installationId)
-  if (!installation) throw oauthError("invalid_grant", "App installation not found", 404)
-  return installation
-}
-
-async function selectInstallation(db: PostgresJsDatabase, installationId: string) {
-  const [installation] = await db
-    .select()
-    .from(appInstallations)
-    .where(eq(appInstallations.id, installationId))
-    .limit(1)
-  return installation ?? null
-}
-
-async function grantedScopes(db: PostgresJsDatabase, installationId: string) {
-  const rows = await db
-    .select({ scope: appGrants.scope })
-    .from(appGrants)
-    .where(and(eq(appGrants.installationId, installationId), eq(appGrants.status, "granted")))
-    .orderBy(appGrants.scope)
-  return rows.map((row) => row.scope)
-}
-
-function assertActiveInstallation(installation: AppInstallation) {
-  if (installation.status !== "active") {
-    throw oauthError("invalid_grant", "App installation is not active")
-  }
-}
-
-function isInstallationUsable(installation: AppInstallation | null, generation: number) {
-  return installation?.status === "active" && installation.credentialGeneration === generation
-}
-
-function assertTokenClient(installation: AppInstallation, clientId: string) {
-  if (installation.appId !== clientId) {
-    throw oauthError("invalid_grant", "Token belongs to a different app")
-  }
 }
 
 export function intersectAppTokenScopes(...sets: readonly (readonly string[])[]): string[] {

@@ -6,7 +6,35 @@ import {
   readStoredAppContextConstraint,
   readStoredScopes,
 } from "./oauth-service.js"
-import { appCredentials, appReleases } from "./schema.js"
+import {
+  appAccessCredentials,
+  appCredentials,
+  appGrants,
+  appInstallations,
+  appReleases,
+} from "./schema.js"
+
+function accessTokenDatabase(
+  installation: Record<string, unknown>,
+  credential: Record<string, unknown>,
+): PostgresJsDatabase {
+  return Object.assign(Object.create(null), {
+    select: () => ({
+      from: (table: unknown) => {
+        if (table === appAccessCredentials) {
+          return { where: () => ({ limit: async () => [credential] }) }
+        }
+        if (table === appInstallations) {
+          return { where: () => ({ limit: async () => [installation] }) }
+        }
+        if (table === appGrants) {
+          return { where: () => ({ orderBy: async () => [] }) }
+        }
+        return { where: () => ({ limit: async () => [] }) }
+      },
+    }),
+  }) as PostgresJsDatabase
+}
 
 describe("app OAuth online token scope intersection", () => {
   it("never exceeds either app grants, viewer grants, or contextual restrictions", () => {
@@ -128,5 +156,83 @@ describe("managed client authentication", () => {
         clientId: "app_1",
       }),
     ).rejects.toMatchObject({ status: 401, code: "invalid_client" })
+  })
+})
+
+describe("managed installation token binding", () => {
+  const baseInstallation = {
+    id: "inst_1",
+    appId: "app_1",
+    releaseId: "release_1",
+    deploymentId: "deployment_revision_1",
+    workloadEnvironmentId: "workload_environment_1",
+    contractGeneration: 4,
+    credentialGeneration: 2,
+    status: "active",
+  }
+  const baseCredential = {
+    id: "credential_1",
+    installationId: "inst_1",
+    workloadEnvironmentId: "workload_environment_1",
+    contractGeneration: 4,
+    generation: 2,
+    tokenMode: "offline",
+    encryptedMetadata: {},
+    status: "active",
+    expiresAt: new Date("2026-07-19T00:00:00Z"),
+    viewerId: null,
+  }
+
+  it("resolves the per-app generation into the runtime auth context", async () => {
+    const generations = new Map([
+      ["app_1", 4],
+      ["app_2", 11],
+    ])
+    const service = createAppOAuthService({
+      accessCatalog: { resources: [], presets: [] },
+      deploymentId: "deployment_revision_2",
+      managedInstallation: {
+        workloadEnvironmentId: "workload_environment_1",
+        resolveInstallationContract: async ({ appId }) => ({
+          contractGeneration: generations.get(appId) ?? 0,
+        }),
+      },
+      now: () => new Date("2026-07-18T12:00:00Z"),
+    })
+
+    await expect(
+      service.resolveAccessToken(
+        accessTokenDatabase(baseInstallation, baseCredential),
+        "vapp_fixture",
+      ),
+    ).resolves.toMatchObject({
+      appWorkloadEnvironmentId: "workload_environment_1",
+      appContractGeneration: 4,
+    })
+  })
+
+  it.each([
+    ["workload_environment_other", 4],
+    ["workload_environment_1", 3],
+  ])("rejects credential binding workload=%s generation=%s", async (workloadEnvironmentId, contractGeneration) => {
+    const service = createAppOAuthService({
+      accessCatalog: { resources: [], presets: [] },
+      deploymentId: "deployment_revision_2",
+      managedInstallation: {
+        workloadEnvironmentId: "workload_environment_1",
+        resolveInstallationContract: async () => ({ contractGeneration: 4 }),
+      },
+      now: () => new Date("2026-07-18T12:00:00Z"),
+    })
+    await expect(
+      service.resolveAccessToken(
+        accessTokenDatabase(baseInstallation, {
+          ...baseCredential,
+          workloadEnvironmentId,
+          contractGeneration,
+        }),
+        "vapp_fixture",
+      ),
+    ).resolves.toBeNull()
   })
 })

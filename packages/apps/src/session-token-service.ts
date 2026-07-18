@@ -16,6 +16,10 @@ import { ApiHttpError } from "@voyant-travel/hono"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { createAppOAuthService } from "./oauth-service.js"
+import type {
+  ManagedAppInstallationAuthority,
+  ManagedAppInstallationBinding,
+} from "./runtime-port.js"
 import {
   type AppInstallation,
   appAuditEvents,
@@ -36,6 +40,7 @@ export interface AppSessionTokenServiceOptions {
   secret: string
   /** The deployment audience the tokens are bound to. */
   deploymentId: string
+  managedInstallation?: ManagedAppInstallationAuthority
   /** OAuth service supplying the online actor-token-exchange primitive. */
   oauth: AppOAuthService
   ttlSeconds?: number
@@ -76,10 +81,17 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
     input: IssueAppSessionTokenInput,
   ): Promise<IssuedAppSessionToken> {
     const installation = await requireActiveInstallation(db, input.installationId)
+    const managedBinding = await resolveManagedBinding(
+      options.managedInstallation,
+      installation.appId,
+      installation.releaseId,
+    )
+    assertManagedBinding(installation, managedBinding)
     const context: AppSessionTokenContext = {
       appId: installation.appId,
       installationId: installation.id,
       deploymentId: installation.deploymentId,
+      ...(managedBinding ?? {}),
       viewerId: input.viewerId,
       viewerScopes: input.viewerScopes ?? [],
       entity: input.entity ?? null,
@@ -93,6 +105,8 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
       installationId: installation.id,
       appId: installation.appId,
       deploymentId: installation.deploymentId,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       jti: signed.claims.jti,
       viewerId: input.viewerId,
       entityType: signed.claims.entity?.type ?? null,
@@ -110,7 +124,7 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
 
   async function exchange(db: PostgresJsDatabase, input: ExchangeAppSessionTokenInput) {
     const verified = verifyAppSessionToken(input.token, options.secret, {
-      deploymentId: options.deploymentId,
+      deploymentId: options.managedInstallation ? undefined : options.deploymentId,
       audience: input.clientId,
       now,
     })
@@ -123,7 +137,17 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
     const { claims } = verified
     return db.transaction(async (tx) => {
       const installation = await requireActiveInstallation(tx, claims.installationId)
-      if (installation.appId !== claims.aud || installation.deploymentId !== claims.deploymentId) {
+      const managedBinding = await resolveManagedBinding(
+        options.managedInstallation,
+        installation.appId,
+        installation.releaseId,
+      )
+      if (
+        installation.appId !== claims.aud ||
+        (!managedBinding && installation.deploymentId !== claims.deploymentId) ||
+        !managedBindingMatches(installation, managedBinding) ||
+        !managedBindingMatches(claims, managedBinding)
+      ) {
         throw new ApiHttpError("Session token installation context changed", {
           status: 401,
           code: "app_session_token_installation_mismatch",
@@ -152,6 +176,12 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
             eq(appSessionTokens.installationId, installation.id),
             eq(appSessionTokens.appId, claims.aud),
             eq(appSessionTokens.deploymentId, claims.deploymentId),
+            ...(managedBinding
+              ? [
+                  eq(appSessionTokens.workloadEnvironmentId, managedBinding.workloadEnvironmentId),
+                  eq(appSessionTokens.contractGeneration, managedBinding.contractGeneration),
+                ]
+              : []),
             eq(appSessionTokens.viewerId, claims.sub),
             isNull(appSessionTokens.consumedAt),
             gt(appSessionTokens.expiresAt, now()),
@@ -175,6 +205,57 @@ export function createAppSessionTokenService(options: AppSessionTokenServiceOpti
   }
 
   return { issue, exchange }
+}
+
+async function resolveManagedBinding(
+  authority: ManagedAppInstallationAuthority | undefined,
+  appId: string,
+  releaseId: string,
+): Promise<ManagedAppInstallationBinding | undefined> {
+  if (!authority) return undefined
+  const contract = await authority.resolveInstallationContract({ appId, releaseId })
+  if (
+    !contract ||
+    !Number.isSafeInteger(contract.contractGeneration) ||
+    contract.contractGeneration <= 0
+  ) {
+    throw new ApiHttpError("Managed app installation contract is unavailable", {
+      status: 401,
+      code: "app_session_token_contract_unavailable",
+    })
+  }
+  return {
+    workloadEnvironmentId: authority.workloadEnvironmentId,
+    contractGeneration: contract.contractGeneration,
+  }
+}
+
+type PersistedManagedBinding = {
+  workloadEnvironmentId?: string | null
+  contractGeneration?: number | null
+}
+
+function managedBindingMatches(
+  persisted: PersistedManagedBinding,
+  expected: ManagedAppInstallationBinding | undefined,
+) {
+  if (!expected) return true
+  return (
+    persisted.workloadEnvironmentId === expected.workloadEnvironmentId &&
+    persisted.contractGeneration === expected.contractGeneration
+  )
+}
+
+function assertManagedBinding(
+  persisted: PersistedManagedBinding,
+  expected: ManagedAppInstallationBinding | undefined,
+) {
+  if (!managedBindingMatches(persisted, expected)) {
+    throw new ApiHttpError("App installation belongs to a different managed environment", {
+      status: 401,
+      code: "app_session_token_installation_mismatch",
+    })
+  }
 }
 
 function intersectRequestedScopes(

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { appOAuthTokenSchema } from "./contracts.js"
 import { createAppSessionTokenService } from "./session-token-service.js"
 
-function trackedDatabaseStub() {
+function trackedDatabaseStub(installationOverrides: Record<string, unknown> = {}) {
   const installation = {
     id: "inst_1",
     appId: "app_1",
@@ -12,6 +12,7 @@ function trackedDatabaseStub() {
     deploymentId: "dep_1",
     status: "active",
     namespace: "app--one",
+    ...installationOverrides,
   }
   const consume = vi.fn().mockResolvedValue([{ id: "session_1" }])
   const db = {
@@ -177,5 +178,38 @@ describe("app session token service", () => {
     expect(consume).not.toHaveBeenCalled()
     await expect(service.exchange(db, input)).resolves.toEqual({ accessToken: "online" })
     expect(consume).toHaveBeenCalledOnce()
+  })
+
+  it("keeps a managed session exchange valid across deployment rollouts", async () => {
+    const token = vi.fn().mockResolvedValue({ accessToken: "online" })
+    const installationAuthority = {
+      workloadEnvironmentId: "workload_environment_1",
+      resolveInstallationContract: async () => ({ contractGeneration: 7 }),
+    }
+    const { db } = trackedDatabaseStub({
+      workloadEnvironmentId: "workload_environment_1",
+      contractGeneration: 7,
+    })
+    const issued = await createAppSessionTokenService({
+      secret: "test-deployment-session-secret-value-000000000000",
+      deploymentId: "deployment_revision_1",
+      managedInstallation: installationAuthority,
+      oauth: { token } as never,
+      now: () => new Date("2026-07-18T09:00:00.000Z"),
+    }).issue(db, { installationId: "inst_1", viewerId: "viewer_1" })
+
+    await expect(
+      createAppSessionTokenService({
+        secret: "test-deployment-session-secret-value-000000000000",
+        deploymentId: "deployment_revision_2",
+        managedInstallation: installationAuthority,
+        oauth: { token } as never,
+        now: () => new Date("2026-07-18T09:00:01.000Z"),
+      }).exchange(db, {
+        token: issued.token,
+        clientId: "app_1",
+        viewerScopes: [],
+      }),
+    ).resolves.toEqual({ accessToken: "online" })
   })
 })

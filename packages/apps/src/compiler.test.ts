@@ -4,6 +4,14 @@ import { appManifestSchema } from "./contracts.js"
 import { validManifest } from "./test-fixtures.js"
 
 describe("app manifest compiler", () => {
+  it("accepts truthful disclosure of publisher-custodied encrypted secrets", () => {
+    const parsed = appManifestSchema.parse({
+      ...validManifest,
+      data: { ...validManifest.data, storesSecrets: true },
+    })
+    expect(parsed.data.storesSecrets).toBe(true)
+  })
+
   it("accepts a closed v1 manifest and produces a stable digest", () => {
     const first = compileAppManifest(validManifest)
     const second = compileAppManifest({
