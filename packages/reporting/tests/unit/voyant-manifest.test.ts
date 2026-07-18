@@ -19,4 +19,17 @@ describe("reporting manifest", () => {
       ["read", "write", "export"],
     )
   })
+
+  it("contributes a cross-module operator overview template", () => {
+    expect(reportingVoyantModule.reporting?.templates).toEqual([
+      expect.objectContaining({
+        id: "reporting.template.operator-overview",
+        version: 1,
+        widgets: expect.arrayContaining([
+          expect.objectContaining({ widgetId: "bookings.widget.total" }),
+          expect.objectContaining({ widgetId: "finance.net-issued-trend" }),
+        ]),
+      }),
+    ])
+  })
 })
