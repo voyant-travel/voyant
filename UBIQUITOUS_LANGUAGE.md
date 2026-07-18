@@ -192,6 +192,8 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 | **Address**         | A postal address attached to a Person or Organization.                                           | —                         |
 | **Named Contact**   | A titled point-of-contact role at an Organization (e.g. "Procurement Manager Jane Doe").         | *role-contact*            |
 | **External Ref**    | A mapping between a Voyant entity and an ID in a third-party system (PMS, OTA, channel manager). | *external id, sync key*   |
+| **Brand Asset**     | An Operator-owned visual identity file. The standard set is a horizontal Logo and compact Icon, each with light-mode and dark-mode variants. | *contract logo, document logo* |
+| **Document Renderer** | A deployment-supplied capability that turns operator-rendered HTML into an output document such as PDF. Managed Voyant supplies its private renderer; self-hosters can bind an in-process provider or configure an HTTP endpoint. | *Cloudflare renderer, contract renderer* |
 
 ---
 

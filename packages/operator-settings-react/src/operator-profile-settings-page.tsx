@@ -1,5 +1,7 @@
 "use client"
 
+// agent-quality: file-size exception -- owner: operator-settings; the profile form and its coordinated brand-asset upload states stay co-located until its shared save/reset model can be extracted without duplication.
+
 /**
  * Settings -> Operator profile (source-free, package-delivered).
  *
@@ -37,8 +39,8 @@ import {
   Textarea,
 } from "@voyant-travel/ui/components"
 import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
-import { Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { ImageIcon, Loader2, UploadCloud } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -55,6 +57,14 @@ interface OperatorProfileForm {
   phone?: string | null
   email?: string | null
   website?: string | null
+  logoLightAssetKey?: string | null
+  logoLightMimeType?: string | null
+  logoDarkAssetKey?: string | null
+  logoDarkMimeType?: string | null
+  iconLightAssetKey?: string | null
+  iconLightMimeType?: string | null
+  iconDarkAssetKey?: string | null
+  iconDarkMimeType?: string | null
   bankTransferBeneficiary?: string | null
   iban?: string | null
   bank?: string | null
@@ -93,6 +103,14 @@ const EMPTY_FORM: OperatorProfileForm = {
   phone: "",
   email: "",
   website: "",
+  logoLightAssetKey: null,
+  logoLightMimeType: null,
+  logoDarkAssetKey: null,
+  logoDarkMimeType: null,
+  iconLightAssetKey: null,
+  iconLightMimeType: null,
+  iconDarkAssetKey: null,
+  iconDarkMimeType: null,
   bankTransferBeneficiary: "",
   iban: "",
   bank: "",
@@ -104,6 +122,158 @@ const EMPTY_FORM: OperatorProfileForm = {
   customerPaymentPolicy: null,
   bookingCheckoutUrlTemplate: "",
   invoicePayUrlTemplate: "",
+}
+
+interface BrandAssetDropzoneProps {
+  assetKey: string | null | undefined
+  baseUrl: string
+  description: string
+  id: string
+  label: string
+  messages: {
+    clickHelp: string
+    drop: string
+    dropActive: string
+    remove: string
+    replace: string
+    uploaded: string
+    uploading: string
+    uploadFailed: string
+  }
+  mode: "light" | "dark"
+  shape: "icon" | "logo"
+  onChange(asset: { key: string; mimeType: string } | null): void
+  onUpload(file: File): Promise<{ key: string; mimeType: string }>
+}
+
+function mediaUrl(baseUrl: string, assetKey: string | null | undefined) {
+  if (!assetKey) return null
+  const encodedKey = assetKey.split("/").map(encodeURIComponent).join("/")
+  return `${baseUrl}/v1/admin/media/${encodedKey}`
+}
+
+function BrandAssetDropzone({
+  assetKey,
+  baseUrl,
+  description,
+  id,
+  label,
+  messages,
+  mode,
+  shape,
+  onChange,
+  onUpload,
+}: BrandAssetDropzoneProps) {
+  const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const previewUrl = mediaUrl(baseUrl, assetKey)
+
+  const upload = async (file: File) => {
+    setIsUploading(true)
+    try {
+      onChange(await onUpload(file))
+      toast.success(messages.uploaded)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : messages.uploadFailed)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label htmlFor={id}>{label}</Label>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      </div>
+      <button
+        type="button"
+        aria-label={label}
+        aria-disabled={isUploading}
+        onClick={() => {
+          if (!isUploading) inputRef.current?.click()
+        }}
+        onDragEnter={(event) => {
+          event.preventDefault()
+          if (!isUploading) setIsDragging(true)
+        }}
+        onDragOver={(event) => {
+          event.preventDefault()
+          event.dataTransfer.dropEffect = "copy"
+          if (!isUploading) setIsDragging(true)
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault()
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setIsDragging(false)
+          }
+        }}
+        onDrop={(event) => {
+          event.preventDefault()
+          setIsDragging(false)
+          const file = event.dataTransfer.files[0]
+          if (file && !isUploading) void upload(file)
+        }}
+        className={`group flex min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+          isDragging
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/30 bg-muted/20 hover:border-primary/60 hover:bg-muted/40"
+        } ${isUploading ? "cursor-wait opacity-70" : ""}`}
+      >
+        {isUploading ? (
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        ) : previewUrl ? (
+          <div className="flex max-w-full flex-col items-center gap-3">
+            <div
+              className={`flex items-center justify-center overflow-hidden rounded-md border p-3 shadow-sm ${
+                shape === "icon" ? "h-20 w-20" : "h-20 w-48"
+              } ${mode === "dark" ? "border-zinc-700 bg-zinc-950" : "bg-white"}`}
+            >
+              <img src={previewUrl} alt={label} className="max-h-full max-w-full object-contain" />
+            </div>
+            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+          </div>
+        ) : (
+          <UploadCloud className="h-9 w-9 text-muted-foreground transition-colors group-hover:text-primary" />
+        )}
+        <div>
+          <p className="text-sm font-medium">
+            {isUploading
+              ? messages.uploading
+              : isDragging
+                ? messages.dropActive
+                : previewUrl
+                  ? messages.replace
+                  : messages.drop}
+          </p>
+          {!isUploading ? (
+            <p className="mt-1 text-xs text-muted-foreground">{messages.clickHelp}</p>
+          ) : null}
+        </div>
+      </button>
+      <input
+        ref={inputRef}
+        id={id}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="sr-only"
+        disabled={isUploading}
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) void upload(file)
+          event.currentTarget.value = ""
+        }}
+      />
+      <div className="flex min-h-8 justify-end">
+        {previewUrl ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
+            {messages.remove}
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 export function OperatorProfileSettingsPage() {
@@ -171,6 +341,14 @@ export function OperatorProfileSettingsPage() {
             phone: next.phone ?? null,
             email: next.email ?? null,
             website: next.website ?? null,
+            logoLightAssetKey: next.logoLightAssetKey ?? null,
+            logoLightMimeType: next.logoLightMimeType ?? null,
+            logoDarkAssetKey: next.logoDarkAssetKey ?? null,
+            logoDarkMimeType: next.logoDarkMimeType ?? null,
+            iconLightAssetKey: next.iconLightAssetKey ?? null,
+            iconLightMimeType: next.iconLightMimeType ?? null,
+            iconDarkAssetKey: next.iconDarkAssetKey ?? null,
+            iconDarkMimeType: next.iconDarkMimeType ?? null,
             license: next.license ?? null,
             licenseAuthority: next.licenseAuthority ?? null,
             signatoryName: next.signatoryName ?? null,
@@ -224,6 +402,24 @@ export function OperatorProfileSettingsPage() {
   const setField = <K extends keyof OperatorProfileForm>(key: K, value: OperatorProfileForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
+  const uploadBrandAsset = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(t.branding.imageOnly)
+    }
+    if (file.size > 2 * 1_024 * 1_024) {
+      throw new Error(t.branding.tooLarge)
+    }
+
+    const body = new FormData()
+    body.append("file", file)
+    const response = await fetcher(`${baseUrl}/v1/admin/uploads`, {
+      method: "POST",
+      body,
+    })
+    if (!response.ok) throw new Error(`${t.branding.uploadFailed} (${response.status})`)
+    return (await response.json()) as { key: string; mimeType: string }
+  }
+
   return (
     <form
       className="mx-auto flex max-w-4xl flex-col gap-6 p-6"
@@ -240,6 +436,106 @@ export function OperatorProfileSettingsPage() {
           {t.descriptionSuffix}
         </p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.branding.title}</CardTitle>
+          <CardDescription>{t.branding.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <section className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">{t.branding.horizontalLogoTitle}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t.branding.horizontalLogoDescription}
+              </p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <BrandAssetDropzone
+                id="op-logo-light"
+                label={`${t.branding.horizontalLogoTitle} — ${t.branding.lightModeLabel}`}
+                description={t.branding.lightModeHelp}
+                assetKey={form.logoLightAssetKey}
+                baseUrl={baseUrl}
+                mode="light"
+                shape="logo"
+                messages={t.branding}
+                onUpload={uploadBrandAsset}
+                onChange={(asset) =>
+                  setForm((current) => ({
+                    ...current,
+                    logoLightAssetKey: asset?.key ?? null,
+                    logoLightMimeType: asset?.mimeType ?? null,
+                  }))
+                }
+              />
+              <BrandAssetDropzone
+                id="op-logo-dark"
+                label={`${t.branding.horizontalLogoTitle} — ${t.branding.darkModeLabel}`}
+                description={t.branding.darkModeHelp}
+                assetKey={form.logoDarkAssetKey}
+                baseUrl={baseUrl}
+                mode="dark"
+                shape="logo"
+                messages={t.branding}
+                onUpload={uploadBrandAsset}
+                onChange={(asset) =>
+                  setForm((current) => ({
+                    ...current,
+                    logoDarkAssetKey: asset?.key ?? null,
+                    logoDarkMimeType: asset?.mimeType ?? null,
+                  }))
+                }
+              />
+            </div>
+          </section>
+          <section className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">{t.branding.iconTitle}</h3>
+              <p className="text-sm text-muted-foreground">{t.branding.iconDescription}</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <BrandAssetDropzone
+                id="op-icon-light"
+                label={`${t.branding.iconTitle} — ${t.branding.lightModeLabel}`}
+                description={t.branding.lightModeHelp}
+                assetKey={form.iconLightAssetKey}
+                baseUrl={baseUrl}
+                mode="light"
+                shape="icon"
+                messages={t.branding}
+                onUpload={uploadBrandAsset}
+                onChange={(asset) =>
+                  setForm((current) => ({
+                    ...current,
+                    iconLightAssetKey: asset?.key ?? null,
+                    iconLightMimeType: asset?.mimeType ?? null,
+                  }))
+                }
+              />
+              <BrandAssetDropzone
+                id="op-icon-dark"
+                label={`${t.branding.iconTitle} — ${t.branding.darkModeLabel}`}
+                description={t.branding.darkModeHelp}
+                assetKey={form.iconDarkAssetKey}
+                baseUrl={baseUrl}
+                mode="dark"
+                shape="icon"
+                messages={t.branding}
+                onUpload={uploadBrandAsset}
+                onChange={(asset) =>
+                  setForm((current) => ({
+                    ...current,
+                    iconDarkAssetKey: asset?.key ?? null,
+                    iconDarkMimeType: asset?.mimeType ?? null,
+                  }))
+                }
+              />
+            </div>
+          </section>
+          <p className="text-xs text-muted-foreground">{t.branding.assetHelp}</p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

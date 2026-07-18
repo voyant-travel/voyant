@@ -17,6 +17,18 @@ export {
   validateCustomFields,
 } from "./custom-fields.js"
 export type {
+  DocumentRenderer,
+  DocumentRendererEnvironment,
+  HttpDocumentRendererOptions,
+  PdfPageFormat,
+  PdfRenderRequest,
+} from "./document-rendering.js"
+export {
+  createHttpDocumentRenderer,
+  createHttpDocumentRendererFromEnv,
+  documentRendererPort,
+} from "./document-rendering.js"
+export type {
   Actor,
   VoyantAuthContext,
   VoyantCallerType,

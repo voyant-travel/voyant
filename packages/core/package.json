@@ -14,6 +14,7 @@
     "./events": "./src/events.ts",
     "./orchestration": "./src/orchestration.ts",
     "./custom-fields": "./src/custom-fields.ts",
+    "./document-rendering": "./src/document-rendering.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./links": "./src/links.ts",
     "./query": "./src/query.ts",
@@ -89,6 +90,11 @@
         "types": "./dist/custom-fields.d.ts",
         "import": "./dist/custom-fields.js",
         "default": "./dist/custom-fields.js"
+      },
+      "./document-rendering": {
+        "types": "./dist/document-rendering.d.ts",
+        "import": "./dist/document-rendering.js",
+        "default": "./dist/document-rendering.js"
       },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",

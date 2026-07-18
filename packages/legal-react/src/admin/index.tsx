@@ -334,6 +334,29 @@ export function createSelectedLegalAdminExtension({
 
   return {
     ...extension,
+    setupSteps: [
+      {
+        id: "@voyant-travel/legal#setup.contract-generation",
+        order: 50,
+        skippable: true,
+        href: "/legal/templates",
+        messages: {
+          en: {
+            title: "Contract generation",
+            description:
+              "Author your contract, select it for automatic use, and choose a default number series.",
+            action: "Configure contracts",
+          },
+          ro: {
+            title: "Generarea contractelor",
+            description:
+              "Creeaza contractul, selecteaza-l pentru folosire automata si alege seria implicita.",
+            action: "Configureaza contractele",
+          },
+        },
+        isComplete: hasContractGenerationSettings,
+      },
+    ],
     navigation: [
       {
         order: -40,
@@ -362,4 +385,32 @@ export function createSelectedLegalAdminExtension({
       },
     ],
   }
+}
+
+async function hasContractGenerationSettings({
+  runtime,
+}: AdminRouteLoaderContext): Promise<boolean> {
+  const request = runtime.fetcher ?? fetch
+  const [templateResponse, seriesResponse] = await Promise.all([
+    request(`${runtime.baseUrl}/v1/admin/legal/contracts/templates/default?scope=customer`),
+    request(`${runtime.baseUrl}/v1/admin/legal/contracts/number-series?scope=customer&active=true`),
+  ])
+  if (!templateResponse.ok || !seriesResponse.ok) return false
+
+  const template = (
+    (await templateResponse.json()) as {
+      data?: { active?: boolean; isDefault?: boolean; currentVersionId?: string | null } | null
+    }
+  ).data
+  const series = (
+    (await seriesResponse.json()) as {
+      data?: Array<{ active?: boolean; isDefault?: boolean }>
+    }
+  ).data
+  return Boolean(
+    template?.active &&
+      template.isDefault &&
+      template.currentVersionId &&
+      series?.some((row) => row.active && row.isDefault),
+  )
 }

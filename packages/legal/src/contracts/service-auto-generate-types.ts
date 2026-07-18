@@ -37,6 +37,14 @@ export interface OperatorContextVariables {
   phone: string
   email: string
   website: string
+  /** Browser-renderable URL/data URL for the horizontal logo in light mode. */
+  logoUrl: string
+  /** Browser-renderable URL/data URL for the horizontal logo in dark mode. */
+  logoDarkUrl: string
+  /** Browser-renderable URL/data URL for the compact icon in light mode. */
+  iconUrl: string
+  /** Browser-renderable URL/data URL for the compact icon in dark mode. */
+  iconDarkUrl: string
   iban: string
   bank: string
   license: string
@@ -346,22 +354,30 @@ export type ResolveContractVariablesFn = (context: {
 export interface AutoGenerateContractOptions {
   enabled?: boolean
   /**
-   * Slug of the contract template to use. The contract is created against
-   * that template's `currentVersionId`. If the template has no current
-   * version, the handler logs + bails.
+   * Optional explicit template slug for backwards-compatible/custom
+   * integrations. Standard Operator deployments omit this and resolve the
+   * operator-authored default template from persisted Legal settings.
    */
-  templateSlug: string
+  templateSlug?: string
   /**
    * Scope the contract defaults to when creating. Matches
    * `contractScopeEnum`; the default `"customer"` is right for the common
    * operator-issues-to-traveler case.
    */
   scope?: "customer" | "supplier" | "partner" | "channel" | "other"
+  /** Optional channel used when resolving an operator-authored default template. */
+  channelId?: string | null
+  /** Ordered language fallbacks used by default-template resolution. */
+  fallbackLanguages?: string[]
+  /** Require an explicitly selected default rather than an implicit active template. */
+  requireExplicitDefaultTemplate?: boolean
   /**
    * When set, resolves the active series via the `(prefix, scope)`
    * partial unique index. Without it, the contract issues unnumbered.
    */
   seriesPrefixScope?: ContractSeriesIdentity
+  /** Resolve the operator-authored default number series for `scope`. */
+  requireNumberSeries?: boolean
   /**
    * Language code written onto the contract row. Used by the PDF
    * renderer to pick the right locale for date/currency filters.
@@ -417,6 +433,8 @@ export type AutoGenerateContractResult =
   | { status: "ok"; contractId: string; attachmentId: string }
   | { status: "template_not_found" }
   | { status: "template_version_missing" }
+  | { status: "series_not_found" }
+  | { status: "series_ambiguous" }
   | { status: "booking_not_found" }
   | { status: "contract_create_failed" }
   | { status: "document_failed"; reason: string }
