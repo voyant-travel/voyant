@@ -171,6 +171,7 @@ describe("ReportingRegistry", () => {
     expect(() => requireReportingScopes(["finance:read"], ["finance:*"])).not.toThrow()
     expect(() => requireReportingScopes(["finance:read"], ["*"])).not.toThrow()
     expect(() => requireReportingScopes(["finance:read"], ["*:*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*:read"])).not.toThrow()
     expect(() => requireReportingScopes(["finance:read"], ["reports:read"])).toThrow(
       ReportingAuthorizationError,
     )
