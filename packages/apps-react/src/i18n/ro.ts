@@ -129,6 +129,11 @@ export const appsUiRo = {
     approving: "Se instalează…",
     selectApp: "Aplicație",
     selectRelease: "Versiune",
+    verifiedApp: "Aplicație verificată",
+    verifiedVersion: "Versiune",
+    verifyingIdentity: "Se verifică…",
+    verifiedMarketplaceIdentity:
+      "Această aplicație și versiune au fost rezolvate dintr-un link protejat al Marketplace-ului.",
     noOptional: "Această aplicație nu solicită permisiuni opționale.",
     installPolicy: "Politică de actualizare",
     dataHeading: "Gestionarea datelor",

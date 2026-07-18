@@ -122,6 +122,10 @@ export type AppsUiMessages = {
     approving: string
     selectApp: string
     selectRelease: string
+    verifiedApp: string
+    verifiedVersion: string
+    verifyingIdentity: string
+    verifiedMarketplaceIdentity: string
     noOptional: string
     installPolicy: string
     dataHeading: string

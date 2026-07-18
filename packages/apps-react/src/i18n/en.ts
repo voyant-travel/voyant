@@ -127,6 +127,11 @@ export const appsUiEn = {
     approving: "Installing…",
     selectApp: "App",
     selectRelease: "Release",
+    verifiedApp: "Verified app",
+    verifiedVersion: "Version",
+    verifyingIdentity: "Verifying…",
+    verifiedMarketplaceIdentity:
+      "This app and version were resolved from a protected Marketplace install link.",
     noOptional: "This app requests no optional scopes.",
     installPolicy: "Update policy",
     dataHeading: "Data handling",

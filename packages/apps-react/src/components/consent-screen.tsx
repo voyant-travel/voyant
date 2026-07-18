@@ -23,7 +23,7 @@ import {
 import { AlertCircle, Loader2, ShieldCheck } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { useAppReleases, useApps } from "../hooks/use-apps.js"
+import { useApp, useAppReleases, useApps } from "../hooks/use-apps.js"
 import { useInstallationActions } from "../hooks/use-installation-actions.js"
 import { useMarketplaceInstallIntent } from "../hooks/use-marketplace-install-intent.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
@@ -58,6 +58,7 @@ export function ConsentScreen({
   const [releaseId, setReleaseId] = useState<string | undefined>()
   const [denied, setDenied] = useState<Set<string>>(new Set())
   const [updatePolicy, setUpdatePolicy] = useState<(typeof UPDATE_POLICIES)[number]>("compatible")
+  const app = useApp(appId)
   const releases = useAppReleases(appId)
   const { install } = useInstallationActions()
   const marketplace = useMarketplaceInstallIntent()
@@ -70,12 +71,11 @@ export function ConsentScreen({
       onSuccess: (result) => {
         setAppId(result.appId)
         setReleaseId(result.releaseId)
-        void apps.refetch()
       },
     })
-  }, [apps.refetch, installIntent, open, marketplace.resolveIntent.mutate])
+  }, [installIntent, open, marketplace.resolveIntent.mutate])
 
-  const selectedApp = apps.data?.data.find((app) => app.id === appId)
+  const selectedApp = app.data?.data
   const release: AppReleaseRecord | undefined = releases.data?.data.find(
     (candidate) => candidate.id === releaseId,
   )
@@ -151,51 +151,58 @@ export function ConsentScreen({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>{t.selectApp}</Label>
-            <Select
-              value={appId}
-              disabled={Boolean(installIntent)}
-              onValueChange={(value) => {
-                setAppId(value ?? undefined)
-                setReleaseId(undefined)
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.selectApp} />
-              </SelectTrigger>
-              <SelectContent>
-                {(apps.data?.data ?? []).map((app) => (
-                  <SelectItem key={app.id} value={app.id}>
-                    {app.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t.selectRelease}</Label>
-            <Select
-              value={releaseId}
-              onValueChange={(value) => setReleaseId(value ?? undefined)}
-              disabled={!appId || Boolean(installIntent)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t.selectRelease} />
-              </SelectTrigger>
-              <SelectContent>
-                {(releases.data?.data ?? [])
-                  .filter((candidate) => candidate.state === "available")
-                  .map((candidate) => (
-                    <SelectItem key={candidate.id} value={candidate.id}>
-                      {candidate.releaseVersion}
+        {installIntent ? (
+          <ManagedInstallIdentity
+            appName={selectedApp?.displayName}
+            releaseVersion={release?.releaseVersion}
+            messages={t}
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>{t.selectApp}</Label>
+              <Select
+                value={appId}
+                onValueChange={(value) => {
+                  setAppId(value ?? undefined)
+                  setReleaseId(undefined)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.selectApp} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(apps.data?.data ?? []).map((app) => (
+                    <SelectItem key={app.id} value={app.id}>
+                      {app.displayName}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t.selectRelease}</Label>
+              <Select
+                value={releaseId}
+                onValueChange={(value) => setReleaseId(value ?? undefined)}
+                disabled={!appId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t.selectRelease} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(releases.data?.data ?? [])
+                    .filter((candidate) => candidate.state === "available")
+                    .map((candidate) => (
+                      <SelectItem key={candidate.id} value={candidate.id}>
+                        {candidate.releaseVersion}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
 
         {marketplace.resolveIntent.isPending ? (
           <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-4 text-sm">
@@ -220,7 +227,7 @@ export function ConsentScreen({
                       key={scope}
                       className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2"
                     >
-                      <ScopeLabel scope={scope} dataClass={t.dataClass} />
+                      <ScopeLabel scope={scope} />
                       <Badge>{messages.detail.grantedBadge}</Badge>
                     </div>
                   ))
@@ -244,7 +251,7 @@ export function ConsentScreen({
                         key={scope}
                         className="flex items-center justify-between rounded-md border px-3 py-2"
                       >
-                        <ScopeLabel scope={scope} dataClass={t.dataClass} />
+                        <ScopeLabel scope={scope} />
                         <span className="flex items-center gap-2">
                           <Badge variant={granted ? "outline" : "secondary"}>
                             {granted ? messages.detail.optionalBadge : messages.detail.deniedBadge}
@@ -357,15 +364,63 @@ export function ConsentScreen({
   )
 }
 
-function ScopeLabel({ scope, dataClass }: { scope: string; dataClass: string }) {
+export function formatScopeLabel(scope: string) {
   const [resource, action] = scope.split(":")
+  const readableResource = (resource || scope).replaceAll("-", " ")
+  const readableAction =
+    {
+      read: "Read",
+      write: "Write",
+      manage: "Manage",
+      delete: "Delete",
+      execute: "Execute",
+    }[action ?? ""] ?? titleCase(action || "Access")
+  return `${readableAction} ${readableResource}`
+}
+
+export function ScopeLabel({ scope }: { scope: string }) {
   return (
     <span className="flex flex-col">
-      <span className="font-mono text-sm">{scope}</span>
-      <span className="text-xs text-muted-foreground">
-        {dataClass}: {resource ?? scope}
-        {action ? ` · ${action}` : ""}
-      </span>
+      <span className="text-sm font-medium">{formatScopeLabel(scope)}</span>
+      <span className="font-mono text-xs text-muted-foreground">{scope}</span>
     </span>
   )
+}
+
+function ManagedInstallIdentity({
+  appName,
+  releaseVersion,
+  messages,
+}: {
+  appName?: string
+  releaseVersion?: string
+  messages: ReturnType<typeof useAppsUiI18nOrDefault>["messages"]["consent"]
+}) {
+  return (
+    <div
+      className="grid gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2"
+      data-slot="managed-app-verified-identity"
+    >
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {messages.verifiedApp}
+        </p>
+        <p className="font-semibold">{appName ?? messages.verifyingIdentity}</p>
+      </div>
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {messages.verifiedVersion}
+        </p>
+        <p className="font-mono text-sm">{releaseVersion ?? messages.verifyingIdentity}</p>
+      </div>
+      <p className="text-xs text-muted-foreground sm:col-span-2">
+        <ShieldCheck className="mr-1 inline size-3.5" />
+        {messages.verifiedMarketplaceIdentity}
+      </p>
+    </div>
+  )
+}
+
+function titleCase(value: string) {
+  return value ? `${value[0]?.toUpperCase()}${value.slice(1).replaceAll("-", " ")}` : value
 }
