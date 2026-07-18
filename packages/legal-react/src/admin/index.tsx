@@ -20,6 +20,7 @@ import { Scale } from "lucide-react"
 // data layer (client + response schemas) stays out of the workspace-chrome
 // chunk that evaluates this factory.
 import { defaultFetcher, type FetchWithValidationOptions } from "../client.js"
+import { legalContractGenerationSetupMessageDefinitions } from "../i18n/setup.js"
 
 /**
  * Semantic destinations the legal admin surfaces navigate to
@@ -340,20 +341,7 @@ export function createSelectedLegalAdminExtension({
         order: 50,
         skippable: true,
         href: "/legal/templates",
-        messages: {
-          en: {
-            title: "Contract generation",
-            description:
-              "Author your contract, select it for automatic use, and choose a default number series.",
-            action: "Configure contracts",
-          },
-          ro: {
-            title: "Generarea contractelor",
-            description:
-              "Creeaza contractul, selecteaza-l pentru folosire automata si alege seria implicita.",
-            action: "Configureaza contractele",
-          },
-        },
+        messages: legalContractGenerationSetupMessageDefinitions,
         isComplete: hasContractGenerationSettings,
       },
     ],

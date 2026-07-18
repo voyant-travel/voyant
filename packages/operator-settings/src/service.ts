@@ -341,6 +341,8 @@ export async function upsertOperatorSettings(
   db: PostgresJsDatabase,
   patch: UpdateOperatorSettingsInput,
 ) {
+  const profilePatch = updateOperatorProfileSchema.parse(patch)
+  const paymentInstructionsPatch = updateOperatorPaymentInstructionsSchema.parse(patch)
   const paymentDefaultsPatch: UpdateOperatorPaymentDefaultsInput = {}
   if ("customerPaymentPolicy" in patch) {
     paymentDefaultsPatch.customerPaymentPolicy = patch.customerPaymentPolicy
@@ -353,26 +355,8 @@ export async function upsertOperatorSettings(
   }
 
   const [profile, instructions, defaults] = await Promise.all([
-    upsertOperatorProfile(db, {
-      name: patch.name,
-      legalName: patch.legalName,
-      vatId: patch.vatId,
-      registrationNumber: patch.registrationNumber,
-      address: patch.address,
-      phone: patch.phone,
-      email: patch.email,
-      website: patch.website,
-      license: patch.license,
-      licenseAuthority: patch.licenseAuthority,
-      signatoryName: patch.signatoryName,
-      signatoryRole: patch.signatoryRole,
-    }),
-    upsertOperatorPaymentInstructions(db, {
-      bankTransferBeneficiary: patch.bankTransferBeneficiary,
-      iban: patch.iban,
-      bank: patch.bank,
-      notes: patch.notes,
-    }),
+    upsertOperatorProfile(db, profilePatch),
+    upsertOperatorPaymentInstructions(db, paymentInstructionsPatch),
     upsertOperatorPaymentDefaults(db, paymentDefaultsPatch),
   ])
   return combineOperatorSettings(profile, instructions, defaults)
