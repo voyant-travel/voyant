@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies [0f9bd93]
+  - @voyant-travel/apps-react@0.3.1
+  - @voyant-travel/types@0.109.5
+
 ## 0.8.2
 
 ### Patch Changes
