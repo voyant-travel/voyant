@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; the package-owned deployment declarations remain centralized in one manifest.
 import { actionLedgerFinanceDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
 import { bookingsFinanceRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import {
@@ -5,6 +6,7 @@ import {
   defineModule,
   providePort,
   requirePort,
+  type VoyantGraphJsonObject,
 } from "@voyant-travel/core/project"
 import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
@@ -124,9 +126,7 @@ export const financeVoyantModule = defineModule({
       label: widget.label,
       description: widget.description,
       datasetId: widget.query.dataset.id,
-      ...(widget.query.dataset.version
-        ? { datasetVersion: widget.query.dataset.version }
-        : {}),
+      ...(widget.query.dataset.version ? { datasetVersion: widget.query.dataset.version } : {}),
       query: {
         select: widget.query.select,
         filters: widget.query.filters,
@@ -134,7 +134,10 @@ export const financeVoyantModule = defineModule({
         orderBy: widget.query.orderBy,
         ...(widget.query.limit ? { limit: widget.query.limit } : {}),
       },
-      visualization: widget.visualization,
+      visualization: {
+        type: widget.visualization.type,
+        options: omitUndefinedJsonOptions(widget.visualization.options),
+      },
       defaultSize: widget.defaultSize,
       ...(widget.minimumSize ? { minSize: widget.minimumSize } : {}),
       ...(widget.maximumSize ? { maxSize: widget.maximumSize } : {}),
@@ -664,5 +667,13 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
     ownership: "package",
   },
 })
+
+function omitUndefinedJsonOptions(options: Record<string, unknown>): VoyantGraphJsonObject {
+  const jsonOptions: Record<string, VoyantGraphJsonObject[string]> = {}
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined) jsonOptions[key] = value as VoyantGraphJsonObject[string]
+  }
+  return jsonOptions
+}
 
 export default financeVoyantModule

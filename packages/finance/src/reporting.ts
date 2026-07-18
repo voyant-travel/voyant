@@ -278,11 +278,7 @@ export const financeReceivablesDataset: ReportDatasetContribution = {
   definition: financeReceivablesDatasetDefinition,
   async execute(context, input) {
     if (
-      !hasApiKeyPermission(
-        permissionStringsToPermissions(context.grantedScopes),
-        "finance",
-        "read",
-      )
+      !hasApiKeyPermission(permissionStringsToPermissions(context.grantedScopes), "finance", "read")
     ) {
       throw new FinanceReportingQueryError("finance:read is required to query receivables.")
     }
@@ -350,7 +346,7 @@ function compileFilter(
   const expression = fieldExpression(field.id)
   if (filter.operator === "isNull") return sql`${expression} IS NULL`
   if (filter.operator === "isNotNull") return sql`${expression} IS NOT NULL`
-  const value = resolveFilterValue(filter, parameters)
+  const value = requireFilterValue(filter, parameters)
   switch (filter.operator) {
     case "equal":
       return value === null ? sql`${expression} IS NULL` : sql`${expression} = ${scalar(value)}`
@@ -396,7 +392,10 @@ function compileFilter(
   }
 }
 
-function resolveFilterValue(filter: ReportQuery["filters"][number], parameters: ReportParameters) {
+function requireFilterValue(
+  filter: ReportQuery["filters"][number],
+  parameters: ReportParameters,
+): ReportScalar | readonly ReportScalar[] {
   if (!filter.value) throw new FinanceReportingQueryError(`${filter.operator} requires a value.`)
   if (filter.value.kind === "literal") return filter.value.value
   if (!(filter.value.name in parameters)) {
@@ -404,7 +403,13 @@ function resolveFilterValue(filter: ReportQuery["filters"][number], parameters: 
       `Missing query parameter ${JSON.stringify(filter.value.name)}.`,
     )
   }
-  return parameters[filter.value.name]
+  const value = parameters[filter.value.name]
+  if (value === undefined) {
+    throw new FinanceReportingQueryError(
+      `Missing query parameter ${JSON.stringify(filter.value.name)}.`,
+    )
+  }
+  return value
 }
 
 function scalar(value: ReportScalar | readonly ReportScalar[]): ReportScalar {
