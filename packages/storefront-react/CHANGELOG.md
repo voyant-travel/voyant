@@ -1,5 +1,16 @@
 # @voyant-travel/storefront-react
 
+## 0.171.2
+
+### Patch Changes
+
+- 07334a7: Split operator and storefront authentication into isolated Better Auth realms,
+  add provider-neutral identity adapters, and support managed WorkOS-backed admin
+  sessions alongside merchant-configurable customer email and social login.
+- Updated dependencies [07334a7]
+  - @voyant-travel/auth-react@0.133.2
+  - @voyant-travel/storefront@0.171.2
+
 ## 0.171.1
 
 ### Patch Changes

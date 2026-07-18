@@ -1,5 +1,15 @@
 # @voyant-travel/db
 
+## 0.114.12
+
+### Patch Changes
+
+- 07334a7: Split operator and storefront authentication into isolated Better Auth realms,
+  add provider-neutral identity adapters, and support managed WorkOS-backed admin
+  sessions alongside merchant-configurable customer email and social login.
+- Updated dependencies [07334a7]
+  - @voyant-travel/core@0.126.1
+
 ## 0.114.11
 
 ### Patch Changes
