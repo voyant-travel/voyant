@@ -297,8 +297,8 @@ function compileFilter(filter: ReportFilter, parameters: ReportParameters): SQL 
     if (!Array.isArray(value) || value.length !== 2) {
       throw new Error("between requires an array containing exactly two values.")
     }
-    const lower = validateScalar(field.definition, value[0])
-    const upper = validateScalar(field.definition, value[1])
+    const lower = validateScalar(field.definition, value[0]!)
+    const upper = validateScalar(field.definition, value[1]!)
     return sql`${field.expression} BETWEEN ${lower} AND ${upper}`
   }
 
@@ -354,11 +354,11 @@ function requireField(fieldId: string): BookingActivityField {
   return field
 }
 
-function requireParameter(parameters: ReportParameters, name: string) {
+function requireParameter(parameters: ReportParameters, name: string): ReportParameters[string] {
   if (!Object.hasOwn(parameters, name)) {
     throw new Error(`Missing query parameter ${JSON.stringify(name)}.`)
   }
-  return parameters[name]
+  return parameters[name]!
 }
 
 function validateScalar(definition: ReportDatasetField, value: ReportScalar): ReportScalar {
