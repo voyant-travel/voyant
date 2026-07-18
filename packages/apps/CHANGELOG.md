@@ -1,5 +1,17 @@
 # @voyant-travel/apps
 
+## 0.7.0
+
+### Minor Changes
+
+- d2d7384: Expose provider-neutral finance issuance hydration, external-reference writeback,
+  and invoice/proforma issuance webhooks through the remote App API boundary.
+
+### Patch Changes
+
+- Updated dependencies [d2d7384]
+  - @voyant-travel/finance-contracts@0.107.0
+
 ## 0.6.3
 
 ### Patch Changes
