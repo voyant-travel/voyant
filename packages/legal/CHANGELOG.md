@@ -1,5 +1,17 @@
 # @voyant-travel/legal
 
+## 0.173.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.173.0
+- @voyant-travel/distribution@0.163.0
+- @voyant-travel/finance@0.173.0
+- @voyant-travel/commerce@0.39.8
+- @voyant-travel/inventory@0.14.4
+- @voyant-travel/relationships@0.128.12
+- @voyant-travel/operator-settings@0.10.4
+
 ## 0.172.0
 
 ### Patch Changes
