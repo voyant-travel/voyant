@@ -40,6 +40,7 @@ const catalog = {
       version: 1,
       label: "Monthly revenue",
       datasetId,
+      datasetVersion: 1,
       query: {
         select: [{ kind: "aggregate", operation: "sum", field: "gross", as: "gross" }],
       },
@@ -71,6 +72,7 @@ const catalog = {
         {
           id: "revenue",
           widgetId,
+          widgetVersion: 1,
           layout: { x: 0, y: 0, width: 3, height: 2 },
         },
         {
@@ -113,11 +115,10 @@ describe("createReportingRegistryFromGraph", () => {
 
     expect(load).not.toHaveBeenCalled()
     expect(registry.getWidget(widgetId)).toMatchObject({
-      query: { dataset: { id: datasetId } },
+      query: { dataset: { id: datasetId, version: 1 } },
     })
-    expect(registry.getTemplate("@acme/finance#reporting.template.overview")?.widgets).toHaveLength(
-      2,
-    )
+    expect(registry.getWidget(missingWidgetId)).toBeUndefined()
+    expect(registry.getTemplate("@acme/finance#reporting.template.overview")).toBeUndefined()
 
     await expect(
       registry.executeQuery({
@@ -134,12 +135,25 @@ describe("createReportingRegistryFromGraph", () => {
     ).resolves.toMatchObject({ rows: [{ gross: 1200 }] })
     expect(load).toHaveBeenCalledOnce()
 
-    const template = registry.getTemplate("@acme/finance#reporting.template.overview")!
-    const draft = { parameters: {}, widgets: template.widgets }
-    expect(registry.resolveDraft(draft, "view").map(({ instance }) => instance.id)).toEqual([
+    const existingDraft = {
+      parameters: {},
+      widgets: [
+        {
+          id: "revenue",
+          source: { kind: "preset" as const, widgetId, version: 1 },
+          layout: { x: 0, y: 0, width: 3, height: 2 },
+        },
+        {
+          id: "missing",
+          source: { kind: "preset" as const, widgetId: missingWidgetId, version: 1 },
+          layout: { x: 3, y: 0, width: 3, height: 2 },
+        },
+      ],
+    }
+    expect(registry.resolveDraft(existingDraft, "view").map(({ instance }) => instance.id)).toEqual([
       "revenue",
     ])
-    expect(registry.resolveDraft(draft, "edit").map(({ status }) => status)).toEqual([
+    expect(registry.resolveDraft(existingDraft, "edit").map(({ status }) => status)).toEqual([
       "available",
       "missing",
     ])

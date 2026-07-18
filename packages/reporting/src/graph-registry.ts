@@ -68,7 +68,7 @@ export async function createReportingRegistryFromGraph(input: {
     }
   })
 
-  const widgets = catalog.widgets.map((widget) =>
+  const widgets = catalog.widgets.filter((widget) => widget.available).map((widget) =>
     reportWidgetDefinitionSchema.parse({
       id: widget.id,
       version: widget.version,
@@ -76,7 +76,10 @@ export async function createReportingRegistryFromGraph(input: {
       ...(widget.description ? { description: widget.description } : {}),
       query: {
         ...widget.query,
-        dataset: { id: widget.datasetId },
+        dataset: {
+          id: widget.datasetId,
+          ...(widget.datasetVersion ? { version: widget.datasetVersion } : {}),
+        },
         filters: widget.query.filters ?? [],
         groupBy: widget.query.groupBy ?? [],
         orderBy: widget.query.orderBy ?? [],
@@ -91,7 +94,7 @@ export async function createReportingRegistryFromGraph(input: {
     }),
   )
 
-  const templates = catalog.templates.map((template) =>
+  const templates = catalog.templates.filter((template) => template.available).map((template) =>
     reportTemplateDefinitionSchema.parse({
       id: template.id,
       version: template.version,
@@ -100,7 +103,11 @@ export async function createReportingRegistryFromGraph(input: {
       parameters: template.parameters ?? [],
       widgets: template.widgets.map((widget) => ({
         id: widget.id,
-        source: { kind: "preset", widgetId: widget.widgetId },
+        source: {
+          kind: "preset",
+          widgetId: widget.widgetId,
+          ...(widget.widgetVersion ? { version: widget.widgetVersion } : {}),
+        },
         ...(widget.title ? { title: widget.title } : {}),
         layout: widget.layout,
       })),

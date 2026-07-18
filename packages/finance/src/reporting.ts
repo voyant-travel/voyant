@@ -276,7 +276,7 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
 export const financeReceivablesDataset: ReportDatasetContribution = {
   definition: financeReceivablesDatasetDefinition,
   async execute(context, input) {
-    if (!context.grantedScopes.includes("finance:read")) {
+    if (!hasScope(context.grantedScopes, "finance:read")) {
       throw new FinanceReportingQueryError("finance:read is required to query receivables.")
     }
     if (context.signal?.aborted) throw abortReason(context.signal)
@@ -294,6 +294,13 @@ export const financeReceivablesDataset: ReportDatasetContribution = {
       warnings: [],
     }
   },
+}
+
+function hasScope(granted: readonly string[], required: string): boolean {
+  const [resource] = required.split(":")
+  return granted.some(
+    (scope) => scope === required || scope === "*" || scope === "*:*" || scope === `${resource}:*`,
+  )
 }
 
 function requireField(

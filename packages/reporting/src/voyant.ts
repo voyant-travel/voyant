@@ -27,26 +27,31 @@ export const reportingVoyantModule = defineModule({
           {
             id: "total-bookings",
             widgetId: "bookings.widget.total",
+            widgetVersion: 1,
             layout: { x: 0, y: 0, width: 3, height: 2 },
           },
           {
             id: "outstanding-receivables",
             widgetId: "finance.outstanding-by-currency",
+            widgetVersion: 1,
             layout: { x: 3, y: 0, width: 4, height: 3 },
           },
           {
             id: "invoice-status",
             widgetId: "finance.invoice-status-breakdown",
+            widgetVersion: 1,
             layout: { x: 7, y: 0, width: 5, height: 3 },
           },
           {
             id: "monthly-bookings",
             widgetId: "bookings.widget.monthly-trend",
+            widgetVersion: 1,
             layout: { x: 0, y: 3, width: 6, height: 4 },
           },
           {
             id: "net-issued",
             widgetId: "finance.net-issued-trend",
+            widgetVersion: 1,
             layout: { x: 6, y: 3, width: 6, height: 4 },
           },
         ],

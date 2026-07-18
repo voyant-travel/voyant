@@ -35,6 +35,16 @@ export class ReportingRegistryError extends Error {
   }
 }
 
+export class ReportingAuthorizationError extends ReportingRegistryError {
+  readonly missingScopes: readonly string[]
+
+  constructor(missingScopes: readonly string[]) {
+    super(`Missing required dataset scopes: ${missingScopes.join(", ")}.`)
+    this.name = "ReportingAuthorizationError"
+    this.missingScopes = missingScopes
+  }
+}
+
 /** Immutable registry assembled from graph-selected module contributions. */
 export class ReportingRegistry {
   readonly #datasets = new Map<string, ReportDatasetContribution>()
@@ -106,6 +116,38 @@ export class ReportingRegistry {
     return mode === "view" ? resolved.filter((widget) => widget.status === "available") : resolved
   }
 
+  /** Materialize preset references so a published version remains reproducible. */
+  snapshotDraft(draft: ReportDraft): ReportDraft {
+    return {
+      parameters: { ...draft.parameters },
+      widgets: draft.widgets.map((instance) => {
+        const definition =
+          instance.source.kind === "custom"
+            ? instance.source.definition
+            : this.getWidget(instance.source.widgetId, instance.source.version)
+        if (!definition) {
+          throw new ReportingRegistryError(
+            `Widget preset ${JSON.stringify(instance.source.kind === "preset" ? instance.source.widgetId : instance.id)} is unavailable and cannot be published.`,
+          )
+        }
+        const dataset = this.getDataset(definition.query.dataset.id, definition.query.dataset.version)
+        if (!dataset) {
+          throw new ReportingRegistryError(
+            `Dataset ${JSON.stringify(definition.query.dataset.id)} is unavailable and cannot be published.`,
+          )
+        }
+        const snapshot = {
+          ...definition,
+          query: {
+            ...definition.query,
+            dataset: { id: dataset.definition.id, version: dataset.definition.version },
+          },
+        }
+        return { ...instance, source: { kind: "custom" as const, definition: snapshot } }
+      }),
+    }
+  }
+
   validateQuery(
     queryInput: ReportQuery,
     grantedScopes: readonly string[],
@@ -113,6 +155,7 @@ export class ReportingRegistry {
     query: ReportQuery
     dataset: ReportDatasetContribution
     maximumRows: number
+    requiredScopes: readonly string[]
   } {
     const query = reportQuerySchema.parse(queryInput)
     const dataset = this.getDataset(query.dataset.id, query.dataset.version)
@@ -121,12 +164,15 @@ export class ReportingRegistry {
         `Dataset ${JSON.stringify(query.dataset.id)} is unavailable.`,
       )
 
-    requireScopes(dataset.definition.requiredScopes, grantedScopes)
     const fields = new Map(dataset.definition.fields.map((field) => [field.id, field]))
     const usedFields = new Set<string>()
+    const fieldSelections: string[] = []
+    const hasAggregate = query.select.some((selection) => selection.kind === "aggregate")
     for (const selection of query.select) {
-      if (selection.kind === "field") usedFields.add(selection.field)
-      else if (selection.field) {
+      if (selection.kind === "field") {
+        usedFields.add(selection.field)
+        fieldSelections.push(selection.field)
+      } else if (selection.field) {
         usedFields.add(selection.field)
         const field = fields.get(selection.field)
         if (field && !field.aggregations.includes(selection.operation)) {
@@ -140,11 +186,21 @@ export class ReportingRegistry {
     }
     for (const filter of query.filters) usedFields.add(filter.field)
     for (const group of query.groupBy) usedFields.add(group.field)
+    if (hasAggregate || query.groupBy.length > 0) {
+      const groupedFields = new Set(query.groupBy.map((group) => group.field))
+      const ungrouped = fieldSelections.filter((field) => !groupedFields.has(field))
+      if (ungrouped.length > 0) {
+        throw new ReportingRegistryError(
+          `Selected fields must be grouped when a query groups or aggregates: ${ungrouped.join(", ")}.`,
+        )
+      }
+    }
+    const requiredScopes = new Set(dataset.definition.requiredScopes)
     for (const fieldId of usedFields) {
       const field = fields.get(fieldId)
       if (!field)
         throw new ReportingRegistryError(`Field ${JSON.stringify(fieldId)} is unavailable.`)
-      requireScopes(field.requiredScopes, grantedScopes)
+      for (const scope of field.requiredScopes) requiredScopes.add(scope)
     }
     for (const filter of query.filters) {
       if (filter.operator === "isNull" || filter.operator === "isNotNull") {
@@ -159,7 +215,9 @@ export class ReportingRegistry {
       query.limit ?? dataset.definition.defaultLimit,
       dataset.definition.maximumLimit,
     )
-    return { query, dataset, maximumRows }
+    const requiredScopeList = [...requiredScopes].sort()
+    requireReportingScopes(requiredScopeList, grantedScopes)
+    return { query, dataset, maximumRows, requiredScopes: requiredScopeList }
   }
 
   async executeQuery(input: {
@@ -235,19 +293,24 @@ export class ReportingRegistry {
   }
 }
 
-function requireScopes(required: readonly string[], granted: readonly string[]): void {
+export function requireReportingScopes(
+  required: readonly string[],
+  granted: readonly string[],
+): void {
   const missing = required.filter((scope) => !hasScope(granted, scope))
   if (missing.length > 0) {
-    throw new ReportingRegistryError(`Missing required dataset scopes: ${missing.join(", ")}.`)
+    throw new ReportingAuthorizationError(missing)
   }
 }
 
-function hasScope(granted: readonly string[], required: string): boolean {
+export function hasReportingScope(granted: readonly string[], required: string): boolean {
   const [resource] = required.split(":")
   return granted.some(
     (scope) => scope === required || scope === "*" || scope === "*:*" || scope === `${resource}:*`,
   )
 }
+
+const hasScope = hasReportingScope
 
 function versionedKey(id: string, version: number): string {
   return `${id}@${version}`

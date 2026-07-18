@@ -8,7 +8,7 @@ import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import type { ReportingRegistry } from "./registry.js"
+import { type ReportingRegistry, requireReportingScopes } from "./registry.js"
 import {
   type ReportDefinitionRow,
   type ReportRunOutput,
@@ -31,6 +31,13 @@ export class ReportingRecordNotFoundError extends Error {
   constructor(record: string) {
     super(`${record} was not found.`)
     this.name = "ReportingRecordNotFoundError"
+  }
+}
+
+export class ReportDefinitionRetentionConflictError extends Error {
+  constructor() {
+    super("Reports with retained execution history cannot be deleted.")
+    this.name = "ReportDefinitionRetentionConflictError"
   }
 }
 
@@ -113,6 +120,13 @@ export function createReportingService(registry: ReportingRegistry) {
     },
 
     async remove(db: PostgresJsDatabase, id: string): Promise<boolean> {
+      const [retainedRun] = await db
+        .select({ id: reportRuns.id })
+        .from(reportRuns)
+        .innerJoin(reportVersions, eq(reportRuns.reportVersionId, reportVersions.id))
+        .where(eq(reportVersions.reportDefinitionId, id))
+        .limit(1)
+      if (retainedRun) throw new ReportDefinitionRetentionConflictError()
       const rows = await db
         .delete(reportDefinitions)
         .where(eq(reportDefinitions.id, id))
@@ -150,7 +164,7 @@ export function createReportingService(registry: ReportingRegistry) {
             name: definition.name,
             description: definition.description,
             definitionRevision: definition.revision,
-            snapshot: definition.draft,
+            snapshot: registry.snapshotDraft(definition.draft),
             createdByUserId: actorId,
           })
           .returning()
@@ -163,7 +177,7 @@ export function createReportingService(registry: ReportingRegistry) {
       db: PostgresJsDatabase,
       versionId: string,
       parameters: ReportParameters,
-      context: { actorId?: string; grantedScopes: readonly string[] },
+      context: { actorId?: string; grantedScopes: readonly string[]; signal?: AbortSignal },
     ) {
       const [version] = await db
         .select()
@@ -171,6 +185,10 @@ export function createReportingService(registry: ReportingRegistry) {
         .where(eq(reportVersions.id, versionId))
         .limit(1)
       if (!version) throw new ReportingRecordNotFoundError("Report version")
+      for (const resolved of registry.resolveDraft(version.snapshot, "edit")) {
+        if (resolved.status === "missing" || !resolved.definition) continue
+        registry.validateQuery(resolved.definition.query, context.grantedScopes)
+      }
       const [run] = await db
         .insert(reportRuns)
         .values({ reportVersionId: versionId, parameters, triggeredByUserId: context.actorId })
@@ -178,7 +196,13 @@ export function createReportingService(registry: ReportingRegistry) {
       if (!run) throw new Error("Report run insert returned no row.")
 
       try {
-        const output = await executeDraft(registry, db, version.snapshot, parameters, context)
+        const executionSignal = context.signal
+          ? AbortSignal.any([context.signal, AbortSignal.timeout(60_000)])
+          : AbortSignal.timeout(60_000)
+        const output = await executeDraft(registry, db, version.snapshot, parameters, {
+          ...context,
+          signal: executionSignal,
+        })
         const failed = output.widgets.some((widget) => widget.status === "failed")
         const [completed] = await db
           .update(reportRuns)
@@ -202,8 +226,14 @@ export function createReportingService(registry: ReportingRegistry) {
       }
     },
 
-    async getRun(db: PostgresJsDatabase, id: string) {
+    async getRun(db: PostgresJsDatabase, id: string, grantedScopes: readonly string[]) {
       const [run] = await db.select().from(reportRuns).where(eq(reportRuns.id, id)).limit(1)
+      if (run) {
+        const requiredScopes = [
+          ...new Set(run.output?.widgets.flatMap((widget) => widget.requiredScopes ?? []) ?? []),
+        ]
+        requireReportingScopes(requiredScopes, grantedScopes)
+      }
       return run ?? null
     },
   }
@@ -214,7 +244,7 @@ async function executeDraft(
   db: PostgresJsDatabase,
   draft: ReportDraft,
   runParameters: ReportParameters,
-  context: { actorId?: string; grantedScopes: readonly string[] },
+  context: { actorId?: string; grantedScopes: readonly string[]; signal?: AbortSignal },
 ): Promise<ReportRunOutput> {
   const parameters = { ...draft.parameters, ...runParameters }
   const widgets: ReportRunOutput["widgets"] = []
@@ -227,19 +257,35 @@ async function executeDraft(
       })
       continue
     }
+    let provenance:
+      | { datasetId: string; datasetVersion: number; requiredScopes: readonly string[] }
+      | undefined
     try {
+      const validation = registry.validateQuery(resolved.definition.query, context.grantedScopes)
+      provenance = {
+        datasetId: validation.dataset.definition.id,
+        datasetVersion: validation.dataset.definition.version,
+        requiredScopes: validation.requiredScopes,
+      }
       const result = await registry.executeQuery({
         db,
         actorId: context.actorId,
         grantedScopes: context.grantedScopes,
         query: resolved.definition.query,
         parameters,
+        signal: context.signal,
       })
-      widgets.push({ widgetInstanceId: resolved.instance.id, status: "succeeded", result })
+      widgets.push({
+        widgetInstanceId: resolved.instance.id,
+        status: "succeeded",
+        ...provenance,
+        result,
+      })
     } catch (error) {
       widgets.push({
         widgetInstanceId: resolved.instance.id,
         status: "failed",
+        ...provenance,
         reason: error instanceof Error ? error.message : "Widget execution failed.",
       })
     }

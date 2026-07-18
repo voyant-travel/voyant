@@ -22,9 +22,14 @@ import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-tra
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
-import type { ReportingRegistry } from "./registry.js"
+import {
+  ReportingAuthorizationError,
+  ReportingRegistryError,
+  type ReportingRegistry,
+} from "./registry.js"
 import {
   createReportingService,
+  ReportDefinitionRetentionConflictError,
   ReportDefinitionRevisionConflictError,
   ReportingRecordNotFoundError,
 } from "./service.js"
@@ -56,14 +61,19 @@ export function createReportingRoutes(registry: ReportingRegistry) {
   routes.post("/queries/preview", async (c) => {
     requireReportsPermission(c.get("scopes"), "read")
     const input = await parseJsonBody(c, previewReportQuerySchema)
-    const data = await registry.executeQuery({
-      db: c.get("db"),
-      actorId: c.get("userId"),
-      grantedScopes: c.get("scopes") ?? [],
-      query: input.query,
-      parameters: input.parameters,
-    })
-    return c.json({ data })
+    try {
+      const data = await registry.executeQuery({
+        db: c.get("db"),
+        actorId: c.get("userId"),
+        grantedScopes: c.get("scopes") ?? [],
+        query: input.query,
+        parameters: input.parameters,
+        signal: c.req.raw.signal,
+      })
+      return c.json({ data })
+    } catch (error) {
+      return reportingErrorResponse(c, error)
+    }
   })
 
   routes.get("/reports", async (c) => {
@@ -97,9 +107,13 @@ export function createReportingRoutes(registry: ReportingRegistry) {
 
   routes.delete("/reports/:id", async (c) => {
     requireReportsPermission(c.get("scopes"), "write")
-    return (await service.remove(c.get("db"), c.req.param("id")))
-      ? c.json({ success: true })
-      : c.json({ error: "report_not_found" }, 404)
+    try {
+      return (await service.remove(c.get("db"), c.req.param("id")))
+        ? c.json({ success: true })
+        : c.json({ error: "report_not_found" }, 404)
+    } catch (error) {
+      return reportingErrorResponse(c, error)
+    }
   })
 
   routes.post("/templates/:id/instantiate", async (c) => {
@@ -140,6 +154,7 @@ export function createReportingRoutes(registry: ReportingRegistry) {
       const run = await service.runVersion(c.get("db"), c.req.param("id"), input.parameters, {
         actorId: c.get("userId"),
         grantedScopes: c.get("scopes") ?? [],
+        signal: c.req.raw.signal,
       })
       return c.json({ data: run }, 201)
     } catch (error) {
@@ -148,9 +163,14 @@ export function createReportingRoutes(registry: ReportingRegistry) {
   })
 
   routes.get("/runs/:id", async (c) => {
-    requireReportsPermission(c.get("scopes"), "read")
-    const run = await service.getRun(c.get("db"), c.req.param("id"))
-    return run ? c.json({ data: run }) : c.json({ error: "report_run_not_found" }, 404)
+    requireReportsPermission(c.get("scopes"), "export")
+    try {
+      const run = await service.getRun(c.get("db"), c.req.param("id"), c.get("scopes") ?? [])
+      if (!run) return c.json({ error: "report_run_not_found" }, 404)
+      return c.json({ data: run })
+    } catch (error) {
+      return reportingErrorResponse(c, error)
+    }
   })
 
   return routes
@@ -169,6 +189,15 @@ function reportingErrorResponse(c: Context, error: unknown) {
   if (error instanceof ReportingRecordNotFoundError) return c.json({ error: "not_found" }, 404)
   if (error instanceof ReportDefinitionRevisionConflictError) {
     return c.json({ error: "revision_conflict" }, 409)
+  }
+  if (error instanceof ReportDefinitionRetentionConflictError) {
+    return c.json({ error: "report_has_retained_runs" }, 409)
+  }
+  if (error instanceof ReportingAuthorizationError) {
+    return c.json({ error: "forbidden", missingScopes: error.missingScopes }, 403)
+  }
+  if (error instanceof ReportingRegistryError) {
+    return c.json({ error: "invalid_report_query", message: error.message }, 400)
   }
   throw error
 }

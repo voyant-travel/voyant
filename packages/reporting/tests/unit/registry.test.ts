@@ -1,7 +1,11 @@
 import type { ReportingContributionRuntime } from "@voyant-travel/reporting-contracts"
 import { describe, expect, it, vi } from "vitest"
 
-import { ReportingRegistry } from "../../src/registry.js"
+import {
+  ReportingAuthorizationError,
+  ReportingRegistry,
+  requireReportingScopes,
+} from "../../src/registry.js"
 
 function contribution(): ReportingContributionRuntime {
   return {
@@ -114,5 +118,61 @@ describe("ReportingRegistry", () => {
         missingReason: expect.stringContaining("finance.revenue"),
       }),
     ])
+  })
+
+  it("accepts camel-case semantic fields and freezes preset and dataset versions", () => {
+    const source = contribution()
+    source.datasets![0]!.definition.fields = [
+      {
+        id: "createdAt",
+        label: "Created at",
+        role: "dimension",
+        valueType: "datetime",
+        sensitivity: "internal",
+        requiredScopes: [],
+        aggregations: ["minimum", "maximum"],
+      },
+    ]
+    source.widgets = [
+      {
+        id: "bookings.created",
+        version: 1,
+        label: "Created",
+        query: {
+          dataset: { id: "bookings" },
+          select: [{ kind: "field", field: "createdAt" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+        visualization: { type: "table", options: {} },
+        defaultSize: { width: 6, height: 4 },
+      },
+    ]
+    const registry = new ReportingRegistry([source])
+    const snapshot = registry.snapshotDraft({
+      parameters: {},
+      widgets: [
+        {
+          id: "created-widget",
+          source: { kind: "preset", widgetId: "bookings.created" },
+          layout: { x: 0, y: 0, width: 6, height: 4 },
+        },
+      ],
+    })
+
+    expect(snapshot.widgets[0]?.source).toMatchObject({
+      kind: "custom",
+      definition: { query: { dataset: { id: "bookings", version: 1 } } },
+    })
+  })
+
+  it("applies resource and global wildcard grants consistently", () => {
+    expect(() => requireReportingScopes(["finance:read"], ["finance:*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*:*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["reports:read"])).toThrow(
+      ReportingAuthorizationError,
+    )
   })
 })

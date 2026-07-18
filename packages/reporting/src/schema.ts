@@ -17,6 +17,9 @@ import {
 
 export interface ReportRunWidgetOutput {
   widgetInstanceId: string
+  datasetId?: string
+  datasetVersion?: number
+  requiredScopes?: readonly string[]
   status: "succeeded" | "missing" | "failed"
   result?: ReportResult
   reason?: string
