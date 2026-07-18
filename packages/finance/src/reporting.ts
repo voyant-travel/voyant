@@ -116,6 +116,9 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
   rowLimit: number
 } {
   const { query, parameters } = input
+  if (!Number.isInteger(input.maximumRows) || input.maximumRows < 1) {
+    throw new FinanceReportingQueryError("maximumRows must be a positive integer.")
+  }
   if (query.dataset.id !== FINANCE_RECEIVABLES_DATASET_ID) {
     throw new FinanceReportingQueryError(`Unsupported dataset ${JSON.stringify(query.dataset.id)}.`)
   }
@@ -424,6 +427,9 @@ function normalizeRow(
   return Object.fromEntries(
     columns.map((column) => {
       const value = row[column.id]
+      if (column.valueType === "date" && value instanceof Date) {
+        return [column.id, value.toISOString().slice(0, 10)]
+      }
       if (
         (column.valueType === "integer" ||
           column.valueType === "number" ||
@@ -431,7 +437,16 @@ function normalizeRow(
         typeof value === "string"
       ) {
         const numeric = Number(value)
-        return [column.id, Number.isFinite(numeric) ? numeric : value]
+        if (
+          !Number.isFinite(numeric) ||
+          ((column.valueType === "integer" || column.valueType === "currency") &&
+            !Number.isSafeInteger(numeric))
+        ) {
+          throw new FinanceReportingQueryError(
+            `Result ${JSON.stringify(column.id)} is outside the supported numeric range.`,
+          )
+        }
+        return [column.id, numeric]
       }
       return [column.id, value]
     }),
