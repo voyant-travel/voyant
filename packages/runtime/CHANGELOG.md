@@ -1,5 +1,14 @@
 # @voyant-travel/runtime
 
+## 0.12.2
+
+### Patch Changes
+
+- Updated dependencies [9c06938]
+  - @voyant-travel/apps@0.9.0
+  - @voyant-travel/core@0.127.1
+  - @voyant-travel/hono@0.129.2
+
 ## 0.12.1
 
 ### Patch Changes

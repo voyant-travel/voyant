@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.127.1
+
+### Patch Changes
+
+- 9c06938: Bind managed remote-app OAuth and extension sessions to stable workload environments and per-app contract generations, and allow manifests to disclose publisher-custodied encrypted secrets.
+
 ## 0.127.0
 
 ### Minor Changes
