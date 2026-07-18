@@ -180,7 +180,9 @@ An arbitrary URL can never choose an app ID or reserved namespace.
 ### Managed acquisition and consent handoff
 
 A managed host may offer an admitted release through the optional
-`apps.managed-marketplace` runtime port. The browser supplies only an opaque,
+`apps.managed-marketplace` runtime port. The port supplies both the stable host
+deployment identity used for local installation rows and the acquisition
+resolver. The browser supplies only an opaque,
 single-purpose install intent. The host authenticates the deployment, resolves
 that intent, verifies its private catalog admission and provenance, and adapts
 the result to `voyant.runtime-marketplace-acquisition.v1`. This managed

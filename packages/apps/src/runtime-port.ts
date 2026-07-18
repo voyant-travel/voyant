@@ -107,6 +107,8 @@ export interface ManagedMarketplaceAcquisitionResolver {
 }
 
 export interface AppsManagedMarketplaceRuntime {
+  /** Stable host deployment identity used for deployment-local installation rows. */
+  deploymentId: string
   acquisitionResolver: ManagedMarketplaceAcquisitionResolver
 }
 
@@ -115,6 +117,9 @@ export const appsManagedMarketplaceRuntimePort = definePort<AppsManagedMarketpla
   test(runtime) {
     if (!runtime || typeof runtime !== "object") {
       throw new TypeError("apps.managed-marketplace must be an object.")
+    }
+    if (typeof runtime.deploymentId !== "string" || runtime.deploymentId.trim().length === 0) {
+      throw new TypeError("apps.managed-marketplace deploymentId must be a non-empty string.")
     }
     if (typeof runtime.acquisitionResolver?.resolveAcquisitionIntent !== "function") {
       throw new TypeError(

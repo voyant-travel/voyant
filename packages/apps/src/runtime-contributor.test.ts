@@ -70,6 +70,7 @@ describe("createAppsRuntimePortContribution", () => {
   it("requires both opaque acquisition resolution and trusted setup handoff", () => {
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
         acquisitionResolver: {
           resolveAcquisitionIntent: async () => null,
           createSetupHandoff: async () => ({
@@ -81,11 +82,13 @@ describe("createAppsRuntimePortContribution", () => {
     ).not.toThrow()
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
         acquisitionResolver: { resolveAcquisitionIntent: async () => null },
       } as never),
     ).toThrow(/createSetupHandoff/)
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
         acquisitionResolver: {
           resolveAcquisitionIntent: async () => null,
           createSetupHandoff: async () => ({
@@ -94,5 +97,17 @@ describe("createAppsRuntimePortContribution", () => {
         },
       } as never),
     ).toThrow(/notifyInstallationLifecycle/)
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "",
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle: async () => undefined,
+        },
+      }),
+    ).toThrow(/deploymentId/)
   })
 })
