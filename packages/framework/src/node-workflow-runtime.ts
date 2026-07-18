@@ -54,6 +54,8 @@ export async function loadVoyantNodeWorkflowRuntime<TEnvironment>(
     ...options.graphRuntime.modules,
     ...options.graphRuntime.extensions,
     ...options.graphRuntime.plugins,
+    ...(options.graphRuntime.adapters ?? []),
+    ...(options.graphRuntime.providerUnits ?? []),
   ]
   const workflows = await Promise.all(
     units.flatMap((unit) => unit.workflows.map((workflow) => workflow.load<WorkflowDefinition>())),

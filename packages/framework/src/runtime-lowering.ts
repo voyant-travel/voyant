@@ -254,6 +254,8 @@ export interface VoyantGraphRuntime {
   modules: readonly VoyantGraphRuntimeUnitLoader[]
   extensions: readonly VoyantGraphRuntimeUnitLoader[]
   plugins: readonly VoyantGraphRuntimeUnitLoader[]
+  adapters?: readonly VoyantGraphRuntimeUnitLoader[]
+  providerUnits?: readonly VoyantGraphRuntimeUnitLoader[]
   references: readonly VoyantGraphRuntimeReferenceLoader[]
   config: readonly VoyantGraphRuntimeConfigLoader[]
   secrets: readonly VoyantGraphRuntimeSecretLoader[]
@@ -281,6 +283,8 @@ export interface CreateVoyantGraphRuntimeInput {
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
   extensions?: readonly VoyantGraphRuntimeUnitDefinition[]
   plugins: readonly VoyantGraphRuntimeUnitDefinition[]
+  adapters?: readonly VoyantGraphRuntimeUnitDefinition[]
+  providerUnits?: readonly VoyantGraphRuntimeUnitDefinition[]
   webhookPlan?: VoyantGraphWebhookPlan
 }
 
@@ -308,7 +312,11 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     createRuntimeUnitLoader(unit, importEntries),
   )
   const plugins = definitions.plugins.map((unit) => createRuntimeUnitLoader(unit, importEntries))
-  const units = [...modules, ...extensions, ...plugins]
+  const adapters = definitions.adapters.map((unit) => createRuntimeUnitLoader(unit, importEntries))
+  const providerUnits = definitions.providerUnits.map((unit) =>
+    createRuntimeUnitLoader(unit, importEntries),
+  )
+  const units = [...modules, ...extensions, ...plugins, ...adapters, ...providerUnits]
   const references = units.flatMap((unit) => unit.references)
   const config = units.flatMap((unit) => unit.config)
   const secrets = units.flatMap((unit) => unit.secrets)
@@ -339,6 +347,8 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     modules,
     extensions,
     plugins,
+    adapters,
+    providerUnits,
     references,
     config,
     secrets,
@@ -407,13 +417,22 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
 interface NormalizedVoyantGraphRuntimeInput
   extends Omit<
     CreateVoyantGraphRuntimeInput,
-    "accessCatalog" | "eventCatalog" | "modules" | "extensions" | "plugins" | "webhookPlan"
+    | "accessCatalog"
+    | "eventCatalog"
+    | "modules"
+    | "extensions"
+    | "plugins"
+    | "adapters"
+    | "providerUnits"
+    | "webhookPlan"
   > {
   accessCatalog: AccessCatalog
   eventCatalog: VoyantGraphEventCatalog
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   extensions: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
+  adapters: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
+  providerUnits: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   webhookPlan: VoyantGraphWebhookPlan
 }
 
@@ -429,12 +448,16 @@ function normalizeRuntimeDefinition(
       ...input.modules,
       ...(input.extensions ?? []),
       ...input.plugins,
+      ...(input.adapters ?? []),
+      ...(input.providerUnits ?? []),
     ]),
     eventCatalog: normalizeEventCatalog(input.eventCatalog),
     webhookPlan,
     modules: input.modules.map(normalizeUnit),
     extensions: (input.extensions ?? []).map(normalizeUnit),
     plugins: input.plugins.map(normalizeUnit),
+    adapters: (input.adapters ?? []).map(normalizeUnit),
+    providerUnits: (input.providerUnits ?? []).map(normalizeUnit),
   }
 }
 
@@ -792,7 +815,13 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const toolIds = new Set<string>()
   const toolNames = new Set<string>()
   const actionIds = new Set<string>()
-  const units = [...input.modules, ...input.extensions, ...input.plugins]
+  const units = [
+    ...input.modules,
+    ...input.extensions,
+    ...input.plugins,
+    ...input.adapters,
+    ...input.providerUnits,
+  ]
   const selectedIds = mergeSelectedIds(units.map((unit) => unit.selectedIds))
   const selectedActionBindings = {
     routes: new Set(selectedIds.routes),
@@ -820,6 +849,8 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
     ["module", input.modules],
     ["extension", input.extensions],
     ["plugin", input.plugins],
+    ["adapter", input.adapters],
+    ["provider", input.providerUnits],
   ] as const) {
     for (const unit of units) {
       if (unit.kind !== expectedKind) {
@@ -998,7 +1029,13 @@ function validateRuntimeEventCatalog(
 }
 
 function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): void {
-  const units = [...input.modules, ...input.extensions, ...input.plugins]
+  const units = [
+    ...input.modules,
+    ...input.extensions,
+    ...input.plugins,
+    ...input.adapters,
+    ...input.providerUnits,
+  ]
   const unitById = new Map(units.map((unit) => [unit.id, unit]))
   const routeById = new Map(
     units.flatMap((unit) => unit.routes.map((route) => [route.route.id, { route, unit }] as const)),

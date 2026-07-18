@@ -19,6 +19,8 @@ export interface VoyantNodeDeploymentGraphArtifactSummary {
   moduleIds: readonly string[]
   extensionIds: readonly string[]
   pluginIds: readonly string[]
+  adapterIds: readonly string[]
+  providerIds: readonly string[]
   packageNames: readonly string[]
   providers: Readonly<Record<string, string>>
   resourceRequirements: readonly VoyantNodeDeploymentGraphResourceRequirement[]
@@ -87,6 +89,8 @@ interface ResolvedDeploymentGraph {
   modules?: unknown
   extensions?: unknown
   plugins?: unknown
+  adapters?: unknown
+  providers?: unknown
   packageRecords?: unknown
 }
 
@@ -217,6 +221,14 @@ export function loadVoyantNodeDeploymentGraphArtifacts(
         ? []
         : collectStringField(graph.extensions, "deployment graph extensions", "id"),
     pluginIds: collectStringField(graph.plugins, "deployment graph plugins", "id"),
+    adapterIds:
+      graph.adapters === undefined
+        ? []
+        : collectStringField(graph.adapters, "deployment graph adapters", "id"),
+    providerIds:
+      graph.providers === undefined
+        ? []
+        : collectStringField(graph.providers, "deployment graph providers", "id"),
     packageNames,
     providers: collectDeploymentProviders(graph.deployment),
     resourceRequirements: collectResourceRequirements(graph.requirements),
@@ -548,6 +560,16 @@ function validateGeneratedRuntimeEntrySource(input: {
     "GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS",
     input.summary.pluginIds,
   )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_ADAPTER_IDS",
+    input.summary.adapterIds,
+  )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_DEPLOYMENT_GRAPH_PROVIDER_IDS",
+    input.summary.providerIds,
+  )
   assertGeneratedStringArrayConst(
     source,
     "GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES",
@@ -580,6 +602,16 @@ function validateGeneratedGraphRuntimeSource(input: {
     source,
     "GENERATED_GRAPH_RUNTIME_PLUGIN_IDS",
     input.summary.pluginIds,
+  )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_GRAPH_RUNTIME_ADAPTER_IDS",
+    input.summary.adapterIds,
+  )
+  assertGeneratedExtensionIds(
+    source,
+    "GENERATED_GRAPH_RUNTIME_PROVIDER_IDS",
+    input.summary.providerIds,
   )
 }
 

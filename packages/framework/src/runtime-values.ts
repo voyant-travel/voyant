@@ -79,10 +79,13 @@ export async function resolveVoyantGraphRuntimeValues(
   const deploymentValues = input.deploymentValues ?? {}
   const deploymentValueAliases = input.deploymentValueAliases ?? {}
   const unitConfig = new Map(
-    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].map((unit) => [
-      unit.id,
-      unit.projectConfig ?? {},
-    ]),
+    [
+      ...runtime.modules,
+      ...runtime.extensions,
+      ...runtime.plugins,
+      ...(runtime.adapters ?? []),
+      ...(runtime.providerUnits ?? []),
+    ].map((unit) => [unit.id, unit.projectConfig ?? {}]),
   )
   const configValues = new Map<string, unknown>()
   const secretValues = new Map<string, unknown>()

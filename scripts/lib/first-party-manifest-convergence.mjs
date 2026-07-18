@@ -80,6 +80,8 @@ export function inspectFirstPartyManifestConvergence({
     ...(graph.modules ?? []),
     ...(graph.extensions ?? []),
     ...(graph.plugins ?? []),
+    ...(graph.adapters ?? []),
+    ...(graph.providers ?? []),
   ])
   for (const reference of runtimeReferences) {
     inspectRuntimeReference(reference, workspacePackages, failures)
@@ -291,8 +293,18 @@ function inspectOwnerRelativeExport(name, pkg, entry, failures) {
   }
 }
 
+function graphUnits(graph) {
+  return [
+    ...(graph.modules ?? []),
+    ...(graph.extensions ?? []),
+    ...(graph.plugins ?? []),
+    ...(graph.adapters ?? []),
+    ...(graph.providers ?? []),
+  ]
+}
+
 function inspectToolParity(graph, workspacePackages, sources, failures) {
-  const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
+  const units = graphUnits(graph)
   const declared = new Set(
     units.flatMap((unit) =>
       (unit.tools ?? []).map((tool) => `${tool.runtime.entry}#${tool.runtime.export ?? "default"}`),
@@ -333,7 +345,7 @@ function inspectExecutableAccessAuthority(graph, failures) {
       new Set((resource.actions ?? []).map((action) => action.action)),
     ]),
   )
-  const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
+  const units = graphUnits(graph)
 
   for (const unit of units) {
     for (const api of unit.api ?? []) {
@@ -361,7 +373,7 @@ function inspectExecutableAccessAuthority(graph, failures) {
 }
 
 function inspectWebhookParity(graph, failures) {
-  const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
+  const units = graphUnits(graph)
   const outbound = new Map()
   const inbound = new Map()
   for (const unit of units) {

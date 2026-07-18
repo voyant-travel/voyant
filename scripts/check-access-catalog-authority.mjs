@@ -97,7 +97,13 @@ const visit = (value) => {
   }
   for (const entry of Object.values(value)) visit(entry)
 }
-visit({ modules: graph.modules, extensions: graph.extensions, plugins: graph.plugins })
+visit({
+  modules: graph.modules,
+  extensions: graph.extensions,
+  plugins: graph.plugins,
+  adapters: graph.adapters,
+  providers: graph.providers,
+})
 
 const presets = new Map(graph.accessCatalog.presets.map((preset) => [preset.id, preset]))
 assert.deepEqual(presets.get("commerce-read")?.grants, [

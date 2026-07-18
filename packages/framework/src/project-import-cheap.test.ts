@@ -18,6 +18,8 @@ describe("framework project import boundary", () => {
       modules: [],
       extensions: [],
       plugins: [],
+      adapters: [],
+      providers: [],
     })
     const config = authoring.defineConfig()
     expect(config.modules.map((unit) => unit.id)).toContain("@voyant-travel/bookings#extras")

@@ -3,11 +3,13 @@
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
+  defineAdapter,
   defineDeployment,
   defineExtension,
   defineModule,
   definePlugin,
   defineProject,
+  defineProvider,
   graphIdFromSpecifier,
   packageNameFromSpecifier,
   resolveDeploymentGraph,
@@ -132,7 +134,7 @@ describe("deployment graph v1", () => {
     )
   })
 
-  it("defines closed module, extension, and plugin manifests", () => {
+  it("defines closed module, extension, plugin, adapter, and provider manifests", () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
       provides: { capabilities: ["acme.loyalty.points"] },
@@ -142,11 +144,35 @@ describe("deployment graph v1", () => {
       id: "@acme/voyant-fiscal#smartbill",
       provides: { capabilities: ["acme.fiscal.invoice"] },
     })
+    const adapter = defineAdapter({
+      id: "@acme/voyant-payments#netopia",
+      providers: [
+        {
+          id: "@acme/voyant-payments#provider.netopia",
+          port: "payments.processor",
+          selection: { role: "payments", value: "netopia" },
+          runtime: { entry: "./netopia", export: "createNetopiaProcessor" },
+        },
+      ],
+    })
+    const provider = defineProvider({
+      id: "@acme/voyant-storage#s3",
+      providers: [
+        {
+          id: "@acme/voyant-storage#provider.s3",
+          port: "storage.object",
+          selection: { role: "storage", value: "s3" },
+          runtime: { entry: "./s3", export: "createObjectStorage" },
+        },
+      ],
+    })
     const extension = defineExtension({ id: "@acme/voyant-loyalty#admin-extension" })
 
     expect(module.schemaVersion).toBe("voyant.module.v1")
     expect(extension.schemaVersion).toBe("voyant.extension.v1")
     expect(plugin.schemaVersion).toBe("voyant.plugin.v1")
+    expect(adapter.schemaVersion).toBe("voyant.adapter.v1")
+    expect(provider.schemaVersion).toBe("voyant.provider.v1")
 
     expect(
       validateGraphUnitManifest({
@@ -167,6 +193,25 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(validateGraphUnitManifest(module)).toEqual([])
+    expect(validateGraphUnitManifest(adapter, "adapter")).toEqual([])
+    expect(validateGraphUnitManifest(provider, "provider")).toEqual([])
+    expect(
+      validateGraphUnitManifest({ ...adapter, schemaVersion: "voyant.plugin.v1" }, "adapter"),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_SCHEMA_VERSION" }),
+      ]),
+    )
+    expect(
+      validateGraphUnitManifest(
+        { schemaVersion: "voyant.unknown.v1", id: "@acme/voyant-unknown" },
+        "provider",
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_SCHEMA_VERSION" }),
+      ]),
+    )
   })
 
   it("requires provider value usage to reference declarations from the same manifest", () => {
@@ -969,6 +1014,91 @@ describe("deployment graph v1", () => {
     expect(graph.modules[0]?.schema).toEqual([
       { id: "@acme/voyant-suite#loyalty.schema", source: "./schema" },
     ])
+    expect(graph.diagnostics).toEqual([])
+  })
+
+  it("replaces adapter and provider selections with their admitted voyant manifests", async () => {
+    const project = defineProject({
+      modules: [],
+      adapters: [{ resolve: "@acme/voyant-payments#netopia", config: { environment: "test" } }],
+      providers: ["@acme/voyant-search#typesense"],
+    })
+    const graph = await resolveDeploymentGraphWithPackageManifests({
+      project,
+      packageRecords: [
+        {
+          packageName: "@acme/voyant-payments",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "adapter",
+            manifest: "./voyant",
+          },
+        },
+        {
+          packageName: "@acme/voyant-search",
+          source: { kind: "workspace" },
+          metadata: {
+            schemaVersion: "voyant.package.v1",
+            kind: "provider",
+            manifest: "./voyant",
+          },
+        },
+      ],
+      admission: { allowedSourceKinds: ["workspace"] },
+      loadPackageManifests: async (record) =>
+        record.packageName === "@acme/voyant-payments"
+          ? [
+              defineAdapter({
+                id: "@acme/voyant-payments#netopia",
+                packageName: "@acme/voyant-payments",
+                providers: [
+                  {
+                    id: "@acme/voyant-payments#provider.netopia",
+                    port: "payments.processor",
+                    selection: { role: "payments", value: "netopia" },
+                    runtime: { entry: "./netopia", export: "createNetopiaProcessor" },
+                  },
+                ],
+              }),
+            ]
+          : [
+              defineProvider({
+                id: "@acme/voyant-search#typesense",
+                packageName: "@acme/voyant-search",
+                providers: [
+                  {
+                    id: "@acme/voyant-search#provider.typesense",
+                    port: "storage.object",
+                    selection: { role: "storage", value: "typesense" },
+                    runtime: { entry: "./typesense", export: "createSearchProvider" },
+                  },
+                ],
+              }),
+            ],
+    })
+
+    expect(graph.adapters[0]).toMatchObject({
+      id: "@acme/voyant-payments#netopia",
+      kind: "adapter",
+      projectConfig: { environment: "test" },
+      providers: [
+        expect.objectContaining({
+          port: "payments.processor",
+          selection: { role: "payments", value: "netopia" },
+        }),
+      ],
+    })
+    expect(graph.providers[0]).toMatchObject({
+      id: "@acme/voyant-search#typesense",
+      kind: "provider",
+      providers: [
+        expect.objectContaining({
+          port: "storage.object",
+          selection: { role: "storage", value: "typesense" },
+        }),
+      ],
+    })
     expect(graph.diagnostics).toEqual([])
   })
 

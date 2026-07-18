@@ -473,6 +473,54 @@ export const audit = ${JSON.stringify(pluginManifest("@acme/suite#audit"))}
     })
   })
 
+  it("parses adapter and provider package metadata and resolves their manifests", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/payments",
+      manifest: `export default ${JSON.stringify(adapterManifest("@acme/payments#netopia"))}\n`,
+      voyant: { schemaVersion: "voyant.package.v1", kind: "adapter", manifest: "./voyant" },
+      extraExports: { "./netopia": "./netopia.mjs" },
+    })
+    writePackage(root, {
+      name: "@acme/storage",
+      manifest: `export default ${JSON.stringify(providerManifest("@acme/storage#s3"))}\n`,
+      voyant: { schemaVersion: "voyant.package.v1", kind: "provider", manifest: "./voyant" },
+      extraExports: { "./s3": "./s3.mjs" },
+    })
+    writeFileSync(
+      path.join(root, "node_modules", "@acme", "payments", "netopia.mjs"),
+      "export const createNetopiaProcessor = () => ({})\n",
+    )
+    writeFileSync(
+      path.join(root, "node_modules", "@acme", "storage", "s3.mjs"),
+      "export const createObjectStorage = () => ({})\n",
+    )
+
+    const resolution = await resolve(
+      root,
+      defineProject({
+        modules: [],
+        adapters: ["@acme/payments#netopia"],
+        providers: ["@acme/storage#s3"],
+      }),
+    )
+
+    expect(resolution.graph.adapters.map((unit) => unit.id)).toEqual(["@acme/payments#netopia"])
+    expect(resolution.graph.providers.map((unit) => unit.id)).toEqual(["@acme/storage#s3"])
+    expect(resolution.graph.packageRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packageName: "@acme/payments",
+          metadata: expect.objectContaining({ kind: "adapter" }),
+        }),
+        expect.objectContaining({
+          packageName: "@acme/storage",
+          metadata: expect.objectContaining({ kind: "provider" }),
+        }),
+      ]),
+    )
+  })
+
   it("rejects stale and invalid package selections", async () => {
     const staleRoot = projectRoot()
     writePackage(staleRoot, {
@@ -492,6 +540,16 @@ export const audit = ${JSON.stringify(pluginManifest("@acme/suite#audit"))}
     await expect(
       resolve(invalidRoot, defineProject({ modules: ["@acme/invalid"] })),
     ).rejects.toThrow(/must declare package\.json#voyant/)
+
+    const unknownKindRoot = projectRoot()
+    writePackage(unknownKindRoot, {
+      name: "@acme/unknown",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/unknown"))}\n`,
+      voyant: { schemaVersion: "voyant.package.v1", kind: "unknown", manifest: "./voyant" },
+    })
+    await expect(
+      resolve(unknownKindRoot, defineProject({ modules: ["@acme/unknown"] })),
+    ).rejects.toThrow(/package.json#voyant.kind is invalid/)
   })
 
   it("does not import a package manifest before compatibility admission", async () => {
@@ -1154,5 +1212,37 @@ function pluginManifest(id: string): Record<string, unknown> {
     schemaVersion: "voyant.plugin.v1",
     id,
     packageName: id.split("#")[0],
+  }
+}
+
+function adapterManifest(id: string): Record<string, unknown> {
+  return {
+    schemaVersion: "voyant.adapter.v1",
+    id,
+    packageName: id.split("#")[0],
+    providers: [
+      {
+        id: `${id}#provider.netopia`,
+        port: "payments.processor",
+        selection: { role: "payments", value: "netopia" },
+        runtime: { entry: "./netopia", export: "createNetopiaProcessor" },
+      },
+    ],
+  }
+}
+
+function providerManifest(id: string): Record<string, unknown> {
+  return {
+    schemaVersion: "voyant.provider.v1",
+    id,
+    packageName: id.split("#")[0],
+    providers: [
+      {
+        id: `${id}#provider.s3`,
+        port: "storage.object",
+        selection: { role: "storage", value: "s3-compatible" },
+        runtime: { entry: "./s3", export: "createObjectStorage" },
+      },
+    ],
   }
 }

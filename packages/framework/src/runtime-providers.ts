@@ -172,6 +172,8 @@ function scopeRuntimeToProviders(
     modules: runtime.modules.filter(includeUnit),
     extensions: runtime.extensions.filter(includeUnit),
     plugins: runtime.plugins.filter(includeUnit),
+    adapters: (runtime.adapters ?? []).filter(includeUnit),
+    providerUnits: (runtime.providerUnits ?? []).filter(includeUnit),
     config: runtime.config.filter(({ declaration }) => configIds.has(declaration.id)),
     secrets: runtime.secrets.filter(({ declaration }) => secretIds.has(declaration.id)),
     resources: runtime.resources.filter(({ declaration }) => resourceIds.has(declaration.id)),

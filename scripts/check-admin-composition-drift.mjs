@@ -83,7 +83,13 @@ function readGraphSelectedAdminPackages() {
   }
 
   const graph = JSON.parse(readFileSync(GRAPH, "utf-8"))
-  const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
+  const units = [
+    ...(graph.modules ?? []),
+    ...(graph.extensions ?? []),
+    ...(graph.plugins ?? []),
+    ...(graph.adapters ?? []),
+    ...(graph.providers ?? []),
+  ]
   const packages = new Set()
   const bundledPackages = new Set()
   const bundledRuntimeEntries = new Map()

@@ -139,7 +139,15 @@ export default defineConfig({
 })
 `
   if (configSource !== expectedConfig) {
-    for (const property of ["modules", "extensions", "plugins", "access", "meta"]) {
+    for (const property of [
+      "modules",
+      "extensions",
+      "plugins",
+      "adapters",
+      "providers",
+      "access",
+      "meta",
+    ]) {
       if (new RegExp(`\\b${property}\\s*:`).test(configSource)) {
         violations.push(`generated config must not declare ${property}`)
       }

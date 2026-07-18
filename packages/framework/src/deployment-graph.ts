@@ -5,9 +5,11 @@ import {
   defineProject,
   isExternalWebhookPayloadSchema,
   VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
+  VOYANT_GRAPH_ADAPTER_SCHEMA_VERSION,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
+  VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION,
   type VoyantGraphAccessDeclaration,
   type VoyantGraphAccessPreset,
   type VoyantGraphAccessResource,
@@ -48,7 +50,7 @@ import {
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
-export { definePlugin } from "@voyant-travel/core/project"
+export { defineAdapter, definePlugin, defineProvider } from "@voyant-travel/core/project"
 
 import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
 import { resourceRequirementsForProvider } from "./deployment-requirements.js"
@@ -77,10 +79,12 @@ export {
   defineModule,
   defineProject,
   VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
+  VOYANT_GRAPH_ADAPTER_SCHEMA_VERSION,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
   VOYANT_GRAPH_PROJECT_SCHEMA_VERSION,
+  VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION,
   type VoyantGraphAccessDeclaration,
   type VoyantGraphActionDeclaration,
   type VoyantGraphAdminDeclaration,
@@ -185,11 +189,11 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "A package source kind is not admitted by the configured graph admission policy.",
   VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED:
     "A graph runtime reference points to a package that did not pass admission.",
-  VOYANT_GRAPH_UNKNOWN_FACET: "A module or plugin manifest contains an unknown top-level facet.",
+  VOYANT_GRAPH_UNKNOWN_FACET: "A graph unit manifest contains an unknown top-level facet.",
   VOYANT_GRAPH_UNKNOWN_REFERENCE:
     "A package facet references an entity that is not present in the selected graph.",
   VOYANT_GRAPH_UNSUPPORTED_FACET:
-    "A module or plugin manifest uses a reserved facet that this toolchain does not support yet.",
+    "A graph unit manifest uses a reserved facet that this toolchain does not support yet.",
 } as const
 
 export type VoyantGraphDiagnosticCode = keyof typeof VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY
@@ -342,6 +346,8 @@ export interface CreateTestDeploymentInput {
   modules: readonly VoyantGraphUnitManifest[]
   extensions?: readonly VoyantGraphUnitManifest[]
   plugins?: readonly VoyantGraphUnitManifest[]
+  adapters?: readonly VoyantGraphUnitManifest[]
+  providers?: readonly VoyantGraphUnitManifest[]
   target?: VoyantGraphRuntimeTarget
   mode?: VoyantGraphProjectDeploymentMode
   packageRecords?: readonly VoyantGraphPackageRecord[]
@@ -403,6 +409,8 @@ export interface ResolvedVoyantDeploymentGraph {
   modules: readonly ResolvedVoyantGraphUnit[]
   extensions: readonly ResolvedVoyantGraphUnit[]
   plugins: readonly ResolvedVoyantGraphUnit[]
+  adapters: readonly ResolvedVoyantGraphUnit[]
+  providers: readonly ResolvedVoyantGraphUnit[]
   capabilities: {
     provided: readonly string[]
     required: readonly string[]
@@ -561,24 +569,21 @@ export function validateGraphUnitManifest(
 
   const source = typeof input.id === "string" ? input.id : undefined
   const diagnostics: VoyantGraphDiagnostic[] = []
-  const expectedSchema =
-    kind === "module"
-      ? VOYANT_GRAPH_MODULE_SCHEMA_VERSION
-      : kind === "extension"
-        ? VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION
-        : VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION
+  const expectedSchema = kind ? schemaVersionForGraphUnitKind(kind) : undefined
 
   if (
     input.schemaVersion !== VOYANT_GRAPH_MODULE_SCHEMA_VERSION &&
     input.schemaVersion !== VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION &&
-    input.schemaVersion !== VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION
+    input.schemaVersion !== VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION &&
+    input.schemaVersion !== VOYANT_GRAPH_ADAPTER_SCHEMA_VERSION &&
+    input.schemaVersion !== VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION
   ) {
     diagnostics.push(
       diagnostic({
         code: "VOYANT_GRAPH_INVALID_SCHEMA_VERSION",
         source,
         facet: "schemaVersion",
-        message: `schemaVersion must be "${VOYANT_GRAPH_MODULE_SCHEMA_VERSION}", "${VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION}", or "${VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION}".`,
+        message: `schemaVersion must be "${VOYANT_GRAPH_MODULE_SCHEMA_VERSION}", "${VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION}", "${VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION}", "${VOYANT_GRAPH_ADAPTER_SCHEMA_VERSION}", or "${VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION}".`,
       }),
     )
   } else if (kind && input.schemaVersion !== expectedSchema) {
@@ -660,7 +665,7 @@ export async function resolveDeploymentGraph(
     throw new Error('resolveDeploymentGraph: target must be "node".')
   }
   const mode = input.mode ?? input.deployment?.mode
-  const providers = { ...(input.deployment?.providers ?? {}) }
+  const deploymentProviders = { ...(input.deployment?.providers ?? {}) }
   const requirements = normalizeDeploymentRequirements(input.deployment?.requirements)
   const migrations = input.deployment?.migrations ?? input.project.deployment?.migrations
   const selectionConfigById = new Map(
@@ -668,6 +673,8 @@ export async function resolveDeploymentGraph(
       ...(input.project.selections?.modules ?? []),
       ...(input.project.selections?.extensions ?? []),
       ...(input.project.selections?.plugins ?? []),
+      ...(input.project.selections?.adapters ?? []),
+      ...(input.project.selections?.providers ?? []),
     ]
       .filter((selection) => selection.config !== undefined)
       .map((selection) => [selection.id, selection.config!]),
@@ -687,7 +694,23 @@ export async function resolveDeploymentGraph(
       resolveUnit(unit, "plugin", selectionConfigById.get(unit.id)),
     ),
   )
-  const selectedUnits = [...selectedModules, ...selectedExtensions, ...selectedPlugins]
+  const selectedAdapters = sortResolvedUnits(
+    (input.project.adapters ?? []).map((unit) =>
+      resolveUnit(unit, "adapter", selectionConfigById.get(unit.id)),
+    ),
+  )
+  const selectedProviders = sortResolvedUnits(
+    (input.project.providers ?? []).map((unit) =>
+      resolveUnit(unit, "provider", selectionConfigById.get(unit.id)),
+    ),
+  )
+  const selectedUnits = [
+    ...selectedModules,
+    ...selectedExtensions,
+    ...selectedPlugins,
+    ...selectedAdapters,
+    ...selectedProviders,
+  ]
 
   const packageRecords = mergePackageRecords(
     selectedUnits,
@@ -711,7 +734,7 @@ export async function resolveDeploymentGraph(
     ...validatePortClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
     ...validateAccessCatalog(selectedUnits, input.project.access?.presets ?? []),
-    ...validateDeploymentProviderSelections(selectedUnits, providers),
+    ...validateDeploymentProviderSelections(selectedUnits, deploymentProviders),
     ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
       target,
@@ -724,6 +747,8 @@ export async function resolveDeploymentGraph(
   const modules = selectedModules.map(({ original: _original, ...unit }) => unit)
   const extensions = selectedExtensions.map(({ original: _original, ...unit }) => unit)
   const plugins = selectedPlugins.map(({ original: _original, ...unit }) => unit)
+  const adapters = selectedAdapters.map(({ original: _original, ...unit }) => unit)
+  const providerUnits = selectedProviders.map(({ original: _original, ...unit }) => unit)
   const graphWithoutHash: Omit<ResolvedVoyantDeploymentGraph, "contentHash"> = {
     schemaVersion: VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
     project: {
@@ -732,13 +757,15 @@ export async function resolveDeploymentGraph(
     deployment: {
       ...(target ? { target } : {}),
       ...(mode ? { mode } : {}),
-      providers,
+      providers: deploymentProviders,
       ...(migrations?.length ? { migrations: [...migrations] } : {}),
     },
     requirements,
     modules,
     extensions,
     plugins,
+    adapters,
+    providers: providerUnits,
     capabilities: {
       provided: sortedUnique(selectedUnits.flatMap((unit) => unit.provides.capabilities)),
       required: sortedUnique(selectedUnits.flatMap((unit) => unit.requires.capabilities)),
@@ -780,6 +807,8 @@ export async function resolveDeploymentGraphWithPackageManifests(
     ...resolveInput.project.modules,
     ...(resolveInput.project.extensions ?? []),
     ...resolveInput.project.plugins,
+    ...(resolveInput.project.adapters ?? []),
+    ...(resolveInput.project.providers ?? []),
   ]
   const selectedIds = new Set(selectedUnits.map((unit) => unit.id))
   const replacements = new Map<string, VoyantGraphUnitManifest>()
@@ -841,6 +870,12 @@ export async function resolveDeploymentGraphWithPackageManifests(
       (unit) => replacements.get(unit.id) ?? unit,
     ),
     plugins: resolveInput.project.plugins.map((unit) => replacements.get(unit.id) ?? unit),
+    adapters: (resolveInput.project.adapters ?? []).map(
+      (unit) => replacements.get(unit.id) ?? unit,
+    ),
+    providers: (resolveInput.project.providers ?? []).map(
+      (unit) => replacements.get(unit.id) ?? unit,
+    ),
   }
   const resolved = await resolveDeploymentGraph({ ...resolveInput, project })
   return diagnostics.length > 0 ? graphWithDiagnostics(resolved, diagnostics) : resolved
@@ -853,6 +888,8 @@ export async function createTestDeployment(
     modules: input.modules,
     extensions: input.extensions ?? [],
     plugins: input.plugins ?? [],
+    adapters: input.adapters ?? [],
+    providers: input.providers ?? [],
   })
   const graph = await resolveDeploymentGraph({
     project,
@@ -880,6 +917,8 @@ export async function createTestDeployment(
           .flatMap((unit) => unit.migrations)
           .concat(graph.extensions.flatMap((unit) => unit.migrations))
           .concat(graph.plugins.flatMap((unit) => unit.migrations))
+          .concat(graph.adapters.flatMap((unit) => unit.migrations))
+          .concat(graph.providers.flatMap((unit) => unit.migrations))
           .map((migration) => migration.id)
         assert(ids.includes(id), `Expected deployment graph to include migration "${id}".`)
       },
@@ -888,6 +927,8 @@ export async function createTestDeployment(
           .flatMap((unit) => unit.migrations)
           .concat(graph.extensions.flatMap((unit) => unit.migrations))
           .concat(graph.plugins.flatMap((unit) => unit.migrations))
+          .concat(graph.adapters.flatMap((unit) => unit.migrations))
+          .concat(graph.providers.flatMap((unit) => unit.migrations))
           .map((migration) => migration.id)
         const uniqueIds = new Set(migrationIds)
         assert(
@@ -3049,7 +3090,7 @@ function validateCapabilityClosure(
           source: unit.id,
           facet: "requires.capabilities",
           message: `Required capability ${capability} is not provided by the selected graph.`,
-          hint: "Select a module or plugin that provides the required capability.",
+          hint: "Select a graph unit that provides the required capability.",
         }),
       )
     }
@@ -3071,7 +3112,7 @@ function validatePortClosure(
           source: unit.id,
           facet: "requires.ports",
           message: `Required port ${port.id} is not provided by the selected graph.`,
-          hint: "Select a module or plugin that provides the required port.",
+          hint: "Select a graph unit that provides the required port.",
         }),
       )
     }
@@ -3428,6 +3469,8 @@ function mergePackageRecords(
       ...(selections?.modules ?? []),
       ...(selections?.extensions ?? []),
       ...(selections?.plugins ?? []),
+      ...(selections?.adapters ?? []),
+      ...(selections?.providers ?? []),
     ].map((selection) => [selection.id, selection]),
   )
   const records = new Map<string, VoyantGraphPackageRecord>()
@@ -3465,8 +3508,33 @@ function normalizePackageRecord(record: VoyantGraphPackageRecord): VoyantGraphPa
   }
 }
 
+function schemaVersionForGraphUnitKind(
+  kind: VoyantGraphUnitKind,
+): VoyantGraphUnitManifest["schemaVersion"] {
+  if (kind === "module") return VOYANT_GRAPH_MODULE_SCHEMA_VERSION
+  if (kind === "extension") return VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION
+  if (kind === "plugin") return VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION
+  if (kind === "adapter") return VOYANT_GRAPH_ADAPTER_SCHEMA_VERSION
+  return VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION
+}
+
+function allResolvedGraphUnits(
+  graph: Pick<ResolvedVoyantDeploymentGraph, "modules" | "extensions" | "plugins"> & {
+    adapters?: readonly ResolvedVoyantGraphUnit[]
+    providers?: readonly ResolvedVoyantGraphUnit[]
+  },
+): ResolvedVoyantGraphUnit[] {
+  return [
+    ...graph.modules,
+    ...graph.extensions,
+    ...graph.plugins,
+    ...(graph.adapters ?? []),
+    ...(graph.providers ?? []),
+  ]
+}
+
 function routePaths(graph: ResolvedVoyantDeploymentGraph): string[] {
-  return [...graph.modules, ...graph.extensions, ...graph.plugins]
+  return allResolvedGraphUnits(graph)
     .flatMap((unit) =>
       unit.api.map((route) => {
         if (route.mount?.startsWith("/")) return route.mount

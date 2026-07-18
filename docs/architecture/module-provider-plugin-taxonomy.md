@@ -1,13 +1,10 @@
 # Voyant Module, Provider, Extension, And Plugin Taxonomy
 
-> **Proposed evolution:**
-> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) reserves **app**
-> for separately deployed OAuth installations. An app may publish an immutable,
-> declarative npm release artifact for self-hosted acquisition, but that package
-> is never executable Operator code or a deployment graph unit. Executable npm
-> bundles remain deployment-time modules, extensions, adapters, or providers.
-> This guide remains normative for the current package graph until that RFC is
-> accepted.
+[`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) reserves **app**
+for separately deployed OAuth installations. An app may publish an immutable,
+declarative release artifact for acquisition, but that artifact is never
+executable Operator code or a deployment graph unit. Executable npm bundles are
+deployment-time modules, extensions, adapters, or providers.
 
 This guide defines how Voyant should classify reusable packages and extension
 surfaces.
@@ -106,6 +103,10 @@ Providers should:
 - stay focused on one execution seam
 - hide vendor-specific details behind that contract
 
+Providers are first-class deployment graph units. Provider packages declare
+`package.json#voyant.kind: "provider"` and their graph manifests use
+`schemaVersion: "voyant.provider.v1"`.
+
 Object storage is one provider role, not one role per vendor. Its built-in
 values are `memory` and `s3-compatible`; AWS S3, Cloudflare R2, Google Cloud
 Storage's XML API, MinIO, and similar services configure the latter through
@@ -137,6 +138,10 @@ An adapter may expose:
 - route or webhook wiring
 - workflow helpers
 
+Adapters are first-class deployment graph units. Adapter packages declare
+`package.json#voyant.kind: "adapter"` and their graph manifests use
+`schemaVersion: "voyant.adapter.v1"`.
+
 Rule:
 
 If a package exists primarily to talk to an external system, treat it as an
@@ -167,32 +172,38 @@ Rule:
 If the package customizes an existing module rather than defining a new
 capability, it is an extension.
 
-### 6. Plugins are distribution bundles
+### 6. Plugins are deprecated graph-unit debt
 
-Plugins are packaging and distribution units.
+`package.json#voyant.kind: "plugin"` and `voyant.plugin.v1` manifests remain
+recognized for backward compatibility only. New executable npm packages must
+declare their actual deployment role: module, extension, adapter, or provider.
 
-A plugin may bundle:
+Historical plugin packages must migrate to their correct target:
 
-- modules
-- extensions
-- providers
-- routes
-- subscribers
-- admin contributions
+- payment, search, and storage integrations become adapters or providers
+- CRM, accounting, and remote-sync integrations become remote apps when they
+  can operate through scoped APIs, events, webhooks, app-owned custom fields,
+  and remote admin UI
+- SmartBill migration is tracked by `voyant#3443`
+- Payload and Sanity CMS package migrations remain open taxonomy debt
 
-But that does not make “plugin” the main runtime abstraction.
+The terminal state deletes the plugin graph kind after the remaining packages
+migrate. Until then, `pnpm verify:deprecated-graph-kinds` runs as a warn-only
+architecture check and prints `[deprecated-kind]` lines for workspace packages
+that still declare `voyant.kind: "plugin"`. The check exits 0 and must not fail
+CI.
 
 Rule:
 
-Use plugins when you want to ship a reusable bundle across projects. Do not use
-plugins as the default answer to every customization problem.
+Do not introduce new plugin graph units. Keep existing plugin declarations only
+where required for compatibility while migration work is active.
 
 Package-owned extensions remain extension contributions in the resolved graph.
 They do not become plugins merely because the runtime lowers them to an
 extension factory. A standard application does not list these contributions in
 its authored `plugins` array; the selected product distribution and package
-manifests provide them. Authored `plugins` entries identify reusable
-distribution packages such as an external adapter bundle.
+manifests provide them. Authored `plugins` entries are legacy compatibility
+inputs for packages that have not yet migrated to `adapters` or `providers`.
 
 ## Decision Rules
 
@@ -207,7 +218,7 @@ Use this order:
 2. adapter
 3. extension
 4. module
-5. plugin bundle
+5. legacy plugin bundle
 
 That keeps the architecture honest and avoids inflating simple seams into a
 meta-framework.
@@ -226,16 +237,16 @@ The runtime question is:
 - extension?
 - adapter?
 
-The packaging question is:
+The compatibility question is:
 
-- should this ship as a plugin bundle?
+- does an existing package still need the legacy plugin lane until migration?
 
 Those are not the same decision.
 
 Rule:
 
-A package can be distributed as a plugin bundle while still being, at runtime,
-primarily a provider or extension package.
+A package should declare the graph kind that matches its runtime role. The
+legacy plugin lane is not a substitute for adapter or provider declarations.
 
 ### 9. Avoid leaking internal implementation structure as public API
 
