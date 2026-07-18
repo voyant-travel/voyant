@@ -73,7 +73,7 @@ describe("managed auth composition", () => {
       auth: {
         resolve: ({ request }) =>
           request.headers.get("cookie") === "staff=1"
-            ? { userId: "staff-1", actor: "staff" }
+            ? { userId: "staff-1", actor: "staff", realm: "admin" }
             : null,
       },
     })

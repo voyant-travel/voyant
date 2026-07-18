@@ -125,7 +125,7 @@ class ApiError extends Error {
 }
 
 const authClient = createAuthClient({
-  baseURL: `${getAdminApiUrl()}/auth`,
+  baseURL: `${getAdminApiUrl()}/auth/admin`,
   plugins: [apiKeyClient(), organizationClient(), emailOTPClient()],
   fetchOptions: { credentials: "include" },
 })
@@ -143,7 +143,7 @@ function cloudAuthStartHref(next?: string): string {
   const params = new URLSearchParams()
   if (next) params.set("next", next)
   const query = params.toString()
-  return `/api/auth/cloud/start${query ? `?${query}` : ""}`
+  return `/api/auth/admin/cloud/start${query ? `?${query}` : ""}`
 }
 
 function shouldUseBrowserEvidenceFallback(request: Request): boolean {

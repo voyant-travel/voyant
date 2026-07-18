@@ -10,7 +10,7 @@
  * - 5-minute expiration ensures quick revocation
  * - HttpOnly, Secure, SameSite cookies
  * - Context-separated signing keys (HKDF-SHA256): the deployment secret
- *   (`SESSION_CLAIMS_SECRET`) is never used directly as an HMAC key.
+ *   (a realm-specific session-claims secret) is never used directly as an HMAC key.
  *   `signSessionClaims`/`verifySessionClaims` derive a dedicated key under
  *   the `voyant:session-claims:v1` context, so a leak of a token-signing
  *   key (or any other derived key) does not compromise sibling contexts
@@ -45,8 +45,7 @@ export const SESSION_CLAIMS_KEY_CONTEXT = "voyant:session-claims:v1"
 
 /**
  * HKDF context label for the Voyant Cloud admin-auth state-cookie HMAC key.
- * Consumers (e.g. the operator auth handler) derive this at the boundary and
- * pass the derived key down as `cookieSecret`.
+ * The cloud broker derives this internally from the admin claims root secret.
  */
 export const CLOUD_STATE_COOKIE_KEY_CONTEXT = "voyant:cloud-state-cookie:v1"
 
@@ -73,7 +72,7 @@ function base64UrlEncode(bytes: Uint8Array): string {
  * compromise of one derived key cannot be replayed against another context
  * or against anything still using the root secret (e.g. Better Auth).
  *
- * @param secret - Root secret (e.g. `SESSION_CLAIMS_SECRET`)
+ * @param secret - Realm-specific session-claims root secret
  * @param context - Context label, e.g. `"voyant:session-claims:v1"`
  * @returns base64url-encoded 256-bit key (43 chars — satisfies >=32-char
  *   secret checks downstream)

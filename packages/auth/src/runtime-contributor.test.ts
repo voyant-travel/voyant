@@ -27,9 +27,21 @@ describe("auth runtime contributor", () => {
 
     expect(() => runtime.resolveDeployment({})).toThrow(/deployment\.providers\.adminAuth/)
   })
+
+  it("does not read the removed shared auth provider selector", () => {
+    const contribution = createAuthRuntimePortContribution(
+      hostWithAuthProvider(undefined, "voyant-cloud"),
+    )
+    const runtime = contribution[identityAccessRuntimePort.id] as IdentityAccessRuntimeProvider
+
+    expect(() => runtime.resolveDeployment({})).toThrow(/deployment\.providers\.adminAuth/)
+  })
 })
 
-function hostWithAuthProvider(provider: "better-auth" | "voyant-cloud" | undefined): {
+function hostWithAuthProvider(
+  provider: "better-auth" | "voyant-cloud" | undefined,
+  removedSharedProvider?: "better-auth" | "voyant-cloud",
+): {
   primitives: VoyantRuntimeHostPrimitives
 } {
   return {
@@ -39,7 +51,11 @@ function hostWithAuthProvider(provider: "better-auth" | "voyant-cloud" | undefin
       storage: {} as VoyantRuntimeHostPrimitives["storage"],
       events: {} as VoyantRuntimeHostPrimitives["events"],
       config: {
-        read: (_bindings, key) => (key === "deployment.providers.adminAuth" ? provider : undefined),
+        read: (_bindings, key) => {
+          if (key === "deployment.providers.adminAuth") return provider
+          if (key === "deployment.providers.auth") return removedSharedProvider
+          return undefined
+        },
       },
     },
   }

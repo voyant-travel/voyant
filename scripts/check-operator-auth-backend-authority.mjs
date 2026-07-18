@@ -45,7 +45,7 @@ if (!existsSync(join(root, runtimePath))) {
     "createCustomerBetterAuth(",
     "createCloudAdminAuthStart(",
     "revalidateVoyantCloudAdminAuthSession(",
-    'auth.all("/auth/*"',
+    'auth.all("/auth/admin/*"',
   ]) {
     if (!runtime.includes(token)) failures.push(`${runtimePath} must contain ${token}`)
   }
@@ -53,6 +53,9 @@ if (!existsSync(join(root, runtimePath))) {
     if (runtime.includes(forbidden)) {
       failures.push(`${runtimePath} must not depend on ${forbidden}`)
     }
+  }
+  if (runtime.includes('auth.all("/auth/*"')) {
+    failures.push(`${runtimePath} must not expose the removed root Better Auth route`)
   }
 }
 

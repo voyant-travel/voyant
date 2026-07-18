@@ -29,12 +29,14 @@ function build() {
     // biome-ignore lint/suspicious/noExplicitAny: stub db for the mount smoke test.
     db: () => ({}) as any,
     auth: {
-      resolve: ({ request }) => ({
-        userId: "u1",
-        actor: (new URL(request.url).pathname.startsWith("/v1/public/")
-          ? "customer"
-          : "staff") as Actor,
-      }),
+      resolve: ({ request }) => {
+        const customer = new URL(request.url).pathname.startsWith("/v1/public/")
+        return {
+          userId: "u1",
+          actor: (customer ? "customer" : "staff") as Actor,
+          realm: customer ? "customer" : "admin",
+        }
+      },
     },
   })
 }
@@ -81,7 +83,7 @@ describe("createApp (config-driven front door)", () => {
         }),
       },
       db: () => ({}) as never,
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     expect(loads).toBe(0)

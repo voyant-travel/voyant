@@ -5,6 +5,7 @@ import type { CreateBetterAuthOptions } from "../../src/server.js"
 
 type BetterAuthConfig = {
   basePath?: string
+  secret?: string
   databaseHooks?: unknown
   plugins: Array<{ id?: string }>
   socialProviders?: Record<string, unknown>
@@ -342,20 +343,42 @@ describe("createBetterAuth", () => {
     const { getAuthSecret } = await import("../../src/server.js")
     const originalAdminAuthSecret = process.env.BETTER_AUTH_ADMIN_SECRET
     const originalBetterAuthSecret = process.env.BETTER_AUTH_SECRET
-    const originalSessionClaimsSecret = process.env.SESSION_CLAIMS_SECRET
     try {
       delete process.env.BETTER_AUTH_ADMIN_SECRET
       process.env.BETTER_AUTH_SECRET = "b".repeat(40)
-      process.env.SESSION_CLAIMS_SECRET = "s".repeat(40)
       expect(() => getAuthSecret()).toThrow(/BETTER_AUTH_ADMIN_SECRET/)
     } finally {
       if (originalAdminAuthSecret === undefined) delete process.env.BETTER_AUTH_ADMIN_SECRET
       else process.env.BETTER_AUTH_ADMIN_SECRET = originalAdminAuthSecret
       if (originalBetterAuthSecret === undefined) delete process.env.BETTER_AUTH_SECRET
       else process.env.BETTER_AUTH_SECRET = originalBetterAuthSecret
-      if (originalSessionClaimsSecret === undefined) delete process.env.SESSION_CLAIMS_SECRET
-      else process.env.SESSION_CLAIMS_SECRET = originalSessionClaimsSecret
     }
+  })
+
+  it("defaults customer auth only from the customer realm secret", async () => {
+    const { createCustomerBetterAuth } = await import("../../src/server.js")
+    vi.stubEnv("BETTER_AUTH_ADMIN_SECRET", "a".repeat(40))
+    vi.stubEnv("BETTER_AUTH_CUSTOMER_SECRET", "c".repeat(40))
+
+    createCustomerBetterAuth({
+      db: { id: "db" } as never,
+      baseURL: "https://shop.example.com",
+    })
+
+    expect(latestBetterAuthConfig().secret).toBe("c".repeat(40))
+  })
+
+  it("does not fall back to the admin secret for customer auth", async () => {
+    const { createCustomerBetterAuth } = await import("../../src/server.js")
+    vi.stubEnv("BETTER_AUTH_ADMIN_SECRET", "a".repeat(40))
+    vi.stubEnv("BETTER_AUTH_CUSTOMER_SECRET", "")
+
+    expect(() =>
+      createCustomerBetterAuth({
+        db: { id: "db" } as never,
+        baseURL: "https://shop.example.com",
+      }),
+    ).toThrow(/BETTER_AUTH_CUSTOMER_SECRET/)
   })
 
   it("preserves consumer plugins alongside Voyant's required auth plugins", async () => {

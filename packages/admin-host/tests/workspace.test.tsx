@@ -87,7 +87,7 @@ describe("createAdminHostWorkspace", () => {
       auth: {
         getCurrentUser: vi.fn(async () => user),
         getBootstrapStatus: vi.fn(async () => ({ hasUsers: true })),
-        cloudAuthStartHref: () => "/api/auth/cloud/start",
+        cloudAuthStartHref: () => "/api/auth/admin/cloud/start",
         signOut,
         updateCurrentUserPreferences,
       },

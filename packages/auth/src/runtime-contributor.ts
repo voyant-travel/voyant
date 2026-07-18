@@ -25,10 +25,7 @@ export interface AuthRuntimeContributorHost {
 }
 
 function selectedAdminAuthProvider(host: AuthRuntimeContributorHost, bindings: unknown): unknown {
-  return (
-    host.primitives.config.read(bindings, "deployment.providers.adminAuth") ??
-    host.primitives.config.read(bindings, "deployment.providers.auth")
-  )
+  return host.primitives.config.read(bindings, "deployment.providers.adminAuth")
 }
 
 /** Package-owned registration map for Auth deployment adapters. */

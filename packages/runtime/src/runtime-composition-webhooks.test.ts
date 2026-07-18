@@ -34,7 +34,11 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("uses an explicitly selected host enqueuer", async () => {
-    mocks.deploymentProviders = { auth: "better-auth", outboundWebhooks: "host" }
+    mocks.deploymentProviders = {
+      adminAuth: "better-auth",
+      customerAuth: "better-auth",
+      outboundWebhooks: "host",
+    }
     const deliverEvent = vi.fn(async () => ["hosted"])
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
@@ -75,7 +79,11 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("does not let Postgres credentials select outbound webhooks when the provider is none", async () => {
-    mocks.deploymentProviders = { auth: "better-auth", outboundWebhooks: "none" }
+    mocks.deploymentProviders = {
+      adminAuth: "better-auth",
+      customerAuth: "better-auth",
+      outboundWebhooks: "none",
+    }
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
       projectRoot,
@@ -91,7 +99,11 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("rejects unsupported outbound webhook providers before server start", async () => {
-    mocks.deploymentProviders = { auth: "better-auth", outboundWebhooks: "external-queue" }
+    mocks.deploymentProviders = {
+      adminAuth: "better-auth",
+      customerAuth: "better-auth",
+      outboundWebhooks: "external-queue",
+    }
     const projectRoot = await createGeneratedProject()
 
     await expect(
@@ -105,7 +117,10 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("rejects a missing outbound webhook provider before server start", async () => {
-    mocks.deploymentProviders = { auth: "better-auth" }
+    mocks.deploymentProviders = {
+      adminAuth: "better-auth",
+      customerAuth: "better-auth",
+    }
     const projectRoot = await createGeneratedProject()
 
     await expect(

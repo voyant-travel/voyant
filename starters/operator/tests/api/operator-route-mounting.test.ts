@@ -38,7 +38,7 @@ async function build() {
         const actor: Actor = new URL(request.url).pathname.startsWith("/v1/public/")
           ? "customer"
           : "staff"
-        return { userId: "u1", actor }
+        return { userId: "u1", actor, realm: actor === "staff" ? "admin" : "customer" }
       },
     },
   })
@@ -53,7 +53,11 @@ async function buildWithSessionActor(actor: Actor) {
     extensions: composition.extensions,
     ...mountRoutePosture(composition),
     auth: {
-      resolve: () => ({ userId: "u1", actor }),
+      resolve: () => ({
+        userId: "u1",
+        actor,
+        realm: actor === "staff" ? "admin" : "customer",
+      }),
     },
   })
 }
@@ -70,7 +74,11 @@ async function buildWithLiveFrontDoor(
     ...mountRoutePosture(composition),
     db,
     auth: {
-      resolve: () => ({ userId: "u1", actor }),
+      resolve: () => ({
+        userId: "u1",
+        actor,
+        realm: actor === "staff" ? "admin" : "customer",
+      }),
     },
   })
 }
@@ -249,7 +257,11 @@ describe("operator composed route mounting (smoke)", () => {
 
   it("admits graph-declared anonymous routes without resolving a session", async () => {
     const composition = await buildGraphComposition()
-    const resolve = vi.fn(() => ({ userId: "u1", actor: "staff" as const }))
+    const resolve = vi.fn(() => ({
+      userId: "u1",
+      actor: "staff" as const,
+      realm: "admin" as const,
+    }))
     const anonymousApp = mountApp({
       modules: composition.modules,
       extensions: composition.extensions,
@@ -280,7 +292,7 @@ describe("operator composed route mounting (smoke)", () => {
       db: defaultDb as any,
       // biome-ignore lint/suspicious/noExplicitAny: stub db factories for route selection regression -- owner: operator API tests.
       dbTransactional: transactionalDb as any,
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     await dbRoutingApp.request("/v1/admin/bookings/book_123/mice-details", {}, TEST_ENV, TEST_CTX)

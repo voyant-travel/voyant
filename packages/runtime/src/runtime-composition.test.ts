@@ -115,7 +115,7 @@ describe("Voyant project runtime composition", () => {
   })
 
   it("derives auth mode from the selected deployment provider, not environment", async () => {
-    mocks.deploymentProviders.auth = "voyant-cloud"
+    mocks.deploymentProviders.adminAuth = "voyant-cloud"
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
       projectRoot,
@@ -127,6 +127,24 @@ describe("Voyant project runtime composition", () => {
     })
 
     expect(mocks.authRuntimeOptions[0]).toMatchObject({ authMode: "voyant-cloud" })
+  })
+
+  it.each([
+    "adminAuth",
+    "customerAuth",
+  ] as const)("rejects a generated deployment without explicit %s selection", async (role) => {
+    delete mocks.deploymentProviders[role]
+    const projectRoot = await createGeneratedProject()
+
+    await expect(
+      loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      }),
+    ).rejects.toThrow(new RegExp(`deployment\\.providers\\.${role}`))
+
+    expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
 })
 

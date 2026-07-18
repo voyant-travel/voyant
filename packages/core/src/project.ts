@@ -632,6 +632,11 @@ function normalizeProjectDeployment(
       if (role.trim().length === 0) {
         throw new Error("defineProject: deployment.providers keys must be non-empty strings.")
       }
+      if (role === "auth") {
+        throw new Error(
+          "defineProject: deployment.providers.auth is no longer supported; select deployment.providers.adminAuth and deployment.providers.customerAuth explicitly.",
+        )
+      }
       const provider = normalizeOptionalString(
         input.providers[role],
         `deployment.providers.${role}`,
@@ -641,15 +646,6 @@ function normalizeProjectDeployment(
       }
       providers[role] = provider
     }
-    // `auth` is the pre-realm deployment role. Keep accepting it for one
-    // migration cycle, but emit only the realm-specific provider contract.
-    if (providers.auth) {
-      providers.adminAuth ??= providers.auth
-      providers.customerAuth ??= "better-auth"
-    }
-    // Emit the v1 alias so older runtimes can still consume newly-authored
-    // graphs during the compatibility window.
-    if (providers.adminAuth) providers.auth ??= providers.adminAuth
   }
 
   const migrations = (input.migrations ?? [])

@@ -179,14 +179,14 @@ function envForProvider(
       variable("VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL", "Cloud admin auth JWKS URL."),
       variable("VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL", "Cloud admin auth revalidation URL."),
       secret("VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN", "Cloud admin auth client token."),
-      secret("SESSION_CLAIMS_SECRET", "Session claim signing secret."),
+      secret("SESSION_CLAIMS_ADMIN_SECRET", "Admin session-claims signing secret."),
       secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth admin-realm secret."),
     ]
   }
   if (role === "adminAuth" && provider === "better-auth") {
     return [
       secret("BETTER_AUTH_ADMIN_SECRET", "Better Auth secret used to sign local admin sessions."),
-      secret("SESSION_CLAIMS_SECRET", "Session claims signing secret."),
+      secret("SESSION_CLAIMS_ADMIN_SECRET", "Admin session-claims signing secret."),
     ]
   }
   if (role === "customerAuth" && provider === "better-auth") {
@@ -194,6 +194,19 @@ function envForProvider(
       secret(
         "BETTER_AUTH_CUSTOMER_SECRET",
         "Better Auth secret used only for storefront customer sessions.",
+      ),
+      secret("SESSION_CLAIMS_CUSTOMER_SECRET", "Customer session-claims signing secret."),
+      secret(
+        "VOYANT_CHECKOUT_CAPABILITY_SECRET",
+        "Checkout and guest-booking capability signing secret.",
+      ),
+    ]
+  }
+  if (role === "customerAuth" && provider === "disabled") {
+    return [
+      secret(
+        "VOYANT_CHECKOUT_CAPABILITY_SECRET",
+        "Checkout and guest-booking capability signing secret.",
       ),
     ]
   }

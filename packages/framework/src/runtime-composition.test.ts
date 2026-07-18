@@ -676,7 +676,9 @@ describe("graph runtime composition", () => {
     const app = mountApp({
       db: () => ({}) as never,
       modules: composition.modules,
-      auth: { resolve: () => ({ userId: "user_1", actor: "customer" }) },
+      auth: {
+        resolve: () => ({ userId: "user_1", actor: "customer", realm: "customer" }),
+      },
     })
 
     expect(composition.modules[0]?.publicPath).toBe("/")

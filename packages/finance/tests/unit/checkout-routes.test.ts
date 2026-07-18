@@ -27,7 +27,7 @@ import {
 } from "../../src/checkout-routes.js"
 
 const TEST_CAPABILITY_ENV = {
-  SESSION_CLAIMS_SECRET: "checkout-capability-test-secret-32chars",
+  VOYANT_CHECKOUT_CAPABILITY_SECRET: "checkout-capability-test-secret-32chars",
 }
 
 async function capabilityHeaders(bookingId = "book_123") {

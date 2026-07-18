@@ -211,17 +211,13 @@ describe("defineProject", () => {
     })
   })
 
-  it("translates the legacy auth provider into explicit realms and preserves its alias", () => {
-    const project = defineProject({
-      modules: [],
-      deployment: { providers: { auth: "voyant-cloud" } },
-    })
-
-    expect(project.deployment?.providers).toEqual({
-      adminAuth: "voyant-cloud",
-      auth: "voyant-cloud",
-      customerAuth: "better-auth",
-    })
+  it("rejects the removed shared auth provider selector", () => {
+    expect(() =>
+      defineProject({
+        modules: [],
+        deployment: { providers: { auth: "voyant-cloud" } },
+      }),
+    ).toThrow(/select deployment\.providers\.adminAuth and deployment\.providers\.customerAuth/)
   })
 
   it("rejects paths and config that cannot produce deterministic project metadata", () => {

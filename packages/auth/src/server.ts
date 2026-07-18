@@ -27,11 +27,12 @@ import {
 import { expandTrustedOrigins, getTrustedOrigins } from "./trusted-origins.js"
 import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
 
-export function getAuthSecret(): string {
-  const secret = process.env.BETTER_AUTH_ADMIN_SECRET || ""
+export function getAuthSecret(realm: "admin" | "customer" = "admin"): string {
+  const envName = realm === "customer" ? "BETTER_AUTH_CUSTOMER_SECRET" : "BETTER_AUTH_ADMIN_SECRET"
+  const secret = process.env[envName] || ""
 
   if (!secret || secret.length < 32) {
-    throw new Error("Missing BETTER_AUTH_ADMIN_SECRET with at least 32 characters")
+    throw new Error(`Missing ${envName} with at least 32 characters`)
   }
 
   return secret
@@ -295,8 +296,9 @@ export function createBetterAuth<
   const UserOptions extends BetterAuthOptions["user"] = undefined,
   const Plugins extends BetterAuthPlugin[] | undefined = undefined,
 >(options: CreateBetterAuthOptions<UserOptions, Plugins> = {}) {
+  const realm = options.realm ?? "admin"
   const db = options.db ?? getDb("edge")
-  const secret = options.secret ?? getAuthSecret()
+  const secret = options.secret ?? getAuthSecret(realm)
   const baseURL =
     options.baseURL ??
     process.env.BETTER_AUTH_URL ??
@@ -308,7 +310,6 @@ export function createBetterAuth<
     baseURL,
   )
   const extraPlugins = options.plugins ?? []
-  const realm = options.realm ?? "admin"
   const realmTables =
     options.realmTables ?? (realm === "customer" ? CUSTOMER_AUTH_TABLES : ADMIN_AUTH_TABLES)
   const signupBlockSurfaces = normalizeSignupBlockSurfaces(options.disableSignupWhenUsersExist)

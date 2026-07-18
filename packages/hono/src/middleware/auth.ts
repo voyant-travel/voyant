@@ -16,6 +16,7 @@ import {
   selectDbFactory,
   type VoyantAuthIntegration,
   type VoyantBindings,
+  type VoyantRequestAuthContext,
   type VoyantVariables,
 } from "../types.js"
 import { acquireRequestDb } from "./request-db.js"
@@ -159,6 +160,16 @@ function applyAuthContext(
   if (auth.appTokenMode) c.set("appTokenMode", auth.appTokenMode)
   if (auth.appViewerId) c.set("appViewerId", auth.appViewerId)
   if (auth.appContextConstraint) c.set("appContextConstraint", auth.appContextConstraint)
+}
+
+function matchesRequestRealm(path: string, auth: VoyantRequestAuthContext): boolean {
+  if (path === "/v1/admin" || path.startsWith("/v1/admin/")) {
+    return auth.actor === "staff" && auth.realm === "admin"
+  }
+  if (path === "/v1/public" || path.startsWith("/v1/public/")) {
+    return auth.actor !== "staff" && auth.realm === "customer"
+  }
+  return false
 }
 
 export function requireAuth<TBindings extends VoyantBindings>(
@@ -358,7 +369,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           ctx: tryGetExecutionCtx(c),
         })
 
-        if (resolved?.userId) {
+        if (resolved?.userId && matchesRequestRealm(p, resolved)) {
           applyAuthContext(c, resolved)
           // `await` is load-bearing — see strategy 2: a bare
           // `return next()` would let the `finally` release the shared
@@ -370,16 +381,35 @@ export function requireAuth<TBindings extends VoyantBindings>(
       }
     }
 
-    // Strategy 5: Generic session-claims bearer token support
-    const sessionSecret = c.env.SESSION_CLAIMS_SECRET
+    // Strategy 5: Realm-bound session-claims bearer token support. Ambiguous
+    // surfaces intentionally skip this strategy instead of trying both keys.
+    const sessionRealm =
+      p === "/v1/admin" || p.startsWith("/v1/admin/")
+        ? "admin"
+        : p === "/v1/public" || p.startsWith("/v1/public/")
+          ? "customer"
+          : null
+    const adminSessionSecret = c.env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
+    const customerSessionSecret = c.env.SESSION_CLAIMS_CUSTOMER_SECRET?.trim()
+    const sessionRootsAreDistinct =
+      !adminSessionSecret || !customerSessionSecret || adminSessionSecret !== customerSessionSecret
+    const sessionSecret = !sessionRootsAreDistinct
+      ? undefined
+      : sessionRealm === "admin"
+        ? adminSessionSecret
+        : sessionRealm === "customer"
+          ? customerSessionSecret
+          : undefined
 
-    if (token && sessionSecret && token.includes(".")) {
+    if (token && sessionSecret && sessionSecret.length >= 32 && token.includes(".")) {
       try {
         const sessionAuth = await verifySession(token, sessionSecret)
 
         applyAuthContext(c, {
           ...sessionAuth,
           callerType: "session",
+          actor: sessionRealm === "admin" ? "staff" : "customer",
+          audience: sessionRealm === "admin" ? "staff" : "customer",
         })
 
         return next()

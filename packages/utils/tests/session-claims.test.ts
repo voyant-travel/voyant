@@ -68,6 +68,12 @@ describe("session claims", () => {
 })
 
 describe("deriveContextKey", () => {
+  it("matches the stable cloud-state derivation vector", async () => {
+    await expect(
+      deriveContextKey("voyant-context-key-test-secret", CLOUD_STATE_COOKIE_KEY_CONTEXT),
+    ).resolves.toBe("rPIk6h3pt_BW3gSEJkzQsyUH2H_bhn11qvLWZjPLdDE")
+  })
+
   it("is deterministic for the same secret and context", async () => {
     const a = await deriveContextKey(SECRET, SESSION_CLAIMS_KEY_CONTEXT)
     const b = await deriveContextKey(SECRET, SESSION_CLAIMS_KEY_CONTEXT)

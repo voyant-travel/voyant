@@ -113,6 +113,7 @@ export type {
   VoyantExecutionContext,
   VoyantQueryRuntime,
   VoyantRequestAuthContext,
+  VoyantResolvedSessionAuthContext,
   VoyantRouteHandler,
   VoyantVariables,
 } from "./types.js"

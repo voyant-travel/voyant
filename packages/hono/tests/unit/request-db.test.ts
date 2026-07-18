@@ -141,7 +141,7 @@ describe("auth + db middleware — single shared client per request", () => {
         auth: {
           resolve: async ({ db: resolveDb }) => {
             seen.push(resolveDb)
-            return { userId: "user_1", actor: "staff" as const }
+            return { userId: "user_1", actor: "staff" as const, realm: "admin" as const }
           },
         },
       }),

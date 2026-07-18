@@ -43,6 +43,7 @@ const VALID_INPUT = {
     items: [{ title: "Tour", availabilitySlotId: "avsl_1" }],
   },
 }
+const CHECKOUT_CAPABILITY_TEST_SECRET = "x".repeat(40)
 
 function pendingIntent(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -225,7 +226,7 @@ describe("async bootstrap route mode", () => {
     return { app, emit }
   }
 
-  const ENV = { SESSION_CLAIMS_SECRET: "0123456789abcdef0123456789abcdef" }
+  const ENV = { VOYANT_CHECKOUT_CAPABILITY_SECRET: CHECKOUT_CAPABILITY_TEST_SECRET }
 
   it("?async=1 enqueues an intent, emits its event, and returns 202 + status URL", async () => {
     writeIntents.enqueueWriteIntent.mockResolvedValue({
@@ -313,7 +314,7 @@ describe("async bootstrap route mode", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(VALID_INPUT),
       },
-      { SESSION_CLAIMS_SECRET: "0123456789abcdef0123456789abcdef" },
+      { VOYANT_CHECKOUT_CAPABILITY_SECRET: CHECKOUT_CAPABILITY_TEST_SECRET },
     )
 
     // Synchronous 201 with the real session — never an unprocessable 202.
@@ -358,7 +359,7 @@ describe("GET /bookings/intents/:id", () => {
     return app
   }
 
-  const ENV = { SESSION_CLAIMS_SECRET: "0123456789abcdef0123456789abcdef" }
+  const ENV = { VOYANT_CHECKOUT_CAPABILITY_SECRET: CHECKOUT_CAPABILITY_TEST_SECRET }
 
   it("returns pending status", async () => {
     writeIntents.getWriteIntent.mockResolvedValue(pendingIntent())

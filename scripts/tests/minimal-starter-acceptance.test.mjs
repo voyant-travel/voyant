@@ -288,7 +288,9 @@ function acceptanceEnvironment() {
       ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant_starter_acceptance"].join(""),
     INTERNAL_API_KEY: "starter-acceptance-internal-key",
     NODE_OPTIONS: "--max-old-space-size=6144",
-    SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
+    SESSION_CLAIMS_ADMIN_SECRET: "starter-acceptance-admin-claims-secret",
+    SESSION_CLAIMS_CUSTOMER_SECRET: "starter-acceptance-customer-claims-secret",
+    VOYANT_CHECKOUT_CAPABILITY_SECRET: "starter-acceptance-checkout-capability-secret",
   }
 }
 

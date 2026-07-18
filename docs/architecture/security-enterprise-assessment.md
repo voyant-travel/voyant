@@ -221,7 +221,7 @@ mounted globally and add depth/complexity protection for JSON parsing.
 
 ### M7 — One secret reused across three crypto contexts + arbitrary-user token minting
 **`starters/operator/src/api/auth/handler.ts:148,219,227`, `packages/hono/src/middleware/auth.ts:258-269`, `packages/auth/src/backend.ts:26-28`**
-`SESSION_CLAIMS_SECRET` is simultaneously the Better Auth signing secret, the cloud-admin state-cookie HMAC key, and the key `requireAuth` accepts for session-claims bearer tokens; `createApiTokenFromUserId(userId, secret)` mints a valid session-claims JWT for any userId from it. A single disclosure compromises all three. (Mitigated: strategy-4 tokens set no `actor`, so they fail the actor guards on `/v1/admin/*` and `/v1/public/*` — but not the legacy surface, see H1.) **Fix:** derive distinct keys per context (HKDF with context labels).
+**Mitigated:** admin and customer session claims now require independent realm-specific roots, and `requireAuth` selects exactly one key from the normalized route surface. Cloud-admin state cookies derive an additional HKDF context key internally, while checkout and guest capabilities use their own explicit capability secrets. Tokens from one realm or capability cannot be replayed into another.
 
 ### M8 — Build-phase placeholder secret can become a live signing key
 **`packages/auth/src/server.ts:104-119`**
