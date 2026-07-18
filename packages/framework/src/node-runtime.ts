@@ -66,10 +66,10 @@ import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
-import type { VoyantDeploymentEnvRequirement, VoyantDeploymentMode } from "./deployment-types.js"
-import {
-  resolveDeploymentAuthProviders,
-  type VoyantDeploymentProviders,
+import type {
+  VoyantDeploymentEnvRequirement,
+  VoyantDeploymentMode,
+  VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
 import { requireNodeAdminBetterAuthSecret } from "./node-auth-secrets.js"
@@ -113,7 +113,8 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?: string
   VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
-  SESSION_CLAIMS_SECRET?: string
+  SESSION_CLAIMS_ADMIN_SECRET?: string
+  SESSION_CLAIMS_CUSTOMER_SECRET?: string
   BETTER_AUTH_ADMIN_SECRET?: string
   BETTER_AUTH_CUSTOMER_SECRET?: string
   VOYANT_CLOUD_WORKFLOWS_URL?: string
@@ -267,9 +268,12 @@ const MANAGED_CLOUD_AUTH_REQUIRED_ENV = [
   "VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL",
   "VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL",
   "VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN",
-  "SESSION_CLAIMS_SECRET",
+  "SESSION_CLAIMS_ADMIN_SECRET",
   "BETTER_AUTH_ADMIN_SECRET",
+] as const
+const MANAGED_CUSTOMER_AUTH_REQUIRED_ENV = [
   "BETTER_AUTH_CUSTOMER_SECRET",
+  "SESSION_CLAIMS_CUSTOMER_SECRET",
 ] as const
 const MANAGED_FULL_ACCESS_SCOPES = ["*"]
 const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
@@ -292,11 +296,21 @@ const MATERIALIZED_NODE_ENVS = new WeakMap<object, string>()
 function selectedNodeAuthMode(
   providers: Readonly<Record<string, string>>,
 ): "local" | "voyant-cloud" {
-  const provider = resolveDeploymentAuthProviders(providers).adminAuth
+  const provider = providers.adminAuth
   if (provider === "better-auth") return "local"
   if (provider === "voyant-cloud") return "voyant-cloud"
   throw new Error(
     `Unsupported deployment.providers.adminAuth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
+  )
+}
+
+function selectedNodeCustomerAuthMode(
+  providers: Readonly<Record<string, string>>,
+): "better-auth" | "disabled" {
+  const provider = providers.customerAuth
+  if (provider === "better-auth" || provider === "disabled") return provider
+  throw new Error(
+    `Unsupported deployment.providers.customerAuth value ${JSON.stringify(provider)}. Expected "better-auth" or "disabled".`,
   )
 }
 
@@ -308,10 +322,7 @@ export async function loadVoyantNodeRuntime(
   const providerEnv = {
     ...Object.fromEntries(Object.entries(options.env ?? process.env)),
     VOYANT_ADMIN_AUTH_MODE: selectedNodeAuthMode(options.deployment.providers),
-    VOYANT_CUSTOMER_AUTH_MODE:
-      resolveDeploymentAuthProviders(options.deployment.providers).customerAuth === "disabled"
-        ? "disabled"
-        : "better-auth",
+    VOYANT_CUSTOMER_AUTH_MODE: selectedNodeCustomerAuthMode(options.deployment.providers),
   }
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, providerEnv)
   if (providerIssues.length > 0) {
@@ -564,6 +575,7 @@ function createManagedCloudAdminAuthIntegration(
         organizationId: null,
         callerType: "session",
         actor: "staff",
+        realm: "admin",
         scopes: await resolveManagedCloudMemberScopes(db, session.user.id, accessCatalog),
         email: session.user.email ?? null,
       }
@@ -647,20 +659,20 @@ export function createVoyantCloudAuthApp(
     }
   }
 
-  auth.get("/auth/cloud/start", startCloudAuth)
-  auth.get("/auth/sign-in/cloud", startCloudAuth)
+  auth.get("/auth/admin/cloud/start", startCloudAuth)
 
-  auth.get("/auth/cloud/callback", async (c) => {
+  auth.get("/auth/admin/cloud/callback", async (c) => {
     if (!isManagedVoyantCloudAuthMode(c.env)) {
       return c.json({ error: "Not found" }, 404)
     }
 
     if (!getManagedCloudAuthExchangeConfig(c.env)) {
       const url = new URL(c.req.url)
+      const callbackUrl = getManagedCloudAuthStartConfig(c.env)?.adminCallbackUrl
       return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
         "Set-Cookie": buildClearCloudAdminAuthStateCookie(
-          url.protocol === "https:",
-          url.pathname.replace(/\/callback$/, "") || "/auth/cloud",
+          callbackUrl ? new URL(callbackUrl).protocol === "https:" : url.protocol === "https:",
+          url.pathname.replace(/\/callback$/, "") || "/auth/admin/cloud",
         ),
       })
     }
@@ -683,7 +695,7 @@ export function createVoyantCloudAuthApp(
     return c.json(await resolveManagedBootstrapStatus(c.env, c.req.raw, activeModules))
   })
 
-  auth.all("/auth/*", async (c) => {
+  auth.all("/auth/admin/*", async (c) => {
     if (isManagedVoyantCloudAuthMode(c.env) && !isManagedCloudAllowedBetterAuthRoute(c.req.raw)) {
       return c.json({ error: "Local auth routes are disabled in Voyant Cloud auth mode" }, 404)
     }
@@ -796,13 +808,16 @@ function createManagedBetterAuth(env: VoyantNodeRuntimeEnv, db: VoyantDb) {
     db: authDb,
     secret: requireNodeAdminBetterAuthSecret(env),
     baseURL: getManagedAuthBaseUrl(env),
-    basePath: "/auth",
+    basePath: "/auth/admin",
     trustedOrigins: getManagedTrustedOrigins(env),
     plugins: cloudAuthExchange
       ? [
           createVoyantCloudAdminAuthPlugin({
             db: cloudAuthDb,
-            cookieSecret: env.SESSION_CLAIMS_SECRET ?? "",
+            cookieSecret: env.SESSION_CLAIMS_ADMIN_SECRET ?? "",
+            secureStateCookie:
+              new URL(`${getManagedPublicApiBaseUrl(env)}/auth/admin/cloud/callback`).protocol ===
+              "https:",
             exchange: cloudAuthExchange,
           }),
         ]
@@ -829,13 +844,13 @@ function isManagedVoyantCloudAuthMode(env: VoyantNodeRuntimeEnv | undefined): bo
 function getManagedCloudAuthStartConfig(env: VoyantNodeRuntimeEnv) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
-  const cookieSecret = env.SESSION_CLAIMS_SECRET?.trim()
+  const cookieSecret = env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
   if (!deploymentId || !cloudAuthStartUrl || !cookieSecret) return null
 
   return {
     cloudAuthStartUrl,
     deploymentId,
-    adminCallbackUrl: `${getManagedPublicApiBaseUrl(env)}/auth/cloud/callback`,
+    adminCallbackUrl: `${getManagedPublicApiBaseUrl(env)}/auth/admin/cloud/callback`,
     cookieSecret,
     environment: env.VOYANT_CLOUD_ENVIRONMENT,
   }
@@ -888,7 +903,7 @@ async function resolveManagedCloudMemberScopes(
 
 function isManagedCloudAllowedBetterAuthRoute(request: Request): boolean {
   const url = new URL(request.url)
-  const pathname = url.pathname.replace(/\/+$/, "") || "/"
+  const pathname = url.pathname.replace("/auth/admin", "/auth").replace(/\/+$/, "") || "/"
   return MANAGED_CLOUD_BETTER_AUTH_ALLOWLIST.has(pathname)
 }
 
@@ -1122,6 +1137,32 @@ function nodeRuntimeEnvIssues(
       const value = getEnvValue(env, name)
       if (typeof value !== "string" || value.trim().length === 0) {
         issues.push(`managed-cloud auth ${name} is required for Voyant Cloud admin auth`)
+      }
+    }
+    const adminClaimsSecret = env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
+    if (adminClaimsSecret && adminClaimsSecret.length < 32) {
+      issues.push("managed-cloud auth SESSION_CLAIMS_ADMIN_SECRET must have at least 32 characters")
+    }
+    if (env.VOYANT_CUSTOMER_AUTH_MODE?.trim() !== "disabled") {
+      for (const name of MANAGED_CUSTOMER_AUTH_REQUIRED_ENV) {
+        const value = getEnvValue(env, name)
+        if (typeof value !== "string" || value.trim().length === 0) {
+          issues.push(`managed-cloud auth ${name} is required for storefront customer auth`)
+        }
+      }
+      const customerClaimsSecret = env.SESSION_CLAIMS_CUSTOMER_SECRET?.trim()
+      if (customerClaimsSecret && customerClaimsSecret.length < 32) {
+        issues.push(
+          "managed-cloud auth SESSION_CLAIMS_CUSTOMER_SECRET must have at least 32 characters",
+        )
+      }
+      if (adminClaimsSecret && adminClaimsSecret === customerClaimsSecret) {
+        issues.push("managed-cloud admin and customer session-claims secrets must be different")
+      }
+      const adminAuthSecret = env.BETTER_AUTH_ADMIN_SECRET?.trim()
+      const customerAuthSecret = env.BETTER_AUTH_CUSTOMER_SECRET?.trim()
+      if (adminAuthSecret && adminAuthSecret === customerAuthSecret) {
+        issues.push("managed-cloud admin and customer Better Auth secrets must be different")
       }
     }
   }

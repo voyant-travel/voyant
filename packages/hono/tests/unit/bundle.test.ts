@@ -83,7 +83,13 @@ describe("mountApp with plugins", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins,
-      auth: { resolve: () => ({ userId: "u1", actor }) },
+      auth: {
+        resolve: () => ({
+          userId: "u1",
+          actor,
+          realm: actor === "staff" ? "admin" : "customer",
+        }),
+      },
     })
   }
 
@@ -179,7 +185,7 @@ describe("mountApp with plugins", () => {
       db: () => ({}) as any,
       modules: [top],
       plugins: [plugin],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
     const r1 = await app.request("/v1/admin/top/ping", {}, TEST_ENV, TEST_CTX)
     const r2 = await app.request("/v1/admin/viaPlugin/ping", {}, TEST_ENV, TEST_CTX)
@@ -269,7 +275,7 @@ describe("mountApp with plugins", () => {
           },
         }),
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const res = await app.request(
@@ -346,7 +352,7 @@ describe("mountApp with plugins", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
       plugins: [plugin],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const r1 = await app.request("/v1/admin/boot/ping", {}, TEST_ENV, TEST_CTX)
@@ -382,7 +388,9 @@ describe("mountApp with plugins", () => {
       db: () => ({}) as any,
       plugins: [throwingPlugin],
       modules: [goodModule],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" as Actor }) },
+      auth: {
+        resolve: () => ({ userId: "u1", actor: "staff" as Actor, realm: "admin" }),
+      },
     })
 
     // First request: bootstrap runs; throwing plugin is logged but does not block pipeline.
@@ -416,7 +424,7 @@ describe("mountApp with plugins", () => {
           }),
         },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const res = await app.request("/v1/admin/runtime/check", {}, TEST_ENV, TEST_CTX)
@@ -442,7 +450,7 @@ describe("mountApp with plugins", () => {
           }),
         },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const res = await app.request("/v1/admin/bus/emit", { method: "POST" }, TEST_ENV, TEST_CTX)

@@ -1,4 +1,8 @@
 import {
+  CLOUD_STATE_COOKIE_KEY_CONTEXT,
+  deriveContextKey,
+} from "@voyant-travel/utils/session-claims"
+import {
   base64UrlDecode,
   base64UrlEncode,
   isRecord,
@@ -50,6 +54,8 @@ export type VerifyCloudAdminAuthCallbackInput = {
   requestUrl: string
   cookieHeader?: string | null
   cookieSecret: string
+  /** Trusted external-scheme hint for deployments behind TLS termination. */
+  secureCookie?: boolean
   now?: Date
 }
 
@@ -109,7 +115,7 @@ export async function createCloudAdminAuthStart({
     setCookie: await buildCloudAdminAuthStateCookie({
       state,
       secret: config.cookieSecret,
-      secure: parsedRequestUrl.protocol === "https:",
+      secure: new URL(state.redirectUri).protocol === "https:",
       path: cloudAuthCookiePath(new URL(state.redirectUri).pathname),
       maxAgeSeconds: ttlSeconds,
     }),
@@ -120,13 +126,14 @@ export async function verifyCloudAdminAuthCallback({
   requestUrl,
   cookieHeader,
   cookieSecret,
+  secureCookie,
   now = new Date(),
 }: VerifyCloudAdminAuthCallbackInput): Promise<VerifyCloudAdminAuthCallbackResult> {
   assertUsableSecret(cookieSecret)
 
   const url = new URL(requestUrl)
   const clearCookie = buildClearCloudAdminAuthStateCookie(
-    url.protocol === "https:",
+    secureCookie ?? url.protocol === "https:",
     cloudAuthCookiePath(url.pathname),
   )
   const cloudError = url.searchParams.get("error")
@@ -183,7 +190,10 @@ export function normalizeCloudAdminAuthNext(
   }
 }
 
-export function buildClearCloudAdminAuthStateCookie(secure: boolean, path = "/auth/cloud"): string {
+export function buildClearCloudAdminAuthStateCookie(
+  secure: boolean,
+  path = "/auth/admin/cloud",
+): string {
   return serializeCookie(VOYANT_CLOUD_ADMIN_AUTH_STATE_COOKIE, "", {
     httpOnly: true,
     maxAge: 0,
@@ -274,17 +284,10 @@ function readCookie(cookieHeader: string | null | undefined, name: string): stri
 
 function cloudAuthCookiePath(pathname: string): string {
   const normalized = pathname.replace(/\/+$/, "") || "/"
-  const marker = "/auth/cloud/"
-  const markerIndex = normalized.indexOf(marker)
-  if (markerIndex >= 0) {
-    return normalized.slice(0, markerIndex + marker.length - 1) || "/auth/cloud"
-  }
+  if (normalized.endsWith("/callback")) return normalized.slice(0, -"/callback".length) || "/"
+  if (normalized.endsWith("/cloud")) return normalized
 
-  if (normalized.endsWith("/auth/cloud")) {
-    return normalized
-  }
-
-  return "/auth/cloud"
+  return "/auth/admin/cloud"
 }
 
 function serializeCookie(
@@ -318,9 +321,10 @@ function randomToken(): string {
 }
 
 async function hmac(value: string, secret: string): Promise<string> {
+  const stateCookieKey = await deriveContextKey(secret, CLOUD_STATE_COOKIE_KEY_CONTEXT)
   const key = await globalThis.crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(secret),
+    new TextEncoder().encode(stateCookieKey),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],

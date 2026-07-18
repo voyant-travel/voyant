@@ -301,8 +301,6 @@ export interface ProjectVoyantSelfHostExportOptions {
 export const VOYANT_SELF_HOST_PROVIDER_DEFAULTS = {
   adminAuth: { from: "voyant-cloud", to: "better-auth" },
   customerAuth: { from: "voyant-cloud", to: "better-auth" },
-  // Compatibility for v1 export bundles.
-  auth: { from: "voyant-cloud", to: "better-auth" },
   email: { from: "voyant-cloud", to: "smtp" },
   realtime: { from: "voyant-cloud", to: "local" },
   scheduledJobs: { from: "cloud-scheduler", to: "node-cron" },
@@ -608,6 +606,16 @@ function validateGraph(
     }
     if (isRecord(value.deployment.providers)) {
       for (const [role, provider] of Object.entries(value.deployment.providers)) {
+        if (role === "auth") {
+          validShape = false
+          addIssue(
+            issues,
+            "VOYANT_EXPORT_INVALID_GRAPH",
+            "$.resolvedGraph.deployment.providers.auth",
+            "The shared auth provider selector is not supported; adminAuth and customerAuth must be explicit.",
+          )
+          continue
+        }
         if (!nonEmptyString(provider)) {
           validShape = false
           addIssue(
@@ -615,6 +623,17 @@ function validateGraph(
             "VOYANT_EXPORT_INVALID_GRAPH",
             `$.resolvedGraph.deployment.providers.${role}`,
             "Deployment provider selections must be non-empty strings.",
+          )
+        }
+      }
+      for (const role of ["adminAuth", "customerAuth"] as const) {
+        if (!nonEmptyString(value.deployment.providers[role])) {
+          validShape = false
+          addIssue(
+            issues,
+            "VOYANT_EXPORT_INVALID_GRAPH",
+            `$.resolvedGraph.deployment.providers.${role}`,
+            `Deployment provider ${role} must be explicitly selected.`,
           )
         }
       }
@@ -924,6 +943,17 @@ function remapProviders(
   for (const role of [
     ...new Set([...DEPLOYMENT_PROVIDER_ROLES, ...Object.keys(source), ...Object.keys(overrides)]),
   ].sort()) {
+    if (role === "auth") {
+      diagnostics.push({
+        code: "VOYANT_SELF_HOST_PROVIDER_UNSUPPORTED",
+        severity: "error",
+        path: "$.resolvedGraph.deployment.providers.auth",
+        message:
+          "The shared auth provider selector is not supported; adminAuth and customerAuth must be explicit.",
+        hint: "Remove providerOverrides.auth and select adminAuth and customerAuth separately.",
+      })
+      continue
+    }
     const original = source[role]
     const override = overrides[role]
     if (!nonEmptyString(original) && !nonEmptyString(override)) {

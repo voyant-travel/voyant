@@ -31,7 +31,8 @@ export interface VoyantExecutionContext {
 export interface VoyantBindings {
   INTERNAL_API_KEY?: string
   INTERNAL_API_KEY_SCOPES?: string
-  SESSION_CLAIMS_SECRET?: string
+  SESSION_CLAIMS_ADMIN_SECRET?: string
+  SESSION_CLAIMS_CUSTOMER_SECRET?: string
   BETTER_AUTH_ADMIN_SECRET?: string
   BETTER_AUTH_CUSTOMER_SECRET?: string
   DATABASE_URL: string
@@ -169,8 +170,13 @@ export function resolveDbFactoryResult(value: VoyantDb | DisposableDb): {
 export type VoyantRequestAuthContext = Omit<VoyantAuthContext, "actor"> & {
   userId: string
   actor: Actor
-  /** Explicit security realm for session identities. */
+  /** Explicit security realm when the context represents a user session. */
   realm?: "admin" | "customer"
+}
+
+/** User-session identity returned by a custom `auth.resolve` adapter. */
+export type VoyantResolvedSessionAuthContext = VoyantRequestAuthContext & {
+  realm: "admin" | "customer"
 }
 
 export interface LogEntry {
@@ -226,15 +232,15 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
   /**
    * Resolve the request to an auth context, or return `null` for anonymous.
    *
-   * The returned object MUST include `actor` — `requireActor` is fail-closed,
-   * so omitting it 401s every protected route. For single-tenant admin apps
-   * where every authenticated session is staff, return `actor: "staff"`.
-   * Customer/partner/supplier sessions should return the corresponding actor
-   * so `/v1/public/*` route guards work.
+   * The returned object MUST include both `actor` and `realm`. Admin sessions
+   * use `realm: "admin"` with `actor: "staff"`; customer, partner, or supplier
+   * sessions use `realm: "customer"` with the corresponding non-staff actor.
+   * Realm/actor mismatches fail closed so credentials cannot cross between
+   * `/v1/admin/*` and `/v1/public/*`.
    */
   resolve?: (
     args: VoyantAuthResolveArgs<TBindings>,
-  ) => Promise<VoyantRequestAuthContext | null> | VoyantRequestAuthContext | null
+  ) => Promise<VoyantResolvedSessionAuthContext | null> | VoyantResolvedSessionAuthContext | null
   resolveAppToken?: (
     args: VoyantAuthAppTokenResolveArgs<TBindings>,
   ) => Promise<VoyantAuthContext | null> | VoyantAuthContext | null

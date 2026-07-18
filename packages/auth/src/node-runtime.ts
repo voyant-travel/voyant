@@ -3,7 +3,7 @@
  *
  * agent-quality: file-size exception -- Auth handler keeps local and Voyant Cloud auth flows co-located until the route surface is split by auth mode.
  *
- * Mounts Better Auth at /auth/* for authentication operations.
+ * Mounts Better Auth at /auth/admin/* and /auth/customer/*.
  * Same-origin — no CORS needed. Session cookies work naturally.
  *
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
@@ -16,7 +16,7 @@ import {
   type SelectApikey,
   userProfilesTable,
 } from "@voyant-travel/db/schema/iam"
-import type { Reporter, VoyantDb, VoyantRequestAuthContext } from "@voyant-travel/hono"
+import type { Reporter, VoyantDb, VoyantResolvedSessionAuthContext } from "@voyant-travel/hono"
 import {
   handleApiError,
   reportException,
@@ -47,6 +47,15 @@ import { ensureCurrentUserProfile } from "./workspace.js"
 // set `VoyantDb` from the deployment's database lifecycle adapter. Without
 // this, the sub-app sees `unknown` for context vars.
 type OperatorAuthMode = "local" | "voyant-cloud"
+type OperatorApiAuthSurface = "admin" | "customer"
+
+function classifyOperatorApiAuthSurface(requestUrl: string): OperatorApiAuthSurface | null {
+  const pathname = new URL(requestUrl).pathname.replace(/\/+$/, "") || "/"
+  const normalized = pathname.startsWith("/api/") ? pathname.slice(4) : pathname
+  if (normalized === "/v1/admin" || normalized.startsWith("/v1/admin/")) return "admin"
+  if (normalized === "/v1/public" || normalized.startsWith("/v1/public/")) return "customer"
+  return null
+}
 
 export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   API_BASE_URL?: string
@@ -57,7 +66,8 @@ export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   CORS_ALLOWLIST?: string
   DASH_BASE_URL?: string
   EMAIL_FROM?: string
-  SESSION_CLAIMS_SECRET: string
+  SESSION_CLAIMS_ADMIN_SECRET: string
+  SESSION_CLAIMS_CUSTOMER_SECRET?: string
   VOYANT_ADMIN_AUTH_MODE?: string
   VOYANT_CUSTOMER_AUTH_MODE?: string
   VOYANT_CUSTOMER_AUTH_CONFIG_JSON?: string
@@ -361,7 +371,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       cloudAuthStartUrl,
       deploymentId,
       adminCallbackUrl: `${getPublicApiBaseUrl(env)}/auth/admin/cloud/callback`,
-      cookieSecret: env.SESSION_CLAIMS_SECRET,
+      cookieSecret: env.SESSION_CLAIMS_ADMIN_SECRET,
       appId: env.VOYANT_CLOUD_APP_ID?.trim() || undefined,
       environment: env.VOYANT_CLOUD_ENVIRONMENT?.trim() || undefined,
     }
@@ -589,7 +599,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         ? [
             createVoyantCloudAdminAuthPlugin({
               db: cloudAuthDb,
-              cookieSecret: env.SESSION_CLAIMS_SECRET,
+              cookieSecret: env.SESSION_CLAIMS_ADMIN_SECRET,
+              secureStateCookie:
+                new URL(`${getPublicApiBaseUrl(env)}/auth/admin/cloud/callback`).protocol ===
+                "https:",
               exchange: cloudAuthExchange,
             }),
           ]
@@ -659,12 +672,6 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     })
   }
 
-  function rewriteLegacyAdminAuthRequest(request: Request): Request {
-    const url = new URL(request.url)
-    url.pathname = url.pathname.replace("/auth", "/auth/admin")
-    return new Request(url, request)
-  }
-
   const FULL_ACCESS_SCOPES = ["*"]
 
   function scopesForOperatorRole(role: string | null | undefined): string[] | null {
@@ -718,8 +725,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   async function resolveAuthRequest(
     request: Request,
     env: Env,
-  ): Promise<VoyantRequestAuthContext | null> {
-    const customerSurface = new URL(request.url).pathname.includes("/v1/public/")
+  ): Promise<VoyantResolvedSessionAuthContext | null> {
+    const surface = classifyOperatorApiAuthSurface(request.url)
+    if (!surface) return null
+    const customerSurface = surface === "customer"
     if (customerSurface && env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
       return null
     }
@@ -1107,10 +1116,11 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const exchangeConfig = getCloudAuthExchangeConfig(c.env)
     if (!exchangeConfig) {
       const url = new URL(c.req.url)
+      const callbackUrl = getCloudAuthStartConfig(c.env)?.adminCallbackUrl
       return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
         "Set-Cookie": buildClearCloudAdminAuthStateCookie(
-          url.protocol === "https:",
-          url.pathname.replace(/\/callback$/, "") || "/auth/cloud",
+          callbackUrl ? new URL(callbackUrl).protocol === "https:" : url.protocol === "https:",
+          url.pathname.replace(/\/callback$/, "") || "/auth/admin/cloud",
         ),
       })
     }
@@ -1118,10 +1128,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildAdminBetterAuth(c.env, db)
-      const request = c.req.path.startsWith("/auth/admin/")
-        ? c.req.raw
-        : rewriteLegacyAdminAuthRequest(c.req.raw)
-      return await betterAuth.handler(request)
+      return await betterAuth.handler(c.req.raw)
     } catch (error) {
       console.error("[auth/cloud/callback] Error:", error)
       return c.json({ error: "Voyant Cloud auth callback failed" }, 500)
@@ -1132,9 +1139,6 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
   auth.get("/auth/admin/cloud/start", handleCloudAuthStart)
   auth.get("/auth/admin/cloud/callback", handleCloudAuthCallback)
-  /** @deprecated Use /auth/admin/cloud/*. */
-  auth.get("/auth/cloud/start", handleCloudAuthStart)
-  auth.get("/auth/cloud/callback", handleCloudAuthCallback)
 
   auth.all("/auth/api-tokens", handleApiTokensFacade)
   auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
@@ -1142,6 +1146,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   auth.get("/auth/organization/list-members", handleOrganizationMembersFacade)
 
   auth.get("/auth/customer/status", async (c) => {
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ authenticated: false, disabled: true })
+    }
+
     const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildCustomerBetterAuth(c.env, db, c.req.raw)
@@ -1197,20 +1205,6 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     try {
       const betterAuth = buildAdminBetterAuth(c.env, db)
       return await betterAuth.handler(c.req.raw)
-    } finally {
-      c.executionCtx.waitUntil(dispose())
-    }
-  })
-
-  /** @deprecated Admin Better Auth routes moved to /auth/admin/*. */
-  auth.all("/auth/*", async (c) => {
-    const rewritten = rewriteLegacyAdminAuthRequest(c.req.raw)
-    if (isVoyantCloudAuthMode(c.env) && !isCloudAllowedBetterAuthRoute(rewritten)) {
-      return localAuthDisabledResponse(c)
-    }
-    const { db, dispose } = openDatabase(c.env)
-    try {
-      return await buildAdminBetterAuth(c.env, db).handler(rewritten)
     } finally {
       c.executionCtx.waitUntil(dispose())
     }

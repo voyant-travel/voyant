@@ -37,7 +37,7 @@ describe("mountApp — module transactionalPaths (ADR-0008)", () => {
       db: defaultFactory,
       dbTransactional: transactionalFactory,
       modules: [widget],
-      auth: { resolve: () => ({ userId: "u", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u", actor: "staff", realm: "admin" }) },
     })
     return { app, defaultFactory, transactionalFactory }
   }

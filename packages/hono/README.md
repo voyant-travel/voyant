@@ -41,6 +41,11 @@ const app = createApp({
 })
 ```
 
+Custom `resolve` adapters must return an explicit realm alongside the actor:
+admin sessions return `{ actor: "staff", realm: "admin" }`, while storefront
+sessions return a non-staff actor with `realm: "customer"`. Realm/actor
+mismatches are rejected before protected routes run.
+
 Use `modules`, `extensions`, and provider-backed route helpers as the default
 composition surface. Use `plugins` when you want to register a reusable
 distribution bundle that packages those pieces together.

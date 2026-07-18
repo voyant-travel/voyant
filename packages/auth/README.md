@@ -172,11 +172,11 @@ import { createBetterAuth } from "@voyant-travel/auth/server"
 
 const auth = createBetterAuth({
   db,
-  basePath: "/auth",
+  basePath: "/auth/admin",
   plugins: [
     createVoyantCloudAdminAuthPlugin({
       db,
-      cookieSecret: env.SESSION_CLAIMS_SECRET,
+      cookieSecret: env.SESSION_CLAIMS_ADMIN_SECRET,
       exchange: {
         exchangeUrl: env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL,
         deploymentId: env.VOYANT_CLOUD_DEPLOYMENT_ID,
@@ -194,7 +194,7 @@ const auth = createBetterAuth({
 })
 ```
 
-The plugin mounts Better Auth's `/auth/cloud/callback` endpoint. That endpoint
+The plugin mounts Better Auth's `/auth/admin/cloud/callback` endpoint. That endpoint
 validates the signed broker state, exchanges the one-time Cloud code, verifies
 the signed Cloud assertion, upserts the local mirror user/account/profile,
 stores Cloud linkage side-table rows, and then creates the local Better Auth

@@ -79,6 +79,36 @@ describe("Voyant self-host export bundle", () => {
     )
   })
 
+  it("rejects a graph that uses the removed shared auth selector", async () => {
+    const bundle = await exportBundle()
+    const providers = bundle.resolvedGraph.deployment.providers as Record<string, string>
+    delete providers.adminAuth
+    delete providers.customerAuth
+    providers.auth = "voyant-cloud"
+    await rehashBundle(bundle)
+
+    const result = await validateVoyantSelfHostExportBundle(bundle)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_GRAPH",
+          path: "$.resolvedGraph.deployment.providers.auth",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_GRAPH",
+          path: "$.resolvedGraph.deployment.providers.adminAuth",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_GRAPH",
+          path: "$.resolvedGraph.deployment.providers.customerAuth",
+        }),
+      ]),
+    )
+  })
+
   it("rejects a framework version outside the admitted package range", async () => {
     const bundle = await exportBundle()
     bundle.frameworkVersion = "0.1.0"
@@ -252,7 +282,8 @@ describe("self-host projection", () => {
       target: "node",
       mode: "self-hosted",
       providers: {
-        auth: "better-auth",
+        adminAuth: "better-auth",
+        customerAuth: "better-auth",
         email: "smtp",
         realtime: "local",
         scheduledJobs: "node-cron",
@@ -263,7 +294,12 @@ describe("self-host projection", () => {
     expect(projection.graph.deployment).toEqual(projection.project.deployment)
     expect(projection.providerRemaps).toEqual(
       expect.arrayContaining([
-        { role: "auth", from: "voyant-cloud", to: "better-auth", reason: "self-host-default" },
+        {
+          role: "adminAuth",
+          from: "voyant-cloud",
+          to: "better-auth",
+          reason: "self-host-default",
+        },
         { role: "email", from: "voyant-cloud", to: "smtp", reason: "self-host-default" },
         {
           role: "scheduledJobs",
@@ -311,7 +347,9 @@ describe("self-host projection", () => {
       expect.arrayContaining([
         "BETTER_AUTH_ADMIN_SECRET",
         "BETTER_AUTH_CUSTOMER_SECRET",
-        "SESSION_CLAIMS_SECRET",
+        "SESSION_CLAIMS_ADMIN_SECRET",
+        "SESSION_CLAIMS_CUSTOMER_SECRET",
+        "VOYANT_CHECKOUT_CAPABILITY_SECRET",
         "SMTP_HOST",
         "SMTP_PASSWORD",
         "DATABASE_URL",

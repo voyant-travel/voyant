@@ -116,7 +116,7 @@ export async function getAuthContextFromHeaders(
     ? [options.cookieName]
     : realm === "customer"
       ? ["voyant-customer.session_token"]
-      : ["voyant-admin.session_token", "better-auth.session_token"]
+      : ["voyant-admin.session_token"]
   const rawCookie = getRawCookieValue(headers, cookieNames)
   if (!rawCookie) return EMPTY
 

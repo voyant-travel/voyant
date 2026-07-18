@@ -68,7 +68,8 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
     postgresEnqueue: vi.fn(async () => ["queued"]),
     createPostgresWebhookDeliveryEnqueuer: vi.fn(),
     deploymentProviders: {
-      auth: "better-auth",
+      adminAuth: "better-auth",
+      customerAuth: "better-auth",
       outboundWebhooks: "postgres",
     } as Record<string, string>,
     loadVoyantNodeRuntime: vi.fn(async (_options: unknown) => nodeRuntime),
@@ -248,7 +249,8 @@ beforeEach(() => {
   mocks.runtimePortHosts.length = 0
   mocks.nodeRuntime.deployment.providers.workflows = "self-hosted"
   mocks.deploymentProviders = {
-    auth: "better-auth",
+    adminAuth: "better-auth",
+    customerAuth: "better-auth",
     workflows: "self-hosted",
     outboundWebhooks: "postgres",
   }

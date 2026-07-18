@@ -24,7 +24,7 @@ describe("requireNodeAdminBetterAuthSecret", () => {
   })
 })
 
-describe("admin auth deployment requirements", () => {
+describe("realm-specific auth deployment requirements", () => {
   it.each([
     "voyant-cloud",
     "better-auth",
@@ -37,5 +37,29 @@ describe("admin auth deployment requirements", () => {
       required: true,
     })
     expect(requirement?.aliases).toBeUndefined()
+
+    expect(resource?.env).toContainEqual(
+      expect.objectContaining({ name: "SESSION_CLAIMS_ADMIN_SECRET", required: true }),
+    )
+  })
+
+  it("requires independent Better Auth and claims secrets for customer auth", () => {
+    const [resource] = resourceRequirementsForProvider("customerAuth", "better-auth")
+
+    expect(resource?.env).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "BETTER_AUTH_CUSTOMER_SECRET", required: true }),
+        expect.objectContaining({ name: "SESSION_CLAIMS_CUSTOMER_SECRET", required: true }),
+        expect.objectContaining({ name: "VOYANT_CHECKOUT_CAPABILITY_SECRET", required: true }),
+      ]),
+    )
+  })
+
+  it("requires checkout capabilities even when customer accounts are disabled", () => {
+    const [resource] = resourceRequirementsForProvider("customerAuth", "disabled")
+
+    expect(resource?.env).toEqual([
+      expect.objectContaining({ name: "VOYANT_CHECKOUT_CAPABILITY_SECRET", required: true }),
+    ])
   })
 })

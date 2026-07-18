@@ -1,3 +1,4 @@
+import { signSessionClaims } from "@voyant-travel/utils/session-claims"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -8,6 +9,135 @@ import type { VoyantBindings } from "../../src/types.js"
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
 
 describe("requireAuth API keys", () => {
+  it.each([
+    ["/v1/admin/profile", "SESSION_CLAIMS_ADMIN_SECRET", "staff"],
+    ["/v1/public/account", "SESSION_CLAIMS_CUSTOMER_SECRET", "customer"],
+  ] as const)("binds session claims on %s to its realm", async (path, secretName, actor) => {
+    const secret = `${actor}-session-claims-secret-with-32-characters`
+    const token = await signSessionClaims("user_123", "session_123", secret)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get(path, (c) =>
+      c.json({ actor: c.get("actor"), audience: c.get("audience"), userId: c.get("userId") }),
+    )
+
+    const response = await app.fetch(
+      new Request(`http://example.com${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      { ...TEST_ENV, [secretName]: secret },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ actor, audience: actor, userId: "user_123" })
+  })
+
+  it.each([
+    ["customer", "/v1/admin/profile"],
+    ["admin", "/v1/public/account"],
+  ] as const)("does not accept a %s session on the other realm", async (tokenRealm, path) => {
+    const adminSecret = "admin-session-claims-secret-with-32-characters"
+    const customerSecret = "customer-session-claims-secret-with-32-characters"
+    const token = await signSessionClaims(
+      "user_123",
+      "session_123",
+      tokenRealm === "admin" ? adminSecret : customerSecret,
+    )
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get(path, (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request(`http://example.com${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      {
+        ...TEST_ENV,
+        SESSION_CLAIMS_ADMIN_SECRET: adminSecret,
+        SESSION_CLAIMS_CUSTOMER_SECRET: customerSecret,
+      },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+  })
+
+  it("rejects bearer sessions when both realms share the same signing root", async () => {
+    const sharedSecret = "shared-session-claims-secret-with-32-characters"
+    const token = await signSessionClaims("user_123", "session_123", sharedSecret)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get("/v1/admin/profile", (c) => c.json({ ok: true }))
+    app.get("/v1/public/profile", (c) => c.json({ ok: true }))
+
+    for (const path of ["/v1/admin/profile", "/v1/public/profile"]) {
+      const response = await app.fetch(
+        new Request(`http://example.com${path}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        {
+          ...TEST_ENV,
+          SESSION_CLAIMS_ADMIN_SECRET: sharedSecret,
+          SESSION_CLAIMS_CUSTOMER_SECRET: sharedSecret,
+        },
+        mockExecutionCtx(),
+      )
+      expect(response.status).toBe(401)
+    }
+  })
+
+  it("rejects bearer sessions signed with a short realm root", async () => {
+    const shortSecret = "too-short"
+    const token = await signSessionClaims("user_123", "session_123", shortSecret)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get("/v1/admin/profile", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/v1/admin/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      { ...TEST_ENV, SESSION_CLAIMS_ADMIN_SECRET: shortSecret },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+  })
+
+  it("skips session-claims auth on ambiguous routes", async () => {
+    const secret = "admin-session-claims-secret-with-32-characters"
+    const token = await signSessionClaims("user_123", "session_123", secret)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      { ...TEST_ENV, SESSION_CLAIMS_ADMIN_SECRET: secret },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+  })
+
   it("matches public paths under a configured deployment base path", async () => {
     const dbFactory = vi.fn(() => ({}) as never)
     const app = new Hono()
@@ -75,11 +205,11 @@ describe("requireAuth API keys", () => {
       "*",
       requireAuth(() => ({}) as never, {
         auth: {
-          resolve: () => ({ userId: "user_123", actor: "partner" }),
+          resolve: () => ({ userId: "user_123", actor: "partner", realm: "customer" }),
         },
       }),
     )
-    app.get("/secure", (c) =>
+    app.get("/v1/public/secure", (c) =>
       c.json({
         userId: c.get("userId"),
         actor: c.get("actor"),
@@ -88,7 +218,7 @@ describe("requireAuth API keys", () => {
     )
 
     const response = await app.fetch(
-      new Request("http://example.com/secure"),
+      new Request("http://example.com/v1/public/secure"),
       TEST_ENV,
       mockExecutionCtx(),
     )
@@ -99,6 +229,48 @@ describe("requireAuth API keys", () => {
       actor: "partner",
       audience: "partner",
     })
+  })
+
+  it("rejects a custom resolver identity that omits its realm", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        // Simulate an untyped JavaScript adapter bypassing the TypeScript contract.
+        auth: { resolve: () => ({ userId: "user_123", actor: "staff" }) as never },
+      }),
+    )
+    app.get("/v1/admin/profile", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/v1/admin/profile"),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+  })
+
+  it.each([
+    ["/v1/admin/profile", { userId: "user_123", actor: "customer", realm: "customer" }],
+    ["/v1/public/profile", { userId: "user_123", actor: "staff", realm: "admin" }],
+  ] as const)("rejects a custom resolver identity from the wrong realm on %s", async (path, auth) => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        auth: { resolve: () => auth },
+      }),
+    )
+    app.get(path, (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request(`http://example.com${path}`),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
   })
 
   it("lets app auth integrations reject an otherwise valid API key", async () => {

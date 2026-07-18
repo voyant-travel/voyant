@@ -35,6 +35,8 @@ export type CloudAdminUserProvisioningHandler = (
 export interface VoyantCloudAdminAuthPluginOptions {
   db: ReturnType<typeof getDb>
   cookieSecret: string
+  /** Whether the externally visible callback is HTTPS, even behind an HTTP proxy hop. */
+  secureStateCookie?: boolean
   exchange: CloudAdminAuthExchangeConfig
   fetch?: typeof fetch
   revalidateAfterSeconds?: number

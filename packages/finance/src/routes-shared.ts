@@ -5,10 +5,7 @@ import type { Context } from "hono"
 export type Env = {
   Bindings: Partial<{
     VOYANT_CHECKOUT_CAPABILITY_SECRET: string
-    CHECKOUT_CAPABILITY_SECRET: string
     VOYANT_CHECKOUT_CAPABILITY_TTL_SECONDS: string
-    CHECKOUT_CAPABILITY_TTL_SECONDS: string
-    SESSION_CLAIMS_SECRET: string
   }>
   Variables: {
     db: PostgresJsDatabase

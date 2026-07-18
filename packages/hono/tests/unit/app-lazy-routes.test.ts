@@ -26,7 +26,7 @@ describe("mountApp lazy route mounting", () => {
         // Lazy route that throws — must match.
         { module: { name: "lazy" }, lazyAdminRoutes: async () => new Hono().get("/boom", boom) },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const eager = await app.request("/v1/admin/eager/boom", {}, TEST_ENV, TEST_CTX)
@@ -54,7 +54,7 @@ describe("mountApp lazy route mounting", () => {
       // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
       db: () => marker as any,
       modules: [mod],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     // Not loaded until the first matching request.
@@ -87,7 +87,7 @@ describe("mountApp lazy route mounting", () => {
       db: () => ({}) as any,
       modules: [{ module: { name: "bookings" } }],
       extensions: [lazyExtension, eagerExtension],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const res = await app.request(
@@ -126,7 +126,7 @@ describe("mountApp lazy route mounting", () => {
       db: () => ({}) as any,
       modules: [{ module: { name: "bookings" } }],
       extensions: [firstExtension, secondExtension],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const resource404 = await app.request(
@@ -152,7 +152,7 @@ describe("mountApp lazy route mounting", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     for (let i = 0; i < 3; i++) {
@@ -173,7 +173,7 @@ describe("mountApp lazy route mounting", () => {
             new Hono().get("/ping", (c) => c.json({ surface: "lazy-public" })),
         },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "customer" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "customer", realm: "customer" }) },
     })
 
     const res = await app.request("/v1/public/checkout/ping", {}, TEST_ENV, TEST_CTX)
@@ -187,12 +187,12 @@ describe("mountApp lazy route mounting", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],
-      auth: { resolve: () => ({ userId: "u1", actor: "customer" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "customer", realm: "customer" }) },
     })
 
     const res = await app.request("/v1/admin/flights/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(403)
-    // Guard rejects before the route bundle is ever imported.
+    expect(res.status).toBe(401)
+    // Auth rejects the cross-realm identity before the route bundle is imported.
     expect(load).not.toHaveBeenCalled()
   })
 
@@ -217,7 +217,7 @@ describe("mountApp lazy route mounting", () => {
           },
         },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const uploads = await app.request("/v1/admin/uploads", {}, TEST_ENV, TEST_CTX)
@@ -244,7 +244,7 @@ describe("mountApp lazy route mounting", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono.
       db: () => ({}) as any,
       modules: [{ module: { name: "flights" }, lazyAdminRoutes: load }],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const first = await app.request("/v1/admin/flights/ping", {}, TEST_ENV, TEST_CTX)

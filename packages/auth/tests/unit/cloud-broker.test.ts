@@ -15,7 +15,7 @@ const secret = "test-cloud-auth-cookie-secret-with-more-than-32-chars"
 describe("cloud broker auth state", () => {
   it("builds a Cloud start redirect bound to deployment, callback, state, and nonce", async () => {
     const result = await createCloudAdminAuthStart({
-      requestUrl: "https://admin.example.com/api/auth/cloud/start?next=/settings/team",
+      requestUrl: "http://operator-internal:3300/api/auth/admin/cloud/start?next=/settings/team",
       next: "/settings/team",
       randomState: "state_123",
       randomNonce: "nonce_123",
@@ -23,7 +23,7 @@ describe("cloud broker auth state", () => {
       config: {
         cloudAuthStartUrl: "https://dash.voyantcloud.com/admin-auth/start",
         deploymentId: "dep_123",
-        adminCallbackUrl: "https://admin.example.com/api/auth/cloud/callback",
+        adminCallbackUrl: "https://admin.example.com/api/auth/admin/cloud/callback",
         appId: "app_123",
         environment: "production",
         cookieSecret: secret,
@@ -35,7 +35,7 @@ describe("cloud broker auth state", () => {
     expect(redirectUrl.pathname).toBe("/admin-auth/start")
     expect(redirectUrl.searchParams.get("deployment_id")).toBe("dep_123")
     expect(redirectUrl.searchParams.get("redirect_uri")).toBe(
-      "https://admin.example.com/api/auth/cloud/callback",
+      "https://admin.example.com/api/auth/admin/cloud/callback",
     )
     expect(redirectUrl.searchParams.get("state")).toBe("state_123")
     expect(redirectUrl.searchParams.get("nonce")).toBe("nonce_123")
@@ -46,27 +46,52 @@ describe("cloud broker auth state", () => {
     expect(result.setCookie).toContain(`${VOYANT_CLOUD_ADMIN_AUTH_STATE_COOKIE}=`)
     expect(result.setCookie).toContain("HttpOnly")
     expect(result.setCookie).toContain("Secure")
-    expect(result.setCookie).toContain("Path=/api/auth/cloud")
+    expect(result.setCookie).toContain("Path=/api/auth/admin/cloud")
     expect(result.setCookie).toContain("SameSite=Lax")
+  })
+
+  it("keeps the clear cookie Secure behind TLS termination", async () => {
+    const start = await createCloudAdminAuthStart({
+      requestUrl: "http://operator-internal:3300/api/auth/admin/cloud/start",
+      randomState: "state_123",
+      randomNonce: "nonce_123",
+      config: {
+        cloudAuthStartUrl: "https://dash.voyantcloud.com/admin-auth/start",
+        deploymentId: "dep_123",
+        adminCallbackUrl: "https://admin.example.com/api/auth/admin/cloud/callback",
+        cookieSecret: secret,
+      },
+    })
+
+    const result = await verifyCloudAdminAuthCallback({
+      requestUrl:
+        "http://operator-internal:3300/api/auth/admin/cloud/callback?code=code_123&state=state_123",
+      cookieHeader: start.setCookie.split(";")[0],
+      cookieSecret: secret,
+      secureCookie: true,
+    })
+
+    expect(result.clearCookie).toContain("Secure")
   })
 
   it("verifies matching callback state and code", async () => {
     const start = await createCloudAdminAuthStart({
-      requestUrl: "http://localhost:3300/api/auth/cloud/start",
+      requestUrl: "http://localhost:3300/api/auth/admin/cloud/start",
       randomState: "state_123",
       randomNonce: "nonce_123",
       now: new Date("2026-05-16T00:00:00.000Z"),
       config: {
         cloudAuthStartUrl: "http://localhost:3000/admin-auth/start",
         deploymentId: "dep_123",
-        adminCallbackUrl: "http://localhost:3300/api/auth/cloud/callback",
+        adminCallbackUrl: "http://localhost:3300/api/auth/admin/cloud/callback",
         cookieSecret: secret,
       },
     })
     const cookie = start.setCookie.split(";")[0]
 
     const result = await verifyCloudAdminAuthCallback({
-      requestUrl: "http://localhost:3300/api/auth/cloud/callback?code=code_123&state=state_123",
+      requestUrl:
+        "http://localhost:3300/api/auth/admin/cloud/callback?code=code_123&state=state_123",
       cookieHeader: cookie,
       cookieSecret: secret,
       now: new Date("2026-05-16T00:01:00.000Z"),
@@ -78,19 +103,19 @@ describe("cloud broker auth state", () => {
     expect(result.state.deploymentId).toBe("dep_123")
     expect(result.state.nonce).toBe("nonce_123")
     expect(result.clearCookie).toContain("Max-Age=0")
-    expect(result.clearCookie).toContain("Path=/api/auth/cloud")
+    expect(result.clearCookie).toContain("Path=/api/auth/admin/cloud")
   })
 
   it("rejects mismatched or expired callback state", async () => {
     const start = await createCloudAdminAuthStart({
-      requestUrl: "http://localhost:3300/api/auth/cloud/start",
+      requestUrl: "http://localhost:3300/api/auth/admin/cloud/start",
       randomState: "state_123",
       randomNonce: "nonce_123",
       now: new Date("2026-05-16T00:00:00.000Z"),
       config: {
         cloudAuthStartUrl: "http://localhost:3000/admin-auth/start",
         deploymentId: "dep_123",
-        adminCallbackUrl: "http://localhost:3300/api/auth/cloud/callback",
+        adminCallbackUrl: "http://localhost:3300/api/auth/admin/cloud/callback",
         cookieSecret: secret,
         stateTtlSeconds: 60,
       },
@@ -99,7 +124,7 @@ describe("cloud broker auth state", () => {
 
     await expect(
       verifyCloudAdminAuthCallback({
-        requestUrl: "http://localhost:3300/api/auth/cloud/callback?code=code_123&state=wrong",
+        requestUrl: "http://localhost:3300/api/auth/admin/cloud/callback?code=code_123&state=wrong",
         cookieHeader: cookie,
         cookieSecret: secret,
         now: new Date("2026-05-16T00:00:30.000Z"),
@@ -108,7 +133,8 @@ describe("cloud broker auth state", () => {
 
     await expect(
       verifyCloudAdminAuthCallback({
-        requestUrl: "http://localhost:3300/api/auth/cloud/callback?code=code_123&state=state_123",
+        requestUrl:
+          "http://localhost:3300/api/auth/admin/cloud/callback?code=code_123&state=state_123",
         cookieHeader: cookie,
         cookieSecret: secret,
         now: new Date("2026-05-16T00:02:00.000Z"),
@@ -245,7 +271,7 @@ describe("exchangeCloudAdminAuthCode", () => {
         state: "state_123",
         nonce: "nonce_123",
         deploymentId: "dep_123",
-        redirectUri: "https://admin.example.com/api/auth/cloud/callback",
+        redirectUri: "https://admin.example.com/api/auth/admin/cloud/callback",
         next: "/",
         expiresAt: Date.now() + 60_000,
       },
@@ -270,7 +296,7 @@ describe("exchangeCloudAdminAuthCode", () => {
       code: "code_123",
       deploymentId: "dep_123",
       nonce: "nonce_123",
-      redirectUri: "https://admin.example.com/api/auth/cloud/callback",
+      redirectUri: "https://admin.example.com/api/auth/admin/cloud/callback",
     })
   })
 
@@ -292,7 +318,7 @@ describe("exchangeCloudAdminAuthCode", () => {
           state: "state_123",
           nonce: "nonce_123",
           deploymentId: "dep_123",
-          redirectUri: "https://admin.example.com/api/auth/cloud/callback",
+          redirectUri: "https://admin.example.com/api/auth/admin/cloud/callback",
           next: "/",
           expiresAt: Date.now() + 60_000,
         },

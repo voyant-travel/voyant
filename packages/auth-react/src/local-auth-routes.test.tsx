@@ -6,7 +6,7 @@ describe("local auth presentation", () => {
     const contribution = createLocalAuthRouteContribution({
       getCurrentUser: vi.fn(async () => null),
       getBootstrapStatus: vi.fn(async () => ({ hasUsers: true, authMode: "local" as const })),
-      cloudAuthStartHref: vi.fn(() => "/api/auth/cloud/start"),
+      cloudAuthStartHref: vi.fn(() => "/api/auth/admin/cloud/start"),
       useMessages: vi.fn(),
       getInvitation: vi.fn(),
       redeemInvitation: vi.fn(),

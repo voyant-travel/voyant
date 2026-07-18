@@ -43,13 +43,17 @@ function makeModule(options: {
  * that requireAuth marks the request authenticated and requireActor sees the
  * intended actor.
  */
-function build(actor: Actor | undefined, mods: ApiModule[]) {
+function build(actor: Actor | undefined, mods: ApiModule[], publicPaths: string[] = []) {
   return mountApp({
     // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
     db: () => ({}) as any,
     modules: mods,
+    publicPaths,
     auth: {
-      resolve: () => (actor === undefined ? { userId: "u1" } : { userId: "u1", actor }),
+      resolve: () =>
+        actor === undefined
+          ? null
+          : { userId: "u1", actor, realm: actor === "staff" ? "admin" : "customer" },
     },
   })
 }
@@ -104,7 +108,7 @@ describe("mountApp surface mounting", () => {
         makeModule({ name: "bookings", admin: true }),
         makeModule({ name: "finance", admin: true }),
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
       adminMeta: {
         contractVersion: "0.1.0",
         deploymentVersion: "2026.06.01",
@@ -163,13 +167,13 @@ describe("mountApp surface mounting", () => {
   // mounted webhook routes can live there; ordinary module surfaces stay under
   // `/v1/admin/*` or `/v1/public/*`.
   it("does not mount ordinary modules on bare /v1/{name} paths", async () => {
-    const app = build("customer", [makeModule({ name: "things" })])
+    const app = build("customer", [makeModule({ name: "things" })], ["/v1/things/ping"])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(404)
   })
 
   it("returns 404 on bare /v1/{name} paths when actor is unresolved", async () => {
-    const app = build(undefined, [makeModule({ name: "things" })])
+    const app = build(undefined, [makeModule({ name: "things" })], ["/v1/things/ping"])
     const res = await app.request("/v1/things/ping", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(404)
   })
@@ -177,13 +181,13 @@ describe("mountApp surface mounting", () => {
   it("blocks customer on /v1/admin/*", async () => {
     const app = build("customer", [makeModule({ name: "only-admin", admin: true })])
     const res = await app.request("/v1/admin/only-admin/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(401)
   })
 
   it("blocks staff on /v1/public/*", async () => {
     const app = build("staff", [makeModule({ name: "only-public", public_: true })])
     const res = await app.request("/v1/public/only-public/ping", {}, TEST_ENV, TEST_CTX)
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(401)
   })
 
   it("allows partner on /v1/public/*", async () => {
@@ -214,7 +218,11 @@ describe("mountApp surface mounting", () => {
           const actor: Actor = new URL(args.request.url).pathname.startsWith("/v1/admin/")
             ? "staff"
             : "customer"
-          return { userId: "u1", actor }
+          return {
+            userId: "u1",
+            actor,
+            realm: actor === "staff" ? "admin" : "customer",
+          }
         },
       },
     })
@@ -337,7 +345,7 @@ describe("mountApp surface mounting", () => {
           }),
         },
       ],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const res = await app.request("/v1/admin/runtime/inspect", {}, TEST_ENV, TEST_CTX)
@@ -419,7 +427,7 @@ describe("mountApp surface mounting", () => {
       linkDefinitions: [personProduct],
       plugins: [{ name: "sales-links", links: [organizationOrder] }],
       modules: [{ module: { name: "runtime" }, adminRoutes }],
-      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      auth: { resolve: () => ({ userId: "u1", actor: "staff", realm: "admin" }) },
     })
 
     const first = await app.request("/v1/admin/runtime/inspect", {}, TEST_ENV, TEST_CTX)

@@ -5,7 +5,7 @@ security realms.
 
 ## Deployment provider migration
 
-Prefer:
+Configure both realms explicitly:
 
 ```ts
 providers: {
@@ -14,23 +14,26 @@ providers: {
 }
 ```
 
-The legacy `providers.auth` value is still accepted as `adminAuth`; it implies
-`customerAuth: "better-auth"`. Resolved graphs emit the legacy alias during the
-compatibility window so an older runtime can still read a new graph.
+The shared `providers.auth` selector is not accepted. Projects must select both
+`adminAuth` and `customerAuth`; runtimes do not infer one realm from the other.
 
 ## Environment migration
 
 - Rename `BETTER_AUTH_SECRET` to `BETTER_AUTH_ADMIN_SECRET`.
 - Generate a distinct `BETTER_AUTH_CUSTOMER_SECRET`.
+- Replace the shared claims root with distinct `SESSION_CLAIMS_ADMIN_SECRET`
+  and `SESSION_CLAIMS_CUSTOMER_SECRET` values of at least 32 characters.
+- Generate a separate `VOYANT_CHECKOUT_CAPABILITY_SECRET`; checkout and guest
+  booking capabilities never reuse either realm's claims root.
 - Set `VOYANT_CUSTOMER_AUTH_MODE=better-auth` or `disabled`.
 - Configure customer method policy through
   `VOYANT_CUSTOMER_AUTH_CONFIG_JSON`. Managed deployments use opaque
   `vault://` credential references and resolve credentials through the runtime
   customer-auth context adapter.
 
-`BETTER_AUTH_ADMIN_SECRET` and `BETTER_AUTH_CUSTOMER_SECRET` are required as
-separate values. The runtime does not accept the old shared secret or derive one
-realm's secret from the other.
+The admin and customer Better Auth secrets must be separate, as must the two
+session-claims secrets. The runtime rejects shared, missing, or short claims
+roots and does not derive one realm's secret from the other.
 
 ## Identity data migration
 
@@ -51,9 +54,10 @@ whether a shared `auth.user` row represented staff, a customer, or both.
 
 ## Route migration
 
-Admin Better Auth routes are canonical at `/auth/admin/*`; `/auth/*` remains a
-temporary compatibility alias. Customer clients must use `/auth/customer/*`.
-Customer routes remain available in `voyant-cloud` admin mode.
+Admin Better Auth routes use `/auth/admin/*`; the old root Better Auth and
+`/auth/cloud/*` routes are rejected. Customer clients use
+`/auth/customer/*`. Customer routes remain available in `voyant-cloud` admin
+mode.
 
 ## Next.js, Astro, and external storefronts
 
@@ -87,7 +91,7 @@ export function StorefrontAuth({ children }: { children: React.ReactNode }) {
 This component can be mounted directly in Next.js or hydrated as a React island
 in Astro. The `/api/auth/customer/*` proxy must forward `Cookie` and
 `Set-Cookie` unchanged to the deployment's `/auth/customer/*` routes. Do not
-proxy customer requests to `/auth/admin/*` or the legacy `/auth/*` alias.
+proxy customer requests to `/auth/admin/*`.
 
 An external site that owns identity and sessions can instead install Better
 Auth through its native Next.js or Astro integration. If it needs to exchange a

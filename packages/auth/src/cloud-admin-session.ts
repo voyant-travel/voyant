@@ -27,6 +27,8 @@ import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
 export interface VoyantCloudAdminAuthPluginOptions {
   db: ReturnType<typeof getDb>
   cookieSecret: string
+  /** Whether the externally visible callback is HTTPS, even behind an HTTP proxy hop. */
+  secureStateCookie?: boolean
   exchange: CloudAdminAuthExchangeConfig
   fetch?: typeof fetch
   revalidateAfterSeconds?: number
@@ -128,6 +130,7 @@ export function createVoyantCloudAdminAuthPlugin(
             requestUrl: ctx.request.url,
             cookieHeader: ctx.headers?.get("cookie") ?? ctx.request.headers.get("cookie"),
             cookieSecret: options.cookieSecret,
+            secureCookie: options.secureStateCookie,
           })
           ctx.setHeader("Set-Cookie", callback.clearCookie)
 

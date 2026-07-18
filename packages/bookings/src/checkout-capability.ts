@@ -35,16 +35,11 @@ const DEFAULT_GUEST_ACCESS_TTL_SECONDS = 30 * 60
 const MAX_GUEST_ACCESS_TTL_SECONDS = 2 * 60 * 60
 
 export function resolveCheckoutCapabilitySecret(env: Record<string, string | undefined>) {
-  return (
-    env.VOYANT_CHECKOUT_CAPABILITY_SECRET ??
-    env.CHECKOUT_CAPABILITY_SECRET ??
-    env.SESSION_CLAIMS_SECRET ??
-    ""
-  )
+  return env.VOYANT_CHECKOUT_CAPABILITY_SECRET ?? ""
 }
 
 export function resolveCheckoutCapabilityTtlSeconds(env: Record<string, string | undefined>) {
-  const raw = env.VOYANT_CHECKOUT_CAPABILITY_TTL_SECONDS ?? env.CHECKOUT_CAPABILITY_TTL_SECONDS
+  const raw = env.VOYANT_CHECKOUT_CAPABILITY_TTL_SECONDS
   const parsed = raw ? Number(raw) : DEFAULT_TTL_SECONDS
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return DEFAULT_TTL_SECONDS
@@ -54,15 +49,11 @@ export function resolveCheckoutCapabilityTtlSeconds(env: Record<string, string |
 }
 
 export function resolveGuestBookingAccessSecret(env: Record<string, string | undefined>) {
-  return (
-    env.VOYANT_GUEST_BOOKING_ACCESS_SECRET ??
-    env.GUEST_BOOKING_ACCESS_SECRET ??
-    resolveCheckoutCapabilitySecret(env)
-  )
+  return env.VOYANT_GUEST_BOOKING_ACCESS_SECRET ?? resolveCheckoutCapabilitySecret(env)
 }
 
 export function resolveGuestBookingAccessTtlSeconds(env: Record<string, string | undefined>) {
-  const raw = env.VOYANT_GUEST_BOOKING_ACCESS_TTL_SECONDS ?? env.GUEST_BOOKING_ACCESS_TTL_SECONDS
+  const raw = env.VOYANT_GUEST_BOOKING_ACCESS_TTL_SECONDS
   const parsed = raw ? Number(raw) : DEFAULT_GUEST_ACCESS_TTL_SECONDS
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return DEFAULT_GUEST_ACCESS_TTL_SECONDS

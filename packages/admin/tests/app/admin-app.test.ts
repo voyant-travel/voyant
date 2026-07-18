@@ -89,7 +89,7 @@ describe("createAdminWorkspaceBeforeLoad", () => {
         ...(overrides.authMode ? { authMode: overrides.authMode } : {}),
       })),
       cloudAuthStartHref: (next?: string) =>
-        `/api/auth/cloud/start${next ? `?next=${encodeURIComponent(next)}` : ""}`,
+        `/api/auth/admin/cloud/start${next ? `?next=${encodeURIComponent(next)}` : ""}`,
     }
   }
 
@@ -127,7 +127,7 @@ describe("createAdminWorkspaceBeforeLoad", () => {
     const options = (
       thrown as { options?: { href?: string; to?: string; reloadDocument?: boolean } }
     ).options
-    expect(options?.href).toBe("/api/auth/cloud/start?next=%2Fbookings")
+    expect(options?.href).toBe("/api/auth/admin/cloud/start?next=%2Fbookings")
     expect(options?.to).toBeUndefined()
     // The broker href is a relative API path, so force a full-document redirect
     // (TanStack only infers it for absolute hrefs).

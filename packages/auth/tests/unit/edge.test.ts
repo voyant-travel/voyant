@@ -34,4 +34,18 @@ describe("getAuthContextFromHeaders", () => {
       else process.env.BETTER_AUTH_SECRET = originalBetterAuthSecret
     }
   })
+
+  it("does not accept the legacy Better Auth cookie name", async () => {
+    vi.stubEnv("BETTER_AUTH_ADMIN_SECRET", "admin-secret-with-at-least-32-characters")
+    try {
+      await expect(
+        getAuthContextFromHeaders(
+          new Headers({ cookie: "better-auth.session_token=legacy-cookie-value" }),
+        ),
+      ).resolves.toEqual({ userId: null, email: null, sessionId: null })
+      expect(getDbMock).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
 })

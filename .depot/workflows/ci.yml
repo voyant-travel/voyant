@@ -278,7 +278,9 @@ jobs:
         run: |
           export BETTER_AUTH_ADMIN_SECRET="$(openssl rand -hex 24)"
           export BETTER_AUTH_CUSTOMER_SECRET="$(openssl rand -hex 24)"
-          export SESSION_CLAIMS_SECRET="$(openssl rand -hex 24)"
+          export SESSION_CLAIMS_ADMIN_SECRET="$(openssl rand -hex 24)"
+          export SESSION_CLAIMS_CUSTOMER_SECRET="$(openssl rand -hex 24)"
+          export VOYANT_CHECKOUT_CAPABILITY_SECRET="$(openssl rand -hex 24)"
           export INTERNAL_API_KEY="$(openssl rand -hex 16)"
           export KMS_LOCAL_KEY="$(openssl rand -hex 16)"
           node dist/server/server.js &

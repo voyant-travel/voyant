@@ -135,8 +135,8 @@ The public checkout/session model is:
 - The capability is scoped to one booking session, a narrow action set
   (`session:read`, `session:update`, `session:reprice`, `session:finalize`,
   `payment:read`, `payment:start`), and a short lifetime. Configure the signing
-  secret with `VOYANT_CHECKOUT_CAPABILITY_SECRET`; if unset, runtime falls back
-  to the auth/session secret.
+  secret with `VOYANT_CHECKOUT_CAPABILITY_SECRET`; it is independent from both
+  auth-realm signing roots.
 - Public finance booking payment options, payment-session reads, and
   payment-session creation require the same booking-scoped capability.
 - Public payment-session creation derives currency and amount from the selected
