@@ -1,6 +1,7 @@
 "use client"
 
 import { formatMessage } from "@voyant-travel/i18n"
+import { formatApiKeyPermissionLabel } from "@voyant-travel/types/api-keys"
 import {
   Alert,
   AlertDescription,
@@ -364,19 +365,7 @@ export function ConsentScreen({
   )
 }
 
-export function formatScopeLabel(scope: string) {
-  const [resource, action] = scope.split(":")
-  const readableResource = (resource || scope).replaceAll("-", " ")
-  const readableAction =
-    {
-      read: "Read",
-      write: "Write",
-      manage: "Manage",
-      delete: "Delete",
-      execute: "Execute",
-    }[action ?? ""] ?? titleCase(action || "Access")
-  return `${readableAction} ${readableResource}`
-}
+export const formatScopeLabel = formatApiKeyPermissionLabel
 
 export function ScopeLabel({ scope }: { scope: string }) {
   return (
@@ -419,8 +408,4 @@ function ManagedInstallIdentity({
       </p>
     </div>
   )
-}
-
-function titleCase(value: string) {
-  return value ? `${value[0]?.toUpperCase()}${value.slice(1).replaceAll("-", " ")}` : value
 }
