@@ -1,5 +1,22 @@
 # @voyant-travel/runtime
 
+## 0.12.0
+
+### Minor Changes
+
+- 96c91b9: Compose provider-neutral remote-app OAuth and session exchange from host-owned
+  runtime inputs, add exact client-authenticated route posture, and augment app
+  access-token resolution without replacing staff authentication.
+
+### Patch Changes
+
+- Updated dependencies [96c91b9]
+  - @voyant-travel/apps@0.8.0
+  - @voyant-travel/framework@0.51.0
+  - @voyant-travel/hono@0.129.0
+  - @voyant-travel/auth@0.133.4
+  - @voyant-travel/workflow-runs@0.122.6
+
 ## 0.11.17
 
 ### Patch Changes

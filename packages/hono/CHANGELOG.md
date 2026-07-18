@@ -1,5 +1,17 @@
 # @voyant-travel/hono
 
+## 0.129.0
+
+### Minor Changes
+
+- 96c91b9: Compose provider-neutral remote-app OAuth and session exchange from host-owned
+  runtime inputs, add exact client-authenticated route posture, and augment app
+  access-token resolution without replacing staff authentication.
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.122.6
+
 ## 0.128.6
 
 ### Patch Changes
