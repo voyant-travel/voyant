@@ -51,7 +51,7 @@ describe("Marketplace setup assertion contract", () => {
     installationId: "installation_1",
     appId: "marketplace_app_1",
     releaseId: "marketplace_release_1",
-    authorizationUrl: "https://admin.example.com/api/v1/admin/apps/oauth/authorize",
+    authorizationUrl: "https://admin.example.com/apps/oauth/authorize",
     tokenUrl: "https://admin.example.com/api/v1/admin/apps/oauth/token",
     redirectUri: "https://app.example.com/oauth/callback",
   } as const
