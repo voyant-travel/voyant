@@ -129,12 +129,17 @@ export function defineConfig(input: DefineVoyantConfigInput = {}): VoyantGraphPr
   const access = {
     presets: [...(STANDARD_OPERATOR_ACCESS.presets ?? []), ...(input.access?.presets ?? [])],
   }
+  const authoredProviders = { ...input.deployment?.providers }
+  if (authoredProviders.auth) {
+    authoredProviders.adminAuth ??= authoredProviders.auth
+    authoredProviders.customerAuth ??= "better-auth"
+  }
   const deployment: VoyantGraphProjectDeployment = {
     ...STANDARD_OPERATOR_DEPLOYMENT,
     ...input.deployment,
     providers: {
       ...STANDARD_OPERATOR_DEPLOYMENT.providers,
-      ...input.deployment?.providers,
+      ...authoredProviders,
     },
     migrations: input.deployment?.migrations ?? STANDARD_OPERATOR_DEPLOYMENT.migrations,
   }

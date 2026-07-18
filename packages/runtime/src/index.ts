@@ -87,7 +87,12 @@ export async function loadVoyantProject(
   const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
-  const authMode = selectedOperatorAuthMode(generated.deployment.providers.auth)
+  const adminAuthProvider =
+    generated.deployment.providers.adminAuth ?? generated.deployment.providers.auth
+  const customerAuthProvider =
+    generated.deployment.providers.customerAuth ??
+    (generated.deployment.providers.auth ? "better-auth" : undefined)
+  const authMode = selectedOperatorAuthMode(adminAuthProvider)
   const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
   const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
@@ -138,7 +143,10 @@ export async function loadVoyantProject(
     ...options.host,
     config: {
       ...options.host?.config,
-      "deployment.providers.auth": generated.deployment.providers.auth,
+      "deployment.providers.adminAuth": adminAuthProvider,
+      "deployment.providers.customerAuth": customerAuthProvider,
+      // Compatibility for packages compiled against the pre-realm config key.
+      "deployment.providers.auth": adminAuthProvider,
     },
     env,
     storage,
@@ -266,7 +274,7 @@ function selectedOperatorAuthMode(provider: unknown): "local" | "voyant-cloud" {
   if (provider === "better-auth") return "local"
   if (provider === "voyant-cloud") return "voyant-cloud"
   throw new Error(
-    `Unsupported deployment.providers.auth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
+    `Unsupported deployment.providers.adminAuth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
   )
 }
 

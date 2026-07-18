@@ -18,8 +18,18 @@ export {
   rewriteCustomerAccountAuthUrl,
 } from "./customer-account-provider.js"
 export {
+  type CustomerAuthConfig,
+  CustomerAuthConfigProvider,
+  type CustomerAuthMethods,
+  customerAuthConfigSchema,
+  customerAuthMethodsSchema,
+  fetchCustomerAuthConfig,
+  useCustomerAuthConfig,
+} from "./customer-auth-config.js"
+export {
   CustomerSignInPage,
   CustomerSignUpPage,
+  type CustomerSocialAuthProvider,
   CustomerVerifyEmailPage,
 } from "./customer-auth-pages.js"
 export type { AvailabilitySlot } from "./detail-shared.js"

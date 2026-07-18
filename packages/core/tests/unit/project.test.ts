@@ -211,6 +211,19 @@ describe("defineProject", () => {
     })
   })
 
+  it("translates the legacy auth provider into explicit realms and preserves its alias", () => {
+    const project = defineProject({
+      modules: [],
+      deployment: { providers: { auth: "voyant-cloud" } },
+    })
+
+    expect(project.deployment?.providers).toEqual({
+      adminAuth: "voyant-cloud",
+      auth: "voyant-cloud",
+      customerAuth: "better-auth",
+    })
+  })
+
   it("rejects paths and config that cannot produce deterministic project metadata", () => {
     expect(() => defineProject({ modules: ["/tmp/voyant-loyalty"] })).toThrow(
       /absolute local paths are not deterministic/,

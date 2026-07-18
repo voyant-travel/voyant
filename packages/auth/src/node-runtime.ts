@@ -35,7 +35,9 @@ import {
 import { buildClearCloudAdminAuthStateCookie, createCloudAdminAuthStart } from "./cloud-broker.js"
 import {
   type CreateBetterAuthOptions,
-  createBetterAuth,
+  type CustomerAuthMethods,
+  createAdminBetterAuth,
+  createCustomerBetterAuth,
   handleApiTokenManagementRequest,
   handleOrganizationMembersRequest,
 } from "./server.js"
@@ -50,12 +52,25 @@ export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   API_BASE_URL?: string
   APP_URL?: string
   AUTH_COOKIE_DOMAIN?: string
-  BETTER_AUTH_SECRET: string
+  /** @deprecated Use BETTER_AUTH_ADMIN_SECRET. */
+  BETTER_AUTH_SECRET?: string
+  BETTER_AUTH_ADMIN_SECRET?: string
+  BETTER_AUTH_CUSTOMER_SECRET?: string
   CORS_ALLOWLIST?: string
   DASH_BASE_URL?: string
   EMAIL_FROM?: string
   SESSION_CLAIMS_SECRET: string
   VOYANT_ADMIN_AUTH_MODE?: string
+  VOYANT_CUSTOMER_AUTH_MODE?: string
+  VOYANT_CUSTOMER_AUTH_CONFIG_JSON?: string
+  VOYANT_CUSTOMER_AUTH_EMAIL_CODE?: string
+  VOYANT_CUSTOMER_AUTH_EMAIL_PASSWORD?: string
+  CUSTOMER_AUTH_GOOGLE_CLIENT_ID?: string
+  CUSTOMER_AUTH_GOOGLE_CLIENT_SECRET?: string
+  CUSTOMER_AUTH_FACEBOOK_CLIENT_ID?: string
+  CUSTOMER_AUTH_FACEBOOK_CLIENT_SECRET?: string
+  CUSTOMER_AUTH_APPLE_CLIENT_ID?: string
+  CUSTOMER_AUTH_APPLE_CLIENT_SECRET?: string
   VOYANT_AUTH_LOG_SECRET_FALLBACKS?: string
   VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
@@ -125,6 +140,86 @@ export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNo
     | Pick<BetterAuthAdvancedOptions, "crossSubDomainCookies" | "defaultCookieAttributes">
     | undefined
   resolveEmailSender?: (env: Env) => OperatorAuthEmailSender | null
+  /**
+   * Storefront/BFF seam for a canonical public auth origin and resolved
+   * merchant credentials. Never derive these values from Host/X-Forwarded-Host.
+   */
+  resolveCustomerAuthContext?: (
+    env: Env,
+    policy: CustomerAuthPolicy,
+    request: Request,
+  ) => CustomerAuthRuntimeContext
+}
+
+export interface CustomerAuthRuntimeContext {
+  baseURL: string
+  trustedOrigins: string[]
+  methods: CustomerAuthMethods
+}
+
+export interface CustomerAuthSocialPolicy {
+  enabled: boolean
+  credentialRef: string | null
+}
+
+export interface CustomerAuthPolicy {
+  methods: {
+    emailCode: boolean
+    emailPassword: boolean
+    google: CustomerAuthSocialPolicy
+    facebook: CustomerAuthSocialPolicy
+    apple: CustomerAuthSocialPolicy
+  }
+}
+
+/**
+ * Better Auth is dispatched internally without the hosting `/api` prefix, but
+ * OAuth providers must return to the browser-visible route. Keep explicit
+ * merchant overrides and supply the canonical public callback otherwise.
+ */
+export function withCustomerSocialRedirectUris(
+  methods: CustomerAuthMethods,
+  publicApiBaseUrl: string,
+): CustomerAuthMethods {
+  const providers = methods.socialProviders
+  if (!providers) return methods
+
+  const normalizedPublicApiBaseUrl = publicApiBaseUrl.replace(/\/+$/, "")
+  const callback = (provider: "google" | "facebook" | "apple") =>
+    `${normalizedPublicApiBaseUrl}/auth/customer/callback/${provider}`
+  const withRedirectUri = <Provider>(
+    provider: Provider | undefined,
+    redirectURI: string,
+  ): Provider | undefined => {
+    if (!provider || typeof provider !== "object") return provider
+    const configured = provider as Provider & { redirectURI?: string }
+    return {
+      ...configured,
+      redirectURI: configured.redirectURI?.trim() || redirectURI,
+    }
+  }
+
+  return {
+    ...methods,
+    socialProviders: {
+      ...providers,
+      ...(providers.google
+        ? {
+            google: withRedirectUri(providers.google, callback("google")),
+          }
+        : {}),
+      ...(providers.facebook
+        ? {
+            facebook: withRedirectUri(providers.facebook, callback("facebook")),
+          }
+        : {}),
+      ...(providers.apple
+        ? {
+            apple: withRedirectUri(providers.apple, callback("apple")),
+          }
+        : {}),
+    },
+  }
 }
 
 export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
@@ -187,7 +282,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
   function isCloudAllowedBetterAuthRoute(request: Request): boolean {
     const url = new URL(request.url)
-    const pathname = url.pathname.replace(/\/+$/, "") || "/"
+    const pathname = url.pathname.replace("/auth/admin", "/auth").replace(/\/+$/, "") || "/"
     return CLOUD_BETTER_AUTH_ALLOWLIST.has(pathname)
   }
 
@@ -267,7 +362,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     return {
       cloudAuthStartUrl,
       deploymentId,
-      adminCallbackUrl: `${getPublicApiBaseUrl(env)}/auth/cloud/callback`,
+      adminCallbackUrl: `${getPublicApiBaseUrl(env)}/auth/admin/cloud/callback`,
       cookieSecret: env.SESSION_CLAIMS_SECRET,
       appId: env.VOYANT_CLOUD_APP_ID?.trim() || undefined,
       environment: env.VOYANT_CLOUD_ENVIRONMENT?.trim() || undefined,
@@ -326,17 +421,162 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
    * The deployment decides whether this is a request-scoped or resident Node
    * pool. The Better Auth instance is not cached independently of that owner.
    */
-  interface BuildBetterAuthOptions {
-    customerSignup?: boolean
+  function requireAdminAuthSecret(env: Env): string {
+    const secret = env.BETTER_AUTH_ADMIN_SECRET?.trim() || env.BETTER_AUTH_SECRET?.trim()
+    if (!secret) throw new Error("Admin auth requires BETTER_AUTH_ADMIN_SECRET")
+    return secret
   }
 
-  function buildBetterAuth(env: Env, db: VoyantDb, options: BuildBetterAuthOptions = {}) {
+  function requireCustomerAuthSecret(env: Env): string {
+    const secret = env.BETTER_AUTH_CUSTOMER_SECRET?.trim()
+    if (secret) return secret
+    // Compatibility bridge for deployments created before realm-specific
+    // secrets. The suffix gives the customer cookie an independent signature.
+    return `${requireAdminAuthSecret(env)}:voyant-customer-realm`
+  }
+
+  function envEnabled(value: string | undefined, fallback: boolean): boolean {
+    const normalized = value?.trim().toLowerCase()
+    if (!normalized) return fallback
+    return normalized === "1" || normalized === "true" || normalized === "yes"
+  }
+
+  function parseCustomerAuthPolicy(env: Env): CustomerAuthPolicy {
+    const fallback = {
+      methods: {
+        emailCode: envEnabled(env.VOYANT_CUSTOMER_AUTH_EMAIL_CODE, true),
+        emailPassword: envEnabled(env.VOYANT_CUSTOMER_AUTH_EMAIL_PASSWORD, true),
+        google: { enabled: false, credentialRef: null },
+        facebook: { enabled: false, credentialRef: null },
+        apple: { enabled: false, credentialRef: null },
+      },
+    } satisfies CustomerAuthPolicy
+    const raw = env.VOYANT_CUSTOMER_AUTH_CONFIG_JSON?.trim()
+    if (!raw) return fallback
+    try {
+      const parsed = JSON.parse(raw) as {
+        methods?: Record<string, unknown>
+      }
+      const methods = parsed.methods ?? {}
+      const social = (value: unknown): CustomerAuthSocialPolicy => {
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+          return { enabled: false, credentialRef: null }
+        }
+        const record = value as Record<string, unknown>
+        return {
+          enabled: record.enabled === true,
+          credentialRef:
+            typeof record.credentialRef === "string" && record.credentialRef.trim()
+              ? record.credentialRef.trim()
+              : null,
+        }
+      }
+      return {
+        methods: {
+          emailCode:
+            typeof methods.emailCode === "boolean" ? methods.emailCode : fallback.methods.emailCode,
+          emailPassword:
+            typeof methods.emailPassword === "boolean"
+              ? methods.emailPassword
+              : fallback.methods.emailPassword,
+          google: social(methods.google),
+          facebook: social(methods.facebook),
+          apple: social(methods.apple),
+        },
+      }
+    } catch {
+      console.error(
+        "[auth/customer] Invalid VOYANT_CUSTOMER_AUTH_CONFIG_JSON; failing social auth closed",
+      )
+      return fallback
+    }
+  }
+
+  function defaultCustomerAuthContext(
+    env: Env,
+    policy: CustomerAuthPolicy,
+  ): CustomerAuthRuntimeContext {
+    const hasCanonicalPolicy = Boolean(env.VOYANT_CUSTOMER_AUTH_CONFIG_JSON?.trim())
+    const google = Boolean(
+      env.CUSTOMER_AUTH_GOOGLE_CLIENT_ID?.trim() &&
+        env.CUSTOMER_AUTH_GOOGLE_CLIENT_SECRET?.trim() &&
+        (!hasCanonicalPolicy || policy.methods.google.enabled),
+    )
+    const facebook = Boolean(
+      env.CUSTOMER_AUTH_FACEBOOK_CLIENT_ID?.trim() &&
+        env.CUSTOMER_AUTH_FACEBOOK_CLIENT_SECRET?.trim() &&
+        (!hasCanonicalPolicy || policy.methods.facebook.enabled),
+    )
+    const apple = Boolean(
+      env.CUSTOMER_AUTH_APPLE_CLIENT_ID?.trim() &&
+        env.CUSTOMER_AUTH_APPLE_CLIENT_SECRET?.trim() &&
+        (!hasCanonicalPolicy || policy.methods.apple.enabled),
+    )
+    return {
+      baseURL: getAuthBaseUrl(env),
+      trustedOrigins: getTrustedOrigins(env),
+      methods: {
+        emailCode: policy.methods.emailCode,
+        emailPassword: policy.methods.emailPassword,
+        socialProviders: {
+          ...(google
+            ? {
+                google: {
+                  clientId: env.CUSTOMER_AUTH_GOOGLE_CLIENT_ID!.trim(),
+                  clientSecret: env.CUSTOMER_AUTH_GOOGLE_CLIENT_SECRET!.trim(),
+                },
+              }
+            : {}),
+          ...(facebook
+            ? {
+                facebook: {
+                  clientId: env.CUSTOMER_AUTH_FACEBOOK_CLIENT_ID!.trim(),
+                  clientSecret: env.CUSTOMER_AUTH_FACEBOOK_CLIENT_SECRET!.trim(),
+                },
+              }
+            : {}),
+          ...(apple
+            ? {
+                apple: {
+                  clientId: env.CUSTOMER_AUTH_APPLE_CLIENT_ID!.trim(),
+                  clientSecret: env.CUSTOMER_AUTH_APPLE_CLIENT_SECRET!.trim(),
+                },
+              }
+            : {}),
+        },
+      },
+    }
+  }
+
+  function resolveCustomerAuthContext(env: Env, request: Request): CustomerAuthRuntimeContext {
+    const policy = parseCustomerAuthPolicy(env)
+    return (
+      runtimeOptions.resolveCustomerAuthContext?.(env, policy, request) ??
+      defaultCustomerAuthContext(env, policy)
+    )
+  }
+
+  function publicCustomerAuthConfiguration(env: Env, request: Request) {
+    const methods = resolveCustomerAuthContext(env, request).methods
+    const providers = methods.socialProviders ?? {}
+    return {
+      methods: {
+        emailCode: methods.emailCode ?? true,
+        emailPassword: methods.emailPassword ?? true,
+        google: Boolean(providers.google),
+        facebook: Boolean(providers.facebook),
+        apple: Boolean(providers.apple),
+      },
+    }
+  }
+
+  function buildAdminBetterAuth(env: Env, db: VoyantDb) {
     const emailSender = runtimeOptions.resolveEmailSender?.(env)
     const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
-    const authDb = db as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
+    const authDb = db as NonNullable<Parameters<typeof createAdminBetterAuth>[0]>["db"]
     const cloudAuthDb = db as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
 
-    return createBetterAuth({
+    return createAdminBetterAuth({
       // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
       // `CreateBetterAuthOptions.db` type still references the older
       // `getDb` return union (postgres-js + neon-http). Drizzle's
@@ -344,12 +584,11 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       // the cast is structurally safe — better-auth's drizzleAdapter
       // works on any PgDatabase. See #500 for context.
       db: authDb,
-      secret: env.BETTER_AUTH_SECRET,
+      secret: requireAdminAuthSecret(env),
       baseURL: getAuthBaseUrl(env),
-      basePath: "/auth",
+      basePath: "/auth/admin",
       trustedOrigins: getTrustedOrigins(env),
       advanced: (runtimeOptions.cookieAdvanced ?? buildBetterAuthCookieAdvancedOptions)(env),
-      customerSignupSurfaces: options.customerSignup ? ["customer"] : undefined,
       plugins: cloudAuthExchange
         ? [
             createVoyantCloudAdminAuthPlugin({
@@ -388,9 +627,45 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     })
   }
 
-  function rewriteCustomerAuthRequest(request: Request): Request {
+  function buildCustomerBetterAuth(env: Env, db: VoyantDb, request: Request) {
+    const emailSender = runtimeOptions.resolveEmailSender?.(env)
+    const context = resolveCustomerAuthContext(env, request)
+    const authDb = db as NonNullable<Parameters<typeof createCustomerBetterAuth>[0]>["db"]
+    return createCustomerBetterAuth({
+      db: authDb,
+      secret: requireCustomerAuthSecret(env),
+      baseURL: context.baseURL,
+      basePath: "/auth/customer",
+      trustedOrigins: context.trustedOrigins,
+      methods: withCustomerSocialRedirectUris(context.methods, getPublicApiBaseUrl(env)),
+      sendResetPassword: async ({ user, url }) => {
+        if (!emailSender) {
+          if (allowAuthSecretLogging(env)) {
+            console.info(`[auth/customer] reset-password (debug fallback) -> ${user.email}: ${url}`)
+            return
+          }
+          throw new Error("Password reset email provider is not configured")
+        }
+        await emailSender.sendResetPassword({ user, url })
+      },
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (!emailSender) {
+          if (allowAuthSecretLogging(env)) {
+            console.info(
+              `[auth/customer] verification-otp (debug fallback) [${type}] -> ${email}: ${otp}`,
+            )
+            return
+          }
+          throw new Error("Verification OTP email provider is not configured")
+        }
+        await emailSender.sendVerificationOtp({ email, otp, type })
+      },
+    })
+  }
+
+  function rewriteLegacyAdminAuthRequest(request: Request): Request {
     const url = new URL(request.url)
-    url.pathname = url.pathname.replace("/auth/customer", "/auth")
+    url.pathname = url.pathname.replace("/auth", "/auth/admin")
     return new Request(url, request)
   }
 
@@ -450,14 +725,17 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   ): Promise<VoyantRequestAuthContext | null> {
     const { db, dispose } = openDatabase(env)
     try {
-      const auth = buildBetterAuth(env, db)
+      const customerSurface = new URL(request.url).pathname.includes("/v1/public/")
+      const auth = customerSurface
+        ? buildCustomerBetterAuth(env, db, request)
+        : buildAdminBetterAuth(env, db)
       const session = await auth.api.getSession({ headers: request.headers })
 
       if (!session) {
         return null
       }
 
-      if (isVoyantCloudAuthMode(env)) {
+      if (!customerSurface && isVoyantCloudAuthMode(env)) {
         const revalidateConfig = getCloudAuthRevalidateConfig(env)
         if (!revalidateConfig) {
           return null
@@ -479,12 +757,26 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         }
       }
 
+      if (customerSurface) {
+        return {
+          userId: session.user.id,
+          sessionId: session.session.id,
+          organizationId: null,
+          callerType: "session",
+          actor: "customer",
+          realm: "customer",
+          scopes: [],
+          email: session.user.email ?? null,
+        }
+      }
+
       return {
         userId: session.user.id,
         sessionId: session.session.id,
         organizationId: null,
         callerType: "session",
         actor: "staff",
+        realm: "admin",
         // Member RBAC scope set (RFC voyant#2085). Defaults to full access until
         // an admin assigns permissions, so existing deployments are unchanged.
         // `actor: "staff"` is retained, so actor-gated paths (incl. the
@@ -528,7 +820,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(env)
     try {
-      const betterAuth = buildBetterAuth(env, db)
+      const betterAuth = buildAdminBetterAuth(env, db)
       const session = await betterAuth.api.getSession({ headers: request.headers })
       if (!session) {
         return null
@@ -650,7 +942,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     // middleware, so own the Pool here.
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db)
+      const betterAuth = buildAdminBetterAuth(c.env, db)
       const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
       if (!session) {
         return c.json({ userExists: false, authenticated: false })
@@ -685,7 +977,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db)
+      const betterAuth = buildAdminBetterAuth(c.env, db)
       const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
 
       if (isVoyantCloudAuthMode(c.env)) {
@@ -732,7 +1024,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   async function handleOrganizationMembersFacade(c: Context<AuthHonoEnv>) {
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db)
+      const betterAuth = buildAdminBetterAuth(c.env, db)
       const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
 
       if (isVoyantCloudAuthMode(c.env)) {
@@ -778,7 +1070,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     }
   }
 
-  auth.get("/auth/cloud/start", async (c) => {
+  async function handleCloudAuthStart(c: Context<AuthHonoEnv>) {
     if (!isVoyantCloudAuthMode(c.env)) {
       return c.json({ error: "Not found" }, 404)
     }
@@ -805,9 +1097,9 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       console.error("[auth/cloud/start] Error:", error)
       return c.json({ error: "Voyant Cloud auth broker is misconfigured" }, 500)
     }
-  })
+  }
 
-  auth.get("/auth/cloud/callback", async (c) => {
+  async function handleCloudAuthCallback(c: Context<AuthHonoEnv>) {
     if (!isVoyantCloudAuthMode(c.env)) {
       return c.json({ error: "Not found" }, 404)
     }
@@ -825,15 +1117,24 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db)
-      return await betterAuth.handler(c.req.raw)
+      const betterAuth = buildAdminBetterAuth(c.env, db)
+      const request = c.req.path.startsWith("/auth/admin/")
+        ? c.req.raw
+        : rewriteLegacyAdminAuthRequest(c.req.raw)
+      return await betterAuth.handler(request)
     } catch (error) {
       console.error("[auth/cloud/callback] Error:", error)
       return c.json({ error: "Voyant Cloud auth callback failed" }, 500)
     } finally {
       c.executionCtx.waitUntil(dispose())
     }
-  })
+  }
+
+  auth.get("/auth/admin/cloud/start", handleCloudAuthStart)
+  auth.get("/auth/admin/cloud/callback", handleCloudAuthCallback)
+  /** @deprecated Use /auth/admin/cloud/*. */
+  auth.get("/auth/cloud/start", handleCloudAuthStart)
+  auth.get("/auth/cloud/callback", handleCloudAuthCallback)
 
   auth.all("/auth/api-tokens", handleApiTokensFacade)
   auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
@@ -843,7 +1144,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   auth.get("/auth/customer/status", async (c) => {
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
+      const betterAuth = buildCustomerBetterAuth(c.env, db, c.req.raw)
       const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
       return c.json({ authenticated: Boolean(session) })
     } finally {
@@ -851,18 +1152,30 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     }
   })
 
+  auth.get("/auth/customer/config", (c) => {
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({
+        methods: {
+          emailCode: false,
+          emailPassword: false,
+          google: false,
+          facebook: false,
+          apple: false,
+        },
+      })
+    }
+    return c.json(publicCustomerAuthConfiguration(c.env, c.req.raw))
+  })
+
   auth.all("/auth/customer/*", async (c) => {
-    if (
-      isVoyantCloudAuthMode(c.env) &&
-      !isCloudAllowedBetterAuthRoute(rewriteCustomerAuthRequest(c.req.raw))
-    ) {
-      return localAuthDisabledResponse(c)
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
     }
 
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
-      return await betterAuth.handler(rewriteCustomerAuthRequest(c.req.raw))
+      const betterAuth = buildCustomerBetterAuth(c.env, db, c.req.raw)
+      return await betterAuth.handler(c.req.raw)
     } finally {
       c.executionCtx.waitUntil(dispose())
     }
@@ -875,15 +1188,29 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
    * Sign-up is gated by a `user.create.before` hook in @voyant-travel/auth — once a
    * user exists, the hook throws and BA returns an error to the client.
    */
-  auth.all("/auth/*", async (c) => {
+  auth.all("/auth/admin/*", async (c) => {
     if (isVoyantCloudAuthMode(c.env) && !isCloudAllowedBetterAuthRoute(c.req.raw)) {
       return localAuthDisabledResponse(c)
     }
 
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildBetterAuth(c.env, db)
+      const betterAuth = buildAdminBetterAuth(c.env, db)
       return await betterAuth.handler(c.req.raw)
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  /** @deprecated Admin Better Auth routes moved to /auth/admin/*. */
+  auth.all("/auth/*", async (c) => {
+    const rewritten = rewriteLegacyAdminAuthRequest(c.req.raw)
+    if (isVoyantCloudAuthMode(c.env) && !isCloudAllowedBetterAuthRoute(rewritten)) {
+      return localAuthDisabledResponse(c)
+    }
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      return await buildAdminBetterAuth(c.env, db).handler(rewritten)
     } finally {
       c.executionCtx.waitUntil(dispose())
     }

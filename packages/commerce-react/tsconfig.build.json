@@ -228,6 +228,7 @@
         "../auth-react/dist/components/team-management-page.d.ts"
       ],
       "@voyant-travel/auth-react/ui": ["../auth-react/dist/ui.d.ts"],
+      "@voyant-travel/auth/auth-realms": ["../auth/dist/auth-realms.d.ts"],
       "@voyant-travel/auth/backend": ["../auth/dist/backend.d.ts"],
       "@voyant-travel/auth/cloud-admin-session": ["../auth/dist/cloud-admin-session-public.d.ts"],
       "@voyant-travel/auth/cloud-broker": ["../auth/dist/cloud-broker.d.ts"],
@@ -679,6 +680,10 @@
       "@voyant-travel/db/schema/iam/apikey": ["../db/dist/schema/iam/apikey.d.ts"],
       "@voyant-travel/db/schema/iam/auth": ["../db/dist/schema/iam/auth.d.ts"],
       "@voyant-travel/db/schema/iam/cloud_auth": ["../db/dist/schema/iam/cloud_auth.d.ts"],
+      "@voyant-travel/db/schema/iam/customer_auth": ["../db/dist/schema/iam/customer_auth.d.ts"],
+      "@voyant-travel/db/schema/iam/customer_profiles": [
+        "../db/dist/schema/iam/customer_profiles.d.ts"
+      ],
       "@voyant-travel/db/schema/iam/invitations": ["../db/dist/schema/iam/invitations.d.ts"],
       "@voyant-travel/db/schema/iam/kms": ["../db/dist/schema/iam/kms.d.ts"],
       "@voyant-travel/db/schema/iam/roles": ["../db/dist/schema/iam/roles.d.ts"],

@@ -11,9 +11,11 @@ import { type StorefrontConfirmationKind, StorefrontConfirmationPage } from "./c
 import { type StorefrontUiNavigation, StorefrontUiProvider } from "./context.js"
 import { CustomerAccountPage } from "./customer-account-page.js"
 import { CustomerAccountProvider } from "./customer-account-provider.js"
+import { useCustomerAuthConfig } from "./customer-auth-config.js"
 import {
   CustomerSignInPage,
   CustomerSignUpPage,
+  type CustomerSocialAuthProvider,
   CustomerVerifyEmailPage,
 } from "./customer-auth-pages.js"
 import {
@@ -69,7 +71,10 @@ export interface StorefrontPresentationRuntime {
   getApiUrl(): string
   projectFetcher: VoyantFetcher
   renderProductDetail(entityModule: string, entityId: string): ReactNode
+  requestEmailCode(email: string): Promise<unknown>
   resendVerification(email: string): Promise<unknown>
+  signInWithEmailCode(input: { email: string; code: string }): Promise<unknown>
+  signInWithSocial(provider: CustomerSocialAuthProvider, callbackURL: string): Promise<unknown>
   signOut(): Promise<unknown>
   useLocale(): string
   useSession(): StorefrontPresentationSession
@@ -148,16 +153,22 @@ export function createStorefrontPresentationContribution(
       typeof accountSignInSearchSchema
     >
     const { data: session, isPending } = runtime.useSession()
+    const authConfig = useCustomerAuthConfig()
     const redirectTo = next || "/shop/account"
-    if (isPending) return null
+    if (isPending || authConfig.isPending) return null
     if (session) {
       void navigate({ to: redirectTo })
       return null
     }
+    if (authConfig.error || !authConfig.config) return <CustomerAuthUnavailable />
     return (
       <CustomerSignInPage
+        methods={authConfig.config.methods}
         redirectTo={redirectTo}
         verified={Boolean(verify)}
+        requestEmailCode={runtime.requestEmailCode}
+        signInWithEmailCode={runtime.signInWithEmailCode}
+        signInWithSocial={runtime.signInWithSocial}
         onNavigate={(to) => void navigate({ to })}
       />
     )
@@ -167,15 +178,23 @@ export function createStorefrontPresentationContribution(
     const navigate = useNavigate()
     const { next } = useSearch({ strict: false }) as z.infer<typeof accountSignUpSearchSchema>
     const { data: session, isPending } = runtime.useSession()
+    const authConfig = useCustomerAuthConfig()
     const redirectTo = next || "/shop/account"
-    if (isPending) return null
+    if (isPending || authConfig.isPending) return null
     if (session) {
       void navigate({ to: redirectTo })
       return null
     }
+    if (authConfig.error || !authConfig.config) return <CustomerAuthUnavailable />
+    if (!authConfig.config.methods.emailPassword) {
+      void navigate({ to: "/shop/account/sign-in", search: { next: redirectTo } })
+      return null
+    }
     return (
       <CustomerSignUpPage
+        methods={authConfig.config.methods}
         redirectTo={redirectTo}
+        signInWithSocial={runtime.signInWithSocial}
         onNavigateToVerify={(email) =>
           void navigate({
             to: "/shop/account/verify-email",
@@ -183,6 +202,21 @@ export function createStorefrontPresentationContribution(
           })
         }
       />
+    )
+  }
+
+  function CustomerAuthUnavailable(): React.ReactElement {
+    return (
+      <div className="mx-auto max-w-md py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign-in unavailable</CardTitle>
+          </CardHeader>
+          <CardContent>
+            Customer authentication is not configured for this storefront. Try again later.
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 

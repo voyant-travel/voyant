@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { rewriteCustomerAccountAuthUrl } from "./customer-account-provider.js"
+import {
+  createCustomerAccountFetcher,
+  rewriteCustomerAccountAuthUrl,
+} from "./customer-account-provider.js"
 
 describe("rewriteCustomerAccountAuthUrl", () => {
   it("routes customer auth UI calls through the customer auth facade", () => {
@@ -28,5 +31,21 @@ describe("rewriteCustomerAccountAuthUrl", () => {
     expect(
       rewriteCustomerAccountAuthUrl("https://example.test/api/auth/customer/sign-in/email"),
     ).toBe("https://example.test/api/auth/customer/sign-in/email")
+  })
+
+  it("uses the explicit storefront API base and leaves admin auth URLs untouched", async () => {
+    const calls: string[] = []
+    const fetcher = createCustomerAccountFetcher(async (url) => {
+      calls.push(url)
+      return new Response(null, { status: 204 })
+    }, "https://storefront.example/api")
+
+    await fetcher("https://storefront.example/api/auth/status")
+    await fetcher("https://admin.example/api/auth/status")
+
+    expect(calls).toEqual([
+      "https://storefront.example/api/auth/customer/status",
+      "https://admin.example/api/auth/status",
+    ])
   })
 })

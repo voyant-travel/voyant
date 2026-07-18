@@ -24,6 +24,13 @@ export interface AuthRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
+function selectedAdminAuthProvider(host: AuthRuntimeContributorHost, bindings: unknown): unknown {
+  return (
+    host.primitives.config.read(bindings, "deployment.providers.adminAuth") ??
+    host.primitives.config.read(bindings, "deployment.providers.auth")
+  )
+}
+
 /** Package-owned registration map for Auth deployment adapters. */
 export function createAuthRuntimePortContribution(
   host: AuthRuntimeContributorHost,
@@ -31,13 +38,10 @@ export function createAuthRuntimePortContribution(
   const identityAccess: IdentityAccessRuntimeProvider = {
     resolveDeployment(bindings) {
       const env = bindings as Record<string, string | undefined>
-      const selectedAuthProvider = host.primitives.config.read(
-        bindings,
-        "deployment.providers.auth",
-      )
+      const selectedAuthProvider = selectedAdminAuthProvider(host, bindings)
       if (selectedAuthProvider !== "better-auth" && selectedAuthProvider !== "voyant-cloud") {
         throw new Error(
-          "Auth runtime requires deployment.providers.auth to select better-auth or voyant-cloud.",
+          "Auth runtime requires deployment.providers.adminAuth to select better-auth or voyant-cloud.",
         )
       }
       const appUrl = (env.APP_URL || env.DASH_BASE_URL || "http://localhost:3300")
@@ -84,14 +88,11 @@ export function createAuthRuntimePortContribution(
   const localTeamManagement = createLocalTeamManagementAdapter(identityAccess)
   const cloudTeamManagement = createCloudTeamManagementAdapter(identityAccess)
   const teamManagement = createGuardedTeamManagementProvider((context) => {
-    const selectedAuthProvider = host.primitives.config.read(
-      context.bindings,
-      "deployment.providers.auth",
-    )
+    const selectedAuthProvider = selectedAdminAuthProvider(host, context.bindings)
     if (selectedAuthProvider === "better-auth") return localTeamManagement
     if (selectedAuthProvider === "voyant-cloud") return cloudTeamManagement
     throw new Error(
-      "Team management requires deployment.providers.auth to select better-auth or voyant-cloud.",
+      "Team management requires deployment.providers.adminAuth to select better-auth or voyant-cloud.",
     )
   })
 

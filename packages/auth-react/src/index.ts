@@ -1,5 +1,6 @@
 export type { AuthStatus, CurrentUser } from "@voyant-travel/auth/workspace"
 export {
+  createAuthBasePathFetcher,
   defaultFetcher,
   fetchWithValidation,
   VoyantApiError,

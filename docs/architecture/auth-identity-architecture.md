@@ -14,6 +14,10 @@ The goal is simple:
 
 Auth should be a framework capability, not a package-local pattern.
 
+The realm split and migration contract are recorded in
+[ADR-0014](../adr/0014-admin-and-customer-auth-realms.md) and the
+[auth realm migration guide](./auth-realm-migration.md).
+
 ## Core Rules
 
 ### 1. Authentication should be shared infrastructure
@@ -97,6 +101,18 @@ Rule:
 Cloud answers "who is this WorkOS user and may they access this deployment";
 Better Auth answers "what local admin session/token does this deployment
 trust".
+
+### 3b. Admin and customer sessions are separate realms
+
+Admin and storefront customer auth use separate Better Auth instances and must
+not share tables, cookies, signing secrets, base paths, or automatic email
+linking. Managed admin mode affects only the admin realm; customer email and
+social routes remain independently selectable.
+
+Rule:
+
+An identity may cross a realm only through an explicit domain link keyed by
+stable ids, never by matching email addresses.
 
 ## Request Context
 

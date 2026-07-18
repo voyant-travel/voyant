@@ -9,7 +9,7 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyant-travel/bookings/schema"
-import { authUser, userProfilesTable } from "@voyant-travel/db/schema/iam"
+import { customerAuthProfilesTable, customerAuthUser } from "@voyant-travel/db/schema/iam"
 import { invoiceRenditions, invoices, payments } from "@voyant-travel/finance/schema"
 import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { identityService } from "@voyant-travel/identity/service"
@@ -56,7 +56,7 @@ import type {
 } from "./validation-public.js"
 import { customerPortalBookingDetailSchema } from "./validation-public.js"
 
-const linkedCustomerSource = "auth.user"
+const linkedCustomerSource = "customer_auth.user"
 const companionMetadataKind = "companion"
 const bookingWizardStateKey = "wizard"
 const peopleKeyRef = { keyType: "people" as const }
@@ -783,27 +783,27 @@ function getCompanionLookupKeys(input: {
 async function getAuthProfileRow(db: PostgresJsDatabase, userId: string) {
   const [row] = await db
     .select({
-      id: authUser.id,
-      email: authUser.email,
-      phoneNumber: authUser.phoneNumber,
-      emailVerified: authUser.emailVerified,
-      name: authUser.name,
-      image: authUser.image,
-      firstName: userProfilesTable.firstName,
-      lastName: userProfilesTable.lastName,
-      avatarUrl: userProfilesTable.avatarUrl,
-      locale: userProfilesTable.locale,
-      timezone: userProfilesTable.timezone,
-      seatingPreference: userProfilesTable.seatingPreference,
-      marketingConsent: userProfilesTable.marketingConsent,
-      marketingConsentAt: userProfilesTable.marketingConsentAt,
-      marketingConsentSource: userProfilesTable.marketingConsentSource,
-      notificationDefaults: userProfilesTable.notificationDefaults,
-      uiPrefs: userProfilesTable.uiPrefs,
+      id: customerAuthUser.id,
+      email: customerAuthUser.email,
+      phoneNumber: customerAuthUser.phoneNumber,
+      emailVerified: customerAuthUser.emailVerified,
+      name: customerAuthUser.name,
+      image: customerAuthUser.image,
+      firstName: customerAuthProfilesTable.firstName,
+      lastName: customerAuthProfilesTable.lastName,
+      avatarUrl: customerAuthProfilesTable.avatarUrl,
+      locale: customerAuthProfilesTable.locale,
+      timezone: customerAuthProfilesTable.timezone,
+      seatingPreference: customerAuthProfilesTable.seatingPreference,
+      marketingConsent: customerAuthProfilesTable.marketingConsent,
+      marketingConsentAt: customerAuthProfilesTable.marketingConsentAt,
+      marketingConsentSource: customerAuthProfilesTable.marketingConsentSource,
+      notificationDefaults: customerAuthProfilesTable.notificationDefaults,
+      uiPrefs: customerAuthProfilesTable.uiPrefs,
     })
-    .from(authUser)
-    .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
-    .where(eq(authUser.id, userId))
+    .from(customerAuthUser)
+    .leftJoin(customerAuthProfilesTable, eq(customerAuthProfilesTable.id, customerAuthUser.id))
+    .where(eq(customerAuthUser.id, userId))
     .limit(1)
 
   return row ?? null
@@ -917,7 +917,7 @@ async function getLinkedPersonDocuments(
  * Resolves the `crm.people` row linked to this auth user, creating
  * it on first PII write if missing. The seed values mirror what the
  * bootstrap path already produces — first/last name from the auth
- * profile, source/sourceRef pinned to `auth.user`/`userId` so future
+ * profile, source/sourceRef pinned to `customer_auth.user`/`userId` so future
  * reads find the same row.
  */
 async function ensureLinkedPerson(
@@ -1484,10 +1484,10 @@ export const publicCustomerPortalService = {
 
     const [authAccount, customerCandidates] = await Promise.all([
       db
-        .select({ id: authUser.id })
-        .from(authUser)
+        .select({ id: customerAuthUser.id })
+        .from(customerAuthUser)
         // agent-quality: raw-sql reviewed -- owner: customer-portal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        .where(sql`lower(${authUser.email}) = ${normalizedEmail}`)
+        .where(sql`lower(${customerAuthUser.email}) = ${normalizedEmail}`)
         .limit(1),
       listCustomerRecordCandidatesByEmail(db, normalizedEmail),
     ])
@@ -1510,11 +1510,11 @@ export const publicCustomerPortalService = {
     const [authAccount, customerCandidates] = await Promise.all([
       db
         .select({
-          id: authUser.id,
-          phoneNumberVerified: authUser.phoneNumberVerified,
+          id: customerAuthUser.id,
+          phoneNumberVerified: customerAuthUser.phoneNumberVerified,
         })
-        .from(authUser)
-        .where(eq(authUser.phoneNumber, normalizedPhone))
+        .from(customerAuthUser)
+        .where(eq(customerAuthUser.phoneNumber, normalizedPhone))
         .limit(1),
       listCustomerRecordCandidatesByPhone(db, normalizedPhone),
     ])
@@ -1658,7 +1658,7 @@ export const publicCustomerPortalService = {
         : undefined
 
     await db
-      .insert(userProfilesTable)
+      .insert(customerAuthProfilesTable)
       .values({
         id: userId,
         firstName: nextFirstName,
@@ -1683,7 +1683,7 @@ export const publicCustomerPortalService = {
             : ((authProfile.uiPrefs as Record<string, unknown> | null) ?? {}),
       })
       .onConflictDoUpdate({
-        target: userProfilesTable.id,
+        target: customerAuthProfilesTable.id,
         set: {
           firstName: nextFirstName,
           lastName: nextLastName,
@@ -1740,13 +1740,13 @@ export const publicCustomerPortalService = {
     }
 
     await db
-      .update(authUser)
+      .update(customerAuthUser)
       .set({
         name: nextDisplayName || authProfile.name,
         image: input.avatarUrl !== undefined ? input.avatarUrl : (authProfile.image ?? null),
         updatedAt: new Date(),
       })
-      .where(eq(authUser.id, userId))
+      .where(eq(customerAuthUser.id, userId))
 
     if (customerRecordId) {
       const nextCustomerRecord =
@@ -1836,7 +1836,7 @@ export const publicCustomerPortalService = {
       })
 
       await db
-        .insert(userProfilesTable)
+        .insert(customerAuthProfilesTable)
         .values({
           id: userId,
           marketingConsent: nextMarketingConsent.marketingConsent,
@@ -1844,7 +1844,7 @@ export const publicCustomerPortalService = {
           marketingConsentSource: nextMarketingConsent.marketingConsentSource,
         })
         .onConflictDoUpdate({
-          target: userProfilesTable.id,
+          target: customerAuthProfilesTable.id,
           set: {
             marketingConsent: nextMarketingConsent.marketingConsent,
             marketingConsentAt: nextMarketingConsent.marketingConsentAt,

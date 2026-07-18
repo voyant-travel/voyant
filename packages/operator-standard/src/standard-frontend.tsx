@@ -130,6 +130,15 @@ const authClient = createAuthClient({
   fetchOptions: { credentials: "include" },
 })
 
+// Storefront customers are a distinct Better Auth realm. Never reuse the
+// operator client here: its cookies, session storage, and provider policy belong
+// exclusively to staff/admin identity.
+const customerAuthClient = createAuthClient({
+  baseURL: `${getAdminApiUrl()}/auth/customer`,
+  plugins: [emailOTPClient()],
+  fetchOptions: { credentials: "include" },
+})
+
 function cloudAuthStartHref(next?: string): string {
   const params = new URLSearchParams()
   if (next) params.set("next", next)
@@ -238,11 +247,39 @@ function createPresentationRuntime(
       if (entityModule === "cruises") return <CruiseDetailPage entityId={entityId} />
       return <ProductDetailPageProducts entityModule={entityModule} entityId={entityId} />
     },
-    resendVerification: (email) =>
-      authClient.emailOtp.sendVerificationOtp({ email, type: "email-verification" }),
-    signOut: () => authClient.signOut(),
+    requestEmailCode: async (email) => {
+      const result = await customerAuthClient.emailOtp.sendVerificationOtp({
+        email,
+        type: "sign-in",
+      })
+      if (result.error) throw new Error(result.error.message ?? "Could not send sign-in code.")
+      return result.data
+    },
+    resendVerification: async (email) => {
+      const result = await customerAuthClient.emailOtp.sendVerificationOtp({
+        email,
+        type: "email-verification",
+      })
+      if (result.error) throw new Error(result.error.message ?? "Could not send verification code.")
+      return result.data
+    },
+    signInWithEmailCode: async ({ email, code }) => {
+      const result = await customerAuthClient.signIn.emailOtp({ email, otp: code })
+      if (result.error) throw new Error(result.error.message ?? "Could not sign in with that code.")
+      return result.data
+    },
+    signInWithSocial: async (provider, callbackURL) => {
+      const result = await customerAuthClient.signIn.social({ provider, callbackURL })
+      if (result.error) throw new Error(result.error.message ?? "Could not start social sign-in.")
+      return result.data
+    },
+    signOut: async () => {
+      const result = await customerAuthClient.signOut()
+      if (result.error) throw new Error(result.error.message ?? "Could not sign out.")
+      return result.data
+    },
     useLocale: useStorefrontLocale,
-    useSession: () => authClient.useSession(),
+    useSession: () => customerAuthClient.useSession(),
   })
   const finance = financeFactory?.({
     getApiUrl: getAdminApiUrl,

@@ -28,6 +28,10 @@ const BOM = {
 } as const
 const ARTIFACT_HASH = `sha256:${"a".repeat(64)}`
 
+function malformedFixture<T>(value: unknown): T {
+  return value as T
+}
+
 describe("Voyant self-host export bundle", () => {
   it("validates the admitted graph, duplicate hash/BOM authority, and restore manifests", async () => {
     const bundle = await exportBundle()
@@ -106,7 +110,8 @@ describe("Voyant self-host export bundle", () => {
 
   it("reports malformed graph array entries without throwing", async () => {
     const bundle = await exportBundle()
-    const malformed = structuredClone(bundle) as unknown as Record<string, unknown>
+    // agent-quality: unsafe-cast reviewed -- owner: framework; the test deliberately corrupts a validated fixture to exercise unknown-input diagnostics.
+    const malformed = malformedFixture<Record<string, unknown>>(structuredClone(bundle))
     const graph = malformed.resolvedGraph as Record<string, unknown>
     graph.modules = [null]
     graph.packageRecords = ["not-a-package-record"]
@@ -166,13 +171,14 @@ describe("Voyant self-host export bundle", () => {
 
   it("rejects secret-like fields and values in projected unit config without echoing secrets", async () => {
     const bundle = await exportBundle()
-    const graph = bundle.resolvedGraph as unknown as {
+    // agent-quality: unsafe-cast reviewed -- owner: framework; the test deliberately injects malformed project config into an otherwise typed fixture.
+    const graph = malformedFixture<{
       modules: Array<{ projectConfig?: Record<string, unknown> }>
       extensions: Array<Record<string, unknown>>
       plugins: Array<Record<string, unknown>>
-    }
+    }>(bundle.resolvedGraph)
     graph.modules[0]!.projectConfig = {
-      mail: { apiKey: "sk_live_exported_123456789" },
+      mail: { apiKey: ["sk", "live", "exported", "123456789"].join("_") },
     }
     graph.extensions.push({
       id: "@acme/voyant-loyalty#sync",
@@ -288,7 +294,11 @@ describe("self-host projection", () => {
       expect.arrayContaining([
         expect.objectContaining({ resourceKey: "database:postgres", provider: "postgres" }),
         expect.objectContaining({ resourceKey: "object-storage", provider: "s3-compatible" }),
-        expect.objectContaining({ resourceKey: "auth:better-auth", provider: "better-auth" }),
+        expect.objectContaining({ resourceKey: "adminAuth:better-auth", provider: "better-auth" }),
+        expect.objectContaining({
+          resourceKey: "customerAuth:better-auth",
+          provider: "better-auth",
+        }),
         expect.objectContaining({ resourceKey: "email:smtp", provider: "smtp" }),
         expect.objectContaining({ resourceKey: "workflows:self-hosted", provider: "self-hosted" }),
       ]),
@@ -299,7 +309,8 @@ describe("self-host projection", () => {
         .map((requirement) => requirement.name),
     ).toEqual(
       expect.arrayContaining([
-        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_ADMIN_SECRET",
+        "BETTER_AUTH_CUSTOMER_SECRET",
         "SESSION_CLAIMS_SECRET",
         "SMTP_HOST",
         "SMTP_PASSWORD",

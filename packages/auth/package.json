@@ -48,6 +48,10 @@
       "types": "./src/permissions.ts",
       "default": "./src/permissions.ts"
     },
+    "./auth-realms": {
+      "types": "./src/auth-realms.ts",
+      "default": "./src/auth-realms.ts"
+    },
     "./identity-access-runtime-port": {
       "types": "./src/identity-access-runtime-port.ts",
       "default": "./src/identity-access-runtime-port.ts"
@@ -125,6 +129,11 @@
         "types": "./dist/permissions.d.ts",
         "import": "./dist/permissions.js",
         "default": "./dist/permissions.js"
+      },
+      "./auth-realms": {
+        "types": "./dist/auth-realms.d.ts",
+        "import": "./dist/auth-realms.js",
+        "default": "./dist/auth-realms.js"
       },
       "./identity-access-runtime-port": {
         "types": "./dist/identity-access-runtime-port.d.ts",
