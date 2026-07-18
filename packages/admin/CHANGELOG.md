@@ -1,5 +1,26 @@
 # @voyant-travel/admin
 
+## 0.127.0
+
+### Minor Changes
+
+- a461920: Source admin extensions from active app installations and complete the iframe
+  session-token host flow (RFC Phase 3). Adds an installation-backed
+  `UiExtensionsClient` (`createInstallationUiExtensionsClient`) alongside the
+  static one; wires the reserved `request-token` message to an environment token
+  broker (host answers `not-supported` without one, `unavailable` on failure);
+  passes the resolved app locale + text direction to each frame at init and on
+  change; and adds full-page app extensions (`AppExtensionPage`) with navigation
+  contributions rendered through the unchanged sandboxed host (no
+  `allow-same-origin`). The extension API moves to `1.1.0`.
+
+### Patch Changes
+
+- a461920: Harden the admin session-token broker: drop grant replies once the requesting frame has navigated or unmounted, time out pending `requestToken()` promises instead of hanging, and expose page fetchers from the installation-backed extensions client so full-page app extensions are reachable.
+- Updated dependencies [a461920]
+- Updated dependencies [a461920]
+  - @voyant-travel/admin-extension-sdk@0.2.0
+
 ## 0.126.2
 
 ### Patch Changes

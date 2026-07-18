@@ -1,5 +1,19 @@
 # @voyant-travel/admin-extension-sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- a461920: Add the admin session-token protocol to the extension host contract: a
+  `voyant:ext:token` host→extension message answering the reserved
+  `request-token` request, a `requestToken()` author action, request/response
+  correlation ids, and resolved `appLocale` + text `direction` on the extension
+  context. Bumps the extension API to `1.1.0`.
+
+### Patch Changes
+
+- a461920: Harden the admin session-token broker: drop grant replies once the requesting frame has navigated or unmounted, time out pending `requestToken()` promises instead of hanging, and expose page fetchers from the installation-backed extensions client so full-page app extensions are reachable.
+
 ## 0.1.1
 
 ### Patch Changes
