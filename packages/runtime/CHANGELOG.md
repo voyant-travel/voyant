@@ -1,5 +1,14 @@
 # @voyant-travel/runtime
 
+## 0.11.13
+
+### Patch Changes
+
+- Updated dependencies [5fe9918]
+- Updated dependencies [5fe9918]
+- Updated dependencies [5fe9918]
+  - @voyant-travel/apps@0.6.0
+
 ## 0.11.12
 
 ### Patch Changes
