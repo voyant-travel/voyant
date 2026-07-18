@@ -3775,12 +3775,6 @@ importers:
       '@voyant-travel/admin-react':
         specifier: workspace:*
         version: link:../admin-react
-      '@voyant-travel/apps':
-        specifier: workspace:*
-        version: link:../apps
-      '@voyant-travel/apps-react':
-        specifier: workspace:*
-        version: link:../apps-react
       '@voyant-travel/auth':
         specifier: workspace:*
         version: link:../auth
