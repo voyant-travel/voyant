@@ -377,6 +377,28 @@ Finance integrations use provider-neutral document contracts:
   failures. Exact replay is unchanged, reuse with different content conflicts,
   and an observation at or before the current timestamp is rejected as out of
   order.
+- `PUT /v1/app/finance/documents/:id/external-lifecycle-state` records a
+  terminal `converted` or `voided` fact under
+  `finance-external-lifecycle:write`. Conversion requires explicit lineage
+  from the route's source proforma to its successor invoice and is accepted
+  only after that native relationship is durable. Void observations are
+  accepted only for a natively void document that was not converted. The
+  append-only operation ledger treats exact replay as unchanged, rejects a
+  reused operation ID with different content, and rejects out-of-order or
+  post-terminal transitions.
+- `POST /v1/app/finance/documents/:id/settlement-observations` records `partial`
+  or `paid` evidence under `finance-settlement-observations:write`. Each
+  observation contains a bounded operation ID and timestamp, ISO currency,
+  balanced document totals, and a bounded set of external payment identifiers.
+  It validates the native document currency and total but never inserts a
+  payment, changes paid totals, or marks the native document paid.
+  Only issued, overdue, partially paid, or paid native documents accept
+  observations. Reported status and paid balance describe the external system
+  and may intentionally differ from the native settlement state; `created`
+  means the evidence was recorded, not that native reconciliation succeeded.
+  Payment identifiers are a cumulative set. Later partial observations cannot
+  reduce paid cents, increase the balance, or drop a previously reported
+  identifier, and a paid observation is terminal.
 
 The allocation and reference write share one database transaction and one app
 audit record. Replaying the same allocation succeeds as `already_applied`;
@@ -389,6 +411,13 @@ an unbound object is never returned through the App API. Document links resolve
 through Voyant's authenticated rendition route so storage authority stays with
 the host. External-sync state is current-state data on the app-owned external
 reference and does not grant broader finance mutation access.
+Lifecycle operations and settlement observations are append-only. External
+payment identifiers are normalized and owned by authenticated app identity;
+one identifier cannot move between finance documents for the same app. The
+document row and each identifier ownership key are locked before mutation so
+concurrent requests preserve the same ordering and ownership rules. All
+document routes enforce an online token's signed entity constraint before
+resolving scopes or invoking Finance.
 The provider-neutral DTOs and runtime port are owned by `finance-contracts`;
 Finance implements that port and the Apps gateway consumes it without either
 package importing the other's implementation.
@@ -407,6 +436,15 @@ series, or provider configuration in the webhook payload.
 `skipExternalSync` is an issuance-scoped decision that is not persisted on the
 document; the webhook projection is authoritative and a Worker must stop before
 hydration when it is true.
+
+`invoice.proforma.converted`, `invoice.voided`, and
+`invoice.payment.recorded` are also externally deliverable through dedicated
+version 2 minimal projections. They expose only stable document and payment IDs, the
+finance document type, occurrence time, and conversion lineage where relevant.
+Customer identity, line items, free-text void reasons, numbering, and routing
+fields stay inside Finance. `invoice.settled` remains an internal event: an app
+reports external settlement evidence through the scoped observation endpoint
+instead of subscribing to an internal reconciliation signal.
 
 Delivery is durable, signed, at-least-once, idempotency-friendly, retried with
 bounded backoff, observable, and replayable where retention policy permits.

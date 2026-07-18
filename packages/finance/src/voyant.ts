@@ -28,11 +28,11 @@ import {
   bookingPaymentSchedulePaidPayloadSchema,
   invoiceDocumentGeneratedPayloadSchema,
   invoiceIssuanceExternalPayloadSchema,
-  invoicePaymentRecordedPayloadSchema,
-  invoiceProformaConvertedPayloadSchema,
+  invoicePaymentRecordedExternalPayloadSchema,
+  invoiceProformaConvertedExternalPayloadSchema,
   invoiceRenderedPayloadSchema,
   invoiceSettledPayloadSchema,
-  invoiceVoidedPayloadSchema,
+  invoiceVoidedExternalPayloadSchema,
   paymentCompletedPayloadSchema,
 } from "./voyant-event-schemas.js"
 
@@ -146,17 +146,17 @@ export const financeVoyantModule = defineModule({
     {
       id: "@voyant-travel/finance#event.invoice.proforma.converted",
       eventType: "invoice.proforma.converted",
-      version: "1.0.0",
-      payloadSchema: invoiceProformaConvertedPayloadSchema,
-      visibility: "internal",
+      version: "2.0.0",
+      payloadSchema: invoiceProformaConvertedExternalPayloadSchema,
+      visibility: "external",
       audit: { sourceModule: "finance", category: "domain" },
     },
     {
       id: "@voyant-travel/finance#event.invoice.voided",
       eventType: "invoice.voided",
-      version: "1.0.0",
-      payloadSchema: invoiceVoidedPayloadSchema,
-      visibility: "internal",
+      version: "2.0.0",
+      payloadSchema: invoiceVoidedExternalPayloadSchema,
+      visibility: "external",
       audit: { sourceModule: "finance", category: "domain" },
     },
     {
@@ -186,9 +186,9 @@ export const financeVoyantModule = defineModule({
     {
       id: "@voyant-travel/finance#event.invoice.payment.recorded",
       eventType: "invoice.payment.recorded",
-      version: "1.0.0",
-      payloadSchema: invoicePaymentRecordedPayloadSchema,
-      visibility: "internal",
+      version: "2.0.0",
+      payloadSchema: invoicePaymentRecordedExternalPayloadSchema,
+      visibility: "external",
       audit: { sourceModule: "finance", category: "domain" },
     },
     {
@@ -250,6 +250,21 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#webhook.invoice-proforma-issued",
       direction: "outbound",
       eventId: "@voyant-travel/finance#event.invoice.proforma.issued",
+    },
+    {
+      id: "@voyant-travel/finance#webhook.invoice-proforma-converted",
+      direction: "outbound",
+      eventId: "@voyant-travel/finance#event.invoice.proforma.converted",
+    },
+    {
+      id: "@voyant-travel/finance#webhook.invoice-voided",
+      direction: "outbound",
+      eventId: "@voyant-travel/finance#event.invoice.voided",
+    },
+    {
+      id: "@voyant-travel/finance#webhook.invoice-payment-recorded",
+      direction: "outbound",
+      eventId: "@voyant-travel/finance#event.invoice.payment.recorded",
     },
   ],
   setupMigrations: [

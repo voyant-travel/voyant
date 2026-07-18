@@ -301,6 +301,36 @@ Policy outcome:
 - if a deployment eventually needs durable content-sync guarantees, that should
   be introduced as a dedicated durable execution path for that event family
 
+### 14. Finance lifecycle webhooks: native fact first, external observation second
+
+Write paths:
+
+- proforma conversion commits the successor invoice, lineage, payment
+  reassignment, and source-proforma void before emitting
+  `invoice.proforma.converted`
+- invoice void commits the void state before emitting `invoice.voided`; event
+  construction does not query or prefer any external provider reference
+- native payment creation and invoice totals commit before emitting
+  `invoice.payment.recorded`
+
+The external event catalog projects those rich internal source payloads to
+minimal facts containing stable IDs, occurrence time, and conversion lineage
+where relevant. These app-facing projections use event contract version 2 to
+make the wire-schema change explicit, while exported source event types retain
+their existing optional fields. Apps respond through append-only lifecycle or settlement
+observation endpoints. A settlement observation is evidence for reconciliation;
+it never creates a native payment or changes the invoice's native settlement
+state.
+
+Policy outcome:
+
+- webhook delivery cannot announce a lifecycle fact before its native state is
+  queryable
+- external retries are idempotent operation observations, not repeated native
+  mutations
+- `invoice.settled` remains an internal reconciliation signal and is not used as
+  an app-facing settlement command
+
 ## Practical Checklist
 
 When adding or reviewing event behavior in Voyant:

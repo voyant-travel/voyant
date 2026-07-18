@@ -460,4 +460,299 @@ describe("finance App API routes", () => {
       expect.objectContaining({ operationId: "operation-1" }),
     )
   })
+
+  it("records a converted document lifecycle observation with explicit lineage", async () => {
+    const scopes = ["finance-external-lifecycle:write"]
+    const updateExternalLifecycleState = vi.fn().mockResolvedValue({
+      status: "ok",
+      outcome: "created",
+      lifecycle: {
+        provider: "app_1",
+        documentId: "proforma_1",
+        operationId: "conversion-1",
+        state: "converted",
+        occurredAt: "2026-07-18T10:00:00.000Z",
+        lineage: {
+          sourceDocumentId: "proforma_1",
+          successorDocumentId: "invoice_1",
+        },
+      },
+    })
+    const app = new Hono<TestEnv>()
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { updateExternalLifecycleState } }))
+
+    const response = await app.request(
+      "/v1/app/finance/documents/proforma_1/external-lifecycle-state",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "conversion-1",
+          state: "converted",
+          occurredAt: "2026-07-18T10:00:00.000Z",
+          lineage: {
+            sourceDocumentId: "proforma_1",
+            successorDocumentId: "invoice_1",
+          },
+        }),
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(updateExternalLifecycleState).toHaveBeenCalledWith(
+      expect.anything(),
+      "proforma_1",
+      "app_1",
+      expect.objectContaining({ state: "converted" }),
+    )
+  })
+
+  it("records a provider-neutral settlement observation without a payment mutation", async () => {
+    const scopes = ["finance-settlement-observations:write"]
+    const recordSettlementObservation = vi.fn().mockResolvedValue({
+      status: "ok",
+      outcome: "created",
+      observation: {
+        provider: "app_1",
+        documentId: "invoice_1",
+        operationId: "settlement-1",
+        occurredAt: "2026-07-18T11:00:00.000Z",
+        status: "paid",
+        currency: "EUR",
+        totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+        paymentIdentifiers: ["payment-1"],
+      },
+    })
+    const app = new Hono<TestEnv>()
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route("/", createAppsAppApiRoutes({ finance: { recordSettlementObservation } }))
+
+    const response = await app.request(
+      "/v1/app/finance/documents/invoice_1/settlement-observations",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "settlement-1",
+          occurredAt: "2026-07-18T11:00:00.000Z",
+          status: "paid",
+          currency: "EUR",
+          totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+          paymentIdentifiers: ["payment-1"],
+        }),
+      },
+    )
+
+    expect(response.status).toBe(201)
+    expect(recordSettlementObservation).toHaveBeenCalledWith(
+      expect.anything(),
+      "invoice_1",
+      "app_1",
+      expect.objectContaining({ paymentIdentifiers: ["payment-1"] }),
+    )
+  })
+
+  it("enforces the signed entity constraint on lifecycle and settlement writes", async () => {
+    const scopes = ["finance-external-lifecycle:write", "finance-settlement-observations:write"]
+    const updateExternalLifecycleState = vi.fn()
+    const recordSettlementObservation = vi.fn()
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "online")
+      c.set("appContextConstraint", {
+        entity: { type: "invoice", id: "invoice_1" },
+        slot: "invoice.details.after-summary",
+      })
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route(
+      "/",
+      createAppsAppApiRoutes({
+        finance: { updateExternalLifecycleState, recordSettlementObservation },
+      }),
+    )
+
+    const lifecycle = await app.request(
+      "/v1/app/finance/documents/invoice_other/external-lifecycle-state",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "void-1",
+          state: "voided",
+          occurredAt: "2026-07-18T10:00:00.000Z",
+          lineage: null,
+        }),
+      },
+    )
+    const settlement = await app.request(
+      "/v1/app/finance/documents/invoice_other/settlement-observations",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "settlement-1",
+          occurredAt: "2026-07-18T11:00:00.000Z",
+          status: "paid",
+          currency: "EUR",
+          totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+          paymentIdentifiers: ["payment-1"],
+        }),
+      },
+    )
+
+    expect(lifecycle.status).toBe(403)
+    expect(settlement.status).toBe(403)
+    expect(updateExternalLifecycleState).not.toHaveBeenCalled()
+    expect(recordSettlementObservation).not.toHaveBeenCalled()
+  })
+
+  it("returns stable public conflicts for reused lifecycle and settlement operations", async () => {
+    const scopes = ["finance-external-lifecycle:write", "finance-settlement-observations:write"]
+    const updateExternalLifecycleState = vi.fn().mockResolvedValue({
+      status: "conflict",
+      reason: "idempotency_key_reused",
+      current: null,
+    })
+    const recordSettlementObservation = vi.fn().mockResolvedValue({
+      status: "conflict",
+      reason: "settlement_regression",
+      current: null,
+    })
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_1")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route(
+      "/",
+      createAppsAppApiRoutes({
+        finance: { updateExternalLifecycleState, recordSettlementObservation },
+      }),
+    )
+
+    const lifecycle = await app.request(
+      "/v1/app/finance/documents/invoice_1/external-lifecycle-state",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "void-1",
+          state: "voided",
+          occurredAt: "2026-07-18T10:00:00.000Z",
+          lineage: null,
+        }),
+      },
+    )
+    const settlement = await app.request(
+      "/v1/app/finance/documents/invoice_1/settlement-observations",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "settlement-2",
+          occurredAt: "2026-07-18T12:00:00.000Z",
+          status: "partial",
+          currency: "EUR",
+          totals: { totalCents: 1000, paidCents: 500, balanceDueCents: 500 },
+          paymentIdentifiers: ["payment-1"],
+        }),
+      },
+    )
+
+    expect(lifecycle.status).toBe(409)
+    await expect(lifecycle.json()).resolves.toMatchObject({
+      code: "app_api_finance_external_lifecycle_idempotency_key_reused",
+    })
+    expect(settlement.status).toBe(409)
+    await expect(settlement.json()).resolves.toMatchObject({
+      code: "app_api_finance_settlement_observation_settlement_regression",
+    })
+  })
+
+  it("denies lifecycle and settlement writes across installation boundaries", async () => {
+    const scopes = ["finance-external-lifecycle:write", "finance-settlement-observations:write"]
+    const updateExternalLifecycleState = vi.fn()
+    const recordSettlementObservation = vi.fn()
+    const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
+    app.use("*", async (c, next) => {
+      c.set("db", accessDb(scopes))
+      c.set("callerType", "app")
+      c.set("appId", "app_from_another_deployment")
+      c.set("appInstallationId", "inst_1")
+      c.set("appReleaseId", "rel_1")
+      c.set("appTokenMode", "offline")
+      c.set("scopes", scopes)
+      await next()
+    })
+    app.route(
+      "/",
+      createAppsAppApiRoutes({
+        finance: { updateExternalLifecycleState, recordSettlementObservation },
+      }),
+    )
+
+    const requests = [
+      app.request("/v1/app/finance/documents/invoice_1/external-lifecycle-state", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "void-1",
+          state: "voided",
+          occurredAt: "2026-07-18T10:00:00.000Z",
+          lineage: null,
+        }),
+      }),
+      app.request("/v1/app/finance/documents/invoice_1/settlement-observations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationId: "settlement-1",
+          occurredAt: "2026-07-18T11:00:00.000Z",
+          status: "paid",
+          currency: "EUR",
+          totals: { totalCents: 1000, paidCents: 1000, balanceDueCents: 0 },
+          paymentIdentifiers: ["payment-1"],
+        }),
+      }),
+    ]
+
+    for (const response of await Promise.all(requests)) expect(response.status).toBe(403)
+    expect(updateExternalLifecycleState).not.toHaveBeenCalled()
+    expect(recordSettlementObservation).not.toHaveBeenCalled()
+  })
 })

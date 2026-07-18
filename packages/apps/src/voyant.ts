@@ -341,6 +341,40 @@ export const appsVoyantModule = defineModule({
         wildcard: "explicit-resource",
       },
       {
+        id: "@voyant-travel/apps#access.finance-external-lifecycle",
+        resource: "finance-external-lifecycle",
+        label: "Finance external lifecycle",
+        description: "Report provider-neutral lifecycle facts for finance documents.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "write",
+            label: "Report finance lifecycle",
+            description: "Record an ordered conversion or void observation.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-settlement-observations",
+        resource: "finance-settlement-observations",
+        label: "Finance settlement observations",
+        description: "Report provider-neutral settlement evidence without creating payments.",
+        remoteSafe: true,
+        actions: [
+          {
+            action: "write",
+            label: "Report settlement observations",
+            description: "Record ordered partial or paid observations and payment identifiers.",
+            sensitive: true,
+            wildcard: "explicit",
+          },
+        ],
+        wildcard: "explicit-resource",
+      },
+      {
         id: "@voyant-travel/apps#access.apps",
         resource: "apps",
         label: "Apps",

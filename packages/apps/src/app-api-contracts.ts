@@ -6,10 +6,12 @@ import {
   upsertCustomFieldValueSchema,
 } from "@voyant-travel/custom-fields"
 import type {
+  FinanceAppApiExternalLifecycleObservation,
   FinanceAppApiExternalReference,
   FinanceAppApiExternalSyncState,
   FinanceAppApiIssuanceDocument,
   FinanceAppApiPdfArtifact,
+  FinanceAppApiSettlementObservation,
 } from "@voyant-travel/finance-contracts/app-api"
 import { z } from "zod"
 
@@ -121,6 +123,70 @@ export const appApiFinanceExternalSyncStateSchema = z
     }
   })
 
+const appApiFinanceDocumentLineageSchema = z
+  .object({
+    sourceDocumentId: z.string().trim().min(1).max(200),
+    successorDocumentId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+
+export const appApiFinanceExternalLifecycleStateSchema = z.discriminatedUnion("state", [
+  z
+    .object({
+      operationId: z.string().trim().min(1).max(200),
+      state: z.literal("converted"),
+      occurredAt: z.string().datetime(),
+      lineage: appApiFinanceDocumentLineageSchema,
+    })
+    .strict(),
+  z
+    .object({
+      operationId: z.string().trim().min(1).max(200),
+      state: z.literal("voided"),
+      occurredAt: z.string().datetime(),
+      lineage: z.null().default(null),
+    })
+    .strict(),
+])
+
+export const appApiFinanceSettlementObservationSchema = z
+  .object({
+    operationId: z.string().trim().min(1).max(200),
+    occurredAt: z.string().datetime(),
+    status: z.enum(["partial", "paid"]),
+    currency: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/),
+    totals: z
+      .object({
+        totalCents: z.number().int().nonnegative(),
+        paidCents: z.number().int().positive(),
+        balanceDueCents: z.number().int().nonnegative(),
+      })
+      .strict(),
+    paymentIdentifiers: z
+      .array(z.string().trim().min(1).max(200))
+      .min(1)
+      .max(100)
+      .refine(
+        (value) => new Set(value).size === value.length,
+        "Payment identifiers must be unique.",
+      ),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.totals.paidCents + value.totals.balanceDueCents !== value.totals.totalCents) {
+      context.addIssue({ code: "custom", message: "Settlement totals must balance." })
+    }
+    if (value.status === "partial" && value.totals.balanceDueCents === 0) {
+      context.addIssue({ code: "custom", message: "Partial settlement requires a balance." })
+    }
+    if (value.status === "paid" && value.totals.balanceDueCents !== 0) {
+      context.addIssue({ code: "custom", message: "Paid settlement cannot have a balance." })
+    }
+  })
+
 export const appApiWebhookReplaySchema = z
   .object({
     deliveryId: z.string().min(1),
@@ -158,6 +224,12 @@ export type AppApiFinancePdfArtifactHeaders = z.infer<typeof appApiFinancePdfArt
 export type AppApiFinanceExternalSyncStateInput = z.infer<
   typeof appApiFinanceExternalSyncStateSchema
 >
+export type AppApiFinanceExternalLifecycleStateInput = z.infer<
+  typeof appApiFinanceExternalLifecycleStateSchema
+>
+export type AppApiFinanceSettlementObservationInput = z.infer<
+  typeof appApiFinanceSettlementObservationSchema
+>
 export type AppApiWebhookReplayInput = z.infer<typeof appApiWebhookReplaySchema>
 export type AppApiAuditQuery = z.infer<typeof appApiAuditQuerySchema>
 
@@ -165,3 +237,5 @@ export type AppApiFinanceIssuanceDocument = FinanceAppApiIssuanceDocument
 export type AppApiFinanceExternalReference = FinanceAppApiExternalReference
 export type AppApiFinancePdfArtifact = FinanceAppApiPdfArtifact & { documentUrl: string }
 export type AppApiFinanceExternalSyncState = FinanceAppApiExternalSyncState
+export type AppApiFinanceExternalLifecycleObservation = FinanceAppApiExternalLifecycleObservation
+export type AppApiFinanceSettlementObservation = FinanceAppApiSettlementObservation

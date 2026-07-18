@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { createEventBus } from "@voyant-travel/core"
+import { prepareExternalWebhookEvent } from "@voyant-travel/webhook-delivery"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -10,7 +11,6 @@ import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
   creditNotes,
-  invoiceExternalRefs,
   invoiceLineItems,
   invoiceNumberSeries,
   invoiceRenditions,
@@ -21,6 +21,7 @@ import {
   payments,
 } from "../../src/schema.js"
 import { financeService } from "../../src/service.js"
+import { financeVoyantModule } from "../../src/voyant.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const ORIGINAL_TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -32,6 +33,32 @@ const jsonWithIdempotency = (body: Record<string, unknown>, key: string) => ({
   headers: { "Content-Type": "application/json", "Idempotency-Key": key },
   body: JSON.stringify(body),
 })
+
+function projectExternalEvent(eventType: string, event: Record<string, unknown>) {
+  const declaration = financeVoyantModule.events.find(
+    (candidate) => candidate.eventType === eventType,
+  )
+  if (!declaration?.eventType || !declaration.version || !declaration.payloadSchema) {
+    throw new Error(`Missing external event declaration for ${eventType}.`)
+  }
+  const envelope = event as Parameters<typeof prepareExternalWebhookEvent>[0]
+  return prepareExternalWebhookEvent(
+    {
+      ...envelope,
+      metadata: {
+        ...envelope.metadata,
+        graphEventId: declaration.id,
+        graphEventVersion: declaration.version,
+      },
+    },
+    {
+      eventId: declaration.id,
+      eventType: declaration.eventType,
+      eventVersion: declaration.version,
+      payloadSchema: declaration.payloadSchema,
+    },
+  )
+}
 
 let seq = 0
 function nextInvoiceNumber() {
@@ -719,6 +746,15 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         status: "completed",
         referenceNumber: "REF-1",
         paymentDate: "2025-06-02",
+        occurredAt: expect.any(String),
+      })
+      expect(
+        projectExternalEvent("invoice.payment.recorded", invoicePaymentRecordedEvents[0]!).data,
+      ).toEqual({
+        invoiceId: invoice.id,
+        invoiceType: "invoice",
+        paymentId: data.paymentId,
+        occurredAt: expect.any(String),
       })
     })
 
@@ -1351,15 +1387,6 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         status: "issued",
         balanceDueCents: 110000,
       })
-      await db.insert(invoiceExternalRefs).values({
-        invoiceId: inv.id,
-        provider: "smartbill",
-        externalId: "SB-42",
-        externalNumber: "42",
-        externalUrl: "https://smartbill.example/invoices/42",
-        metadata: { seriesName: "SB" },
-      })
-
       const res = await app.request(`/invoices/${inv.id}/void`, {
         method: "POST",
         ...json({ reason: "Incorrect client details" }),
@@ -1376,9 +1403,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         invoiceId: inv.id,
         invoiceNumber: inv.invoiceNumber,
         reason: "Incorrect client details",
-        externalProvider: "smartbill",
-        externalNumber: "42",
-        externalSeriesName: "SB",
+        occurredAt: expect.any(String),
+      })
+      expect(projectExternalEvent("invoice.voided", invoiceVoidedEvents[0]!).data).toEqual({
+        invoiceId: inv.id,
+        invoiceType: "invoice",
+        occurredAt: data.voidedAt,
       })
     })
 
@@ -1508,6 +1538,24 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         proformaId: proforma.id,
         proformaInvoiceNumber: "PRO-1269-A",
         convertedFromInvoiceId: proforma.id,
+        occurredAt: expect.any(String),
+        lineage: {
+          sourceDocumentId: proforma.id,
+          successorDocumentId: data.id,
+        },
+      })
+      const projected = projectExternalEvent(
+        "invoice.proforma.converted",
+        proformaConvertedEvents[0]!,
+      )
+      expect(projected.data).toEqual({
+        invoiceId: data.id,
+        invoiceType: "invoice",
+        occurredAt: expect.any(String),
+        lineage: {
+          sourceDocumentId: proforma.id,
+          successorDocumentId: data.id,
+        },
       })
     })
 

@@ -31,6 +31,52 @@ export const invoiceIssuanceExternalPayloadSchema = {
   additionalProperties: false,
 } as const
 
+/** Minimal app-facing fact for a durable proforma-to-invoice conversion. */
+export const invoiceProformaConvertedExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType", "occurredAt", "lineage"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: { enum: ["invoice"] },
+    occurredAt: { type: "string", format: "date-time" },
+    lineage: {
+      type: "object",
+      required: ["sourceDocumentId", "successorDocumentId"],
+      properties: {
+        sourceDocumentId: { type: "string" },
+        successorDocumentId: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  additionalProperties: false,
+} as const
+
+/** Minimal app-facing fact for a durable finance-document void. */
+export const invoiceVoidedExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType", "occurredAt"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: invoiceTypeSchema,
+    occurredAt: { type: "string", format: "date-time" },
+  },
+  additionalProperties: false,
+} as const
+
+/** Minimal app-facing fact for a durable native payment record. */
+export const invoicePaymentRecordedExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType", "paymentId", "occurredAt"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: invoiceTypeSchema,
+    paymentId: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
+  },
+  additionalProperties: false,
+} as const
+
 export const invoiceIssuedPayloadSchema = {
   type: "object",
   required: ["invoiceId", "invoiceNumber", "invoiceType", "bookingId", "totalCents", "currency"],
@@ -109,12 +155,21 @@ export const invoiceIssuedPayloadSchema = {
 
 export const invoiceProformaConvertedPayloadSchema = {
   ...invoiceIssuedPayloadSchema,
-  required: [...invoiceIssuedPayloadSchema.required, "id", "proformaId", "proformaInvoiceNumber"],
+  required: [
+    ...invoiceIssuedPayloadSchema.required,
+    "id",
+    "proformaId",
+    "proformaInvoiceNumber",
+    "occurredAt",
+    "lineage",
+  ],
   properties: {
     ...invoiceIssuedPayloadSchema.properties,
     id: { type: "string" },
     proformaId: { type: "string" },
     proformaInvoiceNumber: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
+    lineage: invoiceProformaConvertedExternalPayloadSchema.properties.lineage,
   },
 } as const
 
@@ -129,6 +184,7 @@ export const invoiceVoidedPayloadSchema = {
     "currency",
     "reason",
     "voidedAt",
+    "occurredAt",
   ],
   properties: {
     invoiceId: { type: "string" },
@@ -139,9 +195,7 @@ export const invoiceVoidedPayloadSchema = {
     currency: { type: "string" },
     reason: nullableStringSchema,
     voidedAt: { type: "string", format: "date-time" },
-    externalProvider: nullableStringSchema,
-    externalNumber: nullableStringSchema,
-    externalSeriesName: nullableStringSchema,
+    occurredAt: { type: "string", format: "date-time" },
   },
   additionalProperties: false,
 } as const
@@ -237,6 +291,7 @@ export const invoicePaymentRecordedPayloadSchema = {
     "status",
     "referenceNumber",
     "paymentDate",
+    "occurredAt",
   ],
   properties: {
     invoiceId: { type: "string" },
@@ -268,6 +323,7 @@ export const invoicePaymentRecordedPayloadSchema = {
     status: { enum: ["pending", "completed", "failed", "refunded"] },
     referenceNumber: nullableStringSchema,
     paymentDate: { type: "string" },
+    occurredAt: { type: "string", format: "date-time" },
   },
   additionalProperties: false,
 } as const
