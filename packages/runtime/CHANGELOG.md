@@ -1,5 +1,12 @@
 # @voyant-travel/runtime
 
+## 0.13.1
+
+### Patch Changes
+
+- Updated dependencies [6ccc360]
+  - @voyant-travel/apps@0.10.0
+
 ## 0.13.0
 
 ### Minor Changes
