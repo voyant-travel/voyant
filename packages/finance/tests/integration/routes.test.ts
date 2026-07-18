@@ -753,7 +753,17 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       ).toEqual({
         invoiceId: invoice.id,
         invoiceType: "invoice",
+        invoiceCurrency: "USD",
+        invoiceTotalCents: 110000,
+        invoicePaidCents: 110000,
+        invoiceBalanceDueCents: 0,
         paymentId: data.paymentId,
+        amountCents: 110000,
+        currency: "USD",
+        baseCurrency: null,
+        baseAmountCents: null,
+        paymentMethod: "credit_card",
+        paymentDate: "2025-06-02",
         occurredAt: expect.any(String),
       })
     })

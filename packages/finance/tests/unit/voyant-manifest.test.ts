@@ -231,7 +231,22 @@ describe("finance deployment manifest", () => {
       version: "2.0.0",
       visibility: "external",
       payloadSchema: {
-        required: ["invoiceId", "invoiceType", "paymentId", "occurredAt"],
+        required: [
+          "invoiceId",
+          "invoiceType",
+          "invoiceCurrency",
+          "invoiceTotalCents",
+          "invoicePaidCents",
+          "invoiceBalanceDueCents",
+          "paymentId",
+          "amountCents",
+          "currency",
+          "baseCurrency",
+          "baseAmountCents",
+          "paymentMethod",
+          "paymentDate",
+          "occurredAt",
+        ],
         additionalProperties: false,
       },
     })
@@ -248,10 +263,20 @@ describe("finance deployment manifest", () => {
       "occurredAt",
     ])
     expect(Object.keys(paymentRecorded!.payloadSchema!.properties as object).sort()).toEqual([
+      "amountCents",
+      "baseAmountCents",
+      "baseCurrency",
+      "currency",
+      "invoiceBalanceDueCents",
+      "invoiceCurrency",
       "invoiceId",
+      "invoicePaidCents",
+      "invoiceTotalCents",
       "invoiceType",
       "occurredAt",
+      "paymentDate",
       "paymentId",
+      "paymentMethod",
     ])
 
     const projected = prepareExternalWebhookEvent(
@@ -306,7 +331,17 @@ describe("finance deployment manifest", () => {
         {
           invoiceId: "credit_1",
           invoiceType: "credit_note",
+          invoiceCurrency: "RON",
+          invoiceTotalCents: 10000,
+          invoicePaidCents: 2500,
+          invoiceBalanceDueCents: 7500,
           paymentId: "payment_1",
+          amountCents: 2500,
+          currency: "RON",
+          baseCurrency: null,
+          baseAmountCents: null,
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-07-18",
           occurredAt: "2026-07-18T11:00:00.000Z",
         },
       ],

@@ -64,14 +64,58 @@ export const invoiceVoidedExternalPayloadSchema = {
   additionalProperties: false,
 } as const
 
-/** Minimal app-facing fact for a durable native payment record. */
+/**
+ * Minimal app-facing input for mirroring a durable native payment.
+ *
+ * The projection carries only the monetary facts an external accounting app
+ * needs to create the corresponding provider payment and report cumulative
+ * settlement evidence. Customer, booking, invoice-number, and free-text
+ * reference fields remain private to Finance.
+ */
 export const invoicePaymentRecordedExternalPayloadSchema = {
   type: "object",
-  required: ["invoiceId", "invoiceType", "paymentId", "occurredAt"],
+  required: [
+    "invoiceId",
+    "invoiceType",
+    "invoiceCurrency",
+    "invoiceTotalCents",
+    "invoicePaidCents",
+    "invoiceBalanceDueCents",
+    "paymentId",
+    "amountCents",
+    "currency",
+    "baseCurrency",
+    "baseAmountCents",
+    "paymentMethod",
+    "paymentDate",
+    "occurredAt",
+  ],
   properties: {
     invoiceId: { type: "string" },
     invoiceType: invoiceTypeSchema,
+    invoiceCurrency: { type: "string" },
+    invoiceTotalCents: { type: "integer" },
+    invoicePaidCents: { type: "integer" },
+    invoiceBalanceDueCents: { type: "integer" },
     paymentId: { type: "string" },
+    amountCents: { type: "integer" },
+    currency: { type: "string" },
+    baseCurrency: nullableStringSchema,
+    baseAmountCents: { type: ["integer", "null"] },
+    paymentMethod: {
+      enum: [
+        "bank_transfer",
+        "credit_card",
+        "debit_card",
+        "cash",
+        "cheque",
+        "wallet",
+        "direct_bill",
+        "travel_credit",
+        "other",
+      ],
+    },
+    paymentDate: { type: "string" },
     occurredAt: { type: "string", format: "date-time" },
   },
   additionalProperties: false,

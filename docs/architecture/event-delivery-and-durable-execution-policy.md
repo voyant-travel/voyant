@@ -314,13 +314,15 @@ Write paths:
   `invoice.payment.recorded`
 
 The external event catalog projects those rich internal source payloads to
-minimal facts containing stable IDs, occurrence time, and conversion lineage
-where relevant. These app-facing projections use event contract version 2 to
-make the wire-schema change explicit, while exported source event types retain
-their existing optional fields. Apps respond through append-only lifecycle or settlement
-observation endpoints. A settlement observation is evidence for reconciliation;
-it never creates a native payment or changes the invoice's native settlement
-state.
+minimal facts containing stable IDs, occurrence time, conversion lineage where
+relevant, and the bounded monetary fields required to mirror a completed
+payment. Customer, booking, invoice-number, and free-text payment-reference
+fields remain private. These app-facing projections use event contract version
+2 to make the wire-schema change explicit, while exported source event types
+retain their existing optional fields. Apps respond through append-only
+lifecycle or settlement observation endpoints. A settlement observation is
+evidence for reconciliation; it never creates a native payment or changes the
+invoice's native settlement state.
 
 Policy outcome:
 

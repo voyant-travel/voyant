@@ -439,12 +439,15 @@ hydration when it is true.
 
 `invoice.proforma.converted`, `invoice.voided`, and
 `invoice.payment.recorded` are also externally deliverable through dedicated
-version 2 minimal projections. They expose only stable document and payment IDs, the
-finance document type, occurrence time, and conversion lineage where relevant.
-Customer identity, line items, free-text void reasons, numbering, and routing
-fields stay inside Finance. `invoice.settled` remains an internal event: an app
-reports external settlement evidence through the scoped observation endpoint
-instead of subscribing to an internal reconciliation signal.
+version 2 minimal projections. Lifecycle projections expose stable document
+IDs, document type, occurrence time, and conversion lineage where relevant.
+The payment projection additionally exposes only the bounded amounts,
+currencies, method, and date required to mirror the completed payment at an
+external accounting provider. Customer identity, booking identity, line items,
+free-text reasons and payment references, numbering, and routing fields stay
+inside Finance. `invoice.settled` remains an internal event: an app reports
+external settlement evidence through the scoped observation endpoint instead
+of subscribing to an internal reconciliation signal.
 
 Delivery is durable, signed, at-least-once, idempotency-friendly, retried with
 bounded backoff, observable, and replayable where retention policy permits.
