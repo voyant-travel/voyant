@@ -1,6 +1,6 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { createFinanceAppApiRuntime } from "../../src/app-api-runtime.js"
 import { invoiceLineItems, invoiceNumberSeries, invoices, taxRegimes } from "../../src/schema.js"
 
@@ -163,6 +163,41 @@ describe("finance App API runtime", () => {
       currentNumber: "SB-41",
       currentStatus: "issued",
     })
+  })
+
+  it("rejects allocation when the caller does not own the external series", async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          invoice_number: "PENDING-INVOICE-1",
+          series_id: "series_1",
+          status: "pending_external_allocation",
+        },
+      ])
+      .mockResolvedValueOnce([{ external_provider: "another-provider" }])
+    const runtime = createFinanceAppApiRuntime()
+    const db = postgresStub({ execute })
+
+    await expect(
+      runtime.upsertExternalReference?.(db, "inv_1", "accounting-provider", {
+        reference: {
+          externalId: "remote_1",
+          externalNumber: "SB-42",
+          externalUrl: null,
+          status: "issued",
+          metadata: null,
+          syncedAt: null,
+          syncError: null,
+        },
+        allocation: { invoiceNumber: "SB-42" },
+      }),
+    ).resolves.toEqual({
+      status: "allocation_conflict",
+      currentNumber: "PENDING-INVOICE-1",
+      currentStatus: "pending_external_allocation",
+    })
+    expect(execute).toHaveBeenCalledTimes(2)
   })
 
   it("treats the same allocation and provider reference as an idempotent replay", async () => {

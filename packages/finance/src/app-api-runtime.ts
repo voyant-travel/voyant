@@ -133,10 +133,14 @@ export function createFinanceAppApiRuntime(): FinanceAppApiRuntime {
     },
 
     async upsertExternalReference(db, documentId, provider, input) {
-      const locked = toRows<{ invoice_number: string; status: string }>(
+      const locked = toRows<{
+        invoice_number: string
+        series_id: string | null
+        status: string
+      }>(
         await db.execute(
           // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
-          sql`SELECT invoice_number, status FROM invoices WHERE id = ${documentId} FOR UPDATE`,
+          sql`SELECT invoice_number, series_id, status FROM invoices WHERE id = ${documentId} FOR UPDATE`,
         ),
       )[0]
       if (!locked) return { status: "not_found" }
@@ -153,6 +157,20 @@ export function createFinanceAppApiRuntime(): FinanceAppApiRuntime {
           }
           allocationOutcome = "already_applied"
         } else {
+          const series = toRows<{ external_provider: string | null }>(
+            await db.execute(
+              // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+              sql`SELECT external_provider FROM invoice_number_series WHERE id = ${locked.series_id} FOR UPDATE`,
+            ),
+          )[0]
+          if (!series || series.external_provider !== provider) {
+            return {
+              status: "allocation_conflict",
+              currentNumber: locked.invoice_number,
+              currentStatus: locked.status,
+            }
+          }
+
           try {
             const allocation = await financeService.applyExternalInvoiceAllocation(db, documentId, {
               invoiceNumber: input.allocation.invoiceNumber,
