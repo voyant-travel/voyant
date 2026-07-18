@@ -169,7 +169,6 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/mcp", required: true },
     { resolve: "@voyant-travel/relationships", required: true },
     { resolve: "@voyant-travel/custom-fields", required: true },
-    { resolve: "@voyant-travel/apps", required: true },
     { resolve: "@voyant-travel/quotes" },
     { resolve: "@voyant-travel/operations" },
     { resolve: "@voyant-travel/operations/dashboard" },
