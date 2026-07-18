@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { defineExtension, defineModule, defineProject } from "../../src/project.js"
+import {
+  defineAdapter,
+  defineExtension,
+  defineModule,
+  defineProject,
+  defineProvider,
+} from "../../src/project.js"
 
 describe("defineProject", () => {
   it("normalizes package strings and records to the same module selection", () => {
@@ -92,6 +98,58 @@ describe("defineProject", () => {
     expect(project.plugins[0]?.schemaVersion).toBe("voyant.plugin.v1")
     expect(project.selections?.extensions).toEqual([])
     expect(project.selections?.plugins[0]?.resolve).toBe("@acme/voyant-tax-provider")
+  })
+
+  it("normalizes adapter and provider selections as first-class graph units", () => {
+    const adapter = defineAdapter({
+      id: "@acme/voyant-payments#netopia",
+      providers: [
+        {
+          id: "@acme/voyant-payments#provider.netopia",
+          port: "payments.processor",
+          selection: { role: "payments", value: "netopia" },
+          runtime: { entry: "./netopia", export: "createNetopiaProcessor" },
+        },
+      ],
+    })
+    const provider = defineProvider({
+      id: "@acme/voyant-storage#s3",
+      providers: [
+        {
+          id: "@acme/voyant-storage#provider.s3",
+          port: "storage.object",
+          selection: { role: "storage", value: "s3" },
+          runtime: { entry: "./s3", export: "createObjectStorage" },
+        },
+      ],
+    })
+    const project = defineProject({
+      modules: [],
+      adapters: [adapter, "@acme/voyant-search#typesense"],
+      providers: [provider, { resolve: "file:./src/providers/storage" }],
+    })
+
+    expect(project.adapters).toEqual([
+      adapter,
+      {
+        schemaVersion: "voyant.adapter.v1",
+        id: "@acme/voyant-search#typesense",
+        packageName: "@acme/voyant-search",
+      },
+    ])
+    expect(project.providers).toEqual([
+      provider,
+      {
+        schemaVersion: "voyant.provider.v1",
+        id: "local/src.providers.storage",
+        packageName: "local/src.providers.storage",
+      },
+    ])
+    expect(project.selections?.adapters[0]?.resolve).toBe("@acme/voyant-search#typesense")
+    expect(project.selections?.providers[0]?.provenance).toEqual({
+      kind: "path",
+      path: "./src/providers/storage",
+    })
   })
 
   it("retains deterministic JSON config without turning it into a unit facet", () => {

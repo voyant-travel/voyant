@@ -21,7 +21,10 @@ type OpenApiSourceApp = Parameters<typeof generateOpenApiDocument>[0] & {
 }
 
 export interface BuildSelectedGraphOpenApiDocumentsInput {
-  runtime: Pick<VoyantGraphRuntime, "modules" | "extensions" | "plugins">
+  runtime: Pick<
+    VoyantGraphRuntime,
+    "modules" | "extensions" | "plugins" | "adapters" | "providerUnits"
+  >
   app: OpenApiSourceApp
   options: GenerateOpenApiOptions
 }
@@ -161,9 +164,18 @@ export function mergeSelectedGraphOpenApiDocuments(
 }
 
 function collectClaims(
-  runtime: Pick<VoyantGraphRuntime, "modules" | "extensions" | "plugins">,
+  runtime: Pick<VoyantGraphRuntime, "modules" | "extensions" | "plugins"> & {
+    adapters?: VoyantGraphRuntime["adapters"]
+    providerUnits?: VoyantGraphRuntime["providerUnits"]
+  },
 ): OpenApiClaim[] {
-  return [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+  return [
+    ...runtime.modules,
+    ...runtime.extensions,
+    ...runtime.plugins,
+    ...(runtime.adapters ?? []),
+    ...(runtime.providerUnits ?? []),
+  ]
     .flatMap((unit) =>
       unit.routes.flatMap(({ route }) =>
         route.openapi

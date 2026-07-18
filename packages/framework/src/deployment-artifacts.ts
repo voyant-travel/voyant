@@ -138,9 +138,19 @@ export function createResolvedGraphRuntime(
     input.graph,
     input.runtimeEntryOverrides,
   )
+  const adapters = lowerGraphRuntimeUnits(
+    input.graph.adapters,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const providers = lowerGraphRuntimeUnits(
+    input.graph.providers,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
   const entrySpecifiers = [
     ...new Set(
-      [...modules, ...extensions, ...plugins].flatMap((unit) =>
+      [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
         unit.references.map((reference) => reference.importEntry),
       ),
     ),
@@ -168,6 +178,8 @@ export function createResolvedGraphRuntime(
     modules,
     extensions,
     plugins,
+    adapters,
+    providerUnits: providers,
     webhookPlan: input.graph.webhookPlan,
   })
 }
@@ -323,7 +335,7 @@ export declare const selectedGraphPresentationFactories: Readonly<
 function selectedGraphAdminUnits(
   graph: ResolvedVoyantDeploymentGraph,
 ): readonly ResolvedVoyantGraphUnit[] {
-  return [...graph.modules, ...graph.extensions, ...graph.plugins]
+  return allGraphUnits(graph)
     .filter((unit) => unit.admin?.runtime)
     .sort(
       (left, right) =>
@@ -333,13 +345,23 @@ function selectedGraphAdminUnits(
 }
 
 function selectedGraphPresentations(graph: ResolvedVoyantDeploymentGraph) {
-  return [...graph.modules, ...graph.extensions, ...graph.plugins]
+  return allGraphUnits(graph)
     .flatMap((unit) => (unit.presentations ?? []).map((presentation) => ({ unit, presentation })))
     .sort(
       (left, right) =>
         left.presentation.id.localeCompare(right.presentation.id) ||
         left.unit.id.localeCompare(right.unit.id),
     )
+}
+
+function allGraphUnits(graph: ResolvedVoyantDeploymentGraph): ResolvedVoyantGraphUnit[] {
+  return [
+    ...graph.modules,
+    ...graph.extensions,
+    ...graph.plugins,
+    ...graph.adapters,
+    ...graph.providers,
+  ]
 }
 
 /** Emit target-neutral lazy package loaders without evaluating imports. */
@@ -361,9 +383,19 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     input.graph,
     input.runtimeEntryOverrides,
   )
+  const adapters = lowerGraphRuntimeUnits(
+    input.graph.adapters,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
+  const providers = lowerGraphRuntimeUnits(
+    input.graph.providers,
+    input.graph,
+    input.runtimeEntryOverrides,
+  )
   const entries = [
     ...new Set(
-      [...modules, ...extensions, ...plugins].flatMap((unit) =>
+      [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
         unit.references.map((definition) => definition.importEntry),
       ),
     ),
@@ -373,6 +405,8 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     ...input.graph.modules,
     ...input.graph.extensions,
     ...input.graph.plugins,
+    ...input.graph.adapters,
+    ...input.graph.providers,
   ].flatMap((unit) => unit.runtimePorts ?? [])
   for (const port of runtimePortDeclarations) {
     const cardinality = port.cardinality ?? "one"
@@ -385,9 +419,13 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     runtimePortCardinalities.set(port.id, cardinality)
   }
   const manyRuntimePorts = [
-    ...new Set([...modules, ...extensions, ...plugins].flatMap((unit) => unit.manyRuntimePorts)),
+    ...new Set(
+      [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap(
+        (unit) => unit.manyRuntimePorts,
+      ),
+    ),
   ].sort((left, right) => left.localeCompare(right))
-  const customFieldTargets = [...modules, ...extensions, ...plugins]
+  const customFieldTargets = [...modules, ...extensions, ...plugins, ...adapters, ...providers]
     .flatMap((unit) => unit.customFieldTargets)
     .sort((left, right) => left.id.localeCompare(right.id))
   const command = input.command ?? "voyant deployment graph emit"
@@ -460,6 +498,12 @@ export const GENERATED_GRAPH_RUNTIME_EXTENSION_IDS = ${formatConstArray(
   )}
 export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
+  )}
+export const GENERATED_GRAPH_RUNTIME_ADAPTER_IDS = ${formatConstArray(
+    adapters.map((unit) => unit.id),
+  )}
+export const GENERATED_GRAPH_RUNTIME_PROVIDER_IDS = ${formatConstArray(
+    providers.map((unit) => unit.id),
   )}
 export const GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = ${formatConstArray(manyRuntimePorts)}
 export const GENERATED_GRAPH_RUNTIME_CUSTOM_FIELD_TARGETS = ${formatGeneratedValue(
@@ -555,6 +599,8 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
     modules: ${formatGeneratedValue(modules, 4)},
     extensions: ${formatGeneratedValue(extensions, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},
+    adapters: ${formatGeneratedValue(adapters, 4)},
+    providerUnits: ${formatGeneratedValue(providers, 4)},
     webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN,
   })
 }
@@ -590,9 +636,11 @@ export function buildGraphWorkflowRuntimeModule(
   const modules = selectFacets(input.graph.modules)
   const extensions = selectFacets(input.graph.extensions)
   const plugins = selectFacets(input.graph.plugins)
+  const adapters = selectFacets(input.graph.adapters)
+  const providers = selectFacets(input.graph.providers)
   const entries = [
     ...new Set(
-      [...modules, ...extensions, ...plugins].flatMap((unit) =>
+      [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
         unit.references.map((definition) => definition.importEntry),
       ),
     ),
@@ -610,7 +658,7 @@ import {
 export const GENERATED_WORKFLOW_RUNTIME_HASH = ${quote(input.graph.contentHash)} as const
 export const GENERATED_WORKFLOW_RUNTIME_ENTRY_SPECIFIERS = ${formatConstArray(entries)}
 export const GENERATED_WORKFLOW_RUNTIME_UNIT_IDS = ${formatConstArray(
-    [...modules, ...extensions, ...plugins]
+    [...modules, ...extensions, ...plugins, ...adapters, ...providers]
       .filter((unit) => unit.workflows.length > 0 || unit.references.length > 0)
       .map((unit) => unit.id),
   )}
@@ -625,6 +673,8 @@ export function createGeneratedWorkflowRuntime(): VoyantGraphRuntime {
     modules: ${formatGeneratedValue(modules, 4)},
     extensions: ${formatGeneratedValue(extensions, 4)},
     plugins: ${formatGeneratedValue(plugins, 4)},
+    adapters: ${formatGeneratedValue(adapters, 4)},
+    providerUnits: ${formatGeneratedValue(providers, 4)},
   })
 }
 `
@@ -693,7 +743,7 @@ export function buildDeploymentArtifactManifest(
 export function buildDeploymentMigrationSources(
   graph: ResolvedVoyantDeploymentGraph,
 ): VoyantDeploymentMigrationSourceArtifact[] {
-  const units = [...graph.modules, ...graph.extensions, ...graph.plugins]
+  const units = allGraphUnits(graph)
   const migrationPackages = new Set(
     units
       .filter((unit) => unit.migrations.some((migration) => Boolean(migration.source)))
@@ -758,6 +808,12 @@ export const GENERATED_DEPLOYMENT_GRAPH_EXTENSION_IDS = ${formatConstArray(
   )}
 export const GENERATED_DEPLOYMENT_GRAPH_PLUGIN_IDS = ${formatConstArray(
     input.graph.plugins.map((unit) => unit.id),
+  )}
+export const GENERATED_DEPLOYMENT_GRAPH_ADAPTER_IDS = ${formatConstArray(
+    input.graph.adapters.map((unit) => unit.id),
+  )}
+export const GENERATED_DEPLOYMENT_GRAPH_PROVIDER_IDS = ${formatConstArray(
+    input.graph.providers.map((unit) => unit.id),
   )}
 export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = ${formatConstArray(
     input.graph.packageRecords.map((record) => record.packageName),

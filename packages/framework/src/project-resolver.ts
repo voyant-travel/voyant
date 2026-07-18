@@ -228,6 +228,8 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     ...targetNeutralGraph.modules,
     ...targetNeutralGraph.extensions,
     ...targetNeutralGraph.plugins,
+    ...targetNeutralGraph.adapters,
+    ...targetNeutralGraph.providers,
   ]
     .flatMap((unit) => unit.links)
     .filter(
@@ -371,7 +373,9 @@ function buildProductBomExpansionArtifact(graph: ResolvedVoyantProjectGraph): st
         modules: graph.modules.map(({ id }) => id),
         extensions: graph.extensions.map(({ id }) => id),
         plugins: graph.plugins.map(({ id }) => id),
-        presentations: [...graph.modules, ...graph.extensions, ...graph.plugins]
+        adapters: graph.adapters.map(({ id }) => id),
+        providers: graph.providers.map(({ id }) => id),
+        presentations: allResolvedGraphUnits(graph)
           .flatMap((unit) => unit.presentations ?? [])
           .map(({ id }) => id)
           .sort(),
@@ -578,6 +582,8 @@ async function materializeRuntimeReferencePackages(
     ...graph.modules,
     ...graph.extensions,
     ...graph.plugins,
+    ...graph.adapters,
+    ...graph.providers,
   ])) {
     const packageName = runtimeReferencePackageName(reference)
     let inspected = packages.get(packageName)
@@ -689,6 +695,21 @@ function requireTargetNeutralGraph(
   return { ...graph, deployment }
 }
 
+function allResolvedGraphUnits(
+  graph: Pick<ResolvedVoyantProjectGraph, "modules" | "extensions" | "plugins"> & {
+    adapters?: readonly ResolvedVoyantGraphUnit[]
+    providers?: readonly ResolvedVoyantGraphUnit[]
+  },
+): ResolvedVoyantGraphUnit[] {
+  return [
+    ...graph.modules,
+    ...graph.extensions,
+    ...graph.plugins,
+    ...(graph.adapters ?? []),
+    ...(graph.providers ?? []),
+  ]
+}
+
 async function productDistributionResolutionRoots(
   project: VoyantGraphProject,
   projectRoot: string,
@@ -746,6 +767,22 @@ async function materializeProjectSelections(
     resolutionRoots,
     packages,
   )
+  const adapters = await materializeUnits(
+    project.adapters,
+    selections.adapters,
+    "adapter",
+    projectRoot,
+    resolutionRoots,
+    packages,
+  )
+  const providers = await materializeUnits(
+    project.providers,
+    selections.providers,
+    "provider",
+    projectRoot,
+    resolutionRoots,
+    packages,
+  )
 
   return {
     packages,
@@ -755,10 +792,14 @@ async function materializeProjectSelections(
       modules: modules.units,
       extensions: extensions.units,
       plugins: plugins.units,
+      adapters: adapters.units,
+      providers: providers.units,
       selections: {
         modules: modules.selections,
         extensions: extensions.selections,
         plugins: plugins.selections,
+        adapters: adapters.selections,
+        providers: providers.selections,
       },
     },
   }
@@ -889,7 +930,7 @@ async function buildLocalRuntimeEntryOverrides(
   const overrides: Record<string, string> = {}
   const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
   const references = [
-    ...runtimePackageReferences([...graph.modules, ...graph.extensions, ...graph.plugins]),
+    ...runtimePackageReferences(allResolvedGraphUnits(graph)),
     ...[...packages.values()].flatMap(({ record }) =>
       record.metadata?.runtime
         ? [{ ownerPackageName: record.packageName, entry: record.metadata.runtime.entry }]
@@ -966,7 +1007,7 @@ function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {
 export function buildMigrationPlan(
   graph: ResolvedVoyantDeploymentGraph,
 ): VoyantProjectMigrationPlan {
-  const units = [...graph.modules, ...graph.extensions, ...graph.plugins]
+  const units = allResolvedGraphUnits(graph)
   const packageSchemaMigrations = units.flatMap((unit) =>
     unit.migrations
       .filter((migration): migration is typeof migration & { source: string } =>
@@ -1255,6 +1296,8 @@ function parsePackageMetadata(
   if (
     value.kind !== "module" &&
     value.kind !== "plugin" &&
+    value.kind !== "adapter" &&
+    value.kind !== "provider" &&
     value.kind !== "framework" &&
     value.kind !== "library"
   ) {
@@ -1456,11 +1499,15 @@ function requireProject(value: unknown): VoyantGraphProject {
   return {
     ...value,
     extensions: value.extensions ?? [],
+    adapters: value.adapters ?? [],
+    providers: value.providers ?? [],
     ...(value.selections
       ? {
           selections: {
             ...value.selections,
             extensions: value.selections.extensions ?? [],
+            adapters: value.selections.adapters ?? [],
+            providers: value.selections.providers ?? [],
           },
         }
       : {}),
@@ -1476,7 +1523,11 @@ function isVoyantGraphProject(value: unknown): value is VoyantGraphProject {
     (value.extensions !== undefined &&
       (!Array.isArray(value.extensions) || !value.extensions.every(isGraphUnitManifest))) ||
     !Array.isArray(value.plugins) ||
-    !value.plugins.every(isGraphUnitManifest)
+    !value.plugins.every(isGraphUnitManifest) ||
+    (value.adapters !== undefined &&
+      (!Array.isArray(value.adapters) || !value.adapters.every(isGraphUnitManifest))) ||
+    (value.providers !== undefined &&
+      (!Array.isArray(value.providers) || !value.providers.every(isGraphUnitManifest)))
   ) {
     return false
   }
@@ -1489,7 +1540,13 @@ function isVoyantGraphProject(value: unknown): value is VoyantGraphProject {
       (Array.isArray(value.selections.extensions) &&
         value.selections.extensions.every(isProjectSelection))) &&
     Array.isArray(value.selections.plugins) &&
-    value.selections.plugins.every(isProjectSelection)
+    value.selections.plugins.every(isProjectSelection) &&
+    (value.selections.adapters === undefined ||
+      (Array.isArray(value.selections.adapters) &&
+        value.selections.adapters.every(isProjectSelection))) &&
+    (value.selections.providers === undefined ||
+      (Array.isArray(value.selections.providers) &&
+        value.selections.providers.every(isProjectSelection)))
   )
 }
 
@@ -1510,7 +1567,9 @@ function isGraphUnitManifest(value: unknown): value is VoyantGraphUnitManifest {
     typeof value.id === "string" &&
     (value.schemaVersion === "voyant.module.v1" ||
       value.schemaVersion === "voyant.extension.v1" ||
-      value.schemaVersion === "voyant.plugin.v1")
+      value.schemaVersion === "voyant.plugin.v1" ||
+      value.schemaVersion === "voyant.adapter.v1" ||
+      value.schemaVersion === "voyant.provider.v1")
   )
 }
 

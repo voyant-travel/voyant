@@ -177,11 +177,19 @@ async function main(): Promise<void> {
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorExtensionIds = new Set(operatorGraph.extensions.map((unit) => unit.id))
   const operatorPluginIds = new Set(operatorGraph.plugins.map((unit) => unit.id))
+  const operatorAdapterIds = new Set(operatorGraph.adapters.map((unit) => unit.id))
+  const operatorProviderIds = new Set(operatorGraph.providers.map((unit) => unit.id))
   const declaredOperatorModuleIds = new Set(resolvedOperator.project.modules.map((unit) => unit.id))
   const declaredOperatorExtensionIds = new Set(
     resolvedOperator.project.extensions.map((unit) => unit.id),
   )
   const declaredOperatorPluginIds = new Set(resolvedOperator.project.plugins.map((unit) => unit.id))
+  const declaredOperatorAdapterIds = new Set(
+    resolvedOperator.project.adapters.map((unit) => unit.id),
+  )
+  const declaredOperatorProviderIds = new Set(
+    resolvedOperator.project.providers.map((unit) => unit.id),
+  )
   if (operatorGraph.deployment.target !== "node") {
     failures.push(
       `expected resolved operator graph runtime target node, got ${operatorGraph.deployment.target}`,
@@ -195,6 +203,16 @@ async function main(): Promise<void> {
   for (const id of declaredOperatorPluginIds) {
     if (!operatorPluginIds.has(id)) {
       failures.push(`expected resolved operator graph to include declared plugin ${id}`)
+    }
+  }
+  for (const id of declaredOperatorAdapterIds) {
+    if (!operatorAdapterIds.has(id)) {
+      failures.push(`expected resolved operator graph to include declared adapter ${id}`)
+    }
+  }
+  for (const id of declaredOperatorProviderIds) {
+    if (!operatorProviderIds.has(id)) {
+      failures.push(`expected resolved operator graph to include declared provider ${id}`)
     }
   }
   for (const id of declaredOperatorExtensionIds) {
@@ -212,6 +230,16 @@ async function main(): Promise<void> {
       failures.push(`expected resolved operator graph plugin ${id} to come from the declaration`)
     }
   }
+  for (const id of operatorAdapterIds) {
+    if (!declaredOperatorAdapterIds.has(id)) {
+      failures.push(`expected resolved operator graph adapter ${id} to come from the declaration`)
+    }
+  }
+  for (const id of operatorProviderIds) {
+    if (!declaredOperatorProviderIds.has(id)) {
+      failures.push(`expected resolved operator graph provider ${id} to come from the declaration`)
+    }
+  }
   for (const id of operatorExtensionIds) {
     if (!declaredOperatorExtensionIds.has(id)) {
       failures.push(`expected resolved operator graph extension ${id} to come from the declaration`)
@@ -224,12 +252,20 @@ async function main(): Promise<void> {
     operatorGraph.packageRecords.map((record) => record.packageName),
   )
   const selectedPackageNames = new Set(
-    [...operatorGraph.modules, ...operatorGraph.plugins].map((unit) => unit.packageName),
+    [
+      ...operatorGraph.modules,
+      ...operatorGraph.plugins,
+      ...operatorGraph.adapters,
+      ...operatorGraph.providers,
+    ].map((unit) => unit.packageName),
   )
   const runtimeOnlyPackageNames = new Set(
-    runtimeReferencePackageNames([...operatorGraph.modules, ...operatorGraph.plugins]).filter(
-      (packageName) => !selectedPackageNames.has(packageName),
-    ),
+    runtimeReferencePackageNames([
+      ...operatorGraph.modules,
+      ...operatorGraph.plugins,
+      ...operatorGraph.adapters,
+      ...operatorGraph.providers,
+    ]).filter((packageName) => !selectedPackageNames.has(packageName)),
   )
   for (const record of operatorGraph.packageRecords) {
     if (record.source?.kind === "unknown") {
@@ -510,7 +546,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `check-deployment-graph: OK (${first.modules.length} modules, ${first.plugins.length} plugins, ${first.contentHash})`,
+    `check-deployment-graph: OK (${first.modules.length} modules, ${first.plugins.length} plugins, ${first.adapters.length} adapters, ${first.providers.length} providers, ${first.contentHash})`,
   )
 }
 

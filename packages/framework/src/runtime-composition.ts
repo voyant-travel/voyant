@@ -61,12 +61,22 @@ export type VoyantGraphRuntimeContributor = (
 export function createVoyantGraphRuntimePortStubs(
   runtime: VoyantGraphRuntime,
 ): VoyantGraphRuntimePorts {
-  const units = [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+  const units = allRuntimeUnits(runtime)
   const ids = new Set(units.flatMap((unit) => unit.requiredRuntimePorts))
   const manyIds = new Set(units.flatMap((unit) => unit.manyRuntimePorts))
   return Object.fromEntries(
     [...ids].map((id) => [id, manyIds.has(id) ? [runtimePortStub(id)] : runtimePortStub(id)]),
   )
+}
+
+function allRuntimeUnits(runtime: VoyantGraphRuntime): readonly VoyantGraphRuntimeUnitLoader[] {
+  return [
+    ...runtime.modules,
+    ...runtime.extensions,
+    ...runtime.plugins,
+    ...(runtime.adapters ?? []),
+    ...(runtime.providerUnits ?? []),
+  ]
 }
 
 function runtimePortStub(id: string): unknown {
@@ -251,7 +261,7 @@ async function composeRuntimeFacetModules(
   factoryContexts: ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext>,
 ): Promise<ApiModule[]> {
   const modules: ApiModule[] = []
-  for (const unit of [...runtime.modules, ...runtime.extensions, ...runtime.plugins]) {
+  for (const unit of allRuntimeUnits(runtime)) {
     const module = await resolveRuntimeFacetModule(
       unit,
       requireRuntimeFactoryContext(factoryContexts, unit),
@@ -305,7 +315,11 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  for (const unit of input.runtime.plugins) {
+  for (const unit of [
+    ...input.runtime.plugins,
+    ...(input.runtime.adapters ?? []),
+    ...(input.runtime.providerUnits ?? []),
+  ]) {
     const outputs = await resolveRuntimeUnit(
       input,
       unit,
@@ -332,11 +346,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     modules,
     extensions,
     accessResources: deriveAccessResources(input.runtime),
-    routePosture: mergeRoutePostures(
-      [...input.runtime.modules, ...input.runtime.extensions, ...input.runtime.plugins].map(
-        deriveUnitRoutePosture,
-      ),
-    ),
+    routePosture: mergeRoutePostures(allRuntimeUnits(input.runtime).map(deriveUnitRoutePosture)),
   }
 }
 
@@ -345,7 +355,7 @@ function deriveAccessResources(runtime: VoyantGraphRuntime): {
   resource: string
   authorization?: "coarse" | "route"
 }[] {
-  return [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+  return allRuntimeUnits(runtime)
     .flatMap((unit) =>
       unit.routes.flatMap(({ route }) =>
         route.resource
@@ -670,9 +680,7 @@ function createRuntimeFactoryContext(
     unitId: unit.id,
     projectConfig: unit.projectConfig,
     getUnitProjectConfig: (unitId) =>
-      [...runtime.modules, ...runtime.extensions, ...runtime.plugins].find(
-        (selectedUnit) => selectedUnit.id === unitId,
-      )?.projectConfig,
+      allRuntimeUnits(runtime).find((selectedUnit) => selectedUnit.id === unitId)?.projectConfig,
     api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
     graph: runtime,
     runtimePorts: ports ?? {},
@@ -731,7 +739,7 @@ function createRuntimeFactoryContexts(
   ports: VoyantGraphRuntimePorts | undefined,
 ): ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext> {
   return new Map(
-    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].map((unit) => [
+    allRuntimeUnits(runtime).map((unit) => [
       unit,
       createRuntimeFactoryContext(runtime, ports, unit),
     ]),

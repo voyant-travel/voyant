@@ -6,7 +6,14 @@ import { parse } from "yaml"
 const dependencySections = ["dependencies", "optionalDependencies", "devDependencies"]
 const ignoredWorkspaceDirs = new Set([".audit", ".git", ".turbo", "build", "dist", "node_modules"])
 const voyantPackageMetadataSchemaVersion = "voyant.package.v1"
-const voyantPackageKinds = new Set(["framework", "library", "module", "plugin"])
+const voyantPackageKinds = new Set([
+  "framework",
+  "library",
+  "module",
+  "plugin",
+  "adapter",
+  "provider",
+])
 const voyantDeploymentModes = new Set(["managed-cloud", "self-hosted", "local"])
 
 export function readPnpmLockfilePackageRecords(options) {

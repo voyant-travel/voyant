@@ -178,6 +178,8 @@ function readApiBundles(resolvedGraph) {
     ...arrayOf(resolvedGraph.modules),
     ...arrayOf(resolvedGraph.extensions),
     ...arrayOf(resolvedGraph.plugins),
+    ...arrayOf(resolvedGraph.adapters),
+    ...arrayOf(resolvedGraph.providers),
   ]
   const bundles = []
 
@@ -283,6 +285,8 @@ function discoverInstalledPackageOpenApiRoots(resolvedGraph, resolvedGraphPath) 
       ...arrayOf(resolvedGraph.modules),
       ...arrayOf(resolvedGraph.extensions),
       ...arrayOf(resolvedGraph.plugins),
+      ...arrayOf(resolvedGraph.adapters),
+      ...arrayOf(resolvedGraph.providers),
     ]
       .filter((unit) => arrayOf(unit?.api).some((api) => stringOrEmpty(api?.openapi?.document)))
       .map((unit) => stringOrEmpty(unit?.packageName))

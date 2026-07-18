@@ -177,6 +177,13 @@ describe("deployment graph package provenance", () => {
             "pnpm-lock:@voyant-travel/plugin-netopia@0.105.18(@types/pg@8.20.0)(postgres@3.4.9)",
           integrity: "sha512-netopia",
         },
+        metadata: {
+          schemaVersion: "voyant.package.v1",
+          kind: "adapter",
+          compatibleWith: {
+            targets: ["node"],
+          },
+        },
       },
     ])
   })

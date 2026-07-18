@@ -149,6 +149,8 @@ export async function resolveOperatorDeploymentGraph(
     ...manifestedGraph.modules,
     ...manifestedGraph.extensions,
     ...manifestedGraph.plugins,
+    ...(manifestedGraph.adapters ?? []),
+    ...(manifestedGraph.providers ?? []),
   ])
   const packageRecords = withOperatorNodePackageCompatibility(
     withInferredRuntimePackageMetadata(
@@ -258,6 +260,8 @@ function projectFromResolvedGraph(
     modules: readonly ResolvedVoyantGraphUnit[]
     extensions: readonly ResolvedVoyantGraphUnit[]
     plugins: readonly ResolvedVoyantGraphUnit[]
+    adapters?: readonly ResolvedVoyantGraphUnit[]
+    providers?: readonly ResolvedVoyantGraphUnit[]
   },
   authored: OperatorAuthoredProject,
 ): VoyantGraphProject {
@@ -268,6 +272,12 @@ function projectFromResolvedGraph(
       manifestFromResolvedUnit(unit, "voyant.extension.v1"),
     ),
     plugins: graph.plugins.map((unit) => manifestFromResolvedUnit(unit, "voyant.plugin.v1")),
+    adapters: (graph.adapters ?? []).map((unit) =>
+      manifestFromResolvedUnit(unit, "voyant.adapter.v1"),
+    ),
+    providers: (graph.providers ?? []).map((unit) =>
+      manifestFromResolvedUnit(unit, "voyant.provider.v1"),
+    ),
     ...(authored.access ? { access: authored.access } : {}),
     deployment: authored.deployment,
   }
@@ -339,6 +349,8 @@ function isResolvedGraph(value: unknown): value is {
   modules: readonly ResolvedVoyantGraphUnit[]
   extensions: readonly ResolvedVoyantGraphUnit[]
   plugins: readonly ResolvedVoyantGraphUnit[]
+  adapters?: readonly ResolvedVoyantGraphUnit[]
+  providers?: readonly ResolvedVoyantGraphUnit[]
 } {
   if (!value || typeof value !== "object") return false
   const record = value as Record<string, unknown>

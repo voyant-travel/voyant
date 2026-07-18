@@ -53,9 +53,10 @@ async function loadWorkspaceModules(root: string) {
       exports?: Record<string, unknown>
       voyant?: { kind?: string; manifest?: string }
     }
+    const governedSchema = schemaVersionForGraphKind(packageJson.voyant?.kind)
     if (
       !packageJson.name?.startsWith("@voyant-travel/") ||
-      !["module", "plugin"].includes(packageJson.voyant?.kind ?? "") ||
+      !governedSchema ||
       !packageJson.voyant.manifest
     ) {
       continue
@@ -71,8 +72,6 @@ async function loadWorkspaceModules(root: string) {
       pathToFileURL(path.resolve(packageDirectory, target)).href
     )) as Record<string, unknown>
     const manifests = new Map<string, Record<string, unknown>>()
-    const governedSchema =
-      packageJson.voyant.kind === "module" ? "voyant.module.v1" : "voyant.plugin.v1"
     for (const value of Object.values(loaded)) {
       if (!isGraphManifest(value)) continue
       if (value.schemaVersion !== governedSchema && !hasTools(value)) continue
@@ -118,11 +117,26 @@ function packageExportTarget(value: unknown): string | undefined {
 function isGraphManifest(value: unknown): value is Record<string, unknown> & { id: string } {
   return (
     isRecord(value) &&
-    ["voyant.module.v1", "voyant.extension.v1", "voyant.plugin.v1"].includes(
-      String(value.schemaVersion),
-    ) &&
+    GRAPH_UNIT_SCHEMA_VERSIONS.has(String(value.schemaVersion)) &&
     typeof value.id === "string"
   )
+}
+
+const GRAPH_UNIT_SCHEMA_VERSIONS = new Set([
+  "voyant.module.v1",
+  "voyant.extension.v1",
+  "voyant.plugin.v1",
+  "voyant.adapter.v1",
+  "voyant.provider.v1",
+])
+
+function schemaVersionForGraphKind(kind: unknown): string | undefined {
+  if (kind === "module") return "voyant.module.v1"
+  if (kind === "extension") return "voyant.extension.v1"
+  if (kind === "plugin") return "voyant.plugin.v1"
+  if (kind === "adapter") return "voyant.adapter.v1"
+  if (kind === "provider") return "voyant.provider.v1"
+  return undefined
 }
 
 function hasTools(value: Record<string, unknown>) {
