@@ -4,6 +4,7 @@ import {
   type AccessCatalog,
   areKnownPermissions,
   assertKnownPermissions,
+  formatApiKeyPermissionLabel,
   hasApiKeyPermission,
   UnknownApiKeyPermissionError,
 } from "../src/api-keys.js"
@@ -121,5 +122,26 @@ describe("assertKnownPermissions", () => {
     expect(() => assertKnownPermissions({ bookings: ["send"] }, selectedCatalog)).toThrow(
       UnknownApiKeyPermissionError,
     )
+  })
+})
+
+describe("formatApiKeyPermissionLabel", () => {
+  it.each([
+    ["finance-documents:read", "Read finance documents"],
+    ["finance-document-artifacts:write", "Write finance document artifacts"],
+    ["provider-connections:manage", "Manage provider connections"],
+    ["invoice-issuance:execute", "Execute invoice issuance"],
+    ["finance-documents:sync-now", "Sync now finance documents"],
+    ["*:read", "Wildcard read access"],
+    ["finance-documents:*", "Wildcard access to finance documents"],
+    ["*", "Wildcard access"],
+    ["*:*", "Wildcard access"],
+    ["finance-documents", "Access finance documents"],
+  ])("formats %s as host-owned consent copy", (scope, label) => {
+    expect(formatApiKeyPermissionLabel(scope)).toBe(label)
+  })
+
+  it("normalizes surrounding whitespace and casing", () => {
+    expect(formatApiKeyPermissionLabel("  Finance-Documents:READ  ")).toBe("Read finance documents")
   })
 })

@@ -314,6 +314,37 @@ export function describePermissions(
   } action${actions.size === 1 ? "" : "s"}`
 }
 
+/**
+ * Format a permission scope as host-owned consent copy. Callers should retain
+ * the raw scope as secondary technical detail; publishers must never supply the
+ * primary label shown to a customer approving access.
+ */
+export function formatApiKeyPermissionLabel(scope: string): string {
+  const normalized = scope.trim().toLowerCase()
+  if (normalized === "*" || normalized === "*:*") return "Wildcard access"
+
+  const parts = normalized.split(":")
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return humanizePermissionToken(normalized)
+      ? `Access ${humanizePermissionToken(normalized)}`
+      : "Access"
+  }
+
+  const [resource, action] = parts
+  if (resource === "*") return `Wildcard ${humanizePermissionToken(action)} access`
+  if (action === "*") return `Wildcard access to ${humanizePermissionToken(resource)}`
+  return `${humanizePermissionAction(action)} ${humanizePermissionToken(resource)}`
+}
+
+function humanizePermissionAction(action: string): string {
+  const readable = humanizePermissionToken(action)
+  return readable ? `${readable[0]?.toUpperCase()}${readable.slice(1)}` : "Access"
+}
+
+function humanizePermissionToken(token: string): string {
+  return token.replaceAll("-", " ")
+}
+
 export const EXPIRATION_PRESETS = {
   never: {
     label: "Never",
