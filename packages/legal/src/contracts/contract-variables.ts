@@ -55,6 +55,14 @@ export interface ContractOperatorProfile {
   phone?: string | null
   email?: string | null
   website?: string | null
+  logoLightAssetKey?: string | null
+  logoLightMimeType?: string | null
+  logoDarkAssetKey?: string | null
+  logoDarkMimeType?: string | null
+  iconLightAssetKey?: string | null
+  iconLightMimeType?: string | null
+  iconDarkAssetKey?: string | null
+  iconDarkMimeType?: string | null
   license?: string | null
   licenseAuthority?: string | null
   signatoryName?: string | null
@@ -91,6 +99,11 @@ export interface ContractVariableBindingsOptions {
    * "listing" | "booking"). Optional — defaults to "operator_default".
    */
   resolvePaymentPolicySource?(internalNotes: string): string | null | undefined
+  /** Resolve a stored operator brand asset to a browser-renderable URL. */
+  resolveOperatorBrandAssetUrl?(
+    asset: { assetKey: string; mimeType: string | null },
+    bindings: Record<string, unknown> | null | undefined,
+  ): Promise<string | null> | string | null
 }
 
 /**
@@ -102,8 +115,12 @@ export interface ContractVariableBindingsOptions {
 export function buildContractVariableBindings(
   options: ContractVariableBindingsOptions,
 ): ResolveContractVariablesFn {
-  const { resolveOperatorProfile, resolveOperatorPaymentInstructions, resolvePaymentPolicySource } =
-    options
+  const {
+    resolveOperatorProfile,
+    resolveOperatorPaymentInstructions,
+    resolvePaymentPolicySource,
+    resolveOperatorBrandAssetUrl,
+  } = options
 
   return async ({ db, booking, defaults, bindings }) => {
     const acceptance = parseAcceptanceMarker(booking.internalNotes ?? "")
@@ -113,6 +130,27 @@ export function buildContractVariableBindings(
       resolveOperatorProfile(db),
       resolveOperatorPaymentInstructions(db),
     ])
+    const brandAssetUrl = async (
+      assetKey: string | null | undefined,
+      mimeType: string | null | undefined,
+    ) => {
+      if (!assetKey) return ""
+      return (
+        (await resolveOperatorBrandAssetUrl?.(
+          { assetKey, mimeType: mimeType ?? null },
+          bindings,
+        )) ?? ""
+      )
+    }
+    const [operatorLogoUrl, operatorLogoDarkUrl, operatorIconUrl, operatorIconDarkUrl] =
+      operatorProfile
+        ? await Promise.all([
+            brandAssetUrl(operatorProfile.logoLightAssetKey, operatorProfile.logoLightMimeType),
+            brandAssetUrl(operatorProfile.logoDarkAssetKey, operatorProfile.logoDarkMimeType),
+            brandAssetUrl(operatorProfile.iconLightAssetKey, operatorProfile.iconLightMimeType),
+            brandAssetUrl(operatorProfile.iconDarkAssetKey, operatorProfile.iconDarkMimeType),
+          ])
+        : ["", "", "", ""]
 
     // Hydrate the customer block from the linked relationships person /
     // identity record when the booking's snapshot columns are empty.
@@ -166,6 +204,10 @@ export function buildContractVariableBindings(
         phone: operatorProfile?.phone ?? "",
         email: operatorProfile?.email ?? "",
         website: operatorProfile?.website ?? "",
+        logoUrl: operatorLogoUrl,
+        logoDarkUrl: operatorLogoDarkUrl,
+        iconUrl: operatorIconUrl,
+        iconDarkUrl: operatorIconDarkUrl,
         iban: paymentInstructions?.iban ?? "",
         bank: paymentInstructions?.bank ?? "",
         license: operatorProfile?.license ?? "",

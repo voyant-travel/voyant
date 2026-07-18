@@ -43,7 +43,7 @@ describe("legal deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/legal#schema" }],
       migrations: [{ id: "@voyant-travel/legal#migrations" }],
-      runtimePorts: [{ id: "legal.runtime" }],
+      runtimePorts: [{ id: "legal.runtime" }, { id: "documents.renderer", optional: true }],
     })
     expect(legalVoyantModule.links?.map((link) => link.id)).toEqual([
       "@voyant-travel/legal#linkable.contract",

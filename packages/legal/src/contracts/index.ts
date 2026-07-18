@@ -79,9 +79,13 @@ export type {
   CloudBrowserRenderClient,
   CloudBrowserWaitUntil,
   CreateBrowserRenderedPdfContractDocumentSerializerOptions,
+  CreateRenderedPdfContractDocumentSerializerOptions,
+  DocumentNavigationOptions,
+  DocumentPdfOptions,
 } from "./service-documents-browser.js"
 export {
   createBrowserRenderedPdfContractDocumentSerializer,
+  createRenderedPdfContractDocumentSerializer,
   defaultContractHtmlWrapper,
 } from "./service-documents-browser.js"
 export type {

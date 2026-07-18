@@ -68,6 +68,16 @@ test("rejects an Inventory contributor that returns to a starter capability", ()
   assert.throws(() => runChecker(fixtureRoot), /Inventory/)
 })
 
+test("rejects an Inventory brochure runtime coupled to the legacy cloud browser client", () => {
+  const fixtureRoot = createFixture()
+  const runtimePath = path.join(fixtureRoot, "packages/inventory/src/brochure-runtime.ts")
+  writeFileSync(
+    runtimePath,
+    `${readFileSync(runtimePath, "utf8")}\nconst legacyRenderer = "@voyant-travel/cloud-sdk"\n`,
+  )
+  assert.throws(() => runChecker(fixtureRoot), /legacy cloud renderer token/)
+})
+
 test("rejects restored Operator storage compatibility facades", () => {
   for (const facade of [
     "starters/operator/src/api/runtime/media-runtime.ts",

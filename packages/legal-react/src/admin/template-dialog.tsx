@@ -45,6 +45,7 @@ const templateFormSchema = z.object({
   description: z.string().optional(),
   body: z.string().min(1, "bodyRequired"),
   active: z.boolean(),
+  isDefault: z.boolean(),
 })
 
 type FormValues = z.input<typeof templateFormSchema>
@@ -105,6 +106,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
       description: "",
       body: "",
       active: true,
+      isDefault: false,
     },
   })
 
@@ -118,6 +120,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
         description: template.description ?? "",
         body: template.body,
         active: template.active,
+        isDefault: template.isDefault,
       })
     } else if (open) {
       form.reset()
@@ -133,6 +136,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
       description: values.description || undefined,
       body: values.body,
       active: values.active,
+      isDefault: values.isDefault,
     }
 
     if (isEditing && template) {
@@ -252,12 +256,25 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
               snippets={liquidSnippets}
             />
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.watch("active")}
-                onCheckedChange={(checked) => form.setValue("active", checked)}
-              />
-              <Label>{t.activeLabel}</Label>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.watch("active")}
+                  onCheckedChange={(checked) => form.setValue("active", checked)}
+                />
+                <Label>{t.activeLabel}</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.watch("isDefault")}
+                  disabled={!form.watch("active")}
+                  onCheckedChange={(checked) => form.setValue("isDefault", checked)}
+                />
+                <div>
+                  <Label>{t.defaultLabel}</Label>
+                  <p className="text-xs text-muted-foreground">{t.defaultHelp}</p>
+                </div>
+              </div>
             </div>
           </DialogBody>
           <DialogFooter>

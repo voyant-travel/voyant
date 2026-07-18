@@ -15,7 +15,10 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-legal-subscriber-authority-"))
   const files = {
     "packages/legal/src/voyant.ts": `
-runtimePorts: [requirePort(legalRuntimePort)]
+runtimePorts: [
+  requirePort(legalRuntimePort),
+  requirePort(documentRendererPort, { optional: true }),
+]
 runtime: { export: "createLegalBookingContractVoyantRuntime" }
 runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)]
 subscribers: [{ runtime: { export: "legalBookingContractConfirmedSubscriber" } }]

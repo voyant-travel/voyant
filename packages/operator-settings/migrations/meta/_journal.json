@@ -36,6 +36,13 @@
       "when": 1784391053807,
       "tag": "0004_drop_fx_reference_source",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784362464227,
+      "tag": "0005_operator_settings_baseline",
+      "breakpoints": true
     }
   ]
 }

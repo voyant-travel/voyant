@@ -140,29 +140,55 @@ export const contractTemplatesService = {
   },
   async createTemplate(db: PostgresJsDatabase, data: CreateContractTemplateInput) {
     validateContractTemplateBody(data.body)
-    if (data.isDefault) {
-      const [existingDefault] = await db
-        .select({ id: contractTemplates.id })
-        .from(contractTemplates)
-        .where(
-          and(
-            eq(contractTemplates.scope, data.scope),
-            eq(contractTemplates.language, data.language),
-            data.channelId
-              ? eq(contractTemplates.channelId, data.channelId)
-              : isNull(contractTemplates.channelId),
-            eq(contractTemplates.isDefault, true),
-          ),
-        )
-        .limit(1)
-      if (existingDefault) {
-        throw new Error(
-          "A default contract template already exists for this scope/channel/language",
-        )
+    return db.transaction(async (tx) => {
+      if (data.isDefault) {
+        const [existingDefault] = await tx
+          .select({ id: contractTemplates.id })
+          .from(contractTemplates)
+          .where(
+            and(
+              eq(contractTemplates.scope, data.scope),
+              eq(contractTemplates.language, data.language),
+              data.channelId
+                ? eq(contractTemplates.channelId, data.channelId)
+                : isNull(contractTemplates.channelId),
+              eq(contractTemplates.isDefault, true),
+            ),
+          )
+          .limit(1)
+        if (existingDefault) {
+          throw new Error(
+            "A default contract template already exists for this scope/channel/language",
+          )
+        }
       }
-    }
-    const [row] = await db.insert(contractTemplates).values(data).returning()
-    return row ?? null
+
+      const [template] = await tx
+        .insert(contractTemplates)
+        .values({ ...data, currentVersionId: null })
+        .returning()
+      if (!template) return null
+
+      const [version] = await tx
+        .insert(contractTemplateVersions)
+        .values({
+          templateId: template.id,
+          version: 1,
+          body: data.body,
+          variableSchema: null,
+          changelog: "Initial version",
+          createdBy: null,
+        })
+        .returning()
+      if (!version) return template
+
+      const [row] = await tx
+        .update(contractTemplates)
+        .set({ currentVersionId: version.id, updatedAt: new Date() })
+        .where(eq(contractTemplates.id, template.id))
+        .returning()
+      return row ?? template
+    })
   },
   /**
    * Update a contract template. When `data.body` is supplied AND differs

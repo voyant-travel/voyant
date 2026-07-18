@@ -17,6 +17,7 @@ import { autoGenerateContractForBooking } from "../../src/contracts/service-auto
 import { contractRecordsService } from "../../src/contracts/service-contracts.js"
 import type { ContractDocumentGenerator } from "../../src/contracts/service-documents.js"
 import { contractSeriesService } from "../../src/contracts/service-series.js"
+import { contractTemplatesService } from "../../src/contracts/service-templates.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -45,7 +46,10 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     await closeTestDb()
   })
 
-  async function seedTemplate(slug: string, options: { language?: string } = {}) {
+  async function seedTemplate(
+    slug: string,
+    options: { language?: string; isDefault?: boolean; body?: string } = {},
+  ) {
     const [template] = await db
       .insert(contractTemplates)
       .values({
@@ -55,6 +59,7 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
         language: options.language ?? "en",
         body: "",
         active: true,
+        isDefault: options.isDefault ?? false,
       })
       .returning()
     const [version] = await db
@@ -62,7 +67,9 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
       .values({
         templateId: template!.id,
         version: 1,
-        body: 'Contract for {{ booking.number }}. Lead: {{ leadTraveler.firstName }} {{ leadTraveler.lastName }}. Travelers: {% for t in travelers %}{{ t.firstName }}{% unless forloop.last %}, {% endunless %}{% endfor %}. Total: {{ booking.totalAmountCents | cents: booking.currency }}. Issued: {{ contract.date | format_date: "short" }}.',
+        body:
+          options.body ??
+          'Contract for {{ booking.number }}. Lead: {{ leadTraveler.firstName }} {{ leadTraveler.lastName }}. Travelers: {% for t in travelers %}{{ t.firstName }}{% unless forloop.last %}, {% endunless %}{% endfor %}. Total: {{ booking.totalAmountCents | cents: booking.currency }}. Issued: {{ contract.date | format_date: "short" }}.',
       })
       .returning()
     // Point template at the version we just made.
@@ -104,6 +111,27 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
       }
     }
   }
+
+  it("creates immutable version 1 when an operator authors a template", async () => {
+    const template = await contractTemplatesService.createTemplate(db, {
+      slug: "operator-authored",
+      name: "Operator-authored agreement",
+      scope: "customer",
+      language: "en",
+      body: "<h1>Our agreement</h1>",
+      active: true,
+      isDefault: true,
+    })
+
+    expect(template?.currentVersionId).toBeTruthy()
+    const versions = await contractTemplatesService.listTemplateVersions(db, template!.id)
+    expect(versions).toHaveLength(1)
+    expect(versions[0]).toMatchObject({
+      version: 1,
+      body: "<h1>Our agreement</h1>",
+      changelog: "Initial version",
+    })
+  })
 
   it("creates contract, renders liquid, and attaches generated document", async () => {
     const { template } = await seedTemplate("cust-services-1")
@@ -329,6 +357,91 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     )
     expect(outcome.status).toBe("template_not_found")
     expect(await db.select().from(contracts)).toHaveLength(0)
+  })
+
+  it("generates from operator-authored default template and number-series settings", async () => {
+    const { template, version } = await seedTemplate("configured-default", {
+      isDefault: true,
+      body: "Configured contract {{ booking.number }}",
+    })
+    const series = await contractSeriesService.createSeries(db, {
+      name: "Customer contracts",
+      prefix: "CUST",
+      separator: "-",
+      padLength: 5,
+      resetStrategy: "annual",
+      scope: "customer",
+      active: true,
+      isDefault: true,
+    })
+    const booking = await seedBooking()
+
+    const renderedBodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      {
+        enabled: true,
+        scope: "customer",
+        requireExplicitDefaultTemplate: true,
+        requireNumberSeries: true,
+      },
+      { generator: makeGenerator(renderedBodies) },
+    )
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    expect(contract).toMatchObject({
+      templateVersionId: version.id,
+      seriesId: series?.id,
+    })
+    expect(renderedBodies[0]).toContain(`Configured contract ${booking.bookingNumber}`)
+    expect(template.isDefault).toBe(true)
+  })
+
+  it("preserves the immutable template version accepted at checkout", async () => {
+    const accepted = await seedTemplate("accepted-at-checkout", {
+      body: "Accepted version {{ booking.number }}",
+    })
+    await seedTemplate("new-default", {
+      isDefault: true,
+      body: "New default must not replace acceptance",
+    })
+    const booking = await seedBooking()
+    const draft = await contractRecordsService.createContract(db, {
+      scope: "customer",
+      status: "draft",
+      title: `Accepted contract — ${booking.bookingNumber}`,
+      templateVersionId: accepted.version.id,
+      seriesId: null,
+      bookingId: booking.id,
+      personId: null,
+      organizationId: null,
+      language: "en",
+      variables: {},
+      metadata: { acceptance: { templateSlug: accepted.template.slug } },
+    })
+
+    const renderedBodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      {
+        enabled: true,
+        scope: "customer",
+        requireExplicitDefaultTemplate: true,
+      },
+      { generator: makeGenerator(renderedBodies) },
+    )
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.contractId).toBe(draft?.id)
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    expect(contract?.templateVersionId).toBe(accepted.version.id)
+    expect(renderedBodies[0]).toContain(`Accepted version ${booking.bookingNumber}`)
+    expect(renderedBodies[0]).not.toContain("New default")
   })
 
   it("returns template_version_missing when template exists but has no current version", async () => {

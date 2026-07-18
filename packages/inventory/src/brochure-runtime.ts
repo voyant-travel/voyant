@@ -1,5 +1,9 @@
-import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import {
+  createHttpDocumentRendererFromEnv,
+  type DocumentRenderer,
+} from "@voyant-travel/core/document-rendering"
+
 import type { InventoryBrochureRuntime } from "./runtime-ports.js"
 import {
   brochureBodyToHtml,
@@ -7,73 +11,27 @@ import {
   type ProductBrochurePrinterContext,
 } from "./tasks/brochure-printers.js"
 
-type RuntimeEnv = Readonly<
-  Partial<
-    Record<
-      | "APP_URL"
-      | "VOYANT_API_KEY"
-      | "VOYANT_CLOUD_API_KEY"
-      | "VOYANT_CLOUD_API_URL"
-      | "VOYANT_CLOUD_USER_AGENT",
-      unknown
-    >
-  >
->
 type BrochureRuntimePrimitives = Pick<VoyantRuntimeHostPrimitives, "env">
+type ConfiguredRenderer = DocumentRenderer | Promise<DocumentRenderer>
 
-const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
-const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
-
-function nonEmpty(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined
-  const trimmed = value.trim()
-  return trimmed.length > 0 && !LOCAL_PLACEHOLDER_KEYS.has(trimmed) ? trimmed : undefined
-}
-
-function resolveVoyantApiKey(env: RuntimeEnv): string | undefined {
-  return nonEmpty(env.VOYANT_API_KEY) ?? nonEmpty(env.VOYANT_CLOUD_API_KEY)
-}
-
-function getCloudClient(env: RuntimeEnv): VoyantCloudClient {
-  const apiKey = resolveVoyantApiKey(env)
-  const cached = apiKey ? CLIENT_CACHE.get(env as object)?.get(apiKey) : undefined
-  if (cached) return cached
-
-  const baseUrl = nonEmpty(env.VOYANT_CLOUD_API_URL)
-  const userAgent = nonEmpty(env.VOYANT_CLOUD_USER_AGENT)
-  const client = getVoyantCloudClient(
-    {
-      ...(apiKey ? { VOYANT_CLOUD_API_KEY: apiKey } : {}),
-      ...(baseUrl ? { VOYANT_CLOUD_API_URL: baseUrl } : {}),
-      ...(userAgent ? { VOYANT_CLOUD_USER_AGENT: userAgent } : {}),
-    },
-    apiKey ? { apiKey } : undefined,
-  )
-  if (apiKey) {
-    const clients = CLIENT_CACHE.get(env as object) ?? new Map<string, VoyantCloudClient>()
-    clients.set(apiKey, client)
-    CLIENT_CACHE.set(env as object, clients)
-  }
-  return client
-}
-
-function tryGetCloudClient(env: RuntimeEnv): VoyantCloudClient | null {
-  return resolveVoyantApiKey(env) ? getCloudClient(env) : null
-}
-
-/** Voyant Cloud browser-backed brochure printer used by Inventory workflows and routes. */
-export function createProductBrochurePrinter(env: RuntimeEnv): ProductBrochurePrinter {
-  const client = getCloudClient(env)
+/** Adapt the shared deployment renderer to Inventory's brochure artifact contract. */
+export function createProductBrochurePrinter(
+  configuredRenderer: ConfiguredRenderer,
+): ProductBrochurePrinter {
   return async ({ template, context }: ProductBrochurePrinterContext) => {
-    const body = await client.browser.pdf({
+    const renderer = await configuredRenderer
+    const body = await renderer.renderPdf({
       html: brochureBodyToHtml(template.body, template.bodyFormat, template.title),
+      page: { format: "a4", printBackground: true },
+      navigation: { waitUntil: "networkidle0", timeoutMs: 30_000 },
+      mediaType: "print",
     })
     return {
       body,
       mimeType: "application/pdf",
       fileSize: body.byteLength,
       metadata: {
-        renderer: "voyant-cloud-browser",
+        renderer: renderer.name,
         productId: context.product.id,
         bodyFormat: template.bodyFormat,
       },
@@ -84,11 +42,13 @@ export function createProductBrochurePrinter(env: RuntimeEnv): ProductBrochurePr
 /** Build Inventory's brochure printer policy from generic graph host primitives. */
 export function createInventoryBrochureRuntime(
   primitives: BrochureRuntimePrimitives,
+  configuredRenderer?: ConfiguredRenderer | null,
 ): InventoryBrochureRuntime {
   return {
     resolvePrinter: (context) => {
-      const env = primitives.env(context.env)
-      return tryGetCloudClient(env) ? createProductBrochurePrinter(env) : null
+      const renderer =
+        configuredRenderer ?? createHttpDocumentRendererFromEnv(primitives.env(context.env))
+      return renderer ? createProductBrochurePrinter(renderer) : null
     },
   }
 }

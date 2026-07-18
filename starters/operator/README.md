@@ -67,19 +67,22 @@ Local and self-hosted deployments can run without a Voyant Cloud API key. Leave
 `VOYANT_API_KEY` unset unless you want Cloud-backed notifications, realtime, or
 Vault KMS.
 
-Cloud-backed legal PDF rendering and finance FX lookup are configured
-separately:
+Document rendering and finance FX lookup are configured separately:
 
 ```bash
-# Styled legal/invoice PDF rendering. Omit for the local basic PDF fallback.
-VOYANT_CLOUD_PDF_API_KEY="vc_..."
+# Any Voyant-compatible HTML-to-PDF endpoint. Used by contracts and brochures.
+# Omit for the local basic PDF fallback.
+VOYANT_DOCUMENT_RENDERER_URL="https://renderer.example/v1/pdf"
+VOYANT_DOCUMENT_RENDERER_TOKEN="optional-bearer-token"
+VOYANT_DOCUMENT_RENDERER_NAME="self-hosted-playwright"
 
 # Hosted Voyant Data FX lookup for finance invoice/payment rates.
 VOYANT_DATA_API_KEY="vd_..."
 ```
 
-In `VOYANT_ADMIN_AUTH_MODE="voyant-cloud"` deployments, `VOYANT_API_KEY` remains
-a legacy fallback for both of those specialized keys.
+Managed Voyant injects its private document-rendering endpoint and deployment
+credential automatically. Self-hosters can replace the renderer without changing
+contract or brochure workflows.
 
 ## Database
 

@@ -36,6 +36,7 @@ const seriesFormSchema = z.object({
   resetStrategy: z.enum(["never", "annual", "monthly"]),
   scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
   active: z.boolean(),
+  isDefault: z.boolean(),
 })
 
 type FormValues = z.input<typeof seriesFormSchema>
@@ -102,6 +103,7 @@ export function NumberSeriesDialog({
       resetStrategy: "never",
       scope: "customer",
       active: true,
+      isDefault: false,
     },
   })
 
@@ -115,6 +117,7 @@ export function NumberSeriesDialog({
         resetStrategy: series.resetStrategy as FormValues["resetStrategy"],
         scope: series.scope as FormValues["scope"],
         active: series.active,
+        isDefault: series.isDefault,
       })
     } else if (open) {
       form.reset()
@@ -130,6 +133,7 @@ export function NumberSeriesDialog({
       resetStrategy: values.resetStrategy,
       scope: values.scope,
       active: values.active,
+      isDefault: values.isDefault,
     }
 
     if (isEditing && series) {
@@ -279,12 +283,25 @@ export function NumberSeriesDialog({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.watch("active")}
-                onCheckedChange={(checked) => form.setValue("active", checked)}
-              />
-              <Label>{t.activeLabel}</Label>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.watch("active")}
+                  onCheckedChange={(checked) => form.setValue("active", checked)}
+                />
+                <Label>{t.activeLabel}</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.watch("isDefault")}
+                  disabled={!form.watch("active")}
+                  onCheckedChange={(checked) => form.setValue("isDefault", checked)}
+                />
+                <div>
+                  <Label>{t.defaultLabel}</Label>
+                  <p className="text-xs text-muted-foreground">{t.defaultHelp}</p>
+                </div>
+              </div>
             </div>
 
             {conflictingSeries ? (

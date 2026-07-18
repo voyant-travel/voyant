@@ -40,43 +40,15 @@ export async function generateContractForBookingFromDefaults(
   runtime: AutoGenerateContractRuntime,
   actorId: string | null = null,
 ): Promise<GenerateContractForBookingResult> {
-  const template = await contractTemplatesService.getDefaultTemplate(db, {
-    scope: input.scope,
-    language: input.language,
-    channelId: input.channelId ?? undefined,
-    fallbackLanguages: input.fallbackLanguages,
-  })
-  if (!template) {
-    return { status: "template_not_found" }
-  }
-  if (!template.currentVersionId) {
-    return { status: "template_version_missing" }
-  }
-
   const options: AutoGenerateContractOptions = {
     enabled: true,
-    templateSlug: template.slug,
     scope: input.scope,
-    language: input.language ?? template.language,
+    language: input.language,
+    channelId: input.channelId,
+    fallbackLanguages: input.fallbackLanguages,
+    requireExplicitDefaultTemplate: true,
+    requireNumberSeries: input.requireNumberSeries,
     forceRecompute: input.forceRecompute,
-  }
-
-  if (input.requireNumberSeries) {
-    try {
-      const series = await contractSeriesService.findDefaultActiveByScope(db, input.scope)
-      if (!series) {
-        return { status: "series_not_found" }
-      }
-      options.seriesPrefixScope = {
-        prefix: series.prefix,
-        scope: series.scope,
-      }
-    } catch (error) {
-      if (error instanceof ContractSeriesAmbiguousError) {
-        return { status: "series_ambiguous" }
-      }
-      throw error
-    }
   }
 
   return autoGenerateContractForBooking(
@@ -164,14 +136,35 @@ export async function autoGenerateContractForBooking(
     // signature row materializes.
   }
 
-  // Resolve the template + its current version. Consumers configure the slug
-  // once at module bootstrap; we look up on every fire so template body
-  // edits are picked up without restart.
-  const template = await contractTemplatesService.findTemplateBySlug(db, options.templateSlug)
+  // Preserve the exact immutable template version accepted at checkout. When
+  // there is no pre-created draft, resolve the operator-authored default from
+  // Legal settings. Custom integrations can still pass an explicit slug.
+  const acceptedVersion = existing?.templateVersionId
+    ? await contractTemplatesService.getTemplateVersionById(db, existing.templateVersionId)
+    : null
+  const template = acceptedVersion
+    ? await contractTemplatesService.getTemplateById(db, acceptedVersion.templateId)
+    : options.templateSlug
+      ? await contractTemplatesService.findTemplateBySlug(db, options.templateSlug)
+      : await contractTemplatesService.getDefaultTemplate(db, {
+          scope,
+          language: options.language,
+          channelId: options.channelId ?? undefined,
+          fallbackLanguages: options.fallbackLanguages ?? [],
+        })
   if (!template) {
     return { status: "template_not_found" }
   }
-  if (!template.currentVersionId) {
+  if (
+    !options.templateSlug &&
+    !acceptedVersion &&
+    options.requireExplicitDefaultTemplate !== false &&
+    !template.isDefault
+  ) {
+    return { status: "template_not_found" }
+  }
+  const templateVersionId = acceptedVersion?.id ?? template.currentVersionId
+  if (!templateVersionId) {
     return { status: "template_version_missing" }
   }
 
@@ -183,16 +176,28 @@ export async function autoGenerateContractForBooking(
   // Prefix + scope is the persisted natural identity for an active series.
   // A missing series remains non-fatal because some operators number
   // contracts externally.
-  const series = options.seriesPrefixScope
+  let series = options.seriesPrefixScope
     ? await contractSeriesService.findActiveByPrefixScope(
         db,
         options.seriesPrefixScope.prefix,
         options.seriesPrefixScope.scope,
       )
     : null
+  if (!series && options.requireNumberSeries && !existing?.seriesId) {
+    try {
+      series = await contractSeriesService.findDefaultActiveByScope(db, scope)
+    } catch (error) {
+      if (error instanceof ContractSeriesAmbiguousError) {
+        return { status: "series_ambiguous" }
+      }
+      throw error
+    }
+    if (!series) return { status: "series_not_found" }
+  }
 
   const variables = await resolveContractGenerationVariables(db, booking, event, options, runtime, {
     id: template.id,
+    slug: template.slug,
     language: template.language,
     seriesLabel: series?.name ?? null,
   })
@@ -204,7 +209,7 @@ export async function autoGenerateContractForBooking(
   if (isPreview) {
     const previewVersion = await contractTemplatesService.getTemplateVersionById(
       db,
-      template.currentVersionId,
+      templateVersionId,
     )
     if (!previewVersion) {
       return { status: "template_version_missing" }
@@ -235,7 +240,7 @@ export async function autoGenerateContractForBooking(
     // there and we need it for the signature row downstream.
     const preservedMetadata = (existing.metadata as Record<string, unknown> | null) ?? {}
     const updated = await contractRecordsService.updateContract(db, existing.id, {
-      templateVersionId: template.currentVersionId,
+      templateVersionId,
       seriesId: existing.seriesId ?? seriesId,
       personId: existing.personId ?? booking.personId ?? null,
       organizationId: existing.organizationId ?? booking.organizationId ?? null,
@@ -255,7 +260,7 @@ export async function autoGenerateContractForBooking(
       scope: options.scope ?? "customer",
       status: "draft",
       title: `${template.name} — ${booking.bookingNumber}`,
-      templateVersionId: template.currentVersionId,
+      templateVersionId,
       seriesId,
       bookingId: event.bookingId,
       personId: booking.personId ?? null,

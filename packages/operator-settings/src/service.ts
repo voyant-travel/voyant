@@ -47,6 +47,14 @@ export const updateOperatorProfileSchema = z.object({
   phone: z.string().nullable().optional(),
   email: z.string().email().nullable().optional().or(z.literal("")),
   website: z.string().url().nullable().optional().or(z.literal("")),
+  logoLightAssetKey: z.string().max(1_024).nullable().optional(),
+  logoLightMimeType: z.string().max(255).nullable().optional(),
+  logoDarkAssetKey: z.string().max(1_024).nullable().optional(),
+  logoDarkMimeType: z.string().max(255).nullable().optional(),
+  iconLightAssetKey: z.string().max(1_024).nullable().optional(),
+  iconLightMimeType: z.string().max(255).nullable().optional(),
+  iconDarkAssetKey: z.string().max(1_024).nullable().optional(),
+  iconDarkMimeType: z.string().max(255).nullable().optional(),
   license: z.string().nullable().optional(),
   licenseAuthority: z.string().nullable().optional(),
   signatoryName: z.string().nullable().optional(),
@@ -333,6 +341,8 @@ export async function upsertOperatorSettings(
   db: PostgresJsDatabase,
   patch: UpdateOperatorSettingsInput,
 ) {
+  const profilePatch = updateOperatorProfileSchema.parse(patch)
+  const paymentInstructionsPatch = updateOperatorPaymentInstructionsSchema.parse(patch)
   const paymentDefaultsPatch: UpdateOperatorPaymentDefaultsInput = {}
   if ("customerPaymentPolicy" in patch) {
     paymentDefaultsPatch.customerPaymentPolicy = patch.customerPaymentPolicy
@@ -345,26 +355,8 @@ export async function upsertOperatorSettings(
   }
 
   const [profile, instructions, defaults] = await Promise.all([
-    upsertOperatorProfile(db, {
-      name: patch.name,
-      legalName: patch.legalName,
-      vatId: patch.vatId,
-      registrationNumber: patch.registrationNumber,
-      address: patch.address,
-      phone: patch.phone,
-      email: patch.email,
-      website: patch.website,
-      license: patch.license,
-      licenseAuthority: patch.licenseAuthority,
-      signatoryName: patch.signatoryName,
-      signatoryRole: patch.signatoryRole,
-    }),
-    upsertOperatorPaymentInstructions(db, {
-      bankTransferBeneficiary: patch.bankTransferBeneficiary,
-      iban: patch.iban,
-      bank: patch.bank,
-      notes: patch.notes,
-    }),
+    upsertOperatorProfile(db, profilePatch),
+    upsertOperatorPaymentInstructions(db, paymentInstructionsPatch),
     upsertOperatorPaymentDefaults(db, paymentDefaultsPatch),
   ])
   return combineOperatorSettings(profile, instructions, defaults)

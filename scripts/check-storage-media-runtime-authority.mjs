@@ -38,11 +38,13 @@ if (
   failures.push("Storage contributor must construct its runtime package-side")
 }
 if (
-  !inventoryContributor.includes("createInventoryBrochureRuntime(host.primitives)") ||
+  !inventoryContributor.includes("host.hasRuntimePort?.(documentRendererPort)") ||
+  !inventoryContributor.includes("host.getRuntimePort<DocumentRenderer>(documentRendererPort)") ||
+  !inventoryContributor.includes("createInventoryBrochureRuntime(host.primitives, renderer)") ||
   /runtime\.brochure|host\.capabilities|loadInventoryRuntime/.test(inventoryContributor)
 ) {
   failures.push(
-    "Inventory brochure printer port must be derived package-side from generic primitives",
+    "Inventory brochure printer port must be derived package-side from generic primitives and the optional document renderer port",
   )
 }
 
@@ -56,6 +58,18 @@ for (const legacyToken of ["MEDIA_BUCKET", "DOCUMENTS_BUCKET", "R2Bucket", "crea
 }
 for (const token of policy.brochureRuntimeTokens) {
   if (!brochureRuntime.includes(token)) failures.push(`Brochure runtime must preserve ${token}`)
+}
+for (const legacyToken of [
+  "@voyant-travel/cloud-sdk",
+  "VOYANT_API_KEY",
+  "VOYANT_CLOUD_API_KEY",
+  "VOYANT_CLOUD_API_URL",
+  "VOYANT_CLOUD_USER_AGENT",
+  "voyant-cloud-browser",
+]) {
+  if (brochureRuntime.includes(legacyToken)) {
+    failures.push(`Brochure runtime must not depend on legacy cloud renderer token ${legacyToken}`)
+  }
 }
 
 if (!nodeRuntime.includes('from "@voyant-travel/storage/runtime"')) {

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: inventory; the import-cheap package manifest keeps routes, events, actions, extensions, and runtime-port declarations co-located for deterministic graph review.
 import { actionLedgerInventoryDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
 import { bookingsInventoryRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
@@ -9,6 +10,7 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
+import { documentRendererPort } from "@voyant-travel/core/runtime-port"
 import { financeInventoryPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"
@@ -22,7 +24,10 @@ export const inventoryVoyantModule = defineModule({
   id: "@voyant-travel/inventory",
   packageName: "@voyant-travel/inventory",
   localId: "inventory",
-  runtimePorts: [requirePort(inventoryRuntimePort)],
+  runtimePorts: [
+    requirePort(inventoryRuntimePort),
+    requirePort(documentRendererPort, { optional: true }),
+  ],
   provides: {
     capabilities: ["inventory.data-owner"],
     ports: [

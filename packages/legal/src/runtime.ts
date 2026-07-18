@@ -1,6 +1,9 @@
 import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-travel/bookings"
-import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import {
+  createHttpDocumentRendererFromEnv,
+  type DocumentRenderer,
+} from "@voyant-travel/core/document-rendering"
 import { readPolicySourceFromInternalNotes } from "@voyant-travel/inventory/booking-payment-policy-runtime"
 import {
   getOperatorPaymentInstructions,
@@ -20,18 +23,10 @@ import type { CreateLegalApiModuleOptions } from "./index.js"
 import {
   type AutoGenerateContractOptions,
   type ContractDocumentGenerator,
-  createBrowserRenderedPdfContractDocumentSerializer,
   createPdfContractDocumentGenerator,
+  createRenderedPdfContractDocumentSerializer,
   createStorageBackedContractDocumentGenerator,
 } from "./index.js"
-
-const DEFAULT_CONTRACT_SERIES = {
-  name: "customer-contracts",
-  prefix: `CTR-${new Date().getFullYear()}-`,
-  scope: "customer",
-} as const
-const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
-const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
 
 export interface LegalRuntime {
   legal: CreateLegalApiModuleOptions
@@ -41,13 +36,9 @@ export interface LegalRuntime {
 
 export const DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
   enabled: true,
-  templateSlug: "customer-sales-agreement",
   scope: "customer",
-  language: "en",
-  seriesPrefixScope: {
-    prefix: DEFAULT_CONTRACT_SERIES.prefix,
-    scope: DEFAULT_CONTRACT_SERIES.scope,
-  },
+  requireExplicitDefaultTemplate: true,
+  requireNumberSeries: true,
   resolveVariables: buildContractVariableBindings({
     resolveOperatorProfile: (db) => getOperatorProfile(db),
     resolveOperatorPaymentInstructions: (db) => getOperatorPaymentInstructions(db),
@@ -55,18 +46,44 @@ export const DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions
   }),
 }
 
+function createDefaultAutoGenerateContractOptions(
+  primitives: VoyantRuntimeHostPrimitives,
+): AutoGenerateContractOptions {
+  return {
+    ...DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
+    resolveVariables: buildContractVariableBindings({
+      resolveOperatorProfile: (db) => getOperatorProfile(db),
+      resolveOperatorPaymentInstructions: (db) => getOperatorPaymentInstructions(db),
+      resolvePaymentPolicySource: (internalNotes) =>
+        readPolicySourceFromInternalNotes(internalNotes),
+      resolveOperatorBrandAssetUrl: async (asset, bindings) => {
+        const storage = primitives.storage.resolve(bindings, "media") as
+          | StorageProvider
+          | null
+          | undefined
+        const body = await storage?.get(asset.assetKey)
+        if (!body) return null
+        return arrayBufferDataUrl(body, asset.mimeType ?? "image/png")
+      },
+    }),
+  }
+}
+
 /** Build all Legal providers for the standard Node product. */
-export function createLegalRuntime(primitives: VoyantRuntimeHostPrimitives): LegalRuntime {
+export function createLegalRuntime(
+  primitives: VoyantRuntimeHostPrimitives,
+  documentRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
+): LegalRuntime {
   return {
     legal: {
       resolveDocumentDownloadUrl: primitives.storage.downloadUrl,
       resolveDocumentStorage: (bindings) => resolveStorage(primitives, bindings),
       resolveDocumentGenerator: (bindings) =>
-        resolveContractDocumentGenerator(primitives, bindings),
+        resolveContractDocumentGenerator(primitives, bindings, documentRenderer),
       resolveBookingPiiService: (bindings) => resolveBookingPiiService(primitives, bindings),
     },
-    contractDocument: createContractDocumentRoutesOptions(primitives),
-    bookingContractSubscriber: createBookingContractSubscriberHost(primitives),
+    contractDocument: createContractDocumentRoutesOptions(primitives, documentRenderer),
+    bookingContractSubscriber: createBookingContractSubscriberHost(primitives, documentRenderer),
   }
 }
 
@@ -78,8 +95,9 @@ export function generateContractPdfForBooking(
   eventBus: EventBus | undefined,
   bookingId: string,
   options: { force?: boolean } = {},
+  documentRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
 ): Promise<{ contractId: string; attachmentId: string } | null> {
-  return createContractDocumentServiceForBindings(primitives, bindings).generate(
+  return createContractDocumentServiceForBindings(primitives, bindings, documentRenderer).generate(
     db,
     eventBus,
     bookingId,
@@ -90,22 +108,25 @@ export function generateContractPdfForBooking(
 export function resolveContractDocumentGenerator(
   primitives: VoyantRuntimeHostPrimitives,
   bindings: unknown,
+  configuredRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
 ): ContractDocumentGenerator | undefined {
   const storage = resolveStorage(primitives, bindings)
   if (!storage) return undefined
 
   return async (context) => {
-    const cloudClient = resolveCloudPdfClient(primitives.env(bindings))
-    if (cloudClient) {
+    const renderer =
+      (configuredRenderer ? await configuredRenderer : null) ??
+      createHttpDocumentRendererFromEnv(primitives.env(bindings))
+    if (renderer) {
       return createStorageBackedContractDocumentGenerator({
         storage,
-        serializer: createBrowserRenderedPdfContractDocumentSerializer({ cloudClient }),
+        serializer: createRenderedPdfContractDocumentSerializer({ renderer }),
       })(context)
     }
 
     console.warn(
-      "[operator] VOYANT_CLOUD_PDF_API_KEY not set - using basic pdf-lib serializer. " +
-        "Contract PDFs will be unstyled. Set the key to enable browser-rendered output.",
+      "[legal] No documents.renderer port or VOYANT_DOCUMENT_RENDERER_URL configured; " +
+        "using the basic pdf-lib contract serializer.",
     )
     return createPdfContractDocumentGenerator({ storage })(context)
   }
@@ -125,6 +146,7 @@ export async function resolveBookingPiiService(
 
 function createContractDocumentRoutesOptions(
   primitives: VoyantRuntimeHostPrimitives,
+  documentRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
 ): ContractDocumentRoutesOptions {
   return {
     generateContract: (bindings, db, eventBus, bookingId, options) =>
@@ -135,9 +157,10 @@ function createContractDocumentRoutesOptions(
         eventBus as EventBus | undefined,
         bookingId,
         options,
+        documentRenderer,
       ),
     previewContract: (bindings, db, bookingId) =>
-      createContractDocumentServiceForBindings(primitives, bindings).preview(
+      createContractDocumentServiceForBindings(primitives, bindings, documentRenderer).preview(
         db as PostgresJsDatabase,
         bookingId,
       ),
@@ -162,10 +185,15 @@ function createContractDocumentRoutesOptions(
 
 function createBookingContractSubscriberHost(
   primitives: VoyantRuntimeHostPrimitives,
+  documentRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
 ): LegalBookingContractSubscriberHost {
   return {
     createRuntime(bindings): LegalBookingContractSubscriberRuntime | null {
-      const documentGenerator = resolveContractDocumentGenerator(primitives, bindings)
+      const documentGenerator = resolveContractDocumentGenerator(
+        primitives,
+        bindings,
+        documentRenderer,
+      )
       if (!documentGenerator) {
         console.error(
           "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
@@ -173,7 +201,7 @@ function createBookingContractSubscriberHost(
         return null
       }
       return {
-        options: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
+        options: createDefaultAutoGenerateContractOptions(primitives),
         withDb: (runtimeBindings, operation) =>
           primitives.database.transaction(runtimeBindings, (db) =>
             operation(db as PostgresJsDatabase),
@@ -181,7 +209,7 @@ function createBookingContractSubscriberHost(
         documentGenerator,
         documentStorage: resolveStorage(primitives, bindings),
         resolveBookingPiiService: () => resolveBookingPiiService(primitives, bindings),
-        resolveVariables: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
+        resolveVariables: createDefaultAutoGenerateContractOptions(primitives).resolveVariables,
         resolveActionLedgerContext: (event) => ({
           userId: event.actorId,
           actor: event.actorId ? "staff" : "system",
@@ -196,11 +224,12 @@ function createBookingContractSubscriberHost(
 function createContractDocumentServiceForBindings(
   primitives: VoyantRuntimeHostPrimitives,
   bindings: unknown,
+  documentRenderer?: DocumentRenderer | Promise<DocumentRenderer> | null,
 ) {
   return createContractDocumentService({
-    resolveGenerator: () => resolveContractDocumentGenerator(primitives, bindings) ?? null,
-    autoGenerateOptions: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
-    defaultSeries: DEFAULT_CONTRACT_SERIES,
+    resolveGenerator: () =>
+      resolveContractDocumentGenerator(primitives, bindings, documentRenderer) ?? null,
+    autoGenerateOptions: createDefaultAutoGenerateContractOptions(primitives),
     resolveBindings: () => primitives.env(bindings),
     resolveBookingPiiService: () => resolveBookingPiiService(primitives, bindings),
   })
@@ -216,37 +245,13 @@ function resolveStorage(
   )
 }
 
-function resolveCloudPdfClient(env: Readonly<Record<string, unknown>>): VoyantCloudClient | null {
-  const apiKey =
-    nonEmpty(env.VOYANT_CLOUD_PDF_API_KEY) ??
-    (nonEmpty(env.VOYANT_ADMIN_AUTH_MODE) === "voyant-cloud"
-      ? (nonEmpty(env.VOYANT_API_KEY) ?? nonEmpty(env.VOYANT_CLOUD_API_KEY))
-      : undefined)
-  if (!apiKey) return null
-
-  const cacheOwner = env as object
-  const cached = CLIENT_CACHE.get(cacheOwner)?.get(apiKey)
-  if (cached) return cached
-  const baseUrl = nonEmpty(env.VOYANT_CLOUD_API_URL)
-  const userAgent = nonEmpty(env.VOYANT_CLOUD_USER_AGENT)
-  const client = getVoyantCloudClient(
-    {
-      VOYANT_CLOUD_API_KEY: apiKey,
-      ...(baseUrl ? { VOYANT_CLOUD_API_URL: baseUrl } : {}),
-      ...(userAgent ? { VOYANT_CLOUD_USER_AGENT: userAgent } : {}),
-    },
-    { apiKey },
-  )
-  const clients = CLIENT_CACHE.get(cacheOwner) ?? new Map<string, VoyantCloudClient>()
-  clients.set(apiKey, client)
-  CLIENT_CACHE.set(cacheOwner, clients)
-  return client
-}
-
-function nonEmpty(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined
-  const trimmed = value.trim()
-  return trimmed && !LOCAL_PLACEHOLDER_KEYS.has(trimmed) ? trimmed : undefined
+function arrayBufferDataUrl(body: ArrayBuffer, mimeType: string): string {
+  const bytes = new Uint8Array(body)
+  let binary = ""
+  for (let offset = 0; offset < bytes.length; offset += 32_768) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32_768))
+  }
+  return `data:${mimeType};base64,${btoa(binary)}`
 }
 
 const MIME_BY_EXT: Readonly<Record<string, string>> = {

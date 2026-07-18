@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest"
-
+import { operatorProfile } from "./schema.js"
 import {
   toPublicOperatorProfile,
   updateOperatorPaymentDefaultsSchema,
   updateOperatorProfileSchema,
+  upsertOperatorSettings,
 } from "./service.js"
 
 // Minimal row shape the DTO mapper reads (the full row also has id/timestamps).
@@ -109,5 +110,41 @@ describe("validation schemas", () => {
         customerPaymentPolicy: { deposit: { kind: "bogus" } },
       }).success,
     ).toBe(false)
+  })
+})
+
+describe("upsertOperatorSettings", () => {
+  it("persists every brand asset field through the aggregate settings surface", async () => {
+    const inserted = new Map<unknown, Record<string, unknown>>()
+    const db = {
+      select: () => ({
+        from: () => ({
+          orderBy: () => ({ limit: async () => [] }),
+        }),
+      }),
+      insert: (table: unknown) => ({
+        values: (values: Record<string, unknown>) => ({
+          returning: async () => {
+            inserted.set(table, values)
+            return [values]
+          },
+        }),
+      }),
+    } as never
+    const brandPatch = {
+      logoLightAssetKey: "uploads/logo-light.svg",
+      logoLightMimeType: "image/svg+xml",
+      logoDarkAssetKey: "uploads/logo-dark.svg",
+      logoDarkMimeType: "image/svg+xml",
+      iconLightAssetKey: "uploads/icon-light.png",
+      iconLightMimeType: "image/png",
+      iconDarkAssetKey: "uploads/icon-dark.png",
+      iconDarkMimeType: "image/png",
+    }
+
+    const settings = await upsertOperatorSettings(db, brandPatch)
+
+    expect(inserted.get(operatorProfile)).toEqual(brandPatch)
+    expect(settings).toMatchObject(brandPatch)
   })
 })

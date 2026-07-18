@@ -13,6 +13,12 @@ import {
 } from "@voyant-travel/commerce/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
+  createHttpDocumentRendererFromEnv,
+  type DocumentRenderer,
+  documentRendererPort,
+} from "@voyant-travel/core/document-rendering"
+import type { VoyantPort } from "@voyant-travel/core/project"
+import {
   type FinanceInventoryPaymentPolicyRuntime,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
@@ -33,6 +39,7 @@ import {
 } from "./runtime-ports.js"
 import { productCapabilities, products } from "./schema.js"
 import { productsService } from "./service.js"
+import { createBasicPdfProductBrochurePrinter } from "./tasks/brochure-printers.js"
 import {
   createProductsGeneratePdfWorkflowRuntime,
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
@@ -47,6 +54,8 @@ export interface InventoryRuntimePortContribution {
 
 export interface InventoryRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
+  hasRuntimePort?(port: Pick<VoyantPort<unknown>, "id">): boolean
+  getRuntimePort?<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
 function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): InventoryRuntime {
@@ -57,7 +66,12 @@ function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): Invent
         PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
         createProductsGeneratePdfWorkflowRuntime({
           resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
-          resolvePrinter: () => createProductBrochurePrinter(env),
+          resolvePrinter: () => {
+            const renderer = createHttpDocumentRendererFromEnv(env)
+            return renderer
+              ? createProductBrochurePrinter(renderer)
+              : createBasicPdfProductBrochurePrinter()
+          },
         }),
       )
     },
@@ -68,8 +82,12 @@ function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): Invent
 export function createInventoryRuntimePortContribution(
   host: InventoryRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const renderer =
+    host.hasRuntimePort?.(documentRendererPort) && host.getRuntimePort
+      ? host.getRuntimePort<DocumentRenderer>(documentRendererPort)
+      : null
   const inventory = createInventoryRuntime(host.primitives)
-  const brochure = createInventoryBrochureRuntime(host.primitives)
+  const brochure = createInventoryBrochureRuntime(host.primitives, renderer)
   return {
     [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,
     [commerceInventoryRuntimePort.id]: {

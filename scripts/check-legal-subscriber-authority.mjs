@@ -48,7 +48,7 @@ rejectMatch(
 )
 requireMatch(
   sources.manifest,
-  /runtimePorts:\s*\[requirePort\(legalRuntimePort\)\]/,
+  /runtimePorts:\s*\[[^\]]*requirePort\(legalRuntimePort\)[^\]]*\]/,
   "Legal module must declare its API runtime port",
 )
 requireMatch(
