@@ -12,6 +12,7 @@
     "./checkout-routes": "./src/checkout-routes.ts",
     "./checkout-validation": "./src/checkout-validation.ts",
     "./invoice-fx": "./src/invoice-fx.ts",
+    "./reporting": "./src/reporting.ts",
     "./order-payment-sessions": "./src/order-payment-sessions.ts",
     "./payment-policy": "./src/payment-policy.ts",
     "./payment-policy-cascade": "./src/payment-policy-cascade.ts",
@@ -59,6 +60,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/public-document-delivery": "workspace:^",
+    "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -121,6 +123,11 @@
         "types": "./dist/invoice-fx.d.ts",
         "import": "./dist/invoice-fx.js",
         "default": "./dist/invoice-fx.js"
+      },
+      "./reporting": {
+        "types": "./dist/reporting.d.ts",
+        "import": "./dist/reporting.js",
+        "default": "./dist/reporting.js"
       },
       "./order-payment-sessions": {
         "types": "./dist/order-payment-sessions.d.ts",

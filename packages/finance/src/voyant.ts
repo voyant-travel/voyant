@@ -9,6 +9,11 @@ import {
 import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
 import {
+  financeReceivablesDatasetDefinition,
+  financeReportingTemplates,
+  financeReportingWidgets,
+} from "./reporting-definitions.js"
+import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
@@ -98,6 +103,55 @@ export const financeVoyantModule = defineModule({
       source: "@voyant-travel/finance/schema",
     },
   ],
+  reporting: {
+    datasets: [
+      {
+        id: financeReceivablesDatasetDefinition.id,
+        version: financeReceivablesDatasetDefinition.version,
+        label: financeReceivablesDatasetDefinition.label,
+        description: financeReceivablesDatasetDefinition.description,
+        descriptor: financeReceivablesDatasetDefinition,
+        requiredScopes: financeReceivablesDatasetDefinition.requiredScopes,
+        runtime: {
+          entry: "@voyant-travel/finance/reporting",
+          export: "financeReceivablesDataset",
+        },
+      },
+    ],
+    widgets: financeReportingWidgets.map((widget) => ({
+      id: widget.id,
+      version: widget.version,
+      label: widget.label,
+      description: widget.description,
+      datasetId: widget.query.dataset.id,
+      query: {
+        select: widget.query.select,
+        filters: widget.query.filters,
+        groupBy: widget.query.groupBy,
+        orderBy: widget.query.orderBy,
+        ...(widget.query.limit ? { limit: widget.query.limit } : {}),
+      },
+      visualization: widget.visualization,
+      defaultSize: widget.defaultSize,
+      ...(widget.minimumSize ? { minSize: widget.minimumSize } : {}),
+      ...(widget.maximumSize ? { maxSize: widget.maximumSize } : {}),
+    })),
+    templates: financeReportingTemplates.map((template) => ({
+      id: template.id,
+      version: template.version,
+      label: template.label,
+      description: template.description,
+      requirements: template.widgets.map((widget) => ({
+        kind: "widget" as const,
+        id: widget.source.kind === "preset" ? widget.source.widgetId : widget.id,
+      })),
+      widgets: template.widgets.flatMap((widget) =>
+        widget.source.kind === "preset"
+          ? [{ id: widget.id, widgetId: widget.source.widgetId, layout: widget.layout }]
+          : [],
+      ),
+    })),
+  },
   migrations: [
     {
       id: "@voyant-travel/finance#migrations",

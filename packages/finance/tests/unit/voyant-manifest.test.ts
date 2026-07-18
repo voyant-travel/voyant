@@ -55,6 +55,24 @@ describe("finance deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/finance#schema" }],
       migrations: [{ id: "@voyant-travel/finance#migrations" }],
+      reporting: {
+        datasets: [
+          {
+            id: "finance.receivables",
+            version: 1,
+            runtime: {
+              entry: "@voyant-travel/finance/reporting",
+              export: "financeReceivablesDataset",
+            },
+          },
+        ],
+        widgets: expect.arrayContaining([
+          expect.objectContaining({ id: "finance.outstanding-by-currency" }),
+          expect.objectContaining({ id: "finance.net-issued-trend" }),
+          expect.objectContaining({ id: "finance.invoice-status-breakdown" }),
+        ]),
+        templates: [expect.objectContaining({ id: "finance.overview" })],
+      },
       setupMigrations: [
         {
           id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",

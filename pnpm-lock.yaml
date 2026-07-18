@@ -2175,6 +2175,9 @@ importers:
       '@voyant-travel/public-document-delivery':
         specifier: workspace:^
         version: link:../public-document-delivery
+      '@voyant-travel/reporting-contracts':
+        specifier: workspace:^
+        version: link:../reporting-contracts
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
