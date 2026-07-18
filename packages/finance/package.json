@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/finance",
-  "version": "0.165.0",
+  "version": "0.168.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -32,7 +32,8 @@
     "./setup/travel-credits": "./src/service-travel-credits-migration.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/finance.json",
-    "./openapi/admin/booking-tax": "./openapi/admin/booking-tax.json",
+    "./openapi/admin/booking-tax-settings": "./openapi/admin/booking-tax-settings.json",
+    "./openapi/admin/booking-tax-preview": "./openapi/admin/booking-tax-preview.json",
     "./openapi/storefront": "./openapi/storefront/finance.json"
   },
   "scripts": {
@@ -56,6 +57,7 @@
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/finance-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
@@ -215,7 +217,8 @@
         "default": "./dist/voyant.js"
       },
       "./openapi/admin": "./openapi/admin/finance.json",
-      "./openapi/admin/booking-tax": "./openapi/admin/booking-tax.json",
+      "./openapi/admin/booking-tax-settings": "./openapi/admin/booking-tax-settings.json",
+      "./openapi/admin/booking-tax-preview": "./openapi/admin/booking-tax-preview.json",
       "./openapi/storefront": "./openapi/storefront/finance.json"
     },
     "main": "./dist/index.js",

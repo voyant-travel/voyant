@@ -40,6 +40,7 @@ export interface AccessCatalogAction {
   label: string
   description: string
   sensitive?: boolean
+  remoteSafe?: boolean
   wildcard?: "allow" | "explicit"
 }
 
@@ -50,6 +51,7 @@ export interface AccessCatalogResource {
   label: string
   description: string
   wildcard: "allow" | "explicit-resource"
+  remoteSafe?: boolean
   actions: readonly AccessCatalogAction[]
   legacyActions?: readonly string[]
 }

@@ -279,6 +279,18 @@ function createBuiltInSettingsPage(
           )
         },
       }
+    case "invoicing":
+      return {
+        ...base,
+        routeMessagesProvider: () =>
+          import("@voyant-travel/finance-react/i18n").then((module) => ({
+            default: module.FinanceUiMessagesProvider,
+          })),
+        page: () =>
+          import("@voyant-travel/finance-react/components/invoicing-page").then((module) =>
+            adminRoutePageModule(module.InvoicingPage),
+          ),
+      }
     case "taxes":
       return {
         ...base,

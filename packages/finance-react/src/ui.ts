@@ -85,6 +85,11 @@ export {
   InvoicesTableSkeleton,
 } from "./components/invoices-page-skeleton.js"
 export {
+  InvoicingPage,
+  type InvoicingPageApi,
+  type InvoicingPageProps,
+} from "./components/invoicing-page.js"
+export {
   type PaymentDetailCardProps,
   PaymentDetailHeader,
   type PaymentDetailHeaderProps,

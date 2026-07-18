@@ -1,5 +1,100 @@
 # @voyant-travel/finance-react
 
+## 0.168.0
+
+### Minor Changes
+
+- 158c3a0: Move the finance tax-settings admin surface and drop the operator FX reference-source setting.
+
+  - **Tax settings moved to the finance surface.** `GET`/`PATCH /tax-settings`
+    now serve from `/v1/admin/finance/tax-settings` instead of
+    `/v1/admin/bookings/tax-settings`. On the managed operator runtime admin
+    routes dispatch per-unit with prefix-first-match, so the bookings package's
+    `GET /{id}` route was capturing `/tax-settings` (id = "tax-settings") and
+    returning 404 — leaving the Settings → Invoicing controls permanently
+    disabled. The booking-tax extension now splits into two separate
+    extensions — `finance.booking-tax-settings-extension` (module `finance`,
+    the `GET`/`PATCH tax-settings` routes on `mount: "finance"`) and
+    `finance.booking-tax-preview-extension` (module `bookings`, the
+    `POST /v1/admin/bookings/tax-preview` route, where it does not collide and
+    `bookings-react` consumes it). They must be distinct extensions because the
+    selected-graph composition yields one composed extension per `defineExtension`
+    (keyed on localId); collapsing both facets into one extension dropped the
+    preview route. The operator standard distribution registers both, attributing
+    settings to finance + operator-settings and preview to finance + bookings.
+  - **Operator FX reference-source setting removed.** The FX reference _source_
+    is not an operator choice: Voyant Cloud serves managed FX by default,
+    self-hosters supply their own adapter through the `finance.fx-reference.runtime`
+    port, and for jurisdictions like RO the source (BNR) is legally mandated. The
+    operator-facing "Reference exchange rates" control, the `fxReferenceSource`
+    field on the tax-settings surface, and the `fx_reference_source` column are
+    removed (additive drop migration). The `finance.fx-reference.runtime` port and
+    its `resolveReferenceRate` helper are kept as the self-host/managed adapter
+    seam; the source is now the host adapter's own and reported only as an output
+    label on the returned rate.
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/bookings-react@0.168.0
+  - @voyant-travel/inventory-react@0.50.0
+  - @voyant-travel/distribution-react@0.158.0
+  - @voyant-travel/operations-react@0.49.0
+
+## 0.167.0
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/bookings-react@0.167.0
+  - @voyant-travel/inventory-react@0.49.0
+  - @voyant-travel/distribution-react@0.157.0
+  - @voyant-travel/operations-react@0.48.0
+
+## 0.166.0
+
+### Minor Changes
+
+- 3062a73: Add an operator-configurable official FX reference-rate source and a dedicated
+  Invoicing settings page.
+
+  A new finance operator setting `fx.referenceSource` (`ecb` | `bnr`, default
+  `ecb`) lives on the finance operator-settings row, is normalized on read, exposed
+  through the finance operator-settings runtime port, and surfaced on the
+  `/tax-settings` admin GET/PATCH schema.
+
+  Finance also gains a `finance.fx-reference.runtime` port plus a typed
+  `resolveReferenceRate({ base, quote, date })` helper that reads the operator's
+  configured source and delegates to a host-provided implementation; hosts wire it
+  to their own FX data source. When no provider is wired, an explicit reference-rate
+  request throws a typed `FinanceFxReferenceSourceUnavailableError`. No existing
+  invoice math is wired to it — this ships the setting and seam only, with zero
+  behaviour change for existing deployments.
+
+  Invoicing configuration moves off the Taxes settings page onto a new dedicated
+  **Invoicing** settings page (registered in the admin settings navigation the same
+  way Taxes is). The invoicing-mode section moves there and the new reference-rate
+  Select is added alongside it (EN + RO); both read/write the shared `/tax-settings`
+  surface. The Taxes page returns to purely tax content.
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [0868f18]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/admin@0.126.2
+  - @voyant-travel/i18n@0.112.0
+  - @voyant-travel/bookings-react@0.166.0
+  - @voyant-travel/inventory-react@0.48.0
+  - @voyant-travel/distribution-react@0.156.0
+  - @voyant-travel/operations-react@0.47.0
+
 ## 0.165.0
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/flights",
-  "version": "0.165.0",
+  "version": "0.168.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -171,19 +171,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21"
-  },
-  "peerDependenciesMeta": {
-    "@voyant-travel/plugin-netopia": {
-      "optional": true
-    }
   },
   "repository": {
     "type": "git",

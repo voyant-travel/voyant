@@ -164,6 +164,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
   VOYANT_GRAPH_INVALID_FACET: "A supported v1 facet does not match its closed metadata contract.",
   VOYANT_GRAPH_INVALID_ID: "A graph unit id is missing or is not a canonical package graph id.",
+  VOYANT_GRAPH_INVALID_PROVIDER_SELECTION:
+    "A deployment provider role is missing, unsupported, or ambiguously selected.",
   VOYANT_GRAPH_INVALID_ROUTE_BUNDLE:
     "An API route bundle declaration does not match the v1 route metadata contract.",
   VOYANT_GRAPH_INVALID_SCHEMA_VERSION: "A graph declaration uses an unsupported schema version.",
@@ -709,6 +711,7 @@ export async function resolveDeploymentGraph(
     ...validatePortClosure(selectedUnits),
     ...validateDuplicateEntityIds(selectedUnits),
     ...validateAccessCatalog(selectedUnits, input.project.access?.presets ?? []),
+    ...validateDeploymentProviderSelections(selectedUnits, providers),
     ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
       target,
@@ -2745,6 +2748,7 @@ function compileAccessCatalog(
           label: resource.label ?? titleFromPermissionName(resource.resource),
           description: resource.description ?? `Access ${resource.resource} resources.`,
           wildcard: resource.wildcard ?? "allow",
+          ...(resource.remoteSafe ? { remoteSafe: true as const } : {}),
           actions: resource.actions
             .map((action) => {
               const name = accessActionName(action)
@@ -2762,6 +2766,9 @@ function compileAccessCatalog(
                       `${titleFromPermissionName(name)} access to ${resource.resource}.`),
                 ...(typeof action !== "string" && action.sensitive
                   ? { sensitive: true as const }
+                  : {}),
+                ...(typeof action !== "string" && action.remoteSafe
+                  ? { remoteSafe: true as const }
                   : {}),
                 ...(typeof action !== "string" && action.wildcard === "explicit"
                   ? { wildcard: "explicit" as const }
@@ -3070,6 +3077,63 @@ function validatePortClosure(
     }
   }
   return diagnostics
+}
+
+function validateDeploymentProviderSelections(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>,
+): VoyantGraphDiagnostic[] {
+  return [...validatePaymentProviderSelection(units, providers)]
+}
+
+function validatePaymentProviderSelection(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>,
+): VoyantGraphDiagnostic[] {
+  const paymentCapable = units.some(
+    (unit) =>
+      unit.provides.capabilities.includes("finance.payment-sessions") ||
+      unit.requires.capabilities.includes("finance.payment-sessions"),
+  )
+  if (!paymentCapable) return []
+
+  const selected = providers.payments
+  if (!selected || selected === "none") {
+    return [
+      diagnostic({
+        code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+        facet: "deployment.providers.payments",
+        message:
+          "Payment-capable graphs must explicitly select one active deployment.providers.payments adapter.",
+        hint: 'Set deployment.providers.payments to "voyant-payments", "netopia", or "custom"; environment variables never select a payment processor.',
+      }),
+    ]
+  }
+
+  if (selected === "custom") return []
+
+  const selectedProviderDeclarations = units.flatMap((unit) =>
+    (unit.providers ?? [])
+      .filter(
+        (provider) =>
+          provider.selection?.role === "payments" && provider.selection.value === selected,
+      )
+      .map((provider) => ({ unitId: unit.id, providerId: provider.id })),
+  )
+  if (selectedProviderDeclarations.length !== 1) {
+    return [
+      diagnostic({
+        code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+        facet: "providers.selection",
+        message: `deployment.providers.payments=${JSON.stringify(
+          selected,
+        )} must match exactly one selected payment adapter provider; found ${selectedProviderDeclarations.length}.`,
+        hint: "Select exactly one adapter package for the configured payment provider, or use custom for an operator-owned adapter.",
+      }),
+    ]
+  }
+
+  return []
 }
 
 function validateDuplicateEntityIds(

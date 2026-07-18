@@ -75,24 +75,27 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
     return c.json({ data: app }, 201)
   })
 
-  routes.get("/oauth/authorize", async (c) => {
+  // Consent approval mutates state (installation, grants, authorization code),
+  // so it must never be reachable through read-scoped GET requests. The admin
+  // consent UI submits the approval and performs the redirect itself.
+  routes.post("/oauth/authorize", async (c) => {
     if (!oauth) return c.json({ error: "App OAuth is not configured" }, 501)
-    const query = parseQuery(c, appOAuthAuthorizeQuerySchema)
+    const body = await parseJsonBody(c, appOAuthAuthorizeQuerySchema)
     const result = await oauth.authorize(c.get("db"), {
-      appId: query.client_id,
-      releaseId: query.release_id,
-      redirectUri: query.redirect_uri,
-      state: query.state,
-      codeChallenge: query.code_challenge,
-      codeChallengeMethod: query.code_challenge_method,
-      actorId: query.actor_id,
-      operatorGrantedScopes: splitScopes(query.operator_scopes),
-      grantedOptionalScopes: splitScopes(query.optional_scopes),
+      appId: body.client_id,
+      releaseId: body.release_id,
+      redirectUri: body.redirect_uri,
+      state: body.state,
+      codeChallenge: body.code_challenge,
+      codeChallengeMethod: body.code_challenge_method,
+      actorId: body.actor_id,
+      operatorGrantedScopes: splitScopes(body.operator_scopes),
+      grantedOptionalScopes: splitScopes(body.optional_scopes),
     })
     const redirectUrl = new URL(result.redirectUri)
     redirectUrl.searchParams.set("code", result.code)
     redirectUrl.searchParams.set("state", result.state)
-    return c.redirect(redirectUrl.toString(), 302)
+    return c.json({ data: { redirectUrl: redirectUrl.toString(), state: result.state } }, 200)
   })
 
   routes.post("/oauth/token", async (c) => {

@@ -1,5 +1,11 @@
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it } from "vitest"
-import { intersectAppTokenScopes } from "./oauth-service.js"
+import {
+  createAppOAuthService,
+  intersectAppTokenScopes,
+  readStoredScopes,
+} from "./oauth-service.js"
+import { appReleases } from "./schema.js"
 
 describe("app OAuth online token scope intersection", () => {
   it("never exceeds either app grants, viewer grants, or contextual restrictions", () => {
@@ -18,5 +24,60 @@ describe("app OAuth online token scope intersection", () => {
         ["bookings:read", "invoices:read"],
       ),
     ).toEqual(["bookings:read"])
+  })
+})
+
+describe("stored online token scopes", () => {
+  it("round-trips the minted scope set and ignores malformed metadata", () => {
+    expect(readStoredScopes({ scopeCount: 1, scopes: ["bookings:read"] })).toEqual([
+      "bookings:read",
+    ])
+    expect(readStoredScopes({ scopes: ["bookings:read", 7, null] })).toEqual(["bookings:read"])
+    expect(readStoredScopes({ scopeCount: 2 })).toBeNull()
+    expect(readStoredScopes({ scopes: "bookings:read" })).toBeNull()
+  })
+})
+
+describe("authorization release lifecycle", () => {
+  function dbWithRelease(state: string): PostgresJsDatabase {
+    const release = {
+      id: "apprel_1",
+      appId: "app_1",
+      state,
+      releaseVersion: "1.0.0",
+    }
+    const db = Object.create(null) as PostgresJsDatabase
+    Object.assign(db, {
+      select: () => ({
+        from: (table: unknown) => ({
+          where: () => ({
+            limit: async () => (table === appReleases ? [release] : []),
+          }),
+        }),
+      }),
+    })
+    return db
+  }
+
+  const authorizeInput = {
+    appId: "app_1",
+    releaseId: "apprel_1",
+    redirectUri: "https://app.example.com/callback",
+    state: "state-1",
+    codeChallenge: "c".repeat(43),
+    codeChallengeMethod: "S256" as const,
+    actorId: "user_1",
+    operatorGrantedScopes: [],
+    grantedOptionalScopes: [],
+  }
+
+  it.each(["suspended", "yanked"])("rejects a %s release before any side effect", async (state) => {
+    const service = createAppOAuthService({
+      accessCatalog: { resources: [], presets: [] },
+      deploymentId: "dep_1",
+    })
+    await expect(service.authorize(dbWithRelease(state), authorizeInput)).rejects.toMatchObject({
+      status: 409,
+    })
   })
 })

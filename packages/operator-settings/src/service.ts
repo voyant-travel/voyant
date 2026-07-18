@@ -203,14 +203,13 @@ export async function resolveBookingTaxSettings(
 }
 
 function normalizeInvoicingMode(value: string | null | undefined): "direct" | "proforma-first" {
-  return value === "proforma-first" ? "proforma-first" : "direct"
+  return value === "direct" ? "direct" : "proforma-first"
 }
 
 /**
- * Resolve just the operator invoicing mode. Defaults to `direct`
- * (zero behaviour change) when no settings row exists. Provided
- * through the finance operator-settings runtime port so the finance
- * proforma-conversion subscriber can gate auto-conversion on it.
+ * Resolve just the operator invoicing mode. Defaults to `proforma-first`
+ * (the historical bank-transfer behaviour) when no settings row exists.
+ * Provided through the finance operator-settings runtime port.
  */
 export async function resolveInvoicingMode(
   db: PostgresJsDatabase,

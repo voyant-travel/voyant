@@ -1,5 +1,54 @@
 # @voyant-travel/trips
 
+## 0.159.0
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/operator-settings@0.9.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/commerce@0.39.1
+  - @voyant-travel/flights@0.168.0
+  - @voyant-travel/inventory@0.13.5
+  - @voyant-travel/storefront@0.170.0
+  - @voyant-travel/bookings@0.168.0
+
+## 0.158.0
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/commerce@0.39.0
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/operator-settings@0.8.0
+  - @voyant-travel/inventory@0.13.4
+  - @voyant-travel/storefront@0.169.0
+  - @voyant-travel/catalog@0.165.0
+  - @voyant-travel/flights@0.167.0
+  - @voyant-travel/bookings@0.167.0
+
+## 0.157.0
+
+### Minor Changes
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/commerce@0.38.0
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/operator-settings@0.7.0
+  - @voyant-travel/payments@0.2.0
+  - @voyant-travel/flights@0.166.0
+  - @voyant-travel/inventory@0.13.3
+  - @voyant-travel/storefront@0.168.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/bookings@0.166.0
+
 ## 0.156.0
 
 ### Patch Changes

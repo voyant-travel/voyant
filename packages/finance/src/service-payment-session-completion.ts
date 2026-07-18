@@ -46,6 +46,8 @@ export const financePaymentSessionCompletionService = {
       return null
     }
 
+    const shouldEmitPaymentCompleted = data.status === "paid" && session.status !== "paid"
+
     const txResult = await db.transaction(async (tx) => {
       let authorizationId = session.paymentAuthorizationId
       let captureId = session.paymentCaptureId
@@ -349,7 +351,7 @@ export const financePaymentSessionCompletionService = {
     // Some aggregate flows, such as composed trips, intentionally use a
     // generic target instead of booking/order/invoice columns; those still
     // need the completion event keyed by targetType/targetId.
-    if (data.status === "paid" && txResult.updated) {
+    if (shouldEmitPaymentCompleted && txResult.updated) {
       await runtime.eventBus?.emit(
         "payment.completed",
         buildPaymentCompletedEvent(txResult.updated),

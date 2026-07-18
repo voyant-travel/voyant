@@ -1,5 +1,94 @@
 # @voyant-travel/operator-settings
 
+## 0.9.0
+
+### Minor Changes
+
+- 158c3a0: Move the finance tax-settings admin surface and drop the operator FX reference-source setting.
+
+  - **Tax settings moved to the finance surface.** `GET`/`PATCH /tax-settings`
+    now serve from `/v1/admin/finance/tax-settings` instead of
+    `/v1/admin/bookings/tax-settings`. On the managed operator runtime admin
+    routes dispatch per-unit with prefix-first-match, so the bookings package's
+    `GET /{id}` route was capturing `/tax-settings` (id = "tax-settings") and
+    returning 404 — leaving the Settings → Invoicing controls permanently
+    disabled. The booking-tax extension now splits into two separate
+    extensions — `finance.booking-tax-settings-extension` (module `finance`,
+    the `GET`/`PATCH tax-settings` routes on `mount: "finance"`) and
+    `finance.booking-tax-preview-extension` (module `bookings`, the
+    `POST /v1/admin/bookings/tax-preview` route, where it does not collide and
+    `bookings-react` consumes it). They must be distinct extensions because the
+    selected-graph composition yields one composed extension per `defineExtension`
+    (keyed on localId); collapsing both facets into one extension dropped the
+    preview route. The operator standard distribution registers both, attributing
+    settings to finance + operator-settings and preview to finance + bookings.
+  - **Operator FX reference-source setting removed.** The FX reference _source_
+    is not an operator choice: Voyant Cloud serves managed FX by default,
+    self-hosters supply their own adapter through the `finance.fx-reference.runtime`
+    port, and for jurisdictions like RO the source (BNR) is legally mandated. The
+    operator-facing "Reference exchange rates" control, the `fxReferenceSource`
+    field on the tax-settings surface, and the `fx_reference_source` column are
+    removed (additive drop migration). The `finance.fx-reference.runtime` port and
+    its `resolveReferenceRate` helper are kept as the self-host/managed adapter
+    seam; the source is now the host adapter's own and reported only as an output
+    label on the returned rate.
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/commerce@0.39.1
+
+## 0.8.0
+
+### Minor Changes
+
+- ca3713e: Scope the operator invoicing mode to the deferred bank-transfer payment path.
+
+  Payment method now determines the document flow. Card payments always issue the fiscal invoice at checkout finalize and never consult `invoicing.mode`. Bank transfer (deferred payment) is the configurable path: `proforma-first` (now the default, matching the platform's historical behaviour) issues a proforma at order placement and mints the fiscal invoice on settlement; `direct` issues the fiscal invoice at order placement and collects the transfer against it.
+
+  The mode consult that PR #3462 added to the checkout finalize saga is removed — finalize once again always issues the fiscal invoice (or converts an existing proforma). The mode is instead wired at the bank-transfer issuance site, and its default flips from `direct` to `proforma-first` (schema default, normalization, and an additive migration that also backfills existing rows). The finance proforma-conversion subscriber no longer gates on the mode: any fully-paid proforma converts, which is correct in every mode and avoids stranding a proforma left outstanding across a mode switch.
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/commerce@0.39.0
+  - @voyant-travel/finance@0.167.0
+
+## 0.7.0
+
+### Minor Changes
+
+- 3062a73: Add an operator-configurable official FX reference-rate source and a dedicated
+  Invoicing settings page.
+
+  A new finance operator setting `fx.referenceSource` (`ecb` | `bnr`, default
+  `ecb`) lives on the finance operator-settings row, is normalized on read, exposed
+  through the finance operator-settings runtime port, and surfaced on the
+  `/tax-settings` admin GET/PATCH schema.
+
+  Finance also gains a `finance.fx-reference.runtime` port plus a typed
+  `resolveReferenceRate({ base, quote, date })` helper that reads the operator's
+  configured source and delegates to a host-provided implementation; hosts wire it
+  to their own FX data source. When no provider is wired, an explicit reference-rate
+  request throws a typed `FinanceFxReferenceSourceUnavailableError`. No existing
+  invoice math is wired to it — this ships the setting and seam only, with zero
+  behaviour change for existing deployments.
+
+  Invoicing configuration moves off the Taxes settings page onto a new dedicated
+  **Invoicing** settings page (registered in the admin settings navigation the same
+  way Taxes is). The invoicing-mode section moves there and the new reference-rate
+  Select is added alongside it (EN + RO); both read/write the shared `/tax-settings`
+  surface. The Taxes page returns to purely tax content.
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/commerce@0.38.0
+  - @voyant-travel/finance@0.166.0
+
 ## 0.6.0
 
 ### Minor Changes

@@ -9,7 +9,7 @@ const checker = join(import.meta.dirname, "..", "check-admin-presentation-fallba
 const messagePackages = [
   ["auth-react", 2],
   ["distribution-react", 1],
-  ["finance-react", 2],
+  ["finance-react", 3],
   ["commerce-react", 2],
   ["inventory-react", 2],
 ]

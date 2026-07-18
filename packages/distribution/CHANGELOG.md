@@ -1,5 +1,40 @@
 # @voyant-travel/distribution
 
+## 0.158.0
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/bookings@0.168.0
+  - @voyant-travel/identity@0.168.0
+
+## 0.157.0
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/catalog@0.165.0
+  - @voyant-travel/bookings@0.167.0
+  - @voyant-travel/identity@0.167.0
+
+## 0.156.0
+
+### Patch Changes
+
+- Updated dependencies [04b031d]
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/webhook-delivery@0.4.0
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/bookings@0.166.0
+  - @voyant-travel/identity@0.166.0
+  - @voyant-travel/workflows@0.122.3
+
 ## 0.155.0
 
 ### Patch Changes

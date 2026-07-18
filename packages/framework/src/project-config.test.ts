@@ -7,7 +7,7 @@ describe("framework project config", () => {
 
     expect(project.modules).toHaveLength(STANDARD_OPERATOR_DISTRIBUTION.modules.length)
     expect(project.modules.map((unit) => unit.id)).toContain("@voyant-travel/bookings#extras")
-    expect(project.extensions).toHaveLength(24)
+    expect(project.extensions).toHaveLength(25)
     expect(project.plugins).toEqual([])
     expect(project.productBom).toEqual({
       schemaVersion: "voyant.product-bom-reference.v1",
@@ -21,7 +21,7 @@ describe("framework project config", () => {
       "@voyant-travel/relationships",
     ])
     expect(project.extensions.map((unit) => unit.schemaVersion)).toEqual(
-      Array.from({ length: 24 }, () => "voyant.extension.v1"),
+      Array.from({ length: 25 }, () => "voyant.extension.v1"),
     )
   })
 
@@ -38,7 +38,7 @@ describe("framework project config", () => {
     })
 
     expect(project.modules).toHaveLength(STANDARD_OPERATOR_DISTRIBUTION.modules.length + 1)
-    expect(project.extensions).toHaveLength(25)
+    expect(project.extensions).toHaveLength(26)
     expect(project.plugins).toHaveLength(1)
     expect(project.modules.at(-1)).toMatchObject({
       id: "local/src.modules.team",

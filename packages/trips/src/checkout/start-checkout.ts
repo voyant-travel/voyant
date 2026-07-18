@@ -40,7 +40,7 @@ export async function startTripCheckout(
     currency: pricing.currency,
     amountCents: pricing.totalAmountCents,
     status: "pending",
-    provider: input.intent === "bank_transfer" ? null : "netopia",
+    provider: null,
     paymentMethod,
     payerPersonId: billing.personId ?? null,
     payerOrganizationId: billing.organizationId ?? null,
@@ -69,7 +69,7 @@ export async function startTripCheckout(
         })
       }
     } catch (error) {
-      console.warn("[trips] netopia start failed for trip payment session:", error)
+      console.warn("[trips] payment adapter start failed for trip payment session:", error)
     }
   }
 

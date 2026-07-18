@@ -9,7 +9,7 @@ const operatorRoot = process.cwd()
 describe("Operator project config", () => {
   it("authors only deployment differences", () => {
     expect(config.modules).toHaveLength(44)
-    expect(config.extensions).toHaveLength(24)
+    expect(config.extensions).toHaveLength(25)
     expect(config.plugins).toHaveLength(0)
     expect(config.productBom).toEqual({
       schemaVersion: "voyant.product-bom-reference.v1",
@@ -34,7 +34,7 @@ describe("Operator project config", () => {
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)
-    expect(config.selections?.extensions).toHaveLength(24)
+    expect(config.selections?.extensions).toHaveLength(25)
     expect(config.selections?.plugins).toEqual([])
     expect(config.extensions.every((unit) => unit.schemaVersion === "voyant.extension.v1")).toBe(
       true,

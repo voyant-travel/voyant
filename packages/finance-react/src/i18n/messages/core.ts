@@ -171,6 +171,10 @@ export type TaxesPageMessageKey =
   | "validationPolicyRuleConditionInvalid"
   | "savePolicyProfileFailed"
   | "savePolicyRuleFailed"
+
+export type InvoicingPageMessageKey =
+  | "title"
+  | "description"
   | "invoicingModeTitle"
   | "invoicingModeDescription"
   | "invoicingModeDirect"

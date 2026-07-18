@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/trips",
-  "version": "0.156.0",
+  "version": "0.159.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -68,6 +68,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -76,19 +77,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "@voyant-travel/plugin-netopia": "^0.105.21"
-  },
-  "peerDependenciesMeta": {
-    "@voyant-travel/plugin-netopia": {
-      "optional": true
-    }
   },
   "files": [
     "dist",

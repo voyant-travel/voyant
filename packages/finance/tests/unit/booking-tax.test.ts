@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   computeBookingItemTaxLine,
-  createBookingTaxRoutes,
+  createBookingTaxPreviewRoutes,
+  createBookingTaxSettingsRoutes,
   matchesTaxPolicyCondition,
 } from "../../src/booking-tax.js"
 import { createFinanceApiModule } from "../../src/index.js"
@@ -113,7 +114,7 @@ describe("booking tax helpers", () => {
       })
       .route(
         "/",
-        createBookingTaxRoutes({
+        createBookingTaxPreviewRoutes({
           settings: {
             taxPriceMode: "exclusive",
             taxPolicyProfileId: "profile_1",
@@ -147,15 +148,38 @@ describe("booking tax helpers", () => {
     })
   })
 
+  it("defaults and normalizes the invoicing mode through the settings route", async () => {
+    const db = {} as PostgresJsDatabase
+    const buildApp = (settings: Record<string, unknown>) =>
+      new Hono()
+        .use("*", async (c, next) => {
+          c.set("db", db)
+          await next()
+        })
+        .route("/", createBookingTaxSettingsRoutes({ resolveBookingTaxSettings: () => settings }))
+
+    // Absent → defaults to proforma-first.
+    const missing = await buildApp({ taxPriceMode: "inclusive" }).request("/tax-settings")
+    await expect(missing.json()).resolves.toMatchObject({
+      data: { invoicingMode: "proforma-first" },
+    })
+
+    // Explicit direct → preserved.
+    const direct = await buildApp({ invoicingMode: "direct" }).request("/tax-settings")
+    await expect(direct.json()).resolves.toMatchObject({ data: { invoicingMode: "direct" } })
+  })
+
   it("serves booking tax settings through the configured storage callbacks", async () => {
     let settings = {
       taxPriceMode: "inclusive" as const,
       taxPolicyProfileId: null as string | null,
+      invoicingMode: "proforma-first" as "direct" | "proforma-first",
     }
     const updateBookingTaxSettings = vi.fn(async (_db: PostgresJsDatabase, next) => {
       settings = {
         taxPriceMode: next.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
         taxPolicyProfileId: next.taxPolicyProfileId ?? null,
+        invoicingMode: next.invoicingMode === "direct" ? "direct" : "proforma-first",
       }
       return settings
     })
@@ -167,7 +191,7 @@ describe("booking tax helpers", () => {
       })
       .route(
         "/",
-        createBookingTaxRoutes({
+        createBookingTaxSettingsRoutes({
           resolveBookingTaxSettings: () => settings,
           updateBookingTaxSettings,
         }),
@@ -178,7 +202,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: null,
-        invoicingMode: "direct",
+        invoicingMode: "proforma-first",
       },
     })
 
@@ -188,6 +212,7 @@ describe("booking tax helpers", () => {
       body: JSON.stringify({
         taxPriceMode: "exclusive",
         taxPolicyProfileId: "profile_1",
+        invoicingMode: "direct",
       }),
     })
 
@@ -224,7 +249,7 @@ describe("booking tax helpers", () => {
       data: {
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",
-        invoicingMode: "direct",
+        invoicingMode: "proforma-first",
       },
     })
   })

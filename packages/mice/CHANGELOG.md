@@ -1,5 +1,38 @@
 # @voyant-travel/mice
 
+## 0.24.0
+
+### Patch Changes
+
+- @voyant-travel/accommodations@0.128.0
+- @voyant-travel/distribution@0.158.0
+- @voyant-travel/quotes@0.131.5
+- @voyant-travel/bookings@0.168.0
+- @voyant-travel/operations@0.8.6
+- @voyant-travel/relationships@0.128.5
+
+## 0.23.0
+
+### Patch Changes
+
+- @voyant-travel/accommodations@0.127.0
+- @voyant-travel/distribution@0.157.0
+- @voyant-travel/quotes@0.131.4
+- @voyant-travel/bookings@0.167.0
+- @voyant-travel/operations@0.8.5
+- @voyant-travel/relationships@0.128.4
+
+## 0.22.0
+
+### Patch Changes
+
+- @voyant-travel/distribution@0.156.0
+- @voyant-travel/accommodations@0.126.0
+- @voyant-travel/quotes@0.131.3
+- @voyant-travel/bookings@0.166.0
+- @voyant-travel/operations@0.8.4
+- @voyant-travel/relationships@0.128.3
+
 ## 0.21.0
 
 ### Patch Changes

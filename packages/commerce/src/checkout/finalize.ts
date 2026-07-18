@@ -94,6 +94,13 @@ function buildCheckoutFinalizeDeps(
       const today = new Date().toISOString().slice(0, 10)
       const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
+      // Finalize runs on payment.completed, i.e. the money has settled.
+      // The fiscal invoice is always issued here. The document-flow choice
+      // (proforma-first vs direct) is made earlier, at order placement, and
+      // is scoped to the deferred bank-transfer path — never card. When a
+      // proforma was issued at placement it is converted above via
+      // `convertProformaToInvoice`; this branch only runs for the direct
+      // path, where no proforma exists.
       const invoice = await issueInvoiceFromBooking(
         db,
         {

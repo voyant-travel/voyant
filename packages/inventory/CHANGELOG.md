@@ -1,5 +1,47 @@
 # @voyant-travel/inventory
 
+## 0.13.5
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/operator-settings@0.9.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/commerce@0.39.1
+  - @voyant-travel/bookings@0.168.0
+  - @voyant-travel/operations@0.8.6
+  - @voyant-travel/relationships@0.128.5
+
+## 0.13.4
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/commerce@0.39.0
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/operator-settings@0.8.0
+  - @voyant-travel/catalog@0.165.0
+  - @voyant-travel/bookings@0.167.0
+  - @voyant-travel/operations@0.8.5
+  - @voyant-travel/relationships@0.128.4
+
+## 0.13.3
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/commerce@0.38.0
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/operator-settings@0.7.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/bookings@0.166.0
+  - @voyant-travel/workflows@0.122.3
+  - @voyant-travel/operations@0.8.4
+  - @voyant-travel/relationships@0.128.3
+
 ## 0.13.2
 
 ### Patch Changes

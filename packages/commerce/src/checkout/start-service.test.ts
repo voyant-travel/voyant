@@ -13,7 +13,11 @@ function stubOptions(overrides: Partial<CheckoutStartOptions> = {}): CheckoutSta
       resolvePipeline: vi.fn().mockResolvedValue(null),
       createInquiry: vi.fn().mockResolvedValue(null),
     },
-    resolveBookingTaxSettings: vi.fn(),
+    resolveBookingTaxSettings: vi.fn().mockResolvedValue({
+      taxPriceMode: "inclusive",
+      taxPolicyProfileId: null,
+      invoicingMode: "proforma-first",
+    }),
     getOwnedProductName: vi.fn().mockResolvedValue(null),
     resolveBankTransferInstructions: vi
       .fn()
@@ -369,6 +373,140 @@ describe("startCatalogCheckout", () => {
       reference: "BOOK-BK-1001",
     })
   }, 10000)
+
+  describe("invoicing mode", () => {
+    function bankTransferDb(booking: Record<string, unknown>) {
+      const selectRows = [[booking], []]
+      const nextRows = () => selectRows.shift() ?? []
+      type AwaitableRows = Promise<unknown[]> & { limit: () => Promise<unknown[]> }
+      type SelectChain = { from: () => SelectChain; where: () => AwaitableRows }
+      const selectChain: SelectChain = {
+        from: () => selectChain,
+        where: () => {
+          const rows = nextRows()
+          const result = Promise.resolve(rows) as AwaitableRows
+          result.limit = async () => rows
+          return result
+        },
+      }
+      return {
+        select: () => selectChain,
+        insert: () => ({
+          values: () => ({
+            onConflictDoNothing: () => ({ returning: async () => [] }),
+            returning: async () => [],
+          }),
+        }),
+        update: () => ({ set: () => ({ where: async () => undefined }) }),
+      } as never
+    }
+
+    const booking = {
+      id: "bk_bank",
+      bookingNumber: "BK-1001",
+      status: "on_hold",
+      holdExpiresAt: null,
+      personId: null,
+      organizationId: null,
+      sellAmountCents: 100000,
+      sellCurrency: "EUR",
+      baseCurrency: null,
+      baseSellAmountCents: null,
+      startDate: "2026-09-01",
+    }
+
+    beforeEach(() => {
+      vi.spyOn(financeModule.financeService, "createPaymentSession").mockResolvedValue({
+        id: "ps_bank_transfer",
+      } as never)
+    })
+
+    it("issues a proforma in proforma-first mode (default)", async () => {
+      const seriesSpy = vi
+        .spyOn(financeModule.financeService, "resolveDefaultInvoiceNumberSeries")
+        .mockResolvedValue({ id: "series_proforma" } as never)
+      const proformaSpy = vi
+        .spyOn(financeModule, "issueProformaFromBooking")
+        .mockResolvedValue({ id: "inv_proforma", invoiceNumber: "PF-1001" } as never)
+      const invoiceSpy = vi.spyOn(financeModule, "issueInvoiceFromBooking")
+
+      await startCatalogCheckout(
+        { db: bankTransferDb(booking), env: {}, options: stubOptions() },
+        { bookingId: "bk_bank", paymentIntent: "bank_transfer" },
+      )
+
+      expect(seriesSpy).toHaveBeenCalledWith(expect.anything(), "proforma")
+      expect(proformaSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ bookingId: "bk_bank", invoiceType: "proforma" }),
+        expect.any(Object),
+        expect.any(Object),
+      )
+      expect(invoiceSpy).not.toHaveBeenCalled()
+    })
+
+    it("issues the fiscal invoice directly in direct mode", async () => {
+      const seriesSpy = vi
+        .spyOn(financeModule.financeService, "resolveDefaultInvoiceNumberSeries")
+        .mockResolvedValue({ id: "series_invoice" } as never)
+      const invoiceSpy = vi
+        .spyOn(financeModule, "issueInvoiceFromBooking")
+        .mockResolvedValue({ id: "inv_fiscal", invoiceNumber: "INV-2001" } as never)
+      const proformaSpy = vi.spyOn(financeModule, "issueProformaFromBooking")
+
+      const options = stubOptions({
+        resolveBookingTaxSettings: vi.fn().mockResolvedValue({
+          taxPriceMode: "inclusive",
+          taxPolicyProfileId: null,
+          invoicingMode: "direct",
+        }),
+      })
+
+      const result = await startCatalogCheckout(
+        { db: bankTransferDb(booking), env: {}, options },
+        { bookingId: "bk_bank", paymentIntent: "bank_transfer" },
+      )
+
+      // Direct mode checks the `invoice` series, not the `proforma` one.
+      expect(seriesSpy).toHaveBeenCalledWith(expect.anything(), "invoice")
+      expect(invoiceSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ bookingId: "bk_bank", invoiceType: "invoice" }),
+        expect.any(Object),
+        expect.any(Object),
+      )
+      expect(proformaSpy).not.toHaveBeenCalled()
+      expect(result).toMatchObject({
+        kind: "bank_transfer_instructions",
+        proformaId: "inv_fiscal",
+        proformaNumber: "INV-2001",
+      })
+    })
+
+    it("rejects direct-mode bank transfer when no invoice series is active", async () => {
+      vi.spyOn(financeModule.financeService, "resolveDefaultInvoiceNumberSeries").mockResolvedValue(
+        null as never,
+      )
+      const options = stubOptions({
+        resolveBookingTaxSettings: vi.fn().mockResolvedValue({
+          taxPriceMode: "inclusive",
+          taxPolicyProfileId: null,
+          invoicingMode: "direct",
+        }),
+      })
+
+      const err = await startCatalogCheckout(
+        { db: bankTransferDb(booking), env: {}, options },
+        { bookingId: "bk_bank", paymentIntent: "bank_transfer" },
+      ).catch((e: unknown) => e)
+
+      expect(err).toBeInstanceOf(CatalogCheckoutStartError)
+      expect(err).toMatchObject({
+        code: "bank_transfer_invoice_number_series_missing",
+        status: 422,
+      })
+    })
+  })
 })
 
 describe("createCatalogCheckoutRoutes", () => {

@@ -1,4 +1,8 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 
 const appInstallationLifecyclePayloadSchema = {
   type: "object",
@@ -15,6 +19,16 @@ export const appsVoyantModule = defineModule({
   id: "@voyant-travel/apps",
   packageName: "@voyant-travel/apps",
   localId: "apps",
+  runtimePorts: [
+    requirePort(customFieldValueLifecycleRuntimePort, {
+      optional: true,
+      cardinality: "many",
+    }),
+    requirePort(customFieldValueOperationsRuntimePort, {
+      optional: true,
+      cardinality: "many",
+    }),
+  ],
   api: [
     {
       id: "@voyant-travel/apps#api.admin",
@@ -84,6 +98,81 @@ export const appsVoyantModule = defineModule({
   ],
   access: {
     resources: [
+      {
+        id: "@voyant-travel/apps#access.app-installation",
+        resource: "app-installation",
+        label: "App installation",
+        description: "Read the calling app installation and grant state.",
+        remoteSafe: true,
+        actions: [{ action: "read", label: "Read installation", description: "Read self." }],
+      },
+      {
+        id: "@voyant-travel/apps#access.custom-field-definitions",
+        resource: "custom-field-definitions",
+        label: "Own custom-field definitions",
+        description: "Read and write custom-field definitions owned by the app.",
+        remoteSafe: true,
+        actions: ["read", "write"],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.custom-field-values",
+        resource: "custom-field-values",
+        label: "Own custom-field values",
+        description: "Read and write app-owned custom-field values by target.",
+        remoteSafe: true,
+        actions: ["read", "write", "booking", "person", "organization", "invoice"],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.webhooks",
+        resource: "webhooks",
+        label: "App webhooks",
+        description: "Read webhook health and request replay.",
+        remoteSafe: true,
+        actions: [
+          "read",
+          { action: "replay", label: "Replay webhooks", description: "Replay deliveries." },
+        ],
+      },
+      {
+        id: "@voyant-travel/apps#access.app-audit",
+        resource: "app-audit",
+        label: "App audit history",
+        description: "Read audit history owned by the app.",
+        remoteSafe: true,
+        actions: ["read"],
+      },
+      {
+        id: "@voyant-travel/apps#access.online-token",
+        resource: "online-token",
+        label: "Online token exchange",
+        description: "Exchange admin session context for online app access.",
+        remoteSafe: true,
+        actions: [{ action: "exchange", wildcard: "explicit" }],
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-documents",
+        resource: "finance-documents",
+        label: "Finance documents",
+        description: "Read finance documents visible to remote accounting apps.",
+        remoteSafe: true,
+        actions: ["read"],
+        wildcard: "explicit-resource",
+      },
+      {
+        id: "@voyant-travel/apps#access.finance-actions",
+        resource: "finance-actions",
+        label: "Finance actions",
+        description: "Request approved finance document actions.",
+        remoteSafe: true,
+        actions: [
+          { action: "issue", sensitive: true, wildcard: "explicit" },
+          { action: "retry", sensitive: true, wildcard: "explicit" },
+          { action: "reconcile", sensitive: true, wildcard: "explicit" },
+        ],
+        wildcard: "explicit-resource",
+      },
       {
         id: "@voyant-travel/apps#access.apps",
         resource: "apps",

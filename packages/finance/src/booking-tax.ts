@@ -30,9 +30,11 @@ export type BookingTaxSettings = {
   taxPriceMode?: "inclusive" | "exclusive" | null
   taxPolicyProfileId?: string | null
   /**
-   * Operator invoicing mode. `direct` bills the fiscal invoice
-   * straight away; `proforma-first` issues a proforma and converts it
-   * to a fiscal invoice on full settlement. Absent/null → `direct`.
+   * Operator invoicing mode for the deferred bank-transfer path.
+   * `proforma-first` issues a proforma at order placement and converts it
+   * to a fiscal invoice on full settlement; `direct` issues the fiscal
+   * invoice at order placement. Card payments always invoice directly and
+   * never consult this. Absent/null → `proforma-first`.
    */
   invoicingMode?: InvoicingMode | null
 }
@@ -207,21 +209,8 @@ async function resolveBookingTaxSettingsOrDefault(
   return {
     taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
     taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
-    invoicingMode: settings?.invoicingMode === "proforma-first" ? "proforma-first" : "direct",
+    invoicingMode: settings?.invoicingMode === "direct" ? "direct" : "proforma-first",
   }
-}
-
-/**
- * Resolve just the operator invoicing mode, defaulting to `direct`
- * when no settings row exists. Shared by the proforma-conversion
- * subscriber so it never converts unless the operator opted in.
- */
-export async function resolveInvoicingModeOrDefault(
-  db: PostgresJsDatabase,
-  options: ResolveBookingSellTaxRateOptions = {},
-): Promise<InvoicingMode> {
-  const settings = await resolveBookingTaxSettingsOrDefault(db, options)
-  return settings.invoicingMode
 }
 
 export function computeBookingItemTaxLine(
@@ -397,7 +386,16 @@ async function resolveProductTaxClassRate(
   return resolved ? { ...resolved, priceMode } : null
 }
 
-export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
+/**
+ * Booking tax **settings** routes: `GET`/`PATCH /tax-settings`.
+ *
+ * Mounted on the finance admin surface (`/v1/admin/finance/tax-settings`)
+ * so it lands alongside the other finance-owned settings (tax regimes,
+ * tax-policy-rules, invoice-fx) rather than under `/v1/admin/bookings`,
+ * where the bookings package's `GET /{id}` route would otherwise capture
+ * `/tax-settings` under the managed runtime's prefix-first-match dispatch.
+ */
+export function createBookingTaxSettingsRoutes(options: BookingTaxRouteOptions = {}) {
   const routes = new OpenAPIHono<{
     Variables: {
       db: PostgresJsDatabase
@@ -437,76 +435,136 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
         200,
       )
     })
-    .openapi(previewBookingTaxRoute, async (c) => {
-      const body = c.req.valid("json")
-      const taxRate = await resolveBookingSellTaxRate(
-        c.get("db"),
-        { productId: body.productId },
-        options,
-      )
-      const taxLine = computeBookingItemTaxLine(taxRate, body.subtotalCents, body.currency)
 
-      if (!taxRate || !taxLine) {
-        return c.json(
-          {
-            data: {
-              subtotalCents: body.subtotalCents,
-              taxCents: 0,
-              totalCents: body.subtotalCents,
-              currency: body.currency,
-              taxRate: null,
-            },
-          },
-          200,
-        )
-      }
+  return stampOpenApiRegistryApiId(
+    routes,
+    "@voyant-travel/finance#booking-tax-settings-extension.api",
+  )
+}
 
-      const inclusive = taxLine.includedInPrice
-      const displaySubtotal = inclusive
-        ? Math.max(0, body.subtotalCents - taxLine.amountCents)
-        : body.subtotalCents
-      const total = inclusive ? body.subtotalCents : body.subtotalCents + taxLine.amountCents
+/**
+ * Booking tax **preview** route: `POST /tax-preview`.
+ *
+ * Stays on the bookings admin surface (`/v1/admin/bookings/tax-preview`);
+ * `POST` does not collide with bookings' `GET /{id}`, and
+ * `@voyant-travel/bookings-react` consumes it there.
+ */
+export function createBookingTaxPreviewRoutes(options: BookingTaxRouteOptions = {}) {
+  const routes = new OpenAPIHono<{
+    Variables: {
+      db: PostgresJsDatabase
+    }
+  }>({ defaultHook: openApiValidationHook }).openapi(previewBookingTaxRoute, async (c) => {
+    const body = c.req.valid("json")
+    const taxRate = await resolveBookingSellTaxRate(
+      c.get("db"),
+      { productId: body.productId },
+      options,
+    )
+    const taxLine = computeBookingItemTaxLine(taxRate, body.subtotalCents, body.currency)
 
+    if (!taxRate || !taxLine) {
       return c.json(
         {
           data: {
-            subtotalCents: displaySubtotal,
-            taxCents: taxLine.amountCents,
-            totalCents: total,
+            subtotalCents: body.subtotalCents,
+            taxCents: 0,
+            totalCents: body.subtotalCents,
             currency: body.currency,
-            taxRate: {
-              code: taxRate.code,
-              label: taxRate.label,
-              rateBasisPoints: Math.round(taxRate.rate * 10_000),
-              priceMode: taxRate.priceMode,
-            },
+            taxRate: null,
           },
         },
         200,
       )
-    })
+    }
 
-  return stampOpenApiRegistryApiId(routes, "@voyant-travel/finance#booking-tax-extension.api")
+    const inclusive = taxLine.includedInPrice
+    const displaySubtotal = inclusive
+      ? Math.max(0, body.subtotalCents - taxLine.amountCents)
+      : body.subtotalCents
+    const total = inclusive ? body.subtotalCents : body.subtotalCents + taxLine.amountCents
+
+    return c.json(
+      {
+        data: {
+          subtotalCents: displaySubtotal,
+          taxCents: taxLine.amountCents,
+          totalCents: total,
+          currency: body.currency,
+          taxRate: {
+            code: taxRate.code,
+            label: taxRate.label,
+            rateBasisPoints: Math.round(taxRate.rate * 10_000),
+            priceMode: taxRate.priceMode,
+          },
+        },
+      },
+      200,
+    )
+  })
+
+  return stampOpenApiRegistryApiId(
+    routes,
+    "@voyant-travel/finance#booking-tax-preview-extension.api",
+  )
 }
 
-export function mountBookingTaxRoutes(hono: Hono, options: BookingTaxRouteOptions = {}): void {
-  hono.route("/v1/admin/bookings", createBookingTaxRoutes(options))
+/** Mount the tax-settings routes under the finance admin surface. */
+export function mountBookingTaxSettingsRoutes(
+  hono: Hono,
+  options: BookingTaxRouteOptions = {},
+): void {
+  hono.route("/v1/admin/finance", createBookingTaxSettingsRoutes(options))
 }
 
-export function createBookingTaxApiExtension(options: BookingTaxRouteOptions = {}): ApiExtension {
+/** Mount the tax-preview route under the bookings admin surface. */
+export function mountBookingTaxPreviewRoutes(
+  hono: Hono,
+  options: BookingTaxRouteOptions = {},
+): void {
+  hono.route("/v1/admin/bookings", createBookingTaxPreviewRoutes(options))
+}
+
+export function createBookingTaxSettingsApiExtension(
+  options: BookingTaxRouteOptions = {},
+): ApiExtension {
   const extension: Extension = {
-    name: "booking-tax",
+    name: "booking-tax-settings",
+    module: "finance",
+  }
+
+  return {
+    extension,
+    adminRoutes: createBookingTaxSettingsRoutes(options),
+  }
+}
+
+export function createBookingTaxPreviewApiExtension(
+  options: BookingTaxRouteOptions = {},
+): ApiExtension {
+  const extension: Extension = {
+    name: "booking-tax-preview",
     module: "bookings",
   }
 
   return {
     extension,
-    adminRoutes: createBookingTaxRoutes(options),
+    adminRoutes: createBookingTaxPreviewRoutes(options),
   }
 }
 
-export const createBookingTaxVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
-  return createBookingTaxApiExtension(
-    createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
-  )
-})
+export const createBookingTaxSettingsVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    return createBookingTaxSettingsApiExtension(
+      createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
+    )
+  },
+)
+
+export const createBookingTaxPreviewVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    return createBookingTaxPreviewApiExtension(
+      createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
+    )
+  },
+)

@@ -1,5 +1,52 @@
 # @voyant-travel/commerce
 
+## 0.39.1
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/distribution@0.158.0
+  - @voyant-travel/bookings@0.168.0
+
+## 0.39.0
+
+### Minor Changes
+
+- ca3713e: Scope the operator invoicing mode to the deferred bank-transfer payment path.
+
+  Payment method now determines the document flow. Card payments always issue the fiscal invoice at checkout finalize and never consult `invoicing.mode`. Bank transfer (deferred payment) is the configurable path: `proforma-first` (now the default, matching the platform's historical behaviour) issues a proforma at order placement and mints the fiscal invoice on settlement; `direct` issues the fiscal invoice at order placement and collects the transfer against it.
+
+  The mode consult that PR #3462 added to the checkout finalize saga is removed — finalize once again always issues the fiscal invoice (or converts an existing proforma). The mode is instead wired at the bank-transfer issuance site, and its default flips from `direct` to `proforma-first` (schema default, normalization, and an additive migration that also backfills existing rows). The finance proforma-conversion subscriber no longer gates on the mode: any fully-paid proforma converts, which is correct in every mode and avoids stranding a proforma left outstanding across a mode switch.
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/catalog@0.165.0
+  - @voyant-travel/distribution@0.157.0
+  - @voyant-travel/bookings@0.167.0
+
+## 0.38.0
+
+### Minor Changes
+
+- c3bdcbc: Wire checkout finalization to the operator invoicing mode. When an operator runs `proforma-first`, a fresh checkout now issues a proforma instead of a fiscal invoice; the fiscal invoice is minted later once the proforma settles. `direct` mode is unchanged, an explicitly requested proforma conversion always wins over the mode default, and deployments without an operator-settings runtime fall back to `direct`.
+
+### Patch Changes
+
+- 926ea47: Add the canonical payment adapter contract and public conformance kit, expose the payments deployment provider role, and route card-payment seams through explicit deployment adapter selection instead of processor package identity.
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/distribution@0.156.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/bookings@0.166.0
+  - @voyant-travel/workflow-runs@0.122.3
+  - @voyant-travel/workflows@0.122.3
+
 ## 0.37.3
 
 ### Patch Changes

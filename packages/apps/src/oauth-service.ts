@@ -152,7 +152,14 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
     if (!credential || (credential.expiresAt && credential.expiresAt <= now())) return null
     const installation = await selectInstallation(db, credential.installationId)
     if (!installation || !isInstallationUsable(installation, credential.generation)) return null
-    const scopes = await grantedScopes(db, installation.id)
+    // Online tokens resolve to the scope set minted at exchange (viewer/context
+    // intersection); recomputing from grants would silently widen them. Offline
+    // tokens track live grants so revoking a scope applies immediately. A
+    // missing stored set on an online token fails closed to no scopes.
+    const scopes =
+      credential.tokenMode === "online"
+        ? (readStoredScopes(credential.encryptedMetadata) ?? [])
+        : await grantedScopes(db, installation.id)
     return {
       callerType: "app",
       actor: "staff",
@@ -276,7 +283,9 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
       generation: installation.credentialGeneration,
       tokenMode: "online",
       credentialHash: sha256Hex(accessToken),
-      encryptedMetadata: { scopeCount: scopes.length },
+      // Online tokens are intentionally narrowed; the resolver must honor the
+      // minted set rather than recomputing from installation grants.
+      encryptedMetadata: { scopeCount: scopes.length, scopes: [...scopes] },
       status: "active",
       actorId: input.viewerId,
       viewerId: input.viewerId,
@@ -371,6 +380,9 @@ async function requireRelease(db: PostgresJsDatabase, appId: string, releaseId: 
     .where(and(eq(appReleases.id, releaseId), eq(appReleases.appId, appId)))
     .limit(1)
   if (!release) throw oauthError("invalid_request", "App release not found", 404)
+  if (release.state !== "available") {
+    throw oauthError("invalid_request", "App release is not available for authorization", 409)
+  }
   return release
 }
 
@@ -500,6 +512,12 @@ export function intersectAppTokenScopes(...sets: readonly (readonly string[])[])
 
 function assertState(state: string) {
   if (!state.trim()) throw oauthError("invalid_request", "OAuth state is required")
+}
+
+export function readStoredScopes(metadata: Record<string, unknown>): string[] | null {
+  const stored = metadata.scopes
+  if (!Array.isArray(stored)) return null
+  return stored.filter((scope): scope is string => typeof scope === "string")
 }
 
 function oauthError(error: string, description: string, status = 400) {

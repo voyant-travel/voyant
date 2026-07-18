@@ -160,6 +160,15 @@ export async function loadVoyantProject(
     reporter: consoleReporter(),
     resolveEmailSender: resolveVoyantCloudAuthEmailSender,
   })
+  const appOauth = await import("@voyant-travel/apps/oauth-service").then((mod) =>
+    mod.createAppOAuthService({
+      accessCatalog: generated.graphRuntime.accessCatalog,
+      deploymentId:
+        rawEnv.VOYANT_DEPLOYMENT_ID?.trim() ||
+        rawEnv.VOYANT_CLOUD_DEPLOYMENT_ID?.trim() ||
+        path.basename(projectRoot),
+    }),
+  )
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
     graphRuntime: generated.graphRuntime,
@@ -189,6 +198,11 @@ export async function loadVoyantProject(
           authRuntime.hasAuthPermission(request, requireVoyantAuthEnv(requestEnv)),
         validateApiKey: ({ env: requestEnv, db, apiKey }) =>
           authRuntime.validateApiTokenAccess(requireVoyantAuthEnv(requestEnv), db, apiKey),
+        resolveAppToken: ({ db, token }) =>
+          appOauth.resolveAccessToken(
+            db as Parameters<typeof appOauth.resolveAccessToken>[0],
+            token,
+          ),
       },
     },
   })

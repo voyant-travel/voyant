@@ -1,0 +1,1 @@
+ALTER TABLE "booking_tax_settings" ADD COLUMN "fx_reference_source" text DEFAULT 'ecb' NOT NULL;

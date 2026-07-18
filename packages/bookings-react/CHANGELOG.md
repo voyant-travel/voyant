@@ -1,5 +1,76 @@
 # @voyant-travel/bookings-react
 
+## 0.168.0
+
+### Patch Changes
+
+- Updated dependencies [158c3a0]
+  - @voyant-travel/finance@0.168.0
+  - @voyant-travel/finance-react@0.168.0
+  - @voyant-travel/accommodations@0.128.0
+  - @voyant-travel/catalog@0.166.0
+  - @voyant-travel/cruises@0.167.0
+  - @voyant-travel/inventory@0.13.5
+  - @voyant-travel/inventory-react@0.50.0
+  - @voyant-travel/distribution-react@0.158.0
+  - @voyant-travel/identity-react@0.168.0
+  - @voyant-travel/legal-react@0.168.0
+  - @voyant-travel/operations-react@0.49.0
+  - @voyant-travel/catalog-react@0.166.0
+  - @voyant-travel/commerce-react@0.50.0
+  - @voyant-travel/relationships-react@0.168.0
+  - @voyant-travel/storefront-react@0.170.0
+  - @voyant-travel/bookings@0.168.0
+
+## 0.167.0
+
+### Patch Changes
+
+- Updated dependencies [ca3713e]
+  - @voyant-travel/finance@0.167.0
+  - @voyant-travel/commerce-react@0.49.0
+  - @voyant-travel/inventory@0.13.4
+  - @voyant-travel/accommodations@0.127.0
+  - @voyant-travel/catalog@0.165.0
+  - @voyant-travel/cruises@0.166.0
+  - @voyant-travel/finance-react@0.167.0
+  - @voyant-travel/inventory-react@0.49.0
+  - @voyant-travel/catalog-react@0.165.0
+  - @voyant-travel/legal-react@0.167.0
+  - @voyant-travel/distribution-react@0.157.0
+  - @voyant-travel/identity-react@0.167.0
+  - @voyant-travel/operations-react@0.48.0
+  - @voyant-travel/storefront-react@0.169.0
+  - @voyant-travel/relationships-react@0.167.0
+  - @voyant-travel/bookings@0.167.0
+
+## 0.166.0
+
+### Patch Changes
+
+- Updated dependencies [c3bdcbc]
+- Updated dependencies [0868f18]
+- Updated dependencies [3062a73]
+- Updated dependencies [926ea47]
+  - @voyant-travel/finance@0.166.0
+  - @voyant-travel/admin@0.126.2
+  - @voyant-travel/finance-react@0.166.0
+  - @voyant-travel/i18n@0.112.0
+  - @voyant-travel/commerce-react@0.48.0
+  - @voyant-travel/inventory@0.13.3
+  - @voyant-travel/accommodations@0.126.0
+  - @voyant-travel/catalog@0.164.0
+  - @voyant-travel/cruises@0.165.0
+  - @voyant-travel/inventory-react@0.48.0
+  - @voyant-travel/catalog-react@0.164.0
+  - @voyant-travel/distribution-react@0.156.0
+  - @voyant-travel/identity-react@0.166.0
+  - @voyant-travel/legal-react@0.166.0
+  - @voyant-travel/operations-react@0.47.0
+  - @voyant-travel/relationships-react@0.166.0
+  - @voyant-travel/storefront-react@0.168.0
+  - @voyant-travel/bookings@0.166.0
+
 ## 0.165.0
 
 ### Patch Changes

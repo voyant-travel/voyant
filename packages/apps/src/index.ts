@@ -1,4 +1,7 @@
 export * from "./access-boundary.js"
+export * from "./app-api-contracts.js"
+export * from "./app-api-routes.js"
+export * from "./app-api-service.js"
 export * from "./compiler.js"
 export * from "./consent.js"
 export * from "./contracts.js"

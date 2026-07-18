@@ -1,5 +1,37 @@
 # @voyant-travel/identity-react
 
+## 0.168.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.168.0
+- @voyant-travel/inventory-react@0.50.0
+- @voyant-travel/distribution-react@0.158.0
+- @voyant-travel/relationships-react@0.168.0
+- @voyant-travel/identity@0.168.0
+
+## 0.167.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.167.0
+- @voyant-travel/inventory-react@0.49.0
+- @voyant-travel/distribution-react@0.157.0
+- @voyant-travel/relationships-react@0.167.0
+- @voyant-travel/identity@0.167.0
+
+## 0.166.0
+
+### Patch Changes
+
+- Updated dependencies [3062a73]
+  - @voyant-travel/i18n@0.112.0
+  - @voyant-travel/bookings-react@0.166.0
+  - @voyant-travel/inventory-react@0.48.0
+  - @voyant-travel/distribution-react@0.156.0
+  - @voyant-travel/relationships-react@0.166.0
+  - @voyant-travel/identity@0.166.0
+
 ## 0.165.0
 
 ### Patch Changes

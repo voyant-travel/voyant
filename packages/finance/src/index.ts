@@ -7,7 +7,7 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import { financeBookingLifecycle } from "./booking-lifecycle.js"
-import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
+import { type BookingTaxRouteOptions, createBookingTaxSettingsRoutes } from "./booking-tax.js"
 import {
   buildFinanceCheckoutRouteRuntime,
   type CheckoutRoutesOptions,
@@ -160,7 +160,7 @@ export function createFinanceApiModule(options: FinanceApiModuleOptions = {}): A
       .route("/", createFinanceAdminDocumentRoutes(options))
       .route("/", createFinanceAdminSettlementRoutes(options)),
     "@voyant-travel/finance#api.admin",
-  ).route("/", createBookingTaxRoutes(options))
+  ).route("/", createBookingTaxSettingsRoutes(options))
 
   const module: Module = {
     ...financeModule,
@@ -229,6 +229,30 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
   },
 )
 
+export type {
+  PaymentAdapter,
+  PaymentAdapterCapabilities,
+  PaymentAdapterConformanceHarness,
+  PaymentAdapterConformanceResult,
+  PaymentAdapterDiagnostics,
+  PaymentAdapterRuntimeContext,
+  PaymentCallbackEvent,
+  PaymentCallbackRequest,
+  PaymentCallbackVerificationResult,
+  PaymentInitiationInput,
+  PaymentInitiationResult,
+  PaymentMoney,
+  PaymentOperationInput,
+  PaymentOperationResult,
+  PaymentStatusInput,
+  PaymentStatusResult,
+} from "@voyant-travel/payments"
+export {
+  PAYMENT_ADAPTER_CONTRACT_VERSION,
+  PAYMENT_ADAPTER_RUNTIME_PORT_ID,
+  paymentAdapterRuntimePort,
+  runPaymentAdapterConformance,
+} from "@voyant-travel/payments"
 export {
   type BookingCancellationSettlementInput,
   buildPaidBookingCancellationSettlementNote,
@@ -240,12 +264,16 @@ export {
   type BookingTaxRouteOptions,
   type BookingTaxSettings,
   computeBookingItemTaxLine,
-  createBookingTaxApiExtension,
-  createBookingTaxRoutes,
-  createBookingTaxVoyantRuntime,
+  createBookingTaxPreviewApiExtension,
+  createBookingTaxPreviewRoutes,
+  createBookingTaxPreviewVoyantRuntime,
+  createBookingTaxSettingsApiExtension,
+  createBookingTaxSettingsRoutes,
+  createBookingTaxSettingsVoyantRuntime,
   loadProductTaxFacts,
   matchesTaxPolicyCondition,
-  mountBookingTaxRoutes,
+  mountBookingTaxPreviewRoutes,
+  mountBookingTaxSettingsRoutes,
   type ProductTaxFacts,
   type ResolveBookingSellTaxRateOptions,
   type ResolveBookingTaxSettings,
@@ -259,7 +287,9 @@ export type {
   CardPaymentStartArgs,
   CardPaymentStarter,
   CardPaymentStartResult,
+  PaymentAdapterCardPaymentStarterOptions,
 } from "./card-payment.js"
+export { createPaymentAdapterCardPaymentStarter } from "./card-payment.js"
 export {
   type DocumentDownloadEnvelope,
   type DocumentDownloadResolution,
@@ -295,6 +325,7 @@ export {
   type OrderPaymentSessionTargetType,
   type StartOrderPaymentProvider,
 } from "./order-payment-sessions.js"
+export { applyPaymentAdapterCallbackEvent } from "./payment-adapter-events.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,
