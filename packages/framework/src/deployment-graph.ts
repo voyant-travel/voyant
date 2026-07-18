@@ -3159,10 +3159,12 @@ function compileReportingCatalog(
       (unit.reporting?.templates ?? []).map((template) => {
         const requirements = [
           ...(template.requirements ?? []),
-          ...template.widgets.map(({ widgetId }): VoyantGraphReportingRequirement => ({
-            kind: "widget",
-            id: widgetId,
-          })),
+          ...template.widgets.map(
+            ({ widgetId }): VoyantGraphReportingRequirement => ({
+              kind: "widget",
+              id: widgetId,
+            }),
+          ),
         ]
         const missingRequirements = uniqueReportingRequirements([
           ...requirements.filter((requirement) => {

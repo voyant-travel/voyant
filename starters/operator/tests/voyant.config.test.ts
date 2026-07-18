@@ -8,7 +8,7 @@ const operatorRoot = process.cwd()
 
 describe("Operator project config", () => {
   it("authors only deployment differences", () => {
-    expect(config.modules).toHaveLength(45)
+    expect(config.modules).toHaveLength(46)
     expect(config.extensions).toHaveLength(25)
     expect(config.plugins).toHaveLength(0)
     expect(config.productBom).toEqual({

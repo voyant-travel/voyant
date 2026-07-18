@@ -40,17 +40,50 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "files": ["dist", "openapi", "migrations/*.sql", "migrations/meta/_journal.json"],
+  "files": [
+    "dist",
+    "openapi",
+    "migrations/*.sql",
+    "migrations/meta/_journal.json"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" },
-      "./schema": { "types": "./dist/schema.d.ts", "import": "./dist/schema.js", "default": "./dist/schema.js" },
-      "./service": { "types": "./dist/service.d.ts", "import": "./dist/service.js", "default": "./dist/service.js" },
-      "./registry": { "types": "./dist/registry.d.ts", "import": "./dist/registry.js", "default": "./dist/registry.js" },
-      "./routes": { "types": "./dist/routes.d.ts", "import": "./dist/routes.js", "default": "./dist/routes.js" },
-      "./api-runtime": { "types": "./dist/api-runtime.d.ts", "import": "./dist/api-runtime.js", "default": "./dist/api-runtime.js" },
-      "./voyant": { "types": "./dist/voyant.d.ts", "import": "./dist/voyant.js", "default": "./dist/voyant.js" },
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./registry": {
+        "types": "./dist/registry.d.ts",
+        "import": "./dist/registry.js",
+        "default": "./dist/registry.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
+      },
+      "./api-runtime": {
+        "types": "./dist/api-runtime.d.ts",
+        "import": "./dist/api-runtime.js",
+        "default": "./dist/api-runtime.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
       "./openapi/admin": "./openapi/admin/reporting.json"
     },
     "main": "./dist/index.js",
@@ -67,10 +100,18 @@
     "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
-      "targets": ["node"],
-      "modes": ["local", "managed-cloud", "self-hosted"]
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
     },
     "schema": "./schema",
-    "requiresSchemas": ["@voyant-travel/db"]
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   }
 }

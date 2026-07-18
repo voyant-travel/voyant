@@ -16,7 +16,9 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {

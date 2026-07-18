@@ -5,6 +5,9 @@
  * react-grid-layout ships the absolute positioning + transition rules that make
  * the 2D grid work; we import them here and layer Voyant chrome on top.
  */
+@source "./**/*.{ts,tsx}";
+@source "../dist/**/*.{js,mjs}";
+
 @import "react-grid-layout/css/styles.css";
 
 /* Accessible-only text (labels, keyboard hints) */
