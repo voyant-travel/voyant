@@ -53,22 +53,17 @@ Screenshots (`0[1-8]-*.png`) of the `@voyant-travel/apps-react` surfaces driven
 in a real Chrome browser against the **actual** exported components and
 react-query hooks. The full seeded operator deployment depends on the
 app-registry backend seed work (this slice is *Blocked by #3438*), so the UI was
-exercised through the self-contained Vite harness in `harness/`, which mounts the
-shipped components (`InstalledAppsPage`, `InstallationDetail`, `ConsentScreen`,
+exercised through a self-contained Vite harness that mounts the shipped
+components (`InstalledAppsPage`, `InstallationDetail`, `ConsentScreen`,
 `DeveloperAppsPage`) behind a mock fetcher whose responses match the
 `/v1/admin/apps/*` envelopes the hooks validate with Zod. Only the HTTP layer is
 stubbed — components, hooks, i18n, and styling are the real ones, at realistic
 data density.
 
-Reproduce:
-
-```sh
-pnpm install
-cd .agent-evidence/harness
-ln -sfn ../../starters/operator/node_modules node_modules
-PATH="$PWD/../../node_modules/.bin:$PATH" vite --port 4321 --strictPort
-# open http://127.0.0.1:4321/
-```
+The harness scaffolding is intentionally not committed (evidence directories
+carry screenshots, not linted/tested tooling): a Vite entry renders each
+exported `@voyant-travel/apps-react` component with a `fetch` mock returning the
+validated `/v1/admin/apps/*` response envelopes.
 
 ## Screenshots
 
