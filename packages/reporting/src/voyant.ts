@@ -1,6 +1,8 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import { reportingContributionRuntimePort } from "@voyant-travel/reporting-contracts/runtime-port"
 
+import { reportingVoyantAdmin } from "./voyant-admin.js"
+
 export const reportingVoyantModule = defineModule({
   id: "@voyant-travel/reporting",
   packageName: "@voyant-travel/reporting",
@@ -14,8 +16,7 @@ export const reportingVoyantModule = defineModule({
         id: "reporting.template.operator-overview",
         version: 1,
         label: "Operator overview",
-        description:
-          "A cross-module overview of booking activity and final-invoice receivables.",
+        description: "A cross-module overview of booking activity and final-invoice receivables.",
         requirements: [
           { kind: "widget", id: "bookings.widget.total" },
           { kind: "widget", id: "bookings.widget.monthly-trend" },
@@ -105,6 +106,7 @@ export const reportingVoyantModule = defineModule({
       },
     ],
   },
+  admin: reportingVoyantAdmin,
   lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
   meta: { ownership: "package" },
 })
