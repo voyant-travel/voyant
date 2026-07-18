@@ -147,7 +147,7 @@ jobs:
         id: publish_pending
         if: steps.release_plan.outputs.publish_pending == 'true'
         # Hard outer bound so a stalled publish can never burn a full job slot.
-        timeout-minutes: 25
+        timeout-minutes: 50
         run: |
           # `pnpm release` is `changeset publish`, which is idempotent: it
           # checks npm per package and skips versions already published, so it
@@ -159,8 +159,10 @@ jobs:
           # the remainder so a transient hang self-heals instead of wedging.
           set -uo pipefail
           attempt=0
-          max_attempts=3
-          per_attempt_timeout=420 # seconds (7 min) — well above a healthy full publish
+          max_attempts=2
+          per_attempt_timeout=1200 # seconds (20 min) — a large release publishing many
+          # big packages (with sigstore provenance) can legitimately exceed the old
+          # 7-min bound; a real single-package stall still fails within the outer job cap.
           while :; do
             attempt=$((attempt + 1))
             echo "::group::changeset publish — attempt ${attempt}/${max_attempts}"
