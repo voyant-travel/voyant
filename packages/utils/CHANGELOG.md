@@ -1,5 +1,11 @@
 # @voyant-travel/utils
 
+## 0.108.0
+
+### Minor Changes
+
+- f6f22e7: Require independent admin and customer auth secrets, bind provider and bearer identities to their explicit route realm, keep guest checkout capabilities independently configured, and preserve secure cloud-auth state cookies behind TLS termination.
+
 ## 0.107.1
 
 ### Patch Changes

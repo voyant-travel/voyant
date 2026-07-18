@@ -1,5 +1,26 @@
 # @voyant-travel/runtime
 
+## 0.13.0
+
+### Minor Changes
+
+- f6f22e7: Require independent admin and customer auth secrets, bind provider and bearer identities to their explicit route realm, keep guest checkout capabilities independently configured, and preserve secure cloud-auth state cookies behind TLS termination.
+
+### Patch Changes
+
+- Updated dependencies [f6f22e7]
+  - @voyant-travel/auth@0.134.0
+  - @voyant-travel/core@0.128.0
+  - @voyant-travel/framework@0.52.0
+  - @voyant-travel/hono@0.130.0
+  - @voyant-travel/apps@0.9.1
+  - @voyant-travel/db@0.114.14
+  - @voyant-travel/storage@0.111.4
+  - @voyant-travel/webhook-delivery@0.4.3
+  - @voyant-travel/workflow-runs@0.122.7
+  - @voyant-travel/runtime-core@0.6.4
+  - @voyant-travel/admin-host@0.22.0
+
 ## 0.12.2
 
 ### Patch Changes
