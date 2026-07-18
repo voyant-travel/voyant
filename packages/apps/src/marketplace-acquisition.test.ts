@@ -6,9 +6,16 @@ import { createAppInstallationService } from "./installation-service.js"
 import {
   createMarketplaceAcquisitionService,
   type HostVerifiedMarketplaceAcquisition,
+  hostVerifiedMarketplaceAcquisitionSchema,
   marketplaceSetupAssertionClaimsSchema,
 } from "./marketplace-acquisition.js"
-import { appRedirectUris, appReleaseArtifacts, appReleases, apps } from "./schema.js"
+import {
+  appCredentials,
+  appRedirectUris,
+  appReleaseArtifacts,
+  appReleases,
+  apps,
+} from "./schema.js"
 import { validManifest } from "./test-fixtures.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -26,6 +33,10 @@ function acquisition(
       displayName: "Accounting Bridge",
       slug: "accounting-bridge",
       redirectUris: ["https://app.example.com/oauth/callback"],
+      oauthClient: {
+        method: "client_secret_post",
+        secretSha256: "a".repeat(64),
+      },
     },
     release: {
       id: "marketplace_release_1",
@@ -38,6 +49,28 @@ function acquisition(
     ...overrides,
   }
 }
+
+describe("Marketplace OAuth client acquisition contract", () => {
+  it("admits only a publisher-held secret verifier, never a raw secret", () => {
+    const current = acquisition()
+    expect(hostVerifiedMarketplaceAcquisitionSchema.parse(current).app.oauthClient).toEqual({
+      method: "client_secret_post",
+      secretSha256: "a".repeat(64),
+    })
+    expect(() =>
+      hostVerifiedMarketplaceAcquisitionSchema.parse({
+        ...current,
+        app: {
+          ...current.app,
+          oauthClient: {
+            ...current.app.oauthClient,
+            secret: "must-not-cross-the-host-boundary",
+          },
+        },
+      }),
+    ).toThrow()
+  })
+})
 
 describe("Marketplace setup assertion contract", () => {
   const valid = {
@@ -125,6 +158,10 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
       .select()
       .from(appRedirectUris)
       .where(eq(appRedirectUris.appId, current.app.id))
+    const credentials = await db
+      .select()
+      .from(appCredentials)
+      .where(eq(appCredentials.appId, current.app.id))
     expect(app).toMatchObject({
       distribution: "marketplace",
       ownerId: current.app.ownerId,
@@ -138,8 +175,20 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
     expect(artifacts).toHaveLength(1)
     expect(artifacts[0]?.registryCoordinates).toBeNull()
     expect(redirects.map((row) => row.redirectUri)).toEqual(current.app.redirectUris)
+    expect(credentials).toHaveLength(1)
+    expect(credentials[0]).toMatchObject({
+      kind: "client_secret",
+      generation: 1,
+      kmsKeyRef: `sha256:${current.app.oauthClient.secretSha256}`,
+    })
 
     current.release.signature = "different-signature"
+    await expect(
+      service.resolveAndAcquire(db, { intent: "opaque-1", actorId: "user_1" }),
+    ).rejects.toMatchObject({ status: 409, code: "app_marketplace_identity_conflict" })
+
+    current.release.signature = "host-verified-signature"
+    current.app.oauthClient.secretSha256 = "b".repeat(64)
     await expect(
       service.resolveAndAcquire(db, { intent: "opaque-1", actorId: "user_1" }),
     ).rejects.toMatchObject({ status: 409, code: "app_marketplace_identity_conflict" })

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto"
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 import {
@@ -9,6 +9,7 @@ import {
   compileAppManifest,
 } from "./compiler.js"
 import {
+  appCredentials,
   appInstallations,
   appRedirectUris,
   appReleaseArtifacts,
@@ -41,6 +42,13 @@ export const hostVerifiedMarketplaceAcquisitionSchema = z
           .trim()
           .regex(/^[a-z0-9][a-z0-9-]{0,78}[a-z0-9]$/),
         redirectUris: z.array(httpsUrlSchema).max(20),
+        oauthClient: z
+          .object({
+            method: z.literal("client_secret_post"),
+            /** Verifier for a high-entropy publisher-held secret; never the raw secret. */
+            secretSha256: z.string().regex(/^[a-f0-9]{64}$/),
+          })
+          .strict(),
       })
       .strict(),
     release: z
@@ -167,6 +175,7 @@ export function createMarketplaceAcquisitionService(options: MarketplaceAcquisit
 
       return db.transaction(async (tx) => {
         const app = await acquireApp(tx, acquisition, input.actorId)
+        await reconcileOAuthClient(tx, app.id, acquisition.app.oauthClient.secretSha256)
         await reconcileRedirectUris(tx, app.id, acquisition.app.redirectUris)
         const release = await acquireRelease(tx, acquisition, compiled, input.actorId)
         return {
@@ -258,6 +267,40 @@ async function acquireApp(
     throw immutableIdentityConflict("Marketplace app identity could not be admitted")
   }
   return row
+}
+
+async function reconcileOAuthClient(db: PostgresJsDatabase, appId: string, secretSha256: string) {
+  const expectedVerifier = `sha256:${secretSha256}`
+  const [active] = await db
+    .select()
+    .from(appCredentials)
+    .where(
+      and(
+        eq(appCredentials.appId, appId),
+        eq(appCredentials.kind, "client_secret"),
+        isNull(appCredentials.retiredAt),
+      ),
+    )
+    .limit(1)
+  if (active) {
+    if (active.kmsKeyRef !== expectedVerifier) {
+      throw immutableIdentityConflict(
+        "Marketplace OAuth client verifier conflicts with the admitted app",
+      )
+    }
+    return
+  }
+
+  const generations = await db
+    .select({ generation: appCredentials.generation })
+    .from(appCredentials)
+    .where(and(eq(appCredentials.appId, appId), eq(appCredentials.kind, "client_secret")))
+  await db.insert(appCredentials).values({
+    appId,
+    kind: "client_secret",
+    generation: Math.max(0, ...generations.map((credential) => credential.generation)) + 1,
+    kmsKeyRef: expectedVerifier,
+  })
 }
 
 async function reconcileRedirectUris(
