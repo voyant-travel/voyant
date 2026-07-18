@@ -12,7 +12,11 @@ import {
   reportTemplateDefinitionSchema,
   reportWidgetDefinitionSchema,
 } from "@voyant-travel/reporting-contracts"
-import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
+import {
+  type AccessCatalog,
+  hasApiKeyPermission,
+  permissionStringsToPermissions,
+} from "@voyant-travel/types/api-keys"
 
 export type ReportBuilderMode = "view" | "edit"
 
@@ -51,9 +55,18 @@ export class ReportingRegistry {
   readonly #datasets = new Map<string, ReportDatasetContribution>()
   readonly #widgets = new Map<string, ReportWidgetDefinition>()
   readonly #templates = new Map<string, ReportTemplateDefinition>()
+  readonly #accessCatalog: AccessCatalog | undefined
 
-  constructor(contributions: readonly ReportingContributionRuntime[]) {
+  constructor(
+    contributions: readonly ReportingContributionRuntime[],
+    accessCatalog?: AccessCatalog,
+  ) {
+    this.#accessCatalog = accessCatalog
     for (const contribution of contributions) this.#addContribution(contribution)
+  }
+
+  requireScopes(required: readonly string[], granted: readonly string[]): void {
+    requireReportingScopes(required, granted, this.#accessCatalog)
   }
 
   listDatasets() {
@@ -217,7 +230,7 @@ export class ReportingRegistry {
       dataset.definition.maximumLimit,
     )
     const requiredScopeList = [...requiredScopes].sort()
-    requireReportingScopes(requiredScopeList, grantedScopes)
+    this.requireScopes(requiredScopeList, grantedScopes)
     return { query, dataset, maximumRows, requiredScopes: requiredScopeList }
   }
 
@@ -297,17 +310,29 @@ export class ReportingRegistry {
 export function requireReportingScopes(
   required: readonly string[],
   granted: readonly string[],
+  accessCatalog?: AccessCatalog,
 ): void {
-  const missing = required.filter((scope) => !hasReportingScope(granted, scope))
+  const missing = required.filter(
+    (scope) => !hasReportingScope(granted, scope, accessCatalog),
+  )
   if (missing.length > 0) {
     throw new ReportingAuthorizationError(missing)
   }
 }
 
-export function hasReportingScope(granted: readonly string[], required: string): boolean {
+export function hasReportingScope(
+  granted: readonly string[],
+  required: string,
+  accessCatalog?: AccessCatalog,
+): boolean {
   const [resource, action] = required.split(":")
   if (!resource || !action) return false
-  return hasApiKeyPermission(permissionStringsToPermissions(granted), resource, action)
+  return hasApiKeyPermission(
+    permissionStringsToPermissions(granted),
+    resource,
+    action,
+    accessCatalog,
+  )
 }
 
 function versionedKey(id: string, version: number): string {

@@ -176,4 +176,34 @@ describe("ReportingRegistry", () => {
       ReportingAuthorizationError,
     )
   })
+
+  it("respects explicit-resource access policy for sensitive source scopes", () => {
+    const accessCatalog = {
+      resources: [
+        {
+          id: "finance-access",
+          unitId: "finance",
+          resource: "finance",
+          label: "Finance",
+          description: "Sensitive finance records",
+          wildcard: "explicit-resource" as const,
+          actions: [
+            {
+              action: "read",
+              label: "Read",
+              description: "Read finance records",
+            },
+          ],
+        },
+      ],
+      presets: [],
+    }
+
+    expect(() =>
+      requireReportingScopes(["finance:read"], ["*:*"], accessCatalog),
+    ).toThrow(ReportingAuthorizationError)
+    expect(() =>
+      requireReportingScopes(["finance:read"], ["finance:read"], accessCatalog),
+    ).not.toThrow()
+  })
 })
