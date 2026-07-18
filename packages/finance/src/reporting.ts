@@ -7,6 +7,7 @@ import type {
   ReportResult,
   ReportScalar,
 } from "@voyant-travel/reporting-contracts"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import { type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -276,7 +277,13 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
 export const financeReceivablesDataset: ReportDatasetContribution = {
   definition: financeReceivablesDatasetDefinition,
   async execute(context, input) {
-    if (!hasScope(context.grantedScopes, "finance:read")) {
+    if (
+      !hasApiKeyPermission(
+        permissionStringsToPermissions(context.grantedScopes),
+        "finance",
+        "read",
+      )
+    ) {
       throw new FinanceReportingQueryError("finance:read is required to query receivables.")
     }
     if (context.signal?.aborted) throw abortReason(context.signal)
@@ -294,13 +301,6 @@ export const financeReceivablesDataset: ReportDatasetContribution = {
       warnings: [],
     }
   },
-}
-
-function hasScope(granted: readonly string[], required: string): boolean {
-  const [resource] = required.split(":")
-  return granted.some(
-    (scope) => scope === required || scope === "*" || scope === "*:*" || scope === `${resource}:*`,
-  )
 }
 
 function requireField(

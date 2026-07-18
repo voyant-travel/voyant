@@ -12,6 +12,7 @@ import {
   reportTemplateDefinitionSchema,
   reportWidgetDefinitionSchema,
 } from "@voyant-travel/reporting-contracts"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 
 export type ReportBuilderMode = "view" | "edit"
 
@@ -297,20 +298,17 @@ export function requireReportingScopes(
   required: readonly string[],
   granted: readonly string[],
 ): void {
-  const missing = required.filter((scope) => !hasScope(granted, scope))
+  const missing = required.filter((scope) => !hasReportingScope(granted, scope))
   if (missing.length > 0) {
     throw new ReportingAuthorizationError(missing)
   }
 }
 
 export function hasReportingScope(granted: readonly string[], required: string): boolean {
-  const [resource] = required.split(":")
-  return granted.some(
-    (scope) => scope === required || scope === "*" || scope === "*:*" || scope === `${resource}:*`,
-  )
+  const [resource, action] = required.split(":")
+  if (!resource || !action) return false
+  return hasApiKeyPermission(permissionStringsToPermissions(granted), resource, action)
 }
-
-const hasScope = hasReportingScope
 
 function versionedKey(id: string, version: number): string {
   return `${id}@${version}`

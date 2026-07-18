@@ -172,5 +172,9 @@ describe("Finance receivables executor", () => {
       rows: [{ currency: "EUR", outstandingBalanceCents: 500 }],
       truncated: true,
     })
+
+    await expect(
+      financeReceivablesDataset.execute({ db: { execute }, grantedScopes: ["finance:*"] }, input),
+    ).resolves.toMatchObject({ truncated: true })
   })
 })
