@@ -32,6 +32,9 @@ import {
   type VoyantGraphProjectDeploymentMode,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
+  type VoyantGraphReportingCatalog,
+  type VoyantGraphReportingDeclaration,
+  type VoyantGraphReportingRequirement,
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteMethod,
@@ -103,6 +106,18 @@ export {
   type VoyantGraphProjectSelectionProvenance,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
+  type VoyantGraphReportingCatalog,
+  type VoyantGraphReportingDataset,
+  type VoyantGraphReportingDeclaration,
+  type VoyantGraphReportingGridPlacement,
+  type VoyantGraphReportingGridSize,
+  type VoyantGraphReportingRequirement,
+  type VoyantGraphReportingRequirementKind,
+  type VoyantGraphReportingWidget,
+  type VoyantGraphReportTemplate,
+  type VoyantGraphResolvedReportingDataset,
+  type VoyantGraphResolvedReportingWidget,
+  type VoyantGraphResolvedReportTemplate,
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
   type VoyantGraphRouteMethod,
@@ -166,6 +181,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_INVALID_ID: "A graph unit id is missing or is not a canonical package graph id.",
   VOYANT_GRAPH_INVALID_PROVIDER_SELECTION:
     "A deployment provider role is missing, unsupported, or ambiguously selected.",
+  VOYANT_GRAPH_INVALID_REPORTING_FACET:
+    "A reporting dataset, widget, or template does not match the closed graph contract.",
   VOYANT_GRAPH_INVALID_ROUTE_BUNDLE:
     "An API route bundle declaration does not match the v1 route metadata contract.",
   VOYANT_GRAPH_INVALID_SCHEMA_VERSION: "A graph declaration uses an unsupported schema version.",
@@ -381,6 +398,7 @@ export interface ResolvedVoyantGraphUnit {
   access?: VoyantGraphAccessDeclaration
   admin?: VoyantGraphAdminDeclaration
   presentations?: readonly VoyantGraphPresentationDeclaration[]
+  reporting?: VoyantGraphReportingDeclaration
   tools?: readonly VoyantGraphToolDeclaration[]
   webhooks?: readonly VoyantGraphWebhookDeclaration[]
   actions?: readonly VoyantGraphActionDeclaration[]
@@ -410,6 +428,7 @@ export interface ResolvedVoyantDeploymentGraph {
   packageRecords: readonly VoyantGraphPackageRecord[]
   accessCatalog: AccessCatalog
   eventCatalog: VoyantGraphEventCatalog
+  reportingCatalog: VoyantGraphReportingCatalog
   webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
     scheduledJobs: readonly VoyantGraphScheduledJob[]
@@ -464,6 +483,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "access",
   "admin",
   "presentations",
+  "reporting",
   "tools",
   "webhooks",
   "actions",
@@ -701,6 +721,7 @@ export async function resolveDeploymentGraph(
   const eventCatalog = compileEventCatalog(selectedUnits)
   const webhookPlan = compileWebhookPlan(selectedUnits)
   const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
+  const reportingCatalog = compileReportingCatalog(selectedUnits)
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
@@ -746,6 +767,7 @@ export async function resolveDeploymentGraph(
     packageRecords,
     accessCatalog,
     eventCatalog,
+    reportingCatalog,
     webhookPlan,
     provisioning: {
       scheduledJobs,
@@ -1162,6 +1184,42 @@ function resolveUnit(
         }
       : {}),
     ...(unit.presentations?.length ? { presentations: sortFacetEntities(unit.presentations) } : {}),
+    ...(unit.reporting
+      ? {
+          reporting: {
+            ...(unit.reporting.datasets?.length
+              ? {
+                  datasets: sortFacetEntities(unit.reporting.datasets).map((dataset) => ({
+                    ...dataset,
+                    ...(dataset.requiredScopes?.length
+                      ? { requiredScopes: sortedUnique(dataset.requiredScopes) }
+                      : {}),
+                  })),
+                }
+              : {}),
+            ...(unit.reporting.widgets?.length
+              ? { widgets: sortFacetEntities(unit.reporting.widgets) }
+              : {}),
+            ...(unit.reporting.templates?.length
+              ? {
+                  templates: sortFacetEntities(unit.reporting.templates).map((template) => ({
+                    ...template,
+                    ...(template.requirements?.length
+                      ? {
+                          requirements: [...template.requirements].sort(
+                            compareReportingRequirement,
+                          ),
+                        }
+                      : {}),
+                    widgets: [...template.widgets].sort((left, right) =>
+                      left.id.localeCompare(right.id),
+                    ),
+                  })),
+                }
+              : {}),
+          },
+        }
+      : {}),
     ...(unit.tools?.length ? { tools: sortFacetEntities(unit.tools) } : {}),
     ...(unit.webhooks?.length ? { webhooks: sortFacetEntities(unit.webhooks) } : {}),
     ...(unit.actions?.length ? { actions: sortFacetEntities(unit.actions) } : {}),
@@ -1826,6 +1884,7 @@ function validatePromotedFacets(
       )
     }
   })
+  validateReportingFacet(input.reporting, source, diagnostics)
   if (input.lifecycle !== undefined) {
     if (!isRecord(input.lifecycle)) {
       invalidFacet("lifecycle", source, diagnostics, "Lifecycle metadata must be an object.")
@@ -2029,6 +2088,248 @@ function validateAdminFacet(
       invalidFacet(`${facet}.skippable`, source, diagnostics, "Setup skippable must be boolean.")
     }
   })
+}
+
+function validateReportingFacet(
+  value: unknown,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (value === undefined) return
+  if (!isRecord(value)) {
+    invalidReportingFacet("reporting", source, diagnostics, "Reporting metadata must be an object.")
+    return
+  }
+
+  for (const facet of ["datasets", "widgets", "templates"] as const) {
+    const entries = value[facet]
+    if (entries === undefined) continue
+    if (!Array.isArray(entries)) {
+      invalidReportingFacet(
+        `reporting.${facet}`,
+        source,
+        diagnostics,
+        `Reporting ${facet} must be an array of declarations.`,
+      )
+      continue
+    }
+    diagnostics.push(...validateFacetEntities(entries, `reporting.${facet}`, source))
+  }
+
+  validateEntityArray(value.datasets, "reporting.datasets", source, diagnostics, (entry, facet) => {
+    validateReportingVersionAndLabel(entry, facet, source, diagnostics)
+    if (!isRecord(entry.descriptor)) {
+      invalidReportingFacet(
+        `${facet}.descriptor`,
+        source,
+        diagnostics,
+        "Reporting dataset descriptors must be JSON objects.",
+      )
+    }
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+    if (!isRecord(entry.runtime) || typeof entry.runtime.export !== "string") {
+      invalidReportingFacet(
+        `${facet}.runtime.export`,
+        source,
+        diagnostics,
+        "Reporting dataset runtime references require a named export.",
+      )
+    }
+    validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
+  })
+
+  validateEntityArray(value.widgets, "reporting.widgets", source, diagnostics, (entry, facet) => {
+    validateReportingVersionAndLabel(entry, facet, source, diagnostics)
+    requireReportingString(entry.datasetId, `${facet}.datasetId`, source, diagnostics)
+    for (const property of ["query", "visualization"] as const) {
+      if (!isRecord(entry[property])) {
+        invalidReportingFacet(
+          `${facet}.${property}`,
+          source,
+          diagnostics,
+          `Reporting widget ${property} must be a JSON object.`,
+        )
+      }
+    }
+    validateReportingGridSize(entry.defaultSize, `${facet}.defaultSize`, source, diagnostics)
+    if (entry.minSize !== undefined) {
+      validateReportingGridSize(entry.minSize, `${facet}.minSize`, source, diagnostics)
+    }
+    if (entry.maxSize !== undefined) {
+      validateReportingGridSize(entry.maxSize, `${facet}.maxSize`, source, diagnostics)
+    }
+  })
+
+  validateEntityArray(
+    value.templates,
+    "reporting.templates",
+    source,
+    diagnostics,
+    (entry, facet) => {
+      validateReportingVersionAndLabel(entry, facet, source, diagnostics)
+      if (entry.requirements !== undefined) {
+        if (!Array.isArray(entry.requirements)) {
+          invalidReportingFacet(
+            `${facet}.requirements`,
+            source,
+            diagnostics,
+            "Reporting template requirements must be an array.",
+          )
+        } else {
+          entry.requirements.forEach((requirement, index) => {
+            const requirementFacet = `${facet}.requirements[${index}]`
+            if (!isRecord(requirement)) {
+              invalidReportingFacet(
+                requirementFacet,
+                source,
+                diagnostics,
+                "Reporting requirements must declare a dataset or widget id.",
+              )
+              return
+            }
+            if (requirement.kind !== "dataset" && requirement.kind !== "widget") {
+              invalidReportingFacet(
+                `${requirementFacet}.kind`,
+                source,
+                diagnostics,
+                'Reporting requirement kind must be "dataset" or "widget".',
+              )
+            }
+            requireReportingString(requirement.id, `${requirementFacet}.id`, source, diagnostics)
+          })
+        }
+      }
+      if (!Array.isArray(entry.widgets)) {
+        invalidReportingFacet(
+          `${facet}.widgets`,
+          source,
+          diagnostics,
+          "Reporting templates must declare a widget instance array.",
+        )
+        return
+      }
+      const instanceIds = new Set<string>()
+      entry.widgets.forEach((widget, index) => {
+        const widgetFacet = `${facet}.widgets[${index}]`
+        if (!isRecord(widget)) {
+          invalidReportingFacet(
+            widgetFacet,
+            source,
+            diagnostics,
+            "Reporting template widgets must be objects.",
+          )
+          return
+        }
+        requireReportingString(widget.id, `${widgetFacet}.id`, source, diagnostics)
+        if (typeof widget.id === "string") {
+          if (instanceIds.has(widget.id)) {
+            invalidReportingFacet(
+              `${widgetFacet}.id`,
+              source,
+              diagnostics,
+              `Reporting template widget instance id "${widget.id}" is duplicated.`,
+            )
+          }
+          instanceIds.add(widget.id)
+        }
+        requireReportingString(widget.widgetId, `${widgetFacet}.widgetId`, source, diagnostics)
+        validateReportingGridPlacement(widget.layout, `${widgetFacet}.layout`, source, diagnostics)
+        if (widget.config !== undefined && !isRecord(widget.config)) {
+          invalidReportingFacet(
+            `${widgetFacet}.config`,
+            source,
+            diagnostics,
+            "Reporting template widget config must be a JSON object.",
+          )
+        }
+      })
+    },
+  )
+}
+
+function validateReportingVersionAndLabel(
+  entry: Record<string, unknown>,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (!Number.isSafeInteger(entry.version) || Number(entry.version) <= 0) {
+    invalidReportingFacet(
+      `${facet}.version`,
+      source,
+      diagnostics,
+      "Reporting declaration versions must be positive safe integers.",
+    )
+  }
+  requireReportingString(entry.label, `${facet}.label`, source, diagnostics)
+}
+
+function requireReportingString(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (typeof value === "string" && value.trim().length > 0) return
+  invalidReportingFacet(facet, source, diagnostics, "Expected a non-empty string.")
+}
+
+function validateReportingGridSize(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (
+    isRecord(value) &&
+    Number.isSafeInteger(value.width) &&
+    Number(value.width) > 0 &&
+    Number.isSafeInteger(value.height) &&
+    Number(value.height) > 0
+  ) {
+    return
+  }
+  invalidReportingFacet(
+    facet,
+    source,
+    diagnostics,
+    "Reporting grid sizes require positive safe-integer width and height.",
+  )
+}
+
+function validateReportingGridPlacement(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  validateReportingGridSize(value, facet, source, diagnostics)
+  if (
+    isRecord(value) &&
+    Number.isSafeInteger(value.x) &&
+    Number(value.x) >= 0 &&
+    Number.isSafeInteger(value.y) &&
+    Number(value.y) >= 0
+  ) {
+    return
+  }
+  invalidReportingFacet(
+    facet,
+    source,
+    diagnostics,
+    "Reporting grid placements require non-negative safe-integer x and y coordinates.",
+  )
+}
+
+function invalidReportingFacet(
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+  message: string,
+): void {
+  diagnostics.push(
+    diagnostic({ code: "VOYANT_GRAPH_INVALID_REPORTING_FACET", source, facet, message }),
+  )
 }
 
 function validateEntityArray(
@@ -2734,6 +3035,85 @@ function accessActionName(action: VoyantGraphAccessResource["actions"][number]):
   return typeof action === "string" ? action : action.action
 }
 
+function compileReportingCatalog(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphReportingCatalog {
+  const datasets = units
+    .flatMap((unit) =>
+      (unit.reporting?.datasets ?? []).map((dataset) => ({
+        ...dataset,
+        ownerUnitId: unit.id,
+        runtimeReferenceId: reportingDatasetRuntimeReferenceId(unit.id, dataset.id),
+      })),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id))
+  const datasetIds = new Set(datasets.map(({ id }) => id))
+
+  const widgets = units
+    .flatMap((unit) =>
+      (unit.reporting?.widgets ?? []).map((widget) => {
+        const missingRequirements = datasetIds.has(widget.datasetId)
+          ? []
+          : [{ kind: "dataset" as const, id: widget.datasetId }]
+        return {
+          ...widget,
+          ownerUnitId: unit.id,
+          available: missingRequirements.length === 0,
+          missingRequirements,
+        }
+      }),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id))
+  const widgetsById = new Map(widgets.map((widget) => [widget.id, widget]))
+
+  const templates = units
+    .flatMap((unit) =>
+      (unit.reporting?.templates ?? []).map((template) => {
+        const requirements = [
+          ...(template.requirements ?? []),
+          ...template.widgets.map(
+            ({ widgetId }): VoyantGraphReportingRequirement => ({ kind: "widget", id: widgetId }),
+          ),
+        ]
+        const missingRequirements = uniqueReportingRequirements(
+          requirements.filter((requirement) => {
+            if (requirement.kind === "dataset") return !datasetIds.has(requirement.id)
+            return widgetsById.get(requirement.id)?.available !== true
+          }),
+        )
+        return {
+          ...template,
+          ownerUnitId: unit.id,
+          available: missingRequirements.length === 0,
+          missingRequirements,
+        }
+      }),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id))
+
+  return { datasets, widgets, templates }
+}
+
+function uniqueReportingRequirements(
+  requirements: readonly VoyantGraphReportingRequirement[],
+): VoyantGraphReportingRequirement[] {
+  const byKey = new Map(
+    requirements.map((requirement) => [`${requirement.kind}\0${requirement.id}`, requirement]),
+  )
+  return [...byKey.values()].sort(compareReportingRequirement)
+}
+
+function compareReportingRequirement(
+  left: VoyantGraphReportingRequirement,
+  right: VoyantGraphReportingRequirement,
+): number {
+  return left.kind.localeCompare(right.kind) || left.id.localeCompare(right.id)
+}
+
+function reportingDatasetRuntimeReferenceId(unitId: string, datasetId: string): string {
+  return `${encodeURIComponent(unitId)}/reporting.datasets.runtime/${encodeURIComponent(datasetId)}`
+}
+
 function compileAccessCatalog(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
   projectPresets: readonly VoyantGraphAccessPreset[],
@@ -3264,6 +3644,9 @@ function validateRuntimeReferenceAdmission(
     for (const presentation of unit.presentations ?? []) {
       add(`presentations.runtime.${presentation.id}.entry`, presentation.runtime)
     }
+    for (const dataset of unit.reporting?.datasets ?? []) {
+      add(`reporting.datasets.runtime.${dataset.id}.entry`, dataset.runtime)
+    }
     for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
     for (const workflow of unit.workflows) {
       add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
@@ -3407,6 +3790,9 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.admin?.slots ?? []).map((entry) => entry.id),
     ...(unit.admin?.contributions ?? []).map((entry) => entry.id),
     ...(unit.presentations ?? []).map((entry) => entry.id),
+    ...(unit.reporting?.datasets ?? []).map((entry) => entry.id),
+    ...(unit.reporting?.widgets ?? []).map((entry) => entry.id),
+    ...(unit.reporting?.templates ?? []).map((entry) => entry.id),
     ...(unit.tools ?? []).map((entry) => entry.id),
     ...(unit.webhooks ?? []).map((entry) => entry.id),
     ...(unit.actions ?? []).map((entry) => entry.id),

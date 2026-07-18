@@ -263,6 +263,9 @@ function collectRuntimeReferences(
   for (const contribution of unit.admin?.contributions ?? []) {
     add("admin.contributions.runtime", contribution.id, contribution.runtime)
   }
+  for (const dataset of unit.reporting?.datasets ?? []) {
+    add("reporting.datasets.runtime", dataset.id, dataset.runtime)
+  }
   for (const tool of unit.tools ?? []) add("tools.runtime", tool.id, tool.runtime)
   for (const workflow of unit.workflows) {
     if (workflow.runtime) add("workflows.runtime", workflow.id, workflow.runtime)

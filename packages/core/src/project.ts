@@ -16,6 +16,8 @@ import type {
   VoyantGraphPresentationDeclaration,
   VoyantGraphProjectAccessDeclaration,
   VoyantGraphProviderDeclaration,
+  VoyantGraphReportingCatalog,
+  VoyantGraphReportingDeclaration,
   VoyantGraphResourceDeclaration,
   VoyantGraphSecretDeclaration,
   VoyantGraphSetupMigration,
@@ -187,6 +189,8 @@ export interface VoyantGraphRuntimeFactoryGraph {
   }
   /** Present on generated v1 runtimes; optional for direct factory test harnesses. */
   readonly eventCatalog?: VoyantGraphEventCatalog
+  /** Source-free report datasets, presets, and page templates selected by the graph. */
+  readonly reportingCatalog?: VoyantGraphReportingCatalog
   readonly tools: readonly {
     readonly referenceId: string
     readonly context?: readonly string[]
@@ -397,6 +401,7 @@ export interface VoyantGraphUnitManifest {
   access?: VoyantGraphAccessDeclaration
   admin?: VoyantGraphAdminDeclaration
   presentations?: readonly VoyantGraphPresentationDeclaration[]
+  reporting?: VoyantGraphReportingDeclaration
   tools?: readonly VoyantGraphToolDeclaration[]
   webhooks?: readonly VoyantGraphWebhookDeclaration[]
   actions?: readonly VoyantGraphActionDeclaration[]
