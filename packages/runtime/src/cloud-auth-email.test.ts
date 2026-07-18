@@ -9,7 +9,7 @@ vi.mock("@voyant-travel/cloud-sdk", () => ({
   getVoyantCloudClient: mocks.getVoyantCloudClient,
 }))
 
-import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
+import { resolveVoyantCloudAuthEmailSender } from "./index.js"
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -74,7 +74,7 @@ describe("Operator cloud auth email", () => {
   })
 
   it("uses the standard sender and generic OTP subject defaults", async () => {
-    const sender = resolveVoyantCloudAuthEmailSender({ VOYANT_CLOUD_API_KEY: "vc_other" })
+    const sender = resolveVoyantCloudAuthEmailSender({ VOYANT_API_KEY: "vc_other" })
     await sender?.sendVerificationOtp({
       email: "user@example.test",
       otp: "654321",

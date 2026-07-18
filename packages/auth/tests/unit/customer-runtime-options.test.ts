@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { withCustomerSocialRedirectUris } from "../../src/node-runtime.js"
+import {
+  withCustomerPublicResetPasswordUrl,
+  withCustomerSocialRedirectUris,
+} from "../../src/node-runtime.js"
 
 describe("customer auth runtime options", () => {
   it("uses the browser-visible API callback for configured social providers", () => {
@@ -42,6 +45,23 @@ describe("customer auth runtime options", () => {
 
     expect(methods.socialProviders?.google?.redirectURI).toBe(
       "https://merchant.example/custom/google-callback",
+    )
+  })
+
+  it("rewrites generated reset-password links through the public storefront API", () => {
+    expect(
+      withCustomerPublicResetPasswordUrl(
+        "https://runtime.internal/auth/customer/reset-password/token-123?callbackURL=%2Faccount",
+        "https://shop.example.com/api/",
+      ),
+    ).toBe(
+      "https://shop.example.com/api/auth/customer/reset-password/token-123?callbackURL=%2Faccount",
+    )
+  })
+
+  it("leaves malformed generated reset-password links untouched", () => {
+    expect(withCustomerPublicResetPasswordUrl("not a URL", "https://shop.example.com/api")).toBe(
+      "not a URL",
     )
   })
 })

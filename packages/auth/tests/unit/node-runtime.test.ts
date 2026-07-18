@@ -25,6 +25,37 @@ describe("buildBetterAuthCookieAdvancedOptions", () => {
 })
 
 describe("createOperatorAuthNodeRuntime", () => {
+  it("surfaces active managed modules in bootstrap status", async () => {
+    const openDatabase = vi.fn(() => {
+      throw new Error("managed bootstrap status must not open the database")
+    })
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      activeModules: ["catalog", "storefront"],
+      appName: "auth-test",
+      authMode: "voyant-cloud",
+      reporter: { captureException: vi.fn() },
+      openDatabase,
+    })
+
+    const response = await runtime.handler.fetch(
+      new Request("https://admin.example.com/auth/bootstrap-status"),
+      {
+        DATABASE_URL: "postgres://unused",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-session-claims-secret",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      hasUsers: true,
+      authMode: "voyant-cloud",
+      modules: ["catalog", "storefront"],
+    })
+    expect(openDatabase).not.toHaveBeenCalled()
+  })
+
   it("exposes only the canonical admin cloud start route", async () => {
     const openDatabase = vi.fn(() => {
       throw new Error("cloud start route must not open the database")
@@ -131,6 +162,163 @@ describe("createOperatorAuthNodeRuntime", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ authenticated: false, disabled: true })
     expect(openDatabase).not.toHaveBeenCalled()
+  })
+
+  it("awaits managed customer auth context for the public configuration", async () => {
+    const resolveCustomerAuthContext = vi.fn(async () => {
+      await Promise.resolve()
+      return {
+        baseURL: "https://shop.example.com",
+        publicApiBaseURL: "https://shop.example.com/api",
+        trustedOrigins: ["https://shop.example.com"],
+        methods: {
+          emailCode: true,
+          emailPassword: false,
+          socialProviders: {
+            google: { clientId: "google-id", clientSecret: "google-secret" },
+          },
+        },
+      }
+    })
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "voyant-cloud",
+      reporter: { captureException: vi.fn() },
+      resolveCustomerAuthContext,
+    })
+
+    const response = await runtime.handler.fetch(
+      new Request("https://runtime.internal/auth/customer/config"),
+      {
+        DATABASE_URL: "postgres://unused",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-session-claims-secret",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      methods: {
+        emailCode: true,
+        emailPassword: false,
+        google: true,
+        facebook: false,
+        apple: false,
+      },
+    })
+    expect(resolveCustomerAuthContext).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    {
+      label: "non-origin base URL",
+      context: {
+        baseURL: "https://shop.example.com/tenant",
+        publicApiBaseURL: "https://shop.example.com/api",
+        trustedOrigins: ["https://shop.example.com"],
+      },
+    },
+    {
+      label: "non-API public URL",
+      context: {
+        baseURL: "https://shop.example.com",
+        publicApiBaseURL: "https://evil.example.com/callback",
+        trustedOrigins: ["https://shop.example.com"],
+      },
+    },
+    {
+      label: "trusted origin with a path",
+      context: {
+        baseURL: "https://shop.example.com",
+        publicApiBaseURL: "https://shop.example.com/api",
+        trustedOrigins: ["https://shop.example.com/path"],
+      },
+    },
+  ])("fails closed for a broker context with $label", async ({ context }) => {
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "voyant-cloud",
+      reporter: { captureException: vi.fn() },
+      resolveCustomerAuthContext: async () => ({
+        ...context,
+        methods: { emailCode: true, emailPassword: true },
+      }),
+    })
+
+    const response = await runtime.handler.fetch(
+      new Request("https://runtime.internal/auth/customer/config"),
+      {
+        DATABASE_URL: "postgres://unused",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-session-claims-secret",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+
+    expect(response.status).toBe(500)
+  })
+
+  it("awaits managed customer auth context for public API session resolution", async () => {
+    const contextError = new Error("customer context broker unavailable")
+    const resolveCustomerAuthContext = vi.fn(async () => {
+      await Promise.resolve()
+      throw contextError
+    })
+    const dispose = vi.fn(async () => {})
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "voyant-cloud",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose }),
+      resolveCustomerAuthContext,
+    })
+    const request = new Request("https://runtime.internal/v1/public/customer/profile")
+
+    await expect(
+      runtime.resolveAuthRequest(request, {
+        DATABASE_URL: "postgres://unused",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-session-claims-secret",
+        BETTER_AUTH_CUSTOMER_SECRET: "customer-secret",
+      }),
+    ).rejects.toBe(contextError)
+    expect(resolveCustomerAuthContext).toHaveBeenCalledWith(expect.anything(), request)
+    expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    "/auth/customer/status",
+    "/auth/customer/sign-in/email",
+  ])("awaits managed customer auth context for %s", async (pathname) => {
+    const contextError = new Error("customer context broker unavailable")
+    const resolveCustomerAuthContext = vi.fn(async () => {
+      await Promise.resolve()
+      throw contextError
+    })
+    const dispose = vi.fn(async () => {})
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "voyant-cloud",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose }),
+      resolveCustomerAuthContext,
+    })
+
+    const response = await runtime.handler.fetch(
+      new Request(`https://runtime.internal${pathname}`),
+      {
+        DATABASE_URL: "postgres://unused",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-session-claims-secret",
+        BETTER_AUTH_CUSTOMER_SECRET: "customer-secret",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+
+    expect(response.status).toBe(500)
+    expect(resolveCustomerAuthContext).toHaveBeenCalledOnce()
+    expect(dispose).toHaveBeenCalledOnce()
   })
 
   it("fails closed for paths that only contain a public-surface substring", async () => {

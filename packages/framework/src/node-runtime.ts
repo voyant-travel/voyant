@@ -3,23 +3,12 @@
 // infrastructure.
 
 import type { ActionLedgerCapabilityRegistry } from "@voyant-travel/action-ledger/capability"
-import {
-  createVoyantCloudAdminAuthPlugin,
-  revalidateVoyantCloudAdminAuthSession,
-  revalidateVoyantCloudAdminAuthUser,
-} from "@voyant-travel/auth/cloud-admin-session"
-import {
-  buildClearCloudAdminAuthStateCookie,
-  createCloudAdminAuthStart,
-} from "@voyant-travel/auth/cloud-broker"
-import { createBetterAuth } from "@voyant-travel/auth/server"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
   resolveNodeDatabase,
 } from "@voyant-travel/db/runtime"
-import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import {
   createMemoryRateLimitStore,
   createRedisRateLimitStore,
@@ -43,15 +32,9 @@ import {
   resolveDocumentDownloadUrl,
 } from "@voyant-travel/storage/runtime"
 import type { StorageProvider, StorageProviderResolver } from "@voyant-travel/storage/types"
-import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
-
-// Derived from the member-roles helper so this file keeps zero first-party
-// PRODUCT imports (architecture gate): the node runtime only threads the
-// catalog through to scope derivation, never interprets it.
-type AccessCatalog = NonNullable<Parameters<typeof accessCatalogScopesForRole>[1]>
 
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import type { DriverFactory } from "@voyant-travel/workflows/driver"
@@ -61,8 +44,6 @@ import {
   createStandaloneDriver,
   type PostgresConnection,
 } from "@voyant-travel/workflows-orchestrator/selfhost"
-import { eq, sql } from "drizzle-orm"
-import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
@@ -72,7 +53,6 @@ import type {
   VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
-import { requireNodeAdminBetterAuthSecret } from "./node-auth-secrets.js"
 import {
   resolveVoyantNodeProviderPlan,
   type VoyantNodeKvProvider,
@@ -254,30 +234,6 @@ export interface VoyantNodeRuntime {
   start: (options?: Partial<CreateNodeServerOptions<VoyantNodeRuntimeEnv>>) => NodeServerHandle
 }
 
-const MANAGED_CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
-  "/auth/get-session",
-  "/auth/jwks",
-  "/auth/session",
-  "/auth/sign-out",
-  "/auth/token",
-])
-const MANAGED_CLOUD_AUTH_REQUIRED_ENV = [
-  "VOYANT_CLOUD_DEPLOYMENT_ID",
-  "VOYANT_CLOUD_ADMIN_AUTH_START_URL",
-  "VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL",
-  "VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL",
-  "VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL",
-  "VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN",
-  "SESSION_CLAIMS_ADMIN_SECRET",
-  "BETTER_AUTH_ADMIN_SECRET",
-] as const
-const MANAGED_CUSTOMER_AUTH_REQUIRED_ENV = [
-  "BETTER_AUTH_CUSTOMER_SECRET",
-  "SESSION_CLAIMS_CUSTOMER_SECRET",
-] as const
-const MANAGED_FULL_ACCESS_SCOPES = ["*"]
-const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
-
 interface NodeSharedStores {
   CACHE: KVStore
   SHARED_STATE: KVStore
@@ -336,12 +292,7 @@ export async function loadVoyantNodeRuntime(
     deploymentValueAliases: deploymentValueAliases(requirements),
   })
   const activeModules = options.graphRuntime.modules.map((unit) => unit.localId ?? unit.id)
-  const auth = resolveVoyantNodeAuthIntegration({
-    env,
-    auth: options.app?.auth ?? options.auth,
-    activeModules,
-    accessCatalog: options.app?.accessCatalog ?? options.graphRuntime.accessCatalog,
-  })
+  const auth = options.app?.auth ?? options.auth
   const resources = { ...(options.providers ?? {}), ...(options.resources ?? {}) }
   const graphComposition = await composeVoyantGraphRuntime({
     runtime: options.graphRuntime,
@@ -460,12 +411,7 @@ export function createVoyantNodeApp(options: {
   modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
   extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
 }) {
-  const auth = resolveVoyantNodeAuthIntegration({
-    env: options.env,
-    auth: options.app?.auth ?? options.auth,
-    activeModules: options.activeModules,
-    accessCatalog: options.app?.accessCatalog,
-  })
+  const auth = options.app?.auth ?? options.auth
   const workflows = createVoyantNodeWorkflowConfig({
     deployment: options.deployment,
     env: options.env ?? createVoyantNodeEnv(process.env),
@@ -524,476 +470,6 @@ export function createVoyantNodeEnv(
 
 function nodeProviderPlanKey(plan: VoyantNodeProviderPlan): string {
   return [plan.storage, plan.cache, plan.sharedState, plan.rateLimit].join("\0")
-}
-
-function resolveVoyantNodeAuthIntegration(options: {
-  env?: VoyantNodeRuntimeEnv
-  auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
-  /** Active module ids surfaced on `/auth/bootstrap-status` for admin gating (voyant#3063). */
-  activeModules?: readonly string[]
-  accessCatalog?: AccessCatalog
-}): VoyantAuthIntegration<VoyantNodeRuntimeEnv> | undefined {
-  if (options.auth) return options.auth
-  if (!isManagedVoyantCloudAuthMode(options.env)) return undefined
-  return createManagedCloudAdminAuthIntegration(options.activeModules ?? [], options.accessCatalog)
-}
-
-function createManagedCloudAdminAuthIntegration(
-  activeModules: readonly string[],
-  accessCatalog: AccessCatalog | undefined,
-): VoyantAuthIntegration<VoyantNodeRuntimeEnv> {
-  return {
-    handler: () => {
-      const app = createVoyantCloudAuthApp(activeModules)
-      return {
-        fetch: (request, env, ctx) => app.fetch(request, env, ctx as never),
-      }
-    },
-    resolve: async ({ request, env, db }) => {
-      const auth = createManagedBetterAuth(env, db)
-      const session = await auth.api.getSession({ headers: request.headers })
-      if (!session) return null
-
-      const revalidateConfig = getManagedCloudAuthRevalidateConfig(env)
-      if (!revalidateConfig) return null
-
-      try {
-        const revalidation = await revalidateVoyantCloudAdminAuthSession({
-          db: db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"],
-          sessionId: session.session.id,
-          config: revalidateConfig,
-        })
-        if (!revalidation.ok) return null
-      } catch (error) {
-        console.error("[managed-auth/session] Cloud revalidation failed:", error)
-        return null
-      }
-
-      return {
-        userId: session.user.id,
-        sessionId: session.session.id,
-        organizationId: null,
-        callerType: "session",
-        actor: "staff",
-        realm: "admin",
-        scopes: await resolveManagedCloudMemberScopes(db, session.user.id, accessCatalog),
-        email: session.user.email ?? null,
-      }
-    },
-    validateApiKey: async ({ env, db, apiKey }) => {
-      if (!isManagedVoyantCloudAuthMode(env)) return true
-
-      const revalidateConfig = getManagedCloudAuthRevalidateConfig(env)
-      if (!revalidateConfig) return false
-
-      try {
-        const revalidation = await revalidateVoyantCloudAdminAuthUser({
-          db: db as Parameters<typeof revalidateVoyantCloudAdminAuthUser>[0]["db"],
-          userId: apiKey.referenceId,
-          config: revalidateConfig,
-        })
-        return revalidation.ok
-      } catch (error) {
-        console.error("[managed-auth/api-token] Cloud revalidation failed:", error)
-        return false
-      }
-    },
-    onUnauthorized: async ({ request, env }) => {
-      if (!isManagedVoyantCloudAuthMode(env) || !shouldRedirectManagedCloudAdminRequest(request)) {
-        return null
-      }
-
-      const config = getManagedCloudAuthStartConfig(env)
-      if (!config) return null
-
-      const start = await createCloudAdminAuthStart({
-        requestUrl: request.url,
-        next: managedRequestNextPath(request),
-        config,
-      })
-
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: start.redirectUrl,
-          "Set-Cookie": start.setCookie,
-        },
-      })
-    },
-  }
-}
-
-type NodeAuthHonoEnv = { Bindings: VoyantNodeRuntimeEnv }
-
-export function createVoyantCloudAuthApp(
-  activeModules: readonly string[] = [],
-): Hono<NodeAuthHonoEnv> {
-  const auth = new Hono<NodeAuthHonoEnv>()
-
-  async function startCloudAuth(c: Context<NodeAuthHonoEnv>) {
-    if (!isManagedVoyantCloudAuthMode(c.env)) {
-      return c.json({ error: "Not found" }, 404)
-    }
-
-    const config = getManagedCloudAuthStartConfig(c.env)
-    if (!config) {
-      return c.json({ error: "Voyant Cloud auth broker is not configured yet" }, 501)
-    }
-
-    try {
-      const start = await createCloudAdminAuthStart({
-        requestUrl: c.req.url,
-        next: c.req.query("next"),
-        config,
-      })
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: start.redirectUrl,
-          "Set-Cookie": start.setCookie,
-        },
-      })
-    } catch (error) {
-      console.error("[managed-auth/cloud/start] Error:", error)
-      return c.json({ error: "Voyant Cloud auth broker is misconfigured" }, 500)
-    }
-  }
-
-  auth.get("/auth/admin/cloud/start", startCloudAuth)
-
-  auth.get("/auth/admin/cloud/callback", async (c) => {
-    if (!isManagedVoyantCloudAuthMode(c.env)) {
-      return c.json({ error: "Not found" }, 404)
-    }
-
-    if (!getManagedCloudAuthExchangeConfig(c.env)) {
-      const url = new URL(c.req.url)
-      const callbackUrl = getManagedCloudAuthStartConfig(c.env)?.adminCallbackUrl
-      return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
-        "Set-Cookie": buildClearCloudAdminAuthStateCookie(
-          callbackUrl ? new URL(callbackUrl).protocol === "https:" : url.protocol === "https:",
-          url.pathname.replace(/\/callback$/, "") || "/auth/admin/cloud",
-        ),
-      })
-    }
-
-    try {
-      return await createManagedBetterAuth(c.env, resolveDb(c.env)).handler(c.req.raw)
-    } catch (error) {
-      console.error("[managed-auth/cloud/callback] Error:", error)
-      return c.json({ error: "Voyant Cloud auth callback failed" }, 500)
-    }
-  })
-
-  auth.get("/auth/me", async (c) => {
-    const user = await resolveManagedCurrentUser(c.env, c.req.raw)
-    if (!user) return c.json({ error: "unauthorized" }, 401)
-    return c.json(user)
-  })
-
-  auth.get("/auth/bootstrap-status", async (c) => {
-    return c.json(await resolveManagedBootstrapStatus(c.env, c.req.raw, activeModules))
-  })
-
-  auth.all("/auth/admin/*", async (c) => {
-    if (isManagedVoyantCloudAuthMode(c.env) && !isManagedCloudAllowedBetterAuthRoute(c.req.raw)) {
-      return c.json({ error: "Local auth routes are disabled in Voyant Cloud auth mode" }, 404)
-    }
-
-    return await createManagedBetterAuth(c.env, resolveDb(c.env)).handler(c.req.raw)
-  })
-
-  return auth
-}
-
-/**
- * Shape returned by `GET /auth/me` for a source-free hosted admin —
- * mirrors the operator starter's `CurrentUser` so the packaged admin UI can
- * resolve its current user directly from the managed API.
- */
-export type VoyantNodeCurrentUser = {
-  id: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  locale: string
-  timezone: string | null
-  uiPrefs: Record<string, unknown> | null
-  isSuperAdmin: boolean
-  isSupportUser: boolean
-  createdAt: string
-  profilePictureUrl: string | null
-}
-
-export type VoyantNodeBootstrapStatus = {
-  hasUsers: boolean
-  authMode: "local" | "voyant-cloud"
-  /**
-   * The active module ids for this deployment (voyant#3063). The source-free
-   * hosted admin — a shared, framework-version-tagged image — reads this to
-   * gate its composition to the modules admitted by the deployment graph,
-   * instead of every module the image can compose.
-   */
-  modules: string[]
-}
-
-async function resolveManagedCurrentUser(
-  env: VoyantNodeRuntimeEnv,
-  request: Request,
-): Promise<VoyantNodeCurrentUser | null> {
-  const db = resolveDb(env)
-  const betterAuth = createManagedBetterAuth(env, db)
-  const session = await betterAuth.api.getSession({ headers: request.headers })
-  if (!session) return null
-
-  const [row] = await db
-    .select({
-      id: authUser.id,
-      email: authUser.email,
-      createdAt: authUser.createdAt,
-      firstName: userProfilesTable.firstName,
-      lastName: userProfilesTable.lastName,
-      locale: userProfilesTable.locale,
-      timezone: userProfilesTable.timezone,
-      uiPrefs: userProfilesTable.uiPrefs,
-      avatarUrl: userProfilesTable.avatarUrl,
-      isSuperAdmin: userProfilesTable.isSuperAdmin,
-      isSupportUser: userProfilesTable.isSupportUser,
-    })
-    .from(authUser)
-    .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
-    .where(eq(authUser.id, session.user.id))
-    .limit(1)
-
-  if (!row) return null
-
-  return {
-    id: row.id,
-    email: row.email ?? session.user.email ?? "",
-    firstName: row.firstName ?? null,
-    lastName: row.lastName ?? null,
-    locale: row.locale ?? "en",
-    timezone: row.timezone ?? null,
-    uiPrefs: (row.uiPrefs as VoyantNodeCurrentUser["uiPrefs"]) ?? null,
-    isSuperAdmin: row.isSuperAdmin ?? false,
-    isSupportUser: row.isSupportUser ?? false,
-    createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
-    profilePictureUrl: row.avatarUrl ?? null,
-  }
-}
-
-async function resolveManagedBootstrapStatus(
-  env: VoyantNodeRuntimeEnv,
-  _request: Request,
-  activeModules: readonly string[],
-): Promise<VoyantNodeBootstrapStatus> {
-  const modules = [...activeModules]
-  if (isManagedVoyantCloudAuthMode(env)) {
-    return { hasUsers: true, authMode: "voyant-cloud", modules }
-  }
-
-  const db = resolveDb(env)
-  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-  return { hasUsers: (row?.count ?? 0) > 0, authMode: "local", modules }
-}
-
-function createManagedBetterAuth(env: VoyantNodeRuntimeEnv, db: VoyantDb) {
-  const cloudAuthExchange = isManagedVoyantCloudAuthMode(env)
-    ? getManagedCloudAuthExchangeConfig(env)
-    : null
-  const authDb = db as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
-  const cloudAuthDb = db as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
-
-  return createBetterAuth({
-    db: authDb,
-    secret: requireNodeAdminBetterAuthSecret(env),
-    baseURL: getManagedAuthBaseUrl(env),
-    basePath: "/auth/admin",
-    trustedOrigins: getManagedTrustedOrigins(env),
-    plugins: cloudAuthExchange
-      ? [
-          createVoyantCloudAdminAuthPlugin({
-            db: cloudAuthDb,
-            cookieSecret: env.SESSION_CLAIMS_ADMIN_SECRET ?? "",
-            secureStateCookie:
-              new URL(`${getManagedPublicApiBaseUrl(env)}/auth/admin/cloud/callback`).protocol ===
-              "https:",
-            exchange: cloudAuthExchange,
-          }),
-        ]
-      : undefined,
-  })
-}
-
-function resolveManagedAdminAuthMode(
-  env: VoyantNodeRuntimeEnv | undefined,
-): "local" | "voyant-cloud" {
-  const mode = env?.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
-  if (mode === "local" || mode === "voyant-cloud") return mode
-
-  console.error(
-    `[managed-auth] Invalid VOYANT_ADMIN_AUTH_MODE="${mode}". Failing closed as voyant-cloud.`,
-  )
-  return "voyant-cloud"
-}
-
-function isManagedVoyantCloudAuthMode(env: VoyantNodeRuntimeEnv | undefined): boolean {
-  return resolveManagedAdminAuthMode(env) === "voyant-cloud"
-}
-
-function getManagedCloudAuthStartConfig(env: VoyantNodeRuntimeEnv) {
-  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
-  const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
-  const cookieSecret = env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
-  if (!deploymentId || !cloudAuthStartUrl || !cookieSecret) return null
-
-  return {
-    cloudAuthStartUrl,
-    deploymentId,
-    adminCallbackUrl: `${getManagedPublicApiBaseUrl(env)}/auth/admin/cloud/callback`,
-    cookieSecret,
-    environment: env.VOYANT_CLOUD_ENVIRONMENT,
-  }
-}
-
-function getManagedCloudAuthExchangeConfig(env: VoyantNodeRuntimeEnv) {
-  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
-  const exchangeUrl = env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?.trim()
-  const assertionJwksUrl = env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?.trim()
-  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
-  if (!deploymentId || !exchangeUrl || !assertionJwksUrl || !clientToken) return null
-
-  return {
-    exchangeUrl,
-    deploymentId,
-    clientToken,
-    assertionJwksUrl,
-    assertionAudience: env.VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?.trim() || deploymentId,
-  }
-}
-
-function getManagedCloudAuthRevalidateConfig(env: VoyantNodeRuntimeEnv) {
-  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
-  const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
-  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
-  if (!deploymentId || !revalidateUrl || !clientToken) return null
-
-  return {
-    revalidateUrl,
-    deploymentId,
-    clientToken,
-  }
-}
-
-async function resolveManagedCloudMemberScopes(
-  db: VoyantDb,
-  userId: string,
-  accessCatalog: AccessCatalog | undefined,
-): Promise<string[]> {
-  const [link] = await db
-    .select({ scopes: cloudAuthUserLinks.scopes, roleSlug: cloudAuthUserLinks.roleSlug })
-    .from(cloudAuthUserLinks)
-    .where(eq(cloudAuthUserLinks.userId, userId))
-    .limit(1)
-  const fullAccessScopes =
-    accessCatalogScopesForRole("admin", accessCatalog) ?? MANAGED_FULL_ACCESS_SCOPES
-  const roleScopes = accessCatalogScopesForRole(link?.roleSlug, accessCatalog) ?? fullAccessScopes
-  return isFullAccessRole(link?.roleSlug) ? roleScopes : (link?.scopes ?? roleScopes)
-}
-
-function isManagedCloudAllowedBetterAuthRoute(request: Request): boolean {
-  const url = new URL(request.url)
-  const pathname = url.pathname.replace("/auth/admin", "/auth").replace(/\/+$/, "") || "/"
-  return MANAGED_CLOUD_BETTER_AUTH_ALLOWLIST.has(pathname)
-}
-
-function shouldRedirectManagedCloudAdminRequest(request: Request): boolean {
-  if (request.method !== "GET" && request.method !== "HEAD") return false
-
-  const url = new URL(request.url)
-  const pathname = url.pathname.replace(/\/+$/, "") || "/"
-  if (
-    pathname === "/health" ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/v1/") ||
-    pathname.startsWith("/api/v1/")
-  ) {
-    return false
-  }
-
-  const accept = request.headers.get("accept") ?? ""
-  return accept.includes("text/html")
-}
-
-function managedRequestNextPath(request: Request): string {
-  const url = new URL(request.url)
-  return `${url.pathname}${url.search}${url.hash}` || "/"
-}
-
-function getManagedAuthBaseUrl(env: VoyantNodeRuntimeEnv): string {
-  const appUrl = getManagedAppUrl(env)
-  try {
-    const parsed = new URL(appUrl)
-    return `${parsed.protocol}//${parsed.host}`
-  } catch {
-    return appUrl
-  }
-}
-
-function getManagedPublicApiBaseUrl(env: VoyantNodeRuntimeEnv): string {
-  const candidate =
-    env.API_BASE_URL?.trim() || env.APP_URL?.trim() || `${getManagedAppUrl(env)}/api`
-  const normalized = normalizeManagedUrl(candidate)
-
-  try {
-    const parsed = new URL(normalized)
-    if (parsed.pathname === "/" || parsed.pathname === "") {
-      parsed.pathname = "/api"
-      return normalizeManagedUrl(parsed.toString())
-    }
-  } catch {
-    return normalized
-  }
-
-  return normalized
-}
-
-function getManagedTrustedOrigins(env: VoyantNodeRuntimeEnv): string[] {
-  return Array.from(
-    new Set(
-      [
-        env.APP_URL,
-        env.DASH_BASE_URL,
-        env.API_BASE_URL,
-        ...(env.CORS_ALLOWLIST ?? "").split(","),
-        getManagedAppUrl(env),
-      ]
-        .map((value) => value?.trim())
-        .filter((value): value is string => Boolean(value)),
-    ),
-  ).map(normalizeManagedUrl)
-}
-
-function getManagedAppUrl(env: VoyantNodeRuntimeEnv): string {
-  const candidates = [
-    env.APP_URL,
-    env.DASH_BASE_URL,
-    env.API_BASE_URL?.replace(/\/api\/?$/, ""),
-    DEFAULT_MANAGED_APP_URL,
-  ]
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return normalizeManagedUrl(candidate)
-    }
-  }
-
-  return DEFAULT_MANAGED_APP_URL
-}
-
-function normalizeManagedUrl(url: string): string {
-  return url.trim().replace(/\/$/, "")
 }
 
 function createNodeSharedStores(
@@ -1099,9 +575,7 @@ function assertVoyantNodeRuntimeSupport(options: {
 }) {
   const issues = nodeRuntimeEnvIssues(options.requirements, options.env)
   if (options.mode === "managed-cloud" && !options.hasAuthIntegration) {
-    issues.push(
-      "managed-cloud applications require VOYANT_ADMIN_AUTH_MODE=voyant-cloud with Cloud admin auth env, or an injected admin auth integration",
-    )
+    issues.push("managed-cloud applications require an injected auth integration")
   }
   if (issues.length > 0) {
     throw new Error(`Voyant Node runtime is not ready to start:\n${formatIssues(issues)}`)
@@ -1129,40 +603,6 @@ function nodeRuntimeEnvIssues(
         issues.push(
           `${requirement.kind} ${requirement.name} must be ${formatDescription(format)} for ${resource.resourceKey}`,
         )
-      }
-    }
-  }
-  if (isManagedVoyantCloudAuthMode(env)) {
-    for (const name of MANAGED_CLOUD_AUTH_REQUIRED_ENV) {
-      const value = getEnvValue(env, name)
-      if (typeof value !== "string" || value.trim().length === 0) {
-        issues.push(`managed-cloud auth ${name} is required for Voyant Cloud admin auth`)
-      }
-    }
-    const adminClaimsSecret = env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
-    if (adminClaimsSecret && adminClaimsSecret.length < 32) {
-      issues.push("managed-cloud auth SESSION_CLAIMS_ADMIN_SECRET must have at least 32 characters")
-    }
-    if (env.VOYANT_CUSTOMER_AUTH_MODE?.trim() !== "disabled") {
-      for (const name of MANAGED_CUSTOMER_AUTH_REQUIRED_ENV) {
-        const value = getEnvValue(env, name)
-        if (typeof value !== "string" || value.trim().length === 0) {
-          issues.push(`managed-cloud auth ${name} is required for storefront customer auth`)
-        }
-      }
-      const customerClaimsSecret = env.SESSION_CLAIMS_CUSTOMER_SECRET?.trim()
-      if (customerClaimsSecret && customerClaimsSecret.length < 32) {
-        issues.push(
-          "managed-cloud auth SESSION_CLAIMS_CUSTOMER_SECRET must have at least 32 characters",
-        )
-      }
-      if (adminClaimsSecret && adminClaimsSecret === customerClaimsSecret) {
-        issues.push("managed-cloud admin and customer session-claims secrets must be different")
-      }
-      const adminAuthSecret = env.BETTER_AUTH_ADMIN_SECRET?.trim()
-      const customerAuthSecret = env.BETTER_AUTH_CUSTOMER_SECRET?.trim()
-      if (adminAuthSecret && adminAuthSecret === customerAuthSecret) {
-        issues.push("managed-cloud admin and customer Better Auth secrets must be different")
       }
     }
   }

@@ -230,7 +230,23 @@ export async function loadVoyantProject(
   ...args: Parameters<RuntimeModule["loadVoyantProject"]>
 ): ReturnType<RuntimeModule["loadVoyantProject"]> {
   const runtime = await import("./index.js")
-  return runtime.loadVoyantProject(...args)
+  const [options = {}] = args
+  return runtime.loadVoyantProject({
+    ...options,
+    env: {
+      BETTER_AUTH_ADMIN_SECRET: "admin-auth-secret-with-at-least-32-characters",
+      BETTER_AUTH_CUSTOMER_SECRET: "customer-auth-secret-with-at-least-32-characters",
+      SESSION_CLAIMS_ADMIN_SECRET: "admin-claims-secret-with-at-least-32-characters",
+      SESSION_CLAIMS_CUSTOMER_SECRET: "customer-claims-secret-with-at-least-32-characters",
+      VOYANT_CLOUD_DEPLOYMENT_ID: "dpl_test",
+      VOYANT_CLOUD_ADMIN_AUTH_START_URL: "https://cloud.example/auth/start",
+      VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL: "https://cloud.example/auth/exchange",
+      VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL: "https://cloud.example/.well-known/jwks.json",
+      VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL: "https://cloud.example/auth/revalidate",
+      VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN: "client-token",
+      ...options.env,
+    },
+  })
 }
 
 export async function loadVoyantProjectWorkflowRuntime(

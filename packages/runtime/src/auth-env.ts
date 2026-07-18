@@ -1,10 +1,33 @@
 import type { OperatorAuthNodeEnv } from "@voyant-travel/auth/node-runtime"
 import type { VoyantNodeRuntimeEnv } from "@voyant-travel/framework/node-runtime"
 
-export function requireVoyantAuthEnv(env: VoyantNodeRuntimeEnv): OperatorAuthNodeEnv {
+const VOYANT_CLOUD_ADMIN_AUTH_REQUIRED_ENV = [
+  "VOYANT_CLOUD_DEPLOYMENT_ID",
+  "VOYANT_CLOUD_ADMIN_AUTH_START_URL",
+  "VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL",
+  "VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL",
+  "VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL",
+  "VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN",
+] as const
+
+export function requireVoyantAuthEnv(
+  env: VoyantNodeRuntimeEnv,
+  authMode: "local" | "voyant-cloud" = env.VOYANT_ADMIN_AUTH_MODE?.trim() === "voyant-cloud"
+    ? "voyant-cloud"
+    : "local",
+  customerAuthMode: "better-auth" | "disabled" = env.VOYANT_CUSTOMER_AUTH_MODE?.trim() ===
+  "disabled"
+    ? "disabled"
+    : "better-auth",
+): VoyantNodeRuntimeEnv & OperatorAuthNodeEnv {
+  for (const legacyName of ["BETTER_AUTH_SECRET", "SESSION_CLAIMS_SECRET"] as const) {
+    if (typeof Reflect.get(env, legacyName) === "string") {
+      throw new Error(`${legacyName} is not supported; configure realm-specific auth secrets.`)
+    }
+  }
   const adminAuthSecret = env.BETTER_AUTH_ADMIN_SECRET?.trim()
   const adminClaimsSecret = env.SESSION_CLAIMS_ADMIN_SECRET?.trim()
-  const customerAuthDisabled = env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled"
+  const customerAuthDisabled = customerAuthMode === "disabled"
   const customerAuthSecret = env.BETTER_AUTH_CUSTOMER_SECRET?.trim()
   const customerClaimsSecret = env.SESSION_CLAIMS_CUSTOMER_SECRET?.trim()
   if (!adminAuthSecret || !adminClaimsSecret || adminClaimsSecret.length < 32) {
@@ -27,15 +50,40 @@ export function requireVoyantAuthEnv(env: VoyantNodeRuntimeEnv): OperatorAuthNod
     throw new Error("Admin and customer Better Auth secrets must be different.")
   }
 
-  const normalizedEnv = { ...env } as VoyantNodeRuntimeEnv & Record<string, string | undefined>
-  delete normalizedEnv.BETTER_AUTH_SECRET
-  delete normalizedEnv.SESSION_CLAIMS_SECRET
+  if (authMode === "voyant-cloud") {
+    const missing = VOYANT_CLOUD_ADMIN_AUTH_REQUIRED_ENV.filter((name) => !env[name]?.trim())
+    if (missing.length > 0) {
+      throw new Error(`Voyant Cloud admin auth requires ${missing.join(", ")}.`)
+    }
+    for (const name of [
+      "VOYANT_CLOUD_ADMIN_AUTH_START_URL",
+      "VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL",
+      "VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL",
+      "VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL",
+    ] as const) {
+      requireHttpUrl(env[name]!, name)
+    }
+  }
 
   return {
-    ...normalizedEnv,
+    ...env,
+    VOYANT_ADMIN_AUTH_MODE: authMode,
+    VOYANT_CUSTOMER_AUTH_MODE: customerAuthMode,
     BETTER_AUTH_ADMIN_SECRET: adminAuthSecret,
     ...(customerAuthSecret ? { BETTER_AUTH_CUSTOMER_SECRET: customerAuthSecret } : {}),
     SESSION_CLAIMS_ADMIN_SECRET: adminClaimsSecret,
     ...(customerClaimsSecret ? { SESSION_CLAIMS_CUSTOMER_SECRET: customerClaimsSecret } : {}),
+  }
+}
+
+function requireHttpUrl(value: string, name: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(value)
+  } catch {
+    throw new Error(`${name} must be an absolute HTTP(S) URL.`)
+  }
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new Error(`${name} must be an absolute HTTP(S) URL.`)
   }
 }
