@@ -35,9 +35,9 @@ describe("standard Operator distribution", () => {
       "@voyant-travel/relationships",
     ])
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(-3)).toEqual([
-      "@voyant-travel/availability",
       "@voyant-travel/catalog-authoring",
       "@voyant-travel/workflow-runs",
+      "@voyant-travel/reporting",
     ])
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toHaveLength(25)
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toContain(
