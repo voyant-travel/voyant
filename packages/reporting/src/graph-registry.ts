@@ -70,51 +70,55 @@ export async function createReportingRegistryFromGraph(input: {
     }
   })
 
-  const widgets = catalog.widgets.filter((widget) => widget.available).map((widget) =>
-    reportWidgetDefinitionSchema.parse({
-      id: widget.id,
-      version: widget.version,
-      label: widget.label,
-      ...(widget.description ? { description: widget.description } : {}),
-      query: {
-        ...widget.query,
-        dataset: {
-          id: widget.datasetId,
-          ...(widget.datasetVersion ? { version: widget.datasetVersion } : {}),
-        },
-        filters: widget.query.filters ?? [],
-        groupBy: widget.query.groupBy ?? [],
-        orderBy: widget.query.orderBy ?? [],
-      },
-      visualization: {
-        ...widget.visualization,
-        options: widget.visualization.options ?? {},
-      },
-      defaultSize: widget.defaultSize,
-      ...(widget.minSize ? { minimumSize: widget.minSize } : {}),
-      ...(widget.maxSize ? { maximumSize: widget.maxSize } : {}),
-    }),
-  )
-
-  const templates = catalog.templates.filter((template) => template.available).map((template) =>
-    reportTemplateDefinitionSchema.parse({
-      id: template.id,
-      version: template.version,
-      label: template.label,
-      ...(template.description ? { description: template.description } : {}),
-      parameters: template.parameters ?? [],
-      widgets: template.widgets.map((widget) => ({
+  const widgets = catalog.widgets
+    .filter((widget) => widget.available)
+    .map((widget) =>
+      reportWidgetDefinitionSchema.parse({
         id: widget.id,
-        source: {
-          kind: "preset",
-          widgetId: widget.widgetId,
-          ...(widget.widgetVersion ? { version: widget.widgetVersion } : {}),
+        version: widget.version,
+        label: widget.label,
+        ...(widget.description ? { description: widget.description } : {}),
+        query: {
+          ...widget.query,
+          dataset: {
+            id: widget.datasetId,
+            ...(widget.datasetVersion ? { version: widget.datasetVersion } : {}),
+          },
+          filters: widget.query.filters ?? [],
+          groupBy: widget.query.groupBy ?? [],
+          orderBy: widget.query.orderBy ?? [],
         },
-        ...(widget.title ? { title: widget.title } : {}),
-        layout: widget.layout,
-      })),
-    }),
-  )
+        visualization: {
+          ...widget.visualization,
+          options: widget.visualization.options ?? {},
+        },
+        defaultSize: widget.defaultSize,
+        ...(widget.minSize ? { minimumSize: widget.minSize } : {}),
+        ...(widget.maxSize ? { maximumSize: widget.maxSize } : {}),
+      }),
+    )
+
+  const templates = catalog.templates
+    .filter((template) => template.available)
+    .map((template) =>
+      reportTemplateDefinitionSchema.parse({
+        id: template.id,
+        version: template.version,
+        label: template.label,
+        ...(template.description ? { description: template.description } : {}),
+        parameters: template.parameters ?? [],
+        widgets: template.widgets.map((widget) => ({
+          id: widget.id,
+          source: {
+            kind: "preset",
+            widgetId: widget.widgetId,
+            ...(widget.widgetVersion ? { version: widget.widgetVersion } : {}),
+          },
+          ...(widget.title ? { title: widget.title } : {}),
+          layout: widget.layout,
+        })),
+      }),
+    )
 
   return new ReportingRegistry(
     [

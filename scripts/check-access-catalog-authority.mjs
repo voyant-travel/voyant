@@ -129,7 +129,12 @@ assert.deepEqual(presets.get("agent-staff")?.grants, [
   "trips:read",
   "trips:write",
 ])
-assert.deepEqual(presets.get("editor")?.grants, ["bookings:read", "bookings:write"])
+assert.deepEqual(presets.get("editor")?.grants, [
+  "bookings:read",
+  "bookings:write",
+  "reports:read",
+  "reports:write",
+])
 
 for (const [relativePath, pattern] of [
   ["packages/runtime/src/index.ts", /graphRuntime\.accessCatalog/],

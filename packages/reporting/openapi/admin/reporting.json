@@ -121,7 +121,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QuerySourceInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/QuerySourceInput" } }
+          }
         },
         "responses": {
           "200": { "$ref": "#/components/responses/ReportingResponse" },
@@ -138,7 +140,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QueryPreviewInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/QueryPreviewInput" } }
+          }
         },
         "responses": {
           "200": { "$ref": "#/components/responses/ReportingResponse" },
@@ -154,8 +158,16 @@
         "description": "Requires reports:read.",
         "tags": ["Reporting"],
         "parameters": [
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0, "default": 0 } }
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          }
         ],
         "responses": {
           "200": { "$ref": "#/components/responses/ReportingResponse" },
@@ -170,7 +182,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateReportInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateReportInput" } }
+          }
         },
         "responses": {
           "201": { "$ref": "#/components/responses/ReportingResponse" },
@@ -180,7 +194,9 @@
       }
     },
     "/v1/admin/reporting/reports/{id}": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
       "get": {
         "operationId": "getReport",
         "summary": "Get a saved report draft",
@@ -199,7 +215,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateReportInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateReportInput" } }
+          }
         },
         "responses": {
           "200": { "$ref": "#/components/responses/ReportingResponse" },
@@ -223,7 +241,9 @@
       }
     },
     "/v1/admin/reporting/templates/{id}/instantiate": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
       "post": {
         "operationId": "instantiateReportTemplate",
         "summary": "Create an editable report from an available page template",
@@ -231,7 +251,11 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InstantiateTemplateInput" } } }
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InstantiateTemplateInput" }
+            }
+          }
         },
         "responses": {
           "201": { "$ref": "#/components/responses/ReportingResponse" },
@@ -242,7 +266,9 @@
       }
     },
     "/v1/admin/reporting/reports/{id}/versions": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
       "post": {
         "operationId": "publishReportVersion",
         "summary": "Publish an immutable report snapshot",
@@ -250,7 +276,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublishReportInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PublishReportInput" } }
+          }
         },
         "responses": {
           "201": { "$ref": "#/components/responses/ReportingResponse" },
@@ -262,7 +290,9 @@
       }
     },
     "/v1/admin/reporting/versions/{id}/runs": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
       "post": {
         "operationId": "runReportVersion",
         "summary": "Execute an immutable report version",
@@ -270,7 +300,9 @@
         "tags": ["Reporting"],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RunReportInput" } } }
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RunReportInput" } }
+          }
         },
         "responses": {
           "201": { "$ref": "#/components/responses/ReportingResponse" },
@@ -281,7 +313,9 @@
       }
     },
     "/v1/admin/reporting/runs/{id}": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
       "get": {
         "operationId": "getReportRun",
         "summary": "Get persisted report results",

@@ -199,9 +199,9 @@ describe("ReportingRegistry", () => {
       presets: [],
     }
 
-    expect(() =>
-      requireReportingScopes(["finance:read"], ["*:*"], accessCatalog),
-    ).toThrow(ReportingAuthorizationError)
+    expect(() => requireReportingScopes(["finance:read"], ["*:*"], accessCatalog)).toThrow(
+      ReportingAuthorizationError,
+    )
     expect(() =>
       requireReportingScopes(["finance:read"], ["finance:read"], accessCatalog),
     ).not.toThrow()

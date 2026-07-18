@@ -144,7 +144,10 @@ export class ReportingRegistry {
             `Widget preset ${JSON.stringify(instance.source.kind === "preset" ? instance.source.widgetId : instance.id)} is unavailable and cannot be published.`,
           )
         }
-        const dataset = this.getDataset(definition.query.dataset.id, definition.query.dataset.version)
+        const dataset = this.getDataset(
+          definition.query.dataset.id,
+          definition.query.dataset.version,
+        )
         if (!dataset) {
           throw new ReportingRegistryError(
             `Dataset ${JSON.stringify(definition.query.dataset.id)} is unavailable and cannot be published.`,
@@ -312,9 +315,7 @@ export function requireReportingScopes(
   granted: readonly string[],
   accessCatalog?: AccessCatalog,
 ): void {
-  const missing = required.filter(
-    (scope) => !hasReportingScope(granted, scope, accessCatalog),
-  )
+  const missing = required.filter((scope) => !hasReportingScope(granted, scope, accessCatalog))
   if (missing.length > 0) {
     throw new ReportingAuthorizationError(missing)
   }

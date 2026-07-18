@@ -30,7 +30,7 @@ describe("Operator project config", () => {
       "read-only",
     ])
 
-    expect(config.selections?.modules).toHaveLength(45)
+    expect(config.selections?.modules).toHaveLength(46)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)

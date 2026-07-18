@@ -24,8 +24,8 @@ import type { Context } from "hono"
 
 import {
   ReportingAuthorizationError,
-  ReportingRegistryError,
   type ReportingRegistry,
+  ReportingRegistryError,
 } from "./registry.js"
 import {
   createReportingService,

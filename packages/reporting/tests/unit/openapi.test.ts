@@ -1,5 +1,5 @@
-import reportingOpenApi from "../../openapi/admin/reporting.json"
 import { describe, expect, it } from "vitest"
+import reportingOpenApi from "../../openapi/admin/reporting.json"
 
 describe("reporting OpenAPI artifact", () => {
   it("documents every mounted reporting route and result authorization", () => {
@@ -19,12 +19,12 @@ describe("reporting OpenAPI artifact", () => {
     expect(reportingOpenApi.paths["/v1/admin/reporting/runs/{id}"].get.description).toContain(
       "reports:export",
     )
-    expect(reportingOpenApi.paths["/v1/admin/reporting/queries/parse"].post.requestBody).toMatchObject(
-      { required: true },
-    )
-    expect(reportingOpenApi.paths["/v1/admin/reporting/reports/{id}"].patch.requestBody).toMatchObject(
-      { required: true },
-    )
+    expect(
+      reportingOpenApi.paths["/v1/admin/reporting/queries/parse"].post.requestBody,
+    ).toMatchObject({ required: true })
+    expect(
+      reportingOpenApi.paths["/v1/admin/reporting/reports/{id}"].patch.requestBody,
+    ).toMatchObject({ required: true })
     expect(
       reportingOpenApi.paths["/v1/admin/reporting/versions/{id}/runs"].post.requestBody,
     ).toMatchObject({ required: true })

@@ -209,11 +209,7 @@ function SeriesChart({
     const keysByLabel = new Map<string, string>()
     const pointsByCategory = new Map<string, Record<string, unknown>>()
     for (const row of result.rows) {
-      const category = formatReportValue(
-        row[categoryColumn.id],
-        categoryColumn.valueType,
-        format,
-      )
+      const category = formatReportValue(row[categoryColumn.id], categoryColumn.valueType, format)
       const seriesLabel = formatReportValue(
         row[seriesDimension.id],
         seriesDimension.valueType,

@@ -150,9 +150,9 @@ describe("createReportingRegistryFromGraph", () => {
         },
       ],
     }
-    expect(registry.resolveDraft(existingDraft, "view").map(({ instance }) => instance.id)).toEqual([
-      "revenue",
-    ])
+    expect(registry.resolveDraft(existingDraft, "view").map(({ instance }) => instance.id)).toEqual(
+      ["revenue"],
+    )
     expect(registry.resolveDraft(existingDraft, "edit").map(({ status }) => status)).toEqual([
       "available",
       "missing",
