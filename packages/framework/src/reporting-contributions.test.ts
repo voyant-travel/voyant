@@ -42,6 +42,7 @@ const revenueWidget = {
   version: 1,
   label: "Monthly revenue",
   datasetId: revenueDataset.id,
+  datasetVersion: 1,
   query: {
     select: [
       { kind: "field", field: "issued-at" },
@@ -72,6 +73,7 @@ const overview = defineModule({
           {
             id: "monthly-revenue",
             widgetId: revenueWidget.id,
+            widgetVersion: 1,
             layout: { x: 0, y: 0, width: 6, height: 4 },
           },
         ],
@@ -109,6 +111,7 @@ describe("reporting graph contributions", () => {
     expect(first.reportingCatalog.widgets).toEqual([
       expect.objectContaining({
         id: revenueWidget.id,
+        datasetVersion: 1,
         ownerUnitId: "@acme/finance",
         available: true,
         missingRequirements: [],
@@ -117,6 +120,7 @@ describe("reporting graph contributions", () => {
     expect(first.reportingCatalog.templates).toEqual([
       expect.objectContaining({
         id: "@acme/operator-overview#reporting.template.executive",
+        widgets: [expect.objectContaining({ widgetVersion: 1 })],
         ownerUnitId: "@acme/operator-overview",
         available: true,
         missingRequirements: [],
