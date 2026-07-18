@@ -63,10 +63,24 @@ function remoteSafeScopes(catalog: AccessCatalog): Set<string> {
       resource.actions.map((action) => `${resource.resource}:${action.action}`),
     ),
   )
+  const remoteSafe = new Set<string>()
+  // A scope is remote-safe when its owning resource is flagged remoteSafe, or
+  // when the specific action is. This is the authority for App API scopes;
+  // audience presets remain supported for operator-declared grant bundles.
+  for (const resource of catalog.resources) {
+    for (const action of resource.actions) {
+      if (resource.remoteSafe || action.remoteSafe) {
+        remoteSafe.add(`${resource.resource}:${action.action}`)
+      }
+    }
+  }
   const presetScopes = catalog.presets
     .filter((preset) => preset.kind === "api-token-grant" && Boolean(preset.audience))
     .flatMap((preset) => preset.grants)
-  return new Set(presetScopes.filter((scope) => catalogScopes.has(scope)))
+  for (const scope of presetScopes) {
+    if (catalogScopes.has(scope)) remoteSafe.add(scope)
+  }
+  return remoteSafe
 }
 
 function parseReleaseScopes(value: unknown): {
