@@ -1,6 +1,9 @@
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type {
+  FinanceAppApiExternalLifecycleMutationResult,
+  FinanceAppApiExternalLifecycleObservation,
+  FinanceAppApiExternalLifecycleStateInput,
   FinanceAppApiExternalReference,
   FinanceAppApiExternalReferenceUpsertInput,
   FinanceAppApiExternalSyncMutationResult,
@@ -11,12 +14,18 @@ import type {
   FinanceAppApiPdfArtifactMutationResult,
   FinanceAppApiReferenceMutationResult,
   FinanceAppApiRuntime,
+  FinanceAppApiSettlementObservation,
+  FinanceAppApiSettlementObservationInput,
+  FinanceAppApiSettlementObservationMutationResult,
 } from "@voyant-travel/finance-contracts/app-api"
 import { FinanceAppApiNumberConflictError } from "@voyant-travel/finance-contracts/app-api"
 import type { StorageProvider } from "@voyant-travel/storage"
-import { and, asc, eq, sql } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 import {
+  invoiceExternalLifecycleOperations,
+  invoiceExternalPaymentIdentifiers,
   invoiceExternalRefs,
+  invoiceExternalSettlementObservations,
   invoiceExternalSyncObservations,
   invoiceLineItems,
   invoiceNumberSeries,
@@ -387,7 +396,336 @@ export function createFinanceAppApiRuntime(
         sync,
       } satisfies FinanceAppApiExternalSyncMutationResult
     },
+
+    async updateExternalLifecycleState(db, documentId, provider, input) {
+      const document = toRows<{
+        id: string
+        invoice_type: string
+        status: string
+      }>(
+        await db.execute(
+          // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+          sql`SELECT id, invoice_type, status FROM invoices WHERE id = ${documentId} FOR UPDATE`,
+        ),
+      )[0]
+      if (!document || document.invoice_type === "credit_note") return { status: "not_found" }
+
+      const [replay] = await db
+        .select()
+        .from(invoiceExternalLifecycleOperations)
+        .where(
+          and(
+            eq(invoiceExternalLifecycleOperations.invoiceId, documentId),
+            eq(invoiceExternalLifecycleOperations.provider, provider),
+            eq(invoiceExternalLifecycleOperations.operationId, input.operationId),
+          ),
+        )
+        .limit(1)
+      if (replay) {
+        const replayState = mapExternalLifecycleOperation(replay)
+        return lifecycleStateMatches(replayState, input)
+          ? { status: "ok", outcome: "unchanged", lifecycle: replayState }
+          : {
+              status: "conflict",
+              reason: "idempotency_key_reused",
+              current: replayState,
+            }
+      }
+
+      const nativeConflict = await validateNativeLifecycleState(db, document, documentId, input)
+      if (nativeConflict) return nativeConflict
+
+      const [latest] = await db
+        .select()
+        .from(invoiceExternalLifecycleOperations)
+        .where(
+          and(
+            eq(invoiceExternalLifecycleOperations.invoiceId, documentId),
+            eq(invoiceExternalLifecycleOperations.provider, provider),
+          ),
+        )
+        .orderBy(desc(invoiceExternalLifecycleOperations.occurredAt))
+        .limit(1)
+      const current = latest ? mapExternalLifecycleOperation(latest) : null
+      if (current) {
+        if (new Date(current.occurredAt).getTime() >= new Date(input.occurredAt).getTime()) {
+          return { status: "conflict", reason: "out_of_order", current }
+        }
+        return { status: "conflict", reason: "terminal_transition", current }
+      }
+
+      await db.insert(invoiceExternalLifecycleOperations).values({
+        invoiceId: documentId,
+        provider,
+        operationId: input.operationId,
+        state: input.state,
+        occurredAt: new Date(input.occurredAt),
+        successorInvoiceId: input.lineage?.successorDocumentId ?? null,
+      })
+      return {
+        status: "ok",
+        outcome: "created",
+        lifecycle: {
+          provider,
+          documentId,
+          ...input,
+        },
+      } satisfies FinanceAppApiExternalLifecycleMutationResult
+    },
+
+    async recordSettlementObservation(db, documentId, provider, input) {
+      const document = toRows<{
+        id: string
+        invoice_type: string
+        status: string
+        currency: string
+        total_cents: number
+      }>(
+        await db.execute(
+          // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+          sql`SELECT id, invoice_type, status, currency, total_cents FROM invoices WHERE id = ${documentId} FOR UPDATE`,
+        ),
+      )[0]
+      if (!document || document.invoice_type === "credit_note") return { status: "not_found" }
+
+      const [replay] = await db
+        .select()
+        .from(invoiceExternalSettlementObservations)
+        .where(
+          and(
+            eq(invoiceExternalSettlementObservations.invoiceId, documentId),
+            eq(invoiceExternalSettlementObservations.provider, provider),
+            eq(invoiceExternalSettlementObservations.operationId, input.operationId),
+          ),
+        )
+        .limit(1)
+      if (replay) {
+        const replayObservation = mapSettlementObservation(replay)
+        return settlementObservationMatches(replayObservation, input)
+          ? { status: "ok", outcome: "unchanged", observation: replayObservation }
+          : {
+              status: "conflict",
+              reason: "idempotency_key_reused",
+              current: replayObservation,
+            }
+      }
+
+      if (
+        !["issued", "overdue", "partially_paid", "paid"].includes(document.status) ||
+        document.currency !== input.currency ||
+        document.total_cents !== input.totals.totalCents
+      ) {
+        return { status: "conflict", reason: "native_document_mismatch", current: null }
+      }
+
+      const [latest] = await db
+        .select()
+        .from(invoiceExternalSettlementObservations)
+        .where(
+          and(
+            eq(invoiceExternalSettlementObservations.invoiceId, documentId),
+            eq(invoiceExternalSettlementObservations.provider, provider),
+          ),
+        )
+        .orderBy(desc(invoiceExternalSettlementObservations.occurredAt))
+        .limit(1)
+      const current = latest ? mapSettlementObservation(latest) : null
+      if (current) {
+        if (new Date(current.occurredAt).getTime() >= new Date(input.occurredAt).getTime()) {
+          return { status: "conflict", reason: "out_of_order", current }
+        }
+        if (current.status === "paid") {
+          return { status: "conflict", reason: "terminal_transition", current }
+        }
+        if (
+          input.totals.paidCents < current.totals.paidCents ||
+          input.totals.balanceDueCents > current.totals.balanceDueCents ||
+          current.paymentIdentifiers.some(
+            (paymentIdentifier) => !input.paymentIdentifiers.includes(paymentIdentifier),
+          )
+        ) {
+          return { status: "conflict", reason: "settlement_regression", current }
+        }
+      }
+
+      const paymentIdentifiers = [...new Set(input.paymentIdentifiers)].sort()
+      for (const paymentIdentifier of paymentIdentifiers) {
+        const lockKey = `finance:external-payment:${provider}:${paymentIdentifier}`
+        await db.execute(
+          // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+          sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+        )
+      }
+      const identifierOwners = await db
+        .select()
+        .from(invoiceExternalPaymentIdentifiers)
+        .where(
+          and(
+            eq(invoiceExternalPaymentIdentifiers.provider, provider),
+            inArray(invoiceExternalPaymentIdentifiers.paymentIdentifier, paymentIdentifiers),
+          ),
+        )
+        .limit(paymentIdentifiers.length)
+      const conflictingOwner = identifierOwners.find((owner) => owner.invoiceId !== documentId)
+      if (conflictingOwner) {
+        return {
+          status: "conflict",
+          reason: "payment_identifier_conflict",
+          current,
+          paymentIdentifier: conflictingOwner.paymentIdentifier,
+        }
+      }
+      const ownedIdentifiers = new Set(identifierOwners.map((owner) => owner.paymentIdentifier))
+      const identifiersToClaim = paymentIdentifiers.filter(
+        (paymentIdentifier) => !ownedIdentifiers.has(paymentIdentifier),
+      )
+      if (identifiersToClaim.length > 0) {
+        await db.insert(invoiceExternalPaymentIdentifiers).values(
+          identifiersToClaim.map((paymentIdentifier) => ({
+            provider,
+            paymentIdentifier,
+            invoiceId: documentId,
+            firstOperationId: input.operationId,
+          })),
+        )
+      }
+      await db.insert(invoiceExternalSettlementObservations).values({
+        invoiceId: documentId,
+        provider,
+        operationId: input.operationId,
+        occurredAt: new Date(input.occurredAt),
+        status: input.status,
+        currency: input.currency,
+        totalCents: input.totals.totalCents,
+        paidCents: input.totals.paidCents,
+        balanceDueCents: input.totals.balanceDueCents,
+        paymentIdentifiers,
+      })
+      return {
+        status: "ok",
+        outcome: "created",
+        observation: {
+          provider,
+          documentId,
+          ...input,
+          paymentIdentifiers,
+        },
+      } satisfies FinanceAppApiSettlementObservationMutationResult
+    },
   }
+}
+
+async function validateNativeLifecycleState(
+  db: Parameters<FinanceAppApiRuntime["updateExternalLifecycleState"]>[0],
+  document: { invoice_type: string; status: string },
+  documentId: string,
+  input: FinanceAppApiExternalLifecycleStateInput,
+): Promise<Extract<FinanceAppApiExternalLifecycleMutationResult, { status: "conflict" }> | null> {
+  if (input.state === "converted") {
+    if (input.lineage?.sourceDocumentId !== documentId) {
+      return { status: "conflict", reason: "lineage_mismatch", current: null }
+    }
+    if (document.invoice_type !== "proforma" || document.status !== "void") {
+      return { status: "conflict", reason: "native_state_mismatch", current: null }
+    }
+    const successor = toRows<{
+      id: string
+      invoice_type: string
+      converted_from_invoice_id: string | null
+    }>(
+      await db.execute(
+        // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+        sql`SELECT id, invoice_type, converted_from_invoice_id FROM invoices WHERE id = ${input.lineage.successorDocumentId} FOR SHARE`,
+      ),
+    )[0]
+    if (
+      successor?.invoice_type !== "invoice" ||
+      successor.converted_from_invoice_id !== documentId
+    ) {
+      return { status: "conflict", reason: "lineage_mismatch", current: null }
+    }
+    return null
+  }
+
+  if (input.lineage || document.status !== "void") {
+    return { status: "conflict", reason: "native_state_mismatch", current: null }
+  }
+  const successor = toRows<{ id: string }>(
+    await db.execute(
+      // agent-quality: raw-sql reviewed -- identifiers are static and values are bound.
+      sql`SELECT id FROM invoices WHERE converted_from_invoice_id = ${documentId} LIMIT 1 FOR SHARE`,
+    ),
+  )[0]
+  return successor ? { status: "conflict", reason: "native_state_mismatch", current: null } : null
+}
+
+function mapExternalLifecycleOperation(
+  row: typeof invoiceExternalLifecycleOperations.$inferSelect,
+): FinanceAppApiExternalLifecycleObservation {
+  if (row.state !== "converted" && row.state !== "voided") {
+    throw new Error("Persisted external lifecycle operation has an invalid state.")
+  }
+  return {
+    provider: row.provider,
+    documentId: row.invoiceId,
+    operationId: row.operationId,
+    state: row.state,
+    occurredAt: row.occurredAt.toISOString(),
+    lineage:
+      row.state === "converted" && row.successorInvoiceId
+        ? {
+            sourceDocumentId: row.invoiceId,
+            successorDocumentId: row.successorInvoiceId,
+          }
+        : null,
+  }
+}
+
+function lifecycleStateMatches(
+  current: FinanceAppApiExternalLifecycleObservation,
+  input: FinanceAppApiExternalLifecycleStateInput,
+) {
+  return (
+    current.state === input.state &&
+    new Date(current.occurredAt).getTime() === new Date(input.occurredAt).getTime() &&
+    canonicalJson(current.lineage) === canonicalJson(input.lineage)
+  )
+}
+
+function mapSettlementObservation(
+  row: typeof invoiceExternalSettlementObservations.$inferSelect,
+): FinanceAppApiSettlementObservation {
+  if (row.status !== "partial" && row.status !== "paid") {
+    throw new Error("Persisted settlement observation has an invalid status.")
+  }
+  return {
+    provider: row.provider,
+    documentId: row.invoiceId,
+    operationId: row.operationId,
+    occurredAt: row.occurredAt.toISOString(),
+    status: row.status,
+    currency: row.currency,
+    totals: {
+      totalCents: row.totalCents,
+      paidCents: row.paidCents,
+      balanceDueCents: row.balanceDueCents,
+    },
+    paymentIdentifiers: [...row.paymentIdentifiers].sort(),
+  }
+}
+
+function settlementObservationMatches(
+  current: FinanceAppApiSettlementObservation,
+  input: FinanceAppApiSettlementObservationInput,
+) {
+  return (
+    current.status === input.status &&
+    current.currency === input.currency &&
+    new Date(current.occurredAt).getTime() === new Date(input.occurredAt).getTime() &&
+    canonicalJson(current.totals) === canonicalJson(input.totals) &&
+    canonicalJson(current.paymentIdentifiers) ===
+      canonicalJson([...new Set(input.paymentIdentifiers)].sort())
+  )
 }
 
 function buildHydratedFx(

@@ -21,9 +21,11 @@ import type {
   AppApiEntityReadQuery,
   AppApiFinanceActionInput,
   AppApiFinanceDocumentQuery,
+  AppApiFinanceExternalLifecycleStateInput,
   AppApiFinanceExternalReferenceUpsertInput,
   AppApiFinanceExternalSyncStateInput,
   AppApiFinancePdfArtifactHeaders,
+  AppApiFinanceSettlementObservationInput,
 } from "./app-api-contracts.js"
 import { APP_API_VERSION } from "./app-api-contracts.js"
 import { audit } from "./installation-reconciliation.js"
@@ -337,6 +339,96 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     return { data: result }
   }
 
+  async function updateFinanceExternalLifecycleState(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+    input: AppApiFinanceExternalLifecycleStateInput,
+  ) {
+    assertFinanceDocumentContext(context, documentId)
+    const access = await requireAccess(db, context, ["finance-external-lifecycle:write"])
+    const updateLifecycleState = options.finance?.updateExternalLifecycleState
+    if (!updateLifecycleState) {
+      throw notSupported("Finance external lifecycle writes are unavailable.")
+    }
+    const result = await db.transaction(async (tx) => {
+      const mutation = await updateLifecycleState(tx, documentId, context.appId, input)
+      if (mutation.status === "ok") {
+        await audit(
+          tx,
+          access.installation,
+          `app:${context.appId}`,
+          "reconciliation",
+          "finance.external-lifecycle.updated",
+          {
+            documentId,
+            provider: context.appId,
+            operationId: input.operationId,
+            lifecycleState: input.state,
+            outcome: mutation.outcome,
+            releaseId: context.releaseId,
+            tokenMode: context.tokenMode,
+          },
+        )
+      }
+      return mutation
+    })
+    if (result.status === "not_found") throw notFound("Finance document not found.")
+    if (result.status === "conflict") {
+      throw new ApiHttpError("External lifecycle state conflicts with the current document.", {
+        status: 409,
+        code: `app_api_finance_external_lifecycle_${result.reason}`,
+        details: result,
+      })
+    }
+    return { data: result }
+  }
+
+  async function recordFinanceSettlementObservation(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+    input: AppApiFinanceSettlementObservationInput,
+  ) {
+    assertFinanceDocumentContext(context, documentId)
+    const access = await requireAccess(db, context, ["finance-settlement-observations:write"])
+    const recordObservation = options.finance?.recordSettlementObservation
+    if (!recordObservation) {
+      throw notSupported("Finance settlement observations are unavailable.")
+    }
+    const result = await db.transaction(async (tx) => {
+      const mutation = await recordObservation(tx, documentId, context.appId, input)
+      if (mutation.status === "ok") {
+        await audit(
+          tx,
+          access.installation,
+          `app:${context.appId}`,
+          "reconciliation",
+          "finance.settlement-observation.recorded",
+          {
+            documentId,
+            provider: context.appId,
+            operationId: input.operationId,
+            settlementStatus: input.status,
+            outcome: mutation.outcome,
+            releaseId: context.releaseId,
+            tokenMode: context.tokenMode,
+          },
+        )
+      }
+      return mutation
+    })
+    if (result.status === "not_found") throw notFound("Finance document not found.")
+    if (result.status === "conflict") {
+      throw new ApiHttpError("Settlement observation conflicts with the current document.", {
+        status: 409,
+        code: `app_api_finance_settlement_observation_${result.reason}`,
+        details: result,
+      })
+    }
+    return { data: result }
+  }
+
   async function listCustomFieldDefinitions(
     db: PostgresJsDatabase,
     context: AppApiAccessContext,
@@ -439,6 +531,8 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     upsertFinanceExternalReference,
     attachFinancePdfArtifact,
     updateFinanceExternalSyncState,
+    updateFinanceExternalLifecycleState,
+    recordFinanceSettlementObservation,
     listCustomFieldDefinitions,
     createCustomFieldDefinition,
     updateCustomFieldDefinition,

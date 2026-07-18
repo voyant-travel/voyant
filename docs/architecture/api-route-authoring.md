@@ -186,6 +186,26 @@ Rule:
 Routes should rely on the shared auth pipeline, not invent package-local auth
 state handling.
 
+### 7a. Declare in-band client authentication by exact method and path
+
+Protocol endpoints that authenticate a non-user client inside the handler may
+use an `ApiModule.clientAuthenticated` declaration. This is not an anonymous
+path prefix: the framework admits only the declared concrete HTTP method and
+the exact admin path, skips the staff actor guard for that request, and applies
+the public-write rate limit. Parameterized and wildcard declarations are
+rejected.
+
+The route handler must validate the protocol credential before doing work.
+Neighboring admin endpoints, other methods on the same path, and child paths
+remain staff-authenticated. Package code must not use this posture for ordinary
+admin CRUD or to replace the shared session pipeline.
+
+Rule:
+
+Use `clientAuthenticated` only for concrete protocol exchanges whose request
+already carries authoritative client authentication; keep every other admin
+route under staff authentication.
+
 ### 8. Use `requireUserId(...)` for authenticated user routes
 
 If a route requires a signed-in user, use the shared helper:

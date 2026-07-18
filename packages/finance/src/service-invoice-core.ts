@@ -22,9 +22,7 @@ import {
   InvoiceValidationError,
   ilike,
   inArray,
-  invoiceExternalRefs,
   invoiceLineItems,
-  invoiceNumberSeries,
   invoices,
   isInvoiceNumberUniqueConstraintError,
   isNotNull,
@@ -32,7 +30,6 @@ import {
   ne,
   or,
   payments,
-  readStringMetadata,
   sql,
   toRows,
   touchLinkedBookingUpdatedAt,
@@ -450,33 +447,7 @@ export const financeInvoiceCoreService = {
     })
 
     if (result.status === "voided" && runtime.eventBus) {
-      const [smartbillRef] = await db
-        .select()
-        .from(invoiceExternalRefs)
-        .where(
-          and(
-            eq(invoiceExternalRefs.invoiceId, result.invoice.id),
-            eq(invoiceExternalRefs.provider, "smartbill"),
-          ),
-        )
-        .orderBy(desc(invoiceExternalRefs.createdAt))
-        .limit(1)
-      const [externalRef] = smartbillRef
-        ? [smartbillRef]
-        : await db
-            .select()
-            .from(invoiceExternalRefs)
-            .where(eq(invoiceExternalRefs.invoiceId, result.invoice.id))
-            .orderBy(desc(invoiceExternalRefs.createdAt))
-            .limit(1)
-      const [series] = result.invoice.seriesId
-        ? await db
-            .select({ name: invoiceNumberSeries.name })
-            .from(invoiceNumberSeries)
-            .where(eq(invoiceNumberSeries.id, result.invoice.seriesId))
-            .limit(1)
-        : []
-
+      const occurredAt = result.invoice.voidedAt?.toISOString() ?? voidedAt.toISOString()
       const event: InvoiceVoidedEvent = {
         invoiceId: result.invoice.id,
         invoiceNumber: result.invoice.invoiceNumber,
@@ -485,14 +456,8 @@ export const financeInvoiceCoreService = {
         totalCents: result.invoice.totalCents,
         currency: result.invoice.currency,
         reason,
-        voidedAt: result.invoice.voidedAt?.toISOString() ?? voidedAt.toISOString(),
-        externalProvider: externalRef?.provider ?? null,
-        externalNumber: externalRef?.externalNumber ?? null,
-        externalSeriesName:
-          readStringMetadata(externalRef?.metadata, "seriesName") ??
-          readStringMetadata(externalRef?.metadata, "series") ??
-          series?.name ??
-          null,
+        voidedAt: occurredAt,
+        occurredAt,
       }
       await runtime.eventBus.emit("invoice.voided", event)
     }

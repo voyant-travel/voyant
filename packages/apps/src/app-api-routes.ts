@@ -19,9 +19,11 @@ import {
   appApiEntityReadQuerySchema,
   appApiFinanceActionSchema,
   appApiFinanceDocumentQuerySchema,
+  appApiFinanceExternalLifecycleStateSchema,
   appApiFinanceExternalReferenceUpsertSchema,
   appApiFinanceExternalSyncStateSchema,
   appApiFinancePdfArtifactHeadersSchema,
+  appApiFinanceSettlementObservationSchema,
   appApiVersionHeader,
   appApiWebhookReplaySchema,
 } from "./app-api-contracts.js"
@@ -207,6 +209,27 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
       c,
       service.updateFinanceExternalSyncState(c.get("db"), appContext(c), id, body),
       options.deadlineMs,
+    )
+  })
+
+  routes.put("/finance/documents/:id/external-lifecycle-state", async (c) => {
+    const { id } = parseIdParams(c.req.param())
+    const body = await parseJsonBody(c, appApiFinanceExternalLifecycleStateSchema)
+    return run(
+      c,
+      service.updateFinanceExternalLifecycleState(c.get("db"), appContext(c), id, body),
+      options.deadlineMs,
+    )
+  })
+
+  routes.post("/finance/documents/:id/settlement-observations", async (c) => {
+    const { id } = parseIdParams(c.req.param())
+    const body = await parseJsonBody(c, appApiFinanceSettlementObservationSchema)
+    return run(
+      c,
+      service.recordFinanceSettlementObservation(c.get("db"), appContext(c), id, body),
+      options.deadlineMs,
+      201,
     )
   })
 

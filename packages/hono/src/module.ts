@@ -2,6 +2,7 @@ import type { Extension, Module } from "@voyant-travel/core"
 import type { Hono } from "hono"
 
 import type { LazyApiRoutes, LazyRoutesLoader } from "./lazy-routes.js"
+import type { VoyantAuthIntegration } from "./types.js"
 
 export interface ApiModule {
   module: Module
@@ -62,6 +63,23 @@ export interface ApiModule {
    */
   anonymous?: boolean | readonly string[]
   /**
+   * Concrete admin endpoints whose credential is validated by the route itself
+   * instead of by the staff-session middleware. Each declaration is matched by
+   * exact HTTP method and exact path; it never opens sibling or child routes.
+   *
+   * This is intentionally narrower than `anonymous`: use it only for protocol
+   * endpoints such as an OAuth token exchange where client authentication is
+   * part of the request body or Authorization header. The handler remains
+   * responsible for validating that client credential.
+   */
+  clientAuthenticated?: readonly ClientAuthenticatedRoute[]
+  /**
+   * Trusted package-owned additions to the host authentication pipeline.
+   * Augmentations are composed after any host app-token resolver and do not
+   * replace staff session handling or any other host auth hook.
+   */
+  authAugmentation?: ApiAuthAugmentation
+  /**
    * Absolute API path prefixes whose requests must be served by the
    * transaction-capable db client (ADR-0008). For modules whose
    * transaction-needing routes are NOT under the name-based surface — e.g. a
@@ -73,6 +91,16 @@ export interface ApiModule {
    * so the deployment doesn't hand-maintain `dbTransactionalPaths`.
    */
   transactionalPaths?: readonly string[]
+}
+
+export interface ClientAuthenticatedRoute {
+  method: "POST"
+  /** Concrete path relative to `/v1/admin/{module.name}`. */
+  path: string
+}
+
+export interface ApiAuthAugmentation {
+  resolveAppToken: NonNullable<VoyantAuthIntegration["resolveAppToken"]>
 }
 
 export interface ApiExtension {

@@ -432,6 +432,7 @@ export const financeInvoicePaymentService = {
           status: payment.status,
           referenceNumber: payment.referenceNumber ?? null,
           paymentDate: payment.paymentDate,
+          occurredAt: new Date().toISOString(),
         }
       }
 

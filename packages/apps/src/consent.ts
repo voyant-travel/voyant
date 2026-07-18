@@ -18,7 +18,7 @@ export interface ComputedConsent {
 
 export function computeAppConsent(input: ConsentComputationInput): ComputedConsent {
   const normalized = parseReleaseScopes(input.release.normalizedRecord)
-  const remoteSafe = remoteSafeScopes(input.accessCatalog)
+  const remoteSafe = grantableRemoteAppScopes(input.accessCatalog)
   const operatorGranted = new Set(input.operatorGrantedScopes)
   const optionalGrantRequest = new Set(input.grantedOptionalScopes ?? [])
 
@@ -57,7 +57,7 @@ function canGrantScope(scope: string, remoteSafe: Set<string>, operatorGranted: 
   return remoteSafe.has(scope) && operatorGranted.has(scope)
 }
 
-function remoteSafeScopes(catalog: AccessCatalog): Set<string> {
+export function grantableRemoteAppScopes(catalog: AccessCatalog): Set<string> {
   const catalogScopes = new Set(
     catalog.resources.flatMap((resource) =>
       resource.actions.map((action) => `${resource.resource}:${action.action}`),

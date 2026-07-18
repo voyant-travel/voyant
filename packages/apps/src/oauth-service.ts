@@ -35,6 +35,8 @@ const REFRESH_TTL_MS = 90 * 24 * 60 * 60 * 1000
 export interface AppOAuthServiceOptions {
   accessCatalog: AccessCatalog
   deploymentId: string
+  /** Managed confidential runtimes fail closed unless a client secret is registered. */
+  clientAuthentication?: "optional" | "required"
   now?: () => Date
 }
 
@@ -130,7 +132,12 @@ export function createAppOAuthService(options: AppOAuthServiceOptions) {
   }
 
   async function token(db: PostgresJsDatabase, input: AppTokenInput) {
-    await authenticateClient(db, input.clientId, input.clientSecret)
+    await authenticateClient(
+      db,
+      input.clientId,
+      input.clientSecret,
+      options.clientAuthentication === "required",
+    )
     if (input.grantType === "authorization_code") return exchangeCode(db, input)
     if (input.grantType === "refresh_token") return refresh(db, input)
     return exchangeActorToken(db, input)
@@ -371,13 +378,17 @@ async function authenticateClient(
   db: PostgresJsDatabase,
   appId: string,
   clientSecret: string | undefined,
+  required: boolean,
 ) {
   const [secret] = await db
     .select()
     .from(appCredentials)
     .where(and(eq(appCredentials.appId, appId), eq(appCredentials.kind, "client_secret")))
     .limit(1)
-  if (!secret) return
+  if (!secret) {
+    if (required) throw oauthError("invalid_client", "Client authentication failed", 401)
+    return
+  }
   if (!clientSecret || !secret.kmsKeyRef.startsWith("sha256:")) {
     throw oauthError("invalid_client", "Client authentication failed", 401)
   }

@@ -18,6 +18,7 @@ import {
   makeFrameworkLogger,
   wireWorkflowRuntime,
 } from "./app-workflows.js"
+import { composeAuthAugmentations } from "./auth-augmentation.js"
 import {
   type ApiBundle,
   type ExpandedApiBundles,
@@ -25,6 +26,10 @@ import {
   isLazyApiBundle,
   type LazyApiBundle,
 } from "./bundle.js"
+import {
+  assembleClientAuthenticatedRoutes,
+  matchesClientAuthenticatedRoute,
+} from "./client-authenticated-routes.js"
 import { type LazyRoutesLoader, mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { mountAuthForwarding } from "./lib/auth-forward.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
@@ -242,6 +247,8 @@ export function mountApp<TBindings extends VoyantBindings>(
     ...(expanded?.anonymousPaths ?? []),
     ...lazyPlugins.flatMap((plugin) => plugin.anonymous ?? []),
   ])
+  const clientAuthenticatedRoutes = assembleClientAuthenticatedRoutes(allModules)
+  const composedAuth = composeAuthAugmentations(config.auth, allModules)
   // When the framework owns the bus, route subscriber-dispatch failures
   // (including the workflow forwarder) to the reporter — they're otherwise
   // only console-logged per the fire-and-forget EventBus contract (RFC #1553).
@@ -568,7 +575,9 @@ export function mountApp<TBindings extends VoyantBindings>(
           basePath: config.basePath,
         })
         const isPublicWrite =
-          pathname.startsWith("/v1/public/") || matchesPublicPath(pathname, anonymousPaths)
+          pathname.startsWith("/v1/public/") ||
+          matchesPublicPath(pathname, anonymousPaths) ||
+          matchesClientAuthenticatedRoute(c.req.method, pathname, clientAuthenticatedRoutes)
         if (!isPublicWrite) return next()
         return rateLimit(
           buildRateLimitPolicy(rateLimitConfig, c.env, "public-write", publicWriteRule),
@@ -638,7 +647,7 @@ export function mountApp<TBindings extends VoyantBindings>(
 
   // App-owned auth handler (must be before auth middleware — these routes are
   // public). Forwarding + observability bridging live in `mountAuthForwarding`.
-  const authHandler = config.auth?.handler
+  const authHandler = composedAuth?.handler
   if (authHandler) {
     mountAuthForwarding(app, authHandler, { reporter, appName })
   }
@@ -655,7 +664,12 @@ export function mountApp<TBindings extends VoyantBindings>(
       })
     : config.db
 
-  const authOptions = { publicPaths: anonymousPaths, basePath: config.basePath, auth: config.auth }
+  const authOptions = {
+    publicPaths: anonymousPaths,
+    clientAuthenticatedRoutes,
+    basePath: config.basePath,
+    auth: composedAuth,
+  }
 
   // Auth middleware for all other routes
   app.use("*", requireAuth(dbSource, authOptions))
@@ -692,6 +706,7 @@ export function mountApp<TBindings extends VoyantBindings>(
     basePath: config.basePath,
     resources: config.accessResources,
     accessCatalog: config.accessCatalog,
+    clientAuthenticatedRoutes,
   }
   app.use("/v1/admin/*", requireActor(actorOptions, "staff"))
   app.use("/v1/public/*", requireActor(actorOptions, "customer", "partner", "supplier"))

@@ -6,7 +6,7 @@ import {
   readStoredAppContextConstraint,
   readStoredScopes,
 } from "./oauth-service.js"
-import { appReleases } from "./schema.js"
+import { appCredentials, appReleases } from "./schema.js"
 
 describe("app OAuth online token scope intersection", () => {
   it("never exceeds either app grants, viewer grants, or contextual restrictions", () => {
@@ -103,5 +103,30 @@ describe("authorization release lifecycle", () => {
     await expect(service.authorize(dbWithRelease(state), authorizeInput)).rejects.toMatchObject({
       status: 409,
     })
+  })
+})
+
+describe("managed client authentication", () => {
+  it("fails closed when confidential-client provisioning is absent", async () => {
+    const db = Object.assign(Object.create(null), {
+      select: () => ({
+        from: (table: unknown) => ({
+          where: () => ({ limit: async () => (table === appCredentials ? [] : []) }),
+        }),
+      }),
+    }) as PostgresJsDatabase
+    const service = createAppOAuthService({
+      accessCatalog: { resources: [], presets: [] },
+      deploymentId: "dep_1",
+      clientAuthentication: "required",
+    })
+
+    await expect(
+      service.token(db, {
+        grantType: "refresh_token",
+        refreshToken: "app_refresh_fixture",
+        clientId: "app_1",
+      }),
+    ).rejects.toMatchObject({ status: 401, code: "invalid_client" })
   })
 })
