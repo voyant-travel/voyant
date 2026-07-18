@@ -26,10 +26,12 @@ The shared `providers.auth` selector is not accepted. Projects must select both
 - Generate a separate `VOYANT_CHECKOUT_CAPABILITY_SECRET`; checkout and guest
   booking capabilities never reuse either realm's claims root.
 - Set `VOYANT_CUSTOMER_AUTH_MODE=better-auth` or `disabled`.
-- Configure customer method policy through
-  `VOYANT_CUSTOMER_AUTH_CONFIG_JSON`. Managed deployments use opaque
-  `vault://` credential references and resolve credentials through the runtime
-  customer-auth context adapter.
+- Self-hosted deployments may configure customer method policy through
+  `VOYANT_CUSTOMER_AUTH_CONFIG_JSON` and provide their own server-side
+  customer-auth context resolver. Managed deployments use Voyant Cloud as the
+  sole policy and credential authority: the runtime resolves the exact
+  site/environment configuration from the customer-auth broker at request time.
+  Merchant OAuth secrets are never injected into workload environment variables.
 
 The admin and customer Better Auth secrets must be separate, as must the two
 session-claims secrets. The runtime rejects shared, missing, or short claims
@@ -90,8 +92,13 @@ export function StorefrontAuth({ children }: { children: React.ReactNode }) {
 
 This component can be mounted directly in Next.js or hydrated as a React island
 in Astro. The `/api/auth/customer/*` proxy must forward `Cookie` and
-`Set-Cookie` unchanged to the deployment's `/auth/customer/*` routes. Do not
-proxy customer requests to `/auth/admin/*`.
+`Set-Cookie` unchanged to the deployment's `/auth/customer/*` routes. Managed
+storefront proxies must also replace any incoming
+`X-Voyant-Storefront-Origin` value with the canonical configured storefront
+origin on every customer-auth and `/v1/public/*` request, including OAuth
+callbacks that do not carry a browser `Origin` header. Never derive this value
+from `Host` or `X-Forwarded-Host`, and do not proxy customer requests to
+`/auth/admin/*`.
 
 An external site that owns identity and sessions can instead install Better
 Auth through its native Next.js or Astro integration. If it needs to exchange a

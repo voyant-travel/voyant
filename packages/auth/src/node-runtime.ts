@@ -109,6 +109,8 @@ export interface OperatorCurrentUser {
 export type OperatorAuthBootstrapStatus = {
   hasUsers: boolean
   authMode?: OperatorAuthMode
+  /** Active deployment modules used by source-free managed admin composition. */
+  modules?: string[]
 }
 
 type BetterAuthAdvancedOptions = NonNullable<CreateBetterAuthOptions["advanced"]>
@@ -138,6 +140,8 @@ export interface OperatorAuthEmailSender {
 
 export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNodeEnv> {
   accessCatalog: AccessCatalog
+  /** Active deployment modules surfaced by `/auth/bootstrap-status`. */
+  activeModules?: readonly string[]
   appName: string
   authMode: OperatorAuthMode
   reporter: Reporter
@@ -154,12 +158,14 @@ export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNo
    */
   resolveCustomerAuthContext?: (
     env: Env,
-    policy: CustomerAuthPolicy,
     request: Request,
-  ) => CustomerAuthRuntimeContext
+  ) => CustomerAuthRuntimeContext | Promise<CustomerAuthRuntimeContext>
 }
 
 export interface CustomerAuthRuntimeContext {
+  /** Browser-visible proxy base used by storefront/BFF auth callbacks. */
+  publicApiBaseURL?: string
+  /** Canonical origin used internally by Better Auth. */
   baseURL: string
   trustedOrigins: string[]
   methods: CustomerAuthMethods
@@ -227,6 +233,27 @@ export function withCustomerSocialRedirectUris(
           }
         : {}),
     },
+  }
+}
+
+/**
+ * Rewrite Better Auth's internally generated customer password-reset URL to
+ * the browser-visible storefront/BFF API base.
+ */
+export function withCustomerPublicResetPasswordUrl(
+  generatedUrl: string,
+  publicApiBaseURL: string,
+): string {
+  try {
+    const generated = new URL(generatedUrl)
+    const publicApi = new URL(publicApiBaseURL)
+    const apiPath = publicApi.pathname.replace(/\/+$/, "")
+    publicApi.pathname = `${apiPath}${generated.pathname}`
+    publicApi.search = generated.search
+    publicApi.hash = generated.hash
+    return publicApi.toString()
+  } catch {
+    return generatedUrl
   }
 }
 
@@ -519,6 +546,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         (!hasCanonicalPolicy || policy.methods.apple.enabled),
     )
     return {
+      publicApiBaseURL: getPublicApiBaseUrl(env),
       baseURL: getAuthBaseUrl(env),
       trustedOrigins: getTrustedOrigins(env),
       methods: {
@@ -554,16 +582,68 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     }
   }
 
-  function resolveCustomerAuthContext(env: Env, request: Request): CustomerAuthRuntimeContext {
-    const policy = parseCustomerAuthPolicy(env)
-    return (
-      runtimeOptions.resolveCustomerAuthContext?.(env, policy, request) ??
-      defaultCustomerAuthContext(env, policy)
+  async function resolveCustomerAuthContext(
+    env: Env,
+    request: Request,
+  ): Promise<CustomerAuthRuntimeContext> {
+    const context = runtimeOptions.resolveCustomerAuthContext
+      ? await runtimeOptions.resolveCustomerAuthContext(env, request)
+      : defaultCustomerAuthContext(env, parseCustomerAuthPolicy(env))
+    const baseURL = requireCanonicalOrigin(context.baseURL, "customer auth baseURL")
+    const publicApiBaseURL = requirePublicApiBaseUrl(
+      context.publicApiBaseURL ?? `${baseURL}/api`,
+      baseURL,
     )
+    const trustedOrigins = context.trustedOrigins.map((origin) =>
+      requireCanonicalOrigin(origin, "customer auth trusted origin"),
+    )
+    return { ...context, baseURL, publicApiBaseURL, trustedOrigins }
   }
 
-  function publicCustomerAuthConfiguration(env: Env, request: Request) {
-    const methods = resolveCustomerAuthContext(env, request).methods
+  function requireCanonicalOrigin(value: string, label: string): string {
+    let parsed: URL
+    try {
+      parsed = new URL(value)
+    } catch {
+      throw new Error(`${label} must be an absolute HTTP(S) origin`)
+    }
+    if (
+      !["http:", "https:"].includes(parsed.protocol) ||
+      parsed.username ||
+      parsed.password ||
+      (parsed.pathname !== "/" && parsed.pathname !== "") ||
+      parsed.search ||
+      parsed.hash
+    ) {
+      throw new Error(`${label} must be an absolute HTTP(S) origin`)
+    }
+    return parsed.origin
+  }
+
+  function requirePublicApiBaseUrl(value: string, baseURL: string): string {
+    let parsed: URL
+    try {
+      parsed = new URL(value)
+    } catch {
+      throw new Error("customer auth publicApiBaseURL must be an absolute HTTP(S) URL")
+    }
+    if (
+      !["http:", "https:"].includes(parsed.protocol) ||
+      parsed.username ||
+      parsed.password ||
+      parsed.search ||
+      parsed.hash ||
+      parsed.origin !== baseURL ||
+      parsed.pathname === "/"
+    ) {
+      throw new Error("customer auth publicApiBaseURL must be an absolute HTTP(S) URL with a path")
+    }
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "")
+    return parsed.toString().replace(/\/$/, "")
+  }
+
+  async function publicCustomerAuthConfiguration(env: Env, request: Request) {
+    const methods = (await resolveCustomerAuthContext(env, request)).methods
     const providers = methods.socialProviders ?? {}
     return {
       methods: {
@@ -636,9 +716,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     })
   }
 
-  function buildCustomerBetterAuth(env: Env, db: VoyantDb, request: Request) {
+  async function buildCustomerBetterAuth(env: Env, db: VoyantDb, request: Request) {
     const emailSender = runtimeOptions.resolveEmailSender?.(env)
-    const context = resolveCustomerAuthContext(env, request)
+    const context = await resolveCustomerAuthContext(env, request)
+    const publicApiBaseURL = context.publicApiBaseURL ?? getPublicApiBaseUrl(env)
     const authDb = db as NonNullable<Parameters<typeof createCustomerBetterAuth>[0]>["db"]
     return createCustomerBetterAuth({
       db: authDb,
@@ -646,16 +727,19 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       baseURL: context.baseURL,
       basePath: "/auth/customer",
       trustedOrigins: context.trustedOrigins,
-      methods: withCustomerSocialRedirectUris(context.methods, getPublicApiBaseUrl(env)),
+      methods: withCustomerSocialRedirectUris(context.methods, publicApiBaseURL),
       sendResetPassword: async ({ user, url }) => {
+        const publicUrl = withCustomerPublicResetPasswordUrl(url, publicApiBaseURL)
         if (!emailSender) {
           if (allowAuthSecretLogging(env)) {
-            console.info(`[auth/customer] reset-password (debug fallback) -> ${user.email}: ${url}`)
+            console.info(
+              `[auth/customer] reset-password (debug fallback) -> ${user.email}: ${publicUrl}`,
+            )
             return
           }
           throw new Error("Password reset email provider is not configured")
         }
-        await emailSender.sendResetPassword({ user, url })
+        await emailSender.sendResetPassword({ user, url: publicUrl })
       },
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (!emailSender) {
@@ -736,7 +820,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const { db, dispose } = openDatabase(env)
     try {
       const auth = customerSurface
-        ? buildCustomerBetterAuth(env, db, request)
+        ? await buildCustomerBetterAuth(env, db, request)
         : buildAdminBetterAuth(env, db)
       const session = await auth.api.getSession({ headers: request.headers })
 
@@ -880,18 +964,21 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     request: Request,
     env: Env,
   ): Promise<OperatorAuthBootstrapStatus> {
+    const modules = runtimeOptions.activeModules
+      ? { modules: [...runtimeOptions.activeModules] }
+      : {}
     if (shouldUseBrowserEvidenceAuthFallback(env, request)) {
-      return { hasUsers: true }
+      return { hasUsers: true, ...modules }
     }
 
     if (isVoyantCloudAuthMode(env)) {
-      return { hasUsers: true, authMode: "voyant-cloud" }
+      return { hasUsers: true, authMode: "voyant-cloud", ...modules }
     }
 
     const { db, dispose } = openDatabase(env)
     try {
       const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-      return { hasUsers: (row?.count ?? 0) > 0, authMode: "local" }
+      return { hasUsers: (row?.count ?? 0) > 0, authMode: "local", ...modules }
     } finally {
       await dispose()
     }
@@ -1152,7 +1239,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildCustomerBetterAuth(c.env, db, c.req.raw)
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw)
       const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
       return c.json({ authenticated: Boolean(session) })
     } finally {
@@ -1160,7 +1247,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     }
   })
 
-  auth.get("/auth/customer/config", (c) => {
+  auth.get("/auth/customer/config", async (c) => {
     if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
       return c.json({
         methods: {
@@ -1172,7 +1259,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         },
       })
     }
-    return c.json(publicCustomerAuthConfiguration(c.env, c.req.raw))
+    return c.json(await publicCustomerAuthConfiguration(c.env, c.req.raw))
   })
 
   auth.all("/auth/customer/*", async (c) => {
@@ -1182,7 +1269,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(c.env)
     try {
-      const betterAuth = buildCustomerBetterAuth(c.env, db, c.req.raw)
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw)
       return await betterAuth.handler(c.req.raw)
     } finally {
       c.executionCtx.waitUntil(dispose())

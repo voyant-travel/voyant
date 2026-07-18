@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import {
   configureSearchProviderRuntime,
   createGeneratedProject,
@@ -111,6 +111,57 @@ describe("Voyant project runtime composition", () => {
 
     expect(mocks.authRuntimeOptions[0]).toMatchObject({
       resolveEmailSender: expect.any(Function),
+    })
+  })
+
+  it("passes active modules and a host customer-auth resolver to the auth runtime", async () => {
+    mocks.workflowGraphRuntime.modules = [
+      { id: "@voyant-travel/catalog", localId: "catalog" },
+      { id: "@acme/loyalty" },
+    ]
+    const resolveCustomerAuthContext = async () => ({
+      baseURL: "https://shop.example.com",
+      trustedOrigins: ["https://shop.example.com"],
+      methods: { emailCode: true, emailPassword: true },
+    })
+    const projectRoot = await createGeneratedProject()
+
+    await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { resolveCustomerAuthContext },
+    })
+
+    expect(mocks.authRuntimeOptions[0]).toMatchObject({
+      activeModules: ["catalog", "@acme/loyalty"],
+      resolveCustomerAuthContext,
+    })
+  })
+
+  it("passes a provider-neutral host auth email sender to the auth runtime", async () => {
+    const sender = {
+      sendResetPassword: vi.fn(async () => {}),
+      sendVerificationOtp: vi.fn(async () => {}),
+    }
+    const resolveAuthEmailSender = () => sender
+    const projectRoot = await createGeneratedProject()
+
+    await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: {
+        DATABASE_URL: "postgres://example.invalid/voyant",
+        BETTER_AUTH_ADMIN_SECRET: "admin-auth-secret-with-at-least-32-characters",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-claims-secret-with-at-least-32-characters",
+        BETTER_AUTH_CUSTOMER_SECRET: "customer-auth-secret-with-at-least-32-characters",
+        SESSION_CLAIMS_CUSTOMER_SECRET: "customer-claims-secret-with-at-least-32-characters",
+      },
+      host: { resolveAuthEmailSender },
+    })
+
+    expect(mocks.authRuntimeOptions[0]).toMatchObject({
+      resolveEmailSender: resolveAuthEmailSender,
     })
   })
 

@@ -1,28 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import { resourceRequirementsForProvider } from "./deployment-requirements.js"
-import { requireNodeAdminBetterAuthSecret } from "./node-auth-secrets.js"
-
-describe("requireNodeAdminBetterAuthSecret", () => {
-  it("uses the realm-specific admin secret", () => {
-    expect(
-      requireNodeAdminBetterAuthSecret({
-        BETTER_AUTH_ADMIN_SECRET: " admin-secret ",
-      }),
-    ).toBe("admin-secret")
-  })
-
-  it("rejects an absent realm-specific secret before Better Auth can apply defaults", () => {
-    expect(() => requireNodeAdminBetterAuthSecret({})).toThrow(
-      "Admin auth requires BETTER_AUTH_ADMIN_SECRET",
-    )
-    expect(() =>
-      requireNodeAdminBetterAuthSecret({
-        BETTER_AUTH_ADMIN_SECRET: "  ",
-      }),
-    ).toThrow("Admin auth requires BETTER_AUTH_ADMIN_SECRET")
-  })
-})
 
 describe("realm-specific auth deployment requirements", () => {
   it.each([

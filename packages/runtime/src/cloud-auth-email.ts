@@ -18,7 +18,7 @@ function readEnv(env: CloudAuthEmailEnv, key: string): unknown {
 }
 
 function resolveApiKey(env: CloudAuthEmailEnv): string | undefined {
-  return nonEmpty(readEnv(env, "VOYANT_API_KEY")) ?? nonEmpty(readEnv(env, "VOYANT_CLOUD_API_KEY"))
+  return nonEmpty(readEnv(env, "VOYANT_API_KEY"))
 }
 
 function resolveCloudClient(env: CloudAuthEmailEnv, apiKey: string): VoyantCloudClient {

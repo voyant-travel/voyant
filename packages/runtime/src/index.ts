@@ -2,7 +2,12 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
-import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/node-runtime"
+import {
+  type CustomerAuthRuntimeContext,
+  createOperatorAuthNodeRuntime,
+  type OperatorAuthEmailSender,
+  type OperatorAuthNodeEnv,
+} from "@voyant-travel/auth/node-runtime"
 import type { EventEnvelope } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
@@ -49,6 +54,7 @@ export {
   resolveSelectedGraphProviderPorts,
   type VoyantDeploymentResources,
 } from "./deployment-resources.js"
+export { resolveVoyantCloudAuthEmailSender }
 
 export interface LoadVoyantProjectOptions {
   projectRoot?: string
@@ -61,6 +67,13 @@ export interface LoadVoyantProjectOptions {
     /** Project-owned provider overrides keyed by their published runtime-port id. */
     runtimePorts?: VoyantGraphRuntimePorts
     storage?: StorageProviderResolver
+    /** Resolve a canonical storefront auth origin and server-side provider credentials. */
+    resolveCustomerAuthContext?: (
+      env: OperatorAuthNodeEnv,
+      request: Request,
+    ) => CustomerAuthRuntimeContext | Promise<CustomerAuthRuntimeContext>
+    /** Project-owned transport for verification codes and password resets. */
+    resolveAuthEmailSender?: (env: OperatorAuthNodeEnv) => OperatorAuthEmailSender | null
   }
 }
 
@@ -101,6 +114,7 @@ export async function loadVoyantProject(
     )
   }
   const env = createVoyantNodeEnv(rawEnv, providerPlan)
+  const authEnv = requireVoyantAuthEnv(env, authMode, customerAuthProvider)
   const explicitRuntimePorts = admitHostPorts(options.host?.runtimePorts ?? {}, generated)
   const selectedProviderPorts = await resolveSelectedGraphProviderPorts(
     generated.graphRuntime,
@@ -145,7 +159,7 @@ export async function loadVoyantProject(
       "deployment.providers.adminAuth": adminAuthProvider,
       "deployment.providers.customerAuth": customerAuthProvider,
     },
-    env,
+    env: authEnv,
     storage,
     deliverEvent: outboundWebhooks
       ? (event, bindings) => outboundWebhooks.enqueue(event as EventEnvelope, bindings)
@@ -160,10 +174,14 @@ export async function loadVoyantProject(
   const projectLinks = await loadGeneratedProjectLinks(artifactRoot)
   const authRuntime = createOperatorAuthNodeRuntime({
     accessCatalog: generated.graphRuntime.accessCatalog,
+    activeModules: generated.graphRuntime.modules.map((unit) => unit.localId ?? unit.id),
     appName: path.basename(projectRoot),
     authMode,
     reporter: consoleReporter(),
-    resolveEmailSender: resolveVoyantCloudAuthEmailSender,
+    resolveEmailSender: options.host?.resolveAuthEmailSender ?? resolveVoyantCloudAuthEmailSender,
+    ...(options.host?.resolveCustomerAuthContext
+      ? { resolveCustomerAuthContext: options.host.resolveCustomerAuthContext }
+      : {}),
   })
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
@@ -176,7 +194,7 @@ export async function loadVoyantProject(
     runtimePorts: deploymentResources.ports,
     resources: deploymentResources.capabilities,
     outboundWebhooks: deploymentResources.outboundWebhooks,
-    env,
+    env: authEnv,
     app: {
       linkDefinitions: projectLinks,
       auth: {

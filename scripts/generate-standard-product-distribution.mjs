@@ -86,7 +86,6 @@ const distributionRuntimeEntryDeps = {
 
 const frameworkDependencies = {
   "@voyant-travel/action-ledger": "workspace:^",
-  "@voyant-travel/auth": "workspace:^",
   "@voyant-travel/cloud-sdk": "^0.11.0",
   "@voyant-travel/connect-sdk": "0.9.1",
   "@voyant-travel/core": "workspace:^",

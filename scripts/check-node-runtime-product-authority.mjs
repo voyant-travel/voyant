@@ -200,7 +200,7 @@ if (operatorLineDelta > 0 || operatorImportDelta > 0) {
   )
 }
 
-// The resident host may import only generic process, auth, database, storage,
+// The resident host may import only generic process, database, storage,
 // composition, and workflow infrastructure. Each exception is intentionally
 // exact so adding another first-party dependency requires architectural review.
 const allowedInfrastructureImports = new Map([
@@ -208,18 +208,13 @@ const allowedInfrastructureImports = new Map([
     "@voyant-travel/action-ledger/capability",
     "lowers graph action declarations into the generic runtime capability registry",
   ],
-  ["@voyant-travel/auth/cloud-admin-session", "implements the Node Cloud admin auth adapter"],
-  ["@voyant-travel/auth/cloud-broker", "implements the Node Cloud auth redirect exchange"],
-  ["@voyant-travel/auth/server", "constructs the generic Node auth handler"],
   ["@voyant-travel/core", "types the domain-neutral runtime host primitive contract"],
   ["@voyant-travel/db/runtime", "constructs the Node database and database-backed stores"],
-  ["@voyant-travel/db/schema/iam", "reads the infrastructure-owned auth identity schema"],
   ["@voyant-travel/hono", "provides the generic HTTP, auth, database, and rate-limit contracts"],
   ["@voyant-travel/hono/composition", "types deployment-local graph factories"],
   ["@voyant-travel/runtime-core", "provides the resident Node server and storage shims"],
   ["@voyant-travel/storage/runtime", "adapts the generic Node document object store"],
   ["@voyant-travel/storage/types", "types the provider-neutral object storage contract"],
-  ["@voyant-travel/types/member-roles", "maps authenticated infrastructure roles to scopes"],
   ["@voyant-travel/utils/cache", "types the generic cache resource"],
   ["@voyant-travel/utils/redis-kv", "adapts Redis to the generic cache resource"],
   ["@voyant-travel/utils/tiered-kv", "composes process and durable cache resources"],

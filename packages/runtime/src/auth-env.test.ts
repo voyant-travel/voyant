@@ -38,6 +38,24 @@ describe("requireVoyantAuthEnv", () => {
     })
   })
 
+  it("uses the selected customer provider instead of a contradictory environment value", () => {
+    expect(
+      requireVoyantAuthEnv(
+        { ...baseEnv, VOYANT_CUSTOMER_AUTH_MODE: "better-auth" },
+        "local",
+        "disabled",
+      ),
+    ).toMatchObject({ VOYANT_CUSTOMER_AUTH_MODE: "disabled" })
+
+    expect(() =>
+      requireVoyantAuthEnv(
+        { ...baseEnv, VOYANT_CUSTOMER_AUTH_MODE: "disabled" },
+        "local",
+        "better-auth",
+      ),
+    ).toThrow("BETTER_AUTH_CUSTOMER_SECRET")
+  })
+
   it("rejects short session-claims roots", () => {
     expect(() =>
       requireVoyantAuthEnv({
@@ -66,14 +84,12 @@ describe("requireVoyantAuthEnv", () => {
     ).toThrow("Better Auth secrets must be different")
   })
 
-  it("normalizes realm-specific secrets without emitting shared aliases", () => {
+  it("normalizes realm-specific secrets", () => {
     const env = requireVoyantAuthEnv({
       ...baseEnv,
-      BETTER_AUTH_SECRET: " legacy-secret-must-be-removed ",
       BETTER_AUTH_CUSTOMER_SECRET: ` ${CUSTOMER_AUTH_SECRET} `,
-      SESSION_CLAIMS_SECRET: " shared-claims-must-be-removed ",
       SESSION_CLAIMS_CUSTOMER_SECRET: ` ${CUSTOMER_CLAIMS_SECRET} `,
-    } as Parameters<typeof requireVoyantAuthEnv>[0] & Record<string, string>)
+    })
 
     expect(env).toMatchObject({
       BETTER_AUTH_ADMIN_SECRET: ADMIN_AUTH_SECRET,
@@ -81,7 +97,43 @@ describe("requireVoyantAuthEnv", () => {
       SESSION_CLAIMS_ADMIN_SECRET: ADMIN_CLAIMS_SECRET,
       SESSION_CLAIMS_CUSTOMER_SECRET: CUSTOMER_CLAIMS_SECRET,
     })
-    expect(env).not.toHaveProperty("BETTER_AUTH_SECRET")
-    expect(env).not.toHaveProperty("SESSION_CLAIMS_SECRET")
+  })
+
+  it.each([
+    "BETTER_AUTH_SECRET",
+    "SESSION_CLAIMS_SECRET",
+  ])("rejects the removed shared secret alias %s", (legacyName) => {
+    expect(() =>
+      requireVoyantAuthEnv({
+        ...baseEnv,
+        BETTER_AUTH_CUSTOMER_SECRET: CUSTOMER_AUTH_SECRET,
+        SESSION_CLAIMS_CUSTOMER_SECRET: CUSTOMER_CLAIMS_SECRET,
+        [legacyName]: "removed-shared-secret",
+      }),
+    ).toThrow(`${legacyName} is not supported`)
+  })
+
+  it("fails composition when Voyant Cloud broker configuration is incomplete", () => {
+    expect(() =>
+      requireVoyantAuthEnv({ ...baseEnv, VOYANT_CUSTOMER_AUTH_MODE: "disabled" }, "voyant-cloud"),
+    ).toThrow("VOYANT_CLOUD_DEPLOYMENT_ID")
+  })
+
+  it("accepts complete Voyant Cloud broker configuration", () => {
+    expect(
+      requireVoyantAuthEnv(
+        {
+          ...baseEnv,
+          VOYANT_CUSTOMER_AUTH_MODE: "disabled",
+          VOYANT_CLOUD_DEPLOYMENT_ID: "dpl_test",
+          VOYANT_CLOUD_ADMIN_AUTH_START_URL: "https://cloud.example/auth/start",
+          VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL: "https://cloud.example/auth/exchange",
+          VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL: "https://cloud.example/.well-known/jwks.json",
+          VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL: "https://cloud.example/auth/revalidate",
+          VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN: "client-token",
+        },
+        "voyant-cloud",
+      ),
+    ).toMatchObject({ VOYANT_CLOUD_DEPLOYMENT_ID: "dpl_test" })
   })
 })
