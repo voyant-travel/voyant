@@ -1,5 +1,24 @@
 # @voyant-travel/apps
 
+## 0.4.0
+
+### Minor Changes
+
+- 3a90c27: Publish the first versioned remote App API surface with app-token routing,
+  service-boundary installation and scope checks, custom-field owner isolation,
+  finance action approval enforcement, webhook/audit self-read endpoints, and
+  runtime app-token resolution.
+- 3a90c27: Add remote app OAuth authorization, token, rotation, revocation, and app-token auth context support.
+
+### Patch Changes
+
+- 3a90c27: Mount the App API under `/v1/app/*` so its endpoints are reachable, enforce the token's own (possibly narrowed) scope set on every App API call, and treat resource/action `remoteSafe` flags as grantable during OAuth consent.
+- Updated dependencies [3a90c27]
+- Updated dependencies [3a90c27]
+  - @voyant-travel/core@0.125.2
+  - @voyant-travel/types@0.109.4
+  - @voyant-travel/hono@0.128.3
+
 ## 0.3.0
 
 ### Minor Changes
