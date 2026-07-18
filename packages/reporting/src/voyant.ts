@@ -113,7 +113,14 @@ export const reportingVoyantModule = defineModule({
   },
   admin: reportingVoyantAdmin,
   lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
-  meta: { ownership: "package" },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "Reporting is an interactive composition surface; source modules own agent-callable domain reads instead of exposing a generic query Tool.",
+    },
+  },
 })
 
 export default reportingVoyantModule
