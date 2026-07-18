@@ -15,6 +15,10 @@ import {
   rotateCredential,
 } from "./installation-reconciliation.js"
 import { canInstallOver, invalidTransition, planLifecycleTransition } from "./installation-state.js"
+import type {
+  ManagedAppInstallationAuthority,
+  ManagedAppInstallationBinding,
+} from "./runtime-port.js"
 import {
   type AppInstallation,
   type AppRegistration,
@@ -43,6 +47,7 @@ export interface AppInstallationServiceOptions {
   customFields?: CustomFieldsService
   platformApiVersion?: string
   deploymentId?: string
+  managedInstallation?: ManagedAppInstallationAuthority
 }
 
 export interface InstallAppInput {
@@ -99,15 +104,29 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
     const resolvedDeploymentId = deploymentId(input)
     return db.transaction(async (tx) => {
       const release = await requireReleaseForApp(tx, input.appId, input.releaseId)
+      const managedBinding = await resolveManagedBinding(
+        options.managedInstallation,
+        input.appId,
+        input.releaseId,
+      )
       assertReleaseAvailable(release)
       assertApiCompatible(release, options.platformApiVersion)
       const app = await requireApp(tx, input.appId)
-      const existing = await selectInstallationByDeploymentApp(
+      const selected = await selectInstallationForApp(
         tx,
         resolvedDeploymentId,
         input.appId,
+        managedBinding,
         true,
       )
+      const existing = selected
+        ? await reconcileManagedInstallationBinding(
+            tx,
+            selected,
+            resolvedDeploymentId,
+            managedBinding,
+          )
+        : null
       if (existing && !canInstallOver(existing.status)) {
         if (existing.releaseId !== input.releaseId) {
           throw invalidTransition(existing.status, "install_different_release")
@@ -118,7 +137,7 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
 
       const installation = existing
         ? await reactivateInstallation(tx, existing, release, input)
-        : await createInstallation(tx, app, release, resolvedDeploymentId, input)
+        : await createInstallation(tx, app, release, resolvedDeploymentId, input, managedBinding)
       await reconcileRelease(tx, installation, release, input.actorId, "install", options)
       await reconcileGrants(tx, installation, release, input.actorId, input.grantedOptionalScopes)
       if (input.credential) {
@@ -306,6 +325,7 @@ async function createInstallation(
   release: AppRelease,
   deploymentId: string,
   input: InstallAppInput,
+  managedBinding: ManagedAppInstallationBinding | undefined,
 ) {
   const now = new Date()
   const [row] = await db
@@ -313,6 +333,8 @@ async function createInstallation(
     .values({
       appId: app.id,
       deploymentId,
+      workloadEnvironmentId: managedBinding?.workloadEnvironmentId,
+      contractGeneration: managedBinding?.contractGeneration,
       releaseId: release.id,
       status: "active",
       namespace: app.platformNamespace,
@@ -400,6 +422,96 @@ async function selectInstallationByDeploymentApp(
     .where(and(eq(appInstallations.deploymentId, deploymentId), eq(appInstallations.appId, appId)))
   const [row] = lock ? await query.for("update").limit(1) : await query.limit(1)
   return row ?? null
+}
+
+async function selectInstallationForApp(
+  db: PostgresJsDatabase,
+  deploymentId: string,
+  appId: string,
+  managedBinding: ManagedAppInstallationBinding | undefined,
+  lock: boolean,
+) {
+  if (!managedBinding) {
+    return selectInstallationByDeploymentApp(db, deploymentId, appId, lock)
+  }
+  const query = db
+    .select()
+    .from(appInstallations)
+    .where(
+      and(
+        eq(appInstallations.workloadEnvironmentId, managedBinding.workloadEnvironmentId),
+        eq(appInstallations.appId, appId),
+      ),
+    )
+  const [row] = lock ? await query.for("update").limit(1) : await query.limit(1)
+  return row ?? null
+}
+
+async function reconcileManagedInstallationBinding(
+  db: PostgresJsDatabase,
+  installation: AppInstallation,
+  deploymentId: string,
+  managedBinding: ManagedAppInstallationBinding | undefined,
+) {
+  if (!managedBinding) return installation
+  if (
+    installation.workloadEnvironmentId !== managedBinding.workloadEnvironmentId ||
+    installation.contractGeneration === null
+  ) {
+    throw new ApiHttpError("Managed app installation binding does not match this runtime", {
+      status: 409,
+      code: "app_managed_installation_binding_mismatch",
+    })
+  }
+  if (installation.contractGeneration > managedBinding.contractGeneration) {
+    throw new ApiHttpError("Managed app contract generation is stale", {
+      status: 409,
+      code: "app_managed_contract_generation_stale",
+    })
+  }
+  if (
+    installation.contractGeneration === managedBinding.contractGeneration &&
+    installation.deploymentId === deploymentId
+  ) {
+    return installation
+  }
+  const generationAdvanced = installation.contractGeneration < managedBinding.contractGeneration
+  const [updated] = await db
+    .update(appInstallations)
+    .set({
+      deploymentId,
+      contractGeneration: managedBinding.contractGeneration,
+      credentialGeneration: generationAdvanced
+        ? sql`${appInstallations.credentialGeneration} + 1`
+        : installation.credentialGeneration,
+      updatedAt: new Date(),
+    })
+    .where(eq(appInstallations.id, installation.id))
+    .returning()
+  return updated ?? installation
+}
+
+async function resolveManagedBinding(
+  authority: ManagedAppInstallationAuthority | undefined,
+  appId: string,
+  releaseId: string,
+): Promise<ManagedAppInstallationBinding | undefined> {
+  if (!authority) return undefined
+  const contract = await authority.resolveInstallationContract({ appId, releaseId })
+  if (
+    !contract ||
+    !Number.isSafeInteger(contract.contractGeneration) ||
+    contract.contractGeneration <= 0
+  ) {
+    throw new ApiHttpError("Managed app installation contract is unavailable", {
+      status: 409,
+      code: "app_managed_installation_contract_unavailable",
+    })
+  }
+  return {
+    workloadEnvironmentId: authority.workloadEnvironmentId,
+    contractGeneration: contract.contractGeneration,
+  }
 }
 
 function assertReleaseAvailable(release: AppRelease) {

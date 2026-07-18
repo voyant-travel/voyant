@@ -208,6 +208,8 @@ export const appInstallations = pgTable(
       .notNull()
       .references(() => apps.id, { onDelete: "cascade" }),
     deploymentId: text("deployment_id").notNull(),
+    workloadEnvironmentId: text("workload_environment_id"),
+    contractGeneration: integer("contract_generation"),
     releaseId: text("release_id")
       .notNull()
       .references(() => appReleases.id, { onDelete: "restrict" }),
@@ -236,6 +238,13 @@ export const appInstallations = pgTable(
     index("idx_app_installations_app").on(table.appId, table.status),
     index("idx_app_installations_deployment").on(table.deploymentId, table.status),
     uniqueIndex("uidx_app_installations_deployment_app").on(table.deploymentId, table.appId),
+    uniqueIndex("uidx_app_installations_workload_environment_app")
+      .on(table.workloadEnvironmentId, table.appId)
+      .where(sql`${table.workloadEnvironmentId} IS NOT NULL`),
+    check(
+      "app_installations_managed_binding_complete",
+      sql`(${table.workloadEnvironmentId} IS NULL AND ${table.contractGeneration} IS NULL) OR (${table.workloadEnvironmentId} IS NOT NULL AND ${table.contractGeneration} > 0)`,
+    ),
     // agent-quality: raw-sql reviewed -- owner: apps; identifier is a Drizzle-owned column and the literal prefix is static.
     check("app_installations_namespace_reserved", sql`${table.namespace} LIKE 'app--%'`),
   ],
@@ -269,6 +278,8 @@ export const appAccessCredentials = pgTable(
       .notNull()
       .references(() => appInstallations.id, { onDelete: "cascade" }),
     generation: integer("generation").notNull(),
+    workloadEnvironmentId: text("workload_environment_id"),
+    contractGeneration: integer("contract_generation"),
     tokenMode: appAccessTokenModeEnum("token_mode").notNull().default("offline"),
     credentialHash: text("credential_hash").notNull(),
     encryptedMetadata: jsonb("encrypted_metadata").$type<Record<string, unknown>>().notNull(),
@@ -285,6 +296,10 @@ export const appAccessCredentials = pgTable(
       table.installationId,
       table.tokenMode,
       table.generation,
+    ),
+    check(
+      "app_access_credentials_managed_binding_complete",
+      sql`(${table.workloadEnvironmentId} IS NULL AND ${table.contractGeneration} IS NULL) OR (${table.workloadEnvironmentId} IS NOT NULL AND ${table.contractGeneration} > 0)`,
     ),
   ],
 )
@@ -303,6 +318,8 @@ export const appOAuthAuthorizationCodes = pgTable(
       .notNull()
       .references(() => appReleases.id, { onDelete: "cascade" }),
     deploymentId: text("deployment_id").notNull(),
+    workloadEnvironmentId: text("workload_environment_id"),
+    contractGeneration: integer("contract_generation"),
     codeHash: text("code_hash").notNull(),
     stateHash: text("state_hash").notNull(),
     redirectUri: text("redirect_uri").notNull(),
@@ -319,6 +336,10 @@ export const appOAuthAuthorizationCodes = pgTable(
   (table) => [
     uniqueIndex("uidx_app_oauth_codes_hash").on(table.codeHash),
     index("idx_app_oauth_codes_installation").on(table.installationId, table.expiresAt),
+    check(
+      "app_oauth_codes_managed_binding_complete",
+      sql`(${table.workloadEnvironmentId} IS NULL AND ${table.contractGeneration} IS NULL) OR (${table.workloadEnvironmentId} IS NOT NULL AND ${table.contractGeneration} > 0)`,
+    ),
   ],
 )
 
@@ -331,6 +352,8 @@ export const appOAuthRefreshTokens = pgTable(
       .references(() => appInstallations.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull(),
     generation: integer("generation").notNull(),
+    workloadEnvironmentId: text("workload_environment_id"),
+    contractGeneration: integer("contract_generation"),
     status: appAccessCredentialStatusEnum("status").notNull().default("active"),
     rotatedFromId: text("rotated_from_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -340,6 +363,10 @@ export const appOAuthRefreshTokens = pgTable(
   (table) => [
     uniqueIndex("uidx_app_oauth_refresh_tokens_hash").on(table.tokenHash),
     index("idx_app_oauth_refresh_tokens_installation").on(table.installationId, table.status),
+    check(
+      "app_oauth_refresh_tokens_managed_binding_complete",
+      sql`(${table.workloadEnvironmentId} IS NULL AND ${table.contractGeneration} IS NULL) OR (${table.workloadEnvironmentId} IS NOT NULL AND ${table.contractGeneration} > 0)`,
+    ),
   ],
 )
 
@@ -469,6 +496,8 @@ export const appSessionTokens = pgTable(
       .references(() => appInstallations.id, { onDelete: "cascade" }),
     appId: text("app_id").notNull(),
     deploymentId: text("deployment_id").notNull(),
+    workloadEnvironmentId: text("workload_environment_id"),
+    contractGeneration: integer("contract_generation"),
     jti: text("jti").notNull(),
     viewerId: text("viewer_id").notNull(),
     entityType: text("entity_type"),
@@ -482,6 +511,10 @@ export const appSessionTokens = pgTable(
   (table) => [
     uniqueIndex("uidx_app_session_tokens_jti").on(table.jti),
     index("idx_app_session_tokens_installation").on(table.installationId, table.expiresAt),
+    check(
+      "app_session_tokens_managed_binding_complete",
+      sql`(${table.workloadEnvironmentId} IS NULL AND ${table.contractGeneration} IS NULL) OR (${table.workloadEnvironmentId} IS NOT NULL AND ${table.contractGeneration} > 0)`,
+    ),
   ],
 )
 

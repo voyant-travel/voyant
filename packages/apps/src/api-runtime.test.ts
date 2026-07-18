@@ -15,6 +15,10 @@ const graph = {
 
 function context(managedAuth?: {
   runtimeAudience: string
+  installationAuthority: {
+    workloadEnvironmentId: string
+    resolveInstallationContract: () => Promise<{ contractGeneration: number }>
+  }
   sessionTokenSigningSecret: string
   sessionTokenTtlSeconds?: number
 }): VoyantGraphRuntimeFactoryContext {
@@ -46,6 +50,10 @@ describe("createAppsApiModule", () => {
     const module = await createAppsApiModule(
       context({
         runtimeAudience: "deployment-1",
+        installationAuthority: {
+          workloadEnvironmentId: "workload-environment-1",
+          resolveInstallationContract: async () => ({ contractGeneration: 1 }),
+        },
         sessionTokenSigningSecret: "s".repeat(32),
         sessionTokenTtlSeconds: 180,
       }),

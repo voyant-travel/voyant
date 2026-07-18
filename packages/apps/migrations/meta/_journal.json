@@ -36,6 +36,13 @@
       "when": 1784300400000,
       "tag": "20260717150000_app_session_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784397468000,
+      "tag": "20260718205748_managed_installation_binding",
+      "breakpoints": true
     }
   ]
 }

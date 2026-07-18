@@ -156,6 +156,12 @@ function applyAuthContext(
   if (auth.appCredentialGeneration !== undefined) {
     c.set("appCredentialGeneration", auth.appCredentialGeneration)
   }
+  if (auth.appWorkloadEnvironmentId) {
+    c.set("appWorkloadEnvironmentId", auth.appWorkloadEnvironmentId)
+  }
+  if (auth.appContractGeneration !== undefined) {
+    c.set("appContractGeneration", auth.appContractGeneration)
+  }
   if (auth.appTokenMode) c.set("appTokenMode", auth.appTokenMode)
   if (auth.appViewerId) c.set("appViewerId", auth.appViewerId)
   if (auth.appContextConstraint) c.set("appContextConstraint", auth.appContextConstraint)

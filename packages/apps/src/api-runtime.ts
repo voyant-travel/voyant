@@ -32,6 +32,7 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
       ? {
           accessCatalog: graph.accessCatalog,
           deploymentId: managedAuth.runtimeAudience,
+          managedInstallation: managedAuth.installationAuthority,
           clientAuthentication: "required" as const,
         }
       : undefined
@@ -45,6 +46,7 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
           ? {
               sessionToken: {
                 secret: managedAuth.sessionTokenSigningSecret,
+                managedInstallation: managedAuth.installationAuthority,
                 ...(managedAuth.sessionTokenTtlSeconds === undefined
                   ? {}
                   : { ttlSeconds: managedAuth.sessionTokenTtlSeconds }),

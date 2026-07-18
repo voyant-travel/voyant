@@ -36,6 +36,10 @@ export interface VoyantAuthContext {
   appInstallationId?: string
   appReleaseId?: string
   appCredentialGeneration?: number
+  /** Stable managed workload-environment identity resolved from app credential state. */
+  appWorkloadEnvironmentId?: string
+  /** Host contract generation bound to the resolved app credential. */
+  appContractGeneration?: number
   appTokenMode?: "offline" | "online"
   appViewerId?: string
   appContextConstraint?: VoyantAppContextConstraint

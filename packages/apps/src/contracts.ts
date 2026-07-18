@@ -175,7 +175,7 @@ export const appManifestSchema = manifestDisallowedKeySchema.pipe(
         .object({
           classifications: z.array(dataClassificationSchema).min(1),
           retention: z.string().trim().min(1).max(280),
-          storesSecrets: z.literal(false).default(false),
+          storesSecrets: z.boolean().default(false),
         })
         .strict(),
     })

@@ -12,29 +12,16 @@ function host(values: Readonly<Record<string, unknown>>) {
 }
 
 describe("createAppsRuntimePortContribution", () => {
-  it("stays off unless both managed-auth inputs are present", () => {
+  it("stays off because scalar environment values cannot authorize managed installations", () => {
     expect(createAppsRuntimePortContribution(host({}))).toEqual({})
     expect(
-      createAppsRuntimePortContribution(host({ VOYANT_APP_RUNTIME_AUDIENCE: "deployment-1" })),
+      createAppsRuntimePortContribution(
+        host({
+          VOYANT_APP_RUNTIME_AUDIENCE: "deployment-1",
+          VOYANT_APP_SESSION_TOKEN_SIGNING_SECRET: "s".repeat(32),
+        }),
+      ),
     ).toEqual({})
-  })
-
-  it("contributes validated provider-neutral managed-auth configuration", () => {
-    const contribution = createAppsRuntimePortContribution(
-      host({
-        VOYANT_APP_RUNTIME_AUDIENCE: "  deployment-1  ",
-        VOYANT_APP_SESSION_TOKEN_SIGNING_SECRET: "s".repeat(32),
-        VOYANT_APP_SESSION_TOKEN_TTL_SECONDS: "180",
-      }),
-    )
-
-    expect(contribution).toEqual({
-      [appsManagedAuthRuntimePort.id]: {
-        runtimeAudience: "deployment-1",
-        sessionTokenSigningSecret: "s".repeat(32),
-        sessionTokenTtlSeconds: 180,
-      },
-    })
   })
 
   it("does not replace an explicitly host-provided managed-auth port", () => {
@@ -49,24 +36,34 @@ describe("createAppsRuntimePortContribution", () => {
     expect(contribution).toEqual({})
   })
 
-  it("rejects weak signing material and long-lived session tokens", () => {
-    expect(() =>
-      createAppsRuntimePortContribution(
-        host({
-          VOYANT_APP_RUNTIME_AUDIENCE: "deployment-1",
-          VOYANT_APP_SESSION_TOKEN_SIGNING_SECRET: "test-secret",
+  it("resolves independent per-app generations within one workload environment", async () => {
+    const generations = new Map([
+      ["app_1", 2],
+      ["app_2", 9],
+    ])
+    const runtime = {
+      runtimeAudience: "runtime-audience",
+      installationAuthority: {
+        workloadEnvironmentId: "workload_environment_1",
+        resolveInstallationContract: async ({ appId }: { appId: string; releaseId: string }) => ({
+          contractGeneration: generations.get(appId) ?? 0,
         }),
-      ),
-    ).toThrow(/at least 32 characters/)
+      },
+      sessionTokenSigningSecret: "s".repeat(32),
+    }
 
-    expect(() =>
-      createAppsRuntimePortContribution(
-        host({
-          VOYANT_APP_RUNTIME_AUDIENCE: "deployment-1",
-          VOYANT_APP_SESSION_TOKEN_SIGNING_SECRET: "s".repeat(32),
-          VOYANT_APP_SESSION_TOKEN_TTL_SECONDS: "301",
-        }),
-      ),
-    ).toThrow(/1 through 300/)
+    expect(() => appsManagedAuthRuntimePort.test(runtime)).not.toThrow()
+    await expect(
+      runtime.installationAuthority.resolveInstallationContract({
+        appId: "app_1",
+        releaseId: "release_1",
+      }),
+    ).resolves.toEqual({ contractGeneration: 2 })
+    await expect(
+      runtime.installationAuthority.resolveInstallationContract({
+        appId: "app_2",
+        releaseId: "release_2",
+      }),
+    ).resolves.toEqual({ contractGeneration: 9 })
   })
 })
