@@ -19,6 +19,7 @@ import {
   appApiEntityReadQuerySchema,
   appApiFinanceActionSchema,
   appApiFinanceDocumentQuerySchema,
+  appApiFinanceExternalReferenceUpsertSchema,
   appApiTokenExchangeSchema,
   appApiVersionHeader,
   appApiWebhookReplaySchema,
@@ -121,6 +122,34 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
       options.deadlineMs,
     ),
   )
+
+  routes.get("/finance/documents/:id", (c) => {
+    const { id } = parseIdParams(c.req.param())
+    return run(
+      c,
+      service.getFinanceIssuanceDocument(c.get("db"), appContext(c), id),
+      options.deadlineMs,
+    )
+  })
+
+  routes.get("/finance/documents/:id/external-reference", (c) => {
+    const { id } = parseIdParams(c.req.param())
+    return run(
+      c,
+      service.getFinanceExternalReference(c.get("db"), appContext(c), id),
+      options.deadlineMs,
+    )
+  })
+
+  routes.put("/finance/documents/:id/external-reference", async (c) => {
+    const { id } = parseIdParams(c.req.param())
+    const body = await parseJsonBody(c, appApiFinanceExternalReferenceUpsertSchema)
+    return run(
+      c,
+      service.upsertFinanceExternalReference(c.get("db"), appContext(c), id, body),
+      options.deadlineMs,
+    )
+  })
 
   routes.post("/finance/actions", async (c) => {
     const body = await parseJsonBody(c, appApiFinanceActionSchema)

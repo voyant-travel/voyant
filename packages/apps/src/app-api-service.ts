@@ -7,6 +7,10 @@ import {
   createAppCustomFieldDefinitionOwner,
   createCustomFieldsService,
 } from "@voyant-travel/custom-fields"
+import {
+  FinanceAppApiNumberConflictError,
+  type FinanceAppApiRuntime,
+} from "@voyant-travel/finance-contracts/app-api"
 import { ApiHttpError } from "@voyant-travel/hono"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -16,8 +20,10 @@ import type {
   AppApiEntityReadQuery,
   AppApiFinanceActionInput,
   AppApiFinanceDocumentQuery,
+  AppApiFinanceExternalReferenceUpsertInput,
 } from "./app-api-contracts.js"
 import { APP_API_VERSION } from "./app-api-contracts.js"
+import { audit } from "./installation-reconciliation.js"
 import { appAuditEvents, appGrants, appReleases, appWebhookSubscriptions } from "./schema.js"
 
 export interface AppApiAccessContext {
@@ -34,9 +40,9 @@ export interface AppApiEntityReader {
   list(db: PostgresJsDatabase, query: AppApiEntityReadQuery): Promise<unknown>
 }
 
-export interface AppApiFinanceRuntime {
-  listDocuments(db: PostgresJsDatabase, query: AppApiFinanceDocumentQuery): Promise<unknown>
-  executeAction(db: PostgresJsDatabase, input: AppApiFinanceActionInput): Promise<unknown>
+export interface AppApiFinanceRuntime extends Partial<FinanceAppApiRuntime> {
+  listDocuments?(db: PostgresJsDatabase, query: AppApiFinanceDocumentQuery): Promise<unknown>
+  executeAction?(db: PostgresJsDatabase, input: AppApiFinanceActionInput): Promise<unknown>
 }
 
 export interface AppApiRateLimitPolicy {
@@ -125,7 +131,22 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
   ) {
     await requireAccess(db, context, ["finance-documents:read"])
     if (!options.finance) throw notSupported("Finance App API runtime is not configured.")
+    if (!options.finance.listDocuments)
+      throw notSupported("Finance document listing is unavailable.")
     return { data: await options.finance.listDocuments(db, query) }
+  }
+
+  async function getFinanceIssuanceDocument(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+  ) {
+    await requireAccess(db, context, ["finance-documents:read"])
+    const getDocument = options.finance?.getIssuanceDocument
+    if (!getDocument) throw notSupported("Finance document hydration is unavailable.")
+    const data = await getDocument(db, documentId)
+    if (!data) throw notFound("Finance document not found.")
+    return { data }
   }
 
   async function executeFinanceAction(
@@ -135,6 +156,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
   ) {
     await requireAccess(db, context, [`finance-actions:${input.action}`])
     if (!options.finance) throw notSupported("Finance App API runtime is not configured.")
+    if (!options.finance.executeAction) throw notSupported("Finance actions are unavailable.")
     if (!input.approvalId) {
       throw new ApiHttpError("Finance action requires action-ledger approval.", {
         status: 403,
@@ -142,6 +164,76 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
       })
     }
     return { data: await options.finance.executeAction(db, input) }
+  }
+
+  async function getFinanceExternalReference(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+  ) {
+    await requireAccess(db, context, ["finance-external-references:read"])
+    const getReference = options.finance?.getExternalReference
+    if (!getReference) throw notSupported("Finance external references are unavailable.")
+    const data = await getReference(db, documentId, context.appId)
+    if (!data) throw notFound("Finance external reference not found.")
+    return { data }
+  }
+
+  async function upsertFinanceExternalReference(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    documentId: string,
+    input: AppApiFinanceExternalReferenceUpsertInput,
+  ) {
+    const scopes = ["finance-external-references:write"]
+    if (input.allocation) scopes.push("finance-external-allocation:write")
+    const access = await requireAccess(db, context, scopes)
+    const upsertReference = options.finance?.upsertExternalReference
+    if (!upsertReference) throw notSupported("Finance external reference writes are unavailable.")
+
+    let result: Awaited<ReturnType<typeof upsertReference>>
+    try {
+      result = await db.transaction(async (tx) => {
+        const mutation = await upsertReference(tx, documentId, context.appId, input)
+        if (mutation.status === "ok") {
+          await audit(
+            tx,
+            access.installation,
+            `app:${context.appId}`,
+            "reconciliation",
+            "finance.external-reference.upserted",
+            {
+              documentId,
+              provider: context.appId,
+              referenceOutcome: mutation.referenceOutcome,
+              allocationOutcome: mutation.allocationOutcome,
+              releaseId: context.releaseId,
+              tokenMode: context.tokenMode,
+            },
+          )
+        }
+        return mutation
+      })
+    } catch (error) {
+      if (error instanceof FinanceAppApiNumberConflictError) {
+        throw new ApiHttpError("Finance document number is already in use.", {
+          status: 409,
+          code: "app_api_finance_number_conflict",
+          details: { invoiceNumber: error.invoiceNumber },
+        })
+      }
+      throw error
+    }
+
+    if (result.status === "not_found") throw notFound("Finance document not found.")
+    if (result.status === "allocation_conflict") {
+      throw new ApiHttpError("Finance document has already received a different allocation.", {
+        status: 409,
+        code: "app_api_finance_allocation_conflict",
+        details: result,
+      })
+    }
+    return { data: result }
   }
 
   async function listCustomFieldDefinitions(
@@ -240,7 +332,10 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     introspect,
     listEntities,
     listFinanceDocuments,
+    getFinanceIssuanceDocument,
     executeFinanceAction,
+    getFinanceExternalReference,
+    upsertFinanceExternalReference,
     listCustomFieldDefinitions,
     createCustomFieldDefinition,
     updateCustomFieldDefinition,

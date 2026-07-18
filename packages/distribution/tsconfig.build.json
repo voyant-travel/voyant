@@ -905,6 +905,10 @@
       ],
       "@voyant-travel/finance": ["../finance/dist/index.d.ts"],
       "@voyant-travel/finance-contracts": ["../finance-contracts/dist/index.d.ts"],
+      "@voyant-travel/finance-contracts/app-api": ["../finance-contracts/dist/app-api.d.ts"],
+      "@voyant-travel/finance-contracts/runtime-port": [
+        "../finance-contracts/dist/runtime-port.d.ts"
+      ],
       "@voyant-travel/finance-contracts/travel-credits": [
         "../finance-contracts/dist/validation-travel-credits.d.ts"
       ],

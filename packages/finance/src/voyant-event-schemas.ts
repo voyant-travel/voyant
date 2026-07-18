@@ -14,6 +14,23 @@ export const invoiceStatusSchema = {
 export const renditionFormatSchema = { enum: ["html", "pdf", "xml", "json"] } as const
 export const nullableStringSchema = { type: ["string", "null"] } as const
 
+/**
+ * Deliberately small projection used when an issued document leaves the
+ * deployment through the remote-app webhook boundary. Apps hydrate the
+ * current provider-neutral document by `invoiceId`; customer, line, routing,
+ * and numbering details remain inside Finance until that authorized read.
+ */
+export const invoiceIssuanceExternalPayloadSchema = {
+  type: "object",
+  required: ["invoiceId", "invoiceType"],
+  properties: {
+    invoiceId: { type: "string" },
+    invoiceType: { enum: ["invoice", "proforma"] },
+    skipExternalSync: { type: "boolean" },
+  },
+  additionalProperties: false,
+} as const
+
 export const invoiceIssuedPayloadSchema = {
   type: "object",
   required: ["invoiceId", "invoiceNumber", "invoiceType", "bookingId", "totalCents", "currency"],
