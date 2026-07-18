@@ -1,5 +1,27 @@
 # @voyant-travel/apps
 
+## 0.5.0
+
+### Minor Changes
+
+- a461920: Add the iframe admin session-token broker (RFC Phase 3): HKDF-signed,
+  context-separated short-lived session tokens carrying issuer, app audience,
+  installation, deployment, viewer, entity/slot context, iat/exp, and a unique
+  token id. Issuance records the token id and audits it; the backend exchange
+  verifies audience/deployment binding, consumes the token id once (rejecting
+  replay, expiry, and context mismatch), and swaps it for online actor access via
+  the existing OAuth actor-token-exchange primitive bounded by viewer ∩ app
+  grants. Adds the `app_session_tokens` table (migration idx 4) and its TypeID
+  prefix.
+
+### Patch Changes
+
+- Updated dependencies [a461920]
+- Updated dependencies [a461920]
+- Updated dependencies [a461920]
+  - @voyant-travel/admin@0.127.0
+  - @voyant-travel/admin-extension-sdk@0.2.0
+
 ## 0.4.0
 
 ### Minor Changes

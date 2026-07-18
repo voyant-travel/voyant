@@ -1,5 +1,25 @@
 # @voyant-travel/inventory
 
+## 0.13.6
+
+### Patch Changes
+
+- 590d256: Republish with dependency ranges resolved. The prior tarballs for these packages
+  carry raw `workspace:` specifiers (they were published outside the pnpm-aware
+  release flow) and cannot be installed by consumers. Also fixes the `runtime`
+  package's `prepack`, which rebuilt the entire workspace dependency closure on
+  every publish — the slow build stalled the release train's publish step past its
+  timeout and wedged the whole batch. `prepack` now builds only the package itself,
+  matching every other package.
+- Updated dependencies [590d256]
+  - @voyant-travel/finance@0.169.0
+  - @voyant-travel/commerce@0.39.2
+  - @voyant-travel/operations@0.8.7
+  - @voyant-travel/bookings@0.169.0
+  - @voyant-travel/catalog@0.167.0
+  - @voyant-travel/operator-settings@0.9.1
+  - @voyant-travel/relationships@0.128.6
+
 ## 0.13.5
 
 ### Patch Changes
