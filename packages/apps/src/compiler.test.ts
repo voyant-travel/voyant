@@ -124,6 +124,60 @@ describe("app manifest compiler", () => {
     ).toThrow(/not an external event contract/)
   })
 
+  it("accepts an HTTPS per-page nav icon and rejects a non-HTTPS one", () => {
+    const parsed = appManifestSchema.parse({
+      ...validManifest,
+      admin: {
+        ...validManifest.admin,
+        pages: [{ ...validManifest.admin.pages[0], icon: "https://app.example.com/icon.svg" }],
+      },
+    })
+    expect(parsed.admin.pages[0]?.icon).toBe("https://app.example.com/icon.svg")
+
+    expect(() =>
+      appManifestSchema.parse({
+        ...validManifest,
+        admin: {
+          ...validManifest.admin,
+          pages: [{ ...validManifest.admin.pages[0], icon: "http://app.example.com/icon.svg" }],
+        },
+      }),
+    ).toThrow(/https/i)
+  })
+
+  it("resolves the app-level default icon into pages that omit their own", () => {
+    const normalized = compileAppManifest({
+      ...validManifest,
+      icon: "https://app.example.com/app-icon.svg",
+      admin: {
+        ...validManifest.admin,
+        pages: [
+          {
+            key: "inherits",
+            titleKey: "t",
+            path: "/inherits",
+            entryUrl: "https://app.example.com/a",
+          },
+          {
+            key: "owns",
+            titleKey: "t",
+            path: "/owns",
+            entryUrl: "https://app.example.com/b",
+            icon: "https://app.example.com/own-icon.svg",
+          },
+        ],
+      },
+    }).normalizedRelease
+    const byKey = new Map(normalized.adminPages.map((page) => [page.key, page.icon]))
+    expect(byKey.get("inherits")).toBe("https://app.example.com/app-icon.svg")
+    expect(byKey.get("owns")).toBe("https://app.example.com/own-icon.svg")
+  })
+
+  it("leaves pages without an icon when neither the page nor the app declares one", () => {
+    const normalized = compileAppManifest(validManifest).normalizedRelease
+    expect(normalized.adminPages[0]?.icon).toBeUndefined()
+  })
+
   it("rejects webhook endpoints that target local infrastructure", () => {
     expect(() =>
       compileAppManifest({

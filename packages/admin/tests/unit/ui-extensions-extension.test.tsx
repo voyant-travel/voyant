@@ -93,6 +93,29 @@ describe("createUiExtensionsAdminExtension", () => {
     expect(document.querySelectorAll("iframe")).toHaveLength(1)
   })
 
+  it("contributes a single param route for installed app pages", () => {
+    const extension = createUiExtensionsAdminExtension({
+      client: createStaticUiExtensionsClient([]),
+    })
+    expect(extension.routes).toHaveLength(1)
+    expect(extension.routes?.[0]?.path).toBe("apps/$installationId/$pageKey")
+    expect(extension.routes?.[0]?.page).toBeTypeOf("function")
+    expect(extension.useRuntimeNavItems).toBeTypeOf("function")
+  })
+
+  it("titles the app-page route with the host default and honors a labels override", () => {
+    const base = createUiExtensionsAdminExtension({
+      client: createStaticUiExtensionsClient([]),
+    })
+    expect(base.routes?.[0]?.title).toBe("App")
+
+    const localized = createUiExtensionsAdminExtension({
+      client: createStaticUiExtensionsClient([]),
+      labels: { appPageTitle: "Aplicație" },
+    })
+    expect(localized.routes?.[0]?.title).toBe("Aplicație")
+  })
+
   it("renders nothing when the environment is absent", async () => {
     const extension = createUiExtensionsAdminExtension({
       client: createStaticUiExtensionsClient([descriptor()]),

@@ -53,10 +53,33 @@ export function useInstalledAppPages(client: UiExtensionsClient): AppPageDescrip
 
 /** A navigation entry contributed by an installed app page. */
 export interface AppPageNavEntry {
+  /** Stable per-installation key (`<installationId>:<manifest key>`). */
   key: string
-  /** Route path relative to the app-owned admin route segment. */
+  /** Owning installation id — pairs with {@link pageKey} to build the route url. */
+  installationId: string
+  /** Manifest page key (unique within an installation, may repeat across them). */
+  pageKey: string
+  /** App-owned admin sub-path declared by the manifest (e.g. `/settings`). */
   path: string
   label: string
+  /** App-declared nav icon URL (HTTPS). Absent → host renders a generic icon. */
+  icon?: string
+}
+
+/**
+ * Split a resolved descriptor key (`<installationId>:<manifest key>`) back into
+ * its parts. Installation ids never contain a colon, so the first colon is the
+ * boundary; a manifest key may itself contain colons and is kept intact.
+ */
+function splitPageKey(page: AppPageDescriptor): { installationId: string; pageKey: string } {
+  const installationId = page.installationId ?? ""
+  const prefix = `${installationId}:`
+  if (installationId && page.key.startsWith(prefix)) {
+    return { installationId, pageKey: page.key.slice(prefix.length) }
+  }
+  const separator = page.key.indexOf(":")
+  if (separator === -1) return { installationId, pageKey: page.key }
+  return { installationId: page.key.slice(0, separator), pageKey: page.key.slice(separator + 1) }
 }
 
 /**
@@ -64,11 +87,17 @@ export interface AppPageNavEntry {
  * these as nav entries pointing at the app-owned admin route.
  */
 export function useAppPageNavEntries(client: UiExtensionsClient): AppPageNavEntry[] {
-  return useInstalledAppPages(client).map((page) => ({
-    key: page.key,
-    path: page.path,
-    label: page.navLabel,
-  }))
+  return useInstalledAppPages(client).map((page) => {
+    const { installationId, pageKey } = splitPageKey(page)
+    return {
+      key: page.key,
+      installationId,
+      pageKey,
+      path: page.path,
+      label: page.navLabel,
+      ...(page.icon ? { icon: page.icon } : {}),
+    }
+  })
 }
 
 /** Adapt a page descriptor into the SDK descriptor shape the host renders. */

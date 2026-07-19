@@ -39,6 +39,27 @@ import { VoyantMark } from "./brand/voyant-mark.js"
 import { VoyantWordmark } from "./brand/voyant-wordmark.js"
 import { OperatorAdminUserMenu } from "./operator-admin-user-menu.js"
 
+/**
+ * Merge each extension's OPTIONAL runtime navigation hook into a flat list, in
+ * stable extension order. Runtime nav (e.g. installed apps' admin pages fetched
+ * at render time) is appended after static navigation as its own sections.
+ *
+ * Rules-of-hooks: the extension registry is a stable, append-only list, so
+ * calling each extension's `useRuntimeNavItems` once per render in a fixed order
+ * keeps hook call order stable across renders.
+ */
+function useRuntimeExtensionNavItems(
+  extensions: ReadonlyArray<AdminExtension> | undefined,
+): NavItem[] {
+  const runtimeItems: NavItem[] = []
+  for (const extension of extensions ?? []) {
+    // biome-ignore lint/correctness/useHookAtTopLevel: owner: admin; intentional -- the extension registry is a stable, append-only list, so calling each extension's runtime nav hook once per render in a fixed order keeps hook call order stable across renders.
+    const items = extension.useRuntimeNavItems?.() ?? []
+    runtimeItems.push(...items)
+  }
+  return runtimeItems
+}
+
 export interface OperatorAdminSidebarProps
   extends Omit<React.ComponentProps<typeof Sidebar>, "children"> {
   accountHref?: string
@@ -102,11 +123,13 @@ export function OperatorAdminSidebar({
 }: OperatorAdminSidebarProps) {
   const messages = useOperatorAdminMessages()
   const baseItems = navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
-  const resolvedItems = resolveOperatorAdminNavigation({
+  const staticItems = resolveOperatorAdminNavigation({
     baseItems,
     extensions,
     preferences: navigationPreferences,
   })
+  const runtimeItems = useRuntimeExtensionNavItems(extensions)
+  const resolvedItems = runtimeItems.length ? [...staticItems, ...runtimeItems] : staticItems
   const resolvedBrand = brand ?? <DefaultOperatorAdminBrand linkComponent={linkComponent} />
   const LinkComponent = linkComponent ?? DefaultAdminNavLink
   const SettingsIcon = icons?.settings ?? DefaultSettingsIcon
@@ -253,11 +276,17 @@ export function OperatorAdminWorkspaceLayout({
   } = sidebarProps ?? {}
   const baseItems =
     sidebarNavItems ?? navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
-  const resolvedItems = resolveOperatorAdminNavigation({
+  const activeExtensions = sidebarExtensions ?? extensions
+  const staticItems = resolveOperatorAdminNavigation({
     baseItems,
-    extensions: sidebarExtensions ?? extensions,
+    extensions: activeExtensions,
     preferences: navigationPreferences,
   })
+  // Merge runtime nav here (not just in the sidebar) so app-page entries are
+  // resolved for both the sidebar tree and the page-title/breadcrumb lookup;
+  // the nested sidebar is handed the merged list with `extensions={undefined}`.
+  const runtimeItems = useRuntimeExtensionNavItems(activeExtensions)
+  const resolvedItems = runtimeItems.length ? [...staticItems, ...runtimeItems] : staticItems
   const resolvedSide = sidebarSide ?? side
   let pageTitle: string | null = null
   if (pageHead !== false) {

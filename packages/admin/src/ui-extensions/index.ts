@@ -41,6 +41,8 @@ export {
   type UiExtensionSessionTokenGrant,
 } from "./ui-extension-host.js"
 export {
+  APP_PAGE_ROUTE_ID,
+  APP_PAGE_ROUTE_PATH,
   type AppPageDescriptor,
   type CreateUiExtensionsAdminExtensionOptions,
   createInstallationUiExtensionsClient,

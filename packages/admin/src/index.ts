@@ -206,6 +206,7 @@ export {
   type ResolveAdminNavigationPreferencesOptions,
   resolveAdminNavigationPreferences,
 } from "./navigation/preferences.js"
+export { createRemoteNavIcon } from "./navigation/remote-nav-icon.js"
 export {
   AdminExtensionsProvider,
   type AdminExtensionsProviderProps,
@@ -267,6 +268,7 @@ export {
   ADMIN_UI_EXTENSION_API_VERSION,
   ADMIN_UI_EXTENSION_SLOTS,
   type AdminUiExtensionSlot,
+  APP_PAGES_QUERY_KEY,
   type CreateUiExtensionsAdminExtensionOptions,
   createStaticUiExtensionsClient,
   createUiExtensionsAdminExtension,
