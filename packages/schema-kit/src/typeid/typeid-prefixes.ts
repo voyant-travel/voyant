@@ -432,6 +432,7 @@ export const PREFIXES = {
   operator_payment_instructions: "opin",
   operator_payment_defaults: "opdp",
   booking_tax_settings: "btxs",
+  payment_provider_config: "ppcfg",
 
   // --- PROMOTIONS (per docs/architecture/promotions-architecture.md §4.4) ---
   // promotional_offer_products is a join table (no `id` column).

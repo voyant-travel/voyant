@@ -8,5 +8,7 @@
  * that consume operator settings.
  */
 
+export * from "./payment-provider-registry.js"
+export * from "./payment-provider-service.js"
 export * from "./schema.js"
 export * from "./service.js"
