@@ -24,6 +24,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "inventory",
       "auth-team",
       "customer-business-accounts",
+      "storefronts",
       "operations",
       "operator-settings",
       "custom-fields",
