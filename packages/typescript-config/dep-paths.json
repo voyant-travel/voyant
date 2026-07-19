@@ -226,6 +226,18 @@
       "@voyant-travel/auth/backend": ["../auth/dist/backend.d.ts"],
       "@voyant-travel/auth/cloud-admin-session": ["../auth/dist/cloud-admin-session-public.d.ts"],
       "@voyant-travel/auth/cloud-broker": ["../auth/dist/cloud-broker.d.ts"],
+      "@voyant-travel/auth/customer-business-accounts": [
+        "../auth/dist/customer-business-accounts-contracts.d.ts"
+      ],
+      "@voyant-travel/auth/customer-business-onboarding-graph-runtime": [
+        "../auth/dist/customer-business-onboarding-graph-runtime.d.ts"
+      ],
+      "@voyant-travel/auth/customer-business-onboarding-runtime-port": [
+        "../auth/dist/customer-business-onboarding-runtime-port.d.ts"
+      ],
+      "@voyant-travel/auth/customer-business-onboarding-service": [
+        "../auth/dist/customer-business-onboarding-service.d.ts"
+      ],
       "@voyant-travel/auth/edge": ["../auth/dist/edge.d.ts"],
       "@voyant-travel/auth/identity-access-graph-runtime": [
         "../auth/dist/identity-access-graph-runtime.d.ts"
@@ -235,6 +247,7 @@
       ],
       "@voyant-travel/auth/node-runtime": ["../auth/dist/node-runtime.d.ts"],
       "@voyant-travel/auth/permissions": ["../auth/dist/permissions.d.ts"],
+      "@voyant-travel/auth/ports": ["../auth/dist/ports.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
       "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
       "@voyant-travel/auth/team-management-runtime-port": [
