@@ -1,5 +1,7 @@
 # @voyant-travel/auth
 
+## 0.140.1
+
 ## 0.140.0
 
 ### Minor Changes
