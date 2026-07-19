@@ -27,6 +27,8 @@ export type AdminChromeMessages = {
   extensionLoading: string
   extensionLoadFailed: string
   extensionIncompatible: string
+  appPageTitle: string
+  appPageUnavailable: string
 }
 
 export const adminChromeMessages = {
@@ -58,6 +60,8 @@ export const adminChromeMessages = {
     extensionLoadFailed: "This extension could not be loaded and was skipped.",
     extensionIncompatible:
       "This extension is incompatible with this admin version (requires {required}, admin provides {provided}).",
+    appPageTitle: "App",
+    appPageUnavailable: "This app page is no longer available.",
   },
   ro: {
     loading: "Se încarcă...",
@@ -87,5 +91,7 @@ export const adminChromeMessages = {
     extensionLoadFailed: "Extensia nu a putut fi încărcată și a fost omisă.",
     extensionIncompatible:
       "Extensia nu este compatibilă cu această versiune de administrare (necesită {required}, versiunea curentă oferă {provided}).",
+    appPageTitle: "Aplicație",
+    appPageUnavailable: "Această pagină de aplicație nu mai este disponibilă.",
   },
 } satisfies LocaleMessageDefinitions<AdminChromeMessages>

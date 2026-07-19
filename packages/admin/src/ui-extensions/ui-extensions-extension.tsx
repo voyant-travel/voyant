@@ -19,6 +19,7 @@ import {
 } from "../extensions.js"
 import { createRemoteNavIcon } from "../navigation/remote-nav-icon.js"
 import { useLocale } from "../providers/locale.js"
+import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import { useTheme } from "../providers/theme.js"
 import type { NavItem } from "../types.js"
 import { AppExtensionPage, useAppPageNavEntries, useInstalledAppPages } from "./app-pages.js"
@@ -214,6 +215,16 @@ function SlotUiExtensions({ client, slot }: { client: UiExtensionsClient; slot: 
 
 export interface CreateUiExtensionsAdminExtensionOptions {
   client: UiExtensionsClient
+  /**
+   * Optional localized chrome copy for the app-page route. The visible sidebar
+   * entry is already localized (its label comes from the resolved page's
+   * `navLabel`); these cover the static route metadata a host can't resolve
+   * through a hook. Omitted → the host default copy (English fallback).
+   */
+  labels?: {
+    /** Document/breadcrumb title for the generic app-page route. */
+    appPageTitle?: string
+  }
 }
 
 /**
@@ -226,6 +237,15 @@ export interface CreateUiExtensionsAdminExtensionOptions {
 export const APP_PAGE_ROUTE_ID = "voyant-ui-extensions:app-page"
 export const APP_PAGE_ROUTE_PATH = "apps/$installationId/$pageKey"
 
+/**
+ * English fallback for the app-page route's static metadata title, used when a
+ * host does not pass a localized {@link CreateUiExtensionsAdminExtensionOptions.labels}
+ * value. Mirrors the package-route localization pattern (host-supplied labels
+ * with an English default). The user-visible sidebar label is localized
+ * independently via the resolved page's `navLabel`.
+ */
+const APP_PAGE_ROUTE_TITLE_FALLBACK = "App"
+
 /** Admin nav url for an installed app page, matching {@link APP_PAGE_ROUTE_PATH}. */
 function appPageNavUrl(installationId: string, pageKey: string): string {
   return `/apps/${encodeURIComponent(installationId)}/${encodeURIComponent(pageKey)}`
@@ -233,9 +253,8 @@ function appPageNavUrl(installationId: string, pageKey: string): string {
 
 /** Fallback shown when the routed installation+page is unknown or inactive. */
 function AppPageNotFound() {
-  return (
-    <div className="p-6 text-sm text-muted-foreground">This app page is no longer available.</div>
-  )
+  const messages = useOperatorAdminMessages()
+  return <div className="p-6 text-sm text-muted-foreground">{messages.appPageUnavailable}</div>
 }
 
 /** Build the param-route page that renders the matching installed app page. */
@@ -278,8 +297,10 @@ function useAppPageRuntimeNavItems(client: UiExtensionsClient): NavItem[] {
  */
 export function createUiExtensionsAdminExtension({
   client,
+  labels,
 }: CreateUiExtensionsAdminExtensionOptions): AdminExtension {
   const AppPageRoute = createAppPageRouteComponent(client)
+  const appPageRouteTitle = labels?.appPageTitle ?? APP_PAGE_ROUTE_TITLE_FALLBACK
   return defineAdminExtension({
     id: "voyant-ui-extensions",
     widgets: ADMIN_UI_EXTENSION_SLOTS.map((slot) => ({
@@ -293,7 +314,7 @@ export function createUiExtensionsAdminExtension({
       {
         id: APP_PAGE_ROUTE_ID,
         path: APP_PAGE_ROUTE_PATH,
-        title: "App",
+        title: appPageRouteTitle,
         page: async () => ({ default: AppPageRoute }),
       },
     ],
