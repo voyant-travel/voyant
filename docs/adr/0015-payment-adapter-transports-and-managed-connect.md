@@ -1,0 +1,254 @@
+# 0015. Payment adapter transports and managed provider connect
+
+- **Status:** Proposed
+- **Audience:** framework, payments, finance, Operator, security, and
+  voyant-cloud maintainers
+- **Decision type:** public runtime and package contract
+- **Related:** [`payment-adapter-boundary.md`](../architecture/payment-adapter-boundary.md),
+  [`payments-architecture.md`](../architecture/payments-architecture.md),
+  [`remote-app-platform-rfc.md`](../architecture/remote-app-platform-rfc.md),
+  [`0013-single-server-api-runtime.md`](./0013-single-server-api-runtime.md)
+
+## Context
+
+Payment processors are, and remain, **deployment adapters** — not remote apps.
+The Remote App Platform RFC deliberately classifies payment under
+*"deployment adapter or provider"* because taking money requires **synchronous
+checkout participation** and native-transaction-adjacent trust that the
+untrusted, OAuth-gated remote-app model forbids. The canonical adapter contract
+already exists in `@voyant-travel/payments` (`PaymentAdapter`,
+`paymentAdapterRuntimePort`), and finance owns payment-session, invoice,
+payment, and checkout state.
+
+Today a deployment **hard-selects one adapter at build time** through
+`deployment.providers.payments` (`voyant-payments` | `netopia` | `custom` |
+`none`) and **configures it with environment variables**. There is no way for an
+operator to browse available processors and connect one from the admin UI; the
+provider is fixed by the deployment graph and its credentials are baked into the
+environment.
+
+Two forces make that insufficient:
+
+1. **Operator experience.** Operators expect to pick a payment processor and
+   connect it by entering credentials in Settings — "it's connected" — the same
+   way they manage every other integration. Not by editing environment
+   variables and redeploying.
+2. **Scale of the connector catalog.** We (Voyant) will build and maintain
+   *first-party* adapters for Voyant Payments, Netopia, Stripe, Adyen, Razorpay,
+   and a long tail of country-specific processors — potentially tens of them.
+   Bundling every adapter's SDK and code into every Operator build is
+   unacceptable bloat, most of it dead weight for any single deployment.
+
+This ADR reconciles both without weakening the trust boundary: the adapter
+contract stays the single source of truth, but an adapter **instance** can be
+obtained through one of two transports, and a managed deployment can select and
+connect a processor at runtime from a first-party catalog.
+
+## Decision
+
+### 1. One contract, two transports
+
+`PaymentAdapter` (`@voyant-travel/payments`) remains **the** contract.
+Nothing about the interface changes. What changes is how an implementation is
+*obtained*:
+
+| Transport | Used by | Bundled into the Operator |
+| --- | --- | --- |
+| **In-process** | Self-hosters | The specific `@voyant-travel/<processor>-adapter` npm packages the developer installs (e.g. `@voyant-travel/netopia-adapter`, which already exports a conforming `PaymentAdapter`) |
+| **Remote (managed)** | Voyant Cloud tenants | Only a generic `createRemotePaymentAdapter(...)` shim — never any per-processor code or SDK |
+
+Both transports produce a first-party, **trusted** deployment component and are
+therefore permitted synchronous checkout participation. The remote transport is
+a Voyant-operated adapter reached over a signed, versioned RPC — it is *not* an
+installed third-party app, so the remote-app restrictions (no synchronous
+checkout, OAuth-only, declarative-only) do not apply.
+
+**Consequence for scale:** adding processor number *N* is "deploy one worker +
+publish one registry entry." The Operator bundle does not grow, regardless of
+how many processors the catalog offers.
+
+### 2. Provider values and selection
+
+`deployment.providers.payments` gains a new value **`managed`**:
+
+- `managed` — runtime selects the active processor from the database, resolves
+  it through the remote transport and the voyant-cloud provider registry. Used
+  by Voyant Cloud deployments. Requires a control-plane endpoint + trust token,
+  not per-processor secrets.
+- `voyant-payments` | `netopia` | `custom` — unchanged. A self-hosted deployment
+  pins one in-process adapter and configures it with environment variables, as
+  today. `custom` remains for operator-owned adapters that pass the conformance
+  kit.
+- `none` — unchanged; valid only for deployments without payment-capable graph
+  units.
+
+Exactly one active adapter per deployment/org is enforced. In `managed` mode
+this is a single active configuration row; in the pinned modes it is the graph
+selection itself.
+
+### 3. Managed connect: credentials never rest in the Operator
+
+Self-host and managed differ **only** in credential custody:
+
+- **Self-host** brings its own environment variables. No processor credentials
+  are stored in the Operator database. The Settings → Payments page renders a
+  **read-only** status ("configured via environment") for the pinned provider.
+- **Managed** stores credentials in **voyant-cloud, encrypted with GCP KMS**,
+  reusing the existing `connect-utils` KMS envelope pattern already used for
+  per-org connector credentials (`"integrations"` key type, region-scoped
+  EU/US, `{ enc: <ciphertext> }` envelope). The managed connect form posts
+  credentials **directly to the voyant-cloud control plane** — they are
+  KMS-encrypted at rest there and decrypted by the **stateless** processor
+  worker at call time. The Operator database holds only an opaque connection
+  reference, the active provider id, connection status, and mode. Raw processor
+  credentials never transit or rest inside the Operator boundary.
+
+This keeps PCI-DSS scope (Req. 3 stored-data protection, Req. 10 audit) on the
+voyant-cloud + worker surface we already operate and audit, and keeps key
+custody inside GCP KMS rather than in any application environment.
+
+### 4. Provider registry and credential-field schema
+
+The catalog the operator browses is driven by a **provider registry**. Each
+entry is a `PaymentProviderDescriptor`:
+
+- `id`, `displayName`, `description`, `logo`;
+- `capabilities` (`PaymentAdapterCapabilities`);
+- `credentialFieldSchema` — the declarative field list (key, label, kind
+  `text | secret | boolean | select`, validation, help text) that renders the
+  connect form;
+- `regions` / `currencies` support hints;
+- `availability` (`available` | `coming_soon`) and `modes`
+  (`sandbox` | `live`).
+
+- **Managed:** the registry is served by voyant-cloud (the set of operated
+  processor workers).
+- **Self-host:** locally installed adapters contribute their own descriptor;
+  not-yet-installed processors appear as static `coming_soon` placeholders.
+
+The Operator exposes the catalog and connection state under
+`/v1/admin/settings/payments/*`.
+
+### 5. Connect flow
+
+1. Settings → Payments shows the catalog (Netopia `available`, Voyant Payments
+   `coming_soon` at launch).
+2. Operator selects a provider; the connect form is rendered from that
+   provider's `credentialFieldSchema`.
+3. Submit. In managed mode the payload goes to the voyant-cloud control plane,
+   which KMS-encrypts it and asks the processor worker to run
+   `adapter.health()` against the supplied credentials.
+4. On a healthy result the connection is marked **connected**, the active
+   provider is set, and the previous provider (if any) is disconnected —
+   enforcing one active per org.
+
+### 6. Runtime resolution seam
+
+The existing finance seam is reused unchanged:
+`createPaymentAdapterCardPaymentStarter(adapter, { resolveContext })`. In
+`managed` mode:
+
+- the active `PaymentAdapter` is a `createRemotePaymentAdapter(...)` instance
+  pointed at the selected processor worker;
+- `resolveContext` supplies the connection reference (not raw secrets) so the
+  worker resolves credentials from KMS on its side.
+
+In pinned self-host mode the adapter is the in-process package and
+`resolveContext` defaults to the request env, exactly as today. Checkout
+surfaces (flights, trips checkout, payment links, catalog) are unaffected — they
+route through the same `CardPaymentStarter`.
+
+### 7. Callbacks
+
+In managed mode the processor's callback URL points at the **processor worker**,
+which owns that processor's signature verification, maps the event to the
+canonical `PaymentCallbackEvent`, and forwards it — signed with the Operator
+trust token — to the Operator's finance callback endpoint, where
+`applyPaymentAdapterCallbackEvent(...)` advances the payment-session state
+machine. Processor-specific signature code never enters the Operator. In
+self-host mode the in-process adapter verifies callbacks locally, as today.
+
+## Non-goals
+
+- Changing the `PaymentAdapter` interface or finance's ownership of payment
+  state. This ADR adds transports and a selection/connect surface, not a new
+  contract.
+- Making payment processors installable "apps." Payments remain trusted
+  deployment adapters per the Remote App Platform RFC.
+- Storing processor credentials in the Operator database in any mode. Self-host
+  uses environment variables; managed uses voyant-cloud + GCP KMS.
+- A public/third-party processor marketplace. All adapters are first-party,
+  built and maintained by Voyant.
+- Multi-processor routing per `PaymentRequest`. One active provider per org for
+  now; a `PaymentRouter` remains a future extension.
+
+## Security and compliance
+
+- Managed credentials are encrypted with **GCP KMS** (hardware-backed KEK,
+  centralized rotation, per-key IAM, Cloud Audit Logs on every decrypt) via the
+  audited `connect-utils` pattern — not app-level symmetric encryption whose key
+  would sit in an application environment.
+- Raw processor credentials are confined to voyant-cloud and the stateless
+  workers; the Operator holds only opaque references, shrinking PCI scope.
+- Remote transport traffic is signed and versioned; callback forwarding is
+  signed with the Operator trust token; SSRF/HTTPS protections apply to all
+  outbound worker and control-plane calls.
+- Health-check-on-connect prevents marking a misconfigured processor as
+  connected.
+
+## Phasing
+
+- **Phase 1 (this branch, `voyant` repo):** this ADR + boundary/architecture doc
+  updates; `@voyant-travel/payments` contract additions
+  (`PaymentProviderDescriptor`, `PaymentCredentialFieldSchema`, remote-transport
+  wire schemas, `createRemotePaymentAdapter` skeleton, a `PaymentProviderRegistry`
+  port); Operator payments settings surface (config row: active provider,
+  status, mode, connection reference — no secrets; service; `/v1/admin/settings/
+  payments/*` routes); Settings → Payments page + i18n (en + ro), with Netopia
+  `available` and Voyant Payments `coming_soon`; `managed` provider value in the
+  framework deployment types + requirements. The registry/connect calls are
+  wired against the `PaymentProviderRegistry` port with a first-party catalog so
+  the UI is real; live voyant-cloud wiring is Phase 2.
+- **Phase 2 (`voyant-cloud`):** processor worker protocol + first worker
+  (Netopia), the provider registry endpoint, KMS-backed credential storage
+  reusing `connect-utils`, dispatcher routing, and signed callback forwarding —
+  making managed connect function end to end.
+- **Phase 3:** the Voyant Payments worker, then Stripe / Adyen / Razorpay and
+  country-specific processors as pure worker + registry-entry additions with no
+  Operator bundle change.
+
+## Consequences
+
+### Benefits
+
+- Operators connect a processor from the admin UI; no env editing or redeploy.
+- Operator bundle size is independent of catalog size.
+- One adapter contract and one checkout seam serve both transports.
+- Processor credentials stay out of the Operator boundary in managed mode, with
+  KMS-grade custody and PCI-scope reduction.
+- New processors ship without touching the Operator.
+
+### Costs
+
+- Managed payments introduce a network hop and remote failure modes on the
+  checkout path (mitigated by health checks, idempotency, and the existing
+  bank-transfer fallback).
+- Two credential-custody paths (env for self-host, KMS for managed) must both be
+  maintained and tested.
+- voyant-cloud operates the registry, workers, KMS storage, and callback
+  forwarding.
+
+## Verification
+
+- Architecture check: no per-processor adapter package is a hard dependency of
+  the Operator build in `managed` mode.
+- Contract: `createRemotePaymentAdapter(...)` satisfies `paymentAdapterRuntimePort`
+  conformance.
+- Self-host regression: pinned `netopia` / `voyant-payments` continue to resolve
+  from environment variables with no DB credential storage.
+- Connect flow: selecting a provider and submitting valid credentials runs
+  `health()` and transitions to `connected`; invalid credentials do not.
+- One-active-per-org invariant holds across provider switches.
+- Callback forwarding is signature-verified end to end.
+</content>
+</invoke>

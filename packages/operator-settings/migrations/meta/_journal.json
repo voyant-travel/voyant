@@ -43,6 +43,13 @@
       "when": 1784362464227,
       "tag": "0005_operator_settings_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784484820894,
+      "tag": "0006_operator_settings_baseline",
+      "breakpoints": true
     }
   ]
 }

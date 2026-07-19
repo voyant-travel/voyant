@@ -26,6 +26,8 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 
+import { mountPaymentProviderRoutes } from "./payment-provider-routes.js"
+
 import {
   getOperatorPaymentDefaults,
   getOperatorPaymentInstructions,
@@ -366,4 +368,5 @@ export function mountOperatorSettingsRoutes(hono: OpenApiMountTarget): void {
     )
 
   hono.route("/", routes)
+  mountPaymentProviderRoutes(hono)
 }
