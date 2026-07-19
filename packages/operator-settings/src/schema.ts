@@ -182,3 +182,34 @@ export const bookingTaxSettings = pgTable("booking_tax_settings", {
 
 export type BookingTaxSettings = typeof bookingTaxSettings.$inferSelect
 export type NewBookingTaxSettings = typeof bookingTaxSettings.$inferInsert
+
+/**
+ * Single-row selection + connection state for the operator's active payment
+ * processor (Settings → Payments).
+ *
+ * Deliberately holds NO processor credentials. Self-host deployments configure
+ * their pinned adapter through environment variables; managed deployments store
+ * credentials in the voyant-cloud control plane under KMS. This row only records
+ * *which* provider is active, its connection status, and an opaque managed
+ * connection reference. See
+ * `docs/adr/0015-payment-adapter-transports-and-managed-connect.md`.
+ */
+export const paymentProviderConfig = pgTable("payment_provider_config", {
+  id: typeId("payment_provider_config"),
+  /** Catalog id of the active provider (e.g. `netopia`); null when none. */
+  activeProviderId: text("active_provider_id"),
+  /** `disconnected` | `connected` | `error`. */
+  status: text("status").notNull().default("disconnected"),
+  /** `sandbox` | `test` | `live`; null until connected. */
+  mode: text("mode"),
+  /** Opaque managed-connection reference resolved by the control plane. No secrets. */
+  connectionRef: text("connection_ref"),
+  lastHealthAt: timestamp("last_health_at", { withTimezone: true }),
+  lastError: text("last_error"),
+  configuredBy: text("configured_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type PaymentProviderConfig = typeof paymentProviderConfig.$inferSelect
+export type NewPaymentProviderConfig = typeof paymentProviderConfig.$inferInsert

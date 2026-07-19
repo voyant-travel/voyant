@@ -5,7 +5,7 @@ import {
   defineAdminExtension,
 } from "@voyant-travel/admin/extensions"
 import type { AdminCoreSettingsExtraPage } from "@voyant-travel/admin-app/core-extension"
-import { Building } from "lucide-react"
+import { Building, CreditCard } from "lucide-react"
 
 import {
   OPERATOR_PROFILE_SETUP_STEP_ID,
@@ -53,11 +53,35 @@ export function createOperatorProfileSettingsExtraPage(
   }
 }
 
+/**
+ * The packaged Settings → Payments page descriptor. Placed in the General group
+ * after Invoicing (order 47). Lets the operator browse and connect a first-party
+ * payment processor. See
+ * `docs/adr/0015-payment-adapter-transports-and-managed-connect.md`.
+ */
+export function createPaymentsSettingsExtraPage(
+  options: { path?: string; order?: number } = {},
+): AdminCoreSettingsExtraPage {
+  return {
+    id: "payments",
+    path: options.path ?? "/payments",
+    title: "Payments",
+    label: (messages) => messages.settings.payments,
+    icon: CreditCard,
+    group: "general",
+    order: options.order ?? 47,
+    page: () =>
+      import("./payments-settings-page.js").then((module) =>
+        adminRoutePageModule(module.PaymentsSettingsPage),
+      ),
+  }
+}
+
 /** Selected-graph admin contribution owned by the operator-settings package. */
 export function createSelectedOperatorSettingsAdminExtension(): AdminExtension {
   return defineAdminExtension({
     id: "operator-settings",
-    settingsPages: [createOperatorProfileSettingsExtraPage()],
+    settingsPages: [createOperatorProfileSettingsExtraPage(), createPaymentsSettingsExtraPage()],
     setupSteps: [
       {
         id: OPERATOR_PROFILE_SETUP_STEP_ID,

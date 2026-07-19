@@ -5,13 +5,27 @@ adapter contract lives in `@voyant-travel/payments`, while finance remains the
 owner of payment-session, invoice, payment, and checkout state.
 
 The deployment selects one active adapter through
-`deployment.providers.payments`. Environment variables configure the selected
-adapter; their presence never selects a processor. The V1 provider values are:
+`deployment.providers.payments`. The provider values are:
 
+- `managed`
 - `voyant-payments`
 - `netopia`
 - `custom`
 - `none`
+
+For the pinned values (`voyant-payments`, `netopia`, `custom`), environment
+variables configure the selected adapter; their presence never selects a
+processor. This is the self-host path: one in-process adapter package, pinned by
+the graph, configured through the environment.
+
+`managed` selects the active processor at runtime from the database and resolves
+it through the remote transport and the voyant-cloud provider registry, so an
+operator can browse and connect a processor from Settings → Payments. Processor
+credentials in managed mode are stored in voyant-cloud under GCP KMS and never
+rest inside the Operator boundary. See
+[ADR 0015](../adr/0015-payment-adapter-transports-and-managed-connect.md) for
+the two-transport model (in-process vs remote), the managed connect flow, and
+the credential-custody rules.
 
 `none` is valid only for deployments without payment-capable graph units.
 Payment-capable graphs, including finance payment-session capability, must

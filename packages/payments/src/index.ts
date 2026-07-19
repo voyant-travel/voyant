@@ -217,3 +217,29 @@ export type {
   PaymentAdapterConformanceResult,
 } from "./conformance.js"
 export { runPaymentAdapterConformance } from "./conformance.js"
+export {
+  defaultPaymentProviderCatalog,
+  findPaymentProviderDescriptor,
+} from "./default-catalog.js"
+export type {
+  PaymentConnectInput,
+  PaymentConnectionState,
+  PaymentConnectionStatus,
+  PaymentConnectResult,
+  PaymentCredentialField,
+  PaymentCredentialFieldError,
+  PaymentCredentialFieldKind,
+  PaymentCredentialFieldOption,
+  PaymentCredentialFieldSchema,
+  PaymentProviderAvailability,
+  PaymentProviderDescriptor,
+  PaymentProviderRegistry,
+} from "./provider-catalog.js"
+export { validatePaymentCredentials } from "./provider-catalog.js"
+export type {
+  RemotePaymentAdapterOptions,
+  RemotePaymentCall,
+  RemotePaymentMethod,
+  RemotePaymentTransport,
+} from "./remote-adapter.js"
+export { createRemotePaymentAdapter, PAYMENT_REMOTE_NOT_IMPLEMENTED } from "./remote-adapter.js"

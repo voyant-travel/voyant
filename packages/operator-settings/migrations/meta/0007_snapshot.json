@@ -1,6 +1,6 @@
 {
-  "id": "be6c4730-26cd-4e1d-93cb-78e269c17cb3",
-  "prevId": "f7379e94-18c0-4002-9c08-9c17c6e6ce5f",
+  "id": "42404757-2e7b-494a-9476-ecfb154c8b83",
+  "prevId": "be6c4730-26cd-4e1d-93cb-78e269c17cb3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33,6 +33,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'proforma-first'"
+        },
+        "base_currency": {
+          "name": "base_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fx_commission_bps": {
+          "name": "fx_commission_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fx_commission_invoice_mention": {
+          "name": "fx_commission_invoice_mention",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
