@@ -1,5 +1,13 @@
 # @voyant-travel/operator-settings-react
 
+## 0.32.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.71.0
+- @voyant-travel/finance-react@0.179.0
+- @voyant-travel/finance@0.179.0
+
 ## 0.31.0
 
 ### Patch Changes
