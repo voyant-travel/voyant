@@ -1,5 +1,13 @@
 # @voyant-travel/crm
 
+## 0.131.23
+
+### Patch Changes
+
+- @voyant-travel/trips@0.173.0
+- @voyant-travel/relationships@0.128.21
+- @voyant-travel/operator-settings@0.13.1
+
 ## 0.131.22
 
 ### Patch Changes
