@@ -25,6 +25,104 @@ describe("buildBetterAuthCookieAdvancedOptions", () => {
 })
 
 describe("createOperatorAuthNodeRuntime", () => {
+  const onboardingProvider = () => ({
+    getCapabilities: vi.fn(),
+    createBusinessAccount: vi.fn(),
+    requestBusinessAccount: vi.fn(),
+    listRequests: vi.fn(),
+    cancelRequest: vi.fn(),
+    approveRequest: vi.fn(),
+    rejectRequest: vi.fn(),
+    provisionBusinessAccount: vi.fn(),
+  })
+
+  it.each([
+    {
+      path: "/auth/customer/business-accounts",
+      body: {
+        idempotencyKey: "open-policy-key",
+        profile: { name: "Acme", legalName: null, taxId: null, website: null },
+      },
+      businessOnboarding: "invite-only" as const,
+    },
+    {
+      path: "/auth/customer/business-account-requests",
+      body: {
+        idempotencyKey: "request-policy-key",
+        profile: { name: "Acme", legalName: null, taxId: null, website: null },
+      },
+      businessOnboarding: "open" as const,
+    },
+  ])("fails closed when $path is inconsistent with policy", async (testCase) => {
+    const provider = onboardingProvider()
+    const dispose = vi.fn(async () => {})
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose }),
+      customerBusinessAccountOnboarding: provider,
+      resolveCustomerAuthContext: async () => ({
+        baseURL: "https://shop.example.com",
+        invitationAcceptBaseURL: "https://shop.example.com",
+        trustedOrigins: ["https://shop.example.com"],
+        methods: { emailCode: true, emailPassword: true },
+        accountPolicy: {
+          allowedKinds: ["business"],
+          personalSignup: "disabled",
+          businessOnboarding: testCase.businessOnboarding,
+        },
+      }),
+    })
+    const response = await runtime.handler.fetch(
+      new Request(`https://shop.example.com${testCase.path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(testCase.body),
+      }),
+      {
+        DATABASE_URL: "postgres://unused",
+        BETTER_AUTH_CUSTOMER_SECRET: "customer-secret-with-at-least-32-characters",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-secret-with-at-least-32-characters",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+    expect(response.status).toBe(403)
+    expect(provider.createBusinessAccount).not.toHaveBeenCalled()
+    expect(provider.requestBusinessAccount).not.toHaveBeenCalled()
+    expect(dispose).toHaveBeenCalledOnce()
+  })
+
+  it("fails the invitation facade closed when business accounts are disabled", async () => {
+    const openDatabase = vi.fn(() => ({ db: {} as never, dispose: async () => {} }))
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase,
+      resolveCustomerAuthContext: async () => ({
+        baseURL: "https://shop.example.com",
+        trustedOrigins: ["https://shop.example.com"],
+        methods: { emailCode: true, emailPassword: true },
+      }),
+    })
+    const response = await runtime.handler.fetch(
+      new Request("https://shop.example.com/auth/customer/business-account-invitations/accept", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ invitationId: "invitation-disabled" }),
+      }),
+      {
+        DATABASE_URL: "postgres://unused",
+        BETTER_AUTH_CUSTOMER_SECRET: "customer-secret-with-at-least-32-characters",
+        SESSION_CLAIMS_ADMIN_SECRET: "admin-secret-with-at-least-32-characters",
+      },
+      { waitUntil: vi.fn() } as never,
+    )
+    expect(response.status).toBe(404)
+  })
   it("surfaces active managed modules in bootstrap status", async () => {
     const openDatabase = vi.fn(() => {
       throw new Error("managed bootstrap status must not open the database")

@@ -3,6 +3,10 @@ import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import {
+  type CustomerBusinessAccountOnboardingRuntimeProvider,
+  customerBusinessAccountOnboardingRuntimePort,
+} from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
+import {
   type CustomerAuthRuntimeContext,
   createOperatorAuthNodeRuntime,
   type OperatorAuthEmailSender,
@@ -171,6 +175,12 @@ export async function loadVoyantProject(
     createRuntimePorts: generated.createRuntimePorts,
     outboundWebhooks,
   })
+  const customerBusinessAccountOnboarding = deploymentResources.ports[
+    customerBusinessAccountOnboardingRuntimePort.id
+  ] as CustomerBusinessAccountOnboardingRuntimeProvider | undefined
+  if (customerBusinessAccountOnboarding) {
+    await customerBusinessAccountOnboardingRuntimePort.test(customerBusinessAccountOnboarding)
+  }
   const projectLinks = await loadGeneratedProjectLinks(artifactRoot)
   const authRuntime = createOperatorAuthNodeRuntime({
     accessCatalog: generated.graphRuntime.accessCatalog,
@@ -178,6 +188,7 @@ export async function loadVoyantProject(
     appName: path.basename(projectRoot),
     authMode,
     reporter: consoleReporter(),
+    ...(customerBusinessAccountOnboarding ? { customerBusinessAccountOnboarding } : {}),
     resolveEmailSender: options.host?.resolveAuthEmailSender ?? resolveVoyantCloudAuthEmailSender,
     ...(options.host?.resolveCustomerAuthContext
       ? { resolveCustomerAuthContext: options.host.resolveCustomerAuthContext }

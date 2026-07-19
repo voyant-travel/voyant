@@ -15,6 +15,10 @@ export interface ServiceApiKeysListFilters {
   sortDirection?: "asc" | "desc"
 }
 
+export interface CustomerBusinessAccountRequestListFilters {
+  status?: "pending" | "approved" | "rejected" | "canceled"
+}
+
 export const authQueryKeys = {
   all: ["auth"] as const,
   currentUser: () => [...authQueryKeys.all, "current-user"] as const,
@@ -26,4 +30,9 @@ export const authQueryKeys = {
     [...authQueryKeys.all, "organization-invitations", filters] as const,
   serviceApiKeys: (filters: ServiceApiKeysListFilters = {}) =>
     [...authQueryKeys.all, "service-api-keys", filters] as const,
+  customerBusinessAccounts: () => [...authQueryKeys.all, "customer-business-accounts"] as const,
+  customerBusinessAccountCapabilities: () =>
+    [...authQueryKeys.customerBusinessAccounts(), "capabilities"] as const,
+  customerBusinessAccountRequests: (filters: CustomerBusinessAccountRequestListFilters = {}) =>
+    [...authQueryKeys.customerBusinessAccounts(), "requests", filters] as const,
 }

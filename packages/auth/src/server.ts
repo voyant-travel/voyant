@@ -557,12 +557,29 @@ export type CreateCustomerBetterAuthOptions<
 > & {
   methods?: CustomerAuthMethods
   accountPolicy?: CustomerBuyerAccountPolicy | null
-  sendOrganizationInvitation?: (data: {
-    id: string
-    email: string
-    organization: { id: string; name: string; slug: string }
-    inviter: { user: { id: string; name: string; email: string } }
-  }) => Promise<void>
+  sendOrganizationInvitation?: (
+    data: {
+      id: string
+      role: string
+      email: string
+      organization: { id: string; name: string; slug: string }
+      invitation: {
+        id: string
+        email: string
+        role: string
+        organizationId: string
+        inviterId: string
+        status: string
+        expiresAt: Date
+      }
+      inviter: {
+        id: string
+        role: string
+        user: { id: string; name: string; email: string }
+      }
+    },
+    request?: Request,
+  ) => Promise<void>
 }
 
 /** Storefront realm factory with isolated tables, cookies, secret, and routes. */

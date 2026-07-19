@@ -1,7 +1,88 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
-
+import { customerBusinessAccountOnboardingRuntimePort } from "./customer-business-onboarding-runtime-port.js"
 import { identityAccessRuntimePort } from "./identity-access-runtime-port.js"
 import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
+
+export const authCustomerBusinessAccountsVoyantModule = defineModule({
+  id: "@voyant-travel/auth#customer-business-accounts",
+  packageName: "@voyant-travel/auth",
+  localId: "auth.customer-business-accounts",
+  requires: { capabilities: ["storefront.data-owner"] },
+  runtimePorts: [requirePort(customerBusinessAccountOnboardingRuntimePort)],
+  api: [
+    {
+      id: "@voyant-travel/auth#customer-business-accounts.api.admin",
+      surface: "admin",
+      mount: "customer-business-accounts",
+      resource: "customer-business-accounts",
+      openapi: { document: "customer-business-accounts" },
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/auth/customer-business-onboarding-graph-runtime",
+        export: "createCustomerBusinessAccountVoyantRuntime",
+      },
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/auth#access.customer-business-accounts",
+        resource: "customer-business-accounts",
+        label: "Customer business accounts",
+        description: "Review onboarding requests and provision customer business accounts.",
+        actions: [
+          {
+            action: "read",
+            label: "View customer business accounts",
+            description: "View customer business-account capabilities and onboarding requests.",
+          },
+          {
+            action: "write",
+            label: "Manage customer business accounts",
+            description: "Approve, reject, and provision customer business accounts.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
+  admin: {
+    compositionOrder: 6,
+    runtime: {
+      entry: "@voyant-travel/auth-react/admin",
+      export: "createSelectedCustomerBusinessAccountsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/auth#customer-business-accounts.admin.copy",
+        namespace: "auth.admin.customer-business-accounts",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/auth-react/i18n",
+          export: "authUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/auth#customer-business-accounts.admin.route",
+        path: "/business-accounts",
+        requiredScopes: ["customer-business-accounts:read"],
+        runtime: {
+          entry: "@voyant-travel/auth-react/admin",
+          export: "createSelectedCustomerBusinessAccountsAdminExtension",
+        },
+      },
+    ],
+  },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale: "Business-account onboarding is exposed through staff-guarded admin routes.",
+    },
+  },
+})
 
 export const authInvitationsVoyantModule = defineModule({
   id: "@voyant-travel/auth#invitations",

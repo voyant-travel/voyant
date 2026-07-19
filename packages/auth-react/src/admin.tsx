@@ -5,7 +5,7 @@ import {
   defineAdminExtension,
   type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin/extensions"
-import { Users } from "lucide-react"
+import { Building2, Users } from "lucide-react"
 import { authTeamSetupMessageDefinitions } from "./i18n/setup.js"
 
 /** Selected-graph team settings contribution owned by Auth React. */
@@ -43,6 +43,64 @@ export function createSelectedAuthTeamAdminExtension(
       },
     ],
   })
+}
+
+/** Selected-graph customer business-account operations owned by Auth React. */
+export function createSelectedCustomerBusinessAccountsAdminExtension(
+  context?: SelectedAdminExtensionFactoryContext,
+): AdminExtension {
+  const label = context?.navMessages.businessAccounts ?? "Business accounts"
+  return defineAdminExtension({
+    id: "customer-business-accounts",
+    navigation: [
+      {
+        order: 45,
+        items: [
+          {
+            id: "customer-business-accounts",
+            title: label,
+            url: "/business-accounts",
+            icon: Building2,
+          },
+        ],
+      },
+    ],
+    routes: [
+      {
+        id: "customer-business-accounts",
+        path: "/business-accounts",
+        title: label,
+        ssr: "data-only",
+        page: () =>
+          import("./components/customer-business-accounts-page.js").then((module) =>
+            adminRoutePageModule(module.CustomerBusinessAccountsPage),
+          ),
+        loader: loadCustomerBusinessAccounts,
+        routeMessagesProvider: () =>
+          import("./i18n/index.js").then((module) => ({
+            default: module.AuthUiMessagesProvider,
+          })),
+      },
+    ],
+  })
+}
+
+async function loadCustomerBusinessAccounts({
+  queryClient,
+  runtime,
+}: AdminRouteLoaderContext): Promise<void> {
+  const {
+    createCustomerBusinessAccountsAdminApi,
+    customerBusinessAccountCapabilitiesQueryOptions,
+    customerBusinessAccountRequestsQueryOptions,
+  } = await import("./customer-business-accounts-admin-api.js")
+  const api = createCustomerBusinessAccountsAdminApi(runtime.baseUrl, runtime.fetcher ?? fetch)
+  const capabilities = await queryClient.fetchQuery(
+    customerBusinessAccountCapabilitiesQueryOptions(api),
+  )
+  if (capabilities.viewRequests) {
+    await queryClient.prefetchQuery(customerBusinessAccountRequestsQueryOptions(api))
+  }
 }
 
 async function hasAdditionalTeamMember({ runtime }: AdminRouteLoaderContext): Promise<boolean> {

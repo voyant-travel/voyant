@@ -1,0 +1,44 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant customer business accounts",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/customer-business-accounts/capabilities": {
+      "get": {
+        "operationId": "getCustomerBusinessAccountCapabilities",
+        "x-voyant-api-id": "@voyant-travel/auth#customer-business-accounts.api.admin",
+        "responses": { "200": { "description": "HTTP 200" } }
+      }
+    },
+    "/v1/admin/customer-business-accounts/requests": {
+      "get": {
+        "operationId": "listCustomerBusinessAccountRequests",
+        "x-voyant-api-id": "@voyant-travel/auth#customer-business-accounts.api.admin",
+        "responses": { "200": { "description": "HTTP 200" } }
+      }
+    },
+    "/v1/admin/customer-business-accounts/requests/{requestId}/approve": {
+      "post": {
+        "operationId": "approveCustomerBusinessAccountRequest",
+        "x-voyant-api-id": "@voyant-travel/auth#customer-business-accounts.api.admin",
+        "responses": { "200": { "description": "HTTP 200" } }
+      }
+    },
+    "/v1/admin/customer-business-accounts/requests/{requestId}/reject": {
+      "post": {
+        "operationId": "rejectCustomerBusinessAccountRequest",
+        "x-voyant-api-id": "@voyant-travel/auth#customer-business-accounts.api.admin",
+        "responses": { "200": { "description": "HTTP 200" } }
+      }
+    },
+    "/v1/admin/customer-business-accounts/accounts": {
+      "post": {
+        "operationId": "provisionCustomerBusinessAccount",
+        "x-voyant-api-id": "@voyant-travel/auth#customer-business-accounts.api.admin",
+        "responses": { "201": { "description": "HTTP 201" } }
+      }
+    }
+  }
+}

@@ -157,7 +157,7 @@ export const customerAuthInvitation = customerAuthSchema.table(
     organizationId: text("organization_id")
       .notNull()
       .references(() => customerAuthOrganization.id, { onDelete: "cascade" }),
-    role: text("role"),
+    role: text("role").notNull().default("member"),
     status: text("status").notNull().default("pending"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -165,6 +165,65 @@ export const customerAuthInvitation = customerAuthSchema.table(
   (table) => [
     index("customer_auth_invitation_email_idx").on(table.email),
     index("customer_auth_invitation_organization_idx").on(table.organizationId),
+    uniqueIndex("customer_auth_invitation_pending_email_organization_unique")
+      .on(sql`lower(${table.email})`, table.organizationId)
+      .where(sql`${table.status} = 'pending'`),
+    check(
+      "customer_auth_invitation_role_check",
+      sql`${table.role} IN ('owner', 'admin', 'member')`,
+    ),
+    check(
+      "customer_auth_invitation_status_check",
+      sql`${table.status} IN ('pending', 'accepted', 'rejected', 'canceled')`,
+    ),
+  ],
+)
+
+/** Durable workflow state for customer business-account onboarding. */
+export const customerAuthBusinessAccountRequest = customerAuthSchema.table(
+  "business_account_request",
+  {
+    id: text("id").primaryKey(),
+    requesterUserId: text("requester_user_id")
+      .notNull()
+      .references(() => customerAuthUser.id, { onDelete: "cascade" }),
+    storefrontOrigin: text("storefront_origin").notNull(),
+    mode: text("mode").notNull(),
+    name: text("name").notNull(),
+    legalName: text("legal_name"),
+    taxId: text("tax_id"),
+    website: text("website"),
+    status: text("status").notNull().default("pending"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    authOrganizationId: text("auth_organization_id").references(() => customerAuthOrganization.id, {
+      onDelete: "set null",
+    }),
+    relationshipOrganizationId: text("relationship_organization_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    /** Audit-only admin-realm subject. Deliberately has no customer-auth FK. */
+    decidedBy: text("decided_by"),
+    decisionReason: text("decision_reason"),
+  },
+  (table) => [
+    index("customer_auth_business_request_requester_idx").on(table.requesterUserId),
+    index("customer_auth_business_request_status_idx").on(table.status, table.createdAt),
+    uniqueIndex("customer_auth_business_request_requester_idempotency_unique").on(
+      table.requesterUserId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("customer_auth_business_request_pending_requester_unique")
+      .on(table.requesterUserId)
+      .where(sql`${table.status} = 'pending'`),
+    check(
+      "customer_auth_business_request_mode_check",
+      sql`${table.mode} IN ('open', 'request', 'invite-only')`,
+    ),
+    check(
+      "customer_auth_business_request_status_check",
+      sql`${table.status} IN ('pending', 'approved', 'rejected', 'canceled')`,
+    ),
   ],
 )
 
@@ -190,6 +249,10 @@ export type SelectCustomerAuthOrganization = typeof customerAuthOrganization.$in
 export type InsertCustomerAuthOrganization = typeof customerAuthOrganization.$inferInsert
 export type SelectCustomerAuthMember = typeof customerAuthMember.$inferSelect
 export type InsertCustomerAuthMember = typeof customerAuthMember.$inferInsert
+export type SelectCustomerAuthBusinessAccountRequest =
+  typeof customerAuthBusinessAccountRequest.$inferSelect
+export type InsertCustomerAuthBusinessAccountRequest =
+  typeof customerAuthBusinessAccountRequest.$inferInsert
 export type SelectCustomerAuthPersonalBuyerAccount =
   typeof customerAuthPersonalBuyerAccount.$inferSelect
 export type InsertCustomerAuthPersonalBuyerAccount =

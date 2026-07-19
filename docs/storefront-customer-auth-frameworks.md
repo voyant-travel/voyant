@@ -38,7 +38,8 @@ export function ActiveBuyerName() {
 
 Selecting an account posts its id and then refetches the customer session and
 personal/business account list. The hook also exposes `accounts`, `policy`,
-`requiresSelection`, and `selectAccount`. Requests use `credentials: "include"`.
+`requiresSelection`, `businessAccountRequests`, and the select/create/request/
+cancel/accept operations. Requests use `credentials: "include"`.
 OAuth client secrets and managed broker credentials never belong in browser
 code.
 
@@ -47,6 +48,64 @@ selection. Sign-in and sign-up remain standard Better Auth HTTP endpoints below
 `/auth/customer/*`. Use `client.request("sign-in/email", init)` (or a Better Auth
 browser client configured against the same BFF base) for those flows; do not
 invent a second Voyant login protocol.
+
+## Personal and business customer onboarding
+
+Business customers use the same Better Auth customer realm as individual
+customers. A business account is a buyer context backed by a customer auth
+organization and a CRM relationship organization; it is not an operator/staff
+organization. WorkOS remains an admin-realm concern and is never required by a
+storefront customer flow.
+
+The storefront policy decides which call to expose:
+
+- `open`: call `createBusinessAccount(input)`. The React provider explicitly
+  activates the returned account and refreshes its account and session state.
+- `request`: call `requestBusinessAccount(input)`. Pending requests are exposed
+  as `businessAccountRequests` and can be withdrawn with
+  `cancelBusinessAccountRequest(requestId)`.
+- `invite-only`: do not show customer-initiated create/request controls. Accept
+  a business membership invitation with
+  `acceptBusinessInvitation({ invitationId })`.
+- `disabled`: do not expose business onboarding or invitation acceptance.
+
+Invitation membership can be `owner`, `admin`, or `member`; never assume that
+an invited user owns the business account. The operator-facing approval and
+provisioning APIs are capability-gated separately from these customer methods.
+Invitation emails link to the customer-facing path
+`/account/business-invitations/:invitationId` on the configured canonical
+storefront origin. Next.js and Astro hosts must own that page, decode the path
+parameter, and call `acceptBusinessInvitation({ invitationId })` after the
+customer is authenticated. Keep this as a storefront route; do not redirect it
+through the operator admin host.
+
+```tsx
+function BusinessOnboarding() {
+  const buyer = useBuyerAccounts()
+
+  if (buyer.policy?.businessOnboarding === "open") {
+    return (
+      <button
+        disabled={buyer.creatingBusinessAccount}
+        onClick={() =>
+          void buyer.createBusinessAccount({
+            idempotencyKey: crypto.randomUUID(),
+            profile: { name: "Acme Travel" },
+          })
+        }
+      >
+        Create business account
+      </button>
+    )
+  }
+
+  if (buyer.policy?.businessOnboarding === "request") {
+    return <p>{buyer.businessAccountRequests.length} business requests</p>
+  }
+
+  return null
+}
+```
 
 ## The same-origin BFF boundary
 
@@ -155,11 +214,13 @@ const buyerState = await client.listBuyerAccounts()
 ```
 
 Mutating auth from a Server Action requires returning Better Auth's cookie
-rotation to the browser. `selectBuyerAccountWithResponse` returns both parsed
-data and the original response so the adapter can forward every `Set-Cookie`
-value. The low-level `request` method likewise returns an untouched `Response`
-for sign-in/sign-up proxies. Never combine multiple `Set-Cookie` values into one
-comma-delimited header.
+rotation to the browser. `selectBuyerAccountWithResponse`,
+`createBusinessAccountWithResponse`, and
+`acceptBusinessInvitationWithResponse` return both parsed data and the original
+response so the adapter can forward every `Set-Cookie` value. The low-level
+`request` method likewise returns an untouched `Response` for sign-in/sign-up
+proxies. Never combine multiple `Set-Cookie` values into one comma-delimited
+header.
 
 ## Astro
 

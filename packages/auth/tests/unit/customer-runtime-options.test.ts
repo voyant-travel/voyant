@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  customerOrganizationInvitationUrl,
   withCustomerPublicResetPasswordUrl,
   withCustomerSocialRedirectUris,
 } from "../../src/node-runtime.js"
 
 describe("customer auth runtime options", () => {
+  it("builds invitation links from an exact trusted origin", () => {
+    expect(customerOrganizationInvitationUrl("https://shop.example.com", "invitation/id")).toBe(
+      "https://shop.example.com/account/business-invitations/invitation%2Fid",
+    )
+    expect(() =>
+      customerOrganizationInvitationUrl("https://shop.example.com/untrusted", "invitation"),
+    ).toThrow(/exact trusted HTTP\(S\) origin/)
+  })
   it("uses the browser-visible API callback for configured social providers", () => {
     const methods = withCustomerSocialRedirectUris(
       {
