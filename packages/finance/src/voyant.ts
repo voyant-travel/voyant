@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: finance; the package-owned deployment declarations remain centralized in one manifest.
 import { actionLedgerFinanceDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
 import { bookingsFinanceRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import {
@@ -5,9 +6,15 @@ import {
   defineModule,
   providePort,
   requirePort,
+  type VoyantGraphJsonObject,
 } from "@voyant-travel/core/project"
 import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
+import {
+  financeReceivablesDatasetDefinition,
+  financeReportingTemplates,
+  financeReportingWidgets,
+} from "./reporting-definitions.js"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
@@ -98,6 +105,66 @@ export const financeVoyantModule = defineModule({
       source: "@voyant-travel/finance/schema",
     },
   ],
+  reporting: {
+    datasets: [
+      {
+        id: financeReceivablesDatasetDefinition.id,
+        version: financeReceivablesDatasetDefinition.version,
+        label: financeReceivablesDatasetDefinition.label,
+        description: financeReceivablesDatasetDefinition.description,
+        descriptor: financeReceivablesDatasetDefinition,
+        requiredScopes: financeReceivablesDatasetDefinition.requiredScopes,
+        runtime: {
+          entry: "@voyant-travel/finance/reporting",
+          export: "financeReceivablesDataset",
+        },
+      },
+    ],
+    widgets: financeReportingWidgets.map((widget) => ({
+      id: widget.id,
+      version: widget.version,
+      label: widget.label,
+      description: widget.description,
+      datasetId: widget.query.dataset.id,
+      ...(widget.query.dataset.version ? { datasetVersion: widget.query.dataset.version } : {}),
+      query: {
+        select: widget.query.select,
+        filters: widget.query.filters,
+        groupBy: widget.query.groupBy,
+        orderBy: widget.query.orderBy,
+        ...(widget.query.limit ? { limit: widget.query.limit } : {}),
+      },
+      visualization: {
+        type: widget.visualization.type,
+        options: omitUndefinedJsonOptions(widget.visualization.options),
+      },
+      defaultSize: widget.defaultSize,
+      ...(widget.minimumSize ? { minSize: widget.minimumSize } : {}),
+      ...(widget.maximumSize ? { maxSize: widget.maximumSize } : {}),
+    })),
+    templates: financeReportingTemplates.map((template) => ({
+      id: template.id,
+      version: template.version,
+      label: template.label,
+      description: template.description,
+      requirements: template.widgets.map((widget) => ({
+        kind: "widget" as const,
+        id: widget.source.kind === "preset" ? widget.source.widgetId : widget.id,
+      })),
+      widgets: template.widgets.flatMap((widget) =>
+        widget.source.kind === "preset"
+          ? [
+              {
+                id: widget.id,
+                widgetId: widget.source.widgetId,
+                ...(widget.source.version ? { widgetVersion: widget.source.version } : {}),
+                layout: widget.layout,
+              },
+            ]
+          : [],
+      ),
+    })),
+  },
   migrations: [
     {
       id: "@voyant-travel/finance#migrations",
@@ -600,5 +667,13 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
     ownership: "package",
   },
 })
+
+function omitUndefinedJsonOptions(options: Record<string, unknown>): VoyantGraphJsonObject {
+  const jsonOptions: Record<string, VoyantGraphJsonObject[string]> = {}
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined) jsonOptions[key] = value as VoyantGraphJsonObject[string]
+  }
+  return jsonOptions
+}
 
 export default financeVoyantModule

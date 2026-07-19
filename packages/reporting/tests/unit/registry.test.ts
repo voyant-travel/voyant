@@ -1,0 +1,209 @@
+import type { ReportingContributionRuntime } from "@voyant-travel/reporting-contracts"
+import { describe, expect, it, vi } from "vitest"
+
+import {
+  ReportingAuthorizationError,
+  ReportingRegistry,
+  requireReportingScopes,
+} from "../../src/registry.js"
+
+function contribution(): ReportingContributionRuntime {
+  return {
+    namespace: "test",
+    datasets: [
+      {
+        definition: {
+          id: "bookings",
+          version: 1,
+          label: "Bookings",
+          grain: "One row per booking",
+          requiredScopes: ["bookings:read"],
+          fields: [
+            {
+              id: "status",
+              label: "Status",
+              role: "dimension",
+              valueType: "string",
+              sensitivity: "internal",
+              requiredScopes: [],
+              aggregations: ["count", "countDistinct"],
+            },
+          ],
+          defaultLimit: 100,
+          maximumLimit: 500,
+        },
+        execute: vi.fn(async () => ({
+          columns: [{ id: "status", label: "Status", valueType: "string" as const }],
+          rows: [{ status: "confirmed" }],
+          truncated: false,
+          warnings: [],
+        })),
+      },
+    ],
+    widgets: [
+      {
+        id: "bookings.by-status",
+        version: 1,
+        label: "Bookings by status",
+        query: {
+          dataset: { id: "bookings" },
+          select: [{ kind: "field", field: "status" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+        visualization: { type: "table", options: {} },
+        defaultSize: { width: 6, height: 4 },
+      },
+    ],
+  }
+}
+
+describe("ReportingRegistry", () => {
+  it("executes only declared fields after checking the dataset scope", async () => {
+    const registry = new ReportingRegistry([contribution()])
+    await expect(
+      registry.executeQuery({
+        db: {},
+        grantedScopes: ["bookings:read"],
+        query: {
+          dataset: { id: "bookings" },
+          select: [{ kind: "field", field: "status" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+      }),
+    ).resolves.toMatchObject({ rows: [{ status: "confirmed" }] })
+
+    expect(() =>
+      registry.validateQuery(
+        {
+          dataset: { id: "bookings" },
+          select: [{ kind: "field", field: "status" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+        ["reports:read"],
+      ),
+    ).toThrow("Missing required dataset scopes")
+  })
+
+  it("omits unavailable widgets in view mode but preserves removable placeholders in edit mode", () => {
+    const registry = new ReportingRegistry([contribution()])
+    const draft = {
+      parameters: {},
+      widgets: [
+        {
+          id: "available",
+          source: { kind: "preset" as const, widgetId: "bookings.by-status" },
+          layout: { x: 0, y: 0, width: 6, height: 4 },
+        },
+        {
+          id: "missing",
+          source: { kind: "preset" as const, widgetId: "finance.revenue" },
+          layout: { x: 6, y: 0, width: 6, height: 4 },
+        },
+      ],
+    }
+
+    expect(registry.resolveDraft(draft, "view").map(({ instance }) => instance.id)).toEqual([
+      "available",
+    ])
+    expect(registry.resolveDraft(draft, "edit")).toEqual([
+      expect.objectContaining({ status: "available" }),
+      expect.objectContaining({
+        status: "missing",
+        missingReason: expect.stringContaining("finance.revenue"),
+      }),
+    ])
+  })
+
+  it("accepts camel-case semantic fields and freezes preset and dataset versions", () => {
+    const source = contribution()
+    source.datasets![0]!.definition.fields = [
+      {
+        id: "createdAt",
+        label: "Created at",
+        role: "dimension",
+        valueType: "datetime",
+        sensitivity: "internal",
+        requiredScopes: [],
+        aggregations: ["minimum", "maximum"],
+      },
+    ]
+    source.widgets = [
+      {
+        id: "bookings.created",
+        version: 1,
+        label: "Created",
+        query: {
+          dataset: { id: "bookings" },
+          select: [{ kind: "field", field: "createdAt" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+        visualization: { type: "table", options: {} },
+        defaultSize: { width: 6, height: 4 },
+      },
+    ]
+    const registry = new ReportingRegistry([source])
+    const snapshot = registry.snapshotDraft({
+      parameters: {},
+      widgets: [
+        {
+          id: "created-widget",
+          source: { kind: "preset", widgetId: "bookings.created" },
+          layout: { x: 0, y: 0, width: 6, height: 4 },
+        },
+      ],
+    })
+
+    expect(snapshot.widgets[0]?.source).toMatchObject({
+      kind: "custom",
+      definition: { query: { dataset: { id: "bookings", version: 1 } } },
+    })
+  })
+
+  it("applies resource and global wildcard grants consistently", () => {
+    expect(() => requireReportingScopes(["finance:read"], ["finance:*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*:*"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["*:read"])).not.toThrow()
+    expect(() => requireReportingScopes(["finance:read"], ["reports:read"])).toThrow(
+      ReportingAuthorizationError,
+    )
+  })
+
+  it("respects explicit-resource access policy for sensitive source scopes", () => {
+    const accessCatalog = {
+      resources: [
+        {
+          id: "finance-access",
+          unitId: "finance",
+          resource: "finance",
+          label: "Finance",
+          description: "Sensitive finance records",
+          wildcard: "explicit-resource" as const,
+          actions: [
+            {
+              action: "read",
+              label: "Read",
+              description: "Read finance records",
+            },
+          ],
+        },
+      ],
+      presets: [],
+    }
+
+    expect(() => requireReportingScopes(["finance:read"], ["*:*"], accessCatalog)).toThrow(
+      ReportingAuthorizationError,
+    )
+    expect(() =>
+      requireReportingScopes(["finance:read"], ["finance:read"], accessCatalog),
+    ).not.toThrow()
+  })
+})

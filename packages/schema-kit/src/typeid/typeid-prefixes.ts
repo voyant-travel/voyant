@@ -31,6 +31,9 @@ export const PREFIXES = {
   action_mutation_details: "almd",
   action_sensitive_read_details: "alsr",
   action_approvals: "alap",
+  report_definitions: "rpdf",
+  report_versions: "rpvr",
+  report_runs: "rprn",
 
   // --- VOYANT MODULES ---
   communication_log: "clog",

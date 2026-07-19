@@ -345,6 +345,7 @@ describe("deployment graph artifacts", () => {
       graph: "deployment-graph.generated.json",
       accessCatalog: graph.accessCatalog,
       eventCatalog: graph.eventCatalog,
+      reportingCatalog: graph.reportingCatalog,
       webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {

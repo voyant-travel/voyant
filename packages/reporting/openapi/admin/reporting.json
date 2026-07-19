@@ -1,0 +1,332 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Reporting Admin API",
+    "version": "1.0.0",
+    "description": "Composable report catalog, drafts, immutable versions, and bounded execution."
+  },
+  "components": {
+    "schemas": {
+      "ReportingResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "QuerySourceInput": {
+        "type": "object",
+        "required": ["source"],
+        "properties": { "source": { "type": "string", "minLength": 1, "maxLength": 10000 } },
+        "additionalProperties": false
+      },
+      "QueryPreviewInput": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": { "type": "object", "additionalProperties": true },
+          "parameters": { "type": "object", "additionalProperties": true, "default": {} }
+        },
+        "additionalProperties": false
+      },
+      "CreateReportInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "description": { "type": ["string", "null"], "maxLength": 2000 },
+          "sourceTemplateId": { "type": ["string", "null"] },
+          "sourceTemplateVersion": { "type": ["integer", "null"], "minimum": 1 },
+          "draft": { "type": "object", "additionalProperties": true }
+        },
+        "additionalProperties": false
+      },
+      "UpdateReportInput": {
+        "type": "object",
+        "required": ["revision"],
+        "properties": {
+          "revision": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "description": { "type": ["string", "null"], "maxLength": 2000 },
+          "draft": { "type": "object", "additionalProperties": true }
+        },
+        "additionalProperties": false
+      },
+      "InstantiateTemplateInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "description": { "type": ["string", "null"], "maxLength": 2000 },
+          "version": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      },
+      "PublishReportInput": {
+        "type": "object",
+        "required": ["expectedRevision"],
+        "properties": { "expectedRevision": { "type": "integer", "minimum": 1 } },
+        "additionalProperties": false
+      },
+      "RunReportInput": {
+        "type": "object",
+        "properties": {
+          "parameters": { "type": "object", "additionalProperties": true, "default": {} }
+        },
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" },
+          "missingScopes": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "responses": {
+      "ReportingResponse": {
+        "description": "Reporting API response",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ReportingResponse" }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "description": "Reporting API error",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/admin/reporting/catalog": {
+      "get": {
+        "operationId": "getReportingCatalog",
+        "summary": "List available datasets, widget presets, and page templates",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/queries/parse": {
+      "post": {
+        "operationId": "parseReportingQuery",
+        "summary": "Parse the bounded reporting query language",
+        "description": "Requires reports:read. The language does not permit joins, mutations, or arbitrary code.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/QuerySourceInput" } }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/queries/preview": {
+      "post": {
+        "operationId": "previewReportingQuery",
+        "summary": "Execute a bounded query preview",
+        "description": "Requires reports:read and every scope declared by the selected dataset fields.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/QueryPreviewInput" } }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/reports": {
+      "get": {
+        "operationId": "listReports",
+        "summary": "List saved report drafts",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 0, "default": 0 }
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      },
+      "post": {
+        "operationId": "createReport",
+        "summary": "Create a report draft",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CreateReportInput" } }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/reports/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "get": {
+        "operationId": "getReport",
+        "summary": "Get a saved report draft",
+        "description": "Requires reports:read.",
+        "tags": ["Reporting"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      },
+      "patch": {
+        "operationId": "updateReport",
+        "summary": "Save an optimistic-concurrency report edit",
+        "description": "Requires reports:write and the current draft revision.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateReportInput" } }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" },
+          "409": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteReport",
+        "summary": "Delete a report without retained runs",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" },
+          "409": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/templates/{id}/instantiate": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "post": {
+        "operationId": "instantiateReportTemplate",
+        "summary": "Create an editable report from an available page template",
+        "description": "Requires reports:write.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InstantiateTemplateInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/reports/{id}/versions": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "post": {
+        "operationId": "publishReportVersion",
+        "summary": "Publish an immutable report snapshot",
+        "description": "Requires reports:write and the current draft revision.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PublishReportInput" } }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" },
+          "409": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/versions/{id}/runs": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "post": {
+        "operationId": "runReportVersion",
+        "summary": "Execute an immutable report version",
+        "description": "Requires reports:export and every source dataset scope used by the version.",
+        "tags": ["Reporting"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RunReportInput" } }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/ReportingResponse" },
+          "400": { "$ref": "#/components/responses/ErrorResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    },
+    "/v1/admin/reporting/runs/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "get": {
+        "operationId": "getReportRun",
+        "summary": "Get persisted report results",
+        "description": "Requires reports:export and every source dataset scope recorded on the run.",
+        "tags": ["Reporting"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ReportingResponse" },
+          "403": { "$ref": "#/components/responses/ErrorResponse" },
+          "404": { "$ref": "#/components/responses/ErrorResponse" }
+        }
+      }
+    }
+  }
+}

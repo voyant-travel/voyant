@@ -1,0 +1,268 @@
+/*
+ * Reporting builder styles. Import once in the host app:
+ *   import "@voyant-travel/reporting-react/styles.css"
+ *
+ * react-grid-layout ships the absolute positioning + transition rules that make
+ * the 2D grid work; we import them here and layer Voyant chrome on top.
+ */
+@source "./**/*.{ts,tsx}";
+@source "../dist/**/*.{js,mjs}";
+
+@import "react-grid-layout/css/styles.css";
+
+/* Accessible-only text (labels, keyboard hints) */
+.vrb-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vrb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.vrb__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.vrb__panels {
+  min-height: 24rem;
+}
+
+.vrb__panel {
+  min-width: 0;
+  overflow: auto;
+}
+
+.vrb__resize-handle {
+  width: 0.5rem;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+}
+
+.vrb__resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0 45%;
+  border-radius: 999px;
+  background: var(--vrb-border, #d4d4d8);
+}
+
+/* Canvas */
+.vrb-canvas {
+  min-height: 12rem;
+}
+
+.vrb-canvas--empty {
+  display: grid;
+  place-items: center;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--vrb-border, #d4d4d8);
+  border-radius: 0.75rem;
+  color: var(--vrb-muted, #71717a);
+  text-align: center;
+}
+
+.vrb-canvas--narrow {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Widget frame */
+.vrb-widget__motion {
+  height: 100%;
+}
+
+.vrb-widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--vrb-border, #e4e4e7);
+  border-radius: 0.75rem;
+  background: var(--vrb-surface, #ffffff);
+  overflow: hidden;
+}
+
+.vrb-widget--selected {
+  border-color: var(--vrb-accent, #6366f1);
+  box-shadow: 0 0 0 1px var(--vrb-accent, #6366f1);
+}
+
+.vrb-widget--unavailable {
+  border-style: dashed;
+  background: var(--vrb-surface-muted, #fafafa);
+  color: var(--vrb-muted, #71717a);
+}
+
+.vrb-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--vrb-border, #e4e4e7);
+}
+
+.vrb-widget__title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+button.vrb-widget__title {
+  cursor: grab;
+  background: none;
+  border: none;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.375rem;
+  color: inherit;
+  font: inherit;
+}
+
+button.vrb-widget__title:focus-visible {
+  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline-offset: 2px;
+}
+
+.vrb-widget__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.vrb-widget__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.vrb-widget__action:hover {
+  background: var(--vrb-surface-muted, #f4f4f5);
+}
+
+.vrb-widget__action:focus-visible {
+  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline-offset: 1px;
+}
+
+.vrb-widget__action--remove:hover {
+  background: var(--vrb-danger-surface, #fef2f2);
+  color: var(--vrb-danger, #dc2626);
+}
+
+.vrb-widget__body {
+  flex: 1;
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+/* Catalog + inspector */
+.vrb-catalog,
+.vrb-inspector {
+  padding: 0.75rem;
+}
+
+.vrb-catalog__title,
+.vrb-inspector__title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vrb-muted, #71717a);
+  margin: 0 0 0.5rem;
+}
+
+.vrb-catalog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vrb-catalog__add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--vrb-border, #e4e4e7);
+  border-radius: 0.5rem;
+  background: var(--vrb-surface, #ffffff);
+  cursor: pointer;
+}
+
+.vrb-catalog__add:hover {
+  border-color: var(--vrb-accent, #6366f1);
+}
+
+.vrb-catalog__add:focus-visible {
+  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline-offset: 1px;
+}
+
+.vrb-catalog__item-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.vrb-catalog__item-desc {
+  font-size: 0.75rem;
+  color: var(--vrb-muted, #71717a);
+}
+
+.vrb-catalog__empty,
+.vrb-inspector__empty {
+  font-size: 0.8125rem;
+  color: var(--vrb-muted, #71717a);
+}
+
+/* Save status */
+.vrb-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--vrb-muted, #71717a);
+}
+
+.vrb-save-status--error {
+  color: var(--vrb-danger, #dc2626);
+}
+
+.vrb-save-status__retry {
+  border: 1px solid currentColor;
+  border-radius: 0.375rem;
+  background: none;
+  color: inherit;
+  padding: 0.125rem 0.5rem;
+  cursor: pointer;
+}
+
+/* Respect reduced motion at the CSS layer too */
+@media (prefers-reduced-motion: reduce) {
+  .vrb-grid.react-grid-layout,
+  .vrb-grid .react-grid-item {
+    transition: none !important;
+  }
+}

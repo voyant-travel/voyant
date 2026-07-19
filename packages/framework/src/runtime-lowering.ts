@@ -33,6 +33,7 @@ export type VoyantGraphRuntimeReferenceFacet =
   | "admin.copy.runtime"
   | "admin.routes.runtime"
   | "admin.contributions.runtime"
+  | "reporting.datasets.runtime"
   | "tools.runtime"
   | "workflows.runtime"
   | "subscribers.runtime"
@@ -264,6 +265,7 @@ export interface VoyantGraphRuntime {
   requiredPorts: readonly string[]
   accessCatalog: AccessCatalog
   eventCatalog: VoyantGraphEventCatalog
+  reportingCatalog: import("@voyant-travel/core/project").VoyantGraphReportingCatalog
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
@@ -278,6 +280,7 @@ export interface CreateVoyantGraphRuntimeInput {
   graphHash: string
   accessCatalog?: AccessCatalog
   eventCatalog?: VoyantGraphEventCatalog
+  reportingCatalog?: import("@voyant-travel/core/project").VoyantGraphReportingCatalog
   providerSelections?: Readonly<Record<string, string>>
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
@@ -357,6 +360,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     requiredPorts,
     accessCatalog: definitions.accessCatalog,
     eventCatalog: definitions.eventCatalog,
+    reportingCatalog: definitions.reportingCatalog,
     accessScopes,
     tools,
     workflows,
@@ -419,6 +423,7 @@ interface NormalizedVoyantGraphRuntimeInput
     CreateVoyantGraphRuntimeInput,
     | "accessCatalog"
     | "eventCatalog"
+    | "reportingCatalog"
     | "modules"
     | "extensions"
     | "plugins"
@@ -428,6 +433,7 @@ interface NormalizedVoyantGraphRuntimeInput
   > {
   accessCatalog: AccessCatalog
   eventCatalog: VoyantGraphEventCatalog
+  reportingCatalog: import("@voyant-travel/core/project").VoyantGraphReportingCatalog
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   extensions: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
@@ -452,6 +458,7 @@ function normalizeRuntimeDefinition(
       ...(input.providerUnits ?? []),
     ]),
     eventCatalog: normalizeEventCatalog(input.eventCatalog),
+    reportingCatalog: input.reportingCatalog ?? { datasets: [], widgets: [], templates: [] },
     webhookPlan,
     modules: input.modules.map(normalizeUnit),
     extensions: (input.extensions ?? []).map(normalizeUnit),

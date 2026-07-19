@@ -33,6 +33,7 @@
     "./status-dispatch": "./src/status-dispatch.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./reporting": "./src/reporting.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/bookings.json",
@@ -58,6 +59,7 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -223,6 +225,11 @@
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
+      },
+      "./reporting": {
+        "types": "./dist/reporting.d.ts",
+        "import": "./dist/reporting.js",
+        "default": "./dist/reporting.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",
