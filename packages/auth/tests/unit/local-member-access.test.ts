@@ -88,6 +88,19 @@ async function signUp(
 }
 
 describe("local member access Better Auth pipeline", () => {
+  it("rejects a cached session when the durable resolver reports it missing", async () => {
+    const fixture = authFixture()
+    const member = await signUp(fixture.auth, "customer-expired@example.com")
+    const active = await fixture.auth.handler(request("/get-session", undefined, member.cookie))
+    const body = (await active.json()) as { session: { id: string } }
+
+    fixture.revokeSession(body.session.id)
+
+    const expired = await fixture.auth.handler(request("/get-session", undefined, member.cookie))
+    expect(expired.status).toBe(200)
+    expect(await expired.json()).toBeNull()
+  })
+
   it("denies cached sessions and password sign-in until the member is reactivated", async () => {
     const fixture = authFixture()
     const member = await signUp(fixture.auth, "member@example.com")

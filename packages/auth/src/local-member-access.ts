@@ -1,9 +1,14 @@
-import { authAccount, authSession, authUser } from "@voyant-travel/db/schema/iam"
+import {
+  authAccount,
+  authSession,
+  authUser,
+  customerAuthSession,
+} from "@voyant-travel/db/schema/iam"
 import type { VoyantDb } from "@voyant-travel/hono"
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api"
 import { deleteSessionCookie } from "better-auth/cookies"
 import type { BetterAuthPlugin } from "better-auth/types"
-import { and, eq } from "drizzle-orm"
+import { and, eq, gt } from "drizzle-orm"
 
 import type { TeamMemberStatus } from "./team-management-runtime-port.js"
 
@@ -57,6 +62,26 @@ export async function isLocalMemberSessionActive(
     .select({ id: authSession.id })
     .from(authSession)
     .where(and(eq(authSession.id, sessionId), eq(authSession.userId, userId)))
+    .limit(1)
+  return sessions.length > 0
+}
+
+/** Customer-realm session liveness check used to defeat stale cookie-cache grants. */
+export async function isCustomerSessionActive(
+  db: VoyantDb,
+  sessionId: string,
+  userId: string,
+): Promise<boolean> {
+  const sessions = await db
+    .select({ id: customerAuthSession.id })
+    .from(customerAuthSession)
+    .where(
+      and(
+        eq(customerAuthSession.id, sessionId),
+        eq(customerAuthSession.userId, userId),
+        gt(customerAuthSession.expiresAt, new Date()),
+      ),
+    )
     .limit(1)
   return sessions.length > 0
 }

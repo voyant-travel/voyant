@@ -43,6 +43,7 @@ export interface DirectB2CBookingOriginInput {
   bookingId: string
   externalBookingRef?: string | null
   items?: DirectB2CBookingOriginItemInput[]
+  buyerKind?: "guest" | "personal" | "business"
 }
 
 export interface CatalogReservationBookingOriginInput {
@@ -132,6 +133,7 @@ export function toDirectB2CBookingOriginInput(
       externalBookingRef: nullable(input.externalBookingRef),
       catalogSnapshotIds,
       itemCount: input.items?.length ?? 0,
+      buyerKind: input.buyerKind ?? "guest",
     },
   }
 }

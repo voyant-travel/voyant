@@ -14,10 +14,47 @@ export interface AdminPrincipal extends PrincipalBase {
   scopes: readonly string[]
 }
 
-export interface CustomerPrincipal extends PrincipalBase {
+interface CustomerPrincipalBase extends PrincipalBase {
   realm: "customer"
   actor: "customer"
+  buyerAccountId: string
 }
+
+export interface CustomerIdentityPrincipal extends PrincipalBase {
+  realm: "customer"
+  actor: "customer"
+  buyerAccountId: null
+  buyerAccountKind: null
+  authOrganizationId: null
+  relationshipOrganizationId: null
+  relationshipPersonId: string | null
+  membershipId: null
+  membershipRole: null
+}
+
+export interface PersonalCustomerPrincipal extends CustomerPrincipalBase {
+  buyerAccountKind: "personal"
+  authOrganizationId: null
+  relationshipOrganizationId: null
+  relationshipPersonId: string | null
+  membershipId: null
+  membershipRole: null
+}
+
+export interface BusinessCustomerPrincipal extends CustomerPrincipalBase {
+  buyerAccountKind: "business"
+  authOrganizationId: string
+  relationshipOrganizationId: string
+  /** Identity Person remains independent from the selected business buyer. */
+  relationshipPersonId: string | null
+  membershipId: string
+  membershipRole: string
+}
+
+export type CustomerPrincipal =
+  | CustomerIdentityPrincipal
+  | PersonalCustomerPrincipal
+  | BusinessCustomerPrincipal
 
 export type AuthPrincipal = AdminPrincipal | CustomerPrincipal
 

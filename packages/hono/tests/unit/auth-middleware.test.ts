@@ -3,7 +3,9 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { sha256Base64Url } from "../../src/auth/crypto.js"
+import { requireCustomerBuyerContext } from "../../src/auth/require-customer-buyer.js"
 import { requireAuth } from "../../src/middleware/auth.js"
+import { handleApiError } from "../../src/middleware/error-boundary.js"
 import type { VoyantBindings } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -21,7 +23,12 @@ describe("requireAuth API keys", () => {
       requireAuth(() => ({}) as never),
     )
     app.get(path, (c) =>
-      c.json({ actor: c.get("actor"), audience: c.get("audience"), userId: c.get("userId") }),
+      c.json({
+        actor: c.get("actor"),
+        audience: c.get("audience"),
+        realm: c.get("realm"),
+        userId: c.get("userId"),
+      }),
     )
 
     const response = await app.fetch(
@@ -33,7 +40,12 @@ describe("requireAuth API keys", () => {
     )
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ actor, audience: actor, userId: "user_123" })
+    expect(await response.json()).toEqual({
+      actor,
+      audience: actor,
+      realm: actor === "staff" ? "admin" : "customer",
+      userId: "user_123",
+    })
   })
 
   it.each([
@@ -148,7 +160,9 @@ describe("requireAuth API keys", () => {
         publicPaths: ["/v1/public/media"],
       }),
     )
-    app.get("/api/v1/public/media/:key", (c) => c.json({ actor: c.get("actor") }))
+    app.get("/api/v1/public/media/:key", (c) =>
+      c.json({ actor: c.get("actor") ?? null, guest: c.get("isAnonymousRequest") }),
+    )
 
     const response = await app.fetch(
       new Request("http://example.com/api/v1/public/media/product.jpg"),
@@ -157,8 +171,105 @@ describe("requireAuth API keys", () => {
     )
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ actor: "customer" })
+    expect(await response.json()).toEqual({ actor: null, guest: true })
     expect(dbFactory).not.toHaveBeenCalled()
+  })
+
+  it("continues an optional customer-auth path as an explicit guest without a session", async () => {
+    const resolve = vi.fn(() => null)
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        publicPaths: ["/v1/public/bookings"],
+        optionalCustomerAuthPaths: ["/v1/public/bookings"],
+        auth: { resolve },
+      }),
+    )
+    app.post("/v1/public/bookings/sessions", (c) =>
+      c.json({
+        actor: c.get("actor") ?? null,
+        realm: c.get("realm") ?? null,
+        userId: c.get("userId") ?? null,
+        guest: c.get("isAnonymousRequest"),
+      }),
+    )
+
+    const response = await app.request("/v1/public/bookings/sessions", { method: "POST" }, TEST_ENV)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ actor: null, realm: null, userId: null, guest: true })
+    expect(resolve).toHaveBeenCalledOnce()
+  })
+
+  it("resolves a valid customer session on an optional customer-auth path", async () => {
+    const resolve = vi.fn(() => ({
+      userId: "customer_123",
+      sessionId: "session_123",
+      actor: "customer" as const,
+      realm: "customer" as const,
+    }))
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        publicPaths: ["/v1/public/bookings"],
+        optionalCustomerAuthPaths: ["/v1/public/bookings"],
+        auth: { resolve },
+      }),
+    )
+    app.post("/v1/public/bookings/sessions", (c) =>
+      c.json({
+        actor: c.get("actor"),
+        realm: c.get("realm"),
+        userId: c.get("userId"),
+        guest: c.get("isAnonymousRequest") ?? false,
+      }),
+    )
+
+    const response = await app.request("/v1/public/bookings/sessions", { method: "POST" }, TEST_ENV)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      actor: "customer",
+      realm: "customer",
+      userId: "customer_123",
+      guest: false,
+    })
+  })
+
+  it("requires a selected buyer for a customer session-claims bearer on mixed checkout", async () => {
+    const secret = "customer-session-claims-secret-with-32-characters"
+    const token = await signSessionClaims("customer_123", "session_123", secret)
+    const app = new Hono().onError(handleApiError)
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        publicPaths: ["/v1/public/bookings"],
+        optionalCustomerAuthPaths: ["/v1/public/bookings"],
+      }),
+    )
+    app.post("/v1/public/bookings/sessions", (c) => {
+      requireCustomerBuyerContext(c)
+      return c.json({ ok: true })
+    })
+
+    const response = await app.fetch(
+      new Request("http://example.com/v1/public/bookings/sessions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      { ...TEST_ENV, SESSION_CLAIMS_CUSTOMER_SECRET: secret },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(403)
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        code: "forbidden",
+        error: "A customer buyer account must be selected",
+      }),
+    )
   })
 
   it("authenticates comma-separated internal API keys with scoped staff context", async () => {

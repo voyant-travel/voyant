@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: bookings; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
-import { handleApiError } from "@voyant-travel/hono"
+import { handleApiError, requireAuth } from "@voyant-travel/hono"
+import { signSessionClaims } from "@voyant-travel/utils/session-claims"
 import { asc, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -40,6 +41,7 @@ function travelerPersonId(traveler: {
 
 describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
   let app: Hono
+  let mixedAuthApp: Hono
   let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
 
   beforeAll(async () => {
@@ -51,7 +53,45 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       .onError(handleApiError)
       .use("*", async (c, next) => {
         c.set("db" as never, db)
-        c.set("userId" as never, "public-test-user")
+        const authContext = c.req.header("x-test-auth-context")
+        if (authContext === "explicit-guest") {
+          c.set("isAnonymousRequest" as never, true)
+        } else if (authContext === "staff-session") {
+          c.set("userId" as never, "staff-user")
+          c.set("sessionId" as never, "staff-session")
+          c.set("actor" as never, "staff")
+          c.set("realm" as never, "admin")
+          c.set("callerType" as never, "session")
+        } else if (authContext === "api-key") {
+          c.set("actor" as never, "staff")
+          c.set("callerType" as never, "api_key")
+          c.set("apiKeyId" as never, "accepted-api-key")
+        } else if (authContext === "customer-missing-realm") {
+          c.set("userId" as never, "customer-missing-realm")
+          c.set("sessionId" as never, "customer-session-missing-realm")
+          c.set("actor" as never, "customer")
+          c.set("callerType" as never, "session")
+        }
+        if (c.req.header("x-test-customer") === "1") {
+          c.set("userId" as never, "public-test-user")
+          c.set("sessionId" as never, "customer-session-1")
+          c.set("actor" as never, "customer")
+          c.set("realm" as never, "customer")
+          const kind = c.req.header("x-test-buyer-kind")
+          if (kind === "personal") {
+            c.set("buyerAccountId" as never, "personal:public-test-user")
+            c.set("buyerAccountKind" as never, "personal")
+            const personId = c.req.header("x-test-person-id")
+            if (personId) c.set("relationshipPersonId" as never, personId)
+          } else if (kind === "business") {
+            c.set("buyerAccountId" as never, "business:auth-org-1")
+            c.set("buyerAccountKind" as never, "business")
+            c.set("authOrganizationId" as never, "auth-org-1")
+            c.set("relationshipOrganizationId" as never, "crm-org-1")
+            c.set("buyerMembershipId" as never, "membership-1")
+            c.set("buyerMembershipRole" as never, "member")
+          }
+        }
         c.set("container" as never, {
           resolve: (key: string) => {
             if (key !== BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) {
@@ -59,16 +99,36 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
             }
 
             return {
+              resolveBillingPerson: async () => "person-from-guest-billing",
               resolveTravelerPerson: async (
                 _db: unknown,
                 traveler: { firstName: string; lastName: string; email?: string | null },
               ) => travelerPersonId(traveler),
+              resolveBillingPersonById: async (_db: unknown, personId: string) =>
+                personId !== "inactive-person",
+              resolveBillingOrganizationById: async (_db: unknown, organizationId: string) =>
+                organizationId !== "inactive-org",
             }
           },
         })
         await next()
       })
       .route("/", publicBookingRoutes)
+
+    mixedAuthApp = new Hono()
+      .onError(handleApiError)
+      .use(
+        "*",
+        requireAuth(() => db, {
+          publicPaths: ["/v1/public/bookings"],
+          optionalCustomerAuthPaths: ["/v1/public/bookings"],
+        }),
+      )
+      .use("*", async (c, next) => {
+        c.set("db" as never, db)
+        await next()
+      })
+      .route("/v1/public/bookings", publicBookingRoutes)
   })
 
   beforeEach(async () => {
@@ -243,6 +303,163 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       }),
     )
     expect(item?.departureLabelSnapshot).toContain("2026")
+
+    const [guestBooking] = await db
+      .select({ personId: bookings.personId, organizationId: bookings.organizationId })
+      .from(bookings)
+      .where(eq(bookings.id, body.data.sessionId))
+    expect(guestBooking).toEqual({ personId: null, organizationId: null })
+  })
+
+  it("allows an explicit guest marker to create an ownerless booking", async () => {
+    const slot = await seedSlot()
+    const res = await app.request("/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-auth-context": "explicit-guest" },
+      body: JSON.stringify({
+        sellCurrency: "EUR",
+        items: [{ title: "Guest tour", availabilitySlotId: slot.id }],
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    const session = (await res.json()).data
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(expect.objectContaining({ personId: null, organizationId: null }))
+  })
+
+  it("requires a selected live buyer for a customer session-claims bearer on mixed checkout", async () => {
+    const slot = await seedSlot()
+    const secret = "customer-session-claims-secret-with-32-characters"
+    const token = await signSessionClaims("bearer-customer", "bearer-session", secret)
+    const res = await mixedAuthApp.request(
+      "/v1/public/bookings/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sellCurrency: "EUR",
+          items: [{ title: "Authenticated tour", availabilitySlotId: slot.id }],
+        }),
+      },
+      { SESSION_CLAIMS_CUSTOMER_SECRET: secret },
+    )
+
+    expect(res.status).toBe(403)
+    expect(await db.select({ id: bookings.id }).from(bookings)).toEqual([])
+  })
+
+  it.each([
+    "staff-session",
+    "api-key",
+    "customer-missing-realm",
+  ])("never downgrades an accepted %s context to a guest booking", async (authContext) => {
+    const slot = await seedSlot()
+    const res = await app.request("/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-auth-context": authContext },
+      body: JSON.stringify({
+        sellCurrency: "EUR",
+        items: [{ title: "Authenticated tour", availabilitySlotId: slot.id }],
+      }),
+    })
+
+    expect(res.status).toBe(401)
+    expect(await db.select({ id: bookings.id }).from(bookings)).toEqual([])
+  })
+
+  it("server-stamps a personal buyer Person on creation", async () => {
+    const slot = await seedSlot()
+    const res = await app.request("/sessions", {
+      method: "POST",
+      headers: {
+        ...json({}).headers,
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "personal",
+        "x-test-person-id": "person-1",
+      },
+      body: JSON.stringify({
+        sellCurrency: "EUR",
+        items: [{ title: "Tour", availabilitySlotId: slot.id }],
+      }),
+    })
+    expect(res.status).toBe(201)
+    const session = (await res.json()).data
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(expect.objectContaining({ personId: "person-1", organizationId: null }))
+  })
+
+  it("server-stamps a business buyer Organization and never retargets it after account switch", async () => {
+    const slot = await seedSlot()
+    const createRes = await app.request("/sessions", {
+      method: "POST",
+      headers: {
+        ...json({}).headers,
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "business",
+      },
+      body: JSON.stringify({
+        sellCurrency: "EUR",
+        items: [{ title: "Corporate tour", availabilitySlotId: slot.id }],
+      }),
+    })
+    expect(createRes.status).toBe(201)
+    const session = (await createRes.json()).data
+
+    const stateRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: {
+        ...json({}).headers,
+        ...capabilityHeaders(session),
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "personal",
+        "x-test-person-id": "person-after-switch",
+      },
+      body: JSON.stringify({
+        currentStep: "billing",
+        completedSteps: [],
+        payload: {
+          stepData: {
+            billing: {
+              billing: { firstName: "Buyer", lastName: "Changed", email: "buyer@example.com" },
+            },
+          },
+        },
+      }),
+    })
+    expect(stateRes.status).toBe(200)
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(
+      expect.objectContaining({ personId: null, organizationId: "crm-org-1" }),
+    )
+  })
+
+  it("denies an authenticated customer with no selected buyer or no live personal Person", async () => {
+    const slot = await seedSlot()
+    const body = JSON.stringify({
+      sellCurrency: "EUR",
+      items: [{ title: "Tour", availabilitySlotId: slot.id }],
+    })
+    const unselected = await app.request("/sessions", {
+      method: "POST",
+      headers: { ...json({}).headers, "x-test-customer": "1" },
+      body,
+    })
+    expect(unselected.status).toBe(403)
+
+    const missingPerson = await app.request("/sessions", {
+      method: "POST",
+      headers: {
+        ...json({}).headers,
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "personal",
+      },
+      body,
+    })
+    expect(missingPerson.status).toBe(403)
   })
 
   it("updates a booking session contact state and derives pax from traveler participants", async () => {
@@ -891,6 +1108,8 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
         contactAddressLine1: "Rue de Rivoli 22",
         contactAddressLine2: "Etage 3",
         contactPostalCode: "75001",
+        personId: null,
+        organizationId: null,
       }),
     )
   })

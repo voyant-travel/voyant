@@ -12,7 +12,7 @@ import { createLinkServiceFactory } from "@voyant-travel/db/links"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import type { Context, Hono } from "hono"
 
-import { assembleAnonymousPaths } from "./anonymous-paths.js"
+import { assembleAnonymousPaths, assembleOptionalCustomerAuthPaths } from "./anonymous-paths.js"
 import {
   containerToServiceResolver,
   makeFrameworkLogger,
@@ -240,13 +240,14 @@ export function mountApp<TBindings extends VoyantBindings>(
   // Anonymous-access allow-list (ADR-0008): assembled from module/extension
   // `anonymous` declarations + bundle-declared absolute anonymous paths (e.g. a
   // payment-processor webhook) + any explicit `publicPaths` escape-hatch entries.
-  // Used by both the auth middleware (skip auth / stamp customer actor) and the
+  // Used by both the auth middleware (skip auth / mark an explicit guest) and the
   // public-write rate-limit matcher below, so the two never diverge.
   const anonymousPaths = assembleAnonymousPaths(allModules, allExtensions, [
     ...(config.publicPaths ?? []),
     ...(expanded?.anonymousPaths ?? []),
     ...lazyPlugins.flatMap((plugin) => plugin.anonymous ?? []),
   ])
+  const optionalCustomerAuthPaths = assembleOptionalCustomerAuthPaths(allModules, allExtensions)
   const clientAuthenticatedRoutes = assembleClientAuthenticatedRoutes(allModules)
   const composedAuth = composeAuthAugmentations(config.auth, allModules)
   // When the framework owns the bus, route subscriber-dispatch failures
@@ -411,6 +412,9 @@ export function mountApp<TBindings extends VoyantBindings>(
       ...assembleAnonymousPaths(lazyExpanded.modules, lazyExpanded.extensions, [
         ...lazyExpanded.anonymousPaths,
       ]),
+    )
+    optionalCustomerAuthPaths.push(
+      ...assembleOptionalCustomerAuthPaths(lazyExpanded.modules, lazyExpanded.extensions),
     )
     for (const mod of lazyExpanded.modules) {
       if (mod.module.service !== undefined) {
@@ -666,6 +670,7 @@ export function mountApp<TBindings extends VoyantBindings>(
 
   const authOptions = {
     publicPaths: anonymousPaths,
+    optionalCustomerAuthPaths,
     clientAuthenticatedRoutes,
     basePath: config.basePath,
     auth: composedAuth,

@@ -44,10 +44,20 @@ export function createBookingsRuntime(
             requireContactPoint: true,
           })
         )?.id ?? null,
-      resolveBillingPersonById: async (db, personId) =>
-        (await relationships.getPersonById(db, personId)) != null,
-      resolveBillingOrganizationById: async (db, organizationId) =>
-        (await relationships.getOrganizationById(db, organizationId)) != null,
+      resolveBillingPersonById: async (db, personId) => {
+        const person = (await relationships.getPersonById(db, personId)) as {
+          status?: string
+          archivedAt?: unknown
+        } | null
+        return person?.status === "active" && person.archivedAt == null
+      },
+      resolveBillingOrganizationById: async (db, organizationId) => {
+        const organization = (await relationships.getOrganizationById(db, organizationId)) as {
+          status?: string
+          archivedAt?: unknown
+        } | null
+        return organization?.status === "active" && organization.archivedAt == null
+      },
       customFieldsForWrite: (db) => customFields.resolveRegistryForWrite(db, "booking"),
       overviewItemEnrichers: { accommodation: accommodation.enrichOverviewItems },
     },

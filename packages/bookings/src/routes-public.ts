@@ -3,7 +3,13 @@
 // enrichment change) and splitting the OpenAPI route group is out of scope for
 // the additive #2969 wiring; tracked for a follow-up split.
 import { OpenAPIHono, z } from "@hono/zod-openapi"
-import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
+import {
+  ForbiddenApiError,
+  idempotencyKey,
+  openApiValidationHook,
+  requireCustomerBuyerContext,
+  UnauthorizedApiError,
+} from "@voyant-travel/hono"
 import type { Context, MiddlewareHandler } from "hono"
 
 import {
@@ -25,7 +31,11 @@ import {
 } from "./route-runtime.js"
 import { createBookingsPublicRoute as createRoute } from "./routes-openapi.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
-import { type PublicBookingsServiceResolvers, publicBookingsService } from "./service-public.js"
+import {
+  type PublicBookingOwner,
+  type PublicBookingsServiceResolvers,
+  publicBookingsService,
+} from "./service-public.js"
 import {
   publicBookingOverviewAccessQuerySchema,
   publicBookingOverviewSchema,
@@ -172,6 +182,35 @@ function publicResolvers(c: Context): PublicBookingsServiceResolvers {
     resolveBillingPerson: runtime.resolveBillingPerson,
     resolveTravelerPerson: runtime.resolveTravelerPerson,
   }
+}
+
+async function resolvePublicBookingOwner(c: Context<Env>): Promise<PublicBookingOwner | null> {
+  if (c.get("isAnonymousRequest") === true) return null
+  const hasAuthContext = Boolean(
+    c.get("actor") || c.get("realm") || c.get("userId") || c.get("callerType"),
+  )
+  if (!hasAuthContext) return null
+
+  const buyer = requireCustomerBuyerContext(c)
+  const runtime = getRouteRuntime(c)
+  if (buyer.kind === "personal") {
+    const personId = buyer.relationshipPersonId
+    if (!personId || !runtime.resolveBillingPersonById) {
+      throw new ForbiddenApiError("An active linked customer record is required")
+    }
+    if (!(await runtime.resolveBillingPersonById(c.get("db"), personId))) {
+      throw new ForbiddenApiError("The linked customer record is no longer active")
+    }
+    return { kind: "personal", personId }
+  }
+
+  if (
+    !runtime.resolveBillingOrganizationById ||
+    !(await runtime.resolveBillingOrganizationById(c.get("db"), buyer.relationshipOrganizationId))
+  ) {
+    throw new ForbiddenApiError("The business buyer organization is no longer active")
+  }
+  return { kind: "business", organizationId: buyer.relationshipOrganizationId }
 }
 
 const sessionParamsSchema = z.object({ sessionId: z.string() })
@@ -448,11 +487,13 @@ publicBookingApp.use(
 
 export const publicBookingRoutes = publicBookingApp
   .openapi(createSessionRoute, async (c) => {
+    const owner = await resolvePublicBookingOwner(c)
     const result = await publicBookingsService.createSession(
       c.get("db"),
       c.req.valid("json"),
       c.get("userId"),
       publicResolvers(c),
+      owner,
     )
 
     if (result.status === "slot_not_found") {

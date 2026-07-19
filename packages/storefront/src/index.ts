@@ -207,7 +207,13 @@ export const storefrontModule: Module = {
   name: "storefront",
 }
 
-export const storefrontAnonymousPublicPaths = ["/leads", "/newsletter", "/offers"] as const
+export const storefrontAnonymousPublicPaths = [
+  "/bookings",
+  "/leads",
+  "/newsletter",
+  "/offers",
+] as const
+export const storefrontOptionalCustomerAuthPaths = ["/bookings"] as const
 
 export type StorefrontApiModuleOptions = Parameters<typeof createStorefrontPublicRoutes>[0]
 
@@ -233,6 +239,7 @@ export function createStorefrontApiModule(options?: StorefrontApiModuleOptions):
       "@voyant-travel/storefront#api.public",
     ),
     anonymous: storefrontAnonymousPublicPaths,
+    optionalCustomerAuth: storefrontOptionalCustomerAuthPaths,
   }
 }
 
@@ -255,6 +262,9 @@ export const createStorefrontVoyantRuntime = defineGraphRuntimeFactory(async ({ 
     selected.publicRoutes = configured.publicRoutes
     if (configured.publicPath !== undefined) selected.publicPath = configured.publicPath
     if (configured.anonymous !== undefined) selected.anonymous = configured.anonymous
+    if (configured.optionalCustomerAuth !== undefined) {
+      selected.optionalCustomerAuth = configured.optionalCustomerAuth
+    }
   }
   return selected
 })

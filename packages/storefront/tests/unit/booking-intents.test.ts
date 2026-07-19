@@ -49,7 +49,7 @@ function pendingIntent(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: "wint_1",
     kind: BOOKING_BOOTSTRAP_INTENT_KIND,
-    payload: { input: VALID_INPUT, userId: undefined },
+    payload: { input: VALID_INPUT, userId: undefined, owner: null },
     idempotencyKey: "idem-1",
     status: "pending",
     result: null,
@@ -82,10 +82,28 @@ describe("createBookingBootstrapIntentHandler", () => {
 
     await createBookingBootstrapIntentHandler(deps)(envelope("wint_1"))
 
+    expect(bootstrapBookingSession.mock.calls[0]?.[3]).toBeNull()
+
     expect(writeIntents.settleWriteIntent).toHaveBeenCalledWith({}, "wint_1", {
       status: "succeeded",
       result: { bootstrap: { session: { sessionId: "bs_1" } } },
     })
+  })
+
+  it("forwards the canonical owner snapshot without re-resolving the active account", async () => {
+    const owner = { kind: "business", organizationId: "crm-org-at-enqueue" } as const
+    writeIntents.getWriteIntent.mockResolvedValue(
+      pendingIntent({ payload: { input: VALID_INPUT, userId: "user-1", owner } }),
+    )
+    bootstrapBookingSession.mockResolvedValue({
+      status: "ok",
+      bootstrap: { session: { sessionId: "bs_owned" } },
+    })
+
+    await createBookingBootstrapIntentHandler(deps)(envelope("wint_1"))
+
+    expect(bootstrapBookingSession.mock.calls[0]?.[2]).toBe("user-1")
+    expect(bootstrapBookingSession.mock.calls[0]?.[3]).toEqual(owner)
   })
 
   it("settles business conflicts as failed WITHOUT retrying", async () => {
@@ -273,6 +291,7 @@ describe("async bootstrap route mode", () => {
           },
         },
         userId: undefined,
+        owner: null,
       },
       idempotencyKey: "bootstrap-test-1",
     })

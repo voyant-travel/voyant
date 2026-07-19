@@ -57,11 +57,13 @@ export interface ApiModule {
    * opens `/v1/public/customer-portal/contact-exists`). The framework assembles
    * the global anonymous allow-list from these declarations, so the
    * "reachable-without-auth" decision lives next to the route rather than in a
-   * hand-maintained `publicPaths` list. Anonymous public requests are stamped
-   * `actor: "customer"`. Only affects the public surface — admin routes always
-   * require a `staff` actor.
+   * hand-maintained `publicPaths` list. Anonymous public requests are marked as
+   * guests and do not receive a synthetic actor. Only affects the public
+   * surface — admin routes always require a `staff` actor.
    */
   anonymous?: boolean | readonly string[]
+  /** Anonymous paths that also attempt live customer-session resolution. */
+  optionalCustomerAuth?: boolean | readonly string[]
   /**
    * Concrete admin endpoints whose credential is validated by the route itself
    * instead of by the staff-session middleware. Each declaration is matched by
@@ -136,6 +138,8 @@ export interface ApiExtension {
    * to the extension's public mount.
    */
   anonymous?: boolean | readonly string[]
+  /** Anonymous paths that also attempt live customer-session resolution. */
+  optionalCustomerAuth?: boolean | readonly string[]
   /**
    * Absolute transactional path prefixes — same semantics as
    * {@link ApiModule.transactionalPaths}.

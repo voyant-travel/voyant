@@ -55,6 +55,11 @@ export interface PublicBookingsServiceResolvers {
   resolveTravelerPerson?: ResolveBookingTravelerPerson
 }
 
+/** Server-derived commercial owner stamped once when a public booking is created. */
+export type PublicBookingOwner =
+  | { kind: "personal"; personId: string }
+  | { kind: "business"; organizationId: string }
+
 const BOOKING_PERSON_SOURCE = "storefront-booking" as const
 
 async function safeResolveTravelerPerson(
@@ -88,25 +93,6 @@ async function safeResolveTravelerPerson(
     // the actual booking. Log and fall back to `null` so the traveler
     // row still lands without a person link.
     console.error("[bookings] resolveTravelerPerson failed for booking", bookingId, error)
-    return null
-  }
-}
-
-async function safeResolveBillingPerson(
-  db: PostgresJsDatabase,
-  resolver: ResolveBookingBillingPerson | undefined,
-  contact: BookingPersonResolverContact,
-  bookingId: string,
-): Promise<string | null> {
-  if (!resolver) return null
-  try {
-    return await resolver(db, contact, {
-      bookingId,
-      source: BOOKING_PERSON_SOURCE,
-      sourceRef: bookingId,
-    })
-  } catch (error) {
-    console.error("[bookings] resolveBillingPerson failed for booking", bookingId, error)
     return null
   }
 }
@@ -1158,6 +1144,7 @@ export const publicBookingsService = {
     input: PublicCreateBookingSessionInput,
     userId?: string,
     resolvers: PublicBookingsServiceResolvers = {},
+    owner: PublicBookingOwner | null = null,
   ) {
     const travelers = input.travelers ?? []
     const travelerCount = countTravelerParticipants(travelers)
@@ -1181,6 +1168,8 @@ export const publicBookingsService = {
         pax: input.pax ?? (travelerCount > 0 ? travelerCount : null),
         holdMinutes: input.holdMinutes,
         holdExpiresAt: input.holdExpiresAt ?? null,
+        personId: owner?.kind === "personal" ? owner.personId : null,
+        organizationId: owner?.kind === "business" ? owner.organizationId : null,
         items: input.items.map((item) => ({
           ...item,
           sellCurrency: item.sellCurrency ?? input.sellCurrency,
@@ -1210,6 +1199,7 @@ export const publicBookingsService = {
         bookingId: result.booking.id,
         externalBookingRef: input.externalBookingRef ?? null,
         items: input.items,
+        buyerKind: owner?.kind ?? "guest",
       }),
     )
 
@@ -1282,28 +1272,9 @@ export const publicBookingsService = {
 
     const bookingContact = extractBookingContactFromStatePayload(state.payload)
     if (bookingContact) {
-      // Resolve a CRM person from the billing snapshot when a resolver
-      // is wired — issue #961 calls out that storefront bookings used
-      // to land with `person_id = NULL`, leaving every customer outside
-      // the CRM until each operator wired their own bridge.
-      const personId = booking.personId
-        ? booking.personId
-        : await safeResolveBillingPerson(
-            db,
-            resolvers.resolveBillingPerson,
-            {
-              firstName: bookingContact.contactFirstName,
-              lastName: bookingContact.contactLastName,
-              email: bookingContact.contactEmail,
-              phone: bookingContact.contactPhone,
-              preferredLanguage: null,
-            },
-            bookingId,
-          )
-      await bookingsService.updateBooking(db, bookingId, {
-        ...bookingContact,
-        ...(personId && booking.personId !== personId ? { personId } : {}),
-      })
+      // The billing contact is a mutable snapshot. The server-stamped booking
+      // owner is immutable; true guests remain unowned (both columns null).
+      await bookingsService.updateBooking(db, bookingId, bookingContact)
     }
 
     await syncTravelerRowsFromStatePayload(db, bookingId, state.payload, resolvers, userId)

@@ -5,6 +5,7 @@ import { VoyantAuthProvider } from "@voyant-travel/auth-react/provider"
 import type { ReactNode } from "react"
 import type { VoyantFetcher } from "../customer-portal/client.js"
 import { VoyantCustomerPortalProvider } from "../customer-portal/provider.js"
+import { BuyerAccountProvider } from "./buyer-account-provider.js"
 import { CustomerAuthConfigProvider } from "./customer-auth-config.js"
 
 export function rewriteCustomerAccountAuthUrl(url: string): string {
@@ -47,7 +48,9 @@ export function CustomerAccountProvider({
     <VoyantAuthProvider baseUrl={baseUrl} fetcher={createCustomerAccountFetcher(fetcher, baseUrl)}>
       <VoyantCustomerPortalProvider baseUrl={baseUrl} fetcher={fetcher}>
         <CustomerAuthConfigProvider baseUrl={baseUrl} fetcher={fetcher}>
-          {children}
+          <BuyerAccountProvider baseUrl={baseUrl} fetcher={fetcher}>
+            {children}
+          </BuyerAccountProvider>
         </CustomerAuthConfigProvider>
       </VoyantCustomerPortalProvider>
     </VoyantAuthProvider>

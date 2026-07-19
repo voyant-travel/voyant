@@ -199,6 +199,11 @@ describe("createOperatorAuthNodeRuntime", () => {
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
+      accountPolicy: {
+        allowedKinds: ["personal"],
+        personalSignup: "open",
+        businessOnboarding: "disabled",
+      },
       methods: {
         emailCode: true,
         emailPassword: false,

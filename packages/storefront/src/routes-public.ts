@@ -7,10 +7,12 @@ import {
 } from "@voyant-travel/bookings/checkout-capability"
 import { enqueueWriteIntent, getWriteIntent } from "@voyant-travel/db/write-intents"
 import {
+  ForbiddenApiError,
   idempotencyKey,
   openApiValidationHook,
   parseJsonBody,
   parseQuery,
+  requireCustomerBuyerContext,
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
@@ -22,6 +24,7 @@ import {
   BOOKING_BOOTSTRAP_INTENT_KIND,
   type BookingBootstrapIntentPayload,
 } from "./booking-intents.js"
+import { resolveActiveCustomerBookingOwner } from "./customer-booking-owner.js"
 import {
   createStorefrontService,
   type StorefrontRequestContext,
@@ -495,6 +498,27 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     } satisfies StorefrontRequestContext
   }
 
+  async function resolveCheckoutOwner(c: Context<Env>) {
+    if (c.get("isAnonymousRequest") === true) return null
+    const hasAuthContext = Boolean(
+      c.get("actor") || c.get("realm") || c.get("userId") || c.get("callerType"),
+    )
+    if (!hasAuthContext) return null
+    const buyer = requireCustomerBuyerContext(c)
+    const owner = await resolveActiveCustomerBookingOwner(
+      c.get("db" as never) as NonNullable<StorefrontRequestContext["db"]>,
+      buyer,
+    )
+    if (!owner) {
+      throw new ForbiddenApiError(
+        buyer.kind === "personal"
+          ? "An active linked customer record is required to book"
+          : "The business buyer organization is no longer active",
+      )
+    }
+    return owner
+  }
+
   async function runIntakeGuard(
     input:
       | {
@@ -689,6 +713,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         replayResponses: false,
       }),
       async (c) => {
+        const owner = await resolveCheckoutOwner(c)
         // Async mode (RFC voyant#1687 Phase 3.2): `?async=1` or
         // `Prefer: respond-async` stores a write intent + durably emits
         // its event (outbox), and answers 202 + a status URL — under a
@@ -718,6 +743,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
             payload: {
               input: body,
               userId: c.get("userId" as never) as string | undefined,
+              owner,
             } satisfies BookingBootstrapIntentPayload,
             idempotencyKey,
           })
@@ -745,6 +771,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
           },
           await parseJsonBody(c, storefrontBookingSessionBootstrapInputSchema),
           c.get("userId" as never),
+          owner,
         )
 
         if (result.status !== "ok") {
@@ -790,12 +817,14 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
         replayResponses: false,
       }),
       async (c) => {
+        const owner = await resolveCheckoutOwner(c)
         const result = await storefrontService.bootstrapBookingSessionCompat(
           getRequestContext(c) as StorefrontRequestContext & {
             db: NonNullable<StorefrontRequestContext["db"]>
           },
           await parseJsonBody(c, storefrontBookingSessionCompatBootstrapInputSchema),
           c.get("userId" as never),
+          owner,
         )
 
         if (result.status !== "ok") {
