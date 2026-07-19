@@ -1,5 +1,13 @@
 # @voyant-travel/db
 
+## 0.117.1
+
+### Patch Changes
+
+- Updated dependencies [c2ca4a3]
+  - @voyant-travel/schema-kit@0.114.0
+  - @voyant-travel/workflows@0.122.14
+
 ## 0.117.0
 
 ### Minor Changes

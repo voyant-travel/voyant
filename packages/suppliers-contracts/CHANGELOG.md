@@ -1,5 +1,12 @@
 # @voyant-travel/suppliers-contracts
 
+## 0.104.14
+
+### Patch Changes
+
+- Updated dependencies [c2ca4a3]
+  - @voyant-travel/schema-kit@0.114.0
+
 ## 0.104.13
 
 ### Patch Changes
