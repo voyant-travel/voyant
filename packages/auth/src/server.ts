@@ -16,7 +16,7 @@ import {
 } from "@voyant-travel/db/schema/iam"
 import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { emailOTP, organization } from "better-auth/plugins"
+import { bearer, emailOTP, organization } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
 import type { AnyPgTable } from "drizzle-orm/pg-core"
@@ -641,6 +641,12 @@ export function createCustomerBetterAuth<
       },
     },
     extraSchema: options.extraSchema,
-    plugins: [customerOrganizationPlugin, ...(options.plugins ?? [])],
+    // `bearer` lets a direct (cross-origin / native) client authenticate with an
+    // `Authorization: Bearer <token>` header instead of a cookie: on sign-in
+    // Better Auth returns the session token via `set-auth-token`, and the bearer
+    // hook converts the presented token back into a session on later calls. The
+    // BFF/same-origin path keeps using host-only cookies untouched. Direct
+    // clients dodge third-party-cookie deprecation this way.
+    plugins: [customerOrganizationPlugin, bearer(), ...(options.plugins ?? [])],
   })
 }

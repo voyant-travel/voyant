@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  createLocalStorefrontCorsOriginResolver,
   createLocalStorefrontCustomerAuthResolver,
+  resolveStorefrontRequestOrigin,
   STOREFRONT_KEY_HEADER,
   STOREFRONT_ORIGIN_HEADER,
   StorefrontCustomerAuthResolutionError,
 } from "../../src/storefront-customer-auth-resolver.js"
+import { isStorefrontOriginAllowed } from "../../src/storefront-origins.js"
 import type {
   ResolvedStorefrontApiKey,
   ResolvedStorefrontProviderCredentials,
@@ -35,6 +38,7 @@ const STOREFRONT: StorefrontDto = {
 function fakeProvider(overrides?: {
   resolveStorefrontByApiKey?: () => Promise<ResolvedStorefrontApiKey | null>
   resolveProviderCredentials?: () => Promise<ResolvedStorefrontProviderCredentials>
+  resolveStorefrontByOrigin?: (origin: string) => Promise<StorefrontDto | null>
 }): StorefrontRuntimeProvider {
   return {
     async resolveStorefrontByApiKey() {
@@ -54,6 +58,10 @@ function fakeProvider(overrides?: {
           },
         })
       )
+    },
+    async resolveStorefrontByOrigin(_context: unknown, origin: string) {
+      if (overrides?.resolveStorefrontByOrigin) return overrides.resolveStorefrontByOrigin(origin)
+      return isStorefrontOriginAllowed(origin, STOREFRONT.allowedOrigins) ? STOREFRONT : null
     },
     async resolveProviderCredentials() {
       return (
@@ -100,6 +108,7 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
       publicApiBaseURL: "https://shop.example.com/api",
       invitationAcceptBaseURL: "https://shop.example.com",
       trustedOrigins: ["https://shop.example.com"],
+      allowedOrigins: ["https://shop.example.com", "https://*.example.com"],
       methods: {
         emailCode: true,
         emailPassword: false,
@@ -108,6 +117,38 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
       accountPolicy: STOREFRONT.accountPolicy,
     })
     expect(disposed()).toBe(1)
+  })
+
+  it("falls back to the standard Origin header for a direct (non-BFF) client", async () => {
+    const { resolver } = makeResolver(fakeProvider())
+    const context = await resolver(
+      {},
+      new Request("https://api.example.com/api/v1/public", {
+        headers: {
+          origin: "https://shop.example.com",
+          [STOREFRONT_KEY_HEADER]: "vpk_token",
+        },
+      }),
+    )
+    expect(context.baseURL).toBe("https://shop.example.com")
+    expect(context.trustedOrigins).toEqual(["https://shop.example.com"])
+  })
+
+  it("prefers the explicit BFF origin header over the standard Origin header", async () => {
+    const { resolver } = makeResolver(fakeProvider())
+    const context = await resolver(
+      {},
+      new Request("https://api.example.com/api/v1/public", {
+        headers: {
+          [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+          // A cross-origin proxy hop could carry a different browser Origin; the
+          // BFF header must win so the server contract is unchanged.
+          origin: "https://preview.example.com",
+          [STOREFRONT_KEY_HEADER]: "vpk_token",
+        },
+      }),
+    )
+    expect(context.baseURL).toBe("https://shop.example.com")
   })
 
   it("accepts a wildcard-matched origin", async () => {
@@ -191,5 +232,94 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
     // A known key from a disallowed origin is a 403 (forbidden), not a 401.
     expect(error.status).toBe(403)
     expect(error.code).toBe("forbidden")
+  })
+})
+
+describe("resolveStorefrontRequestOrigin", () => {
+  it("prefers the BFF header, then falls back to the standard Origin header", () => {
+    expect(
+      resolveStorefrontRequestOrigin(
+        request({
+          [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+          origin: "https://other.example.com",
+        }),
+      ),
+    ).toBe("https://shop.example.com")
+    expect(resolveStorefrontRequestOrigin(request({ origin: "https://shop.example.com" }))).toBe(
+      "https://shop.example.com",
+    )
+    expect(resolveStorefrontRequestOrigin(request({}))).toBeNull()
+  })
+})
+
+describe("createLocalStorefrontCorsOriginResolver", () => {
+  function makeCorsResolver(provider: StorefrontRuntimeProvider) {
+    let disposed = 0
+    const resolver = createLocalStorefrontCorsOriginResolver<Record<string, never>>({
+      provider,
+      async openResolveContext() {
+        return {
+          context: { bindings: {}, db: {} as never },
+          dispose: async () => {
+            disposed += 1
+          },
+        }
+      },
+    })
+    return { resolver, disposed: () => disposed }
+  }
+
+  it("echoes the request origin for a valid key from an allowed origin", async () => {
+    const { resolver, disposed } = makeCorsResolver(fakeProvider())
+    const origin = await resolver(
+      {},
+      request({
+        [STOREFRONT_KEY_HEADER]: "vpk_token",
+        origin: "https://shop.example.com",
+      }),
+    )
+    expect(origin).toBe("https://shop.example.com")
+    expect(disposed()).toBe(1)
+  })
+
+  it("returns null for a valid key presented from a disallowed origin", async () => {
+    const { resolver } = makeCorsResolver(fakeProvider())
+    const origin = await resolver(
+      {},
+      request({ [STOREFRONT_KEY_HEADER]: "vpk_token", origin: "https://evil.com" }),
+    )
+    expect(origin).toBeNull()
+  })
+
+  it("returns null for an unknown key", async () => {
+    const { resolver } = makeCorsResolver(
+      fakeProvider({ resolveStorefrontByApiKey: async () => null }),
+    )
+    const origin = await resolver(
+      {},
+      request({ [STOREFRONT_KEY_HEADER]: "vpk_bad", origin: "https://shop.example.com" }),
+    )
+    expect(origin).toBeNull()
+  })
+
+  it("authorizes a keyless preflight by declared origin (exact + wildcard)", async () => {
+    const { resolver } = makeCorsResolver(fakeProvider())
+    expect(await resolver({}, request({ origin: "https://shop.example.com" }))).toBe(
+      "https://shop.example.com",
+    )
+    // https://*.example.com wildcard authorizes a single-label sub-domain.
+    expect(await resolver({}, request({ origin: "https://preview.example.com" }))).toBe(
+      "https://preview.example.com",
+    )
+  })
+
+  it("returns null for a keyless preflight from an origin no storefront allows", async () => {
+    const { resolver } = makeCorsResolver(fakeProvider())
+    expect(await resolver({}, request({ origin: "https://evil.com" }))).toBeNull()
+  })
+
+  it("returns null when no origin is present", async () => {
+    const { resolver } = makeCorsResolver(fakeProvider())
+    expect(await resolver({}, request({ [STOREFRONT_KEY_HEADER]: "vpk_token" }))).toBeNull()
   })
 })
