@@ -1717,6 +1717,9 @@
       "@voyant-travel/storefront/booking-bootstrap-subscriber": [
         "../storefront/dist/booking-bootstrap-subscriber-runtime.d.ts"
       ],
+      "@voyant-travel/storefront/customer-auth-client": [
+        "../storefront/dist/customer-auth-client.d.ts"
+      ],
       "@voyant-travel/storefront/customer-portal": [
         "../storefront/dist/customer-portal/index.d.ts"
       ],
