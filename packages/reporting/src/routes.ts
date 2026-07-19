@@ -4,17 +4,15 @@ import {
   openApiValidationHook,
   parseJsonBody,
   parseQuery,
-  RequestValidationError,
 } from "@voyant-travel/hono"
 import {
   createReportDefinitionSchema,
-  createReportVersionSchema,
-  executeReportVersionSchema,
   instantiateReportTemplateSchema,
   listReportDefinitionsQuerySchema,
   parseReportQuery,
   parseReportQuerySourceSchema,
   previewReportQuerySchema,
+  ReportDatasetQueryError,
   ReportQuerySyntaxError,
   updateReportDefinitionSchema,
 } from "@voyant-travel/reporting-contracts"
@@ -23,13 +21,20 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import {
+  REPORT_EXPORT_CONTENT_TYPES,
+  type ReportExportFormat,
+  reportExportFileBase,
+  reportToCsv,
+  reportToPdf,
+  reportToXlsx,
+} from "./export.js"
+import {
   ReportingAuthorizationError,
   type ReportingRegistry,
   ReportingRegistryError,
 } from "./registry.js"
 import {
   createReportingService,
-  ReportDefinitionRetentionConflictError,
   ReportDefinitionRevisionConflictError,
   ReportingRecordNotFoundError,
 } from "./service.js"
@@ -51,10 +56,20 @@ export function createReportingRoutes(registry: ReportingRegistry) {
     requireReportsPermission(c.get("scopes"), "read")
     const input = await parseJsonBody(c, parseReportQuerySourceSchema)
     try {
-      return c.json({ data: parseReportQuery(input.source) })
+      const query = parseReportQuery(input.source)
+      // Validate against the live registry so unknown datasets/fields, unsupported
+      // aggregations, and grouping mistakes fail here — where the author clicked
+      // "Parse" to check their query — instead of only when the preview executes.
+      registry.validateQuery(query, c.get("scopes") ?? [])
+      return c.json({ data: query })
     } catch (error) {
-      if (error instanceof ReportQuerySyntaxError) throw new RequestValidationError(error.message)
-      throw error
+      // Both syntax errors and registry validation failures (unknown dataset/field,
+      // bad grouping, out-of-range limit) are author mistakes → 400 with a message,
+      // never a 500.
+      if (error instanceof ReportQuerySyntaxError) {
+        return c.json({ error: "invalid_report_query", message: error.message }, 400)
+      }
+      return reportingErrorResponse(c, error)
     }
   })
 
@@ -131,43 +146,40 @@ export function createReportingRoutes(registry: ReportingRegistry) {
     }
   })
 
-  routes.post("/reports/:id/versions", async (c) => {
-    requireReportsPermission(c.get("scopes"), "write")
-    const input = await parseJsonBody(c, createReportVersionSchema)
+  routes.get("/reports/:id/export", async (c) => {
+    requireReportsPermission(c.get("scopes"), "export")
+    const format = (c.req.query("format") ?? "csv").toLowerCase()
+    if (format !== "csv" && format !== "xlsx" && format !== "pdf") {
+      return c.json({ error: "invalid_format", message: "format must be csv, xlsx, or pdf." }, 400)
+    }
     try {
-      const version = await service.createVersion(
+      const report = await service.exportReport(
         c.get("db"),
         c.req.param("id"),
-        input.expectedRevision,
-        c.get("userId"),
+        {},
+        {
+          actorId: c.get("userId"),
+          grantedScopes: c.get("scopes") ?? [],
+          signal: c.req.raw.signal,
+        },
       )
-      return c.json({ data: version }, 201)
-    } catch (error) {
-      return reportingErrorResponse(c, error)
-    }
-  })
-
-  routes.post("/versions/:id/runs", async (c) => {
-    requireReportsPermission(c.get("scopes"), "export")
-    const input = await parseJsonBody(c, executeReportVersionSchema)
-    try {
-      const run = await service.runVersion(c.get("db"), c.req.param("id"), input.parameters, {
-        actorId: c.get("userId"),
-        grantedScopes: c.get("scopes") ?? [],
-        signal: c.req.raw.signal,
-      })
-      return c.json({ data: run }, 201)
-    } catch (error) {
-      return reportingErrorResponse(c, error)
-    }
-  })
-
-  routes.get("/runs/:id", async (c) => {
-    requireReportsPermission(c.get("scopes"), "export")
-    try {
-      const run = await service.getRun(c.get("db"), c.req.param("id"), c.get("scopes") ?? [])
-      if (!run) return c.json({ error: "report_run_not_found" }, 404)
-      return c.json({ data: run })
+      if (!report) return c.json({ error: "report_not_found" }, 404)
+      const typed = format as ReportExportFormat
+      c.header("Content-Type", REPORT_EXPORT_CONTENT_TYPES[typed])
+      c.header(
+        "Content-Disposition",
+        `attachment; filename="${reportExportFileBase(report)}.${typed}"`,
+      )
+      if (typed === "csv") {
+        return c.body(reportToCsv(report))
+      }
+      // xlsx/pdf return raw bytes; hand Hono a standalone ArrayBuffer (a
+      // Uint8Array is not part of its accepted body `Data` union, and the view
+      // may be backed by a larger buffer).
+      const bytes = typed === "xlsx" ? await reportToXlsx(report) : await reportToPdf(report)
+      return c.body(
+        bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+      )
     } catch (error) {
       return reportingErrorResponse(c, error)
     }
@@ -190,13 +202,10 @@ function reportingErrorResponse(c: Context, error: unknown) {
   if (error instanceof ReportDefinitionRevisionConflictError) {
     return c.json({ error: "revision_conflict" }, 409)
   }
-  if (error instanceof ReportDefinitionRetentionConflictError) {
-    return c.json({ error: "report_has_retained_runs" }, 409)
-  }
   if (error instanceof ReportingAuthorizationError) {
     return c.json({ error: "forbidden", missingScopes: error.missingScopes }, 403)
   }
-  if (error instanceof ReportingRegistryError) {
+  if (error instanceof ReportingRegistryError || error instanceof ReportDatasetQueryError) {
     return c.json({ error: "invalid_report_query", message: error.message }, 400)
   }
   throw error

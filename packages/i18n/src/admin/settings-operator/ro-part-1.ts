@@ -281,6 +281,16 @@ export const operatorAdminSettingsMessagesRoPart1 = {
       bankLabel: "Nume banca",
       notesLabel: "Note de plata",
     },
+    baseCurrency: {
+      title: "Moneda de baza",
+      description:
+        "Moneda unica in care se consolideaza finantele. Fiecare factura si plata inregistreaza un instantaneu convertit in aceasta moneda in momentul crearii, astfel incat rapoartele pot afisa un total consistent pentru toate monedele tranzactiilor.",
+      label: "Moneda de baza",
+      placeholder: "Selecteaza o moneda",
+      help: "Folosita ca baza de inregistrare FX pentru noile inregistrari financiare. Schimbarea nu reconverteste inregistrarile anterioare — instantaneele lor raman la cursul capturat la crearea lor.",
+      savedToast: "Moneda de baza a fost salvata",
+      saveFailed: "Salvarea monedei de baza a esuat",
+    },
     license: {
       title: "Licenta",
       description:

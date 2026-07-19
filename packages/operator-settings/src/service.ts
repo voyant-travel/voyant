@@ -270,6 +270,61 @@ export async function updateBookingTaxSettings(
   }
 }
 
+export interface OperatorInvoiceFxSettings {
+  baseCurrency: string | null
+  fxCommissionBps: number | null
+  fxCommissionInvoiceMention: string | null
+}
+
+/**
+ * Resolve the invoice-FX settings from the finance operator-settings singleton.
+ * Co-located on `booking_tax_settings`; provided through the finance
+ * operator-settings runtime port so the invoice-FX routes can persist the
+ * operator's chosen base currency.
+ */
+export async function resolveInvoiceFxSettings(
+  db: PostgresJsDatabase,
+): Promise<OperatorInvoiceFxSettings> {
+  const [settings] = await db
+    .select()
+    .from(bookingTaxSettings)
+    .orderBy(desc(bookingTaxSettings.createdAt))
+    .limit(1)
+  return {
+    baseCurrency: settings?.baseCurrency ?? null,
+    fxCommissionBps: settings?.fxCommissionBps ?? null,
+    fxCommissionInvoiceMention: settings?.fxCommissionInvoiceMention ?? null,
+  }
+}
+
+export async function updateInvoiceFxSettings(
+  db: PostgresJsDatabase,
+  patch: Partial<OperatorInvoiceFxSettings>,
+): Promise<OperatorInvoiceFxSettings> {
+  const [existing] = await db
+    .select()
+    .from(bookingTaxSettings)
+    .orderBy(desc(bookingTaxSettings.createdAt))
+    .limit(1)
+  const values = {
+    baseCurrency: patch.baseCurrency ?? null,
+    fxCommissionBps: patch.fxCommissionBps ?? null,
+    fxCommissionInvoiceMention: patch.fxCommissionInvoiceMention ?? null,
+  }
+  const [row] = existing
+    ? await db
+        .update(bookingTaxSettings)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(bookingTaxSettings.id, existing.id))
+        .returning()
+    : await db.insert(bookingTaxSettings).values(values).returning()
+  return {
+    baseCurrency: row?.baseCurrency ?? null,
+    fxCommissionBps: row?.fxCommissionBps ?? null,
+    fxCommissionInvoiceMention: row?.fxCommissionInvoiceMention ?? null,
+  }
+}
+
 export function toPublicOperatorProfile(
   row: OperatorProfileRow,
   defaults?: OperatorPaymentDefaultsRow | null,

@@ -277,6 +277,16 @@ export const operatorAdminSettingsMessagesEnPart1 = {
       bankLabel: "Bank name",
       notesLabel: "Payment notes",
     },
+    baseCurrency: {
+      title: "Base currency",
+      description:
+        "The single currency your financials consolidate into. Every invoice and payment records a snapshot converted to this currency at the moment it is created, so reports can show one consistent total across all transaction currencies.",
+      label: "Base currency",
+      placeholder: "Select a currency",
+      help: "Used as the FX recording base for new financial records. Changing it does not re-convert past records — their snapshots stay at the rate captured when they were created.",
+      savedToast: "Base currency saved",
+      saveFailed: "Failed to save base currency",
+    },
     license: {
       title: "License",
       description: "Tour license, hotel rating registry, cruise flag-state, or whichever applies.",

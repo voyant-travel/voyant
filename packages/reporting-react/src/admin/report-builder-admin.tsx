@@ -1,9 +1,35 @@
 "use client"
 
+// agent-quality: file-size exception -- owner: reporting-react; the report
+// builder keeps its view/edit toggle, widget-preview and config Sheets, export
+// menu, date-window and base-currency controls, and autosave/unsaved-guard state
+// co-located because they share one draft/document controller that cannot be
+// split without duplicating that coordinated state. Intentional until the shared
+// controller is extracted.
+
 import { useQueryClient } from "@tanstack/react-query"
 import type { ReportWidgetDefinition } from "@voyant-travel/reporting-contracts"
-import { Button } from "@voyant-travel/ui/components"
-import { useCallback, useMemo, useState } from "react"
+import {
+  Button,
+  DateRangePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input,
+  Label,
+  SegmentedControl,
+  Separator,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  Switch,
+} from "@voyant-travel/ui/components"
+import { Download, Plus, Sparkles, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { resolveLabels } from "../components/labels.js"
 import { ReportCanvas } from "../components/report-canvas.js"
 import { useNarrowViewport } from "../hooks/use-narrow-viewport.js"
@@ -11,7 +37,13 @@ import { useReducedMotion } from "../hooks/use-reduced-motion.js"
 import { moveItem, normalizeLayout, resizeItem } from "../layout/grid-model.js"
 import { buildRegistry, constraintsFromRegistry, renderableItems } from "../report-model.js"
 import { CANONICAL_COLUMNS, type LayoutItem, type WidgetDefinition } from "../types.js"
-import { getReportQueryOptions, type ReportDefinitionRow, updateReport } from "./api.js"
+import {
+  exportReport,
+  getReportQueryOptions,
+  type ReportDefinitionRow,
+  type ReportExportFormat,
+  updateReport,
+} from "./api.js"
 import type { ReportingClient } from "./client.js"
 import { CustomWidgetEditor } from "./query-editor.js"
 import { ReportWidgetView } from "./renderers/report-widget-view.js"
@@ -26,6 +58,7 @@ import {
   setCustomInstanceDefinition,
   setInstanceTitle,
 } from "./report-document.js"
+import { generateReportPdf } from "./report-pdf.js"
 import { type ReportDocumentController, useReportDocument } from "./use-report-document.js"
 
 export interface ReportBuilderAdminProps {
@@ -44,6 +77,10 @@ export interface ReportBuilderAdminProps {
  * instance-aware {@link ReportDraft}. Layout edits, added/removed instances,
  * titles, and custom query definitions all flow through the document controller
  * and are autosaved with revision-guarded PATCHes.
+ *
+ * Editing affordances stay out of the canvas: presets are added from a menu,
+ * custom widgets are authored in a dialog, and per-widget configuration opens a
+ * side sheet — so the grid itself always reads as the finished report.
  */
 export function ReportBuilderAdmin({
   client,
@@ -78,15 +115,101 @@ export function ReportBuilderAdmin({
   )
 
   const [mode, setMode] = useState<"view" | "edit">(initialMode)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  // The instance whose configuration sheet is open (also drives the canvas
+  // selection highlight). Distinct from "added" so presets don't force a sheet.
+  const [configuringId, setConfiguringId] = useState<string | null>(null)
+  const [addingPreset, setAddingPreset] = useState(false)
   const [addingCustom, setAddingCustom] = useState(false)
 
   const narrow = useNarrowViewport(narrowBreakpointPx)
   const animate = !useReducedMotion()
   const editable = mode === "edit"
 
+  // Guard against losing edits: warn on tab close / reload while a save is still
+  // pending, failed, or conflicted. Steady state (everything saved) adds no
+  // listener, so normal navigation is never interrupted.
+  const hasPendingChanges =
+    doc.isDirty || doc.status === "saving" || doc.status === "error" || doc.status === "conflict"
+  useEffect(() => {
+    if (!hasPendingChanges) return
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      // Legacy browsers require a truthy returnValue to show the prompt.
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [hasPendingChanges])
+
   const resolved = useMemo(() => resolveDraft(doc.draft, catalog), [doc.draft, catalog])
   const parameters = doc.draft.parameters
+
+  // Page-level date range → the reserved `dateFrom`/`dateTo` parameters. Empty
+  // means "all time"; datasets that declare a default date field get an inclusive
+  // window applied server-side to every widget.
+  const dateFrom = typeof parameters.dateFrom === "string" ? parameters.dateFrom : null
+  const dateTo = typeof parameters.dateTo === "string" ? parameters.dateTo : null
+  const handleDateRange = useCallback(
+    (range: { from: string | null; to: string | null } | null) => {
+      doc.updateDraft((draft) => {
+        const next = { ...draft.parameters }
+        if (range?.from) next.dateFrom = range.from
+        else delete next.dateFrom
+        if (range?.to) next.dateTo = range.to
+        else delete next.dateTo
+        return { ...draft, parameters: next }
+      })
+    },
+    [doc],
+  )
+
+  // "Show in base currency": converts every money widget to the operator's base
+  // currency using each record's recording-time FX snapshot (handled server-side).
+  const baseCurrency = parameters.reportCurrency === "base"
+  const handleBaseCurrency = useCallback(
+    (on: boolean) => {
+      doc.updateDraft((draft) => {
+        const next = { ...draft.parameters }
+        if (on) next.reportCurrency = "base"
+        else delete next.reportCurrency
+        return { ...draft, parameters: next }
+      })
+    },
+    [doc],
+  )
+
+  const [exporting, setExporting] = useState<ReportExportFormat | null>(null)
+  const handleExport = useCallback(
+    async (format: ReportExportFormat) => {
+      setExporting(format)
+      try {
+        // Export re-runs the saved report server-side, so flush pending edits first.
+        if (doc.isDirty) await doc.flush()
+        if (format === "pdf") {
+          // The PDF is visual: it captures the live rendered charts/tables, which
+          // only exist in the browser — so it's generated client-side, not on the API.
+          const blob = await generateReportPdf({ name: doc.name, description: doc.description })
+          const slug = doc.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+          const objectUrl = URL.createObjectURL(blob)
+          const anchor = document.createElement("a")
+          anchor.href = objectUrl
+          anchor.download = `${slug || "report"}.pdf`
+          document.body.append(anchor)
+          anchor.click()
+          anchor.remove()
+          URL.revokeObjectURL(objectUrl)
+        } else {
+          await exportReport(client, report.id, format)
+        }
+      } finally {
+        setExporting(null)
+      }
+    },
+    [client, report.id, doc],
+  )
 
   // One grid `WidgetDefinition` per AVAILABLE instance, keyed by the *instance*
   // id (not the preset id) so multiple instances of one preset coexist.
@@ -107,7 +230,7 @@ export function ReportBuilderAdmin({
               <ReportWidgetView definition={definition} client={client} parameters={parameters} />
             ),
             // Presence enables the configure affordance; the actual inspector is
-            // rendered by this component, keyed by the selected instance.
+            // rendered by this component in a side sheet, keyed by the instance.
             renderConfig: () => null,
           }
         }),
@@ -150,40 +273,28 @@ export function ReportBuilderAdmin({
   const handleRemove = useCallback(
     (widgetId: string) => {
       doc.updateDraft((draft) => removeInstance(draft, widgetId))
-      setSelectedId((current) => (current === widgetId ? null : current))
+      setConfiguringId((current) => (current === widgetId ? null : current))
     },
     [doc],
   )
 
   const handleAddPreset = useCallback(
     (widget: ReportWidgetDefinition) => {
-      let newId = ""
-      doc.updateDraft((draft) => {
-        const result = addPresetInstance(draft, widget, { columns })
-        newId = result.instanceId
-        return result.draft
-      })
-      setSelectedId(newId)
+      doc.updateDraft((draft) => addPresetInstance(draft, widget, { columns }).draft)
     },
     [doc, columns],
   )
 
   const handleAddCustom = useCallback(
     (definition: ReportWidgetDefinition) => {
-      let newId = ""
-      doc.updateDraft((draft) => {
-        const result = addCustomInstance(draft, definition, { columns })
-        newId = result.instanceId
-        return result.draft
-      })
-      setSelectedId(newId)
+      doc.updateDraft((draft) => addCustomInstance(draft, definition, { columns }).draft)
       setAddingCustom(false)
     },
     [doc, columns],
   )
 
-  const selectedEntry = selectedId
-    ? (resolved.find((entry) => entry.instance.id === selectedId) ?? null)
+  const configuringEntry = configuringId
+    ? (resolved.find((entry) => entry.instance.id === configuringId) ?? null)
     : null
 
   const canvas = (
@@ -196,57 +307,88 @@ export function ReportBuilderAdmin({
       rowHeight={rowHeight}
       narrow={narrow}
       animate={animate}
-      selectedId={selectedId}
+      selectedId={configuringId}
       onLayoutChange={editable ? handleLayoutChange : undefined}
       onMove={handleMove}
       onResize={handleResize}
       onRemove={handleRemove}
-      onConfigure={setSelectedId}
+      onConfigure={setConfiguringId}
     />
   )
 
   return (
-    <div className="flex flex-col gap-4" data-mode={mode}>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">{doc.name}</h1>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8" data-mode={mode}>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">{doc.name}</h1>
           {doc.description ? (
             <p className="text-muted-foreground text-sm">{doc.description}</p>
-          ) : null}
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {editable ? "Add, arrange, and configure widgets." : "Live report dashboard."}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <SaveStatus doc={doc} />
-          {/* biome-ignore lint/a11y/useSemanticElements: intentional — a two-button view/edit toggle is an ARIA group, not a form fieldset (owner: reporting) */}
-          <div
-            className="inline-flex rounded-md border p-0.5"
-            role="group"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" disabled={exporting !== null}>
+                <Download className="size-4" />
+                {exporting ? "Exporting…" : "Export"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                CSV (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("pdf")}>
+                PDF (.pdf)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <SegmentedControl
             aria-label="Report mode"
-          >
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "view" ? "default" : "ghost"}
-              aria-pressed={mode === "view"}
-              onClick={() => setMode("view")}
-            >
-              View
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "edit" ? "default" : "ghost"}
-              aria-pressed={mode === "edit"}
-              onClick={() => setMode("edit")}
-            >
-              Edit
-            </Button>
-          </div>
+            options={[
+              { label: "View", value: "view" },
+              { label: "Edit", value: "edit" },
+            ]}
+            value={mode}
+            onValueChange={(next) => setMode(next as "view" | "edit")}
+          />
         </div>
       </header>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          Period
+        </span>
+        <DateRangePicker
+          value={{ from: dateFrom, to: dateTo }}
+          onChange={handleDateRange}
+          placeholder="All time"
+          className="w-[18rem]"
+        />
+        <Separator
+          orientation="vertical"
+          className="mx-1 h-5 data-[orientation=vertical]:self-center"
+        />
+        <label htmlFor="vrb-base-currency" className="flex cursor-pointer items-center gap-2">
+          <Switch
+            id="vrb-base-currency"
+            checked={baseCurrency}
+            onCheckedChange={handleBaseCurrency}
+          />
+          <span className="text-muted-foreground text-xs font-medium">Show in base currency</span>
+        </label>
+      </div>
+
       {doc.status === "conflict" ? (
         <div
-          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
+          className="border-destructive/40 bg-destructive/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
           role="alert"
         >
           <span>This report changed elsewhere since you opened it.</span>
@@ -262,101 +404,178 @@ export function ReportBuilderAdmin({
       ) : null}
 
       {editable ? (
-        <div className="grid gap-4 lg:grid-cols-[16rem_1fr_20rem]">
-          <aside className="flex flex-col gap-2">
-            <h2 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-              Widgets
-            </h2>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/40 p-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={catalog.widgets.length === 0}
+            onClick={() => setAddingPreset(true)}
+          >
+            <Plus className="size-4" />
+            Add widget
+          </Button>
+
+          <Separator
+            orientation="vertical"
+            className="h-5 data-[orientation=vertical]:self-center"
+          />
+
+          <Button size="sm" variant="ghost" onClick={() => setAddingCustom(true)}>
+            <Sparkles className="size-4" />
+            Custom widget
+          </Button>
+
+          <span className="text-muted-foreground ml-auto hidden pr-1 text-xs sm:inline">
+            Drag a widget's title to move it · drag the corner to resize
+          </span>
+        </div>
+      ) : null}
+
+      {canvas}
+
+      {/* Widget picker: a wide sheet showing a live preview of each preset so the
+          author sees the visualization before adding it — not a bare menu. */}
+      <Sheet open={editable && addingPreset} onOpenChange={setAddingPreset}>
+        <SheetContent size="xl" className="gap-0">
+          <SheetHeader>
+            <SheetTitle>Add a widget</SheetTitle>
+            <SheetDescription>Preview a preset, then add it to your report.</SheetDescription>
+          </SheetHeader>
+          <SheetBody>
             {catalog.widgets.length === 0 ? (
               <p className="text-muted-foreground text-sm">No preset widgets available.</p>
             ) : (
-              <ul className="flex flex-col gap-1">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {catalog.widgets.map((widget) => (
-                  <li key={`${widget.id}@${widget.version}`}>
-                    <button
-                      type="button"
-                      className="w-full rounded-md border px-2 py-1.5 text-left text-sm hover:border-primary"
-                      onClick={() => handleAddPreset(widget)}
-                    >
-                      <span className="font-medium">{widget.label}</span>
-                    </button>
-                  </li>
+                  <button
+                    key={`${widget.id}@${widget.version}`}
+                    type="button"
+                    className="group hover:border-primary focus-visible:ring-ring flex flex-col gap-2 rounded-lg border bg-card p-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    onClick={() => {
+                      handleAddPreset(widget)
+                      setAddingPreset(false)
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{widget.label}</span>
+                      <span className="text-muted-foreground rounded-sm border px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide">
+                        {widget.visualization.type}
+                      </span>
+                    </div>
+                    {widget.description ? (
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                        {widget.description}
+                      </p>
+                    ) : null}
+                    <div className="bg-background/40 pointer-events-none h-40 overflow-hidden rounded-md border p-2">
+                      <ReportWidgetView
+                        definition={widget}
+                        client={client}
+                        parameters={parameters}
+                      />
+                    </div>
+                    <span className="text-muted-foreground group-hover:text-primary inline-flex items-center gap-1 text-xs font-medium">
+                      <Plus className="size-3.5" />
+                      Add to report
+                    </span>
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setAddingCustom((value) => !value)}
-            >
-              {addingCustom ? "Close custom widget" : "Add custom widget"}
-            </Button>
-            {addingCustom ? (
-              <div className="rounded-md border p-2">
-                <CustomWidgetEditor
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
+
+      {/* Per-widget configuration lives in a side sheet, keyed by instance so the
+          title field resets cleanly when switching between widgets. */}
+      <Sheet
+        open={editable && configuringEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfiguringId(null)
+        }}
+      >
+        <SheetContent size="default" className="gap-0">
+          {configuringEntry ? (
+            <>
+              <SheetHeader>
+                <SheetTitle>Configure widget</SheetTitle>
+                <SheetDescription>
+                  {configuringEntry.instance.source.kind === "custom"
+                    ? "Rename the widget or refine its query."
+                    : "Rename this widget."}
+                </SheetDescription>
+              </SheetHeader>
+              <SheetBody>
+                <InstanceInspector
+                  key={configuringEntry.instance.id}
                   client={client}
                   catalog={catalog}
-                  onCommit={handleAddCustom}
-                  onCancel={() => setAddingCustom(false)}
+                  doc={doc}
+                  instanceId={configuringEntry.instance.id}
+                  definition={configuringEntry.definition}
+                  isCustom={configuringEntry.instance.source.kind === "custom"}
+                  titleValue={configuringEntry.instance.title ?? ""}
+                  onRemove={() => handleRemove(configuringEntry.instance.id)}
                 />
-              </div>
-            ) : null}
-          </aside>
+              </SheetBody>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
 
-          <div className="min-w-0">{canvas}</div>
-
-          <aside className="flex flex-col gap-2">
-            <h2 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-              Configure
-            </h2>
-            {selectedEntry ? (
-              <InstanceInspector
-                key={selectedEntry.instance.id}
-                client={client}
-                catalog={catalog}
-                doc={doc}
-                instanceId={selectedEntry.instance.id}
-                definition={selectedEntry.definition}
-                isCustom={selectedEntry.instance.source.kind === "custom"}
-                titleValue={selectedEntry.instance.title ?? ""}
-                onRemove={() => handleRemove(selectedEntry.instance.id)}
-              />
-            ) : (
-              <p className="text-muted-foreground text-sm">Select a widget to configure it.</p>
-            )}
-          </aside>
-        </div>
-      ) : (
-        canvas
-      )}
+      {/* Custom widget authoring is a side sheet, consistent with the widget
+          picker and per-widget configuration. */}
+      <Sheet open={editable && addingCustom} onOpenChange={setAddingCustom}>
+        <SheetContent size="lg" className="gap-0">
+          <SheetHeader>
+            <SheetTitle>Add custom widget</SheetTitle>
+            <SheetDescription>
+              Author a bounded query and pick how to visualize it.
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <CustomWidgetEditor
+              client={client}
+              catalog={catalog}
+              onCommit={handleAddCustom}
+              onCancel={() => setAddingCustom(false)}
+            />
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
 
 function SaveStatus({ doc }: { doc: ReportDocumentController }) {
-  const text =
-    doc.status === "saving"
-      ? "Saving…"
-      : doc.status === "saved"
-        ? "All changes saved"
-        : doc.status === "error"
-          ? "Could not save"
-          : doc.status === "conflict"
-            ? "Save conflict"
-            : doc.isDirty
-              ? "Unsaved changes"
-              : "All changes saved"
-  return (
-    <span className="text-muted-foreground text-sm" role="status" aria-live="polite">
-      {text}
-      {doc.status === "error" ? (
+  // The saved/idle steady state is intentionally silent — a persistent
+  // "All changes saved" label is noise. Only transient or attention-worthy
+  // states surface, and unsaved work is additionally guarded on unload.
+  if (doc.status === "error") {
+    return (
+      <span className="text-destructive text-sm" role="status" aria-live="polite">
+        Couldn't save
         <button type="button" className="ml-2 underline" onClick={() => void doc.flush()}>
           Retry
         </button>
-      ) : null}
-    </span>
-  )
+      </span>
+    )
+  }
+  if (doc.status === "conflict") {
+    return (
+      <span className="text-destructive text-sm" role="status" aria-live="polite">
+        Save conflict
+      </span>
+    )
+  }
+  if (doc.status === "saving" || doc.isDirty) {
+    return (
+      <span className="text-muted-foreground text-sm" role="status" aria-live="polite">
+        {doc.status === "saving" ? "Saving…" : "Unsaved changes"}
+      </span>
+    )
+  }
+  return null
 }
 
 function InstanceInspector({
@@ -379,12 +598,42 @@ function InstanceInspector({
   onRemove: () => void
 }) {
   const [title, setTitle] = useState(titleValue)
+
+  const removeButton = (
+    <Button type="button" variant="destructive" size="sm" className="self-start" onClick={onRemove}>
+      <Trash2 className="size-4" />
+      Remove widget
+    </Button>
+  )
+
+  // Custom widgets are fully described by their own editor (title, visualization,
+  // query) — rendering a second instance-title field on top would duplicate the
+  // "Title" control, so the editor is the single source of truth here.
+  if (isCustom && definition) {
+    return (
+      <div className="flex flex-col gap-5">
+        <CustomWidgetEditor
+          client={client}
+          catalog={catalog}
+          initialDefinition={definition}
+          onCommit={(next) =>
+            doc.updateDraft((draft) => setCustomInstanceDefinition(draft, instanceId, next))
+          }
+        />
+        <Separator />
+        {removeButton}
+      </div>
+    )
+  }
+
+  // Preset widgets have no editable definition; the only configuration is a
+  // display-title override (empty = fall back to the preset's own label).
   return (
-    <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Title</span>
-        <input
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`widget-title-${instanceId}`}>Title</Label>
+        <Input
+          id={`widget-title-${instanceId}`}
           value={title}
           onChange={(event) => {
             setTitle(event.target.value)
@@ -392,25 +641,9 @@ function InstanceInspector({
           }}
           placeholder={definition?.label ?? "Widget title"}
         />
-      </label>
-
-      {isCustom && definition ? (
-        <div>
-          <h3 className="mb-1 text-sm font-medium">Query</h3>
-          <CustomWidgetEditor
-            client={client}
-            catalog={catalog}
-            initialDefinition={definition}
-            onCommit={(next) =>
-              doc.updateDraft((draft) => setCustomInstanceDefinition(draft, instanceId, next))
-            }
-          />
-        </div>
-      ) : null}
-
-      <Button type="button" variant="destructive" size="sm" onClick={onRemove}>
-        Remove widget
-      </Button>
+      </div>
+      <Separator />
+      {removeButton}
     </div>
   )
 }

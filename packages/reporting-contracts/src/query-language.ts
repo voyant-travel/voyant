@@ -24,6 +24,20 @@ export class ReportQuerySyntaxError extends Error {
 }
 
 /**
+ * Error a dataset raises when a query is well-formed but not answerable against
+ * that dataset (e.g. summing amounts across currencies without grouping). The
+ * reporting API surfaces it as a 400 so authors see the reason instead of a 500.
+ * Dataset packages extend this so the reporting layer can recognise their
+ * domain errors without importing each dataset package.
+ */
+export class ReportDatasetQueryError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ReportDatasetQueryError"
+  }
+}
+
+/**
  * Compile the intentionally small reporting language into the public query AST.
  * It is SQL-like for familiarity but has no joins, subqueries, statements, or
  * table access. Dataset owners remain responsible for executing the AST.
@@ -95,7 +109,7 @@ function parseFilter(source: string): ReportQuery["filters"][number] {
     }
   }
   const match = source.match(
-    /^([a-z0-9][a-z0-9._/-]*)\s+(not\s+in|in|contains|>=|<=|!=|=|>|<)\s+(.+)$/i,
+    /^([a-z0-9][a-z0-9._/-]*)\s+(not\s+in|in|between|contains|>=|<=|!=|=|>|<)\s+(.+)$/i,
   )
   if (!match) throw syntax(`Unsupported filter ${JSON.stringify(source)}.`)
   const operator = {
@@ -107,6 +121,7 @@ function parseFilter(source: string): ReportQuery["filters"][number] {
     "<=": "lessThanOrEqual",
     in: "in",
     "not in": "notIn",
+    between: "between",
     contains: "contains",
   } as const
   const operatorKey = required(match[2], "filter operator")
@@ -124,7 +139,11 @@ function parseValueReference(source: string): ReportQuery["filters"][number]["va
   if (value.startsWith("$")) {
     return { kind: "parameter", name: parseIdentifier(value.slice(1), "parameter") }
   }
-  if (value.startsWith("[") && value.endsWith("]")) {
+  // Lists accept both `[...]` and SQL-style `(...)` for `in`/`not in`/`between`.
+  if (
+    (value.startsWith("[") && value.endsWith("]")) ||
+    (value.startsWith("(") && value.endsWith(")"))
+  ) {
     const inner = value.slice(1, -1).trim()
     const values = inner ? splitList(inner).map(parseLiteral) : []
     return { kind: "literal", value: values }

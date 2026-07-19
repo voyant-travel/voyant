@@ -4,6 +4,12 @@
  *
  * react-grid-layout ships the absolute positioning + transition rules that make
  * the 2D grid work; we import them here and layer Voyant chrome on top.
+ *
+ * Theming: every color reads through a `--vrb-*` seam so a host can re-theme the
+ * builder in isolation. When a `--vrb-*` var is unset we default to the Voyant
+ * design tokens (`--card`, `--border`, `--muted-foreground`, `--ring`,
+ * `--destructive`) so the builder tracks the app's light/dark theme out of the
+ * box; the trailing hex is the last-resort fallback for hosts without tokens.
  */
 @source "./**/*.{ts,tsx}";
 @source "../dist/**/*.{js,mjs}";
@@ -57,7 +63,7 @@
   position: absolute;
   inset: 0 45%;
   border-radius: 999px;
-  background: var(--vrb-border, #d4d4d8);
+  background: var(--vrb-border, var(--border, #d4d4d8));
 }
 
 /* Canvas */
@@ -69,9 +75,9 @@
   display: grid;
   place-items: center;
   padding: 3rem 1rem;
-  border: 1px dashed var(--vrb-border, #d4d4d8);
+  border: 1px dashed var(--vrb-border, var(--border, #d4d4d8));
   border-radius: 0.75rem;
-  color: var(--vrb-muted, #71717a);
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
   text-align: center;
 }
 
@@ -90,21 +96,22 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border: 1px solid var(--vrb-border, #e4e4e7);
+  border: 1px solid var(--vrb-border, var(--border, #e4e4e7));
   border-radius: 0.75rem;
-  background: var(--vrb-surface, #ffffff);
+  background: var(--vrb-surface, var(--card, #ffffff));
+  color: var(--vrb-foreground, var(--card-foreground, inherit));
   overflow: hidden;
 }
 
 .vrb-widget--selected {
-  border-color: var(--vrb-accent, #6366f1);
-  box-shadow: 0 0 0 1px var(--vrb-accent, #6366f1);
+  border-color: var(--vrb-accent, var(--ring, #6366f1));
+  box-shadow: 0 0 0 1px var(--vrb-accent, var(--ring, #6366f1));
 }
 
 .vrb-widget--unavailable {
   border-style: dashed;
-  background: var(--vrb-surface-muted, #fafafa);
-  color: var(--vrb-muted, #71717a);
+  background: var(--vrb-surface-muted, var(--muted, #fafafa));
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
 }
 
 .vrb-widget__header {
@@ -112,13 +119,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--vrb-border, #e4e4e7);
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--vrb-border, var(--border, #e4e4e7));
 }
 
 .vrb-widget__title {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   text-align: left;
 }
 
@@ -133,7 +142,7 @@ button.vrb-widget__title {
 }
 
 button.vrb-widget__title:focus-visible {
-  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline: 2px solid var(--vrb-accent, var(--ring, #6366f1));
   outline-offset: 2px;
 }
 
@@ -156,22 +165,23 @@ button.vrb-widget__title:focus-visible {
 }
 
 .vrb-widget__action:hover {
-  background: var(--vrb-surface-muted, #f4f4f5);
+  background: var(--vrb-surface-muted, var(--muted, #f4f4f5));
 }
 
 .vrb-widget__action:focus-visible {
-  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline: 2px solid var(--vrb-accent, var(--ring, #6366f1));
   outline-offset: 1px;
 }
 
 .vrb-widget__action--remove:hover {
-  background: var(--vrb-danger-surface, #fef2f2);
-  color: var(--vrb-danger, #dc2626);
+  background: var(--vrb-danger-surface, color-mix(in oklab, var(--destructive, #dc2626) 15%, transparent));
+  color: var(--vrb-danger, var(--destructive, #dc2626));
 }
 
 .vrb-widget__body {
   flex: 1;
-  padding: 0.75rem;
+  min-height: 0;
+  padding: 0.875rem 1rem 1rem;
   overflow: auto;
 }
 
@@ -186,7 +196,7 @@ button.vrb-widget__title:focus-visible {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--vrb-muted, #71717a);
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
   margin: 0 0 0.5rem;
 }
 
@@ -206,18 +216,19 @@ button.vrb-widget__title:focus-visible {
   width: 100%;
   text-align: left;
   padding: 0.5rem 0.625rem;
-  border: 1px solid var(--vrb-border, #e4e4e7);
+  border: 1px solid var(--vrb-border, var(--border, #e4e4e7));
   border-radius: 0.5rem;
-  background: var(--vrb-surface, #ffffff);
+  background: var(--vrb-surface, var(--card, #ffffff));
+  color: var(--vrb-foreground, var(--card-foreground, inherit));
   cursor: pointer;
 }
 
 .vrb-catalog__add:hover {
-  border-color: var(--vrb-accent, #6366f1);
+  border-color: var(--vrb-accent, var(--ring, #6366f1));
 }
 
 .vrb-catalog__add:focus-visible {
-  outline: 2px solid var(--vrb-accent, #6366f1);
+  outline: 2px solid var(--vrb-accent, var(--ring, #6366f1));
   outline-offset: 1px;
 }
 
@@ -228,13 +239,13 @@ button.vrb-widget__title:focus-visible {
 
 .vrb-catalog__item-desc {
   font-size: 0.75rem;
-  color: var(--vrb-muted, #71717a);
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
 }
 
 .vrb-catalog__empty,
 .vrb-inspector__empty {
   font-size: 0.8125rem;
-  color: var(--vrb-muted, #71717a);
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
 }
 
 /* Save status */
@@ -243,11 +254,11 @@ button.vrb-widget__title:focus-visible {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8125rem;
-  color: var(--vrb-muted, #71717a);
+  color: var(--vrb-muted, var(--muted-foreground, #71717a));
 }
 
 .vrb-save-status--error {
-  color: var(--vrb-danger, #dc2626);
+  color: var(--vrb-danger, var(--destructive, #dc2626));
 }
 
 .vrb-save-status__retry {
@@ -257,6 +268,19 @@ button.vrb-widget__title:focus-visible {
   color: inherit;
   padding: 0.125rem 0.5rem;
   cursor: pointer;
+}
+
+/*
+ * Drag/resize placeholder. react-grid-layout ships `background: red` here; retint
+ * it to a subtle brand wash so the drop target reads as Voyant chrome.
+ */
+.vrb-grid .react-grid-placeholder,
+.react-grid-item.react-grid-placeholder {
+  background: var(--vrb-accent, var(--ring, #6366f1));
+  opacity: 0.14;
+  border-radius: 0.75rem;
+  border: 1px dashed var(--vrb-accent, var(--ring, #6366f1));
+  transition-duration: 100ms;
 }
 
 /* Respect reduced motion at the CSS layer too */
