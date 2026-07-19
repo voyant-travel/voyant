@@ -1,5 +1,14 @@
 # @voyant-travel/runtime
 
+## 0.15.4
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.30.0
+- @voyant-travel/auth@0.140.1
+- @voyant-travel/workflow-runs@0.122.13
+- @voyant-travel/framework@0.55.5
+
 ## 0.15.3
 
 ### Patch Changes
