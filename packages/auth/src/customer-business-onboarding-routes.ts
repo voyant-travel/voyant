@@ -5,6 +5,7 @@ import {
   parseQuery,
   type VoyantDb,
 } from "@voyant-travel/hono"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import type { Context } from "hono"
 
 import {
@@ -23,7 +24,7 @@ import {
 
 type CustomerBusinessAdminEnv = {
   Bindings: Record<string, unknown>
-  Variables: { userId?: string; db: VoyantDb }
+  Variables: { userId?: string; scopes?: string[]; db: VoyantDb }
 }
 type CustomerBusinessAdminContext = Context<CustomerBusinessAdminEnv>
 
@@ -130,6 +131,14 @@ function onboardingError(c: CustomerBusinessAdminContext, error: unknown): Respo
   throw error
 }
 
+function canManageCustomerBusinessAccounts(c: CustomerBusinessAdminContext) {
+  return hasApiKeyPermission(
+    permissionStringsToPermissions(c.get("scopes") ?? []),
+    "customer-business-accounts",
+    "write",
+  )
+}
+
 export function createCustomerBusinessAccountAdminRoutes(
   runtime: CustomerBusinessAccountOnboardingRuntimeProvider,
 ) {
@@ -152,7 +161,15 @@ export function createCustomerBusinessAccountAdminRoutes(
 
   routes.openapi(capabilitiesRoute, async (c) => {
     const result = await run(c, (context) => runtime.getCapabilities(context))
-    return result instanceof Response ? result : c.json({ data: result })
+    if (result instanceof Response) return result
+    const canManage = canManageCustomerBusinessAccounts(c)
+    return c.json({
+      data: {
+        ...result,
+        decideRequests: result.decideRequests && canManage,
+        provisionAccounts: result.provisionAccounts && canManage,
+      },
+    })
   })
   routes.openapi(listRequestsRoute, async (c) => {
     const query = parseQuery(c, customerBusinessAccountRequestListQuerySchema)

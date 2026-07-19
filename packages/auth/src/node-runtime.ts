@@ -804,6 +804,8 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const context = resolvedContext ?? (await resolveCustomerAuthContext(env, request))
     const publicApiBaseURL = context.publicApiBaseURL ?? getPublicApiBaseUrl(env)
     const authDb = db as NonNullable<Parameters<typeof createCustomerBetterAuth>[0]>["db"]
+    const invitationAcceptBaseURL = context.invitationAcceptBaseURL
+    const invitationEmailSender = invitationAcceptBaseURL ? emailSender : null
     return createCustomerBetterAuth({
       db: authDb,
       secret: requireCustomerAuthSecret(env),
@@ -812,28 +814,20 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       trustedOrigins: context.trustedOrigins,
       methods: withCustomerSocialRedirectUris(context.methods, publicApiBaseURL),
       accountPolicy: context.accountPolicy,
-      sendOrganizationInvitation: async ({ id, email, organization, inviter, role }) => {
-        if (!context.invitationAcceptBaseURL) {
-          throw new Error("Customer invitation accept origin is not configured")
-        }
-        const url = customerOrganizationInvitationUrl(context.invitationAcceptBaseURL, id)
-        if (!emailSender) {
-          if (allowAuthSecretLogging(env)) {
-            console.info(
-              `[auth/customer] organization-invitation (debug fallback) -> ${email}: ${url}`,
-            )
-            return
+      ...(invitationAcceptBaseURL && invitationEmailSender
+        ? {
+            sendOrganizationInvitation: async ({ id, email, organization, inviter, role }) => {
+              const url = customerOrganizationInvitationUrl(invitationAcceptBaseURL, id)
+              await invitationEmailSender.sendCustomerOrganizationInvitation({
+                email,
+                organizationName: organization.name,
+                inviterName: inviter.user.name,
+                role,
+                url,
+              })
+            },
           }
-          throw new Error("Customer organization invitation email provider is not configured")
-        }
-        await emailSender.sendCustomerOrganizationInvitation({
-          email,
-          organizationName: organization.name,
-          inviterName: inviter.user.name,
-          role,
-          url,
-        })
-      },
+        : {}),
       sendResetPassword: async ({ user, url }) => {
         const publicUrl = withCustomerPublicResetPasswordUrl(url, publicApiBaseURL)
         if (!emailSender) {
