@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.178.0
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.122.12
+
 ## 0.177.0
 
 ### Patch Changes

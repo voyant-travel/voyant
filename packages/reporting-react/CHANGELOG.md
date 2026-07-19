@@ -1,5 +1,12 @@
 # @voyant-travel/reporting-react
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [2bcafc9]
+  - @voyant-travel/admin@0.128.0
+
 ## 0.2.0
 
 ### Minor Changes

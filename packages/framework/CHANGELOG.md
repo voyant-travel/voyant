@@ -1,5 +1,14 @@
 # @voyant-travel/framework
 
+## 0.55.3
+
+### Patch Changes
+
+- @voyant-travel/operator-standard@0.9.5
+- @voyant-travel/cruises@0.177.0
+- @voyant-travel/workflows@0.122.12
+- @voyant-travel/workflows-orchestrator@0.122.12
+
 ## 0.55.2
 
 ### Patch Changes
