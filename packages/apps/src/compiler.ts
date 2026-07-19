@@ -101,7 +101,14 @@ function normalizeManifest(manifest: AppManifest): AppManifest {
       optional: sortedUnique(manifest.scopes.optional),
     },
     admin: {
-      pages: [...manifest.admin.pages].sort(byKey),
+      // Resolve the app-level default icon into each page that omits its own,
+      // so every normalized/persisted page carries a concrete icon or none.
+      pages: [...manifest.admin.pages]
+        .map((page) => {
+          const icon = page.icon ?? manifest.icon
+          return icon ? { ...page, icon } : page
+        })
+        .sort(byKey),
       slotExtensions: [...manifest.admin.slotExtensions]
         .map((extension) => ({ ...extension, slots: sortedUnique(extension.slots) }))
         .sort(byKey),

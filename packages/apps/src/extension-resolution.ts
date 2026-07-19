@@ -54,6 +54,12 @@ export interface ResolvedAppPage {
   title: string
   /** Host-rendered navigation label for the page's nav entry. */
   navLabel: string
+  /**
+   * App-declared nav icon (HTTPS remote asset). Already resolved through the
+   * app-level default at manifest-normalize time; absent when neither the page
+   * nor the app declared one (the host falls back to a generic app icon).
+   */
+  icon?: string
   appLocale: string
   direction: AppTextDirection
 }
@@ -163,6 +169,7 @@ export function assembleInstalledExtensions(
         entryUrl: page.entryUrl,
         title,
         navLabel,
+        ...(page.icon ? { icon: page.icon } : {}),
         appLocale: locale.appLocale,
         direction: locale.direction,
       })
@@ -232,6 +239,7 @@ interface ParsedPageDescriptor {
   titleKey: string
   path: string
   entryUrl: string
+  icon?: string
 }
 
 function parsePageDescriptor(value: Record<string, unknown>): ParsedPageDescriptor | null {
@@ -240,7 +248,8 @@ function parsePageDescriptor(value: Record<string, unknown>): ParsedPageDescript
   const path = stringField(value.path)
   const entryUrl = stringField(value.entryUrl)
   if (!key || !titleKey || !path || !entryUrl) return null
-  return { key, titleKey, path, entryUrl }
+  const icon = stringField(value.icon)
+  return icon ? { key, titleKey, path, entryUrl, icon } : { key, titleKey, path, entryUrl }
 }
 
 interface ParsedSlotDescriptor {

@@ -74,6 +74,25 @@ describe("assembleInstalledExtensions", () => {
     expect(page?.navLabel).toBe("Settings")
   })
 
+  it("threads a page's icon from the descriptor when present", () => {
+    const withIcon = pageRow({
+      descriptor: {
+        key: "settings",
+        titleKey: "settings.title",
+        path: "/settings",
+        entryUrl: "https://app.example.com/settings",
+        icon: "https://app.example.com/settings-icon.svg",
+      },
+    })
+    const result = assembleInstalledExtensions([withIcon], localizations, { activeLocale: "en" })
+    expect(result.pages[0]?.icon).toBe("https://app.example.com/settings-icon.svg")
+  })
+
+  it("leaves icon undefined when the descriptor omits it", () => {
+    const result = assembleInstalledExtensions([pageRow()], localizations, { activeLocale: "en" })
+    expect(result.pages[0]?.icon).toBeUndefined()
+  })
+
   it("filters out extensionApi-incompatible slot extensions", () => {
     const incompatible = slotRow({
       descriptor: {

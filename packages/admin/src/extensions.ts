@@ -354,6 +354,16 @@ export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisf
 export interface AdminExtension {
   id: string
   navigation?: ReadonlyArray<AdminNavigationContribution>
+  /**
+   * Runtime navigation hook, merged AFTER static {@link navigation} as its own
+   * appended sections. Unlike static `navigation` (declared at creation), this
+   * lets an extension contribute nav items discovered at runtime — e.g. an
+   * installed app's admin pages fetched via React Query. It IS a React hook
+   * (may call `useQuery`), so the shell calls it unconditionally for every
+   * extension in a stable order to honor the rules of hooks. Keep it fail-soft:
+   * on a fetch error return `[]` rather than throwing.
+   */
+  useRuntimeNavItems?: () => ReadonlyArray<NavItem>
   /** Final navigation-visibility source, evaluated after selected contributions merge. */
   navigationPreferences?: AdminNavigationPreferencesContribution
   routes?: ReadonlyArray<AdminUiRouteContribution>

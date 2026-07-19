@@ -93,6 +93,16 @@ describe("createUiExtensionsAdminExtension", () => {
     expect(document.querySelectorAll("iframe")).toHaveLength(1)
   })
 
+  it("contributes a single param route for installed app pages", () => {
+    const extension = createUiExtensionsAdminExtension({
+      client: createStaticUiExtensionsClient([]),
+    })
+    expect(extension.routes).toHaveLength(1)
+    expect(extension.routes?.[0]?.path).toBe("apps/$installationId/$pageKey")
+    expect(extension.routes?.[0]?.page).toBeTypeOf("function")
+    expect(extension.useRuntimeNavItems).toBeTypeOf("function")
+  })
+
   it("renders nothing when the environment is absent", async () => {
     const extension = createUiExtensionsAdminExtension({
       client: createStaticUiExtensionsClient([descriptor()]),

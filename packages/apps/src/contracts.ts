@@ -100,6 +100,12 @@ const adminPageSchema = z
       .trim()
       .regex(/^\/[a-z0-9-_/]*$/),
     entryUrl: httpsUrlSchema,
+    /**
+     * App-declared nav icon rendered as a remote `<img>` in admin chrome.
+     * HTTPS-only; the app-level {@link appManifestSchema} `icon` is the
+     * fallback when a page omits its own. Absent/invalid → generic app icon.
+     */
+    icon: httpsUrlSchema.optional(),
   })
   .strict()
 
@@ -140,6 +146,11 @@ export const appManifestSchema = manifestDisallowedKeySchema.pipe(
       schemaVersion: z.literal(APP_MANIFEST_SCHEMA_VERSION),
       releaseVersion: semverLikeSchema,
       apiCompatibility: z.object({ min: semverLikeSchema, max: semverLikeSchema }).strict(),
+      /**
+       * App-level default nav icon (HTTPS remote asset). Applied at normalize
+       * time to any admin page that omits its own `icon`.
+       */
+      icon: httpsUrlSchema.optional(),
       scopes: z
         .object({
           requested: z.array(scopeSchema).default([]),
