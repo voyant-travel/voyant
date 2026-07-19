@@ -57,6 +57,13 @@
       "when": 1784435883140,
       "tag": "20260719043803_customer_buyer_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784451600000,
+      "tag": "20260719120000_customer_business_onboarding",
+      "breakpoints": true
     }
   ]
 }

@@ -95,5 +95,14 @@ export function resolveVoyantCloudAuthEmailSender(
         ...(replyTo ? { replyTo } : {}),
       })
     },
+    async sendCustomerOrganizationInvitation({ email, organizationName, inviterName, role, url }) {
+      await cloud.email.sendMessage({
+        from,
+        to: [email],
+        subject: `Join ${organizationName}`,
+        html: `<p>${escapeHtml(inviterName)} invited you to join <strong>${escapeHtml(organizationName)}</strong> as ${escapeHtml(role)}.</p><p><a href="${escapeHtml(url)}">Accept invitation</a></p><p>If you weren&#39;t expecting this invitation, you can safely ignore it.</p>`,
+        ...(replyTo ? { replyTo } : {}),
+      })
+    },
   }
 }

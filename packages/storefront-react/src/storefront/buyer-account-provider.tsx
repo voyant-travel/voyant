@@ -3,6 +3,10 @@
 import {
   type CustomerAuthFetcher,
   type CustomerAuthSession,
+  type CustomerBusinessAccountCreateInput,
+  type CustomerBusinessAccountDto,
+  type CustomerBusinessAccountRequestDto,
+  type CustomerBusinessInvitationAcceptInput,
   type CustomerBuyerAccount,
   type CustomerBuyerAccountList,
   createCustomerAuthClient,
@@ -23,15 +27,30 @@ export type BuyerAccountPolicy = CustomerBuyerAccountList["policy"]
 
 export interface BuyerAccountContextValue {
   accounts: CustomerBuyerAccount[]
+  businessAccountRequests: CustomerBusinessAccountRequestDto[]
   active: CustomerBuyerAccount | null
   requiresSelection: boolean
   policy: BuyerAccountPolicy | null
   session: CustomerAuthSession
   loading: boolean
   selecting: boolean
+  creatingBusinessAccount: boolean
+  requestingBusinessAccount: boolean
+  cancelingBusinessAccountRequest: boolean
+  acceptingBusinessInvitation: boolean
   error: Error | null
   refresh: () => Promise<void>
   selectAccount: (accountId: string) => Promise<void>
+  createBusinessAccount: (
+    input: CustomerBusinessAccountCreateInput,
+  ) => Promise<CustomerBusinessAccountDto>
+  requestBusinessAccount: (
+    input: CustomerBusinessAccountCreateInput,
+  ) => Promise<CustomerBusinessAccountRequestDto>
+  cancelBusinessAccountRequest: (requestId: string) => Promise<CustomerBusinessAccountRequestDto>
+  acceptBusinessInvitation: (
+    input: CustomerBusinessInvitationAcceptInput,
+  ) => Promise<CustomerBusinessAccountDto>
 }
 
 const BuyerAccountContext = createContext<BuyerAccountContextValue | null>(null)
@@ -59,13 +78,21 @@ export function BuyerAccountProvider({
     [baseUrl, fetcher],
   )
   const requestVersion = useRef(0)
+  const businessRequestVersion = useRef(0)
   const [accounts, setAccounts] = useState<CustomerBuyerAccount[]>([])
+  const [businessAccountRequests, setBusinessAccountRequests] = useState<
+    CustomerBusinessAccountRequestDto[]
+  >([])
   const [active, setActive] = useState<CustomerBuyerAccount | null>(null)
   const [requiresSelection, setRequiresSelection] = useState(false)
   const [policy, setPolicy] = useState<BuyerAccountPolicy | null>(null)
   const [session, setSession] = useState<CustomerAuthSession>(null)
   const [loading, setLoading] = useState(true)
   const [selecting, setSelecting] = useState(false)
+  const [creatingBusinessAccount, setCreatingBusinessAccount] = useState(false)
+  const [requestingBusinessAccount, setRequestingBusinessAccount] = useState(false)
+  const [cancelingBusinessAccountRequest, setCancelingBusinessAccountRequest] = useState(false)
+  const [acceptingBusinessInvitation, setAcceptingBusinessInvitation] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
   const refresh = useCallback(async () => {
@@ -77,12 +104,17 @@ export function BuyerAccountProvider({
         client.listBuyerAccounts(),
         client.getSession(),
       ])
+      const requestState =
+        accountState.policy.businessOnboarding === "request"
+          ? await client.listBusinessAccountRequests()
+          : []
       if (version !== requestVersion.current) return
       setAccounts(accountState.accounts)
       setActive(accountState.activeAccount)
       setRequiresSelection(accountState.requiresSelection)
       setPolicy(accountState.policy)
       setSession(sessionState)
+      setBusinessAccountRequests(requestState)
     } catch (cause) {
       if (version !== requestVersion.current) return
       setError(cause instanceof Error ? cause : new Error(String(cause)))
@@ -95,6 +127,7 @@ export function BuyerAccountProvider({
     void refresh()
     return () => {
       requestVersion.current += 1
+      businessRequestVersion.current += 1
     }
   }, [refresh])
 
@@ -115,30 +148,146 @@ export function BuyerAccountProvider({
     [client, refresh],
   )
 
+  const refreshBusinessAccountRequests = useCallback(async () => {
+    const version = ++businessRequestVersion.current
+    const requests = await client.listBusinessAccountRequests()
+    if (version === businessRequestVersion.current) setBusinessAccountRequests(requests)
+  }, [client])
+
+  const assertBusinessOnboardingMode = useCallback(
+    (expected: "open" | "request", action: string) => {
+      if (policy?.businessOnboarding !== expected) {
+        throw new Error(`${action} is not available for the current business onboarding policy`)
+      }
+    },
+    [policy],
+  )
+
+  const createBusinessAccount = useCallback(
+    async (input: CustomerBusinessAccountCreateInput) => {
+      assertBusinessOnboardingMode("open", "Creating a business account")
+      setCreatingBusinessAccount(true)
+      setError(null)
+      try {
+        const account = await client.createBusinessAccount(input)
+        await client.selectBuyerAccount(account.id)
+        await refresh()
+        return account
+      } catch (cause) {
+        const nextError = cause instanceof Error ? cause : new Error(String(cause))
+        setError(nextError)
+        throw nextError
+      } finally {
+        setCreatingBusinessAccount(false)
+      }
+    },
+    [assertBusinessOnboardingMode, client, refresh],
+  )
+
+  const requestBusinessAccount = useCallback(
+    async (input: CustomerBusinessAccountCreateInput) => {
+      assertBusinessOnboardingMode("request", "Requesting a business account")
+      setRequestingBusinessAccount(true)
+      setError(null)
+      try {
+        const request = await client.requestBusinessAccount(input)
+        await refreshBusinessAccountRequests()
+        return request
+      } catch (cause) {
+        const nextError = cause instanceof Error ? cause : new Error(String(cause))
+        setError(nextError)
+        throw nextError
+      } finally {
+        setRequestingBusinessAccount(false)
+      }
+    },
+    [assertBusinessOnboardingMode, client, refreshBusinessAccountRequests],
+  )
+
+  const cancelBusinessAccountRequest = useCallback(
+    async (requestId: string) => {
+      assertBusinessOnboardingMode("request", "Canceling a business account request")
+      setCancelingBusinessAccountRequest(true)
+      setError(null)
+      try {
+        const request = await client.cancelBusinessAccountRequest(requestId)
+        await refreshBusinessAccountRequests()
+        return request
+      } catch (cause) {
+        const nextError = cause instanceof Error ? cause : new Error(String(cause))
+        setError(nextError)
+        throw nextError
+      } finally {
+        setCancelingBusinessAccountRequest(false)
+      }
+    },
+    [assertBusinessOnboardingMode, client, refreshBusinessAccountRequests],
+  )
+
+  const acceptBusinessInvitation = useCallback(
+    async (input: CustomerBusinessInvitationAcceptInput) => {
+      if (policy?.businessOnboarding === "disabled") {
+        throw new Error("Business invitations are disabled for this storefront")
+      }
+      setAcceptingBusinessInvitation(true)
+      setError(null)
+      try {
+        const { account } = await client.acceptBusinessInvitation(input)
+        await refresh()
+        return account
+      } catch (cause) {
+        const nextError = cause instanceof Error ? cause : new Error(String(cause))
+        setError(nextError)
+        throw nextError
+      } finally {
+        setAcceptingBusinessInvitation(false)
+      }
+    },
+    [client, policy?.businessOnboarding, refresh],
+  )
+
   const value = useMemo<BuyerAccountContextValue>(
     () => ({
       accounts,
+      businessAccountRequests,
       active,
       requiresSelection,
       policy,
       session,
       loading,
       selecting,
+      creatingBusinessAccount,
+      requestingBusinessAccount,
+      cancelingBusinessAccountRequest,
+      acceptingBusinessInvitation,
       error,
       refresh,
       selectAccount,
+      createBusinessAccount,
+      requestBusinessAccount,
+      cancelBusinessAccountRequest,
+      acceptBusinessInvitation,
     }),
     [
       accounts,
+      businessAccountRequests,
       active,
       requiresSelection,
       policy,
       session,
       loading,
       selecting,
+      creatingBusinessAccount,
+      requestingBusinessAccount,
+      cancelingBusinessAccountRequest,
+      acceptingBusinessInvitation,
       error,
       refresh,
       selectAccount,
+      createBusinessAccount,
+      requestBusinessAccount,
+      cancelBusinessAccountRequest,
+      acceptBusinessInvitation,
     ],
   )
 

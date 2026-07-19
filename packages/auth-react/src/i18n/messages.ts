@@ -232,6 +232,56 @@ export interface TeamManagementPageMessages {
   actionFailed: string
 }
 
+export interface CustomerBusinessAccountsPageMessages {
+  title: string
+  description: string
+  loading: string
+  loadFailed: string
+  forbidden: string
+  actionFailed: string
+  requests: {
+    title: string
+    description: string
+    requesterColumn: string
+    businessColumn: string
+    statusColumn: string
+    submittedColumn: string
+    actionsColumn: string
+    empty: string
+    approve: string
+    approveLabel: (name: string) => string
+    reject: string
+    rejectLabel: (name: string) => string
+    rejectConfirm: (name: string) => string
+  }
+  provision: {
+    title: string
+    description: string
+    storefrontOriginLabel: string
+    storefrontOriginPlaceholder: string
+    storefrontOriginRequired: string
+    customerEmailLabel: string
+    customerEmailPlaceholder: string
+    businessNameLabel: string
+    businessNamePlaceholder: string
+    existingOrganizationIdLabel: string
+    existingOrganizationIdPlaceholder: string
+    existingOrganizationIdDescription: string
+    submit: string
+    submitting: string
+    success: string
+    emailRequired: string
+    nameRequired: string
+  }
+  statuses: {
+    pending: string
+    approved: string
+    rejected: string
+    canceled: string
+  }
+  dateUnknown: string
+}
+
 export interface ForgotPasswordPageMessages {
   title: string
   description: string
@@ -357,6 +407,7 @@ export type AuthUiMessages = {
   forgotPasswordPage: ForgotPasswordPageMessages
   organizationMembersPage: OrganizationMembersPageMessages
   teamManagementPage: TeamManagementPageMessages
+  customerBusinessAccountsPage: CustomerBusinessAccountsPageMessages
   onboardingPage: OnboardingPageMessages
   resetPasswordPage: ResetPasswordPageMessages
   signInPage: SignInPageMessages

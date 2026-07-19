@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
 import { describe, expect, it, vi } from "vitest"
 import {
   configureSearchProviderRuntime,
@@ -143,6 +144,7 @@ describe("Voyant project runtime composition", () => {
     const sender = {
       sendResetPassword: vi.fn(async () => {}),
       sendVerificationOtp: vi.fn(async () => {}),
+      sendCustomerOrganizationInvitation: vi.fn(async () => {}),
     }
     const resolveAuthEmailSender = () => sender
     const projectRoot = await createGeneratedProject()
@@ -163,6 +165,33 @@ describe("Voyant project runtime composition", () => {
     expect(mocks.authRuntimeOptions[0]).toMatchObject({
       resolveEmailSender: resolveAuthEmailSender,
     })
+  })
+
+  it("injects the composed customer business onboarding port into auth", async () => {
+    const provider = Object.fromEntries(
+      [
+        "getCapabilities",
+        "createBusinessAccount",
+        "requestBusinessAccount",
+        "listRequests",
+        "cancelRequest",
+        "approveRequest",
+        "rejectRequest",
+        "provisionBusinessAccount",
+      ].map((method) => [method, vi.fn()]),
+    )
+    mocks.runtimePorts[customerBusinessAccountOnboardingRuntimePort.id] = provider
+    try {
+      const projectRoot = await createGeneratedProject()
+      await loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      })
+      expect(mocks.authRuntimeOptions[0]?.customerBusinessAccountOnboarding).toBe(provider)
+    } finally {
+      delete mocks.runtimePorts[customerBusinessAccountOnboardingRuntimePort.id]
+    }
   })
 
   it("derives auth mode from the selected deployment provider, not environment", async () => {

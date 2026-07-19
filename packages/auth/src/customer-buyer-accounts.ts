@@ -301,17 +301,3 @@ export async function repairCustomerPersonalBuyerAccountEntitlement(
   await db.insert(customerAuthPersonalBuyerAccount).values({ userId }).onConflictDoNothing()
   return true
 }
-
-/**
- * Deployment-owned seam for open/request business onboarding. Implementations
- * must create or select the canonical Relationships Organization before they
- * create the Better Auth membership container and return both ids.
- */
-export interface CustomerBusinessAccountOnboardingPort<Context = unknown> {
-  create(input: {
-    userId: string
-    name: string
-    context: Context
-  }): Promise<BusinessCustomerBuyerAccount>
-  request?(input: { userId: string; name: string; context: Context }): Promise<{ id: string }>
-}

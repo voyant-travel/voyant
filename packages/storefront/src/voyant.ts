@@ -1,3 +1,4 @@
+import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-schemas.js"
 import {
@@ -19,6 +20,7 @@ export const storefrontVoyantModule = defineModule({
     ports: [
       providePort(storefrontOffersRuntimePort),
       providePort(storefrontBookingIntentsRuntimePort),
+      providePort(customerBusinessAccountOnboardingRuntimePort),
     ],
   },
   runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },

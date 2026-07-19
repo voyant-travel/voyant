@@ -1,3 +1,13 @@
+import {
+  type CustomerBusinessAccountCreateInput,
+  type CustomerBusinessAccountDto,
+  type CustomerBusinessAccountRequestDto,
+  type CustomerBusinessInvitationAcceptInput,
+  type CustomerBusinessInvitationAcceptResult,
+  customerBusinessAccountRequestSchema,
+  customerBusinessAccountSchema,
+  customerBusinessInvitationAcceptResultSchema,
+} from "@voyant-travel/auth/customer-business-accounts"
 import { z } from "zod"
 
 export type CustomerAuthFetcher = (url: string, init?: RequestInit) => Promise<Response>
@@ -92,10 +102,16 @@ function joinUrl(baseUrl: string, path: string): string {
 async function read<T>(response: Response, schema: z.ZodType<T>): Promise<T> {
   const body = await response.json().catch(() => null)
   if (!response.ok) {
-    const message =
+    const error =
       body && typeof body === "object" && "error" in body
-        ? String((body as { error: unknown }).error)
-        : `Customer auth request failed (${response.status})`
+        ? (body as { error: unknown }).error
+        : null
+    const message =
+      typeof error === "string"
+        ? error
+        : error && typeof error === "object" && "message" in error
+          ? String((error as { message: unknown }).message)
+          : `Customer auth request failed (${response.status})`
     throw new Error(message)
   }
   return schema.parse(body)
@@ -112,7 +128,32 @@ async function readWithResponse<T>(
 export function createCustomerAuthClient(options: CreateCustomerAuthClientOptions) {
   const rawFetcher = options.fetcher ?? fetch
   const fetcher: CustomerAuthFetcher = (url, init) =>
-    rawFetcher(url, { credentials: "include", ...init })
+    rawFetcher(url, { ...init, credentials: "include" })
+  const createBusinessAccountWithResponse = async (
+    input: CustomerBusinessAccountCreateInput,
+  ): Promise<CustomerAuthResponse<CustomerBusinessAccountDto>> =>
+    readWithResponse(
+      await fetcher(joinUrl(options.baseUrl, "/auth/customer/business-accounts"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+      customerBusinessAccountSchema,
+    )
+  const acceptBusinessInvitationWithResponse = async (
+    input: CustomerBusinessInvitationAcceptInput,
+  ): Promise<CustomerAuthResponse<CustomerBusinessInvitationAcceptResult>> =>
+    readWithResponse(
+      await fetcher(
+        joinUrl(options.baseUrl, "/auth/customer/business-account-invitations/accept"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        },
+      ),
+      customerBusinessInvitationAcceptResultSchema,
+    )
 
   return {
     /**
@@ -168,5 +209,59 @@ export function createCustomerAuthClient(options: CreateCustomerAuthClientOption
       )
       return { data: result.data.activeAccount, response: result.response }
     },
+    async createBusinessAccount(
+      input: CustomerBusinessAccountCreateInput,
+    ): Promise<CustomerBusinessAccountDto> {
+      return (await createBusinessAccountWithResponse(input)).data
+    },
+    createBusinessAccountWithResponse,
+    async listBusinessAccountRequests(): Promise<CustomerBusinessAccountRequestDto[]> {
+      return read(
+        await fetcher(joinUrl(options.baseUrl, "/auth/customer/business-account-requests"), {
+          method: "GET",
+        }),
+        z.array(customerBusinessAccountRequestSchema),
+      )
+    },
+    async requestBusinessAccount(
+      input: CustomerBusinessAccountCreateInput,
+    ): Promise<CustomerBusinessAccountRequestDto> {
+      return read(
+        await fetcher(joinUrl(options.baseUrl, "/auth/customer/business-account-requests"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        }),
+        customerBusinessAccountRequestSchema,
+      )
+    },
+    async cancelBusinessAccountRequest(
+      requestId: string,
+    ): Promise<CustomerBusinessAccountRequestDto> {
+      return read(
+        await fetcher(
+          joinUrl(
+            options.baseUrl,
+            `/auth/customer/business-account-requests/${encodeURIComponent(requestId)}`,
+          ),
+          { method: "DELETE" },
+        ),
+        customerBusinessAccountRequestSchema,
+      )
+    },
+    async acceptBusinessInvitation(
+      input: CustomerBusinessInvitationAcceptInput,
+    ): Promise<CustomerBusinessInvitationAcceptResult> {
+      return (await acceptBusinessInvitationWithResponse(input)).data
+    },
+    acceptBusinessInvitationWithResponse,
   }
+}
+
+export type {
+  CustomerBusinessAccountCreateInput,
+  CustomerBusinessAccountDto,
+  CustomerBusinessAccountRequestDto,
+  CustomerBusinessInvitationAcceptInput,
+  CustomerBusinessInvitationAcceptResult,
 }
