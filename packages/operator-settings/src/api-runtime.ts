@@ -7,11 +7,24 @@
  * The loaded bundle is an `OpenAPIHono` (carrying the `defaultHook` that shapes
  * request-validation failures) so its `createRoute(...).openapi(...)` operations
  * are visible to the build-time `mergeLazyOpenApiPaths` replay (voyant#2114).
+ *
+ * `createOperatorSettingsVoyantRuntime` is the graph-runtime-factory the module
+ * declares as its top-level runtime: it resolves the optional managed payment
+ * registry port and, when a deployment provides it, registers the resolver into
+ * the module container so the Settings → Payments routes broker to the control
+ * plane (self-host uses the default registry). See voyant
+ * `docs/adr/0015-payment-adapter-transports-and-managed-connect.md`.
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
+import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
+import {
+  type PaymentProviderRegistryResolver,
+  paymentProviderRegistryRuntimePort,
+} from "@voyant-travel/payments/runtime-port"
 
 /** Stable absolute matchers for the operator-settings admin + public routes. */
 export const OPERATOR_SETTINGS_ROUTE_PATHS = [
@@ -20,9 +33,28 @@ export const OPERATOR_SETTINGS_ROUTE_PATHS = [
   "/v1/public/settings/operator",
 ] as const
 
-export function createOperatorSettingsApiModule(): ApiModule {
+export interface OperatorSettingsApiModuleOptions {
+  /**
+   * Deployment-provided resolver that brokers Settings → Payments to a managed
+   * control plane. Registered into the module container at bootstrap; absent it,
+   * the payment routes use the default self-host registry.
+   */
+  paymentProviderRegistryResolver?: PaymentProviderRegistryResolver
+}
+
+export function createOperatorSettingsApiModule(
+  options: OperatorSettingsApiModuleOptions = {},
+): ApiModule {
+  const module: Module = { name: "operator-settings" }
+  const resolver = options.paymentProviderRegistryResolver
+  if (resolver) {
+    module.bootstrap = ({ container }) => {
+      container.register(paymentProviderRegistryRuntimePort.id, resolver)
+    }
+  }
+
   return {
-    module: { name: "operator-settings" },
+    module,
     lazyRoutes: {
       paths: OPERATOR_SETTINGS_ROUTE_PATHS,
       load: () =>
@@ -34,3 +66,17 @@ export function createOperatorSettingsApiModule(): ApiModule {
     },
   }
 }
+
+/**
+ * Top-level graph runtime factory. Resolves the optional managed payment
+ * registry port; when a deployment provides it, the returned module registers
+ * the resolver at bootstrap so the payment routes broker to the control plane.
+ */
+export const createOperatorSettingsVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort, hasPort }) =>
+    createOperatorSettingsApiModule({
+      paymentProviderRegistryResolver: hasPort(paymentProviderRegistryRuntimePort)
+        ? await getPort(paymentProviderRegistryRuntimePort)
+        : undefined,
+    }),
+)

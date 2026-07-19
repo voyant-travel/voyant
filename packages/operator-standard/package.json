@@ -120,6 +120,7 @@
     "@voyant-travel/operations-react": "workspace:*",
     "@voyant-travel/operator-settings": "workspace:*",
     "@voyant-travel/operator-settings-react": "workspace:*",
+    "@voyant-travel/payments": "workspace:*",
     "@voyant-travel/public-document-delivery": "workspace:*",
     "@voyant-travel/quotes": "workspace:*",
     "@voyant-travel/quotes-contracts": "workspace:*",
