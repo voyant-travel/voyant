@@ -442,7 +442,10 @@ export const authStorefrontVoyantModule = defineModule({
   // resolver, surfaced through the operator "Storefronts" admin surface. The
   // managed cloud storefront adapter is a follow-up.
   provides: { ports: [providePort(storefrontRuntimePort)] },
-  runtimePorts: [requirePort(storefrontRuntimePort)],
+  runtimePorts: [
+    requirePort(storefrontRuntimePort),
+    requirePort(customerBusinessAccountOnboardingRuntimePort, { optional: true }),
+  ],
   api: [
     {
       id: "@voyant-travel/auth#storefront.api.admin",
