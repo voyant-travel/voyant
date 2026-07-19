@@ -270,6 +270,20 @@ function envForProvider(
     ]
   }
   if (role === "payments") {
+    if (provider === "managed") {
+      return [
+        variable(
+          "VOYANT_PAYMENTS_CONTROL_PLANE_URL",
+          "Base URL of the managed payments control plane that serves the provider registry and brokers processor connections.",
+          true,
+          "http-url",
+        ),
+        secret(
+          "VOYANT_PAYMENTS_CONTROL_PLANE_TOKEN",
+          "Trust token authenticating this deployment to the managed payments control plane. Processor credentials are held by the control plane under KMS and never rest in the Operator.",
+        ),
+      ]
+    }
     if (provider === "voyant-payments") {
       return [
         secret("VOYANT_PAYMENTS_API_KEY", "Voyant Payments API key."),

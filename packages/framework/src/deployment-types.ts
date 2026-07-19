@@ -32,7 +32,7 @@ export interface VoyantDeploymentProviders {
   scheduledJobs: "cloud-scheduler" | "node-cron" | "none"
   workflows: "voyant-cloud" | "self-hosted" | "none"
   outboundWebhooks: "postgres" | "host" | "none"
-  payments: "voyant-payments" | "netopia" | "custom" | "none"
+  payments: "managed" | "voyant-payments" | "netopia" | "custom" | "none"
 }
 
 export type VoyantDeploymentEnvValueFormat = "postgres-url" | "redis-url" | "http-url"
@@ -88,7 +88,7 @@ export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   scheduledJobs: ["cloud-scheduler", "node-cron", "none"],
   workflows: ["voyant-cloud", "self-hosted", "none"],
   outboundWebhooks: ["postgres", "host", "none"],
-  payments: ["voyant-payments", "netopia", "custom", "none"],
+  payments: ["managed", "voyant-payments", "netopia", "custom", "none"],
 } as const satisfies Record<VoyantDeploymentProviderRole, readonly string[]>
 
 export const DEPLOYMENT_PROVIDER_ROLES = Object.keys(
