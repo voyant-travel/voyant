@@ -401,6 +401,126 @@ export interface VerifyEmailPageMessages {
   changeEmail: string
 }
 
+export interface StorefrontsPageMessages {
+  title: string
+  description: string
+  loading: string
+  loadFailed: string
+  actionFailed: string
+  refresh: string
+  businessUnsupported: string
+  create: {
+    title: string
+    description: string
+    nameLabel: string
+    namePlaceholder: string
+    slugLabel: string
+    slugPlaceholder: string
+    hostingLabel: string
+    hostingExternal: string
+    hostingCloudSite: string
+    siteIdLabel: string
+    siteIdPlaceholder: string
+    submit: string
+    submitting: string
+    nameRequired: string
+    slugRequired: string
+    createFailed: string
+  }
+  list: {
+    title: string
+    empty: string
+    externalBadge: string
+    cloudSiteBadge: string
+    originsSummary: (count: number) => string
+  }
+  detail: {
+    overviewTitle: string
+    nameLabel: string
+    slugLabel: string
+    hostingLabel: string
+    save: string
+    saving: string
+    delete: string
+    deleteConfirm: string
+    close: string
+  }
+  origins: {
+    title: string
+    description: string
+    addPlaceholder: string
+    add: string
+    remove: string
+    empty: string
+    localhostHint: string
+  }
+  keys: {
+    title: string
+    description: string
+    namePlaceholder: string
+    issuePublishable: string
+    issueSecret: string
+    empty: string
+    revoke: string
+    revokeConfirm: string
+    rotate: string
+    rotateConfirm: string
+    kindPublishable: string
+    kindSecret: string
+    revoked: string
+    active: string
+    revealTitle: string
+    revealDescription: string
+    copy: string
+    copied: string
+    dismiss: string
+  }
+  account: {
+    methodsTitle: string
+    methodsDescription: string
+    methodEmailCode: string
+    methodEmailPassword: string
+    methodGoogle: string
+    methodFacebook: string
+    methodApple: string
+    saveMethods: string
+    policyTitle: string
+    policyDescription: string
+    allowPersonal: string
+    allowBusiness: string
+    personalSignup: string
+    personalSignupOpen: string
+    personalSignupDisabled: string
+    businessOnboarding: string
+    businessOnboardingDisabled: string
+    businessOnboardingOpen: string
+    businessOnboardingRequest: string
+    businessOnboardingInviteOnly: string
+    savePolicy: string
+    saving: string
+  }
+  providers: {
+    title: string
+    description: string
+    configured: string
+    notConfigured: string
+    clientIdLabel: string
+    clientSecretLabel: string
+    secretHint: string
+    save: string
+    clear: string
+    clearConfirm: string
+    providerGoogle: string
+    providerFacebook: string
+    providerApple: string
+  }
+  sites: {
+    title: string
+    description: string
+    seam: string
+  }
+}
+
 export type AuthUiMessages = {
   acceptInvitationPage: AcceptInvitationPageMessages
   accountPage: AccountPageMessages
@@ -408,6 +528,7 @@ export type AuthUiMessages = {
   organizationMembersPage: OrganizationMembersPageMessages
   teamManagementPage: TeamManagementPageMessages
   customerBusinessAccountsPage: CustomerBusinessAccountsPageMessages
+  storefrontsPage: StorefrontsPageMessages
   onboardingPage: OnboardingPageMessages
   resetPasswordPage: ResetPasswordPageMessages
   signInPage: SignInPageMessages

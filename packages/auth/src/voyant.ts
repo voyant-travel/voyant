@@ -439,9 +439,83 @@ export const authStorefrontVoyantModule = defineModule({
   localId: "auth.storefront",
   // Self-host storefront access model: keys, operator-declared origins, and
   // KMS-encrypted provider credentials backing the local customer-auth
-  // resolver. Admin routes/tools and the managed cloud adapter are follow-ups.
+  // resolver, surfaced through the operator "Storefronts" admin surface. The
+  // managed cloud storefront adapter is a follow-up.
   provides: { ports: [providePort(storefrontRuntimePort)] },
   runtimePorts: [requirePort(storefrontRuntimePort)],
+  api: [
+    {
+      id: "@voyant-travel/auth#storefront.api.admin",
+      surface: "admin",
+      mount: "storefronts",
+      resource: "storefronts",
+      openapi: { document: "storefronts" },
+      transactional: true,
+      runtime: {
+        entry: "@voyant-travel/auth/storefront-graph-runtime",
+        export: "createStorefrontVoyantRuntime",
+      },
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/auth#access.storefronts",
+        resource: "storefronts",
+        label: "Storefronts",
+        description: "Manage storefront access keys, origins, and customer auth.",
+        actions: [
+          {
+            action: "read",
+            label: "View storefronts",
+            description: "View storefront configuration, keys, and provider status.",
+          },
+          {
+            action: "write",
+            label: "Manage storefronts",
+            description:
+              "Create storefronts, issue keys, and configure origins, methods, and provider credentials.",
+            sensitive: true,
+          },
+          {
+            action: "delete",
+            label: "Delete storefronts",
+            description: "Delete storefronts and revoke their access keys.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
+  admin: {
+    compositionOrder: 7,
+    runtime: {
+      entry: "@voyant-travel/auth-react/admin",
+      export: "createSelectedStorefrontAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/auth#storefront.admin.copy",
+        namespace: "auth.admin.storefronts",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/auth-react/i18n",
+          export: "authUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/auth#storefront.admin.route",
+        path: "/storefronts",
+        requiredScopes: ["storefronts:read"],
+        runtime: {
+          entry: "@voyant-travel/auth-react/admin",
+          export: "createSelectedStorefrontAdminExtension",
+        },
+      },
+    ],
+  },
   meta: {
     ownership: "package",
     agentTools: {

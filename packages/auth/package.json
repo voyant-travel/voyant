@@ -88,6 +88,14 @@
       "types": "./src/storefront-runtime-port.ts",
       "default": "./src/storefront-runtime-port.ts"
     },
+    "./storefront-admin-contracts": {
+      "types": "./src/storefront-admin-contracts.ts",
+      "default": "./src/storefront-admin-contracts.ts"
+    },
+    "./storefront-graph-runtime": {
+      "types": "./src/storefront-graph-runtime.ts",
+      "default": "./src/storefront-graph-runtime.ts"
+    },
     "./storefront-local-adapter": {
       "types": "./src/storefront-local-adapter.ts",
       "default": "./src/storefront-local-adapter.ts"
@@ -111,6 +119,7 @@
     "./openapi/admin/invitations": "./openapi/admin/invitations.json",
     "./openapi/admin/team": "./openapi/admin/team.json",
     "./openapi/admin/customer-business-accounts": "./openapi/admin/customer-business-accounts.json",
+    "./openapi/admin/storefronts": "./openapi/admin/storefronts.json",
     "./openapi/storefront/invitations": "./openapi/storefront/invitations.json",
     "./voyant": {
       "types": "./src/voyant.ts",
@@ -212,6 +221,16 @@
         "import": "./dist/storefront-runtime-port.js",
         "default": "./dist/storefront-runtime-port.js"
       },
+      "./storefront-admin-contracts": {
+        "types": "./dist/storefront-admin-contracts.d.ts",
+        "import": "./dist/storefront-admin-contracts.js",
+        "default": "./dist/storefront-admin-contracts.js"
+      },
+      "./storefront-graph-runtime": {
+        "types": "./dist/storefront-graph-runtime.d.ts",
+        "import": "./dist/storefront-graph-runtime.js",
+        "default": "./dist/storefront-graph-runtime.js"
+      },
       "./storefront-local-adapter": {
         "types": "./dist/storefront-local-adapter.d.ts",
         "import": "./dist/storefront-local-adapter.js",
@@ -245,6 +264,7 @@
       "./openapi/admin/invitations": "./openapi/admin/invitations.json",
       "./openapi/admin/team": "./openapi/admin/team.json",
       "./openapi/admin/customer-business-accounts": "./openapi/admin/customer-business-accounts.json",
+      "./openapi/admin/storefronts": "./openapi/admin/storefronts.json",
       "./openapi/storefront/invitations": "./openapi/storefront/invitations.json",
       "./voyant": {
         "types": "./dist/voyant.d.ts",
