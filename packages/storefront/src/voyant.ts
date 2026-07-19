@@ -1,4 +1,4 @@
-import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
+import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/ports"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-schemas.js"
 import {

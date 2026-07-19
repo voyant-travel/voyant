@@ -60,6 +60,10 @@
       "types": "./src/customer-business-onboarding-runtime-port.ts",
       "default": "./src/customer-business-onboarding-runtime-port.ts"
     },
+    "./ports": {
+      "types": "./src/ports.ts",
+      "default": "./src/ports.ts"
+    },
     "./customer-business-onboarding-service": {
       "types": "./src/customer-business-onboarding-service.ts",
       "default": "./src/customer-business-onboarding-service.ts"
@@ -161,6 +165,11 @@
         "types": "./dist/customer-business-onboarding-runtime-port.d.ts",
         "import": "./dist/customer-business-onboarding-runtime-port.js",
         "default": "./dist/customer-business-onboarding-runtime-port.js"
+      },
+      "./ports": {
+        "types": "./dist/ports.d.ts",
+        "import": "./dist/ports.js",
+        "default": "./dist/ports.js"
       },
       "./customer-business-onboarding-service": {
         "types": "./dist/customer-business-onboarding-service.d.ts",
