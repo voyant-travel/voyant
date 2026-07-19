@@ -11,12 +11,10 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./admin": "./src/admin.ts",
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
     "./query-keys": "./src/query-keys.ts",
-    "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
     "./storefront": "./src/storefront/index.ts",
     "./customer-portal": "./src/customer-portal/index.ts",
@@ -24,8 +22,7 @@
     "./customer-portal/hooks": "./src/customer-portal/hooks/index.ts",
     "./customer-portal/operations": "./src/customer-portal/operations.ts",
     "./customer-portal/provider": "./src/customer-portal/provider.tsx",
-    "./customer-portal/query-keys": "./src/customer-portal/query-keys.ts",
-    "./components/storefront-settings-page": "./src/components/storefront-settings-page.tsx"
+    "./customer-portal/query-keys": "./src/customer-portal/query-keys.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -110,11 +107,6 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./admin": {
-        "types": "./dist/admin.d.ts",
-        "import": "./dist/admin.js",
-        "default": "./dist/admin.js"
-      },
       "./provider": {
         "types": "./dist/provider.d.ts",
         "import": "./dist/provider.js",
@@ -134,11 +126,6 @@
         "types": "./dist/query-keys.d.ts",
         "import": "./dist/query-keys.js",
         "default": "./dist/query-keys.js"
-      },
-      "./ui": {
-        "types": "./dist/ui.d.ts",
-        "import": "./dist/ui.js",
-        "default": "./dist/ui.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"
@@ -177,11 +164,6 @@
         "types": "./dist/customer-portal/query-keys.d.ts",
         "import": "./dist/customer-portal/query-keys.js",
         "default": "./dist/customer-portal/query-keys.js"
-      },
-      "./components/storefront-settings-page": {
-        "types": "./dist/components/storefront-settings-page.d.ts",
-        "import": "./dist/components/storefront-settings-page.js",
-        "default": "./dist/components/storefront-settings-page.js"
       }
     },
     "main": "./dist/index.js",

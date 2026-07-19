@@ -3,7 +3,7 @@ export const operatorAdminSettingsMessagesEnPart1 = {
   description: "Manage your workspace configuration",
   generalGroup: "General",
   productsGroup: "Products",
-  operator: "Operator Profile",
+  operator: "Organization",
   team: "Team",
   apiTokens: "API Tokens",
   channels: "Channels",
@@ -219,12 +219,12 @@ export const operatorAdminSettingsMessagesEnPart1 = {
     saveFailed: "Save failed",
   },
   operatorProfilePage: {
-    title: "Operator profile",
+    title: "Organization",
     descriptionPrefix:
-      "Operator identity for contracts, public legal blocks, and payment collection. These details populate ",
+      "Organization identity for contracts, public legal blocks, and payment collection. These details populate ",
     descriptionCodeFragment: "operator.*",
     descriptionSuffix: " in contract templates.",
-    savedToast: "Operator profile saved",
+    savedToast: "Organization saved",
     saveFailed: "Save failed",
     saveChanges: "Save changes",
     branding: {

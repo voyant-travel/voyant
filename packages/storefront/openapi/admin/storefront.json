@@ -140,46 +140,6 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "branding": {
-                          "type": "object",
-                          "properties": {
-                            "logoUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "faviconUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "brandMarkUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "primaryColor": {
-                              "type": ["string", "null"],
-                              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                            },
-                            "accentColor": {
-                              "type": ["string", "null"],
-                              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                            },
-                            "supportedLanguages": {
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
-                              }
-                            }
-                          },
-                          "required": [
-                            "logoUrl",
-                            "faviconUrl",
-                            "brandMarkUrl",
-                            "primaryColor",
-                            "accentColor",
-                            "supportedLanguages"
-                          ]
-                        },
                         "support": {
                           "type": "object",
                           "properties": {
@@ -583,14 +543,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "branding",
-                        "support",
-                        "legal",
-                        "localization",
-                        "forms",
-                        "payment"
-                      ]
+                      "required": ["support", "legal", "localization", "forms", "payment"]
                     }
                   },
                   "required": ["data"]
@@ -616,38 +569,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "branding": {
-                    "type": "object",
-                    "properties": {
-                      "logoUrl": {
-                        "type": ["string", "null"],
-                        "format": "uri"
-                      },
-                      "faviconUrl": {
-                        "type": ["string", "null"],
-                        "format": "uri"
-                      },
-                      "brandMarkUrl": {
-                        "type": ["string", "null"],
-                        "format": "uri"
-                      },
-                      "primaryColor": {
-                        "type": ["string", "null"],
-                        "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                      },
-                      "accentColor": {
-                        "type": ["string", "null"],
-                        "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                      },
-                      "supportedLanguages": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
-                        }
-                      }
-                    }
-                  },
                   "support": {
                     "type": "object",
                     "properties": {
@@ -1008,46 +929,6 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "branding": {
-                          "type": "object",
-                          "properties": {
-                            "logoUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "faviconUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "brandMarkUrl": {
-                              "type": ["string", "null"],
-                              "format": "uri"
-                            },
-                            "primaryColor": {
-                              "type": ["string", "null"],
-                              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                            },
-                            "accentColor": {
-                              "type": ["string", "null"],
-                              "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
-                            },
-                            "supportedLanguages": {
-                              "type": "array",
-                              "items": {
-                                "type": "string",
-                                "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
-                              }
-                            }
-                          },
-                          "required": [
-                            "logoUrl",
-                            "faviconUrl",
-                            "brandMarkUrl",
-                            "primaryColor",
-                            "accentColor",
-                            "supportedLanguages"
-                          ]
-                        },
                         "support": {
                           "type": "object",
                           "properties": {
@@ -1451,14 +1332,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "branding",
-                        "support",
-                        "legal",
-                        "localization",
-                        "forms",
-                        "payment"
-                      ]
+                      "required": ["support", "legal", "localization", "forms", "payment"]
                     }
                   },
                   "required": ["data"]

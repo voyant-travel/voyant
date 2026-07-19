@@ -318,14 +318,6 @@ export function resolveStorefrontSettings(input?: StorefrontSettingsInput): Stor
   const schedule = normalizePaymentScheduleEntries(parsed.payment?.schedule, defaultSchedule)
 
   return storefrontSettingsSchema.parse({
-    branding: {
-      logoUrl: parsed.branding?.logoUrl ?? null,
-      faviconUrl: parsed.branding?.faviconUrl ?? null,
-      brandMarkUrl: parsed.branding?.brandMarkUrl ?? null,
-      primaryColor: parsed.branding?.primaryColor ?? null,
-      accentColor: parsed.branding?.accentColor ?? null,
-      supportedLanguages: parsed.branding?.supportedLanguages ?? [],
-    },
     support: {
       email: parsed.support?.email ?? null,
       phone: parsed.support?.phone ?? null,
@@ -365,7 +357,6 @@ export function mergeStorefrontSettingsPatch(
   patch: StorefrontSettingsPatchInput,
 ): StorefrontSettings {
   return resolveStorefrontSettings({
-    branding: patch.branding ? { ...current.branding, ...patch.branding } : current.branding,
     support: patch.support ? { ...current.support, ...patch.support } : current.support,
     legal: patch.legal ? { ...current.legal, ...patch.legal } : current.legal,
     localization: patch.localization

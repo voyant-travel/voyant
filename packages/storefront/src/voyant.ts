@@ -125,14 +125,6 @@ export const storefrontVoyantModule = defineModule({
       },
     ],
   },
-  admin: {
-    compositionOrder: 30,
-    setupSteps: [{ id: "@voyant-travel/storefront#setup.branding", skippable: true }],
-    runtime: {
-      entry: "@voyant-travel/storefront-react/admin",
-      export: "createSelectedStorefrontAdminExtension",
-    },
-  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
