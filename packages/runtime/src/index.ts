@@ -76,6 +76,14 @@ export interface LoadVoyantProjectOptions {
       env: OperatorAuthNodeEnv,
       request: Request,
     ) => CustomerAuthRuntimeContext | Promise<CustomerAuthRuntimeContext>
+    /**
+     * Authorize a customer-realm cross-origin request for dynamic CORS. Returns
+     * the exact request origin to echo, or `null` for static-allowlist fallback.
+     */
+    resolveCustomerCorsOrigin?: (
+      env: OperatorAuthNodeEnv,
+      request: Request,
+    ) => Promise<string | null>
     /** Project-owned transport for verification codes and password resets. */
     resolveAuthEmailSender?: (env: OperatorAuthNodeEnv) => OperatorAuthEmailSender | null
   }
@@ -193,6 +201,9 @@ export async function loadVoyantProject(
     ...(options.host?.resolveCustomerAuthContext
       ? { resolveCustomerAuthContext: options.host.resolveCustomerAuthContext }
       : {}),
+    ...(options.host?.resolveCustomerCorsOrigin
+      ? { resolveCustomerCorsOrigin: options.host.resolveCustomerCorsOrigin }
+      : {}),
   })
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
@@ -221,6 +232,8 @@ export async function loadVoyantProject(
           authRuntime.resolveAuthRequest(request, requireVoyantAuthEnv(requestEnv)),
         hasPermission: ({ request, env: requestEnv }) =>
           authRuntime.hasAuthPermission(request, requireVoyantAuthEnv(requestEnv)),
+        resolveCorsOrigin: ({ request, env: requestEnv }) =>
+          authRuntime.resolveCustomerCorsOrigin(request, requireVoyantAuthEnv(requestEnv)),
         validateApiKey: ({ env: requestEnv, db, apiKey }) =>
           authRuntime.validateApiTokenAccess(requireVoyantAuthEnv(requestEnv), db, apiKey),
       },

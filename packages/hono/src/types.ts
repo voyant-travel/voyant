@@ -249,6 +249,16 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
   onUnauthorized?: (
     args: VoyantAuthUnauthorizedArgs<TBindings>,
   ) => Promise<Response | null> | Response | null
+  /**
+   * Authorize a customer-realm cross-origin request for dynamic CORS. Returns
+   * the exact request origin to echo in `Access-Control-Allow-Origin` (dynamic,
+   * per-storefront), or `null` to fall back to the static `CORS_ALLOWLIST`.
+   * Runs before the db middleware, so implementations own any db access. Only
+   * consulted for the customer surface; admin/dash keep the static allowlist.
+   */
+  resolveCorsOrigin?: (
+    args: VoyantAuthUnauthorizedArgs<TBindings>,
+  ) => Promise<string | null> | string | null
 }
 
 export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindings> {

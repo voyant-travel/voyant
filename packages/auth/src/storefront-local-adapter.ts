@@ -14,7 +14,7 @@ import {
   storefrontCustomerAuthCredentials,
   storefronts,
 } from "@voyant-travel/db/schema/iam"
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 
 import {
   type StorefrontCredentialCipher,
@@ -27,6 +27,7 @@ import {
 } from "./storefront-keys.js"
 import {
   enabledStorefrontSocialProviders,
+  isStorefrontOriginAllowed,
   normalizeStorefrontAllowedOrigins,
   normalizeStorefrontCustomerAccountPolicy,
   normalizeStorefrontCustomerAuthMethods,
@@ -325,6 +326,36 @@ export function createLocalStorefrontAdapter(options: {
         // Best-effort usage stamping; never fail the request on it.
       }
       return { storefront: toStorefrontDto(storefront), key: toApiKeyDto(key) }
+    },
+
+    async resolveStorefrontByOrigin(
+      context: StorefrontResolveContext,
+      origin: string,
+    ): Promise<StorefrontDto | null> {
+      // Preflight authorization is keyless, so it cannot select a single
+      // storefront up front. Exact-origin entries are filtered in SQL via array
+      // containment; wildcard (`https://*.host`) declarations are matched in
+      // memory over the small self-host storefront set. First match wins — a
+      // browser origin resolves to at most one storefront in practice.
+      const [exactMatch] = await context.db
+        .select()
+        .from(storefronts)
+        // agent-quality: raw-sql reviewed -- Postgres text[] containment authorizes the exact declared origin without loading every row.
+        .where(sql`${storefronts.allowedOrigins} @> ARRAY[${origin}]::text[]`)
+        .limit(1)
+      if (exactMatch) return toStorefrontDto(exactMatch)
+
+      const wildcardCandidates = await context.db
+        .select()
+        .from(storefronts)
+        // agent-quality: raw-sql reviewed -- Only rows carrying a wildcard origin declaration are considered for the in-memory match.
+        .where(
+          sql`EXISTS (SELECT 1 FROM unnest(${storefronts.allowedOrigins}) AS o WHERE o LIKE 'https://*.%')`,
+        )
+      for (const row of wildcardCandidates) {
+        if (isStorefrontOriginAllowed(origin, row.allowedOrigins)) return toStorefrontDto(row)
+      }
+      return null
     },
 
     async updateAccountPolicy(context, storefrontId, policy) {

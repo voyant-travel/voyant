@@ -166,6 +166,40 @@ describe.skipIf(!TEST_DATABASE_URL)("customer business Better Auth compatibility
     expect(membership).toBeTruthy()
   })
 
+  it("issues a bearer token on sign-in and accepts it for cookieless session calls", async () => {
+    // Direct (cross-origin / native) clients authenticate with a bearer token
+    // instead of a cross-site cookie. Better Auth's bearer plugin returns the
+    // session token via `set-auth-token` on sign-in and converts it back to a
+    // session on later calls.
+    const email = "bearer@example.com"
+    const sent = await request("/email-otp/send-verification-otp", { email, type: "sign-in" })
+    expect(sent.status).toBe(200)
+    const otp = otpByEmail.get(email)
+    const signedIn = await request("/sign-in/email-otp", { email, otp, name: "Bearer" })
+    expect(signedIn.status).toBe(200)
+    const token = signedIn.headers.get("set-auth-token")
+    expect(token).toBeTruthy()
+
+    // A cookieless call carrying only the bearer token resolves the session.
+    const withBearer = await auth.handler(
+      new Request(`${baseURL}${basePath}/get-session`, {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+    )
+    expect(withBearer.status).toBe(200)
+    expect(await withBearer.json()).toMatchObject({ user: { email } })
+
+    // Absent/invalid bearer + no cookie yields no session.
+    const anon = await auth.handler(new Request(`${baseURL}${basePath}/get-session`))
+    expect(await anon.json()).toBeNull()
+    const bad = await auth.handler(
+      new Request(`${baseURL}${basePath}/get-session`, {
+        headers: { authorization: "Bearer not-a-real-token" },
+      }),
+    )
+    expect(await bad.json()).toBeNull()
+  })
+
   it("allows only one concurrent acceptance and rejects expired invitations", async () => {
     const owner = await signIn("race-owner@example.com", "Race Owner")
     const recipient = await signIn("race-recipient@example.com", "Race Recipient")
