@@ -181,6 +181,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/auth/invitations", required: true },
     { resolve: "@voyant-travel/auth/team", required: true },
     { resolve: "@voyant-travel/auth/customer-business-accounts" },
+    { resolve: "@voyant-travel/auth/storefront" },
     { resolve: "@voyant-travel/distribution" },
     { resolve: "@voyant-travel/inventory/extras" },
     { resolve: "@voyant-travel/bookings/requirements" },
