@@ -1,5 +1,21 @@
 # @voyant-travel/storefront-react
 
+## 0.177.0
+
+### Minor Changes
+
+- a160a81: Add isolated customer identities, personal and business buyer accounts, live
+  buyer selection, immutable booking ownership, and framework-neutral storefront
+  auth clients for B2C, B2B, and hybrid deployments.
+
+### Patch Changes
+
+- Updated dependencies [a160a81]
+  - @voyant-travel/storefront@0.177.0
+  - @voyant-travel/auth-react@0.136.0
+  - @voyant-travel/accommodations@0.135.0
+  - @voyant-travel/catalog-react@0.173.0
+
 ## 0.176.0
 
 ### Patch Changes
