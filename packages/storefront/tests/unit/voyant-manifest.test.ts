@@ -30,6 +30,7 @@ describe("storefront deployment manifest", () => {
         ports: [
           { id: storefrontOffersRuntimePort.id },
           { id: storefrontBookingIntentsRuntimePort.id },
+          { id: "auth.customer-business-onboarding.runtime" },
         ],
       },
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },

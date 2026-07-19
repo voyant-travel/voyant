@@ -23,6 +23,12 @@ providers. Storefronts can use `useBuyerAccounts`, `BuyerAccountSelector`, and
 `BuyerAccountSelectionGate` from `@voyant-travel/storefront-react/storefront`
 to support personal accounts, business accounts, or both.
 
+The buyer-account context also exposes policy-aware business onboarding:
+`businessAccountRequests`, `createBusinessAccount`, `requestBusinessAccount`,
+`cancelBusinessAccountRequest`, and `acceptBusinessInvitation`, with separate
+pending flags. Open creation explicitly activates the new buyer account;
+request state is fetched only when the storefront policy is `request`.
+
 See the
 [storefront customer auth framework integration guide](https://github.com/voyant-travel/voyant/blob/main/docs/storefront-customer-auth-frameworks.md)
 for Next.js and Astro SSR/BFF examples. Authentication stays cookie-backed and

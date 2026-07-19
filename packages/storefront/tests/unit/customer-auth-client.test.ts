@@ -149,4 +149,130 @@ describe("framework-neutral customer auth client", () => {
       credentials: "include",
     })
   })
+
+  it("creates and manages business account requests through exact credentialed paths", async () => {
+    const request = businessRequest()
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(response(request))
+      .mockResolvedValueOnce(response([request]))
+      .mockResolvedValueOnce(response({ ...request, status: "canceled" }))
+    const client = createCustomerAuthClient({ baseUrl: "/api/", fetcher })
+    const input = { idempotencyKey: "request-12345678", profile: businessProfile }
+
+    await expect(client.requestBusinessAccount(input)).resolves.toEqual(request)
+    await expect(client.listBusinessAccountRequests()).resolves.toEqual([request])
+    await expect(client.cancelBusinessAccountRequest("request/id")).resolves.toMatchObject({
+      status: "canceled",
+    })
+
+    expect(fetcher).toHaveBeenNthCalledWith(1, "/api/auth/customer/business-account-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+      credentials: "include",
+    })
+    expect(fetcher).toHaveBeenNthCalledWith(2, "/api/auth/customer/business-account-requests", {
+      method: "GET",
+      credentials: "include",
+    })
+    expect(fetcher).toHaveBeenNthCalledWith(
+      3,
+      "/api/auth/customer/business-account-requests/request%2Fid",
+      { method: "DELETE", credentials: "include" },
+    )
+  })
+
+  it("preserves cookie rotation when creating an account or accepting an invitation", async () => {
+    const account = businessAccount()
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(cookieResponse(account, "created"))
+      .mockResolvedValueOnce(cookieResponse({ account }, "invited"))
+    const client = createCustomerAuthClient({ baseUrl: "/api", fetcher })
+
+    const created = await client.createBusinessAccountWithResponse({
+      idempotencyKey: "create-12345678",
+      profile: businessProfile,
+    })
+    const accepted = await client.acceptBusinessInvitationWithResponse({
+      invitationId: "invite/id",
+    })
+
+    expect(created.data).toEqual(account)
+    expect(created.response.headers.get("set-cookie")).toContain("created")
+    expect(accepted.data.account).toEqual(account)
+    expect(accepted.response.headers.get("set-cookie")).toContain("invited")
+    expect(fetcher).toHaveBeenNthCalledWith(
+      2,
+      "/api/auth/customer/business-account-invitations/accept",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId: "invite/id" }),
+        credentials: "include",
+      },
+    )
+  })
+
+  it("surfaces structured customer auth errors", async () => {
+    const client = createCustomerAuthClient({
+      baseUrl: "/api",
+      fetcher: async () => response({ error: { message: "Request is no longer pending" } }, 409),
+    })
+
+    await expect(client.listBusinessAccountRequests()).rejects.toThrow(
+      "Request is no longer pending",
+    )
+  })
 })
+
+const businessProfile = {
+  name: "Acme Travel",
+  legalName: null,
+  taxId: null,
+  website: null,
+}
+
+function businessAccount() {
+  return {
+    id: "business:auth-org-1",
+    kind: "business" as const,
+    name: "Acme Travel",
+    authOrganizationId: "auth-org-1",
+    relationshipOrganizationId: "relationship-org-1",
+    relationshipPersonId: null,
+    membershipId: "membership-1",
+    membershipRole: "owner" as const,
+  }
+}
+
+function businessRequest() {
+  return {
+    id: "request-1",
+    requesterUserId: "customer-1",
+    requesterEmail: "customer@example.com",
+    requesterName: "Customer One",
+    storefrontOrigin: "https://shop.example.com",
+    mode: "request" as const,
+    profile: businessProfile,
+    status: "pending" as const,
+    idempotencyKey: "request-12345678",
+    authOrganizationId: null,
+    relationshipOrganizationId: null,
+    createdAt: "2026-07-19T10:00:00.000Z",
+    updatedAt: "2026-07-19T10:00:00.000Z",
+    decidedAt: null,
+    decidedBy: null,
+    decisionReason: null,
+  }
+}
+
+function cookieResponse(body: unknown, marker: string) {
+  return new Response(JSON.stringify(body), {
+    headers: {
+      "Content-Type": "application/json",
+      "Set-Cookie": `voyant-customer.session=${marker}; Path=/; HttpOnly`,
+    },
+  })
+}

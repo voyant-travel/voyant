@@ -16,6 +16,7 @@ describe("auth-ui i18n", () => {
     expect(messages.serviceApiKeysPage.title).toBe("Tokenuri API")
     expect(messages.serviceApiKeysPage.create.submit).toBe("Creeaza token")
     expect(messages.organizationMembersPage.title).toBe("Membrii organizatiei")
+    expect(messages.customerBusinessAccountsPage.title).toBe("Conturi business")
   })
 
   it("applies overrides", () => {

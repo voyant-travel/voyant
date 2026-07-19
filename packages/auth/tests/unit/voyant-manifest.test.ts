@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { describe, expect, it } from "vitest"
-
+import { createCustomerBusinessAccountAdminRoutes } from "../../src/customer-business-onboarding-routes.js"
+import { customerBusinessAccountOnboardingRuntimePort } from "../../src/customer-business-onboarding-runtime-port.js"
 import { identityAccessRuntimePort } from "../../src/identity-access-runtime-port.js"
 import {
   createInvitationsAdminRoutes,
@@ -8,10 +9,49 @@ import {
 } from "../../src/invitations-routes.js"
 import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 import { createTeamAdminRoutes } from "../../src/team-routes.js"
-import { authInvitationsVoyantModule, authTeamVoyantModule } from "../../src/voyant.js"
+import {
+  authCustomerBusinessAccountsVoyantModule,
+  authInvitationsVoyantModule,
+  authTeamVoyantModule,
+} from "../../src/voyant.js"
 
 describe("auth identity/access deployment manifests", () => {
   it("owns invitations and team route bundles behind typed deployment ports", () => {
+    expect(authCustomerBusinessAccountsVoyantModule).toMatchObject({
+      id: "@voyant-travel/auth#customer-business-accounts",
+      packageName: "@voyant-travel/auth",
+      runtimePorts: [{ id: customerBusinessAccountOnboardingRuntimePort.id }],
+      api: [
+        {
+          surface: "admin",
+          mount: "customer-business-accounts",
+          resource: "customer-business-accounts",
+          openapi: { document: "customer-business-accounts" },
+          transactional: true,
+        },
+      ],
+      access: {
+        resources: [
+          {
+            resource: "customer-business-accounts",
+            actions: [{ action: "read" }, { action: "write", sensitive: true }],
+          },
+        ],
+      },
+      admin: {
+        runtime: {
+          entry: "@voyant-travel/auth-react/admin",
+          export: "createSelectedCustomerBusinessAccountsAdminExtension",
+        },
+        routes: [
+          {
+            path: "/business-accounts",
+            requiredScopes: ["customer-business-accounts:read"],
+          },
+        ],
+        copy: [{ namespace: "auth.admin.customer-business-accounts" }],
+      },
+    })
     expect(authInvitationsVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#invitations",
       packageName: "@voyant-travel/auth",
@@ -111,6 +151,7 @@ describe("auth identity/access deployment manifests", () => {
       readOpenApi("../../openapi/admin/invitations.json"),
       readOpenApi("../../openapi/storefront/invitations.json"),
       readOpenApi("../../openapi/admin/team.json"),
+      readOpenApi("../../openapi/admin/customer-business-accounts.json"),
     ])
 
     const runtime = {} as Parameters<typeof createInvitationsAdminRoutes>[0]
@@ -122,6 +163,12 @@ describe("auth identity/access deployment manifests", () => {
     )
     expect(operationClaims(documents[2])).toEqual(
       liveOperationClaims(createTeamAdminRoutes(runtime), "/v1/admin/team"),
+    )
+    expect(operationClaims(documents[3])).toEqual(
+      liveOperationClaims(
+        createCustomerBusinessAccountAdminRoutes(runtime as never),
+        "/v1/admin/customer-business-accounts",
+      ),
     )
   })
 })

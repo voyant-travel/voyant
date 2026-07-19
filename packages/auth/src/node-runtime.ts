@@ -40,6 +40,18 @@ import {
 } from "./cloud-admin-session.js"
 import { buildClearCloudAdminAuthStateCookie, createCloudAdminAuthStart } from "./cloud-broker.js"
 import {
+  type CustomerBusinessAccountDto,
+  customerBusinessAccountCreateInputSchema,
+  customerBusinessAccountRequestCreateInputSchema,
+  customerBusinessAccountRequestListQuerySchema,
+  customerBusinessInvitationAcceptInputSchema,
+} from "./customer-business-accounts-contracts.js"
+import type { CustomerBusinessAccountOnboardingRuntimeProvider } from "./customer-business-onboarding-runtime-port.js"
+import {
+  CustomerBusinessOnboardingConflictError,
+  CustomerBusinessOnboardingNotFoundError,
+} from "./customer-business-onboarding-service.js"
+import {
   type CustomerBuyerAccountPolicy,
   createDrizzleCustomerBuyerAccountStore,
   listCustomerBuyerAccounts,
@@ -94,6 +106,7 @@ export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   CUSTOMER_AUTH_FACEBOOK_CLIENT_SECRET?: string
   CUSTOMER_AUTH_APPLE_CLIENT_ID?: string
   CUSTOMER_AUTH_APPLE_CLIENT_SECRET?: string
+  CUSTOMER_STOREFRONT_ORIGIN?: string
   VOYANT_AUTH_LOG_SECRET_FALLBACKS?: string
   VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?: string
   VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?: string
@@ -151,6 +164,13 @@ export interface OperatorAuthEmailSender {
     url: string
   }) => Promise<void>
   sendVerificationOtp: (input: { email: string; otp: string; type: string }) => Promise<void>
+  sendCustomerOrganizationInvitation: (input: {
+    email: string
+    organizationName: string
+    inviterName: string
+    role: string
+    url: string
+  }) => Promise<void>
 }
 
 export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNodeEnv> {
@@ -167,6 +187,7 @@ export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNo
     | Pick<BetterAuthAdvancedOptions, "crossSubDomainCookies" | "defaultCookieAttributes">
     | undefined
   resolveEmailSender?: (env: Env) => OperatorAuthEmailSender | null
+  customerBusinessAccountOnboarding?: CustomerBusinessAccountOnboardingRuntimeProvider
   /**
    * Storefront/BFF seam for a canonical public auth origin and resolved
    * merchant credentials. Never derive these values from Host/X-Forwarded-Host.
@@ -182,6 +203,8 @@ export interface CustomerAuthRuntimeContext {
   publicApiBaseURL?: string
   /** Canonical origin used internally by Better Auth. */
   baseURL: string
+  /** Explicit trusted storefront origin used for customer invitation links and request audit. */
+  invitationAcceptBaseURL?: string
   trustedOrigins: string[]
   methods: CustomerAuthMethods
   /** Buyer capabilities are independent from identity sign-up methods. */
@@ -273,6 +296,25 @@ export function withCustomerPublicResetPasswordUrl(
   } catch {
     return generatedUrl
   }
+}
+
+export function customerOrganizationInvitationUrl(
+  invitationAcceptBaseURL: string,
+  invitationId: string,
+): string {
+  const base = new URL(invitationAcceptBaseURL)
+  if (
+    (base.protocol !== "http:" && base.protocol !== "https:") ||
+    base.username ||
+    base.password ||
+    base.pathname !== "/" ||
+    base.search ||
+    base.hash
+  ) {
+    throw new Error("invitationAcceptBaseURL must be an exact trusted HTTP(S) origin")
+  }
+  base.pathname = `/account/business-invitations/${encodeURIComponent(invitationId)}`
+  return base.toString()
 }
 
 export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
@@ -566,6 +608,9 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     return {
       publicApiBaseURL: getPublicApiBaseUrl(env),
       baseURL: getAuthBaseUrl(env),
+      ...(env.CUSTOMER_STOREFRONT_ORIGIN?.trim()
+        ? { invitationAcceptBaseURL: env.CUSTOMER_STOREFRONT_ORIGIN.trim() }
+        : {}),
       trustedOrigins: getTrustedOrigins(env),
       methods: {
         emailCode: policy.methods.emailCode,
@@ -616,7 +661,19 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const trustedOrigins = context.trustedOrigins.map((origin) =>
       requireCanonicalOrigin(origin, "customer auth trusted origin"),
     )
-    return { ...context, baseURL, publicApiBaseURL, trustedOrigins }
+    const invitationAcceptBaseURL = context.invitationAcceptBaseURL
+      ? requireCanonicalOrigin(
+          context.invitationAcceptBaseURL,
+          "customer invitation accept baseURL",
+        )
+      : undefined
+    return {
+      ...context,
+      baseURL,
+      publicApiBaseURL,
+      trustedOrigins,
+      ...(invitationAcceptBaseURL ? { invitationAcceptBaseURL } : {}),
+    }
   }
 
   function requireCanonicalOrigin(value: string, label: string): string {
@@ -747,6 +804,8 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     const context = resolvedContext ?? (await resolveCustomerAuthContext(env, request))
     const publicApiBaseURL = context.publicApiBaseURL ?? getPublicApiBaseUrl(env)
     const authDb = db as NonNullable<Parameters<typeof createCustomerBetterAuth>[0]>["db"]
+    const invitationAcceptBaseURL = context.invitationAcceptBaseURL
+    const invitationEmailSender = invitationAcceptBaseURL ? emailSender : null
     return createCustomerBetterAuth({
       db: authDb,
       secret: requireCustomerAuthSecret(env),
@@ -755,6 +814,20 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       trustedOrigins: context.trustedOrigins,
       methods: withCustomerSocialRedirectUris(context.methods, publicApiBaseURL),
       accountPolicy: context.accountPolicy,
+      ...(invitationAcceptBaseURL && invitationEmailSender
+        ? {
+            sendOrganizationInvitation: async ({ id, email, organization, inviter, role }) => {
+              const url = customerOrganizationInvitationUrl(invitationAcceptBaseURL, id)
+              await invitationEmailSender.sendCustomerOrganizationInvitation({
+                email,
+                organizationName: organization.name,
+                inviterName: inviter.user.name,
+                role,
+                url,
+              })
+            },
+          }
+        : {}),
       sendResetPassword: async ({ user, url }) => {
         const publicUrl = withCustomerPublicResetPasswordUrl(url, publicApiBaseURL)
         if (!emailSender) {
@@ -1330,6 +1403,40 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
   const selectBuyerAccountSchema = z.object({ accountId: z.string().min(1) })
 
+  const onboardingRuntime = runtimeOptions.customerBusinessAccountOnboarding
+  const onboardingErrorResponse = (c: Context<AuthHonoEnv>, error: unknown): Response => {
+    if (error instanceof CustomerBusinessOnboardingNotFoundError) {
+      return c.json({ error: error.message }, 404)
+    }
+    if (error instanceof CustomerBusinessOnboardingConflictError) {
+      return c.json({ error: error.message }, 409)
+    }
+    throw error
+  }
+
+  const requireBusinessOnboarding = (
+    c: Context<AuthHonoEnv>,
+    context: CustomerAuthRuntimeContext,
+    expected: "open" | "request" | "invitation",
+  ): Response | null => {
+    const policy = normalizeCustomerBuyerAccountPolicy(context.accountPolicy)
+    if (!policy.allowedKinds.includes("business")) {
+      return c.json({ error: "Customer business accounts are disabled" }, 404)
+    }
+    if (expected === "invitation") {
+      return policy.businessOnboarding === "disabled"
+        ? c.json({ error: "Customer business accounts are disabled" }, 403)
+        : null
+    }
+    if (policy.businessOnboarding !== expected) {
+      return c.json({ error: `Customer business onboarding is not ${expected}` }, 403)
+    }
+    if (!onboardingRuntime) {
+      return c.json({ error: "Customer business onboarding provider is unavailable" }, 501)
+    }
+    return null
+  }
+
   auth.get("/auth/customer/buyer-accounts", async (c) => {
     c.header("Cache-Control", "no-store")
     if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
@@ -1415,6 +1522,236 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       headers.set("cache-control", "no-store")
       headers.set("content-type", "application/json; charset=UTF-8")
       return new Response(JSON.stringify({ activeAccount: selected }), { status: 200, headers })
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.post("/auth/customer/business-accounts", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+    const input = await parseJsonBody(c, customerBusinessAccountCreateInputSchema)
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const policyError = requireBusinessOnboarding(c, context, "open")
+      if (policyError) return policyError
+      if (!context.invitationAcceptBaseURL) {
+        return c.json({ error: "Trusted storefront origin is not configured" }, 503)
+      }
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+
+      let account: CustomerBusinessAccountDto
+      try {
+        account = await onboardingRuntime!.createBusinessAccount(
+          { bindings: c.env, db },
+          {
+            requesterUserId: session.user.id,
+            storefrontOrigin: new URL(context.invitationAcceptBaseURL).origin,
+            idempotencyKey: input.idempotencyKey,
+            profile: input.profile,
+          },
+        )
+      } catch (error) {
+        return onboardingErrorResponse(c, error)
+      }
+
+      const activationUrl = new URL(c.req.url)
+      activationUrl.pathname = "/auth/customer/organization/set-active"
+      activationUrl.search = ""
+      const activationHeaders = new Headers(c.req.raw.headers)
+      activationHeaders.delete("content-length")
+      activationHeaders.set("content-type", "application/json")
+      const activationResponse = await betterAuth.handler(
+        new Request(activationUrl, {
+          method: "POST",
+          headers: activationHeaders,
+          body: JSON.stringify({ organizationId: account.authOrganizationId }),
+        }),
+      )
+      if (!activationResponse.ok) return activationResponse
+      const headers = new Headers(activationResponse.headers)
+      headers.delete("content-length")
+      headers.set("cache-control", "no-store")
+      headers.set("content-type", "application/json; charset=UTF-8")
+      return new Response(JSON.stringify(account), { status: 201, headers })
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.get("/auth/customer/business-account-requests", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+    const query = customerBusinessAccountRequestListQuerySchema.parse(c.req.query())
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const policyError = requireBusinessOnboarding(c, context, "request")
+      if (policyError) return policyError
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+      try {
+        return c.json(
+          await onboardingRuntime!.listRequests(
+            { bindings: c.env, db },
+            { requesterUserId: session.user.id, status: query.status },
+          ),
+        )
+      } catch (error) {
+        return onboardingErrorResponse(c, error)
+      }
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.post("/auth/customer/business-account-requests", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+    const input = await parseJsonBody(c, customerBusinessAccountRequestCreateInputSchema)
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const policyError = requireBusinessOnboarding(c, context, "request")
+      if (policyError) return policyError
+      if (!context.invitationAcceptBaseURL) {
+        return c.json({ error: "Trusted storefront origin is not configured" }, 503)
+      }
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+      try {
+        const request = await onboardingRuntime!.requestBusinessAccount(
+          { bindings: c.env, db },
+          {
+            requesterUserId: session.user.id,
+            storefrontOrigin: new URL(context.invitationAcceptBaseURL).origin,
+            idempotencyKey: input.idempotencyKey,
+            profile: input.profile,
+          },
+        )
+        return c.json(request, 201)
+      } catch (error) {
+        return onboardingErrorResponse(c, error)
+      }
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.delete("/auth/customer/business-account-requests/:requestId", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const policyError = requireBusinessOnboarding(c, context, "request")
+      if (policyError) return policyError
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+      try {
+        return c.json(
+          await onboardingRuntime!.cancelRequest(
+            { bindings: c.env, db },
+            { requestId: c.req.param("requestId"), requesterUserId: session.user.id },
+          ),
+        )
+      } catch (error) {
+        return onboardingErrorResponse(c, error)
+      }
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.post("/auth/customer/business-account-invitations/accept", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+    const input = await parseJsonBody(c, customerBusinessInvitationAcceptInputSchema)
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const policyError = requireBusinessOnboarding(c, context, "invitation")
+      if (policyError) return policyError
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+
+      const acceptUrl = new URL(c.req.url)
+      acceptUrl.pathname = "/auth/customer/organization/accept-invitation"
+      acceptUrl.search = ""
+      const betterAuthHeaders = new Headers(c.req.raw.headers)
+      betterAuthHeaders.delete("content-length")
+      betterAuthHeaders.set("content-type", "application/json")
+      const accepted = await betterAuth.handler(
+        new Request(acceptUrl, {
+          method: "POST",
+          headers: betterAuthHeaders,
+          body: JSON.stringify({ invitationId: input.invitationId }),
+        }),
+      )
+      if (!accepted.ok) return accepted
+      const acceptedPayload = (await accepted.clone().json()) as {
+        invitation?: { organizationId?: string }
+        member?: { organizationId?: string }
+      }
+      const organizationId =
+        acceptedPayload.member?.organizationId ?? acceptedPayload.invitation?.organizationId
+      if (!organizationId) {
+        return c.json({ error: "Accepted invitation did not identify an organization" }, 502)
+      }
+
+      const activationUrl = new URL(c.req.url)
+      activationUrl.pathname = "/auth/customer/organization/set-active"
+      activationUrl.search = ""
+      const activated = await betterAuth.handler(
+        new Request(activationUrl, {
+          method: "POST",
+          headers: betterAuthHeaders,
+          body: JSON.stringify({ organizationId }),
+        }),
+      )
+      if (!activated.ok) return activated
+
+      const listed = await listCustomerBuyerAccounts({
+        identity: {
+          userId: session.user.id,
+          name: session.user.name ?? null,
+          email: session.user.email ?? null,
+        },
+        activeAuthOrganizationId: organizationId,
+        policy: context.accountPolicy,
+        store: createDrizzleCustomerBuyerAccountStore(db),
+      })
+      const account = listed.accounts.find(
+        (candidate) =>
+          candidate.kind === "business" && candidate.authOrganizationId === organizationId,
+      )
+      if (!account) {
+        return c.json({ error: "Accepted business account is unavailable" }, 409)
+      }
+
+      const headers = new Headers(accepted.headers)
+      headers.delete("content-length")
+      for (const cookie of activated.headers.getSetCookie()) headers.append("set-cookie", cookie)
+      headers.set("cache-control", "no-store")
+      headers.set("content-type", "application/json; charset=UTF-8")
+      return new Response(JSON.stringify({ account }), { status: 200, headers })
     } finally {
       c.executionCtx.waitUntil(dispose())
     }

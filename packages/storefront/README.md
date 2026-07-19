@@ -3,6 +3,21 @@
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
 
+## Customer auth client
+
+`@voyant-travel/storefront/customer-auth-client` is the framework-neutral
+customer realm client for browser, Next.js, and Astro BFF integrations. It
+models configuration, session and buyer-account selection plus open creation,
+request/cancel, and business invitation acceptance. Response-preserving
+variants are provided for mutations that can rotate cookies so SSR adapters can
+forward every `Set-Cookie` header independently.
+
+Storefront customer auth is Better Auth-backed in managed and self-hosted
+deployments. WorkOS applies only to managed admin authentication and is not a
+customer dependency. See the
+[Next.js and Astro integration guide](../../docs/storefront-customer-auth-frameworks.md)
+for same-origin proxy and policy examples.
+
 ## MCP Tools
 
 `@voyant-travel/storefront/tools` publishes graph-selected, provider-neutral Tools for the
