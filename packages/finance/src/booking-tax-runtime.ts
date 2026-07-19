@@ -7,6 +7,7 @@ import {
   createBookingTaxPreviewApiExtension,
   createBookingTaxSettingsApiExtension,
 } from "./booking-tax.js"
+import { INVOICE_FX_SETTINGS_RUNTIME_KEY, type InvoiceFxSettingsRuntime } from "./invoice-fx.js"
 import { createFinanceBookingTaxRuntime } from "./runtime.js"
 import { financeOperatorSettingsRuntimePort } from "./runtime-port.js"
 
@@ -53,9 +54,8 @@ export function resolveBookingTaxRouteOptions(
 
 export const createBookingTaxSettingsVoyantRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) => {
-    const options = createFinanceBookingTaxRuntime(
-      await getPort(financeOperatorSettingsRuntimePort),
-    )
+    const settings = await getPort(financeOperatorSettingsRuntimePort)
+    const options = createFinanceBookingTaxRuntime(settings)
     const configured = createBookingTaxSettingsApiExtension(options)
     const selected: ApiExtension = {
       ...configured,
@@ -65,6 +65,13 @@ export const createBookingTaxSettingsVoyantRuntime = defineGraphRuntimeFactory(
           container.register(BOOKING_TAX_SETTINGS_RUNTIME_KEY, {
             resolveRoutesOptions: () => options,
           } satisfies BookingTaxRuntime)
+          // The same operator-settings port also backs invoice-FX settings, so the
+          // invoice-fx routes (in the core finance module) can persist the base
+          // currency without a separate extension/graph plugin.
+          container.register(INVOICE_FX_SETTINGS_RUNTIME_KEY, {
+            resolveInvoiceFxSettings: settings.resolveInvoiceFxSettings,
+            updateInvoiceFxSettings: settings.updateInvoiceFxSettings,
+          } satisfies InvoiceFxSettingsRuntime)
         },
       },
     }

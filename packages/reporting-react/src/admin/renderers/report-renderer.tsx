@@ -76,7 +76,11 @@ export function ReportVisualizationView({
   }
 
   if (result.rows.length === 0) {
-    return <p className="text-muted-foreground text-sm">No data for the selected parameters.</p>
+    return (
+      <div className="text-muted-foreground flex h-full min-h-24 items-center justify-center text-center text-sm">
+        No data for the selected parameters.
+      </div>
+    )
   }
 
   switch (definition.visualization.type) {

@@ -17,9 +17,43 @@ function createApp(scopes: string[], registry = new ReportingRegistry([])) {
   return app
 }
 
+/** A registry with a single unscoped `bookings` dataset, so parse validation passes. */
+function bookingsRegistry() {
+  return new ReportingRegistry([
+    {
+      namespace: "bookings",
+      datasets: [
+        {
+          definition: {
+            id: "bookings",
+            version: 1,
+            label: "Bookings",
+            grain: "One row per booking",
+            requiredScopes: [],
+            fields: [
+              {
+                id: "status",
+                label: "Status",
+                role: "dimension",
+                valueType: "string",
+                sensitivity: "internal",
+                requiredScopes: [],
+                aggregations: [],
+              },
+            ],
+            defaultLimit: 100,
+            maximumLimit: 1_000,
+          },
+          execute: async () => ({ columns: [], rows: [], truncated: false, warnings: [] }),
+        },
+      ],
+    },
+  ])
+}
+
 describe("reporting routes", () => {
-  it("parses the bounded text language for report readers", async () => {
-    const response = await createApp(["reports:read"]).request(
+  it("parses and validates the bounded text language for report readers", async () => {
+    const response = await createApp(["reports:read"], bookingsRegistry()).request(
       "/v1/admin/reporting/queries/parse",
       {
         method: "POST",

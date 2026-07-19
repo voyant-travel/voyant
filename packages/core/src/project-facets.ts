@@ -197,6 +197,12 @@ export interface VoyantGraphReportingDatasetDescriptor {
   fields: readonly VoyantGraphReportingDatasetField[]
   defaultLimit?: number
   maximumLimit?: number
+  /**
+   * Field the page-level date window (`dateFrom`/`dateTo`) filters on when a
+   * report does not name one explicitly. Optional: datasets without a natural
+   * primary date leave it unset and simply ignore the window.
+   */
+  defaultDateField?: string
 }
 
 /** Package-owned semantic dataset metadata. Executable query behavior stays behind runtime. */

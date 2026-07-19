@@ -31,7 +31,9 @@
     "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
+    "exceljs": "^4.4.0",
     "hono": "catalog:",
+    "pdf-lib": "^1.17.1",
     "zod": "catalog:"
   },
   "devDependencies": {

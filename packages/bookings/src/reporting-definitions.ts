@@ -92,6 +92,7 @@ export const bookingsReportingDeclaration = {
         fields: BOOKINGS_ACTIVITY_DATASET_FIELDS,
         defaultLimit: 100,
         maximumLimit: 1_000,
+        defaultDateField: "createdAt",
       },
       requiredScopes: ["bookings:read"],
       runtime: {

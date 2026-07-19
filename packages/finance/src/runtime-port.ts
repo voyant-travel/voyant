@@ -6,6 +6,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { BookingTaxRouteOptions } from "./booking-tax.js"
 import type { CheckoutRoutesOptions } from "./checkout-routes.js"
 import type { CheckoutPaymentStarter } from "./checkout-service.js"
+import type { ResolveInvoiceFxSettings, UpdateInvoiceFxSettings } from "./invoice-fx.js"
 import type { PaymentPolicy } from "./payment-policy.js"
 import type { PaymentPolicyEntityContext } from "./payment-policy-cascade.js"
 import type { BookingScheduleRoutesOptions } from "./payment-schedule/routes.js"
@@ -48,6 +49,10 @@ export interface FinanceOperatorSettingsRuntime {
    * settled proforma should be auto-converted to a fiscal invoice.
    */
   resolveInvoicingMode: (db: PostgresJsDatabase) => Promise<"direct" | "proforma-first">
+  /** Resolve the operator's invoice-FX settings (base currency, commission). */
+  resolveInvoiceFxSettings: ResolveInvoiceFxSettings
+  /** Persist the operator's invoice-FX settings. */
+  updateInvoiceFxSettings: UpdateInvoiceFxSettings
 }
 
 export interface FinanceNotificationsRuntime {
@@ -160,6 +165,8 @@ export const financeOperatorSettingsRuntimePort = objectPort<FinanceOperatorSett
     "resolveBookingTaxSettings",
     "updateBookingTaxSettings",
     "resolveInvoicingMode",
+    "resolveInvoiceFxSettings",
+    "updateInvoiceFxSettings",
   ],
 )
 export const financeNotificationsRuntimePort = objectPort<FinanceNotificationsRuntime>(

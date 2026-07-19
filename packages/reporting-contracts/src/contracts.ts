@@ -61,6 +61,11 @@ export const reportDatasetDefinitionSchema = z
     fields: z.array(reportDatasetFieldSchema).min(1).max(250),
     defaultLimit: z.number().int().positive().max(1_000).default(100),
     maximumLimit: z.number().int().positive().max(5_000).default(1_000),
+    // The date/datetime field a page-level date range filters on. When set, the
+    // reporting runtime injects `>= dateFrom` / `<= dateTo` on this field from the
+    // reserved `dateFrom`/`dateTo` report parameters — applying uniformly to every
+    // widget (preset and custom) without editing individual queries.
+    defaultDateField: reportingIdentifierSchema.optional(),
   })
   .strict()
   .superRefine((dataset, context) => {
@@ -306,13 +311,6 @@ export const listReportDefinitionsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(25),
   offset: z.coerce.number().int().nonnegative().default(0),
 })
-
-export const createReportVersionSchema = z
-  .object({ expectedRevision: z.number().int().positive() })
-  .strict()
-export const executeReportVersionSchema = z
-  .object({ parameters: reportParametersSchema.default({}) })
-  .strict()
 
 export const previewReportQuerySchema = z
   .object({ query: reportQuerySchema, parameters: reportParametersSchema.default({}) })

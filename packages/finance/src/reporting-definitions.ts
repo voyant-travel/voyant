@@ -22,6 +22,7 @@ export const financeReceivablesDatasetDefinition = {
   requiredScopes: ["finance:read"],
   defaultLimit: 100,
   maximumLimit: 1_000,
+  defaultDateField: "issueDate",
   fields: [
     {
       id: "issueDate",

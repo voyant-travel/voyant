@@ -1,6 +1,5 @@
 import type {
   createReportDefinitionSchema,
-  ReportDraft,
   ReportParameters,
   updateReportDefinitionSchema,
 } from "@voyant-travel/reporting-contracts"
@@ -9,13 +8,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
 import type { ReportingRegistry } from "./registry.js"
-import {
-  type ReportDefinitionRow,
-  type ReportRunOutput,
-  reportDefinitions,
-  reportRuns,
-  reportVersions,
-} from "./schema.js"
+import { type ReportDefinitionRow, reportDefinitions } from "./schema.js"
 
 export type CreateReportDefinitionInput = z.infer<typeof createReportDefinitionSchema>
 export type UpdateReportDefinitionInput = z.infer<typeof updateReportDefinitionSchema>
@@ -31,13 +24,6 @@ export class ReportingRecordNotFoundError extends Error {
   constructor(record: string) {
     super(`${record} was not found.`)
     this.name = "ReportingRecordNotFoundError"
-  }
-}
-
-export class ReportDefinitionRetentionConflictError extends Error {
-  constructor() {
-    super("Reports with retained execution history cannot be deleted.")
-    this.name = "ReportDefinitionRetentionConflictError"
   }
 }
 
@@ -120,191 +106,98 @@ export function createReportingService(registry: ReportingRegistry) {
     },
 
     async remove(db: PostgresJsDatabase, id: string): Promise<boolean> {
-      return db.transaction(async (transaction) => {
-        const [definition] = await transaction
-          .select({ id: reportDefinitions.id })
-          .from(reportDefinitions)
-          .where(eq(reportDefinitions.id, id))
-          .limit(1)
-          .for("update")
-        if (!definition) return false
-        await transaction
-          .select({ id: reportVersions.id })
-          .from(reportVersions)
-          .where(eq(reportVersions.reportDefinitionId, id))
-          .for("update")
-        const [retainedRun] = await transaction
-          .select({ id: reportRuns.id })
-          .from(reportRuns)
-          .innerJoin(reportVersions, eq(reportRuns.reportVersionId, reportVersions.id))
-          .where(eq(reportVersions.reportDefinitionId, id))
-          .limit(1)
-        if (retainedRun) throw new ReportDefinitionRetentionConflictError()
-        await transaction.delete(reportDefinitions).where(eq(reportDefinitions.id, id))
-        return true
-      })
+      const deleted = await db
+        .delete(reportDefinitions)
+        .where(eq(reportDefinitions.id, id))
+        .returning({ id: reportDefinitions.id })
+      return deleted.length > 0
     },
 
-    async createVersion(
+    /**
+     * Execute every widget in a report and return its tabular data, ready to be
+     * serialized to CSV / XLSX / PDF. Widgets that fail (unavailable, scope, or
+     * query error) become a section carrying the error message rather than
+     * aborting the whole export.
+     */
+    async exportReport(
       db: PostgresJsDatabase,
-      reportDefinitionId: string,
-      expectedRevision: number,
-      actorId?: string,
-    ) {
-      return db.transaction(async (transaction) => {
-        const [definition] = await transaction
-          .select()
-          .from(reportDefinitions)
-          .where(eq(reportDefinitions.id, reportDefinitionId))
-          .limit(1)
-          .for("update")
-        if (!definition) throw new ReportingRecordNotFoundError("Report definition")
-        if (definition.revision !== expectedRevision)
-          throw new ReportDefinitionRevisionConflictError()
-        const [latest] = await transaction
-          .select({ version: reportVersions.version })
-          .from(reportVersions)
-          .where(eq(reportVersions.reportDefinitionId, reportDefinitionId))
-          .orderBy(desc(reportVersions.version))
-          .limit(1)
-        const [version] = await transaction
-          .insert(reportVersions)
-          .values({
-            reportDefinitionId,
-            version: (latest?.version ?? 0) + 1,
-            name: definition.name,
-            description: definition.description,
-            definitionRevision: definition.revision,
-            snapshot: registry.snapshotDraft(definition.draft),
-            createdByUserId: actorId,
-          })
-          .returning()
-        if (!version) throw new Error("Report version insert returned no row.")
-        return version
-      })
-    },
-
-    async runVersion(
-      db: PostgresJsDatabase,
-      versionId: string,
+      id: string,
       parameters: ReportParameters,
       context: { actorId?: string; grantedScopes: readonly string[]; signal?: AbortSignal },
-    ) {
-      const execution = await db.transaction(async (transaction) => {
-        const [version] = await transaction
-          .select()
-          .from(reportVersions)
-          .where(eq(reportVersions.id, versionId))
-          .limit(1)
-          .for("share")
-        if (!version) throw new ReportingRecordNotFoundError("Report version")
-        for (const resolved of registry.resolveDraft(version.snapshot, "edit")) {
-          if (resolved.status === "missing" || !resolved.definition) continue
-          registry.validateQuery(resolved.definition.query, context.grantedScopes)
+    ): Promise<ReportExport | null> {
+      const [definition] = await db
+        .select()
+        .from(reportDefinitions)
+        .where(eq(reportDefinitions.id, id))
+        .limit(1)
+      if (!definition) return null
+      const merged = { ...definition.draft.parameters, ...parameters }
+      const sections: ReportExportSection[] = []
+      for (const resolved of registry.resolveDraft(definition.draft, "view")) {
+        const title = resolved.definition
+          ? (resolved.instance.title ?? resolved.definition.label)
+          : (resolved.instance.title ?? resolved.instance.id)
+        if (resolved.status === "missing" || !resolved.definition) {
+          sections.push({ title, columns: [], rows: [], error: resolved.missingReason })
+          continue
         }
-        const [run] = await transaction
-          .insert(reportRuns)
-          .values({ reportVersionId: versionId, parameters, triggeredByUserId: context.actorId })
-          .returning()
-        if (!run) throw new Error("Report run insert returned no row.")
-        return { run, version }
-      })
-      const { run, version } = execution
-
-      try {
-        const executionSignal = context.signal
-          ? AbortSignal.any([context.signal, AbortSignal.timeout(60_000)])
-          : AbortSignal.timeout(60_000)
-        const output = await executeDraft(registry, db, version.snapshot, parameters, {
-          ...context,
-          signal: executionSignal,
-        })
-        const failed = output.widgets.some((widget) => widget.status === "failed")
-        const [completed] = await db
-          .update(reportRuns)
-          .set({
-            status: failed ? "failed" : "succeeded",
-            output,
-            error: failed ? "One or more widgets failed." : null,
-            completedAt: new Date(),
+        try {
+          const result = await registry.executeQuery({
+            db,
+            actorId: context.actorId,
+            grantedScopes: context.grantedScopes,
+            query: resolved.definition.query,
+            parameters: merged,
+            signal: context.signal,
           })
-          .where(eq(reportRuns.id, run.id))
-          .returning()
-        return completed ?? run
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Report execution failed."
-        const [failed] = await db
-          .update(reportRuns)
-          .set({ status: "failed", error: message, completedAt: new Date() })
-          .where(eq(reportRuns.id, run.id))
-          .returning()
-        return failed ?? run
+          const options = resolved.definition.visualization.options ?? {}
+          sections.push({
+            title,
+            columns: result.columns,
+            rows: result.rows,
+            format: {
+              minorUnit: options.minorUnit === true,
+              currencyField:
+                typeof options.currencyField === "string" ? options.currencyField : undefined,
+              currency: typeof options.currency === "string" ? options.currency : undefined,
+            },
+          })
+        } catch (error) {
+          sections.push({
+            title,
+            columns: [],
+            rows: [],
+            error: error instanceof Error ? error.message : "Widget failed to export.",
+          })
+        }
       }
-    },
-
-    async getRun(db: PostgresJsDatabase, id: string, grantedScopes: readonly string[]) {
-      const [run] = await db.select().from(reportRuns).where(eq(reportRuns.id, id)).limit(1)
-      if (run) {
-        const requiredScopes = [
-          ...new Set(run.output?.widgets.flatMap((widget) => widget.requiredScopes ?? []) ?? []),
-        ]
-        registry.requireScopes(requiredScopes, grantedScopes)
-      }
-      return run ?? null
+      return { name: definition.name, description: definition.description, sections }
     },
   }
 }
 
-async function executeDraft(
-  registry: ReportingRegistry,
-  db: PostgresJsDatabase,
-  draft: ReportDraft,
-  runParameters: ReportParameters,
-  context: { actorId?: string; grantedScopes: readonly string[]; signal?: AbortSignal },
-): Promise<ReportRunOutput> {
-  const parameters = { ...draft.parameters, ...runParameters }
-  const widgets: ReportRunOutput["widgets"] = []
-  for (const resolved of registry.resolveDraft(draft, "edit")) {
-    if (resolved.status === "missing" || !resolved.definition) {
-      widgets.push({
-        widgetInstanceId: resolved.instance.id,
-        status: "missing",
-        reason: resolved.missingReason ?? "Widget is unavailable.",
-      })
-      continue
-    }
-    let provenance:
-      | { datasetId: string; datasetVersion: number; requiredScopes: readonly string[] }
-      | undefined
-    try {
-      const validation = registry.validateQuery(resolved.definition.query, context.grantedScopes)
-      provenance = {
-        datasetId: validation.dataset.definition.id,
-        datasetVersion: validation.dataset.definition.version,
-        requiredScopes: validation.requiredScopes,
-      }
-      const result = await registry.executeQuery({
-        db,
-        actorId: context.actorId,
-        grantedScopes: context.grantedScopes,
-        query: resolved.definition.query,
-        parameters,
-        signal: context.signal,
-      })
-      widgets.push({
-        widgetInstanceId: resolved.instance.id,
-        status: "succeeded",
-        ...provenance,
-        result,
-      })
-    } catch (error) {
-      widgets.push({
-        widgetInstanceId: resolved.instance.id,
-        status: "failed",
-        ...provenance,
-        reason: error instanceof Error ? error.message : "Widget execution failed.",
-      })
-    }
-  }
-  return { widgets }
+/** Presentation hints carried from a widget's visualization options into export. */
+export interface ReportExportSectionFormat {
+  /** Currency values are stored in minor units (cents) and must be divided by 100. */
+  readonly minorUnit: boolean
+  /** Column whose value holds the ISO currency code for each row. */
+  readonly currencyField?: string
+  /** Fallback ISO currency when a row has no {@link currencyField}. */
+  readonly currency?: string
+}
+
+/** A single widget's tabular data within an exported report. */
+export interface ReportExportSection {
+  readonly title: string
+  readonly columns: ReadonlyArray<{ id: string; label: string; valueType: string }>
+  readonly rows: ReadonlyArray<Record<string, unknown>>
+  readonly format?: ReportExportSectionFormat
+  readonly error?: string
+}
+
+/** A report resolved to plain tabular sections for file export. */
+export interface ReportExport {
+  readonly name: string
+  readonly description: string | null
+  readonly sections: readonly ReportExportSection[]
 }

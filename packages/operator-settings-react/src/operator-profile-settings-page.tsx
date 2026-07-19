@@ -38,6 +38,7 @@ import {
   Label,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { ImageIcon, Loader2, UploadCloud } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -273,6 +274,90 @@ function BrandAssetDropzone({
         ) : null}
       </div>
     </div>
+  )
+}
+
+/**
+ * Operator base currency (the FX recording base). Persisted independently of the
+ * operator profile because it is a Finance operator-setting, served by the
+ * finance module's `/v1/admin/finance/invoice-fx-settings` route. Editing it here
+ * keeps the operator's one "financial identity" concept on the same settings page.
+ */
+function BaseCurrencyCard() {
+  const queryClient = useQueryClient()
+  const { baseUrl, fetcher } = useVoyantReactContext()
+  const page = useOperatorAdminMessages().settings.operatorProfilePage
+  const t = page.baseCurrency
+
+  const { data, isPending } = useQuery({
+    queryKey: ["operator-invoice-fx-settings"],
+    queryFn: async (): Promise<string | null> => {
+      const res = await fetcher(`${baseUrl}/v1/admin/finance/invoice-fx-settings`)
+      if (!res.ok) return null
+      const json = (await res.json()) as { data?: { baseCurrency?: string | null } }
+      return json.data?.baseCurrency ?? null
+    },
+  })
+
+  const [value, setValue] = useState<string | null>(null)
+  useEffect(() => {
+    if (data !== undefined) setValue(data)
+  }, [data])
+
+  const save = useMutation({
+    mutationFn: async (next: string | null) => {
+      const res = await fetcher(`${baseUrl}/v1/admin/finance/invoice-fx-settings`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ baseCurrency: next }),
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error ?? `Save failed (${res.status})`)
+      }
+      const json = (await res.json()) as { data?: { baseCurrency?: string | null } }
+      return json.data?.baseCurrency ?? null
+    },
+    onSuccess: (saved) => {
+      setValue(saved)
+      toast.success(t.savedToast)
+      void queryClient.invalidateQueries({ queryKey: ["operator-invoice-fx-settings"] })
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t.saveFailed)
+    },
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t.title}</CardTitle>
+        <CardDescription>{t.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="op-baseCurrency">{t.label}</Label>
+          <CurrencyCombobox
+            id="op-baseCurrency"
+            value={value}
+            placeholder={t.placeholder}
+            disabled={isPending || save.isPending}
+            onChange={setValue}
+          />
+          <p className="text-xs text-muted-foreground">{t.help}</p>
+        </div>
+        <div className="flex items-end justify-start md:justify-end">
+          <Button
+            type="button"
+            disabled={isPending || save.isPending || value === (data ?? null)}
+            onClick={() => save.mutate(value)}
+          >
+            {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {page.saveChanges}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -665,6 +750,8 @@ export function OperatorProfileSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <BaseCurrencyCard />
 
       <Card>
         <CardHeader>

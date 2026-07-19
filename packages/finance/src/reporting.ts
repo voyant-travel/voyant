@@ -7,6 +7,7 @@ import type {
   ReportResult,
   ReportScalar,
 } from "@voyant-travel/reporting-contracts"
+import { ReportDatasetQueryError } from "@voyant-travel/reporting-contracts"
 import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import { type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -91,8 +92,69 @@ const semanticReceivables = sql`
     AND invoice.status IN ('issued', 'partially_paid', 'paid', 'overdue')
 `
 
+/** Reserved report parameter that switches money measures to the operator base currency. */
+const REPORT_CURRENCY_PARAM = "reportCurrency"
+const BASE_CURRENCY_MODE = "base"
+
+/**
+ * Base-currency variant of {@link semanticReceivables}. Every monetary figure is
+ * read from the record's persisted base-currency snapshot (`base_*_cents`), which
+ * was converted at the moment the record was created using that day's FX rate set
+ * — so aggregating across documents is exact and recording-time accurate. Records
+ * without an FX snapshot (base currency/amount unset) are excluded rather than
+ * silently counted at parity.
+ */
+const baseReceivables = sql`
+  SELECT
+    invoice.issue_date AS "issueDate",
+    invoice.due_date AS "dueDate",
+    invoice.status::text AS status,
+    invoice.base_currency AS currency,
+    invoice.base_total_cents::bigint AS "grossIssuedCents",
+    credit_totals.credited_cents::bigint AS "creditedCents",
+    greatest(invoice.base_total_cents::bigint - credit_totals.credited_cents, 0) AS "netIssuedCents",
+    payment_totals.settled_cents::bigint AS "settledCents",
+    payment_totals.refunded_cents::bigint AS "refundedCents",
+    greatest(
+      invoice.base_total_cents::bigint
+        - credit_totals.credited_cents
+        - payment_totals.settled_cents,
+      0
+    ) AS "outstandingBalanceCents"
+  FROM invoices invoice
+  LEFT JOIN LATERAL (
+    SELECT coalesce(sum(credit.base_amount_cents), 0)::bigint AS credited_cents
+    FROM credit_notes credit
+    WHERE credit.invoice_id = invoice.id
+      AND credit.status IN ('issued', 'applied')
+      AND credit.base_amount_cents IS NOT NULL
+  ) credit_totals ON true
+  LEFT JOIN LATERAL (
+    SELECT
+      coalesce(
+        sum(
+          CASE WHEN payment.status = 'completed' THEN payment.base_amount_cents ELSE 0 END
+        ),
+        0
+      )::bigint AS settled_cents,
+      coalesce(
+        sum(
+          CASE WHEN payment.status = 'refunded' THEN payment.base_amount_cents ELSE 0 END
+        ),
+        0
+      )::bigint AS refunded_cents
+    FROM payments payment
+    WHERE payment.invoice_id = invoice.id
+      AND payment.base_amount_cents IS NOT NULL
+  ) payment_totals ON true
+  WHERE invoice.invoice_type = 'invoice'
+    AND invoice.status IN ('issued', 'partially_paid', 'paid', 'overdue')
+    AND invoice.base_currency IS NOT NULL
+    AND invoice.base_total_cents IS NOT NULL
+`
+
 /** A query shape outside Finance's deliberately small reporting surface. */
-export class FinanceReportingQueryError extends Error {
+export class FinanceReportingQueryError extends ReportDatasetQueryError {
   constructor(message: string) {
     super(message)
     this.name = "FinanceReportingQueryError"
@@ -117,6 +179,9 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
   rowLimit: number
 } {
   const { query, parameters } = input
+  // Page-level "show in base currency": read money from recording-time base
+  // snapshots so every amount is already in one currency (the operator base).
+  const baseMode = parameters[REPORT_CURRENCY_PARAM] === BASE_CURRENCY_MODE
   if (!Number.isInteger(input.maximumRows) || input.maximumRows < 1) {
     throw new FinanceReportingQueryError("maximumRows must be a positive integer.")
   }
@@ -230,6 +295,7 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
     ? groups.has("currency")
     : query.select.some((selection) => selection.kind === "field" && selection.field === "currency")
   if (
+    !baseMode &&
     moneySelections.length > 0 &&
     !currencyIsExplicit &&
     !hasSingleCurrencyFilter(query, parameters)
@@ -261,7 +327,7 @@ export function compileFinanceReceivablesQuery(input: ReportDatasetExecutionInpu
 
   return {
     statement: sql`
-      WITH receivable AS (${semanticReceivables})
+      WITH receivable AS (${baseMode ? baseReceivables : semanticReceivables})
       SELECT ${selectSql}
       FROM receivable
       ${filters.length ? sql`WHERE ${sql.join(filters, sql` AND `)}` : sql``}

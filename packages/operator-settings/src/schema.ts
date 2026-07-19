@@ -10,7 +10,7 @@
  */
 
 import { typeId } from "@voyant-travel/db/lib/typeid-column"
-import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 /**
  * Original catch-all table from the first booking-journey settings
@@ -167,6 +167,15 @@ export const bookingTaxSettings = pgTable("booking_tax_settings", {
    * operator-settings singleton row.
    */
   invoicingMode: text("invoicing_mode").notNull().default("proforma-first"),
+  /**
+   * Invoice-FX settings, co-located on the finance operator-settings singleton.
+   * `base_currency` is the single currency financials consolidate into (the base
+   * every invoice/payment records its `base_*_cents` snapshot against at creation
+   * time); the commission fields configure the operator's FX markup.
+   */
+  baseCurrency: text("base_currency"),
+  fxCommissionBps: integer("fx_commission_bps"),
+  fxCommissionInvoiceMention: text("fx_commission_invoice_mention"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

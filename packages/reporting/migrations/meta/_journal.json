@@ -8,6 +8,13 @@
       "when": 1784365200000,
       "tag": "20260718090000_reporting_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784480400000,
+      "tag": "20260719170000_drop_report_versioning",
+      "breakpoints": true
     }
   ]
 }
