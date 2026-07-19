@@ -1,5 +1,29 @@
 # @voyant-travel/framework
 
+## 0.54.0
+
+### Minor Changes
+
+- b8b25b7: Add the composable reporting platform: module-owned semantic datasets and widget presets,
+  cross-module full-page templates, persisted editable report drafts, immutable published versions,
+  bounded query parsing and execution, source-scope authorization, and standard Operator selection.
+  Bookings and Finance now contribute initial operational reporting content.
+
+### Patch Changes
+
+- Updated dependencies [b8b25b7]
+- Updated dependencies [b8b25b7]
+  - @voyant-travel/core@0.129.0
+  - @voyant-travel/operator-standard@0.9.0
+  - @voyant-travel/action-ledger@0.111.6
+  - @voyant-travel/cruises@0.173.0
+  - @voyant-travel/db@0.114.15
+  - @voyant-travel/hono@0.130.1
+  - @voyant-travel/mcp@0.4.6
+  - @voyant-travel/storage@0.111.5
+  - @voyant-travel/workflows@0.122.8
+  - @voyant-travel/workflows-orchestrator@0.122.8
+
 ## 0.53.0
 
 ### Minor Changes
