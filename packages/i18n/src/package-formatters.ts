@@ -109,11 +109,16 @@ export function createLocaleFormatters(
         return String(value)
       }
 
-      return getDateTimeFormatter({
-        dateStyle: "medium",
-        timeStyle: "short",
-        ...options,
-      }).format(normalizedValue)
+      // `Intl.DateTimeFormat` forbids combining `dateStyle`/`timeStyle` with
+      // individual component options, so only apply the default styles when the
+      // caller hasn't specified a shape of their own. `timeZone` is compatible
+      // with the styles, so it doesn't count as an explicit shape.
+      const hasExplicitShape =
+        options !== undefined && Object.keys(options).some((key) => key !== "timeZone")
+
+      return getDateTimeFormatter(
+        hasExplicitShape ? options : { dateStyle: "medium", timeStyle: "short", ...options },
+      ).format(normalizedValue)
     },
     formatNumber(value, options) {
       const normalizedValue = coerceNumber(value)

@@ -115,6 +115,24 @@ describe("message and value formatting", () => {
     expect(() => formatMessage("Hello, {name}!", {})).toThrow(/name/)
   })
 
+  it("formats date-time with individual component options without throwing", () => {
+    const formatter = createLocaleFormatters("en-US", "UTC")
+    const options = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    } as const
+
+    expect(() => formatter.formatDateTime("2026-03-08T07:30:00Z", options)).not.toThrow()
+
+    const formatted = formatter.formatDateTime("2026-03-08T07:30:00Z", options)
+    expect(formatted).toContain("Mar")
+    expect(formatted).toContain("2026")
+    expect(formatted).toContain("07:30")
+  })
+
   it("applies and validates the configured timezone", () => {
     const formatter = createLocaleFormatters("en-US", "America/New_York")
     expect(formatter.timeZone).toBe("America/New_York")
