@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.9.3
+
+### Patch Changes
+
+- Updated dependencies [b2212ac]
+  - @voyant-travel/i18n@0.112.2
+
 ## 0.9.2
 
 ### Patch Changes
