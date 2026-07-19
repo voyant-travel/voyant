@@ -1,6 +1,7 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { customerBusinessAccountOnboardingRuntimePort } from "./customer-business-onboarding-runtime-port.js"
 import { identityAccessRuntimePort } from "./identity-access-runtime-port.js"
+import { storefrontRuntimePort } from "./storefront-runtime-port.js"
 import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
 
 export const authCustomerBusinessAccountsVoyantModule = defineModule({
@@ -429,5 +430,24 @@ export const authTeamVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+  },
+})
+
+export const authStorefrontVoyantModule = defineModule({
+  id: "@voyant-travel/auth#storefront",
+  packageName: "@voyant-travel/auth",
+  localId: "auth.storefront",
+  // Self-host storefront access model: keys, operator-declared origins, and
+  // KMS-encrypted provider credentials backing the local customer-auth
+  // resolver. Admin routes/tools and the managed cloud adapter are follow-ups.
+  provides: { ports: [providePort(storefrontRuntimePort)] },
+  runtimePorts: [requirePort(storefrontRuntimePort)],
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "Storefront access configuration is operator-owned; it is exposed through guarded admin surfaces, not agent tools.",
+    },
   },
 })

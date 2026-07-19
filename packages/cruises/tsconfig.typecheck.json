@@ -252,6 +252,14 @@
       "@voyant-travel/auth/ports": ["../auth/dist/ports.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
       "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
+      "@voyant-travel/auth/storefront-credentials": ["../auth/dist/storefront-credentials.d.ts"],
+      "@voyant-travel/auth/storefront-customer-auth-resolver": [
+        "../auth/dist/storefront-customer-auth-resolver.d.ts"
+      ],
+      "@voyant-travel/auth/storefront-local-adapter": [
+        "../auth/dist/storefront-local-adapter.d.ts"
+      ],
+      "@voyant-travel/auth/storefront-runtime-port": ["../auth/dist/storefront-runtime-port.d.ts"],
       "@voyant-travel/auth/team-management-runtime-port": [
         "../auth/dist/team-management-runtime-port.d.ts"
       ],
@@ -752,6 +760,7 @@
       "@voyant-travel/db/schema/iam/invitations": ["../db/dist/schema/iam/invitations.d.ts"],
       "@voyant-travel/db/schema/iam/kms": ["../db/dist/schema/iam/kms.d.ts"],
       "@voyant-travel/db/schema/iam/roles": ["../db/dist/schema/iam/roles.d.ts"],
+      "@voyant-travel/db/schema/iam/storefronts": ["../db/dist/schema/iam/storefronts.d.ts"],
       "@voyant-travel/db/schema/iam/user_profiles": ["../db/dist/schema/iam/user_profiles.d.ts"],
       "@voyant-travel/db/schema/infra": ["../db/dist/schema/infra/index.d.ts"],
       "@voyant-travel/db/schema/infra/*": ["../db/dist/schema/infra/*.d.ts"],

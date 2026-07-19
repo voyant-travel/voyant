@@ -14,6 +14,9 @@ export const PREFIXES = {
   user_profiles: "usrp",
   user_invitations: "uinv",
   connection_secrets: "secr",
+  storefronts: "sf",
+  storefront_api_keys: "sfk",
+  storefront_customer_auth_credentials: "sfcc",
 
   // --- INFRA ---
   webhook_subscriptions: "hksub",
