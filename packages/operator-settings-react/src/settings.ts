@@ -26,7 +26,7 @@ export interface OperatorProfileSettingsExtraPageOptions {
 }
 
 /**
- * The packaged Operator Profile settings page as an
+ * The packaged Organization settings page as an
  * {@link AdminCoreSettingsExtraPage} descriptor. Spread the result into
  * `createAdminCoreExtension({ settings: { extraPages: [...] } })` to mount the
  * page — the same shape the operator starter uses, but source-free so the
@@ -41,7 +41,7 @@ export function createOperatorProfileSettingsExtraPage(
   return {
     id: "operator",
     path: options.path ?? "/operator",
-    title: "Operator Profile",
+    title: "Organization",
     label: (messages) => messages.settings.operator,
     icon: Building,
     group: "general",

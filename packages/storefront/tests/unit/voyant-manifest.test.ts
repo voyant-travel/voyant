@@ -144,17 +144,6 @@ describe("storefront deployment manifest", () => {
     })
   })
 
-  it("declares its package-owned branding setup contribution", () => {
-    expect(storefrontVoyantModule.admin).toEqual({
-      compositionOrder: 30,
-      setupSteps: [{ id: "@voyant-travel/storefront#setup.branding", skippable: true }],
-      runtime: {
-        entry: "@voyant-travel/storefront-react/admin",
-        export: "createSelectedStorefrontAdminExtension",
-      },
-    })
-  })
-
   it("owns package-namespaced storefront fragments", () => {
     expect([
       storefrontCustomerPortalVoyantModule,

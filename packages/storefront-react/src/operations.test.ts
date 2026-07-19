@@ -5,14 +5,6 @@ import { getAdminStorefrontSettings, updateAdminStorefrontSettings } from "./ope
 
 const storefrontSettingsResponse = {
   data: {
-    branding: {
-      logoUrl: null,
-      faviconUrl: null,
-      brandMarkUrl: null,
-      primaryColor: null,
-      accentColor: null,
-      supportedLanguages: [],
-    },
     support: {
       email: null,
       phone: null,

@@ -258,14 +258,6 @@ describe("storefront catalog read response contracts", () => {
 
   it("resolved settings serialize to the documented settings envelope", () => {
     const settings: z.infer<typeof storefrontSettingsSchema> = {
-      branding: {
-        logoUrl: null,
-        faviconUrl: null,
-        brandMarkUrl: null,
-        primaryColor: null,
-        accentColor: null,
-        supportedLanguages: ["en"],
-      },
       support: { email: null, phone: null, links: [] },
       legal: {
         termsUrl: null,

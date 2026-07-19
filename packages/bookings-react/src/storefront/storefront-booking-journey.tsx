@@ -475,7 +475,7 @@ function useResolvedContractSlug(
  * contract preview UI.
  *
  * Returns `undefined` while the request is in flight or when the
- * operator hasn't filled in Settings -> Operator profile yet — the contract
+ * operator hasn't filled in Settings -> Organization yet — the contract
  * preview then renders the operator block with `-` placeholders (the
  * template renderer's missing-value substitution kicks in).
  */

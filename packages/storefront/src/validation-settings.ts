@@ -17,10 +17,6 @@ const httpUrlSchema = z.url().refine(
   { message: "URL must use http or https" },
 )
 const urlOrNullSchema = httpUrlSchema.nullable()
-const colorTokenSchema = z
-  .string()
-  .trim()
-  .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
 const textOrNullSchema = z.string().trim().min(1).nullable()
 
 export const storefrontPaymentMethodCodeSchema = z.enum([
@@ -153,16 +149,6 @@ export const storefrontPaymentScheduleSchema = z.object({
 export const storefrontCurrencyDisplaySchema = z.enum(["code", "symbol", "name"])
 
 export const storefrontSettingsInputSchema = z.object({
-  branding: z
-    .object({
-      logoUrl: httpUrlSchema.optional().nullable(),
-      faviconUrl: httpUrlSchema.optional().nullable(),
-      brandMarkUrl: httpUrlSchema.optional().nullable(),
-      primaryColor: colorTokenSchema.optional().nullable(),
-      accentColor: colorTokenSchema.optional().nullable(),
-      supportedLanguages: z.array(languageTagSchema).optional(),
-    })
-    .optional(),
   support: z
     .object({
       email: z.email().optional().nullable(),
@@ -211,14 +197,6 @@ export const storefrontSettingsInputSchema = z.object({
 })
 
 export const storefrontSettingsSchema = z.object({
-  branding: z.object({
-    logoUrl: urlOrNullSchema,
-    faviconUrl: urlOrNullSchema,
-    brandMarkUrl: urlOrNullSchema,
-    primaryColor: colorTokenSchema.nullable(),
-    accentColor: colorTokenSchema.nullable(),
-    supportedLanguages: z.array(languageTagSchema),
-  }),
   support: z.object({
     email: z.email().nullable(),
     phone: z.string().trim().min(1).nullable(),
@@ -253,7 +231,6 @@ export const storefrontSettingsSchema = z.object({
 })
 
 export const storefrontSettingsPatchSchema = z.object({
-  branding: storefrontSettingsInputSchema.shape.branding,
   support: storefrontSettingsInputSchema.shape.support,
   legal: storefrontSettingsInputSchema.shape.legal,
   localization: storefrontSettingsInputSchema.shape.localization,

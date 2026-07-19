@@ -15,14 +15,6 @@ describe("createStorefrontAdminRoutes", () => {
   it("reads normalized storefront settings through the admin surface", async () => {
     const app = createTestApp({
       settings: {
-        branding: {
-          logoUrl: "https://cdn.example.com/logo.svg",
-          faviconUrl: "https://cdn.example.com/favicon.ico",
-          brandMarkUrl: "https://cdn.example.com/mark.svg",
-          primaryColor: "#123abc",
-          accentColor: "#f80",
-          supportedLanguages: ["en", "ro"],
-        },
         support: {
           email: "support@example.com",
           phone: "+1 555 100 2000",
@@ -75,14 +67,6 @@ describe("createStorefrontAdminRoutes", () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       data: {
-        branding: {
-          logoUrl: "https://cdn.example.com/logo.svg",
-          faviconUrl: "https://cdn.example.com/favicon.ico",
-          brandMarkUrl: "https://cdn.example.com/mark.svg",
-          primaryColor: "#123abc",
-          accentColor: "#f80",
-          supportedLanguages: ["en", "ro"],
-        },
         support: {
           email: "support@example.com",
           phone: "+1 555 100 2000",
@@ -162,14 +146,6 @@ describe("createStorefrontAdminRoutes", () => {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        branding: {
-          logoUrl: "https://cdn.example.com/new-logo.svg",
-          faviconUrl: "https://cdn.example.com/favicon.ico",
-          brandMarkUrl: "https://cdn.example.com/mark.svg",
-          primaryColor: "#0f766e",
-          accentColor: "#f59e0b",
-          supportedLanguages: ["en", "fr"],
-        },
         support: {
           email: "help@example.com",
           links: [{ label: "Contact form", url: "https://example.com/contact" }],
@@ -299,7 +275,7 @@ describe("createStorefrontAdminRoutes", () => {
     })
   })
 
-  it("rejects invalid URLs, colors, locales, and payment metadata", async () => {
+  it("rejects invalid URLs, locales, and payment metadata", async () => {
     const app = createTestApp({
       updateSettings: (next) => next,
     })
@@ -308,7 +284,6 @@ describe("createStorefrontAdminRoutes", () => {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        branding: { logoUrl: "not-a-url", primaryColor: "teal", supportedLanguages: ["english"] },
         support: { email: "not-email", links: [{ label: "", url: "ftp://example.com" }] },
         legal: { termsUrl: "not-a-url" },
         localization: { defaultLocale: "not a locale", currencyDisplay: "verbose" },

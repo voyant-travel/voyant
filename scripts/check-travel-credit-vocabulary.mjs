@@ -62,7 +62,6 @@ for (const path of [
 for (const path of [
   "packages/storefront/src/validation-settings.ts",
   "packages/storefront/src/service.ts",
-  "packages/storefront-react/src/internal/storefront-settings-form.ts",
 ]) {
   const source = readFileSync(resolve(root, path), "utf8")
   if (/\bvoucher\b/i.test(source)) {

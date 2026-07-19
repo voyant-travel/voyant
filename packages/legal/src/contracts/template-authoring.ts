@@ -664,7 +664,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
     id: "operator",
     label: "Operator",
     description:
-      "The legal/trading entity contracting with the customer. Wired from Settings -> Operator profile.",
+      "The legal/trading entity contracting with the customer. Wired from Settings -> Organization.",
     variables: [
       { key: "operator.name", label: "Trading name", example: "Voyant Travel", type: "string" },
       {
@@ -699,28 +699,28 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         label: "Horizontal logo URL (light mode)",
         example: "data:image/png;base64,…",
         type: "url",
-        description: "Uploaded in Settings → Operator profile. Empty when not configured.",
+        description: "Uploaded in Settings → Organization. Empty when not configured.",
       },
       {
         key: "operator.logoDarkUrl",
         label: "Horizontal logo URL (dark mode)",
         example: "data:image/png;base64,…",
         type: "url",
-        description: "Uploaded in Settings → Operator profile. Empty when not configured.",
+        description: "Uploaded in Settings → Organization. Empty when not configured.",
       },
       {
         key: "operator.iconUrl",
         label: "Icon URL (light mode)",
         example: "data:image/png;base64,…",
         type: "url",
-        description: "Uploaded in Settings → Operator profile. Empty when not configured.",
+        description: "Uploaded in Settings → Organization. Empty when not configured.",
       },
       {
         key: "operator.iconDarkUrl",
         label: "Icon URL (dark mode)",
         example: "data:image/png;base64,…",
         type: "url",
-        description: "Uploaded in Settings → Operator profile. Empty when not configured.",
+        description: "Uploaded in Settings → Organization. Empty when not configured.",
       },
       { key: "operator.iban", label: "IBAN", example: "RO00BANK0000000000000000", type: "string" },
       { key: "operator.bank", label: "Bank name", example: "BCR", type: "string" },

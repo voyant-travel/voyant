@@ -3,7 +3,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
   description: "Administreaza configuratia spatiului de lucru",
   generalGroup: "General",
   productsGroup: "Produse",
-  operator: "Profil operator",
+  operator: "Organizație",
   team: "Echipa",
   apiTokens: "Tokenuri API",
   channels: "Canale",
@@ -222,12 +222,12 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     saveFailed: "Salvarea a esuat",
   },
   operatorProfilePage: {
-    title: "Profil operator",
+    title: "Organizație",
     descriptionPrefix:
-      "Identitatea operatorului pentru contracte, blocuri legale publice si colectarea platilor. Aceste detalii populeaza ",
+      "Identitatea organizației pentru contracte, blocuri legale publice si colectarea platilor. Aceste detalii populeaza ",
     descriptionCodeFragment: "operator.*",
     descriptionSuffix: " in sabloanele de contract.",
-    savedToast: "Profilul operatorului a fost salvat",
+    savedToast: "Organizația a fost salvată",
     saveFailed: "Salvarea a esuat",
     saveChanges: "Salveaza modificarile",
     branding: {
