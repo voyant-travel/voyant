@@ -1,5 +1,12 @@
 # @voyant-travel/apps-react
 
+## 0.3.2
+
+### Patch Changes
+
+- a145a8f: Deduplicate concurrent Marketplace install-intent resolution so the managed consent screen remains usable when it remounts during the handoff.
+  - @voyant-travel/types@0.109.6
+
 ## 0.3.1
 
 ### Patch Changes

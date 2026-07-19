@@ -1,5 +1,19 @@
 # @voyant-travel/db
 
+## 0.115.0
+
+### Minor Changes
+
+- a160a81: Add isolated customer identities, personal and business buyer accounts, live
+  buyer selection, immutable booking ownership, and framework-neutral storefront
+  auth clients for B2C, B2B, and hybrid deployments.
+
+### Patch Changes
+
+- Updated dependencies [a160a81]
+  - @voyant-travel/core@0.130.0
+  - @voyant-travel/workflows@0.122.9
+
 ## 0.114.15
 
 ### Patch Changes
