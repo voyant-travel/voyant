@@ -11,11 +11,13 @@ import {
 } from "@voyant-travel/bookings/schema"
 import { customerAuthProfilesTable, customerAuthUser } from "@voyant-travel/db/schema/iam"
 import { invoiceRenditions, invoices, payments } from "@voyant-travel/finance/schema"
+import type { CustomerBuyerContext, PersonalCustomerBuyerContext } from "@voyant-travel/hono"
 import { identityContactPoints } from "@voyant-travel/identity/schema"
 import { identityService } from "@voyant-travel/identity/service"
 import { contractAttachments, contracts } from "@voyant-travel/legal/schema"
 import {
   type CreatePersonDocumentInput,
+  organizations,
   type PersonDocument,
   people,
   personDocumentNumberPlaintextSchema,
@@ -28,7 +30,7 @@ import {
   encryptOptionalJsonEnvelope,
   type KmsProvider,
 } from "@voyant-travel/utils"
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, exists, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type {
@@ -98,6 +100,46 @@ function resolveMarketingConsentState(params: {
           : null,
     marketingConsentSource: nextConsent ? normalizedNextSource : null,
   }
+}
+
+async function persistBootstrapMarketingConsent(
+  db: PostgresJsDatabase,
+  userId: string,
+  authProfile: Awaited<ReturnType<typeof getAuthProfileRow>>,
+  input: BootstrapCustomerPortalInput,
+): Promise<void> {
+  if (
+    !authProfile ||
+    (input.marketingConsent === undefined && input.marketingConsentSource === undefined)
+  ) {
+    return
+  }
+
+  const nextMarketingConsent = resolveMarketingConsentState({
+    currentConsent: authProfile.marketingConsent,
+    currentConsentAt: authProfile.marketingConsentAt,
+    currentConsentSource: authProfile.marketingConsentSource,
+    nextConsent: input.marketingConsent,
+    nextConsentSource: input.marketingConsentSource,
+  })
+
+  await db
+    .insert(customerAuthProfilesTable)
+    .values({
+      id: userId,
+      marketingConsent: nextMarketingConsent.marketingConsent,
+      marketingConsentAt: nextMarketingConsent.marketingConsentAt,
+      marketingConsentSource: nextMarketingConsent.marketingConsentSource,
+    })
+    .onConflictDoUpdate({
+      target: customerAuthProfilesTable.id,
+      set: {
+        marketingConsent: nextMarketingConsent.marketingConsent,
+        marketingConsentAt: nextMarketingConsent.marketingConsentAt,
+        marketingConsentSource: nextMarketingConsent.marketingConsentSource,
+        updatedAt: new Date(),
+      },
+    })
 }
 
 function normalizeDate(value: Date | string | null | undefined) {
@@ -786,9 +828,11 @@ async function getAuthProfileRow(db: PostgresJsDatabase, userId: string) {
       id: customerAuthUser.id,
       email: customerAuthUser.email,
       phoneNumber: customerAuthUser.phoneNumber,
+      phoneNumberVerified: customerAuthUser.phoneNumberVerified,
       emailVerified: customerAuthUser.emailVerified,
       name: customerAuthUser.name,
       image: customerAuthUser.image,
+      relationshipPersonId: customerAuthUser.relationshipPersonId,
       firstName: customerAuthProfilesTable.firstName,
       lastName: customerAuthProfilesTable.lastName,
       avatarUrl: customerAuthProfilesTable.avatarUrl,
@@ -885,6 +929,8 @@ async function projectPersonDocumentToWire(
 }
 
 async function getLinkedPersonPiiRow(db: PostgresJsDatabase, userId: string) {
+  const personId = await resolveLinkedCustomerRecordId(db, userId)
+  if (!personId) return null
   const [row] = await db
     .select({
       id: people.id,
@@ -894,7 +940,7 @@ async function getLinkedPersonPiiRow(db: PostgresJsDatabase, userId: string) {
       insuranceEncrypted: people.insuranceEncrypted,
     })
     .from(people)
-    .where(and(eq(people.source, linkedCustomerSource), eq(people.sourceRef, userId)))
+    .where(eq(people.id, personId))
     .limit(1)
 
   return row ?? null
@@ -916,9 +962,9 @@ async function getLinkedPersonDocuments(
 /**
  * Resolves the `crm.people` row linked to this auth user, creating
  * it on first PII write if missing. The seed values mirror what the
- * bootstrap path already produces — first/last name from the auth
- * profile, source/sourceRef pinned to `customer_auth.user`/`userId` so future
- * reads find the same row.
+ * bootstrap path already produces. The customer identity's durable
+ * relationshipPersonId is the link authority; legacy Person source/sourceRef
+ * values are read only for upgrade reconciliation.
  */
 async function ensureLinkedPerson(
   db: PostgresJsDatabase,
@@ -928,37 +974,140 @@ async function ensureLinkedPerson(
   const existing = await resolveLinkedCustomerRecordId(db, userId)
   if (existing) return existing
 
+  const [identity] = await db
+    .select({ relationshipPersonId: customerAuthUser.relationshipPersonId })
+    .from(customerAuthUser)
+    .where(eq(customerAuthUser.id, userId))
+    .limit(1)
+  if (identity?.relationshipPersonId) {
+    throw new Error("The linked customer record is no longer active")
+  }
+
   const fallbackFirst =
     authProfile.firstName ?? authProfile.name.split(" ")[0]?.trim() ?? "Customer"
   const fallbackLast =
     authProfile.lastName ?? (authProfile.name.split(" ").slice(1).join(" ").trim() || "")
 
-  const created = await relationshipsService.createPerson(db, {
-    firstName: fallbackFirst,
-    lastName: fallbackLast,
-    tags: [],
-    status: "active",
-    source: linkedCustomerSource,
-    sourceRef: userId,
-    website: null,
+  return db.transaction(async (tx) => {
+    const txDb = tx as PostgresJsDatabase
+    const created = await relationshipsService.createPerson(txDb, {
+      firstName: fallbackFirst,
+      lastName: fallbackLast,
+      tags: [],
+      status: "active",
+      website: null,
+    })
+    if (!created || !(await claimPersonalBuyerPerson(txDb, userId, created.id))) {
+      throw new Error("Failed to atomically create and claim the customer record")
+    }
+    return created.id
   })
-  if (!created) {
-    throw new Error("Failed to create linked customer record")
-  }
-  return created.id
 }
 
 async function resolveLinkedCustomerRecordId(
   db: PostgresJsDatabase,
   userId: string,
 ): Promise<string | null> {
-  const [row] = await db
+  const [identity] = await db
+    .select({ relationshipPersonId: customerAuthUser.relationshipPersonId })
+    .from(customerAuthUser)
+    .where(eq(customerAuthUser.id, userId))
+    .limit(1)
+  if (!identity) return null
+  if (identity.relationshipPersonId) {
+    const [activePerson] = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(
+        and(
+          eq(people.id, identity.relationshipPersonId),
+          eq(people.status, "active"),
+          isNull(people.archivedAt),
+        ),
+      )
+      .limit(1)
+    return activePerson?.id ?? null
+  }
+
+  // Upgrade/fresh-install reconciliation for the legacy mutable source/sourceRef
+  // link. Ambiguous legacy state fails closed instead of choosing a Person.
+  const legacyRows = await db
     .select({ id: people.id })
     .from(people)
-    .where(and(eq(people.source, linkedCustomerSource), eq(people.sourceRef, userId)))
-    .limit(1)
+    .where(
+      and(
+        eq(people.source, linkedCustomerSource),
+        eq(people.sourceRef, userId),
+        eq(people.status, "active"),
+        isNull(people.archivedAt),
+      ),
+    )
+    .limit(2)
+  if (legacyRows.length !== 1) return null
+  return (await claimPersonalBuyerPerson(db, userId, legacyRows[0]!.id)) ? legacyRows[0]!.id : null
+}
 
-  return row?.id ?? null
+/** @internal Exported only for security-focused integration coverage. */
+export async function claimPersonalBuyerPerson(
+  db: PostgresJsDatabase,
+  userId: string,
+  personId: string,
+  options: { requireVerifiedIdentityContact?: boolean } = {},
+): Promise<boolean> {
+  const activePerson = db
+    .select({ id: people.id })
+    .from(people)
+    .where(and(eq(people.id, personId), eq(people.status, "active"), isNull(people.archivedAt)))
+  try {
+    const verifiedIdentityContact = db
+      .select({ id: identityContactPoints.id })
+      .from(identityContactPoints)
+      .innerJoin(customerAuthUser, eq(customerAuthUser.id, userId))
+      .where(
+        and(
+          eq(identityContactPoints.entityType, "person"),
+          eq(identityContactPoints.entityId, personId),
+          or(
+            and(
+              eq(customerAuthUser.emailVerified, true),
+              eq(identityContactPoints.kind, "email"),
+              sql`lower(${identityContactPoints.normalizedValue}) = lower(${customerAuthUser.email})`,
+            ),
+            and(
+              eq(customerAuthUser.phoneNumberVerified, true),
+              inArray(identityContactPoints.kind, ["phone", "mobile", "whatsapp", "sms"]),
+              or(
+                eq(identityContactPoints.normalizedValue, customerAuthUser.phoneNumber),
+                eq(identityContactPoints.value, customerAuthUser.phoneNumber),
+              ),
+            ),
+          ),
+        ),
+      )
+    const [claimed] = await db
+      .update(customerAuthUser)
+      .set({ relationshipPersonId: personId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(customerAuthUser.id, userId),
+          isNull(customerAuthUser.relationshipPersonId),
+          exists(activePerson),
+          ...(options.requireVerifiedIdentityContact ? [exists(verifiedIdentityContact)] : []),
+        ),
+      )
+      .returning({ userId: customerAuthUser.id })
+    if (claimed) return true
+
+    const [existing] = await db
+      .select({ relationshipPersonId: customerAuthUser.relationshipPersonId })
+      .from(customerAuthUser)
+      .where(eq(customerAuthUser.id, userId))
+      .limit(1)
+    return existing?.relationshipPersonId === personId
+  } catch (error) {
+    if ((error as { code?: unknown })?.code === "23505") return false
+    throw error
+  }
 }
 
 async function listCustomerRecordCandidatesByEmail(
@@ -978,6 +1127,7 @@ async function listCustomerRecordCandidatesByEmail(
       status: people.status,
       source: people.source,
       sourceRef: people.sourceRef,
+      claimedUserId: customerAuthUser.id,
     })
     .from(people)
     .innerJoin(
@@ -989,6 +1139,8 @@ async function listCustomerRecordCandidatesByEmail(
         eq(identityContactPoints.normalizedValue, normalizedEmail),
       ),
     )
+    .leftJoin(customerAuthUser, eq(customerAuthUser.relationshipPersonId, people.id))
+    .where(and(eq(people.status, "active"), isNull(people.archivedAt)))
     .orderBy(desc(people.updatedAt))
 
   const uniqueRows = new Map<string, (typeof rows)[number]>()
@@ -1010,8 +1162,12 @@ async function listCustomerRecordCandidatesByEmail(
     billingAddress: null,
     relation: row.relation ?? null,
     status: row.status,
-    claimedByAnotherUser: row.source === linkedCustomerSource && Boolean(row.sourceRef),
-    linkable: row.source === linkedCustomerSource ? row.sourceRef == null : row.sourceRef == null,
+    claimedByAnotherUser:
+      Boolean(row.claimedUserId) || (row.source === linkedCustomerSource && Boolean(row.sourceRef)),
+    linkable:
+      !row.claimedUserId &&
+      !(row.source === linkedCustomerSource && Boolean(row.sourceRef)) &&
+      row.sourceRef == null,
   }))
 
   return candidates
@@ -1034,6 +1190,7 @@ async function listCustomerRecordCandidatesByPhone(
       status: people.status,
       source: people.source,
       sourceRef: people.sourceRef,
+      claimedUserId: customerAuthUser.id,
     })
     .from(people)
     .innerJoin(
@@ -1048,6 +1205,8 @@ async function listCustomerRecordCandidatesByPhone(
         ),
       ),
     )
+    .leftJoin(customerAuthUser, eq(customerAuthUser.relationshipPersonId, people.id))
+    .where(and(eq(people.status, "active"), isNull(people.archivedAt)))
     .orderBy(desc(people.updatedAt))
 
   const uniqueRows = new Map<string, (typeof rows)[number]>()
@@ -1069,8 +1228,12 @@ async function listCustomerRecordCandidatesByPhone(
     billingAddress: null,
     relation: row.relation ?? null,
     status: row.status,
-    claimedByAnotherUser: row.source === linkedCustomerSource && Boolean(row.sourceRef),
-    linkable: row.source === linkedCustomerSource ? row.sourceRef == null : row.sourceRef == null,
+    claimedByAnotherUser:
+      Boolean(row.claimedUserId) || (row.source === linkedCustomerSource && Boolean(row.sourceRef)),
+    linkable:
+      !row.claimedUserId &&
+      !(row.source === linkedCustomerSource && Boolean(row.sourceRef)) &&
+      row.sourceRef == null,
   }))
 }
 
@@ -1138,9 +1301,19 @@ async function upsertCustomerBillingAddress(
 
 async function getAccessibleBookingIds(
   db: PostgresJsDatabase,
-  params: { userId: string; email: string | null },
+  params: { buyer: CustomerBuyerContext; email: string | null },
 ) {
-  const linkedPersonId = await resolveLinkedCustomerRecordId(db, params.userId)
+  if (params.buyer.kind === "business") {
+    if (!(await isActiveBusinessBuyerOrganization(db, params.buyer))) return []
+    const rows = await db
+      .select({ bookingId: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.organizationId, params.buyer.relationshipOrganizationId))
+    return rows.map((row) => row.bookingId)
+  }
+
+  const linkedPersonId = await resolveLinkedCustomerRecordId(db, params.buyer.userId)
+  if (!linkedPersonId) return []
   const email = params.email?.trim().toLowerCase() ?? null
 
   const [directBookingRows, participantPersonRows, participantEmailRows] = await Promise.all([
@@ -1175,15 +1348,50 @@ async function getAccessibleBookingIds(
   )
 }
 
+async function isActiveBusinessBuyerOrganization(
+  db: PostgresJsDatabase,
+  buyer: Extract<CustomerBuyerContext, { kind: "business" }>,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(
+      and(
+        eq(organizations.id, buyer.relationshipOrganizationId),
+        eq(organizations.status, "active"),
+        isNull(organizations.archivedAt),
+      ),
+    )
+    .limit(1)
+  return Boolean(row)
+}
+
 async function hasBookingAccess(params: {
   db: PostgresJsDatabase
   bookingId: string
-  userId: string
+  buyer: CustomerBuyerContext
   // Phone-only users have no email; the email-match branch is skipped
   // and access falls through to the linked-person path.
   authEmail: string | null
   linkedPersonId: string | null
 }) {
+  if (params.buyer.kind === "business") {
+    if (!(await isActiveBusinessBuyerOrganization(params.db, params.buyer))) return false
+    const [match] = await params.db
+      .select({ bookingId: bookings.id })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.id, params.bookingId),
+          eq(bookings.organizationId, params.buyer.relationshipOrganizationId),
+        ),
+      )
+      .limit(1)
+    return Boolean(match)
+  }
+
+  if (!params.linkedPersonId) return false
+
   const ownershipConditions = []
   if (params.authEmail) {
     // agent-quality: raw-sql reviewed -- owner: customer-portal; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
@@ -1816,85 +2024,107 @@ export const publicCustomerPortalService = {
         candidates: [],
       }
     }
+    if (authProfile.relationshipPersonId) {
+      // A non-null durable link that points at an archived/missing Person is
+      // invalid state, not permission to silently create and retarget identity.
+      return { error: "customer_record_not_found" }
+    }
 
     // Phone-only signups have no email; email-keyed candidate
     // matching simply finds zero candidates and the path falls
     // through to creating a fresh `crm.people` row when allowed.
-    const normalizedEmail = authProfile.email ? normalizeEmail(authProfile.email) : null
+    const normalizedEmail =
+      authProfile.emailVerified && authProfile.email ? normalizeEmail(authProfile.email) : null
+    const normalizedPhone =
+      authProfile.phoneNumberVerified && authProfile.phoneNumber
+        ? normalizePhone(authProfile.phoneNumber)
+        : null
+    const verifiedCandidateLists = await Promise.all([
+      normalizedEmail ? listCustomerRecordCandidatesByEmail(db, normalizedEmail) : [],
+      normalizedPhone ? listCustomerRecordCandidatesByPhone(db, normalizedPhone) : [],
+    ])
+    const verifiedCandidatesById = new Map(
+      verifiedCandidateLists.flat().map((candidate) => [candidate.id, candidate]),
+    )
     const nextFirstName =
       input.firstName ?? authProfile.firstName ?? authProfile.name.split(" ")[0] ?? "Customer"
     const nextLastName =
       input.lastName ?? authProfile.lastName ?? authProfile.name.split(" ").slice(1).join(" ") ?? ""
 
-    if (input.marketingConsent !== undefined || input.marketingConsentSource !== undefined) {
-      const nextMarketingConsent = resolveMarketingConsentState({
-        currentConsent: authProfile.marketingConsent,
-        currentConsentAt: authProfile.marketingConsentAt,
-        currentConsentSource: authProfile.marketingConsentSource,
-        nextConsent: input.marketingConsent,
-        nextConsentSource: input.marketingConsentSource,
-      })
-
-      await db
-        .insert(customerAuthProfilesTable)
-        .values({
-          id: userId,
-          marketingConsent: nextMarketingConsent.marketingConsent,
-          marketingConsentAt: nextMarketingConsent.marketingConsentAt,
-          marketingConsentSource: nextMarketingConsent.marketingConsentSource,
-        })
-        .onConflictDoUpdate({
-          target: customerAuthProfilesTable.id,
-          set: {
-            marketingConsent: nextMarketingConsent.marketingConsent,
-            marketingConsentAt: nextMarketingConsent.marketingConsentAt,
-            marketingConsentSource: nextMarketingConsent.marketingConsentSource,
-            updatedAt: new Date(),
-          },
-        })
-    }
-
     if (input.customerRecordId) {
-      const person = await relationshipsService.getPersonById(db, input.customerRecordId)
-      if (!person) {
-        return { error: "customer_record_not_found" }
-      }
+      try {
+        await db.transaction(async (tx) => {
+          const txDb = tx as PostgresJsDatabase
+          const currentAuthProfile = await getAuthProfileRow(txDb, userId)
+          if (!currentAuthProfile) throw new Error("customer_record_not_found")
 
-      if (
-        person.source === linkedCustomerSource &&
-        person.sourceRef &&
-        person.sourceRef !== userId
-      ) {
-        return { error: "customer_record_claimed" }
-      }
+          const currentEmail =
+            currentAuthProfile.emailVerified && currentAuthProfile.email
+              ? normalizeEmail(currentAuthProfile.email)
+              : null
+          const currentPhone =
+            currentAuthProfile.phoneNumberVerified && currentAuthProfile.phoneNumber
+              ? normalizePhone(currentAuthProfile.phoneNumber)
+              : null
+          const currentCandidates = await Promise.all([
+            currentEmail ? listCustomerRecordCandidatesByEmail(txDb, currentEmail) : [],
+            currentPhone ? listCustomerRecordCandidatesByPhone(txDb, currentPhone) : [],
+          ])
+          const candidate = currentCandidates
+            .flat()
+            .find((row) => row.id === input.customerRecordId)
+          if (!candidate?.linkable || candidate.claimedByAnotherUser) {
+            throw new Error("customer_record_not_found")
+          }
 
-      const updated = await relationshipsService.updatePerson(db, input.customerRecordId, {
-        source: linkedCustomerSource,
-        sourceRef: userId,
-        ...(input.firstName !== undefined ? { firstName: nextFirstName } : {}),
-        ...(input.lastName !== undefined ? { lastName: nextLastName } : {}),
-        ...(input.customerRecord?.preferredLanguage !== undefined
-          ? { preferredLanguage: input.customerRecord.preferredLanguage }
-          : {}),
-        ...(input.customerRecord?.preferredCurrency !== undefined
-          ? { preferredCurrency: input.customerRecord.preferredCurrency }
-          : {}),
-        ...(input.customerRecord?.dateOfBirth !== undefined
-          ? { dateOfBirth: input.customerRecord.dateOfBirth }
-          : {}),
-        ...(input.customerRecord?.phone !== undefined ? { phone: input.customerRecord.phone } : {}),
-      })
+          const person = await relationshipsService.getPersonById(txDb, input.customerRecordId!)
+          if (person?.status !== "active" || person.archivedAt) {
+            throw new Error("customer_record_not_found")
+          }
 
-      if (!updated) {
-        return { error: "customer_record_not_found" }
-      }
+          if (
+            !(await claimPersonalBuyerPerson(txDb, userId, input.customerRecordId!, {
+              requireVerifiedIdentityContact: true,
+            }))
+          ) {
+            throw new Error("customer_record_claimed")
+          }
 
-      if (input.customerRecord?.billingAddress) {
-        await upsertCustomerBillingAddress(
-          db,
-          input.customerRecordId,
-          input.customerRecord.billingAddress,
-        )
+          const updated = await relationshipsService.updatePerson(txDb, input.customerRecordId!, {
+            ...(input.firstName !== undefined ? { firstName: nextFirstName } : {}),
+            ...(input.lastName !== undefined ? { lastName: nextLastName } : {}),
+            ...(input.customerRecord?.preferredLanguage !== undefined
+              ? { preferredLanguage: input.customerRecord.preferredLanguage }
+              : {}),
+            ...(input.customerRecord?.preferredCurrency !== undefined
+              ? { preferredCurrency: input.customerRecord.preferredCurrency }
+              : {}),
+            ...(input.customerRecord?.dateOfBirth !== undefined
+              ? { dateOfBirth: input.customerRecord.dateOfBirth }
+              : {}),
+            ...(input.customerRecord?.phone !== undefined
+              ? { phone: input.customerRecord.phone }
+              : {}),
+          })
+          if (!updated) throw new Error("customer_record_not_found")
+
+          if (input.customerRecord?.billingAddress) {
+            await upsertCustomerBillingAddress(
+              txDb,
+              input.customerRecordId!,
+              input.customerRecord.billingAddress,
+            )
+          }
+          await persistBootstrapMarketingConsent(txDb, userId, currentAuthProfile, input)
+        })
+      } catch (error) {
+        if ((error as Error).message === "customer_record_not_found") {
+          return { error: "customer_record_not_found" }
+        }
+        if ((error as Error).message === "customer_record_claimed") {
+          return { error: "customer_record_claimed" }
+        }
+        throw error
       }
 
       const profile = await this.getProfile(db, userId)
@@ -1905,14 +2135,13 @@ export const publicCustomerPortalService = {
       }
     }
 
-    const customerCandidates = normalizedEmail
-      ? await listCustomerRecordCandidatesByEmail(db, normalizedEmail)
-      : []
+    const customerCandidates = Array.from(verifiedCandidatesById.values())
     const selectableCandidates = customerCandidates.filter(
       (candidate) => !candidate.claimedByAnotherUser,
     )
 
     if (selectableCandidates.length > 0) {
+      await persistBootstrapMarketingConsent(db, userId, authProfile, input)
       return {
         status: "customer_selection_required",
         profile: null,
@@ -1921,6 +2150,7 @@ export const publicCustomerPortalService = {
     }
 
     if (!input.createCustomerIfMissing) {
+      await persistBootstrapMarketingConsent(db, userId, authProfile, input)
       return {
         status: "customer_selection_required",
         profile: null,
@@ -1928,28 +2158,40 @@ export const publicCustomerPortalService = {
       }
     }
 
-    const created = await relationshipsService.createPerson(db, {
-      firstName: nextFirstName,
-      lastName: nextLastName || "Customer",
-      preferredLanguage: input.customerRecord?.preferredLanguage ?? authProfile.locale ?? null,
-      preferredCurrency: input.customerRecord?.preferredCurrency ?? null,
-      dateOfBirth: input.customerRecord?.dateOfBirth ?? null,
-      relation: "client",
-      status: "active",
-      source: linkedCustomerSource,
-      sourceRef: userId,
-      tags: [],
-      email: normalizedEmail,
-      phone: input.customerRecord?.phone ?? null,
-      website: null,
-    })
-
-    if (!created) {
-      return { error: "not_found" }
-    }
-
-    if (input.customerRecord?.billingAddress) {
-      await upsertCustomerBillingAddress(db, created.id, input.customerRecord.billingAddress)
+    try {
+      await db.transaction(async (tx) => {
+        const txDb = tx as PostgresJsDatabase
+        const created = await relationshipsService.createPerson(txDb, {
+          firstName: nextFirstName,
+          lastName: nextLastName || "Customer",
+          preferredLanguage: input.customerRecord?.preferredLanguage ?? authProfile.locale ?? null,
+          preferredCurrency: input.customerRecord?.preferredCurrency ?? null,
+          dateOfBirth: input.customerRecord?.dateOfBirth ?? null,
+          relation: "client",
+          status: "active",
+          tags: [],
+          email: normalizedEmail,
+          phone: input.customerRecord?.phone ?? null,
+          website: null,
+        })
+        if (!created) throw new Error("customer_record_create_failed")
+        if (!(await claimPersonalBuyerPerson(txDb, userId, created.id))) {
+          throw new Error("customer_record_claim_failed")
+        }
+        if (input.customerRecord?.billingAddress) {
+          await upsertCustomerBillingAddress(txDb, created.id, input.customerRecord.billingAddress)
+        }
+        await persistBootstrapMarketingConsent(txDb, userId, authProfile, input)
+        return created.id
+      })
+    } catch (error) {
+      if ((error as Error).message === "customer_record_create_failed") {
+        return { error: "not_found" }
+      }
+      if ((error as Error).message === "customer_record_claim_failed") {
+        return { error: "customer_record_claimed" }
+      }
+      throw error
     }
 
     const profile = await this.getProfile(db, userId)
@@ -1978,9 +2220,10 @@ export const publicCustomerPortalService = {
 
   async importBookingTravelersAsCompanions(
     db: PostgresJsDatabase,
-    userId: string,
+    buyer: PersonalCustomerBuyerContext,
     input: ImportCustomerPortalBookingTravelersInput,
   ): Promise<ImportCustomerPortalBookingTravelersResult | null> {
+    const userId = buyer.userId
     const authProfile = await getAuthProfileRow(db, userId)
     const personId = await resolveLinkedCustomerRecordId(db, userId)
     if (!authProfile || !personId) {
@@ -1988,7 +2231,7 @@ export const publicCustomerPortalService = {
     }
 
     const accessibleBookingIds = await getAccessibleBookingIds(db, {
-      userId,
+      buyer,
       email: authProfile.email,
     })
     const targetBookingIds =
@@ -2104,10 +2347,10 @@ export const publicCustomerPortalService = {
 
   async importBookingParticipantsAsCompanions(
     db: PostgresJsDatabase,
-    userId: string,
+    buyer: PersonalCustomerBuyerContext,
     input: ImportCustomerPortalBookingTravelersInput,
   ): Promise<ImportCustomerPortalBookingTravelersResult | null> {
-    return this.importBookingTravelersAsCompanions(db, userId, input)
+    return this.importBookingTravelersAsCompanions(db, buyer, input)
   },
 
   async createCompanion(
@@ -2216,14 +2459,17 @@ export const publicCustomerPortalService = {
 
   async listBookings(
     db: PostgresJsDatabase,
-    userId: string,
+    buyer: CustomerBuyerContext,
   ): Promise<CustomerPortalBookingSummary[] | null> {
-    const authProfile = await getAuthProfileRow(db, userId)
+    const authProfile = await getAuthProfileRow(db, buyer.userId)
     if (!authProfile) {
       return null
     }
 
-    const bookingIds = await getAccessibleBookingIds(db, { userId, email: authProfile.email })
+    const bookingIds = await getAccessibleBookingIds(db, {
+      buyer,
+      email: authProfile.emailVerified ? authProfile.email : null,
+    })
     if (bookingIds.length === 0) {
       return []
     }
@@ -2317,24 +2563,28 @@ export const publicCustomerPortalService = {
 
   async getBooking(
     db: PostgresJsDatabase,
-    userId: string,
+    buyer: CustomerBuyerContext,
     bookingId: string,
     options: CustomerPortalServiceOptions = {},
   ): Promise<CustomerPortalBookingDetail | null> {
-    const authProfile = await getAuthProfileRow(db, userId)
+    const authProfile = await getAuthProfileRow(db, buyer.userId)
     if (!authProfile) {
       return null
     }
 
-    const [linkedPersonId, customerRecord] = await Promise.all([
-      resolveLinkedCustomerRecordId(db, userId),
-      getCustomerRecord(db, userId),
-    ])
-    const authEmail = authProfile.email?.trim().toLowerCase() ?? null
+    const [linkedPersonId, customerRecord] =
+      buyer.kind === "personal"
+        ? await Promise.all([
+            resolveLinkedCustomerRecordId(db, buyer.userId),
+            getCustomerRecord(db, buyer.userId),
+          ])
+        : [null, null]
+    const authEmail =
+      authProfile.emailVerified && authProfile.email ? authProfile.email.trim().toLowerCase() : null
     const canAccess = await hasBookingAccess({
       db,
       bookingId,
-      userId,
+      buyer,
       authEmail,
       linkedPersonId,
     })
@@ -2348,30 +2598,40 @@ export const publicCustomerPortalService = {
 
   async listBookingDocuments(
     db: PostgresJsDatabase,
-    userId: string,
+    buyer: CustomerBuyerContext,
     bookingId: string,
     options: CustomerPortalServiceOptions = {},
   ) {
-    const detail = await this.getBooking(db, userId, bookingId, options)
+    const detail = await this.getBooking(db, buyer, bookingId, options)
     return detail?.documents ?? null
   },
 
-  async getBookingBillingContact(db: PostgresJsDatabase, userId: string, bookingId: string) {
-    const authProfile = await getAuthProfileRow(db, userId)
+  async getBookingBillingContact(
+    db: PostgresJsDatabase,
+    buyer: CustomerBuyerContext,
+    bookingId: string,
+  ) {
+    const authProfile = await getAuthProfileRow(db, buyer.userId)
     if (!authProfile) {
       return null
     }
 
-    const [linkedPersonId, customerRecord] = await Promise.all([
-      resolveLinkedCustomerRecordId(db, userId),
-      getCustomerRecord(db, userId),
-    ])
+    const [linkedPersonId, customerRecord] =
+      buyer.kind === "personal"
+        ? await Promise.all([
+            resolveLinkedCustomerRecordId(db, buyer.userId),
+            getCustomerRecord(db, buyer.userId),
+          ])
+        : [null, null]
 
     const canAccess = await hasBookingAccess({
       db,
       bookingId,
-      userId,
-      authEmail: authProfile.email?.trim().toLowerCase() ?? null,
+      buyer,
+      authEmail:
+        authProfile.emailVerified && authProfile.email
+          ? authProfile.email.trim().toLowerCase()
+          : null,
       linkedPersonId,
     })
 

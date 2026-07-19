@@ -7,19 +7,26 @@ import {
   authUser,
   authVerification,
   customerAuthAccount,
+  customerAuthInvitation,
+  customerAuthMember,
+  customerAuthOrganization,
   customerAuthSession,
   customerAuthUser,
   customerAuthVerification,
 } from "@voyant-travel/db/schema/iam"
 import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { emailOTP } from "better-auth/plugins"
+import { emailOTP, organization } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
 import type { AnyPgTable } from "drizzle-orm/pg-core"
-
+import {
+  type CustomerBuyerAccountPolicy,
+  normalizeCustomerBuyerAccountPolicy,
+} from "./customer-buyer-accounts.js"
 import {
   createLocalMemberAccessPlugin,
+  isCustomerSessionActive,
   isLocalMemberDeactivated,
   isLocalMemberEmailDeactivated,
   isLocalMemberSessionActive,
@@ -218,12 +225,15 @@ const ADMIN_AUTH_TABLES: BetterAuthRealmTables = {
   apikey: apikeyTable,
 }
 
-const CUSTOMER_AUTH_TABLES: BetterAuthRealmTables = {
+const CUSTOMER_AUTH_TABLES = {
   user: customerAuthUser,
   session: customerAuthSession,
   account: customerAuthAccount,
   verification: customerAuthVerification,
-}
+  organization: customerAuthOrganization,
+  member: customerAuthMember,
+  invitation: customerAuthInvitation,
+} satisfies BetterAuthRealmTables & BetterAuthDrizzleSchema
 
 export interface CreateBetterAuthOptions<
   UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
@@ -315,6 +325,12 @@ export function createBetterAuth<
   const signupBlockSurfaces = normalizeSignupBlockSurfaces(options.disableSignupWhenUsersExist)
   const signupBlockEnabled = isSignupBlockEnabled(options.disableSignupWhenUsersExist)
   const customerSignupSurfaces = normalizeSurfaceList(options.customerSignupSurfaces)
+  const reservedSchemaCollision = Object.keys(options.extraSchema ?? {}).find(
+    (modelName) => (realmTables as unknown as BetterAuthDrizzleSchema)[modelName] !== undefined,
+  )
+  if (reservedSchemaCollision) {
+    throw new Error(`extraSchema cannot override reserved auth model: ${reservedSchemaCollision}`)
+  }
   const schema = {
     ...realmTables,
     ...(options.extraSchema ?? {}),
@@ -410,16 +426,21 @@ export function createBetterAuth<
               },
             }),
           ]),
-      ...(realm === "admin"
-        ? [
-            createLocalMemberAccessPlugin({
+      createLocalMemberAccessPlugin(
+        realm === "admin"
+          ? {
               isEmailDeactivated: (email) => isLocalMemberEmailDeactivated(db, email),
               isSessionActive: (sessionId, userId) =>
                 isLocalMemberSessionActive(db, sessionId, userId),
               isUserDeactivated: (userId) => isLocalMemberDeactivated(db, userId),
-            }),
-          ]
-        : []),
+            }
+          : {
+              isEmailDeactivated: async () => false,
+              isSessionActive: (sessionId, userId) =>
+                isCustomerSessionActive(db, sessionId, userId),
+              isUserDeactivated: async () => false,
+            },
+      ),
       ...extraPlugins,
     ] as ResolvedBetterAuthPlugins<Plugins>,
     ...(realm === "admin"
@@ -533,13 +554,47 @@ export type CreateCustomerBetterAuthOptions<
   | "socialProviders"
   | "emailCodeEnabled"
   | "emailPasswordEnabled"
-> & { methods?: CustomerAuthMethods }
+> & {
+  methods?: CustomerAuthMethods
+  accountPolicy?: CustomerBuyerAccountPolicy | null
+  sendOrganizationInvitation?: (data: {
+    id: string
+    email: string
+    organization: { id: string; name: string; slug: string }
+    inviter: { user: { id: string; name: string; email: string } }
+  }) => Promise<void>
+}
 
 /** Storefront realm factory with isolated tables, cookies, secret, and routes. */
 export function createCustomerBetterAuth<
   const UserOptions extends BetterAuthOptions["user"] = undefined,
   const Plugins extends BetterAuthPlugin[] | undefined = undefined,
 >(options: CreateCustomerBetterAuthOptions<UserOptions, Plugins> = {}) {
+  const accountPolicy = normalizeCustomerBuyerAccountPolicy(options.accountPolicy)
+  const customerOrganizationPlugin = organization({
+    // A Better Auth organization is only the membership container. Public
+    // creation cannot also create/link the canonical Relationships Organization,
+    // so onboarding must go through the provider-neutral orchestration seam.
+    allowUserToCreateOrganization: false,
+    disableOrganizationDeletion: true,
+    requireEmailVerificationOnInvitation: true,
+    invitationLimit: options.sendOrganizationInvitation ? 100 : 0,
+    ...(options.sendOrganizationInvitation
+      ? { sendInvitationEmail: options.sendOrganizationInvitation }
+      : {}),
+    schema: {
+      organization: {
+        additionalFields: {
+          relationshipOrganizationId: {
+            type: "string",
+            required: false,
+            input: false,
+          },
+        },
+      },
+    },
+  })
+
   return createBetterAuth({
     ...options,
     realm: "customer",
@@ -549,5 +604,26 @@ export function createCustomerBetterAuth<
     emailCodeEnabled: options.methods?.emailCode ?? true,
     emailPasswordEnabled: options.methods?.emailPassword ?? true,
     socialProviders: options.methods?.socialProviders,
+    user: {
+      ...options.user,
+      additionalFields: {
+        ...options.user?.additionalFields,
+        personalBuyerEntitlementEligible: {
+          type: "boolean",
+          required: true,
+          input: false,
+          defaultValue:
+            accountPolicy.allowedKinds.includes("personal") &&
+            accountPolicy.personalSignup === "open",
+        },
+        relationshipPersonId: {
+          type: "string",
+          required: false,
+          input: false,
+        },
+      },
+    },
+    extraSchema: options.extraSchema,
+    plugins: [customerOrganizationPlugin, ...(options.plugins ?? [])],
   })
 }

@@ -7,7 +7,10 @@ type BetterAuthConfig = {
   basePath?: string
   secret?: string
   databaseHooks?: unknown
-  plugins: Array<{ id?: string }>
+  plugins: Array<{
+    id?: string
+    resolver?: Record<string, (...args: string[]) => Promise<boolean>>
+  }>
   socialProviders?: Record<string, unknown>
   advanced: {
     cookiePrefix?: string
@@ -34,13 +37,24 @@ type BetterAuthConfig = {
   }
 }
 
-const { betterAuthMock, drizzleAdapterMock, isFirstAuthUserMock, provisionCurrentUserProfileMock } =
-  vi.hoisted(() => ({
-    betterAuthMock: vi.fn((config: Record<string, unknown>) => ({ config })),
-    drizzleAdapterMock: vi.fn(() => ({ adapter: "drizzle" })),
-    isFirstAuthUserMock: vi.fn(async () => false),
-    provisionCurrentUserProfileMock: vi.fn(async () => undefined),
-  }))
+const {
+  betterAuthMock,
+  createLocalMemberAccessPluginMock,
+  drizzleAdapterMock,
+  isCustomerSessionActiveMock,
+  isFirstAuthUserMock,
+  provisionCurrentUserProfileMock,
+} = vi.hoisted(() => ({
+  betterAuthMock: vi.fn((config: Record<string, unknown>) => ({ config })),
+  createLocalMemberAccessPluginMock: vi.fn((resolver: Record<string, unknown>) => ({
+    id: "voyant-local-member-access",
+    resolver,
+  })),
+  drizzleAdapterMock: vi.fn(() => ({ adapter: "drizzle" })),
+  isCustomerSessionActiveMock: vi.fn(async () => true),
+  isFirstAuthUserMock: vi.fn(async () => false),
+  provisionCurrentUserProfileMock: vi.fn(async () => undefined),
+}))
 
 vi.mock("@better-auth/api-key", () => ({
   apiKey: vi.fn((options: Record<string, unknown>) => ({ id: "apiKey", options })),
@@ -57,6 +71,9 @@ vi.mock("@voyant-travel/db/schema/iam", () => ({
   authUser: { name: "user" },
   authVerification: { name: "verification" },
   customerAuthAccount: { name: "customerAccount" },
+  customerAuthInvitation: { name: "customerInvitation" },
+  customerAuthMember: { name: "customerMember" },
+  customerAuthOrganization: { name: "customerOrganization" },
   customerAuthSession: { name: "customerSession" },
   customerAuthUser: { name: "customerUser" },
   customerAuthVerification: { name: "customerVerification" },
@@ -83,6 +100,15 @@ vi.mock("better-auth/cookies", () => ({
 
 vi.mock("better-auth/plugins", () => ({
   emailOTP: vi.fn((options: Record<string, unknown>) => ({ id: "emailOTP", options })),
+  organization: vi.fn((options: Record<string, unknown>) => ({ id: "organization", options })),
+}))
+
+vi.mock("../../src/local-member-access.js", () => ({
+  createLocalMemberAccessPlugin: createLocalMemberAccessPluginMock,
+  isCustomerSessionActive: isCustomerSessionActiveMock,
+  isLocalMemberDeactivated: vi.fn(async () => false),
+  isLocalMemberEmailDeactivated: vi.fn(async () => false),
+  isLocalMemberSessionActive: vi.fn(async () => true),
 }))
 
 vi.mock("../../src/workspace.js", () => ({
@@ -134,6 +160,29 @@ describe("createBetterAuth", () => {
     expect(config.advanced).toMatchObject({ cookiePrefix: "voyant-customer" })
     expect(config.databaseHooks).toBeUndefined()
     expect(config.plugins.some((plugin) => plugin.id === "apiKey")).toBe(false)
+    expect(config.plugins).toContainEqual(
+      expect.objectContaining({ id: "voyant-local-member-access" }),
+    )
+    const accessPlugin = config.plugins.find((plugin) => plugin.id === "voyant-local-member-access")
+    await expect(
+      accessPlugin?.resolver?.isSessionActive?.("customer-session", "customer-user"),
+    ).resolves.toBe(true)
+    expect(isCustomerSessionActiveMock).toHaveBeenCalledWith(
+      { id: "db" },
+      "customer-session",
+      "customer-user",
+    )
+    expect(config.plugins).toContainEqual(
+      expect.objectContaining({
+        id: "organization",
+        options: expect.objectContaining({
+          allowUserToCreateOrganization: false,
+          disableOrganizationDeletion: true,
+          invitationLimit: 0,
+          requireEmailVerificationOnInvitation: true,
+        }),
+      }),
+    )
     expect(config.socialProviders).toEqual(
       expect.objectContaining({
         google: expect.any(Object),
@@ -149,9 +198,25 @@ describe("createBetterAuth", () => {
           session: { name: "customerSession" },
           account: { name: "customerAccount" },
           verification: { name: "customerVerification" },
+          organization: { name: "customerOrganization" },
+          member: { name: "customerMember" },
+          invitation: { name: "customerInvitation" },
         }),
       }),
     )
+  })
+
+  it("rejects extra schema collisions with reserved customer realm models", async () => {
+    const { createCustomerBetterAuth } = await import("../../src/server.js")
+
+    expect(() =>
+      createCustomerBetterAuth({
+        db: { id: "db" } as never,
+        secret: "c".repeat(32),
+        baseURL: "https://shop.example.com",
+        extraSchema: { organization: { name: "attackerOrganization" } } as never,
+      }),
+    ).toThrow("extraSchema cannot override reserved auth model: organization")
   })
 
   it("defaults secure cookies on outside explicit local development", async () => {

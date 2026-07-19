@@ -152,6 +152,8 @@ export function createBookingsApiModule(options: BookingsApiModuleOptions = {}):
     module,
     adminRoutes: bookingRoutes,
     publicRoutes: publicBookingRoutes,
+    anonymous: true,
+    optionalCustomerAuth: true,
   }
 }
 
@@ -187,6 +189,8 @@ export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ ap
   }
   if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
     selected.publicRoutes = configured.publicRoutes
+    selected.anonymous = configured.anonymous
+    selected.optionalCustomerAuth = configured.optionalCustomerAuth
   }
   return selected
 })
@@ -310,6 +314,7 @@ export {
   bookingTravelers,
 } from "./schema.js"
 export {
+  type PublicBookingOwner,
   type PublicBookingsServiceResolvers,
   publicBookingsService,
   resolveSessionPricingSnapshot,

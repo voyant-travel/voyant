@@ -15,3 +15,15 @@ those subpaths.
   `./ui` barrel) — the admin storefront settings page: branding, support
   links, legal, and payment configuration backed by
   `useAdminStorefrontSettings` / `useAdminStorefrontSettingsMutation`.
+
+## Customer buyer accounts
+
+`CustomerAccountProvider` composes the customer-auth, portal, and buyer-account
+providers. Storefronts can use `useBuyerAccounts`, `BuyerAccountSelector`, and
+`BuyerAccountSelectionGate` from `@voyant-travel/storefront-react/storefront`
+to support personal accounts, business accounts, or both.
+
+See the
+[storefront customer auth framework integration guide](https://github.com/voyant-travel/voyant/blob/main/docs/storefront-customer-auth-frameworks.md)
+for Next.js and Astro SSR/BFF examples. Authentication stays cookie-backed and
+same-origin; browser bundles never receive managed-runtime or provider secrets.

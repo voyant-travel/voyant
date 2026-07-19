@@ -102,6 +102,7 @@ describe("booking origins", () => {
         externalBookingRef: "storefront-cart-123",
         catalogSnapshotIds: ["bcsn_1", "bcsn_2"],
         itemCount: 3,
+        buyerKind: "guest",
       },
     })
   })

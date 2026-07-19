@@ -16,7 +16,12 @@ import {
   type SelectApikey,
   userProfilesTable,
 } from "@voyant-travel/db/schema/iam"
-import type { Reporter, VoyantDb, VoyantResolvedSessionAuthContext } from "@voyant-travel/hono"
+import {
+  parseJsonBody,
+  type Reporter,
+  type VoyantDb,
+  type VoyantResolvedSessionAuthContext,
+} from "@voyant-travel/hono"
 import {
   handleApiError,
   reportException,
@@ -27,12 +32,22 @@ import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
+import { z } from "zod"
 import {
   createVoyantCloudAdminAuthPlugin,
   revalidateVoyantCloudAdminAuthSession,
   revalidateVoyantCloudAdminAuthUser,
 } from "./cloud-admin-session.js"
 import { buildClearCloudAdminAuthStateCookie, createCloudAdminAuthStart } from "./cloud-broker.js"
+import {
+  type CustomerBuyerAccountPolicy,
+  createDrizzleCustomerBuyerAccountStore,
+  listCustomerBuyerAccounts,
+  normalizeCustomerBuyerAccountPolicy,
+  repairCustomerPersonalBuyerAccountEntitlement,
+  resolveActiveCustomerBuyerContext,
+  selectCustomerBuyerAccount,
+} from "./customer-buyer-accounts.js"
 import {
   type CreateBetterAuthOptions,
   type CustomerAuthMethods,
@@ -169,6 +184,8 @@ export interface CustomerAuthRuntimeContext {
   baseURL: string
   trustedOrigins: string[]
   methods: CustomerAuthMethods
+  /** Buyer capabilities are independent from identity sign-up methods. */
+  accountPolicy?: CustomerBuyerAccountPolicy | null
 }
 
 export interface CustomerAuthSocialPolicy {
@@ -184,6 +201,7 @@ export interface CustomerAuthPolicy {
     facebook: CustomerAuthSocialPolicy
     apple: CustomerAuthSocialPolicy
   }
+  accountPolicy: CustomerBuyerAccountPolicy
 }
 
 /**
@@ -483,12 +501,14 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         facebook: { enabled: false, credentialRef: null },
         apple: { enabled: false, credentialRef: null },
       },
+      accountPolicy: normalizeCustomerBuyerAccountPolicy(),
     } satisfies CustomerAuthPolicy
     const raw = env.VOYANT_CUSTOMER_AUTH_CONFIG_JSON?.trim()
     if (!raw) return fallback
     try {
       const parsed = JSON.parse(raw) as {
         methods?: Record<string, unknown>
+        accountPolicy?: CustomerBuyerAccountPolicy
       }
       const methods = parsed.methods ?? {}
       const social = (value: unknown): CustomerAuthSocialPolicy => {
@@ -516,12 +536,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
           facebook: social(methods.facebook),
           apple: social(methods.apple),
         },
+        accountPolicy: normalizeCustomerBuyerAccountPolicy(parsed.accountPolicy),
       }
-    } catch {
-      console.error(
-        "[auth/customer] Invalid VOYANT_CUSTOMER_AUTH_CONFIG_JSON; failing social auth closed",
-      )
-      return fallback
+    } catch (error) {
+      throw new Error("Invalid VOYANT_CUSTOMER_AUTH_CONFIG_JSON", { cause: error })
     }
   }
 
@@ -579,6 +597,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
             : {}),
         },
       },
+      accountPolicy: policy.accountPolicy,
     }
   }
 
@@ -643,7 +662,8 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   }
 
   async function publicCustomerAuthConfiguration(env: Env, request: Request) {
-    const methods = (await resolveCustomerAuthContext(env, request)).methods
+    const context = await resolveCustomerAuthContext(env, request)
+    const methods = context.methods
     const providers = methods.socialProviders ?? {}
     return {
       methods: {
@@ -653,6 +673,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         facebook: Boolean(providers.facebook),
         apple: Boolean(providers.apple),
       },
+      accountPolicy: normalizeCustomerBuyerAccountPolicy(context.accountPolicy),
     }
   }
 
@@ -716,9 +737,14 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     })
   }
 
-  async function buildCustomerBetterAuth(env: Env, db: VoyantDb, request: Request) {
+  async function buildCustomerBetterAuth(
+    env: Env,
+    db: VoyantDb,
+    request: Request,
+    resolvedContext?: CustomerAuthRuntimeContext,
+  ) {
     const emailSender = runtimeOptions.resolveEmailSender?.(env)
-    const context = await resolveCustomerAuthContext(env, request)
+    const context = resolvedContext ?? (await resolveCustomerAuthContext(env, request))
     const publicApiBaseURL = context.publicApiBaseURL ?? getPublicApiBaseUrl(env)
     const authDb = db as NonNullable<Parameters<typeof createCustomerBetterAuth>[0]>["db"]
     return createCustomerBetterAuth({
@@ -728,6 +754,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       basePath: "/auth/customer",
       trustedOrigins: context.trustedOrigins,
       methods: withCustomerSocialRedirectUris(context.methods, publicApiBaseURL),
+      accountPolicy: context.accountPolicy,
       sendResetPassword: async ({ user, url }) => {
         const publicUrl = withCustomerPublicResetPasswordUrl(url, publicApiBaseURL)
         if (!emailSender) {
@@ -819,8 +846,11 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(env)
     try {
+      const customerContext = customerSurface
+        ? await resolveCustomerAuthContext(env, request)
+        : null
       const auth = customerSurface
-        ? await buildCustomerBetterAuth(env, db, request)
+        ? await buildCustomerBetterAuth(env, db, request, customerContext ?? undefined)
         : buildAdminBetterAuth(env, db)
       const session = await auth.api.getSession({ headers: request.headers })
 
@@ -851,15 +881,49 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       }
 
       if (customerSurface) {
-        return {
+        await repairCustomerPersonalBuyerAccountEntitlement(db, session.user.id)
+        const buyerStore = createDrizzleCustomerBuyerAccountStore(db)
+        const relationshipPersonId = await buyerStore.getRelationshipPersonId(session.user.id)
+        const activeAuthOrganizationId =
+          (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null
+        const buyer = await resolveActiveCustomerBuyerContext({
+          identity: {
+            userId: session.user.id,
+            name: session.user.name ?? null,
+            email: session.user.email ?? null,
+          },
+          activeAuthOrganizationId,
+          policy: customerContext?.accountPolicy,
+          store: buyerStore,
+        })
+        const customerIdentity = {
           userId: session.user.id,
           sessionId: session.session.id,
+          // Existing organizationId is staff/workspace context. Customer buyer
+          // scoping uses the explicit discriminated buyer fields below.
           organizationId: null,
-          callerType: "session",
-          actor: "customer",
-          realm: "customer",
+          callerType: "session" as const,
+          actor: "customer" as const,
+          realm: "customer" as const,
           scopes: [],
           email: session.user.email ?? null,
+        }
+        if (!buyer) {
+          return {
+            ...customerIdentity,
+            relationshipPersonId,
+          }
+        }
+
+        return {
+          ...customerIdentity,
+          buyerAccountId: buyer.id,
+          buyerAccountKind: buyer.kind,
+          authOrganizationId: buyer.authOrganizationId,
+          relationshipOrganizationId: buyer.relationshipOrganizationId,
+          relationshipPersonId,
+          buyerMembershipId: buyer.membershipId,
+          buyerMembershipRole: buyer.membershipRole,
         }
       }
 
@@ -1248,8 +1312,10 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   })
 
   auth.get("/auth/customer/config", async (c) => {
+    c.header("Cache-Control", "no-store")
     if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
       return c.json({
+        disabled: true,
         methods: {
           emailCode: false,
           emailPassword: false,
@@ -1260,6 +1326,98 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       })
     }
     return c.json(await publicCustomerAuthConfiguration(c.env, c.req.raw))
+  })
+
+  const selectBuyerAccountSchema = z.object({ accountId: z.string().min(1) })
+
+  auth.get("/auth/customer/buyer-accounts", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+
+      await repairCustomerPersonalBuyerAccountEntitlement(db, session.user.id)
+      return c.json(
+        await listCustomerBuyerAccounts({
+          identity: {
+            userId: session.user.id,
+            name: session.user.name ?? null,
+            email: session.user.email ?? null,
+          },
+          activeAuthOrganizationId:
+            (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ??
+            null,
+          policy: context.accountPolicy,
+          store: createDrizzleCustomerBuyerAccountStore(db),
+        }),
+      )
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
+  })
+
+  auth.post("/auth/customer/buyer-accounts/active", async (c) => {
+    c.header("Cache-Control", "no-store")
+    if (c.env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") {
+      return c.json({ error: "Customer auth is disabled" }, 404)
+    }
+
+    const body = await parseJsonBody(c, selectBuyerAccountSchema)
+    const { db, dispose } = openDatabase(c.env)
+    try {
+      const context = await resolveCustomerAuthContext(c.env, c.req.raw)
+      const betterAuth = await buildCustomerBetterAuth(c.env, db, c.req.raw, context)
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) return c.json({ error: "Unauthorized" }, 401)
+
+      await repairCustomerPersonalBuyerAccountEntitlement(db, session.user.id)
+      const selected = await selectCustomerBuyerAccount({
+        accountId: body.accountId,
+        identity: {
+          userId: session.user.id,
+          name: session.user.name ?? null,
+          email: session.user.email ?? null,
+        },
+        activeAuthOrganizationId:
+          (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ??
+          null,
+        policy: context.accountPolicy,
+        store: createDrizzleCustomerBuyerAccountStore(db),
+      })
+      if (!selected) {
+        return c.json({ error: "Buyer account is unavailable" }, 403)
+      }
+
+      const activationUrl = new URL(c.req.url)
+      activationUrl.pathname = "/auth/customer/organization/set-active"
+      activationUrl.search = ""
+      const activationHeaders = new Headers(c.req.raw.headers)
+      activationHeaders.delete("content-length")
+      activationHeaders.set("content-type", "application/json")
+      const activationResponse = await betterAuth.handler(
+        new Request(activationUrl, {
+          method: "POST",
+          headers: activationHeaders,
+          body: JSON.stringify({ organizationId: selected.authOrganizationId }),
+        }),
+      )
+      if (!activationResponse.ok) return activationResponse
+
+      const headers = new Headers(activationResponse.headers)
+      headers.delete("content-length")
+      headers.set("cache-control", "no-store")
+      headers.set("content-type", "application/json; charset=UTF-8")
+      return new Response(JSON.stringify({ activeAccount: selected }), { status: 200, headers })
+    } finally {
+      c.executionCtx.waitUntil(dispose())
+    }
   })
 
   auth.all("/auth/customer/*", async (c) => {

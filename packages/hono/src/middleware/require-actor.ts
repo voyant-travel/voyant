@@ -179,6 +179,9 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
+    if (c.get("isAnonymousRequest") && allowSet.has("customer") && !allowSet.has("staff")) {
+      return next()
+    }
 
     const pathname = normalizePathname(new URL(c.req.url).pathname, {
       basePath: options.basePath,

@@ -1,12 +1,22 @@
 export type { VoyantPermission } from "@voyant-travel/core"
-export { assembleAnonymousPaths } from "./anonymous-paths.js"
+export { assembleAnonymousPaths, assembleOptionalCustomerAuthPaths } from "./anonymous-paths.js"
 export { mountApp } from "./app.js"
-export type { SessionAuthContext } from "./auth/index.js"
+export type {
+  BusinessCustomerBuyerContext,
+  CustomerBuyerContext,
+  CustomerIdentityContext,
+  PersonalCustomerBuyerContext,
+  SessionAuthContext,
+} from "./auth/index.js"
 export {
   constantTimeEqual,
   extractBearerToken,
   generateNumericCode,
   randomBytesHex,
+  requireBusinessCustomerBuyerContext,
+  requireCustomerBuyerContext,
+  requireCustomerIdentityContext,
+  requirePersonalCustomerBuyerContext,
   requireUserId,
   sha256Base64Url,
   sha256Hex,

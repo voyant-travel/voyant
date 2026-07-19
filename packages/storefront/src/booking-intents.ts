@@ -1,3 +1,4 @@
+import type { PublicBookingOwner } from "@voyant-travel/bookings"
 import type { EventBus, EventHandler } from "@voyant-travel/core"
 import { getWriteIntent, settleWriteIntent } from "@voyant-travel/db/write-intents"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -35,6 +36,8 @@ export const BOOKING_BOOTSTRAP_INTENT_EVENT = "storefront.booking.bootstrap.requ
 export interface BookingBootstrapIntentPayload {
   input: unknown
   userId?: string
+  /** Canonical owner accepted and snapshotted synchronously at enqueue time. */
+  owner: PublicBookingOwner | null
 }
 
 /** Final business outcomes → the HTTP status the sync route would return. */
@@ -97,6 +100,7 @@ export function createBookingBootstrapIntentHandler(
       } as StorefrontRequestContext & { db: PostgresJsDatabase },
       parsed.data,
       payload.userId,
+      payload.owner,
     )
 
     if (result.status === "ok" && "bootstrap" in result) {

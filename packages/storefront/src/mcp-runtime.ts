@@ -1,4 +1,10 @@
 import { buildPaymentLinkUrl, financeService } from "@voyant-travel/finance"
+import {
+  type CustomerBuyerContext,
+  type CustomerIdentityContext,
+  requireCustomerBuyerContext,
+  requireCustomerIdentityContext,
+} from "@voyant-travel/hono"
 import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -53,7 +59,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
     return {
       storefrontCustomerPortal: createCustomerPortalToolServices({
         db,
-        userId: () => requireCustomerUserId(c),
+        identity: () => requireToolCustomerIdentity(c),
+        buyer: () => requireToolCustomerBuyer(c),
         runtime: portalRuntime,
       }),
       ...(paymentLinkOptions
@@ -90,21 +97,45 @@ function requireCustomerUserId(c: StorefrontMcpContext): string {
   return userId
 }
 
+function requireToolCustomerIdentity(c: StorefrontMcpContext): CustomerIdentityContext {
+  try {
+    return requireCustomerIdentityContext(c)
+  } catch {
+    throw new ToolError(
+      "Customer self-service Tools require an authenticated customer identity.",
+      "AUTHORIZATION_DENIED",
+    )
+  }
+}
+
+function requireToolCustomerBuyer(c: StorefrontMcpContext): CustomerBuyerContext {
+  try {
+    return requireCustomerBuyerContext(c)
+  } catch {
+    throw new ToolError(
+      "Customer self-service Tools require an active buyer account.",
+      "AUTHORIZATION_DENIED",
+    )
+  }
+}
+
 export function createCustomerPortalToolServices(input: {
   db: PostgresJsDatabase
-  userId: () => string
+  identity: () => CustomerIdentityContext
+  buyer: () => CustomerBuyerContext
   runtime: ReturnType<typeof buildPublicCustomerPortalRouteRuntime>
 }): StorefrontCustomerPortalToolServices {
   const options = {
     kms: input.runtime.getOptionalKmsProvider(),
     resolveDocumentDownloadUrl: input.runtime.resolveDocumentDownloadUrl,
   }
+  const userId = () => input.identity().userId
 
   return {
     async getProfile() {
       const profile = await publicCustomerPortalService.getProfileWithOptions(
         input.db,
-        input.userId(),
+        userId(),
         options,
       )
       if (!profile) throw new ToolError("Customer profile was not found.", "NOT_FOUND")
@@ -113,7 +144,7 @@ export function createCustomerPortalToolServices(input: {
     async updateProfile(update) {
       const result = await publicCustomerPortalService.updateProfileWithOptions(
         input.db,
-        input.userId(),
+        userId(),
         update,
         options,
       )
@@ -128,7 +159,7 @@ export function createCustomerPortalToolServices(input: {
       return result.profile
     },
     async bootstrap(command) {
-      const result = await publicCustomerPortalService.bootstrap(input.db, input.userId(), command)
+      const result = await publicCustomerPortalService.bootstrap(input.db, userId(), command)
       if ("error" in result) {
         const notFound =
           result.error === "not_found" || result.error === "customer_record_not_found"
@@ -142,14 +173,14 @@ export function createCustomerPortalToolServices(input: {
       return result
     },
     async listBookings() {
-      const rows = await publicCustomerPortalService.listBookings(input.db, input.userId())
+      const rows = await publicCustomerPortalService.listBookings(input.db, input.buyer())
       if (!rows) throw new ToolError("Customer profile was not found.", "NOT_FOUND")
       return rows
     },
     async getBooking(bookingId) {
       const booking = await publicCustomerPortalService.getBooking(
         input.db,
-        input.userId(),
+        input.buyer(),
         bookingId,
         options,
       )
@@ -165,14 +196,10 @@ export function createCustomerPortalToolServices(input: {
       return booking
     },
     listCompanions() {
-      return publicCustomerPortalService.listCompanions(input.db, input.userId())
+      return publicCustomerPortalService.listCompanions(input.db, userId())
     },
     async createCompanion(command) {
-      const row = await publicCustomerPortalService.createCompanion(
-        input.db,
-        input.userId(),
-        command,
-      )
+      const row = await publicCustomerPortalService.createCompanion(input.db, userId(), command)
       if (!row) {
         throw new ToolError(
           "A linked customer record is required to create companions.",
@@ -184,7 +211,7 @@ export function createCustomerPortalToolServices(input: {
     async updateCompanion(companionId, command) {
       const row = await publicCustomerPortalService.updateCompanion(
         input.db,
-        input.userId(),
+        userId(),
         companionId,
         command,
       )
@@ -197,9 +224,16 @@ export function createCustomerPortalToolServices(input: {
       return row
     },
     async importBookingTravelers(command) {
+      const buyer = input.buyer()
+      if (buyer.kind !== "personal") {
+        throw new ToolError(
+          "Importing travelers as personal companions requires a personal buyer account.",
+          "AUTHORIZATION_DENIED",
+        )
+      }
       const result = await publicCustomerPortalService.importBookingTravelersAsCompanions(
         input.db,
-        input.userId(),
+        buyer,
         command,
       )
       if (!result) {
@@ -211,12 +245,12 @@ export function createCustomerPortalToolServices(input: {
       return result
     },
     listDocuments() {
-      return publicCustomerPortalService.listMyDocuments(input.db, input.userId(), options)
+      return publicCustomerPortalService.listMyDocuments(input.db, userId(), options)
     },
     async createDocument(command) {
       const row = await publicCustomerPortalService.createMyDocument(
         input.db,
-        input.userId(),
+        userId(),
         command,
         options,
       )
@@ -226,7 +260,7 @@ export function createCustomerPortalToolServices(input: {
     async updateDocument(documentId, command) {
       const row = await publicCustomerPortalService.updateMyDocument(
         input.db,
-        input.userId(),
+        userId(),
         documentId,
         command,
         options,
@@ -245,7 +279,7 @@ export function createCustomerPortalToolServices(input: {
     async setPrimaryDocument(documentId) {
       const row = await publicCustomerPortalService.setPrimaryMyDocument(
         input.db,
-        input.userId(),
+        userId(),
         documentId,
         options,
       )

@@ -33,7 +33,16 @@ export type Env = {
     workflowPrincipalId?: string
     principalSubtype?: string
     sessionId?: string
+    realm?: "admin" | "customer"
+    isAnonymousRequest?: boolean
     organizationId?: string | null
+    buyerAccountId?: string | null
+    buyerAccountKind?: "personal" | "business"
+    authOrganizationId?: string | null
+    relationshipOrganizationId?: string | null
+    relationshipPersonId?: string | null
+    buyerMembershipId?: string | null
+    buyerMembershipRole?: string | null
     workflowRunId?: string | null
     workflowStepId?: string | null
     actor?: "staff" | "customer" | "partner" | "supplier" | "agent" | "system"

@@ -136,7 +136,28 @@ function applyAuthContext(
 ) {
   if (auth.userId) c.set("userId", auth.userId)
   if (auth.sessionId) c.set("sessionId", auth.sessionId)
+  if (auth.realm) c.set("realm", auth.realm)
+  if (auth.isAnonymousRequest !== undefined) {
+    c.set("isAnonymousRequest", auth.isAnonymousRequest)
+  }
   if (auth.organizationId !== undefined) c.set("organizationId", auth.organizationId ?? undefined)
+  if (auth.buyerAccountId !== undefined) c.set("buyerAccountId", auth.buyerAccountId ?? undefined)
+  if (auth.buyerAccountKind !== undefined) c.set("buyerAccountKind", auth.buyerAccountKind)
+  if (auth.authOrganizationId !== undefined) {
+    c.set("authOrganizationId", auth.authOrganizationId ?? undefined)
+  }
+  if (auth.relationshipOrganizationId !== undefined) {
+    c.set("relationshipOrganizationId", auth.relationshipOrganizationId ?? undefined)
+  }
+  if (auth.relationshipPersonId !== undefined) {
+    c.set("relationshipPersonId", auth.relationshipPersonId ?? undefined)
+  }
+  if (auth.buyerMembershipId !== undefined) {
+    c.set("buyerMembershipId", auth.buyerMembershipId ?? undefined)
+  }
+  if (auth.buyerMembershipRole !== undefined) {
+    c.set("buyerMembershipRole", auth.buyerMembershipRole ?? undefined)
+  }
   if (auth.callerType) c.set("callerType", auth.callerType)
   if (auth.actor) c.set("actor", auth.actor)
   if (auth.audience !== undefined) {
@@ -182,6 +203,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
   dbSource: DbSource<TBindings>,
   opts?: {
     publicPaths?: string[]
+    optionalCustomerAuthPaths?: string[]
     clientAuthenticatedRoutes?: readonly AbsoluteClientAuthenticatedRoute[]
     basePath?: string
     auth?: VoyantAuthIntegration<TBindings>
@@ -191,6 +213,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
   Variables: VoyantVariables
 }> {
   const publicPaths = opts?.publicPaths ?? []
+  const optionalCustomerAuthPaths = opts?.optionalCustomerAuthPaths ?? []
 
   return async (c, next) => {
     if (c.req.method === "OPTIONS") return next()
@@ -209,10 +232,10 @@ export function requireAuth<TBindings extends VoyantBindings>(
       return next()
     }
 
-    if (matchesPublicPath(p, publicPaths)) {
-      if (p.startsWith("/v1/public/")) {
-        c.set("actor", "customer")
-      }
+    const isAnonymousPath = matchesPublicPath(p, publicPaths)
+    const isOptionalCustomerAuthPath = matchesPublicPath(p, optionalCustomerAuthPaths)
+    if (isAnonymousPath && !isOptionalCustomerAuthPath) {
+      c.set("isAnonymousRequest", true)
       return next()
     }
 
@@ -407,12 +430,19 @@ export function requireAuth<TBindings extends VoyantBindings>(
           ? customerSessionSecret
           : undefined
 
-    if (token && sessionSecret && sessionSecret.length >= 32 && token.includes(".")) {
+    if (
+      token &&
+      sessionRealm &&
+      sessionSecret &&
+      sessionSecret.length >= 32 &&
+      token.includes(".")
+    ) {
       try {
         const sessionAuth = await verifySession(token, sessionSecret)
 
         applyAuthContext(c, {
           ...sessionAuth,
+          realm: sessionRealm,
           callerType: "session",
           actor: sessionRealm === "admin" ? "staff" : "customer",
           audience: sessionRealm === "admin" ? "staff" : "customer",
@@ -422,6 +452,11 @@ export function requireAuth<TBindings extends VoyantBindings>(
       } catch {
         // fall through
       }
+    }
+
+    if (isAnonymousPath && isOptionalCustomerAuthPath) {
+      c.set("isAnonymousRequest", true)
+      return next()
     }
 
     if (opts?.auth?.onUnauthorized) {

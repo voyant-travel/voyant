@@ -44,7 +44,7 @@ export const storefrontVoyantModule = defineModule({
       mount: "/",
       resource: "storefront",
       openapi: { document: "storefront" },
-      anonymous: ["/leads", "/newsletter", "/offers"],
+      anonymous: ["/bookings", "/leads", "/newsletter", "/offers"],
       runtime: {
         entry: "@voyant-travel/storefront",
         export: "createStorefrontApiModule",

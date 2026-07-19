@@ -1,4 +1,6 @@
 // agent-quality: file-size exception -- owner: storefront; the sync + compat bootstrap cases share one seed harness and stay co-located until a dedicated split preserves coverage.
+
+import { bookings } from "@voyant-travel/bookings/schema"
 import {
   departurePriceOverrides,
   optionPriceRules,
@@ -10,6 +12,7 @@ import { bookingPaymentSchedules } from "@voyant-travel/finance/schema"
 import { handleApiError } from "@voyant-travel/hono"
 import { optionUnits, productOptions, products } from "@voyant-travel/inventory/schema"
 import { availabilitySlots } from "@voyant-travel/operations"
+import { organizations, people } from "@voyant-travel/relationships"
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -36,7 +39,44 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
       .onError(handleApiError)
       .use("*", async (c, next) => {
         c.set("db" as never, db)
-        c.set("userId" as never, "storefront-bootstrap-test-user")
+        const authContext = c.req.header("x-test-auth-context")
+        if (authContext === "explicit-guest") {
+          c.set("isAnonymousRequest" as never, true)
+        } else if (authContext === "staff-session") {
+          c.set("userId" as never, "staff-user")
+          c.set("sessionId" as never, "staff-session")
+          c.set("actor" as never, "staff")
+          c.set("realm" as never, "admin")
+          c.set("callerType" as never, "session")
+        } else if (authContext === "api-key") {
+          c.set("actor" as never, "staff")
+          c.set("callerType" as never, "api_key")
+          c.set("apiKeyId" as never, "accepted-api-key")
+        } else if (authContext === "customer-missing-realm") {
+          c.set("userId" as never, "customer-missing-realm")
+          c.set("sessionId" as never, "customer-session-missing-realm")
+          c.set("actor" as never, "customer")
+          c.set("callerType" as never, "session")
+        }
+        if (c.req.header("x-test-customer") === "1") {
+          c.set("userId" as never, "storefront-bootstrap-test-user")
+          c.set("sessionId" as never, "customer-session-storefront")
+          c.set("actor" as never, "customer")
+          c.set("realm" as never, "customer")
+          const kind = c.req.header("x-test-buyer-kind")
+          if (kind === "personal") {
+            c.set("buyerAccountId" as never, "personal:storefront-bootstrap-test-user")
+            c.set("buyerAccountKind" as never, "personal")
+            c.set("relationshipPersonId" as never, "person-storefront-owner")
+          } else if (kind === "business") {
+            c.set("buyerAccountId" as never, "business:auth-org-storefront")
+            c.set("buyerAccountKind" as never, "business")
+            c.set("authOrganizationId" as never, "auth-org-storefront")
+            c.set("relationshipOrganizationId" as never, "org-storefront-owner")
+            c.set("buyerMembershipId" as never, "member-storefront")
+            c.set("buyerMembershipRole" as never, "member")
+          }
+        }
         await next()
       })
       .route(
@@ -365,6 +405,36 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
     expect(slot?.remainingPax).toBe(9)
   })
 
+  it("allows an explicit guest marker to bootstrap an ownerless booking", async () => {
+    const seed = await seedDeparture()
+    const res = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-auth-context": "explicit-guest" },
+      body: JSON.stringify(bootstrapPayload(seed)),
+    })
+
+    expect(res.status).toBe(201)
+    const session = (await res.json()).data.session
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(expect.objectContaining({ personId: null, organizationId: null }))
+  })
+
+  it.each([
+    "staff-session",
+    "api-key",
+    "customer-missing-realm",
+  ])("never downgrades an accepted %s context to a guest bootstrap", async (authContext) => {
+    const seed = await seedDeparture()
+    const res = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-auth-context": authContext },
+      body: JSON.stringify(bootstrapPayload(seed)),
+    })
+
+    expect(res.status).toBe(401)
+    expect(await db.select({ id: bookings.id }).from(bookings)).toEqual([])
+  })
+
   it("prices bootstrap sessions with departure price overrides", async () => {
     const seed = await seedDeparture()
     await db.insert(departurePriceOverrides).values({
@@ -490,6 +560,31 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
     )
   })
 
+  it("stamps the active personal buyer on synchronous bootstrap", async () => {
+    const seed = await seedDeparture()
+    await db.insert(people).values({
+      id: "person-storefront-owner",
+      firstName: "Personal",
+      lastName: "Buyer",
+      status: "active",
+    })
+    const res = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      headers: {
+        ...json({}).headers,
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "personal",
+      },
+      body: JSON.stringify(bootstrapPayload(seed)),
+    })
+    expect(res.status).toBe(201)
+    const session = (await res.json()).data.session
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(
+      expect.objectContaining({ personId: "person-storefront-owner", organizationId: null }),
+    )
+  })
+
   // Compatibility bootstrap (issue voyant#1984): derive slot/price server-side
   // from the minimal `{ productId, departureId, pax, ... }` contract.
   it("compat-bootstraps a session from minimal product/departure input", async () => {
@@ -531,6 +626,36 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
         productId: seed.product.id,
         remaining: 9,
       }),
+    )
+  })
+
+  it("stamps the active business buyer on compatibility bootstrap", async () => {
+    const seed = await seedDeparture()
+    await db.insert(organizations).values({
+      id: "org-storefront-owner",
+      name: "Storefront Business Buyer",
+      status: "active",
+    })
+    const res = await app.request("/bookings/sessions/compat-bootstrap", {
+      method: "POST",
+      headers: {
+        ...json({}).headers,
+        "x-test-customer": "1",
+        "x-test-buyer-kind": "business",
+      },
+      body: JSON.stringify({
+        productId: seed.product.id,
+        departureId: seed.slot.id,
+        optionUnitId: seed.unit.id,
+        pax: 1,
+        currency: "EUR",
+      }),
+    })
+    expect(res.status).toBe(201)
+    const session = (await res.json()).data.session
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, session.sessionId))
+    expect(booking).toEqual(
+      expect.objectContaining({ personId: null, organizationId: "org-storefront-owner" }),
     )
   })
 

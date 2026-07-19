@@ -1,5 +1,9 @@
 // agent-quality: file-size exception -- owner: storefront; the bootstrap pricing/derivation helpers stay co-located with the sync + compat bootstrap paths until a dedicated split preserves behavior and tests.
-import { publicBookingsService, resolveSessionPricingSnapshot } from "@voyant-travel/bookings"
+import {
+  type PublicBookingOwner,
+  publicBookingsService,
+  resolveSessionPricingSnapshot,
+} from "@voyant-travel/bookings"
 import {
   computePaymentSchedule,
   financeService,
@@ -379,6 +383,7 @@ export async function bootstrapStorefrontBookingSession(
   input: StorefrontBookingSessionBootstrapInput,
   options: StorefrontBookingSessionBootstrapOptions | undefined,
   userId?: string,
+  owner: PublicBookingOwner | null = null,
 ) {
   const now = options?.today ?? new Date()
   if (isExpired(input.quote.expiresAt, now)) {
@@ -461,6 +466,8 @@ export async function bootstrapStorefrontBookingSession(
       }),
     },
     userId,
+    {},
+    owner,
   )
 
   if (createResult.status !== "ok") {
@@ -556,6 +563,7 @@ export async function bootstrapStorefrontBookingSessionCompat(
   input: StorefrontBookingSessionCompatBootstrapInput,
   options: StorefrontBookingSessionBootstrapOptions | undefined,
   userId?: string,
+  owner: PublicBookingOwner | null = null,
 ): Promise<
   Awaited<ReturnType<typeof bootstrapStorefrontBookingSession>> | { status: "product_mismatch" }
 > {
@@ -657,6 +665,7 @@ export async function bootstrapStorefrontBookingSessionCompat(
     },
     options,
     userId,
+    owner,
   )
 
   // Preserve the caller's external departure id in the availability snapshot

@@ -1,4 +1,6 @@
 // agent-quality: file-size exception -- owner: storefront; existing service module stays co-located until a dedicated split preserves behavior and tests.
+
+import type { PublicBookingOwner } from "@voyant-travel/bookings"
 import type { EventBus } from "@voyant-travel/core"
 import type { StorefrontIntakeContext } from "@voyant-travel/relationships-contracts/storefront-intake"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -551,24 +553,28 @@ export function createStorefrontService(options?: StorefrontServiceOptions) {
       context: StorefrontRequestContext & { db: PostgresJsDatabase },
       input: StorefrontBookingSessionBootstrapInput,
       userId?: string,
+      owner: PublicBookingOwner | null = null,
     ) {
       return bootstrapStorefrontBookingSession(
         context,
         input,
         options?.bookingSessionBootstrap,
         userId,
+        owner,
       )
     },
     async bootstrapBookingSessionCompat(
       context: StorefrontRequestContext & { db: PostgresJsDatabase },
       input: StorefrontBookingSessionCompatBootstrapInput,
       userId?: string,
+      owner: PublicBookingOwner | null = null,
     ) {
       return bootstrapStorefrontBookingSessionCompat(
         context,
         input,
         options?.bookingSessionBootstrap,
         userId,
+        owner,
       )
     },
     async listApplicableOffers(input: {

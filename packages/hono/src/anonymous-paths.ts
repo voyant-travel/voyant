@@ -13,7 +13,7 @@ import { resolveSurfaceMountPath } from "./mount-paths.js"
  * `publicPath`/name under `/v1/public`. `anonymous: true` opens the whole mount;
  * a string array opens specific sub-paths relative to it. Pure and sorted for a
  * deterministic, snapshot-auditable result; the global list is what `requireAuth`
- * matches to skip auth (and stamp `actor: "customer"`).
+ * matches to skip auth and mark the request as explicitly anonymous.
  */
 export function assembleAnonymousPaths(
   modules: readonly ApiModule[],
@@ -60,5 +60,40 @@ export function assembleAnonymousPaths(
     addWebhooks(e.extension.module, e.webhookRoutes)
   }
 
+  return [...paths].sort()
+}
+
+/**
+ * Assemble anonymous paths that use mixed auth: valid customer sessions are
+ * resolved, while requests without a valid session continue as explicit guests.
+ */
+export function assembleOptionalCustomerAuthPaths(
+  modules: readonly ApiModule[],
+  extensions: readonly ApiExtension[],
+): string[] {
+  const paths = new Set<string>()
+  const add = (mount: string, declaration: boolean | readonly string[] | undefined): void => {
+    if (!declaration) return
+    if (declaration === true) {
+      paths.add(mount)
+      return
+    }
+    for (const sub of declaration) {
+      const trimmed = sub.trim().replace(/^\/+|\/+$/g, "")
+      paths.add(trimmed ? `${mount}/${trimmed}` : mount)
+    }
+  }
+  for (const module of modules) {
+    add(
+      resolveSurfaceMountPath("/v1/public", module.publicPath, module.module.name),
+      module.optionalCustomerAuth,
+    )
+  }
+  for (const extension of extensions) {
+    add(
+      resolveSurfaceMountPath("/v1/public", extension.publicPath, extension.extension.module),
+      extension.optionalCustomerAuth,
+    )
+  }
   return [...paths].sort()
 }

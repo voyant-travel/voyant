@@ -18,7 +18,22 @@ export interface VoyantAppContextConstraint {
 export interface VoyantAuthContext {
   userId?: string
   sessionId?: string
+  /** Explicit admin/customer security realm for session identities. */
+  realm?: "admin" | "customer"
+  /** True only when auth admitted this request as an anonymous public guest. */
+  isAnonymousRequest?: boolean
   organizationId?: string | null
+  /** Provider-neutral storefront buyer context selected for this request. */
+  buyerAccountId?: string | null
+  buyerAccountKind?: "personal" | "business"
+  /** Better Auth organization membership container; never a CRM Organization id. */
+  authOrganizationId?: string | null
+  /** Canonical Relationships Organization id for a business buyer. */
+  relationshipOrganizationId?: string | null
+  /** Canonical Relationships Person id for the customer identity, including B2B-only users. */
+  relationshipPersonId?: string | null
+  buyerMembershipId?: string | null
+  buyerMembershipRole?: string | null
   callerType?: VoyantCallerType
   actor?: Actor
   /**

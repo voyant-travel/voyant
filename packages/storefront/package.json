@@ -8,6 +8,7 @@
     "./admin-routes": "./src/routes-admin.ts",
     "./booking-bootstrap-subscriber": "./src/booking-bootstrap-subscriber-runtime.ts",
     "./customer-portal": "./src/customer-portal/index.ts",
+    "./customer-auth-client": "./src/customer-auth-client.ts",
     "./customer-portal/public-routes": "./src/customer-portal/routes-public.ts",
     "./customer-portal/public-validation": "./src/customer-portal/validation-public.ts",
     "./customer-portal/routes": "./src/customer-portal/routes.ts",
@@ -135,6 +136,11 @@
         "types": "./dist/customer-portal/index.d.ts",
         "import": "./dist/customer-portal/index.js",
         "default": "./dist/customer-portal/index.js"
+      },
+      "./customer-auth-client": {
+        "types": "./dist/customer-auth-client.d.ts",
+        "import": "./dist/customer-auth-client.js",
+        "default": "./dist/customer-auth-client.js"
       },
       "./customer-portal/public-routes": {
         "types": "./dist/customer-portal/routes-public.d.ts",

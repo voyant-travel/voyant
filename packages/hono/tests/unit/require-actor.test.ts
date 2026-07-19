@@ -151,6 +151,26 @@ describe("requireActor", () => {
     expect(res.status).toBe(401)
   })
 
+  it("allows an explicit anonymous request through a customer public surface", async () => {
+    const app = makeApp((c) => c.set("isAnonymousRequest", true))
+    app.use("*", requireActor("customer", "partner"))
+    app.post("/bookings", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/bookings", { method: "POST" })
+
+    expect(res.status).toBe(200)
+  })
+
+  it("never lets an explicit anonymous request bypass a staff-only guard", async () => {
+    const app = makeApp((c) => c.set("isAnonymousRequest", true))
+    app.use("*", requireActor("staff"))
+    app.get("/admin", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/admin")
+
+    expect(res.status).toBe(401)
+  })
+
   it("differentiates 401 (no actor) from 403 (wrong actor)", async () => {
     const wrongActor = makeApp((c) => c.set("actor", "customer"))
     wrongActor.use("*", requireActor("staff"))

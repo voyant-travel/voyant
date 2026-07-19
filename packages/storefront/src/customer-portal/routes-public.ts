@@ -1,7 +1,13 @@
 // agent-quality: file-size exception -- owner: customer-portal; the OpenAPI route definitions and their handlers stay co-located (one app instance) until a dedicated split preserves behavior and tests.
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ModuleContainer } from "@voyant-travel/core"
-import { ForbiddenApiError, openApiValidationHook, requireUserId } from "@voyant-travel/hono"
+import {
+  ForbiddenApiError,
+  openApiValidationHook,
+  requireCustomerBuyerContext,
+  requireCustomerIdentityContext,
+  requirePersonalCustomerBuyerContext,
+} from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -444,7 +450,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
   // distinct from the `/me/documents/{id}` legs).
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(getMeRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const profile = await publicCustomerPortalService.getProfileWithOptions(c.get("db"), userId, {
         kms: resolveOptionalKms(c),
@@ -454,7 +460,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
         : c.json({ error: "Customer profile not found" }, 404)
     })
     .openapi(patchMeRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const result = await publicCustomerPortalService.updateProfileWithOptions(
         c.get("db"),
@@ -476,14 +482,14 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: result.profile }, 200)
     })
     .openapi(listDocumentsRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
       const data = await publicCustomerPortalService.listMyDocuments(c.get("db"), userId, {
         kms: resolveOptionalKms(c),
       })
       return c.json({ data }, 200)
     })
     .openapi(createDocumentRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
       const row = await publicCustomerPortalService.createMyDocument(
         c.get("db"),
         userId,
@@ -496,7 +502,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: row }, 201)
     })
     .openapi(setPrimaryDocumentRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
       const row = await publicCustomerPortalService.setPrimaryMyDocument(
         c.get("db"),
         userId,
@@ -507,7 +513,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: row }, 200)
     })
     .openapi(updateDocumentRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
       const row = await publicCustomerPortalService.updateMyDocument(
         c.get("db"),
         userId,
@@ -519,7 +525,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: row }, 200)
     })
     .openapi(deleteDocumentRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
       const result = await publicCustomerPortalService.deleteMyDocument(
         c.get("db"),
         userId,
@@ -529,7 +535,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ success: true } as const, 200)
     })
     .openapi(bootstrapRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const result = await publicCustomerPortalService.bootstrap(
         c.get("db"),
@@ -556,7 +562,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: result }, 200)
     })
     .openapi(listCompanionsRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       return c.json(
         { data: await publicCustomerPortalService.listCompanions(c.get("db"), userId) },
@@ -564,11 +570,11 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       )
     })
     .openapi(importCompanionsRoute, async (c) => {
-      const userId = requireUserId(c)
+      const buyer = requirePersonalCustomerBuyerContext(c)
 
       const result = await publicCustomerPortalService.importBookingTravelersAsCompanions(
         c.get("db"),
-        userId,
+        buyer,
         c.req.valid("json"),
       )
 
@@ -579,7 +585,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: result }, 200)
     })
     .openapi(createCompanionRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const companion = await publicCustomerPortalService.createCompanion(
         c.get("db"),
@@ -594,7 +600,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: companion }, 201)
     })
     .openapi(updateCompanionRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const companion = await publicCustomerPortalService.updateCompanion(
         c.get("db"),
@@ -618,7 +624,7 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ data: companion }, 200)
     })
     .openapi(deleteCompanionRoute, async (c) => {
-      const userId = requireUserId(c)
+      const userId = requireCustomerIdentityContext(c).userId
 
       const result = await publicCustomerPortalService.deleteCompanion(
         c.get("db"),
@@ -637,19 +643,19 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return c.json({ success: true } as const, 200)
     })
     .openapi(listBookingsRoute, async (c) => {
-      const userId = requireUserId(c)
+      const buyer = requireCustomerBuyerContext(c)
 
-      const bookings = await publicCustomerPortalService.listBookings(c.get("db"), userId)
+      const bookings = await publicCustomerPortalService.listBookings(c.get("db"), buyer)
       return bookings
         ? c.json({ data: bookings }, 200)
         : c.json({ error: "Customer profile not found" }, 404)
     })
     .openapi(getBookingRoute, async (c) => {
-      const userId = requireUserId(c)
+      const buyer = requireCustomerBuyerContext(c)
 
       const booking = await publicCustomerPortalService.getBooking(
         c.get("db"),
-        userId,
+        buyer,
         c.req.valid("param").bookingId,
         {
           resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c, storageKey),
@@ -659,11 +665,11 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
       return booking ? c.json({ data: booking }, 200) : c.json({ error: "Booking not found" }, 404)
     })
     .openapi(listBookingDocumentsRoute, async (c) => {
-      const userId = requireUserId(c)
+      const buyer = requireCustomerBuyerContext(c)
 
       const documents = await publicCustomerPortalService.listBookingDocuments(
         c.get("db"),
-        userId,
+        buyer,
         c.req.valid("param").bookingId,
         {
           resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c, storageKey),
@@ -675,11 +681,11 @@ export function createPublicCustomerPortalRoutes(options: PublicCustomerPortalRo
         : c.json({ error: "Booking not found" }, 404)
     })
     .openapi(getBookingBillingContactRoute, async (c) => {
-      const userId = requireUserId(c)
+      const buyer = requireCustomerBuyerContext(c)
 
       const billingContact = await publicCustomerPortalService.getBookingBillingContact(
         c.get("db"),
-        userId,
+        buyer,
         c.req.valid("param").bookingId,
       )
 

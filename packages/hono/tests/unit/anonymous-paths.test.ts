@@ -1,7 +1,10 @@
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
-import { assembleAnonymousPaths } from "../../src/anonymous-paths.js"
+import {
+  assembleAnonymousPaths,
+  assembleOptionalCustomerAuthPaths,
+} from "../../src/anonymous-paths.js"
 import type { ApiExtension, ApiModule } from "../../src/module.js"
 
 const noop = (c: { json: (b: unknown) => unknown }) => c.json({})
@@ -113,5 +116,16 @@ describe("assembleAnonymousPaths (ADR-0008)", () => {
       .post("/hooks/fixed", noop as any)
     const paths = assembleAnonymousPaths([mod("svc", { webhookRoutes })], [])
     expect(paths).toEqual(["/v1/svc/hooks/fixed"])
+  })
+})
+
+describe("assembleOptionalCustomerAuthPaths", () => {
+  it("assembles mixed guest/customer paths relative to module and extension mounts", () => {
+    expect(
+      assembleOptionalCustomerAuthPaths(
+        [mod("bookings", { optionalCustomerAuth: true })],
+        [ext("storefront", { optionalCustomerAuth: ["/bookings"] })],
+      ),
+    ).toEqual(["/v1/public/bookings", "/v1/public/storefront/bookings"])
   })
 })
