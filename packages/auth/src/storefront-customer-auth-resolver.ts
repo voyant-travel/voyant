@@ -45,10 +45,37 @@ export interface LocalStorefrontCustomerAuthResolverConfig<Env> {
   keyHeader?: string
 }
 
+/**
+ * Reason a storefront customer-auth resolution failed. Every variant is a
+ * client-side auth failure (bad/absent credentials or a disallowed origin), not
+ * a server fault, so the auth handler maps these to 401/403 — never 500.
+ */
+export type StorefrontCustomerAuthFailureReason =
+  | "missing_origin"
+  | "missing_key"
+  | "unknown_key"
+  | "origin_not_allowed"
+
+/**
+ * Thrown by the local storefront customer-auth resolver when the presented
+ * credentials/origin cannot be resolved to a storefront. Carries an HTTP status
+ * and a stable machine code so the auth handler can translate it into a clean
+ * 401 (or 403 for a known key from a disallowed origin) instead of a 500. The
+ * message is intentionally non-leaky — it never echoes the presented key.
+ */
 export class StorefrontCustomerAuthResolutionError extends Error {
-  constructor(message: string) {
+  readonly reason: StorefrontCustomerAuthFailureReason
+  /** HTTP status the auth handler should surface (401 unauthorized / 403 forbidden). */
+  readonly status: 401 | 403
+  /** Stable client-facing error code. */
+  readonly code: "unauthorized" | "forbidden"
+
+  constructor(reason: StorefrontCustomerAuthFailureReason, message: string) {
     super(message)
     this.name = "StorefrontCustomerAuthResolutionError"
+    this.reason = reason
+    this.status = reason === "origin_not_allowed" ? 403 : 401
+    this.code = reason === "origin_not_allowed" ? "forbidden" : "unauthorized"
   }
 }
 
@@ -81,12 +108,14 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
     const origin = request.headers.get(originHeader)?.trim()
     if (!origin) {
       throw new StorefrontCustomerAuthResolutionError(
+        "missing_origin",
         `Local storefront customer auth requires ${originHeader} from the storefront BFF.`,
       )
     }
     const token = request.headers.get(keyHeader)?.trim()
     if (!token) {
       throw new StorefrontCustomerAuthResolutionError(
+        "missing_key",
         `Local storefront customer auth requires a storefront key (${keyHeader}).`,
       )
     }
@@ -96,12 +125,14 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
       const resolved = await config.provider.resolveStorefrontByApiKey(context, token)
       if (!resolved) {
         throw new StorefrontCustomerAuthResolutionError(
+          "unknown_key",
           "The presented storefront key is unknown or revoked.",
         )
       }
       const { storefront } = resolved
       if (!isStorefrontOriginAllowed(origin, storefront.allowedOrigins)) {
         throw new StorefrontCustomerAuthResolutionError(
+          "origin_not_allowed",
           "The request origin is not a declared allowed origin for this storefront.",
         )
       }

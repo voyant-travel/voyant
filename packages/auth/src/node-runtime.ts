@@ -68,6 +68,7 @@ import {
   handleApiTokenManagementRequest,
   handleOrganizationMembersRequest,
 } from "./server.js"
+import { StorefrontCustomerAuthResolutionError } from "./storefront-customer-auth-resolver.js"
 import { ensureCurrentUserProfile } from "./workspace.js"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
@@ -354,9 +355,21 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       })
     }
   })
-  auth.onError((err, c) =>
-    handleApiError(err, c, { reporter: runtimeOptions.reporter, appName: runtimeOptions.appName }),
-  )
+  auth.onError((err, c) => {
+    // A storefront customer-auth resolution failure is a client-side auth
+    // failure (missing/invalid storefront key or a disallowed origin), not a
+    // server fault. Translate it into a clean 401/403 with a stable, non-leaky
+    // body instead of letting it fall through to `handleApiError`'s 500. The
+    // catch is narrowed to this error type so genuine server faults still 500.
+    if (err instanceof StorefrontCustomerAuthResolutionError) {
+      c.header("Cache-Control", "no-store")
+      return c.json({ error: err.code }, err.status)
+    }
+    return handleApiError(err, c, {
+      reporter: runtimeOptions.reporter,
+      appName: runtimeOptions.appName,
+    })
+  })
 
   const DEFAULT_APP_URL = "http://localhost:3300"
   const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([

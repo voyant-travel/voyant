@@ -4,6 +4,12 @@ import {
   buildBetterAuthCookieAdvancedOptions,
   createOperatorAuthNodeRuntime,
 } from "../../src/node-runtime.js"
+import {
+  createLocalStorefrontCustomerAuthResolver,
+  STOREFRONT_KEY_HEADER,
+  STOREFRONT_ORIGIN_HEADER,
+} from "../../src/storefront-customer-auth-resolver.js"
+import type { StorefrontDto, StorefrontRuntimeProvider } from "../../src/storefront-runtime-port.js"
 
 describe("buildBetterAuthCookieAdvancedOptions", () => {
   it("leaves Better Auth cookie defaults untouched when the domain is unset", () => {
@@ -487,5 +493,122 @@ describe("createOperatorAuthNodeRuntime", () => {
       }),
     ).rejects.toThrow("Customer auth requires BETTER_AUTH_CUSTOMER_SECRET")
     expect(dispose).toHaveBeenCalledOnce()
+  })
+})
+
+describe("createOperatorAuthNodeRuntime storefront customer-auth failures", () => {
+  const STOREFRONT: StorefrontDto = {
+    id: "sf_1",
+    organizationId: "org_1",
+    name: "Shop",
+    slug: "shop",
+    hostingKind: "external",
+    siteId: null,
+    allowedOrigins: ["https://shop.example.com"],
+    methods: {
+      emailCode: true,
+      emailPassword: false,
+      google: false,
+      facebook: false,
+      apple: false,
+    },
+    accountPolicy: {
+      allowedKinds: ["personal"],
+      personalSignup: "open",
+      businessOnboarding: "disabled",
+    },
+    hostOnlyCookies: true,
+    createdAt: "2026-07-19T00:00:00.000Z",
+    updatedAt: "2026-07-19T00:00:00.000Z",
+  }
+
+  function fakeProvider(
+    resolveStorefrontByApiKey?: () => Promise<unknown>,
+  ): StorefrontRuntimeProvider {
+    return {
+      resolveStorefrontByApiKey:
+        resolveStorefrontByApiKey ?? (async () => ({ storefront: STOREFRONT, key: null })),
+      resolveProviderCredentials: async () => ({}),
+    } as unknown as StorefrontRuntimeProvider
+  }
+
+  function makeRuntime(provider: StorefrontRuntimeProvider) {
+    return createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose: async () => {} }),
+      resolveCustomerAuthContext: createLocalStorefrontCustomerAuthResolver({
+        provider,
+        openResolveContext: async () => ({
+          context: { bindings: {}, db: {} as never },
+          dispose: async () => {},
+        }),
+      }),
+    })
+  }
+
+  const ENV = {
+    DATABASE_URL: "postgres://unused",
+    BETTER_AUTH_CUSTOMER_SECRET: "customer-secret-with-at-least-32-characters",
+    SESSION_CLAIMS_ADMIN_SECRET: "admin-secret-with-at-least-32-characters",
+  }
+
+  async function configRequest(headers: Record<string, string>) {
+    return makeRuntime(fakeProvider()).handler.fetch(
+      new Request("https://shop.example.com/auth/customer/config", { headers }),
+      ENV,
+      { waitUntil: vi.fn() } as never,
+    )
+  }
+
+  it("returns 401 when the storefront key is missing", async () => {
+    const response = await configRequest({ [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com" })
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "unauthorized" })
+  })
+
+  it("returns 401 when the storefront origin header is missing", async () => {
+    const response = await configRequest({ [STOREFRONT_KEY_HEADER]: "vpk_token" })
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "unauthorized" })
+  })
+
+  it("returns 401 for an unknown or revoked key without leaking it", async () => {
+    const response = await makeRuntime(fakeProvider(async () => null)).handler.fetch(
+      new Request("https://shop.example.com/auth/customer/config", {
+        headers: {
+          [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+          [STOREFRONT_KEY_HEADER]: "vpk_secret_value",
+        },
+      }),
+      ENV,
+      { waitUntil: vi.fn() } as never,
+    )
+    expect(response.status).toBe(401)
+    const body = await response.text()
+    expect(JSON.parse(body)).toEqual({ error: "unauthorized" })
+    expect(body).not.toContain("vpk_secret_value")
+  })
+
+  it("returns 403 for a known key presented from a disallowed origin", async () => {
+    const response = await configRequest({
+      [STOREFRONT_ORIGIN_HEADER]: "https://evil.example.com",
+      [STOREFRONT_KEY_HEADER]: "vpk_token",
+    })
+    expect(response.status).toBe(403)
+    expect(await response.json()).toEqual({ error: "forbidden" })
+  })
+
+  it("still resolves a valid key + allowed origin (200 path unaffected)", async () => {
+    const response = await configRequest({
+      [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+      [STOREFRONT_KEY_HEADER]: "vpk_token",
+    })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      methods: { emailCode: true, emailPassword: false },
+    })
   })
 })
