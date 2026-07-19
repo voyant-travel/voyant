@@ -1,5 +1,13 @@
 # @voyant-travel/custom-fields
 
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [43e7754]
+  - @voyant-travel/db@0.117.0
+  - @voyant-travel/hono@0.131.2
+
 ## 0.2.8
 
 ### Patch Changes
