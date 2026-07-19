@@ -95,7 +95,7 @@ export function createDefaultPaymentProviderRegistry(
       }
 
       const row = await getPaymentProviderConfig(db)
-      if (!row || !row.activeProviderId) return disconnected
+      if (!row?.activeProviderId) return disconnected
       return {
         activeProviderId: row.activeProviderId,
         status: (row.status as PaymentProviderConnectionState) ?? "disconnected",
