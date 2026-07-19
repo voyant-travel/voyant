@@ -1736,11 +1736,7 @@
       "@voyant-travel/storage/voyant": ["../storage/dist/voyant.d.ts"],
       "@voyant-travel/storefront": ["../storefront/dist/index.d.ts"],
       "@voyant-travel/storefront-react": ["../storefront-react/dist/index.d.ts"],
-      "@voyant-travel/storefront-react/admin": ["../storefront-react/dist/admin.d.ts"],
       "@voyant-travel/storefront-react/client": ["../storefront-react/dist/client.d.ts"],
-      "@voyant-travel/storefront-react/components/storefront-settings-page": [
-        "../storefront-react/dist/components/storefront-settings-page.d.ts"
-      ],
       "@voyant-travel/storefront-react/customer-portal": [
         "../storefront-react/dist/customer-portal/index.d.ts"
       ],
@@ -1765,7 +1761,6 @@
       "@voyant-travel/storefront-react/storefront": [
         "../storefront-react/dist/storefront/index.d.ts"
       ],
-      "@voyant-travel/storefront-react/ui": ["../storefront-react/dist/ui.d.ts"],
       "@voyant-travel/storefront-sdk": ["../storefront-sdk/dist/index.d.ts"],
       "@voyant-travel/storefront-sdk/booking-engine": [
         "../storefront-sdk/dist/booking-engine.d.ts"
