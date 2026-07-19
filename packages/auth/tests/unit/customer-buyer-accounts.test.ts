@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest"
 
 import {
   businessBuyerAccountId,
+  type CustomerBusinessMembership,
+  type CustomerBuyerAccountStore,
   listCustomerBuyerAccounts,
   normalizeCustomerBuyerAccountPolicy,
   personalBuyerAccountId,
   resolveActiveCustomerBuyerContext,
   selectCustomerBuyerAccount,
-  type CustomerBusinessMembership,
-  type CustomerBuyerAccountStore,
 } from "../../src/customer-buyer-accounts.js"
 
 function memoryStore(input?: {

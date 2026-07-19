@@ -1,5 +1,5 @@
-import type { EventBus, EventHandler } from "@voyant-travel/core"
 import type { PublicBookingOwner } from "@voyant-travel/bookings"
+import type { EventBus, EventHandler } from "@voyant-travel/core"
 import { getWriteIntent, settleWriteIntent } from "@voyant-travel/db/write-intents"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

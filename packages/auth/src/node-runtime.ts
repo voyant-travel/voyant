@@ -40,6 +40,15 @@ import {
 } from "./cloud-admin-session.js"
 import { buildClearCloudAdminAuthStateCookie, createCloudAdminAuthStart } from "./cloud-broker.js"
 import {
+  type CustomerBuyerAccountPolicy,
+  createDrizzleCustomerBuyerAccountStore,
+  listCustomerBuyerAccounts,
+  normalizeCustomerBuyerAccountPolicy,
+  repairCustomerPersonalBuyerAccountEntitlement,
+  resolveActiveCustomerBuyerContext,
+  selectCustomerBuyerAccount,
+} from "./customer-buyer-accounts.js"
+import {
   type CreateBetterAuthOptions,
   type CustomerAuthMethods,
   createAdminBetterAuth,
@@ -48,15 +57,6 @@ import {
   handleOrganizationMembersRequest,
 } from "./server.js"
 import { ensureCurrentUserProfile } from "./workspace.js"
-import {
-  createDrizzleCustomerBuyerAccountStore,
-  listCustomerBuyerAccounts,
-  normalizeCustomerBuyerAccountPolicy,
-  repairCustomerPersonalBuyerAccountEntitlement,
-  resolveActiveCustomerBuyerContext,
-  selectCustomerBuyerAccount,
-  type CustomerBuyerAccountPolicy,
-} from "./customer-buyer-accounts.js"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
 // set `VoyantDb` from the deployment's database lifecycle adapter. Without
