@@ -1,5 +1,18 @@
 # @voyant-travel/operator-standard
 
+## 0.9.11
+
+### Patch Changes
+
+- Updated dependencies [0fa5feb]
+  - @voyant-travel/operator-settings@0.13.0
+  - @voyant-travel/inventory@0.14.14
+  - @voyant-travel/legal@0.181.1
+  - @voyant-travel/quotes@0.131.22
+  - @voyant-travel/trips@0.172.1
+  - @voyant-travel/legal-react@0.181.1
+  - @voyant-travel/trips-react@0.172.1
+
 ## 0.9.10
 
 ### Patch Changes
