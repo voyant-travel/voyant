@@ -1,5 +1,26 @@
 # @voyant-travel/runtime
 
+## 0.15.0
+
+### Minor Changes
+
+- abc32b6: Add customer business-account onboarding contracts, durable request workflows,
+  deployment-composed runtime wiring, staff-guarded administration, Better Auth
+  organization invitation acceptance, the framework-neutral storefront client,
+  React provider operations, and the capability-gated operator page.
+
+### Patch Changes
+
+- Updated dependencies [abc32b6]
+  - @voyant-travel/auth@0.137.0
+  - @voyant-travel/db@0.116.0
+  - @voyant-travel/apps@0.10.3
+  - @voyant-travel/framework@0.55.1
+  - @voyant-travel/hono@0.131.1
+  - @voyant-travel/webhook-delivery@0.4.6
+  - @voyant-travel/workflow-runs@0.122.10
+  - @voyant-travel/admin-host@0.26.0
+
 ## 0.14.2
 
 ### Patch Changes
