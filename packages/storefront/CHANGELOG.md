@@ -1,5 +1,27 @@
 # @voyant-travel/storefront
 
+## 0.178.0
+
+### Minor Changes
+
+- abc32b6: Add customer business-account onboarding contracts, durable request workflows,
+  deployment-composed runtime wiring, staff-guarded administration, Better Auth
+  organization invitation acceptance, the framework-neutral storefront client,
+  React provider operations, and the capability-gated operator page.
+
+### Patch Changes
+
+- Updated dependencies [abc32b6]
+  - @voyant-travel/auth@0.137.0
+  - @voyant-travel/db@0.116.0
+  - @voyant-travel/bookings@0.176.0
+  - @voyant-travel/commerce@0.39.11
+  - @voyant-travel/finance@0.176.0
+  - @voyant-travel/hono@0.131.1
+  - @voyant-travel/identity@0.176.0
+  - @voyant-travel/legal@0.176.0
+  - @voyant-travel/relationships@0.128.15
+
 ## 0.177.0
 
 ### Minor Changes

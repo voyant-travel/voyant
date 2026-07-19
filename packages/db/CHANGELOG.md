@@ -1,5 +1,18 @@
 # @voyant-travel/db
 
+## 0.116.0
+
+### Minor Changes
+
+- abc32b6: Add customer business-account onboarding contracts, durable request workflows,
+  deployment-composed runtime wiring, staff-guarded administration, Better Auth
+  organization invitation acceptance, the framework-neutral storefront client,
+  React provider operations, and the capability-gated operator page.
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.122.10
+
 ## 0.115.0
 
 ### Minor Changes

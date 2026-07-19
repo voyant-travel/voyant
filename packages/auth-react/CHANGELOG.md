@@ -1,5 +1,20 @@
 # @voyant-travel/auth-react
 
+## 0.137.0
+
+### Minor Changes
+
+- abc32b6: Add customer business-account onboarding contracts, durable request workflows,
+  deployment-composed runtime wiring, staff-guarded administration, Better Auth
+  organization invitation acceptance, the framework-neutral storefront client,
+  React provider operations, and the capability-gated operator page.
+
+### Patch Changes
+
+- Updated dependencies [abc32b6]
+  - @voyant-travel/auth@0.137.0
+  - @voyant-travel/types@0.109.7
+
 ## 0.136.0
 
 ### Patch Changes

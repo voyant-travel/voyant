@@ -1,5 +1,13 @@
 # @voyant-travel/action-ledger
 
+## 0.111.8
+
+### Patch Changes
+
+- Updated dependencies [abc32b6]
+  - @voyant-travel/db@0.116.0
+  - @voyant-travel/hono@0.131.1
+
 ## 0.111.7
 
 ### Patch Changes
