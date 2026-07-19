@@ -4,6 +4,7 @@ import {
   createLocalStorefrontCustomerAuthResolver,
   STOREFRONT_KEY_HEADER,
   STOREFRONT_ORIGIN_HEADER,
+  StorefrontCustomerAuthResolutionError,
 } from "../../src/storefront-customer-auth-resolver.js"
 import type {
   ResolvedStorefrontApiKey,
@@ -121,25 +122,44 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
     expect(context.baseURL).toBe("https://preview.example.com")
   })
 
+  async function rejection(
+    promise: Promise<unknown>,
+  ): Promise<StorefrontCustomerAuthResolutionError> {
+    try {
+      await promise
+    } catch (error) {
+      return error as StorefrontCustomerAuthResolutionError
+    }
+    throw new Error("expected the resolver to reject")
+  }
+
   it("requires the origin header", async () => {
     const { resolver } = makeResolver(fakeProvider())
-    await expect(resolver({}, request({ [STOREFRONT_KEY_HEADER]: "vpk_token" }))).rejects.toThrow(
-      /origin/i,
-    )
+    const error = await rejection(resolver({}, request({ [STOREFRONT_KEY_HEADER]: "vpk_token" })))
+    expect(error).toBeInstanceOf(StorefrontCustomerAuthResolutionError)
+    expect(error.message).toMatch(/origin/i)
+    expect(error.reason).toBe("missing_origin")
+    expect(error.status).toBe(401)
+    expect(error.code).toBe("unauthorized")
   })
 
   it("requires the key header", async () => {
     const { resolver } = makeResolver(fakeProvider())
-    await expect(
+    const error = await rejection(
       resolver({}, request({ [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com" })),
-    ).rejects.toThrow(/key/i)
+    )
+    expect(error.message).toMatch(/key/i)
+    expect(error.reason).toBe("missing_key")
+    expect(error.status).toBe(401)
+    // The message must not echo any presented key.
+    expect(error.message).not.toMatch(/vpk_/)
   })
 
   it("rejects an unknown or revoked key", async () => {
     const { resolver, disposed } = makeResolver(
       fakeProvider({ resolveStorefrontByApiKey: async () => null }),
     )
-    await expect(
+    const error = await rejection(
       resolver(
         {},
         request({
@@ -147,13 +167,17 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
           [STOREFRONT_KEY_HEADER]: "vpk_bad",
         }),
       ),
-    ).rejects.toThrow(/unknown or revoked/i)
+    )
+    expect(error.message).toMatch(/unknown or revoked/i)
+    expect(error.reason).toBe("unknown_key")
+    expect(error.status).toBe(401)
+    expect(error.message).not.toMatch(/vpk_bad/)
     expect(disposed()).toBe(1)
   })
 
-  it("rejects an origin outside the declared allowlist", async () => {
+  it("rejects an origin outside the declared allowlist as forbidden", async () => {
     const { resolver } = makeResolver(fakeProvider())
-    await expect(
+    const error = await rejection(
       resolver(
         {},
         request({
@@ -161,6 +185,11 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
           [STOREFRONT_KEY_HEADER]: "vpk_token",
         }),
       ),
-    ).rejects.toThrow(/declared allowed origin/i)
+    )
+    expect(error.message).toMatch(/declared allowed origin/i)
+    expect(error.reason).toBe("origin_not_allowed")
+    // A known key from a disallowed origin is a 403 (forbidden), not a 401.
+    expect(error.status).toBe(403)
+    expect(error.code).toBe("forbidden")
   })
 })
