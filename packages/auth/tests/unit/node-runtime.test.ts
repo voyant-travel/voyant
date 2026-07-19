@@ -613,6 +613,52 @@ describe("createOperatorAuthNodeRuntime storefront customer-auth failures", () =
       methods: { emailCode: true, emailPassword: false },
     })
   })
+
+  it.each([
+    { label: "missing key", headers: { [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com" } },
+    {
+      label: "unknown/revoked key",
+      headers: {
+        [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+        [STOREFRONT_KEY_HEADER]: "vpk_secret_value",
+      },
+      resolveStorefrontByApiKey: async () => null,
+    },
+    {
+      label: "disallowed origin",
+      headers: {
+        [STOREFRONT_ORIGIN_HEADER]: "https://evil.example.com",
+        [STOREFRONT_KEY_HEADER]: "vpk_token",
+      },
+    },
+  ])("maps a public-API storefront resolver failure ($label) to unauthorized (null → 401)", async ({
+    headers,
+    resolveStorefrontByApiKey,
+  }) => {
+    // On /v1/public/*, a storefront key/origin failure must resolve to
+    // "unauthorized" (null) so the framework returns 401 — never a 500.
+    const result = await makeRuntime(fakeProvider(resolveStorefrontByApiKey)).resolveAuthRequest(
+      new Request("https://shop.example.com/v1/public/catalog", { headers }),
+      ENV,
+    )
+    expect(result).toBeNull()
+  })
+
+  it("propagates a genuine (non-resolver) fault on the public API path", async () => {
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose: async () => {} }),
+      resolveCustomerAuthContext: async () => {
+        throw new Error("customer context broker unavailable")
+      },
+    })
+    await expect(
+      runtime.resolveAuthRequest(new Request("https://shop.example.com/v1/public/catalog"), ENV),
+    ).rejects.toThrow("customer context broker unavailable")
+  })
 })
 
 describe("isCustomerCorsSurface", () => {
