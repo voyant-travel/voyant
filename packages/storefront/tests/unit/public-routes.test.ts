@@ -33,10 +33,6 @@ describe("createStorefrontPublicRoutes", () => {
       "/",
       createStorefrontPublicRoutes({
         settings: {
-          branding: {
-            logoUrl: "https://cdn.example.com/logo.svg",
-            supportedLanguages: ["ro", "en"],
-          },
           support: {
             email: "help@example.com",
             phone: "+40 723 123 456",
@@ -88,14 +84,6 @@ describe("createStorefrontPublicRoutes", () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       data: {
-        branding: {
-          logoUrl: "https://cdn.example.com/logo.svg",
-          faviconUrl: null,
-          brandMarkUrl: null,
-          primaryColor: null,
-          accentColor: null,
-          supportedLanguages: ["ro", "en"],
-        },
         support: {
           email: "help@example.com",
           phone: "+40 723 123 456",
@@ -174,14 +162,6 @@ describe("createStorefrontPublicRoutes", () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       data: {
-        branding: {
-          logoUrl: null,
-          faviconUrl: null,
-          brandMarkUrl: null,
-          primaryColor: null,
-          accentColor: null,
-          supportedLanguages: [],
-        },
         support: {
           email: null,
           phone: null,

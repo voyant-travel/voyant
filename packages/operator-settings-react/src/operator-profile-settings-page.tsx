@@ -3,7 +3,7 @@
 // agent-quality: file-size exception -- owner: operator-settings; the profile form and its coordinated brand-asset upload states stay co-located until its shared save/reset model can be extracted without duplication.
 
 /**
- * Settings -> Operator profile (source-free, package-delivered).
+ * Settings -> Organization (source-free, package-delivered).
  *
  * Operator identity, payment instructions, and operator-level booking payment
  * defaults live in separate API/storage concepts, but remain one operational

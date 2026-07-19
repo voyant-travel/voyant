@@ -31,7 +31,6 @@ describe("selected-graph Action Ledger admin composition", () => {
       "navigation-preferences",
       "relationships",
       "distribution",
-      "storefront",
       "finance",
       "flights",
       "legal",
