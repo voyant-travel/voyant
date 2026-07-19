@@ -84,6 +84,22 @@
       "types": "./src/team-management-runtime-port.ts",
       "default": "./src/team-management-runtime-port.ts"
     },
+    "./storefront-runtime-port": {
+      "types": "./src/storefront-runtime-port.ts",
+      "default": "./src/storefront-runtime-port.ts"
+    },
+    "./storefront-local-adapter": {
+      "types": "./src/storefront-local-adapter.ts",
+      "default": "./src/storefront-local-adapter.ts"
+    },
+    "./storefront-customer-auth-resolver": {
+      "types": "./src/storefront-customer-auth-resolver.ts",
+      "default": "./src/storefront-customer-auth-resolver.ts"
+    },
+    "./storefront-credentials": {
+      "types": "./src/storefront-credentials.ts",
+      "default": "./src/storefront-credentials.ts"
+    },
     "./tools": {
       "types": "./src/mcp-runtime.ts",
       "default": "./src/mcp-runtime.ts"
@@ -190,6 +206,26 @@
         "types": "./dist/identity-access-graph-runtime.d.ts",
         "import": "./dist/identity-access-graph-runtime.js",
         "default": "./dist/identity-access-graph-runtime.js"
+      },
+      "./storefront-runtime-port": {
+        "types": "./dist/storefront-runtime-port.d.ts",
+        "import": "./dist/storefront-runtime-port.js",
+        "default": "./dist/storefront-runtime-port.js"
+      },
+      "./storefront-local-adapter": {
+        "types": "./dist/storefront-local-adapter.d.ts",
+        "import": "./dist/storefront-local-adapter.js",
+        "default": "./dist/storefront-local-adapter.js"
+      },
+      "./storefront-customer-auth-resolver": {
+        "types": "./dist/storefront-customer-auth-resolver.d.ts",
+        "import": "./dist/storefront-customer-auth-resolver.js",
+        "default": "./dist/storefront-customer-auth-resolver.js"
+      },
+      "./storefront-credentials": {
+        "types": "./dist/storefront-credentials.d.ts",
+        "import": "./dist/storefront-credentials.js",
+        "default": "./dist/storefront-credentials.js"
       },
       "./team-management-runtime-port": {
         "types": "./dist/team-management-runtime-port.d.ts",
