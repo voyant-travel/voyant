@@ -27,8 +27,29 @@ import type {
 
 /** Default header the storefront BFF uses to declare its browser origin. */
 export const STOREFRONT_ORIGIN_HEADER = "x-voyant-storefront-origin"
+/** Standard browser header a direct (non-BFF) cross-origin client sends. */
+export const STANDARD_ORIGIN_HEADER = "origin"
 /** Default header carrying the storefront's publishable/secret access key. */
 export const STOREFRONT_KEY_HEADER = "x-api-key"
+
+const WILDCARD_ORIGIN_PREFIX = "https://*."
+
+/**
+ * Resolve the storefront browser origin for a request. The BFF forwards its
+ * origin explicitly via {@link STOREFRONT_ORIGIN_HEADER} and that always wins;
+ * a direct (non-BFF) cross-origin client carries no BFF header, so fall back to
+ * the standard `Origin` header the browser attaches. Same-origin server
+ * requests keep sending the BFF header exactly as before.
+ */
+export function resolveStorefrontRequestOrigin(
+  request: Request,
+  originHeader: string = STOREFRONT_ORIGIN_HEADER,
+): string | null {
+  const bffOrigin = request.headers.get(originHeader)?.trim()
+  if (bffOrigin) return bffOrigin
+  const browserOrigin = request.headers.get(STANDARD_ORIGIN_HEADER)?.trim()
+  return browserOrigin || null
+}
 
 export interface LocalStorefrontCustomerAuthResolverConfig<Env> {
   provider: StorefrontRuntimeProvider
@@ -105,11 +126,11 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
   const keyHeader = config.keyHeader ?? STOREFRONT_KEY_HEADER
 
   return async (env, request) => {
-    const origin = request.headers.get(originHeader)?.trim()
+    const origin = resolveStorefrontRequestOrigin(request, originHeader)
     if (!origin) {
       throw new StorefrontCustomerAuthResolutionError(
         "missing_origin",
-        `Local storefront customer auth requires ${originHeader} from the storefront BFF.`,
+        `Local storefront customer auth requires ${originHeader} (BFF) or a standard Origin header.`,
       )
     }
     const token = request.headers.get(keyHeader)?.trim()
@@ -150,14 +171,68 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
         socialProviders: toSocialProviders(secrets),
       }
 
+      // Trust every declared exact origin plus the concrete request origin (which
+      // covers a `https://*.host` wildcard match, since the browser sends the
+      // resolved sub-domain). Wildcard entries themselves are surfaced via
+      // `allowedOrigins` for dynamic CORS but kept out of `trustedOrigins`, which
+      // the runtime validates as canonical origins.
+      const exactAllowedOrigins = storefront.allowedOrigins.filter(
+        (candidate) => !candidate.startsWith(WILDCARD_ORIGIN_PREFIX),
+      )
+      const trustedOrigins = [...new Set([origin, ...exactAllowedOrigins])]
+
       return {
         baseURL: origin,
         publicApiBaseURL: `${origin}/api`,
         invitationAcceptBaseURL: origin,
-        trustedOrigins: [origin],
+        trustedOrigins,
+        allowedOrigins: [...storefront.allowedOrigins],
         methods,
         accountPolicy: storefront.accountPolicy as CustomerBuyerAccountPolicy,
       }
+    } finally {
+      await dispose?.()
+    }
+  }
+}
+
+/**
+ * Build the request-time dynamic-CORS origin authorizer a self-host runtime
+ * passes to {@link createOperatorAuthNodeRuntime} as `resolveCustomerCorsOrigin`.
+ *
+ * Returns the exact request origin to echo in `Access-Control-Allow-Origin` when
+ * a storefront authorizes it, or `null` when it does not (the caller then omits
+ * CORS headers so the browser blocks the cross-origin response).
+ *
+ * Two request shapes are handled:
+ *  - Real/credentialed requests carry the publishable/secret key: the storefront
+ *    is resolved by key and the origin checked against its declared origins.
+ *  - CORS preflight (`OPTIONS`) carries no key or cookies, so the origin is
+ *    matched against any storefront that declares it via
+ *    {@link StorefrontRuntimeProvider.resolveStorefrontByOrigin}. This never
+ *    echoes an origin that no storefront allows.
+ */
+export function createLocalStorefrontCorsOriginResolver<Env>(
+  config: LocalStorefrontCustomerAuthResolverConfig<Env>,
+): (env: Env, request: Request) => Promise<string | null> {
+  const originHeader = config.originHeader ?? STOREFRONT_ORIGIN_HEADER
+  const keyHeader = config.keyHeader ?? STOREFRONT_KEY_HEADER
+
+  return async (env, request) => {
+    const origin = resolveStorefrontRequestOrigin(request, originHeader)
+    if (!origin) return null
+
+    const { context, dispose } = await config.openResolveContext(env, request)
+    try {
+      const token = request.headers.get(keyHeader)?.trim()
+      if (token) {
+        const resolved = await config.provider.resolveStorefrontByApiKey(context, token)
+        if (!resolved) return null
+        return isStorefrontOriginAllowed(origin, resolved.storefront.allowedOrigins) ? origin : null
+      }
+      // Keyless preflight: authorize purely by declared origin.
+      const storefront = await config.provider.resolveStorefrontByOrigin(context, origin)
+      return storefront ? origin : null
     } finally {
       await dispose?.()
     }

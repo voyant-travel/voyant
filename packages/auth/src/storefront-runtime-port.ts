@@ -135,6 +135,15 @@ export interface StorefrontRuntimeProvider {
     context: StorefrontResolveContext,
     token: string,
   ): Promise<ResolvedStorefrontApiKey | null>
+  /**
+   * Resolve a storefront that declares `origin` as an allowed browser origin
+   * (exact or `https://*.host` wildcard). Used to authorize keyless CORS
+   * preflight requests, which carry an `Origin` but no storefront key.
+   */
+  resolveStorefrontByOrigin(
+    context: StorefrontResolveContext,
+    origin: string,
+  ): Promise<StorefrontDto | null>
   // account policy + methods --------------------------------------------
   updateAccountPolicy(
     context: StorefrontRequestContext,
@@ -182,6 +191,7 @@ const REQUIRED_METHODS = [
   "rotateApiKey",
   "revokeApiKey",
   "resolveStorefrontByApiKey",
+  "resolveStorefrontByOrigin",
   "updateAccountPolicy",
   "updateMethods",
   "listProviderCredentials",

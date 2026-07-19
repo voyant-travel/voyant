@@ -101,6 +101,7 @@ vi.mock("better-auth/cookies", () => ({
 vi.mock("better-auth/plugins", () => ({
   emailOTP: vi.fn((options: Record<string, unknown>) => ({ id: "emailOTP", options })),
   organization: vi.fn((options: Record<string, unknown>) => ({ id: "organization", options })),
+  bearer: vi.fn((options?: Record<string, unknown>) => ({ id: "bearer", options })),
 }))
 
 vi.mock("../../src/local-member-access.js", () => ({
@@ -183,6 +184,9 @@ describe("createBetterAuth", () => {
         }),
       }),
     )
+    // Bearer enables direct (cross-origin / native) clients to authenticate with
+    // an Authorization: Bearer <token> header instead of a cross-site cookie.
+    expect(config.plugins).toContainEqual(expect.objectContaining({ id: "bearer" }))
     expect(config.socialProviders).toEqual(
       expect.objectContaining({
         google: expect.any(Object),

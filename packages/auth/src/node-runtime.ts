@@ -85,6 +85,24 @@ function classifyOperatorApiAuthSurface(requestUrl: string): OperatorApiAuthSurf
   return null
 }
 
+/**
+ * Whether a request targets the customer realm surface eligible for per-storefront
+ * dynamic CORS: the public storefront API (`/v1/public` + `/v1/public/*`) and the
+ * customer auth routes (`/auth/customer` + `/auth/customer/*`) a direct client
+ * hits to sign in. Tolerates an optional `/api` host prefix. Admin/dash surfaces
+ * are intentionally excluded — they keep the static `CORS_ALLOWLIST` behavior.
+ */
+export function isCustomerCorsSurface(requestUrl: string): boolean {
+  const pathname = new URL(requestUrl).pathname.replace(/\/+$/, "") || "/"
+  const normalized = pathname.startsWith("/api/") ? pathname.slice(4) : pathname
+  return (
+    normalized === "/v1/public" ||
+    normalized.startsWith("/v1/public/") ||
+    normalized === "/auth/customer" ||
+    normalized.startsWith("/auth/customer/")
+  )
+}
+
 export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   API_BASE_URL?: string
   APP_URL?: string
@@ -197,6 +215,15 @@ export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNo
     env: Env,
     request: Request,
   ) => CustomerAuthRuntimeContext | Promise<CustomerAuthRuntimeContext>
+  /**
+   * Request-time dynamic-CORS origin authorizer for the customer realm
+   * (`/v1/public/*` + `/auth/customer/*`). Returns the exact request origin to
+   * echo in `Access-Control-Allow-Origin` when a storefront authorizes it, or
+   * `null` to omit CORS headers. Authorizes keyed requests by the presented
+   * storefront key and keyless preflight by the declared allowed origins. When
+   * unset, the customer realm keeps the static `CORS_ALLOWLIST` behavior.
+   */
+  resolveCustomerCorsOrigin?: (env: Env, request: Request) => Promise<string | null>
 }
 
 export interface CustomerAuthRuntimeContext {
@@ -207,6 +234,12 @@ export interface CustomerAuthRuntimeContext {
   /** Explicit trusted storefront origin used for customer invitation links and request audit. */
   invitationAcceptBaseURL?: string
   trustedOrigins: string[]
+  /**
+   * Full declared browser origins for the resolved storefront (exact +
+   * `https://*.host` wildcard). Carried for dynamic CORS; `trustedOrigins` is
+   * the canonical-origin subset Better Auth validates.
+   */
+  allowedOrigins?: string[]
   methods: CustomerAuthMethods
   /** Buyer capabilities are independent from identity sign-up methods. */
   accountPolicy?: CustomerBuyerAccountPolicy | null
@@ -671,8 +704,16 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       context.publicApiBaseURL ?? `${baseURL}/api`,
       baseURL,
     )
-    const trustedOrigins = context.trustedOrigins.map((origin) =>
-      requireCanonicalOrigin(origin, "customer auth trusted origin"),
+    // Fold the resolved storefront's trusted origins together with the static
+    // env allowlist so a cross-origin customer-auth call from any allowed
+    // storefront origin is trusted by Better Auth (WORK: direct-client support).
+    // Wildcard (`https://*.host`) entries pass through untouched — Better Auth
+    // matches them natively; every other entry must be a canonical origin.
+    const trustedOrigins = [...new Set([...context.trustedOrigins, ...getTrustedOrigins(env)])].map(
+      (origin) =>
+        isCustomerWildcardOrigin(origin)
+          ? origin
+          : requireCanonicalOrigin(origin, "customer auth trusted origin"),
     )
     const invitationAcceptBaseURL = context.invitationAcceptBaseURL
       ? requireCanonicalOrigin(
@@ -687,6 +728,13 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       trustedOrigins,
       ...(invitationAcceptBaseURL ? { invitationAcceptBaseURL } : {}),
     }
+  }
+
+  /** A single-label `https://*.host` wildcard trusted-origin declaration. */
+  function isCustomerWildcardOrigin(value: string): boolean {
+    if (!value.startsWith("https://*.")) return false
+    const host = value.slice("https://*.".length)
+    return host.length > 0 && !host.includes("*") && !host.includes("/") && !host.includes(":")
   }
 
   function requireCanonicalOrigin(value: string, label: string): string {
@@ -1044,6 +1092,21 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   async function hasAuthPermission(request: Request, env: Env): Promise<boolean> {
     const auth = await resolveAuthRequest(request, env)
     return auth !== null
+  }
+
+  /**
+   * Authorize a customer-realm cross-origin request for dynamic CORS. Returns
+   * the exact request origin to echo in `Access-Control-Allow-Origin`, or `null`
+   * to omit CORS headers. Only the customer surface (`/v1/public/*` and
+   * `/auth/customer/*`) is dynamically authorized; every other surface keeps the
+   * static `CORS_ALLOWLIST` behavior. The customer realm being disabled, or no
+   * authorizer being wired, yields `null` (static behavior).
+   */
+  async function resolveCustomerCorsOrigin(request: Request, env: Env): Promise<string | null> {
+    if (!runtimeOptions.resolveCustomerCorsOrigin) return null
+    if (env.VOYANT_CUSTOMER_AUTH_MODE?.trim() === "disabled") return null
+    if (!isCustomerCorsSurface(request.url)) return null
+    return runtimeOptions.resolveCustomerCorsOrigin(env, request)
   }
 
   class CurrentUserNotFoundError extends Error {
@@ -1811,6 +1874,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     getCurrentUserForRequest,
     hasAuthPermission,
     resolveAuthRequest,
+    resolveCustomerCorsOrigin,
     validateApiTokenAccess,
   }
 }

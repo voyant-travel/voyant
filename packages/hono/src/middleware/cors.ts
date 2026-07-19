@@ -63,6 +63,7 @@ const DEFAULT_ALLOWED_REQUEST_HEADERS = new Set([
   "x-request-id",
   "x-voyant-checkout-capability",
   "x-voyant-guest-booking-access",
+  "x-voyant-storefront-origin",
 ])
 
 function allowedRequestHeaders(requested: string | undefined): string {
@@ -74,11 +75,47 @@ function allowedRequestHeaders(requested: string | undefined): string {
   return allowed.length > 0 ? allowed.join(", ") : "content-type, authorization"
 }
 
-export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
+/**
+ * Resolve the exact origin to echo for a customer-realm request, or `null` to
+ * fall back to the static allowlist. Runs before the db middleware, so it owns
+ * any db access. Provided by the auth integration (`resolveCorsOrigin`).
+ */
+export type DynamicCorsOriginResolver = (
+  c: Parameters<MiddlewareHandler<{ Bindings: VoyantBindings }>>[0],
+) => Promise<string | null> | string | null
+
+export interface CorsOptions {
+  /**
+   * Per-storefront dynamic origin authorizer for the customer realm. When it
+   * returns an origin, that specific origin is echoed with credentials — never
+   * `*`. When it returns `null`, the request falls back to the static
+   * `CORS_ALLOWLIST`. Only consulted for {@link CorsOptions.isDynamicPath}
+   * matches, so admin/dash surfaces stay on the static allowlist.
+   */
+  resolveDynamicOrigin?: DynamicCorsOriginResolver
+  /** Whether a pathname is eligible for dynamic per-storefront CORS. */
+  isDynamicPath?: (pathname: string) => boolean
+}
+
+export function cors(options: CorsOptions = {}): MiddlewareHandler<{ Bindings: VoyantBindings }> {
+  const { resolveDynamicOrigin, isDynamicPath } = options
+
   return async (c, next) => {
     const origin = c.req.header("origin") || ""
     const allowlist = compileAllowlist(c.env.CORS_ALLOWLIST)
-    const allowed = isAllowedOrigin(origin, allowlist)
+
+    // Per-storefront dynamic CORS for the customer realm: an operator-configured
+    // storefront authorizes its own declared origins via the resolver, so a
+    // direct cross-origin SPA works without the origin sitting in the static env
+    // allowlist. The resolver echoes only the specific request origin (never
+    // `*`), and preflight is authorized without a key/cookie. A `null` result
+    // means "no storefront allows this origin" — fall back to the static list.
+    const dynamicEligible = Boolean(
+      origin && resolveDynamicOrigin && (isDynamicPath?.(c.req.path) ?? true),
+    )
+    const dynamicOrigin = dynamicEligible ? await resolveDynamicOrigin!(c) : null
+    const allowed = dynamicOrigin !== null || isAllowedOrigin(origin, allowlist)
+    const echoOrigin = dynamicOrigin ?? origin
 
     if (origin && !allowed) {
       console.warn("[CORS] Origin not in allowlist - CORS headers will NOT be set", {
@@ -91,7 +128,7 @@ export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
 
     if (c.req.method === "OPTIONS") {
       if (allowed) {
-        c.header("Access-Control-Allow-Origin", origin)
+        c.header("Access-Control-Allow-Origin", echoOrigin)
         c.header("Vary", "Origin")
         c.header("Access-Control-Allow-Credentials", "true")
         c.header(
@@ -109,7 +146,7 @@ export function cors(): MiddlewareHandler<{ Bindings: VoyantBindings }> {
     await next()
 
     if (allowed) {
-      c.header("Access-Control-Allow-Origin", origin)
+      c.header("Access-Control-Allow-Origin", echoOrigin)
       c.header("Vary", "Origin")
       c.header("Access-Control-Allow-Credentials", "true")
     }

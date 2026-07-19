@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vitest"
 import {
   buildBetterAuthCookieAdvancedOptions,
   createOperatorAuthNodeRuntime,
+  isCustomerCorsSurface,
 } from "../../src/node-runtime.js"
 import {
+  createLocalStorefrontCorsOriginResolver,
   createLocalStorefrontCustomerAuthResolver,
   STOREFRONT_KEY_HEADER,
   STOREFRONT_ORIGIN_HEADER,
@@ -610,5 +612,166 @@ describe("createOperatorAuthNodeRuntime storefront customer-auth failures", () =
     expect(await response.json()).toMatchObject({
       methods: { emailCode: true, emailPassword: false },
     })
+  })
+})
+
+describe("isCustomerCorsSurface", () => {
+  it("matches the customer public API and customer auth routes (with or without /api)", () => {
+    for (const url of [
+      "https://api.example.com/v1/public",
+      "https://api.example.com/v1/public/catalog/items",
+      "https://api.example.com/api/v1/public/catalog/items",
+      "https://api.example.com/auth/customer",
+      "https://api.example.com/auth/customer/sign-in/email",
+      "https://api.example.com/api/auth/customer/sign-in/email",
+    ]) {
+      expect(isCustomerCorsSurface(url)).toBe(true)
+    }
+  })
+
+  it("excludes admin/dash and unrelated surfaces", () => {
+    for (const url of [
+      "https://api.example.com/v1/admin/catalog",
+      "https://api.example.com/auth/admin/sign-in/email",
+      "https://api.example.com/health",
+      "https://api.example.com/not-v1/public/x",
+    ]) {
+      expect(isCustomerCorsSurface(url)).toBe(false)
+    }
+  })
+})
+
+describe("createOperatorAuthNodeRuntime customer dynamic CORS", () => {
+  const STOREFRONT: StorefrontDto = {
+    id: "sf_cors",
+    organizationId: "org_1",
+    name: "Shop",
+    slug: "shop",
+    hostingKind: "external",
+    siteId: null,
+    allowedOrigins: ["https://shop.example.com", "https://*.example.com"],
+    methods: {
+      emailCode: true,
+      emailPassword: false,
+      google: false,
+      facebook: false,
+      apple: false,
+    },
+    accountPolicy: {
+      allowedKinds: ["personal"],
+      personalSignup: "open",
+      businessOnboarding: "disabled",
+    },
+    hostOnlyCookies: true,
+    createdAt: "2026-07-19T00:00:00.000Z",
+    updatedAt: "2026-07-19T00:00:00.000Z",
+  }
+
+  function corsProvider(): StorefrontRuntimeProvider {
+    return {
+      resolveStorefrontByApiKey: async (_context: unknown, token: string) =>
+        token ? { storefront: STOREFRONT, key: null } : null,
+      resolveStorefrontByOrigin: async (_context: unknown, origin: string) =>
+        ["https://shop.example.com", "https://preview.example.com"].includes(origin)
+          ? STOREFRONT
+          : null,
+      resolveProviderCredentials: async () => ({}),
+    } as unknown as StorefrontRuntimeProvider
+  }
+
+  function makeRuntime() {
+    return createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose: async () => {} }),
+      resolveCustomerCorsOrigin: createLocalStorefrontCorsOriginResolver({
+        provider: corsProvider(),
+        openResolveContext: async () => ({
+          context: { bindings: {}, db: {} as never },
+          dispose: async () => {},
+        }),
+      }),
+    })
+  }
+
+  const ENV = { DATABASE_URL: "postgres://unused", SESSION_CLAIMS_ADMIN_SECRET: "x".repeat(32) }
+
+  it("echoes an allowed origin for a keyed public-API request", async () => {
+    const runtime = makeRuntime()
+    const origin = await runtime.resolveCustomerCorsOrigin(
+      new Request("https://api.example.com/v1/public/catalog", {
+        headers: { origin: "https://shop.example.com", [STOREFRONT_KEY_HEADER]: "vpk_token" },
+      }),
+      ENV,
+    )
+    expect(origin).toBe("https://shop.example.com")
+  })
+
+  it("authorizes a keyless preflight by declared origin", async () => {
+    const runtime = makeRuntime()
+    const origin = await runtime.resolveCustomerCorsOrigin(
+      new Request("https://api.example.com/auth/customer/sign-in/email", {
+        method: "OPTIONS",
+        headers: { origin: "https://preview.example.com" },
+      }),
+      ENV,
+    )
+    expect(origin).toBe("https://preview.example.com")
+  })
+
+  it("returns null for a disallowed origin", async () => {
+    const runtime = makeRuntime()
+    expect(
+      await runtime.resolveCustomerCorsOrigin(
+        new Request("https://api.example.com/v1/public/catalog", {
+          headers: { origin: "https://evil.com", [STOREFRONT_KEY_HEADER]: "vpk_token" },
+        }),
+        ENV,
+      ),
+    ).toBeNull()
+  })
+
+  it("does not authorize admin surfaces (static allowlist only)", async () => {
+    const runtime = makeRuntime()
+    expect(
+      await runtime.resolveCustomerCorsOrigin(
+        new Request("https://api.example.com/v1/admin/catalog", {
+          headers: { origin: "https://shop.example.com", [STOREFRONT_KEY_HEADER]: "vpk_token" },
+        }),
+        ENV,
+      ),
+    ).toBeNull()
+  })
+
+  it("returns null when the customer realm is disabled", async () => {
+    const runtime = makeRuntime()
+    expect(
+      await runtime.resolveCustomerCorsOrigin(
+        new Request("https://api.example.com/v1/public/catalog", {
+          headers: { origin: "https://shop.example.com", [STOREFRONT_KEY_HEADER]: "vpk_token" },
+        }),
+        { ...ENV, VOYANT_CUSTOMER_AUTH_MODE: "disabled" },
+      ),
+    ).toBeNull()
+  })
+
+  it("returns null when no CORS authorizer is wired", async () => {
+    const runtime = createOperatorAuthNodeRuntime({
+      accessCatalog: { resources: [], presets: [] },
+      appName: "auth-test",
+      authMode: "local",
+      reporter: { captureException: vi.fn() },
+      openDatabase: () => ({ db: {} as never, dispose: async () => {} }),
+    })
+    expect(
+      await runtime.resolveCustomerCorsOrigin(
+        new Request("https://api.example.com/v1/public/catalog", {
+          headers: { origin: "https://shop.example.com", [STOREFRONT_KEY_HEADER]: "vpk_token" },
+        }),
+        ENV,
+      ),
+    ).toBeNull()
   })
 })

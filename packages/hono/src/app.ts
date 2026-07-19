@@ -539,8 +539,36 @@ export function mountApp<TBindings extends VoyantBindings>(
   // Structured logger
   app.use("*", logger(config.logger))
 
-  // CORS (allowlist via env CORS_ALLOWLIST)
-  app.use("*", cors())
+  // CORS (allowlist via env CORS_ALLOWLIST). The customer realm additionally
+  // supports per-storefront dynamic CORS when the auth integration provides a
+  // `resolveCorsOrigin` authorizer: an operator-configured storefront authorizes
+  // its own declared origins (exact + `https://*.host`) for direct cross-origin
+  // SPA/native clients, while admin/dash surfaces keep the static allowlist.
+  const resolveCorsOrigin = composedAuth?.resolveCorsOrigin
+  app.use(
+    "*",
+    resolveCorsOrigin
+      ? cors({
+          resolveDynamicOrigin: (c) =>
+            resolveCorsOrigin({
+              request: c.req.raw,
+              // The composed app's bindings ARE TBindings at runtime; the shared
+              // cors() signature only knows the VoyantBindings base.
+              env: c.env as TBindings,
+              ctx: tryGetExecutionCtx(c),
+            }),
+          isDynamicPath: (pathname) => {
+            const p = normalizePathname(pathname, { basePath: config.basePath })
+            return (
+              p === "/v1/public" ||
+              p.startsWith("/v1/public/") ||
+              p === "/auth/customer" ||
+              p.startsWith("/auth/customer/")
+            )
+          },
+        })
+      : cors(),
+  )
 
   if (config.securityHeaders !== false) {
     app.use("*", securityHeaders(config.securityHeaders))
