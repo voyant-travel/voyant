@@ -1,0 +1,12 @@
+/* Tailwind v4 source-detection helper.
+ *
+ * Templates that consume this package should `@import` this CSS so Tailwind
+ * scans these component files for utility classes:
+ *
+ *   @import "@voyant-travel/media-react/styles.css";
+ *
+ * Without it, classes that only appear inside this package (e.g. data-attr
+ * variants on primitives) won't be compiled into the final bundle.
+ */
+@source "./components/**/*.{ts,tsx}";
+@source "./admin/**/*.{ts,tsx}";
