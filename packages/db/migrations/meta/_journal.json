@@ -64,6 +64,13 @@
       "when": 1784451600000,
       "tag": "20260719120000_customer_business_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784468745226,
+      "tag": "20260719134545_storefront_access_model",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,9 @@ import {
   type IdentityAccessRuntimeProvider,
   identityAccessRuntimePort,
 } from "./identity-access-runtime-port.js"
+import { createKmsStorefrontCredentialCipher } from "./storefront-credentials.js"
+import { createLocalStorefrontAdapter } from "./storefront-local-adapter.js"
+import { storefrontRuntimePort } from "./storefront-runtime-port.js"
 import { createCloudTeamManagementAdapter } from "./team-management-cloud-adapter.js"
 import { createLocalTeamManagementAdapter } from "./team-management-local-adapter.js"
 import { createGuardedTeamManagementProvider } from "./team-management-policy.js"
@@ -93,8 +96,20 @@ export function createAuthRuntimePortContribution(
     )
   })
 
+  // Self-host storefront access: keys, declared origins, and KMS-encrypted
+  // provider credentials served from this deployment's own runtime DB. The
+  // managed cloud storefront adapter is a follow-up; the port carries the
+  // storefront config the local customer-auth resolver reads.
+  const storefront = createLocalStorefrontAdapter({
+    resolveCipher: (bindings) =>
+      createKmsStorefrontCredentialCipher(
+        host.primitives.env(bindings) as Record<string, string | undefined>,
+      ),
+  })
+
   return {
     [identityAccessRuntimePort.id]: identityAccess,
     [teamManagementRuntimePort.id]: teamManagement,
+    [storefrontRuntimePort.id]: storefront,
   }
 }
