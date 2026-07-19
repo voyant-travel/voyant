@@ -980,9 +980,20 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
     const { db, dispose } = openDatabase(env)
     try {
-      const customerContext = customerSurface
-        ? await resolveCustomerAuthContext(env, request)
-        : null
+      // A storefront customer-auth resolution failure on `/v1/public/*` (missing/
+      // unknown/revoked key or a disallowed origin) is a client-side auth failure,
+      // not a server fault: resolve it to "unauthorized" (null) so the framework
+      // returns 401 instead of letting it surface as a 500. Genuine faults still
+      // throw. Mirrors the auth handler's onError mapping for `/auth/customer/*`.
+      let customerContext: CustomerAuthRuntimeContext | null = null
+      if (customerSurface) {
+        try {
+          customerContext = await resolveCustomerAuthContext(env, request)
+        } catch (error) {
+          if (error instanceof StorefrontCustomerAuthResolutionError) return null
+          throw error
+        }
+      }
       const auth = customerSurface
         ? await buildCustomerBetterAuth(env, db, request, customerContext ?? undefined)
         : buildAdminBetterAuth(env, db)
