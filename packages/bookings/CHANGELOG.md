@@ -1,5 +1,13 @@
 # @voyant-travel/bookings
 
+## 0.180.1
+
+### Patch Changes
+
+- @voyant-travel/bookings-contracts@0.109.1
+- @voyant-travel/db@0.117.1
+- @voyant-travel/workflows@0.122.14
+
 ## 0.180.0
 
 ### Patch Changes

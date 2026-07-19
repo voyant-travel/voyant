@@ -1,5 +1,60 @@
 # @voyant-travel/operator-standard
 
+## 0.9.8
+
+### Patch Changes
+
+- Updated dependencies [c2ca4a3]
+  - @voyant-travel/operator-settings@0.11.0
+  - @voyant-travel/operator-settings-react@0.34.0
+  - @voyant-travel/i18n@0.115.0
+  - @voyant-travel/finance@0.180.1
+  - @voyant-travel/trips@0.171.1
+  - @voyant-travel/inventory@0.14.12
+  - @voyant-travel/legal@0.180.1
+  - @voyant-travel/quotes@0.131.20
+  - @voyant-travel/action-ledger-react@0.68.1
+  - @voyant-travel/admin@0.128.2
+  - @voyant-travel/apps-react@0.4.2
+  - @voyant-travel/auth-react@0.140.2
+  - @voyant-travel/bookings-react@0.180.1
+  - @voyant-travel/catalog-react@0.178.1
+  - @voyant-travel/commerce-react@0.62.1
+  - @voyant-travel/cruises-react@0.179.1
+  - @voyant-travel/custom-fields-react@0.4.2
+  - @voyant-travel/distribution-react@0.170.1
+  - @voyant-travel/event-catalog-react@0.12.2
+  - @voyant-travel/finance-react@0.180.1
+  - @voyant-travel/flights-react@0.180.1
+  - @voyant-travel/identity-react@0.180.1
+  - @voyant-travel/inventory-react@0.62.1
+  - @voyant-travel/legal-react@0.180.1
+  - @voyant-travel/mice-react@0.48.1
+  - @voyant-travel/navigation-preferences-react@0.13.2
+  - @voyant-travel/notifications-react@0.132.3
+  - @voyant-travel/operations-react@0.61.1
+  - @voyant-travel/quotes-react@0.178.1
+  - @voyant-travel/relationships-react@0.180.1
+  - @voyant-travel/storefront-react@0.182.1
+  - @voyant-travel/trips-react@0.171.1
+  - @voyant-travel/db@0.117.1
+  - @voyant-travel/finance-contracts@0.107.1
+  - @voyant-travel/admin-react@0.128.2
+  - @voyant-travel/auth@0.140.2
+  - @voyant-travel/bookings@0.180.1
+  - @voyant-travel/catalog@0.178.1
+  - @voyant-travel/charters@0.178.1
+  - @voyant-travel/cruises@0.179.1
+  - @voyant-travel/distribution@0.170.1
+  - @voyant-travel/flights@0.180.1
+  - @voyant-travel/identity@0.180.1
+  - @voyant-travel/notifications@0.132.3
+  - @voyant-travel/navigation-preferences@0.13.2
+  - @voyant-travel/storefront@0.182.1
+  - @voyant-travel/workflow-runs@0.122.14
+  - @voyant-travel/workflows@0.122.14
+  - @voyant-travel/workflows-orchestrator@0.122.14
+
 ## 0.9.7
 
 ### Patch Changes

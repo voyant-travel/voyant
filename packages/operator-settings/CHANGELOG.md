@@ -1,5 +1,27 @@
 # @voyant-travel/operator-settings
 
+## 0.11.0
+
+### Minor Changes
+
+- c2ca4a3: Add a Settings → Payments surface where operators browse first-party payment
+  processors and connect one (single active provider per org). Introduces the
+  payment provider catalog + credential-field schema + registry port and a remote
+  adapter transport in `@voyant-travel/payments`, a `payment_provider_config`
+  table, service, and `/v1/admin/settings/payments/*` routes in
+  `@voyant-travel/operator-settings`, the Payments settings page in
+  `@voyant-travel/operator-settings-react`, the `managed` payments provider value
+  in the framework deployment graph, and en/ro catalog strings. Self-host
+  deployments configure their processor via environment variables (read-only in
+  the UI); managed connect brokering lands in a follow-up.
+
+### Patch Changes
+
+- Updated dependencies [c2ca4a3]
+  - @voyant-travel/payments@0.3.0
+  - @voyant-travel/finance@0.180.1
+  - @voyant-travel/db@0.117.1
+
 ## 0.10.11
 
 ### Patch Changes
