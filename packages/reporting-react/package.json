@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/reporting-react",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -54,9 +54,16 @@
     }
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.4",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.0",
+    "@codemirror/view": "^6.43.4",
+    "@lezer/highlight": "^1.2.3",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/reporting-contracts": "workspace:^",
+    "html-to-image": "^1.11.11",
     "motion": "^12.42.2",
+    "pdf-lib": "^1.17.1",
     "react-grid-layout": "^1.5.2",
     "react-resizable-panels": "^3.0.3"
   },

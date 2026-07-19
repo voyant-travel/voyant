@@ -1,0 +1,100 @@
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { describe, expect, it } from "vitest"
+
+import { createDefaultPaymentProviderRegistry } from "./payment-provider-registry.js"
+
+/** Minimal db stub — the single-row read resolves to an empty result. */
+const emptyDb = {
+  select: () => ({
+    from: () => ({
+      orderBy: () => ({
+        limit: async () => [] as unknown[],
+      }),
+    }),
+  }),
+} as unknown as PostgresJsDatabase
+
+const managedEnv = { VOYANT_PAYMENTS_CONTROL_PLANE_URL: "https://payments.example" }
+
+describe("default payment provider registry", () => {
+  it("lists the catalog", async () => {
+    const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: {} })
+    const providers = await registry.listProviders()
+    expect(providers.map((p) => p.id)).toContain("netopia")
+  })
+
+  describe("self-host (no control plane)", () => {
+    it("reports read-only, env-derived connection", async () => {
+      const registry = createDefaultPaymentProviderRegistry({
+        db: emptyDb,
+        env: { NETOPIA_MERCHANT_ID: "M1", NETOPIA_SANDBOX: "true" },
+      })
+      const status = await registry.getConnection()
+      expect(status).toMatchObject({
+        activeProviderId: "netopia",
+        status: "connected",
+        mode: "sandbox",
+        readOnly: true,
+      })
+    })
+
+    it("refuses to connect (configured via environment)", async () => {
+      const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: {} })
+      const result = await registry.connect({
+        providerId: "netopia",
+        mode: "sandbox",
+        credentials: {},
+      })
+      expect(result.ok).toBe(false)
+    })
+  })
+
+  describe("managed", () => {
+    it("rejects an unknown provider", async () => {
+      const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: managedEnv })
+      const result = await registry.connect({
+        providerId: "nope",
+        mode: "sandbox",
+        credentials: {},
+      })
+      expect(result).toMatchObject({ ok: false })
+      expect(result.error).toContain("Unknown")
+    })
+
+    it("rejects a coming-soon provider", async () => {
+      const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: managedEnv })
+      const result = await registry.connect({
+        providerId: "voyant-payments",
+        mode: "sandbox",
+        credentials: { apiKey: "k" },
+      })
+      expect(result.ok).toBe(false)
+    })
+
+    it("rejects missing required credentials", async () => {
+      const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: managedEnv })
+      const result = await registry.connect({
+        providerId: "netopia",
+        mode: "sandbox",
+        credentials: {},
+      })
+      expect(result.ok).toBe(false)
+    })
+
+    it("validates then reports brokering unavailable for valid credentials", async () => {
+      const registry = createDefaultPaymentProviderRegistry({ db: emptyDb, env: managedEnv })
+      const result = await registry.connect({
+        providerId: "netopia",
+        mode: "sandbox",
+        credentials: {
+          merchantId: "M1",
+          apiKey: "k",
+          posSignature: "sig",
+          ipnPublicKey: "-----BEGIN PUBLIC KEY-----",
+        },
+      })
+      expect(result.ok).toBe(false)
+      expect(result.error).toContain("not yet available")
+    })
+  })
+})

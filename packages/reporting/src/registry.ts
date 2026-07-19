@@ -50,6 +50,38 @@ export class ReportingAuthorizationError extends ReportingRegistryError {
   }
 }
 
+/** The reserved report parameters a page-level date range writes into. */
+const PAGE_DATE_FROM_PARAM = "dateFrom"
+const PAGE_DATE_TO_PARAM = "dateTo"
+
+/**
+ * Apply a page-level date range to a query. When the dataset declares a
+ * {@link ReportDatasetContribution.definition.defaultDateField} and the caller
+ * supplies the reserved `dateFrom`/`dateTo` parameters, an inclusive window is
+ * appended as extra filters — so a single header control filters every widget
+ * (preset and custom) without touching individual queries. Absent parameters
+ * mean "all time"; the query is returned unchanged.
+ */
+function applyPageDateWindow(
+  query: ReportQuery,
+  dataset: ReportDatasetContribution,
+  parameters?: ReportParameters,
+): ReportQuery {
+  const field = dataset.definition.defaultDateField
+  if (!field) return query
+  const params = parameters ?? {}
+  const from = params[PAGE_DATE_FROM_PARAM]
+  const to = params[PAGE_DATE_TO_PARAM]
+  const extra: ReportQuery["filters"][number][] = []
+  if (typeof from === "string" && from.length > 0) {
+    extra.push({ field, operator: "greaterThanOrEqual", value: { kind: "literal", value: from } })
+  }
+  if (typeof to === "string" && to.length > 0) {
+    extra.push({ field, operator: "lessThanOrEqual", value: { kind: "literal", value: to } })
+  }
+  return extra.length === 0 ? query : { ...query, filters: [...query.filters, ...extra] }
+}
+
 /** Immutable registry assembled from graph-selected module contributions. */
 export class ReportingRegistry {
   readonly #datasets = new Map<string, ReportDatasetContribution>()
@@ -246,7 +278,8 @@ export class ReportingRegistry {
     signal?: AbortSignal
   }) {
     const { query, dataset, maximumRows } = this.validateQuery(input.query, input.grantedScopes)
-    for (const filter of query.filters) {
+    const executable = applyPageDateWindow(query, dataset, input.parameters)
+    for (const filter of executable.filters) {
       if (filter.value?.kind === "parameter" && !(filter.value.name in (input.parameters ?? {}))) {
         throw new ReportingRegistryError(
           `Missing query parameter ${JSON.stringify(filter.value.name)}.`,
@@ -261,7 +294,7 @@ export class ReportingRegistry {
           grantedScopes: input.grantedScopes,
           signal: input.signal,
         },
-        { query, parameters: input.parameters ?? {}, maximumRows },
+        { query: executable, parameters: input.parameters ?? {}, maximumRows },
       ),
     )
     if (result.rows.length <= maximumRows) return result

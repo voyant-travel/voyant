@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
 } from "@voyant-travel/ui/components"
 import { useState } from "react"
 
@@ -60,10 +61,10 @@ export default function ReportsIndexPage() {
   const templates = catalogQuery.data?.templates ?? []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Reports</h1>
+        <div className="space-y-1">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">Reports</h1>
           <p className="text-muted-foreground text-sm">
             Build and manage dashboards from your reporting datasets.
           </p>
@@ -76,8 +77,8 @@ export default function ReportsIndexPage() {
             if (name.length > 0) createMutation.mutate(name)
           }}
         >
-          <input
-            className="w-56 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <Input
+            className="w-56"
             placeholder="New report name"
             value={newName}
             onChange={(event) => setNewName(event.target.value)}

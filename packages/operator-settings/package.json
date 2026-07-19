@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/operator-settings",
-  "version": "0.10.11",
+  "version": "0.12.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -31,6 +31,7 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",

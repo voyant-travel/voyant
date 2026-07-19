@@ -124,16 +124,38 @@ type InvoiceFxRouteEnv = Env & {
   }
 }
 
+/**
+ * Container key under which the operator-settings bridge registers persistable
+ * invoice-FX settings (base currency + commission). When present, it overlays
+ * the base route runtime so `PATCH /invoice-fx-settings` can actually write.
+ */
+export const INVOICE_FX_SETTINGS_RUNTIME_KEY = "finance.invoiceFxSettingsRuntime"
+
+export interface InvoiceFxSettingsRuntime {
+  resolveInvoiceFxSettings: ResolveInvoiceFxSettings
+  updateInvoiceFxSettings: UpdateInvoiceFxSettings
+}
+
 function getInvoiceFxRuntime(
   options: InvoiceFxRouteOptions | undefined,
   bindings: Record<string, unknown>,
   container?: ModuleContainer,
 ) {
-  return (
+  const base =
     (container?.has(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
       ? container.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
       : undefined) ?? buildFinanceRouteRuntime(bindings, options)
-  )
+  // Overlay the operator-settings-backed resolver/updater at request time so the
+  // wiring is independent of module-bootstrap ordering.
+  if (container?.has(INVOICE_FX_SETTINGS_RUNTIME_KEY)) {
+    const settings = container.resolve<InvoiceFxSettingsRuntime>(INVOICE_FX_SETTINGS_RUNTIME_KEY)
+    return {
+      ...base,
+      resolveInvoiceFxSettings: settings.resolveInvoiceFxSettings,
+      updateInvoiceFxSettings: settings.updateInvoiceFxSettings,
+    }
+  }
+  return base
 }
 
 export async function resolveInvoiceFxSettingsOrDefault(

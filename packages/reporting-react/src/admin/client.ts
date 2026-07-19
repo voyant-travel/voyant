@@ -25,11 +25,19 @@ export interface ReportingClient {
 }
 
 function extractErrorMessage(status: number, statusText: string, body: unknown): string {
-  if (typeof body === "object" && body !== null && "error" in body) {
-    const error = (body as { error: unknown }).error
-    if (typeof error === "string") return error
-    if (typeof error === "object" && error !== null && "message" in error) {
-      return String((error as { message: unknown }).message)
+  if (typeof body === "object" && body !== null) {
+    // Prefer a human-readable `message` (e.g. "Dataset \"bookings\" is unavailable.")
+    // over a machine `error` code (e.g. "invalid_report_query") so the builder
+    // surfaces something the author can act on.
+    if ("message" in body && typeof (body as { message: unknown }).message === "string") {
+      return (body as { message: string }).message
+    }
+    if ("error" in body) {
+      const error = (body as { error: unknown }).error
+      if (typeof error === "object" && error !== null && "message" in error) {
+        return String((error as { message: unknown }).message)
+      }
+      if (typeof error === "string") return error
     }
   }
   return `Reporting API error: ${status} ${statusText}`

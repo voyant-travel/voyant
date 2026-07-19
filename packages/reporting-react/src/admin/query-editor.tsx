@@ -2,11 +2,11 @@
 
 import type { ReportQuery, ReportWidgetDefinition } from "@voyant-travel/reporting-contracts"
 import { Button } from "@voyant-travel/ui/components"
-import { cn } from "@voyant-travel/ui/lib/utils"
 import { useCallback, useState } from "react"
 
 import { parseQuerySource, previewQuery } from "./api.js"
 import { type ReportingClient, VoyantApiError } from "./client.js"
+import { QueryCodeEditor } from "./query-code-editor.js"
 import { ReportVisualizationView } from "./renderers/report-renderer.js"
 import type { ReportingCatalog } from "./report-document.js"
 
@@ -140,16 +140,10 @@ export function CustomWidgetEditor({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <div className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Query</span>
-        <textarea
-          className={cn(inputClass, "min-h-24 font-mono")}
-          value={source}
-          onChange={(event) => setSource(event.target.value)}
-          placeholder="from bookings where status = 'confirmed' select count() as total"
-          spellCheck={false}
-        />
-      </label>
+        <QueryCodeEditor value={source} onChange={setSource} ariaLabel="Widget query" />
+      </div>
 
       <DatasetHints catalog={catalog} />
 
@@ -167,7 +161,7 @@ export function CustomWidgetEditor({
           {previewing ? "Previewing…" : "Preview"}
         </Button>
         <Button type="button" size="sm" onClick={commit} disabled={!canCommit}>
-          {initialDefinition ? "Apply" : "Add widget"}
+          {initialDefinition ? "Apply" : "Add to report"}
         </Button>
         {onCancel ? (
           <Button type="button" variant="ghost" size="sm" onClick={onCancel}>

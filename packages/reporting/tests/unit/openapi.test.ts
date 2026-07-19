@@ -10,23 +10,18 @@ describe("reporting OpenAPI artifact", () => {
         "/v1/admin/reporting/queries/preview",
         "/v1/admin/reporting/reports",
         "/v1/admin/reporting/reports/{id}",
+        "/v1/admin/reporting/reports/{id}/export",
         "/v1/admin/reporting/templates/{id}/instantiate",
-        "/v1/admin/reporting/reports/{id}/versions",
-        "/v1/admin/reporting/versions/{id}/runs",
-        "/v1/admin/reporting/runs/{id}",
       ]),
     )
-    expect(reportingOpenApi.paths["/v1/admin/reporting/runs/{id}"].get.description).toContain(
-      "reports:export",
-    )
+    expect(
+      reportingOpenApi.paths["/v1/admin/reporting/reports/{id}/export"].get.description,
+    ).toContain("reports:export")
     expect(
       reportingOpenApi.paths["/v1/admin/reporting/queries/parse"].post.requestBody,
     ).toMatchObject({ required: true })
     expect(
       reportingOpenApi.paths["/v1/admin/reporting/reports/{id}"].patch.requestBody,
-    ).toMatchObject({ required: true })
-    expect(
-      reportingOpenApi.paths["/v1/admin/reporting/versions/{id}/runs"].post.requestBody,
     ).toMatchObject({ required: true })
   })
 })

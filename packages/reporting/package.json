@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/reporting",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Composable, domain-neutral reporting registry and persisted report lifecycle for Voyant.",
   "license": "Apache-2.0",
   "type": "module",
@@ -31,7 +31,9 @@
     "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
+    "exceljs": "^4.4.0",
     "hono": "catalog:",
+    "pdf-lib": "^1.17.1",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -11,9 +11,11 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
   resolveBookingTaxSettings,
+  resolveInvoiceFxSettings,
   resolveInvoicingMode,
   resolveOperatorDefaultPaymentPolicy,
   updateBookingTaxSettings,
+  updateInvoiceFxSettings,
 } from "./service.js"
 
 /** Provide operator-owned Finance settings through Finance's typed port. */
@@ -55,6 +57,8 @@ export function createOperatorSettingsRuntimePortContribution(
       resolveBookingTaxSettings,
       updateBookingTaxSettings,
       resolveInvoicingMode,
+      resolveInvoiceFxSettings,
+      updateInvoiceFxSettings,
     } satisfies FinanceOperatorSettingsRuntime,
   }
 }

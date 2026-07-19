@@ -13,7 +13,7 @@ import {
 } from "@voyant-travel/reporting-contracts"
 import { z } from "zod"
 
-import { fetchWithValidation, type ReportingClient } from "./client.js"
+import { fetchWithValidation, type ReportingClient, VoyantApiError } from "./client.js"
 import type { ReportingCatalog } from "./report-document.js"
 
 /** Admin API mount for the reporting module (see `reporting/src/voyant.ts`). */
@@ -184,6 +184,39 @@ export async function parseQuerySource(
     { method: "POST", body: JSON.stringify({ source }) },
   )
   return data
+}
+
+export type ReportExportFormat = "csv" | "xlsx" | "pdf"
+
+/**
+ * Download a report as CSV / XLSX / PDF. Streams the file from the admin export
+ * endpoint (which re-runs every widget server-side, honoring the report's saved
+ * period) and triggers a browser download. Throws {@link VoyantApiError} on a
+ * non-2xx response.
+ */
+export async function exportReport(
+  client: ReportingClient,
+  id: string,
+  format: ReportExportFormat,
+): Promise<void> {
+  const url = `${client.baseUrl.replace(/\/$/, "")}${REPORTING_API_BASE}/reports/${encodeURIComponent(
+    id,
+  )}/export?format=${format}`
+  const response = await client.fetcher(url, { credentials: "include" })
+  if (!response.ok) {
+    throw new VoyantApiError(`Report export failed: ${response.status}`, response.status, undefined)
+  }
+  const blob = await response.blob()
+  const disposition = response.headers.get("Content-Disposition") ?? ""
+  const filename = /filename="?([^"]+)"?/.exec(disposition)?.[1] ?? `report.${format}`
+  const objectUrl = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = objectUrl
+  anchor.download = filename
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(objectUrl)
 }
 
 /** Execute a bounded query for a live preview (`/queries/preview`). */

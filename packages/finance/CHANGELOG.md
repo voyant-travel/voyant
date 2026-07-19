@@ -1,5 +1,56 @@
 # @voyant-travel/finance
 
+## 0.181.0
+
+### Minor Changes
+
+- 464815c: Operator base currency setting (the FX recording base).
+
+  Add a base-currency selector to Settings → Operator profile. The value is
+  persisted on the Finance operator-settings singleton (`booking_tax_settings`
+  gains `base_currency`, `fx_commission_bps`, and `fx_commission_invoice_mention`)
+  and provided to Finance through the existing operator-settings runtime port, so
+  `GET`/`PATCH /v1/admin/finance/invoice-fx-settings` can now read and write it.
+  This is the base every invoice and payment records its `base_*_cents` FX
+  snapshot against, and the currency reporting consolidates into. Includes the
+  en/ro catalog copy for the new section.
+
+- 464815c: Report export, base-currency reporting, and a redesigned builder.
+
+  - Add report export in CSV, XLSX, and visual PDF (charts stay charts; only table
+    widgets render as tables) via a new `GET /reports/:id/export` route and a
+    client-side visual PDF composer.
+  - Remove report versioning (versions/runs routes, tables, and retention): the
+    editable draft is the single source of truth. Reporting datasets now expose a
+    `defaultDateField` so the page date window applies without a per-report knob.
+  - Add a `reportCurrency=base` execution mode: Finance receivables consolidate
+    every amount into the operator base currency using the recording-time FX
+    snapshot (`base_*_cents`), so a report can show one cross-currency total. The
+    query language gains `between` and `in (...)` operators and a typed
+    `ReportDatasetQueryError`.
+  - Redesign the reporting-react builder to match the admin aesthetic: page date
+    window, base-currency toggle, export menu, widget-preview and configuration
+    Sheets, a CodeMirror query editor for custom widgets, and a silent autosave
+    with an unsaved-changes guard.
+  - Fix the Bookings/Finance reporting time-grain grouping (literal `date_trunc`
+    grain) that previously errored under `group by`.
+
+### Patch Changes
+
+- Updated dependencies [464815c]
+  - @voyant-travel/reporting-contracts@0.3.0
+  - @voyant-travel/bookings@0.181.0
+
+## 0.180.1
+
+### Patch Changes
+
+- Updated dependencies [c2ca4a3]
+  - @voyant-travel/payments@0.3.0
+  - @voyant-travel/db@0.117.1
+  - @voyant-travel/finance-contracts@0.107.1
+  - @voyant-travel/bookings@0.180.1
+
 ## 0.180.0
 
 ### Patch Changes

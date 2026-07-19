@@ -1,5 +1,35 @@
 # @voyant-travel/i18n
 
+## 0.115.1
+
+### Patch Changes
+
+- 464815c: Operator base currency setting (the FX recording base).
+
+  Add a base-currency selector to Settings → Operator profile. The value is
+  persisted on the Finance operator-settings singleton (`booking_tax_settings`
+  gains `base_currency`, `fx_commission_bps`, and `fx_commission_invoice_mention`)
+  and provided to Finance through the existing operator-settings runtime port, so
+  `GET`/`PATCH /v1/admin/finance/invoice-fx-settings` can now read and write it.
+  This is the base every invoice and payment records its `base_*_cents` FX
+  snapshot against, and the currency reporting consolidates into. Includes the
+  en/ro catalog copy for the new section.
+
+## 0.115.0
+
+### Minor Changes
+
+- c2ca4a3: Add a Settings → Payments surface where operators browse first-party payment
+  processors and connect one (single active provider per org). Introduces the
+  payment provider catalog + credential-field schema + registry port and a remote
+  adapter transport in `@voyant-travel/payments`, a `payment_provider_config`
+  table, service, and `/v1/admin/settings/payments/*` routes in
+  `@voyant-travel/operator-settings`, the Payments settings page in
+  `@voyant-travel/operator-settings-react`, the `managed` payments provider value
+  in the framework deployment graph, and en/ro catalog strings. Self-host
+  deployments configure their processor via environment variables (read-only in
+  the UI); managed connect brokering lands in a follow-up.
+
 ## 0.114.0
 
 ### Minor Changes

@@ -78,6 +78,7 @@ export const bookingsActivityDataset: ReportDatasetContribution = {
     fields: [...fieldCatalog.values()].map(({ definition }) => definition),
     defaultLimit: DEFAULT_LIMIT,
     maximumLimit: MAXIMUM_LIMIT,
+    defaultDateField: "createdAt",
   },
   execute: executeBookingsActivity,
 }
@@ -345,7 +346,33 @@ function compileGroupExpression(
     field.definition.valueType === "datetime"
       ? sql`${field.expression} AT TIME ZONE 'UTC'`
       : sql`${field.expression}::timestamp`
-  return sql`to_char(date_trunc(${timeGrain}, ${utcValue}), 'YYYY-MM-DD')`
+  // The grain must be a SQL literal, not a bound parameter: this same expression
+  // is emitted in both SELECT and GROUP BY, and Postgres only treats them as the
+  // same grouped column when they are byte-identical. A `date_trunc($1, …)`
+  // parameter yields distinct placeholders per position, which Postgres rejects
+  // with "column must appear in the GROUP BY clause". The value is a validated
+  // enum, so a literal switch is safe.
+  return sql`to_char(date_trunc(${truncGrainLiteral(timeGrain)}, ${utcValue}), 'YYYY-MM-DD')`
+}
+
+/** Map a validated time grain to a raw `date_trunc` field literal (never a bound param). */
+function truncGrainLiteral(
+  timeGrain: NonNullable<ReportQuery["groupBy"][number]["timeGrain"]>,
+): SQL {
+  switch (timeGrain) {
+    case "day":
+      return sql`'day'`
+    case "week":
+      return sql`'week'`
+    case "month":
+      return sql`'month'`
+    case "quarter":
+      return sql`'quarter'`
+    case "year":
+      return sql`'year'`
+    default:
+      throw new Error(`Unsupported time grain ${JSON.stringify(timeGrain)}.`)
+  }
 }
 
 function requireField(fieldId: string): BookingActivityField {
