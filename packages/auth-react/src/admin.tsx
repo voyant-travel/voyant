@@ -5,7 +5,7 @@ import {
   defineAdminExtension,
   type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin/extensions"
-import { Building2, Users } from "lucide-react"
+import { Building2, Globe, Store, Users } from "lucide-react"
 import { authTeamSetupMessageDefinitions } from "./i18n/setup.js"
 
 /** Selected-graph team settings contribution owned by Auth React. */
@@ -83,6 +83,88 @@ export function createSelectedCustomerBusinessAccountsAdminExtension(
       },
     ],
   })
+}
+
+/**
+ * Selected-graph "Storefronts" admin surface owned by Auth React.
+ *
+ * The former top-level "Sites" surface is reparented here as a sub-view of
+ * Storefronts: the nav entry and route live under Storefronts, and a
+ * `cloud_site` storefront's hosting/deployment aspect is a managed-only
+ * capability that plugs into the reparented `/storefronts/sites` route.
+ */
+export function createSelectedStorefrontAdminExtension(
+  context?: SelectedAdminExtensionFactoryContext,
+): AdminExtension {
+  const label = context?.navMessages.storefronts ?? "Storefronts"
+  const sitesLabel = context?.navMessages.storefrontSites ?? "Sites"
+  const routeMessagesProvider = () =>
+    import("./i18n/index.js").then((module) => ({ default: module.AuthUiMessagesProvider }))
+  return defineAdminExtension({
+    id: "storefronts",
+    navigation: [
+      {
+        order: 46,
+        items: [
+          {
+            id: "storefronts",
+            title: label,
+            url: "/storefronts",
+            icon: Store,
+            items: [
+              { id: "storefronts-all", title: label, url: "/storefronts", icon: Store },
+              // Reparented Sites entry (was the top-level "Sites" nav item).
+              {
+                id: "storefronts-sites",
+                title: sitesLabel,
+                url: "/storefronts/sites",
+                icon: Globe,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    routes: [
+      {
+        id: "storefronts",
+        path: "/storefronts",
+        title: label,
+        ssr: "data-only",
+        page: () =>
+          import("./components/storefronts-page.js").then((module) =>
+            adminRoutePageModule(module.StorefrontsPage),
+          ),
+        loader: loadStorefronts,
+        routeMessagesProvider,
+      },
+      {
+        // Reparented Sites route: the managed sites surface plugs in here.
+        id: "storefront-sites",
+        path: "/storefronts/sites",
+        title: sitesLabel,
+        ssr: "data-only",
+        page: () =>
+          import("./components/storefront-sites-page.js").then((module) =>
+            adminRoutePageModule(module.StorefrontSitesPage),
+          ),
+        routeMessagesProvider,
+      },
+    ],
+  })
+}
+
+async function loadStorefronts({ queryClient, runtime }: AdminRouteLoaderContext): Promise<void> {
+  const {
+    createStorefrontsAdminApi,
+    storefrontCapabilitiesQueryOptions,
+    storefrontListQueryOptions,
+  } = await import("./storefronts-admin-api.js")
+  const api = createStorefrontsAdminApi(runtime.baseUrl, runtime.fetcher ?? fetch)
+  await Promise.all([
+    queryClient.prefetchQuery(storefrontCapabilitiesQueryOptions(api)),
+    queryClient.prefetchQuery(storefrontListQueryOptions(api)),
+  ])
 }
 
 async function loadCustomerBusinessAccounts({

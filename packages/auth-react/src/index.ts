@@ -7,6 +7,8 @@ export {
   type VoyantFetcher,
   withQueryParams,
 } from "./client.js"
+export * from "./components/storefront-sites-page.js"
+export * from "./components/storefronts-page.js"
 export * from "./components/team-management-page.js"
 export * from "./hooks/index.js"
 export {
@@ -30,3 +32,11 @@ export {
   getServiceApiKeysQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"
+export {
+  createStorefrontsAdminApi,
+  type StorefrontsAdminApi,
+  storefrontApiKeysQueryOptions,
+  storefrontCapabilitiesQueryOptions,
+  storefrontListQueryOptions,
+  storefrontProviderCredentialsQueryOptions,
+} from "./storefronts-admin-api.js"
