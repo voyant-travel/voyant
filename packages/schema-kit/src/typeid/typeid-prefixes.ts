@@ -461,6 +461,15 @@ export const PREFIXES = {
   mice_bid_lines: "mbln",
   mice_bid_evaluations: "mbev",
   booking_mice_details: "bkmd",
+
+  // --- MEDIA LIBRARY (see voyant#3555) ---
+  // Consolidated, org-scoped media library (images/videos/documents) built on
+  // the @voyant-travel/storage seam. Folder membership is a join table (an
+  // asset can belong to many folders); asset_usage records "where used".
+  media_asset: "mast",
+  media_folder: "mfld",
+  media_folder_member: "mfm",
+  asset_usage: "ausg",
 } as const
 
 export type PrefixKey = keyof typeof PREFIXES
