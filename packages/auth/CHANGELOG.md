@@ -1,5 +1,18 @@
 # @voyant-travel/auth
 
+## 0.138.0
+
+### Minor Changes
+
+- 43e7754: Add the self-host storefront access model: a storefront runtime port + local adapter, schema (storefronts, storefront API keys, storefront customer-auth credentials) with migration, publishable/secret key helpers, an operator-declared allowed-origins normalizer, and a local customer-auth resolver.
+
+### Patch Changes
+
+- Updated dependencies [43e7754]
+  - @voyant-travel/db@0.117.0
+  - @voyant-travel/hono@0.131.2
+  - @voyant-travel/types@0.109.8
+
 ## 0.137.0
 
 ### Minor Changes
