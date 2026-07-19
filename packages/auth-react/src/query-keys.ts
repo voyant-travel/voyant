@@ -35,4 +35,13 @@ export const authQueryKeys = {
     [...authQueryKeys.customerBusinessAccounts(), "capabilities"] as const,
   customerBusinessAccountRequests: (filters: CustomerBusinessAccountRequestListFilters = {}) =>
     [...authQueryKeys.customerBusinessAccounts(), "requests", filters] as const,
+  storefronts: () => [...authQueryKeys.all, "storefronts"] as const,
+  storefrontCapabilities: () => [...authQueryKeys.storefronts(), "capabilities"] as const,
+  storefrontList: () => [...authQueryKeys.storefronts(), "list"] as const,
+  storefront: (storefrontId: string) =>
+    [...authQueryKeys.storefronts(), "detail", storefrontId] as const,
+  storefrontApiKeys: (storefrontId: string) =>
+    [...authQueryKeys.storefront(storefrontId), "keys"] as const,
+  storefrontProviderCredentials: (storefrontId: string) =>
+    [...authQueryKeys.storefront(storefrontId), "provider-credentials"] as const,
 }
