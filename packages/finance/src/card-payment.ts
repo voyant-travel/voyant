@@ -72,6 +72,13 @@ export interface PaymentAdapterCardPaymentStarterOptions {
   resolveContext?(c: Context): PaymentAdapterRuntimeContext
   resolveRuntime?(c: Context): FinanceServiceRuntime
   idempotencyKey?(sessionId: string): string
+  /**
+   * Resolve the public URL a redirect processor should POST its callback/IPN to
+   * (the deployment's payment webhook). Passed to the adapter as
+   * `metadata.notifyUrl` so the processor confirms server-side; absent when the
+   * deployment has no public checkout base (confirmation falls back to polling).
+   */
+  resolveNotifyUrl?(c: Context): string | undefined
 }
 
 export function createPaymentAdapterCardPaymentStarter(
@@ -88,6 +95,7 @@ export function createPaymentAdapterCardPaymentStarter(
 
     const idempotencyKey =
       session.idempotencyKey ?? options.idempotencyKey?.(session.id) ?? `payment:${session.id}`
+    const notifyUrl = options.resolveNotifyUrl?.(c)
     const result = await adapter.initiate(options.resolveContext?.(c) ?? { env: c.env }, {
       paymentSessionId: session.id,
       money: { amountMinor: session.amountCents, currency: session.currency },
@@ -100,6 +108,7 @@ export function createPaymentAdapterCardPaymentStarter(
         firstName: args.billing.firstName,
         lastName: args.billing.lastName ?? null,
       },
+      ...(notifyUrl ? { metadata: { notifyUrl } } : {}),
     })
 
     const providerData = {
