@@ -141,15 +141,16 @@ const unconfiguredStartCardPayment: PaymentLinkRoutesOptions["startCardPayment"]
  * card, not just the full booking checkout.
  */
 function createAdapterStartCardPayment(
-  adapter: PaymentAdapter,
+  adapter: PaymentAdapter | Promise<PaymentAdapter>,
 ): PaymentLinkRoutesOptions["startCardPayment"] {
   return async (c, session) => {
+    const resolvedAdapter = await adapter
     const { createPaymentAdapterCardPaymentStarter } = (await import(
       FINANCE_CARD_PAYMENT_MODULE
     )) as {
       createPaymentAdapterCardPaymentStarter: PaymentAdapterCardPaymentStarterFactory
     }
-    const starter = createPaymentAdapterCardPaymentStarter(adapter, {
+    const starter = createPaymentAdapterCardPaymentStarter(resolvedAdapter, {
       resolveContext: (ctx) => ({ env: ctx.env }),
       resolveRuntime: (ctx) => ({ eventBus: ctx.var.eventBus }),
       idempotencyKey: (sessionId) => `payment:${sessionId}`,
@@ -279,7 +280,7 @@ const resolveTripData: PaymentLinkRoutesOptions["resolveTripData"] = async (
  * still works.
  */
 export function createStandardPaymentLinkRouteOptions(
-  adapter?: PaymentAdapter,
+  adapter?: PaymentAdapter | Promise<PaymentAdapter>,
 ): PaymentLinkRoutesOptions {
   return {
     resolveBankTransferDetails,
