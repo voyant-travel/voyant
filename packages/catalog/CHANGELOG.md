@@ -1,5 +1,15 @@
 # @voyant-travel/catalog
 
+## 0.180.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/bookings@0.182.1
+  - @voyant-travel/finance@0.182.3
+  - @voyant-travel/workflows@0.122.15
+
 ## 0.180.0
 
 ### Patch Changes

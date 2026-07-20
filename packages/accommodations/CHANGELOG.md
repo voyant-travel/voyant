@@ -1,5 +1,18 @@
 # @voyant-travel/accommodations
 
+## 0.142.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/bookings@0.182.1
+  - @voyant-travel/catalog@0.180.1
+  - @voyant-travel/distribution@0.172.1
+  - @voyant-travel/finance@0.182.3
+  - @voyant-travel/mice@0.38.1
+  - @voyant-travel/operations@0.8.23
+
 ## 0.142.0
 
 ### Patch Changes

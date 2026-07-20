@@ -1,5 +1,13 @@
 # @voyant-travel/apps
 
+## 0.11.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/custom-fields@0.2.10
+
 ## 0.11.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # @voyant-travel/reporting
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+
 ## 0.3.0
 
 ### Minor Changes

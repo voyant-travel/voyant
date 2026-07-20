@@ -1,5 +1,12 @@
 # @voyant-travel/media
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+
 ## 0.2.1
 
 ### Patch Changes
