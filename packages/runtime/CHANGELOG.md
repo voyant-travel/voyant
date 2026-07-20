@@ -1,5 +1,13 @@
 # @voyant-travel/runtime
 
+## 0.15.8
+
+### Patch Changes
+
+- Updated dependencies [bcd7ad0]
+  - @voyant-travel/storage@0.112.0
+  - @voyant-travel/framework@0.56.3
+
 ## 0.15.7
 
 ### Patch Changes

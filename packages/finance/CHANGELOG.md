@@ -1,5 +1,13 @@
 # @voyant-travel/finance
 
+## 0.182.1
+
+### Patch Changes
+
+- Updated dependencies [bcd7ad0]
+  - @voyant-travel/storage@0.112.0
+  - @voyant-travel/public-document-delivery@0.4.9
+
 ## 0.182.0
 
 ### Patch Changes
