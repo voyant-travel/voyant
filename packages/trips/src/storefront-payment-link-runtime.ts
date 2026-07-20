@@ -28,6 +28,7 @@ type PaymentAdapterCardPaymentStarterFactory = (
     resolveContext(c: Context): PaymentAdapterRuntimeContext
     resolveRuntime(c: Context): { eventBus?: unknown }
     idempotencyKey(sessionId: string): string
+    resolveNotifyUrl?(c: Context): string | undefined
   },
 ) => (context: Context, args: CardPaymentStartArgs) => Promise<CardPaymentStartResult>
 
@@ -54,6 +55,13 @@ async function startAdapterCardPayment(
     resolveContext: (c) => ({ env: c.env }),
     resolveRuntime: (c) => ({ eventBus: c.var.eventBus }),
     idempotencyKey: (sessionId) => `payment:${sessionId}`,
+    // Tell the processor to POST its callback/IPN to the deployment's public
+    // payment webhook, so payment confirmation is authoritative (server-side)
+    // instead of relying on the confirmation-page poll.
+    resolveNotifyUrl: (c) => {
+      const base = resolvePublicCheckoutBaseUrl(c.env as Record<string, unknown>)
+      return base ? `${base}/v1/public/payment-link/callback` : undefined
+    },
   })
   return starter(context, args)
 }
