@@ -28,6 +28,7 @@ import type {
   LocalAuthPresentationRuntime,
   LocalAuthRouteContribution,
 } from "@voyant-travel/auth-react/local-auth-routes"
+import { createAuthBasePathFetcher } from "@voyant-travel/auth-react/client"
 import type { RedeemInvitationStatus } from "@voyant-travel/auth-react/ui"
 import {
   StorefrontBookingPage,
@@ -62,6 +63,7 @@ import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"
 import { emailOTPClient, organizationClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
+import { useMemo } from "react"
 import type { ComponentType, ReactNode } from "react"
 import { createApiDocsRouteOptions, type OpenApiSpecLoaders } from "./standard-api-docs.js"
 
@@ -342,10 +344,20 @@ export function createStandardOperatorFrontend(
   const providers = [TooltipProvider, AvailabilityProvider] satisfies readonly AdminChildProvider[]
 
   function Providers({ children, queryClient }: { children: ReactNode; queryClient: QueryClient }) {
+    const baseUrl = getAdminApiUrl()
+    // Admin Better Auth routes live under `/auth/admin/*` (the isolated admin
+    // realm). auth-react hooks (useSignUp/useSignIn/useAuthStatus) target the
+    // default `/auth/*` surface, so scope the shared admin fetcher to the admin
+    // realm — mirroring the storefront's `/auth/customer` rewrite. Non-auth URLs
+    // pass through unchanged, so domain data hooks are unaffected.
+    const adminAuthFetcher = useMemo(
+      () => createAuthBasePathFetcher(adminFetcher, { baseUrl, authBasePath: "/auth/admin" }),
+      [baseUrl],
+    )
     return (
       <OperatorAdminShellProvider
-        baseUrl={getAdminApiUrl()}
-        fetcher={adminFetcher}
+        baseUrl={baseUrl}
+        fetcher={adminAuthFetcher}
         queryClient={queryClient}
         providers={providers}
       >
