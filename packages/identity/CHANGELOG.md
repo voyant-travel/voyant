@@ -1,5 +1,7 @@
 # @voyant-travel/identity
 
+## 0.182.2
+
 ## 0.182.1
 
 ### Patch Changes
