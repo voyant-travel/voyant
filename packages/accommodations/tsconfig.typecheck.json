@@ -1291,6 +1291,7 @@
       "@voyant-travel/mcp/voyant": ["../mcp/dist/voyant.d.ts"],
       "@voyant-travel/media": ["../media/dist/index.d.ts"],
       "@voyant-travel/media-react": ["../media-react/dist/index.d.ts"],
+      "@voyant-travel/media-react/admin": ["../media-react/dist/admin/index.d.ts"],
       "@voyant-travel/media-react/client": ["../media-react/dist/client.d.ts"],
       "@voyant-travel/media-react/components/*": ["../media-react/dist/components/*.d.ts"],
       "@voyant-travel/media-react/hooks": ["../media-react/dist/hooks/index.d.ts"],
