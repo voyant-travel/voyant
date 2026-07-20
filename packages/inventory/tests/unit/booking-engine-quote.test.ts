@@ -245,7 +245,9 @@ describe("createProductsBookingHandler.computeQuote", () => {
         configure: {
           departureSlotId: "slot_1",
           pax: { adult: 2 },
-          optionSelections: [{ optionId: "opt_standard", optionUnitId: "unit_double", quantity: 3 }],
+          optionSelections: [
+            { optionId: "opt_standard", optionUnitId: "unit_double", quantity: 3 },
+          ],
         },
       }),
     )
