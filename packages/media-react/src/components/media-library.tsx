@@ -8,6 +8,13 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@voyant-travel/ui/components/empty"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components/sheet"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { LayoutGrid, List } from "lucide-react"
@@ -89,7 +96,7 @@ export function MediaLibrary({
   }
 
   return (
-    <div className={cn("flex flex-col gap-4", className)} data-slot="media-library">
+    <div className={cn("flex flex-col gap-6 p-6", className)} data-slot="media-library">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">{library.title}</h2>
         <p className="text-sm text-muted-foreground">{library.description}</p>
@@ -206,19 +213,32 @@ export function MediaLibrary({
             </div>
           )}
         </div>
-
-        {selected ? (
-          <MediaAssetDetailPanel
-            asset={selected}
-            currentFolderId={folderId}
-            onDeleted={() => setSelectedId(undefined)}
-          />
-        ) : (
-          <div className="hidden w-80 shrink-0 items-start justify-center pt-8 text-sm text-muted-foreground lg:flex">
-            {library.detail.selectPrompt}
-          </div>
-        )}
       </div>
+
+      <Sheet
+        open={Boolean(selected)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(undefined)
+        }}
+      >
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
+          {selected ? (
+            <>
+              <SheetHeader className="border-b">
+                <SheetTitle className="truncate">{selected.name}</SheetTitle>
+                <SheetDescription>{library.detail.title}</SheetDescription>
+              </SheetHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <MediaAssetDetailPanel
+                  asset={selected}
+                  currentFolderId={folderId}
+                  onDeleted={() => setSelectedId(undefined)}
+                />
+              </div>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
