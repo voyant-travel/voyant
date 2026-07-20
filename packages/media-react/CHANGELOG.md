@@ -1,5 +1,15 @@
 # @voyant-travel/media-react
 
+## 0.2.1
+
+### Patch Changes
+
+- 05aa1d5: Exclude test files from the build so `dist` no longer emits `*.test.*` outputs.
+- Updated dependencies [05aa1d5]
+- Updated dependencies [05aa1d5]
+- Updated dependencies [05aa1d5]
+  - @voyant-travel/media@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
