@@ -3230,6 +3230,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@voyant-travel/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -5859,6 +5862,9 @@ importers:
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../../packages/legal-react
+      '@voyant-travel/media-react':
+        specifier: workspace:^
+        version: link:../../packages/media-react
       '@voyant-travel/mice-react':
         specifier: workspace:^
         version: link:../../packages/mice-react
