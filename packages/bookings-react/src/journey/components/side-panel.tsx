@@ -78,7 +78,15 @@ export function PriceSidePanel({
           <StepRecap steps={steps} currentStep={currentStep} draft={draft} />
         ) : null}
 
-        {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
+        {/* `invalidReason` is a raw engine code (e.g. `no_sell_amount_configured`)
+            and is expected on the pristine draft before any price driver is
+            picked — surface it only once the buyer has configured what drives
+            the price, and as a human-readable message, never the raw code. */}
+        {invalidReason && showPricing ? (
+          <p className="text-destructive text-sm">
+            {messages.bookingJourney.validation.pricingUnavailable}
+          </p>
+        ) : null}
         {!showPricing ? (
           <p className="border-t pt-4 text-muted-foreground text-sm">{pricingHint}</p>
         ) : isQuoting && !pricing ? (
