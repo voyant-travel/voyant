@@ -1,5 +1,21 @@
 # @voyant-travel/trips-react
 
+## 0.173.3
+
+### Patch Changes
+
+- Updated dependencies [f0f51b4]
+  - @voyant-travel/i18n@0.116.0
+  - @voyant-travel/admin@0.128.3
+  - @voyant-travel/bookings-react@0.182.2
+  - @voyant-travel/catalog-react@0.180.2
+  - @voyant-travel/flights-react@0.182.2
+  - @voyant-travel/relationships-react@0.182.1
+  - @voyant-travel/catalog@0.180.2
+  - @voyant-travel/finance@0.182.4
+  - @voyant-travel/flights@0.182.2
+  - @voyant-travel/trips@0.173.3
+
 ## 0.173.2
 
 ### Patch Changes

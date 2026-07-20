@@ -1,5 +1,24 @@
 # @voyant-travel/media-react
 
+## 0.3.0
+
+### Minor Changes
+
+- f0f51b4: Add the Media library admin navigation surface. The media deployment manifest
+  now declares an `admin` block with a runtime factory, route, and navigation
+  entry, and `@voyant-travel/media-react/admin` exposes
+  `createSelectedMediaAdminExtension`, which contributes a "Media library"
+  navigation item plus a route that renders the `<MediaLibrary>` browse surface.
+  The operator navigation catalogue gains the `mediaLibrary` label in English and
+  Romanian.
+
+### Patch Changes
+
+- Updated dependencies [f0f51b4]
+  - @voyant-travel/media@0.4.0
+  - @voyant-travel/i18n@0.116.0
+  - @voyant-travel/admin@0.128.3
+
 ## 0.2.1
 
 ### Patch Changes
