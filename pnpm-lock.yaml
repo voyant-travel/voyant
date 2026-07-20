@@ -4011,6 +4011,9 @@ importers:
       '@voyant-travel/media':
         specifier: workspace:*
         version: link:../media
+      '@voyant-travel/media-react':
+        specifier: workspace:*
+        version: link:../media-react
       '@voyant-travel/mice':
         specifier: workspace:*
         version: link:../mice
