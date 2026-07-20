@@ -231,6 +231,7 @@ export const productMedia = pgTable(
     mimeType: text("mime_type"),
     fileSize: integer("file_size"),
     altText: text("alt_text"),
+    assetId: text("asset_id"),
     sortOrder: integer("sort_order").notNull().default(0),
     isCover: boolean("is_cover").notNull().default(false),
     isBrochure: boolean("is_brochure").notNull().default(false),

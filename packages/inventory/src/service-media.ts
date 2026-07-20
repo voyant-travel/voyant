@@ -187,6 +187,7 @@ export const mediaProductsService = {
         mimeType: data.mimeType ?? null,
         fileSize: data.fileSize ?? null,
         altText: data.altText ?? null,
+        assetId: data.assetId ?? null,
         sortOrder: data.sortOrder,
         isCover: data.isCover,
         isBrochure: data.isBrochure,

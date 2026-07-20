@@ -316,6 +316,7 @@ const productMediaCoreSchema = z.object({
   mimeType: z.string().max(255).optional().nullable(),
   fileSize: z.number().int().min(0).optional().nullable(),
   altText: z.string().max(1000).optional().nullable(),
+  assetId: z.string().max(255).optional().nullable(),
   sortOrder: z.number().int().default(0),
   isCover: z.boolean().default(false),
   isBrochure: z.boolean().default(false),
