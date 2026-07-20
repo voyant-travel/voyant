@@ -41,6 +41,7 @@ import {
   createVoyantDeploymentResources,
   resolveSelectedGraphProviderPorts,
 } from "./deployment-resources.js"
+import { resolveLocalStorageDir, withFilesystemPersistence } from "./filesystem-storage.js"
 import {
   type GeneratedScheduledJob,
   loadGeneratedProjectLinks,
@@ -140,11 +141,18 @@ export async function loadVoyantProject(
     },
   )
   const providerPorts = { ...selectedProviderPorts, ...explicitRuntimePorts }
-  const storage = resolveCustomStorageResolver(
+  let storage = resolveCustomStorageResolver(
     providerPlan.storage === "custom"
       ? (options.host?.storage ?? providerPorts["storage.object"])
       : providerPorts["storage.object"],
   )
+  // The local `memory` storage plan keeps bytes in a per-process Map, so uploads
+  // vanish on restart while their Postgres rows persist. Mirror them to disk so a
+  // self-hosted operator without a configured bucket keeps its media across
+  // restarts. (Node-only; the isomorphic storage package must not touch node:fs.)
+  if (providerPlan.storage === "memory") {
+    storage = withFilesystemPersistence(storage, resolveLocalStorageDir(rawEnv))
+  }
   const runtimeProviderPorts = { ...providerPorts, "storage.object": storage }
   const hostDeliverEvent = options.host?.deliverEvent
   const outboundWebhooks = resolveOutboundWebhookDeliveryEnqueuer({
