@@ -1,5 +1,29 @@
 # @voyant-travel/trips
 
+## 0.176.0
+
+### Minor Changes
+
+- e7e90bf: Pass the deployment's public payment webhook to the card processor as
+  `metadata.notifyUrl` when starting a hosted payment. The generic payment
+  adapter forwards it to the connected processor worker so redirect processors
+  (e.g. Netopia) POST their server-side confirmation (IPN) back to
+  `/v1/public/payment-link/callback`, closing the charge-confirmation loop.
+  Finance's card-payment starter gains an optional `resolveNotifyUrl(c)`; the
+  Storefront-selected trips runtime derives it from the public checkout base URL.
+
+### Patch Changes
+
+- Updated dependencies [e7e90bf]
+  - @voyant-travel/finance@0.185.0
+  - @voyant-travel/catalog@0.183.0
+  - @voyant-travel/commerce@0.39.21
+  - @voyant-travel/flights@0.185.0
+  - @voyant-travel/inventory@0.14.21
+  - @voyant-travel/operator-settings@0.14.4
+  - @voyant-travel/storefront@0.187.0
+  - @voyant-travel/bookings@0.185.0
+
 ## 0.175.0
 
 ### Patch Changes
