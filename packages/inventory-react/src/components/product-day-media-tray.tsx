@@ -4,6 +4,7 @@ import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
+import { useProductMediaUpload } from "../hooks/use-product-media-upload.js"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 import { type ProductMediaRecord, useProductMedia, useProductMediaMutation } from "../index.js"
 import { ProductMediaDialog } from "./product-media-dialog.js"
@@ -31,7 +32,8 @@ export function ProductDayMediaTray({
   const [uploadError, setUploadError] = React.useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { data, isPending, isError } = useProductMedia(productId, { dayId, limit: 50 })
-  const { create, remove, setCover } = useProductMediaMutation()
+  const { remove, setCover } = useProductMediaMutation()
+  const { upload } = useProductMediaUpload()
 
   const media = React.useMemo(
     () =>
@@ -45,36 +47,20 @@ export function ProductDayMediaTray({
   )
 
   const handleUpload = async (file: File) => {
-    if (!uploadMedia) return
-
     setUploadError(null)
     setIsUploading(true)
 
     try {
-      const uploaded = await uploadMedia(file, { productId, dayId })
-      const mimeType = uploaded.mimeType?.trim() || file.type || null
-      const mediaType =
-        uploaded.mediaType ??
-        (mimeType?.startsWith("video/")
-          ? "video"
-          : mimeType?.startsWith("image/")
-            ? "image"
-            : "document")
-
-      await create.mutateAsync({
-        productId,
-        dayId,
-        mediaType,
-        name: uploaded.name?.trim() || file.name,
-        url: uploaded.url,
-        storageKey: uploaded.storageKey ?? null,
-        mimeType,
-        fileSize: uploaded.fileSize ?? (file.size || null),
-        altText: uploaded.altText ?? null,
-        sortOrder: uploaded.sortOrder ?? media.length,
-        isCover:
-          mediaType === "image" ? (uploaded.isCover ?? !media.some((item) => item.isCover)) : false,
-      })
+      await upload(
+        file,
+        {
+          productId,
+          dayId,
+          sortOrder: media.length,
+          isCover: !media.some((item) => item.isCover),
+        },
+        uploadMedia,
+      )
     } catch (error) {
       setUploadError(
         error instanceof Error ? error.message : messages.productMediaSection.uploadFailed,
@@ -89,37 +75,33 @@ export function ProductDayMediaTray({
       <div className="flex items-center justify-between gap-2">
         <div className="text-sm font-medium">{messages.productMediaSection.titles.dayMedia}</div>
         <div className="flex items-center gap-1">
-          {uploadMedia ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isUploading}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {isUploading ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Upload className="mr-2 size-4" aria-hidden="true" />
-                )}
-                {messages.productMediaSection.actions.upload}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={uploadAccept}
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (file) {
-                    void handleUpload(file)
-                    event.target.value = ""
-                  }
-                }}
-              />
-            </>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {isUploading ? (
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Upload className="mr-2 size-4" aria-hidden="true" />
+            )}
+            {messages.productMediaSection.actions.upload}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={uploadAccept}
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) {
+                void handleUpload(file)
+                event.target.value = ""
+              }
+            }}
+          />
           <Button
             type="button"
             variant="outline"
