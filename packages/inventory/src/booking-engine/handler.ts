@@ -701,6 +701,7 @@ export function createProductsBookingHandler(
                 selections: optionSelections,
                 slotDate,
                 effectivePax,
+                pax: draft.configure?.pax,
               })
             : priceQuote({
                 product,

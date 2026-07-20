@@ -107,10 +107,18 @@ export async function priceOptionSelections(input: {
   selections: ReadonlyArray<NormalizedOptionSelection>
   slotDate: string | null
   effectivePax: number
+  /** Booking-level pax counts by band code, for per-traveler-type room prices. */
+  pax?: Partial<Record<string, number>>
 }): Promise<PricedQuote> {
   const lines: PricedLine[] = []
   let totalCents = 0
   const optionsById = new Map(input.productOptions.map((option) => [option.id, option]))
+  // Per-traveler-category room prices (a Double room whose price is set per
+  // "Adult"/"Child" via the product editor's Rooms & prices matrix) price
+  // per-person by band — `pax[band] × price` — NOT per room, so they're
+  // collected here and charged once at the booking level after the per-unit
+  // loop, keyed by band so two same-band selections never double-count pax.
+  const perBandPrice = new Map<string, { cents: number; label: string }>()
   const totalInventoryUnits = input.selections.reduce((sum, selection) => {
     const unit = findProductOptionUnit(
       input.productOptions,
@@ -137,11 +145,30 @@ export async function priceOptionSelections(input: {
             date: input.slotDate,
           })
         : null
-    const unitPrice =
+    const unitRows =
       selection.optionUnitId && resolvedPrice?.unitPrices
-        ? resolvedPrice.unitPrices.find((unit) => unit.unitId === selection.optionUnitId)
-            ?.sellAmountCents
-        : null
+        ? resolvedPrice.unitPrices.filter((unit) => unit.unitId === selection.optionUnitId)
+        : []
+    // A category-less unit price charges flat per room (× quantity). Per-
+    // category rows (the Rooms & prices matrix — "Double / Adult") price per
+    // traveler band instead, so collect them for the booking-level charge below
+    // and skip the flat per-room line for this selection.
+    const categoryUnitRows = unitRows.filter((unit) => unit.travelerCategory)
+    const unitPrice = unitRows.find((unit) => !unit.travelerCategory)?.sellAmountCents ?? null
+    if (unitPrice == null && categoryUnitRows.length > 0) {
+      const unitLabel =
+        findProductOptionUnit(input.productOptions, selection.optionId, selection.optionUnitId)
+          ?.name ??
+        selection.optionUnitName ??
+        optionsById.get(selection.optionId)?.name ??
+        input.product.name
+      for (const row of categoryUnitRows) {
+        const band = row.travelerCategory
+        if (!band || (row.sellAmountCents ?? 0) <= 0 || perBandPrice.has(band)) continue
+        perBandPrice.set(band, { cents: row.sellAmountCents ?? 0, label: `${unitLabel} — ${band}` })
+      }
+      continue
+    }
     const paxTier =
       unitPrice == null && selection.optionUnitId
         ? await resolveSelectionPaxTier({
@@ -184,6 +211,23 @@ export async function priceOptionSelections(input: {
         selection.optionUnitName ?? optionsById.get(selection.optionId)?.name ?? input.product.name,
       quantity: selection.quantity,
       unitAmount,
+      totalAmount,
+    })
+  }
+
+  // Per-traveler-category room prices: charge each band once at the booking
+  // level (`pax[band] × price`), independent of how many rooms were selected —
+  // rooms are capacity, the per-person rate is what the traveler pays.
+  for (const [band, price] of perBandPrice) {
+    const count = input.pax?.[band] ?? 0
+    if (count <= 0 || price.cents <= 0) continue
+    const totalAmount = price.cents * count
+    totalCents += totalAmount
+    lines.push({
+      kind: "base",
+      label: price.label,
+      quantity: count,
+      unitAmount: price.cents,
       totalAmount,
     })
   }

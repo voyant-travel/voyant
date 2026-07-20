@@ -211,6 +211,56 @@ describe("createProductsBookingHandler.computeQuote", () => {
     )
   })
 
+  it("prices a room whose unit price is set per traveler category, per person (voyant#3586)", async () => {
+    // The Rooms & prices editor stores a room's price per traveler type — a
+    // "Double / Adult" row (`travelerCategory` set), not a flat per-room price.
+    // Such a room prices per person by band (`pax[band] × price`), independent
+    // of how many rooms are selected (rooms are capacity). Before the fix these
+    // rows were dropped and the product quoted `no_sell_amount_configured`.
+    const loadResolvedOptionPrice = vi.fn(
+      async (): Promise<ResolvedOptionPrice> => ({
+        baseSellAmountCents: 0,
+        unitPrices: [
+          {
+            unitId: "unit_double",
+            unitType: "room",
+            travelerCategory: "adult",
+            sellAmountCents: 40000,
+          },
+        ],
+      }),
+    )
+    const handler = createProductsBookingHandler({
+      createBooking: vi.fn(),
+      loadSlotDate: async () => "2026-07-27",
+      loadProductOptions: async () => [
+        { id: "opt_standard", name: "Standard", units: [{ id: "unit_double", name: "Double" }] },
+      ],
+      loadResolvedOptionPrice,
+    })
+
+    const result = await handler.computeQuote(
+      makeCtx([product]),
+      baseRequest({
+        configure: {
+          departureSlotId: "slot_1",
+          pax: { adult: 2 },
+          optionSelections: [{ optionId: "opt_standard", optionUnitId: "unit_double", quantity: 3 }],
+        },
+      }),
+    )
+
+    expect(result.available).toBe(true)
+    const breakdown = result.pricing?.breakdown as Record<string, unknown>
+    // 2 adults × 40000 = 80000 — NOT × 3 rooms.
+    expect(breakdown?.total).toBe(80000)
+    const lines = breakdown?.lines as Array<{ label: string; quantity: number; unitAmount: number }>
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toEqual(
+      expect.objectContaining({ quantity: 2, unitAmount: 40000, label: "Double — adult" }),
+    )
+  })
+
   it("uses selected option-unit pax tiers before falling back to the product base price", async () => {
     const loadPaxPricingTier = vi.fn(
       async (
