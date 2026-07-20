@@ -92,7 +92,7 @@ export const mediaVoyantModule = defineModule({
     routes: [
       {
         id: "@voyant-travel/media#admin.route.media-library-index",
-        path: "/media-library",
+        path: "/media",
         requiredScopes: ["media-library:read"],
         runtime: {
           entry: "@voyant-travel/media-react/admin",

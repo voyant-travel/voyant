@@ -68,7 +68,7 @@ export interface CreateMediaAdminExtensionOptions {
 export function createMediaAdminExtension(
   options: CreateMediaAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/media-library", labels = {}, icon } = options
+  const { basePath = "/media", labels = {}, icon } = options
   const { mediaLibrary = "Media library" } = labels
 
   return defineAdminExtension({
