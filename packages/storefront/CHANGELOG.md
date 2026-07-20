@@ -1,5 +1,22 @@
 # @voyant-travel/storefront
 
+## 0.185.0
+
+### Minor Changes
+
+- 8d370ef: Managed card checkout (Phase 2B): the concrete control-plane remote payment transport that the generic `createRemotePaymentAdapter` delegates to (brokers initiate/status/verifyCallback to the platform payments control plane), plus the inbound processor IPN webhook (`POST /v1/public/payment-link/callback`) that verifies the callback through the payment adapter and applies the event. Together these let a connected processor actually charge cards without the deployment bundling any per-processor SDK.
+
+### Patch Changes
+
+- Updated dependencies [8d370ef]
+  - @voyant-travel/payments@0.5.0
+  - @voyant-travel/finance@0.183.0
+  - @voyant-travel/bookings@0.183.0
+  - @voyant-travel/identity@0.183.0
+  - @voyant-travel/legal@0.183.0
+  - @voyant-travel/commerce@0.39.19
+  - @voyant-travel/relationships@0.128.23
+
 ## 0.184.2
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyant-travel/action-ledger-react
 
+## 0.71.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.183.0
+- @voyant-travel/inventory-react@0.65.0
+- @voyant-travel/relationships-react@0.183.0
+
 ## 0.70.1
 
 ### Patch Changes
