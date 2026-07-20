@@ -53,6 +53,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
+    "@voyant-travel/media-react": "workspace:^",
     "@voyant-travel/mice-react": "workspace:^",
     "@voyant-travel/operations-react": "workspace:^",
     "@voyant-travel/runtime": "workspace:^",

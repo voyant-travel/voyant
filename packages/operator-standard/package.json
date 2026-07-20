@@ -111,6 +111,7 @@
     "@voyant-travel/legal-react": "workspace:*",
     "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/media": "workspace:*",
+    "@voyant-travel/media-react": "workspace:*",
     "@voyant-travel/mice": "workspace:*",
     "@voyant-travel/mice-react": "workspace:*",
     "@voyant-travel/navigation-preferences": "workspace:*",
