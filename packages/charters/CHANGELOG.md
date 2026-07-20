@@ -1,5 +1,14 @@
 # @voyant-travel/charters
 
+## 0.180.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/bookings@0.182.1
+  - @voyant-travel/catalog@0.180.1
+
 ## 0.180.0
 
 ### Patch Changes

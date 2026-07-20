@@ -1,5 +1,16 @@
 # @voyant-travel/runtime
 
+## 0.15.9
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/apps@0.11.1
+  - @voyant-travel/auth@0.141.1
+  - @voyant-travel/framework@0.57.0
+  - @voyant-travel/workflow-runs@0.122.15
+
 ## 0.15.8
 
 ### Patch Changes

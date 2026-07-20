@@ -1,5 +1,18 @@
 # @voyant-travel/framework
 
+## 0.57.0
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/action-ledger@0.111.10
+  - @voyant-travel/cruises@0.181.1
+  - @voyant-travel/mcp@0.4.8
+  - @voyant-travel/operator-standard@0.9.15
+  - @voyant-travel/workflows@0.122.15
+  - @voyant-travel/workflows-orchestrator@0.122.15
+
 ## 0.56.3
 
 ### Patch Changes

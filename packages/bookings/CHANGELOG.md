@@ -1,5 +1,14 @@
 # @voyant-travel/bookings
 
+## 0.182.1
+
+### Patch Changes
+
+- Updated dependencies [b320e4f]
+  - @voyant-travel/hono@0.132.0
+  - @voyant-travel/action-ledger@0.111.10
+  - @voyant-travel/workflows@0.122.15
+
 ## 0.182.0
 
 ## 0.181.0
