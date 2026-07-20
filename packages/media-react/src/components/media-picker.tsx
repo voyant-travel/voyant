@@ -74,7 +74,7 @@ export function MediaPicker({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogTrigger render={trigger as React.ReactElement} /> : null}
-      <DialogContent className="sm:!max-w-5xl">{body}</DialogContent>
+      <DialogContent className="sm:max-w-5xl">{body}</DialogContent>
     </Dialog>
   )
 }
