@@ -105,14 +105,7 @@ export function MediaAssetDetailPanel({
   const usageRecords = usage.data?.data ?? []
 
   return (
-    <div
-      className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto"
-      data-slot="media-asset-detail"
-    >
-      <div>
-        <h3 className="text-sm font-semibold">{detail.title}</h3>
-      </div>
-
+    <div className="flex w-full flex-col gap-4" data-slot="media-asset-detail">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="media-asset-name">{detail.nameLabel}</Label>
         <Input
