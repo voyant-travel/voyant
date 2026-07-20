@@ -1,5 +1,12 @@
 # @voyant-travel/media
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [bcd7ad0]
+  - @voyant-travel/storage@0.112.0
+
 ## 0.2.0
 
 ### Minor Changes
