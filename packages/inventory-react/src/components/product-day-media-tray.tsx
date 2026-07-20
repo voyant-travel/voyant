@@ -1,10 +1,11 @@
 "use client"
 
+import type { MediaAsset } from "@voyant-travel/media-react"
+import { MediaPicker } from "@voyant-travel/media-react/ui"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
 import * as React from "react"
-import { useProductMediaUpload } from "../hooks/use-product-media-upload.js"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 import { type ProductMediaRecord, useProductMedia, useProductMediaMutation } from "../index.js"
 import { ProductMediaDialog } from "./product-media-dialog.js"
@@ -18,22 +19,14 @@ export interface ProductDayMediaTrayProps {
   emptyState?: React.ReactNode
 }
 
-export function ProductDayMediaTray({
-  productId,
-  dayId,
-  uploadMedia,
-  uploadAccept = "image/*,video/*,application/pdf",
-  emptyState,
-}: ProductDayMediaTrayProps) {
+export function ProductDayMediaTray({ productId, dayId, emptyState }: ProductDayMediaTrayProps) {
   const messages = useProductsUiMessagesOrDefault()
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [pickerOpen, setPickerOpen] = React.useState(false)
   const [editingMedia, setEditingMedia] = React.useState<ProductMediaRecord | undefined>()
-  const [isUploading, setIsUploading] = React.useState(false)
   const [uploadError, setUploadError] = React.useState<string | null>(null)
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { data, isPending, isError } = useProductMedia(productId, { dayId, limit: 50 })
-  const { remove, setCover } = useProductMediaMutation()
-  const { upload } = useProductMediaUpload()
+  const { create, remove, setCover } = useProductMediaMutation()
 
   const media = React.useMemo(
     () =>
@@ -46,27 +39,33 @@ export function ProductDayMediaTray({
     [data?.data],
   )
 
-  const handleUpload = async (file: File) => {
+  const handleSelectFromLibrary = async (assets: MediaAsset[]) => {
+    if (assets.length === 0) return
     setUploadError(null)
-    setIsUploading(true)
-
     try {
-      await upload(
-        file,
-        {
+      let coverAssigned = media.some((item) => item.isCover)
+      for (const [offset, asset] of assets.entries()) {
+        const assignCover = asset.type === "image" && !coverAssigned
+        if (assignCover) coverAssigned = true
+        await create.mutateAsync({
           productId,
           dayId,
-          sortOrder: media.length,
-          isCover: !media.some((item) => item.isCover),
-        },
-        uploadMedia,
-      )
+          mediaType: asset.type,
+          name: asset.name,
+          url: `/api/v1/admin/media/${asset.storageKey}`,
+          storageKey: asset.storageKey,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+          altText: asset.alt,
+          assetId: asset.id,
+          sortOrder: media.length + offset,
+          isCover: assignCover,
+        })
+      }
     } catch (error) {
       setUploadError(
-        error instanceof Error ? error.message : messages.productMediaSection.uploadFailed,
+        error instanceof Error ? error.message : messages.productMediaSection.libraryAddFailed,
       )
-    } finally {
-      setIsUploading(false)
     }
   }
 
@@ -75,33 +74,10 @@ export function ProductDayMediaTray({
       <div className="flex items-center justify-between gap-2">
         <div className="text-sm font-medium">{messages.productMediaSection.titles.dayMedia}</div>
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isUploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {isUploading ? (
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Upload className="mr-2 size-4" aria-hidden="true" />
-            )}
+          <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+            <Upload className="mr-2 size-4" aria-hidden="true" />
             {messages.productMediaSection.actions.upload}
           </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={uploadAccept}
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) {
-                void handleUpload(file)
-                event.target.value = ""
-              }
-            }}
-          />
           <Button
             type="button"
             variant="outline"
@@ -200,6 +176,17 @@ export function ProductDayMediaTray({
         dayId={dayId}
         media={editingMedia}
         onSuccess={() => setEditingMedia(undefined)}
+      />
+
+      <MediaPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        multiple
+        resolveAssetUrl={(asset) => `/api/v1/admin/media/${asset.storageKey}`}
+        onSelect={(assets) => {
+          setPickerOpen(false)
+          void handleSelectFromLibrary(assets)
+        }}
       />
     </div>
   )

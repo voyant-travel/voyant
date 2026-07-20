@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { MediaAsset } from "@voyant-travel/media-react"
 import { useMemo } from "react"
 import { productsQueryKeys, useProduct, useProductItineraries } from "../../index.js"
 
@@ -40,6 +41,9 @@ export interface UseProductDetailDataResult {
     deleteSlot: ReturnType<typeof useMutation<unknown, Error, string>>
     deleteRule: ReturnType<typeof useMutation<unknown, Error, string>>
     uploadMedia: ReturnType<typeof useMutation<unknown, Error, { file: File; dayId?: string }>>
+    addMediaFromLibrary: ReturnType<
+      typeof useMutation<unknown, Error, { assets: MediaAsset[]; dayId?: string }>
+    >
     deleteMedia: ReturnType<typeof useMutation<unknown, Error, string>>
     setCover: ReturnType<typeof useMutation<unknown, Error, string>>
     generateBrochure: ReturnType<typeof useMutation<unknown, Error, void>>
@@ -140,6 +144,30 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
     },
   })
 
+  const addMediaFromLibrary = useMutation({
+    mutationFn: async ({ assets, dayId }: { assets: MediaAsset[]; dayId?: string }) => {
+      const endpoint = dayId
+        ? `/v1/admin/products/${productId}/days/${dayId}/media`
+        : `/v1/admin/products/${productId}/media`
+      for (const asset of assets) {
+        await api.post(endpoint, {
+          mediaType: asset.type,
+          name: asset.name,
+          url: `/api/v1/admin/media/${asset.storageKey}`,
+          storageKey: asset.storageKey,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+          altText: asset.alt,
+          assetId: asset.id,
+        })
+      }
+    },
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
+  })
+
   const deleteMedia = useMutation({
     mutationFn: (mediaId: string) => api.delete(`/v1/admin/products/media/${mediaId}`),
     onSuccess: () => {
@@ -203,6 +231,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
       deleteSlot,
       deleteRule,
       uploadMedia,
+      addMediaFromLibrary,
       deleteMedia,
       setCover,
       generateBrochure,

@@ -2,6 +2,8 @@
 
 import { useMutation } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
+import type { MediaAsset } from "@voyant-travel/media-react"
+import { MediaPicker } from "@voyant-travel/media-react/ui"
 import { Button } from "@voyant-travel/ui/components"
 import {
   Carousel,
@@ -33,6 +35,11 @@ interface ProductMediaGalleryProps {
   media: ProductMediaItem[]
   isUploading: boolean
   onUpload: (file: File) => void
+  /**
+   * When provided, the "Upload" action opens the media library picker (select
+   * existing assets or upload new ones) instead of a bare file input.
+   */
+  onSelectFromLibrary?: (assets: MediaAsset[]) => void
   onSetCover: (mediaId: string) => void
   onDelete: (mediaId: string) => void
   onReorderLocal?: (items: ProductMediaItem[]) => void
@@ -49,6 +56,7 @@ export function ProductMediaGallery({
   media,
   isUploading,
   onUpload,
+  onSelectFromLibrary,
   onSetCover,
   onDelete,
   onReorderLocal,
@@ -57,6 +65,7 @@ export function ProductMediaGallery({
   const api = useProductDetailApi()
   const mediaMessages = messages.products.operations.media
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
   const [active, setActive] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
@@ -155,7 +164,9 @@ export function ProductMediaGallery({
             size="sm"
             className="h-8 text-xs"
             disabled={isUploading || reorderMode}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() =>
+              onSelectFromLibrary ? setPickerOpen(true) : fileInputRef.current?.click()
+            }
           >
             {isUploading ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -251,6 +262,19 @@ export function ProductMediaGallery({
         onClose={() => setLightboxIndex(null)}
         mediaMessages={mediaMessages}
       />
+
+      {onSelectFromLibrary ? (
+        <MediaPicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          multiple
+          resolveAssetUrl={(asset) => `/api/v1/admin/media/${asset.storageKey}`}
+          onSelect={(assets) => {
+            setPickerOpen(false)
+            if (assets.length > 0) onSelectFromLibrary(assets)
+          }}
+        />
+      ) : null}
     </>
   )
 }

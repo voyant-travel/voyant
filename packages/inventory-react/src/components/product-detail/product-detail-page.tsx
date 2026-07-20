@@ -121,6 +121,7 @@ export function ProductDetailPage({ id }: { id: string }) {
             media={galleryMedia}
             isUploading={mutations.uploadMedia.isPending}
             onUpload={(file) => mutations.uploadMedia.mutate({ file })}
+            onSelectFromLibrary={(assets) => mutations.addMediaFromLibrary.mutate({ assets })}
             onSetCover={(mediaId) => mutations.setCover.mutate(mediaId)}
             onDelete={(mediaId) => {
               if (confirm(productMessages.deleteMediaConfirm)) {

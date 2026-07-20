@@ -1,4 +1,5 @@
 import { formatMessage } from "@voyant-travel/i18n"
+import type { MediaAsset } from "@voyant-travel/media-react"
 import { Button } from "@voyant-travel/ui/components"
 import { Download, FileText, RefreshCw } from "lucide-react"
 import { useProductDetailMessages } from "./host.js"
@@ -75,6 +76,7 @@ export function ProductMediaSection({
   media,
   isUploading,
   onUpload,
+  onSelectFromLibrary,
   onSetCover,
   onDelete,
 }: {
@@ -82,6 +84,7 @@ export function ProductMediaSection({
   media: ProductMediaItem[]
   isUploading: boolean
   onUpload: (file: File) => void
+  onSelectFromLibrary?: (assets: MediaAsset[]) => void
   onSetCover: (mediaId: string) => void
   onDelete: (mediaId: string) => void
 }) {
@@ -94,6 +97,7 @@ export function ProductMediaSection({
           media={media}
           isUploading={isUploading}
           onUpload={onUpload}
+          onSelectFromLibrary={onSelectFromLibrary}
           onSetCover={onSetCover}
           onDelete={onDelete}
         />
