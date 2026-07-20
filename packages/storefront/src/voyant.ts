@@ -1,6 +1,14 @@
 import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/ports"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-schemas.js"
+
+// Lightweight reference (id only) so the deployment-graph manifest stays
+// import-cheap — importing the real port from @voyant-travel/payments would
+// pull the whole package into the manifest graph. Mirrors trips/voyant.ts.
+const paymentAdapterRuntimePortReference = {
+  id: "payments.adapter.runtime",
+} as const
+
 import {
   storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
@@ -469,7 +477,12 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
     entry: "@voyant-travel/storefront/payment-link",
     export: "createPaymentLinkVoyantRuntime",
   },
-  runtimePorts: [requirePort(storefrontPaymentLinkRuntimePort)],
+  runtimePorts: [
+    requirePort(storefrontPaymentLinkRuntimePort),
+    // Optional: when a payment adapter is wired (self-host in-process OR the
+    // managed remote adapter), the IPN webhook verifies + applies callbacks.
+    { ...paymentAdapterRuntimePortReference, optional: true },
+  ],
   api: [
     {
       id: "@voyant-travel/storefront#payment-link.api",

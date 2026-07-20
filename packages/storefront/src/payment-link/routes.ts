@@ -30,10 +30,11 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { financeService } from "@voyant-travel/finance"
+import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
+import { type PaymentCallbackRequest, paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -50,6 +51,7 @@ export const PAYMENT_LINK_ROUTE_PATHS = [
   "/v1/public/payment-link/:sessionId/trip-summary",
   "/v1/public/payment-link/:sessionId/booking-summary",
   "/v1/public/bookings/:bookingId/checkout-status",
+  "/v1/public/payment-link/callback",
 ] as const
 
 // ─────────────────────────────────────────────────────────────────
@@ -129,6 +131,15 @@ export interface PaymentLinkRoutesOptions {
       redirectUrl: string | null
     },
   ): Promise<{ configured: true; redirectUrl: string | null } | { configured: false }>
+  /**
+   * Verify an inbound processor IPN/webhook and apply its event (mark the
+   * payment session paid → complete the booking). Absent when no payment
+   * adapter is wired. Fails closed: an unverified callback is rejected.
+   */
+  verifyAndApplyPaymentCallback?(
+    c: Context,
+    request: PaymentCallbackRequest,
+  ): Promise<{ ok: true } | { ok: false; reason: string }>
   /**
    * Resolve a trip envelope (+ reconcile a paid checkout) and its visible
    * components with product-media enrichment, or `null` when the envelope is
@@ -859,9 +870,32 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
       )
     })
 
-  return new OpenAPIHono({ defaultHook: openApiValidationHook })
+  const app = new OpenAPIHono({ defaultHook: openApiValidationHook })
     .route("/", sessionActionRoutes)
     .route("/", summaryRoutes)
+
+  // Public processor IPN/webhook. The processor POSTs the raw signed callback;
+  // we verify it through the payment adapter (which brokers to the connected
+  // processor's verifyCallback) and apply the event. Fails closed.
+  app.post("/v1/public/payment-link/callback", async (c) => {
+    if (!options.verifyAndApplyPaymentCallback) {
+      return c.json({ ok: false, error: "not_configured" }, 503)
+    }
+    const rawBody = await c.req.text()
+    const headers: Record<string, string> = {}
+    c.req.raw.headers.forEach((value, key) => {
+      headers[key] = value
+    })
+    const result = await options.verifyAndApplyPaymentCallback(c, {
+      headers,
+      rawBody,
+      receivedAt: new Date().toISOString(),
+    })
+    // 200 when applied; 400 when rejected (a processor may retry on non-2xx).
+    return c.json(result, result.ok ? 200 : 400)
+  })
+
+  return app
 }
 
 /** Package-owned module descriptor; deployments inject provider and projection adapters. */
@@ -881,9 +915,33 @@ export function createPaymentLinkApiModule(options: PaymentLinkRoutesOptions): A
   }
 }
 
-export const createPaymentLinkVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
-  return createPaymentLinkApiModule(await getPort(storefrontPaymentLinkRuntimePort))
-})
+export const createPaymentLinkVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort, hasPort }) => {
+    const options = await getPort(storefrontPaymentLinkRuntimePort)
+    // The payment adapter is optional: absent on deployments without a card
+    // processor, present (self-host in-process OR the managed remote adapter)
+    // when one is wired. When present, the IPN webhook verifies + applies.
+    const adapter = hasPort(paymentAdapterRuntimePort)
+      ? await getPort(paymentAdapterRuntimePort)
+      : undefined
+    return createPaymentLinkApiModule({
+      ...options,
+      verifyAndApplyPaymentCallback: adapter
+        ? async (c, request) => {
+            const verification = await adapter.verifyCallback(
+              { env: c.env as Readonly<Record<string, unknown>> },
+              request,
+            )
+            if (!verification.verified) {
+              return { ok: false, reason: verification.reason }
+            }
+            await applyPaymentAdapterCallbackEvent(getDb(c), verification.event)
+            return { ok: true }
+          }
+        : undefined,
+    })
+  },
+)
 
 // ─────────────────────────────────────────────────────────────────
 // Pure schedule resolution helpers
