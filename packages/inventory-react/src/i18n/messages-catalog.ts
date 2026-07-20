@@ -174,6 +174,7 @@ export type ProductsUiCatalogMessages = {
     }
     actions: {
       upload: string
+      chooseFromLibrary: string
       addMedia: string
       reorder: string
       saveOrder: string
@@ -192,6 +193,7 @@ export type ProductsUiCatalogMessages = {
     empty: string
     itemCount: string
     uploadFailed: string
+    libraryAddFailed: string
     deleteConfirm: string
     viewerTitle: string
     coverBadge: string

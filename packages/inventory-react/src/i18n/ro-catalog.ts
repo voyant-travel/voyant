@@ -179,6 +179,7 @@ export const productsUiCatalogRo = {
     },
     actions: {
       upload: "Incarca",
+      chooseFromLibrary: "Alege din biblioteca media",
       addMedia: "Adauga media",
       reorder: "Reordoneaza",
       saveOrder: "Salveaza ordinea",
@@ -197,6 +198,7 @@ export const productsUiCatalogRo = {
     empty: "Nu exista inca elemente media configurate.",
     itemCount: "Elemente media: {count}",
     uploadFailed: "Incarcarea media a esuat.",
+    libraryAddFailed: "Adaugarea media din biblioteca a esuat.",
     deleteConfirm: "Stergi acest element media?",
     viewerTitle: "Previzualizare media",
     coverBadge: "Cover",
