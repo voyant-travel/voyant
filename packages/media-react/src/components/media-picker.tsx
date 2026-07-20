@@ -74,7 +74,7 @@ export function MediaPicker({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogTrigger render={trigger as React.ReactElement} /> : null}
-      <DialogContent className="max-w-3xl">{body}</DialogContent>
+      <DialogContent className="sm:!max-w-5xl">{body}</DialogContent>
     </Dialog>
   )
 }
@@ -187,7 +187,7 @@ function MediaPickerBody({
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid max-h-[45vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
+        <div className="grid max-h-[45vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
           {assets.map((asset) => (
             <MediaAssetTile
               key={asset.id}

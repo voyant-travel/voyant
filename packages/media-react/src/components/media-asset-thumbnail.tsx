@@ -1,7 +1,8 @@
 "use client"
 
 import { cn } from "@voyant-travel/ui/lib/utils"
-import { FileText, Film } from "lucide-react"
+import { FileText, Film, ImageOff } from "lucide-react"
+import * as React from "react"
 
 import type { MediaAsset } from "../schemas.js"
 
@@ -13,11 +14,18 @@ export interface MediaAssetThumbnailProps {
 
 /**
  * Renders a preview appropriate to the asset kind: an `<img>` for images, a
- * muted `<video>` for videos, and a document glyph for everything else. Purely
- * presentational — no user-facing copy (the alt text comes from the asset).
+ * muted `<video>` for videos, and a document glyph for everything else. Images
+ * that fail to load (missing bytes, an undecodable file, or a security-downgraded
+ * content type such as inline SVG) fall back to a muted icon instead of the
+ * browser's broken-image glyph. Purely presentational — no user-facing copy (the
+ * alt text comes from the asset).
  */
 export function MediaAssetThumbnail({ asset, url, className }: MediaAssetThumbnailProps) {
-  if (asset.type === "image") {
+  // Tiles are keyed by asset id, so a new asset remounts this component and
+  // clears the error state — no reset effect needed.
+  const [errored, setErrored] = React.useState(false)
+
+  if (asset.type === "image" && !errored) {
     return (
       <img
         src={url}
@@ -25,22 +33,12 @@ export function MediaAssetThumbnail({ asset, url, className }: MediaAssetThumbna
         className={cn("h-full w-full object-cover", className)}
         draggable={false}
         loading="lazy"
+        onError={() => setErrored(true)}
       />
     )
   }
 
-  if (asset.type === "video") {
-    return (
-      <div
-        className={cn(
-          "flex h-full w-full items-center justify-center bg-muted text-muted-foreground",
-          className,
-        )}
-      >
-        <Film className="size-6" aria-hidden="true" />
-      </div>
-    )
-  }
+  const FallbackIcon = asset.type === "video" ? Film : asset.type === "image" ? ImageOff : FileText
 
   return (
     <div
@@ -49,7 +47,7 @@ export function MediaAssetThumbnail({ asset, url, className }: MediaAssetThumbna
         className,
       )}
     >
-      <FileText className="size-6" aria-hidden="true" />
+      <FallbackIcon className="size-6" aria-hidden="true" />
     </div>
   )
 }
