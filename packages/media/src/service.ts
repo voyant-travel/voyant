@@ -75,7 +75,7 @@ const MEDIA_EXTENSION_BY_MIME: Readonly<Record<string, string>> = {
   "application/pdf": "pdf",
 }
 
-function storageKeyExtension(mimeType: string | undefined): string {
+function storageKeyExtension(mimeType: string | null | undefined): string {
   const normalized = (mimeType ?? "").toLowerCase().split(";")[0]?.trim() ?? ""
   const ext = MEDIA_EXTENSION_BY_MIME[normalized]
   return ext ? `.${ext}` : ""
