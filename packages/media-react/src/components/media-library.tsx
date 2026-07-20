@@ -213,7 +213,6 @@ export function MediaLibrary({
             </div>
           )}
         </div>
-
       </div>
 
       <Sheet
