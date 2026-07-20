@@ -1,5 +1,24 @@
 # @voyant-travel/inventory-react
 
+## 0.68.0
+
+### Minor Changes
+
+- 5af8682: Route inline product-media uploads through the Media Library. Uploading a file
+  from the product media section or an itinerary day now creates a library asset
+  (so it appears in the Media Library) and attaches it to the product via
+  `assetId`, mirroring the byte-URL convention used by library-picked assets. The
+  host-provided `uploadMedia` storage handler stays supported as an optional
+  legacy fallback.
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.184.0
+- @voyant-travel/finance-react@0.186.0
+- @voyant-travel/storefront-react@0.188.0
+- @voyant-travel/finance@0.186.0
+- @voyant-travel/inventory@0.14.22
+
 ## 0.67.0
 
 ### Patch Changes
