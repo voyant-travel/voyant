@@ -1,5 +1,13 @@
 # @voyant-travel/finance
 
+## 0.183.0
+
+### Patch Changes
+
+- Updated dependencies [8d370ef]
+  - @voyant-travel/payments@0.5.0
+  - @voyant-travel/bookings@0.183.0
+
 ## 0.182.4
 
 ### Patch Changes
