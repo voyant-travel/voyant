@@ -1,10 +1,21 @@
 import { commerceOperatorSettingsRuntimePort } from "@voyant-travel/commerce/runtime-port"
-import { defineModule, providePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { paymentProviderRegistryRuntimePort } from "@voyant-travel/payments/runtime-port"
 
+/** Per-api runtime — the plain module, read by the build-time OpenAPI replay. */
 const runtime = {
   entry: "@voyant-travel/operator-settings/api-runtime",
   export: "createOperatorSettingsApiModule",
+} as const
+
+/**
+ * Top-level runtime — the graph-runtime-factory that resolves the optional
+ * managed payment registry port and configures the module accordingly.
+ */
+const runtimeFactory = {
+  entry: "@voyant-travel/operator-settings/api-runtime",
+  export: "createOperatorSettingsVoyantRuntime",
 } as const
 
 const operatorSettingsAdminRuntime = {
@@ -17,6 +28,8 @@ export const operatorSettingsVoyantModule = defineModule({
   id: "@voyant-travel/operator-settings",
   packageName: "@voyant-travel/operator-settings",
   localId: "operator-settings",
+  runtime: runtimeFactory,
+  runtimePorts: [requirePort(paymentProviderRegistryRuntimePort, { optional: true })],
   provides: {
     ports: [
       providePort(commerceOperatorSettingsRuntimePort),

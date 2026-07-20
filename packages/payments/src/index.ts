@@ -243,3 +243,10 @@ export type {
   RemotePaymentTransport,
 } from "./remote-adapter.js"
 export { createRemotePaymentAdapter, PAYMENT_REMOTE_NOT_IMPLEMENTED } from "./remote-adapter.js"
+
+export {
+  PAYMENT_PROVIDER_REGISTRY_RUNTIME_PORT_ID,
+  type PaymentProviderRegistryContext,
+  type PaymentProviderRegistryResolver,
+  paymentProviderRegistryRuntimePort,
+} from "./runtime-port.js"

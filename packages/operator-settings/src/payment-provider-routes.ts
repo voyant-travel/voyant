@@ -11,33 +11,38 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { ModuleContainer } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { PaymentProviderRegistry } from "@voyant-travel/payments"
+import {
+  type PaymentProviderRegistry,
+  type PaymentProviderRegistryResolver,
+  paymentProviderRegistryRuntimePort,
+} from "@voyant-travel/payments"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 
-import {
-  PAYMENT_PROVIDER_REGISTRY_RESOLVER_VAR,
-  type PaymentProviderRegistryResolver,
-} from "./payment-provider-injection.js"
 import { createDefaultPaymentProviderRegistry } from "./payment-provider-registry.js"
 
 type Env = {
   Variables: {
     db: PostgresJsDatabase
-    paymentProviderRegistryResolver?: PaymentProviderRegistryResolver
+    container: ModuleContainer
   }
 }
 
 /**
- * Resolve the registry for this request: the deployment-injected one when
- * present (managed → control plane), else the default self-host registry.
+ * Resolve the registry for this request: the deployment-injected one when a
+ * resolver was registered under the payment registry runtime port (managed →
+ * control plane), else the default self-host registry.
  */
 async function resolveRegistry(c: Context<Env>): Promise<PaymentProviderRegistry> {
   const db = c.get("db")
   const env = c.env as Record<string, unknown>
-  const resolver = c.get(PAYMENT_PROVIDER_REGISTRY_RESOLVER_VAR)
-  if (resolver) {
+  const container = c.get("container")
+  if (container?.has(paymentProviderRegistryRuntimePort.id)) {
+    const resolver = container.resolve<PaymentProviderRegistryResolver>(
+      paymentProviderRegistryRuntimePort.id,
+    )
     return resolver({ db, env, request: c.req.raw })
   }
   return createDefaultPaymentProviderRegistry({ db, env })
