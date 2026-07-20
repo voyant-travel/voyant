@@ -102,6 +102,11 @@ export const mediaVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "The media library exposes an admin catalogue surface only; byte upload/serve mechanics and any future media Tools are owned by @voyant-travel/storage.",
+    },
   },
 })
 
