@@ -1,5 +1,18 @@
 # @voyant-travel/media-react
 
+## 0.3.2
+
+### Patch Changes
+
+- ff02608: Media library polish:
+
+  - Rename the admin route from `/media-library` to `/media` (nav + default host base path).
+  - Move folder creation from an inline sidebar form into a dialog.
+  - Give uploaded objects a file extension in their storage key so the byte-serving route (which sends `X-Content-Type-Options: nosniff`) infers the correct `Content-Type` — raster images and PDFs now render instead of downloading as `application/octet-stream`.
+
+- Updated dependencies [ff02608]
+  - @voyant-travel/media@0.4.1
+
 ## 0.3.1
 
 ### Patch Changes
