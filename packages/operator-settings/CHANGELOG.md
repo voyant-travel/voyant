@@ -1,5 +1,12 @@
 # @voyant-travel/operator-settings
 
+## 0.14.3
+
+### Patch Changes
+
+- @voyant-travel/finance@0.184.0
+- @voyant-travel/commerce@0.39.20
+
 ## 0.14.2
 
 ### Patch Changes

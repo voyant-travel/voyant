@@ -1,5 +1,24 @@
 # @voyant-travel/inventory-react
 
+## 0.66.0
+
+### Minor Changes
+
+- a33c590: Add a "Choose from Media Library" action to the product media section so
+  operators can attach existing library assets to a product or itinerary day
+  instead of only uploading new files. Product media now records the source
+  asset reference (`assetId`) alongside the derived byte URL, kind, mime type,
+  and size.
+
+### Patch Changes
+
+- Updated dependencies [a33c590]
+  - @voyant-travel/inventory@0.14.20
+  - @voyant-travel/catalog-react@0.182.0
+  - @voyant-travel/finance-react@0.184.0
+  - @voyant-travel/storefront-react@0.186.0
+  - @voyant-travel/finance@0.184.0
+
 ## 0.65.0
 
 ### Patch Changes

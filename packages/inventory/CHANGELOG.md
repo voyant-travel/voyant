@@ -1,5 +1,24 @@
 # @voyant-travel/inventory
 
+## 0.14.20
+
+### Patch Changes
+
+- a33c590: Add a "Choose from Media Library" action to the product media section so
+  operators can attach existing library assets to a product or itinerary day
+  instead of only uploading new files. Product media now records the source
+  asset reference (`assetId`) alongside the derived byte URL, kind, mime type,
+  and size.
+- Updated dependencies [a33c590]
+  - @voyant-travel/products-contracts@0.107.5
+  - @voyant-travel/bookings@0.184.0
+  - @voyant-travel/catalog@0.182.0
+  - @voyant-travel/finance@0.184.0
+  - @voyant-travel/commerce@0.39.20
+  - @voyant-travel/relationships@0.128.24
+  - @voyant-travel/operations@0.8.25
+  - @voyant-travel/operator-settings@0.14.3
+
 ## 0.14.19
 
 ### Patch Changes
