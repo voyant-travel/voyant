@@ -58,12 +58,20 @@ async function startAdapterCardPayment(
     // Tell the processor to POST its callback/IPN to the deployment's public
     // payment webhook, so payment confirmation is authoritative (server-side)
     // instead of relying on the confirmation-page poll.
-    resolveNotifyUrl: (c) => {
-      const base = resolvePublicCheckoutBaseUrl(c.env as Record<string, unknown>)
-      return base ? `${base}/v1/public/payment-link/callback` : undefined
-    },
+    resolveNotifyUrl: (c) => resolvePaymentCallbackUrl(c.env as Record<string, unknown>),
   })
   return starter(context, args)
+}
+
+/**
+ * The deployment's public payment webhook — where a redirect processor POSTs
+ * its server-side confirmation (IPN). The operator API is served under `/api`,
+ * so the callback registered at `/v1/public/payment-link/callback` is publicly
+ * reachable at `/api/v1/public/payment-link/callback`.
+ */
+function resolvePaymentCallbackUrl(bindings: Record<string, unknown>): string | undefined {
+  const base = resolvePublicCheckoutBaseUrl(bindings)
+  return base ? `${base}/api/v1/public/payment-link/callback` : undefined
 }
 
 interface PaymentConfigBindings {
@@ -121,10 +129,48 @@ async function resolveBankTransferDetails(c: Context) {
   }
 }
 
-/** Start a fresh card payment via this deployment's processor, or report it isn't configured. */
-const startCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async () => ({
+/** No processor wired (self-host with mocks, or Cloud not connected): the handler 503s. */
+const unconfiguredStartCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async () => ({
   configured: false,
 })
+
+/**
+ * Start a card payment for a payment-link session via this deployment's selected
+ * processor (the same neutral adapter the checkout path uses), returning the
+ * processor's hosted-checkout redirect URL. Enables paying a payment link by
+ * card, not just the full booking checkout.
+ */
+function createAdapterStartCardPayment(
+  adapter: PaymentAdapter,
+): PaymentLinkRoutesOptions["startCardPayment"] {
+  return async (c, session) => {
+    const { createPaymentAdapterCardPaymentStarter } = (await import(
+      FINANCE_CARD_PAYMENT_MODULE
+    )) as {
+      createPaymentAdapterCardPaymentStarter: PaymentAdapterCardPaymentStarterFactory
+    }
+    const starter = createPaymentAdapterCardPaymentStarter(adapter, {
+      resolveContext: (ctx) => ({ env: ctx.env }),
+      resolveRuntime: (ctx) => ({ eventBus: ctx.var.eventBus }),
+      idempotencyKey: (sessionId) => `payment:${sessionId}`,
+      resolveNotifyUrl: (ctx) => resolvePaymentCallbackUrl(ctx.env as Record<string, unknown>),
+    })
+    const trimmedName = (session.payerName ?? "").trim()
+    const [firstName, ...rest] = trimmedName ? trimmedName.split(/\s+/) : []
+    const result = await starter(c, {
+      db: getDb(c),
+      sessionId: session.id,
+      billing: {
+        email: session.payerEmail ?? "",
+        firstName: firstName || session.payerEmail || "Customer",
+        lastName: rest.join(" "),
+      },
+      description: session.notes || "Payment",
+      returnUrl: session.redirectUrl ?? undefined,
+    })
+    return { configured: true, redirectUrl: result?.redirectUrl ?? null }
+  }
+}
 
 /**
  * Resolve a trip envelope (+ reconcile a paid checkout) and its visible
@@ -226,13 +272,22 @@ const resolveTripData: PaymentLinkRoutesOptions["resolveTripData"] = async (
   }
 }
 
-/** Build the payment-link route-module options for this deployment. */
-export function createStandardPaymentLinkRouteOptions(): PaymentLinkRoutesOptions {
+/**
+ * Build the payment-link route-module options for this deployment. When a
+ * payment adapter is selected, card payment links charge through it; otherwise
+ * the card path reports "not configured" (the handler 503s) and bank transfer
+ * still works.
+ */
+export function createStandardPaymentLinkRouteOptions(
+  adapter?: PaymentAdapter,
+): PaymentLinkRoutesOptions {
   return {
     resolveBankTransferDetails,
     resolvePublicCheckoutBaseUrl: (c) =>
       resolvePublicCheckoutBaseUrl(c.env as Record<string, unknown>),
-    startCardPayment,
+    startCardPayment: adapter
+      ? createAdapterStartCardPayment(adapter)
+      : unconfiguredStartCardPayment,
     resolveTripData,
   }
 }

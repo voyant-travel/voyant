@@ -73,8 +73,13 @@ export function createTripsRuntimePortContribution(
     withDb: (bindings, operation) =>
       host.primitives.database.transaction(bindings, (database) => operation(database as never)),
   }
+  const paymentLinkOptions = paymentAdapter
+    ? Promise.resolve(paymentAdapter).then((adapter) =>
+        createStandardPaymentLinkRouteOptions(adapter),
+      )
+    : createStandardPaymentLinkRouteOptions()
   const contribution: Record<string, unknown> = {
-    [storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions(),
+    [storefrontPaymentLinkRuntimePort.id]: paymentLinkOptions,
     [tripsRoutesRuntimePort.id]: tripsRoutes,
     [tripsDatabaseRuntimePort.id]: tripsDatabase,
   }
