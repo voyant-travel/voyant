@@ -289,6 +289,21 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     (quote.data.available === false ||
       (quote.data.invalidReason != null && quote.data.invalidReason !== ""))
   const quoteBlocked = hasQuoteError || quoteUnpriceable
+  // The pristine baseline quote is intentionally un-priceable: a product has no
+  // price until its price driver — a room, or a traveler count — is chosen, and
+  // the engine reports that empty draft as `no_sell_amount_configured`. Suppress
+  // the un-priceable banner (and the side-panel error) for exactly that baseline
+  // so step 1 doesn't scream "can't be priced" before the buyer has picked
+  // anything. Any other reason (e.g. `rates_missing` on an already-picked stay,
+  // #2638), or the same code once a driver IS picked (a room that carries no
+  // price), still surfaces. Commit stays gated on `quoteBlocked` regardless, so
+  // an unpriced booking can never be submitted.
+  const priceDriversConfigured =
+    (draft?.configure?.optionSelections?.length ?? 0) > 0 ||
+    Object.values(draft?.configure?.pax ?? {}).reduce<number>((sum, n) => sum + (n ?? 0), 0) > 0
+  const isPristineUnconfigured =
+    quote.data?.invalidReason === "no_sell_amount_configured" && !priceDriversConfigured
+  const showQuoteUnpriceable = quoteBlocked && !isPristineUnconfigured
   const quoteReady = Boolean(quote.data?.quoteId)
   // Step navigation only hard-blocks on a thrown quote error (a transient fetch
   // failure that a retry fixes). An un-priceable quote (e.g. `rates_missing`
@@ -520,7 +535,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     setConfirmError(null)
     void quote.refetch()
   }
-  const quoteErrorBanner = quoteBlocked ? (
+  const quoteErrorBanner = showQuoteUnpriceable ? (
     <div
       role="alert"
       aria-live="polite"
