@@ -1,5 +1,7 @@
 export type { StorageProviderConformanceOptions } from "./conformance.js"
 export { assertStorageProviderConformance } from "./conformance.js"
+export type { GatewayStorageProviderOptions } from "./providers/gateway.js"
+export { createGatewayStorageProvider } from "./providers/gateway.js"
 export type { LocalStorageOptions } from "./providers/local.js"
 export { createLocalStorageProvider } from "./providers/local.js"
 export type { S3CompatibleProviderOptions } from "./providers/s3-compatible.js"

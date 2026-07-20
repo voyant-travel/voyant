@@ -1707,6 +1707,7 @@
       "@voyant-travel/setup/voyant": ["../setup/dist/voyant.d.ts"],
       "@voyant-travel/storage": ["../storage/dist/index.d.ts"],
       "@voyant-travel/storage/conformance": ["../storage/dist/conformance.d.ts"],
+      "@voyant-travel/storage/providers/gateway": ["../storage/dist/providers/gateway.d.ts"],
       "@voyant-travel/storage/providers/graph": ["../storage/dist/providers/graph.d.ts"],
       "@voyant-travel/storage/providers/local": ["../storage/dist/providers/local.d.ts"],
       "@voyant-travel/storage/providers/s3-compatible": [
