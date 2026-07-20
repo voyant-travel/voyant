@@ -45,6 +45,14 @@ export type SetupMigrationHandler = (context: SetupMigrationContext) => unknown 
 export interface NodeMigrationRuntime {
   setupLoaders: Readonly<Record<string, () => Promise<SetupMigrationHandler>>>
   resolveFrom: string | URL
+  /**
+   * Additional package-resolution roots the build-time resolver used to locate
+   * schema-owning migration packages (e.g. the operator-standard product BOM
+   * directory whose `node_modules` nest the transitive schema packages). When
+   * present these are tried ahead of {@link resolveFrom} so a package that is not
+   * a direct operator dependency still resolves its published `migrations/`.
+   */
+  resolutionRoots?: readonly string[]
 }
 
 interface ConnectedMigrationClient extends MigrationClient {
@@ -64,6 +72,7 @@ export interface NodeMigrationRunnerDependencies {
   loadSchemaSource(
     migration: VoyantProjectSchemaMigration,
     resolveFrom: string | URL,
+    resolutionRoots?: readonly string[],
   ): Promise<MigrationSource>
   runSchema(client: MigrationClient, source: MigrationSource): Promise<RunResult>
 }
@@ -100,7 +109,11 @@ export async function executeNodeMigrationPlan(
     for (const migration of plan.migrations) {
       try {
         if (migration.migrationKind === "schema") {
-          const source = await dependencies.loadSchemaSource(migration, runtime.resolveFrom)
+          const source = await dependencies.loadSchemaSource(
+            migration,
+            runtime.resolveFrom,
+            runtime.resolutionRoots,
+          )
           const result = await dependencies.runSchema(client, source)
           if (result.executed.length + result.baselined.length === 0) {
             skipped.push(status(migration, "skipped", "already_applied"))
@@ -162,6 +175,7 @@ const defaultDependencies: NodeMigrationRunnerDependencies = {
 export async function loadNodeSchemaMigrationSource(
   migration: VoyantProjectSchemaMigration,
   resolveFrom: string | URL,
+  resolutionRoots?: readonly string[],
 ): Promise<MigrationSource> {
   const { loadMigrationFolder, loadModuleBundleSource } = await import(
     "@voyant-travel/framework-migrations"
@@ -184,9 +198,17 @@ export async function loadNodeSchemaMigrationSource(
     migration.source.packageName === "@voyant-travel/workflows-orchestrator"
       ? import.meta.url
       : resolveFrom
+  // Try the build-time resolution roots (e.g. the operator-standard BOM
+  // directory) ahead of the runner's own location so transitive schema packages
+  // nested under the product distribution resolve their published migrations.
   const source = await loadModuleBundleSource(migration.source.packageName, {
     priority: migration.order,
     resolveFrom: packageResolveFrom,
+    ...(migration.source.packageName === "@voyant-travel/workflows-orchestrator"
+      ? {}
+      : resolutionRoots && resolutionRoots.length > 0
+        ? { resolutionRoots }
+        : {}),
   })
   if (!source) {
     throw new Error(

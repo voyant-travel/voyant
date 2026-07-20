@@ -38,6 +38,15 @@ export interface LoadModuleBundleSourceOptions {
    */
   resolveFrom?: string | URL
   /**
+   * Additional resolution roots tried (in order) BEFORE {@link resolveFrom} when
+   * locating the package. A schema-owning package delivered by a sealed product
+   * distribution (e.g. the operator-standard BOM) is a TRANSITIVE dependency
+   * nested under that distribution's own `node_modules`, so it is not resolvable
+   * from the deployment root; pass the distribution directory here so its
+   * `migrations/` is found the same way the build-time resolver found it.
+   */
+  resolutionRoots?: readonly string[]
+  /**
    * Ledger source name (recorded in `_voyant_migrations`). Defaults to the
    * package's unscoped name so the same module records under one stable name
    * across source and managed modes. Override only to match an existing ledger.
@@ -131,6 +140,23 @@ function resolveModuleMigrationsDir(packageName: string, resolveFrom: string | U
 }
 
 /**
+ * Resolve a package's `migrations/` folder, trying each declared resolution root
+ * (in order) before the default `resolveFrom`. Each root is walked for a nested
+ * `node_modules/<packageName>`; the first hit that yields a migrations folder
+ * wins. Returns `null` when no root resolves the package.
+ */
+function resolveModuleMigrationsDirFromRoots(
+  packageName: string,
+  options: LoadModuleBundleSourceOptions,
+): string | null {
+  for (const root of options.resolutionRoots ?? []) {
+    const migrationsDir = resolveModuleMigrationsDir(packageName, root)
+    if (migrationsDir) return migrationsDir
+  }
+  return resolveModuleMigrationsDir(packageName, options.resolveFrom ?? import.meta.url)
+}
+
+/**
  * Load a module package's pre-built migrations as a {@link MigrationSource}, or
  * `null` when the package ships no `migrations/` folder (it owns no schema).
  * Throws only if a present `migrations/` folder is malformed (missing SQL a
@@ -141,8 +167,7 @@ export async function loadModuleBundleSource(
   options: LoadModuleBundleSourceOptions,
 ): Promise<MigrationSource | null> {
   const migrationsDir =
-    options.migrationsDir ??
-    resolveModuleMigrationsDir(packageName, options.resolveFrom ?? import.meta.url)
+    options.migrationsDir ?? resolveModuleMigrationsDirFromRoots(packageName, options)
   if (!migrationsDir) return null
   if (!existsSync(join(migrationsDir, "meta", "_journal.json"))) return null
 
