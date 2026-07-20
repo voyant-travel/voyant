@@ -299,6 +299,7 @@ export const productMediaRecordSchema = z.object({
   mimeType: z.string().nullable(),
   fileSize: z.number().int().nullable(),
   altText: z.string().nullable(),
+  assetId: z.string().nullable(),
   sortOrder: z.number().int(),
   isCover: z.boolean(),
   createdAt: z.string(),

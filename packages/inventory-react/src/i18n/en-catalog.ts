@@ -178,6 +178,7 @@ export const productsUiCatalogEn = {
     },
     actions: {
       upload: "Upload",
+      chooseFromLibrary: "Choose from Media Library",
       addMedia: "Add media",
       reorder: "Reorder",
       saveOrder: "Save order",
@@ -196,6 +197,7 @@ export const productsUiCatalogEn = {
     empty: "No media items configured yet.",
     itemCount: "Media items: {count}",
     uploadFailed: "Failed to upload media.",
+    libraryAddFailed: "Failed to add media from the library.",
     deleteConfirm: "Delete this media item?",
     viewerTitle: "Media preview",
     coverBadge: "Cover",

@@ -1,5 +1,7 @@
 "use client"
 
+import type { MediaAsset } from "@voyant-travel/media-react"
+import { MediaPicker } from "@voyant-travel/media-react/ui"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
@@ -9,10 +11,11 @@ import {
   CardTitle,
 } from "@voyant-travel/ui/components/card"
 import { cn } from "@voyant-travel/ui/lib/utils"
-import { GripVertical, Loader2, Plus, Upload } from "lucide-react"
+import { GripVertical, ImageIcon, Loader2, Plus, Upload } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
 import { type ProductMediaRecord, useProductMedia, useProductMediaMutation } from "../index.js"
+import { useVoyantProductsContext } from "../provider.js"
 import { ProductMediaDialog } from "./product-media-dialog.js"
 import { MediaLightbox } from "./product-media-lightbox.js"
 import { MediaTile } from "./product-media-tile.js"
@@ -56,6 +59,7 @@ export function ProductMediaSection({
   const messages = useProductsUiMessagesOrDefault()
   const sectionMessages = messages.productMediaSection
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [pickerOpen, setPickerOpen] = React.useState(false)
   const [editingMedia, setEditingMedia] = React.useState<ProductMediaRecord | undefined>()
   const [isUploading, setIsUploading] = React.useState(false)
   const [uploadError, setUploadError] = React.useState<string | null>(null)
@@ -64,6 +68,7 @@ export function ProductMediaSection({
   const [draggedId, setDraggedId] = React.useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const { baseUrl } = useVoyantProductsContext()
   const { data, isPending, isError } = useProductMedia(productId, { dayId, limit: 100 })
   const { create, remove, reorder, setCover } = useProductMediaMutation()
 
@@ -126,6 +131,42 @@ export function ProductMediaSection({
       setUploadError(error instanceof Error ? error.message : sectionMessages.uploadFailed)
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  // Mirror `defaultAssetUrl` from media-react: raw asset bytes are served by
+  // `@voyant-travel/storage` at `GET /v1/admin/media/{storageKey}`.
+  const assetByteUrl = (asset: MediaAsset) => {
+    const trimmed = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+    return `${trimmed}/v1/admin/media/${asset.storageKey}` // i18n-literal-ok byte-serving route
+  }
+
+  const handleSelectFromLibrary = async (assets: MediaAsset[]) => {
+    if (assets.length === 0) return
+    setUploadError(null)
+    try {
+      let coverAssigned = media.some((item) => item.isCover)
+      for (const [offset, asset] of assets.entries()) {
+        const isImage = asset.type === "image"
+        const assignCover = isImage && !coverAssigned
+        if (assignCover) coverAssigned = true
+        await create.mutateAsync({
+          productId,
+          dayId,
+          mediaType: asset.type,
+          name: asset.name,
+          url: assetByteUrl(asset),
+          storageKey: asset.storageKey,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+          altText: asset.alt,
+          assetId: asset.id,
+          sortOrder: media.length + offset,
+          isCover: assignCover,
+        })
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : sectionMessages.libraryAddFailed)
     }
   }
 
@@ -238,6 +279,16 @@ export function ProductMediaSection({
       ) : null}
       <Button
         type="button"
+        variant="outline"
+        size={compact ? "sm" : "default"}
+        disabled={reorderMode}
+        onClick={() => setPickerOpen(true)}
+      >
+        <ImageIcon className="mr-2 size-4" aria-hidden="true" />
+        {sectionMessages.actions.chooseFromLibrary}
+      </Button>
+      <Button
+        type="button"
         size={compact ? "sm" : "default"}
         disabled={reorderMode}
         onClick={() => {
@@ -345,6 +396,13 @@ export function ProductMediaSection({
         media={visibleMedia}
         index={lightboxIndex}
         onClose={() => setLightboxIndex(null)}
+      />
+      <MediaPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        multiple
+        resolveAssetUrl={assetByteUrl}
+        onSelect={(assets) => void handleSelectFromLibrary(assets)}
       />
     </>
   )

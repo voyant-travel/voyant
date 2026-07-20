@@ -59,6 +59,7 @@ const mediaSchema = z.object({
   mimeType: z.string().nullable(),
   fileSize: z.number().nullable(),
   altText: z.string().nullable(),
+  assetId: z.string().nullable(),
   sortOrder: z.number(),
   isCover: z.boolean(),
   isBrochure: z.boolean(),
