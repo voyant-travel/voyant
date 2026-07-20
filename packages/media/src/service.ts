@@ -56,6 +56,31 @@ export interface CreateMediaAssetResult {
 /** All object keys minted by the library live under this servable prefix. */
 const MEDIA_STORAGE_KEY_PREFIX = "uploads/media/"
 
+/**
+ * Storage keys are content-addressed by checksum. Append the file extension so
+ * the byte-serving route (`@voyant-travel/storage`, which sends
+ * `X-Content-Type-Options: nosniff`) can infer the correct `Content-Type` from
+ * the key and browsers render the asset instead of downloading octet-stream.
+ */
+const MEDIA_EXTENSION_BY_MIME: Readonly<Record<string, string>> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/avif": "avif",
+  "image/svg+xml": "svg",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+  "application/pdf": "pdf",
+}
+
+function storageKeyExtension(mimeType: string | undefined): string {
+  const normalized = (mimeType ?? "").toLowerCase().split(";")[0]?.trim() ?? ""
+  const ext = MEDIA_EXTENSION_BY_MIME[normalized]
+  return ext ? `.${ext}` : ""
+}
+
 async function toBytes(body: StorageUploadBody): Promise<Uint8Array> {
   if (body instanceof Uint8Array) return body
   if (body instanceof ArrayBuffer) return new Uint8Array(body)
@@ -101,7 +126,7 @@ export async function createMediaAsset(
     return { asset: existing, deduped: true }
   }
 
-  const storageKey = `${MEDIA_STORAGE_KEY_PREFIX}${checksum}`
+  const storageKey = `${MEDIA_STORAGE_KEY_PREFIX}${checksum}${storageKeyExtension(input.mimeType)}`
   await storage.upload(bytes, {
     key: storageKey,
     ...(input.mimeType ? { contentType: input.mimeType } : {}),

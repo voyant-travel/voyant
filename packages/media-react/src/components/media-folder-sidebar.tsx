@@ -1,6 +1,14 @@
 "use client"
 
 import { Button } from "@voyant-travel/ui/components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@voyant-travel/ui/components/dialog"
 import { Input } from "@voyant-travel/ui/components/input"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Folder, FolderPlus, Library, Loader2, Trash2 } from "lucide-react"
@@ -38,53 +46,61 @@ export function MediaFolderSidebar({ selectedFolderId, onSelectFolder }: MediaFo
         <span className="text-xs font-medium text-muted-foreground uppercase">
           {folderMessages.title}
         </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={folderMessages.newFolder}
-          onClick={() => setCreating((open) => !open)}
+        <Dialog
+          open={creating}
+          onOpenChange={(open) => {
+            setCreating(open)
+            if (!open) setName("")
+          }}
         >
-          <FolderPlus className="size-4" aria-hidden="true" />
-        </Button>
-      </div>
-
-      {creating ? (
-        <div className="flex flex-col gap-2 px-2 pb-2">
-          <Input
-            value={name}
-            autoFocus
-            placeholder={folderMessages.newFolderPlaceholder}
-            aria-label={folderMessages.newFolderPlaceholder}
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void submit()
-            }}
+          <DialogTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={folderMessages.newFolder}
+              >
+                <FolderPlus className="size-4" aria-hidden="true" />
+              </Button>
+            }
           />
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              className="flex-1"
-              disabled={create.isPending || !name.trim()}
-              onClick={() => void submit()}
-            >
-              {folderMessages.create}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setCreating(false)
-                setName("")
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{folderMessages.newFolder}</DialogTitle>
+            </DialogHeader>
+            <Input
+              value={name}
+              autoFocus
+              placeholder={folderMessages.newFolderPlaceholder}
+              aria-label={folderMessages.newFolderPlaceholder}
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void submit()
               }}
-            >
-              {messages.common.cancel}
-            </Button>
-          </div>
-        </div>
-      ) : null}
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setCreating(false)
+                  setName("")
+                }}
+              >
+                {messages.common.cancel}
+              </Button>
+              <Button
+                type="button"
+                disabled={create.isPending || !name.trim()}
+                onClick={() => void submit()}
+              >
+                {folderMessages.create}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <button
         type="button"
