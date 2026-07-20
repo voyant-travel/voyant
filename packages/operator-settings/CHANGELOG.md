@@ -1,5 +1,17 @@
 # @voyant-travel/operator-settings
 
+## 0.14.0
+
+### Minor Changes
+
+- 225000a: Make the managed payment registry injectable via a runtime port (the framework-idiomatic seam). `@voyant-travel/payments` defines `paymentProviderRegistryRuntimePort`; `@voyant-travel/operator-settings` gains a graph-runtime-factory (`createOperatorSettingsVoyantRuntime`) that resolves the optional port and, when a deployment provides it, registers the resolver into the module container at bootstrap. The Settings → Payments routes resolve the registry from the container per request, else the default self-host registry. This supersedes the earlier request-context injection seam (which could not fire in the opaque managed runtime).
+
+### Patch Changes
+
+- Updated dependencies [225000a]
+  - @voyant-travel/payments@0.4.0
+  - @voyant-travel/finance@0.182.2
+
 ## 0.13.1
 
 ### Patch Changes

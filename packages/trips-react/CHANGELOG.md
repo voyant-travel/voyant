@@ -1,5 +1,12 @@
 # @voyant-travel/trips-react
 
+## 0.173.1
+
+### Patch Changes
+
+- @voyant-travel/finance@0.182.2
+- @voyant-travel/trips@0.173.1
+
 ## 0.173.0
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @voyant-travel/operator-standard
 
+## 0.9.14
+
+### Patch Changes
+
+- Updated dependencies [225000a]
+  - @voyant-travel/payments@0.4.0
+  - @voyant-travel/operator-settings@0.14.0
+  - @voyant-travel/finance@0.182.2
+  - @voyant-travel/trips@0.173.1
+  - @voyant-travel/inventory@0.14.17
+  - @voyant-travel/legal@0.182.2
+  - @voyant-travel/quotes@0.131.24
+  - @voyant-travel/finance-react@0.182.2
+  - @voyant-travel/legal-react@0.182.2
+  - @voyant-travel/trips-react@0.173.1
+
 ## 0.9.13
 
 ### Patch Changes
