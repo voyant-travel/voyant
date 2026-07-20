@@ -21,8 +21,7 @@
     "./i18n": "./src/i18n.ts",
     "./i18n/en": "./src/i18n-en.ts",
     "./i18n/ro": "./src/i18n-ro.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./admin": "./src/admin/index.tsx"
+    "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -128,11 +127,6 @@
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",
         "default": "./dist/components/*.js"
-      },
-      "./admin": {
-        "types": "./dist/admin/index.d.ts",
-        "import": "./dist/admin/index.js",
-        "default": "./dist/admin/index.js"
       }
     },
     "main": "./dist/index.js",

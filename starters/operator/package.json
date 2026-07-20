@@ -118,6 +118,7 @@
     "@voyant-travel/legal": "workspace:^",
     "@voyant-travel/mcp": "workspace:^",
     "@voyant-travel/mice": "workspace:^",
+    "@voyant-travel/media": "workspace:^",
     "@voyant-travel/notifications": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/realtime": "workspace:^",

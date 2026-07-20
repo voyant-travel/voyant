@@ -9,7 +9,10 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./validation": "./src/validation.ts",
-    "./routes": "./src/routes.ts"
+    "./routes": "./src/routes.ts",
+    "./graph-runtime": "./src/graph-runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/media-library.json"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -22,6 +25,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
@@ -40,6 +44,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -70,7 +75,18 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
-      }
+      },
+      "./graph-runtime": {
+        "types": "./dist/graph-runtime.d.ts",
+        "import": "./dist/graph-runtime.js",
+        "default": "./dist/graph-runtime.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/media-library.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -82,7 +98,8 @@
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
-    "kind": "library",
+    "kind": "module",
+    "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -93,6 +110,10 @@
         "managed-cloud",
         "self-hosted"
       ]
-    }
+    },
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   }
 }

@@ -10,6 +10,7 @@
     "packages/db",
     "packages/flights",
     "packages/identity",
+    "packages/media",
     "packages/operator-settings",
     "packages/trips",
     "packages/workflow-runs"
