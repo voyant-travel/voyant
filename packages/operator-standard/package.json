@@ -112,6 +112,7 @@
     "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/mice": "workspace:*",
     "@voyant-travel/mice-react": "workspace:*",
+    "@voyant-travel/media": "workspace:*",
     "@voyant-travel/navigation-preferences": "workspace:*",
     "@voyant-travel/navigation-preferences-react": "workspace:*",
     "@voyant-travel/notifications": "workspace:*",

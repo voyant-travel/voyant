@@ -10,5 +10,6 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx"
-  }
+  },
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }

@@ -1,0 +1,1448 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
+  "components": {
+    "schemas": {},
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/media-library/assets": {
+      "post": {
+        "summary": "Upload a media asset (content-deduplicated)",
+        "responses": {
+          "200": {
+            "description": "An existing asset with identical bytes (deduped)."
+          },
+          "201": {
+            "description": "The newly created media asset."
+          },
+          "400": {
+            "description": "The multipart request is invalid."
+          },
+          "503": {
+            "description": "Object storage is not configured."
+          }
+        },
+        "operationId": "postAdminMediaLibraryAssets",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["image", "video", "document"]
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "tag",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "folderId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "mimeType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated media assets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": ["image", "video", "document"]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "alt": {
+                            "type": ["string", "null"]
+                          },
+                          "storageKey": {
+                            "type": "string"
+                          },
+                          "mimeType": {
+                            "type": ["string", "null"]
+                          },
+                          "fileSize": {
+                            "type": ["number", "null"]
+                          },
+                          "checksum": {
+                            "type": "string"
+                          },
+                          "width": {
+                            "type": ["number", "null"]
+                          },
+                          "height": {
+                            "type": ["number", "null"]
+                          },
+                          "durationMs": {
+                            "type": ["number", "null"]
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "providerMeta": {},
+                          "createdBy": {
+                            "type": ["string", "null"]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "name",
+                          "alt",
+                          "storageKey",
+                          "mimeType",
+                          "fileSize",
+                          "checksum",
+                          "width",
+                          "height",
+                          "durationMs",
+                          "tags",
+                          "createdBy",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "limit", "offset"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminMediaLibraryAssets",
+        "summary": "GET /v1/admin/media-library/assets",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/assets/{assetId}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single media asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["image", "video", "document"]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "alt": {
+                          "type": ["string", "null"]
+                        },
+                        "storageKey": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "fileSize": {
+                          "type": ["number", "null"]
+                        },
+                        "checksum": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": ["number", "null"]
+                        },
+                        "height": {
+                          "type": ["number", "null"]
+                        },
+                        "durationMs": {
+                          "type": ["number", "null"]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "providerMeta": {},
+                        "createdBy": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "name",
+                        "alt",
+                        "storageKey",
+                        "mimeType",
+                        "fileSize",
+                        "checksum",
+                        "width",
+                        "height",
+                        "durationMs",
+                        "tags",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminMediaLibraryAssetsByAssetId",
+        "summary": "GET /v1/admin/media-library/assets/{assetId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "alt": {
+                    "type": ["string", "null"],
+                    "maxLength": 1024
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "maxItems": 64
+                  },
+                  "folderIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 64
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated media asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["image", "video", "document"]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "alt": {
+                          "type": ["string", "null"]
+                        },
+                        "storageKey": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "fileSize": {
+                          "type": ["number", "null"]
+                        },
+                        "checksum": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": ["number", "null"]
+                        },
+                        "height": {
+                          "type": ["number", "null"]
+                        },
+                        "durationMs": {
+                          "type": ["number", "null"]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "providerMeta": {},
+                        "createdBy": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "name",
+                        "alt",
+                        "storageKey",
+                        "mimeType",
+                        "fileSize",
+                        "checksum",
+                        "width",
+                        "height",
+                        "durationMs",
+                        "tags",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patchAdminMediaLibraryAssetsByAssetId",
+        "summary": "PATCH /v1/admin/media-library/assets/{assetId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deleted media asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["image", "video", "document"]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "alt": {
+                          "type": ["string", "null"]
+                        },
+                        "storageKey": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "fileSize": {
+                          "type": ["number", "null"]
+                        },
+                        "checksum": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": ["number", "null"]
+                        },
+                        "height": {
+                          "type": ["number", "null"]
+                        },
+                        "durationMs": {
+                          "type": ["number", "null"]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "providerMeta": {},
+                        "createdBy": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "name",
+                        "alt",
+                        "storageKey",
+                        "mimeType",
+                        "fileSize",
+                        "checksum",
+                        "width",
+                        "height",
+                        "durationMs",
+                        "tags",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The asset is in use and cannot be deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Object storage is not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteAdminMediaLibraryAssetsByAssetId",
+        "summary": "DELETE /v1/admin/media-library/assets/{assetId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/folders": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "parentId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated folders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "parentId": {
+                            "type": ["string", "null"]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "name", "parentId", "createdAt", "updatedAt"]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "limit", "offset"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminMediaLibraryFolders",
+        "summary": "GET /v1/admin/media-library/folders",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created folder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "name", "parentId", "createdAt", "updatedAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminMediaLibraryFolders",
+        "summary": "POST /v1/admin/media-library/folders",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/folders/{folderId}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "folderId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single folder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "name", "parentId", "createdAt", "updatedAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminMediaLibraryFoldersByFolderId",
+        "summary": "GET /v1/admin/media-library/folders/{folderId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "folderId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "parentId": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated folder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "name", "parentId", "createdAt", "updatedAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patchAdminMediaLibraryFoldersByFolderId",
+        "summary": "PATCH /v1/admin/media-library/folders/{folderId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "folderId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deleted folder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "parentId": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "name", "parentId", "createdAt", "updatedAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteAdminMediaLibraryFoldersByFolderId",
+        "summary": "DELETE /v1/admin/media-library/folders/{folderId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/folders/{folderId}/members": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "folderId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["assetId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The folder membership",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "assetId": {
+                          "type": "string"
+                        },
+                        "folderId": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "assetId", "folderId", "createdAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminMediaLibraryFoldersByFolderIdMembers",
+        "summary": "POST /v1/admin/media-library/folders/{folderId}/members",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/folders/{folderId}/members/{assetId}": {
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "folderId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membership removal result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "removed": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["removed"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteAdminMediaLibraryFoldersByFolderIdMembersByAssetId",
+        "summary": "DELETE /v1/admin/media-library/folders/{folderId}/members/{assetId}",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    },
+    "/v1/admin/media-library/usage": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "assetId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required": false,
+            "name": "entityType",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated asset usage records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "assetId": {
+                            "type": "string"
+                          },
+                          "entityType": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "assetId", "entityType", "entityId", "createdAt"]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "limit", "offset"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminMediaLibraryUsage",
+        "summary": "GET /v1/admin/media-library/usage",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                },
+                "required": ["assetId", "entityType", "entityId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The recorded usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "assetId": {
+                          "type": "string"
+                        },
+                        "entityType": {
+                          "type": "string"
+                        },
+                        "entityId": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "assetId", "entityType", "entityId", "createdAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminMediaLibraryUsage",
+        "summary": "POST /v1/admin/media-library/usage",
+        "tags": ["media-library"],
+        "x-voyant-module": "media-library",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/media#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/media",
+        "x-voyant-package-name": "@voyant-travel/media"
+      }
+    }
+  },
+  "webhooks": {}
+}

@@ -198,6 +198,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/public-document-delivery" },
     { resolve: "@voyant-travel/notifications" },
     { resolve: "@voyant-travel/storage" },
+    { resolve: "@voyant-travel/media" },
     { resolve: "@voyant-travel/storefront" },
     { resolve: "@voyant-travel/storefront/customer-portal" },
     { resolve: "@voyant-travel/storefront/verification" },

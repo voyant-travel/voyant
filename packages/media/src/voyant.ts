@@ -1,0 +1,83 @@
+/**
+ * `@voyant-travel/media` deployment manifest — the import-cheap declaration that
+ * admits the media-library admin surface into a graph. Routes are lazily loaded
+ * (absolute paths under `/v1/admin/media-library/*`) and the `"media"`
+ * object-storage provider is injected via the storage runtime port. This module
+ * owns the media-library catalogue (assets, folders, membership, usage); the
+ * raw byte upload/serve surface stays owned by `@voyant-travel/storage`.
+ */
+
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
+
+const schemaSource = "@voyant-travel/media/schema"
+
+/** Import-cheap deployment declaration owned by the media package. */
+export const mediaVoyantModule = defineModule({
+  id: "@voyant-travel/media",
+  packageName: "@voyant-travel/media",
+  localId: "media",
+  runtimePorts: [requirePort(storageMediaRuntimePort)],
+  api: [
+    {
+      id: "@voyant-travel/media#api.admin",
+      surface: "admin",
+      mount: "media-library",
+      resource: "media-library",
+      openapi: { document: "media-library" },
+      runtime: {
+        entry: "@voyant-travel/media/graph-runtime",
+        export: "createMediaVoyantRuntime",
+      },
+    },
+  ],
+  schema: [
+    {
+      id: "@voyant-travel/media#schema",
+      source: schemaSource,
+    },
+  ],
+  migrations: [
+    {
+      id: "@voyant-travel/media#migrations",
+      source: "./migrations",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/media#access.media-library",
+        resource: "media-library",
+        label: "Media library",
+        description: "Read and manage catalogued media assets, folders, and usage.",
+        actions: [
+          {
+            action: "read",
+            label: "View media library",
+            description: "View catalogued media assets, folders, and usage records.",
+          },
+          {
+            action: "write",
+            label: "Manage media library",
+            description: "Upload, update, and organise media assets and folders.",
+            sensitive: true,
+          },
+          {
+            action: "delete",
+            label: "Delete media assets",
+            description: "Delete catalogued media assets and folders.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
+  lifecycle: {
+    uninstall: { default: "retain-data", purge: "not-supported" },
+  },
+  meta: {
+    ownership: "package",
+  },
+})
+
+export default mediaVoyantModule
