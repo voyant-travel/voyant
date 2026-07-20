@@ -1,5 +1,6 @@
 import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/ports"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import { paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-schemas.js"
 import {
   storefrontBookingIntentsRuntimePort,
@@ -469,7 +470,12 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
     entry: "@voyant-travel/storefront/payment-link",
     export: "createPaymentLinkVoyantRuntime",
   },
-  runtimePorts: [requirePort(storefrontPaymentLinkRuntimePort)],
+  runtimePorts: [
+    requirePort(storefrontPaymentLinkRuntimePort),
+    // Optional: when a payment adapter is wired (self-host in-process OR the
+    // managed remote adapter), the IPN webhook verifies + applies callbacks.
+    requirePort(paymentAdapterRuntimePort, { optional: true }),
+  ],
   api: [
     {
       id: "@voyant-travel/storefront#payment-link.api",
