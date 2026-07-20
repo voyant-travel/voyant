@@ -1,5 +1,24 @@
 # @voyant-travel/inventory-react
 
+## 0.69.0
+
+### Minor Changes
+
+- 0b7f213: Wire the media library into product and itinerary-day media management. The
+  "Upload" action on the product detail gallery and the itinerary-day media tray
+  now opens the media library picker — a dialog where you can select existing
+  assets or upload new ones — instead of a bare file input. Selected assets are
+  linked to the product/day (`assetId`) and served through the shared media
+  byte route so uploads surface in the library and vice versa.
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.185.0
+- @voyant-travel/finance-react@0.187.0
+- @voyant-travel/storefront-react@0.189.0
+- @voyant-travel/finance@0.187.0
+- @voyant-travel/inventory@0.14.24
+
 ## 0.68.0
 
 ### Minor Changes
