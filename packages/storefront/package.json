@@ -85,6 +85,7 @@
   "peerDependencies": {
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/legal": "workspace:^",
+    "@voyant-travel/payments": "workspace:^",
     "@voyant-travel/relationships": "workspace:^"
   },
   "peerDependenciesMeta": {
