@@ -215,7 +215,10 @@ describe("storefront deployment manifest", () => {
         entry: "@voyant-travel/storefront/payment-link",
         export: "createPaymentLinkVoyantRuntime",
       },
-      runtimePorts: [{ id: "storefront.payment-link.runtime" }],
+      runtimePorts: [
+        { id: "storefront.payment-link.runtime" },
+        { id: "payments.adapter.runtime", optional: true },
+      ],
       api: [
         {
           id: "@voyant-travel/storefront#payment-link.api",
