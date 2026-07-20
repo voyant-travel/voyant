@@ -72,6 +72,31 @@ export const mediaVoyantModule = defineModule({
       },
     ],
   },
+  admin: {
+    compositionOrder: 120,
+    runtime: {
+      entry: "@voyant-travel/media-react/admin",
+      export: "createSelectedMediaAdminExtension",
+    },
+    routes: [
+      {
+        id: "@voyant-travel/media#admin.route.media-library-index",
+        path: "/media-library",
+        requiredScopes: ["media-library:read"],
+        runtime: {
+          entry: "@voyant-travel/media-react/admin",
+          export: "createSelectedMediaAdminExtension",
+        },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/media#admin.nav.media-library",
+        routeId: "@voyant-travel/media#admin.route.media-library-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.mediaLibrary" },
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
