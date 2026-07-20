@@ -557,14 +557,43 @@ export function registerProductBookingHandler(
             .where(and(eq(optionUnits.optionId, args.optionId), eq(optionUnits.isHidden, false))),
         ])
         const unitsById = new Map(unitRows.map((u) => [u.id, u]))
+        // Resolve each per-category price row's pricing category to its band
+        // code (`categoryType`, e.g. "adult") — the code pax bands and the
+        // pricing engine key on. This is how the Rooms & prices editor stores
+        // per-traveler-type room prices ("Double / Adult"); without this map
+        // those rows are dropped and the product can't be priced (voyant#3586).
+        const categoryIds = [
+          ...new Set(
+            unitPriceRows.flatMap((up) => (up.pricingCategoryId ? [up.pricingCategoryId] : [])),
+          ),
+        ]
+        const bandByCategoryId = new Map<string, string>()
+        if (categoryIds.length > 0) {
+          const categoryRows = await db
+            .select({ id: pricingCategories.id, categoryType: pricingCategories.categoryType })
+            .from(pricingCategories)
+            .where(inArray(pricingCategories.id, categoryIds))
+          for (const cat of categoryRows) bandByCategoryId.set(cat.id, cat.categoryType)
+        }
+        const travelerBands = new Set(["adult", "child", "infant", "senior"])
         const unitPrices = unitPriceRows.flatMap((up) => {
           const unit = unitsById.get(up.unitId)
           if (!unit) return []
-          // Per-category rows (`pricingCategoryId` set) belong to the
-          // unit×category matrix used for accommodation products. The
-          // booking engine prices per-band today, so we only consume
-          // rows where the unit alone determines the price.
-          if (up.pricingCategoryId !== null) return []
+          if (up.pricingCategoryId !== null) {
+            // Per-traveler-category room price ("Double / Adult"): map to its
+            // band so the engine charges `pax[band] × price` per person. Rows
+            // tied to a non-traveler category carry no band and are skipped.
+            const band = bandByCategoryId.get(up.pricingCategoryId)
+            if (!band || !travelerBands.has(band)) return []
+            return [
+              {
+                unitId: up.unitId,
+                unitType: unit.unitType,
+                travelerCategory: band as "adult" | "child" | "infant" | "senior",
+                sellAmountCents: up.sellAmountCents,
+              },
+            ]
+          }
           return [
             {
               unitId: up.unitId,
