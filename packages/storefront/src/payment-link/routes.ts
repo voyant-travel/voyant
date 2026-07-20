@@ -34,10 +34,7 @@ import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
-import {
-  type PaymentCallbackRequest,
-  paymentAdapterRuntimePort,
-} from "@voyant-travel/payments"
+import { type PaymentCallbackRequest, paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"

@@ -13,10 +13,7 @@
  * adapter are the only payment code in the bundle, for any of N processors.
  */
 
-import type {
-  PaymentCallbackRequest,
-  PaymentCallbackVerificationResult,
-} from "./index.js"
+import type { PaymentCallbackRequest, PaymentCallbackVerificationResult } from "./index.js"
 import type { RemotePaymentCall, RemotePaymentTransport } from "./remote-adapter.js"
 
 export interface ControlPlaneRemotePaymentTransportConfig {
@@ -64,17 +61,14 @@ export function createControlPlaneRemotePaymentTransport(
       body: JSON.stringify(body),
     })
     if (!response.ok) {
-      throw new Error(
-        `Payments control plane ${path} failed (${response.status}).`,
-      )
+      throw new Error(`Payments control plane ${path} failed (${response.status}).`)
     }
     return response.json()
   }
 
   /** Unwrap a `{ data: { ok, result } | { ok, error } }` control-plane body. */
   function unwrapOutcome<T>(body: unknown): T {
-    const data = (body as { data?: { ok: boolean; result?: T; error?: string } })
-      .data
+    const data = (body as { data?: { ok: boolean; result?: T; error?: string } }).data
     if (!data) throw new Error("Malformed control-plane response.")
     if (!data.ok) throw new Error(data.error ?? "Control-plane operation failed.")
     if (data.result === undefined) {

@@ -8,6 +8,7 @@ import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-sch
 const paymentAdapterRuntimePortReference = {
   id: "payments.adapter.runtime",
 } as const
+
 import {
   storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
