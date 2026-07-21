@@ -333,5 +333,5 @@ listed here:
 - [`@voyant-travel/core@0.122.0`](../../packages/core/CHANGELOG.md)
 - [`@voyant-travel/runtime@0.8.0`](../../packages/runtime/CHANGELOG.md)
 - [`@voyant-travel/operator-standard@0.3.0`](../../packages/operator-standard/CHANGELOG.md)
-- [`@voyant-travel/workflows-orchestrator@0.119.0`](../../packages/workflows-orchestrator/CHANGELOG.md)
-- [`@voyant-travel/workflow-runs@0.119.0`](../../packages/workflow-runs/CHANGELOG.md)
+- `@voyant-travel/workflows-orchestrator@0.119.0` (retired)
+- `@voyant-travel/workflow-runs@0.119.0` (retired)
