@@ -51,6 +51,8 @@ search services, or catalog runtime services.
   selectable first-party provider.
 - **`./indexer/postgres-provider`** — graph provider factory selected by
   `deployment.providers.search: "postgres"`.
+- **`./indexer/relevance`** — shared travel relevance corpus and comparison
+  harness for measuring Postgres against a selected baseline adapter.
 - **`./indexer/typesense-provider`** — graph provider factory selected by
   `deployment.providers.search: "typesense"`.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.

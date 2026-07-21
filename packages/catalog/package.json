@@ -20,6 +20,7 @@
     "./indexer/typesense-provider": "./src/indexer/typesense-provider.ts",
     "./indexer/postgres": "./src/indexer/postgres.ts",
     "./indexer/postgres-provider": "./src/indexer/postgres-provider.ts",
+    "./indexer/relevance": "./src/indexer/relevance.ts",
     "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
     "./search/semantic": "./src/search/semantic.ts",

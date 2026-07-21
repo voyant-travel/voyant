@@ -69,9 +69,17 @@ export interface PostgresIndexerDiagnostics {
   vectorStrategy: PostgresVectorStrategy
 }
 
+export interface PostgresProjectionState {
+  documentCount: number
+  generation: number
+  updatedAt: Date | string
+}
+
 export interface PostgresIndexerAdapter extends IndexerAdapter {
   /** Deployment-private cache invalidation token for one projection slice. */
   projectionGeneration(slice: IndexerSlice): Promise<number>
+  /** Deployment-private projection state for maintenance and cache diagnostics. */
+  projectionState(slice: IndexerSlice): Promise<PostgresProjectionState>
   /** Recorded capability state; no request-time extension or management probes. */
   diagnostics(): PostgresIndexerDiagnostics
 }
@@ -304,6 +312,30 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     lakebaseVectorIndexReady = true
   }
 
+  const readProjectionState = async (slice: IndexerSlice): Promise<PostgresProjectionState> => {
+    await ensureStorage()
+    await ensureSlice(slice)
+    const [row] = readRows(
+      await db.execute(sql`
+        SELECT slices.generation, slices.updated_at, count(documents.id)::integer AS document_count
+        FROM voyant_catalog_search_slices AS slices
+        LEFT JOIN voyant_catalog_search_documents AS documents
+          ON documents.vertical = slices.vertical
+          AND documents.locale = slices.locale
+          AND documents.audience = slices.audience
+          AND documents.market = slices.market
+          AND documents.channel = slices.channel
+        WHERE ${facetSlicePredicate(slice)}
+        GROUP BY slices.generation, slices.updated_at
+      `),
+    ) as Array<{ document_count: number | string; generation: number | string; updated_at: Date | string }>
+    return {
+      documentCount: Number(row?.document_count ?? 0),
+      generation: Number(row?.generation ?? 1),
+      updatedAt: row?.updated_at ?? new Date(0),
+    }
+  }
+
   return {
     capabilities: {
       supportsKeywordSearch: true,
@@ -317,16 +349,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     },
 
     async projectionGeneration(slice) {
-      await ensureStorage()
-      await ensureSlice(slice)
-      const [row] = readRows(
-        await db.execute(sql`
-          SELECT generation
-          FROM voyant_catalog_search_slices
-          WHERE ${facetSlicePredicate(slice)}
-        `),
-      ) as Array<{ generation: number | string }>
-      return Number(row?.generation ?? 1)
+      return (await readProjectionState(slice)).generation
+    },
+
+    async projectionState(slice) {
+      return readProjectionState(slice)
     },
 
     diagnostics() {
@@ -489,7 +516,6 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
             )}
           )
       `)
-      await bumpGeneration(slice)
       await db.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
@@ -500,6 +526,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
             )}
           )
       `)
+      await bumpGeneration(slice)
     },
 
     async search(slice, request) {

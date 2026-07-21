@@ -143,6 +143,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     await adapter.ensureCollection(lifecycleSlice, registry)
     await adapter.upsert(lifecycleSlice, [{ id: "old", fields: { title: "Old projection" } }])
     const beforeRebuild = await adapter.projectionGeneration(lifecycleSlice)
+    expect((await adapter.projectionState(lifecycleSlice)).documentCount).toBe(1)
 
     await adapter.bulkReindex(
       lifecycleSlice,
@@ -155,6 +156,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
         expect.objectContaining({ id: "new" }),
       ])
       expect(afterRebuild).toBeGreaterThan(beforeRebuild)
+      expect((await adapter.projectionState(lifecycleSlice)).documentCount).toBe(1)
 
       await expect(adapter.bulkReindex(lifecycleSlice, failingStream())).rejects.toThrow("stream failed")
       expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
