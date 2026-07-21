@@ -77,6 +77,11 @@ export const storageVoyantModule = defineModule({
       key: "MEDIA_PUBLIC_BASE_URL",
       required: false,
     },
+    {
+      id: "@voyant-travel/storage#config.gateway-endpoint",
+      key: "STORAGE_GATEWAY_ENDPOINT",
+      required: true,
+    },
   ],
   secrets: [
     {
@@ -95,6 +100,12 @@ export const storageVoyantModule = defineModule({
       id: "@voyant-travel/storage#secret.s3-session-token",
       key: "S3_SESSION_TOKEN",
       required: false,
+      rotation: "supported",
+    },
+    {
+      id: "@voyant-travel/storage#secret.gateway-token",
+      key: "STORAGE_GATEWAY_TOKEN",
+      required: true,
       rotation: "supported",
     },
   ],
@@ -138,6 +149,19 @@ export const storageVoyantModule = defineModule({
       runtime: {
         entry: "@voyant-travel/storage/providers/graph",
         export: "createS3CompatibleGraphStorageProvider",
+      },
+    },
+    {
+      id: "@voyant-travel/storage#provider.gateway",
+      port: storageObjectRuntimePort.id,
+      selection: { role: "storage", value: "gateway" },
+      uses: {
+        config: ["@voyant-travel/storage#config.gateway-endpoint"],
+        secrets: ["@voyant-travel/storage#secret.gateway-token"],
+      },
+      runtime: {
+        entry: "@voyant-travel/storage/providers/graph",
+        export: "createGatewayGraphStorageProvider",
       },
     },
   ],

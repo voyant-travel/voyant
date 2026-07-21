@@ -84,6 +84,21 @@ function envForProvider(
       secret("S3_SESSION_TOKEN", "Optional temporary S3 session token.", false),
     ]
   }
+  if (role === "storage" && provider === "gateway") {
+    return [
+      variable(
+        "STORAGE_GATEWAY_ENDPOINT",
+        "Base URL of the managed asset-storage gateway.",
+        true,
+        "http-url",
+      ),
+      secret(
+        "STORAGE_GATEWAY_TOKEN",
+        "Workspace-scoped bearer token for the managed asset-storage gateway.",
+        true,
+      ),
+    ]
+  }
   if (
     (role === "cache" || role === "sharedState" || role === "rateLimit") &&
     provider === "redis"
@@ -328,7 +343,9 @@ function resourceKeyFor(role: VoyantDeploymentProviderRole, provider: string): s
   ) {
     return "postgres-shared-state"
   }
-  if (role === "storage" && provider === "s3-compatible") return "object-storage"
+  if (role === "storage" && (provider === "s3-compatible" || provider === "gateway")) {
+    return "object-storage"
+  }
   return `${role}:${provider}`
 }
 
