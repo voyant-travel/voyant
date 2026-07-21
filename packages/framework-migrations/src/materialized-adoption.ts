@@ -162,6 +162,7 @@ function normalizeOutsideStringLiterals(
   let result = ""
   let outside = ""
   let inLiteral = false
+  let backslashEscapes = false
   const flushOutside = () => {
     if (!outside) return
     result += normalizeOutside(outside)
@@ -169,22 +170,31 @@ function normalizeOutsideStringLiterals(
   }
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index] as string
-    if (character === "'") {
-      if (!inLiteral) flushOutside()
+    if (inLiteral) {
+      if (backslashEscapes && character === "\\" && value[index + 1] !== undefined) {
+        result += character + value[index + 1]
+        index += 1
+        continue
+      }
       result += character
-      if (inLiteral && value[index + 1] === "'") {
+      if (character !== "'") continue
+      if (value[index + 1] === "'") {
         result += "'"
         index += 1
       } else {
-        inLiteral = !inLiteral
+        inLiteral = false
+        backslashEscapes = false
       }
       continue
     }
-    if (inLiteral) {
+    if (character === "'") {
+      backslashEscapes = /(?:^|[^a-z0-9_$])e$/i.test(outside)
+      flushOutside()
       result += character
-    } else {
-      outside += character
+      inLiteral = true
+      continue
     }
+    outside += character
   }
   flushOutside()
   return result

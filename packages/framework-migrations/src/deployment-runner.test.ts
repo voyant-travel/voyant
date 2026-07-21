@@ -830,6 +830,74 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     expect(ledgerRows).toEqual([])
   })
 
+  it("rejects E-string defaults that differ after a backslash-escaped quote", async () => {
+    const source = src("escaped-literal-defaults", [
+      `CREATE TABLE "escaped_literal_defaults" (
+  "id" text PRIMARY KEY NOT NULL,
+  "label" text DEFAULT E'a\\'B, C'::text NOT NULL
+);`,
+    ])
+    const { client, ledgerRows } = adoptionClient({
+      tables: ["escaped_literal_defaults"],
+      columns: [
+        {
+          table_name: "escaped_literal_defaults",
+          column_name: "id",
+          ordinal_position: "1",
+          data_type: "text",
+          not_null: true,
+          column_default: null,
+          identity_kind: "",
+          generated_kind: "",
+        },
+        {
+          table_name: "escaped_literal_defaults",
+          column_name: "label",
+          ordinal_position: "2",
+          data_type: "text",
+          not_null: true,
+          column_default: "E'a\\'b,c'::text",
+          identity_kind: "",
+          generated_kind: "",
+        },
+      ],
+      constraints: [
+        {
+          table_name: "escaped_literal_defaults",
+          constraint_name: "escaped_literal_defaults_pkey",
+          constraint_type: "p",
+          column_names: ["id"],
+          referenced_schema: null,
+          referenced_table: null,
+          referenced_column_names: [],
+          update_action: " ",
+          delete_action: " ",
+          match_type: " ",
+          is_deferrable: false,
+          initially_deferred: false,
+        },
+      ],
+      indexes: [],
+    })
+
+    await expect(
+      runDeploymentMigrations(
+        client,
+        [source],
+        {},
+        {
+          materializedMigrationAdoptions: [
+            {
+              source: "escaped-literal-defaults",
+              tag: "0000_escaped-literal-defaults",
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("does not exactly match")
+    expect(ledgerRows).toEqual([])
+  })
+
   it("is idempotent and serializes concurrent adopters under the session lock", async () => {
     const { client, events, ledgerRows } = exactClient({ serializeLocks: true })
     const [first, second] = await Promise.all([
