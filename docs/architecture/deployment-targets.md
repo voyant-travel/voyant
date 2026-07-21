@@ -29,9 +29,9 @@ workload class well. On Node none of it is necessary.
 
 - **Entry:** `starters/operator/src/server.ts` is a generic bootstrap for
   `@voyant-travel/runtime`. The package loads the admitted generated
-  graph, links, access catalog, workflow graph, schedules, and provider plan;
+  graph, links, access catalog, jobs, schedules, and provider plan;
   owns API/auth dispatch, admin SSR/static hosting, `waitUntil`, scheduled
-  workflow execution, origin trust, and graceful shutdown; and serves the
+  job execution, origin trust, and graceful shutdown; and serves the
   client build from `dist/client`. Product composition and package-specific
   services must not return to the starter entry.
 - **Managed Cloud entry:** `@voyant-travel/framework/node-runtime` boots the
@@ -124,6 +124,100 @@ They do not consume or statically compose the unified application deployment
 graph. A `cloudflare-worker` target must not be offered by its CLI target
 adapters.
 
+### Package-owned jobs in a small Worker application
+
+A separately admitted, deliberately small Worker graph may use the generated
+product-job projection without reintroducing a composed operator Worker. The
+ordinary project resolver emits `GENERATED_PROJECT_PRODUCT_JOBS` from the same
+graph into `.voyant/runtime/project-runtime.generated.ts`. Pass the result of
+`createGeneratedProjectRuntime()` to
+`createVoyantWorkerJobHostFromProjectRuntime(...)`, together with the
+deployment-composed runtime ports. This binds immutable `provisioning.jobs`
+without a second registry; application authors do not create
+`src/jobs`, `src/workflows`, or an inline job registry.
+
+The framework package advertises `cloudflare-worker` compatibility solely for
+these target-neutral generation APIs and the `worker-job-host` export. The
+project resolver still rejects a unified composed operator Worker target; this
+does not reopen that deployment shape.
+
+The host requires an explicit `scheduleAuthority`. Self-hosted Wrangler
+deployments select `cloudflare-cron`; managed workloads select `managed-http`.
+This prevents both systems from firing the same cadence during rollout.
+
+The Worker entry owns no product IDs. Its integration shape is:
+
+```ts
+import { createGeneratedProjectRuntime } from "../.voyant/runtime/project-runtime.generated"
+import {
+  createVoyantWorkerJobHealthReporter,
+  createVoyantWorkerJobHostFromProjectRuntime,
+  createVoyantWorkerRuntimeHostPrimitives,
+} from "@voyant-travel/framework/worker-job-host"
+
+const projectRuntime = createGeneratedProjectRuntime()
+const hosts = new WeakMap<object, ReturnType<typeof createVoyantWorkerJobHostFromProjectRuntime>>()
+
+function productJobs(env: CloudflareBindings) {
+  const existing = hosts.get(env)
+  if (existing) return existing
+  const primitives = createVoyantWorkerRuntimeHostPrimitives({
+    bindings: env,
+    resolveDatabase: (bindings) => resolveWorkerDatabase(bindings),
+    deliverEvent: (event, bindings) => deliverOutboxEvent(event, bindings),
+  })
+  const host = createVoyantWorkerJobHostFromProjectRuntime(projectRuntime, {
+    primitives,
+    scheduleAuthority: "cloudflare-cron",
+    originTrustSecret: env.ORIGIN_TRUST_SECRET,
+    reportExecution: createVoyantWorkerJobHealthReporter(env),
+  })
+  hosts.set(env, host)
+  return host
+}
+
+export default {
+  async fetch(request: Request, env: CloudflareBindings, ctx: ExecutionContext) {
+    return (await productJobs(env).fetch(request, ctx)) ?? applicationFetch(request, env, ctx)
+  },
+  scheduled(event: ScheduledController, env: CloudflareBindings, ctx: ExecutionContext) {
+    return productJobs(env).scheduled(event, ctx)
+  },
+}
+```
+
+Runtime contributors capture the domain-neutral primitives, while each host is
+created for one Worker bindings object. This lets DB-, storage-, and event-backed
+package jobs resolve the deployment's actual bindings without globals or a
+project-local runtime-port registry.
+
+The application routes `fetch` through the generated host before its ordinary
+handler and delegates its `scheduled` event to the same host. Both the trusted
+`GET /__voyant/jobs` inventory and bodyless `POST /__voyant/jobs/:id`
+invocation route are fixed. Accepted work is attached to `ctx.waitUntil`.
+There is no generic run store, payload, step graph, or durable scheduler state;
+package handlers retain durable claims and domain checkpoints as authority.
+
+Wrangler configuration passes generated `productJobs` to
+`cloudflareCronTriggersForProductJobs(...)`. Exact UTC cron declarations and
+`every` cadences that map without drift to minute/hour/day Cron Triggers are
+included. Sub-minute, non-divisor, and non-UTC schedules are omitted and remain
+owned by the managed HTTP scheduler. Hosted deployments reject sub-minute
+cadences rather than claiming a precision neither scheduler provides. A
+self-hosted Worker deployment must either configure the generated triggers or
+fail admission when a selected schedule is marked `managed-http`; silently
+dropping it is not supported.
+
+```ts
+import { GENERATED_PROJECT_PRODUCT_JOBS } from "./.voyant/runtime/project-runtime.generated"
+import { cloudflareCronTriggersForProductJobs } from "@voyant-travel/framework/worker-job-host"
+
+export default {
+  // ...the remaining Wrangler configuration
+  triggers: { crons: cloudflareCronTriggersForProductJobs(GENERATED_PROJECT_PRODUCT_JOBS) },
+}
+```
+
 **Known limitation for composed operator APIs on Workers:** no isolate residency
 → a per-request composition toll (multi-second graph evaluation). This is a
 structural property of the runtime for this workload, not a bug for app authors
@@ -135,7 +229,7 @@ accommodation for composed apps.
 Even on Node the app entry (`src/entry.ts`) keeps SSR behind a lazy import: the
 `@tanstack/react-start/server` graph (React + `react-dom/server`, ~2.2 MB) is
 imported on first render, not at module top level, which keeps boot fast. Heavy
-API and workflow graphs stay lazy for the same reason.
+API graphs stay lazy for the same reason.
 
 Prefer:
 
@@ -148,7 +242,6 @@ Avoid:
 
 - `import { app as apiApp } from "./api/app"`;
 - `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`;
-- `import "./workflows.js"`.
 
 The mechanical checks live in `scripts/check-node-entrypoint.mjs`,
 `scripts/check-generic-node-bootstrap-authority.mjs`, and

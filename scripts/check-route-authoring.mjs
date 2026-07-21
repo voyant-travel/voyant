@@ -2,7 +2,7 @@
  * Enforces the route parsing rules from docs/architecture/api-route-authoring.md.
  *
  * New Hono routes should parse request bodies through parseJsonBody(...) and query
- * strings through parseQuery(...). Existing workflow-runs debt is baselined here
+ * strings through parseQuery(...).
  * so the check prevents new drift without making this process branch own that
  * cleanup.
  */
@@ -17,8 +17,6 @@ const PACKAGES_DIR = join(ROOT, "packages")
 const SKIP_DIRS = new Set(["node_modules", "dist", ".turbo", ".next", "coverage"])
 
 const ALLOWED_EXISTING = new Set([
-  "packages/workflow-runs/src/routes.ts|raw-query|const params = Object.fromEntries(new URL(c.req.url).searchParams)",
-  "packages/workflow-runs/src/routes.ts|raw-json|body = rerunBodySchema.parse(await c.req.json().catch(() => ({})))",
   // @voyant-travel/storage cannot import parseJsonBody from @voyant-travel/hono
   // (hono imports StorageProvider from storage — that would cycle), so the media
   // upload route inlines an equivalent json + zod safeParse that returns 400.

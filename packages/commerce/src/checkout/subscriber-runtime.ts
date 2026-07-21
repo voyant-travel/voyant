@@ -1,14 +1,12 @@
 import type { BootstrapContext, EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
   type AcceptanceSignatureLegalPort,
   persistAcceptanceSignature,
 } from "./acceptance-signature.js"
-import { type CatalogCheckoutContractPdfGenerator, dispatchCheckoutFinalize } from "./finalize.js"
-import { registerCheckoutFinalizeWorkflowRunner } from "./runner-runtime.js"
+import { type CatalogCheckoutContractPdfGenerator, finalizeCheckout } from "./finalize.js"
 import {
   type CatalogCheckoutDatabaseRuntime,
   catalogCheckoutContractPdfRuntimePort,
@@ -49,7 +47,8 @@ export interface AcceptanceSignatureSubscriberRuntimeOptions<TBindings = unknown
 export interface CheckoutFinalizeSubscriberRuntimeOptions<TBindings = unknown>
   extends CatalogCheckoutRuntimeDatabase<TBindings> {
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
-  dispatchFinalize?: typeof dispatchCheckoutFinalize
+  finalize?: typeof finalizeCheckout
+  logger?: Pick<Console, "error">
 }
 
 interface ContractDocumentGeneratedPayload {
@@ -58,7 +57,7 @@ interface ContractDocumentGeneratedPayload {
 
 interface PaymentCompletedPayload {
   bookingId: string | null
-  paymentSessionId?: string
+  paymentSessionId: string
   paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
 }
 
@@ -83,6 +82,7 @@ export function createAcceptanceSignatureSubscriberRuntime<TBindings = unknown>(
             )
           } catch (error) {
             logger.error("[catalog-checkout] persistAcceptanceSignature failed", error)
+            throw error
           }
         },
       )
@@ -94,7 +94,8 @@ export function createAcceptanceSignatureSubscriberRuntime<TBindings = unknown>(
 export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
   options: CheckoutFinalizeSubscriberRuntimeOptions<TBindings>,
 ): SubscriberRuntimeDescriptor {
-  const dispatchFinalize = options.dispatchFinalize ?? dispatchCheckoutFinalize
+  const finalize = options.finalize ?? finalizeCheckout
+  const logger = options.logger ?? console
 
   return {
     id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
@@ -110,7 +111,7 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
 
           try {
             await options.withDb(runtimeBindings, (db) =>
-              dispatchFinalize({
+              finalize({
                 db,
                 eventBus: nestedEventBus,
                 input: {
@@ -118,18 +119,15 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
                   paymentSessionId: data.paymentSessionId,
                   paymentIntent: data.paymentIntent,
                 },
-                trigger: "payment.completed",
-                correlationId: data.paymentSessionId ?? null,
-                tags: [
-                  `bookingId:${bookingId}`,
-                  ...(data.paymentSessionId ? [`paymentSessionId:${data.paymentSessionId}`] : []),
-                  ...(data.paymentIntent ? [`paymentIntent:${data.paymentIntent}`] : []),
-                ],
                 generateContractPdf: options.generateContractPdf,
               }),
             )
-          } catch {
-            // The dispatcher records and logs workflow failures; delivery stays successful.
+          } catch (error) {
+            logger.error(
+              `[catalog-checkout] checkout finalization failed for booking ${bookingId}`,
+              error,
+            )
+            throw error
           }
         },
         { inline: true },
@@ -147,32 +145,23 @@ export const createAcceptanceSignatureSubscriberGraphRuntime = defineGraphRuntim
     }),
 )
 
-/** Selected-graph factory for inline payment finalization and dashboard runner registration. */
+/** Selected-graph factory for inline payment finalization. */
 export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) => {
-    const [database, contractPdf, registry] = await Promise.all([
+    const [database, contractPdf] = await Promise.all([
       getPort(catalogCheckoutDatabaseRuntimePort),
       getPort(catalogCheckoutContractPdfRuntimePort),
-      getPort(workflowRunnerRegistryRuntimePort),
     ])
     return {
       id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
       eventType: "payment.completed",
       register: async (context: BootstrapContext) => {
-        const generateContractPdf: CatalogCheckoutContractPdfGenerator = (input) =>
-          contractPdf.generate({ ...input, bindings: context.bindings })
         const descriptor = createCheckoutFinalizeSubscriberRuntime({
           ...database,
-          generateContractPdf,
+          generateContractPdf: (input) =>
+            contractPdf.generate({ ...input, bindings: context.bindings }),
         })
         await descriptor.register(context)
-        registerCheckoutFinalizeWorkflowRunner({
-          registry,
-          bindings: context.bindings,
-          eventBus: context.eventBus,
-          ...database,
-          generateContractPdf,
-        })
       },
     }
   },

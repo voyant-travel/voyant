@@ -3,6 +3,7 @@
 import type { VoyantGraphCustomFieldTarget } from "@voyant-travel/core/project"
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
+import { invokeVoyantGraphJob } from "./runtime-composition.js"
 import {
   createVoyantGraphRuntime,
   registerVoyantGraphTools,
@@ -16,7 +17,6 @@ function selectedIds(
   return {
     routes: [],
     tools: [],
-    workflows: [],
     events: [],
     webhooks: [],
     ...overrides,
@@ -359,49 +359,40 @@ describe("graph runtime lowering", () => {
     expect(importRuntime).toHaveBeenCalledTimes(1)
   })
 
-  it("loads workflow exports independently from the unit runtime", async () => {
-    const unitFactory = () => ({ module: { name: "commerce" } })
-    const workflow = { id: "commerce.reconcile", config: { id: "commerce.reconcile" } }
-    const importRuntime = vi.fn(async () => ({ unitFactory, workflow }))
+  it("exposes selected product jobs as lazy payload-free handlers", async () => {
+    const runJob = vi.fn(async () => {})
+    const importRuntime = vi.fn(async () => ({ runJob }))
     const runtime = createVoyantGraphRuntime({
-      graphHash: "sha256:workflow-runtime",
-      entries: { "@acme/commerce/runtime": importRuntime },
+      graphHash: "sha256:job-runtime",
+      entries: { "@acme/notifications/jobs": importRuntime },
       modules: [
         {
-          id: "@acme/commerce",
+          id: "@acme/notifications",
           kind: "module",
-          packageName: "@acme/commerce",
+          packageName: "@acme/notifications",
           order: 0,
-          runtimeReferenceId: "commerce-runtime",
           references: [
             {
-              id: "commerce-runtime",
-              unitId: "@acme/commerce",
-              facet: "runtime",
-              entityId: "@acme/commerce",
-              runtime: { entry: "./runtime", export: "unitFactory" },
-              importEntry: "@acme/commerce/runtime",
-            },
-            {
-              id: "commerce-workflow",
-              unitId: "@acme/commerce",
-              facet: "workflows.runtime",
-              entityId: workflow.id,
-              runtime: { entry: "./runtime", export: "workflow" },
-              importEntry: "@acme/commerce/runtime",
+              id: "notifications-job",
+              unitId: "@acme/notifications",
+              facet: "jobs.runtime",
+              entityId: "notifications.deliver",
+              runtime: { entry: "./jobs", export: "runJob" },
+              importEntry: "@acme/notifications/jobs",
             },
           ],
-          workflows: [
+          jobs: [
             {
-              unitId: "@acme/commerce",
+              unitId: "@acme/notifications",
               declaration: {
-                id: workflow.id,
-                runtime: { entry: "./runtime", export: "workflow" },
+                id: "notifications.deliver",
+                wakeup: true,
+                runtime: { entry: "./jobs", export: "runJob" },
               },
-              referenceId: "commerce-workflow",
+              referenceId: "notifications-job",
             },
           ],
-          selectedIds: selectedIds({ workflows: [workflow.id] }),
+          selectedIds: selectedIds(),
           routes: [],
         },
       ],
@@ -409,67 +400,63 @@ describe("graph runtime lowering", () => {
     })
 
     expect(importRuntime).not.toHaveBeenCalled()
-    await expect(runtime.modules[0]?.load()).resolves.toEqual([unitFactory])
-    await expect(runtime.modules[0]?.workflows[0]?.load()).resolves.toBe(workflow)
-    await expect(runtime.workflows[0]?.load()).resolves.toBe(workflow)
+    const handler = await runtime.jobs[0]?.load()
+    expect(handler).toBe(runJob)
+    expect(runtime.modules[0]?.jobs[0]?.declaration.wakeup).toBe(true)
     expect(importRuntime).toHaveBeenCalledTimes(1)
+    await invokeVoyantGraphJob(runtime, "notifications.deliver")
+    expect(runJob).toHaveBeenCalledWith(expect.objectContaining({ unitId: "@acme/notifications" }))
+    await expect(invokeVoyantGraphJob(runtime, "notifications.missing")).rejects.toThrow(
+      'job "notifications.missing" is not selected',
+    )
   })
 
-  it("rejects workflow exports whose id differs from the graph declaration", async () => {
+  it("rejects non-callable product job exports", async () => {
     const runtime = createVoyantGraphRuntime({
-      graphHash: "sha256:mismatched-workflow-runtime",
-      entries: {
-        "@acme/commerce/workflows": async () => ({
-          workflow: { id: "commerce.wrong-workflow", config: {} },
-        }),
-      },
+      graphHash: "sha256:invalid-job-runtime",
+      entries: { "@acme/notifications/jobs": async () => ({ runJob: { steps: [] } }) },
       modules: [
         {
-          id: "@acme/commerce",
+          id: "@acme/notifications",
           kind: "module",
-          packageName: "@acme/commerce",
+          packageName: "@acme/notifications",
           order: 0,
           references: [
             {
-              id: "commerce-workflow",
-              unitId: "@acme/commerce",
-              facet: "workflows.runtime",
-              entityId: "commerce.reconcile",
-              runtime: { entry: "./workflows", export: "workflow" },
-              importEntry: "@acme/commerce/workflows",
+              id: "notifications-job",
+              unitId: "@acme/notifications",
+              facet: "jobs.runtime",
+              entityId: "notifications.deliver",
+              runtime: { entry: "./jobs", export: "runJob" },
+              importEntry: "@acme/notifications/jobs",
             },
           ],
-          workflows: [
+          jobs: [
             {
-              unitId: "@acme/commerce",
+              unitId: "@acme/notifications",
               declaration: {
-                id: "commerce.reconcile",
-                runtime: { entry: "./workflows", export: "workflow" },
+                id: "notifications.deliver",
+                wakeup: true,
+                runtime: { entry: "./jobs", export: "runJob" },
               },
-              referenceId: "commerce-workflow",
+              referenceId: "notifications-job",
             },
           ],
-          selectedIds: selectedIds({ workflows: ["commerce.reconcile"] }),
+          selectedIds: selectedIds(),
           routes: [],
         },
       ],
       plugins: [],
     })
 
-    await expect(runtime.modules[0]?.workflows[0]?.load()).rejects.toMatchObject({
+    await expect(runtime.jobs[0]?.load()).rejects.toMatchObject({
       code: "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
       context: {
-        referenceId: "commerce-workflow",
-        unitId: "@acme/commerce",
-        facet: "workflows.runtime",
-        entityId: "commerce.reconcile",
-        entry: "@acme/commerce/workflows",
-        exportName: "workflow",
+        facet: "jobs.runtime",
+        entityId: "notifications.deliver",
+        exportName: "runJob",
       },
     })
-    await expect(runtime.modules[0]?.workflows[0]?.load()).rejects.toThrow(
-      'loaded workflow must declare id "commerce.reconcile"',
-    )
   })
 
   it("loads typed package exports for non-route facets by stable reference id", async () => {
@@ -695,7 +682,6 @@ describe("graph runtime lowering", () => {
       from: {
         routes: [],
         tools: ["loyalty.missing"],
-        workflows: [],
         events: [],
         webhooks: [],
       },

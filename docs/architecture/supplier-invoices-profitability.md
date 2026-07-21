@@ -85,7 +85,7 @@ This is **gross margin**, not net profit: costs not attributable to a single dep
 - **Overhead / non-departure costs.** Marketing spend, salaries, office rent, fixed costs not attributable to a departure. The model is designed so an `allocation target = "overhead"` *could* be added later, but v1 reports **gross margin** only. (See §15.)
 - **Self-billing / generating invoices *to* suppliers.** This is *inbound* AP — recording documents suppliers send the operator. Outbound supplier-facing invoicing (commission self-bills, RCTI) is out of scope.
 - **Full double-entry / GL.** No chart-of-accounts, no journals, no trial balance. This is operational AP + a profitability read model, not an accounting ledger. (Export to an external accounting system is a future hook.)
-- **Approval *routing* / multi-step sign-off chains.** v1 has a single `approved` state + who/when. Configurable approval workflows (thresholds, approver roles) are a future extension via the existing `createWorkflow` saga primitive.
+- **Approval *routing* / multi-step sign-off chains.** v1 has a single `approved` state + who/when. A future design may coordinate this with a domain-specific saga or an external automation.
 - **Bank-feed import / auto-matching payments.** Manual payment recording reused from `supplier_payments`.
 - **Per-traveller as a stored first-class allocation.** v1 derives per-traveller by splitting departure-level allocations (§6).
 

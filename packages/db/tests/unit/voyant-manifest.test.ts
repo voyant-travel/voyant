@@ -8,9 +8,9 @@ describe("database deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/db",
       packageName: "@voyant-travel/db",
-      runtimePorts: [{ id: "voyant.workflow-services", optional: true, cardinality: "many" }],
+      runtimePorts: [{ id: "infrastructure.event-outbox-delivery" }],
       provides: {
-        ports: [{ id: "database.client" }, { id: "voyant.workflow-services" }],
+        ports: [{ id: "database.client" }, { id: "infrastructure.event-outbox-delivery" }],
       },
       schema: [{ id: "@voyant-travel/db#schema", source: "@voyant-travel/db/schema" }],
       migrations: [{ id: "@voyant-travel/db#migrations", source: "./migrations" }],
@@ -33,13 +33,14 @@ describe("database deployment manifest", () => {
           config: { adapter: "node" },
         },
       ],
-      workflows: [
+      jobs: [
         expect.objectContaining({
           id: "infrastructure.event-outbox-drain",
-          schedules: [expect.objectContaining({ id: "outbox-drain" })],
+          schedule: { cron: "*/2 * * * *", overlap: "skip" },
+          wakeup: true,
           runtime: {
-            entry: "@voyant-travel/db/outbox-workflow",
-            export: "eventOutboxDrainWorkflow",
+            entry: "@voyant-travel/db/outbox-job",
+            export: "runEventOutboxDrainJob",
           },
         }),
       ],

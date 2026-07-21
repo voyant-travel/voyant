@@ -1,17 +1,12 @@
 import type { BootstrapContext, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-
+import { BULK_REINDEX_SERVICE_KEY } from "./job-runtime.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "./runtime-ports.js"
 import { recordPromotionRedemptionsForBooking } from "./service-booking-confirmed.js"
-import {
-  PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
-  type PromotionBoundarySchedulerRuntime,
-} from "./workflow-boundary-scheduler.js"
-import { BULK_REINDEX_SERVICE_KEY } from "./workflow-runtime.js"
 
 export const COMMERCE_PROMOTION_REDEMPTION_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed"
@@ -64,7 +59,7 @@ export function createPromotionRedemptionSubscriberRuntime<TBindings = unknown>(
   }
 }
 
-/** Selected-graph factory for redemption recording and promotion workflow services. */
+/** Selected-graph factory for redemption recording and the shared reindex service. */
 export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) => {
     const [database, bulkReindex] = await Promise.all([
@@ -78,10 +73,6 @@ export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntim
       register: async (context: BootstrapContext) => {
         const reindexService = await bulkReindex.createService(context.bindings)
         context.container.register(BULK_REINDEX_SERVICE_KEY, reindexService)
-        context.container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
-          withDb: (operation) => database.withDb(context.bindings, operation),
-          createReindexService: () => reindexService,
-        } satisfies PromotionBoundarySchedulerRuntime)
         await descriptor.register(context)
       },
     }

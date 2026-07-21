@@ -20,7 +20,7 @@ than adding them to the generated starter.
 - **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node
   production default); neon-http/WS remain fallback adapters
 - **Auth**: Better Auth
-- **Jobs**: Voyant Workflows
+- **Jobs**: package-owned jobs selected through the resolved deployment graph
 
 ## Quick start
 
@@ -32,7 +32,7 @@ pnpm -F operator dev          # Voyant development server + SSR (port 3300)
 ## Project customization
 
 The directories under `src/api`, `src/admin`, `src/modules`, `src/extensions`,
-`src/workflows`, `src/jobs`, `src/subscribers`, and `src/links` exercise every
+`src/subscribers`, and `src/links` exercise every
 supported project convention. Their README files document each convention.
 `voyant build` discovers convention entries and emits static graph entries; no
 central registration file is required.
@@ -56,9 +56,8 @@ pnpm -F operator build        # complete graph, client, and Node server build
 pnpm -F operator start        # starts the built Node application (PORT defaults to 8080)
 ```
 
-The server exposes `/healthz` (probe), `/__voyant/scheduled?schedule=<id>` (the
-Cloud Scheduler hook, origin-trust gated), and serves the client build. Scheduled
-jobs come from the admitted graph. Provision them through deployment tooling
+The server exposes `/healthz`, origin-trust-gated job invocation, and the client
+build. Scheduled jobs come from the admitted graph. Provision them through deployment tooling
 using `renderGoogleCloudSchedulerScript` from `@voyant-travel/framework/node-host`.
 
 ## Optional Cloud Services
@@ -82,7 +81,7 @@ VOYANT_DATA_API_KEY="vd_..."
 
 Managed Voyant injects its private document-rendering endpoint and deployment
 credential automatically. Self-hosters can replace the renderer without changing
-contract or brochure workflows.
+contract or brochure generation.
 
 ## Database
 

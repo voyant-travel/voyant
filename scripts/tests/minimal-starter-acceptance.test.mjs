@@ -75,21 +75,8 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
     )
     write(
       app,
-      "src/workflows/sync-health.ts",
-      [
-        'import { defineWorkflow } from "@voyant-travel/framework/project-runtime"',
-        'export default defineWorkflow({ id: "health.sync", run: async () => undefined })',
-      ].join("\n"),
-    )
-    write(
-      app,
-      "src/jobs/cleanup.ts",
-      'export const schedule = { cron: "0 3 * * *" }; export default async function cleanup() {}\n',
-    )
-    write(
-      app,
       "src/subscribers/booking-created.ts",
-      'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
+      'export default { id: "booking.created.audit", eventType: "booking.created", register: () => undefined }\n',
     )
     write(app, "src/acceptance-proof.tsx", acceptanceProofSource("before"))
     write(
@@ -146,7 +133,6 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
           api.methods?.includes("GET"),
       ),
     )
-    assert.ok(graph.modules.some((unit) => unit.localId === "project-workflows"))
     assert.ok(graph.modules.some((unit) => unit.localId === "project-subscribers-links"))
     assert.ok(graph.modules.some((unit) => unit.localId === "concierge"))
     assert.ok(

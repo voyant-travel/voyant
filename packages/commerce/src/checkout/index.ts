@@ -11,9 +11,8 @@
  *     through `@voyant-travel/inventory`, which depends on commerce).
  *   - `resolveBankTransferInstructions` — operator profile / payment rows.
  *
- * Package-owned subscriber and workflow-runner factories are published on
- * dedicated subpaths. Deployments inject database lifecycle, Legal, and
- * contract-PDF ports without recreating checkout workflow knowledge.
+ * The package-owned subscriber is published on a dedicated subpath.
+ * Deployments inject database lifecycle, Legal, and contract-PDF ports.
  */
 
 export {
@@ -25,8 +24,8 @@ export {
 export { createCatalogCheckoutGraphExtension } from "./api-runtime.js"
 export {
   type CatalogCheckoutContractPdfGenerator,
-  type DispatchCheckoutFinalizeParams,
-  dispatchCheckoutFinalize,
+  type FinalizeCheckoutParams,
+  finalizeCheckout,
 } from "./finalize.js"
 export {
   type DraftPayload,

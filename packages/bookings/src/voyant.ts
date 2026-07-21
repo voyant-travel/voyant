@@ -19,6 +19,7 @@ import {
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
 } from "./runtime-port.js"
+import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job-runtime-port.js"
 import { bookingsVoyantAdmin } from "./voyant-admin.js"
 import {
   bookingCancelledPayloadSchema,
@@ -266,6 +267,7 @@ export const bookingsVoyantModule = defineModule({
     requirePort(bookingsAccommodationRuntimePort),
     requirePort(customFieldsRuntimePort),
     requirePort(bookingsFinanceRuntimePort),
+    requirePort(bookingsStaleHoldsJobRuntimePort),
     requirePort(bookingsRelationshipsRuntimePort),
   ],
   customFieldTargets: [
@@ -293,6 +295,7 @@ export const bookingsVoyantModule = defineModule({
       providePort(actionLedgerBookingDriftRuntimePort),
       providePort(customFieldValueLifecycleRuntimePort),
       providePort(customFieldValueOperationsRuntimePort),
+      providePort(bookingsStaleHoldsJobRuntimePort),
     ],
   },
   reporting: bookingsReportingDeclaration,
@@ -342,20 +345,13 @@ export const bookingsVoyantModule = defineModule({
       source: "@voyant-travel/bookings/linkables",
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "bookings.expire-stale-holds",
-      config: {
-        defaultRuntime: "node",
-        schedule: {
-          cron: "*/5 * * * *",
-          name: "every-5-minutes",
-        },
-      },
-      source: "@voyant-travel/bookings/workflows",
+      schedule: { cron: "*/5 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/bookings/workflows",
-        export: "bookingsExpireStaleHoldsWorkflow",
+        entry: "@voyant-travel/bookings/stale-holds-job",
+        export: "runBookingsExpireStaleHoldsJob",
       },
     },
   ],

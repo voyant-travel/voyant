@@ -39,13 +39,6 @@ export { publicProductRoutes } from "./routes-public.js"
 export { productsService } from "./service.js"
 export { catalogProductsService } from "./service-catalog.js"
 export { publicProductsService } from "./service-public.js"
-export {
-  PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-  type ProductsGeneratePdfWorkflowInput,
-  type ProductsGeneratePdfWorkflowOutput,
-  type ProductsGeneratePdfWorkflowRuntime,
-} from "./workflow-runtime.js"
-
 export const productsModule: Module = {
   name: "products",
   linkable: productsCompatibilityLinkable,

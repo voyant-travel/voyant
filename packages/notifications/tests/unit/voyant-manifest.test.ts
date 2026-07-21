@@ -10,11 +10,6 @@ import {
   notificationsReminderSubscribersVoyantPlugin,
   notificationsVoyantModule,
 } from "../../src/voyant.js"
-import {
-  createNotificationReminderWorkflows,
-  notificationsDeliverReminderWorkflow,
-  notificationsSendDueRemindersWorkflow,
-} from "../../src/workflow-entry.js"
 
 describe("notifications deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -28,10 +23,11 @@ describe("notifications deployment manifest", () => {
           { id: storefrontVerificationRuntimePort.id },
           { id: financeNotificationsRuntimePort.id },
           { id: "notifications.runtime" },
+          { id: "notifications.reminder-job" },
           { id: quotesNotificationsRuntimePort.id },
         ],
       },
-      runtimePorts: [{ id: "notifications.runtime" }],
+      runtimePorts: [{ id: "notifications.runtime" }, { id: "notifications.reminder-job" }],
       api: [
         {
           id: "@voyant-travel/notifications#api.admin",
@@ -46,26 +42,14 @@ describe("notifications deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/notifications#schema" }],
       migrations: [{ id: "@voyant-travel/notifications#migrations" }],
-      workflows: [
-        {
-          id: "notifications.deliver-reminder",
-          source: "@voyant-travel/notifications/workflows",
-          runtime: {
-            entry: "@voyant-travel/notifications/workflows",
-            export: "notificationsDeliverReminderWorkflow",
-          },
-          config: {
-            retry: { max: 3, backoff: "exponential", maxDelay: "300s" },
-          },
-        },
+      jobs: [
         {
           id: "notifications.send-due-reminders",
-          source: "@voyant-travel/notifications/workflows",
+          schedule: { cron: "0 * * * *", overlap: "skip" },
           runtime: {
-            entry: "@voyant-travel/notifications/workflows",
-            export: "notificationsSendDueRemindersWorkflow",
+            entry: "@voyant-travel/notifications/reminder-job",
+            export: "runDueNotificationRemindersJob",
           },
-          config: { schedule: { cron: "0 * * * *", name: "hourly" } },
         },
       ],
     })
@@ -104,15 +88,6 @@ describe("notifications deployment manifest", () => {
         reversible: false,
         from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
       }),
-    )
-  })
-
-  it("exports workflow runtime descriptors matching the manifest ids", () => {
-    expect(notificationsDeliverReminderWorkflow.id).toBe(
-      notificationsVoyantModule.workflows?.[0]?.id,
-    )
-    expect(notificationsSendDueRemindersWorkflow.id).toBe(
-      notificationsVoyantModule.workflows?.[1]?.id,
     )
   })
 
@@ -220,22 +195,5 @@ describe("notifications deployment manifest", () => {
     ])
     expect(declarations[0]?.id).toBe(NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID)
     expect(declarations[0]?.eventType).toBe("booking.contract.generated")
-  })
-
-  it("preserves configurable reminder workflow factories", () => {
-    const definitions = createNotificationReminderWorkflows({
-      resolveDb: () => ({}) as never,
-      resolveEnv: () => ({}),
-      resolveRuntimeOptions: () => ({ providers: [] }),
-    })
-    expect(definitions.deliverReminderWorkflow.config.retry).toEqual({
-      max: 3,
-      backoff: "exponential",
-      maxDelay: "300s",
-    })
-    expect(definitions.sendDueRemindersWorkflow.config.schedule).toEqual({
-      cron: "0 * * * *",
-      name: "hourly",
-    })
   })
 })

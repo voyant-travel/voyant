@@ -1,7 +1,7 @@
 {
   "name": "@voyant-travel/framework",
   "version": "0.60.0",
-  "description": "Voyant deployment graph resolver and Node runtime framework.",
+  "description": "Voyant deployment graph resolver and deployment runtime framework.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -14,13 +14,13 @@
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project-admin-conventions": "./src/project-admin-conventions.ts",
-    "./project-workflow-job-conventions": "./src/project-workflow-job-conventions.ts",
     "./project-subscriber-link-conventions": "./src/project-subscriber-link-conventions.ts",
     "./project-artifacts": "./src/project-artifacts.ts",
     "./project": "./src/project.ts",
     "./project-runtime": "./src/project-runtime.ts",
     "./node-host": "./src/node-host.ts",
     "./node-runtime": "./src/node-runtime.ts",
+    "./worker-job-host": "./src/worker-job-host.ts",
     "./scheduled-jobs": "./src/scheduled-jobs.ts"
   },
   "files": [
@@ -32,7 +32,8 @@
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
-        "node"
+        "node",
+        "cloudflare-worker"
       ],
       "modes": [
         "local",
@@ -65,8 +66,6 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
-    "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "pg": "^8.22.0",
@@ -127,11 +126,6 @@
         "types": "./dist/project-admin-conventions.d.ts",
         "import": "./dist/project-admin-conventions.js"
       },
-      "./project-workflow-job-conventions": {
-        "types": "./dist/project-workflow-job-conventions.d.ts",
-        "import": "./dist/project-workflow-job-conventions.js",
-        "default": "./dist/project-workflow-job-conventions.js"
-      },
       "./project-subscriber-link-conventions": {
         "types": "./dist/project-subscriber-link-conventions.d.ts",
         "import": "./dist/project-subscriber-link-conventions.js",
@@ -158,6 +152,10 @@
       "./node-runtime": {
         "types": "./dist/node-runtime.d.ts",
         "import": "./dist/node-runtime.js"
+      },
+      "./worker-job-host": {
+        "types": "./dist/worker-job-host.d.ts",
+        "import": "./dist/worker-job-host.js"
       },
       "./scheduled-jobs": {
         "types": "./dist/scheduled-jobs.d.ts",

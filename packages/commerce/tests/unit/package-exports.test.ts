@@ -33,16 +33,15 @@ const packageJson = JSON.parse(
 
 describe("@voyant-travel/commerce package exports", () => {
   it.each([
-    ["./catalog-checkout-runner", "./src/checkout/runner-runtime.ts", "checkout/runner-runtime"],
     [
       "./catalog-checkout-subscribers",
       "./src/checkout/subscriber-runtime.ts",
       "checkout/subscriber-runtime",
     ],
     [
-      "./promotion-boundary-workflow",
-      "./src/promotions/workflow-boundary-scheduler.ts",
-      "promotions/workflow-boundary-scheduler",
+      "./promotion-boundary-job",
+      "./src/promotions/job-boundary-scheduler.ts",
+      "promotions/job-boundary-scheduler",
     ],
   ])("publishes %s with matching source and distribution targets", (subpath, source, dist) => {
     expect(packageJson.exports[subpath]).toBe(source)

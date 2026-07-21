@@ -31,7 +31,6 @@ for (const required of [
   "loadGeneratedProjectRuntime",
   "readGeneratedDeploymentGraph",
   "resolveAdminAssetsDir",
-  "dispatchScheduledProjectJob",
   "createAdminSsrHandler",
 ]) {
   if (!runtime.includes(required)) violations.push(`${runtimePath} must contain ${required}`)

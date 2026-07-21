@@ -1,298 +1,341 @@
-import { bookingsService } from "@voyant-travel/bookings"
-import { runCheckoutFinalize } from "@voyant-travel/catalog/booking-engine"
-import {
-  financeService,
-  issueInvoiceFromBooking,
-  issueProformaFromBooking,
-  settleCoveredBookingPaymentSchedules,
-} from "@voyant-travel/finance"
-import { beginWorkflowRun } from "@voyant-travel/workflow-runs"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { dispatchCheckoutFinalize } from "./finalize.js"
+import { buildCheckoutFinalizeDeps, finalizeCheckout } from "./finalize.js"
 
 const mocks = vi.hoisted(() => ({
-  confirmBooking: vi.fn(),
-  recoverExpiredPaidBooking: vi.fn(),
-  issueInvoiceFromBooking: vi.fn(),
-  issueProformaFromBooking: vi.fn(),
+  completePaymentSession: vi.fn(),
   convertProformaToInvoice: vi.fn(),
-  createPayment: vi.fn(),
-  settleCoveredBookingPaymentSchedules: vi.fn(),
-  beginWorkflowRun: vi.fn(),
+  ensureFinalization: vi.fn(),
+  generateContractPdf: vi.fn(),
+  getDelivery: vi.fn(),
+  getFinalization: vi.fn(),
+  issueInvoiceFromBooking: vi.fn(),
   runCheckoutFinalize: vi.fn(),
+  settleCoveredBookingPaymentSchedules: vi.fn(),
+  updateDelivery: vi.fn(),
+  updateFinalization: vi.fn(),
+  withLock: vi.fn(),
 }))
 
-vi.mock("@voyant-travel/bookings", () => ({
-  bookingsService: {
-    confirmBooking: mocks.confirmBooking,
-    recoverExpiredPaidBooking: mocks.recoverExpiredPaidBooking,
+const tables = vi.hoisted(() => ({
+  bookings: { id: "bookings.id", status: "bookings.status" },
+  invoices: {
+    id: "invoices.id",
+    bookingId: "invoices.bookingId",
+    invoiceType: "invoices.invoiceType",
+    status: "invoices.status",
+    createdAt: "invoices.createdAt",
+  },
+  paymentSessions: {
+    id: "paymentSessions.id",
+    bookingId: "paymentSessions.bookingId",
+    status: "paymentSessions.status",
+    invoiceId: "paymentSessions.invoiceId",
   },
 }))
 
+vi.mock("@voyant-travel/bookings", () => ({ bookingsService: {} }))
+vi.mock("@voyant-travel/bookings/schema", () => ({
+  bookingItems: { bookingId: "bookingItems.bookingId" },
+  bookings: tables.bookings,
+}))
 vi.mock("@voyant-travel/catalog/booking-engine", () => ({
   runCheckoutFinalize: mocks.runCheckoutFinalize,
 }))
-
 vi.mock("@voyant-travel/finance", () => ({
   convertProformaToInvoice: mocks.convertProformaToInvoice,
+  financeService: { completePaymentSession: mocks.completePaymentSession },
+  invoices: tables.invoices,
   issueInvoiceFromBooking: mocks.issueInvoiceFromBooking,
-  issueProformaFromBooking: mocks.issueProformaFromBooking,
   settleCoveredBookingPaymentSchedules: mocks.settleCoveredBookingPaymentSchedules,
-  financeService: {
-    createPayment: mocks.createPayment,
-  },
+}))
+vi.mock("@voyant-travel/finance/schema", () => ({ paymentSessions: tables.paymentSessions }))
+vi.mock("./finalization-store.js", () => ({
+  ensureCheckoutFinalization: mocks.ensureFinalization,
+  getCheckoutFinalization: mocks.getFinalization,
+  getCheckoutFinalizationDelivery: mocks.getDelivery,
+  updateCheckoutFinalization: mocks.updateFinalization,
+  updateCheckoutFinalizationDelivery: mocks.updateDelivery,
+  withCheckoutFinalizationLock: mocks.withLock,
 }))
 
-vi.mock("@voyant-travel/workflow-runs", () => ({
-  beginWorkflowRun: mocks.beginWorkflowRun,
-}))
+type Authority = {
+  bookingId: string
+  triggerPaymentSessionId: string
+  invoiceId: string | null
+  paymentId: string | null
+  confirmedAt: Date | null
+  paymentRevision: number
+  contractId: string | null
+  contractAttachmentId: string | null
+  finalPaymentRenderVersion: number
+  finalPaymentRenderKey: string | null
+  revision: number
+}
 
-describe("dispatchCheckoutFinalize", () => {
+type Delivery = {
+  paymentSessionId: string
+  bookingId: string
+  paymentLinkedAt: Date | null
+  completedAt: Date | null
+}
+
+const authorities = new Map<string, Authority>()
+const deliveries = new Map<string, Delivery>()
+const lockTails = new Map<string, Promise<void>>()
+
+interface SelectQuery {
+  from(): SelectQuery
+  limit(): Promise<Array<Record<string, unknown>>>
+  orderBy(): SelectQuery
+  then(resolve: (rows: unknown[]) => unknown): Promise<unknown>
+  where(): SelectQuery
+}
+
+interface UpdateQuery {
+  set(next: Record<string, unknown>): UpdateQuery
+  then(resolve: (rows: unknown[]) => unknown): Promise<unknown>
+  where(): UpdateQuery
+}
+
+function ensureState(identity: { bookingId: string; paymentSessionId: string }) {
+  if (!authorities.has(identity.bookingId)) {
+    authorities.set(identity.bookingId, {
+      bookingId: identity.bookingId,
+      triggerPaymentSessionId: identity.paymentSessionId,
+      invoiceId: null,
+      paymentId: null,
+      confirmedAt: new Date(),
+      paymentRevision: 0,
+      contractId: null,
+      contractAttachmentId: null,
+      finalPaymentRenderVersion: 0,
+      finalPaymentRenderKey: null,
+      revision: 0,
+    })
+  }
+  if (!deliveries.has(identity.paymentSessionId)) {
+    deliveries.set(identity.paymentSessionId, {
+      ...identity,
+      paymentLinkedAt: null,
+      completedAt: null,
+    })
+  }
+}
+
+function installCheckpointStore() {
+  mocks.ensureFinalization.mockImplementation(async (_db, identity) => ensureState(identity))
+  mocks.getFinalization.mockImplementation(async (_db, bookingId) => authorities.get(bookingId))
+  mocks.getDelivery.mockImplementation(async (_db, sessionId) => deliveries.get(sessionId))
+  mocks.updateFinalization.mockImplementation(async (_db, identity, revision, patch) => {
+    const state = authorities.get(identity.bookingId)
+    if (!state || state.revision !== revision) throw new Error("stale fence")
+    Object.assign(state, patch, { revision: revision + 1 })
+    return state
+  })
+  mocks.updateDelivery.mockImplementation(async (_db, identity, patch) => {
+    const delivery = deliveries.get(identity.paymentSessionId)
+    if (!delivery) throw new Error("missing delivery")
+    Object.assign(delivery, patch)
+  })
+  mocks.withLock.mockImplementation(async (db, identity, operation) => {
+    ensureState(identity)
+    const prior = lockTails.get(identity.bookingId) ?? Promise.resolve()
+    let release = () => {}
+    const current = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    lockTails.set(
+      identity.bookingId,
+      prior.then(() => current),
+    )
+    await prior
+    try {
+      return await operation(db, authorities.get(identity.bookingId))
+    } finally {
+      release()
+    }
+  })
+}
+
+function databaseWithPaidSessions(sessions: Array<Record<string, unknown>>) {
+  const query = () => {
+    const chain: SelectQuery = {
+      from: () => chain,
+      limit: async () => sessions,
+      orderBy: () => chain,
+      // biome-ignore lint/suspicious/noThenProperty: Drizzle query builders are intentionally thenable.
+      then: (resolve: (rows: unknown[]) => unknown) =>
+        Promise.resolve(sessions.map((s) => ({ ...s }))).then(resolve),
+      where: () => chain,
+    }
+    return chain
+  }
+  const update = () => {
+    let patch: Record<string, unknown> = {}
+    const chain: UpdateQuery = {
+      set: (next: Record<string, unknown>) => {
+        patch = next
+        return chain
+      },
+      // biome-ignore lint/suspicious/noThenProperty: Drizzle query builders are intentionally thenable.
+      then: (resolve: (rows: unknown[]) => unknown) => {
+        const session = sessions.find((candidate) => candidate.invoiceId === null)
+        if (session) Object.assign(session, patch)
+        return Promise.resolve([]).then(resolve)
+      },
+      where: () => chain,
+    }
+    return chain
+  }
+  return { select: vi.fn(query), update: vi.fn(update) } as never
+}
+
+function databaseWithSelectResults(...results: Array<Array<Record<string, unknown>>>) {
+  const queue = [...results]
+  return {
+    select: vi.fn(() => {
+      const rows = queue.shift() ?? []
+      const chain: SelectQuery = {
+        from: () => chain,
+        limit: async () => rows,
+        orderBy: () => chain,
+        // biome-ignore lint/suspicious/noThenProperty: Drizzle query builders are intentionally thenable.
+        then: (resolve: (selected: unknown[]) => unknown) => Promise.resolve(rows).then(resolve),
+        where: () => chain,
+      }
+      return chain
+    }),
+  } as never
+}
+
+describe("finalizeCheckout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.confirmBooking.mockResolvedValue({ status: "ok" })
-    mocks.issueInvoiceFromBooking.mockResolvedValue({ id: "inv_final" })
-    mocks.issueProformaFromBooking.mockResolvedValue({ id: "pro_final" })
-    mocks.createPayment.mockResolvedValue({ id: "pay_card" })
-    mocks.settleCoveredBookingPaymentSchedules.mockResolvedValue([])
-    mocks.beginWorkflowRun.mockResolvedValue(createRecorder())
-    mocks.runCheckoutFinalize.mockImplementation(async (input, deps) => {
-      await deps.confirmBooking(input.bookingId)
-      const invoice = await deps.issueInvoice({ bookingId: input.bookingId })
-      await deps.linkPaymentToInvoice({
-        bookingId: input.bookingId,
-        invoiceId: invoice?.invoiceId ?? "inv_final",
-        paymentSessionId: input.paymentSessionId ?? null,
-      })
-      await deps.generateContractPdf?.({ bookingId: input.bookingId, force: true })
-    })
+    authorities.clear()
+    deliveries.clear()
+    lockTails.clear()
+    installCheckpointStore()
   })
 
-  it("links paid card checkout sessions to the final invoice and settles covered schedules", async () => {
-    const db = createCheckoutFinalizeDb()
-    const eventBus = { emit: vi.fn() }
-    const generateContractPdf = vi
-      .fn()
-      .mockResolvedValue({ contractId: "ctrt_1", attachmentId: "att_1" })
+  it("requires a payment-session identity and records delivery completion", async () => {
+    const db = {} as never
+    const eventBus = {} as never
+    const input = { bookingId: "booking_1", paymentSessionId: "session_1" }
 
-    await dispatchCheckoutFinalize({
-      db: db as never,
-      eventBus: eventBus as never,
-      input: {
-        bookingId: "book_card",
-        paymentSessionId: "ps_card",
-        paymentIntent: "card",
-      },
-      trigger: "payment.completed",
-      correlationId: "ps_card",
-      tags: ["bookingId:book_card", "paymentSessionId:ps_card", "paymentIntent:card"],
-      generateContractPdf,
-    })
+    await finalizeCheckout({ db, eventBus, input })
 
-    expect(bookingsService.confirmBooking).toHaveBeenCalledWith(db, "book_card", {}, undefined, {
-      eventBus,
-    })
-    expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
-      db,
-      expect.objectContaining({
-        bookingId: "book_card",
-        invoiceType: "invoice",
-      }),
-      expect.objectContaining({
-        booking: expect.objectContaining({
-          id: "book_card",
-          bookingNumber: "BK-CARD",
-        }),
-        items: [
-          expect.objectContaining({
-            id: "bkit_1",
-            title: "Adult ticket",
-            totalSellAmountCents: 50000,
-          }),
-        ],
-      }),
-      { eventBus },
+    expect(mocks.runCheckoutFinalize).toHaveBeenCalledWith(
+      input,
+      expect.objectContaining({ db, eventBus }),
     )
-    expect(financeService.createPayment).toHaveBeenCalledWith(
-      db,
-      "inv_final",
-      expect.objectContaining({
-        amountCents: 50000,
-        currency: "USD",
-        paymentMethod: "credit_card",
-        status: "completed",
-        referenceNumber: "NETOPIA-PAY-1",
-        notes: "Checkout-finalize linkage from session ps_card",
-      }),
-    )
-    expect(db.updates).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ invoiceId: "inv_final" }),
-        expect.objectContaining({ paymentId: "pay_card" }),
-      ]),
-    )
-    expect(settleCoveredBookingPaymentSchedules).toHaveBeenCalledWith(db, "book_card")
-    expect(generateContractPdf).toHaveBeenCalledWith({
-      db,
-      eventBus,
-      bookingId: "book_card",
-      force: true,
-    })
-    expect(runCheckoutFinalize).toHaveBeenCalledWith(
-      expect.objectContaining({ bookingId: "book_card", paymentSessionId: "ps_card" }),
-      expect.any(Object),
-      expect.objectContaining({ skipUntil: undefined, seedResults: undefined }),
-    )
-    expect(beginWorkflowRun).toHaveBeenCalledWith(
-      db,
-      expect.objectContaining({
-        workflowName: "checkout-finalize",
-        trigger: "payment.completed",
-        correlationId: "ps_card",
-      }),
-    )
+    expect(deliveries.get("session_1")?.completedAt).toBeInstanceOf(Date)
   })
 
-  describe("invoice issuance", () => {
-    async function runFinalize() {
-      const db = createCheckoutFinalizeDb()
-      await dispatchCheckoutFinalize({
-        db: db as never,
-        eventBus: { emit: vi.fn() } as never,
-        input: { bookingId: "book_card", paymentSessionId: "ps_card", paymentIntent: "card" },
-        trigger: "payment.completed",
-        correlationId: "ps_card",
-        tags: [],
-      })
-      return db
-    }
+  it("checkpoints only the final invoice explicitly linked by the triggering payment session", async () => {
+    const identity = { bookingId: "booking_1", paymentSessionId: "session_1" }
+    ensureState(identity)
+    const db = databaseWithSelectResults(
+      [{ invoiceId: "invoice_explicit" }],
+      [{ id: "invoice_explicit" }],
+    )
+    const deps = buildCheckoutFinalizeDeps(db, {} as never, identity)
 
-    it("always issues the fiscal invoice at finalize (payment has settled)", async () => {
-      // Finalize runs on payment.completed. The document flow is decided
-      // earlier, at order placement, and only for the deferred bank-transfer
-      // path — never here. A fresh finalize always mints the fiscal invoice.
-      await runFinalize()
+    await expect(deps.issueInvoice({ bookingId: "booking_1" })).resolves.toEqual({
+      invoiceId: "invoice_explicit",
+    })
+    expect(mocks.issueInvoiceFromBooking).not.toHaveBeenCalled()
+    expect(authorities.get("booking_1")?.invoiceId).toBe("invoice_explicit")
+  })
 
-      expect(issueInvoiceFromBooking).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ bookingId: "book_card", invoiceType: "invoice" }),
-        expect.any(Object),
-        expect.any(Object),
-      )
-      expect(issueProformaFromBooking).not.toHaveBeenCalled()
+  it("serializes distinct payment sessions on one booking authority without duplicate invoice, link, or final render", async () => {
+    const sessions = [
+      paidSession("session_1", "provider_payment_1"),
+      paidSession("session_2", "provider_payment_2"),
+    ]
+    const db = databaseWithPaidSessions(sessions)
+    const eventBus = {} as never
+    const firstIdentity = { bookingId: "booking_1", paymentSessionId: "session_1" }
+    const secondIdentity = { bookingId: "booking_1", paymentSessionId: "session_2" }
+    ensureState(firstIdentity)
+    ensureState(secondIdentity)
+    const first = buildCheckoutFinalizeDeps(db, eventBus, firstIdentity, mocks.generateContractPdf)
+    const second = buildCheckoutFinalizeDeps(
+      db,
+      eventBus,
+      secondIdentity,
+      mocks.generateContractPdf,
+    )
+    mocks.convertProformaToInvoice.mockResolvedValue({
+      status: "ok",
+      invoice: { id: "invoice_from_proforma" },
+    })
+    mocks.completePaymentSession.mockImplementation(async (_db, sessionId) => {
+      const session = sessions.find((candidate) => candidate.id === sessionId)
+      if (!session) return null
+      session.invoiceId = "invoice_from_proforma"
+      session.paymentId = `payment_${sessionId}`
+      return session
+    })
+    mocks.generateContractPdf.mockResolvedValue({
+      contractId: "contract_1",
+      attachmentId: "attachment_final_payment",
     })
 
-    it("converts an existing proforma instead of issuing a fresh invoice", async () => {
-      // A bank-transfer checkout in proforma-first mode already minted a
-      // proforma; the finalize step converts it to the fiscal invoice
-      // rather than issuing a new document.
-      mocks.runCheckoutFinalize.mockImplementationOnce(async (input, deps) => {
-        await deps.confirmBooking(input.bookingId)
-        await deps.issueInvoice({ bookingId: input.bookingId, convertedFromInvoiceId: "pro_1" })
-      })
-      mocks.convertProformaToInvoice.mockResolvedValue({
-        status: "ok",
-        invoice: { id: "inv_from_pro" },
-      })
+    const [firstInvoice, secondInvoice] = await Promise.all([
+      first.issueInvoice({ bookingId: "booking_1", convertedFromInvoiceId: "proforma_1" }),
+      second.issueInvoice({ bookingId: "booking_1", convertedFromInvoiceId: "proforma_1" }),
+    ])
+    expect(firstInvoice).toEqual({ invoiceId: "invoice_from_proforma" })
+    expect(secondInvoice).toEqual(firstInvoice)
+    expect(mocks.convertProformaToInvoice).toHaveBeenCalledOnce()
+    expect(mocks.issueInvoiceFromBooking).not.toHaveBeenCalled()
 
-      await runFinalize()
+    await Promise.all([
+      first.linkPaymentToInvoice?.({
+        bookingId: "booking_1",
+        invoiceId: "invoice_from_proforma",
+        paymentSessionId: "session_1",
+      }),
+      second.linkPaymentToInvoice?.({
+        bookingId: "booking_1",
+        invoiceId: "invoice_from_proforma",
+        paymentSessionId: "session_2",
+      }),
+    ])
+    expect(mocks.completePaymentSession).toHaveBeenCalledTimes(2)
+    expect(authorities.get("booking_1")?.paymentRevision).toBe(1)
 
-      expect(mocks.convertProformaToInvoice).toHaveBeenCalledWith(
-        expect.anything(),
-        "pro_1",
-        {},
-        expect.any(Object),
-      )
-      expect(issueProformaFromBooking).not.toHaveBeenCalled()
-      expect(issueInvoiceFromBooking).not.toHaveBeenCalled()
+    await Promise.all([
+      first.generateContractPdf?.({ bookingId: "booking_1", force: true }),
+      second.generateContractPdf?.({ bookingId: "booking_1", force: true }),
+    ])
+    expect(mocks.generateContractPdf).toHaveBeenCalledOnce()
+    expect(mocks.generateContractPdf).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: "booking_1", force: true }),
+    )
+    expect(authorities.get("booking_1")).toMatchObject({
+      invoiceId: "invoice_from_proforma",
+      finalPaymentRenderVersion: 1,
+      contractAttachmentId: "attachment_final_payment",
     })
   })
 })
 
-function createRecorder() {
+function paidSession(id: string, providerPaymentId: string) {
   return {
-    runId: "wfr_1",
-    startStep: vi.fn(),
-    completeStep: vi.fn(),
-    failStep: vi.fn(),
-    recordSkippedStep: vi.fn(),
-    complete: vi.fn(),
-    fail: vi.fn(),
-  }
-}
-
-function createCheckoutFinalizeDb() {
-  const selectRows = [
-    [
-      {
-        id: "book_card",
-        bookingNumber: "BK-CARD",
-        personId: "person_1",
-        organizationId: null,
-        sellCurrency: "USD",
-        baseCurrency: "USD",
-        sellAmountCents: 50000,
-        baseSellAmountCents: 50000,
-      },
-    ],
-    [
-      {
-        id: "bkit_1",
-        bookingId: "book_card",
-        title: "Adult ticket",
-        quantity: 1,
-        unitSellAmountCents: 50000,
-        totalSellAmountCents: 50000,
-      },
-    ],
-    [
-      {
-        id: "ps_card",
-        bookingId: "book_card",
-        invoiceId: null,
-        amountCents: 50000,
-        currency: "USD",
-        paymentMethod: "credit_card",
-        paymentInstrumentId: "pmin_1",
-        paymentAuthorizationId: "pmaz_1",
-        paymentCaptureId: "pmcp_1",
-        providerPaymentId: "NETOPIA-PAY-1",
-        externalReference: null,
-        providerSessionId: "NETOPIA-SESSION-1",
-        completedAt: new Date("2026-07-04T12:00:00.000Z"),
-      },
-    ],
-  ]
-  const updates: Array<Record<string, unknown>> = []
-
-  function selectResult(rows: unknown[]) {
-    const rowResult = [...rows] as Array<unknown> & {
-      limit: () => Promise<unknown[]>
-      orderBy: () => unknown[]
-    }
-    rowResult.limit = async () => rows
-    rowResult.orderBy = () => rowResult
-
-    const chain = {
-      from: () => chain,
-      where: () => rowResult,
-      orderBy: () => chain,
-      limit: async () => rows,
-    }
-    return chain
-  }
-
-  return {
-    updates,
-    select: () => selectResult(selectRows.shift() ?? []),
-    update: () => ({
-      set(values: Record<string, unknown>) {
-        updates.push(values)
-        return {
-          where: async () => undefined,
-        }
-      },
-    }),
+    id,
+    bookingId: "booking_1",
+    status: "paid",
+    invoiceId: null as string | null,
+    paymentId: null as string | null,
+    amountCents: 6_250,
+    currency: "EUR",
+    paymentMethod: "credit_card",
+    paymentInstrumentId: null,
+    providerSessionId: `provider_${id}`,
+    providerPaymentId,
+    externalReference: null,
+    completedAt: new Date("2026-07-21T10:00:00.000Z"),
   }
 }

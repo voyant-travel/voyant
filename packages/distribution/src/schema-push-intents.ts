@@ -6,7 +6,7 @@ import { channels } from "./schema-core.js"
 /**
  * Durable handoff rows for the channel-push availability and content
  * flows. Subscribers INSERT into these tables (returning immediately
- * per the EventBus contract); the scheduled push workflows drain them.
+ * per the EventBus contract); package-owned jobs drain them.
  *
  * Booking push doesn't need its own intent table — `channel_booking_links`
  * already serves both roles (push_status = 'pending' for in-flight,
@@ -87,6 +87,14 @@ export const channelContentPushIntents = pgTable(
     uniqueIndex("uniq_chan_content_push_intents_per_product").on(table.channelId, table.productId),
   ],
 )
+
+/** Cross-instance leases for the fixed channel-push drain/reconciler jobs. */
+export const channelPushJobLeases = pgTable("channel_push_job_leases", {
+  jobId: text("job_id").primaryKey(),
+  owner: text("owner").notNull(),
+  leaseUntil: timestamp("lease_until", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
 
 export type ChannelAvailabilityPushIntent = typeof channelAvailabilityPushIntents.$inferSelect
 export type NewChannelAvailabilityPushIntent = typeof channelAvailabilityPushIntents.$inferInsert

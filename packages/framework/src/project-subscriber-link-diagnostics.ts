@@ -96,19 +96,6 @@ export function invalidSubscriberDiagnostic(sourcePath: string): ProjectSubscrib
   }
 }
 
-export function nonDurableSubscriberDiagnostic(
-  sourcePath: string,
-  subscriberId: string,
-): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_SUBSCRIBER_NON_DURABLE_DESCRIPTOR",
-    severity: "error",
-    subscriberId,
-    sourcePaths: [sourcePath],
-    message: `Subscriber "${subscriberId}" in "${sourcePath}" must contain only literal, serializable data.`,
-  }
-}
-
 export function invalidLinkDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
   return {
     code: "PROJECT_LINK_INVALID_DEFINITION",

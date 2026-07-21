@@ -1,23 +1,14 @@
-import {
-  defineModule,
-  providePort,
-  requirePort,
-  voyantWorkflowServiceContributionsPort,
-} from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import { eventOutboxJobRuntimePort } from "./outbox-job-runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the database package. */
 export const dbVoyantModule = defineModule({
   id: "@voyant-travel/db",
   packageName: "@voyant-travel/db",
   localId: "db",
-  runtimePorts: [
-    requirePort(voyantWorkflowServiceContributionsPort, {
-      optional: true,
-      cardinality: "many",
-    }),
-  ],
+  runtimePorts: [requirePort(eventOutboxJobRuntimePort)],
   provides: {
-    ports: [{ id: "database.client" }, providePort(voyantWorkflowServiceContributionsPort)],
+    ports: [{ id: "database.client" }, providePort(eventOutboxJobRuntimePort)],
   },
   schema: [
     {
@@ -67,21 +58,14 @@ export const dbVoyantModule = defineModule({
       config: { adapter: "node" },
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "infrastructure.event-outbox-drain",
-      config: { defaultRuntime: "node" },
-      schedules: [
-        {
-          id: "outbox-drain",
-          workflowId: "infrastructure.event-outbox-drain",
-          cron: "*/2 * * * *",
-          name: "retry-sweep",
-        },
-      ],
+      schedule: { cron: "*/2 * * * *", overlap: "skip" },
+      wakeup: true,
       runtime: {
-        entry: "@voyant-travel/db/outbox-workflow",
-        export: "eventOutboxDrainWorkflow",
+        entry: "@voyant-travel/db/outbox-job",
+        export: "runEventOutboxDrainJob",
       },
     },
   ],

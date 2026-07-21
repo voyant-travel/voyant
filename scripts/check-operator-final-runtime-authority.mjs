@@ -20,7 +20,6 @@ const packagePorts = {
   relationships: ["relationshipsRouteRuntimePort"],
   storage: ["storageMediaRuntimePort"],
   trips: ["tripsRoutesRuntimePort", "tripsDatabaseRuntimePort"],
-  "workflow-runs": ["workflowRunnerRegistryRuntimePort"],
 }
 const contributorFactories = [
   "createAuthRuntimePortContribution",
@@ -33,7 +32,6 @@ const contributorFactories = [
   "createRelationshipsRuntimePortContribution",
   "createStorageRuntimePortContribution",
   "createTripsRuntimePortContribution",
-  "createWorkflowRunsRuntimePortContribution",
 ]
 
 const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.all([

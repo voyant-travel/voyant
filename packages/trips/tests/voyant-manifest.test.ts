@@ -40,7 +40,7 @@ describe("trips deployment manifest", () => {
         { id: "payments.adapter.runtime", optional: true },
         { id: "catalog.runtime-services" },
         { id: "commerce.checkout-api-options" },
-        { id: "flights.runtime" },
+        { id: "flights.runtime", optional: true },
       ],
       api: [
         {
@@ -112,6 +112,23 @@ describe("trips deployment manifest", () => {
       getRuntimePort: vi.fn(async () => adapter) as never,
     })
     expect(withAdapter).toHaveProperty(commerceCardPaymentRuntimePort.id)
+  })
+
+  it("does not resolve the optional flights runtime when flights are not selected", async () => {
+    const getRuntimePort = vi.fn((port: { id: string }) => {
+      if (port.id === "catalog.runtime-services") return {}
+      if (port.id === "commerce.checkout-api-options") return () => ({})
+      throw new Error(`unexpected runtime port ${port.id}`)
+    })
+    const contribution = createTripsRuntimePortContribution({
+      primitives: { database: { transaction: vi.fn() } } as never,
+      hasRuntimePort: (port) => port.id !== "flights.runtime",
+      getRuntimePort: getRuntimePort as never,
+    })
+
+    await contribution[tripsRoutesRuntimePort.id]
+
+    expect(getRuntimePort.mock.calls.map(([port]) => port.id)).not.toContain("flights.runtime")
   })
 
   it("scopes selected Trips navigation, routes, and contributions", () => {

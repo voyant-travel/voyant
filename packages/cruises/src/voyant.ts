@@ -8,9 +8,9 @@ import {
   defineModule,
   providePort,
   requirePort,
-  voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core/project"
 import { financeCruisesPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { cruisesExternalRefreshJobRuntimePort } from "./external-refresh-job.js"
 import { cruisesRoutesRuntimePort } from "./runtime-port.js"
 
 const cruiseLifecycleEventPayloadSchema = {
@@ -29,16 +29,13 @@ export const cruisesVoyantModule = defineModule({
     ports: [
       providePort(catalogCruisesRuntimeExtensionPort),
       providePort(financeCruisesPaymentPolicyRuntimePort),
-      providePort(voyantWorkflowServiceContributionsPort),
+      providePort(cruisesExternalRefreshJobRuntimePort),
     ],
   },
   requires: { ports: [requirePort(catalogRuntimeServicesPort)] },
   runtimePorts: [
     requirePort(cruisesRoutesRuntimePort),
-    requirePort(voyantWorkflowServiceContributionsPort, {
-      optional: true,
-      cardinality: "many",
-    }),
+    requirePort(cruisesExternalRefreshJobRuntimePort),
   ],
   api: [
     {
@@ -153,21 +150,13 @@ export const cruisesVoyantModule = defineModule({
       audit: { sourceModule: "cruises", category: "domain" },
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "cruises.external-catalog-refresh",
-      config: { defaultRuntime: "node" },
-      schedules: [
-        {
-          id: "external-cruise-catalog-refresh",
-          workflowId: "cruises.external-catalog-refresh",
-          cron: "30 3 * * *",
-          name: "nightly",
-        },
-      ],
+      schedule: { cron: "30 3 * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/cruises/external-refresh-workflow",
-        export: "cruisesExternalCatalogRefreshWorkflow",
+        entry: "@voyant-travel/cruises/external-refresh-job",
+        export: "runCruisesExternalCatalogRefreshJob",
       },
     },
   ],

@@ -12,8 +12,8 @@
     "./routes": "./src/routes.ts",
     "./service": "./src/service.ts",
     "./tasks": "./src/tasks/index.ts",
-    "./workflows": "./src/workflow-entry.ts",
-    "./workflow-runtime": "./src/workflow-runtime.ts",
+    "./reminder-job": "./src/reminder-job.ts",
+    "./job-runtime": "./src/job-runtime.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./subscriber-runtime": "./src/subscriber-runtime.ts",
     "./providers/local": "./src/providers/local.ts",
@@ -50,8 +50,7 @@
     "hono": "catalog:",
     "liquidjs": "^10.27.1",
     "zod": "catalog:",
-    "@voyant-travel/tools": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^"
+    "@voyant-travel/tools": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -108,15 +107,15 @@
         "import": "./dist/tasks/index.js",
         "default": "./dist/tasks/index.js"
       },
-      "./workflows": {
-        "types": "./dist/workflow-entry.d.ts",
-        "import": "./dist/workflow-entry.js",
-        "default": "./dist/workflow-entry.js"
+      "./reminder-job": {
+        "types": "./dist/reminder-job.d.ts",
+        "import": "./dist/reminder-job.js",
+        "default": "./dist/reminder-job.js"
       },
-      "./workflow-runtime": {
-        "types": "./dist/workflow-runtime.d.ts",
-        "import": "./dist/workflow-runtime.js",
-        "default": "./dist/workflow-runtime.js"
+      "./job-runtime": {
+        "types": "./dist/job-runtime.d.ts",
+        "import": "./dist/job-runtime.js",
+        "default": "./dist/job-runtime.js"
       },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",

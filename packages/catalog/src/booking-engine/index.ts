@@ -34,7 +34,7 @@ export {
   type CheckoutFinalizeDeps,
   type CheckoutFinalizeInput,
   type CheckoutFinalizeStepRecorder,
-  checkoutFinalizeWorkflow,
+  checkoutFinalizeSaga,
   runCheckoutFinalize,
 } from "./checkout-finalize.js"
 export {

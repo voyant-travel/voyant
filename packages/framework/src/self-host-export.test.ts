@@ -288,7 +288,6 @@ describe("self-host projection", () => {
         realtime: "local",
         scheduledJobs: "node-cron",
         sms: "twilio",
-        workflows: "self-hosted",
       },
     })
     expect(projection.graph.deployment).toEqual(projection.project.deployment)
@@ -336,7 +335,6 @@ describe("self-host projection", () => {
           provider: "better-auth",
         }),
         expect.objectContaining({ resourceKey: "email:smtp", provider: "smtp" }),
-        expect.objectContaining({ resourceKey: "workflows:self-hosted", provider: "self-hosted" }),
       ]),
     )
     expect(
@@ -418,9 +416,6 @@ describe("self-host projection", () => {
       pendingEntry: "apply",
     })
     expect(selfHostPackageMigration).toEqual(cloudPackageMigration)
-    expect(selfHostPlan.migrations.map((migration) => migration.id)).toContain(
-      "@voyant-travel/workflows-orchestrator#migrations",
-    )
   })
 })
 

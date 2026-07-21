@@ -1,10 +1,8 @@
 // agent-quality: file-size exception -- owner: framework; graph runtime bindings, contributors, ports, and activation share one public composition contract.
 import type {
   EventEnvelope,
-  EventFilterDescriptor,
   SubscriberRuntimeDescriptor,
   VoyantRuntimeHostPrimitives,
-  WorkflowDescriptor,
 } from "@voyant-travel/core"
 import {
   isGraphRuntimeFactory,
@@ -111,10 +109,9 @@ function runtimePortStub(id: string): unknown {
     email: { subject: "Verification code" },
     bootstrap: async () => {},
     register: () => {},
-    registerWorkflowService: () => {},
     readConfig: () => undefined,
     enrichOverviewItems: unavailableAsync,
-    createStaleBookingHoldsRuntime: () => runtimeServiceStub(id),
+    createStaleBookingHoldsJobRuntime: () => runtimeServiceStub(id),
     resolveProductSnapshot: unavailableAsync,
     loadPersonTravelSnapshot: unavailableAsync,
     upsertPersonFromContact: unavailableAsync,
@@ -160,7 +157,7 @@ function runtimePortStub(id: string): unknown {
     resolveProviders: () => [],
     resolveDeployment: unavailable,
     sendInvitationEmail: unavailableAsync,
-    resolveReminderWorkflowRuntime: () => runtimeServiceStub(id),
+    resolveReminderJobRuntime: () => runtimeServiceStub(id),
     resolveDocumentDownloadUrl: unavailableAsync,
     resolveDocumentStorage: unavailable,
     resolveDocumentGenerator: () => undefined,
@@ -252,7 +249,27 @@ export interface VoyantGraphRuntimeRoutePosture {
   transactionalPaths: string[]
 }
 
-/** Load graph-owned workflow/subscriber metadata without composing API routes. */
+/**
+ * Invoke one fixed job from the admitted graph without accepting a run payload.
+ * Scheduling, retries, leases, and health remain deployment-host concerns.
+ */
+export async function invokeVoyantGraphJob(
+  runtime: VoyantGraphRuntime,
+  jobId: string,
+  ports?: VoyantGraphRuntimePorts,
+): Promise<void> {
+  const owner = allRuntimeUnits(runtime).find((unit) =>
+    unit.jobs.some((job) => job.declaration.id === jobId),
+  )
+  const job = owner?.jobs.find((candidate) => candidate.declaration.id === jobId)
+  if (!owner || !job) {
+    throw new Error(`invokeVoyantGraphJob: job "${jobId}" is not selected by the graph.`)
+  }
+  const handler = await job.load()
+  await handler(createRuntimeFactoryContext(runtime, ports, owner))
+}
+
+/** Load graph-owned subscriber metadata without composing API routes. */
 export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
   ports?: VoyantGraphRuntimePorts,
@@ -607,30 +624,18 @@ async function resolveRuntimeFacetModule(
   unit: VoyantGraphRuntimeUnitLoader,
   factoryContext: VoyantGraphRuntimeFactoryContext,
 ): Promise<ApiModule | undefined> {
-  const workflows =
-    unit.workflows.length > 0
-      ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
-      : await loadFacetReferences<WorkflowDescriptor>(unit, "workflows.runtime")
-  const subscriberFacets = await loadSubscriberFacets(unit, factoryContext)
-  if (
-    workflows.length === 0 &&
-    subscriberFacets.eventFilters.length === 0 &&
-    subscriberFacets.subscribers.length === 0
-  ) {
+  const subscribers = await loadSubscriberFacets(unit, factoryContext)
+  if (subscribers.length === 0) {
     return undefined
   }
 
   return {
     module: {
       name: `${unit.localId ?? unit.id}.graph-runtime`,
-      ...(workflows.length > 0 ? { workflows } : {}),
-      ...(subscriberFacets.eventFilters.length > 0
-        ? { eventFilters: subscriberFacets.eventFilters }
-        : {}),
-      ...(subscriberFacets.subscribers.length > 0
+      ...(subscribers.length > 0
         ? {
             bootstrap: async (context) => {
-              for (const subscriber of subscriberFacets.subscribers) {
+              for (const subscriber of subscribers) {
                 await subscriber.register(context)
               }
             },
@@ -643,11 +648,7 @@ async function resolveRuntimeFacetModule(
 async function loadSubscriberFacets(
   unit: VoyantGraphRuntimeUnitLoader,
   factoryContext: VoyantGraphRuntimeFactoryContext,
-): Promise<{
-  eventFilters: EventFilterDescriptor[]
-  subscribers: SubscriberRuntimeDescriptor[]
-}> {
-  const eventFilters: EventFilterDescriptor[] = []
+): Promise<SubscriberRuntimeDescriptor[]> {
   const subscribers: SubscriberRuntimeDescriptor[] = []
 
   for (const reference of unit.references.filter(
@@ -666,27 +667,12 @@ async function loadSubscriberFacets(
       subscribers.push(value)
       continue
     }
-    if (isEventFilterDescriptor(value)) {
-      eventFilters.push(value)
-      continue
-    }
     throw new Error(
-      `composeVoyantGraphRuntime: subscriber runtime "${reference.entityId}" must export a SubscriberRuntimeDescriptor or EventFilterDescriptor.`,
+      `composeVoyantGraphRuntime: subscriber runtime "${reference.entityId}" must export a SubscriberRuntimeDescriptor.`,
     )
   }
 
-  return { eventFilters, subscribers }
-}
-
-async function loadFacetReferences<T>(
-  unit: VoyantGraphRuntimeUnitLoader,
-  facet: "workflows.runtime" | "subscribers.runtime",
-): Promise<T[]> {
-  return Promise.all(
-    unit.references
-      .filter((reference) => reference.facet === facet)
-      .map((reference) => reference.load<T>()),
-  )
+  return subscribers
 }
 
 async function resolveRuntimeUnit<TCapabilities>(
@@ -846,15 +832,6 @@ function isSubscriberRuntimeDescriptor(value: unknown): value is SubscriberRunti
     isNonEmptyString(value.id) &&
     isNonEmptyString(value.eventType) &&
     typeof value.register === "function"
-  )
-}
-
-function isEventFilterDescriptor(value: unknown): value is EventFilterDescriptor {
-  return (
-    isRecord(value) &&
-    isNonEmptyString(value.id) &&
-    isNonEmptyString(value.eventType) &&
-    typeof value.register !== "function"
   )
 }
 

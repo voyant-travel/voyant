@@ -32,6 +32,9 @@ export interface DrainOutboxResult {
   deadLettered: number
 }
 
+/** Minimal delivery surface needed by the durable outbox drain. */
+export type OutboxEventDelivery = Pick<EventBus, "deliver"> & Partial<Pick<EventBus, "emit">>
+
 /**
  * Postgres-backed {@link OutboxEventStore} for `createEventBus`'s durable
  * emit path. `getDb` is called per operation so the store can be bound
@@ -212,7 +215,7 @@ export function outboxRowToEnvelope(row: EventOutboxRow): EventEnvelope {
  */
 export async function drainOutbox(
   db: DrizzleClient,
-  bus: EventBus,
+  bus: OutboxEventDelivery,
   options: DrainOutboxOptions = {},
 ): Promise<DrainOutboxResult> {
   const claimed = await claimDueOutboxEvents(db, options)
@@ -234,10 +237,12 @@ export async function drainOutbox(
           const delivery = await bus.deliver(envelope)
           failedCount = delivery.failed
           errors = delivery.errors
-        } else {
+        } else if (bus.emit) {
           // Third-party bus without failure reporting: emit is
           // fire-and-forget; count as success.
           await bus.emit(envelope.name, envelope.data, envelope.metadata as EventMetadata)
+        } else {
+          throw new Error("Outbox delivery runtime provides neither deliver() nor emit().")
         }
       } catch (err) {
         failedCount = 1

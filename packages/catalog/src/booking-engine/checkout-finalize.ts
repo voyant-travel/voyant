@@ -1,5 +1,5 @@
 /**
- * `checkoutFinalize` workflow — runs on `payment.completed` for
+ * `checkoutFinalize` saga — runs on `payment.completed` for
  * bookings created through the storefront's checkout-start path.
  *
  * Steps:
@@ -13,19 +13,15 @@
  *
  * Compensation: if `issue_invoice` fails after the booking is
  * already confirmed, we don't roll back to `awaiting_payment` — the
- * payment was real and the booking is real. Instead the workflow
- * leaves the booking in `confirmed` and rethrows so the workflow
- * runs view surfaces the failed step for ops.
+ * payment was real and the booking is real. Instead the saga leaves the
+ * booking in `confirmed` and rethrows so operations can surface the failure.
  *
- * This is a thin adapter on top of `createWorkflow` from
- * `@voyant-travel/core/workflows` — no durability, no event-await; the
- * caller subscribes to `payment.completed` and runs the workflow
- * inline. Phase 6 of the storefront-checkout-flow plan elaborates
- * with workflow-runs surfacing.
+ * This is an in-process compensation saga. It is not a background job or
+ * durable execution surface; the payment subscriber invokes it inline.
  */
 
 import type { EventBus } from "@voyant-travel/core"
-import { createWorkflow, step } from "@voyant-travel/core/workflows"
+import { createSaga, sagaStep } from "@voyant-travel/core/saga"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export interface CheckoutFinalizeInput {
@@ -36,9 +32,8 @@ export interface CheckoutFinalizeInput {
 }
 
 /**
- * Optional step-lifecycle hooks the caller can wire to the
- * `@voyant-travel/workflow-runs` recorder (or any other observability
- * sink). Catalog stays neutral — it just emits the events.
+ * Optional step-lifecycle hooks the caller can wire to an observability sink.
+ * Catalog stays neutral — it just emits the events.
  */
 export interface CheckoutFinalizeStepRecorder {
   startStep(name: string): Promise<void> | void
@@ -76,15 +71,15 @@ export interface CheckoutFinalizeDeps {
   findProformaForBooking?: (bookingId: string) => Promise<{ invoiceId: string } | null>
   /**
    * Generate the contract PDF for the booking. Checkout finalization
-   * passes `force: true` so this step can overwrite any earlier
-   * `booking.confirmed` subscriber render with final payment state.
-   * Implementations should still be safe to retry.
+   * requests a refresh after final payment linkage. The implementation owns
+   * a durable final-payment render version so retries return the refreshed
+   * attachment rather than forcing it again.
    *
    * Returning `null` is treated as "no contract template wired" and
    * skipped silently — the operator may not have configured one,
-   * which is a deployment choice rather than a workflow failure.
+   * which is a deployment choice rather than a saga failure.
    *
-   * Optional: when omitted, the workflow skips this step entirely
+   * Optional: when omitted, the saga skips this step entirely
    * (operators that don't want explicit-step recording leave it
    * unset and rely on the subscriber).
    */
@@ -110,7 +105,7 @@ export interface CheckoutFinalizeDeps {
   linkPaymentToInvoice?: (input: {
     bookingId: string
     invoiceId: string
-    /** Hint from the workflow input — when set, prefer linking this session. */
+    /** Hint from the saga input — when set, prefer linking this session. */
     paymentSessionId?: string
   }) => Promise<{ paymentId: string | null; sessionsLinked: number }>
 }
@@ -138,8 +133,8 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return null
 }
 
-export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
-  step<CheckoutFinalizeInput, void>("transition_to_confirmed").run(async (input, ctx) => {
+export const checkoutFinalizeSaga = createSaga("checkout-finalize", [
+  sagaStep<CheckoutFinalizeInput, void>("transition_to_confirmed").run(async (input, ctx) => {
     const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
     if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
     await runStep("transition_to_confirmed", deps.recorder, () =>
@@ -147,7 +142,7 @@ export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
     )
   }),
 
-  step<CheckoutFinalizeInput, { invoiceId: string } | null>("issue_invoice").run(
+  sagaStep<CheckoutFinalizeInput, { invoiceId: string } | null>("issue_invoice").run(
     async (input, ctx) => {
       const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
       if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
@@ -163,7 +158,7 @@ export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
     },
   ),
 
-  step<CheckoutFinalizeInput, { paymentId: string | null; sessionsLinked: number } | null>(
+  sagaStep<CheckoutFinalizeInput, { paymentId: string | null; sessionsLinked: number } | null>(
     "link_payment_to_invoice",
   ).run(async (input, ctx) => {
     const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
@@ -174,7 +169,7 @@ export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
     if (!issueOutput?.invoiceId) {
       // Invoice generation was skipped (returned null) — there's
       // nothing to link a payment to. Skip silently rather than
-      // throwing so the workflow continues for "hold"-only checkouts.
+      // throwing so the saga continues for "hold"-only checkouts.
       return null
     }
 
@@ -187,16 +182,15 @@ export const checkoutFinalizeWorkflow = createWorkflow("checkout-finalize", [
     )
   }),
 
-  step<CheckoutFinalizeInput, { contractId: string; attachmentId: string } | null>(
+  sagaStep<CheckoutFinalizeInput, { contractId: string; attachmentId: string } | null>(
     "generate_contract_pdf",
   ).run(async (input, ctx) => {
     const deps = ctx.results.__deps as CheckoutFinalizeDeps | undefined
     if (!deps) throw new Error("checkout-finalize: deps not seeded into context")
-    // Optional step — when no generator is wired, the workflow
+    // Optional step — when no generator is wired, the saga
     // proceeds without a contract document (some operators don't
-    // attach a customer-facing contract). Returning null also keeps
-    // the dashboard's step row, which is the point of having this
-    // as an explicit step rather than a fire-and-forget subscriber.
+    // attach a customer-facing contract). Keeping this explicit also makes
+    // the operation's outcome observable to its caller.
     if (!deps.generateContractPdf) return null
     return runStep("generate_contract_pdf", deps.recorder, () =>
       deps.generateContractPdf!({ bookingId: input.bookingId, force: true }),
@@ -216,8 +210,8 @@ export interface RunCheckoutFinalizeOptions {
 }
 
 /**
- * Run the workflow with deps seeded. Wraps `checkoutFinalizeWorkflow.run`
- * with the dependency-injection plumbing — the workflow primitive
+ * Run the saga with deps seeded. Wraps `checkoutFinalizeSaga.run`
+ * with the dependency-injection plumbing — the saga primitive
  * doesn't carry a "deps" concept on its own, so we pass them through
  * `ctx.results` keyed under `__deps`.
  *
@@ -236,9 +230,9 @@ export async function runCheckoutFinalize(
   // key the downstream steps read (`__deps`) — a previous spelling
   // (`__seed_deps`) silently broke this because step outputs are
   // keyed by name.
-  const seeded = createWorkflow("checkout-finalize", [
-    step<CheckoutFinalizeInput, CheckoutFinalizeDeps>("__deps").run(() => deps),
-    ...checkoutFinalizeWorkflow.steps,
+  const seeded = createSaga("checkout-finalize", [
+    sagaStep<CheckoutFinalizeInput, CheckoutFinalizeDeps>("__deps").run(() => deps),
+    ...checkoutFinalizeSaga.steps,
   ])
   // For resume: the synthetic "__deps" step would otherwise be
   // skipped (and produce no value), starving downstream steps of

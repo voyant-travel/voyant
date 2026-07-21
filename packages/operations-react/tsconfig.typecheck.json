@@ -342,6 +342,7 @@
       ],
       "@voyant-travel/bookings/extras": ["../bookings/dist/extras.d.ts"],
       "@voyant-travel/bookings/extras/validation": ["../bookings/dist/extras/validation.d.ts"],
+      "@voyant-travel/bookings/job-runtime": ["../bookings/dist/job-runtime.d.ts"],
       "@voyant-travel/bookings/linkables": ["../bookings/dist/linkables.d.ts"],
       "@voyant-travel/bookings/pii": ["../bookings/dist/pii.d.ts"],
       "@voyant-travel/bookings/pricing-assignment": ["../bookings/dist/pricing-assignment.d.ts"],
@@ -362,14 +363,13 @@
       "@voyant-travel/bookings/runtime-contributor": ["../bookings/dist/runtime-contributor.d.ts"],
       "@voyant-travel/bookings/runtime-port": ["../bookings/dist/runtime-port.d.ts"],
       "@voyant-travel/bookings/schema": ["../bookings/dist/schema.d.ts"],
+      "@voyant-travel/bookings/stale-holds-job": ["../bookings/dist/stale-holds-job.d.ts"],
       "@voyant-travel/bookings/status": ["../bookings/dist/status.d.ts"],
       "@voyant-travel/bookings/status-dispatch": ["../bookings/dist/status-dispatch.d.ts"],
       "@voyant-travel/bookings/tasks": ["../bookings/dist/tasks/index.d.ts"],
       "@voyant-travel/bookings/tools": ["../bookings/dist/mcp-runtime.d.ts"],
       "@voyant-travel/bookings/validation": ["../bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../bookings/dist/voyant.d.ts"],
-      "@voyant-travel/bookings/workflow-runtime": ["../bookings/dist/workflow-runtime.d.ts"],
-      "@voyant-travel/bookings/workflows": ["../bookings/dist/workflow-entry.d.ts"],
       "@voyant-travel/catalog": ["../catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../catalog-authoring/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring/extension": ["../catalog-authoring/dist/extension.d.ts"],
@@ -452,9 +452,7 @@
       ],
       "@voyant-travel/catalog/catalog-runtime": ["../catalog/dist/runtime/catalog-runtime.d.ts"],
       "@voyant-travel/catalog/contract": ["../catalog/dist/contract.d.ts"],
-      "@voyant-travel/catalog/draft-reaper-workflow": [
-        "../catalog/dist/draft-reaper-workflow.d.ts"
-      ],
+      "@voyant-travel/catalog/draft-reaper-job": ["../catalog/dist/draft-reaper-job.d.ts"],
       "@voyant-travel/catalog/drift/events": ["../catalog/dist/drift/events.d.ts"],
       "@voyant-travel/catalog/embeddings/contract": ["../catalog/dist/embeddings/contract.d.ts"],
       "@voyant-travel/catalog/embeddings/gemini": ["../catalog/dist/embeddings/gemini.d.ts"],
@@ -650,9 +648,6 @@
       "@voyant-travel/commerce-react/sellability/ui": [
         "../commerce-react/dist/sellability/ui.d.ts"
       ],
-      "@voyant-travel/commerce/catalog-checkout-runner": [
-        "../commerce/dist/checkout/runner-runtime.d.ts"
-      ],
       "@voyant-travel/commerce/catalog-checkout-subscribers": [
         "../commerce/dist/checkout/subscriber-runtime.d.ts"
       ],
@@ -660,17 +655,17 @@
         "../commerce/dist/catalog-runtime-extension.d.ts"
       ],
       "@voyant-travel/commerce/checkout": ["../commerce/dist/checkout/index.d.ts"],
-      "@voyant-travel/commerce/product-reindex-workflow": [
-        "../commerce/dist/promotions/workflow-bulk-reindex.d.ts"
-      ],
-      "@voyant-travel/commerce/product-reindex-workflow-manifest": [
-        "../commerce/dist/promotions/workflow-bulk-reindex-manifest.d.ts"
-      ],
-      "@voyant-travel/commerce/promotion-boundary-workflow": [
-        "../commerce/dist/promotions/workflow-boundary-scheduler.d.ts"
+      "@voyant-travel/commerce/promotion-boundary-job": [
+        "../commerce/dist/promotions/job-boundary-scheduler.d.ts"
       ],
       "@voyant-travel/commerce/promotion-redemption-subscriber": [
         "../commerce/dist/promotions/subscriber-runtime.d.ts"
+      ],
+      "@voyant-travel/commerce/promotion-reindex-job": [
+        "../commerce/dist/promotions/reindex-job.d.ts"
+      ],
+      "@voyant-travel/commerce/promotion-reindex-subscriber": [
+        "../commerce/dist/promotions/reindex-subscriber.d.ts"
       ],
       "@voyant-travel/commerce/runtime-contributor": ["../commerce/dist/runtime-contributor.d.ts"],
       "@voyant-travel/commerce/runtime-port": ["../commerce/dist/runtime-port.d.ts"],
@@ -688,13 +683,12 @@
       "@voyant-travel/core/links": ["../core/dist/links.d.ts"],
       "@voyant-travel/core/locking": ["../core/dist/locking.d.ts"],
       "@voyant-travel/core/module": ["../core/dist/module.d.ts"],
-      "@voyant-travel/core/orchestration": ["../core/dist/orchestration.d.ts"],
       "@voyant-travel/core/plugin": ["../core/dist/plugin.d.ts"],
       "@voyant-travel/core/project": ["../core/dist/project.d.ts"],
       "@voyant-travel/core/query": ["../core/dist/query.d.ts"],
       "@voyant-travel/core/registry": ["../core/dist/registry.d.ts"],
       "@voyant-travel/core/runtime-port": ["../core/dist/runtime-port.d.ts"],
-      "@voyant-travel/core/workflows": ["../core/dist/workflows.d.ts"],
+      "@voyant-travel/core/saga": ["../core/dist/saga.d.ts"],
       "@voyant-travel/cruises": ["../cruises/dist/index.d.ts"],
       "@voyant-travel/cruises-contracts": ["../cruises-contracts/dist/index.d.ts"],
       "@voyant-travel/cruises-contracts/cabin-features": [
@@ -729,9 +723,7 @@
       ],
       "@voyant-travel/cruises/content-shape": ["../cruises/dist/content-shape.d.ts"],
       "@voyant-travel/cruises/draft-shape": ["../cruises/dist/draft-shape.d.ts"],
-      "@voyant-travel/cruises/external-refresh-workflow": [
-        "../cruises/dist/external-refresh-workflow.d.ts"
-      ],
+      "@voyant-travel/cruises/external-refresh-job": ["../cruises/dist/external-refresh-job.d.ts"],
       "@voyant-travel/cruises/graph-runtime": ["../cruises/dist/graph-runtime.d.ts"],
       "@voyant-travel/cruises/payment-policy-runtime": [
         "../cruises/dist/payment-policy-runtime.d.ts"
@@ -794,7 +786,7 @@
       "@voyant-travel/db/links": ["../db/dist/links.d.ts"],
       "@voyant-travel/db/operators": ["../db/dist/operators.d.ts"],
       "@voyant-travel/db/outbox": ["../db/dist/outbox.d.ts"],
-      "@voyant-travel/db/outbox-workflow": ["../db/dist/outbox-workflow.d.ts"],
+      "@voyant-travel/db/outbox-job": ["../db/dist/outbox-job.d.ts"],
       "@voyant-travel/db/primitives": ["../db/dist/primitives/index.d.ts"],
       "@voyant-travel/db/primitives/*": ["../db/dist/primitives/*.d.ts"],
       "@voyant-travel/db/queries": ["../db/dist/queries/index.d.ts"],
@@ -941,14 +933,14 @@
       "@voyant-travel/distribution/catalog-runtime-extension": [
         "../distribution/dist/catalog-runtime-extension.d.ts"
       ],
+      "@voyant-travel/distribution/channel-push-jobs": [
+        "../distribution/dist/channel-push/jobs.d.ts"
+      ],
       "@voyant-travel/distribution/channel-push-runtime": [
         "../distribution/dist/channel-push/types.d.ts"
       ],
       "@voyant-travel/distribution/channel-push-subscribers": [
         "../distribution/dist/channel-push/subscriber-runtime.d.ts"
-      ],
-      "@voyant-travel/distribution/channel-push-workflows": [
-        "../distribution/dist/channel-push/workflow-entry.d.ts"
       ],
       "@voyant-travel/distribution/linkables": ["../distribution/dist/linkables.d.ts"],
       "@voyant-travel/distribution/mcp-runtime": ["../distribution/dist/mcp-runtime.d.ts"],
@@ -1120,14 +1112,12 @@
       "@voyant-travel/framework/project-subscriber-link-conventions": [
         "../framework/dist/project-subscriber-link-conventions.d.ts"
       ],
-      "@voyant-travel/framework/project-workflow-job-conventions": [
-        "../framework/dist/project-workflow-job-conventions.d.ts"
-      ],
       "@voyant-travel/framework/scheduled-jobs": ["../framework/dist/scheduled-jobs.d.ts"],
       "@voyant-travel/framework/selected-graph-openapi": [
         "../framework/dist/selected-graph-openapi.d.ts"
       ],
       "@voyant-travel/framework/self-host-export": ["../framework/dist/self-host-export.d.ts"],
+      "@voyant-travel/framework/worker-job-host": ["../framework/dist/worker-job-host.d.ts"],
       "@voyant-travel/hono": ["../hono/dist/index.d.ts"],
       "@voyant-travel/hono/app": ["../hono/dist/app.d.ts"],
       "@voyant-travel/hono/auth": ["../hono/dist/auth/index.d.ts"],
@@ -1271,8 +1261,6 @@
       "@voyant-travel/inventory/tools": ["../inventory/dist/mcp-runtime.d.ts"],
       "@voyant-travel/inventory/validation": ["../inventory/dist/validation.d.ts"],
       "@voyant-travel/inventory/voyant": ["../inventory/dist/voyant.d.ts"],
-      "@voyant-travel/inventory/workflow-runtime": ["../inventory/dist/workflow-runtime.d.ts"],
-      "@voyant-travel/inventory/workflows": ["../inventory/dist/workflow-entry.d.ts"],
       "@voyant-travel/legal": ["../legal/dist/index.d.ts"],
       "@voyant-travel/legal-contracts": ["../legal-contracts/dist/index.d.ts"],
       "@voyant-travel/legal-contracts/contracts/validation": [
@@ -1428,6 +1416,7 @@
         "../notifications-react/dist/query-keys.d.ts"
       ],
       "@voyant-travel/notifications-react/ui": ["../notifications-react/dist/ui.d.ts"],
+      "@voyant-travel/notifications/job-runtime": ["../notifications/dist/job-runtime.d.ts"],
       "@voyant-travel/notifications/providers/local": [
         "../notifications/dist/providers/local.d.ts"
       ],
@@ -1437,6 +1426,7 @@
       "@voyant-travel/notifications/providers/voyant-cloud-sms": [
         "../notifications/dist/providers/voyant-cloud-sms.d.ts"
       ],
+      "@voyant-travel/notifications/reminder-job": ["../notifications/dist/reminder-job.d.ts"],
       "@voyant-travel/notifications/routes": ["../notifications/dist/routes.d.ts"],
       "@voyant-travel/notifications/runtime-contributor": [
         "../notifications/dist/runtime-contributor.d.ts"
@@ -1455,10 +1445,6 @@
       "@voyant-travel/notifications/types": ["../notifications/dist/types.d.ts"],
       "@voyant-travel/notifications/validation": ["../notifications/dist/validation.d.ts"],
       "@voyant-travel/notifications/voyant": ["../notifications/dist/voyant.d.ts"],
-      "@voyant-travel/notifications/workflow-runtime": [
-        "../notifications/dist/workflow-runtime.d.ts"
-      ],
-      "@voyant-travel/notifications/workflows": ["../notifications/dist/workflow-entry.d.ts"],
       "@voyant-travel/observability-sentry": ["../observability-sentry/dist/index.d.ts"],
       "@voyant-travel/operations": ["../operations/dist/index.d.ts"],
       "@voyant-travel/operations/catalog-runtime-extension": [
@@ -1689,7 +1675,6 @@
       "@voyant-travel/runtime/deployment-resources": ["../runtime/dist/deployment-resources.d.ts"],
       "@voyant-travel/runtime/openapi": ["../runtime/dist/openapi.d.ts"],
       "@voyant-travel/runtime/tooling": ["../runtime/dist/tooling.d.ts"],
-      "@voyant-travel/runtime/workflow-entry": ["../runtime/dist/workflow-entry.d.ts"],
       "@voyant-travel/schema-kit": ["../schema-kit/dist/index.d.ts"],
       "@voyant-travel/schema-kit/kms": ["../schema-kit/dist/kms.d.ts"],
       "@voyant-travel/schema-kit/query-params": ["../schema-kit/dist/query-params.d.ts"],
@@ -1870,62 +1855,7 @@
       "@voyant-travel/utils/timezones": ["../utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../vite-config/dist/index.d.ts"],
       "@voyant-travel/webhook-delivery": ["../webhook-delivery/dist/index.d.ts"],
-      "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"],
-      "@voyant-travel/workflow-runs": ["../workflow-runs/dist/index.d.ts"],
-      "@voyant-travel/workflow-runs/api-runtime": ["../workflow-runs/dist/api-runtime.d.ts"],
-      "@voyant-travel/workflow-runs/recorder": ["../workflow-runs/dist/recorder.d.ts"],
-      "@voyant-travel/workflow-runs/routes": ["../workflow-runs/dist/routes.d.ts"],
-      "@voyant-travel/workflow-runs/runtime-contributor": [
-        "../workflow-runs/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/workflow-runs/runtime-port": ["../workflow-runs/dist/runtime-port.d.ts"],
-      "@voyant-travel/workflow-runs/scheduled-workflow": [
-        "../workflow-runs/dist/scheduled-workflow.d.ts"
-      ],
-      "@voyant-travel/workflow-runs/schema": ["../workflow-runs/dist/schema.d.ts"],
-      "@voyant-travel/workflow-runs/service": ["../workflow-runs/dist/service.d.ts"],
-      "@voyant-travel/workflow-runs/tools": ["../workflow-runs/dist/mcp-runtime.d.ts"],
-      "@voyant-travel/workflow-runs/voyant": ["../workflow-runs/dist/voyant.d.ts"],
-      "@voyant-travel/workflow-runs/workflows": ["../workflow-runs/dist/workflows.d.ts"],
-      "@voyant-travel/workflows": ["../workflows/dist/index.d.ts"],
-      "@voyant-travel/workflows-orchestrator": ["../workflows-orchestrator/dist/index.d.ts"],
-      "@voyant-travel/workflows-orchestrator/in-memory": [
-        "../workflows-orchestrator/dist/driver-inmemory.d.ts"
-      ],
-      "@voyant-travel/workflows-orchestrator/selfhost": [
-        "../workflows-orchestrator/dist/node/index.d.ts"
-      ],
-      "@voyant-travel/workflows-orchestrator/testing": [
-        "../workflows-orchestrator/dist/testing/driver-compliance.d.ts"
-      ],
-      "@voyant-travel/workflows-react": ["../workflows-react/dist/index.d.ts"],
-      "@voyant-travel/workflows-react/client": ["../workflows-react/dist/client.d.ts"],
-      "@voyant-travel/workflows-react/components/*": ["../workflows-react/dist/components/*.d.ts"],
-      "@voyant-travel/workflows-react/i18n": ["../workflows-react/dist/i18n/index.d.ts"],
-      "@voyant-travel/workflows-react/i18n/en": ["../workflows-react/dist/i18n/en.d.ts"],
-      "@voyant-travel/workflows-react/i18n/ro": ["../workflows-react/dist/i18n/ro.d.ts"],
-      "@voyant-travel/workflows-react/ui": ["../workflows-react/dist/ui.d.ts"],
-      "@voyant-travel/workflows-react/workflow-runs": [
-        "../workflows-react/dist/workflow-runs.d.ts"
-      ],
-      "@voyant-travel/workflows-react/workflow-runs-client": [
-        "../workflows-react/dist/workflow-runs-client.d.ts"
-      ],
-      "@voyant-travel/workflows-react/workflow-schedules-client": [
-        "../workflows-react/dist/workflow-schedules-client.d.ts"
-      ],
-      "@voyant-travel/workflows/auth": ["../workflows/dist/auth/index.d.ts"],
-      "@voyant-travel/workflows/bindings": ["../workflows/dist/bindings.d.ts"],
-      "@voyant-travel/workflows/client": ["../workflows/dist/client.d.ts"],
-      "@voyant-travel/workflows/config": ["../workflows/dist/config.d.ts"],
-      "@voyant-travel/workflows/driver": ["../workflows/dist/driver.d.ts"],
-      "@voyant-travel/workflows/errors": ["../workflows/dist/errors.d.ts"],
-      "@voyant-travel/workflows/events": ["../workflows/dist/events/index.d.ts"],
-      "@voyant-travel/workflows/handler": ["../workflows/dist/handler/index.d.ts"],
-      "@voyant-travel/workflows/http-ingest": ["../workflows/dist/http-ingest.d.ts"],
-      "@voyant-travel/workflows/protocol": ["../workflows/dist/protocol/index.d.ts"],
-      "@voyant-travel/workflows/rate-limit": ["../workflows/dist/rate-limit/index.d.ts"],
-      "@voyant-travel/workflows/testing": ["../workflows/dist/testing/index.d.ts"]
+      "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"]
     }
   }
 }

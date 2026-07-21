@@ -11,7 +11,7 @@ import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/app-a
 import { checkFinanceActionLedgerDrift } from "./action-ledger-drift.js"
 import { createFinanceAppApiRuntime } from "./app-api-runtime.js"
 import { financeHostRuntimePort } from "./runtime-port.js"
-import { createFinanceStaleBookingHoldsRuntime } from "./stale-booking-holds-runtime.js"
+import { createFinanceStaleBookingHoldsJobRuntime } from "./stale-booking-holds-runtime.js"
 
 export interface FinanceRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
@@ -28,7 +28,7 @@ export function createFinanceRuntimePortContribution(
     } satisfies ActionLedgerFinanceDriftRuntime,
     [financeHostRuntimePort.id]: { primitives: host.primitives },
     [bookingsFinanceRuntimePort.id]: {
-      createStaleBookingHoldsRuntime: createFinanceStaleBookingHoldsRuntime,
+      createStaleBookingHoldsJobRuntime: createFinanceStaleBookingHoldsJobRuntime,
     } satisfies BookingsFinanceRuntime,
   }
 }

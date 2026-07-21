@@ -1,5 +1,4 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
 import { createPostgresAdvisoryLockManager } from "@voyant-travel/db/runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -8,7 +7,7 @@ import {
   type NotificationProvider,
   type NotificationsRuntimeProvider,
 } from "./index.js"
-import { createNotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
+import { createNotificationReminderJobRuntime } from "./job-runtime.js"
 
 /** Build the standard Node Notifications runtime from domain-neutral host primitives. */
 export function createNotificationsRuntime(
@@ -45,9 +44,9 @@ export function createNotificationsRuntime(
       enabled: true,
       templateSlug: "booking-confirmation",
     },
-    resolveReminderWorkflowRuntime: (bindings) => {
-      const env = resolveWorkflowEnvironment(primitives.env(bindings))
-      return createNotificationReminderWorkflowRuntime({
+    resolveReminderJobRuntime: (bindings) => {
+      const env = resolveStringEnvironment(primitives.env(bindings))
+      return createNotificationReminderJobRuntime({
         resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
         resolveEnv: () => env,
         resolveRuntimeOptions: (runtimeEnv) =>
@@ -62,7 +61,7 @@ export function createNotificationsRuntime(
 
 function notificationProviders(
   primitives: VoyantRuntimeHostPrimitives,
-  bindings: Record<string, unknown>,
+  bindings: unknown,
 ): ReadonlyArray<NotificationProvider> {
   const resolver = primitives.config.read(bindings, "notificationProviders")
   return typeof resolver === "function" ? resolver(primitives.env(bindings)) : []
@@ -88,4 +87,14 @@ function nonEmpty(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : undefined
+}
+
+function resolveStringEnvironment(
+  bindings: Readonly<Record<string, unknown>>,
+): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(bindings).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  )
 }

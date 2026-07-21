@@ -80,11 +80,7 @@ for (const token of [
     violations.push(`Operator runtime code must not retain Inventory capability ${token}`)
   }
 }
-for (const token of [
-  "createInventoryRuntime(host.primitives)",
-  "PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY",
-  "createProductsGeneratePdfWorkflowRuntime",
-]) {
+for (const token of ["createInventoryRuntime(host.primitives)"]) {
   if (!inventoryContributor.includes(token)) {
     violations.push(`Inventory contributor must own ${token}`)
   }

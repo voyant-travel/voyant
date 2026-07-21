@@ -1400,98 +1400,55 @@ describe("deployment graph v1", () => {
     )
   })
 
-  it("lowers workflow schedule descriptors into nested stable graph entities", async () => {
-    const project = defineProject({
-      modules: [
-        defineModule({
-          id: "@acme/voyant-automation",
-          workflows: [
-            {
-              id: "daily-rollup",
-              config: {
-                defaultRuntime: "node",
-                schedule: [
-                  {
-                    cron: "0 * * * *",
-                    timezone: "UTC",
-                    environments: ["production"],
-                    input: { kind: "hourly" },
-                    overlap: "skip",
-                    name: "hourly",
-                  },
-                  {
-                    at: "2026-01-01T12:00:00.000Z",
-                    enabled: false,
-                  },
-                ],
-              },
-            },
-          ],
-        }),
+  it("selects package-owned product jobs as closed graph metadata", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.deliver-reminders",
+          wakeup: true,
+          schedule: { every: "5m", overlap: "skip" },
+          runtime: { entry: "./jobs", export: "deliverReminders" },
+        },
+        {
+          id: "notifications.sweep-due-reminders",
+          schedule: { cron: "0 * * * *", timezone: "UTC" },
+          runtime: { entry: "./jobs", export: "sweepDueReminders" },
+        },
       ],
     })
 
-    const graph = await resolveDeploymentGraph({ project, target: "node", mode: "self-hosted" })
-    const [unit] = graph.modules
+    expect(validateGraphUnitManifest(module)).toEqual([])
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
 
-    expect(unit?.workflows[0]?.schedules).toEqual([
+    expect(graph.modules[0]?.jobs).toEqual([
       {
-        id: "@acme/voyant-automation#schedule.daily-rollup.hourly",
-        workflowId: "daily-rollup",
-        cron: "0 * * * *",
-        timezone: "UTC",
-        environments: ["production"],
-        input: { kind: "hourly" },
-        overlap: "skip",
-        name: "hourly",
+        id: "notifications.deliver-reminders",
+        wakeup: true,
+        schedule: { every: "5m", overlap: "skip" },
+        runtime: { entry: "./jobs", export: "deliverReminders" },
       },
       {
-        id: "@acme/voyant-automation#schedule.daily-rollup.schedule-2",
-        workflowId: "daily-rollup",
-        at: "2026-01-01T12:00:00.000Z",
-        enabled: false,
+        id: "notifications.sweep-due-reminders",
+        schedule: { cron: "0 * * * *", timezone: "UTC" },
+        runtime: { entry: "./jobs", export: "sweepDueReminders" },
       },
     ])
-    expect(graph.provisioning.scheduledJobs).toEqual([
+    expect(graph.provisioning.jobs).toEqual([
       {
-        id: "@acme/voyant-automation#schedule.daily-rollup.hourly",
-        cron: "0 * * * *",
-        description:
-          "Triggers workflow daily-rollup from graph schedule @acme/voyant-automation#schedule.daily-rollup.hourly.",
-        route: "/__voyant/scheduled",
-        module: "@acme/voyant-automation",
-        workflowId: "daily-rollup",
-        input: { kind: "hourly" },
+        id: "notifications.deliver-reminders",
+        unitId: "@acme/voyant-notifications",
+        packageName: "@acme/voyant-notifications",
+        schedule: { every: "5m", overlap: "skip" },
+        wakeup: true,
       },
-    ])
-    expect(graph.diagnostics).toEqual([])
-  })
-
-  it("detects duplicate workflow schedule entity ids after descriptor lowering", async () => {
-    const project = defineProject({
-      modules: [
-        defineModule({
-          id: "@acme/voyant-automation",
-          workflows: [
-            {
-              id: "daily-rollup",
-              schedules: [{ id: "@acme/voyant-automation#schedule.daily-rollup.hourly" }],
-              config: {
-                schedule: { cron: "0 * * * *", name: "hourly" },
-              },
-            },
-          ],
-        }),
-      ],
-    })
-
-    const graph = await resolveDeploymentGraph({ project, target: "node", mode: "self-hosted" })
-
-    expect(graph.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
-        source: "@acme/voyant-automation",
-      }),
+      {
+        id: "notifications.sweep-due-reminders",
+        unitId: "@acme/voyant-notifications",
+        packageName: "@acme/voyant-notifications",
+        schedule: { cron: "0 * * * *", timezone: "UTC" },
+        wakeup: false,
+      },
     ])
   })
 

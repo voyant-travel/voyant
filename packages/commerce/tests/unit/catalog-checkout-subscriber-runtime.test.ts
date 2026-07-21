@@ -67,7 +67,7 @@ describe("catalog-checkout subscriber runtimes", () => {
     expect(persistSignature).toHaveBeenCalledWith(db, "contract_1", eventBus, legalPort)
   })
 
-  it("logs and swallows acceptance-signature failures", async () => {
+  it("logs and rethrows acceptance-signature failures for outbox retry", async () => {
     const error = new Error("legal unavailable")
     const logger = { error: vi.fn() }
     const { eventBus, subscriptions } = recordingEventBus()
@@ -82,7 +82,7 @@ describe("catalog-checkout subscriber runtimes", () => {
 
     await expect(
       subscriptions[0]?.handler(event("contract.document.generated", { contractId: "contract_2" })),
-    ).resolves.toBeUndefined()
+    ).rejects.toBe(error)
     expect(logger.error).toHaveBeenCalledWith(
       "[catalog-checkout] persistAcceptanceSignature failed",
       error,
@@ -92,10 +92,10 @@ describe("catalog-checkout subscriber runtimes", () => {
   it("finalizes booking payments inline with the delivery-scoped event bus", async () => {
     const db = {} as PostgresJsDatabase
     const scopedEventBus = createEventBus()
-    const dispatchFinalize = vi.fn(async () => ({ runId: "run_1" }))
+    const finalize = vi.fn(async () => undefined)
     const withDb = vi.fn(async (_bindings, operation) => operation(db))
     const { eventBus, subscriptions } = recordingEventBus()
-    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, dispatchFinalize })
+    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, finalize })
     await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
 
     await subscriptions[0]?.handler(
@@ -112,7 +112,7 @@ describe("catalog-checkout subscriber runtimes", () => {
       eventType: "payment.completed",
     })
     expect(subscriptions[0]?.inline).toBe(true)
-    expect(dispatchFinalize).toHaveBeenCalledWith(
+    expect(finalize).toHaveBeenCalledWith(
       expect.objectContaining({
         db,
         eventBus: scopedEventBus,
@@ -121,28 +121,33 @@ describe("catalog-checkout subscriber runtimes", () => {
           paymentSessionId: "session_1",
           paymentIntent: "card",
         },
-        trigger: "payment.completed",
-        correlationId: "session_1",
-        tags: ["bookingId:booking_1", "paymentSessionId:session_1", "paymentIntent:card"],
       }),
     )
   })
 
-  it("ignores unrelated payments and swallows dispatch failures", async () => {
-    const dispatchFinalize = vi.fn(async () => {
-      throw new Error("recorded workflow failure")
+  it("ignores unrelated payments and rethrows dispatch failures for outbox retry", async () => {
+    const error = new Error("checkout finalization failure")
+    const finalize = vi.fn(async () => {
+      throw error
     })
+    const logger = { error: vi.fn() }
     const withDb = vi.fn(async (_bindings, operation) => operation({} as PostgresJsDatabase))
     const { eventBus, subscriptions } = recordingEventBus()
-    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, dispatchFinalize })
+    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, finalize, logger })
     await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
 
     await subscriptions[0]?.handler(event("payment.completed", { bookingId: null }))
     expect(withDb).not.toHaveBeenCalled()
 
     await expect(
-      subscriptions[0]?.handler(event("payment.completed", { bookingId: "booking_2" })),
-    ).resolves.toBeUndefined()
-    expect(dispatchFinalize).toHaveBeenCalledOnce()
+      subscriptions[0]?.handler(
+        event("payment.completed", { bookingId: "booking_2", paymentSessionId: "session_2" }),
+      ),
+    ).rejects.toBe(error)
+    expect(finalize).toHaveBeenCalledOnce()
+    expect(logger.error).toHaveBeenCalledWith(
+      "[catalog-checkout] checkout finalization failed for booking booking_2",
+      error,
+    )
   })
 })

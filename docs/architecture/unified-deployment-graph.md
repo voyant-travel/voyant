@@ -73,7 +73,7 @@ export default defineConfig({
 ```
 
 A standard project does not list standard modules, package-owned extensions,
-admin pages, API documents, subscribers, workflows, jobs, links, migrations, or
+admin pages, API documents, subscribers, jobs, links, migrations, or
 runtime bindings. Product defaults change through an explicit distribution
 dependency or lockfile change, so graph diffing and migration planning remain
 reviewable.
@@ -96,8 +96,6 @@ src/
   admin/
   modules/
   extensions/
-  workflows/
-  jobs/
   subscribers/
   links/
 ```
@@ -141,7 +139,7 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 - capabilities and typed runtime ports
 - API bundles and their OpenAPI document membership
 - schemas, migrations, links, and setup migrations
-- workflows, schedules, subscribers, and events
+- package-owned product jobs, schedules, subscribers, and events
 - admin routes, pages, slots, and contributions
 - reporting datasets, preset widgets, and cross-module grid templates
 - access resources, tools, webhooks, actions, and lifecycle metadata
@@ -149,7 +147,7 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 
 Executable code is referenced through symbolic package exports and remains
 behind lazy imports. Importing `./voyant` must not load route trees, schemas, UI,
-workflow implementations, or infrastructure clients.
+job implementations, or infrastructure clients.
 
 Reporting declarations follow the same boundary. Dataset descriptors, preset
 queries, visualizations, and grid templates are source-free JSON metadata;
@@ -265,6 +263,12 @@ domain-neutral primitives for environment, database, storage, events, and
 configuration. It also owns HTTP serving, admin SSR/static delivery, auth host
 integration, scheduled dispatch, origin trust, and graceful shutdown.
 
+For product jobs, the host consumes exactly two outputs of the admitted graph:
+`provisioning.jobs` is its immutable inventory and `runtime.jobs` supplies the
+matching fixed callable exports. Boot fails when those inventories differ.
+The same composed runtime ports used by API and subscriber contributors are
+passed to job handlers; the host never creates per-run bindings or input.
+
 Packages own product runtime composition. A selected package declares the ports
 its runtime factory requires and publishes a package-owned runtime contributor.
 Generated composition loads contributors from selected packages, runs port
@@ -276,7 +280,7 @@ ID. The host must not choose Bookings, Finance, Catalog, or any other product
 implementation. Conversely, packages must not reach into a deployment container
 for undeclared services. Infrastructure follows the same authority
 rule: `deployment.providers` selects storage, cache, shared state, rate limit,
-workflow, and delivery implementations; environment values only configure the
+job and delivery implementations; environment values only configure the
 selected implementation.
 
 Object storage is exposed as a vendor-neutral logical-store resolver. The Node
@@ -376,14 +380,35 @@ surfaces return and render the lowered catalog without importing package manifes
 or rebuilding contracts. Product distributions select the infrastructure module;
 settings packages and application hosts do not own or reconstruct the catalog.
 
-### Workflows, jobs, and schedules
+### Jobs and schedules
 
-Packages own workflow and schedule descriptors. Project jobs compile into graph
-workflow descriptors through the project convention. Public scheduled work uses
-stable schedule IDs and package-owned workflow references; the Node host only
-dispatches admitted generated schedules. Cron expressions are scheduling
-metadata, not runtime dispatch identity. A central scheduled-job catalog is not
-allowed.
+Selected packages may own product jobs required by their capabilities. Each job
+has a stable ID, a package-owned schedule or wakeup marker, and a named symbolic
+runtime export. The resolved graph is the only job inventory consumed by a
+deployment host. Job declarations cannot carry execution payloads, steps, waits,
+or generic run controls; durable work state belongs to the owning domain.
+
+Projects cannot author product-job declarations in `voyant.config.ts` or
+through a product-job source convention. Selecting a package selects its jobs.
+Customer-specific scheduled automation runs outside Voyant and integrates
+through events and domain commands.
+
+The standard self-hosted Operator selects `node-cron` and starts this job host
+by default. It serializes each job in-process, coalesces at most one queued
+invocation when requested, and retries failures with bounded exponential
+backoff. Schedules support five-field numeric cron expressions and `every`
+durations; cron day-of-month/day-of-week follow standard OR semantics. Product
+jobs cannot opt into concurrent overlap within one host.
+
+At process start, every scheduled job receives one explicit recovery sweep.
+This is intentionally stronger than guessing whether a tick was missed: job
+operations must be idempotent and claim domain-owned durable work, so the sweep
+repairs missed scheduler delivery without making host memory authoritative.
+After that sweep, resident cadence dispatch observes cron and `every` metadata.
+External scheduler and wakeup calls use the fixed
+`POST /__voyant/jobs/:jobId` endpoint, require origin-trust authentication, and
+accept no body or query input. The host exposes only in-memory job health (last
+attempt, success, failure, and retry exhaustion), not generic run controls.
 
 ### Tools, access, actions, and audit
 
@@ -436,13 +461,13 @@ The unification is complete only when all of these statements are true:
 3. No first-party package ID appears in starter composition code.
 4. Every selected reusable package publishes `voyant.package.v1` metadata and
    owns each facet it activates.
-5. API, admin, OpenAPI, events, subscribers, workflows, jobs, schedules, tools,
+5. API, admin, OpenAPI, events, subscribers, jobs, schedules, tools,
    access, actions, links, schemas, and migrations are selected-graph derived.
 6. Runtime behavior is assembled from package-owned contributors and explicit
    typed ports over domain-neutral host primitives.
 7. Central composition and OpenAPI catalogs, package-keyed runtime bindings, and
    compatibility registries are absent.
-8. Adding a local route, admin page, module, workflow, job, subscriber, or link
+8. Adding a local route, admin page, module, subscriber, or link
    requires adding a file in the corresponding directory, not forking a
    standard package.
 9. Generated artifacts are deterministic, hash-consistent, and rejected when

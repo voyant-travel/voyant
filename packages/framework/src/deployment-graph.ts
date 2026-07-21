@@ -22,6 +22,8 @@ import {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
+  type VoyantGraphJob,
+  type VoyantGraphJobSchedule,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
@@ -49,8 +51,6 @@ import {
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
   type VoyantGraphWebhookDeclaration,
-  type VoyantGraphWorkflow,
-  type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
 export { defineAdapter, definePlugin, defineProvider } from "@voyant-travel/core/project"
@@ -63,7 +63,7 @@ import type {
   VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
 import { DEPLOYMENT_PROVIDER_ROLES } from "./deployment-types.js"
-import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
+import type { VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
 export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
@@ -99,6 +99,8 @@ export {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
+  type VoyantGraphJob,
+  type VoyantGraphJobSchedule,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
@@ -134,8 +136,6 @@ export {
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
   type VoyantGraphWebhookDeclaration,
-  type VoyantGraphWorkflow,
-  type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
 export const VOYANT_GRAPH_RESERVED_FACETS = [
@@ -237,8 +237,15 @@ export interface VoyantGraphScheduledJob {
   description: string
   route: string
   module: string
-  workflowId?: string
-  input?: VoyantGraphJsonValue
+}
+
+/** Host-facing inventory for fixed jobs selected with product packages. */
+export interface VoyantGraphProvisionedJob {
+  id: string
+  unitId: string
+  packageName: string
+  schedule?: VoyantGraphJobSchedule
+  wakeup: boolean
 }
 
 export interface VoyantGraphInboundWebhookPlanEntry {
@@ -395,7 +402,7 @@ export interface ResolvedVoyantGraphUnit {
   links: readonly VoyantGraphLinkDeclaration[]
   subscribers: readonly VoyantGraphSubscriber[]
   events: readonly VoyantGraphEvent[]
-  workflows: readonly VoyantGraphWorkflow[]
+  jobs: readonly VoyantGraphJob[]
   setupMigrations?: readonly VoyantGraphSetupMigration[]
   config?: readonly VoyantGraphConfigDeclaration[]
   secrets?: readonly VoyantGraphSecretDeclaration[]
@@ -439,6 +446,7 @@ export interface ResolvedVoyantDeploymentGraph {
   reportingCatalog: VoyantGraphReportingCatalog
   webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
+    jobs: readonly VoyantGraphProvisionedJob[]
     scheduledJobs: readonly VoyantGraphScheduledJob[]
   }
   diagnostics: readonly VoyantGraphDiagnostic[]
@@ -482,7 +490,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "links",
   "subscribers",
   "events",
-  "workflows",
+  "jobs",
   "setupMigrations",
   "config",
   "secrets",
@@ -671,7 +679,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateLinks(input.links, source))
   diagnostics.push(...validateSubscribers(input.subscribers, source))
   diagnostics.push(...validateEvents(input.events, source))
-  diagnostics.push(...validateWorkflows(input.workflows, source))
+  diagnostics.push(...validateJobs(input.jobs, source))
   diagnostics.push(...validatePromotedFacets(input, source))
 
   return sortDiagnostics(diagnostics)
@@ -737,10 +745,18 @@ export async function resolveDeploymentGraph(
     input.project.selections,
     input.packageRecords ?? [],
   )
-  const scheduledJobs = normalizeScheduledJobs([
-    ...deriveWorkflowScheduledJobs(selectedUnits),
-    ...(input.scheduledJobs ?? []),
-  ])
+  const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
+  const provisionedJobs = selectedUnits
+    .flatMap((unit) =>
+      unit.jobs.map((job) => ({
+        id: job.id,
+        unitId: unit.id,
+        packageName: unit.packageName,
+        ...(job.schedule ? { schedule: job.schedule } : {}),
+        wakeup: job.wakeup === true,
+      })),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id))
   const eventCatalog = compileEventCatalog(selectedUnits)
   const webhookPlan = compileWebhookPlan(selectedUnits)
   const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
@@ -797,6 +813,7 @@ export async function resolveDeploymentGraph(
     reportingCatalog,
     webhookPlan,
     provisioning: {
+      jobs: provisionedJobs,
       scheduledJobs,
     },
     diagnostics,
@@ -1077,33 +1094,8 @@ function normalizeScheduledJobs(
       description: job.description,
       route: job.route,
       module: job.module,
-      ...("workflowId" in job && job.workflowId ? { workflowId: job.workflowId } : {}),
-      ...("input" in job && job.input !== undefined ? { input: job.input } : {}),
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
-}
-
-function deriveWorkflowScheduledJobs(
-  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
-): VoyantGraphScheduledJob[] {
-  return units.flatMap((unit) =>
-    unit.workflows.flatMap((workflow) =>
-      (workflow.schedules ?? []).flatMap((schedule) => {
-        if (schedule.enabled === false || !schedule.cron) return []
-        return [
-          {
-            id: schedule.id,
-            cron: schedule.cron,
-            description: `Triggers workflow ${workflow.id} from graph schedule ${schedule.id}.`,
-            route: SCHEDULED_JOB_ROUTE,
-            module: unit.localId ?? unit.id,
-            workflowId: workflow.id,
-            ...(schedule.input !== undefined ? { input: schedule.input } : {}),
-          },
-        ]
-      }),
-    ),
-  )
 }
 
 function compareEnvRequirements(
@@ -1176,7 +1168,7 @@ function resolveUnit(
     links: sortFacetEntities(unit.links ?? []),
     subscribers: sortFacetEntities(unit.subscribers ?? []) as VoyantGraphSubscriber[],
     events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
-    workflows: sortWorkflows(normalizeWorkflowScheduleFacets(unit.id, unit.workflows ?? [])),
+    jobs: sortFacetEntities(unit.jobs ?? []) as VoyantGraphJob[],
     ...(unit.setupMigrations?.length
       ? { setupMigrations: sortFacetEntities(unit.setupMigrations) }
       : {}),
@@ -1445,79 +1437,6 @@ function sortResolvedUnits<
         left.packageName.localeCompare(right.packageName),
     )
     .map((unit, index) => ({ ...unit, order: index }))
-}
-
-function normalizeWorkflowScheduleFacets(
-  unitId: string,
-  workflows: readonly VoyantGraphWorkflow[],
-): VoyantGraphWorkflow[] {
-  return workflows.map((workflow) => {
-    const declared = workflow.schedules ?? []
-    const lowered =
-      isRecord(workflow.config) && workflow.config.schedule !== undefined
-        ? lowerWorkflowScheduleFacets(unitId, workflow.id, workflow.config.schedule)
-        : []
-    return lowered.length > 0 ? { ...workflow, schedules: [...declared, ...lowered] } : workflow
-  })
-}
-
-function lowerWorkflowScheduleFacets(
-  unitId: string,
-  workflowId: string,
-  value: unknown,
-): VoyantGraphWorkflowSchedule[] {
-  const schedules = Array.isArray(value) ? value : [value]
-  return schedules.flatMap((schedule, index) => {
-    const lowered = lowerWorkflowScheduleFacet(unitId, workflowId, schedule, index)
-    return lowered ? [lowered] : []
-  })
-}
-
-function lowerWorkflowScheduleFacet(
-  unitId: string,
-  workflowId: string,
-  value: unknown,
-  index: number,
-): VoyantGraphWorkflowSchedule | undefined {
-  if (!isRecord(value)) return undefined
-  const input = typeof value.input === "function" ? undefined : toGraphJsonValue(value.input)
-  const environments = normalizeScheduleEnvironments(value.environments)
-  return {
-    id: childGraphEntityId(unitId, `schedule.${workflowId}.${scheduleEntityKey(value, index)}`),
-    workflowId,
-    ...(typeof value.cron === "string" ? { cron: value.cron } : {}),
-    ...(typeof value.every === "string" || typeof value.every === "number"
-      ? { every: value.every }
-      : {}),
-    ...(typeof value.at === "string"
-      ? { at: value.at }
-      : value.at instanceof Date
-        ? { at: value.at.toISOString() }
-        : {}),
-    ...(typeof value.timezone === "string" ? { timezone: value.timezone } : {}),
-    ...(input !== undefined ? { input } : {}),
-    ...(typeof value.enabled === "boolean" ? { enabled: value.enabled } : {}),
-    ...(value.overlap === "skip" || value.overlap === "queue" || value.overlap === "allow"
-      ? { overlap: value.overlap }
-      : {}),
-    ...(environments.length > 0 ? { environments } : {}),
-    ...(typeof value.name === "string" ? { name: value.name } : {}),
-  }
-}
-
-function scheduleEntityKey(value: Record<string, unknown>, index: number): string {
-  if (typeof value.name === "string" && isGraphEntityIdSegment(value.name)) return value.name
-  return `schedule-${index + 1}`
-}
-
-function normalizeScheduleEnvironments(
-  value: unknown,
-): Array<"production" | "preview" | "development"> {
-  if (!Array.isArray(value)) return []
-  return value.filter(
-    (entry): entry is "production" | "preview" | "development" =>
-      entry === "production" || entry === "preview" || entry === "development",
-  )
 }
 
 function validateCapabilityDeclaration(
@@ -2698,32 +2617,173 @@ function normalizeRouteRelativePath(value: string): string | undefined {
   return segments.some((segment) => segment === "." || segment === "..") ? undefined : normalized
 }
 
-function validateWorkflows(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
-  const diagnostics = validateFacetEntities(value, "workflows", source)
+function validateJobs(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "jobs", source)
   if (!Array.isArray(value)) return diagnostics
-  for (let workflowIndex = 0; workflowIndex < value.length; workflowIndex++) {
-    const workflow = value[workflowIndex]
-    if (!isRecord(workflow)) continue
-    if (workflow.runtime !== undefined) {
-      validateRuntimeReference(
-        workflow.runtime,
-        `workflows[${workflowIndex}].runtime`,
+
+  value.forEach((job, index) => {
+    if (!isRecord(job)) return
+    const facet = `jobs[${index}]`
+    for (const key of Object.keys(job)) {
+      if (["id", "runtime", "schedule", "wakeup"].includes(key)) continue
+      invalidFacet(
+        `${facet}.${key}`,
         source,
         diagnostics,
+        `Job declarations do not support "${key}". Jobs are fixed package-owned operations without payloads or user-authored controls.`,
       )
     }
-    if (!Array.isArray(workflow.schedules)) continue
-    for (let scheduleIndex = 0; scheduleIndex < workflow.schedules.length; scheduleIndex++) {
-      diagnostics.push(
-        ...validateEntityId(
-          workflow.schedules[scheduleIndex],
-          `workflows[${workflowIndex}].schedules[${scheduleIndex}]`,
-          source,
-        ),
+
+    validateRuntimeReference(job.runtime, `${facet}.runtime`, source, diagnostics)
+    if (!isRecord(job.runtime) || typeof job.runtime.export !== "string" || !job.runtime.export) {
+      invalidFacet(
+        `${facet}.runtime.export`,
+        source,
+        diagnostics,
+        "Job runtime references require a named export.",
       )
     }
-  }
+
+    const scheduled = job.schedule !== undefined
+    const wakeable = job.wakeup === true
+    if (!scheduled && !wakeable) {
+      invalidFacet(
+        facet,
+        source,
+        diagnostics,
+        "Jobs must declare a package-owned schedule, wakeup: true, or both.",
+      )
+    }
+    if (job.wakeup !== undefined && job.wakeup !== true) {
+      invalidFacet(`${facet}.wakeup`, source, diagnostics, "Job wakeup must be true when declared.")
+    }
+    if (!scheduled) return
+    if (!isRecord(job.schedule)) {
+      invalidFacet(
+        `${facet}.schedule`,
+        source,
+        diagnostics,
+        "Job schedules must declare exactly one cron or every cadence.",
+      )
+      return
+    }
+    const schedule = job.schedule
+    for (const key of Object.keys(schedule)) {
+      if (["cron", "every", "timezone", "overlap"].includes(key)) continue
+      invalidFacet(
+        `${facet}.schedule.${key}`,
+        source,
+        diagnostics,
+        `Job schedules do not support "${key}".`,
+      )
+    }
+    const hasCron = typeof schedule.cron === "string" && schedule.cron.trim().length > 0
+    const hasEvery =
+      (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
+      (typeof schedule.every === "number" && Number.isFinite(schedule.every) && schedule.every > 0)
+    if (hasCron === hasEvery) {
+      invalidFacet(
+        `${facet}.schedule`,
+        source,
+        diagnostics,
+        "Job schedules must declare exactly one non-empty cron or positive every cadence.",
+      )
+    }
+    if (hasCron && !isSupportedProductJobCron(schedule.cron as string)) {
+      invalidFacet(
+        `${facet}.schedule.cron`,
+        source,
+        diagnostics,
+        "Job cron schedules must use five numeric fields with wildcards, lists, ranges, or steps.",
+      )
+    }
+    if (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number)) {
+      invalidFacet(
+        `${facet}.schedule.every`,
+        source,
+        diagnostics,
+        "Job every schedules must use positive milliseconds, a duration such as 5m, or an ISO PT duration.",
+      )
+    }
+    if (schedule.timezone !== undefined && typeof schedule.timezone !== "string") {
+      invalidFacet(
+        `${facet}.schedule.timezone`,
+        source,
+        diagnostics,
+        "Job schedule timezone must be a string.",
+      )
+    }
+    if (
+      typeof schedule.timezone === "string" &&
+      !isSupportedProductJobTimezone(schedule.timezone)
+    ) {
+      invalidFacet(
+        `${facet}.schedule.timezone`,
+        source,
+        diagnostics,
+        "Job schedule timezone must be a valid IANA time zone.",
+      )
+    }
+    if (
+      schedule.overlap !== undefined &&
+      schedule.overlap !== "skip" &&
+      schedule.overlap !== "queue"
+    ) {
+      invalidFacet(
+        `${facet}.schedule.overlap`,
+        source,
+        diagnostics,
+        "Job schedule overlap must be skip or queue; product jobs never run concurrently in one host.",
+      )
+    }
+  })
   return diagnostics
+}
+
+function isSupportedProductJobCron(expression: string): boolean {
+  const ranges = [
+    [0, 59],
+    [0, 23],
+    [1, 31],
+    [1, 12],
+    [0, 7],
+  ] as const
+  const fields = expression.trim().split(/\s+/)
+  return (
+    fields.length === 5 &&
+    fields.every((field, index) => {
+      const [minimum, maximum] = ranges[index]!
+      return field.split(",").every((part) => {
+        const [range, stepText, extra] = part.split("/")
+        if (extra !== undefined) return false
+        const step = stepText === undefined ? 1 : Number(stepText)
+        if (!Number.isInteger(step) || step <= 0) return false
+        if (range === "*") return true
+        const values = range!.split("-").map(Number)
+        if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
+        const [start, end = start] = values
+        return start! >= minimum && end! <= maximum && start! <= end!
+      })
+    })
+  )
+}
+
+function isSupportedProductJobEvery(value: string | number): boolean {
+  if (typeof value === "number") return Number.isInteger(value) && value > 0
+  if (/^\d+(?:\.\d+)?\s*(?:ms|s|m|h|d)$/i.test(value.trim())) return true
+  const iso = /^PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?$/i.exec(
+    value.trim(),
+  )
+  return Boolean(iso && iso.slice(1).some((part) => Number(part ?? 0) > 0))
+}
+
+function isSupportedProductJobTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format()
+    return true
+  } catch {
+    return false
+  }
 }
 
 function validateSubscribers(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
@@ -2897,7 +2957,6 @@ function validateFacetReferences(
   const actionBindings = {
     routes: new Set(units.flatMap((unit) => unit.api.map((entry) => entry.id))),
     tools: new Set(units.flatMap((unit) => (unit.tools ?? []).map((entry) => entry.id))),
-    workflows: new Set(units.flatMap((unit) => unit.workflows.map((entry) => entry.id))),
     events: new Set(units.flatMap((unit) => unit.events.map((entry) => entry.id))),
     webhooks: new Set(units.flatMap((unit) => (unit.webhooks ?? []).map((entry) => entry.id))),
   } as const
@@ -3762,9 +3821,7 @@ function validateRuntimeReferenceAdmission(
       add(`reporting.datasets.runtime.${dataset.id}.entry`, dataset.runtime)
     }
     for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
-    for (const workflow of unit.workflows) {
-      add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
-    }
+    for (const job of unit.jobs) add(`jobs.runtime.${job.id}.entry`, job.runtime)
     for (const subscriber of unit.subscribers) {
       add(`subscribers.runtime.${subscriber.id}.entry`, subscriber.runtime)
     }
@@ -3911,10 +3968,7 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.webhooks ?? []).map((entry) => entry.id),
     ...(unit.actions ?? []).map((entry) => entry.id),
     ...(unit.lifecycle?.cleanup ?? []).map((entry) => entry.id),
-    ...unit.workflows.flatMap((entry) => [
-      entry.id,
-      ...(entry.schedules ?? []).map((schedule) => schedule.id),
-    ]),
+    ...unit.jobs.map((entry) => entry.id),
   ]
 }
 
@@ -4026,17 +4080,6 @@ async function graphWithDiagnostics(
     ...next,
     contentHash: `sha256:${await sha256(next)}`,
   }
-}
-
-function sortWorkflows(workflows: readonly VoyantGraphWorkflow[]): VoyantGraphWorkflow[] {
-  return [...workflows]
-    .map((workflow) => ({
-      ...workflow,
-      ...(workflow.schedules
-        ? { schedules: sortFacetEntities(workflow.schedules) as VoyantGraphWorkflowSchedule[] }
-        : {}),
-    }))
-    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 function sortFacetEntities<T extends { id: string }>(entities: readonly T[]): T[] {

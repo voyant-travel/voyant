@@ -57,11 +57,10 @@ honest.
 
 ## Final state (migration complete)
 
-Every route family above now composes through `OPERATOR_RUNTIME_MANIFEST` /
-`operatorComposition` as a module or extension. Workflow Runs now creates its
-registry through its package runtime contributor and mounts its routes through
-its selected-graph factory. The generic Runtime and Operator starter contain no
-Workflow Runs-specific route mount.
+Every remaining route family above now composes through
+`OPERATOR_RUNTIME_MANIFEST` / `operatorComposition` as a module or extension.
+The subsequently retired Workflow Runs package and its routes are no longer
+part of the graph, generic Runtime, or Operator starter.
 
 - Package-owned extensions: `channel-push` (distribution), `booking-tax`
   (finance).

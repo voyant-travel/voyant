@@ -1,7 +1,7 @@
 import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 
 import { createChannelPushSubscribers } from "./subscriber.js"
-import { CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY, type ChannelPushDeps } from "./types.js"
+import { CHANNEL_PUSH_RUNTIME_KEY, type ChannelPushDeps } from "./types.js"
 
 const BOOKING_CONFIRMED_SUBSCRIBER_ID =
   "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed"
@@ -19,9 +19,10 @@ function defineChannelPushSubscriberRuntime(
     eventType,
     register: ({ container, eventBus }) => {
       const subscriber = createChannelPushSubscribers({
+        drainInline: false,
         resolveDeps: () =>
-          container.has(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)
-            ? container.resolve<ChannelPushDeps>(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)
+          container.has(CHANNEL_PUSH_RUNTIME_KEY)
+            ? container.resolve<ChannelPushDeps>(CHANNEL_PUSH_RUNTIME_KEY)
             : undefined,
       }).find((candidate) => candidate.event === eventType)
 

@@ -52,7 +52,7 @@ export const OPERATOR_GRAPH_ADMISSION_POLICY = {
 
 const OPERATOR_GRAPH_COMPATIBILITY = {
   framework: ">=0.26.0",
-  targets: ["node"],
+  targets: ["node", "cloudflare-worker"],
   modes: ["local", "managed-cloud", "self-hosted"],
 } as const
 
@@ -89,7 +89,7 @@ export function withOperatorDeploymentLocalPackageRecords(
   )
 }
 
-export function withOperatorNodePackageCompatibility(
+export function withOperatorHostPackageCompatibility(
   records: readonly VoyantGraphPackageRecord[],
 ): VoyantGraphPackageRecord[] {
   return records.map((record) =>
@@ -100,7 +100,7 @@ export function withOperatorNodePackageCompatibility(
             ...record.metadata,
             compatibleWith: {
               ...record.metadata.compatibleWith,
-              targets: ["node"],
+              targets: ["node", "cloudflare-worker"],
             },
           },
         }
@@ -122,7 +122,7 @@ export async function resolveOperatorDeploymentGraph(
     admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   } as const
   const discoveredGraph = await resolveDeploymentGraph(graphInput)
-  const selectedPackageRecords = withOperatorNodePackageCompatibility(
+  const selectedPackageRecords = withOperatorHostPackageCompatibility(
     withOperatorDeploymentLocalPackageRecords(
       readPnpmLockfilePackageRecords({
         repoRoot: options.repoRoot,
@@ -152,7 +152,7 @@ export async function resolveOperatorDeploymentGraph(
     ...(manifestedGraph.adapters ?? []),
     ...(manifestedGraph.providers ?? []),
   ])
-  const packageRecords = withOperatorNodePackageCompatibility(
+  const packageRecords = withOperatorHostPackageCompatibility(
     withInferredRuntimePackageMetadata(
       withOperatorDeploymentLocalPackageRecords(
         readPnpmLockfilePackageRecords({
@@ -245,7 +245,6 @@ function requireResolvedProjectArtifacts(value: unknown): ResolvedProjectArtifac
   const artifacts = value as Partial<ResolvedProjectArtifacts>
   if (
     typeof artifacts.runtimeEntry !== "string" ||
-    typeof artifacts.workflowRuntimeEntry !== "string" ||
     typeof artifacts.migrationRunner !== "string" ||
     !Array.isArray(artifacts.files) ||
     !artifacts.migrationPlan
@@ -301,7 +300,6 @@ function manifestFromResolvedUnit(
     links: unit.links,
     subscribers: unit.subscribers,
     events: unit.events,
-    workflows: unit.workflows,
     ...(unit.setupMigrations ? { setupMigrations: unit.setupMigrations } : {}),
     ...(unit.config ? { config: unit.config } : {}),
     ...(unit.secrets ? { secrets: unit.secrets } : {}),

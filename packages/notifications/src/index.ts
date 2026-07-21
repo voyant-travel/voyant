@@ -20,8 +20,14 @@ import {
   type NotificationsAutoConfirmAndDispatchOptions,
   type NotificationsSubscriberRuntime,
 } from "./subscriber-runtime.js"
-import { NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY } from "./workflow-runtime.js"
 
+export {
+  type DeliverReminderJobInput,
+  type DeliverReminderJobOutput,
+  NOTIFICATION_REMINDER_JOB_RUNTIME_KEY,
+  type NotificationReminderJobRuntime,
+  type SendDueRemindersJobInput,
+} from "./job-runtime.js"
 export {
   notificationLiquidEngine,
   renderLiquidTemplate,
@@ -215,13 +221,6 @@ export {
   updateNotificationSettingsSchema,
   updateNotificationTemplateSchema,
 } from "./validation.js"
-export {
-  type DeliverReminderWorkflowInput,
-  type DeliverReminderWorkflowOutput,
-  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-  type NotificationReminderWorkflowRuntime,
-  type SendDueRemindersWorkflowInput,
-} from "./workflow-runtime.js"
 
 export interface CreateNotificationsApiModuleOptions extends NotificationsRoutesOptions {
   /**
@@ -275,10 +274,6 @@ export const createNotificationsVoyantRuntime = defineGraphRuntimeFactory(async 
     module: {
       ...configured.module,
       bootstrap: async (context: BootstrapContext) => {
-        context.container.register(
-          NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-          provider.resolveReminderWorkflowRuntime(context.bindings as Record<string, unknown>),
-        )
         await bootstrap?.(context)
       },
     },

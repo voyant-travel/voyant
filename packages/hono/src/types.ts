@@ -14,7 +14,6 @@ import type { SelectApikey } from "@voyant-travel/db/schema/iam"
 import { dbClientDispose } from "@voyant-travel/db/transaction-capability"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { KVStore } from "@voyant-travel/utils/cache"
-import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -63,8 +62,6 @@ export type VoyantVariables = CoreVoyantVariables & {
   link?: LinkService
   /** Shared cross-module query runtime, when the app wires one in. */
   query?: VoyantQueryRuntime
-  /** Optional workflow driver surfaced to HTTP routes after lazy app bootstrap. */
-  workflowDriver?: import("@voyant-travel/workflows/driver").WorkflowDriver
 }
 
 /** Handler contract for application-authored Hono API routes. */
@@ -366,17 +363,6 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    */
   rateLimit?: false | import("./middleware/rate-limit.js").RateLimitConfig
   /**
-   * Workflow runtime configuration. When set, `createApp()` collects
-   * `module.workflows` + `module.eventFilters` (plus the same fields
-   * from plugins), invokes `workflows.driver` with framework deps, and
-   * — inside the lazy bootstrap path — registers the manifest with the
-   * driver and installs an EventBus forwarder that routes emitted
-   * events to `driver.ingestEvent(...)`.
-   *
-   * See `docs/architecture/workflows-runtime-architecture.md` §6, §18.
-   */
-  workflows?: VoyantWorkflowsConfig
-  /**
    * Admin API capability metadata, served at `GET /v1/admin/_meta/capabilities`
    * so clients (the admin SDK) can discover what this deployment supports —
    * enabled modules, available operations, contract/deployment version, and the
@@ -400,60 +386,3 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   // biome-ignore lint/suspicious/noExplicitAny: reason: Hono sub-apps need to accept host-specific binding and variable generics.
   additionalRoutes?: (app: Hono<any>) => void
 }
-
-/**
- * Workflow runtime configuration block. The driver is resolved at boot
- * time (inside the lazy bootstrap path), after framework deps and —
- * crucially — after runtime bindings are available.
- *
- * `driver` is **always** a function-of-bindings: `(env) => DriverFactory`.
- * This unambiguous shape works for local node runtimes and managed-cloud
- * forwarding drivers:
- *
- * **Node / InMemory** — wrap your direct factory:
- *
- *     workflows: {
- *       driver: () => createStandaloneDriver({ db }),
- *     }
- *
- * **Managed Cloud forwarding** — pull credentials off `env`:
- *
- *     workflows: {
- *       driver: (env) => () => createCloudWorkflowDriver({
- *         baseUrl: env.VOYANT_CLOUD_WORKFLOWS_URL,
- *         triggerToken: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
- *         appSlug: env.VOYANT_CLOUD_APP_SLUG,
- *         environment: env.VOYANT_CLOUD_ENVIRONMENT,
- *       }),
- *     }
- *
- * The single shape avoids ambiguous "is this a factory or a
- * factory-of-factories?" heuristics. See architecture doc §6.3 +
- * reviewer feedback P2.1.
- */
-export interface VoyantWorkflowsConfig<TBindings = unknown> {
-  /**
-   * Function-of-bindings that returns a `DriverFactory`. Resolved
-   * lazily with `c.env` once bindings are available, then invoked
-   * with `{ services, logger }` to produce the driver.
-   */
-  driver: (bindings: TBindings) => DriverFactory
-  /**
-   * Environment the manifest registers under. Defaults to `"development"`.
-   * Workflow filters are environment-scoped (production manifests don't
-   * see preview events and vice versa) per architecture doc §21.10.
-   */
-  environment?: "production" | "preview" | "development"
-  /**
-   * Project / tenant identifier baked into the manifest. Single-tenant
-   * runtimes leave this unset (defaults to `"default"`). Multi-tenant
-   * deployments override per-app via voyant-cloud's wrapper layer.
-   */
-  projectId?: string
-}
-
-/**
- * Structural shape of a `DriverFactory` from `@voyant-travel/workflows/driver`.
- * The SDK package's concrete `DriverFactory` satisfies this via TS
- * structural compat (architecture doc §21.19).
- */

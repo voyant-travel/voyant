@@ -37,23 +37,23 @@ import { createLazyRedisClient, type LazyRedisClient } from "@voyant-travel/util
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 
-import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
-import type { DriverFactory } from "@voyant-travel/workflows/driver"
-import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
-import {
-  createPostgresConnection,
-  createStandaloneDriver,
-  type PostgresConnection,
-} from "@voyant-travel/workflows-orchestrator/selfhost"
-
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
-import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
+import type {
+  VoyantGraphDeploymentRequirements,
+  VoyantGraphProvisionedJob,
+} from "./deployment-graph.js"
 import type {
   VoyantDeploymentEnvRequirement,
   VoyantDeploymentMode,
   VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
+import {
+  createVoyantNodeJobHost,
+  VOYANT_PRODUCT_JOB_ROUTE,
+  type VoyantNodeJobHealth,
+  type VoyantNodeJobHost,
+} from "./node-job-host.js"
 import {
   resolveVoyantNodeProviderPlan,
   type VoyantNodeKvProvider,
@@ -100,10 +100,8 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   SESSION_CLAIMS_CUSTOMER_SECRET?: string
   BETTER_AUTH_ADMIN_SECRET?: string
   BETTER_AUTH_CUSTOMER_SECRET?: string
-  VOYANT_CLOUD_WORKFLOWS_URL?: string
-  VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?: string
-  VOYANT_CLOUD_APP_SLUG?: string
-  VOYANT_CLOUD_ENVIRONMENT?: "production" | "preview" | "development"
+  VOYANT_CLOUD_PRODUCT_JOB_HEALTH_URL?: string
+  VOYANT_CLOUD_WORKLOAD_ENVIRONMENT_ID?: string
   ORIGIN_TRUST_SECRET?: string
   PORT?: string
 }
@@ -192,12 +190,15 @@ export type VoyantNodeRuntimeResources = Readonly<Record<string, unknown>>
 /** Graph-native deployment settings consumed by the resident Node host. */
 export interface VoyantNodeRuntimeDeployment {
   mode: VoyantDeploymentMode
-  providers: Readonly<Record<string, string>> & Pick<VoyantDeploymentProviders, "workflows">
+  providers: Readonly<Record<string, string>> &
+    Partial<Pick<VoyantDeploymentProviders, "scheduledJobs">>
 }
 
 /** Inputs for booting a generated application graph in a resident Node process. */
 export interface VoyantNodeRuntimeOptions {
   graphRuntime: VoyantGraphRuntime
+  /** Resolved, immutable provisioning.jobs inventory from the admitted graph. */
+  jobs: readonly VoyantGraphProvisionedJob[]
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
@@ -217,10 +218,7 @@ export interface VoyantNodeRuntimeOptions {
   /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers" | "workflows"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
 }
 
@@ -233,6 +231,11 @@ export interface VoyantNodeRuntime {
   graphValues: ResolvedVoyantGraphRuntimeValues
   app: ReturnType<typeof createVoyantNodeApp>
   actionLedgerCapabilities: ActionLedgerCapabilityRegistry
+  jobs: {
+    inventory: readonly VoyantGraphProvisionedJob[]
+    health: () => readonly VoyantNodeJobHealth[]
+    invoke: VoyantNodeJobHost["invoke"]
+  }
   fetch: (
     request: Request,
     env?: VoyantNodeRuntimeEnv,
@@ -293,7 +296,6 @@ export async function loadVoyantNodeRuntime(
     throw new Error(`Voyant Node provider plan is not ready:\n${formatIssues(providerIssues)}`)
   }
   const env = createVoyantNodeEnv(providerEnv, providerPlan)
-  assertVoyantNodeWorkflowProviderConfigured(options.deployment, env)
   const requirements = options.deploymentRequirements
   const graphValues = await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
     deploymentValues: toPluginEnvRecord(env),
@@ -308,6 +310,14 @@ export async function loadVoyantNodeRuntime(
     ports: options.runtimePorts,
     outboundWebhooks: options.outboundWebhooks,
     appWebhooks: options.appWebhooks,
+  })
+  const managedJobHealthReporter = createManagedJobHealthReporter(env)
+  const jobHost = createVoyantNodeJobHost({
+    runtime: options.graphRuntime,
+    jobs: options.jobs,
+    ...(options.runtimePorts ? { ports: options.runtimePorts } : {}),
+    ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
+    ...(managedJobHealthReporter ? { reportExecution: managedJobHealthReporter } : {}),
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,
@@ -357,6 +367,22 @@ export async function loadVoyantNodeRuntime(
     ),
   })
 
+  const fetch = async (
+    request: Request,
+    bindings: VoyantNodeRuntimeEnv = env,
+    ctx: ExecutionContextLike = createNoopExecutionContext(),
+  ): Promise<Response> => {
+    const url = new URL(request.url)
+    if (
+      url.pathname === VOYANT_PRODUCT_JOB_ROUTE ||
+      url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)
+    ) {
+      const response = await jobHost.handleRequest(request, bindings.ORIGIN_TRUST_SECRET)
+      if (response) return response
+    }
+    return app.fetch(request, bindings, toHonoExecutionContext(ctx))
+  }
+
   return {
     graphRuntime: options.graphRuntime,
     deployment: options.deployment,
@@ -365,17 +391,53 @@ export async function loadVoyantNodeRuntime(
     graphValues,
     app,
     actionLedgerCapabilities,
-    fetch: (request, bindings = env, ctx = createNoopExecutionContext()) =>
-      app.fetch(request, bindings, toHonoExecutionContext(ctx)),
+    jobs: {
+      inventory: jobHost.inventory,
+      health: jobHost.health,
+      invoke: jobHost.invoke,
+    },
+    fetch,
     start: (serverOptions = {}) =>
       createNodeServer<VoyantNodeRuntimeEnv>({
-        fetch: (request, bindings, ctx) =>
-          app.fetch(request, bindings, toHonoExecutionContext(ctx)),
+        fetch,
+        scheduled: (event) =>
+          jobHost.dispatchSchedule({
+            ...(event.scheduleId ? { scheduleId: event.scheduleId } : {}),
+            ...(event.cron ? { cron: event.cron } : {}),
+          }),
         env,
         port: Number.parseInt(env.PORT ?? "8080", 10),
         ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
         ...serverOptions,
+        residentServices:
+          options.deployment.providers.scheduledJobs === "node-cron"
+            ? [jobHost, ...(serverOptions.residentServices ?? [])]
+            : serverOptions.residentServices,
       }),
+  }
+}
+
+function createManagedJobHealthReporter(
+  env: VoyantNodeRuntimeEnv,
+):
+  | ((report: import("./node-job-host.js").VoyantNodeJobExecutionReport) => Promise<void>)
+  | undefined {
+  const endpoint = env.VOYANT_CLOUD_PRODUCT_JOB_HEALTH_URL?.trim()
+  const workloadEnvironmentId = env.VOYANT_CLOUD_WORKLOAD_ENVIRONMENT_ID?.trim()
+  const originTrustSecret = env.ORIGIN_TRUST_SECRET?.trim()
+  if (!endpoint || !workloadEnvironmentId || !originTrustSecret) return undefined
+  return async (report) => {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-voyant-origin-trust": originTrustSecret,
+      },
+      body: JSON.stringify({ workloadEnvironmentId, ...report }),
+    })
+    if (!response.ok) {
+      throw new Error(`Managed product job health reporting failed with HTTP ${response.status}.`)
+    }
   }
 }
 
@@ -413,26 +475,17 @@ export function createVoyantNodeApp(options: {
   /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers" | "workflows"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
   extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
 }) {
   const auth = options.app?.auth ?? options.auth
-  const workflows = createVoyantNodeWorkflowConfig({
-    deployment: options.deployment,
-    env: options.env ?? createVoyantNodeEnv(process.env),
-    defaultAppSlug: options.applicationId,
-  })
   return createVoyantApp<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>({
     db: resolveDb,
     dbTransactional: resolveDb,
     outbox: true,
     ...options.app,
-    workflows,
     modules: {
       ...(options.app?.modules ?? {}),
       ...(options.modules ?? {}),
@@ -759,135 +812,6 @@ function resolveDb(env: unknown): VoyantDb {
 
 export type { StorageProvider, StorageProviderResolver, VoyantNodeProviderPlan }
 export { resolveVoyantNodeProviderPlan, validateVoyantNodeProviderPlanEnv }
-
-export type VoyantNodeWorkflowProvider = VoyantDeploymentProviders["workflows"]
-
-export interface CreateVoyantNodeWorkflowDriverOptions {
-  deployment: VoyantNodeRuntimeDeployment
-  env: VoyantNodeRuntimeEnv
-  defaultAppSlug: string
-  /** Disable resident scheduler and time-wheel loops for a one-shot cron invocation. */
-  oneShot?: boolean
-}
-
-const WORKFLOW_PROVIDERS = new Set<VoyantNodeWorkflowProvider>([
-  "voyant-cloud",
-  "self-hosted",
-  "none",
-])
-const selfHostedWorkflowConnections = new Map<string, PostgresConnection>()
-
-export function resolveVoyantNodeWorkflowProvider(value: unknown): VoyantNodeWorkflowProvider {
-  if (typeof value === "string" && WORKFLOW_PROVIDERS.has(value as VoyantNodeWorkflowProvider)) {
-    return value as VoyantNodeWorkflowProvider
-  }
-  throw new Error(
-    `Unsupported deployment.providers.workflows value ${JSON.stringify(value)}. Expected "voyant-cloud", "self-hosted", or "none".`,
-  )
-}
-
-export function createVoyantNodeWorkflowDriver(
-  options: CreateVoyantNodeWorkflowDriverOptions,
-): DriverFactory | undefined {
-  const provider = assertVoyantNodeWorkflowProviderConfigured(options.deployment, options.env)
-  if (provider === "none") return undefined
-
-  const environment = options.env.VOYANT_CLOUD_ENVIRONMENT ?? "development"
-  if (provider === "voyant-cloud") {
-    return () =>
-      createCloudWorkflowDriver({
-        env: {
-          VOYANT_CLOUD_WORKFLOWS_URL: requireWorkflowEnv(
-            options.env.VOYANT_CLOUD_WORKFLOWS_URL,
-            "VOYANT_CLOUD_WORKFLOWS_URL",
-          ),
-          VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: requireWorkflowEnv(
-            options.env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
-            "VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN",
-          ),
-          VOYANT_CLOUD_APP_SLUG: options.env.VOYANT_CLOUD_APP_SLUG ?? options.defaultAppSlug,
-          VOYANT_CLOUD_ENVIRONMENT: environment,
-        },
-      })
-  }
-
-  if (options.deployment.mode === "local") {
-    return createInMemoryDriver({
-      defaultEnvironment: environment,
-      ...(options.oneShot ? { disableScheduleRunner: true } : {}),
-    })
-  }
-  if (options.deployment.mode !== "self-hosted") {
-    throw new Error(
-      `deployment.providers.workflows="self-hosted" is not supported in ${options.deployment.mode} mode.`,
-    )
-  }
-
-  const databaseUrl = resolveWorkflowDatabaseUrl(options.env)
-  let connection = selfHostedWorkflowConnections.get(databaseUrl)
-  if (!connection) {
-    connection = createPostgresConnection({ databaseUrl })
-    selfHostedWorkflowConnections.set(databaseUrl, connection)
-  }
-  return createStandaloneDriver({
-    db: connection.db,
-    defaultEnvironment: environment,
-    ...(options.oneShot ? { disableScheduleRunner: true, disableTimeWheel: true } : {}),
-  })
-}
-
-function createVoyantNodeWorkflowConfig(options: CreateVoyantNodeWorkflowDriverOptions) {
-  const provider = assertVoyantNodeWorkflowProviderConfigured(options.deployment, options.env)
-  if (provider === "none") return undefined
-  return {
-    driver: (bindings: unknown) =>
-      createVoyantNodeWorkflowDriver({
-        ...options,
-        env: bindings as VoyantNodeRuntimeEnv,
-      })!,
-    environment: options.env.VOYANT_CLOUD_ENVIRONMENT ?? "development",
-    projectId: options.env.VOYANT_CLOUD_APP_SLUG ?? options.defaultAppSlug,
-  }
-}
-
-function assertVoyantNodeWorkflowProviderConfigured(
-  deployment: VoyantNodeRuntimeDeployment,
-  env: VoyantNodeRuntimeEnv,
-): VoyantNodeWorkflowProvider {
-  const provider = resolveVoyantNodeWorkflowProvider(deployment.providers.workflows)
-  if (provider === "voyant-cloud") {
-    requireWorkflowEnv(env.VOYANT_CLOUD_WORKFLOWS_URL, "VOYANT_CLOUD_WORKFLOWS_URL")
-    requireWorkflowEnv(
-      env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
-      "VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN",
-    )
-  } else if (provider === "self-hosted" && deployment.mode === "self-hosted") {
-    resolveWorkflowDatabaseUrl(env)
-  } else if (provider === "self-hosted" && deployment.mode === "managed-cloud") {
-    throw new Error(
-      'deployment.providers.workflows="self-hosted" is not supported in managed-cloud mode.',
-    )
-  }
-  return provider
-}
-
-function resolveWorkflowDatabaseUrl(env: VoyantNodeRuntimeEnv): string {
-  const databaseUrl = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
-  if (!databaseUrl) {
-    throw new Error(
-      'deployment.providers.workflows="self-hosted" requires DATABASE_URL or DATABASE_URL_DIRECT.',
-    )
-  }
-  return databaseUrl
-}
-
-function requireWorkflowEnv(value: string | undefined, name: string): string {
-  const normalized = value?.trim()
-  if (!normalized) {
-    throw new Error(`deployment.providers.workflows="voyant-cloud" requires ${name}.`)
-  }
-  return normalized
-}
 
 /**
  * Flatten the runtime env bag (string vars + provider bindings) into a plain

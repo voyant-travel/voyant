@@ -53,7 +53,7 @@
     "./subscriber-runtime-ports": "./src/subscriber-runtime-ports.ts",
     "./booking-engine/operator-routes": "./src/booking-engine/operator-routes.ts",
     "./runtime-port": "./src/content-runtime-port.ts",
-    "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
+    "./draft-reaper-job": "./src/draft-reaper-job.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
@@ -351,10 +351,10 @@
         "import": "./dist/content-runtime-port.js",
         "default": "./dist/content-runtime-port.js"
       },
-      "./draft-reaper-workflow": {
-        "types": "./dist/draft-reaper-workflow.d.ts",
-        "import": "./dist/draft-reaper-workflow.js",
-        "default": "./dist/draft-reaper-workflow.js"
+      "./draft-reaper-job": {
+        "types": "./dist/draft-reaper-job.d.ts",
+        "import": "./dist/draft-reaper-job.js",
+        "default": "./dist/draft-reaper-job.js"
       },
       "./graph-runtime": {
         "types": "./dist/graph-runtime.d.ts",
@@ -400,7 +400,6 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/tools": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

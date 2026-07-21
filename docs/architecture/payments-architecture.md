@@ -300,7 +300,8 @@ A cruise booking produces:
 
 - one `PaymentRequest` for the deposit at booking time
 - one `PaymentRequest` for the balance, scheduled N days before departure
-  (handled by `@voyant-travel/finance` payment schedules + workflow runner)
+  (handled by `@voyant-travel/finance` payment schedules and the selected
+  notification reminder job)
 
 Both go through the same `<PaymentStep>` (deposit at checkout) or
 payment-link flow (balance emailed automatically). Neither requires

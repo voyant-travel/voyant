@@ -25,10 +25,7 @@ import {
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
-import {
-  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
-  channelPushRuntimePort,
-} from "@voyant-travel/distribution"
+import { channelPushRuntimePort } from "@voyant-travel/distribution"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
@@ -74,10 +71,6 @@ import {
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
-import {
-  WorkflowRunnerRegistry,
-  workflowRunnerRegistryRuntimePort,
-} from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -142,7 +135,7 @@ describe("selected Operator graph runtime composition", () => {
     )
   })
 
-  it("selects channel-push routes, workflow service, and subscribers exactly once", async () => {
+  it("selects channel-push routes and subscribers exactly once", async () => {
     const runtime = createGeneratedGraphRuntime()
     const channelPush = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
@@ -186,7 +179,6 @@ describe("selected Operator graph runtime composition", () => {
     await channelPushExtension?.extension.bootstrap?.(context)
     await channelPushRuntime?.module.bootstrap?.(context)
 
-    expect(container.has(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)).toBe(true)
     expect(subscribe.mock.calls.map(([eventType]) => eventType).sort()).toEqual([
       "availability.slot.changed",
       "booking.confirmed",
@@ -492,17 +484,12 @@ describe("selected Operator graph runtime composition", () => {
     ).toBe(false)
   })
 
-  it("activates both selected Commerce checkout subscribers exactly once and registers its runner", async () => {
+  it("activates both selected Commerce checkout subscribers exactly once", async () => {
     const runtime = createGeneratedGraphRuntime()
     const checkout = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
     )
     const ports = await buildSelectedOperatorRuntimePorts(runtime)
-    const registry = await ports[workflowRunnerRegistryRuntimePort.id]
-    expect(registry).toBeInstanceOf(WorkflowRunnerRegistry)
-    if (!(registry instanceof WorkflowRunnerRegistry)) {
-      throw new TypeError("The selected graph did not contribute a workflow runner registry.")
-    }
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),
@@ -537,11 +524,6 @@ describe("selected Operator graph runtime composition", () => {
     expect(
       subscribe.mock.calls.find(([eventType]) => eventType === "payment.completed")?.[2],
     ).toEqual({ inline: true })
-    expect(registry.get("checkout-finalize")).toMatchObject({
-      name: "checkout-finalize",
-      rerun: expect.any(Function),
-      resume: expect.any(Function),
-    })
   })
 
   it("activates the selected Commerce promotion-redemption subscriber exactly once", async () => {

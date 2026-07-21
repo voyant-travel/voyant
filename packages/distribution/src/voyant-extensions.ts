@@ -89,80 +89,53 @@ export const distributionChannelPushVoyantExtensionDefinition = {
       },
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "channel.booking.push",
-      config: { defaultRuntime: "node" },
-      source: "@voyant-travel/distribution/channel-push-workflows",
+      schedule: { every: "2m", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelBookingPushWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelBookingPushJob",
       },
     },
     {
       id: "channel.availability.push",
-      config: { defaultRuntime: "node" },
-      source: "@voyant-travel/distribution/channel-push-workflows",
+      schedule: { every: "1m", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelAvailabilityPushWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelAvailabilityPushJob",
       },
     },
     {
       id: "channel.content.push",
-      config: { defaultRuntime: "node" },
-      source: "@voyant-travel/distribution/channel-push-workflows",
+      schedule: { every: "5m", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelContentPushWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelContentPushJob",
       },
     },
     {
       id: "distribution.channel-push-reconcile-booking-links",
-      config: { defaultRuntime: "node" },
-      schedules: [
-        {
-          id: "channel-push-booking-link",
-          workflowId: "distribution.channel-push-reconcile-booking-links",
-          cron: "*/15 * * * *",
-          name: "booking-links",
-        },
-      ],
+      schedule: { cron: "*/15 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelPushBookingLinkReconcileWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelBookingLinkReconcilerJob",
       },
     },
     {
       id: "distribution.channel-push-reconcile-availability",
-      config: { defaultRuntime: "node" },
-      schedules: [
-        {
-          id: "channel-push-availability",
-          workflowId: "distribution.channel-push-reconcile-availability",
-          cron: "0 * * * *",
-          name: "hourly",
-        },
-      ],
+      schedule: { cron: "0 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelPushAvailabilityReconcileWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelAvailabilityReconcilerJob",
       },
     },
     {
       id: "distribution.channel-push-reconcile-content",
-      config: { defaultRuntime: "node" },
-      schedules: [
-        {
-          id: "channel-push-content",
-          workflowId: "distribution.channel-push-reconcile-content",
-          cron: "0 3 * * *",
-          name: "nightly",
-        },
-      ],
+      schedule: { cron: "0 3 * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/distribution/channel-push-workflows",
-        export: "channelPushContentReconcileWorkflow",
+        entry: "@voyant-travel/distribution/channel-push-jobs",
+        export: "runChannelContentReconcilerJob",
       },
     },
   ],

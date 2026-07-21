@@ -79,12 +79,11 @@ function unit(
     requiredRuntimePorts: [],
     accessScopes: [],
     tools: [],
-    workflows: [],
+    jobs: [],
     actions: [],
     selectedIds: {
       routes: routes.map(({ id }) => id),
       tools: [],
-      workflows: [],
       events: [],
       webhooks: [],
     },

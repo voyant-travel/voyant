@@ -1,1 +1,0 @@
-ALTER TABLE "voyant_snapshot_runs" ALTER COLUMN "input" DROP NOT NULL;

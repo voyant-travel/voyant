@@ -5,7 +5,6 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./catalog-checkout-runner": "./src/checkout/runner-runtime.ts",
     "./catalog-checkout-subscribers": "./src/checkout/subscriber-runtime.ts",
     "./schema": "./src/schema.ts",
     "./checkout": "./src/checkout/index.ts",
@@ -14,9 +13,9 @@
     "./promotion-redemption-subscriber": "./src/promotions/subscriber-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
-    "./product-reindex-workflow-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
-    "./product-reindex-workflow": "./src/promotions/workflow-bulk-reindex.ts",
-    "./promotion-boundary-workflow": "./src/promotions/workflow-boundary-scheduler.ts",
+    "./promotion-reindex-job": "./src/promotions/reindex-job.ts",
+    "./promotion-reindex-subscriber": "./src/promotions/reindex-subscriber.ts",
+    "./promotion-boundary-job": "./src/promotions/job-boundary-scheduler.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin/markets": "./openapi/admin/markets.json",
     "./openapi/admin/pricing": "./openapi/admin/pricing.json",
@@ -48,8 +47,6 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
-    "@voyant-travel/workflow-runs": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "rrule": "^2.8.1",
@@ -74,11 +71,6 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
-      },
-      "./catalog-checkout-runner": {
-        "types": "./dist/checkout/runner-runtime.d.ts",
-        "import": "./dist/checkout/runner-runtime.js",
-        "default": "./dist/checkout/runner-runtime.js"
       },
       "./catalog-checkout-subscribers": {
         "types": "./dist/checkout/subscriber-runtime.d.ts",
@@ -120,20 +112,20 @@
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
       },
-      "./product-reindex-workflow-manifest": {
-        "types": "./dist/promotions/workflow-bulk-reindex-manifest.d.ts",
-        "import": "./dist/promotions/workflow-bulk-reindex-manifest.js",
-        "default": "./dist/promotions/workflow-bulk-reindex-manifest.js"
+      "./promotion-reindex-job": {
+        "types": "./dist/promotions/reindex-job.d.ts",
+        "import": "./dist/promotions/reindex-job.js",
+        "default": "./dist/promotions/reindex-job.js"
       },
-      "./product-reindex-workflow": {
-        "types": "./dist/promotions/workflow-bulk-reindex.d.ts",
-        "import": "./dist/promotions/workflow-bulk-reindex.js",
-        "default": "./dist/promotions/workflow-bulk-reindex.js"
+      "./promotion-reindex-subscriber": {
+        "types": "./dist/promotions/reindex-subscriber.d.ts",
+        "import": "./dist/promotions/reindex-subscriber.js",
+        "default": "./dist/promotions/reindex-subscriber.js"
       },
-      "./promotion-boundary-workflow": {
-        "types": "./dist/promotions/workflow-boundary-scheduler.d.ts",
-        "import": "./dist/promotions/workflow-boundary-scheduler.js",
-        "default": "./dist/promotions/workflow-boundary-scheduler.js"
+      "./promotion-boundary-job": {
+        "types": "./dist/promotions/job-boundary-scheduler.d.ts",
+        "import": "./dist/promotions/job-boundary-scheduler.js",
+        "default": "./dist/promotions/job-boundary-scheduler.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

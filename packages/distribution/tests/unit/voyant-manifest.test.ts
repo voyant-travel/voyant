@@ -3,14 +3,6 @@ import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import { channelPushRuntimePort } from "../../src/channel-push/runtime-port.js"
 import {
-  channelAvailabilityPushWorkflow,
-  channelBookingPushWorkflow,
-  channelContentPushWorkflow,
-  channelPushAvailabilityReconcileWorkflow,
-  channelPushBookingLinkReconcileWorkflow,
-  channelPushContentReconcileWorkflow,
-} from "../../src/channel-push/workflow-entry.js"
-import {
   createChannelPushExtension,
   createChannelPushVoyantRuntime,
   distributionApiModule,
@@ -233,11 +225,12 @@ describe("distribution deployment manifests", () => {
     expect(createChannelPushVoyantRuntime).toBeTypeOf("function")
   })
 
-  it("owns typed channel-push route and workflow-service composition", async () => {
-    const registerWorkflowService = vi.fn()
+  it("owns typed channel-push route and subscriber composition", async () => {
+    const registerSubscriberRuntime = vi.fn()
     const provider = {
       resolveRegistry: vi.fn(() => ({ resolveByConnection: vi.fn() })),
-      registerWorkflowService,
+      registerSubscriberRuntime,
+      withDeps: vi.fn(),
     }
 
     await expect(assertPortConforms(channelPushRuntimePort, provider)).resolves.toBeUndefined()
@@ -271,44 +264,33 @@ describe("distribution deployment manifests", () => {
     expect(extension.extension).toMatchObject({ name: "channel-push", module: "distribution" })
     expect(extension.adminRoutes).toBeDefined()
     await extension.extension.bootstrap?.(context)
-    expect(registerWorkflowService).toHaveBeenCalledOnce()
-    expect(registerWorkflowService).toHaveBeenCalledWith(context)
+    expect(registerSubscriberRuntime).toHaveBeenCalledOnce()
+    expect(registerSubscriberRuntime).toHaveBeenCalledWith(context)
   })
 
-  it("references each package-owned workflow definition", () => {
-    expect(distributionChannelPushVoyantPlugin.workflows).toEqual([
+  it("references each payload-free package job", () => {
+    expect(distributionChannelPushVoyantPlugin.jobs).toEqual([
       expect.objectContaining({
-        id: channelBookingPushWorkflow.id,
+        id: "channel.booking.push",
         runtime: {
-          entry: "@voyant-travel/distribution/channel-push-workflows",
-          export: "channelBookingPushWorkflow",
+          entry: "@voyant-travel/distribution/channel-push-jobs",
+          export: "runChannelBookingPushJob",
         },
       }),
       expect.objectContaining({
-        id: channelAvailabilityPushWorkflow.id,
-        runtime: {
-          entry: "@voyant-travel/distribution/channel-push-workflows",
-          export: "channelAvailabilityPushWorkflow",
-        },
+        id: "channel.availability.push",
       }),
       expect.objectContaining({
-        id: channelContentPushWorkflow.id,
-        runtime: {
-          entry: "@voyant-travel/distribution/channel-push-workflows",
-          export: "channelContentPushWorkflow",
-        },
+        id: "channel.content.push",
       }),
       expect.objectContaining({
-        id: channelPushBookingLinkReconcileWorkflow.id,
-        schedules: [expect.objectContaining({ id: "channel-push-booking-link" })],
+        id: "distribution.channel-push-reconcile-booking-links",
       }),
       expect.objectContaining({
-        id: channelPushAvailabilityReconcileWorkflow.id,
-        schedules: [expect.objectContaining({ id: "channel-push-availability" })],
+        id: "distribution.channel-push-reconcile-availability",
       }),
       expect.objectContaining({
-        id: channelPushContentReconcileWorkflow.id,
-        schedules: [expect.objectContaining({ id: "channel-push-content" })],
+        id: "distribution.channel-push-reconcile-content",
       }),
     ])
   })

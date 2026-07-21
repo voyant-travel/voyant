@@ -9,7 +9,6 @@ import {
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
-import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   bookingMaintenanceRuntimePort,
@@ -20,6 +19,8 @@ import {
 } from "../../src/checkout/runtime-ports.js"
 import { publicMarketsRoutes } from "../../src/markets/routes-public.js"
 import { publicPricingRoutes } from "../../src/pricing/routes-public.js"
+import { promotionBoundaryJobRuntimePort } from "../../src/promotions/job-boundary-scheduler.js"
+import { promotionReindexJobRuntimePort } from "../../src/promotions/reindex-job.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
@@ -47,11 +48,15 @@ describe("commerce deployment manifest", () => {
           { id: catalogCommerceRuntimeExtensionPort.id },
           { id: promotionRedemptionDatabaseRuntimePort.id },
           { id: promotionsBulkReindexRuntimePort.id },
+          { id: promotionBoundaryJobRuntimePort.id },
+          { id: promotionReindexJobRuntimePort.id },
         ],
       },
       runtimePorts: [
         { id: promotionRedemptionDatabaseRuntimePort.id },
         { id: promotionsBulkReindexRuntimePort.id },
+        { id: promotionBoundaryJobRuntimePort.id },
+        { id: promotionReindexJobRuntimePort.id },
         { id: commerceOperatorSettingsRuntimePort.id },
         { id: commerceInventoryRuntimePort.id },
         { id: commerceLegalRuntimePort.id },
@@ -140,26 +145,22 @@ describe("commerce deployment manifest", () => {
           eventType: "inquiry.created",
         },
       ],
-      workflows: [
+      jobs: [
         {
-          id: "commerce.process-promotion-boundaries",
-          source: "@voyant-travel/commerce/promotion-boundary-workflow",
-          config: {
-            defaultRuntime: "node",
-            schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-          },
+          id: "promotions.reindex-all-products",
+          schedule: { every: "2m", overlap: "skip" },
+          wakeup: true,
           runtime: {
-            entry: "@voyant-travel/commerce/promotion-boundary-workflow",
-            export: "promotionBoundarySchedulerWorkflow",
+            entry: "@voyant-travel/commerce/promotion-reindex-job",
+            export: "runPromotionReindexJob",
           },
         },
         {
-          id: "promotions.reindex-all-products",
-          source: "@voyant-travel/commerce/product-reindex-workflow",
-          config: { defaultRuntime: "node" },
+          id: "commerce.process-promotion-boundaries",
+          schedule: { cron: "*/5 * * * *", overlap: "skip" },
           runtime: {
-            entry: "@voyant-travel/commerce/product-reindex-workflow",
-            export: "bulkReindexProductsWorkflow",
+            entry: "@voyant-travel/commerce/promotion-boundary-job",
+            export: "runPromotionBoundaryJob",
           },
         },
       ],
@@ -174,14 +175,11 @@ describe("commerce deployment manifest", () => {
           },
         },
         {
-          id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
+          id: "@voyant-travel/commerce#subscriber.promotion-reindex-intent",
           eventType: "promotion.changed",
-          eventFilterId: "ef_6f8e4b4ce409d04c",
-          workflowId: "promotions.reindex-all-products",
-          filter: {
-            where: {
-              eq: [{ path: "data.affected.kind" }, { lit: "all" }],
-            },
+          runtime: {
+            entry: "@voyant-travel/commerce/promotion-reindex-subscriber",
+            export: "createPromotionReindexIntentSubscriberGraphRuntime",
           },
         },
       ],
@@ -209,7 +207,6 @@ describe("commerce deployment manifest", () => {
         { id: catalogCheckoutDatabaseRuntimePort.id },
         { id: catalogCheckoutLegalRuntimePort.id },
         { id: catalogCheckoutContractPdfRuntimePort.id },
-        { id: workflowRunnerRegistryRuntimePort.id },
       ],
       api: [
         {

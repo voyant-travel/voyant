@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
-
-import { bookings as bookingsTable } from "../../src/schema.js"
 import {
-  buildRefundBookingWorkflow,
+  buildRefundBookingSaga,
   type RefundBookingDeps,
   type RefundBookingInput,
-} from "../../src/workflows/refund-booking.js"
+} from "../../src/sagas/refund-booking.js"
+import { bookings as bookingsTable } from "../../src/schema.js"
 
 /**
  * Lightweight in-memory fakes for the bits of `db` the saga touches.
@@ -156,7 +155,7 @@ describe("refund-booking saga", () => {
       },
     })
 
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     const result = await wf.run({ input: baseInput })
 
     expect(calls.createCreditNote).toBe(1)
@@ -183,7 +182,7 @@ describe("refund-booking saga", () => {
       },
     })
 
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await wf.run({ input: { ...baseInput, amountCents: 4000 } })
 
     expect(calls.createCreditNote).toBe(1)
@@ -199,7 +198,7 @@ describe("refund-booking saga", () => {
         sellAmountCents: 12000,
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await wf.run({ input: baseInput })
     expect(state.booking.status).toBe("cancelled")
   })
@@ -213,7 +212,7 @@ describe("refund-booking saga", () => {
         sellAmountCents: 12000,
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await expect(wf.run({ input: baseInput })).rejects.toThrow(/not refundable/)
     expect(calls.createCreditNote).toBe(0)
     expect(state.booking.status).toBe("draft")
@@ -228,7 +227,7 @@ describe("refund-booking saga", () => {
         sellAmountCents: 12000,
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await expect(wf.run({ input: baseInput })).rejects.toThrow(/not refundable/)
     expect(calls.createCreditNote).toBe(0)
   })
@@ -242,7 +241,7 @@ describe("refund-booking saga", () => {
         sellAmountCents: 0,
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     const result = await wf.run({ input: baseInput })
 
     expect(calls.createCreditNote).toBe(0)
@@ -266,7 +265,7 @@ describe("refund-booking saga", () => {
         throw new Error("supplier API down")
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await expect(wf.run({ input: baseInput })).rejects.toThrow(/supplier API down/)
 
     // Credit note WAS created, then voided by compensation
@@ -289,7 +288,7 @@ describe("refund-booking saga", () => {
         throw new Error("email service down")
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     // The saga catches notify failures and returns notified: false; it does NOT
     // throw, so the booking ends up cancelled.
     await wf.run({ input: baseInput })
@@ -307,7 +306,7 @@ describe("refund-booking saga", () => {
         sellAmountCents: 10000,
       },
     })
-    const wf = buildRefundBookingWorkflow(deps)
+    const wf = buildRefundBookingSaga(deps)
     await expect(wf.run({ input: { ...baseInput, amountCents: 99999 } })).rejects.toThrow(
       /out of range/,
     )

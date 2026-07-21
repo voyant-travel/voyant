@@ -26,19 +26,13 @@ for (const file of [
 }
 
 const runtime = read("packages/runtime/src/index.ts")
-for (const token of [
-  "loadVoyantProject",
-  "dispatchScheduledProjectJob",
-  "loadVoyantProjectWorkflowRuntime",
-  "createVoyantProjectServerEntry",
-]) {
+for (const token of ["loadVoyantProject", "createVoyantProjectServerEntry"]) {
   requireText(runtime, token, "packages/runtime/src/index.ts")
 }
 
 for (const file of [
   "packages/framework/src/node-api-dispatch.ts",
   "packages/framework/src/node-scheduled-jobs.ts",
-  "packages/framework/src/node-workflow-runtime.ts",
 ]) {
   const source = read(file)
   requireAbsent(source, "Operator", file)

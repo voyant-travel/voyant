@@ -35,7 +35,7 @@ export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
       id: "automation",
       kind: "api-token",
       label: "Automation",
-      grants: ["workflows:trigger", "webhooks:relay"],
+      grants: ["app-webhooks:replay"],
     },
     {
       id: "read-only",
@@ -110,8 +110,7 @@ export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
     adminAuth: "better-auth",
     customerAuth: "better-auth",
     realtime: "none",
-    scheduledJobs: "none",
-    workflows: "self-hosted",
+    scheduledJobs: "node-cron",
     outboundWebhooks: "postgres",
     payments: "custom",
   },
@@ -215,7 +214,6 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/db" },
     { resolve: "@voyant-travel/availability" },
     { resolve: "@voyant-travel/catalog-authoring" },
-    { resolve: "@voyant-travel/workflow-runs" },
     { resolve: "@voyant-travel/reporting" },
   ],
   extensions: [

@@ -29,11 +29,7 @@ import { ScrollText } from "lucide-react"
 // a static host re-export would pin the page modules (table, sheet, the
 // bookings/crm/products picker comboboxes) into the entry chunk. Hosts
 // import from their specific modules; only their TYPES re-export here.
-export type {
-  ActionLedgerAdminClient,
-  WorkflowRunSummary,
-  WorkflowRunsListResponse,
-} from "./admin-api.js"
+export type { ActionLedgerAdminClient } from "./admin-api.js"
 export { actionLedgerQueryKeys } from "./query-keys.js"
 
 export interface CreateActionLedgerAdminExtensionOptions {

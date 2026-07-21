@@ -471,8 +471,7 @@ Show:
 - edit authority
 - queued upstream write status when writes are forwarded
 - local overlay markers where Voyant owns only merchandising or annotations
-- links to sync runs, workflow runs, action ledger entries, and source
-  connection detail
+- links to sync runs, action ledger entries, and source connection detail
 
 Edit controls should be based on authority:
 

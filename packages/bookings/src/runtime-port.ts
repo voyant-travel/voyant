@@ -1,8 +1,8 @@
-import type { BootstrapContext } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { BookingsApiModuleOptions } from "./index.js"
+import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
 import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type { ResolveBookingRequirementsProductSnapshot } from "./requirements/service-public.js"
 import type {
@@ -10,11 +10,9 @@ import type {
   BookingPersonResolverContact,
   ResolveBookingTravelSnapshot,
 } from "./route-runtime.js"
-import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
 
 export interface BookingsRuntimeProvider {
   options: BookingsApiModuleOptions
-  registerWorkflowService?(context: BootstrapContext): Promise<void> | void
 }
 
 export interface BookingsAccommodationRuntime {
@@ -22,10 +20,10 @@ export interface BookingsAccommodationRuntime {
 }
 
 export interface BookingsFinanceRuntime {
-  createStaleBookingHoldsRuntime(options: {
+  createStaleBookingHoldsJobRuntime(options: {
     resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
     userId?: string
-  }): BookingsExpireStaleHoldsWorkflowRuntime
+  }): BookingsExpireStaleHoldsJobRuntime
 }
 
 export interface BookingsInventoryRuntime {
@@ -65,12 +63,6 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
     if (provider === null || typeof provider !== "object" || !provider.options) {
       throw new Error("bookings.runtime provider must supply module options.")
     }
-    if (
-      provider.registerWorkflowService !== undefined &&
-      typeof provider.registerWorkflowService !== "function"
-    ) {
-      throw new Error("bookings.runtime registerWorkflowService must be a function.")
-    }
   },
 })
 export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsApiModuleOptions>(
@@ -82,7 +74,7 @@ export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodation
 )
 export const bookingsFinanceRuntimePort = objectPort<BookingsFinanceRuntime>(
   "bookings.finance.runtime",
-  ["createStaleBookingHoldsRuntime"],
+  ["createStaleBookingHoldsJobRuntime"],
 )
 export const bookingsInventoryRuntimePort = objectPort<BookingsInventoryRuntime>(
   "bookings.inventory.runtime",

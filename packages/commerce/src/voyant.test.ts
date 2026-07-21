@@ -1,32 +1,25 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  bulkReindexProductsWorkflowManifest,
-  promotionAffectedAllFilter,
-} from "./promotions/workflow-bulk-reindex-manifest.js"
 import { commerceVoyantModule } from "./voyant.js"
 
 describe("commerce deployment manifest", () => {
-  it("owns the promotion workflow and event-filter runtime references", () => {
-    expect(commerceVoyantModule.workflows).toEqual([
+  it("owns durable promotion jobs and the reindex-intent subscriber", () => {
+    expect(commerceVoyantModule.jobs).toEqual([
       {
-        id: "commerce.process-promotion-boundaries",
-        config: {
-          defaultRuntime: "node",
-          schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-        },
-        source: "@voyant-travel/commerce/promotion-boundary-workflow",
+        id: "promotions.reindex-all-products",
+        schedule: { every: "2m", overlap: "skip" },
+        wakeup: true,
         runtime: {
-          entry: "@voyant-travel/commerce/promotion-boundary-workflow",
-          export: "promotionBoundarySchedulerWorkflow",
+          entry: "@voyant-travel/commerce/promotion-reindex-job",
+          export: "runPromotionReindexJob",
         },
       },
       {
-        ...bulkReindexProductsWorkflowManifest,
-        source: "@voyant-travel/commerce/product-reindex-workflow",
+        id: "commerce.process-promotion-boundaries",
+        schedule: { cron: "*/5 * * * *", overlap: "skip" },
         runtime: {
-          entry: "@voyant-travel/commerce/product-reindex-workflow",
-          export: "bulkReindexProductsWorkflow",
+          entry: "@voyant-travel/commerce/promotion-boundary-job",
+          export: "runPromotionBoundaryJob",
         },
       },
     ])
@@ -41,24 +34,13 @@ describe("commerce deployment manifest", () => {
         },
       },
       {
-        id: `@voyant-travel/commerce#subscriber.${promotionAffectedAllFilter.id}`,
-        eventType: promotionAffectedAllFilter.eventType,
-        eventFilterId: promotionAffectedAllFilter.id,
-        workflowId: bulkReindexProductsWorkflowManifest.id,
-        filter: promotionAffectedAllFilter.manifest,
-        source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
+        id: "@voyant-travel/commerce#subscriber.promotion-reindex-intent",
+        eventType: "promotion.changed",
         runtime: {
-          entry: "@voyant-travel/commerce/product-reindex-workflow-manifest",
-          export: "promotionAffectedAllFilter",
+          entry: "@voyant-travel/commerce/promotion-reindex-subscriber",
+          export: "createPromotionReindexIntentSubscriberGraphRuntime",
         },
       },
     ])
-    expect(promotionAffectedAllFilter).toMatchObject({
-      id: "ef_6f8e4b4ce409d04c",
-      manifest: {
-        payloadHash: "6f8e4b4ce409d04c",
-        targetWorkflowId: "promotions.reindex-all-products",
-      },
-    })
   })
 })

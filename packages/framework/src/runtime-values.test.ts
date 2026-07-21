@@ -132,7 +132,7 @@ function runtimeWithDeclarations(options: {
             referenceId: "provider-runtime",
           },
         ],
-        selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+        selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
         routes: [],
       },
     ],

@@ -2,7 +2,7 @@
 
 Voyant API tokens are Better Auth API keys configured for automation and
 cross-runtime integrations. They are intended for CMS sync jobs, storefront
-proxies, webhook relays, workflow triggers, and other systems that need a
+proxies, webhook relays, domain API commands, and other systems that need a
 narrow capability without carrying an operator session.
 
 ## Ownership
@@ -14,7 +14,7 @@ narrow capability without carrying an operator session.
   ```ts
   {
     products: ["read"],
-    workflows: ["trigger"],
+    bookings: ["write"],
   }
   ```
 
@@ -42,7 +42,6 @@ Permissions are Better Auth's `Record<string, string[]>` shape:
 {
   products: ["read", "write"],
   bookings: ["read"],
-  workflows: ["trigger"],
   webhooks: ["relay"],
 }
 ```
@@ -66,7 +65,6 @@ Known permissions include:
 - `accommodations: ["read"]`
 - `ground: ["read"]`
 - `cruises: ["read"]`
-- `workflows: ["trigger"]`
 - `webhooks: ["relay"]`
 
 The contract is intentionally extensible. New modules can use their module name
@@ -89,7 +87,6 @@ Examples:
 
 - `GET /v1/public/products` requires `{ products: ["read"] }`,
   `{ products: ["*"] }`, `{ "*": ["read"] }`, or `{ "*": ["*"] }`.
-- `POST /v1/admin/workflows/events` accepts `{ workflows: ["trigger"] }`.
 - `POST /v1/admin/webhooks/relay` accepts `{ webhooks: ["relay"] }`.
 
 Session callers still use the normal actor checks. Internal requests still

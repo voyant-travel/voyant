@@ -9,7 +9,6 @@ import {
   buildGraphPresentationBundleDeclarationModule,
   buildGraphPresentationBundleModule,
   buildGraphRuntimeModule,
-  buildGraphWorkflowRuntimeModule,
   buildNodeRuntimeEntry,
   buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
@@ -422,10 +421,27 @@ describe("deployment graph artifacts", () => {
     ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/node-runtime")'))
     expect(source).toContain("startVoyantNodeRuntime")
     expect(source).not.toContain("profileSnapshotPath:")
-    expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
+    expect(source).toContain("const deployment = resolveGeneratedRuntimeDeployment()")
+    expect(source).toContain("deployment,")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
     expect(source).toContain('from "./graph-runtime.generated.js"')
     expect(source).toContain("graphRuntime: createGeneratedGraphRuntime()")
+    expect(source).toContain("createGeneratedGraphRuntimePorts")
+    expect(source).toContain("createVoyantNodeEnv")
+    expect(source).toContain("resolveVoyantNodeProviderPlan(deployment.providers)")
+    expect(source).toContain("createVoyantNodeRuntimeHostPrimitives")
+    expect(source).toContain('"deployment.providers.adminAuth": deployment.providers.adminAuth')
+    expect(source).toContain(
+      '"deployment.providers.customerAuth": deployment.providers.customerAuth',
+    )
+    expect(source).toContain("const runtimePorts = createGeneratedGraphRuntimePorts({")
+    expect(source).toContain("env,")
+    expect(source).toContain("runtimePorts,")
+    expect(source.indexOf("const runtimePorts = createGeneratedGraphRuntimePorts({")).toBeLessThan(
+      source.indexOf("const handle = await startVoyantNodeRuntime({"),
+    )
+    expect(source).toContain("GENERATED_PRODUCT_JOBS")
+    expect(source).toContain("jobs: GENERATED_PRODUCT_JOBS")
     expect(source).not.toContain("starters/")
   })
 
@@ -445,34 +461,28 @@ describe("deployment graph artifacts", () => {
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
   })
 
-  it("emits a workflow-only runtime without API or module loaders", async () => {
+  it("lowers package-owned jobs into the generated runtime inventory", async () => {
     const graph = await graphWithSelectedUnits([
       defineModule({
-        id: "@acme/voyant-loyalty",
-        runtime: { entry: "./runtime", export: "createLoyaltyModule" },
-        api: [
+        id: "@acme/voyant-notifications",
+        jobs: [
           {
-            id: "loyalty.api",
-            surface: "admin",
-            runtime: { entry: "./api", export: "loyaltyRoutes" },
-          },
-        ],
-        workflows: [
-          {
-            id: "loyalty.reconcile",
-            runtime: { entry: "./workflows", export: "reconcileWorkflow" },
+            id: "notifications.deliver",
+            wakeup: true,
+            schedule: { every: "5m", overlap: "skip" },
+            runtime: { entry: "./jobs", export: "deliverNotifications" },
           },
         ],
       }),
     ])
-    const source = buildGraphWorkflowRuntimeModule({ graph })
 
-    expect(source).toContain("createGeneratedWorkflowRuntime")
-    expect(source).toContain('"workflows.runtime"')
-    expect(source).toContain('"reconcileWorkflow"')
-    expect(source).not.toContain('"createLoyaltyModule"')
-    expect(source).not.toContain('"loyaltyRoutes"')
-    expect(source).not.toContain('import("@acme/voyant-loyalty/api")')
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain('"facet": "jobs.runtime"')
+    expect(source).toContain('"jobs": [')
+    expect(source).toContain('"notifications.deliver"')
+    expect(source).toContain('"deliverNotifications"')
+    expect(source).toContain('"wakeup": true')
   })
 
   it("preserves and lowers unit runtimes for modules, extensions, and plugins", async () => {
@@ -593,12 +603,6 @@ describe("deployment graph artifacts", () => {
             requiredScopes: ["loyalty:write"],
           },
         ],
-        workflows: [
-          {
-            id: "loyalty.reconcile",
-            runtime: { entry: "./runtime", export: "reconcileWorkflow" },
-          },
-        ],
         events: [
           {
             id: "loyalty.event",
@@ -628,7 +632,6 @@ describe("deployment graph artifacts", () => {
             from: {
               routes: ["loyalty.api"],
               tools: ["loyalty.adjust"],
-              workflows: ["loyalty.reconcile"],
               events: ["loyalty.event"],
               webhooks: ["loyalty.webhook"],
             },
@@ -655,7 +658,6 @@ describe("deployment graph artifacts", () => {
       "admin.routes.runtime",
       "admin.contributions.runtime",
       "tools.runtime",
-      "workflows.runtime",
       "subscribers.runtime",
     ]) {
       expect(source).toContain(`"facet": "${facet}"`)
@@ -666,10 +668,6 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"loyalty:write"')
     expect(source).toContain('"tools": [')
     expect(source).toContain('"name": "adjust_loyalty"')
-    expect(source).toContain('"workflows": [')
-    expect(source).toContain(
-      '"referenceId": "%40acme%2Fvoyant-loyalty/workflows.runtime/loyalty.reconcile"',
-    )
     expect(source).toContain('"config": [')
     expect(source).toContain('"declaration": {')
     expect(source).toContain('"key": "loyalty"')
@@ -694,8 +692,34 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
     expect(source).toContain(`graphHash: GENERATED_GRAPH_RUNTIME_HASH`)
     expect(source).toContain(`GENERATED_GRAPH_RUNTIME_HASH = "${graph.contentHash}"`)
+    expect(source).toContain("GENERATED_PROJECT_PRODUCT_JOBS")
+    expect(source).toContain("productJobs: GENERATED_PROJECT_PRODUCT_JOBS")
     expect(source).not.toContain("starters/")
     expect(() => buildProjectRuntimeModule({ graph })).toThrow(/must be target-neutral/)
+  })
+
+  it("exports selected package jobs from the generated project runtime", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/worker-jobs",
+        jobs: [
+          {
+            id: "acme.worker.reconcile",
+            schedule: { every: "5m" },
+            runtime: { entry: "./jobs", export: "reconcile" },
+          },
+        ],
+      }),
+    ])
+    const source = buildProjectRuntimeModule({
+      graph: {
+        ...graph,
+        deployment: { mode: graph.deployment.mode, providers: graph.deployment.providers },
+      },
+    })
+    expect(source).toContain('"id": "acme.worker.reconcile"')
+    expect(source).toContain('"every": "5m"')
+    expect(source).toContain("productJobs: GENERATED_PROJECT_PRODUCT_JOBS")
   })
 
   it("removes package importers and loaders when the package is not selected", async () => {

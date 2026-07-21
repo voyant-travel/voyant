@@ -26,7 +26,7 @@
     "./crud": "./src/crud.ts",
     "./links": "./src/links.ts",
     "./outbox": "./src/outbox.ts",
-    "./outbox-workflow": "./src/outbox-workflow.ts",
+    "./outbox-job": "./src/outbox-job.ts",
     "./write-intents": "./src/write-intents.ts",
     "./queries": "./src/queries/index.ts",
     "./runtime": "./src/runtime/index.ts",
@@ -162,10 +162,10 @@
         "import": "./dist/outbox.js",
         "default": "./dist/outbox.js"
       },
-      "./outbox-workflow": {
-        "types": "./dist/outbox-workflow.d.ts",
-        "import": "./dist/outbox-workflow.js",
-        "default": "./dist/outbox-workflow.js"
+      "./outbox-job": {
+        "types": "./dist/outbox-job.d.ts",
+        "import": "./dist/outbox-job.js",
+        "default": "./dist/outbox-job.js"
       },
       "./write-intents": {
         "types": "./dist/write-intents.d.ts",
@@ -394,7 +394,6 @@
     "@neondatabase/serverless": "^1.1.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/schema-kit": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "postgres": "^3.4.9",
     "typeid-js": "^1.2.0",

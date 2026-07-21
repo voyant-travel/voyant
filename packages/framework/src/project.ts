@@ -55,10 +55,7 @@ export type {
   ProjectApiConventionsOptions,
   ProjectApiGeneratedFile,
 } from "./project-api-conventions.js"
-export {
-  VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
-  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
-} from "./project-artifact-paths.js"
+export { VOYANT_PROJECT_PRODUCT_BOM_ENTRY } from "./project-artifact-paths.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,
@@ -100,16 +97,6 @@ export type {
   ProjectSubscriberLinkDiagnosticCode,
   ProjectSubscriberLinkGeneratedFile,
 } from "./project-subscriber-link-conventions.js"
-export type {
-  ProjectJobConvention,
-  ProjectWorkflowConvention,
-  ProjectWorkflowJobConventionAnalysis,
-  ProjectWorkflowJobConventionCompilation,
-  ProjectWorkflowJobConventionDiagnostic,
-  ProjectWorkflowJobConventionDiagnosticCode,
-  ProjectWorkflowJobConventionsOptions,
-  ProjectWorkflowJobGeneratedFile,
-} from "./project-workflow-job-conventions.js"
 export {
   buildStandardNodeStarterSnapshot,
   STANDARD_NODE_STARTER,
@@ -186,22 +173,6 @@ export async function compileProjectAdminConventions(
 ): Promise<import("./project-admin-conventions.js").CompiledProjectAdminConventions> {
   const conventions = await import("./project-admin-conventions.js")
   return conventions.compileProjectAdminConventions(input)
-}
-
-export async function analyzeProjectWorkflowJobConventions(
-  options: import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionsOptions,
-): Promise<import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionAnalysis> {
-  const conventions = await import("./project-workflow-job-conventions.js")
-  return conventions.analyzeProjectWorkflowJobConventions(options)
-}
-
-export async function compileProjectWorkflowJobConventions(
-  options: import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionsOptions,
-): Promise<
-  import("./project-workflow-job-conventions.js").ProjectWorkflowJobConventionCompilation
-> {
-  const conventions = await import("./project-workflow-job-conventions.js")
-  return conventions.compileProjectWorkflowJobConventions(options)
 }
 
 export async function analyzeProjectSubscriberLinkConventions(

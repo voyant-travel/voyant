@@ -32,9 +32,6 @@ const descriptor = {
 }
 register: async (context) => {
   context.container.register(BULK_REINDEX_SERVICE_KEY, await bulkReindex.createService(bindings))
-  context.container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
-    withDb: (operation) => database.withDb(context.bindings, operation)
-  })
   await descriptor.register(context)
 }
 `,

@@ -1,8 +1,8 @@
-// agent-quality: file-size exception -- owner: commerce; the checkout-finalize
-// step wiring (confirm booking, issue invoice, link payments, contract PDF) is
-// one cohesive workflow definition; splitting it would scatter a single saga.
+// agent-quality: file-size exception -- owner: commerce; checkout finalization
+// (confirm booking, issue invoice, link payments, contract PDF) is one cohesive
+// domain operation.
 import { bookingsService } from "@voyant-travel/bookings"
-import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
+import { bookings } from "@voyant-travel/bookings/schema"
 import {
   type CheckoutFinalizeDeps,
   type CheckoutFinalizeInput,
@@ -14,14 +14,23 @@ import {
   issueInvoiceFromBooking,
   settleCoveredBookingPaymentSchedules,
 } from "@voyant-travel/finance"
-import { beginWorkflowRun, type WorkflowRunRecorder } from "@voyant-travel/workflow-runs"
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+import {
+  type CheckoutFinalizationIdentity,
+  ensureCheckoutFinalization,
+  getCheckoutFinalization,
+  getCheckoutFinalizationDelivery,
+  updateCheckoutFinalization,
+  updateCheckoutFinalizationDelivery,
+  withCheckoutFinalizationLock,
+} from "./finalization-store.js"
 
 /**
  * Optional callback that generates (or fetches existing) the contract PDF for
  * a booking. Wired by the deployment and forwarded into the explicit
- * `generate_contract_pdf` workflow step. The deployment supplies its
+ * contract-generation step. The deployment supplies its
  * platform bindings (`env`) when constructing it, so this package-level type
  * only carries the booking-scoped inputs the step needs.
  */
@@ -32,31 +41,40 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
   force?: boolean
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
-function buildCheckoutFinalizeDeps(
+export function buildCheckoutFinalizeDeps(
   db: PostgresJsDatabase,
   eventBus: EventBus,
-  recorder: WorkflowRunRecorder,
+  identity: CheckoutFinalizationIdentity,
   generateContractPdf?: CatalogCheckoutContractPdfGenerator,
 ): CheckoutFinalizeDeps {
   return {
     db,
     eventBus,
-    recorder: {
-      startStep: (name) => {
-        void recorder.startStep(name)
-      },
-      completeStep: (name, output) => {
-        void recorder.completeStep(name, output ?? null)
-      },
-      failStep: (name, error) => {
-        void recorder.failStep(name, error)
-      },
-    },
     confirmBooking: async (bookingId) => {
+      const checkpoint = await getCheckoutFinalization(db, identity.bookingId)
+      if (checkpoint?.confirmedAt) return
+
+      const [booking] = await db
+        .select({ status: bookings.status })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
+      if (
+        booking?.status === "confirmed" ||
+        booking?.status === "in_progress" ||
+        booking?.status === "completed"
+      ) {
+        await markBookingConfirmed(db, identity)
+        return
+      }
+
       const result = await bookingsService.confirmBooking(db, bookingId, {}, undefined, {
         eventBus,
       })
-      if (result.status === "ok") return
+      if (result.status === "ok") {
+        await markBookingConfirmed(db, identity)
+        return
+      }
 
       if (result.status === "hold_expired") {
         const recovered = await bookingsService.recoverExpiredPaidBooking(
@@ -66,77 +84,61 @@ function buildCheckoutFinalizeDeps(
           undefined,
           { eventBus },
         )
-        if (recovered.status === "ok") return
+        if (recovered.status === "ok") {
+          await markBookingConfirmed(db, identity)
+          return
+        }
         throw new Error(`checkout-finalize: late payment recovery failed (${recovered.status})`)
+      }
+
+      if (result.status === "invalid_transition") {
+        const [current] = await db
+          .select({ status: bookings.status })
+          .from(bookings)
+          .where(eq(bookings.id, bookingId))
+          .limit(1)
+        if (
+          current?.status === "confirmed" ||
+          current?.status === "in_progress" ||
+          current?.status === "completed"
+        ) {
+          await markBookingConfirmed(db, identity)
+          return
+        }
       }
 
       throw new Error(`checkout-finalize: booking confirmation failed (${result.status})`)
     },
     issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
-      if (convertedFromInvoiceId) {
-        const result = await convertProformaToInvoice(db, convertedFromInvoiceId, {}, { eventBus })
-        if (result.status === "ok") return { invoiceId: result.invoice.id }
-        if (result.status === "already_converted" && result.invoice) {
-          return { invoiceId: result.invoice.id }
+      return withCheckoutFinalizationLock(db, identity, async (tx, state) => {
+        if (state.invoiceId) return { invoiceId: state.invoiceId }
+
+        let invoiceId: string | null = null
+        // The payment event's proforma path takes precedence. Never infer a
+        // checkpoint from an arbitrary invoice already attached to the booking.
+        if (convertedFromInvoiceId) {
+          const result = await convertProformaToInvoice(
+            tx,
+            convertedFromInvoiceId,
+            {},
+            { eventBus },
+          )
+          if (result.status === "ok") invoiceId = result.invoice.id
+          else if (result.status === "already_converted" && result.invoice) {
+            invoiceId = result.invoice.id
+          } else {
+            throw new Error(`checkout-finalize: proforma conversion failed (${result.status})`)
+          }
+        } else {
+          invoiceId =
+            (await findPaymentSessionFinalInvoice(tx, identity)) ??
+            (await issueDirectInvoice(tx, eventBus, bookingId))
         }
-        throw new Error(`checkout-finalize: proforma conversion failed (${result.status})`)
-      }
 
-      const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
-      if (!booking) return null
-
-      const { bookingItems } = await import("@voyant-travel/bookings/schema")
-      const items = await db
-        .select()
-        .from(bookingItems)
-        .where(eq(bookingItems.bookingId, bookingId))
-
-      const today = new Date().toISOString().slice(0, 10)
-      const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-
-      // Finalize runs on payment.completed, i.e. the money has settled.
-      // The fiscal invoice is always issued here. The document-flow choice
-      // (proforma-first vs direct) is made earlier, at order placement, and
-      // is scoped to the deferred bank-transfer path — never card. When a
-      // proforma was issued at placement it is converted above via
-      // `convertProformaToInvoice`; this branch only runs for the direct
-      // path, where no proforma exists.
-      const invoice = await issueInvoiceFromBooking(
-        db,
-        {
-          bookingId,
-          issueDate: today,
-          dueDate,
-          invoiceType: "invoice",
-          convertedFromInvoiceId,
-          notes: convertedFromInvoiceId
-            ? `Converted from proforma ${convertedFromInvoiceId}`
-            : null,
-        },
-        {
-          booking: {
-            id: booking.id,
-            bookingNumber: booking.bookingNumber,
-            personId: booking.personId,
-            organizationId: booking.organizationId,
-            sellCurrency: booking.sellCurrency,
-            baseCurrency: booking.baseCurrency,
-            fxRateSetId: null,
-            sellAmountCents: booking.sellAmountCents,
-            baseSellAmountCents: booking.baseSellAmountCents,
-          },
-          items: items.map((item) => ({
-            id: item.id,
-            title: item.title,
-            quantity: item.quantity,
-            unitSellAmountCents: item.unitSellAmountCents,
-            totalSellAmountCents: item.totalSellAmountCents,
-          })),
-        },
-        { eventBus },
-      )
-
-      return invoice ? { invoiceId: invoice.id } : null
+        if (!invoiceId) return null
+        await updateCheckoutFinalization(tx, identity, state.revision, { invoiceId })
+        return { invoiceId }
+      })
     },
     findProformaForBooking: async (bookingId) => {
       const { invoices } = await import("@voyant-travel/finance")
@@ -155,158 +157,274 @@ function buildCheckoutFinalizeDeps(
       return proforma ? { invoiceId: proforma.id } : null
     },
     generateContractPdf: generateContractPdf
-      ? async ({ bookingId, force }) => generateContractPdf({ db, eventBus, bookingId, force })
+      ? async ({ bookingId }) =>
+          withCheckoutFinalizationLock(db, identity, async (tx, state) => {
+            if (!state.invoiceId || state.paymentRevision < 1) {
+              throw new Error("checkout-finalize: contract render preceded payment linkage")
+            }
+            const renderKey = finalPaymentRenderKey(
+              identity.bookingId,
+              state.invoiceId,
+              state.paymentRevision,
+            )
+            if (
+              state.finalPaymentRenderVersion === state.paymentRevision &&
+              state.finalPaymentRenderKey === renderKey &&
+              state.contractId &&
+              state.contractAttachmentId
+            ) {
+              return {
+                contractId: state.contractId,
+                attachmentId: state.contractAttachmentId,
+              }
+            }
+
+            // Exactly one forced render occurs after payment linkage. The row
+            // lock prevents an overlapping delivery from forcing a second one.
+            const generated = await generateContractPdf({
+              db: tx,
+              eventBus,
+              bookingId,
+              force: true,
+            })
+            if (!generated) return null
+            await updateCheckoutFinalization(tx, identity, state.revision, {
+              contractId: generated.contractId,
+              contractAttachmentId: generated.attachmentId,
+              finalPaymentRenderVersion: state.paymentRevision,
+              finalPaymentRenderKey: renderKey,
+            })
+            return generated
+          })
       : undefined,
     linkPaymentToInvoice: async ({ bookingId, invoiceId, paymentSessionId }) => {
-      const { paymentSessions } = await import("@voyant-travel/finance/schema")
-      const { financeService } = await import("@voyant-travel/finance")
-      const paidSessions = await db
-        .select()
-        .from(paymentSessions)
-        .where(
-          and(
-            eq(paymentSessions.bookingId, bookingId),
-            eq(paymentSessions.status, "paid"),
-            isNull(paymentSessions.invoiceId),
-          ),
-        )
-
-      let firstPaymentId: string | null = null
-      let sessionsLinked = 0
-
-      for (const session of paidSessions) {
-        await db
-          .update(paymentSessions)
-          .set({ invoiceId, updatedAt: new Date() })
-          .where(eq(paymentSessions.id, session.id))
-
-        const payment = await financeService.createPayment(db, invoiceId, {
-          amountCents: session.amountCents,
-          currency: session.currency,
-          paymentMethod: session.paymentMethod ?? "credit_card",
-          paymentInstrumentId: session.paymentInstrumentId ?? null,
-          paymentAuthorizationId: session.paymentAuthorizationId ?? null,
-          paymentCaptureId: session.paymentCaptureId ?? null,
-          status: "completed",
-          referenceNumber:
-            session.providerPaymentId ??
-            session.externalReference ??
-            session.providerSessionId ??
-            session.id,
-          paymentDate: (session.completedAt ?? new Date()).toISOString().slice(0, 10),
-          notes:
-            `Checkout-finalize linkage from session ${session.id}` +
-            (paymentSessionId && session.id !== paymentSessionId
-              ? ` (workflow input session: ${paymentSessionId})`
-              : ""),
-        })
-
-        if (payment?.id) {
-          await db
-            .update(paymentSessions)
-            .set({ paymentId: payment.id, updatedAt: new Date() })
-            .where(eq(paymentSessions.id, session.id))
-          if (!firstPaymentId) firstPaymentId = payment.id
+      return withCheckoutFinalizationLock(db, identity, async (tx, state) => {
+        if (!state.invoiceId) {
+          throw new Error("checkout-finalize: payment linkage preceded invoice checkpoint")
         }
-        sessionsLinked++
-      }
+        if (state.invoiceId !== invoiceId) {
+          throw new Error(
+            "checkout-finalize: saga invoice differs from its finalization checkpoint",
+          )
+        }
+        const delivery = await getCheckoutFinalizationDelivery(tx, identity.paymentSessionId)
+        if (delivery?.paymentLinkedAt) {
+          return { paymentId: state.paymentId, sessionsLinked: 0 }
+        }
 
-      await settleCoveredBookingPaymentSchedules(db, bookingId)
-
-      return { paymentId: firstPaymentId, sessionsLinked }
+        const linked = await linkPaidSessions(
+          tx,
+          eventBus,
+          bookingId,
+          state.invoiceId,
+          paymentSessionId,
+        )
+        const paymentRevision =
+          linked.sessionsLinked > 0 ? state.paymentRevision + 1 : Math.max(1, state.paymentRevision)
+        await updateCheckoutFinalization(tx, identity, state.revision, {
+          paymentId: linked.paymentId ?? state.paymentId,
+          paymentRevision,
+        })
+        await updateCheckoutFinalizationDelivery(tx, identity, { paymentLinkedAt: new Date() })
+        return linked
+      })
     },
   }
 }
 
-export interface DispatchCheckoutFinalizeParams {
+async function findPaymentSessionFinalInvoice(
+  db: PostgresJsDatabase,
+  identity: CheckoutFinalizationIdentity,
+): Promise<string | null> {
+  const { invoices } = await import("@voyant-travel/finance")
+  const { paymentSessions } = await import("@voyant-travel/finance/schema")
+  const [session] = await db
+    .select({ invoiceId: paymentSessions.invoiceId })
+    .from(paymentSessions)
+    .where(
+      and(
+        eq(paymentSessions.id, identity.paymentSessionId),
+        eq(paymentSessions.bookingId, identity.bookingId),
+      ),
+    )
+    .limit(1)
+  if (!session?.invoiceId) return null
+
+  const [invoice] = await db
+    .select({ id: invoices.id })
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.id, session.invoiceId),
+        eq(invoices.bookingId, identity.bookingId),
+        eq(invoices.invoiceType, "invoice"),
+        ne(invoices.status, "void"),
+      ),
+    )
+    .limit(1)
+  return invoice?.id ?? null
+}
+
+async function issueDirectInvoice(
+  db: PostgresJsDatabase,
+  eventBus: EventBus,
+  bookingId: string,
+): Promise<string | null> {
+  const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  if (!booking) return null
+
+  const { bookingItems } = await import("@voyant-travel/bookings/schema")
+  const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
+  const today = new Date().toISOString().slice(0, 10)
+  const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const invoice = await issueInvoiceFromBooking(
+    db,
+    { bookingId, issueDate: today, dueDate, invoiceType: "invoice" },
+    {
+      booking: {
+        id: booking.id,
+        bookingNumber: booking.bookingNumber,
+        personId: booking.personId,
+        organizationId: booking.organizationId,
+        sellCurrency: booking.sellCurrency,
+        baseCurrency: booking.baseCurrency,
+        fxRateSetId: null,
+        sellAmountCents: booking.sellAmountCents,
+        baseSellAmountCents: booking.baseSellAmountCents,
+      },
+      items: items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        quantity: item.quantity,
+        unitSellAmountCents: item.unitSellAmountCents,
+        totalSellAmountCents: item.totalSellAmountCents,
+      })),
+    },
+    { eventBus },
+  )
+  return invoice?.id ?? null
+}
+
+async function linkPaidSessions(
+  db: PostgresJsDatabase,
+  eventBus: EventBus,
+  bookingId: string,
+  invoiceId: string,
+  paymentSessionId?: string,
+): Promise<{ paymentId: string | null; sessionsLinked: number }> {
+  const { paymentSessions } = await import("@voyant-travel/finance/schema")
+  const { financeService } = await import("@voyant-travel/finance")
+  const paidSessions = await db
+    .select()
+    .from(paymentSessions)
+    .where(and(eq(paymentSessions.bookingId, bookingId), eq(paymentSessions.status, "paid")))
+
+  let firstPaymentId: string | null = null
+  let sessionsLinked = 0
+
+  for (const session of paidSessions) {
+    if (session.paymentId) continue
+    if (session.invoiceId && session.invoiceId !== invoiceId) {
+      throw new Error(`checkout-finalize: paid session ${session.id} is linked to another invoice`)
+    }
+
+    if (!session.invoiceId) {
+      await db
+        .update(paymentSessions)
+        .set({ invoiceId, updatedAt: new Date() })
+        .where(and(eq(paymentSessions.id, session.id), isNull(paymentSessions.invoiceId)))
+    }
+
+    // Finance owns the atomic payment + session checkpoint. If delivery
+    // stops after the invoice pointer is written, a retry enters here
+    // again; if this call committed, paymentId makes the retry a no-op.
+    const completed = await financeService.completePaymentSession(
+      db,
+      session.id,
+      {
+        status: "paid",
+        captureMode: "manual",
+        providerSessionId: session.providerSessionId,
+        providerPaymentId: session.providerPaymentId,
+        externalReference: session.externalReference,
+        paymentMethod: session.paymentMethod ?? "credit_card",
+        paymentInstrumentId: session.paymentInstrumentId ?? null,
+        referenceNumber:
+          session.providerPaymentId ??
+          session.externalReference ??
+          session.providerSessionId ??
+          session.id,
+        paymentDate: (session.completedAt ?? new Date()).toISOString().slice(0, 10),
+        notes:
+          `Checkout-finalize linkage from session ${session.id}` +
+          (paymentSessionId && session.id !== paymentSessionId
+            ? ` (command input session: ${paymentSessionId})`
+            : ""),
+      },
+      { eventBus },
+    )
+    if (!completed?.paymentId) {
+      throw new Error(`checkout-finalize: paid session ${session.id} was not reconciled`)
+    }
+
+    if (!firstPaymentId) firstPaymentId = completed.paymentId
+    sessionsLinked++
+  }
+
+  await settleCoveredBookingPaymentSchedules(db, bookingId)
+  return { paymentId: firstPaymentId, sessionsLinked }
+}
+
+async function markBookingConfirmed(
+  db: PostgresJsDatabase,
+  identity: CheckoutFinalizationIdentity,
+): Promise<void> {
+  await withCheckoutFinalizationLock(db, identity, async (tx, state) => {
+    if (state.confirmedAt) return
+    await updateCheckoutFinalization(tx, identity, state.revision, { confirmedAt: new Date() })
+  })
+}
+
+function finalPaymentRenderKey(
+  bookingId: string,
+  invoiceId: string,
+  paymentRevision: number,
+): string {
+  return `v1:${bookingId}:${invoiceId}:payment-revision-${paymentRevision}`
+}
+
+export interface FinalizeCheckoutParams {
   db: PostgresJsDatabase
   eventBus: EventBus
   input: CheckoutFinalizeInput
-  trigger: string
-  correlationId: string | null
-  tags: ReadonlyArray<string>
-  parentRunId?: string | null
-  triggeredByUserId?: string | null
-  resumeFromStep?: string
-  seedResults?: Record<string, unknown>
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
 }
 
-function checkoutFinalizeInputRecord(input: CheckoutFinalizeInput): Record<string, unknown> {
-  return { ...input }
-}
-
 /**
- * Run the checkout-finalize workflow for a booking: record a workflow run,
- * build the finalize deps (confirm booking, issue invoice, link payments,
- * generate contract PDF), execute `runCheckoutFinalize`, and mark the run
- * complete/failed. The deployment owns the db + event bus + (optional)
- * contract-pdf generator; this is the reusable saga driver.
+ * Finalize a paid checkout as an idempotent domain operation. The payment
+ * subscriber owns delivery; durable event-outbox retry is the recovery path.
+ * There is no customer-authored execution definition or run record.
  */
-export async function dispatchCheckoutFinalize(
-  params: DispatchCheckoutFinalizeParams,
-): Promise<{ runId: string }> {
-  const recorder = await beginWorkflowRun(params.db, {
-    workflowName: "checkout-finalize",
-    trigger: params.trigger,
-    correlationId: params.correlationId ?? null,
-    tags: [...params.tags],
-    input: checkoutFinalizeInputRecord(params.input),
-    parentRunId: params.parentRunId ?? null,
-    triggeredByUserId: params.triggeredByUserId ?? null,
-    resumeFromStep: params.resumeFromStep ?? null,
-  })
-
-  if (params.parentRunId) {
-    try {
-      const action = params.resumeFromStep ? "resumed" : "rerun"
-      const description = params.resumeFromStep
-        ? `Workflow checkout-finalize ${action} from step "${params.resumeFromStep}"`
-        : `Workflow checkout-finalize ${action}`
-      await params.db.insert(bookingActivityLog).values({
-        bookingId: params.input.bookingId,
-        actorId: params.triggeredByUserId ?? null,
-        activityType: "system_action",
-        description,
-        metadata: {
-          kind: "workflow_rerun",
-          workflowName: "checkout-finalize",
-          parentRunId: params.parentRunId,
-          newRunId: recorder.runId,
-          resumeFromStep: params.resumeFromStep ?? null,
-        },
-      })
-    } catch (err) {
-      console.warn("[catalog-checkout] failed to write rerun activity log", err)
-    }
+export async function finalizeCheckout(params: FinalizeCheckoutParams): Promise<void> {
+  const paymentSessionId = params.input.paymentSessionId
+  if (!paymentSessionId) {
+    throw new Error("checkout-finalize: paymentSessionId is required for durable finalization")
   }
-
-  if (params.resumeFromStep && params.seedResults) {
-    for (const [stepName, output] of Object.entries(params.seedResults)) {
-      if (stepName === "__deps") continue
-      await recorder.recordSkippedStep(
-        stepName,
-        output && typeof output === "object" ? (output as Record<string, unknown>) : null,
-      )
-    }
-  }
+  const identity = { paymentSessionId, bookingId: params.input.bookingId }
+  await ensureCheckoutFinalization(params.db, identity)
+  const delivery = await getCheckoutFinalizationDelivery(params.db, paymentSessionId)
+  if (delivery?.completedAt) return
 
   const deps = buildCheckoutFinalizeDeps(
     params.db,
     params.eventBus,
-    recorder,
+    identity,
     params.generateContractPdf,
   )
-  try {
-    await runCheckoutFinalize(params.input, deps, {
-      skipUntil: params.resumeFromStep,
-      seedResults: params.seedResults,
-    })
-    await recorder.complete()
-    return { runId: recorder.runId }
-  } catch (err) {
-    console.error("[catalog-checkout] checkout-finalize workflow failed", err)
-    await recorder.fail(err)
-    throw err
-  }
+  await runCheckoutFinalize(params.input, deps)
+  await withCheckoutFinalizationLock(params.db, identity, async (tx) => {
+    const current = await getCheckoutFinalizationDelivery(tx, paymentSessionId)
+    if (current?.completedAt) return
+    await updateCheckoutFinalizationDelivery(tx, identity, { completedAt: new Date() })
+  })
 }

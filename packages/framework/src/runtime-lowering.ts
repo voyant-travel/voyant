@@ -6,14 +6,15 @@ import {
   type VoyantGraphActionDeclaration,
   type VoyantGraphConfigDeclaration,
   type VoyantGraphEventCatalog,
+  type VoyantGraphJob,
   type VoyantGraphJsonObject,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
   type VoyantGraphRouteBundle,
+  type VoyantGraphRuntimeFactoryContext,
   type VoyantGraphRuntimeReference,
   type VoyantGraphSecretDeclaration,
   type VoyantGraphUnitKind,
-  type VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
@@ -35,7 +36,7 @@ export type VoyantGraphRuntimeReferenceFacet =
   | "admin.contributions.runtime"
   | "reporting.datasets.runtime"
   | "tools.runtime"
-  | "workflows.runtime"
+  | "jobs.runtime"
   | "subscribers.runtime"
 
 export interface VoyantGraphRuntimeReferenceDefinition {
@@ -108,9 +109,14 @@ export interface VoyantGraphRuntimeToolDefinition {
   risk?: "low" | "medium" | "high" | "critical"
 }
 
-export interface VoyantGraphRuntimeWorkflowDefinition {
+/** Fixed callable operation exposed to the deployment job host without run payloads. */
+export type VoyantGraphRuntimeJobHandler = (
+  context: VoyantGraphRuntimeFactoryContext,
+) => Promise<void> | void
+
+export interface VoyantGraphRuntimeJobDefinition {
   unitId: string
-  declaration: VoyantGraphWorkflow
+  declaration: VoyantGraphJob
   referenceId: string
 }
 
@@ -140,7 +146,6 @@ export interface VoyantGraphRuntimeProviderDefinition {
 export interface VoyantGraphRuntimeSelectedIds {
   routes: readonly string[]
   tools: readonly string[]
-  workflows: readonly string[]
   events: readonly string[]
   webhooks: readonly string[]
 }
@@ -172,7 +177,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
-  workflows?: readonly VoyantGraphRuntimeWorkflowDefinition[]
+  jobs?: readonly VoyantGraphRuntimeJobDefinition[]
   actions?: readonly VoyantGraphRuntimeActionDefinition[]
   setupSteps?: readonly { id: string; skippable: boolean }[]
   selectedIds: VoyantGraphRuntimeSelectedIds
@@ -193,8 +198,8 @@ export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefi
   load: <T = unknown>() => Promise<T>
 }
 
-export interface VoyantGraphRuntimeWorkflowLoader extends VoyantGraphRuntimeWorkflowDefinition {
-  load: <T = unknown>() => Promise<T>
+export interface VoyantGraphRuntimeJobLoader extends VoyantGraphRuntimeJobDefinition {
+  load: () => Promise<VoyantGraphRuntimeJobHandler>
 }
 
 export interface VoyantGraphRuntimeConfigLoader extends VoyantGraphRuntimeConfigDefinition {
@@ -219,7 +224,7 @@ export interface VoyantGraphRuntimeUnitLoader
     | "routes"
     | "secrets"
     | "tools"
-    | "workflows"
+    | "jobs"
   > {
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
   references: readonly VoyantGraphRuntimeReferenceLoader[]
@@ -233,7 +238,7 @@ export interface VoyantGraphRuntimeUnitLoader
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
-  workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
+  jobs: readonly VoyantGraphRuntimeJobLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteLoader[]
@@ -268,7 +273,7 @@ export interface VoyantGraphRuntime {
   reportingCatalog: import("@voyant-travel/core/project").VoyantGraphReportingCatalog
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
-  workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
+  jobs: readonly VoyantGraphRuntimeJobLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   setupSteps: readonly { id: string; skippable: boolean }[]
   selectedIds: VoyantGraphRuntimeSelectedIds
@@ -336,7 +341,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   )
   const accessScopes = sortedUnique(units.flatMap((unit) => unit.accessScopes))
   const tools = units.flatMap((unit) => unit.tools)
-  const workflows = units.flatMap((unit) => unit.workflows)
+  const jobs = units.flatMap((unit) => unit.jobs)
   const actions = units.flatMap((unit) => unit.actions)
   const setupSteps = units.flatMap((unit) => unit.setupSteps ?? [])
   const selectedIds = mergeSelectedIds(units.map((unit) => unit.selectedIds))
@@ -363,7 +368,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     reportingCatalog: definitions.reportingCatalog,
     accessScopes,
     tools,
-    workflows,
+    jobs,
     actions,
     setupSteps,
     selectedIds,
@@ -398,7 +403,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "secrets"
     | "selectedIds"
     | "tools"
-    | "workflows"
+    | "jobs"
   > {
   projectConfig: VoyantGraphJsonObject
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
@@ -412,7 +417,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
-  workflows: readonly VoyantGraphRuntimeWorkflowDefinition[]
+  jobs: readonly VoyantGraphRuntimeJobDefinition[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
@@ -549,7 +554,7 @@ function normalizeRuntimeUnitDefinition(
         : sortedUnique(unit.requiredRuntimePorts),
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
-    workflows: [...(unit.workflows ?? [])],
+    jobs: [...(unit.jobs ?? [])],
     actions: [...(unit.actions ?? [])],
     setupSteps: [...(unit.setupSteps ?? [])],
     selectedIds: normalizeSelectedIds(unit.selectedIds),
@@ -618,20 +623,19 @@ function createRuntimeUnitLoader(
       load: <T = unknown>() => loadDeclaredTool<T>(definition, reference),
     }
   })
-  const workflows = unit.workflows.map((definition) => {
+  const jobs = unit.jobs.map((definition) => {
     const reference = requireDeclarationReference(
       definition.unitId,
       definition.declaration.id,
       definition.referenceId,
-      "workflows.runtime",
+      "jobs.runtime",
       referenceById,
     )
     return {
       ...definition,
-      load: <T = unknown>() => loadDeclaredWorkflow<T>(definition, reference),
+      load: () => loadDeclaredJob(definition, reference),
     }
   })
-
   return {
     id: unit.id,
     ...(unit.localId ? { localId: unit.localId } : {}),
@@ -652,7 +656,7 @@ function createRuntimeUnitLoader(
     requiredRuntimePorts: unit.requiredRuntimePorts,
     accessScopes: unit.accessScopes,
     tools,
-    workflows,
+    jobs,
     actions: unit.actions,
     selectedIds: unit.selectedIds,
     routes,
@@ -833,7 +837,6 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const selectedActionBindings = {
     routes: new Set(selectedIds.routes),
     tools: new Set(selectedIds.tools),
-    workflows: new Set(selectedIds.workflows),
     events: new Set(selectedIds.events),
     webhooks: new Set(selectedIds.webhooks),
   } as const
@@ -884,7 +887,7 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
         ["secrets", unit.secrets],
         ["resources", unit.resources],
         ["providers", unit.providers],
-        ["workflows", unit.workflows],
+        ["jobs", unit.jobs],
       ] as const) {
         for (const definition of declarations) {
           const declarationId = definition.declaration.id
@@ -1154,26 +1157,26 @@ async function loadDeclaredTool<T>(
   return value as T
 }
 
-async function loadDeclaredWorkflow<T>(
-  definition: VoyantGraphRuntimeWorkflowDefinition,
+async function loadDeclaredJob(
+  definition: VoyantGraphRuntimeJobDefinition,
   reference: VoyantGraphRuntimeReferenceLoader,
-): Promise<T> {
+): Promise<VoyantGraphRuntimeJobHandler> {
   const value = await reference.load<unknown>()
-  if (!isRecord(value) || value.id !== definition.declaration.id) {
+  if (typeof value !== "function") {
     throw new VoyantGraphRuntimeLoadError(
       "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
       {
         referenceId: reference.id,
         unitId: definition.unitId,
-        facet: "workflows.runtime",
+        facet: "jobs.runtime",
         entityId: definition.declaration.id,
         entry: reference.importEntry,
         ...(reference.runtime.export ? { exportName: reference.runtime.export } : {}),
       },
-      `loaded workflow must declare id "${definition.declaration.id}"`,
+      "job runtime exports must be callable functions that receive only the graph runtime context",
     )
   }
-  return value as T
+  return value as VoyantGraphRuntimeJobHandler
 }
 
 function invalidToolExport(
@@ -1214,7 +1217,6 @@ function normalizeSelectedIds(
   return {
     routes: sortedUnique(selectedIds.routes),
     tools: sortedUnique(selectedIds.tools),
-    workflows: sortedUnique(selectedIds.workflows),
     events: sortedUnique(selectedIds.events),
     webhooks: sortedUnique(selectedIds.webhooks),
   }
@@ -1226,7 +1228,6 @@ function mergeSelectedIds(
   return normalizeSelectedIds({
     routes: selectedIds.flatMap((ids) => ids.routes),
     tools: selectedIds.flatMap((ids) => ids.tools),
-    workflows: selectedIds.flatMap((ids) => ids.workflows),
     events: selectedIds.flatMap((ids) => ids.events),
     webhooks: selectedIds.flatMap((ids) => ids.webhooks),
   })

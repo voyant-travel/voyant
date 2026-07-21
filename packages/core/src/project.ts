@@ -1,12 +1,10 @@
 // agent-quality: file-size exception -- reason: project authoring validation stays import-cheap and centralized with its public serializable contracts.
 /**
  * Import-cheap authoring contracts for package-owned deployment manifests.
- * Executable route, schema, UI, workflow, and provider code is referenced by
+ * Executable route, schema, UI, subscriber, job, and provider code is referenced by
  * package export, never imported from this module.
  */
 
-import type { ModuleContainer } from "./container.js"
-import type { EventBus } from "./events.js"
 import type {
   VoyantGraphAccessDeclaration,
   VoyantGraphActionDeclaration,
@@ -126,35 +124,6 @@ export async function assertPortConforms<TProvider>(
 ): Promise<void> {
   await port.test(provider)
 }
-
-export const VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID = "voyant.workflow-services" as const
-
-export interface VoyantWorkflowServiceContributionContext {
-  environment: Readonly<Record<string, unknown>>
-  services: ModuleContainer
-  eventBus: EventBus
-  reportFailure(error: unknown, context: Readonly<Record<string, unknown>>): void
-}
-
-export interface VoyantWorkflowServiceContribution {
-  serviceId: string
-  create(context: VoyantWorkflowServiceContributionContext): unknown | Promise<unknown>
-}
-
-/** Additive package-owned workflow services selected through the deployment graph. */
-export const voyantWorkflowServiceContributionsPort = definePort<VoyantWorkflowServiceContribution>(
-  {
-    id: VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
-    test(contribution) {
-      if (!contribution || typeof contribution !== "object") {
-        throw new Error("Workflow service contribution must be an object.")
-      }
-      if (!contribution.serviceId || typeof contribution.create !== "function") {
-        throw new Error("Workflow service contribution must define serviceId and create().")
-      }
-    },
-  },
-)
 
 export interface VoyantGraphRuntimeFactoryGraph {
   /** Explicit deployment provider selections keyed by provider role. */
@@ -352,29 +321,31 @@ export function isExternalWebhookPayloadSchema(value: unknown): value is VoyantG
 
 export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
   eventType?: string
-  eventFilterId?: string
-  workflowId?: string
   filter?: VoyantGraphJsonObject
   runtime?: VoyantGraphRuntimeReference
 }
 
-export interface VoyantGraphWorkflow extends VoyantGraphFacetEntity {
-  config?: VoyantGraphJsonObject
-  schedules?: readonly VoyantGraphWorkflowSchedule[]
-  runtime?: VoyantGraphRuntimeReference
+/** Package-owned cadence for a built-in product job. */
+export type VoyantGraphJobSchedule = (
+  | { cron: string; every?: never }
+  | { every: string | number; cron?: never }
+) & {
+  timezone?: string
+  overlap?: "skip" | "queue"
 }
 
-export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
-  workflowId?: string
-  cron?: string
-  every?: string | number
-  at?: string
-  timezone?: string
-  input?: VoyantGraphJsonValue
-  enabled?: boolean
-  overlap?: "skip" | "queue" | "allow"
-  environments?: readonly ("production" | "preview" | "development")[]
-  name?: string
+/**
+ * A package-owned background operation selected with its owning graph unit.
+ *
+ * Jobs deliberately have no input or payload declaration. Durable work remains
+ * in the owning domain, while a host only schedules or wakes the fixed runtime
+ * export selected by this declaration.
+ */
+export interface VoyantGraphJob extends VoyantGraphFacetEntity {
+  runtime: VoyantGraphRuntimeReference
+  schedule?: VoyantGraphJobSchedule
+  /** Marks a job that may be prompted after its domain records durable work. */
+  wakeup?: boolean
 }
 
 export interface VoyantGraphUnitManifest {
@@ -400,7 +371,7 @@ export interface VoyantGraphUnitManifest {
   links?: readonly VoyantGraphLinkDeclaration[]
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]
-  workflows?: readonly VoyantGraphWorkflow[]
+  jobs?: readonly VoyantGraphJob[]
   setupMigrations?: readonly VoyantGraphSetupMigration[]
   config?: readonly VoyantGraphConfigDeclaration[]
   secrets?: readonly VoyantGraphSecretDeclaration[]

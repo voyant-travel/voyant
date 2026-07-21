@@ -58,7 +58,6 @@ function runtimeWithApiFactory(
         selectedIds: {
           routes: [`${unitId}#api.admin`],
           tools: [],
-          workflows: [],
           events: [],
           webhooks: [],
         },
@@ -145,7 +144,6 @@ describe("graph runtime factory context", () => {
           selectedIds: {
             routes: ["@acme/alerts#api.admin"],
             tools: [],
-            workflows: [],
             events: [],
             webhooks: [],
           },
@@ -304,7 +302,6 @@ describe("graph runtime factory context", () => {
         selectedIds: {
           routes: [`${unitId}#api.admin`],
           tools: [],
-          workflows: [],
           events: [],
           webhooks: [],
         },

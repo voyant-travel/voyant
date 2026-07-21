@@ -6,13 +6,13 @@ import {
 import type {
   VoyantGraphRuntimeActionDefinition,
   VoyantGraphRuntimeConfigDefinition,
+  VoyantGraphRuntimeJobDefinition,
   VoyantGraphRuntimeProviderDefinition,
   VoyantGraphRuntimeReferenceDefinition,
   VoyantGraphRuntimeReferenceFacet,
   VoyantGraphRuntimeResourceDefinition,
   VoyantGraphRuntimeSecretDefinition,
   VoyantGraphRuntimeToolDefinition,
-  VoyantGraphRuntimeWorkflowDefinition,
 } from "./runtime-lowering.js"
 
 interface GeneratedRuntimeRouteDefinition {
@@ -41,13 +41,12 @@ export interface GeneratedRuntimeUnitDefinition {
   requiredRuntimePorts: string[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
-  workflows: VoyantGraphRuntimeWorkflowDefinition[]
+  jobs: VoyantGraphRuntimeJobDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
   setupSteps: { id: string; skippable: boolean }[]
   selectedIds: {
     routes: string[]
     tools: string[]
-    workflows: string[]
     events: string[]
     webhooks: string[]
   }
@@ -128,12 +127,11 @@ export function lowerGraphRuntimeUnits(
           ...(tool.risk ? { risk: tool.risk } : {}),
         }))
         .sort((left, right) => left.id.localeCompare(right.id))
-      const workflows = unit.workflows
-        .filter((workflow) => workflow.runtime !== undefined)
-        .map((workflow) => ({
+      const jobs = (unit.jobs ?? [])
+        .map((job) => ({
           unitId: unit.id,
-          declaration: workflow,
-          referenceId: runtimeReferenceId(unit.id, "workflows.runtime", workflow.id),
+          declaration: job,
+          referenceId: runtimeReferenceId(unit.id, "jobs.runtime", job.id),
         }))
         .sort((left, right) => left.declaration.id.localeCompare(right.declaration.id))
       const actions = (unit.actions ?? [])
@@ -144,7 +142,6 @@ export function lowerGraphRuntimeUnits(
           from: {
             routes: sortedUnique(action.from?.routes ?? []),
             tools: sortedUnique(action.from?.tools ?? []),
-            workflows: sortedUnique(action.from?.workflows ?? []),
             events: sortedUnique(action.from?.events ?? []),
             webhooks: sortedUnique(action.from?.webhooks ?? []),
           },
@@ -186,7 +183,7 @@ export function lowerGraphRuntimeUnits(
           .sort(),
         accessScopes,
         tools,
-        workflows,
+        jobs,
         actions,
         setupSteps: (unit.admin?.setupSteps ?? []).map(({ id, skippable }) => ({
           id,
@@ -195,7 +192,6 @@ export function lowerGraphRuntimeUnits(
         selectedIds: {
           routes: unit.api.map(({ id }) => id).sort(),
           tools: (unit.tools ?? []).map(({ id }) => id).sort(),
-          workflows: unit.workflows.map(({ id }) => id).sort(),
           events: unit.events.map(({ id }) => id).sort(),
           webhooks: (unit.webhooks ?? []).map(({ id }) => id).sort(),
         },
@@ -267,9 +263,7 @@ function collectRuntimeReferences(
     add("reporting.datasets.runtime", dataset.id, dataset.runtime)
   }
   for (const tool of unit.tools ?? []) add("tools.runtime", tool.id, tool.runtime)
-  for (const workflow of unit.workflows) {
-    if (workflow.runtime) add("workflows.runtime", workflow.id, workflow.runtime)
-  }
+  for (const job of unit.jobs ?? []) add("jobs.runtime", job.id, job.runtime)
   for (const subscriber of unit.subscribers) {
     if (subscriber.runtime) add("subscribers.runtime", subscriber.id, subscriber.runtime)
   }

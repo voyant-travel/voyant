@@ -72,11 +72,8 @@ describe("standard package manifests", () => {
     ])
   })
 
-  it("selects durable self-hosted workflow execution by default", () => {
-    expect(STANDARD_OPERATOR_DEPLOYMENT).toMatchObject({
-      mode: "self-hosted",
-      providers: { workflows: "self-hosted" },
-    })
+  it("runs selected product jobs in the standard Operator by default", () => {
+    expect(STANDARD_OPERATOR_DEPLOYMENT.providers?.scheduledJobs).toBe("node-cron")
   })
 
   it("selects the composed dashboard with a staff preset that satisfies every source scope", () => {

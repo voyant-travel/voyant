@@ -27,6 +27,8 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "./checkout/runtime-ports.js"
+import { promotionBoundaryJobRuntimePort } from "./promotions/boundary-job-runtime-port.js"
+import { promotionReindexJobRuntimePort } from "./promotions/reindex-job-runtime-port.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
@@ -121,6 +123,16 @@ export function createCommerceRuntimePortContribution(
     [promotionsBulkReindexRuntimePort.id]: contribution.then(
       (runtime) => runtime.promotionsBulkReindex,
     ),
+    [promotionBoundaryJobRuntimePort.id]: contribution.then((runtime) => ({
+      withDb: <T>(operation: (db: import("@voyant-travel/db").AnyDrizzleDb) => Promise<T>) =>
+        runtime.promotionRedemptionDatabase.withDb(undefined, operation),
+      createReindexService: () => runtime.promotionsBulkReindex.createService(undefined),
+    })),
+    [promotionReindexJobRuntimePort.id]: contribution.then((runtime) => ({
+      withDb: <T>(operation: (db: import("@voyant-travel/db").AnyDrizzleDb) => Promise<T>) =>
+        runtime.promotionRedemptionDatabase.withDb(undefined, operation),
+      createService: () => runtime.promotionsBulkReindex.createService(undefined),
+    })),
   }
 }
 

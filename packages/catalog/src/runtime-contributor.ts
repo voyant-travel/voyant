@@ -21,20 +21,14 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import {
-  type VoyantRuntimeHostPrimitives,
-  type VoyantWorkflowServiceContribution,
-  voyantWorkflowServiceContributionsPort,
-} from "@voyant-travel/core"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   type FinanceOperatorSettingsRuntime,
   financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import {
-  CATALOG_DRAFT_REAPER_RUNTIME_KEY,
-  createCatalogDraftReaperRuntime,
-} from "./draft-reaper-workflow.js"
+import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogAccommodationsRuntimeExtension,
@@ -147,19 +141,24 @@ export function createCatalogRuntimePortContribution(
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
     [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
-    [voyantWorkflowServiceContributionsPort.id]: {
-      serviceId: CATALOG_DRAFT_REAPER_RUNTIME_KEY,
-      async create(context) {
+    [catalogDraftReaperJobRuntimePort.id]: {
+      async withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>) {
+        return operation(host.primitives.database.resolve(undefined))
+      },
+      async resolveSourceRegistry() {
         const runtime = await contribution
         const services = await runtime.services
-        return createCatalogDraftReaperRuntime({
-          withDb: (operation) => operation(host.primitives.database.resolve(context.environment)),
-          resolveSourceRegistry: () => services.ensureSourceRegistry(context.environment),
-          resolveOwnedHandlers: () => services.getOwnedHandlers(context.environment),
-          reportFailure: (error, details) => context.reportFailure(error, details),
-        })
+        return services.ensureSourceRegistry(host.primitives.env(undefined))
       },
-    } satisfies VoyantWorkflowServiceContribution,
+      async resolveOwnedHandlers() {
+        const runtime = await contribution
+        const services = await runtime.services
+        return services.getOwnedHandlers(host.primitives.env(undefined))
+      },
+      reportFailure(error: unknown, details: { draftId: string; op: string }) {
+        console.error("[catalog-draft-reaper] operation failed", { error, ...details })
+      },
+    },
     [cruisesRoutesRuntimePortReference.id]: cruisesRoutes,
   }
 }

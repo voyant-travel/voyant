@@ -88,7 +88,6 @@ export {
   type DefineVoyantConfigInput,
   defineConfig,
   resolveStandardNodeGraphRuntime,
-  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project.js"
 export {
   type ProjectArtifactWriteEntry,
@@ -103,6 +102,7 @@ export {
   composeVoyantGraphRuntime,
   composeVoyantGraphRuntimeFacetModules,
   createVoyantGraphRuntimePortStubs,
+  invokeVoyantGraphJob,
   resolveVoyantGraphRouteMountPath,
   type VoyantGraphRuntimeBinding,
   type VoyantGraphRuntimeBindingContext,
@@ -122,6 +122,9 @@ export {
   type VoyantGraphRuntimeActionDefinition,
   type VoyantGraphRuntimeConfigDefinition,
   type VoyantGraphRuntimeConfigLoader,
+  type VoyantGraphRuntimeJobDefinition,
+  type VoyantGraphRuntimeJobHandler,
+  type VoyantGraphRuntimeJobLoader,
   VoyantGraphRuntimeLoadError,
   type VoyantGraphRuntimeLoadErrorCode,
   type VoyantGraphRuntimeProviderDefinition,
@@ -137,8 +140,6 @@ export {
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
   type VoyantGraphRuntimeWebhookPlan,
-  type VoyantGraphRuntimeWorkflowDefinition,
-  type VoyantGraphRuntimeWorkflowLoader,
 } from "./runtime-lowering.js"
 export {
   type ResolvedVoyantGraphRuntimeProviders,
