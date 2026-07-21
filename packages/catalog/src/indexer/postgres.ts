@@ -15,7 +15,7 @@ import {
   resolveSearchSort,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { sql, type SQL } from "drizzle-orm"
+import { type SQL, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry } from "../contract.js"
 
@@ -94,12 +94,34 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       )
     `)
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_facets (
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        document_id text NOT NULL,
+        field text NOT NULL,
+        value_type text NOT NULL,
+        value_text text NOT NULL,
+        PRIMARY KEY (
+          vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+        )
+      )
+    `)
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_vector_idx
         ON voyant_catalog_search_documents USING gin (search_vector)
     `)
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_slice_idx
         ON voyant_catalog_search_documents (vertical, locale, audience, market, channel, id)
+    `)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS voyant_catalog_search_facets_lookup_idx
+        ON voyant_catalog_search_facets (
+          vertical, locale, audience, market, channel, field, value_type, value_text
+        )
     `)
     if (vectorStrategy === "pgvector") {
       if (!vectorStorageVerified) {
@@ -171,6 +193,10 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
 
       async drop(slice) {
         await ensureStorage()
+        await db.execute(sql`
+          DELETE FROM voyant_catalog_search_facets
+          WHERE ${facetSlicePredicate(slice)}
+        `)
         const documentResult = await db.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
@@ -258,12 +284,23 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
               updated_at = now()
           `)
         }
+        await replaceFacetValues(db, slice, document)
       }
     },
 
     async delete(slice, ids) {
       if (ids.length === 0) return
       await ensureStorage()
+      await db.execute(sql`
+        DELETE FROM voyant_catalog_search_facets
+        WHERE ${facetSlicePredicate(slice)}
+          AND document_id IN (
+            ${sql.join(
+              ids.map((id) => sql`${id}`),
+              sql`, `,
+            )}
+          )
+      `)
       await db.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
@@ -286,9 +323,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
           ? request.search_audiences
           : [slice.audience]
       const keywordRows =
-        request.mode === "semantic"
-          ? []
-          : await searchKeywordRows(db, slice, audiences, request)
+        request.mode === "semantic" ? [] : await searchKeywordRows(db, slice, audiences, request)
       const vectorRows =
         request.mode === "keyword"
           ? []
@@ -298,20 +333,23 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         ({ document }) => matchesFilters(document, request.filters ?? []),
       )
 
-      const ordered = orderHits(candidates, request, options.registries.get(slice.vertical), slice)
-      const start = cursorOffset(ordered, request.pagination?.cursor)
+      const registry = options.registries.get(slice.vertical)
+      const ordered = orderHits(candidates, request, registry, slice)
+      const pagedHits = afterCursor(ordered, request, registry, slice, request.pagination?.cursor)
       const limit = boundedPageSize(request.pagination?.limit)
-      const page = ordered.slice(start, start + limit)
+      const page = pagedHits.slice(0, limit)
       const results: SearchResults = {
         hits: page,
         total: candidates.length,
         ...(capped ? { totalRelation: "gte" as const } : {}),
-        ...(start + limit < ordered.length
-          ? { next_cursor: encodeCursor(ordered[start + limit - 1]!) }
+        ...(limit < pagedHits.length
+          ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice) }
           : {}),
       }
       if (request.facets?.length) {
-        results.facets = buildFacets(
+        results.facets = await buildFacets(
+          db,
+          slice,
           candidates.map(({ document }) => document),
           request.facets,
         )
@@ -423,6 +461,63 @@ function slicePredicate(slice: IndexerSlice, audiences: readonly string[] = [sli
   `
 }
 
+function facetSlicePredicate(slice: IndexerSlice) {
+  return sql`
+    vertical = ${slice.vertical}
+    AND locale = ${slice.locale}
+    AND audience = ${slice.audience}
+    AND market = ${slice.market}
+    AND channel = ${slice.channel ?? ""}
+  `
+}
+
+async function replaceFacetValues(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  document: IndexerDocument,
+): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_facets
+    WHERE ${facetSlicePredicate(slice)} AND document_id = ${document.id}
+  `)
+  const values = facetValues(document.fields)
+  if (values.length === 0) return
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_facets (
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+    ) VALUES ${sql.join(
+      values.map(
+        (value) => sql`(
+          ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
+          ${slice.channel ?? ""}, ${document.id}, ${value.field}, ${value.type}, ${value.text}
+        )`,
+      ),
+      sql`, `,
+    )}
+    ON CONFLICT DO NOTHING
+  `)
+}
+
+function facetValues(fields: Record<string, unknown>): Array<{
+  field: string
+  type: "boolean" | "number" | "string"
+  text: string
+}> {
+  const values = new Map<
+    string,
+    { field: string; type: "boolean" | "number" | "string"; text: string }
+  >()
+  for (const [field, rawValue] of Object.entries(fields)) {
+    for (const value of Array.isArray(rawValue) ? rawValue : [rawValue]) {
+      const type = typeof value
+      if (type !== "string" && type !== "number" && type !== "boolean") continue
+      const typedValue = { field, type, text: String(value) } as const
+      values.set(`${field}\u0000${type}\u0000${typedValue.text}`, typedValue)
+    }
+  }
+  return [...values.values()]
+}
+
 /**
  * Push contract filters into the candidate query before ranking. JSONB is the
  * portable representation until a policy-backed field has an explicit typed
@@ -451,7 +546,10 @@ function toFilterPredicate(filter: SearchFilter): SQL {
     )`
   }
   if (filter.kind === "eq") return scalarFilterPredicate(filter.field, filter.value)
-  return sql`(${sql.join(filter.values.map((value) => scalarFilterPredicate(filter.field, value)), sql` OR `)})`
+  return sql`(${sql.join(
+    filter.values.map((value) => scalarFilterPredicate(filter.field, value)),
+    sql` OR `,
+  )})`
 }
 
 function scalarFilterPredicate(field: string, value: string | number | boolean): SQL {
@@ -680,11 +778,19 @@ function orderHits(
   const sort = request.sort ?? "relevance"
   return hits.sort((left, right) => {
     if (sort === "relevance") return right.score - left.score || left.id.localeCompare(right.id)
-    const resolved = registry ? resolveSearchSort(sort, registry, slice) : undefined
-    const [field, direction] = resolved ? [resolved.field, resolved.direction] : sortField(sort)
+    const [field, direction] = resolveSortField(sort, registry, slice)
     const comparison = compareSortValues(left.document.fields[field], right.document.fields[field])
     return (direction === "asc" ? comparison : -comparison) || left.id.localeCompare(right.id)
   })
+}
+
+function resolveSortField(
+  sort: Exclude<SearchRequest["sort"], undefined | "relevance">,
+  registry: FieldPolicyRegistry | undefined,
+  slice: IndexerSlice,
+): [string, "asc" | "desc"] {
+  const resolved = registry ? resolveSearchSort(sort, registry, slice) : undefined
+  return resolved ? [resolved.field, resolved.direction] : sortField(sort)
 }
 
 function sortField(sort: NonNullable<SearchRequest["sort"]>): [string, "asc" | "desc"] {
@@ -702,29 +808,45 @@ function compareSortValues(left: unknown, right: unknown): number {
   return String(left).localeCompare(String(right))
 }
 
-function buildFacets(documents: IndexerDocument[], facets: readonly FacetRequest[]) {
+async function buildFacets(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  documents: IndexerDocument[],
+  facets: readonly FacetRequest[],
+) {
+  const documentIds = [...new Set(documents.map(({ id }) => id))]
+  if (documentIds.length === 0) return Object.fromEntries(facets.map(({ field }) => [field, []]))
+  const rows = readRows(
+    await db.execute(sql`
+      SELECT field, value_type, value_text, COUNT(*)::int AS count
+      FROM voyant_catalog_search_facets
+      WHERE ${facetSlicePredicate(slice)}
+        AND document_id IN (${sql.join(
+          documentIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})
+        AND field IN (${sql.join(
+          facets.map(({ field }) => sql`${field}`),
+          sql`, `,
+        )})
+      GROUP BY field, value_type, value_text
+    `),
+  ) as Array<{ field: string; value_type: string; value_text: string; count: number | string }>
   return Object.fromEntries(
-    facets.map((facet) => {
-      const counts = new Map<string | number, number>()
-      for (const document of documents) {
-        const value = document.fields[facet.field]
-        const values = Array.isArray(value) ? value : [value]
-        for (const entry of values) {
-          if (typeof entry !== "string" && typeof entry !== "number") continue
-          counts.set(entry, (counts.get(entry) ?? 0) + 1)
-        }
-      }
-      return [
-        facet.field,
-        [...counts.entries()]
-          .map(([value, count]) => ({ value, count }))
-          .sort(
-            (left, right) =>
-              right.count - left.count || String(left.value).localeCompare(String(right.value)),
-          )
-          .slice(0, resolveFacetBucketLimit(facet.limit)),
-      ]
-    }),
+    facets.map((facet) => [
+      facet.field,
+      rows
+        .filter((row) => row.field === facet.field)
+        .map((row) => ({
+          value: row.value_type === "number" ? Number(row.value_text) : row.value_text,
+          count: Number(row.count),
+        }))
+        .sort(
+          (left, right) =>
+            right.count - left.count || String(left.value).localeCompare(String(right.value)),
+        )
+        .slice(0, resolveFacetBucketLimit(facet.limit)),
+    ]),
   )
 }
 
@@ -748,24 +870,78 @@ function boundedBatchSize(batchSize: number | undefined): number {
   return Math.min(batchSize, MAX_SCAN_BATCH_SIZE)
 }
 
-function encodeCursor(hit: SearchHit): string {
-  return Buffer.from(JSON.stringify({ id: hit.id })).toString("base64url")
+type SearchCursor = {
+  v: 1
+  id: string
+  sort: string
+  score?: number
+  value?: unknown
 }
 
-function cursorOffset(hits: SearchHit[], cursor: string | undefined): number {
-  if (!cursor) return 0
+function encodeCursor(
+  hit: SearchHit,
+  request: SearchRequest,
+  registry: FieldPolicyRegistry | undefined,
+  slice: IndexerSlice,
+): string {
+  const sort = request.sort ?? "relevance"
+  const cursor: SearchCursor =
+    sort === "relevance"
+      ? { v: 1, id: hit.id, sort, score: hit.score }
+      : {
+          v: 1,
+          id: hit.id,
+          sort,
+          value: hit.document.fields[resolveSortField(sort, registry, slice)[0]],
+        }
+  return Buffer.from(JSON.stringify(cursor)).toString("base64url")
+}
+
+function afterCursor(
+  hits: SearchHit[],
+  request: SearchRequest,
+  registry: FieldPolicyRegistry | undefined,
+  slice: IndexerSlice,
+  encoded: string | undefined,
+): SearchHit[] {
+  if (!encoded) return hits
+  const cursor = decodeCursor(encoded, request.sort ?? "relevance")
+  if (cursor.sort === "relevance") {
+    return hits.filter(
+      (hit) =>
+        hit.score < cursor.score! ||
+        (hit.score === cursor.score && hit.id.localeCompare(cursor.id) > 0),
+    )
+  }
+  const [field, direction] = resolveSortField(
+    cursor.sort as Exclude<SearchRequest["sort"], undefined | "relevance">,
+    registry,
+    slice,
+  )
+  return hits.filter((hit) => {
+    const comparison = compareSortValues(hit.document.fields[field], cursor.value)
+    return (
+      (direction === "asc" ? comparison : -comparison) > 0 ||
+      (comparison === 0 && hit.id.localeCompare(cursor.id) > 0)
+    )
+  })
+}
+
+function decodeCursor(encoded: string, expectedSort: string): SearchCursor {
   try {
-    const decoded: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
+    const decoded: unknown = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"))
     if (
       !decoded ||
       typeof decoded !== "object" ||
-      typeof (decoded as { id?: unknown }).id !== "string"
+      (decoded as { v?: unknown }).v !== 1 ||
+      typeof (decoded as { id?: unknown }).id !== "string" ||
+      (decoded as { sort?: unknown }).sort !== expectedSort
     ) {
       throw new Error("invalid")
     }
-    const index = hits.findIndex((hit) => hit.id === (decoded as { id: string }).id)
-    if (index < 0) throw new Error("invalid")
-    return index + 1
+    const cursor = decoded as SearchCursor
+    if (cursor.sort === "relevance" && typeof cursor.score !== "number") throw new Error("invalid")
+    return cursor
   } catch {
     throw new RangeError("Search cursor is invalid.")
   }
