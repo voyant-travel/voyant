@@ -655,11 +655,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       }
       await ensureStorage()
       return withConsistentSearchSnapshot(db, async (snapshotDb) => {
-        const generation = await readSearchGeneration(snapshotDb, slice)
         const audiences =
           request.search_audiences?.length && slice.audience === "staff-admin"
             ? request.search_audiences
             : [slice.audience]
+        const generation = await readSearchGenerationToken(snapshotDb, slice, audiences)
         let keywordRows =
           request.mode === "semantic"
             ? []
@@ -784,16 +784,27 @@ async function withConsistentSearchSnapshot<T>(
   })
 }
 
-async function readSearchGeneration(db: AnyDrizzleDb, slice: IndexerSlice): Promise<number> {
-  const [row] = readRows(
+async function readSearchGenerationToken(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  audiences: readonly string[],
+): Promise<string> {
+  const rows = readRows(
     await db.execute(sql`
-      SELECT generation
+      SELECT audience, generation
       FROM voyant_catalog_search_slices
-      WHERE ${facetSlicePredicate(slice)}
-      LIMIT 1
+      WHERE vertical = ${slice.vertical}
+        AND locale = ${slice.locale}
+        AND audience IN (${sql.join(
+          audiences.map((audience) => sql`${audience}`),
+          sql`, `,
+        )})
+        AND market = ${slice.market}
+        AND channel = ${slice.channel ?? ""}
+      ORDER BY audience
     `),
-  ) as Array<{ generation: number | string }>
-  return Number(row?.generation ?? 0)
+  ) as Array<{ audience: string; generation: number | string }>
+  return rows.map((row) => `${row.audience}:${row.generation}`).join(",") || "empty"
 }
 
 async function searchKeywordRows(
@@ -1861,7 +1872,7 @@ function boundedBatchSize(batchSize: number | undefined): number {
 }
 
 type SearchCursor = {
-  generation: number
+  generation: string
   v: 2
   id: string
   sort: string
@@ -1875,7 +1886,7 @@ function encodeCursor(
   registry: FieldPolicyRegistry | undefined,
   slice: IndexerSlice,
   signingKey: string,
-  generation: number,
+  generation: string,
 ): string {
   const sort = request.sort ?? "relevance"
   const cursor: SearchCursor =
@@ -1899,7 +1910,7 @@ function afterCursor(
   slice: IndexerSlice,
   encoded: string | undefined,
   signingKey: string,
-  generation: number,
+  generation: string,
 ): SearchHit[] {
   if (!encoded) return hits
   const cursor = decodeCursor(encoded, request.sort ?? "relevance", signingKey)
@@ -1943,8 +1954,8 @@ function decodeCursor(encoded: string, expectedSort: string, signingKey: string)
       !decoded ||
       typeof decoded !== "object" ||
       (decoded as { v?: unknown }).v !== 2 ||
-      !Number.isSafeInteger((decoded as { generation?: unknown }).generation) ||
-      (decoded as { generation: number }).generation < 0 ||
+      typeof (decoded as { generation?: unknown }).generation !== "string" ||
+      (decoded as { generation: string }).generation.length === 0 ||
       typeof (decoded as { id?: unknown }).id !== "string" ||
       (decoded as { sort?: unknown }).sort !== expectedSort
     ) {
