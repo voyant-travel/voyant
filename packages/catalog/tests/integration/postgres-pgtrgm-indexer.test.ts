@@ -76,11 +76,7 @@ describe.skipIf(!databaseAvailable)("Postgres pg_trgm catalog indexer integratio
     await adapter.upsert(relevanceSlice, [...travelRelevanceCorpus.documents])
 
     try {
-      const report = await runTravelRelevance(
-        adapter,
-        relevanceSlice,
-        travelRelevanceCorpus.cases,
-      )
+      const report = await runTravelRelevance(adapter, relevanceSlice, travelRelevanceCorpus.cases)
       expect(report.metrics).toEqual({
         ndcgAtK: 1,
         recallAtK: 1,
