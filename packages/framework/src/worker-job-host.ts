@@ -145,8 +145,8 @@ export function createVoyantWorkerRuntimeHostPrimitives<TBindings extends object
       },
       read: (bindings, key) =>
         options.readStorage?.(bindingsFor(bindings), key) ?? missing("storage.read"),
-    downloadUrl: (bindings, key) =>
-      options.resolveDownloadUrl?.(bindingsFor(bindings), key) ?? missing("storage.downloadUrl"),
+      downloadUrl: (bindings, key) =>
+        options.resolveDownloadUrl?.(bindingsFor(bindings), key) ?? missing("storage.downloadUrl"),
     },
     events: {
       deliver: (event, bindings) =>
