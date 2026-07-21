@@ -113,7 +113,7 @@ function envForProvider(
       ),
       variable(
         "REDIS_NAMESPACE",
-        "Immutable deployment namespace for framework-owned Redis cache and rate-limit keys.",
+        "Immutable deployment namespace for framework-owned Redis cache, shared-state, and rate-limit keys.",
         false,
       ),
     ]

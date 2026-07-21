@@ -65,8 +65,11 @@ is not read from requests, sessions, headers, database rows, or organization
 ids, and package code must not derive tenant filters from it. Authoritative
 state remains governed by the deployment-boundary model above; managed Cloud
 uses Postgres for shared state by default. Self-hosted deployments may still
-choose Redis for shared state explicitly, but that is their infrastructure
-contract rather than a framework-provided shared-tenant isolation mechanism.
+choose Redis for shared state explicitly; when they also provide
+`REDIS_NAMESPACE`, the Node runtime uses the distinct
+`voyant:v1:<namespace>:state:` prefix for that shared-state store. That is the
+self-hoster's infrastructure contract rather than a framework-provided
+shared-tenant isolation mechanism.
 
 ## Consequences
 

@@ -78,7 +78,12 @@ export function createRedisKvStore(redisUrl: string, options: RedisKvStoreOption
         const [nextCursor, batch] = await client.scan(Number(cursor), { match, count: 100 })
         for (const name of batch) {
           const logicalName = logicalKey(keyPrefix, name)
-          if (logicalName !== undefined) keys.push({ name: logicalName })
+          if (
+            logicalName !== undefined &&
+            (options?.prefix === undefined || logicalName.startsWith(options.prefix))
+          ) {
+            keys.push({ name: logicalName })
+          }
         }
         cursor = nextCursor
       } while (String(cursor) !== "0")

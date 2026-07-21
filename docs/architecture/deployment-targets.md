@@ -49,11 +49,16 @@ workload class well. On Node none of it is necessary.
   choice. There is no `caches.default` shim (the public-cache middleware reads
   `env.CACHE` directly).
   Redis-backed Node providers use the single `REDIS_URL` contract, which is an
-  Upstash-compatible HTTP(S) Redis REST URL with a token. Managed Cloud also
-  supplies a deployment-static `REDIS_NAMESPACE`; the runtime prefixes cache
-  keys with `voyant:v1:<namespace>:cache:` and rate-limit counters with
-  `voyant:v1:<namespace>:rate:`. The namespace is immutable deployment
-  identity, not per-request organization scoping.
+  Upstash-compatible HTTP(S) Redis REST URL with a token. HTTP is accepted for
+  local and self-hosted deployments; managed Cloud requires HTTPS. Managed
+  Cloud also supplies a deployment-static `REDIS_NAMESPACE`; the runtime
+  prefixes cache keys with `voyant:v1:<namespace>:cache:` and rate-limit
+  counters with `voyant:v1:<namespace>:rate:`. Managed Cloud keeps
+  authoritative shared state on Postgres by default. If a self-hosted
+  deployment intentionally selects Redis for shared state and provides
+  `REDIS_NAMESPACE`, the runtime uses `voyant:v1:<namespace>:state:` for that
+  store. The namespace is immutable deployment identity, not per-request
+  organization scoping.
 - **Build:** `pnpm --filter operator build` (Vite, no `@cloudflare/vite-plugin`)
   emits `dist/client` + `dist/server/server.js`. **Run:** `pnpm --filter operator
   start` (`node dist/server/server.js`).

@@ -500,7 +500,9 @@ function createNodeSharedStores(
           redisCacheKv: createRedisKvStore(redisUrl, {
             keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "cache") : undefined,
           }),
-          redisSharedStateKv: createRedisKvStore(redisUrl),
+          redisSharedStateKv: createRedisKvStore(redisUrl, {
+            keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "state") : undefined,
+          }),
           redisRateLimit: createRedisRateLimitStore(redisUrl, {
             keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "rate") : undefined,
           }),
@@ -579,7 +581,7 @@ function optionalRedisNamespace(value: string | undefined): string | undefined {
   return namespace
 }
 
-function redisRoleKeyPrefix(namespace: string, role: "cache" | "rate"): string {
+function redisRoleKeyPrefix(namespace: string, role: "cache" | "state" | "rate"): string {
   assertValidRedisNamespace(namespace)
   return `voyant:v1:${namespace}:${role}:`
 }
@@ -618,6 +620,15 @@ function assertVoyantNodeRuntimeSupport(options: {
     !options.env.REDIS_NAMESPACE?.trim()
   ) {
     issues.push("managed-cloud Redis cache/rate-limit providers require REDIS_NAMESPACE")
+  }
+  if (
+    options.mode === "managed-cloud" &&
+    (options.providerPlan.cache === "redis" ||
+      options.providerPlan.sharedState === "redis" ||
+      options.providerPlan.rateLimit === "redis") &&
+    !isHttpsRedisRestUrl(options.env.REDIS_URL)
+  ) {
+    issues.push("managed-cloud Redis providers require REDIS_URL to use HTTPS")
   }
   if (issues.length > 0) {
     throw new Error(`Voyant Node runtime is not ready to start:\n${formatIssues(issues)}`)
@@ -690,6 +701,19 @@ function isRedisRestUrl(parsed: URL): boolean {
     (parsed.protocol === "https:" || parsed.protocol === "http:") &&
     (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
   )
+}
+
+function isHttpsRedisRestUrl(value: unknown): boolean {
+  if (typeof value !== "string" || value.trim().length === 0) return false
+  try {
+    const parsed = new URL(value)
+    return (
+      parsed.protocol === "https:" &&
+      (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
+    )
+  } catch {
+    return false
+  }
 }
 
 function resolveDb(env: unknown): VoyantDb {

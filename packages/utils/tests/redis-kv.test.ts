@@ -6,6 +6,8 @@ import { createRedisKvStore } from "../src/redis-kv.js"
 class FakeRedisClient implements RedisClient {
   readonly values = new Map<string, string>()
   readonly expiries = new Map<string, number>()
+  readonly deletions: string[] = []
+  leakedScanKeys: string[] | undefined
 
   async get<T = unknown>(key: string): Promise<T | null> {
     return (this.values.get(key) ?? null) as T | null
@@ -17,6 +19,7 @@ class FakeRedisClient implements RedisClient {
   }
 
   async del(key: string): Promise<unknown> {
+    this.deletions.push(key)
     this.values.delete(key)
     this.expiries.delete(key)
   }
@@ -26,6 +29,7 @@ class FakeRedisClient implements RedisClient {
     options?: { match?: string; count?: number },
   ): Promise<[number | string, string[]]> {
     if (cursor !== 0) return [0, []]
+    if (this.leakedScanKeys) return [0, this.leakedScanKeys]
     const pattern = options?.match ?? "*"
     return [0, [...this.values.keys()].filter((key) => redisGlobMatches(pattern, key)).sort()]
   }
@@ -134,6 +138,27 @@ describe("createRedisKvStore with keyPrefix", () => {
     await expect(kv.list({ prefix: "hotel:" })).resolves.toEqual({
       keys: [{ name: "hotel:1" }],
     })
+  })
+
+  it("filters leaked physical keys and returns logical names safe for delete", async () => {
+    const client = new FakeRedisClient()
+    const kv = createRedisKvStore("https://example.test?token=test-token", {
+      client: fakeClient(client),
+      keyPrefix: "voyant:v1:ro:cache:",
+    })
+    client.values.set("voyant:v1:ro:cache:hotel:1", "match")
+    client.leakedScanKeys = [
+      "voyant:v1:ro:cache:hotel:1",
+      "voyant:v1:ro:rate:hotel:2",
+      "voyant:v1:ro:cache:tour:1",
+      "unprefixed:hotel:3",
+    ]
+
+    const result = await kv.list({ prefix: "hotel:" })
+    await kv.delete(result.keys[0]!.name)
+
+    expect(result).toEqual({ keys: [{ name: "hotel:1" }] })
+    expect(client.deletions).toEqual(["voyant:v1:ro:cache:hotel:1"])
   })
 
   it("rejects control characters in keyPrefix", () => {

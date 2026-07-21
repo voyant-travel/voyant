@@ -109,7 +109,11 @@ roles, provider ids, resource keys, required variables/secrets/bindings, the
 `createVoyantApp` module exclusion list, and framework migration metadata.
 Managed operator profiles emit one `redis` resource requirement with
 `REDIS_URL` for cache and rate limiting plus a deployment-static
-`REDIS_NAMESPACE` used to prefix those Redis keys.
+`REDIS_NAMESPACE` used to prefix those Redis keys. Managed Cloud requires
+HTTPS Redis REST URLs and keeps authoritative `sharedState` on Postgres by
+default. Self-hosted deployments that explicitly select Redis for
+`sharedState` may reuse `REDIS_NAMESPACE`; the runtime writes that store under
+`voyant:v1:<namespace>:state:`.
 
 ## Runtime Bridge
 

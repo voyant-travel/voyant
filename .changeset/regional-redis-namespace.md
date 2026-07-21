@@ -9,4 +9,6 @@ state. Redis KV and rate-limit adapters now accept an optional `keyPrefix`,
 deployment/runtime Redis URL validation matches the Upstash-compatible REST URL
 contract, and the Node runtime wires `REDIS_NAMESPACE` to
 `voyant:v1:<namespace>:cache:` and `voyant:v1:<namespace>:rate:` prefixes while
-keeping managed shared state on Postgres by default.
+keeping managed shared state on Postgres by default. Self-hosted deployments
+that explicitly select Redis for shared state and provide `REDIS_NAMESPACE` now
+use the distinct `voyant:v1:<namespace>:state:` prefix.
