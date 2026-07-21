@@ -41,6 +41,8 @@ search services, or catalog runtime services.
   recorded `POSTGRES_SEARCH_VECTOR_STRATEGY=pgvector` capability together with
   a deployment vector dimension only when the database has provisioned the
   `vector` extension; otherwise it remains the portable native FTS strategy.
+  Its private `projectionGeneration(slice)` token changes after successful
+  writes and is intended for deployment-level cache keys, not public responses.
 - **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a
   selectable first-party provider.
 - **`./indexer/postgres-provider`** — graph provider factory selected by

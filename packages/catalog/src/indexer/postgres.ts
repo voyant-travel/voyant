@@ -50,6 +50,20 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
   typoStrategy?: PostgresTypoStrategy
 }
 
+export interface PostgresIndexerDiagnostics {
+  candidateLimit: number
+  typoStrategy: PostgresTypoStrategy
+  vectorDimensions: number | null
+  vectorStrategy: PostgresVectorStrategy
+}
+
+export interface PostgresIndexerAdapter extends IndexerAdapter {
+  /** Deployment-private cache invalidation token for one projection slice. */
+  projectionGeneration(slice: IndexerSlice): Promise<number>
+  /** Recorded capability state; no request-time extension or management probes. */
+  diagnostics(): PostgresIndexerDiagnostics
+}
+
 /**
  * Native Postgres catalog search projection.
  *
@@ -59,7 +73,7 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
  * build on the same projection in subsequent slices; they must be capability
  * selected rather than probed while serving a request.
  */
-export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerAdapter {
+export function createPostgresIndexer(options: PostgresIndexerOptions): PostgresIndexerAdapter {
   const { db } = options
   const vectorStrategy = options.vectorStrategy ?? "none"
   const typoStrategy = options.typoStrategy ?? "none"
@@ -76,8 +90,18 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         market text NOT NULL,
         channel text NOT NULL DEFAULT '',
         created_at timestamptz NOT NULL DEFAULT now(),
+        generation bigint NOT NULL DEFAULT 1,
+        updated_at timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (vertical, locale, audience, market, channel)
       )
+    `)
+    await db.execute(sql`
+      ALTER TABLE voyant_catalog_search_slices
+      ADD COLUMN IF NOT EXISTS generation bigint NOT NULL DEFAULT 1
+    `)
+    await db.execute(sql`
+      ALTER TABLE voyant_catalog_search_slices
+      ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now()
     `)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS voyant_catalog_search_documents (
@@ -191,6 +215,14 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
     `)
   }
 
+  const bumpGeneration = async (slice: IndexerSlice) => {
+    await db.execute(sql`
+      UPDATE voyant_catalog_search_slices
+      SET generation = generation + 1, updated_at = now()
+      WHERE ${facetSlicePredicate(slice)}
+    `)
+  }
+
   return {
     capabilities: {
       supportsKeywordSearch: true,
@@ -201,6 +233,28 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       maxVectorsPerDocument: vectorStrategy === "pgvector" ? 1 : null,
       supportsCrossAudienceFederation: true,
       supportsAdminDenormalization: true,
+    },
+
+    async projectionGeneration(slice) {
+      await ensureStorage()
+      await ensureSlice(slice)
+      const [row] = readRows(
+        await db.execute(sql`
+          SELECT generation
+          FROM voyant_catalog_search_slices
+          WHERE ${facetSlicePredicate(slice)}
+        `),
+      ) as Array<{ generation: number | string }>
+      return Number(row?.generation ?? 1)
+    },
+
+    diagnostics() {
+      return {
+        candidateLimit: MAX_CANDIDATES,
+        typoStrategy,
+        vectorDimensions,
+        vectorStrategy,
+      }
     },
 
     admin: {
@@ -325,6 +379,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         await replaceFacetValues(db, slice, document)
         if (typoStrategy === "pgtrgm") await replaceTypoTerms(db, slice, document)
       }
+      await bumpGeneration(slice)
     },
 
     async delete(slice, ids) {
@@ -350,6 +405,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
             )}
           )
       `)
+      await bumpGeneration(slice)
       await db.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
