@@ -7,12 +7,12 @@ import {
   createNotificationsSubscribersVoyantRuntime,
   createNotificationsVoyantRuntime,
 } from "../../src/index.js"
+import { NOTIFICATION_REMINDER_JOB_RUNTIME_KEY } from "../../src/job-runtime.js"
 import {
   type NotificationsRuntimeProvider,
   notificationsRuntimePort,
 } from "../../src/runtime-port.js"
 import { NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY } from "../../src/subscriber-runtime.js"
-import { NOTIFICATION_REMINDER_JOB_RUNTIME_KEY } from "../../src/job-runtime.js"
 
 const jobRuntime = {
   resolveDb: () => ({}) as PostgresJsDatabase,

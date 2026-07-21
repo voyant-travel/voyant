@@ -130,9 +130,7 @@ describe("splitDocumentByModule", () => {
       "/v1/public/booking-engine/hold",
     ])
     // Unclaimed route falls back to its second path segment.
-    expect(Object.keys(docs.get("audit-log")?.paths ?? {})).toEqual([
-      "/v1/admin/audit-log/{id}",
-    ])
+    expect(Object.keys(docs.get("audit-log")?.paths ?? {})).toEqual(["/v1/admin/audit-log/{id}"])
     expect(Object.keys(docs.get("bookings")?.paths ?? {})).toEqual(["/v1/admin/bookings/list"])
 
     // Every surface path is covered exactly once; non-surface routes are excluded.

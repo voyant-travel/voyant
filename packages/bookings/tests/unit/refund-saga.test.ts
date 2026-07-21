@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
-
-import { bookings as bookingsTable } from "../../src/schema.js"
 import {
   buildRefundBookingSaga,
   type RefundBookingDeps,
   type RefundBookingInput,
 } from "../../src/sagas/refund-booking.js"
+import { bookings as bookingsTable } from "../../src/schema.js"
 
 /**
  * Lightweight in-memory fakes for the bits of `db` the saga touches.

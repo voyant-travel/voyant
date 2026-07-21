@@ -288,7 +288,6 @@ describe("bookings deployment manifest", () => {
       ]),
     )
   })
-
 })
 
 function readApiIds(routes: OpenApiDocumentSource): unknown[] {
