@@ -100,7 +100,7 @@ export const distributionChannelPushVoyantExtensionDefinition = {
     },
     {
       id: "channel.availability.push",
-      schedule: { every: "30s", overlap: "skip" },
+      schedule: { every: "1m", overlap: "skip" },
       runtime: {
         entry: "@voyant-travel/distribution/channel-push-jobs",
         export: "runChannelAvailabilityPushJob",

@@ -71,6 +71,8 @@ export interface VoyantNodeJobHost {
   dispatchSchedule: (event: { scheduleId?: string; cron?: string }) => Promise<void>
   handleRequest: (request: Request, originTrustSecret?: string) => Promise<Response | undefined>
   health: () => readonly VoyantNodeJobHealth[]
+  /** Resolve after the current invocation and any coalesced follow-up are idle. */
+  settled: (jobId: string) => Promise<void>
   start: () => void
   stop: () => void
 }
@@ -329,6 +331,14 @@ export function createVoyantNodeJobHost(
     dispatchSchedule,
     handleRequest,
     health: () => inventory.map((job) => ({ ...requireMapValue(healthById, job.id) })),
+    settled: async (jobId) => {
+      if (!jobsById.has(jobId)) {
+        throw new Error(`Voyant Node job host: job "${jobId}" is not selected by the graph.`)
+      }
+      while (requireMapValue(states, jobId).running) {
+        await requireMapValue(states, jobId).running
+      }
+    },
     start,
     stop: () => {
       if (timer) clearInterval(timer)
