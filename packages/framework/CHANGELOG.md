@@ -1,5 +1,18 @@
 # @voyant-travel/framework
 
+## 0.60.0
+
+### Minor Changes
+
+- d9ff078: Add the first-party Postgres catalog search provider, its public adapter and
+  relevance utilities, snapshot-identified rebuild retries, and the `postgres`
+  managed search-provider selection.
+
+### Patch Changes
+
+- @voyant-travel/cruises@0.188.0
+- @voyant-travel/operator-standard@0.10.28
+
 ## 0.59.0
 
 ### Minor Changes

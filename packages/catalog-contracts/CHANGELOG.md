@@ -1,5 +1,13 @@
 # @voyant-travel/catalog-contracts
 
+## 0.112.0
+
+### Minor Changes
+
+- d9ff078: Add the first-party Postgres catalog search provider, its public adapter and
+  relevance utilities, snapshot-identified rebuild retries, and the `postgres`
+  managed search-provider selection.
+
 ## 0.111.1
 
 ### Patch Changes
