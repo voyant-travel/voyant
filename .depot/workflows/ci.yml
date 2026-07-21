@@ -233,6 +233,9 @@ jobs:
                 pnpm --filter operator db:migrate
               pnpm --filter @voyant-travel/relationships exec vitest run \
                 tests/integration/generic-custom-field-values.test.ts
+              pnpm --filter @voyant-travel/catalog exec vitest run \
+                tests/integration/postgres-indexer.test.ts \
+                tests/integration/postgres-pgtrgm-indexer.test.ts
               ;;
           esac
 
