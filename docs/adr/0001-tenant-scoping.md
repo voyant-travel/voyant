@@ -51,11 +51,13 @@ inherit the same model.
 ## Redis cache and rate-limit namespace exception
 
 Managed Cloud may consolidate Redis-backed **cache** and **rate-limit** state
-onto a regional Upstash-compatible REST Redis service. Those records are
-non-authoritative: cache entries can be recomputed, and rate-limit counters are
-traffic brakes rather than customer data. The framework-owned Node runtime
-therefore accepts a deployment-static `REDIS_NAMESPACE` and prefixes managed
-Redis keys as:
+onto a regional Redis service. The framework-owned Node runtime accepts
+`rediss://` TCP Redis and HTTPS Redis REST for managed deployments; it rejects
+plaintext `redis://`. Those records are non-authoritative: cache entries can be
+recomputed, and rate-limit counters are traffic brakes rather than customer
+data. The framework-owned Node runtime therefore requires a deployment-static
+`REDIS_NAMESPACE` for every managed Redis role and prefixes managed Redis keys
+as:
 
 - `voyant:v1:<namespace>:cache:`
 - `voyant:v1:<namespace>:rate:`

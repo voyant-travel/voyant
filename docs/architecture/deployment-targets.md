@@ -48,10 +48,14 @@ workload class well. On Node none of it is necessary.
   the graph-selected provider; their mere presence must not change provider
   choice. There is no `caches.default` shim (the public-cache middleware reads
   `env.CACHE` directly).
-  Redis-backed Node providers use the single `REDIS_URL` contract, which is an
-  Upstash-compatible HTTP(S) Redis REST URL with a token. HTTP is accepted for
-  local and self-hosted deployments; managed Cloud requires HTTPS. Managed
-  Cloud also supplies a deployment-static `REDIS_NAMESPACE`; the runtime
+  Redis-backed Node providers use the single `REDIS_URL` contract. Resident
+  Node accepts `redis://` and `rediss://` TCP URLs plus the existing
+  Upstash-compatible HTTP(S) REST URL with a token; Worker and shared utility
+  consumers keep using the REST adapter only. Managed Cloud rejects plaintext
+  `redis://` and requires `rediss://` for TCP, while HTTPS REST remains
+  accepted for compatibility. Local and self-hosted deployments may use
+  `redis://`, `rediss://`, HTTP, or HTTPS. Managed Cloud also requires a
+  deployment-static `REDIS_NAMESPACE` for every Redis role; the runtime
   prefixes cache keys with `voyant:v1:<namespace>:cache:` and rate-limit
   counters with `voyant:v1:<namespace>:rate:`. Managed Cloud keeps
   authoritative shared state on Postgres by default. If a self-hosted

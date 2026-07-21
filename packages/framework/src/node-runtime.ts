@@ -33,6 +33,7 @@ import {
 } from "@voyant-travel/storage/runtime"
 import type { StorageProvider, StorageProviderResolver } from "@voyant-travel/storage/types"
 import type { KVStore } from "@voyant-travel/utils/cache"
+import { createLazyRedisClient, type LazyRedisClient } from "@voyant-travel/utils/redis-client"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 
@@ -59,6 +60,7 @@ import {
   type VoyantNodeProviderPlan,
   validateVoyantNodeProviderPlanEnv,
 } from "./node-provider-plan.js"
+import { createLazyNodeRedisTcpClient } from "./node-redis-client.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 import {
@@ -490,6 +492,7 @@ function createNodeSharedStores(
   const redisUrl = selectedProviders.includes("redis")
     ? requireNodeEnv(env, "REDIS_URL")
     : undefined
+  const redisClient = redisUrl ? createLazyNodeRedisClient(redisUrl) : undefined
   const redisNamespace = redisUrl ? optionalRedisNamespace(env.REDIS_NAMESPACE) : undefined
   const postgresDatabase = selectedProviders.includes("postgres")
     ? resolveProviderDatabase(env)
@@ -498,12 +501,15 @@ function createNodeSharedStores(
     ...(redisUrl
       ? {
           redisCacheKv: createRedisKvStore(redisUrl, {
+            client: redisClient,
             keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "cache") : undefined,
           }),
           redisSharedStateKv: createRedisKvStore(redisUrl, {
+            client: redisClient,
             keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "state") : undefined,
           }),
           redisRateLimit: createRedisRateLimitStore(redisUrl, {
+            client: redisClient,
             keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "rate") : undefined,
           }),
         }
@@ -520,6 +526,15 @@ function createNodeSharedStores(
     SHARED_STATE: selectedAuthoritativeKvStore(plan.sharedState, l1SharedState, resources),
     RATE_LIMIT_STORE: selectedRateLimitStore(plan.rateLimit, resources),
   }
+}
+
+function createLazyNodeRedisClient(redisUrl: string): LazyRedisClient {
+  const protocol = redisUrlProtocol(redisUrl)
+  if (protocol === "http:" || protocol === "https:") return createLazyRedisClient(redisUrl)
+  if (protocol === "redis:" || protocol === "rediss:") return createLazyNodeRedisTcpClient(redisUrl)
+  throw new Error(
+    "REDIS_URL must be an HTTP(S) Redis REST URL with a token or a redis:// or rediss:// Redis TCP URL.",
+  )
 }
 
 function selectedCacheStore(
@@ -630,9 +645,11 @@ function assertVoyantNodeRuntimeSupport(options: {
     (options.providerPlan.cache === "redis" ||
       options.providerPlan.sharedState === "redis" ||
       options.providerPlan.rateLimit === "redis") &&
-    !isRedisRestUrl(options.env.REDIS_URL, { requireHttps: true })
+    !isManagedRedisUrl(options.env.REDIS_URL)
   ) {
-    issues.push("managed-cloud Redis providers require an HTTPS Redis REST URL with a token")
+    issues.push(
+      "managed-cloud Redis providers require rediss:// for Redis TCP or an HTTPS Redis REST URL with a token",
+    )
   }
   if (issues.length > 0) {
     throw new Error(`Voyant Node runtime is not ready to start:\n${formatIssues(issues)}`)
@@ -687,7 +704,7 @@ function hasFormat(
     const parsed = new URL(value)
     if (format === "postgres-url")
       return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
-    if (format === "redis-url") return isRedisRestUrl(value, { requireHttps: false })
+    if (format === "redis-url") return isRedisUrl(value)
     return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     return false
@@ -696,21 +713,44 @@ function hasFormat(
 
 function formatDescription(format: NonNullable<VoyantDeploymentEnvRequirement["format"]>): string {
   if (format === "postgres-url") return "a Postgres URL"
-  if (format === "redis-url") return "an HTTP(S) Redis REST URL with a token"
+  if (format === "redis-url") return "a Redis REST HTTP(S) URL with a token or Redis TCP URL"
   return "an HTTP(S) URL"
+}
+
+function isRedisUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim().length === 0) return false
+  try {
+    const protocol = redisUrlProtocol(value)
+    if (protocol === "redis:" || protocol === "rediss:") return true
+    return isRedisRestUrl(value, { requireHttps: false })
+  } catch {
+    return false
+  }
+}
+
+function isManagedRedisUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim().length === 0) return false
+  try {
+    const protocol = redisUrlProtocol(value)
+    if (protocol === "rediss:") return true
+    if (protocol === "redis:") return false
+    return isRedisRestUrl(value, { requireHttps: true })
+  } catch {
+    return false
+  }
 }
 
 function isRedisRestUrl(value: unknown, options: { requireHttps: boolean }): value is string {
   if (typeof value !== "string" || value.trim().length === 0) return false
-  try {
-    const parsed = new URL(value)
-    return (
-      (parsed.protocol === "https:" || (!options.requireHttps && parsed.protocol === "http:")) &&
-      (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
-    )
-  } catch {
-    return false
-  }
+  const parsed = new URL(value)
+  return (
+    (parsed.protocol === "https:" || (!options.requireHttps && parsed.protocol === "http:")) &&
+    (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
+  )
+}
+
+function redisUrlProtocol(value: string): string {
+  return new URL(value).protocol
 }
 
 function resolveDb(env: unknown): VoyantDb {

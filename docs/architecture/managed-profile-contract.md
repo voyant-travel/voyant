@@ -110,10 +110,12 @@ roles, provider ids, resource keys, required variables/secrets/bindings, the
 Managed operator profiles emit one `redis` resource requirement with
 `REDIS_URL` for cache and rate limiting plus a deployment-static
 `REDIS_NAMESPACE` used to prefix those Redis keys. Managed Cloud requires
-HTTPS Redis REST URLs and keeps authoritative `sharedState` on Postgres by
-default. Self-hosted deployments that explicitly select Redis for
-`sharedState` may reuse `REDIS_NAMESPACE`; the runtime writes that store under
-`voyant:v1:<namespace>:state:`.
+`rediss://` for Redis TCP and still accepts HTTPS Redis REST URLs for
+compatibility; plaintext `redis://` is rejected. Managed profiles keep
+authoritative `sharedState` on Postgres by default. Self-hosted deployments
+that explicitly select Redis for `sharedState` may use `redis://`,
+`rediss://`, HTTP, or HTTPS and may reuse `REDIS_NAMESPACE`; the runtime writes
+that store under `voyant:v1:<namespace>:state:`.
 
 ## Runtime Bridge
 
