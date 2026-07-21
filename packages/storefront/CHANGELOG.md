@@ -1,5 +1,11 @@
 # @voyant-travel/storefront
 
+## 0.192.1
+
+### Patch Changes
+
+- bacae5e: Allow guest storefronts to read public settings and preview departure prices without authentication.
+
 ## 0.192.0
 
 ### Patch Changes

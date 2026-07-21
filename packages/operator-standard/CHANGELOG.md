@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.11.1
+
+### Patch Changes
+
+- Updated dependencies [bacae5e]
+  - @voyant-travel/storefront@0.192.1
+  - @voyant-travel/storefront-react@0.192.1
+
 ## 0.11.0
 
 ### Minor Changes
