@@ -66,6 +66,27 @@ describe("resolveVoyantNodeProviderPlan", () => {
     ])
   })
 
+  it("maps the managed storage gateway provider and requires its endpoint + token", () => {
+    const plan = resolveVoyantNodeProviderPlan({
+      storage: "gateway",
+      cache: "memory",
+      sharedState: "memory",
+      rateLimit: "memory",
+    })
+
+    expect(plan.storage).toBe("gateway")
+    expect(validateVoyantNodeProviderPlanEnv(plan, {})).toEqual([
+      "env STORAGE_GATEWAY_ENDPOINT is required by the Node provider plan",
+      "env STORAGE_GATEWAY_TOKEN is required by the Node provider plan",
+    ])
+    expect(
+      validateVoyantNodeProviderPlanEnv(plan, {
+        STORAGE_GATEWAY_ENDPOINT: "https://gw.example.test",
+        STORAGE_GATEWAY_TOKEN: "tok",
+      }),
+    ).toEqual([])
+  })
+
   it("accepts DATABASE_URL_DIRECT for Postgres provider roles", () => {
     const plan = resolveVoyantNodeProviderPlan({
       storage: "memory",

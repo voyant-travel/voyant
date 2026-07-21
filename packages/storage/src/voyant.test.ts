@@ -27,6 +27,10 @@ describe("storage deployment manifest", () => {
           port: "storage.object",
           selection: { role: "storage", value: "s3-compatible" },
         }),
+        expect.objectContaining({
+          port: "storage.object",
+          selection: { role: "storage", value: "gateway" },
+        }),
       ],
       runtimePorts: [{ id: "storage.media-runtime" }],
       resources: [

@@ -1,4 +1,5 @@
 import type { StorageProvider, StorageProviderResolver, VoyantStorageName } from "../types.js"
+import { createGatewayStorageProvider } from "./gateway.js"
 import { createLocalStorageProvider } from "./local.js"
 import { createS3CompatibleStorageProvider } from "./s3-compatible.js"
 
@@ -16,12 +17,14 @@ const CONFIG = {
   documentsBucket: "@voyant-travel/storage#config.documents-bucket",
   mediaBucket: "@voyant-travel/storage#config.media-bucket",
   mediaPublicBaseUrl: "@voyant-travel/storage#config.media-public-base-url",
+  gatewayEndpoint: "@voyant-travel/storage#config.gateway-endpoint",
 } as const
 
 const SECRET = {
   accessKeyId: "@voyant-travel/storage#secret.s3-access-key-id",
   secretAccessKey: "@voyant-travel/storage#secret.s3-secret-access-key",
   sessionToken: "@voyant-travel/storage#secret.s3-session-token",
+  gatewayToken: "@voyant-travel/storage#secret.gateway-token",
 } as const
 
 /** In-memory resolver selected by deployment.providers.storage. */
@@ -80,6 +83,27 @@ export function createS3CompatibleGraphStorageProvider(
       bucket: requiredString(context.getConfig(CONFIG.mediaBucket), "STORAGE_MEDIA_BUCKET"),
       publicBaseUrl: mediaPublicBaseUrl,
     }),
+  })
+}
+
+/**
+ * HTTP storage-gateway resolver selected by managed deployments. Instead of raw
+ * bucket credentials, both stores talk to the platform asset-gateway worker with
+ * a workspace-scoped bearer token; the gateway brokers R2 access scoped to the
+ * caller's `<jurisdiction>/<org>` prefix. Documents and media share one gateway
+ * endpoint + token and differ only by object key.
+ */
+export function createGatewayGraphStorageProvider(
+  context: StorageGraphProviderContext,
+): StorageProviderResolver {
+  const endpoint = requiredString(
+    context.getConfig(CONFIG.gatewayEndpoint),
+    "STORAGE_GATEWAY_ENDPOINT",
+  )
+  const token = requiredString(context.getSecret(SECRET.gatewayToken), "STORAGE_GATEWAY_TOKEN")
+  return fixedStores({
+    documents: createGatewayStorageProvider({ endpoint, token, name: "gateway:documents" }),
+    media: createGatewayStorageProvider({ endpoint, token, name: "gateway:media" }),
   })
 }
 
