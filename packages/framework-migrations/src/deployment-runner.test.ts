@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework-migrations; deployment runner tests keep existing, baseline, adoption, and PostgreSQL conformance cases in one migration-contract harness.
 import { Client } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import type { MigrationClient, MigrationSource } from "./collector.js"
@@ -471,18 +472,29 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
       index_name: "uidx_product_day_service_translations_service_language",
       index_definition:
         "CREATE UNIQUE INDEX uidx_product_day_service_translations_service_language ON public.product_day_service_translations USING btree (service_id, language_tag)",
+      is_valid: true,
+      is_ready: true,
+      is_live: true,
     },
     {
       table_name: "product_itinerary_translations",
       index_name: "idx_product_itinerary_translations_itinerary",
       index_definition:
         "CREATE INDEX idx_product_itinerary_translations_itinerary ON public.product_itinerary_translations USING btree (itinerary_id)",
+      is_valid: true,
+      is_ready: true,
+      is_live: true,
     },
   ]
 
   function adoptionClient(options: {
     existing?: boolean
     tables?: string[]
+    tableRows?: ReadonlyArray<{
+      table_name: string
+      relation_kind: string
+      relation_persistence: string
+    }>
     columns?: typeof exactColumns
     constraints?: typeof exactConstraints
     indexes?: typeof exactIndexes
@@ -532,7 +544,16 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
           }
         }
         if (sql.includes("FROM pg_class c") && sql.includes("c.relkind")) {
-          return { rows: (options.tables ?? []).map((table_name) => ({ table_name })) }
+          return {
+            rows: (
+              options.tableRows ??
+              (options.tables ?? []).map((table_name) => ({
+                table_name,
+                relation_kind: "r",
+                relation_persistence: "p",
+              }))
+            ).map((row) => ({ ...row })),
+          }
         }
         if (sql.includes("FROM pg_attribute a")) return { rows: options.columns ?? [] }
         if (sql.includes("FROM pg_constraint con")) return { rows: options.constraints ?? [] }
@@ -681,6 +702,48 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
         ),
       },
     ],
+    [
+      "relation kind",
+      {
+        tableRows: [
+          {
+            table_name: "product_day_service_translations",
+            relation_kind: "p",
+            relation_persistence: "p",
+          },
+          {
+            table_name: "product_itinerary_translations",
+            relation_kind: "r",
+            relation_persistence: "p",
+          },
+        ],
+      },
+    ],
+    [
+      "relation persistence",
+      {
+        tableRows: [
+          {
+            table_name: "product_day_service_translations",
+            relation_kind: "r",
+            relation_persistence: "u",
+          },
+          {
+            table_name: "product_itinerary_translations",
+            relation_kind: "r",
+            relation_persistence: "p",
+          },
+        ],
+      },
+    ],
+    [
+      "index validity",
+      {
+        indexes: exactIndexes.map((row, index) =>
+          index === 0 ? { ...row, is_valid: false } : row,
+        ),
+      },
+    ],
   ] as const)("rejects an exact-footprint %s mismatch", async (_kind, override) => {
     const { client, ledgerRows } = adoptionClient({
       tables: ["product_day_service_translations", "product_itinerary_translations"],
@@ -699,6 +762,171 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
         },
       ),
     ).rejects.toThrow("does not exactly match")
+    expect(ledgerRows).toEqual([])
+  })
+
+  it("rejects default expressions that differ only inside a string literal", async () => {
+    const source = src("literal-defaults", [
+      `CREATE TABLE "literal_defaults" (
+  "id" text PRIMARY KEY NOT NULL,
+  "label" text DEFAULT 'a, b'::text NOT NULL
+);`,
+    ])
+    const { client, ledgerRows } = adoptionClient({
+      tables: ["literal_defaults"],
+      columns: [
+        {
+          table_name: "literal_defaults",
+          column_name: "id",
+          ordinal_position: "1",
+          data_type: "text",
+          not_null: true,
+          column_default: null,
+          identity_kind: "",
+          generated_kind: "",
+        },
+        {
+          table_name: "literal_defaults",
+          column_name: "label",
+          ordinal_position: "2",
+          data_type: "text",
+          not_null: true,
+          column_default: "'a,b'::text",
+          identity_kind: "",
+          generated_kind: "",
+        },
+      ],
+      constraints: [
+        {
+          table_name: "literal_defaults",
+          constraint_name: "literal_defaults_pkey",
+          constraint_type: "p",
+          column_names: ["id"],
+          referenced_schema: null,
+          referenced_table: null,
+          referenced_column_names: [],
+          update_action: " ",
+          delete_action: " ",
+          match_type: " ",
+          is_deferrable: false,
+          initially_deferred: false,
+        },
+      ],
+      indexes: [],
+    })
+
+    await expect(
+      runDeploymentMigrations(
+        client,
+        [source],
+        {},
+        {
+          materializedMigrationAdoptions: [
+            { source: "literal-defaults", tag: "0000_literal-defaults" },
+          ],
+        },
+      ),
+    ).rejects.toThrow("does not exactly match")
+    expect(ledgerRows).toEqual([])
+  })
+
+  it("fails closed for E-string defaults with backslash-escaped quotes", async () => {
+    const source = src("escaped-literal-defaults", [
+      `CREATE TABLE "escaped_literal_defaults" (
+  "id" text PRIMARY KEY NOT NULL,
+  "label" text DEFAULT E'a\\'B, C'::text NOT NULL
+);`,
+    ])
+    const { client, ledgerRows } = adoptionClient({
+      tables: ["escaped_literal_defaults"],
+      columns: [
+        {
+          table_name: "escaped_literal_defaults",
+          column_name: "id",
+          ordinal_position: "1",
+          data_type: "text",
+          not_null: true,
+          column_default: null,
+          identity_kind: "",
+          generated_kind: "",
+        },
+        {
+          table_name: "escaped_literal_defaults",
+          column_name: "label",
+          ordinal_position: "2",
+          data_type: "text",
+          not_null: true,
+          column_default: "E'a\\'b,c'::text",
+          identity_kind: "",
+          generated_kind: "",
+        },
+      ],
+      constraints: [
+        {
+          table_name: "escaped_literal_defaults",
+          constraint_name: "escaped_literal_defaults_pkey",
+          constraint_type: "p",
+          column_names: ["id"],
+          referenced_schema: null,
+          referenced_table: null,
+          referenced_column_names: [],
+          update_action: " ",
+          delete_action: " ",
+          match_type: " ",
+          is_deferrable: false,
+          initially_deferred: false,
+        },
+      ],
+      indexes: [],
+    })
+
+    await expect(
+      runDeploymentMigrations(
+        client,
+        [source],
+        {},
+        {
+          materializedMigrationAdoptions: [
+            {
+              source: "escaped-literal-defaults",
+              tag: "0000_escaped-literal-defaults",
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("E-string default expressions are not supported")
+    expect(ledgerRows).toEqual([])
+  })
+
+  it("fails closed for parenthesized E-string defaults", async () => {
+    const source = src("parenthesized-escaped-literal-defaults", [
+      `CREATE TABLE "parenthesized_escaped_literal_defaults" (
+  "id" text PRIMARY KEY NOT NULL,
+  "label" text DEFAULT (( E'a\\'B, C'::text )) NOT NULL
+);`,
+    ])
+    const { client, ledgerRows } = adoptionClient({
+      tables: ["parenthesized_escaped_literal_defaults"],
+      columns: [],
+      constraints: [],
+      indexes: [],
+    })
+
+    await expect(
+      runDeploymentMigrations(
+        client,
+        [source],
+        {},
+        {
+          materializedMigrationAdoptions: [
+            {
+              source: "parenthesized-escaped-literal-defaults",
+              tag: "0000_parenthesized-escaped-literal-defaults",
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("E-string default expressions are not supported")
     expect(ledgerRows).toEqual([])
   })
 
