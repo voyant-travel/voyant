@@ -328,7 +328,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         WHERE ${facetSlicePredicate(slice)}
         GROUP BY slices.generation, slices.updated_at
       `),
-    ) as Array<{ document_count: number | string; generation: number | string; updated_at: Date | string }>
+    ) as Array<{
+      document_count: number | string
+      generation: number | string
+      updated_at: Date | string
+    }>
     return {
       documentCount: Number(row?.document_count ?? 0),
       generation: Number(row?.generation ?? 1),
