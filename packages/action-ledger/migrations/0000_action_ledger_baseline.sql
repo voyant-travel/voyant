@@ -178,7 +178,7 @@ CREATE INDEX "idx_action_ledger_entries_correlation" ON "action_ledger_entries" 
 CREATE INDEX "idx_action_ledger_entries_causation" ON "action_ledger_entries" USING btree ("causation_action_id");--> statement-breakpoint
 CREATE INDEX "idx_action_ledger_entries_control_state" ON "action_ledger_entries" USING btree ("evaluated_risk","status","occurred_at");--> statement-breakpoint
 CREATE INDEX "idx_action_ledger_entries_capability" ON "action_ledger_entries" USING btree ("capability_id","capability_version","occurred_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_action_ledger_entries_idempotency" ON "action_ledger_entries" USING btree ("idempotency_scope","action_name","target_type","target_id","idempotency_key") WHERE
+CREATE UNIQUE INDEX "idx_action_ledger_entries_idempotency" ON "action_ledger_entries" USING btree ("idempotency_scope","action_name","target_type","target_id","idempotency_key") WHERE 
         "action_ledger_entries"."idempotency_key" IS NOT NULL
       ;--> statement-breakpoint
 CREATE INDEX "idx_action_ledger_payloads_action" ON "action_ledger_payloads" USING btree ("action_id");--> statement-breakpoint

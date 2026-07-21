@@ -1,1 +1,2 @@
 packages/apps/src/session-token.ts text diff
+packages/action-ledger/migrations/0000_action_ledger_baseline.sql text whitespace=-trailing-space,-blank-at-eof
