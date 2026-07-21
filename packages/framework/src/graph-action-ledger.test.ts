@@ -7,7 +7,6 @@ import { createVoyantGraphRuntime, type VoyantGraphRuntimeSelectedIds } from "./
 const selectedIds: VoyantGraphRuntimeSelectedIds = {
   routes: ["loyalty.api"],
   tools: ["loyalty.tool"],
-  workflows: ["loyalty.workflow"],
   events: ["loyalty.event"],
   webhooks: ["loyalty.webhook"],
 }
@@ -61,7 +60,6 @@ function actionRuntime(
             from: {
               routes: ["loyalty.api"],
               tools: ["loyalty.tool"],
-              workflows: ["loyalty.workflow"],
               events: ["loyalty.event"],
               webhooks: ["loyalty.webhook"],
             },
@@ -112,7 +110,6 @@ describe("graph action-ledger lowering", () => {
   it.each([
     "routes",
     "tools",
-    "workflows",
     "events",
     "webhooks",
   ] as const)("rejects unknown selected-graph %s bindings", (binding) => {

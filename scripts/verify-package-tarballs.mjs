@@ -45,21 +45,6 @@ const financeContractsPaymentBodyExports = [
 ]
 const packedExportChecks = [
   {
-    packageName: "@voyant-travel/workflows",
-    entries: [
-      {
-        path: "dist/index.js",
-        label: "root runtime",
-        requiredExports: ["defineWorkflow"],
-      },
-      {
-        path: "dist/index.d.ts",
-        label: "root declaration",
-        requiredExports: ["defineWorkflow"],
-      },
-    ],
-  },
-  {
     packageName: "@voyant-travel/finance-contracts",
     entries: [
       {

@@ -136,7 +136,7 @@ An adapter may expose:
 - one or more providers
 - a small extension
 - route or webhook wiring
-- workflow helpers
+- subscriber or job wiring owned by the integration package
 
 Adapters are first-class deployment graph units. Adapter packages declare
 `package.json#voyant.kind: "adapter"` and their graph manifests use
@@ -292,7 +292,7 @@ Rules:
   `transactionalModules` or `transactionalPaths` metadata. The app selects the
   request DB before lazy route handlers run, so transaction ownership cannot be
   discovered from the loaded bundle on the first request.
-- Lazy bundles that must register subscribers, workflow metadata, container
+- Lazy bundles that must register subscribers, container
   services, or bootstrap work before a bundle-owned route is hit must opt into
   app bootstrap loading with `loadOnBootstrap`.
 
@@ -324,11 +324,6 @@ Rule:
 
 Use a many-valued runtime port only when independently selected packages are
 genuinely additive. Keep replaceable single-provider seams one-valued.
-
-The standard `voyant.workflow-services` port follows this rule: every selected
-package contributes only the services required by its own workflow facets, and
-the generic Node workflow host aggregates them. Starters must not reconstruct
-that set by checking package ids or importing package runtime keys.
 
 ### 10. Prefer clear names that reveal the package role
 

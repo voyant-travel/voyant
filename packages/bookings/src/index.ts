@@ -112,8 +112,8 @@ export {
 } from "./tasks/index.js"
 export {
   BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-  type BookingsExpireStaleHoldsWorkflowRuntime,
-} from "./workflow-runtime.js"
+  type BookingsExpireStaleHoldsJobRuntime,
+} from "./job-runtime.js"
 
 export const bookingsModule: Module = {
   name: "bookings",

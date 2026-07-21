@@ -26,8 +26,6 @@ import {
 import { ListFilter } from "lucide-react"
 import * as React from "react"
 
-import { useVoyantActionLedgerContext } from "../provider.js"
-import { listWorkflowRuns, type WorkflowRunSummary } from "./admin-api.js"
 
 const ANY = "__all__"
 export const RISK_ALL = ANY
@@ -214,12 +212,11 @@ export function ActionLedgerFiltersPopover({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="logs-filter-workflow">{f.workflowRunLabel}</Label>
-            <WorkflowRunCombobox
+            <Input
+              id="logs-filter-workflow"
               value={workflowRunId}
-              onChange={onWorkflowRunIdChange}
+              onChange={(event) => onWorkflowRunIdChange(event.target.value)}
               placeholder={f.workflowRunPlaceholder}
-              loadingText={f.workflowRunLoading}
-              emptyText={f.workflowRunEmpty}
             />
           </div>
 
@@ -459,92 +456,4 @@ function OrganizationTargetCombobox({
 function formatPersonName(person: PersonRecord): string {
   const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
   return name || person.email || person.id
-}
-
-function WorkflowRunCombobox({
-  value,
-  onChange,
-  placeholder,
-  loadingText,
-  emptyText,
-}: {
-  value: string
-  onChange: (value: string) => void
-  placeholder: string
-  loadingText: string
-  emptyText: string
-}) {
-  const [search, setSearch] = React.useState("")
-  const [selected, setSelected] = React.useState<WorkflowRunSummary | null>(null)
-  const runsQuery = useWorkflowRunsList()
-  const filtered = React.useMemo(() => {
-    if (!search.trim()) return runsQuery.data ?? []
-    const needle = search.trim().toLowerCase()
-    return (runsQuery.data ?? []).filter(
-      (run) =>
-        run.workflowName.toLowerCase().includes(needle) || run.id.toLowerCase().includes(needle),
-    )
-  }, [runsQuery.data, search])
-
-  return (
-    <AsyncCombobox<WorkflowRunSummary>
-      value={value || null}
-      onChange={(next) => {
-        onChange(next ?? "")
-        if (!next) setSelected(null)
-        else {
-          const match = filtered.find((run) => run.id === next)
-          if (match) setSelected(match)
-        }
-      }}
-      items={filtered}
-      selectedItem={selected}
-      getKey={(run) => run.id}
-      getLabel={(run) => run.workflowName}
-      getSecondary={(run) => `${run.status} · ${formatRunTimestamp(run.startedAt)}`}
-      onSearchChange={setSearch}
-      placeholder={placeholder}
-      emptyText={runsQuery.isLoading ? loadingText : emptyText}
-    />
-  )
-}
-
-function useWorkflowRunsList() {
-  const client = useVoyantActionLedgerContext()
-  const [data, setData] = React.useState<WorkflowRunSummary[] | undefined>(undefined)
-  const [isLoading, setLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    listWorkflowRuns(client)
-      .then((res) => {
-        if (cancelled) return
-        setData(res.data ?? [])
-      })
-      .catch(() => {
-        if (cancelled) return
-        setData([])
-      })
-      .finally(() => {
-        if (cancelled) return
-        setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [client])
-
-  return { data, isLoading }
-}
-
-function formatRunTimestamp(value: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(new Date(value))
-  } catch {
-    return value
-  }
 }

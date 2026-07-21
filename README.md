@@ -148,21 +148,13 @@ Voyant ships one first-party starter:
 | [`@voyant-travel/cruises`](./packages/cruises/README.md) | Cruise products |
 | [`@voyant-travel/flights`](./packages/flights) | Flight products |
 
-### Workflows (durable orchestration)
+### Background execution
 
-Step-based workflows with durable state, retries, and a shared wire protocol,
-runnable on self-host infrastructure or Voyant Cloud's hosted runtime.
-
-| Package | Description |
-| --- | --- |
-| [`@voyant-travel/workflows`](./packages/workflows) | Authoring SDK, with `./bindings`, `./config`, and `./errors` subpaths |
-| [`@voyant-travel/workflows-orchestrator`](./packages/workflows-orchestrator) | Orchestrator engine and Postgres self-host runtime primitives |
-| [`@voyant-travel/workflows-react`](./packages/workflows-react) | Run-inspection hooks, plus an importable admin UI at `./ui` |
-
-Self-hosting composes the `./selfhost` export of
-`@voyant-travel/workflows-orchestrator` (the Node runtime) with the
-`@voyant-travel/workflows-react/ui` dashboard; Voyant Cloud provides the same
-runtime as a managed service.
+Selected modules contribute the subscribers and jobs required for their
+product behavior. Jobs are enabled by the standard managed and self-hosted
+runtime and recover from domain-owned durable state. Customer-specific
+automation consumes Voyant events and invokes authenticated domain APIs from
+an external automation system.
 
 ### UI and React families
 

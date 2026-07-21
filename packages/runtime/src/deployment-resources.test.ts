@@ -94,7 +94,7 @@ describe("createVoyantDeploymentResources", () => {
               declaration: { id: "search.host", key: "SEARCH_HOST", required: true },
             },
           ],
-          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
           routes: [],
         },
       ],

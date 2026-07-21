@@ -7,7 +7,7 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "./runtime-ports.js"
 import { recordPromotionRedemptionsForBooking } from "./service-booking-confirmed.js"
-import { BULK_REINDEX_SERVICE_KEY } from "./workflow-runtime.js"
+import { BULK_REINDEX_SERVICE_KEY } from "./job-runtime.js"
 
 export const COMMERCE_PROMOTION_REDEMPTION_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed"

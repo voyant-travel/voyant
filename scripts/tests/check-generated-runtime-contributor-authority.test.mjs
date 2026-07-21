@@ -33,7 +33,6 @@ const packageFactories = {
   storage: "createStorageRuntimePortContribution",
   storefront: "createStorefrontRuntimePortContribution",
   trips: "createTripsRuntimePortContribution",
-  "workflow-runs": "createWorkflowRunsRuntimePortContribution",
 }
 
 async function write(root, relativePath, contents) {

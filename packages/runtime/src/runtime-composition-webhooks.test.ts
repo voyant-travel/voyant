@@ -61,7 +61,7 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("composes installed-app delivery from the selected external catalog", async () => {
-    mocks.workflowGraphRuntime = {
+    mocks.graphRuntime = {
       modules: [
         {
           id: "@voyant-travel/apps",
@@ -144,7 +144,7 @@ describe("Voyant outbound webhook composition", () => {
   })
 
   it("does not construct a delivery worker when Apps has no webhook runtime port", async () => {
-    mocks.workflowGraphRuntime = {
+    mocks.graphRuntime = {
       modules: [
         {
           id: "@voyant-travel/apps",

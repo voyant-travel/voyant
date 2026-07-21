@@ -304,7 +304,6 @@ export const VOYANT_SELF_HOST_PROVIDER_DEFAULTS = {
   email: { from: "voyant-cloud", to: "smtp" },
   realtime: { from: "voyant-cloud", to: "local" },
   scheduledJobs: { from: "cloud-scheduler", to: "node-cron" },
-  workflows: { from: "voyant-cloud", to: "self-hosted" },
 } as const
 
 export async function validateVoyantSelfHostExportBundle(

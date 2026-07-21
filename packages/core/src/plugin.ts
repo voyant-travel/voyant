@@ -5,7 +5,7 @@
  * A plugin is the unit of "distribution" in Voyant: a customer, vendor, or
  * integrator ships a plugin package and it can be registered alongside core
  * modules without touching the framework itself. It is not the default runtime
- * customization unit — modules, providers, extensions, and workflows should be
+ * customization unit — modules, providers, extensions, subscribers, and jobs should be
  * preferred when a smaller seam fits.
  *
  * Core plugins do not carry HTTP routes — they contain {@link Module} and
@@ -15,13 +15,7 @@
 
 import type { EventBus, EventHandler, EventMetadata } from "./events.js"
 import type { LinkDefinition } from "./links.js"
-import type {
-  BootstrapHandler,
-  EventFilterDescriptor,
-  Extension,
-  Module,
-  WorkflowDescriptor,
-} from "./module.js"
+import type { BootstrapHandler, Extension, Module } from "./module.js"
 
 /**
  * A single event subscription contributed by a plugin.
@@ -76,17 +70,6 @@ export interface Plugin {
   subscribers?: Subscriber[]
   /** Link definitions contributed by the plugin. */
   links?: LinkDefinition[]
-  /**
-   * Workflows contributed by the plugin. Collected and merged with
-   * module-owned workflows at `createApp()` boot. See
-   * {@link WorkflowDescriptor} for the structural contract.
-   */
-  workflows?: readonly WorkflowDescriptor[]
-  /**
-   * Event filters contributed by the plugin. See
-   * {@link EventFilterDescriptor} for the structural contract.
-   */
-  eventFilters?: readonly EventFilterDescriptor[]
 }
 
 /**
@@ -112,10 +95,6 @@ export interface RegisteredPlugins {
   subscribers: Subscriber[]
   /** Subscription handles for subscribers attached to the event bus. */
   subscriptions: Array<{ unsubscribe(): void }>
-  /** All workflows contributed by the supplied plugins, in registration order. */
-  workflows: WorkflowDescriptor[]
-  /** All event filters contributed by the supplied plugins, in registration order. */
-  eventFilters: EventFilterDescriptor[]
 }
 
 export interface RegisterPluginsOptions {
@@ -139,8 +118,6 @@ export function registerPlugins(
   const links: LinkDefinition[] = []
   const subscribers: Subscriber[] = []
   const subscriptions: Array<{ unsubscribe(): void }> = []
-  const workflows: WorkflowDescriptor[] = []
-  const eventFilters: EventFilterDescriptor[] = []
 
   for (const plugin of plugins) {
     if (seen.has(plugin.name)) {
@@ -161,9 +138,7 @@ export function registerPlugins(
         }
       }
     }
-    if (plugin.workflows) workflows.push(...plugin.workflows)
-    if (plugin.eventFilters) eventFilters.push(...plugin.eventFilters)
   }
 
-  return { modules, extensions, links, subscribers, subscriptions, workflows, eventFilters }
+  return { modules, extensions, links, subscribers, subscriptions }
 }

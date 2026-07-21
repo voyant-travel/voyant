@@ -215,12 +215,12 @@ export {
   updateNotificationTemplateSchema,
 } from "./validation.js"
 export {
-  type DeliverReminderWorkflowInput,
-  type DeliverReminderWorkflowOutput,
-  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-  type NotificationReminderWorkflowRuntime,
-  type SendDueRemindersWorkflowInput,
-} from "./workflow-runtime.js"
+  type DeliverReminderJobInput,
+  type DeliverReminderJobOutput,
+  NOTIFICATION_REMINDER_JOB_RUNTIME_KEY,
+  type NotificationReminderJobRuntime,
+  type SendDueRemindersJobInput,
+} from "./job-runtime.js"
 
 export interface CreateNotificationsApiModuleOptions extends NotificationsRoutesOptions {
   /**

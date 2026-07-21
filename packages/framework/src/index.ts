@@ -88,7 +88,6 @@ export {
   type DefineVoyantConfigInput,
   defineConfig,
   resolveStandardNodeGraphRuntime,
-  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project.js"
 export {
   type ProjectArtifactWriteEntry,
@@ -141,8 +140,6 @@ export {
   type VoyantGraphRuntimeUnitDefinition,
   type VoyantGraphRuntimeUnitLoader,
   type VoyantGraphRuntimeWebhookPlan,
-  type VoyantGraphRuntimeWorkflowDefinition,
-  type VoyantGraphRuntimeWorkflowLoader,
 } from "./runtime-lowering.js"
 export {
   type ResolvedVoyantGraphRuntimeProviders,

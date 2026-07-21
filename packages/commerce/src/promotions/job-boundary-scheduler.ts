@@ -2,7 +2,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 
 import { runPromotionBoundaryScheduler } from "./service-boundary-scheduler.js"
-import type { BulkReindexProductsService } from "./workflow-runtime.js"
+import type { BulkReindexProductsService } from "./job-runtime.js"
 
 export interface PromotionBoundaryJobRuntime {
   withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>

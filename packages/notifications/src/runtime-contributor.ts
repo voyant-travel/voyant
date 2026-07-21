@@ -33,7 +33,7 @@ export function createNotificationsRuntimePortContribution(
   } satisfies StorefrontVerificationRoutesOptions
   return {
     [notificationsRuntimePort.id]: runtime,
-    [notificationsReminderJobRuntimePort.id]: runtime.resolveReminderWorkflowRuntime(undefined),
+    [notificationsReminderJobRuntimePort.id]: runtime.resolveReminderJobRuntime(undefined),
     [storefrontVerificationRuntimePort.id]: verification,
     [financeNotificationsRuntimePort.id]: createFinanceNotificationsRuntime(
       host.primitives,

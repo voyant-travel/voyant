@@ -245,32 +245,6 @@ function envForProvider(
       ),
     ]
   }
-  if (role === "workflows" && provider === "voyant-cloud") {
-    return [
-      variable("VOYANT_CLOUD_WORKFLOWS_URL", "Voyant Cloud workflow runtime URL."),
-      secret("VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN", "Workflow trigger token."),
-      variable("VOYANT_CLOUD_APP_SLUG", "Cloud app slug."),
-      variable("VOYANT_CLOUD_ENVIRONMENT", "Cloud environment name.", false),
-    ]
-  }
-  if (role === "workflows" && provider === "self-hosted") {
-    return [
-      secret(
-        "DATABASE_URL",
-        "Postgres URL used by the self-hosted workflow runtime.",
-        true,
-        ["DATABASE_URL_DIRECT"],
-        "postgres-url",
-      ),
-      secret(
-        "DATABASE_URL_DIRECT",
-        "Direct Postgres URL for the resident workflow runtime.",
-        false,
-        [],
-        "postgres-url",
-      ),
-    ]
-  }
   if (role === "outboundWebhooks" && provider === "postgres") {
     return [
       secret(
@@ -333,9 +307,6 @@ function notesForProvider(
 ): string | undefined {
   if (role === "scheduledJobs" && provider === "cloud-scheduler") {
     return "Cloud Scheduler should POST /__voyant/scheduled?schedule=<stable-id> with x-voyant-origin-trust."
-  }
-  if (role === "workflows" && provider === "voyant-cloud") {
-    return "App code forwards workflow trigger/event calls to the hosted Voyant Cloud workflow runtime."
   }
   return undefined
 }

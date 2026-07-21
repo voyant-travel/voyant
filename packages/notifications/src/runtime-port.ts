@@ -1,14 +1,14 @@
 import { definePort } from "@voyant-travel/core/project"
 
 import type { CreateNotificationsApiModuleOptions } from "./index.js"
-import type { NotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
+import type { NotificationReminderJobRuntime } from "./job-runtime.js"
 
 export interface NotificationsRuntimeProvider extends CreateNotificationsApiModuleOptions {
   resolveDb: NonNullable<CreateNotificationsApiModuleOptions["resolveDb"]>
   resolveProviders: NonNullable<CreateNotificationsApiModuleOptions["resolveProviders"]>
-  resolveReminderWorkflowRuntime: (
+  resolveReminderJobRuntime: (
     bindings?: Record<string, unknown>,
-  ) => NotificationReminderWorkflowRuntime
+  ) => NotificationReminderJobRuntime
 }
 
 /** Node-host contract consumed by the package-owned Notifications graph factory. */
@@ -21,7 +21,7 @@ export const notificationsRuntimePort = definePort<NotificationsRuntimeProvider>
     for (const method of [
       "resolveDb",
       "resolveProviders",
-      "resolveReminderWorkflowRuntime",
+      "resolveReminderJobRuntime",
     ] as const) {
       if (typeof provider[method] !== "function") {
         throw new Error(`notifications.runtime provider must implement ${method}().`)

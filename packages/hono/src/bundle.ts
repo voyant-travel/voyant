@@ -1,10 +1,4 @@
-import type {
-  BootstrapHandler,
-  EventFilterDescriptor,
-  LinkDefinition,
-  Subscriber,
-  WorkflowDescriptor,
-} from "@voyant-travel/core"
+import type { BootstrapHandler, LinkDefinition, Subscriber } from "@voyant-travel/core"
 
 import type { ApiExtension, ApiModule } from "./module.js"
 
@@ -45,17 +39,6 @@ export interface ApiBundle {
    * these into the assembled anonymous allow-list.
    */
   anonymous?: string[]
-  /**
-   * Workflows contributed by the plugin. Mirrors the `Plugin.workflows`
-   * field in `@voyant-travel/core` — collected at `createApp()` boot and
-   * registered with the configured workflow driver.
-   */
-  workflows?: readonly WorkflowDescriptor[]
-  /**
-   * Event filters contributed by the plugin. Mirrors
-   * `Plugin.eventFilters` in `@voyant-travel/core`.
-   */
-  eventFilters?: readonly EventFilterDescriptor[]
 }
 
 const LAZY_API_BUNDLE = Symbol.for("voyant.api.lazyBundle")
@@ -99,8 +82,7 @@ export interface LazyApiBundle {
   /**
    * Load this bundle during app bootstrap instead of waiting for a declared
    * route matcher. Set this for lazy bundles that contribute subscribers,
-   * workflow metadata, container services, or bootstraps needed before a
-   * bundle-owned route is hit.
+   * container services, or bootstraps needed before a bundle-owned route is hit.
    */
   loadOnBootstrap?: boolean
   /** Loads and constructs the real bundle. Memoized by `mountApp`. */

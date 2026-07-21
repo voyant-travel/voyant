@@ -223,7 +223,7 @@ describe("bookings deployment manifest", () => {
             }),
             resolveVisibleValues: async () => ({}),
           },
-          "bookings.finance.runtime": { createStaleBookingHoldsRuntime: () => ({}) },
+          "bookings.finance.runtime": { createStaleBookingHoldsJobRuntime: () => ({}) },
           "bookings.relationships.runtime": {
             loadPersonTravelSnapshot: async () => null,
             upsertPersonFromContact: async () => null,

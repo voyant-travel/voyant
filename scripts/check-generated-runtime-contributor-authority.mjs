@@ -32,7 +32,6 @@ const packageFactories = {
   storage: "createStorageRuntimePortContribution",
   storefront: "createStorefrontRuntimePortContribution",
   trips: "createTripsRuntimePortContribution",
-  "workflow-runs": "createWorkflowRunsRuntimePortContribution",
 }
 
 const [

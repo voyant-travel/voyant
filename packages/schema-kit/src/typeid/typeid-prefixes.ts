@@ -422,11 +422,7 @@ export const PREFIXES = {
   // table is the cleanest fit.
   availability_holds: "avhd",
 
-  // Workflow runs — observability for in-process workflows (the
-  // catalog-checkout finalize spine, follow-up scheduled jobs, etc).
-  // Lives outside the durable @voyant-travel/workflows orchestrator so
-  // edge-compatible templates can record runs without spinning up
-  // a separate Node process.
+  // Reserved legacy prefixes retained so historical identifiers remain valid.
   workflow_runs: "wfrn",
   workflow_run_steps: "wfrs",
   // --- Operator-starter-local settings ---
