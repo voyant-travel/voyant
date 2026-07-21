@@ -109,10 +109,10 @@ export function createVoyantNodeJobHost(
   const sleep =
     options.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)))
   const schedulerPollMs = positiveInteger(options.schedulerPollMs ?? 1_000, "schedulerPollMs")
-  const states = new Map(
+  const states = new Map<string, JobExecutionState>(
     inventory.map((job) => [job.id, { pending: false } satisfies JobExecutionState]),
   )
-  const healthById = new Map(
+  const healthById = new Map<string, MutableJobHealth>(
     inventory.map((job) => [
       job.id,
       { id: job.id, status: "idle", attempts: 0, retryExhausted: false } satisfies MutableJobHealth,
@@ -290,7 +290,7 @@ export function createVoyantNodeJobHost(
     const current = now()
     for (const job of inventory) {
       if (!job.schedule) continue
-      if ("every" in job.schedule) {
+      if (job.schedule.every !== undefined) {
         const next = nextEveryTick.get(job.id)
         if (next === undefined || current.getTime() < next) continue
         nextEveryTick.set(job.id, current.getTime() + everyMilliseconds(job.schedule.every))
@@ -314,7 +314,7 @@ export function createVoyantNodeJobHost(
     const startedAt = now()
     for (const job of inventory) {
       if (!job.schedule) continue
-      if ("every" in job.schedule) {
+      if (job.schedule.every !== undefined) {
         nextEveryTick.set(job.id, startedAt.getTime() + everyMilliseconds(job.schedule.every))
       } else {
         lastCronTick.set(job.id, cronTickKey(startedAt, job.schedule.timezone))

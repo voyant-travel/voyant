@@ -2,14 +2,14 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 
 import type { VoyantGraphProvisionedJob } from "./deployment-graph.js"
 import {
-  createVoyantNodeJobHost,
   type CreateVoyantNodeJobHostOptions,
+  createVoyantNodeJobHost,
+  VOYANT_PRODUCT_JOB_ROUTE,
   type VoyantNodeJobExecutionReport,
   type VoyantNodeJobHealth,
-  VOYANT_PRODUCT_JOB_ROUTE,
 } from "./node-job-host.js"
-import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 import type { VoyantGraphRuntimePorts } from "./runtime-composition.js"
+import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 
 export { VOYANT_PRODUCT_JOB_ROUTE }
 
@@ -40,10 +40,7 @@ export interface VoyantWorkerJobHost {
   inventory: readonly VoyantGraphProvisionedJob[]
   schedules: readonly VoyantCloudflareProductJobSchedule[]
   fetch(request: Request, context: VoyantWorkerExecutionContext): Promise<Response | undefined>
-  scheduled(
-    event: VoyantWorkerScheduledEvent,
-    context: VoyantWorkerExecutionContext,
-  ): Promise<void>
+  scheduled(event: VoyantWorkerScheduledEvent, context: VoyantWorkerExecutionContext): Promise<void>
   health(): readonly VoyantNodeJobHealth[]
 }
 
@@ -249,7 +246,7 @@ export function createVoyantWorkerJobHost(
 export function compileCloudflareProductJobSchedules(
   jobs: readonly VoyantGraphProvisionedJob[],
 ): readonly VoyantCloudflareProductJobSchedule[] {
-  return jobs.flatMap((job) => {
+  return jobs.flatMap<VoyantCloudflareProductJobSchedule>((job) => {
     if (!job.schedule) return []
     if ("cron" in job.schedule) {
       if (

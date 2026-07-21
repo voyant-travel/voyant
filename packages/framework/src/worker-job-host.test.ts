@@ -1,23 +1,25 @@
 import { describe, expect, it, vi } from "vitest"
-
+import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 import {
   cloudflareCronTriggersForProductJobs,
   compileCloudflareProductJobSchedules,
-  createVoyantWorkerJobHostFromProjectRuntime,
   createVoyantWorkerJobHealthReporter,
   createVoyantWorkerJobHost,
+  createVoyantWorkerJobHostFromProjectRuntime,
   createVoyantWorkerRuntimeHostPrimitives,
 } from "./worker-job-host.js"
-import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 const unitId = "@acme/jobs"
 
-function runtime(handler: (jobId: string) => void) {
+function runtime(
+  handler: (jobId: string) => void,
+  schedule: { cron: string } | { every: string } = { cron: "*/5 * * * *" },
+) {
   const jobs = ["acme.first", "acme.second"].map((id) => ({
     unitId,
     declaration: {
       id,
-      schedule: { cron: "*/5 * * * *" },
+      schedule,
       runtime: { entry: `./${id}`, export: "run" },
     },
     referenceId: `${id}.runtime`,
@@ -208,10 +210,7 @@ describe("Voyant Worker product job host", () => {
       jobs: inventory,
       scheduleAuthority: "cloudflare-cron",
     })
-    await host.scheduled(
-      { cron: "*/5 * * * *" },
-      { waitUntil: (promise) => pending.push(promise) },
-    )
+    await host.scheduled({ cron: "*/5 * * * *" }, { waitUntil: (promise) => pending.push(promise) })
     await Promise.all(pending)
     expect(run).toHaveBeenCalledTimes(2)
     expect(run).toHaveBeenCalledWith("acme.first")
@@ -256,8 +255,8 @@ describe("Voyant Worker product job host", () => {
   it("fails closed when a self-hosted Cron authority cannot represent a cadence", () => {
     expect(() =>
       createVoyantWorkerJobHost({
-        runtime: runtime(() => {}),
-        jobs: [{ ...inventory[0]!, schedule: { every: "30s" } }, inventory[1]!],
+        runtime: runtime(() => {}, { every: "30s" }),
+        jobs: inventory.map((job) => ({ ...job, schedule: { every: "30s" } })),
         scheduleAuthority: "cloudflare-cron",
       }),
     ).toThrow("Cloudflare cannot represent selected schedules for acme.first")
