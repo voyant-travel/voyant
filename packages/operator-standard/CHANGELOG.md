@@ -1,5 +1,18 @@
 # @voyant-travel/operator-standard
 
+## 0.10.18
+
+### Patch Changes
+
+- Updated dependencies [406cebb]
+- Updated dependencies [406cebb]
+- Updated dependencies [406cebb]
+  - @voyant-travel/inventory@0.14.26
+  - @voyant-travel/storefront@0.189.1
+  - @voyant-travel/apps@0.12.0
+  - @voyant-travel/runtime-core@0.6.5
+  - @voyant-travel/storefront-react@0.189.1
+
 ## 0.10.17
 
 ### Patch Changes

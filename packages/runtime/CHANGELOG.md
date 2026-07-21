@@ -1,5 +1,15 @@
 # @voyant-travel/runtime
 
+## 0.16.3
+
+### Patch Changes
+
+- 406cebb: Add host-owned app webhook signing-key provisioning, confirmation-gated subscriptions, selected external-event durable intake, app-specific worker composition, a resident Node worker lifecycle, and server-authorized replay.
+- Updated dependencies [406cebb]
+  - @voyant-travel/apps@0.12.0
+  - @voyant-travel/framework@0.58.1
+  - @voyant-travel/runtime-core@0.6.5
+
 ## 0.16.2
 
 ### Patch Changes

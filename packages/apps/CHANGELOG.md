@@ -1,5 +1,11 @@
 # @voyant-travel/apps
 
+## 0.12.0
+
+### Minor Changes
+
+- 406cebb: Add host-owned app webhook signing-key provisioning, confirmation-gated subscriptions, selected external-event durable intake, app-specific worker composition, a resident Node worker lifecycle, and server-authorized replay.
+
 ## 0.11.1
 
 ### Patch Changes
