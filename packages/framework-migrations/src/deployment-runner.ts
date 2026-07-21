@@ -6,10 +6,12 @@
  *   1. detects whether the database is FRESH or an EXISTING pre-collector deployment
  *      (a `framework/*` ledger row from the retired monolithic bundle, or the legacy
  *      `drizzle.__drizzle_migrations`);
- *   2. on EXISTING, gates the import-baseline with a schema-parity check over
- *      exactly the cutline-covered migrations (so we never record a baseline the
- *      DB doesn't actually have);
- *   3. runs {@link applyMigrations}.
+ *   2. on EXISTING, executes a newly-added source from the beginning only when
+ *      it has no ledger lineage and its whole schema footprint is absent;
+ *   3. gates every other import-baseline with a schema-parity check over exactly
+ *      the cutline-covered migrations (so we never record a baseline the DB
+ *      doesn't actually have);
+ *   4. runs {@link applyMigrations}.
  *
  * Free of dotenv/config/process concerns so it can be driven against an
  * arbitrary database in tests. See docs/architecture/migration-collector-d2.md.

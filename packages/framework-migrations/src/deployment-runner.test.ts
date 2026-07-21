@@ -211,6 +211,23 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
     expect(inserted.map(({ source, tag }) => `${source}/${tag}`)).toEqual(result.executed)
   })
 
+  it("import-baselines a fully materialized unledgered source", async () => {
+    const source = profileExpansionSource("accommodations", 8)
+    const tables = Array.from({ length: 8 }, (_, index) => `accommodations_${index}`)
+    const { client, executedCreates } = expansionClient({
+      tables,
+      columns: tables.map((table) => [table, "id"]),
+    })
+
+    const result = await runDeploymentMigrations(client, [source], {
+      accommodations: ["0000_accommodations_baseline"],
+    })
+
+    expect(result.executed).toEqual([])
+    expect(result.baselined).toEqual(["accommodations/0000_accommodations_baseline"])
+    expect(executedCreates).toEqual([])
+  })
+
   it("refuses a partially-present unledgered source instead of executing or baselining it", async () => {
     const source = profileExpansionSource("accommodations", 8)
     const firstTable = "accommodations_0"
