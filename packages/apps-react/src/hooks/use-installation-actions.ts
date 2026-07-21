@@ -25,6 +25,9 @@ export interface ActivateReleaseInput {
   installationId: string
   releaseId: string
   actorId: string
+  grantedRequiredScopes?: string[]
+  grantedOptionalScopes?: string[]
+  updatePolicy?: "manual" | "compatible" | "patch" | "pinned"
 }
 
 async function postLifecycle(client: FetchWithValidationOptions, path: string, body: object) {
@@ -75,10 +78,9 @@ export function useInstallationActions() {
   })
 
   const activate = useMutation({
-    mutationFn: ({ installationId, releaseId, actorId }: ActivateReleaseInput) =>
+    mutationFn: ({ installationId, ...body }: ActivateReleaseInput) =>
       postLifecycle(client, `/v1/admin/apps/installations/${installationId}/activate`, {
-        releaseId,
-        actorId,
+        ...body,
       }),
     onSuccess: (_data, input) => invalidate(input.installationId),
   })

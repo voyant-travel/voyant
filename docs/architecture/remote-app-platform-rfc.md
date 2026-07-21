@@ -205,11 +205,17 @@ host-verified acquisition envelope; the deployment stores that verifier as the
 active client credential. The raw secret never enters the catalog, artifact,
 setup assertion, browser, or Voyant database.
 
-Acquisition returns only local app and release IDs. The native Apps page then
-renders consent from the admitted normalized release: required and optional
-scopes, data classifications, external secret-custody disclosure, retention,
-webhooks, admin pages and slots, privacy policy, and support. The existing
-installation mutation remains the sole final approval and reconciliation path.
+Acquisition returns local app and release IDs plus, when present, the
+deployment-scoped identity and current release of the existing installation.
+The native Apps page then renders consent from the admitted normalized release:
+required and optional scopes, data classifications, external secret-custody
+disclosure, retention, webhooks, admin pages and slots, privacy policy, and
+support. Fresh consent uses the installation mutation. When an active
+installation already exists at a different admitted release, the same consent
+screen uses the explicit installation activation route, supplies the required
+scopes approved in that ceremony, advances the existing installation, and only
+then starts the setup handoff. Retrying either path is idempotent and never
+creates a second installation identity.
 
 After an active Marketplace installation is created, a host may create a
 one-time setup handoff. The public runtime sends only `installationId`, `appId`,

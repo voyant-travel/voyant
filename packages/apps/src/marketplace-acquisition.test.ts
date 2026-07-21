@@ -206,12 +206,67 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
     ).rejects.toMatchObject({ status: 409, code: "app_marketplace_digest_mismatch" })
   })
 
+  it("advances the managed installation contract when activating an acquired release", async () => {
+    const first = acquisition()
+    const nextManifest = { ...validManifest, releaseVersion: "1.1.0" }
+    const second = acquisition({
+      acquisitionId: "acquisition_2",
+      release: {
+        ...first.release,
+        id: "marketplace_release_2",
+        manifest: nextManifest,
+        digest: compileAppManifest(nextManifest).digest,
+      },
+    })
+    const service = createMarketplaceAcquisitionService({
+      installationIdentity: {
+        deploymentId: "deployment_1",
+        workloadEnvironmentId: "workload_environment_1",
+      },
+      resolveAcquisitionIntent: async ({ intent }) => (intent === "opaque-2" ? second : first),
+      createSetupHandoff: vi.fn(),
+    })
+    await service.resolveAndAcquire(db, { intent: "opaque-1", actorId: "user_1" })
+    const installations = createAppInstallationService({
+      deploymentId: "deployment_1",
+      managedInstallation: {
+        workloadEnvironmentId: "workload_environment_1",
+        resolveInstallationContract: async ({ releaseId }) => ({
+          contractGeneration: releaseId === second.release.id ? 2 : 1,
+        }),
+      },
+    })
+    const installed = await installations.install(db, {
+      appId: first.app.id,
+      releaseId: first.release.id,
+      actorId: "user_1",
+    })
+    await service.resolveAndAcquire(db, { intent: "opaque-2", actorId: "user_1" })
+
+    const upgraded = await installations.upgrade(db, {
+      installationId: installed.installation.id,
+      releaseId: second.release.id,
+      actorId: "user_1",
+    })
+
+    expect(upgraded).toMatchObject({
+      outcome: "upgraded",
+      installation: {
+        id: installed.installation.id,
+        releaseId: second.release.id,
+        workloadEnvironmentId: "workload_environment_1",
+        contractGeneration: 2,
+      },
+    })
+  })
+
   it("creates setup only from active installation identity and an admitted setup origin", async () => {
     const current = acquisition()
     const createSetupHandoff = vi.fn(async () => ({
       redirectUrl: "https://app.example.com/setup?code=one-time-opaque",
     }))
     const service = createMarketplaceAcquisitionService({
+      installationIdentity: { deploymentId: "deployment_1" },
       resolveAcquisitionIntent: async () => current,
       createSetupHandoff,
     })
@@ -224,6 +279,16 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
         actorId: "user_1",
       },
     )
+
+    await expect(
+      service.resolveAndAcquire(db, { intent: "opaque-1", actorId: "user_1" }),
+    ).resolves.toMatchObject({
+      existingInstallation: {
+        id: installed.installation.id,
+        releaseId: current.release.id,
+        status: "active",
+      },
+    })
 
     await expect(service.createSetupHandoff(db, installed.installation.id)).resolves.toEqual({
       redirectUrl: "https://app.example.com/setup?code=one-time-opaque",

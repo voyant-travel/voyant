@@ -29,6 +29,7 @@ import { useInstallationActions } from "../hooks/use-installation-actions.js"
 import { useMarketplaceInstallIntent } from "../hooks/use-marketplace-install-intent.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
 import type { AppReleaseRecord } from "../schemas.js"
+import type { MarketplaceInstallIntentResult } from "../schemas.js"
 import { ConsentDisclosures, readConsentDisclosures } from "./consent-disclosures.js"
 
 const UPDATE_POLICIES = ["compatible", "patch", "manual", "pinned"] as const
@@ -61,7 +62,7 @@ export function ConsentScreen({
   const [updatePolicy, setUpdatePolicy] = useState<(typeof UPDATE_POLICIES)[number]>("compatible")
   const app = useApp(appId)
   const releases = useAppReleases(appId)
-  const { install } = useInstallationActions()
+  const { activate, install } = useInstallationActions()
   const marketplace = useMarketplaceInstallIntent()
   const resolvedIntent = useRef<string | null>(null)
 
@@ -89,6 +90,12 @@ export function ConsentScreen({
 
   const grantedOptional = optional.filter((scope) => !denied.has(scope))
   const grantedCount = required.length + grantedOptional.length
+  const existingInstallation = marketplace.resolveIntent.data?.existingInstallation ?? null
+  const upgradeInstallation =
+    existingInstallation &&
+    shouldUpgradeManagedInstallation(installIntent, existingInstallation, releaseId)
+      ? existingInstallation
+      : null
 
   const toggleOptional = (scope: string, granted: boolean) => {
     setDenied((current) => {
@@ -103,6 +110,7 @@ export function ConsentScreen({
     setDenied(new Set())
     setReleaseId(undefined)
     install.reset()
+    activate.reset()
     marketplace.resolveIntent.reset()
     marketplace.createSetupHandoff.reset()
     resolvedIntent.current = null
@@ -110,13 +118,22 @@ export function ConsentScreen({
 
   const handleApprove = async () => {
     if (!appId || !releaseId) return
-    const result = await install.mutateAsync({
-      appId,
-      releaseId,
-      actorId,
-      grantedOptionalScopes: grantedOptional,
-      updatePolicy,
-    })
+    const result = upgradeInstallation
+      ? await activate.mutateAsync({
+          installationId: upgradeInstallation.id,
+          releaseId,
+          actorId,
+          grantedRequiredScopes: required,
+          grantedOptionalScopes: grantedOptional,
+          updatePolicy,
+        })
+      : await install.mutateAsync({
+          appId,
+          releaseId,
+          actorId,
+          grantedOptionalScopes: grantedOptional,
+          updatePolicy,
+        })
     onInstalled?.(result.installation.id)
     if ((installIntent || selectedApp?.distribution === "marketplace") && disclosure?.urls.setup) {
       try {
@@ -210,6 +227,17 @@ export function ConsentScreen({
             <Loader2 className="size-4 animate-spin" />
             {t.resolvingIntent}
           </div>
+        ) : null}
+
+        {upgradeInstallation ? (
+          <Alert>
+            <ShieldCheck className="size-4" />
+            <AlertDescription>
+              {formatMessage(t.upgradeDescription, {
+                version: release?.releaseVersion ?? "",
+              })}
+            </AlertDescription>
+          </Alert>
         ) : null}
 
         {release ? (
@@ -316,12 +344,12 @@ export function ConsentScreen({
           </Alert>
         ) : null}
 
-        {install.isError || marketplace.resolveIntent.isError ? (
+        {install.isError || activate.isError || marketplace.resolveIntent.isError ? (
           <Alert variant="destructive">
             <AlertCircle className="size-4" />
             <AlertDescription>
-              {(install.error ?? marketplace.resolveIntent.error) instanceof Error
-                ? (install.error ?? marketplace.resolveIntent.error)?.message
+              {(install.error ?? activate.error ?? marketplace.resolveIntent.error) instanceof Error
+                ? (install.error ?? activate.error ?? marketplace.resolveIntent.error)?.message
                 : messages.common.requestFailed}
             </AlertDescription>
           </Alert>
@@ -338,7 +366,7 @@ export function ConsentScreen({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={install.isPending}
+            disabled={install.isPending || activate.isPending}
           >
             {messages.common.cancel}
           </Button>
@@ -348,20 +376,38 @@ export function ConsentScreen({
               !releaseId ||
               !disclosure ||
               install.isPending ||
+              activate.isPending ||
               marketplace.resolveIntent.isPending ||
               marketplace.createSetupHandoff.isPending
             }
           >
-            {install.isPending || marketplace.createSetupHandoff.isPending ? (
+            {install.isPending || activate.isPending || marketplace.createSetupHandoff.isPending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : null}
-            {install.isPending || marketplace.createSetupHandoff.isPending
-              ? t.approving
-              : t.approve}
+            {install.isPending || activate.isPending || marketplace.createSetupHandoff.isPending
+              ? upgradeInstallation
+                ? t.upgrading
+                : t.approving
+              : upgradeInstallation
+                ? t.upgrade
+                : t.approve}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function shouldUpgradeManagedInstallation(
+  installIntent: string | undefined,
+  installation: MarketplaceInstallIntentResult["existingInstallation"],
+  releaseId: string | undefined,
+) {
+  return Boolean(
+    installIntent &&
+      releaseId &&
+      installation?.status === "active" &&
+      installation.releaseId !== releaseId,
   )
 }
 

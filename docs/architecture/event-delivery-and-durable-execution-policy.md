@@ -213,6 +213,11 @@ proof never enter ordinary database rows, tokens, events, delivery payloads, or
 audit details. Delivery and replay fail closed unless the active
 subscription's persisted key id exactly matches host resolution.
 
+Legacy subscriptions that claim to be active without a persisted signing key
+are reconciled to inactive before an installation upgrade can remain pending or
+be activated. They retain their declaration but must complete the current
+signing-key possession ceremony before delivery can resume.
+
 These provider selections are durable intake boundaries, not HTTP delivery.
 The package workers own payload hydration, claiming, signing, retry attempts,
 and delivery/subscription outcomes. The app worker claims only rows whose

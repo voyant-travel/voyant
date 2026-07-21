@@ -290,6 +290,9 @@ export const activateInstallationBodySchema = z
   .object({
     releaseId: z.string().trim().min(1),
     actorId: z.string().trim().min(1).max(160),
+    grantedRequiredScopes: z.array(scopeSchema).optional(),
+    grantedOptionalScopes: z.array(scopeSchema).optional(),
+    updatePolicy: z.enum(appInstallationUpdatePolicyValues).optional(),
   })
   .strict()
 

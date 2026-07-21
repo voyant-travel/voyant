@@ -9,6 +9,7 @@ import {
   compileAppManifest,
 } from "./compiler.js"
 import {
+  type AppInstallation,
   appCredentials,
   appInstallations,
   appRedirectUris,
@@ -79,6 +80,22 @@ export const marketplaceInstallIntentResultSchema = z.object({
       releaseId: z.string(),
       acquisitionId: z.string(),
       created: z.boolean(),
+      existingInstallation: z
+        .object({
+          id: z.string(),
+          releaseId: z.string(),
+          status: z.enum([
+            "pending",
+            "authorizing",
+            "active",
+            "paused",
+            "degraded",
+            "revoked",
+            "uninstalled",
+          ]),
+        })
+        .strict()
+        .nullable(),
     })
     .strict(),
 })
@@ -138,9 +155,14 @@ export interface MarketplaceInstallIntentResult {
   releaseId: string
   acquisitionId: string
   created: boolean
+  existingInstallation: Pick<AppInstallation, "id" | "releaseId" | "status"> | null
 }
 
 export interface MarketplaceAcquisitionServiceOptions extends CompileAppManifestOptions {
+  installationIdentity?: {
+    deploymentId?: string
+    workloadEnvironmentId?: string
+  }
   resolveAcquisitionIntent(input: {
     intent: string
   }): Promise<HostVerifiedMarketplaceAcquisition | null>
@@ -178,11 +200,17 @@ export function createMarketplaceAcquisitionService(options: MarketplaceAcquisit
         await reconcileOAuthClient(tx, app.id, acquisition.app.oauthClient.secretSha256)
         await reconcileRedirectUris(tx, app.id, acquisition.app.redirectUris)
         const release = await acquireRelease(tx, acquisition, compiled, input.actorId)
+        const existingInstallation = await selectExistingInstallation(
+          tx,
+          app.id,
+          options.installationIdentity,
+        )
         return {
           appId: app.id,
           releaseId: release.id,
           acquisitionId: acquisition.acquisitionId,
           created: release.created,
+          existingInstallation,
         }
       })
     },
@@ -224,6 +252,29 @@ export function createMarketplaceAcquisitionService(options: MarketplaceAcquisit
       return { redirectUrl }
     },
   }
+}
+
+async function selectExistingInstallation(
+  db: PostgresJsDatabase,
+  appId: string,
+  identity: MarketplaceAcquisitionServiceOptions["installationIdentity"],
+): Promise<Pick<AppInstallation, "id" | "releaseId" | "status"> | null> {
+  const binding = identity?.workloadEnvironmentId
+    ? eq(appInstallations.workloadEnvironmentId, identity.workloadEnvironmentId)
+    : identity?.deploymentId
+      ? eq(appInstallations.deploymentId, identity.deploymentId)
+      : null
+  if (!binding) return null
+  const [installation] = await db
+    .select({
+      id: appInstallations.id,
+      releaseId: appInstallations.releaseId,
+      status: appInstallations.status,
+    })
+    .from(appInstallations)
+    .where(and(eq(appInstallations.appId, appId), binding))
+    .limit(1)
+  return installation ?? null
 }
 
 async function acquireApp(

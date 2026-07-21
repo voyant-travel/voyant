@@ -130,6 +130,10 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   const marketplace = options.managedMarketplace
     ? createMarketplaceAcquisitionService({
         eventCatalog: options.eventCatalog,
+        installationIdentity: {
+          deploymentId: options.oauth?.deploymentId ?? options.deploymentId,
+          workloadEnvironmentId: options.oauth?.managedInstallation?.workloadEnvironmentId,
+        },
         resolveAcquisitionIntent: options.managedMarketplace.resolveAcquisitionIntent,
         createSetupHandoff: options.managedMarketplace.createSetupHandoff,
       })
@@ -373,6 +377,9 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
       installationId,
       releaseId: body.releaseId,
       actorId: body.actorId,
+      grantedRequiredScopes: body.grantedRequiredScopes,
+      grantedOptionalScopes: body.grantedOptionalScopes,
+      updatePolicy: body.updatePolicy,
     })
     return c.json({ data: result }, 200)
   })
