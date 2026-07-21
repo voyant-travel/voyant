@@ -954,10 +954,13 @@ function toFilterPredicate(filter: SearchFilter): SQL {
     return sql`(${sql.join(filter.clauses.map(toFilterPredicate), sql` OR `)})`
   }
   if (filter.kind === "range") {
-    const value = filter.field === "id" ? sql`id` : sql`fields ->> ${filter.field}`
+    // The contract treats `id` as a string, so a numeric range can never
+    // match it. JSON extraction must be parenthesized before its numeric cast.
+    if (filter.field === "id") return sql`FALSE`
+    const value = sql`(fields ->> ${filter.field})::numeric`
     return sql`(
-      ${filter.gte === undefined ? sql`TRUE` : sql`${value}::numeric >= ${filter.gte}`}
-      AND ${filter.lte === undefined ? sql`TRUE` : sql`${value}::numeric <= ${filter.lte}`}
+      ${filter.gte === undefined ? sql`TRUE` : sql`${value} >= ${filter.gte}`}
+      AND ${filter.lte === undefined ? sql`TRUE` : sql`${value} <= ${filter.lte}`}
     )`
   }
   if (filter.kind === "eq") return scalarFilterPredicate(filter.field, filter.value)
