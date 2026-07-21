@@ -164,11 +164,11 @@ pending allowlisted identity before a normal migration can commit:
 
 - if every table created by the immutable SQL is absent, the migration stays on
   the normal execution path;
-- if any table is present, the full footprint must match exactly: table and
-  column sets/order, PostgreSQL type, nullability, default, identity/generated
-  state, named primary/unique/foreign-key constraints and their actions, and
-  non-constraint index names, uniqueness, method, keys/expressions and
-  predicates;
+- if any table is present, the full footprint must match exactly: ordinary
+  permanent table identity, column sets/order, PostgreSQL type, nullability,
+  default, identity/generated state, named primary/unique/foreign-key
+  constraints and their actions, and non-constraint index names, validity,
+  readiness, uniqueness, method, keys/expressions and predicates;
 - a partial or mismatched footprint aborts without a ledger write or migration
   transaction;
 - an exact footprint is recorded with the current immutable SQL content hash and
