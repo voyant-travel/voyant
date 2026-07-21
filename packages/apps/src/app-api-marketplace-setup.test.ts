@@ -24,13 +24,6 @@ describe("managed Marketplace setup App API", () => {
 
     const response = await app.request("/v1/app/marketplace/setup-completion", {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      // Caller-selected identity fields are deliberately not parsed.
-      body: JSON.stringify({
-        appId: "app_attacker",
-        installationId: "apin_attacker",
-        releaseId: "rel_attacker",
-      }),
     })
 
     expect(response.status).toBe(200)
@@ -47,6 +40,24 @@ describe("managed Marketplace setup App API", () => {
       scopes: [],
       apiVersion: undefined,
     })
+  })
+
+  it("rejects caller-selected identity fields instead of parsing them", async () => {
+    const completeMarketplaceSetup = vi.fn(async () => undefined)
+    const app = authenticatedApp({ completeMarketplaceSetup })
+
+    const response = await app.request("/v1/app/marketplace/setup-completion", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        appId: "app_attacker",
+        installationId: "apin_attacker",
+        releaseId: "rel_attacker",
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    expect(completeMarketplaceSetup).not.toHaveBeenCalled()
   })
 
   it("does not expose the completion operation in a self-hosted runtime", async () => {
