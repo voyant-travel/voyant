@@ -1,5 +1,11 @@
 # @voyant-travel/apps
 
+## 0.12.3
+
+### Patch Changes
+
+- 34348fe: Support consented upgrades of existing managed Marketplace installations and reconcile legacy unsigned webhook subscriptions before activation.
+
 ## 0.12.2
 
 ### Patch Changes

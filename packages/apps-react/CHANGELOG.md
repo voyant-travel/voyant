@@ -1,5 +1,11 @@
 # @voyant-travel/apps-react
 
+## 0.4.4
+
+### Patch Changes
+
+- 34348fe: Support consented upgrades of existing managed Marketplace installations and reconcile legacy unsigned webhook subscriptions before activation.
+
 ## 0.4.3
 
 ### Patch Changes
