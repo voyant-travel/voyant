@@ -325,7 +325,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           AND documents.audience = slices.audience
           AND documents.market = slices.market
           AND documents.channel = slices.channel
-        WHERE ${facetSlicePredicate(slice)}
+        WHERE slices.vertical = ${slice.vertical}
+          AND slices.locale = ${slice.locale}
+          AND slices.audience = ${slice.audience}
+          AND slices.market = ${slice.market}
+          AND slices.channel = ${slice.channel ?? ""}
         GROUP BY slices.generation, slices.updated_at
       `),
     ) as Array<{
