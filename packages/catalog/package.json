@@ -186,6 +186,11 @@
         "import": "./dist/indexer/postgres-provider.js",
         "default": "./dist/indexer/postgres-provider.js"
       },
+      "./indexer/relevance": {
+        "types": "./dist/indexer/relevance.d.ts",
+        "import": "./dist/indexer/relevance.js",
+        "default": "./dist/indexer/relevance.js"
+      },
       "./search/routes": {
         "types": "./dist/search/routes.d.ts",
         "import": "./dist/search/routes.js",
