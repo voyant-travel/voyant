@@ -163,6 +163,13 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
         expect.objectContaining({ id: "new" }),
       ])
       expect(await adapter.projectionGeneration(lifecycleSlice)).toBe(afterRebuild)
+
+      expect(await adapter.rollbackProjection(lifecycleSlice)).toBe(true)
+      expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
+        expect.objectContaining({ id: "old" }),
+      ])
+      expect(await adapter.projectionGeneration(lifecycleSlice)).toBeGreaterThan(afterRebuild)
+      expect(await adapter.rollbackProjection(lifecycleSlice)).toBe(false)
     } finally {
       await adapter.admin!.drop(lifecycleSlice)
     }

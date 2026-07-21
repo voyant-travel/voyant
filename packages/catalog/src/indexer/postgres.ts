@@ -80,6 +80,8 @@ export interface PostgresIndexerAdapter extends IndexerAdapter {
   projectionGeneration(slice: IndexerSlice): Promise<number>
   /** Deployment-private projection state for maintenance and cache diagnostics. */
   projectionState(slice: IndexerSlice): Promise<PostgresProjectionState>
+  /** Restore the immediately preceding atomically published projection, if retained. */
+  rollbackProjection(slice: IndexerSlice): Promise<boolean>
   /** Recorded capability state; no request-time extension or management probes. */
   diagnostics(): PostgresIndexerDiagnostics
 }
@@ -193,6 +195,23 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         document_text text NOT NULL,
         created_at timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (rebuild_id, vertical, locale, audience, market, channel, id)
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_projection_snapshots (
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        id text NOT NULL,
+        fields jsonb NOT NULL,
+        embeddings jsonb,
+        embedding_model_id text,
+        document_text text NOT NULL,
+        source_generation bigint NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (vertical, locale, audience, market, channel, id)
       )
     `)
     await db.execute(sql`
@@ -372,6 +391,19 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       return readProjectionState(slice)
     },
 
+    async rollbackProjection(slice) {
+      if (dbSupportsTransactions(db) === false) {
+        throw new Error(
+          "Postgres catalog indexer projection rollback requires a transaction-capable database adapter.",
+        )
+      }
+      await ensureStorage()
+      await ensureSlice(slice)
+      return withOptionalTransaction(db, async (tx) =>
+        restoreProjectionSnapshot(tx, slice, vectorStrategy, typoStrategy),
+      )
+    },
+
     diagnostics() {
       return {
         candidateLimit: MAX_CANDIDATES,
@@ -406,6 +438,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
 
       async drop(slice) {
         await ensureStorage()
+        await discardProjectionSnapshot(db, slice)
         await db.execute(sql`
           DELETE FROM voyant_catalog_search_facets
           WHERE ${facetSlicePredicate(slice)}
@@ -505,6 +538,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         if (typoStrategy === "pgtrgm") await replaceTypoTerms(db, slice, document)
       }
       await bumpGeneration(slice)
+      await discardProjectionSnapshot(db, slice)
       await ensureLakebaseTextIndex()
       await ensureLakebaseVectorIndex()
     },
@@ -543,6 +577,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           )
       `)
       await bumpGeneration(slice)
+      await discardProjectionSnapshot(db, slice)
     },
 
     async search(slice, request) {
@@ -934,6 +969,7 @@ async function publishStagedRebuild(
   vectorStrategy: PostgresVectorStrategy,
   typoStrategy: PostgresTypoStrategy,
 ): Promise<void> {
+  await snapshotProjection(db, slice)
   await db.execute(sql`
     DELETE FROM voyant_catalog_search_facets
     WHERE ${facetSlicePredicate(slice)}
@@ -1038,7 +1074,198 @@ async function publishStagedRebuild(
   `)
 }
 
+/** Keep one complete, slice-local predecessor until a rollback or steady write consumes it. */
+async function snapshotProjection(db: AnyDrizzleDb, slice: IndexerSlice): Promise<void> {
+  await discardProjectionSnapshot(db, slice)
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_projection_snapshots (
+      vertical, locale, audience, market, channel, id, fields, embeddings,
+      embedding_model_id, document_text, source_generation
+    )
+    SELECT
+      documents.vertical,
+      documents.locale,
+      documents.audience,
+      documents.market,
+      documents.channel,
+      documents.id,
+      documents.fields,
+      documents.embeddings,
+      documents.embedding_model_id,
+      documents.document_text,
+      slices.generation
+    FROM voyant_catalog_search_documents AS documents
+    INNER JOIN voyant_catalog_search_slices AS slices
+      ON slices.vertical = documents.vertical
+      AND slices.locale = documents.locale
+      AND slices.audience = documents.audience
+      AND slices.market = documents.market
+      AND slices.channel = documents.channel
+    WHERE documents.vertical = ${slice.vertical}
+      AND documents.locale = ${slice.locale}
+      AND documents.audience = ${slice.audience}
+      AND documents.market = ${slice.market}
+      AND documents.channel = ${slice.channel ?? ""}
+  `)
+}
+
+/** Restore the predecessor captured by the most recent successful bulk publish. */
+async function restoreProjectionSnapshot(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  vectorStrategy: PostgresVectorStrategy,
+  typoStrategy: PostgresTypoStrategy,
+): Promise<boolean> {
+  const snapshot = readRows(
+    await db.execute(sql`
+      SELECT 1
+      FROM voyant_catalog_search_projection_snapshots
+      WHERE ${snapshotSlicePredicate(slice)}
+      LIMIT 1
+    `),
+  )
+  if (snapshot.length === 0) return false
+
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_facets
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_terms
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_documents
+    WHERE ${slicePredicate(slice)}
+  `)
+  if (vectorStrategy !== "none") {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_documents (
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text, search_embedding
+      )
+      SELECT
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text,
+        CASE
+          WHEN embeddings IS NULL THEN NULL
+          ELSE (SELECT value::text::vector FROM jsonb_each(embeddings) LIMIT 1)
+        END
+      FROM voyant_catalog_search_projection_snapshots
+      WHERE ${snapshotSlicePredicate(slice)}
+    `)
+  } else {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_documents (
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text
+      )
+      SELECT vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text
+      FROM voyant_catalog_search_projection_snapshots
+      WHERE ${snapshotSlicePredicate(slice)}
+    `)
+  }
+  await rebuildProjectionFacets(db, slice, "voyant_catalog_search_projection_snapshots")
+  if (typoStrategy === "pgtrgm") {
+    await rebuildProjectionTerms(db, slice, "voyant_catalog_search_projection_snapshots")
+  }
+  await bumpProjectionGeneration(db, slice)
+  await discardProjectionSnapshot(db, slice)
+  return true
+}
+
+async function discardProjectionSnapshot(db: AnyDrizzleDb, slice: IndexerSlice): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_projection_snapshots
+    WHERE ${snapshotSlicePredicate(slice)}
+  `)
+}
+
+async function bumpProjectionGeneration(db: AnyDrizzleDb, slice: IndexerSlice): Promise<void> {
+  await db.execute(sql`
+    UPDATE voyant_catalog_search_slices
+    SET generation = generation + 1, updated_at = now()
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+}
+
+async function rebuildProjectionFacets(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  source: "voyant_catalog_search_projection_snapshots",
+): Promise<void> {
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_facets (
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+    )
+    SELECT
+      snapshot.vertical,
+      snapshot.locale,
+      snapshot.audience,
+      snapshot.market,
+      snapshot.channel,
+      snapshot.id,
+      entry.key,
+      jsonb_typeof(value_item.value),
+      value_item.value #>> '{}'
+    FROM ${sql.raw(source)} AS snapshot
+    CROSS JOIN LATERAL jsonb_each(snapshot.fields) AS entry(key, value)
+    CROSS JOIN LATERAL jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(entry.value) = 'array' THEN entry.value
+        ELSE jsonb_build_array(entry.value)
+      END
+    ) AS value_item(value)
+    WHERE ${snapshotSlicePredicate(slice)}
+      AND jsonb_typeof(value_item.value) IN ('string', 'number', 'boolean')
+    ON CONFLICT DO NOTHING
+  `)
+}
+
+async function rebuildProjectionTerms(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  source: "voyant_catalog_search_projection_snapshots",
+): Promise<void> {
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_terms (
+      vertical, locale, audience, market, channel, document_id, term
+    )
+    SELECT DISTINCT
+      snapshot.vertical,
+      snapshot.locale,
+      snapshot.audience,
+      snapshot.market,
+      snapshot.channel,
+      snapshot.id,
+      lower(value_item.value #>> '{}')
+    FROM ${sql.raw(source)} AS snapshot
+    CROSS JOIN LATERAL jsonb_each(snapshot.fields) AS entry(key, value)
+    CROSS JOIN LATERAL jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(entry.value) = 'array' THEN entry.value
+        ELSE jsonb_build_array(entry.value)
+      END
+    ) AS value_item(value)
+    WHERE ${snapshotSlicePredicate(slice)}
+      AND jsonb_typeof(value_item.value) IN ('string', 'number', 'boolean')
+      AND char_length(value_item.value #>> '{}') BETWEEN 3 AND 64
+    ON CONFLICT DO NOTHING
+  `)
+}
+
 function stagingSlicePredicate(slice: IndexerSlice) {
+  return sql`
+    vertical = ${slice.vertical}
+    AND locale = ${slice.locale}
+    AND audience = ${slice.audience}
+    AND market = ${slice.market}
+    AND channel = ${slice.channel ?? ""}
+  `
+}
+
+function snapshotSlicePredicate(slice: IndexerSlice) {
   return sql`
     vertical = ${slice.vertical}
     AND locale = ${slice.locale}
