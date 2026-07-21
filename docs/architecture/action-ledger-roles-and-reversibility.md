@@ -5,6 +5,10 @@ Audience: anyone designing operator audit trails, permission checks, approval
 flows, reversible commands, workflow operations, or AI-agent execution in
 Voyant.
 
+The workflow product has since been retired. Workflow principal/run fields in
+this planning document describe retained historical ledger compatibility; new
+product execution uses commands, subscribers, jobs, and external automation.
+
 This document captures a platform-level bottleneck before broad AI automation:
 operators need to quickly answer **who did what, why, under which authority,
 and can we undo or compensate it?**
@@ -946,8 +950,8 @@ use durable events on the framework's generic transactional event outbox.
   actor context, and permission-check boundaries.
 - [`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md)
   - event envelope and why EventBus is not audit storage.
-- [`execution-architecture.md`](./execution-architecture.md) - workflows,
-  schedules, daemons, and durable execution placement.
+- [`execution-architecture.md`](./execution-architecture.md) - commands,
+  subscribers, jobs, and durable execution placement.
 - [`booking-pii.md`](./booking-pii.md) - sensitive-read audit and PII
   redaction.
 - [`service-api-keys.md`](./service-api-keys.md) - Better Auth API token

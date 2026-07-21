@@ -767,7 +767,9 @@ Adapter calls are not free. Templates can wrap the adapter in a memoizing decora
 - The list of supported cruise lines. Connect's roadmap.
 - Scheduling, retries, backoff, dead-letter queues for the adapter's polling loop. Those live in Connect (or in whatever runs the custom adapter).
 - Provider authentication, rate-limiting, screen scraping. Same.
-- A workflow engine or job runner. The `@voyant-travel/core/workflows` primitives exist if a custom adapter wants them, but the cruises module doesn't require them.
+- A general-purpose workflow engine or customer-authored job runner. The
+  package contributes its fixed external-catalog refresh job when selected;
+  custom adapter orchestration remains external to Voyant.
 
 ## 11. Booking integration
 

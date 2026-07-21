@@ -1,6 +1,6 @@
 # ADR-0012: Application authoring and product defaults
 
-- **Status:** Accepted (2026-07-11)
+- **Status:** Accepted (2026-07-11), amended 2026-07-21
 - **Relates to:** [ADR-0007](./0007-module-subsetting-and-capability-ports.md),
   [ADR-0008](./0008-convention-driven-deployment-surface.md),
   [unified deployment graph](../architecture/unified-deployment-graph.md),
@@ -30,15 +30,16 @@ the generated graph expresses the complete deployment.**
    application. Package-owned extensions are extension contributions, not
    plugins.
 3. Application-local contributions are discovered at build time from
-   conventional directories:
-   `src/api/{admin,public}`, `src/admin`, `src/workflows`, `src/jobs`,
-   `src/subscribers`, `src/links`, and `src/modules`.
+   conventional directories: `src/api/{admin,public}`, `src/admin`,
+   `src/subscribers`, `src/links`, and `src/modules`. Product jobs are selected
+   with their packages; applications do not author `src/jobs` or
+   `src/workflows` contributions.
 4. Discovery is deterministic and Node-only. It produces normalized stable IDs,
    validates collisions and requirements, and writes the complete result under
    disposable `.voyant/` output before runtime code is loaded.
 5. Reusable custom modules and external plugins remain explicit authored
-   selections. Local conventional API routes, workflows, jobs, subscribers,
-   links, and admin contributions do not require duplicate config entries.
+   selections. Local conventional API routes, subscribers, links, and admin
+   contributions do not require duplicate config entries.
 6. Standard defaults may change only through a dependency or lockfile change.
    `voyant upgrade`, graph diffing, and `voyant doctor` must report the
    resulting facet, migration, provider, access, schedule, and resource changes.
@@ -48,9 +49,9 @@ the generated graph expresses the complete deployment.**
 8. The public configuration helper is `defineConfig`. Authored definitions and
    resolved manifests are separate types; placeholder manifests are not part of
    the public application interface.
-9. Runtime-specific settings use domain-qualified helpers and types. In
-   particular, standalone workflow runtime settings use `defineWorkflowConfig`
-   and `VoyantWorkflowConfig`; they are not a second application config API.
+9. Runtime-specific infrastructure settings remain deployment concerns; they
+   are not a second application config API. The retired standalone workflow
+   runtime and its `defineWorkflowConfig` helper are no longer product surfaces.
 
 The initial standard Operator remains the only composed application runtime and
 always lowers to Node. This decision does not create a managed-operator variant

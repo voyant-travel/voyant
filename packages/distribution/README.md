@@ -31,7 +31,9 @@ const app = createApp({
 | Entry | Description |
 | --- | --- |
 | `.` | Module export |
-| `./channel-push-workflows` | Opt-in workflow registration for channel-push bundles |
+| `./channel-push-jobs` | Package-owned channel-push job handlers |
+| `./channel-push-runtime` | Runtime port and host composition for channel push |
+| `./channel-push-subscribers` | Domain-event subscribers that record channel-push intent |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
@@ -45,9 +47,9 @@ capabilities for supplier profiles, distribution channels, and external
 references. Destructive deletes remain outside the Tool surface until a
 deployment selects an explicit destructive-action policy.
 
-Set `VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED=true` in workflow build/runtime
-environments that should publish the scheduled availability and content
-channel-push workflows.
+Selecting the package's channel-push extension selects its subscribers and
+jobs. Their schedules come from the package manifest; applications do not
+redeclare them through environment flags or project-local job definitions.
 
 ## License
 
