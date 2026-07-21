@@ -6,7 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./channel-push-subscribers": "./src/channel-push/subscriber-runtime.ts",
-    "./channel-push-workflows": "./src/channel-push/workflow-entry.ts",
+    "./channel-push-jobs": "./src/channel-push/jobs.ts",
     "./channel-push-runtime": "./src/channel-push/types.ts",
     "./linkables": "./src/linkables.ts",
     "./schema": "./src/schema.ts",
@@ -44,7 +44,6 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "@voyant-travel/webhook-delivery": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -75,10 +74,10 @@
         "import": "./dist/channel-push/subscriber-runtime.js",
         "default": "./dist/channel-push/subscriber-runtime.js"
       },
-      "./channel-push-workflows": {
-        "types": "./dist/channel-push/workflow-entry.d.ts",
-        "import": "./dist/channel-push/workflow-entry.js",
-        "default": "./dist/channel-push/workflow-entry.js"
+      "./channel-push-jobs": {
+        "types": "./dist/channel-push/jobs.d.ts",
+        "import": "./dist/channel-push/jobs.js",
+        "default": "./dist/channel-push/jobs.js"
       },
       "./channel-push-runtime": {
         "types": "./dist/channel-push/types.d.ts",

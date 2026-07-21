@@ -20,10 +20,6 @@ import {
   inventoryExtrasVoyantModule,
   inventoryVoyantModule,
 } from "../../src/voyant.js"
-import {
-  createProductsGeneratePdfWorkflow,
-  productsGeneratePdfWorkflow,
-} from "../../src/workflow-entry.js"
 
 describe("inventory deployment manifests", () => {
   it("owns the inventory and extras module surfaces", () => {
@@ -70,16 +66,6 @@ describe("inventory deployment manifests", () => {
         { id: "@voyant-travel/inventory#linkable.product" },
         { id: "@voyant-travel/inventory#link.organization-product" },
         { id: "@voyant-travel/inventory#link.person-product" },
-      ],
-      workflows: [
-        {
-          id: "products.generate-pdf",
-          source: "@voyant-travel/inventory/workflows",
-          runtime: {
-            entry: "@voyant-travel/inventory/workflows",
-            export: "productsGeneratePdfWorkflow",
-          },
-        },
       ],
     })
     expectConcreteEventSchemas(inventoryVoyantModule.events)
@@ -259,18 +245,9 @@ describe("inventory deployment manifests", () => {
     expect(isGraphRuntimeFactory(createInventoryBrochureVoyantRuntime)).toBe(true)
   })
 
-  it("exposes a configurable PDF workflow factory", () => {
-    const definition = createProductsGeneratePdfWorkflow({ resolveDb: () => ({}) as never })
-    expect(definition.id).toBe("products.generate-pdf")
-    expect(definition.config.defaultRuntime).toBe("node")
-  })
-
-  it("exports the declared executable PDF workflow", () => {
-    expect(productsGeneratePdfWorkflow.id).toBe(inventoryVoyantModule.workflows?.[0]?.id)
-    expect(inventoryVoyantModule.workflows?.[0]?.runtime).toEqual({
-      entry: "@voyant-travel/inventory/workflows",
-      export: "productsGeneratePdfWorkflow",
-    })
+  it("keeps brochure generation on the authenticated command surface", () => {
+    expect(inventoryVoyantModule.workflows).toBeUndefined()
+    expect(inventoryBrochureVoyantPlugin.api?.[0]?.surface).toBe("admin")
   })
 })
 

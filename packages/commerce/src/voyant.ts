@@ -24,11 +24,12 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "./checkout/runtime-ports.js"
+import { promotionBoundaryJobRuntimePort } from "./promotions/job-boundary-scheduler.js"
+import { promotionReindexJobRuntimePort } from "./promotions/reindex-job.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "./promotions/runtime-ports.js"
-import { promotionBoundaryJobRuntimePort } from "./promotions/job-boundary-scheduler.js"
 import {
   commerceCardPaymentRuntimePort,
   commerceInventoryRuntimePort,
@@ -46,22 +47,6 @@ const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-ind
 const commerceAdminRuntime = {
   entry: "@voyant-travel/commerce-react/admin",
   export: "createCommerceAdminExtension",
-} as const
-
-const promotionAffectedAllFilter = {
-  eventType: "promotion.changed",
-  id: "ef_6f8e4b4ce409d04c",
-  input: {
-    object: {
-      offerId: { path: "data.offerId" },
-      source: { path: "data.source" },
-    },
-  },
-  payloadHash: "6f8e4b4ce409d04c",
-  targetWorkflowId: "promotions.reindex-all-products",
-  where: {
-    eq: [{ path: "data.affected.kind" }, { lit: "all" }],
-  },
 } as const
 
 const commerceToolActions = [
@@ -113,6 +98,7 @@ export const commerceVoyantModule = defineModule({
     requirePort(promotionRedemptionDatabaseRuntimePort),
     requirePort(promotionsBulkReindexRuntimePort),
     requirePort(promotionBoundaryJobRuntimePort),
+    requirePort(promotionReindexJobRuntimePort),
     requirePort(commerceOperatorSettingsRuntimePort),
     requirePort(commerceInventoryRuntimePort),
     requirePort(commerceLegalRuntimePort),
@@ -130,6 +116,7 @@ export const commerceVoyantModule = defineModule({
       providePort(promotionRedemptionDatabaseRuntimePort),
       providePort(promotionsBulkReindexRuntimePort),
       providePort(promotionBoundaryJobRuntimePort),
+      providePort(promotionReindexJobRuntimePort),
     ],
   },
   api: [
@@ -376,38 +363,30 @@ export const commerceVoyantModule = defineModule({
       },
     },
     {
-      id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
+      id: "@voyant-travel/commerce#subscriber.promotion-reindex-intent",
       eventType: "promotion.changed",
-      eventFilterId: promotionAffectedAllFilter.id,
-      workflowId: "promotions.reindex-all-products",
-      filter: promotionAffectedAllFilter,
-      source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
       runtime: {
-        entry: "@voyant-travel/commerce/product-reindex-workflow-manifest",
-        export: "promotionAffectedAllFilter",
+        entry: "@voyant-travel/commerce/promotion-reindex-subscriber",
+        export: "createPromotionReindexIntentSubscriberGraphRuntime",
       },
     },
   ],
   jobs: [
+    {
+      id: "promotions.reindex-all-products",
+      schedule: { every: "2m", overlap: "skip" },
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/commerce/promotion-reindex-job",
+        export: "runPromotionReindexJob",
+      },
+    },
     {
       id: "commerce.process-promotion-boundaries",
       schedule: { cron: "*/5 * * * *", overlap: "skip" },
       runtime: {
         entry: "@voyant-travel/commerce/promotion-boundary-job",
         export: "runPromotionBoundaryJob",
-      },
-    },
-  ],
-  workflows: [
-    {
-      id: "promotions.reindex-all-products",
-      config: {
-        defaultRuntime: "node",
-      },
-      source: "@voyant-travel/commerce/product-reindex-workflow",
-      runtime: {
-        entry: "@voyant-travel/commerce/product-reindex-workflow",
-        export: "bulkReindexProductsWorkflow",
       },
     },
   ],
