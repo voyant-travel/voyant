@@ -45,18 +45,18 @@
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/types": "workspace:^",
-    "lucide-react": "^1.23.0"
+    "lucide-react": "^1.25.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
