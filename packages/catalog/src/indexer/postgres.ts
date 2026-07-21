@@ -312,6 +312,14 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     lakebaseVectorIndexReady = true
   }
 
+  const refreshLakebaseTextStatistics = async () => {
+    if (textStrategy !== "lakebase") return
+    // lakebase_bm25 computes corpus statistics at index build and refreshes
+    // them through VACUUM. This runs after the publish transaction commits so
+    // it never exposes a mixed projection generation.
+    await db.execute(sql`VACUUM (ANALYZE) voyant_catalog_search_documents`)
+  }
+
   const readProjectionState = async (slice: IndexerSlice): Promise<PostgresProjectionState> => {
     await ensureStorage()
     await ensureSlice(slice)
@@ -624,6 +632,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         })
         await ensureLakebaseTextIndex()
         await ensureLakebaseVectorIndex()
+        await refreshLakebaseTextStatistics()
       } finally {
         await db.execute(sql`
           DELETE FROM voyant_catalog_search_rebuild_documents
