@@ -616,10 +616,14 @@ function assertVoyantNodeRuntimeSupport(options: {
   }
   if (
     options.mode === "managed-cloud" &&
-    (options.providerPlan.cache === "redis" || options.providerPlan.rateLimit === "redis") &&
+    (options.providerPlan.cache === "redis" ||
+      options.providerPlan.sharedState === "redis" ||
+      options.providerPlan.rateLimit === "redis") &&
     !options.env.REDIS_NAMESPACE?.trim()
   ) {
-    issues.push("managed-cloud Redis cache/rate-limit providers require REDIS_NAMESPACE")
+    issues.push(
+      "managed-cloud Redis cache, shared-state, and rate-limit providers require REDIS_NAMESPACE",
+    )
   }
   if (
     options.mode === "managed-cloud" &&

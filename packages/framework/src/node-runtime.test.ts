@@ -103,6 +103,138 @@ describe("createVoyantNodeEnv Redis namespace", () => {
 })
 
 describe("loadVoyantNodeRuntime Redis URL validation", () => {
+  it("requires REDIS_NAMESPACE when only managed shared state uses Redis", async () => {
+    const providers = {
+      ...DEFAULT_MANAGED_CLOUD_PROVIDERS,
+      storage: "memory",
+      cache: "memory",
+      sharedState: "redis",
+      rateLimit: "memory",
+      adminAuth: "voyant-cloud",
+      customerAuth: "disabled",
+      workflows: "none",
+    } satisfies VoyantDeploymentProviders
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      entries: {},
+      modules: [],
+      plugins: [],
+      providerSelections: providers,
+    })
+
+    await expect(
+      loadVoyantNodeRuntime({
+        graphRuntime,
+        deployment: {
+          mode: "managed-cloud",
+          providers,
+        },
+        deploymentRequirements: {
+          resources: [
+            {
+              resourceKey: "redis",
+              roles: ["sharedState"],
+              provider: "redis",
+              required: true,
+              env: [
+                {
+                  name: "REDIS_URL",
+                  kind: "secret",
+                  required: true,
+                  description: "Redis REST URL.",
+                  format: "redis-url",
+                },
+                {
+                  name: "REDIS_NAMESPACE",
+                  kind: "variable",
+                  required: false,
+                  description: "Redis key namespace.",
+                },
+              ],
+            },
+          ],
+        },
+        env: {
+          REDIS_URL: "https://example.upstash.io?token=test-token",
+        },
+        auth: {
+          handler: () => ({
+            fetch: async () => new Response(null, { status: 404 }),
+          }),
+        },
+      }),
+    ).rejects.toThrow(
+      /managed-cloud Redis cache, shared-state, and rate-limit providers require REDIS_NAMESPACE/,
+    )
+  })
+
+  it("allows managed Redis shared state when REDIS_NAMESPACE is configured", async () => {
+    const providers = {
+      ...DEFAULT_MANAGED_CLOUD_PROVIDERS,
+      storage: "memory",
+      cache: "memory",
+      sharedState: "redis",
+      rateLimit: "memory",
+      adminAuth: "voyant-cloud",
+      customerAuth: "disabled",
+      workflows: "none",
+    } satisfies VoyantDeploymentProviders
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      entries: {},
+      modules: [],
+      plugins: [],
+      providerSelections: providers,
+    })
+
+    await expect(
+      loadVoyantNodeRuntime({
+        graphRuntime,
+        deployment: {
+          mode: "managed-cloud",
+          providers,
+        },
+        deploymentRequirements: {
+          resources: [
+            {
+              resourceKey: "redis",
+              roles: ["sharedState"],
+              provider: "redis",
+              required: true,
+              env: [
+                {
+                  name: "REDIS_URL",
+                  kind: "secret",
+                  required: true,
+                  description: "Redis REST URL.",
+                  format: "redis-url",
+                },
+                {
+                  name: "REDIS_NAMESPACE",
+                  kind: "variable",
+                  required: false,
+                  description: "Redis key namespace.",
+                },
+              ],
+            },
+          ],
+        },
+        env: {
+          REDIS_URL: "https://example.upstash.io?token=test-token",
+          REDIS_NAMESPACE: "region_eu-1",
+        },
+        auth: {
+          handler: () => ({
+            fetch: async () => new Response(null, { status: 404 }),
+          }),
+        },
+      }),
+    ).resolves.toMatchObject({
+      deployment: { mode: "managed-cloud" },
+      env: { REDIS_NAMESPACE: "region_eu-1" },
+    })
+  })
+
   it("rejects raw Redis socket URLs for Redis REST providers", async () => {
     const providers = {
       ...DEFAULT_MANAGED_CLOUD_PROVIDERS,
