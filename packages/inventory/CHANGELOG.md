@@ -1,5 +1,13 @@
 # @voyant-travel/inventory
 
+## 0.14.25
+
+### Patch Changes
+
+- Updated dependencies [d8a225c]
+  - @voyant-travel/storage@0.113.0
+  - @voyant-travel/finance@0.187.1
+
 ## 0.14.24
 
 ### Patch Changes

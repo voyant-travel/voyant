@@ -1,5 +1,29 @@
 # @voyant-travel/framework
 
+## 0.58.0
+
+### Minor Changes
+
+- d8a225c: Add a selectable `gateway` object-storage provider. Managed deployments can now
+  resolve their `media`/`documents` stores through the platform asset-storage
+  gateway (via the existing `createGatewayStorageProvider`) instead of holding raw
+  bucket credentials: both stores talk to `STORAGE_GATEWAY_ENDPOINT` with a
+  workspace-scoped `STORAGE_GATEWAY_TOKEN` bearer token, and the gateway brokers
+  R2 access scoped to the caller's `<jurisdiction>/<org>` prefix.
+
+  The storage manifest exposes the provider under `selection { role: "storage",
+value: "gateway" }`, and the Node runtime provider plan accepts `storage:
+"gateway"` (requiring `STORAGE_GATEWAY_ENDPOINT` + `STORAGE_GATEWAY_TOKEN`) and
+  maps it to the `object-storage` deployment resource. Self-hosters are
+  unaffected — they continue to use `s3-compatible` or the local memory provider,
+  with no token.
+
+### Patch Changes
+
+- Updated dependencies [d8a225c]
+  - @voyant-travel/storage@0.113.0
+  - @voyant-travel/operator-standard@0.10.15
+
 ## 0.57.6
 
 ### Patch Changes
