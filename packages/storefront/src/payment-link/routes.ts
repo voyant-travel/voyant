@@ -29,12 +29,17 @@
  */
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
-import { type PaymentCallbackRequest, paymentAdapterRuntimePort } from "@voyant-travel/payments"
+import {
+  type PaymentAdapter,
+  type PaymentCallbackRequest,
+  paymentAdapterRuntimePort,
+} from "@voyant-travel/payments"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -927,21 +932,32 @@ export const createPaymentLinkVoyantRuntime = defineGraphRuntimeFactory(
     return createPaymentLinkApiModule({
       ...options,
       verifyAndApplyPaymentCallback: adapter
-        ? async (c, request) => {
-            const verification = await adapter.verifyCallback(
-              { env: c.env as Readonly<Record<string, unknown>> },
-              request,
-            )
-            if (!verification.verified) {
-              return { ok: false, reason: verification.reason }
-            }
-            await applyPaymentAdapterCallbackEvent(getDb(c), verification.event)
-            return { ok: true }
-          }
+        ? createVerifiedPaymentCallbackHandler(adapter)
         : undefined,
     })
   },
 )
+
+export function createVerifiedPaymentCallbackHandler(
+  adapter: PaymentAdapter,
+  dependencies: {
+    applyEvent?: typeof applyPaymentAdapterCallbackEvent
+  } = {},
+): NonNullable<PaymentLinkRoutesOptions["verifyAndApplyPaymentCallback"]> {
+  const applyEvent = dependencies.applyEvent ?? applyPaymentAdapterCallbackEvent
+  return async (c, request) => {
+    const verification = await adapter.verifyCallback(
+      { env: c.env as Readonly<Record<string, unknown>> },
+      request,
+    )
+    if (!verification.verified) {
+      return { ok: false, reason: verification.reason }
+    }
+    const eventBus = c.get("eventBus" as never) as EventBus | undefined
+    await applyEvent(getDb(c), verification.event, { eventBus })
+    return { ok: true }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Pure schedule resolution helpers

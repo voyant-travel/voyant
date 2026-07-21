@@ -192,19 +192,36 @@ The intake row is truthful about its lifecycle: it is `pending`, has no
 idempotency key. Event-outbox replay therefore reuses the existing first
 attempt instead of claiming that another HTTP call occurred.
 
-Package-owned integration subscribers follow the same selected-graph rule.
-SmartBill declares `invoice.issued`, `invoice.proforma.issued`, and
-`invoice.payment.recorded` in its `./voyant` manifest and exports their runtime
-descriptors from `./subscriber-runtime`. Generic selected-graph composition
-registers those descriptors exactly once. The Operator retains only the local
-service adapter that resolves environment, database, and storage capabilities;
-it does not register descriptors or subscribe to those event names directly.
+Installed remote apps have a parallel durable intake owned by
+`@voyant-travel/apps`. When the optional `apps.webhook-delivery` runtime port is
+present, Node registers one app-intake subscriber for every valid external
+entry in the selected event catalog, even when no operator-owned outbound
+webhook resource selected that event. The generic and app intakes remain
+separate, so an app subscription neither creates nor suppresses an operator
+webhook subscription. Both receive the same selected contract metadata and use
+idempotent delivery rows.
 
-This provider selection is a durable intake boundary, not HTTP delivery. The
-package worker owns payload hydration, claiming, signing, retry attempts, and
-delivery/subscription outcomes, but standard Node boot does not yet schedule
-that worker. Until a deployment triggers it, pending graph webhook rows remain
-observable delivery intents and no external request is made.
+App webhook subscriptions are inactive after manifest reconciliation. An
+authenticated app with `app-webhooks:configure` must issue a host-owned signing
+key and prove possession through a bounded signed challenge before the current
+release's subscriptions activate atomically. The proof is base64url
+HMAC-SHA256 over
+`voyant.app-webhook-key-confirm.v1\n<appId>\n<installationId>\n<keyId>\n<challenge>`.
+The host runtime owns key material, challenge authenticity, context binding,
+expiry, and rotation. Voyant persists only the confirmed key id; secret, challenge, and
+proof never enter ordinary database rows, tokens, events, delivery payloads, or
+audit details. Delivery and replay fail closed unless the active
+subscription's persisted key id exactly matches host resolution.
+
+These provider selections are durable intake boundaries, not HTTP delivery.
+The package workers own payload hydration, claiming, signing, retry attempts,
+and delivery/subscription outcomes. The app worker claims only rows whose
+source module is `apps`; the generic worker cannot hydrate app subscription
+authority. Deployments must schedule both workers when both intake families are
+enabled. Until the corresponding worker runs, pending rows remain observable
+delivery intents and no external request is made. Generic and app intake
+handlers fail independently through EventBus reporting, so one durable-write
+failure cannot suppress the sibling intake attempt.
 
 ### 9. Defer event priority until durable queued delivery exists
 

@@ -297,8 +297,6 @@ export const appWebhookReplaySchema = z
   .object({
     deliveryId: z.string().trim().min(1),
     actorId: z.string().trim().min(1).max(160),
-    signingKeyId: z.string().trim().min(1).max(160),
-    signingSecret: z.string().min(32),
   })
   .strict()
 

@@ -15,6 +15,11 @@ export * from "./oauth-crypto.js"
 export * from "./oauth-service.js"
 export { createAppsAdminRoutes } from "./routes.js"
 export {
+  type AppsWebhookDeliveryRuntime,
+  type AppsWebhookSigningKey,
+  appsWebhookDeliveryRuntimePort,
+} from "./runtime-port.js"
+export {
   appAccessCredentialStatusEnum,
   appAccessCredentials,
   appAccessTokenModeEnum,
@@ -49,9 +54,15 @@ export {
 export { createAppsService } from "./service.js"
 export * from "./session-token.js"
 export * from "./session-token-service.js"
-export type { AppWebhookDeliveryOptions } from "./webhook-delivery.js"
+export type {
+  AppWebhookDeliveryOptions,
+  CreateAppWebhookDeliveryEnqueuerOptions,
+  CreateAppWebhookDeliveryWorkerOptions,
+} from "./webhook-delivery.js"
 export {
+  createAppWebhookDeliveryEnqueuer,
   createAppWebhookDeliveryStore,
+  createAppWebhookDeliveryWorker,
   createAppWebhookEventQueue,
   enqueueAppWebhookEvent,
   listAppWebhookHealth,

@@ -190,8 +190,14 @@ export const appApiFinanceSettlementObservationSchema = z
 export const appApiWebhookReplaySchema = z
   .object({
     deliveryId: z.string().min(1),
-    signingKeyId: z.string().min(1),
-    signingSecret: z.string().min(1),
+  })
+  .strict()
+
+export const appApiWebhookSigningKeyConfirmSchema = z
+  .object({
+    keyId: z.string().trim().min(1).max(160),
+    challenge: z.string().trim().min(1).max(4_096),
+    proof: z.string().trim().min(32).max(512),
   })
   .strict()
 
@@ -217,6 +223,9 @@ export {
 export type AppApiEntityReadQuery = z.infer<typeof appApiEntityReadQuerySchema>
 export type AppApiFinanceDocumentQuery = z.infer<typeof appApiFinanceDocumentQuerySchema>
 export type AppApiFinanceActionInput = z.infer<typeof appApiFinanceActionSchema>
+export type AppApiWebhookSigningKeyConfirmInput = z.infer<
+  typeof appApiWebhookSigningKeyConfirmSchema
+>
 export type AppApiFinanceExternalReferenceUpsertInput = z.infer<
   typeof appApiFinanceExternalReferenceUpsertSchema
 >

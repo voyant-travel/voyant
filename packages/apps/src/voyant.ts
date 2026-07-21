@@ -4,7 +4,11 @@ import {
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import { financeAppApiRuntimePort } from "@voyant-travel/finance-contracts/runtime-port"
-import { appsManagedAuthRuntimePort, appsManagedMarketplaceRuntimePort } from "./runtime-port.js"
+import {
+  appsManagedAuthRuntimePort,
+  appsManagedMarketplaceRuntimePort,
+  appsWebhookDeliveryRuntimePort,
+} from "./runtime-port.js"
 
 const appsAdminRuntime = {
   entry: "@voyant-travel/apps-react/admin",
@@ -38,6 +42,7 @@ export const appsVoyantModule = defineModule({
     requirePort(financeAppApiRuntimePort, { optional: true }),
     requirePort(appsManagedAuthRuntimePort, { optional: true }),
     requirePort(appsManagedMarketplaceRuntimePort, { optional: true }),
+    requirePort(appsWebhookDeliveryRuntimePort, { optional: true }),
   ],
   provides: {
     ports: [
@@ -211,9 +216,16 @@ export const appsVoyantModule = defineModule({
         // owns the deployment `webhooks` resource.
         resource: "app-webhooks",
         label: "App webhooks",
-        description: "Read webhook health and request replay.",
+        description: "Configure signing, read webhook health, and request replay.",
         remoteSafe: true,
         actions: [
+          {
+            action: "configure",
+            label: "Configure app webhooks",
+            description: "Issue and confirm the installation webhook signing key.",
+            sensitive: true,
+            remoteSafe: true,
+          },
           {
             action: "read",
             label: "Read app webhooks",

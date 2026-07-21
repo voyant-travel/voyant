@@ -12,6 +12,8 @@ interface RuntimeCompositionMocks {
   authRuntimeOptions: Array<Record<string, unknown>>
   createNodeServer: Mock
   postgresEnqueue: Mock
+  appEnqueue: Mock
+  createAppWebhookDeliveryEnqueuer: Mock
   createPostgresWebhookDeliveryEnqueuer: Mock
   deploymentProviders: Record<string, string>
   loadVoyantNodeRuntime: Mock
@@ -66,6 +68,8 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
     authRuntimeOptions: [] as Array<Record<string, unknown>>,
     createNodeServer: vi.fn((_options: unknown) => ({ close: vi.fn(), port: 8080 })),
     postgresEnqueue: vi.fn(async () => ["queued"]),
+    appEnqueue: vi.fn(async () => ["app-queued"]),
+    createAppWebhookDeliveryEnqueuer: vi.fn(),
     createPostgresWebhookDeliveryEnqueuer: vi.fn(),
     deploymentProviders: {
       adminAuth: "better-auth",
@@ -112,6 +116,16 @@ vi.mock("@voyant-travel/admin-host/serve", () => ({
       fetch: (request: Request, env: unknown, ctx: unknown) => options.app(request, env, ctx),
     }
   },
+}))
+
+vi.mock("@voyant-travel/apps", () => ({
+  appsWebhookDeliveryRuntimePort: {
+    id: "apps.webhook-delivery",
+    test: (runtime: { resolveSigningKey?: unknown }) => {
+      if (typeof runtime?.resolveSigningKey !== "function") throw new Error("invalid app runtime")
+    },
+  },
+  createAppWebhookDeliveryEnqueuer: mocks.createAppWebhookDeliveryEnqueuer,
 }))
 
 vi.mock("@voyant-travel/auth/node-runtime", () => ({
@@ -279,6 +293,7 @@ beforeEach(() => {
   mocks.createPostgresWebhookDeliveryEnqueuer.mockReturnValue({
     enqueue: mocks.postgresEnqueue,
   })
+  mocks.createAppWebhookDeliveryEnqueuer.mockReturnValue({ enqueue: mocks.appEnqueue })
 })
 
 afterEach(async () => {

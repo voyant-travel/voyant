@@ -229,6 +229,10 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
   outboundWebhooks?: {
     enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
   }
+  /** Installed-app durable intake for every selected external event contract. */
+  appWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
 }
 
 export interface VoyantGraphRuntimeComposition {
@@ -341,6 +345,8 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   modules.push(...(await composeRuntimeFacetModules(input.runtime, factoryContexts)))
   const outboundWebhookModule = createGraphOutboundWebhookModule(input)
   if (outboundWebhookModule) modules.push(outboundWebhookModule)
+  const appWebhookModule = createGraphAppWebhookModule(input)
+  if (appWebhookModule) modules.push(appWebhookModule)
 
   return {
     modules,
@@ -529,6 +535,43 @@ function createGraphOutboundWebhookModule<TCapabilities>(
                   category: declaration.audit.category,
                   graphEventId: declaration.eventId,
                   graphEventVersion: declaration.eventVersion,
+                  graphEventPayloadSchema: declaration.payloadSchema,
+                  graphEventSourceModule: declaration.audit.sourceModule,
+                },
+              },
+              bindings,
+            )
+          })
+        }
+      },
+    },
+  }
+}
+
+function createGraphAppWebhookModule<TCapabilities>(
+  input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
+): ApiModule | undefined {
+  const enqueue = input.appWebhooks?.enqueue
+  if (!enqueue) return undefined
+  const declarations = input.runtime.eventCatalog.events.filter(
+    (event) => event.visibility === "external",
+  )
+  if (declarations.length === 0) return undefined
+
+  return {
+    module: {
+      name: "graph-app-webhooks",
+      bootstrap: ({ bindings, eventBus }) => {
+        for (const declaration of declarations) {
+          eventBus.subscribe(declaration.eventType, async (event) => {
+            await enqueue(
+              {
+                ...event,
+                metadata: {
+                  ...event.metadata,
+                  category: declaration.audit.category,
+                  graphEventId: declaration.id,
+                  graphEventVersion: declaration.version,
                   graphEventPayloadSchema: declaration.payloadSchema,
                   graphEventSourceModule: declaration.audit.sourceModule,
                 },

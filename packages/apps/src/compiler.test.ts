@@ -192,4 +192,13 @@ describe("app manifest compiler", () => {
       }),
     ).toThrow(/local or private hosts/)
   })
+
+  it("requires webhook apps to request signing-key configuration authority", () => {
+    expect(() =>
+      compileAppManifest({
+        ...validManifest,
+        scopes: { requested: ["bookings:read"], optional: [] },
+      }),
+    ).toThrow(/app-webhooks:configure/)
+  })
 })

@@ -46,6 +46,9 @@ export interface PricedLine {
   quantity: number
   unitAmount: number
   totalAmount: number
+  /** Internal quote provenance used to persist the accepted price per booking item. */
+  optionId?: string
+  optionUnitId?: string
 }
 
 export interface PricedQuote {
@@ -118,7 +121,10 @@ export async function priceOptionSelections(input: {
   // per-person by band — `pax[band] × price` — NOT per room, so they're
   // collected here and charged once at the booking level after the per-unit
   // loop, keyed by band so two same-band selections never double-count pax.
-  const perBandPrice = new Map<string, { cents: number; label: string }>()
+  const perBandPrice = new Map<
+    string,
+    { cents: number; label: string; optionId: string; optionUnitId?: string }
+  >()
   const totalInventoryUnits = input.selections.reduce((sum, selection) => {
     const unit = findProductOptionUnit(
       input.productOptions,
@@ -165,7 +171,12 @@ export async function priceOptionSelections(input: {
       for (const row of categoryUnitRows) {
         const band = row.travelerCategory
         if (!band || (row.sellAmountCents ?? 0) <= 0 || perBandPrice.has(band)) continue
-        perBandPrice.set(band, { cents: row.sellAmountCents ?? 0, label: `${unitLabel} — ${band}` })
+        perBandPrice.set(band, {
+          cents: row.sellAmountCents ?? 0,
+          label: `${unitLabel} — ${band}`,
+          optionId: selection.optionId,
+          ...(selection.optionUnitId ? { optionUnitId: selection.optionUnitId } : {}),
+        })
       }
       continue
     }
@@ -212,6 +223,8 @@ export async function priceOptionSelections(input: {
       quantity: selection.quantity,
       unitAmount,
       totalAmount,
+      optionId: selection.optionId,
+      ...(selection.optionUnitId ? { optionUnitId: selection.optionUnitId } : {}),
     })
   }
 
@@ -229,6 +242,8 @@ export async function priceOptionSelections(input: {
       quantity: count,
       unitAmount: price.cents,
       totalAmount,
+      optionId: price.optionId,
+      ...(price.optionUnitId ? { optionUnitId: price.optionUnitId } : {}),
     })
   }
 
@@ -372,6 +387,201 @@ export function bookingItemLinesFromOptionSelections(
       : [],
   )
   return lines.length > 0 ? lines : undefined
+}
+
+interface AcceptedBasePriceLine {
+  optionId?: string
+  optionUnitId?: string
+  quantity: number
+  unitAmountCents: number
+  totalAmountCents: number
+  label: string | null
+}
+
+/**
+ * Populate missing booking-item amounts from the accepted quote.
+ *
+ * Quote lines carrying option provenance are matched directly. Legacy quotes
+ * without provenance retain their itemized amounts when their line ordering
+ * and quantities still identify the selected units. Any residual (promotion,
+ * operator override, or cent rounding) is allocated by the accepted base-line
+ * weights, with quantity as the final fallback. Explicit caller amounts are
+ * never replaced and the authoritative line totals sum exactly to `target`.
+ * `target` is the booking sell amount: gross when tax is included, pre-tax
+ * when tax is excluded (the separate booking tax lines carry excluded tax).
+ */
+export function fillMissingBookingItemSellAmounts(input: {
+  itemLines: BookingCreateBridgeInput["itemLines"]
+  pricing: CommitOwnedRequest["pricing"]
+  targetSellAmountCents: number | null
+  extraLines?: BookingCreateBridgeInput["extraLines"]
+}): BookingCreateBridgeInput["itemLines"] | undefined {
+  if (!input.itemLines?.length) return input.itemLines
+
+  const target = input.targetSellAmountCents
+  if (target == null || target < 0) return input.itemLines
+
+  const extraTotal = (input.extraLines ?? []).reduce(
+    (sum, line) => sum + Math.max(0, line.totalSellAmountCents ?? 0),
+    0,
+  )
+  if (extraTotal > target) {
+    throw new Error("Accepted booking pricing is inconsistent: add-ons exceed the sell total.")
+  }
+  const itemTarget = target - extraTotal
+  const quoteLines = acceptedBasePriceLines(input.pricing)
+  const quoteBySelection = matchAcceptedBasePriceLines(input.itemLines, quoteLines)
+
+  const explicitTotal = input.itemLines.reduce(
+    (sum, line) => sum + Math.max(0, line.totalSellAmountCents ?? 0),
+    0,
+  )
+  if (explicitTotal > itemTarget) {
+    throw new Error(
+      "Accepted booking pricing is inconsistent: explicit item lines exceed the item total.",
+    )
+  }
+  const missingIndexes = input.itemLines.flatMap((line, index) =>
+    line.totalSellAmountCents == null ? [index] : [],
+  )
+  if (missingIndexes.length === 0) {
+    if (explicitTotal !== itemTarget) {
+      throw new Error(
+        "Accepted booking pricing is inconsistent: explicit item lines do not equal the item total.",
+      )
+    }
+    return input.itemLines
+  }
+
+  const remaining = itemTarget - explicitTotal
+  const weights = missingIndexes.map((index) => {
+    const quoted = quoteBySelection.get(index)?.totalAmountCents
+    return quoted != null && quoted > 0
+      ? quoted
+      : Math.max(1, input.itemLines?.[index]?.quantity ?? 1)
+  })
+  const allocated = allocateExactTotal(remaining, weights)
+
+  return input.itemLines.map((line, index) => {
+    if (line.totalSellAmountCents != null) return line
+    const missingIndex = missingIndexes.indexOf(index)
+    if (missingIndex < 0) return line
+    const totalSellAmountCents = allocated[missingIndex] ?? 0
+    const quoted = quoteBySelection.get(index)
+    const unitSellAmountCents =
+      quoted && quoted.totalAmountCents === totalSellAmountCents
+        ? quoted.unitAmountCents
+        : Math.floor(totalSellAmountCents / Math.max(1, line.quantity))
+    return {
+      ...line,
+      ...(line.title == null && quoted?.label ? { title: quoted.label } : {}),
+      unitSellAmountCents,
+      totalSellAmountCents,
+    }
+  })
+}
+
+function acceptedBasePriceLines(pricing: CommitOwnedRequest["pricing"]): AcceptedBasePriceLine[] {
+  const breakdown = pricing?.breakdown
+  if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return []
+  const lines = (breakdown as { lines?: unknown }).lines
+  if (!Array.isArray(lines)) return []
+  return lines.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return []
+    const line = value as Record<string, unknown>
+    if (line.kind !== "base") return []
+    const quantity = asFiniteInteger(line.quantity)
+    const unitAmountCents = asFiniteInteger(line.unitAmount)
+    const totalAmountCents = asFiniteInteger(line.totalAmount)
+    if (
+      quantity == null ||
+      quantity <= 0 ||
+      unitAmountCents == null ||
+      unitAmountCents < 0 ||
+      totalAmountCents == null ||
+      totalAmountCents < 0
+    ) {
+      return []
+    }
+    return [
+      {
+        ...(typeof line.optionId === "string" ? { optionId: line.optionId } : {}),
+        ...(typeof line.optionUnitId === "string" ? { optionUnitId: line.optionUnitId } : {}),
+        quantity,
+        unitAmountCents,
+        totalAmountCents,
+        label: typeof line.label === "string" ? line.label : null,
+      },
+    ]
+  })
+}
+
+function matchAcceptedBasePriceLines(
+  itemLines: NonNullable<BookingCreateBridgeInput["itemLines"]>,
+  quoteLines: readonly AcceptedBasePriceLine[],
+): Map<number, AcceptedBasePriceLine> {
+  const matched = new Map<number, AcceptedBasePriceLine>()
+  const claimed = new Set<number>()
+  for (const [itemIndex, item] of itemLines.entries()) {
+    const quoteIndexes = quoteLines.flatMap((line, index) =>
+      !claimed.has(index) &&
+      line.optionUnitId === item.optionUnitId &&
+      (line.optionId == null || item.optionId == null || line.optionId === item.optionId)
+        ? [index]
+        : [],
+    )
+    if (quoteIndexes.length > 0) {
+      for (const quoteIndex of quoteIndexes) claimed.add(quoteIndex)
+      const quoted = quoteIndexes.flatMap((index) => (quoteLines[index] ? [quoteLines[index]] : []))
+      const totalAmountCents = quoted.reduce((sum, line) => sum + line.totalAmountCents, 0)
+      matched.set(itemIndex, {
+        optionId: item.optionId ?? undefined,
+        optionUnitId: item.optionUnitId,
+        quantity: item.quantity,
+        unitAmountCents:
+          quoted.length === 1 && quoted[0]?.quantity === item.quantity
+            ? quoted[0].unitAmountCents
+            : Math.floor(totalAmountCents / Math.max(1, item.quantity)),
+        totalAmountCents,
+        label: quoted[0]?.label ?? null,
+      })
+    }
+  }
+
+  const unmatchedItems = itemLines.flatMap((_, index) => (matched.has(index) ? [] : [index]))
+  const unmatchedQuotes = quoteLines.flatMap((line, index) =>
+    claimed.has(index) || line.optionUnitId != null ? [] : [{ line, index }],
+  )
+  if (
+    unmatchedItems.length === unmatchedQuotes.length &&
+    unmatchedItems.every(
+      (itemIndex, index) =>
+        itemLines[itemIndex]?.quantity === unmatchedQuotes[index]?.line.quantity,
+    )
+  ) {
+    for (const [index, itemIndex] of unmatchedItems.entries()) {
+      const quoted = unmatchedQuotes[index]?.line
+      if (quoted) matched.set(itemIndex, quoted)
+    }
+  }
+  return matched
+}
+
+function allocateExactTotal(total: number, weights: readonly number[]): number[] {
+  if (weights.length === 0) return []
+  const positiveWeights = weights.map((weight) => Math.max(0, weight))
+  const denominator = positiveWeights.reduce((sum, weight) => sum + weight, 0)
+  if (denominator <= 0) return positiveWeights.map((_, index) => (index === 0 ? total : 0))
+
+  let allocated = 0
+  return positiveWeights.map((weight, index) => {
+    const amount =
+      index === positiveWeights.length - 1
+        ? total - allocated
+        : Math.floor((total * weight) / denominator)
+    allocated += amount
+    return amount
+  })
 }
 
 export function applyAddonSelections(input: {

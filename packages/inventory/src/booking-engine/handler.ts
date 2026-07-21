@@ -56,6 +56,7 @@ import {
   extractInternalNotes,
   extractPartyTravelers,
   extractTaxLines,
+  fillMissingBookingItemSellAmounts,
   isRealBillingEmail,
   loadProduct,
   normalizeOptionSelections,
@@ -985,6 +986,19 @@ export function createProductsBookingHandler(
           : optionSelections.length === 0
             ? (draft.configure?.variantId ?? null)
             : null
+      const extraLines = bookingExtraLinesFromAddonSelections({
+        addons: draft.addons,
+        addonCatalog: await options.loadAddonCatalog?.(ctx, product.id),
+        currency: product.sellCurrency,
+        quantityMultiplier: Math.max(1, travelers.length || 1),
+      })
+      const acceptedSellAmountCents = draft.priceOverride?.amountCents ?? sellAmountCentsOverride
+      const itemLines = fillMissingBookingItemSellAmounts({
+        itemLines: bookingItemLinesFromOptionSelections(optionSelections),
+        pricing: request.pricing,
+        targetSellAmountCents: acceptedSellAmountCents,
+        extraLines,
+      })
 
       const bridge = await options.createBooking({
         productId: product.id,
@@ -1028,13 +1042,8 @@ export function createProductsBookingHandler(
         // redeems it atomically and re-checks status / expiry / balance.
         travelCreditRedemption: draft.travelCreditRedemption,
         taxLines: extractTaxLines(request.pricing),
-        itemLines: bookingItemLinesFromOptionSelections(optionSelections),
-        extraLines: bookingExtraLinesFromAddonSelections({
-          addons: draft.addons,
-          addonCatalog: await options.loadAddonCatalog?.(ctx, product.id),
-          currency: product.sellCurrency,
-          quantityMultiplier: Math.max(1, travelers.length || 1),
-        }),
+        itemLines,
+        extraLines,
         initialStatus: readInitialStatus(request.parameters) ?? "on_hold",
       })
 

@@ -13,7 +13,7 @@ import {
   type FinanceAppApiRuntime,
 } from "@voyant-travel/finance-contracts/app-api"
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, asc, eq, sql } from "drizzle-orm"
+import { and, asc, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { assertActiveAppInstallationAccess } from "./access-boundary.js"
 import type {
@@ -26,10 +26,13 @@ import type {
   AppApiFinanceExternalSyncStateInput,
   AppApiFinancePdfArtifactHeaders,
   AppApiFinanceSettlementObservationInput,
+  AppApiWebhookSigningKeyConfirmInput,
 } from "./app-api-contracts.js"
 import { APP_API_VERSION } from "./app-api-contracts.js"
 import { audit } from "./installation-reconciliation.js"
+import type { AppsWebhookDeliveryRuntime } from "./runtime-port.js"
 import { appAuditEvents, appGrants, appReleases, appWebhookSubscriptions } from "./schema.js"
+import { replayAppWebhookDelivery } from "./webhook-delivery.js"
 
 export interface AppApiAccessContext {
   appId: string
@@ -64,6 +67,7 @@ export interface AppApiServiceOptions {
   customFieldValueLifecycles?: readonly CustomFieldValueLifecycleRuntime[]
   customFieldValueOperations?: readonly CustomFieldValueOperationsRuntime[]
   rateLimit?: AppApiRateLimitPolicy
+  webhookDelivery?: AppsWebhookDeliveryRuntime
   now?: () => Date
 }
 
@@ -504,6 +508,83 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     return { data }
   }
 
+  async function issueWebhookSigningKey(db: PostgresJsDatabase, context: AppApiAccessContext) {
+    await requireAccess(db, context, ["app-webhooks:configure"])
+    const issued = await webhookDeliveryRequired().issueSigningKey({
+      appId: context.appId,
+      installationId: context.installationId,
+    })
+    return {
+      data: { keyId: issued.id, secret: issued.secret, challenge: issued.challenge },
+    }
+  }
+
+  async function confirmWebhookSigningKey(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    input: AppApiWebhookSigningKeyConfirmInput,
+  ) {
+    const access = await requireAccess(db, context, ["app-webhooks:configure"])
+    const confirmed = await webhookDeliveryRequired().verifySigningKeyProof({
+      appId: context.appId,
+      installationId: context.installationId,
+      keyId: input.keyId,
+      challenge: input.challenge,
+      proof: input.proof,
+    })
+    if (!confirmed) {
+      throw new ApiHttpError("Webhook signing-key proof is invalid or expired.", {
+        status: 400,
+        code: "app_webhook_signing_key_proof_invalid",
+      })
+    }
+    const activatedSubscriptions = await db.transaction(async (tx) => {
+      const rows = await tx
+        .update(appWebhookSubscriptions)
+        .set({
+          status: "active",
+          signingKeyId: input.keyId,
+          failureCount: 0,
+          pausedAt: null,
+          deactivatedAt: null,
+        })
+        .where(
+          and(
+            eq(appWebhookSubscriptions.installationId, context.installationId),
+            eq(appWebhookSubscriptions.releaseId, context.releaseId),
+            eq(appWebhookSubscriptions.status, "inactive"),
+            isNull(appWebhookSubscriptions.deactivatedAt),
+          ),
+        )
+        .returning({ id: appWebhookSubscriptions.id })
+      await audit(
+        tx,
+        access.installation,
+        context.appId,
+        "reconciliation",
+        "webhooks.signing_key.confirmed",
+        { activatedSubscriptions: rows.length },
+      )
+      return rows.length
+    })
+    return { data: { confirmed: true as const, activatedSubscriptions } }
+  }
+
+  async function replayWebhookDelivery(
+    db: PostgresJsDatabase,
+    context: AppApiAccessContext,
+    deliveryId: string,
+  ) {
+    await requireAccess(db, context, ["app-webhooks:replay"])
+    return replayAppWebhookDelivery(db, {
+      deliveryId,
+      actorId: context.appId,
+      expectedAppId: context.appId,
+      expectedInstallationId: context.installationId,
+      resolveSigningKey: webhookDeliveryRequired().resolveSigningKey,
+    })
+  }
+
   async function listAuditHistory(
     db: PostgresJsDatabase,
     context: AppApiAccessContext,
@@ -539,6 +620,9 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
     listCustomFieldValues,
     upsertCustomFieldValue,
     listWebhookHealth,
+    issueWebhookSigningKey,
+    confirmWebhookSigningKey,
+    replayWebhookDelivery,
     listAuditHistory,
     requireAccess,
     enforceRateLimit,
@@ -616,6 +700,13 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
   function customFieldsRequired() {
     if (!customFields) throw notSupported("Custom fields App API runtime is not configured.")
     return customFields
+  }
+
+  function webhookDeliveryRequired() {
+    if (!options.webhookDelivery) {
+      throw notSupported("App webhook delivery runtime is not configured.")
+    }
+    return options.webhookDelivery
   }
 }
 

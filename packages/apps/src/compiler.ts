@@ -141,6 +141,19 @@ function validateWebhookSubscriptions(
   manifest: AppManifest,
   eventCatalog?: VoyantGraphEventCatalog,
 ) {
+  if (
+    manifest.webhooks.length > 0 &&
+    !manifest.scopes.requested.includes("app-webhooks:configure")
+  ) {
+    throw new z.ZodError([
+      {
+        code: "custom",
+        path: ["scopes", "requested"],
+        message: 'Apps declaring webhooks must request the "app-webhooks:configure" scope.',
+        input: manifest.scopes.requested,
+      },
+    ])
+  }
   if (!eventCatalog) return
   const externalEvents = new Map<string, VoyantGraphEventCatalogEntry>()
   for (const event of eventCatalog.events) {

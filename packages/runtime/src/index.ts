@@ -3,6 +3,11 @@ import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import {
+  type AppsWebhookDeliveryRuntime,
+  appsWebhookDeliveryRuntimePort,
+  createAppWebhookDeliveryEnqueuer,
+} from "@voyant-travel/apps"
+import {
   type CustomerBusinessAccountOnboardingRuntimeProvider,
   customerBusinessAccountOnboardingRuntimePort,
 } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
@@ -172,6 +177,31 @@ export async function loadVoyantProject(
         }
       : {}),
   })
+  const appWebhookRuntime = providerPorts[appsWebhookDeliveryRuntimePort.id] as
+    | AppsWebhookDeliveryRuntime
+    | undefined
+  const appsSelected = generated.graphRuntime.modules.some(
+    (unit) => unit.id === "@voyant-travel/apps" || unit.packageName === "@voyant-travel/apps",
+  )
+  if (appWebhookRuntime) await appsWebhookDeliveryRuntimePort.test(appWebhookRuntime)
+  const appWebhooks =
+    appsSelected && appWebhookRuntime
+      ? createAppWebhookDeliveryEnqueuer({
+          contracts: (generated.graphRuntime.eventCatalog?.events ?? [])
+            .filter((event) => event.visibility === "external")
+            .map((event) => ({
+              eventId: event.id,
+              eventType: event.eventType,
+              eventVersion: event.version,
+              payloadSchema: event.payloadSchema,
+            })),
+          resolveDatabase: (bindings) =>
+            resolveNodeDatabase(
+              bindings as Parameters<typeof resolveNodeDatabase>[0],
+            ) as AnyDrizzleDb,
+          resolveSigningKey: appWebhookRuntime.resolveSigningKey,
+        })
+      : undefined
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     ...options.host,
     config: {
@@ -224,6 +254,7 @@ export async function loadVoyantProject(
     runtimePorts: deploymentResources.ports,
     resources: deploymentResources.capabilities,
     outboundWebhooks: deploymentResources.outboundWebhooks,
+    appWebhooks,
     env: authEnv,
     app: {
       linkDefinitions: projectLinks,

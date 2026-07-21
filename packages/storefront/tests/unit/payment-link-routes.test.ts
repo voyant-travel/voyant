@@ -1,9 +1,12 @@
+import type { EventBus } from "@voyant-travel/core"
+import type { PaymentAdapter } from "@voyant-travel/payments"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   createPaymentLinkApiModule,
   createPaymentLinkRoutes,
+  createVerifiedPaymentCallbackHandler,
   PAYMENT_LINK_ROUTE_PATHS,
   type PaymentLinkRoutesOptions,
 } from "../../src/payment-link/routes.js"
@@ -39,10 +42,11 @@ function makeDb(rows: unknown[][]) {
   return builder
 }
 
-function mountApp(options: PaymentLinkRoutesOptions, db: unknown) {
+function mountApp(options: PaymentLinkRoutesOptions, db: unknown, eventBus?: EventBus) {
   const app = new Hono()
   app.use("*", async (c, next) => {
     c.set("db" as never, db as never)
+    if (eventBus) c.set("eventBus" as never, eventBus as never)
     await next()
   })
   app.route("/", createPaymentLinkRoutes(options))
@@ -74,6 +78,66 @@ describe("createPaymentLinkRoutes", () => {
     })
     expect(module.lazyRoutes?.paths).toBe(PAYMENT_LINK_ROUTE_PATHS)
     expect(module.lazyRoutes?.load).toBeTypeOf("function")
+  })
+
+  it("applies a verified managed callback with the request event bus", async () => {
+    const eventBus = { emit: vi.fn() } as unknown as EventBus
+    const event = {
+      eventId: "evt_paid",
+      paymentSessionId: "ps_paid",
+      nextState: "paid" as const,
+      occurredAt: "2026-07-21T10:00:00.000Z",
+    }
+    const adapter = {
+      verifyCallback: vi.fn(async () => ({ verified: true as const, event })),
+    } as unknown as PaymentAdapter
+    const applyEvent = vi.fn(async () => undefined)
+    const app = mountApp(
+      stubOptions({
+        verifyAndApplyPaymentCallback: createVerifiedPaymentCallbackHandler(adapter, {
+          applyEvent,
+        }),
+      }),
+      makeDb([]),
+      eventBus,
+    )
+
+    const response = await app.request("/v1/public/payment-link/callback", {
+      method: "POST",
+      headers: { "x-payment-signature": "valid" },
+      body: "signed-body",
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ ok: true })
+    expect(applyEvent).toHaveBeenCalledWith(expect.anything(), event, { eventBus })
+  })
+
+  it("rejects an unverified managed callback without applying an event", async () => {
+    const adapter = {
+      verifyCallback: vi.fn(async () => ({
+        verified: false as const,
+        reason: "invalid_signature" as const,
+      })),
+    } as unknown as PaymentAdapter
+    const applyEvent = vi.fn(async () => undefined)
+    const app = mountApp(
+      stubOptions({
+        verifyAndApplyPaymentCallback: createVerifiedPaymentCallbackHandler(adapter, {
+          applyEvent,
+        }),
+      }),
+      makeDb([]),
+    )
+
+    const response = await app.request("/v1/public/payment-link/callback", {
+      method: "POST",
+      body: "unsigned-body",
+    })
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ ok: false, reason: "invalid_signature" })
+    expect(applyEvent).not.toHaveBeenCalled()
   })
 
   it("payment-link-config returns instructions + checkout base url with cache header", async () => {

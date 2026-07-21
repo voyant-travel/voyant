@@ -19,6 +19,7 @@ describe("Voyant outbound webhook composition", () => {
 
     const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
       outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+      appWebhooks?: unknown
     }
     expect(options).toMatchObject({
       runtimePorts: mocks.runtimePorts,
@@ -31,6 +32,7 @@ describe("Voyant outbound webhook composition", () => {
     await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
     expect(mocks.createPostgresWebhookDeliveryEnqueuer).toHaveBeenCalledOnce()
     expect(mocks.postgresEnqueue).toHaveBeenCalledWith(event, bindings)
+    expect(options.appWebhooks).toBeUndefined()
   })
 
   it("uses an explicitly selected host enqueuer", async () => {
@@ -56,6 +58,69 @@ describe("Voyant outbound webhook composition", () => {
     await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["hosted"])
     expect(deliverEvent).toHaveBeenCalledWith(event, bindings)
     expect(mocks.createPostgresWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
+  })
+
+  it("composes installed-app delivery from the selected external catalog", async () => {
+    mocks.workflowGraphRuntime = {
+      modules: [
+        {
+          id: "@voyant-travel/apps",
+          packageName: "@voyant-travel/apps",
+          requiredPorts: ["apps.webhook-delivery"],
+        },
+      ],
+      extensions: [],
+      plugins: [],
+      accessCatalog: { resources: [] },
+      eventCatalog: {
+        schemaVersion: "voyant.event-catalog.v1",
+        events: [
+          {
+            id: "@voyant-travel/finance#event.invoice.issued",
+            eventType: "invoice.issued",
+            version: "1.0.0",
+            visibility: "external",
+            payloadSchema: {
+              type: "object",
+              properties: { invoiceId: { type: "string" } },
+            },
+          },
+        ],
+      },
+    }
+    const webhookDelivery = {
+      issueSigningKey: vi.fn(),
+      verifySigningKeyProof: vi.fn(),
+      resolveSigningKey: vi.fn(async () => ({ id: "key_1", secret: "s".repeat(32) })),
+    }
+    const projectRoot = await createGeneratedProject()
+    await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { runtimePorts: { "apps.webhook-delivery": webhookDelivery } },
+    })
+
+    const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
+      outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+      appWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+    }
+    const event = { name: "invoice.issued" }
+    const bindings = { DATABASE_URL: "postgres://example.invalid/voyant" }
+
+    await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
+    await expect(options.appWebhooks.enqueue(event, bindings)).resolves.toEqual(["app-queued"])
+    expect(mocks.createAppWebhookDeliveryEnqueuer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contracts: [
+          expect.objectContaining({
+            eventType: "invoice.issued",
+            eventVersion: "1.0.0",
+          }),
+        ],
+        resolveSigningKey: webhookDelivery.resolveSigningKey,
+      }),
+    )
   })
 
   it("does not let a host callback override the explicitly selected Postgres provider", async () => {

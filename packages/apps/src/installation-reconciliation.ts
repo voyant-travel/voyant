@@ -341,6 +341,28 @@ async function reconcileWebhooks(
   normalized: NormalizedAppReleaseRecord,
 ) {
   for (const webhook of normalized.webhooks) {
+    const [existing] = await db
+      .select({
+        signingKeyId: appWebhookSubscriptions.signingKeyId,
+        status: appWebhookSubscriptions.status,
+        pausedAt: appWebhookSubscriptions.pausedAt,
+        deactivatedAt: appWebhookSubscriptions.deactivatedAt,
+      })
+      .from(appWebhookSubscriptions)
+      .where(
+        and(
+          eq(appWebhookSubscriptions.installationId, installation.id),
+          eq(appWebhookSubscriptions.eventType, webhook.eventType),
+          eq(appWebhookSubscriptions.eventVersion, webhook.eventVersion),
+          eq(appWebhookSubscriptions.endpointUrl, webhook.endpointUrl),
+        ),
+      )
+      .limit(1)
+    const confirmed =
+      existing?.status === "active" &&
+      existing.signingKeyId != null &&
+      existing.pausedAt == null &&
+      existing.deactivatedAt == null
     await db
       .insert(appWebhookSubscriptions)
       .values({
@@ -349,7 +371,7 @@ async function reconcileWebhooks(
         eventType: webhook.eventType,
         eventVersion: webhook.eventVersion,
         endpointUrl: webhook.endpointUrl,
-        status: "active",
+        status: confirmed ? "active" : "inactive",
         failureCount: 0,
         pausedAt: null,
         deactivatedAt: null,
@@ -363,9 +385,8 @@ async function reconcileWebhooks(
         ],
         set: {
           releaseId: release.id,
-          status: "active",
-          failureCount: 0,
-          pausedAt: null,
+          status: confirmed ? "active" : "inactive",
+          ...(confirmed ? { failureCount: 0, pausedAt: null } : {}),
           deactivatedAt: null,
         },
       })
