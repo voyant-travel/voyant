@@ -15,7 +15,7 @@ import {
   resolveSearchSort,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { sql } from "drizzle-orm"
+import { sql, type SQL } from "drizzle-orm"
 
 import type { FieldPolicyRegistry } from "../contract.js"
 
@@ -288,7 +288,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       const keywordRows =
         request.mode === "semantic"
           ? []
-          : await searchKeywordRows(db, slice, audiences, request.query)
+          : await searchKeywordRows(db, slice, audiences, request)
       const vectorRows =
         request.mode === "keyword"
           ? []
@@ -337,9 +337,9 @@ async function searchKeywordRows(
   db: AnyDrizzleDb,
   slice: IndexerSlice,
   audiences: readonly string[],
-  rawQuery: string,
+  request: SearchRequest,
 ): Promise<StoredRow[]> {
-  const query = rawQuery.trim()
+  const query = request.query.trim()
   const prefixQuery = toPrefixTsQuery(query)
   const keywordScoreSql = query
     ? prefixQuery
@@ -366,7 +366,9 @@ async function searchKeywordRows(
       SELECT id, fields, embeddings, embedding_model_id, document_text,
         ${keywordScoreSql} AS keyword_score
       FROM voyant_catalog_search_documents
-      WHERE ${slicePredicate(slice, audiences)} ${keywordPredicate}
+      WHERE ${slicePredicate(slice, audiences)}
+        ${keywordPredicate}
+        ${filterPredicate(request.filters ?? [])}
       ORDER BY keyword_score DESC, id
       LIMIT ${MAX_CANDIDATES + 1}
     `),
@@ -389,6 +391,7 @@ async function searchVectorRows(
       FROM voyant_catalog_search_documents
       WHERE ${slicePredicate(slice, audiences)}
         AND search_embedding IS NOT NULL
+        ${filterPredicate(request.filters ?? [])}
         ${
           request.query_embedding_model_id
             ? sql`AND embedding_model_id = ${request.query_embedding_model_id}`
@@ -418,6 +421,47 @@ function slicePredicate(slice: IndexerSlice, audiences: readonly string[] = [sli
     AND market = ${slice.market}
     AND channel = ${slice.channel ?? ""}
   `
+}
+
+/**
+ * Push contract filters into the candidate query before ranking. JSONB is the
+ * portable representation until a policy-backed field has an explicit typed
+ * projection column; the in-memory predicate remains below as a defensive
+ * equivalence check for nested contract expressions.
+ */
+function filterPredicate(filters: readonly SearchFilter[]): SQL {
+  if (filters.length === 0) return sql``
+  return sql`AND ${sql.join(filters.map(toFilterPredicate), sql` AND `)}`
+}
+
+function toFilterPredicate(filter: SearchFilter): SQL {
+  if (filter.kind === "and") {
+    if (filter.clauses.length === 0) return sql`TRUE`
+    return sql`(${sql.join(filter.clauses.map(toFilterPredicate), sql` AND `)})`
+  }
+  if (filter.kind === "or") {
+    if (filter.clauses.length === 0) return sql`FALSE`
+    return sql`(${sql.join(filter.clauses.map(toFilterPredicate), sql` OR `)})`
+  }
+  if (filter.kind === "range") {
+    const value = filter.field === "id" ? sql`id` : sql`fields ->> ${filter.field}`
+    return sql`(
+      ${filter.gte === undefined ? sql`TRUE` : sql`${value}::numeric >= ${filter.gte}`}
+      AND ${filter.lte === undefined ? sql`TRUE` : sql`${value}::numeric <= ${filter.lte}`}
+    )`
+  }
+  if (filter.kind === "eq") return scalarFilterPredicate(filter.field, filter.value)
+  return sql`(${sql.join(filter.values.map((value) => scalarFilterPredicate(filter.field, value)), sql` OR `)})`
+}
+
+function scalarFilterPredicate(field: string, value: string | number | boolean): SQL {
+  if (field === "id") return sql`id = ${String(value)}`
+  const encoded = JSON.stringify(value)
+  const arrayEncoded = JSON.stringify([value])
+  return sql`(
+    fields -> ${field} = ${encoded}::jsonb
+    OR fields -> ${field} @> ${arrayEncoded}::jsonb
+  )`
 }
 
 function readRows(result: unknown): unknown[] {
