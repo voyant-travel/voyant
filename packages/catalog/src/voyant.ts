@@ -145,6 +145,11 @@ export const catalogVoyantModule = defineModule({
       key: "POSTGRES_SEARCH_TYPO_STRATEGY",
       required: false,
     },
+    {
+      id: "@voyant-travel/catalog#config.postgres-search-text-strategy",
+      key: "POSTGRES_SEARCH_TEXT_STRATEGY",
+      required: false,
+    },
   ],
   secrets: [
     {
@@ -152,6 +157,13 @@ export const catalogVoyantModule = defineModule({
       key: "TYPESENSE_API_KEY",
       required: false,
       description: "Typesense API key used by the selected catalog indexer provider.",
+      rotation: "replace-only",
+    },
+    {
+      id: "@voyant-travel/catalog#secret.postgres-search-cursor-signing-key",
+      key: "POSTGRES_SEARCH_CURSOR_SIGNING_KEY",
+      required: false,
+      description: "HMAC key for opaque Postgres catalog-search pagination cursors.",
       rotation: "replace-only",
     },
   ],
@@ -173,7 +185,9 @@ export const catalogVoyantModule = defineModule({
         config: [
           "@voyant-travel/catalog#config.postgres-search-vector-strategy",
           "@voyant-travel/catalog#config.postgres-search-typo-strategy",
+          "@voyant-travel/catalog#config.postgres-search-text-strategy",
         ],
+        secrets: ["@voyant-travel/catalog#secret.postgres-search-cursor-signing-key"],
       },
       runtime: {
         entry: "@voyant-travel/catalog/indexer/postgres-provider",

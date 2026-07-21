@@ -98,6 +98,38 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     }
   })
 
+  it("rejects tampered opaque keyset cursors", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[slice.vertical, registry]]),
+      cursorSigningKey: "integration-cursor-signing-key",
+    })
+    await adapter.ensureCollection(slice, registry)
+    await adapter.upsert(slice, [
+      { id: "first", fields: { title: "Island escape" } },
+      { id: "second", fields: { title: "Island holiday" } },
+    ])
+
+    try {
+      const firstPage = await adapter.search(slice, {
+        mode: "keyword",
+        query: "Island",
+        pagination: { limit: 1 },
+      })
+      expect(firstPage.next_cursor).toBeDefined()
+      await expect(
+        adapter.search(slice, {
+          mode: "keyword",
+          query: "Island",
+          pagination: { limit: 1, cursor: `${firstPage.next_cursor}x` },
+        }),
+      ).rejects.toThrow("Search cursor is invalid")
+    } finally {
+      await adapter.admin!.drop(slice)
+    }
+  })
+
   it("publishes bulk rebuilds atomically and preserves the active generation on failure", async () => {
     const registry = createIndexerConformanceRegistry()
     const lifecycleSlice: IndexerSlice = {

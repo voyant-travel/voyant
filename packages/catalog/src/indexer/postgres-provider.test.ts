@@ -5,6 +5,10 @@ import { createPostgresGraphIndexerProvider } from "./postgres-provider.js"
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
 const VECTOR_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-vector-strategy"
 const TYPO_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-typo-strategy"
+const TEXT_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-text-strategy"
+const CURSOR_SIGNING_KEY_SECRET_ID =
+  "@voyant-travel/catalog#secret.postgres-search-cursor-signing-key"
+const CURSOR_SIGNING_KEY = "test-postgres-cursor-signing-key"
 
 describe("Postgres graph indexer provider", () => {
   it("binds the adapter to its declared deployment database resource", () => {
@@ -12,6 +16,8 @@ describe("Postgres graph indexer provider", () => {
     const provider = createPostgresGraphIndexerProvider({
       getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
       getConfig: (() => undefined) as never,
+      getSecret: ((id: string) =>
+        id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
     })
 
     expect(provider.create({ registries: new Map() }).capabilities).toMatchObject({
@@ -26,6 +32,7 @@ describe("Postgres graph indexer provider", () => {
       createPostgresGraphIndexerProvider({
         getResource: (() => undefined) as never,
         getConfig: (() => undefined) as never,
+        getSecret: (() => undefined) as never,
       }),
     ).toThrow(DATABASE_RESOURCE_ID)
   })
@@ -36,6 +43,8 @@ describe("Postgres graph indexer provider", () => {
       getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
       getConfig: ((id: string) =>
         id === VECTOR_STRATEGY_CONFIG_ID ? "pgvector" : undefined) as never,
+      getSecret: ((id: string) =>
+        id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
     })
 
     expect(
@@ -55,6 +64,8 @@ describe("Postgres graph indexer provider", () => {
         getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
         getConfig: ((id: string) =>
           id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
+        getSecret: ((id: string) =>
+          id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
       }),
     ).toThrow("POSTGRES_SEARCH_VECTOR_STRATEGY")
   })
@@ -66,7 +77,47 @@ describe("Postgres graph indexer provider", () => {
         getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
         getConfig: ((id: string) =>
           id === TYPO_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
+        getSecret: ((id: string) =>
+          id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
       }),
     ).toThrow("POSTGRES_SEARCH_TYPO_STRATEGY")
+  })
+
+  it("accepts Lakebase text only when recorded by the deployment", () => {
+    const db = { execute: async () => [] }
+    const provider = createPostgresGraphIndexerProvider({
+      getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
+      getConfig: ((id: string) =>
+        id === TEXT_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
+      getSecret: ((id: string) =>
+        id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
+    })
+
+    expect(provider.create({ registries: new Map() }).diagnostics()).toMatchObject({
+      textStrategy: "lakebase",
+    })
+  })
+
+  it("rejects unrecorded Postgres text strategies", () => {
+    const db = { execute: async () => [] }
+    expect(() =>
+      createPostgresGraphIndexerProvider({
+        getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
+        getConfig: ((id: string) => (id === TEXT_STRATEGY_CONFIG_ID ? "bm25" : undefined)) as never,
+        getSecret: ((id: string) =>
+          id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
+      }),
+    ).toThrow("POSTGRES_SEARCH_TEXT_STRATEGY")
+  })
+
+  it("requires a deployment cursor-signing key", () => {
+    const db = { execute: async () => [] }
+    expect(() =>
+      createPostgresGraphIndexerProvider({
+        getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
+        getConfig: (() => undefined) as never,
+        getSecret: (() => undefined) as never,
+      }),
+    ).toThrow("POSTGRES_SEARCH_CURSOR_SIGNING_KEY")
   })
 })

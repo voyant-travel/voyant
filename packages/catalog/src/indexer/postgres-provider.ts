@@ -6,10 +6,14 @@ import { createPostgresIndexer } from "./postgres.js"
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
 const VECTOR_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-vector-strategy"
 const TYPO_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-typo-strategy"
+const TEXT_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-text-strategy"
+const CURSOR_SIGNING_KEY_SECRET_ID =
+  "@voyant-travel/catalog#secret.postgres-search-cursor-signing-key"
 
 interface PostgresGraphProviderContext {
   getResource: <T = unknown>(declarationId: string) => T | undefined
   getConfig: <T = unknown>(declarationId: string) => T | undefined
+  getSecret: <T = unknown>(declarationId: string) => T | undefined
 }
 
 /**
@@ -29,11 +33,30 @@ export function createPostgresGraphIndexerProvider(
   }
   const vectorStrategy = resolveVectorStrategy(context.getConfig(VECTOR_STRATEGY_CONFIG_ID))
   const typoStrategy = resolveTypoStrategy(context.getConfig(TYPO_STRATEGY_CONFIG_ID))
+  const textStrategy = resolveTextStrategy(context.getConfig(TEXT_STRATEGY_CONFIG_ID))
+  const cursorSigningKey = requiredString(
+    context.getSecret(CURSOR_SIGNING_KEY_SECRET_ID),
+    "POSTGRES_SEARCH_CURSOR_SIGNING_KEY",
+  )
 
   return {
     create: ({ registries, vectorDimensions }) =>
-      createPostgresIndexer({ db, registries, vectorDimensions, vectorStrategy, typoStrategy }),
+      createPostgresIndexer({
+        db,
+        registries,
+        vectorDimensions,
+        vectorStrategy,
+        typoStrategy,
+        textStrategy,
+        cursorSigningKey,
+      }),
   }
+}
+
+function resolveTextStrategy(value: unknown): "native" | "lakebase" {
+  if (value === undefined || value === "" || value === "native") return "native"
+  if (value === "lakebase") return value
+  throw new Error('POSTGRES_SEARCH_TEXT_STRATEGY must be either "native" or "lakebase".')
 }
 
 function resolveTypoStrategy(value: unknown): "none" | "pgtrgm" {
@@ -46,4 +69,11 @@ function resolveVectorStrategy(value: unknown): "none" | "pgvector" {
   if (value === undefined || value === "" || value === "none") return "none"
   if (value === "pgvector") return value
   throw new Error('POSTGRES_SEARCH_VECTOR_STRATEGY must be either "none" or "pgvector".')
+}
+
+function requiredString(value: unknown, name: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`${name} must be a non-empty string.`)
+  }
+  return value.trim()
 }

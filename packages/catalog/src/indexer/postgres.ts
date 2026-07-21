@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "node:crypto"
 import type {
   FacetRequest,
   IndexerAdapter,
@@ -26,6 +27,9 @@ const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 250
 const DEFAULT_SCAN_BATCH_SIZE = 250
 const MAX_SCAN_BATCH_SIZE = 1_000
+// Direct adapter construction is used by the portable conformance harness.
+// Deployed providers must supply their own secret through the graph.
+const DIRECT_ADAPTER_CURSOR_SIGNING_KEY = "voyant-postgres-indexer-direct-adapter"
 
 type StoredRow = {
   id: string
@@ -39,6 +43,7 @@ type StoredRow = {
 
 type PostgresVectorStrategy = "none" | "pgvector"
 type PostgresTypoStrategy = "none" | "pgtrgm"
+type PostgresTextStrategy = "native" | "lakebase"
 
 export interface PostgresIndexerOptions extends IndexerProviderOptions {
   /** The deployment-owned pooled database client. */
@@ -50,11 +55,16 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
   vectorStrategy?: PostgresVectorStrategy
   /** Recorded typo-recovery capability; pg_trgm remains deployment-owned. */
   typoStrategy?: PostgresTypoStrategy
+  /** Recorded corpus-aware lexical capability provided by lakebase_text. */
+  textStrategy?: PostgresTextStrategy
+  /** HMAC material for opaque pagination cursors in a deployed provider. */
+  cursorSigningKey?: string
 }
 
 export interface PostgresIndexerDiagnostics {
   candidateLimit: number
   typoStrategy: PostgresTypoStrategy
+  textStrategy: PostgresTextStrategy
   vectorDimensions: number | null
   vectorStrategy: PostgresVectorStrategy
 }
@@ -79,12 +89,18 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
   const { db } = options
   const vectorStrategy = options.vectorStrategy ?? "none"
   const typoStrategy = options.typoStrategy ?? "none"
+  const textStrategy = options.textStrategy ?? "native"
+  const cursorSigningKey = options.cursorSigningKey ?? DIRECT_ADAPTER_CURSOR_SIGNING_KEY
   const vectorDimensions = resolveVectorDimensions(vectorStrategy, options.vectorDimensions)
   let vectorStorageVerified = vectorStrategy !== "pgvector"
   let typoStorageVerified = typoStrategy !== "pgtrgm"
+  let lakebaseTextStorageVerified = textStrategy !== "lakebase"
+  let lakebaseTextIndexReady = textStrategy !== "lakebase"
+  let storageEnsured = false
   let rebuildSequence = 0
 
   const ensureStorage = async () => {
+    if (storageEnsured) return
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS voyant_catalog_search_slices (
         vertical text NOT NULL,
@@ -209,6 +225,17 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           ON voyant_catalog_search_terms USING gist (term gist_trgm_ops)
       `)
     }
+    if (textStrategy === "lakebase" && !lakebaseTextStorageVerified) {
+      const lakebaseTextExtension = readRows(
+        await db.execute(sql`SELECT 1 FROM pg_extension WHERE extname = 'lakebase_text' LIMIT 1`),
+      )
+      if (lakebaseTextExtension.length === 0) {
+        throw new Error(
+          "Postgres catalog indexer recorded Lakebase text strategy requires the lakebase_text extension to be provisioned.",
+        )
+      }
+      lakebaseTextStorageVerified = true
+    }
     if (vectorStrategy === "pgvector") {
       if (!vectorStorageVerified) {
         const vectorType = readRows(
@@ -232,6 +259,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           )
       `)
     }
+    storageEnsured = true
   }
 
   const ensureSlice = async (slice: IndexerSlice) => {
@@ -249,6 +277,17 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       SET generation = generation + 1, updated_at = now()
       WHERE ${facetSlicePredicate(slice)}
     `)
+  }
+
+  const ensureLakebaseTextIndex = async () => {
+    if (textStrategy !== "lakebase" || lakebaseTextIndexReady) return
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_bm25_idx
+        ON voyant_catalog_search_documents
+        USING lakebase_bm25 (search_vector)
+        WITH (default_limit = 10000)
+    `)
+    lakebaseTextIndexReady = true
   }
 
   return {
@@ -280,6 +319,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       return {
         candidateLimit: MAX_CANDIDATES,
         typoStrategy,
+        textStrategy,
         vectorDimensions,
         vectorStrategy,
       }
@@ -408,6 +448,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         if (typoStrategy === "pgtrgm") await replaceTypoTerms(db, slice, document)
       }
       await bumpGeneration(slice)
+      await ensureLakebaseTextIndex()
     },
 
     async delete(slice, ids) {
@@ -456,7 +497,16 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           ? request.search_audiences
           : [slice.audience]
       let keywordRows =
-        request.mode === "semantic" ? [] : await searchKeywordRows(db, slice, audiences, request)
+        request.mode === "semantic"
+          ? []
+          : await searchKeywordRows(
+              db,
+              slice,
+              audiences,
+              request,
+              textStrategy,
+              lakebaseTextIndexReady,
+            )
       if (typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic") {
         keywordRows = await searchTypoRows(db, slice, audiences, request)
       }
@@ -471,7 +521,14 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
 
       const registry = options.registries.get(slice.vertical)
       const ordered = orderHits(candidates, request, registry, slice)
-      const pagedHits = afterCursor(ordered, request, registry, slice, request.pagination?.cursor)
+      const pagedHits = afterCursor(
+        ordered,
+        request,
+        registry,
+        slice,
+        request.pagination?.cursor,
+        cursorSigningKey,
+      )
       const limit = boundedPageSize(request.pagination?.limit)
       const page = pagedHits.slice(0, limit)
       const results: SearchResults = {
@@ -479,7 +536,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         total: candidates.length,
         ...(capped ? { totalRelation: "gte" as const } : {}),
         ...(limit < pagedHits.length
-          ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice) }
+          ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice, cursorSigningKey) }
           : {}),
       }
       if (request.facets?.length) {
@@ -515,6 +572,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         await withOptionalTransaction(db, async (tx) => {
           await publishStagedRebuild(tx, rebuildId, slice, vectorStrategy, typoStrategy)
         })
+        await ensureLakebaseTextIndex()
       } finally {
         await db.execute(sql`
           DELETE FROM voyant_catalog_search_rebuild_documents
@@ -530,8 +588,13 @@ async function searchKeywordRows(
   slice: IndexerSlice,
   audiences: readonly string[],
   request: SearchRequest,
+  textStrategy: PostgresTextStrategy,
+  lakebaseTextIndexReady: boolean,
 ): Promise<StoredRow[]> {
   const query = request.query.trim()
+  if (textStrategy === "lakebase" && lakebaseTextIndexReady && query.length >= 3) {
+    return searchLakebaseKeywordRows(db, slice, audiences, request)
+  }
   const prefixQuery = toPrefixTsQuery(query)
   const keywordScoreSql = query
     ? prefixQuery
@@ -562,6 +625,30 @@ async function searchKeywordRows(
         ${keywordPredicate}
         ${filterPredicate(request.filters ?? [])}
       ORDER BY keyword_score DESC, id
+      LIMIT ${MAX_CANDIDATES + 1}
+    `),
+  ) as StoredRow[]
+}
+
+async function searchLakebaseKeywordRows(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  audiences: readonly string[],
+  request: SearchRequest,
+): Promise<StoredRow[]> {
+  const query = request.query.trim()
+  const bm25Query = sql`to_bm25query(
+    to_tsvector('simple', ${query}),
+    'voyant_catalog_search_documents_bm25_idx'::regclass
+  )`
+  return readRows(
+    await db.execute(sql`
+      SELECT id, fields, embeddings, embedding_model_id, document_text,
+        -(search_vector <@> ${bm25Query}) AS keyword_score
+      FROM voyant_catalog_search_documents
+      WHERE ${slicePredicate(slice, audiences)}
+        ${filterPredicate(request.filters ?? [])}
+      ORDER BY search_vector <@> ${bm25Query}, id
       LIMIT ${MAX_CANDIDATES + 1}
     `),
   ) as StoredRow[]
@@ -1301,6 +1388,7 @@ function encodeCursor(
   request: SearchRequest,
   registry: FieldPolicyRegistry | undefined,
   slice: IndexerSlice,
+  signingKey: string,
 ): string {
   const sort = request.sort ?? "relevance"
   const cursor: SearchCursor =
@@ -1312,7 +1400,8 @@ function encodeCursor(
           sort,
           value: hit.document.fields[resolveSortField(sort, registry, slice)[0]],
         }
-  return Buffer.from(JSON.stringify(cursor)).toString("base64url")
+  const payload = Buffer.from(JSON.stringify(cursor)).toString("base64url")
+  return `${payload}.${signCursor(payload, signingKey)}`
 }
 
 function afterCursor(
@@ -1321,9 +1410,10 @@ function afterCursor(
   registry: FieldPolicyRegistry | undefined,
   slice: IndexerSlice,
   encoded: string | undefined,
+  signingKey: string,
 ): SearchHit[] {
   if (!encoded) return hits
-  const cursor = decodeCursor(encoded, request.sort ?? "relevance")
+  const cursor = decodeCursor(encoded, request.sort ?? "relevance", signingKey)
   if (cursor.sort === "relevance") {
     return hits.filter(
       (hit) =>
@@ -1345,9 +1435,18 @@ function afterCursor(
   })
 }
 
-function decodeCursor(encoded: string, expectedSort: string): SearchCursor {
+function decodeCursor(encoded: string, expectedSort: string, signingKey: string): SearchCursor {
   try {
-    const decoded: unknown = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"))
+    const [payload, signature, extra] = encoded.split(".")
+    if (
+      !payload ||
+      !signature ||
+      extra !== undefined ||
+      !verifyCursor(payload, signature, signingKey)
+    ) {
+      throw new Error("invalid")
+    }
+    const decoded: unknown = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
     if (
       !decoded ||
       typeof decoded !== "object" ||
@@ -1363,4 +1462,17 @@ function decodeCursor(encoded: string, expectedSort: string): SearchCursor {
   } catch {
     throw new RangeError("Search cursor is invalid.")
   }
+}
+
+function signCursor(payload: string, signingKey: string): string {
+  return createHmac("sha256", signingKey).update(payload).digest("base64url")
+}
+
+function verifyCursor(payload: string, signature: string, signingKey: string): boolean {
+  const expected = signCursor(payload, signingKey)
+  const suppliedBytes = Buffer.from(signature)
+  const expectedBytes = Buffer.from(expected)
+  return (
+    suppliedBytes.length === expectedBytes.length && timingSafeEqual(suppliedBytes, expectedBytes)
+  )
 }

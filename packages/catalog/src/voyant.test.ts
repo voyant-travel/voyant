@@ -13,7 +13,9 @@ describe("catalog deployment declaration", () => {
           config: [
             "@voyant-travel/catalog#config.postgres-search-vector-strategy",
             "@voyant-travel/catalog#config.postgres-search-typo-strategy",
+            "@voyant-travel/catalog#config.postgres-search-text-strategy",
           ],
+          secrets: ["@voyant-travel/catalog#secret.postgres-search-cursor-signing-key"],
         },
         runtime: {
           entry: "@voyant-travel/catalog/indexer/postgres-provider",
@@ -59,6 +61,12 @@ describe("catalog deployment declaration", () => {
     )
     expect(catalogVoyantModule.config).toContainEqual(
       expect.objectContaining({ key: "POSTGRES_SEARCH_TYPO_STRATEGY", required: false }),
+    )
+    expect(catalogVoyantModule.config).toContainEqual(
+      expect.objectContaining({ key: "POSTGRES_SEARCH_TEXT_STRATEGY", required: false }),
+    )
+    expect(catalogVoyantModule.secrets).toContainEqual(
+      expect.objectContaining({ key: "POSTGRES_SEARCH_CURSOR_SIGNING_KEY", required: false }),
     )
   })
 })
