@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.10.6
+
+### Patch Changes
+
+- 42593c6: Tighten materialized migration adoption with fail-closed table identity, index state, and string-literal comparisons.
+
 ## 0.10.5
 
 ### Patch Changes
