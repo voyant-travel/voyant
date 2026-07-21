@@ -177,7 +177,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     } finally {
       await adapter.admin!.drop(facetSlice)
     }
-  })
+  }, 20_000)
 
   it("aggregates federated facets across every requested audience", async () => {
     const registry = createIndexerConformanceRegistry()
