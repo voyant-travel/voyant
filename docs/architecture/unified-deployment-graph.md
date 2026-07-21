@@ -264,6 +264,12 @@ domain-neutral primitives for environment, database, storage, events, and
 configuration. It also owns HTTP serving, admin SSR/static delivery, auth host
 integration, scheduled dispatch, origin trust, and graceful shutdown.
 
+For product jobs, the host consumes exactly two outputs of the admitted graph:
+`provisioning.jobs` is its immutable inventory and `runtime.jobs` supplies the
+matching fixed callable exports. Boot fails when those inventories differ.
+The same composed runtime ports used by API and subscriber contributors are
+passed to job handlers; the host never creates per-run bindings or input.
+
 Packages own product runtime composition. A selected package declares the ports
 its runtime factory requires and publishes a package-owned runtime contributor.
 Generated composition loads contributors from selected packages, runs port
@@ -387,6 +393,23 @@ Projects cannot author product-job declarations in `voyant.config.ts` or
 through a product-job source convention. Selecting a package selects its jobs.
 Customer-specific scheduled automation runs outside Voyant and integrates
 through events and domain commands.
+
+The standard self-hosted Operator selects `node-cron` and starts this job host
+by default. It serializes each job in-process, coalesces at most one queued
+invocation when requested, and retries failures with bounded exponential
+backoff. Schedules support five-field numeric cron expressions and `every`
+durations; cron day-of-month/day-of-week follow standard OR semantics. Product
+jobs cannot opt into concurrent overlap within one host.
+
+At process start, every scheduled job receives one explicit recovery sweep.
+This is intentionally stronger than guessing whether a tick was missed: job
+operations must be idempotent and claim domain-owned durable work, so the sweep
+repairs missed scheduler delivery without making host memory authoritative.
+After that sweep, resident cadence dispatch observes cron and `every` metadata.
+External scheduler and wakeup calls use the fixed
+`POST /__voyant/jobs/:jobId` endpoint, require origin-trust authentication, and
+accept no body or query input. The host exposes only in-memory job health (last
+attempt, success, failure, and retry exhaustion), not workflow run controls.
 
 Workflow and workflow-schedule descriptors remain supported temporarily during
 the workflow-product retirement. Existing `src/workflows` and legacy `src/jobs`

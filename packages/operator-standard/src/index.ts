@@ -110,7 +110,7 @@ export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
     adminAuth: "better-auth",
     customerAuth: "better-auth",
     realtime: "none",
-    scheduledJobs: "none",
+    scheduledJobs: "node-cron",
     workflows: "self-hosted",
     outboundWebhooks: "postgres",
     payments: "custom",

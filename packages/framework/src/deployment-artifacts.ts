@@ -801,7 +801,10 @@ export function buildNodeRuntimeEntry(input: BuildNodeRuntimeEntryInput): string
 import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+import type {
+  VoyantGraphDeploymentRequirements,
+  VoyantGraphProvisionedJob,
+} from "@voyant-travel/framework/deployment-graph"
 import type { VoyantNodeRuntimeDeployment } from "@voyant-travel/framework/node-runtime"
 import { createGeneratedGraphRuntime } from ${quote(graphRuntimePath)}
 
@@ -829,6 +832,10 @@ export const GENERATED_DEPLOYMENT_GRAPH_PROVIDER_IDS = ${formatConstArray(
 export const GENERATED_DEPLOYMENT_GRAPH_PACKAGE_NAMES = ${formatConstArray(
     input.graph.packageRecords.map((record) => record.packageName),
   )}
+export const GENERATED_PRODUCT_JOBS = ${formatGeneratedValue(
+    input.graph.provisioning.jobs,
+    0,
+  )} as const satisfies readonly VoyantGraphProvisionedJob[]
 
 export function assertGeneratedDeploymentGraphArtifact(): void {
   const graph = readGeneratedDeploymentGraph()
@@ -955,6 +962,7 @@ if (isMainModule) {
     deployment: resolveGeneratedRuntimeDeployment(),
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
     graphRuntime: createGeneratedGraphRuntime(),
+    jobs: GENERATED_PRODUCT_JOBS,
   })
   console.info(
     \`[node-runtime] Node runtime listening on :\${handle.port} (\${GENERATED_DEPLOYMENT_GRAPH_HASH})\`,

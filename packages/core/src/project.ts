@@ -383,7 +383,7 @@ export type VoyantGraphJobSchedule = (
   | { every: string | number; cron?: never }
 ) & {
   timezone?: string
-  overlap?: "skip" | "queue" | "allow"
+  overlap?: "skip" | "queue"
 }
 
 /**
