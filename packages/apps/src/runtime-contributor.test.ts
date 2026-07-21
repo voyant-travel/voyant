@@ -133,6 +133,19 @@ describe("createAppsRuntimePortContribution", () => {
     ).not.toThrow()
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle: async () => undefined,
+          completeInstallationSetup: "not-a-function",
+        },
+      } as never),
+    ).toThrow(/completeInstallationSetup/)
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
         deploymentId: "",
         acquisitionResolver: {
           resolveAcquisitionIntent: async () => null,

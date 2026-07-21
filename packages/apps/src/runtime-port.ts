@@ -189,5 +189,13 @@ export const appsManagedMarketplaceRuntimePort = definePort<AppsManagedMarketpla
         "apps.managed-marketplace acquisitionResolver.notifyInstallationLifecycle must be a function.",
       )
     }
+    if (
+      runtime.acquisitionResolver.completeInstallationSetup !== undefined &&
+      typeof runtime.acquisitionResolver.completeInstallationSetup !== "function"
+    ) {
+      throw new TypeError(
+        "apps.managed-marketplace acquisitionResolver.completeInstallationSetup must be a function when provided.",
+      )
+    }
   },
 })
