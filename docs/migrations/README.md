@@ -6,6 +6,7 @@ The full history (including patch-level changes and dependency updates) lives in
 
 ## Available
 
+- [Separate the payment callback origin](./payment-callback-origin.md) — configure processor callbacks independently from customer-facing payment links.
 - [Migrating Framework to 0.42](./migrating-to-0.42.md) - require explicit graph runtime metadata and select workflow execution and outbound webhook enqueueing through deployment providers.
 - [Migrating Auth to 0.128](./migrating-to-0.128.md) - move the removed top-level `useSecureCookies` option under Better Auth's `advanced` configuration.
 - [Workflow Runs 0.119](./migrating-to-0.119.md) — custom `workflows.runner-registry` providers must implement both `register()` and `get()`; direct registry and route composition APIs remain available.

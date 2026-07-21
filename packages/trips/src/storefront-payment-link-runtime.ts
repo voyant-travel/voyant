@@ -69,9 +69,9 @@ async function startAdapterCardPayment(
  * so the callback registered at `/v1/public/payment-link/callback` is publicly
  * reachable at `/api/v1/public/payment-link/callback`.
  */
-function resolvePaymentCallbackUrl(bindings: Record<string, unknown>): string | undefined {
-  const base = resolvePublicCheckoutBaseUrl(bindings)
-  return base ? `${base}/api/v1/public/payment-link/callback` : undefined
+export function resolvePaymentCallbackUrl(bindings: Record<string, unknown>): string | undefined {
+  const origin = resolvePaymentCallbackOrigin(bindings)
+  return origin ? `${origin}/api/v1/public/payment-link/callback` : undefined
 }
 
 interface PaymentConfigBindings {
@@ -80,7 +80,46 @@ interface PaymentConfigBindings {
   BANK_TRANSFER_BENEFICIARY?: string
   BANK_TRANSFER_IBAN?: string
   DASH_BASE_URL?: string
+  PAYMENT_CALLBACK_BASE_URL?: string
   PUBLIC_CHECKOUT_BASE_URL?: string
+}
+
+function resolvePaymentCallbackOrigin(bindings: Record<string, unknown>): string | undefined {
+  const env = bindings as PaymentConfigBindings
+  const configured = env.PAYMENT_CALLBACK_BASE_URL?.trim()
+  if (configured) return requireHttpOrigin(configured, "PAYMENT_CALLBACK_BASE_URL")
+
+  // Compatibility for deployments created before PAYMENT_CALLBACK_BASE_URL:
+  // DASH_BASE_URL and APP_URL describe this operator deployment, so they are
+  // safe callback origins. PUBLIC_CHECKOUT_BASE_URL deliberately is not a
+  // fallback: it may point at a customer website or a path such as `/pay`.
+  const dashboard = env.DASH_BASE_URL?.trim()
+  if (dashboard) return requireHttpOrigin(dashboard, "DASH_BASE_URL")
+
+  const app = env.APP_URL?.trim().replace(/\/api\/?$/, "")
+  return app ? requireHttpOrigin(app, "APP_URL") : undefined
+}
+
+function requireHttpOrigin(value: string, key: string): string {
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error(`${key} must be an absolute HTTP(S) origin`)
+  }
+
+  if (
+    (url.protocol !== "http:" && url.protocol !== "https:") ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error(`${key} must be an absolute HTTP(S) origin without a path, query, or hash`)
+  }
+
+  return url.origin
 }
 
 function resolvePublicCheckoutBaseUrl(bindings: Record<string, unknown>): string | null {

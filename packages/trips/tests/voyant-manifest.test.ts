@@ -60,6 +60,13 @@ describe("trips deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/trips#schema" }],
       migrations: [{ id: "@voyant-travel/trips#migrations" }],
+      config: [
+        {
+          id: "@voyant-travel/trips#config.payment-callback-base-url",
+          key: "PAYMENT_CALLBACK_BASE_URL",
+          required: false,
+        },
+      ],
       subscribers: [
         {
           id: "@voyant-travel/trips#subscriber.payment-completed",
