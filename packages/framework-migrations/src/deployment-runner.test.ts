@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest"
+import { Client } from "pg"
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import type { MigrationClient, MigrationSource } from "./collector.js"
 import { detectExisting, expectedSchema, runDeploymentMigrations } from "./deployment-runner.js"
 
@@ -735,6 +736,106 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     expect(result.baselined).toEqual([])
     expect(result.executed).toEqual(["inventory/0001_inventory_baseline"])
     expect(statements.some((sql) => sql.startsWith('CREATE TABLE "product_'))).toBe(true)
+  })
+})
+
+const DB_URL = process.env.TEST_DATABASE_URL
+
+describe.skipIf(!DB_URL)("materialized-migration adoption (PostgreSQL conformance)", () => {
+  let client: Client
+  const parentTable = "materialized_adoption_parent"
+  const childTable = "materialized_adoption_child"
+  const source: MigrationSource = {
+    name: "materialized-adoption-test",
+    priority: 1,
+    migrations: [
+      {
+        tag: "0001_materialized_baseline",
+        sql: `CREATE TABLE "${parentTable}" (
+  "id" text PRIMARY KEY NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "${childTable}" (
+  "id" text PRIMARY KEY NOT NULL,
+  "parent_id" text NOT NULL,
+  "state" text DEFAULT 'READY'::text NOT NULL,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "${childTable}" ADD CONSTRAINT "materialized_adoption_child_parent_id_materialized_adoption_parent_id_fk_long_suffix" FOREIGN KEY ("parent_id") REFERENCES "public"."${parentTable}"("id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_materialized_adoption_child_parent" ON "${childTable}" USING btree ("parent_id");`,
+      },
+    ],
+  }
+
+  async function reset(): Promise<void> {
+    await client.query(`DROP TABLE IF EXISTS "${childTable}" CASCADE`)
+    await client.query(`DROP TABLE IF EXISTS "${parentTable}" CASCADE`)
+    await client.query(`CREATE SCHEMA IF NOT EXISTS "drizzle"`)
+    await client.query(
+      `CREATE TABLE IF NOT EXISTS "drizzle"."_voyant_migrations" (
+         "source" text NOT NULL,
+         "tag" text NOT NULL,
+         "content_hash" text NOT NULL,
+         "applied_at" timestamptz NOT NULL DEFAULT now(),
+         PRIMARY KEY ("source", "tag")
+       )`,
+    )
+    await client.query(
+      `DELETE FROM "drizzle"."_voyant_migrations"
+        WHERE "source" IN ('framework', 'materialized-adoption-test')
+          AND "tag" LIKE 'materialized-adoption-test-%' OR
+              ("source" = 'materialized-adoption-test' AND "tag" = '0001_materialized_baseline')`,
+    )
+    await client.query(
+      `INSERT INTO "drizzle"."_voyant_migrations" ("source", "tag", "content_hash")
+       VALUES ('framework', 'materialized-adoption-test-existing', 'test-seed')
+       ON CONFLICT ("source", "tag") DO UPDATE SET "content_hash" = EXCLUDED."content_hash"`,
+    )
+  }
+
+  beforeAll(async () => {
+    client = new Client({ connectionString: DB_URL })
+    await client.connect()
+  })
+
+  beforeEach(reset)
+
+  afterAll(async () => {
+    if (!client) return
+    await reset()
+    await client.query(
+      `DELETE FROM "drizzle"."_voyant_migrations"
+        WHERE "source" = 'framework' AND "tag" = 'materialized-adoption-test-existing'`,
+    )
+    await client.end()
+  })
+
+  it("adopts the PostgreSQL-canonical footprint, including truncated constraint names", async () => {
+    for (const statement of source.migrations[0]!.sql.split("--> statement-breakpoint")) {
+      await client.query(statement)
+    }
+
+    const result = await runDeploymentMigrations(
+      client,
+      [source],
+      {},
+      {
+        materializedMigrationAdoptions: [
+          { source: "materialized-adoption-test", tag: "0001_materialized_baseline" },
+        ],
+      },
+    )
+
+    expect(result.executed).toEqual([])
+    expect(result.adopted).toEqual(["materialized-adoption-test/0001_materialized_baseline"])
+    const ledger = await client.query(
+      `SELECT "content_hash" FROM "drizzle"."_voyant_migrations"
+        WHERE "source" = 'materialized-adoption-test'
+          AND "tag" = '0001_materialized_baseline'`,
+    )
+    expect(ledger.rows[0]?.content_hash).toMatch(/^[a-f0-9]{64}$/)
   })
 })
 
