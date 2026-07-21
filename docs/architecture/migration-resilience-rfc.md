@@ -191,7 +191,7 @@ schema list:
   `legal`, `catalog`, `storefront`.
 - **Operator** would miss even more: `action-ledger`, `catalog-authoring`,
   `legal`, `promotions`, `cruises`, `charters`, `accommodations`,
-  `trips`, `flights`, `catalog`, `workflow-runs`,
+  `trips`, `flights`, `catalog`,
   `storefront` verification schema (plus its starter-local `./src/db/schema.ts`).
 - **apps/dev** has a `drizzle.config.ts` but **no `voyant.config.ts`** — there is
   no manifest to resolve from, so it needs a manifest-creation step before it can
@@ -199,7 +199,7 @@ schema list:
 
 Two further normalization gaps block resolution even where a module *is* listed:
 
-- **Missing `package.json#voyant` metadata.** `catalog`, `workflow-runs`,
+- **Missing `package.json#voyant` metadata.** `catalog`,
   `trips`, and `flights` export schema subpaths but declare no `voyant`
   field, so `resolveSchemas()` cannot find their schema or dependencies.
   (`crm`/`products`/`bookings` do declare it.)
@@ -372,7 +372,7 @@ defer runtime derivation (the hard part) to last.
 ### Phase 0 — inventory & normalization (no behavior change)
 - Build the per-template manifest↔schema gap inventory (§3.1) and keep it current.
 - Add `package.json#voyant` (`schema`, `requiresSchemas`) to **every**
-  schema-owning package, including `catalog`, `workflow-runs`, `trips`,
+  schema-owning package, including `catalog`, `trips`,
   and `flights`; fix non-standard entrypoints (e.g. flights'
   `src/reference/local-postgres.ts`).
 - Complete each template's `voyant.config.ts` so `modules` covers everything its

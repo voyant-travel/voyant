@@ -202,23 +202,21 @@ selected graph then orders and applies it without adding files to the starter.
 ## Project subscribers and links
 
 Application-local subscribers live under `src/subscribers/**/*.ts`. Each file
-default-exports durable `EventFilterDescriptor` data with non-empty literal
-`id` and `eventType` fields. Descriptor values must be serializable data; use a
-workflow definition for executable behavior.
+default-exports a `SubscriberRuntimeDescriptor` with non-empty literal `id` and
+`eventType` fields and a bounded `register` function.
 
 ```ts
-import type { EventFilterDescriptor } from "@voyant-travel/core"
+import type { SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 
 export default {
   id: "loyalty.credit-booking-points",
   eventType: "booking.confirmed",
-  manifest: {
-    id: "loyalty.credit-booking-points",
-    eventType: "booking.confirmed",
-    payloadHash: "7dd9b0cbfd8c5e30",
-    targetWorkflowId: "loyalty.credit-points",
+  register({ eventBus }) {
+    eventBus.subscribe("booking.confirmed", async () => {
+      // Perform bounded work or record durable intent.
+    })
   },
-} satisfies EventFilterDescriptor
+} satisfies SubscriberRuntimeDescriptor
 ```
 
 Application-local links live under `src/links/**/*.ts`. Each file imports
