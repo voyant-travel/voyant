@@ -145,6 +145,8 @@ export async function loadVoyantProject(
         ...(providerPlan.storage === "custom" && options.host?.storage ? ["storage.object"] : []),
       ],
       deploymentValueAliases: { DATABASE_URL: ["DATABASE_URL_DIRECT"] },
+      resolveResource: (resource) =>
+        resource.kind === "database" ? resolveOptionalNodeDatabase(rawEnv) : undefined,
     },
   )
   const providerPorts = { ...selectedProviderPorts, ...explicitRuntimePorts }
@@ -491,6 +493,18 @@ export async function loadVoyantProjectWorkflowRuntime(
 
 function createNoopContext(): import("@voyant-travel/runtime-core").ExecutionContextLike {
   return { waitUntil: () => undefined }
+}
+
+function resolveOptionalNodeDatabase(
+  env: Readonly<Record<string, string | undefined>>,
+): ReturnType<typeof resolveNodeDatabase> | undefined {
+  const databaseUrl = env.DATABASE_URL ?? env.DATABASE_URL_DIRECT
+  if (!databaseUrl) return undefined
+  return resolveNodeDatabase({
+    DATABASE_URL: databaseUrl,
+    ...(env.DATABASE_URL_DIRECT ? { DATABASE_URL_DIRECT: env.DATABASE_URL_DIRECT } : {}),
+    ...(env.DATABASE_URL_REPLICAS ? { DATABASE_URL_REPLICAS: env.DATABASE_URL_REPLICAS } : {}),
+  })
 }
 
 let defaultProject: Promise<VoyantProjectHost> | undefined

@@ -18,6 +18,9 @@
     "./indexer/reconciliation-node": "./src/indexer/reconciliation-node.ts",
     "./indexer/typesense": "./src/indexer/typesense.ts",
     "./indexer/typesense-provider": "./src/indexer/typesense-provider.ts",
+    "./indexer/postgres": "./src/indexer/postgres.ts",
+    "./indexer/postgres-provider": "./src/indexer/postgres-provider.ts",
+    "./indexer/relevance": "./src/indexer/relevance.ts",
     "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
     "./search/semantic": "./src/search/semantic.ts",
@@ -172,6 +175,21 @@
         "types": "./dist/indexer/typesense-provider.d.ts",
         "import": "./dist/indexer/typesense-provider.js",
         "default": "./dist/indexer/typesense-provider.js"
+      },
+      "./indexer/postgres": {
+        "types": "./dist/indexer/postgres.d.ts",
+        "import": "./dist/indexer/postgres.js",
+        "default": "./dist/indexer/postgres.js"
+      },
+      "./indexer/postgres-provider": {
+        "types": "./dist/indexer/postgres-provider.d.ts",
+        "import": "./dist/indexer/postgres-provider.js",
+        "default": "./dist/indexer/postgres-provider.js"
+      },
+      "./indexer/relevance": {
+        "types": "./dist/indexer/relevance.d.ts",
+        "import": "./dist/indexer/relevance.js",
+        "default": "./dist/indexer/relevance.js"
       },
       "./search/routes": {
         "types": "./dist/search/routes.d.ts",

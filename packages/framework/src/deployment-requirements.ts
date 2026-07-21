@@ -139,6 +139,24 @@ function envForProvider(
       ),
     ]
   }
+  if (role === "search" && provider === "postgres") {
+    return [
+      secret(
+        "DATABASE_URL",
+        "Postgres URL used by the catalog search projection.",
+        true,
+        ["DATABASE_URL_DIRECT"],
+        "postgres-url",
+      ),
+      secret(
+        "DATABASE_URL_DIRECT",
+        "Direct Postgres URL for the resident catalog search pool.",
+        false,
+        [],
+        "postgres-url",
+      ),
+    ]
+  }
   if (role === "search" && (provider === "typesense" || provider === "algolia")) {
     return provider === "typesense"
       ? [

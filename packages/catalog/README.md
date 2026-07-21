@@ -35,8 +35,36 @@ search services, or catalog runtime services.
   contracts now owned by `@voyant-travel/catalog-contracts/indexer/contract`.
 - **`./indexer/provider`** — the `catalog.indexer` runtime port used by deployment
   composition.
-- **`./indexer/typesense`** — native Typesense `IndexerAdapter`, Voyant's only
-  first-party search implementation and the managed-cloud default.
+- **`./indexer/postgres`** — native Postgres `IndexerAdapter`, the first-party
+  managed-cloud default. It keeps a rebuildable catalog projection in the
+  deployment database and uses the deployment-owned resident pool. Set the
+  recorded `POSTGRES_SEARCH_TEXT_STRATEGY=lakebase` and/or
+  `POSTGRES_SEARCH_VECTOR_STRATEGY=lakebase` only when Lakebase Search has
+  provisioned `lakebase_text` and/or `lakebase_vector`; use
+  `POSTGRES_SEARCH_VECTOR_STRATEGY=pgvector` with a deployment vector dimension
+  when only the `vector` extension is provisioned. Native FTS remains the
+  portable lexical fallback, and `POSTGRES_SEARCH_TYPO_STRATEGY=pgtrgm` enables
+  curated-term typo recovery when `pg_trgm` is provisioned.
+  Its private `projectionGeneration(slice)` token changes after successful
+  writes and is intended for deployment-level cache keys, not public responses.
+  On transaction-capable deployments, each search reads candidates and facets
+  from a repeatable-read, read-only projection snapshot.
+  Its signed cursors include every searched projection generation and reject
+  continuation after a write or rebuild, preventing mixed-generation pagination.
+  Policy-backed scalar filters are maintained in typed facet rows before search
+  candidate generation. A successful full rebuild retains one predecessor per
+  slice; deployment maintenance may use the private `rollbackProjection(slice)`
+  operation before steady writes invalidate that rollback snapshot. Interrupted
+  bulk streams retain their staged chunks for a retry when callers reuse the
+  same `rebuildRunId` for one source snapshot; a changed source uses a new run
+  id and cannot publish stale staging rows. `projectionState(slice)` reports
+  the pending staged-document count until atomic publication succeeds.
+- **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a
+  selectable first-party provider.
+- **`./indexer/postgres-provider`** — graph provider factory selected by
+  `deployment.providers.search: "postgres"`.
+- **`./indexer/relevance`** — shared travel relevance corpus and comparison
+  harness for measuring Postgres against a selected baseline adapter.
 - **`./indexer/typesense-provider`** — graph provider factory selected by
   `deployment.providers.search: "typesense"`.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
@@ -67,15 +95,17 @@ import { defineConfig } from "@voyant-travel/framework/project"
 export default defineConfig({
   deployment: {
     target: "node",
-    providers: { search: "typesense" },
+    providers: { search: "postgres" },
   },
 })
 ```
 
-`typesense` selects the first-party provider declared by this package and uses
-`TYPESENSE_HOST` plus `TYPESENSE_API_KEY`. The standard self-hosted operator
-configuration uses `search: "none"` until search is enabled; managed-cloud
-defaults select Typesense.
+`postgres` selects the first-party provider declared by this package. It uses
+the same graph-declared Postgres resource as the application and never opens a
+separate database pool from an environment variable. `typesense` remains
+available and uses `TYPESENSE_HOST` plus `TYPESENSE_API_KEY`. The standard
+self-hosted operator configuration uses `search: "none"` until search is
+enabled.
 
 Embedded hosts and tests can supply a custom implementation by selecting
 `deployment.providers.search: "custom"` and passing either an `IndexerAdapter`
@@ -142,6 +172,17 @@ await assertIndexerAdapterConformance({
 Provider-neutral maintenance uses the optional `IndexerAdapter.admin` surface
 (`list`, `drop`, and `scan`). Raw Typesense collection/search maintenance APIs
 are not public catalog package surface.
+
+### Relevance comparison
+
+`@voyant-travel/catalog/indexer/relevance` provides a curated travel corpus and
+an adapter-level harness for comparing Postgres with Typesense (or another
+approved baseline). It reports recall@k, NDCG@k, zero-result rate, and exact
+facet-bucket parity. Provider scores are intentionally excluded from the
+comparison because each engine normalizes relevance differently. Run it against
+the real deployment adapters and retain the resulting report with the rollout
+evidence; the built-in corpus is a minimum regression gate, not a replacement
+for operator-approved travel judgments.
 
 ## Usage
 

@@ -26,6 +26,12 @@ export interface VoyantDeploymentResources {
 export interface ResolveSelectedGraphProviderPortsOptions {
   excludedPorts?: readonly string[]
   deploymentValueAliases?: Readonly<Record<string, readonly string[]>>
+  /**
+   * Supplies deployment-owned resources to graph providers. The resolver is
+   * intentionally keyed by declared resource kind rather than provider id so
+   * providers cannot reach undeclared host infrastructure.
+   */
+  resolveResource?: (resource: { id: string; kind: string }) => unknown
 }
 
 const CATALOG_INDEXER_PORT_ID = "catalog.indexer"
@@ -100,9 +106,17 @@ export async function resolveSelectedGraphProviderPorts(
   ].sort()
   if (ports.length === 0) return {}
 
+  const resourceValues = Object.fromEntries(
+    runtime.resources.map(({ declaration }) => [
+      declaration.id,
+      options.resolveResource?.({ id: declaration.id, kind: declaration.kind }),
+    ]),
+  )
+
   const providers = await resolveVoyantGraphRuntimeProviders(runtime, {
     ports,
     deploymentValues,
+    resourceValues,
     ...(options.deploymentValueAliases
       ? { deploymentValueAliases: options.deploymentValueAliases }
       : {}),

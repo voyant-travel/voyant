@@ -342,6 +342,10 @@ jobs:
                 tests/integration/generic-custom-field-values.test.ts
               pnpm --filter @voyant-travel/framework-migrations exec vitest run \
                 src/deployment-runner.test.ts
+              pnpm --filter @voyant-travel/catalog exec vitest run \
+                tests/integration/postgres-indexer.test.ts
+              pnpm --filter @voyant-travel/catalog exec vitest run \
+                tests/integration/postgres-pgtrgm-indexer.test.ts
               ;;
           esac
 
