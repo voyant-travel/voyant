@@ -1,5 +1,14 @@
 # @voyant-travel/operator-standard
 
+## 0.10.21
+
+### Patch Changes
+
+- Updated dependencies [9ed6114]
+  - @voyant-travel/workflows@0.122.17
+  - @voyant-travel/workflow-runs@0.122.17
+  - @voyant-travel/workflows-orchestrator@0.122.17
+
 ## 0.10.20
 
 ### Patch Changes
