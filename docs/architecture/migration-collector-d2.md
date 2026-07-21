@@ -150,6 +150,35 @@ Plugins that own no schema (e.g. `@voyant-travel/plugin-netopia`) are unaffected
 they define no `pgTable` and ship no `migrations/`, so they resolve to `null` and
 need no migration step. Unblocks Slice 4 of platform#1016.
 
+## Explicit adoption of materialized post-cutline migrations
+
+An existing deployment may contain DDL from a package migration even when the
+collector ledger does not contain that exact `(source, tag)` row. This can occur
+when a legacy deployment materialized package schema outside the collector. The
+runner does not infer or broadly baseline such rows.
+
+`runDeploymentMigrations` accepts an explicit
+`materializedMigrationAdoptions` allowlist of exact source/tag identities. While
+holding the deployment migration session advisory lock, it classifies every
+pending allowlisted identity before a normal migration can commit:
+
+- if every table created by the immutable SQL is absent, the migration stays on
+  the normal execution path;
+- if any table is present, the full footprint must match exactly: table and
+  column sets/order, PostgreSQL type, nullability, default, identity/generated
+  state, named primary/unique/foreign-key constraints and their actions, and
+  non-constraint index names, uniqueness, method, keys/expressions and
+  predicates;
+- a partial or mismatched footprint aborts without a ledger write or migration
+  transaction;
+- an exact footprint is recorded with the current immutable SQL content hash and
+  reported through both `adopted` and the existing `baselined` result/hook.
+
+Fresh databases always execute from scratch. Migrations not named in the
+allowlist are never considered for materialized adoption. The verifier supports
+only DDL forms it can prove from PostgreSQL catalogs and fails closed for an
+unsupported allowlisted migration.
+
 ## References
 
 - `docs/architecture/migration-collector-d1.md` — the collector primitive + ledger D.2 reuses; the `assertSchemaAtBaseline` parity pattern.

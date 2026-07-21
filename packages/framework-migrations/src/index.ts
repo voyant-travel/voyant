@@ -24,6 +24,7 @@ export {
   assertSchemaAtBaseline,
   detectExisting,
   expectedSchema,
+  type RunDeploymentMigrationsOptions,
   type RunResult,
   runDeploymentMigrations,
 } from "./deployment-runner.js"
@@ -36,6 +37,7 @@ export {
   packageRootOfSchemaPath,
 } from "./discover.js"
 export { loadMigrationFolder } from "./load-folder.js"
+export type { MaterializedMigrationAdoption } from "./materialized-adoption.js"
 export {
   type CollectDeploymentMigrationSourcesOptions,
   collectDeploymentMigrationSources,
