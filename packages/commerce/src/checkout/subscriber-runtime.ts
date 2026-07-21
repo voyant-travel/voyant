@@ -48,6 +48,7 @@ export interface CheckoutFinalizeSubscriberRuntimeOptions<TBindings = unknown>
   extends CatalogCheckoutRuntimeDatabase<TBindings> {
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
   finalize?: typeof finalizeCheckout
+  logger?: Pick<Console, "error">
 }
 
 interface ContractDocumentGeneratedPayload {
@@ -81,6 +82,7 @@ export function createAcceptanceSignatureSubscriberRuntime<TBindings = unknown>(
             )
           } catch (error) {
             logger.error("[catalog-checkout] persistAcceptanceSignature failed", error)
+            throw error
           }
         },
       )
@@ -93,6 +95,7 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
   options: CheckoutFinalizeSubscriberRuntimeOptions<TBindings>,
 ): SubscriberRuntimeDescriptor {
   const finalize = options.finalize ?? finalizeCheckout
+  const logger = options.logger ?? console
 
   return {
     id: COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
@@ -119,8 +122,12 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
                 generateContractPdf: options.generateContractPdf,
               }),
             )
-          } catch {
-            // Durable outbox delivery owns retry; this subscriber remains idempotent.
+          } catch (error) {
+            logger.error(
+              `[catalog-checkout] checkout finalization failed for booking ${bookingId}`,
+              error,
+            )
+            throw error
           }
         },
         { inline: true },

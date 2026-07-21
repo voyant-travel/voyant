@@ -71,9 +71,9 @@ export interface CheckoutFinalizeDeps {
   findProformaForBooking?: (bookingId: string) => Promise<{ invoiceId: string } | null>
   /**
    * Generate the contract PDF for the booking. Checkout finalization
-   * passes `force: true` so this step can overwrite any earlier
-   * `booking.confirmed` subscriber render with final payment state.
-   * Implementations should still be safe to retry.
+   * uses the Legal domain's existing attachment as its durable checkpoint.
+   * Implementations should return that attachment on retry rather than
+   * regenerating it.
    *
    * Returning `null` is treated as "no contract template wired" and
    * skipped silently — the operator may not have configured one,
@@ -193,7 +193,7 @@ export const checkoutFinalizeSaga = createSaga("checkout-finalize", [
     // the operation's outcome observable to its caller.
     if (!deps.generateContractPdf) return null
     return runStep("generate_contract_pdf", deps.recorder, () =>
-      deps.generateContractPdf!({ bookingId: input.bookingId, force: true }),
+      deps.generateContractPdf!({ bookingId: input.bookingId, force: false }),
     )
   }),
 ])
