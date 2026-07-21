@@ -80,6 +80,7 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   MEDIA_PUBLIC_BASE_URL?: string
   API_BASE_URL?: string
   REDIS_URL?: string
+  REDIS_NAMESPACE?: string
   RATE_LIMIT_STORE?: RateLimitStore
   VOYANT_ADMIN_AUTH_MODE?: string
   VOYANT_CUSTOMER_AUTH_MODE?: string
@@ -245,7 +246,8 @@ interface NodeSharedStores {
 }
 
 interface NodeSharedProviderResources {
-  redisKv?: KVStore
+  redisCacheKv?: KVStore
+  redisSharedStateKv?: KVStore
   redisRateLimit?: RateLimitStore
   postgresKv?: KVStore
   postgresRateLimit?: RateLimitStore
@@ -310,6 +312,7 @@ export async function loadVoyantNodeRuntime(
   )
   assertVoyantNodeRuntimeSupport({
     mode: options.deployment.mode,
+    providerPlan,
     requirements,
     env,
     hasAuthIntegration: Boolean(auth),
@@ -487,14 +490,20 @@ function createNodeSharedStores(
   const redisUrl = selectedProviders.includes("redis")
     ? requireNodeEnv(env, "REDIS_URL")
     : undefined
+  const redisNamespace = redisUrl ? optionalRedisNamespace(env.REDIS_NAMESPACE) : undefined
   const postgresDatabase = selectedProviders.includes("postgres")
     ? resolveProviderDatabase(env)
     : undefined
   const resources: NodeSharedProviderResources = {
     ...(redisUrl
       ? {
-          redisKv: createRedisKvStore(redisUrl),
-          redisRateLimit: createRedisRateLimitStore(redisUrl),
+          redisCacheKv: createRedisKvStore(redisUrl, {
+            keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "cache") : undefined,
+          }),
+          redisSharedStateKv: createRedisKvStore(redisUrl),
+          redisRateLimit: createRedisRateLimitStore(redisUrl, {
+            keyPrefix: redisNamespace ? redisRoleKeyPrefix(redisNamespace, "rate") : undefined,
+          }),
         }
       : {}),
     ...(postgresDatabase
@@ -518,7 +527,7 @@ function selectedCacheStore(
 ): KVStore {
   if (provider === "memory") return memory
   if (provider === "redis") {
-    return createTieredKvStore(memory, requireProviderResource(resources.redisKv))
+    return createTieredKvStore(memory, requireProviderResource(resources.redisCacheKv))
   }
   return createTieredKvStore(memory, requireProviderResource(resources.postgresKv))
 }
@@ -529,7 +538,7 @@ function selectedAuthoritativeKvStore(
   resources: NodeSharedProviderResources,
 ): KVStore {
   if (provider === "memory") return memory
-  if (provider === "redis") return requireProviderResource(resources.redisKv)
+  if (provider === "redis") return requireProviderResource(resources.redisSharedStateKv)
   return requireProviderResource(resources.postgresKv)
 }
 
@@ -563,6 +572,26 @@ function requireNodeEnv(env: Record<string, string>, name: string): string {
   throw new Error(`${name} is required by the selected Node provider`)
 }
 
+function optionalRedisNamespace(value: string | undefined): string | undefined {
+  const namespace = value?.trim()
+  if (!namespace) return undefined
+  assertValidRedisNamespace(namespace)
+  return namespace
+}
+
+function redisRoleKeyPrefix(namespace: string, role: "cache" | "rate"): string {
+  assertValidRedisNamespace(namespace)
+  return `voyant:v1:${namespace}:${role}:`
+}
+
+function assertValidRedisNamespace(namespace: string): void {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/u.test(namespace)) {
+    throw new Error(
+      "REDIS_NAMESPACE must be 1-63 characters of ASCII letters, numbers, underscores, or hyphens, and start with a letter or number.",
+    )
+  }
+}
+
 function isPostgresConnectionUrl(value: string): boolean {
   try {
     const parsed = new URL(value)
@@ -574,6 +603,7 @@ function isPostgresConnectionUrl(value: string): boolean {
 
 function assertVoyantNodeRuntimeSupport(options: {
   mode: VoyantDeploymentMode
+  providerPlan: VoyantNodeProviderPlan
   requirements: VoyantGraphDeploymentRequirements
   env: VoyantNodeRuntimeEnv
   hasAuthIntegration: boolean
@@ -581,6 +611,13 @@ function assertVoyantNodeRuntimeSupport(options: {
   const issues = nodeRuntimeEnvIssues(options.requirements, options.env)
   if (options.mode === "managed-cloud" && !options.hasAuthIntegration) {
     issues.push("managed-cloud applications require an injected auth integration")
+  }
+  if (
+    options.mode === "managed-cloud" &&
+    (options.providerPlan.cache === "redis" || options.providerPlan.rateLimit === "redis") &&
+    !options.env.REDIS_NAMESPACE?.trim()
+  ) {
+    issues.push("managed-cloud Redis cache/rate-limit providers require REDIS_NAMESPACE")
   }
   if (issues.length > 0) {
     throw new Error(`Voyant Node runtime is not ready to start:\n${formatIssues(issues)}`)
@@ -635,7 +672,7 @@ function hasFormat(
     const parsed = new URL(value)
     if (format === "postgres-url")
       return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
-    if (format === "redis-url") return parsed.protocol === "redis:" || parsed.protocol === "rediss:"
+    if (format === "redis-url") return isRedisRestUrl(parsed)
     return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     return false
@@ -644,8 +681,15 @@ function hasFormat(
 
 function formatDescription(format: NonNullable<VoyantDeploymentEnvRequirement["format"]>): string {
   if (format === "postgres-url") return "a Postgres URL"
-  if (format === "redis-url") return "a Redis URL"
+  if (format === "redis-url") return "an HTTP(S) Redis REST URL with a token"
   return "an HTTP(S) URL"
+}
+
+function isRedisRestUrl(parsed: URL): boolean {
+  return (
+    (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+    (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
+  )
 }
 
 function resolveDb(env: unknown): VoyantDb {
