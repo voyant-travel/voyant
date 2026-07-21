@@ -279,7 +279,8 @@ async function main(): Promise<void> {
     if (
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
-      JSON.stringify(metadata.compatibleWith.targets) !== JSON.stringify(["node"]) ||
+      JSON.stringify(metadata.compatibleWith.targets) !==
+        JSON.stringify(["node", "cloudflare-worker"]) ||
       typeof metadata.compatibleWith?.framework !== "string" ||
       !metadata.compatibleWith.modes?.includes("local") ||
       !metadata.compatibleWith.modes?.includes("managed-cloud") ||
