@@ -150,10 +150,7 @@ export class SagaError extends Error {
  * This is not a durable job runner: execution lives entirely within one
  * process. Use a job when work must survive process failure or run later.
  */
-export function createSaga(
-  name: string,
-  steps: ReadonlyArray<SagaStepBuilder>,
-): SagaDefinition {
+export function createSaga(name: string, steps: ReadonlyArray<SagaStepBuilder>): SagaDefinition {
   const seen = new Set<string>()
   for (const builder of steps) {
     const stepName = builder.definition.name
@@ -176,9 +173,7 @@ export function createSaga(
     if (options.skipUntil !== undefined) {
       const found = steps.some((b) => b.definition.name === options.skipUntil)
       if (!found) {
-        throw new SagaError(
-          `Saga "${name}" cannot resume: step "${options.skipUntil}" not found`,
-        )
+        throw new SagaError(`Saga "${name}" cannot resume: step "${options.skipUntil}" not found`)
       }
     }
 

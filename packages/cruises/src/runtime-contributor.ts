@@ -4,9 +4,7 @@ import {
   catalogCruisesRuntimeExtensionPort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/runtime-contracts"
-import {
-  type VoyantRuntimeHostPrimitives,
-} from "@voyant-travel/core"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   type FinanceCruisesPaymentPolicyRuntime,
@@ -15,12 +13,12 @@ import {
 
 import { catalogCruisesRuntimeExtension } from "./catalog-runtime-extension.js"
 import { cruisesExternalRefreshJobRuntimePort } from "./external-refresh-job.js"
-import { refreshExternalCruiseCatalog } from "./service-external-refresh.js"
 import {
   resolveCruiseBookingPaymentPolicy,
   resolveCruiseEntityPaymentPolicy,
   resolveCruiseSupplierId,
 } from "./payment-policy-runtime.js"
+import { refreshExternalCruiseCatalog } from "./service-external-refresh.js"
 
 /** Provide Cruises' narrow Catalog and Finance runtime contracts. */
 export interface CruisesRuntimeContributorHost {

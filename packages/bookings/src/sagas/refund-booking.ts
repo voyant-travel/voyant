@@ -230,11 +230,13 @@ export function buildRefundBookingSaga(deps: RefundBookingDeps) {
         })
       }),
 
-    sagaStep<RefundBookingInput, { reversed: boolean }>("reverse-supplier-offer").run(async (input) => {
-      if (!deps.reverseSupplierOffer) return { reversed: false }
-      await deps.reverseSupplierOffer({ bookingId: input.bookingId, reason: input.reason })
-      return { reversed: true }
-    }),
+    sagaStep<RefundBookingInput, { reversed: boolean }>("reverse-supplier-offer").run(
+      async (input) => {
+        if (!deps.reverseSupplierOffer) return { reversed: false }
+        await deps.reverseSupplierOffer({ bookingId: input.bookingId, reason: input.reason })
+        return { reversed: true }
+      },
+    ),
 
     sagaStep<RefundBookingInput, { status: BookingStatus }>("transition-booking").run(
       async (input, ctx) => {

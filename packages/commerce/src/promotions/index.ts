@@ -24,7 +24,10 @@ export {
   type PromotionChangedEvent,
   type PromotionChangedSource,
 } from "./events.js"
-
+export {
+  BULK_REINDEX_SERVICE_KEY,
+  type BulkReindexProductsService,
+} from "./job-runtime.js"
 export {
   type NewPromotionalOffer,
   type NewPromotionalOfferProduct,
@@ -63,7 +66,3 @@ export {
   type UpdatePromotionalOfferInput,
   updatePromotionalOfferSchema,
 } from "./validation.js"
-export {
-  BULK_REINDEX_SERVICE_KEY,
-  type BulkReindexProductsService,
-} from "./job-runtime.js"

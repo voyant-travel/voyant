@@ -21,9 +21,7 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import {
-  type VoyantRuntimeHostPrimitives,
-} from "@voyant-travel/core"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
   type FinanceOperatorSettingsRuntime,

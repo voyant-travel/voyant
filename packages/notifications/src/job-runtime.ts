@@ -15,8 +15,7 @@ export interface SendDueRemindersJobInput {
   now?: string | null
 }
 
-export const NOTIFICATION_REMINDER_JOB_RUNTIME_KEY =
-  "notifications.jobs.reminders.runtime" as const
+export const NOTIFICATION_REMINDER_JOB_RUNTIME_KEY = "notifications.jobs.reminders.runtime" as const
 
 export interface NotificationReminderJobRuntime {
   resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
