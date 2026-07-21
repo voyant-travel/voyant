@@ -14,7 +14,7 @@ import {
   issueInvoiceFromBooking,
   settleCoveredBookingPaymentSchedules,
 } from "@voyant-travel/finance"
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
@@ -31,7 +31,7 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
   force?: boolean
 }) => Promise<{ contractId: string; attachmentId: string } | null>
 
-function buildCheckoutFinalizeDeps(
+export function buildCheckoutFinalizeDeps(
   db: PostgresJsDatabase,
   eventBus: EventBus,
   generateContractPdf?: CatalogCheckoutContractPdfGenerator,
@@ -40,6 +40,19 @@ function buildCheckoutFinalizeDeps(
     db,
     eventBus,
     confirmBooking: async (bookingId) => {
+      const [booking] = await db
+        .select({ status: bookings.status })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
+      if (
+        booking?.status === "confirmed" ||
+        booking?.status === "in_progress" ||
+        booking?.status === "completed"
+      ) {
+        return
+      }
+
       const result = await bookingsService.confirmBooking(db, bookingId, {}, undefined, {
         eventBus,
       })
@@ -60,6 +73,21 @@ function buildCheckoutFinalizeDeps(
       throw new Error(`checkout-finalize: booking confirmation failed (${result.status})`)
     },
     issueInvoice: async ({ bookingId, convertedFromInvoiceId }) => {
+      const { invoices } = await import("@voyant-travel/finance")
+      const [existingInvoice] = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.bookingId, bookingId),
+            eq(invoices.invoiceType, "invoice"),
+            ne(invoices.status, "void"),
+          ),
+        )
+        .orderBy(desc(invoices.createdAt))
+        .limit(1)
+      if (existingInvoice) return { invoiceId: existingInvoice.id }
+
       if (convertedFromInvoiceId) {
         const result = await convertProformaToInvoice(db, convertedFromInvoiceId, {}, { eventBus })
         if (result.status === "ok") return { invoiceId: result.invoice.id }
@@ -150,51 +178,59 @@ function buildCheckoutFinalizeDeps(
       const paidSessions = await db
         .select()
         .from(paymentSessions)
-        .where(
-          and(
-            eq(paymentSessions.bookingId, bookingId),
-            eq(paymentSessions.status, "paid"),
-            isNull(paymentSessions.invoiceId),
-          ),
-        )
+        .where(and(eq(paymentSessions.bookingId, bookingId), eq(paymentSessions.status, "paid")))
 
       let firstPaymentId: string | null = null
       let sessionsLinked = 0
 
       for (const session of paidSessions) {
-        await db
-          .update(paymentSessions)
-          .set({ invoiceId, updatedAt: new Date() })
-          .where(eq(paymentSessions.id, session.id))
+        if (session.paymentId) continue
+        if (session.invoiceId && session.invoiceId !== invoiceId) {
+          throw new Error(
+            `checkout-finalize: paid session ${session.id} is linked to another invoice`,
+          )
+        }
 
-        const payment = await financeService.createPayment(db, invoiceId, {
-          amountCents: session.amountCents,
-          currency: session.currency,
-          paymentMethod: session.paymentMethod ?? "credit_card",
-          paymentInstrumentId: session.paymentInstrumentId ?? null,
-          paymentAuthorizationId: session.paymentAuthorizationId ?? null,
-          paymentCaptureId: session.paymentCaptureId ?? null,
-          status: "completed",
-          referenceNumber:
-            session.providerPaymentId ??
-            session.externalReference ??
-            session.providerSessionId ??
-            session.id,
-          paymentDate: (session.completedAt ?? new Date()).toISOString().slice(0, 10),
-          notes:
-            `Checkout-finalize linkage from session ${session.id}` +
-            (paymentSessionId && session.id !== paymentSessionId
-              ? ` (command input session: ${paymentSessionId})`
-              : ""),
-        })
-
-        if (payment?.id) {
+        if (!session.invoiceId) {
           await db
             .update(paymentSessions)
-            .set({ paymentId: payment.id, updatedAt: new Date() })
-            .where(eq(paymentSessions.id, session.id))
-          if (!firstPaymentId) firstPaymentId = payment.id
+            .set({ invoiceId, updatedAt: new Date() })
+            .where(and(eq(paymentSessions.id, session.id), isNull(paymentSessions.invoiceId)))
         }
+
+        // Finance owns the atomic payment + session checkpoint. If delivery
+        // stops after the invoice pointer is written, a retry enters here
+        // again; if this call committed, paymentId makes the retry a no-op.
+        const completed = await financeService.completePaymentSession(
+          db,
+          session.id,
+          {
+            status: "paid",
+            captureMode: "manual",
+            providerSessionId: session.providerSessionId,
+            providerPaymentId: session.providerPaymentId,
+            externalReference: session.externalReference,
+            paymentMethod: session.paymentMethod ?? "credit_card",
+            paymentInstrumentId: session.paymentInstrumentId ?? null,
+            referenceNumber:
+              session.providerPaymentId ??
+              session.externalReference ??
+              session.providerSessionId ??
+              session.id,
+            paymentDate: (session.completedAt ?? new Date()).toISOString().slice(0, 10),
+            notes:
+              `Checkout-finalize linkage from session ${session.id}` +
+              (paymentSessionId && session.id !== paymentSessionId
+                ? ` (command input session: ${paymentSessionId})`
+                : ""),
+          },
+          { eventBus },
+        )
+        if (!completed?.paymentId) {
+          throw new Error(`checkout-finalize: paid session ${session.id} was not reconciled`)
+        }
+
+        if (!firstPaymentId) firstPaymentId = completed.paymentId
         sessionsLinked++
       }
 
@@ -218,10 +254,6 @@ export interface FinalizeCheckoutParams {
  * There is no customer-authored execution definition or run record.
  */
 export async function finalizeCheckout(params: FinalizeCheckoutParams): Promise<void> {
-  const deps = buildCheckoutFinalizeDeps(
-    params.db,
-    params.eventBus,
-    params.generateContractPdf,
-  )
+  const deps = buildCheckoutFinalizeDeps(params.db, params.eventBus, params.generateContractPdf)
   await runCheckoutFinalize(params.input, deps)
 }

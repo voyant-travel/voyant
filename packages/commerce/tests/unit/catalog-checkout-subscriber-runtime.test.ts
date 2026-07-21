@@ -67,7 +67,7 @@ describe("catalog-checkout subscriber runtimes", () => {
     expect(persistSignature).toHaveBeenCalledWith(db, "contract_1", eventBus, legalPort)
   })
 
-  it("logs and swallows acceptance-signature failures", async () => {
+  it("logs and rethrows acceptance-signature failures for outbox retry", async () => {
     const error = new Error("legal unavailable")
     const logger = { error: vi.fn() }
     const { eventBus, subscriptions } = recordingEventBus()
@@ -82,7 +82,7 @@ describe("catalog-checkout subscriber runtimes", () => {
 
     await expect(
       subscriptions[0]?.handler(event("contract.document.generated", { contractId: "contract_2" })),
-    ).resolves.toBeUndefined()
+    ).rejects.toBe(error)
     expect(logger.error).toHaveBeenCalledWith(
       "[catalog-checkout] persistAcceptanceSignature failed",
       error,
@@ -125,13 +125,15 @@ describe("catalog-checkout subscriber runtimes", () => {
     )
   })
 
-  it("ignores unrelated payments and swallows dispatch failures", async () => {
+  it("ignores unrelated payments and rethrows dispatch failures for outbox retry", async () => {
+    const error = new Error("checkout finalization failure")
     const finalize = vi.fn(async () => {
-      throw new Error("checkout finalization failure")
+      throw error
     })
+    const logger = { error: vi.fn() }
     const withDb = vi.fn(async (_bindings, operation) => operation({} as PostgresJsDatabase))
     const { eventBus, subscriptions } = recordingEventBus()
-    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, finalize })
+    const descriptor = createCheckoutFinalizeSubscriberRuntime({ withDb, finalize, logger })
     await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
 
     await subscriptions[0]?.handler(event("payment.completed", { bookingId: null }))
@@ -139,7 +141,11 @@ describe("catalog-checkout subscriber runtimes", () => {
 
     await expect(
       subscriptions[0]?.handler(event("payment.completed", { bookingId: "booking_2" })),
-    ).resolves.toBeUndefined()
+    ).rejects.toBe(error)
     expect(finalize).toHaveBeenCalledOnce()
+    expect(logger.error).toHaveBeenCalledWith(
+      "[catalog-checkout] checkout finalization failed for booking booking_2",
+      error,
+    )
   })
 })
