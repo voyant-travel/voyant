@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { createPostgresIndexer } from "./postgres.js"
 import { createPostgresGraphIndexerProvider } from "./postgres-provider.js"
 
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
@@ -57,17 +58,38 @@ describe("Postgres graph indexer provider", () => {
     })
   })
 
-  it("rejects unrecorded Postgres vector strategies", () => {
+  it("enables Lakebase ANN only from its recorded deployment capability", () => {
     const db = { execute: async () => [] }
-    expect(() =>
-      createPostgresGraphIndexerProvider({
-        getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-        getConfig: ((id: string) =>
-          id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
-        getSecret: ((id: string) =>
-          id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
-      }),
-    ).toThrow("POSTGRES_SEARCH_VECTOR_STRATEGY")
+    const provider = createPostgresGraphIndexerProvider({
+      getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
+      getConfig: ((id: string) =>
+        id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
+      getSecret: ((id: string) =>
+        id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
+    })
+    expect(
+      provider.create({ registries: new Map(), vectorDimensions: 3 }).capabilities,
+    ).toMatchObject({
+      supportsHybridSearch: true,
+      supportsVectorFields: true,
+      vectorDimensions: 3,
+    })
+  })
+
+  it("reports the recorded Lakebase capability state without a query-time probe", () => {
+    const adapter = createPostgresIndexer({
+      db: { execute: async () => [] } as never,
+      registries: new Map(),
+      vectorDimensions: 3,
+      vectorStrategy: "lakebase",
+      textStrategy: "lakebase",
+    })
+
+    expect(adapter.diagnostics()).toMatchObject({
+      textStrategy: "lakebase",
+      vectorStrategy: "lakebase",
+      vectorDimensions: 3,
+    })
   })
 
   it("rejects unrecorded Postgres typo strategies", () => {

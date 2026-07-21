@@ -41,7 +41,7 @@ type StoredRow = {
   vector_score?: number | string
 }
 
-type PostgresVectorStrategy = "none" | "pgvector"
+type PostgresVectorStrategy = "none" | "pgvector" | "lakebase"
 type PostgresTypoStrategy = "none" | "pgtrgm"
 type PostgresTextStrategy = "native" | "lakebase"
 
@@ -92,7 +92,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
   const textStrategy = options.textStrategy ?? "native"
   const cursorSigningKey = options.cursorSigningKey ?? DIRECT_ADAPTER_CURSOR_SIGNING_KEY
   const vectorDimensions = resolveVectorDimensions(vectorStrategy, options.vectorDimensions)
-  let vectorStorageVerified = vectorStrategy !== "pgvector"
+  let vectorStorageVerified = vectorStrategy === "none"
+  let lakebaseVectorIndexReady = vectorStrategy !== "lakebase"
   let typoStorageVerified = typoStrategy !== "pgtrgm"
   let lakebaseTextStorageVerified = textStrategy !== "lakebase"
   let lakebaseTextIndexReady = textStrategy !== "lakebase"
@@ -236,14 +237,17 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       }
       lakebaseTextStorageVerified = true
     }
-    if (vectorStrategy === "pgvector") {
+    if (vectorStrategy !== "none") {
       if (!vectorStorageVerified) {
-        const vectorType = readRows(
-          await db.execute(sql`SELECT 1 FROM pg_type WHERE typname = 'vector' LIMIT 1`),
+        const requiredExtension = vectorStrategy === "lakebase" ? "lakebase_vector" : "vector"
+        const vectorExtension = readRows(
+          await db.execute(
+            sql`SELECT 1 FROM pg_extension WHERE extname = ${requiredExtension} LIMIT 1`,
+          ),
         )
-        if (vectorType.length === 0) {
+        if (vectorExtension.length === 0) {
           throw new Error(
-            "Postgres catalog indexer recorded pgvector strategy requires the vector extension to be provisioned.",
+            `Postgres catalog indexer recorded ${vectorStrategy} vector strategy requires the ${requiredExtension} extension to be provisioned.`,
           )
         }
         vectorStorageVerified = true
@@ -290,14 +294,24 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     lakebaseTextIndexReady = true
   }
 
+  const ensureLakebaseVectorIndex = async () => {
+    if (vectorStrategy !== "lakebase" || lakebaseVectorIndexReady) return
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_ann_idx
+        ON voyant_catalog_search_documents
+        USING lakebase_ann (search_embedding vector_cosine_ops)
+    `)
+    lakebaseVectorIndexReady = true
+  }
+
   return {
     capabilities: {
       supportsKeywordSearch: true,
-      supportsHybridSearch: vectorStrategy === "pgvector",
-      supportsVectorFields: vectorStrategy === "pgvector",
+      supportsHybridSearch: vectorStrategy !== "none",
+      supportsVectorFields: vectorStrategy !== "none",
       vectorDimensions,
       // The native fallback persists one selected embedding per document.
-      maxVectorsPerDocument: vectorStrategy === "pgvector" ? 1 : null,
+      maxVectorsPerDocument: vectorStrategy !== "none" ? 1 : null,
       supportsCrossAudienceFederation: true,
       supportsAdminDenormalization: true,
     },
@@ -405,7 +419,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         const embedding = vectorDimensions
           ? selectedEmbedding(document, vectorDimensions)
           : undefined
-        if (vectorStrategy === "pgvector") {
+        if (vectorStrategy !== "none") {
           await db.execute(sql`
             INSERT INTO voyant_catalog_search_documents (
               vertical, locale, audience, market, channel, id, fields, embeddings,
@@ -449,6 +463,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       }
       await bumpGeneration(slice)
       await ensureLakebaseTextIndex()
+      await ensureLakebaseVectorIndex()
     },
 
     async delete(slice, ids) {
@@ -488,7 +503,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     },
 
     async search(slice, request) {
-      if (request.mode !== "keyword" && vectorStrategy !== "pgvector") {
+      if (request.mode !== "keyword" && vectorStrategy === "none") {
         throw new Error("Postgres catalog indexer semantic and hybrid strategies are not enabled.")
       }
       await ensureStorage()
@@ -573,6 +588,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           await publishStagedRebuild(tx, rebuildId, slice, vectorStrategy, typoStrategy)
         })
         await ensureLakebaseTextIndex()
+        await ensureLakebaseVectorIndex()
       } finally {
         await db.execute(sql`
           DELETE FROM voyant_catalog_search_rebuild_documents
@@ -886,7 +902,7 @@ async function publishStagedRebuild(
     DELETE FROM voyant_catalog_search_documents
     WHERE ${slicePredicate(slice)}
   `)
-  if (vectorStrategy === "pgvector") {
+  if (vectorStrategy !== "none") {
     await db.execute(sql`
       INSERT INTO voyant_catalog_search_documents (
         vertical, locale, audience, market, channel, id, fields, embeddings,
@@ -1200,7 +1216,7 @@ function resolveVectorDimensions(
   if (strategy === "none") return null
   if (!Number.isInteger(dimensions) || (dimensions ?? 0) <= 0) {
     throw new Error(
-      "Postgres catalog indexer pgvector strategy requires a positive vectorDimensions deployment setting.",
+      "Postgres catalog indexer vector strategy requires a positive vectorDimensions deployment setting.",
     )
   }
   return dimensions ?? null
@@ -1210,9 +1226,7 @@ function selectedEmbedding(document: IndexerDocument, dimensions: number): strin
   const embeddings = Object.entries(document.embeddings ?? {})
   if (embeddings.length === 0) return null
   if (embeddings.length > 1) {
-    throw new Error(
-      "Postgres catalog indexer pgvector strategy supports one embedding per document.",
-    )
+    throw new Error("Postgres catalog indexer vector strategy supports one embedding per document.")
   }
   const [, embedding] = embeddings[0]!
   return vectorLiteral(embedding, dimensions, `document "${document.id}" embedding`)

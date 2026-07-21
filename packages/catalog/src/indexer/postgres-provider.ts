@@ -65,10 +65,10 @@ function resolveTypoStrategy(value: unknown): "none" | "pgtrgm" {
   throw new Error('POSTGRES_SEARCH_TYPO_STRATEGY must be either "none" or "pgtrgm".')
 }
 
-function resolveVectorStrategy(value: unknown): "none" | "pgvector" {
+function resolveVectorStrategy(value: unknown): "none" | "pgvector" | "lakebase" {
   if (value === undefined || value === "" || value === "none") return "none"
-  if (value === "pgvector") return value
-  throw new Error('POSTGRES_SEARCH_VECTOR_STRATEGY must be either "none" or "pgvector".')
+  if (value === "pgvector" || value === "lakebase") return value
+  throw new Error('POSTGRES_SEARCH_VECTOR_STRATEGY must be "none", "pgvector", or "lakebase".')
 }
 
 function requiredString(value: unknown, name: string): string {
