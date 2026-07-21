@@ -376,7 +376,10 @@ export async function loadVoyantNodeRuntime(
     ctx: ExecutionContextLike = createNoopExecutionContext(),
   ): Promise<Response> => {
     const url = new URL(request.url)
-    if (url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)) {
+    if (
+      url.pathname === VOYANT_PRODUCT_JOB_ROUTE ||
+      url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)
+    ) {
       const response = await jobHost.handleRequest(request, bindings.ORIGIN_TRUST_SECRET)
       if (response) return response
     }

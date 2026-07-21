@@ -157,7 +157,6 @@ const BASE_PROVIDERS = {
   customerAuth: "disabled",
   realtime: "none",
   scheduledJobs: "none",
-  workflows: "none",
   outboundWebhooks: "none",
   payments: "none",
 } satisfies VoyantDeploymentProviders
@@ -331,6 +330,29 @@ describe("createVoyantNodeEnv Redis namespace", () => {
 })
 
 describe("loadVoyantNodeRuntime Redis URL validation", () => {
+  it("routes the exact managed product-job inventory endpoint", async () => {
+    const providers = {
+      ...BASE_PROVIDERS,
+      adminAuth: "better-auth",
+    } satisfies VoyantDeploymentProviders
+    const runtime = await loadVoyantNodeRuntime({
+      graphRuntime: emptyGraphRuntime(providers),
+      jobs: [],
+      deployment: { mode: "self-hosted", providers },
+      deploymentRequirements: { resources: [] },
+      env: { ORIGIN_TRUST_SECRET: "secret" },
+    })
+
+    const response = await runtime.fetch(
+      new Request("https://operator.test/__voyant/jobs", {
+        headers: { "x-voyant-origin-trust": "secret" },
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ provisioning: { jobs: [] } })
+  })
+
   it("requires REDIS_NAMESPACE when managed shared state uses Redis", async () => {
     const providers = {
       ...BASE_PROVIDERS,
@@ -340,6 +362,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -361,6 +384,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -389,6 +413,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -404,6 +429,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -425,6 +451,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -455,6 +482,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "managed-cloud", providers },
         deploymentRequirements: { resources: [] },
         env: {
@@ -485,6 +513,7 @@ describe("loadVoyantNodeRuntime Redis URL validation", () => {
     await expect(
       loadVoyantNodeRuntime({
         graphRuntime: emptyGraphRuntime(providers),
+        jobs: [],
         deployment: { mode: "self-hosted", providers },
         deploymentRequirements: { resources: [] },
         env: {
