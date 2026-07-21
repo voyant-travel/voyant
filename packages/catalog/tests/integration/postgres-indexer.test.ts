@@ -289,9 +289,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
 
       await expect(
         adapter.bulkReindex(lifecycleSlice, failingStream(), { rebuildRunId: "resume" }),
-      ).rejects.toThrow(
-        "stream failed",
-      )
+      ).rejects.toThrow("stream failed")
       expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
         expect.objectContaining({ id: "new" }),
       ])

@@ -1906,9 +1906,7 @@ function facetMatchPredicate(
     ? typoFacetPredicate(request)
     : nativeKeywordFacetPredicate(request)
   const vector =
-    request.mode === "keyword"
-      ? sql`FALSE`
-      : vectorFacetPredicate(request, vectorDimensions!)
+    request.mode === "keyword" ? sql`FALSE` : vectorFacetPredicate(request, vectorDimensions!)
   const retrieval =
     request.mode === "keyword"
       ? keyword
