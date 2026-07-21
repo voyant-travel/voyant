@@ -245,7 +245,7 @@ export async function loadVoyantProject(
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
     graphRuntime: generated.graphRuntime,
-    jobs: graph.provisioning.jobs,
+    jobs: graph.jobs,
     deployment: {
       mode: generated.deployment.mode ?? "self-hosted",
       providers: generated.deployment.providers,

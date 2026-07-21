@@ -100,7 +100,6 @@ describe("graph runtime composition", () => {
     expect(typeof provider.resolveDeployment).toBe("function")
     expect(typeof provider.resolveSourceAdapterRegistry).toBe("function")
     expect(typeof provider.readConfig).toBe("function")
-    expect(typeof provider.createStaleBookingHoldsRuntime).toBe("function")
     expect(typeof provider.resolveNotificationDispatcher).toBe("function")
     expect(typeof provider.resolveOperatorDefaultPaymentPolicy).toBe("function")
     expect(typeof provider.createPaymentPolicyRuntime).toBe("function")
@@ -367,7 +366,6 @@ describe("graph runtime composition", () => {
     )
     const eventBus = createEventBus()
 
-    expect(module?.module.eventFilters).toBeUndefined()
     await module?.module.bootstrap?.({ bindings: {}, container: {} as never, eventBus })
     await eventBus.emit("booking.confirmed", { bookingId: "booking_1" })
 

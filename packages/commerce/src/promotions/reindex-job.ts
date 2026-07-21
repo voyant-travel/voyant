@@ -1,28 +1,18 @@
-import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import { sql } from "drizzle-orm"
 
-import type { BulkReindexProductsService } from "./job-runtime.js"
+import { promotionReindexJobRuntimePort } from "./reindex-job-runtime-port.js"
 
-export interface PromotionReindexJobRuntime {
-  withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>
-  createService(): BulkReindexProductsService | Promise<BulkReindexProductsService>
+function unrefTimer(timer: unknown): void {
+  if (typeof timer !== "object" || timer === null) return
+  const maybeTimer = timer as { unref?: unknown }
+  if (typeof maybeTimer.unref === "function") maybeTimer.unref()
 }
 
-export const promotionReindexJobRuntimePort = definePort<PromotionReindexJobRuntime>({
-  id: "commerce.promotion-reindex-job",
-  test(runtime) {
-    if (
-      !runtime ||
-      typeof runtime.withDb !== "function" ||
-      typeof runtime.createService !== "function"
-    ) {
-      throw new Error(
-        "commerce.promotion-reindex-job provider must implement withDb() and createService().",
-      )
-    }
-  },
-})
+export {
+  type PromotionReindexJobRuntime,
+  promotionReindexJobRuntimePort,
+} from "./reindex-job-runtime-port.js"
 
 /** Drain the durable catalog-wide reindex checkpoint without invocation input. */
 export async function runPromotionReindexJob(
@@ -55,7 +45,7 @@ export async function runPromotionReindexJob(
   const renew = () => {
     renewal = renewal
       .then(async () => {
-        const updated = await runtime.withDb((db) =>
+        const updated = await runtime.withDb(async (db) =>
           db.execute(sql`
           UPDATE promotion_reindex_state
           SET lease_until = now() + interval '2 minutes', updated_at = now()
@@ -73,7 +63,7 @@ export async function runPromotionReindexJob(
       })
   }
   const heartbeat = setInterval(renew, 30_000)
-  heartbeat.unref?.()
+  unrefTimer(heartbeat)
 
   try {
     const service = await runtime.createService()
@@ -98,7 +88,7 @@ export async function runPromotionReindexJob(
       if (rows.length === 0) throw new Error("Promotion reindex lease was lost before checkpoint.")
     })
   } catch (error) {
-    await runtime.withDb((db) =>
+    await runtime.withDb(async (db) =>
       db.execute(sql`
         UPDATE promotion_reindex_state
         SET lease_owner = NULL, lease_until = NULL, updated_at = now()

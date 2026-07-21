@@ -23,8 +23,8 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "./checkout/runtime-ports.js"
-import { promotionBoundaryJobRuntimePort } from "./promotions/job-boundary-scheduler.js"
-import { promotionReindexJobRuntimePort } from "./promotions/reindex-job.js"
+import { promotionBoundaryJobRuntimePort } from "./promotions/boundary-job-runtime-port.js"
+import { promotionReindexJobRuntimePort } from "./promotions/reindex-job-runtime-port.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,

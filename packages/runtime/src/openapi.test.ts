@@ -5,6 +5,13 @@ import { describe, expect, it } from "vitest"
 
 import { buildOperatorOpenApiDocuments } from "./openapi.js"
 
+async function loadFixtureModule<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(): Promise<T> {
+  const moduleNamespace: Record<string, unknown> = { fixtureModule: {} }
+  return moduleNamespace as T
+}
+
 function documentedApp() {
   const app = new OpenAPIHono() as OpenAPIHono & {
     lazyMounts: LazyMount[]
@@ -64,8 +71,7 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
           runtime,
           importEntry: id,
           load: async <T = unknown>() => ({}) as T,
-          loadModule: async <T extends Record<string, unknown> = Record<string, unknown>>() =>
-            ({ fixtureModule: {} }) as unknown as T,
+          loadModule: loadFixtureModule,
         },
       ],
       config: [],
@@ -78,6 +84,7 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
       requiredRuntimePorts: [],
       accessScopes: [],
       tools: [],
+      jobs: [],
       actions: [],
       selectedIds: {
         routes: [route.id],

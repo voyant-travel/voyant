@@ -23,11 +23,12 @@ import {
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   type FinanceOperatorSettingsRuntime,
   financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job.js"
+import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogAccommodationsRuntimeExtension,
@@ -141,7 +142,7 @@ export function createCatalogRuntimePortContribution(
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
     [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
     [catalogDraftReaperJobRuntimePort.id]: {
-      async withDb<T>(operation: (db: import("@voyant-travel/db").AnyDrizzleDb) => Promise<T>) {
+      async withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>) {
         return operation(host.primitives.database.resolve(undefined))
       },
       async resolveSourceRegistry() {
