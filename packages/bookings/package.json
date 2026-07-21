@@ -14,7 +14,7 @@
     "./requirements/routes": "./src/requirements/routes.ts",
     "./requirements/public-routes": "./src/requirements/routes-public.ts",
     "./tasks": "./src/tasks/index.ts",
-    "./workflows": "./src/workflow-entry.ts",
+    "./stale-holds-job": "./src/stale-holds-job.ts",
     "./workflow-runtime": "./src/workflow-runtime.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
@@ -61,7 +61,6 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:",
@@ -131,10 +130,10 @@
         "import": "./dist/tasks/index.js",
         "default": "./dist/tasks/index.js"
       },
-      "./workflows": {
-        "types": "./dist/workflow-entry.d.ts",
-        "import": "./dist/workflow-entry.js",
-        "default": "./dist/workflow-entry.js"
+      "./stale-holds-job": {
+        "types": "./dist/stale-holds-job.d.ts",
+        "import": "./dist/stale-holds-job.js",
+        "default": "./dist/stale-holds-job.js"
       },
       "./workflow-runtime": {
         "types": "./dist/workflow-runtime.d.ts",

@@ -30,7 +30,7 @@ describe("cruises deployment manifest", () => {
         ports: [
           { id: "catalog.extension.cruises" },
           { id: "finance.cruises-payment-policy.runtime" },
-          { id: "voyant.workflow-services" },
+          { id: "cruises.external-refresh-job" },
         ],
       },
       requires: { ports: [{ id: "catalog.runtime-services" }] },
@@ -53,7 +53,7 @@ describe("cruises deployment manifest", () => {
       ],
       runtimePorts: [
         { id: "cruises.routes-runtime" },
-        { id: "voyant.workflow-services", optional: true, cardinality: "many" },
+        { id: "cruises.external-refresh-job" },
       ],
       schema: [{ id: "@voyant-travel/cruises#schema", source: "@voyant-travel/cruises/schema" }],
       migrations: [{ id: "@voyant-travel/cruises#migrations", source: "./migrations" }],
@@ -63,13 +63,13 @@ describe("cruises deployment manifest", () => {
         { id: "@voyant-travel/cruises#linkable.cruise_sailing" },
         { id: "@voyant-travel/cruises#linkable.cruise_ship" },
       ],
-      workflows: [
+      jobs: [
         expect.objectContaining({
           id: "cruises.external-catalog-refresh",
-          schedules: [expect.objectContaining({ id: "external-cruise-catalog-refresh" })],
+          schedule: { cron: "30 3 * * *", overlap: "skip" },
           runtime: {
-            entry: "@voyant-travel/cruises/external-refresh-workflow",
-            export: "cruisesExternalCatalogRefreshWorkflow",
+            entry: "@voyant-travel/cruises/external-refresh-job",
+            export: "runCruisesExternalCatalogRefreshJob",
           },
         }),
       ],

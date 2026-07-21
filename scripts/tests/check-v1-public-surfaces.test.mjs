@@ -11,7 +11,7 @@ const packages = {
       "./validation",
       "./product-reindex-workflow",
       "./product-reindex-workflow-manifest",
-      "./promotion-boundary-workflow",
+      "./promotion-boundary-job",
     ],
     retiredPrefixes: ["./markets", "./promotions", "./sellability"],
   },

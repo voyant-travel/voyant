@@ -367,7 +367,7 @@
       "@voyant-travel/bookings/validation": ["../bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../bookings/dist/voyant.d.ts"],
       "@voyant-travel/bookings/workflow-runtime": ["../bookings/dist/workflow-runtime.d.ts"],
-      "@voyant-travel/bookings/workflows": ["../bookings/dist/workflow-entry.d.ts"],
+      "@voyant-travel/bookings/stale-holds-job": ["../bookings/dist/stale-holds-job.d.ts"],
       "@voyant-travel/catalog": ["../catalog/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring": ["../catalog-authoring/dist/index.d.ts"],
       "@voyant-travel/catalog-authoring/extension": ["../catalog-authoring/dist/extension.d.ts"],
@@ -450,8 +450,8 @@
       ],
       "@voyant-travel/catalog/catalog-runtime": ["../catalog/dist/runtime/catalog-runtime.d.ts"],
       "@voyant-travel/catalog/contract": ["../catalog/dist/contract.d.ts"],
-      "@voyant-travel/catalog/draft-reaper-workflow": [
-        "../catalog/dist/draft-reaper-workflow.d.ts"
+      "@voyant-travel/catalog/draft-reaper-job": [
+        "../catalog/dist/draft-reaper-job.d.ts"
       ],
       "@voyant-travel/catalog/drift/events": ["../catalog/dist/drift/events.d.ts"],
       "@voyant-travel/catalog/embeddings/contract": ["../catalog/dist/embeddings/contract.d.ts"],
@@ -664,8 +664,8 @@
       "@voyant-travel/commerce/product-reindex-workflow-manifest": [
         "../commerce/dist/promotions/workflow-bulk-reindex-manifest.d.ts"
       ],
-      "@voyant-travel/commerce/promotion-boundary-workflow": [
-        "../commerce/dist/promotions/workflow-boundary-scheduler.d.ts"
+      "@voyant-travel/commerce/promotion-boundary-job": [
+        "../commerce/dist/promotions/job-boundary-scheduler.d.ts"
       ],
       "@voyant-travel/commerce/promotion-redemption-subscriber": [
         "../commerce/dist/promotions/subscriber-runtime.d.ts"
@@ -727,8 +727,8 @@
       ],
       "@voyant-travel/cruises/content-shape": ["../cruises/dist/content-shape.d.ts"],
       "@voyant-travel/cruises/draft-shape": ["../cruises/dist/draft-shape.d.ts"],
-      "@voyant-travel/cruises/external-refresh-workflow": [
-        "../cruises/dist/external-refresh-workflow.d.ts"
+      "@voyant-travel/cruises/external-refresh-job": [
+        "../cruises/dist/external-refresh-job.d.ts"
       ],
       "@voyant-travel/cruises/graph-runtime": ["../cruises/dist/graph-runtime.d.ts"],
       "@voyant-travel/cruises/payment-policy-runtime": [
@@ -1456,7 +1456,7 @@
       "@voyant-travel/notifications/workflow-runtime": [
         "../notifications/dist/workflow-runtime.d.ts"
       ],
-      "@voyant-travel/notifications/workflows": ["../notifications/dist/workflow-entry.d.ts"],
+      "@voyant-travel/notifications/reminder-job": ["../notifications/dist/reminder-job.d.ts"],
       "@voyant-travel/observability-sentry": ["../observability-sentry/dist/index.d.ts"],
       "@voyant-travel/operations": ["../operations/dist/index.d.ts"],
       "@voyant-travel/operations-react": ["../operations-react/dist/index.d.ts"],

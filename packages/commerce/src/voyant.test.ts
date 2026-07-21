@@ -7,20 +7,18 @@ import {
 import { commerceVoyantModule } from "./voyant.js"
 
 describe("commerce deployment manifest", () => {
-  it("owns the promotion workflow and event-filter runtime references", () => {
-    expect(commerceVoyantModule.workflows).toEqual([
+  it("owns the promotion job, deferred reindex workflow, and event-filter references", () => {
+    expect(commerceVoyantModule.jobs).toEqual([
       {
         id: "commerce.process-promotion-boundaries",
-        config: {
-          defaultRuntime: "node",
-          schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-        },
-        source: "@voyant-travel/commerce/promotion-boundary-workflow",
+        schedule: { cron: "*/5 * * * *", overlap: "skip" },
         runtime: {
-          entry: "@voyant-travel/commerce/promotion-boundary-workflow",
-          export: "promotionBoundarySchedulerWorkflow",
+          entry: "@voyant-travel/commerce/promotion-boundary-job",
+          export: "runPromotionBoundaryJob",
         },
       },
+    ])
+    expect(commerceVoyantModule.workflows).toEqual([
       {
         ...bulkReindexProductsWorkflowManifest,
         source: "@voyant-travel/commerce/product-reindex-workflow",

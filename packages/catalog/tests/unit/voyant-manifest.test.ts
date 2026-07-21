@@ -25,7 +25,7 @@ describe("catalog deployment manifest", () => {
           { id: "catalog.projection-runtime" },
           { id: "catalog.booking-snapshot-runtime" },
           { id: "catalog.runtime-services" },
-          { id: "voyant.workflow-services" },
+          { id: "catalog.draft-reaper-job" },
           { id: "cruises.routes-runtime" },
         ],
       },
@@ -104,7 +104,7 @@ describe("catalog deployment manifest", () => {
       { id: "catalog.search-runtime" },
       { id: "catalog.projection-runtime" },
       { id: "catalog.booking-snapshot-runtime" },
-      { id: "voyant.workflow-services", optional: true, cardinality: "many" },
+      { id: "catalog.draft-reaper-job" },
     ])
     expect(catalogVoyantModule.tools).toEqual(
       expect.arrayContaining([
@@ -112,17 +112,13 @@ describe("catalog deployment manifest", () => {
         expect.objectContaining({ name: "get_catalog_entry", risk: "low" }),
       ]),
     )
-    expect(catalogVoyantModule.workflows).toEqual([
+    expect(catalogVoyantModule.jobs).toEqual([
       {
         id: "catalog.reap-expired-booking-drafts",
-        config: {
-          defaultRuntime: "node",
-          schedule: { cron: "5 * * * *", name: "hourly-at-05" },
-        },
-        source: "@voyant-travel/catalog/draft-reaper-workflow",
+        schedule: { cron: "5 * * * *", overlap: "skip" },
         runtime: {
-          entry: "@voyant-travel/catalog/draft-reaper-workflow",
-          export: "catalogDraftReaperWorkflow",
+          entry: "@voyant-travel/catalog/draft-reaper-job",
+          export: "runCatalogDraftReaperJob",
         },
       },
     ])
