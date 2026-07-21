@@ -559,8 +559,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       if (documents.length === 0) return
       requireTransactionSupport(db, "incremental upsert")
       await ensureStorage()
-      await ensureSlice(db, slice)
       await withOptionalTransaction(db, async (tx) => {
+        await ensureSlice(tx, slice)
         for (const document of documents) {
           const embedding = vectorDimensions
             ? selectedEmbedding(document, vectorDimensions)
@@ -618,8 +618,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       if (ids.length === 0) return
       requireTransactionSupport(db, "incremental delete")
       await ensureStorage()
-      await ensureSlice(db, slice)
       await withOptionalTransaction(db, async (tx) => {
+        await ensureSlice(tx, slice)
         await tx.execute(sql`
         DELETE FROM voyant_catalog_search_facets
         WHERE ${facetSlicePredicate(slice)}
