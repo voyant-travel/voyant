@@ -1,5 +1,12 @@
 # @voyant-travel/ui
 
+## 0.109.4
+
+### Patch Changes
+
+- Updated dependencies [9db4363]
+  - @voyant-travel/utils@0.109.0
+
 ## 0.109.3
 
 ### Patch Changes

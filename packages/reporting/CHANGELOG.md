@@ -1,5 +1,12 @@
 # @voyant-travel/reporting
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [9db4363]
+  - @voyant-travel/hono@0.133.0
+
 ## 0.3.1
 
 ### Patch Changes
