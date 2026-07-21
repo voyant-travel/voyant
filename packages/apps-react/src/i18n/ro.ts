@@ -127,6 +127,10 @@ export const appsUiRo = {
     deniedSummary: "{count} permisiuni opționale refuzate.",
     approve: "Aprobă și instalează",
     approving: "Se instalează…",
+    upgrade: "Aprobă și actualizează",
+    upgrading: "Se actualizează…",
+    upgradeDescription:
+      "Această aplicație este deja instalată. Aprobarea va actualiza instalarea existentă la versiunea {version} și îi va păstra identitatea.",
     selectApp: "Aplicație",
     selectRelease: "Versiune",
     verifiedApp: "Aplicație verificată",

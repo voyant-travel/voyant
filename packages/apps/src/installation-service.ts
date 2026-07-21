@@ -6,6 +6,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   audit,
   countInstallationRows,
+  deactivateKeylessActiveWebhooks,
   deactivateResolvedRegistrations,
   deactivateRuntimeState,
   markAppDefinitionsInactive,
@@ -64,6 +65,9 @@ export interface UpgradeAppInput {
   installationId: string
   releaseId: string
   actorId: string
+  grantedRequiredScopes?: readonly string[]
+  grantedOptionalScopes?: readonly string[]
+  updatePolicy?: AppInstallationUpdatePolicy
   credential?: AppCredentialInput
 }
 
@@ -154,30 +158,59 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
 
   async function upgrade(db: PostgresJsDatabase, input: UpgradeAppInput) {
     return db.transaction(async (tx) => {
-      const installation = await requireInstallation(tx, input.installationId, true)
+      let installation = await requireInstallation(tx, input.installationId, true)
       if (!["active", "paused", "degraded"].includes(installation.status)) {
         throw invalidTransition(installation.status, "upgrade")
       }
       const release = await requireReleaseForApp(tx, installation.appId, input.releaseId)
       assertReleaseAvailable(release)
       assertApiCompatible(release, options.platformApiVersion)
+      const deactivatedKeylessWebhooks = await deactivateKeylessActiveWebhooks(tx, installation)
+      if (deactivatedKeylessWebhooks > 0) {
+        await audit(
+          tx,
+          installation,
+          input.actorId,
+          "reconciliation",
+          "webhooks.keyless_inactive",
+          {
+            count: deactivatedKeylessWebhooks,
+          },
+        )
+      }
+      if (installation.releaseId === release.id) {
+        installation = await reconcileUpgradeManagedBinding(tx, installation, input.releaseId)
+        await audit(tx, installation, input.actorId, "lifecycle", "upgrade.idempotent", {
+          releaseId: release.id,
+        })
+        return { installation, outcome: "unchanged" as const, missingScopes: [] }
+      }
       const missingScopes = await newlyRequiredScopes(tx, installation, release)
-      if (missingScopes.length > 0) {
+      const grantedRequiredScopes = new Set(input.grantedRequiredScopes ?? [])
+      const unapprovedScopes = missingScopes.filter((scope) => !grantedRequiredScopes.has(scope))
+      if (unapprovedScopes.length > 0) {
         const [pending] = await tx
           .update(appInstallations)
           .set({
             pendingReleaseId: release.id,
-            pendingReason: `New required scopes need consent: ${missingScopes.join(", ")}`,
+            pendingReason: `New required scopes need consent: ${unapprovedScopes.join(", ")}`,
             updatedAt: new Date(),
           })
           .where(eq(appInstallations.id, installation.id))
           .returning()
         const row = pending ?? installation
-        await audit(tx, row, input.actorId, "grant", "upgrade.pending_consent", { missingScopes })
+        await audit(tx, row, input.actorId, "grant", "upgrade.pending_consent", {
+          missingScopes: unapprovedScopes,
+        })
         await emitLifecycle(row, "upgrade_pending")
-        return { installation: row, outcome: "pending_consent" as const, missingScopes }
+        return {
+          installation: row,
+          outcome: "pending_consent" as const,
+          missingScopes: unapprovedScopes,
+        }
       }
 
+      installation = await reconcileUpgradeManagedBinding(tx, installation, input.releaseId)
       await deactivateResolvedRegistrations(tx, installation)
       if (input.credential) {
         await rotateCredential(tx, installation, input.credential, input.actorId)
@@ -186,6 +219,7 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
         .update(appInstallations)
         .set({
           releaseId: release.id,
+          updatePolicy: input.updatePolicy ?? installation.updatePolicy,
           pendingReleaseId: null,
           pendingReason: null,
           updatedAt: new Date(),
@@ -194,11 +228,28 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
         .returning()
       const row = upgraded ?? installation
       await reconcileRelease(tx, row, release, input.actorId, "upgrade", options)
-      await reconcileGrants(tx, row, release, input.actorId, [])
-      await audit(tx, row, input.actorId, "lifecycle", "upgrade.active", { releaseId: release.id })
+      await reconcileGrants(tx, row, release, input.actorId, input.grantedOptionalScopes)
+      await audit(tx, row, input.actorId, "lifecycle", "upgrade.active", {
+        releaseId: release.id,
+        grantedRequiredScopes: missingScopes,
+      })
       await emitLifecycle(row, "upgraded")
       return { installation: row, outcome: "upgraded" as const, missingScopes: [] }
     })
+  }
+
+  async function reconcileUpgradeManagedBinding(
+    db: PostgresJsDatabase,
+    installation: AppInstallation,
+    releaseId: string,
+  ) {
+    const managedBinding = await resolveManagedBinding(
+      options.managedInstallation,
+      installation.appId,
+      releaseId,
+    )
+    if (!managedBinding) return installation
+    return reconcileManagedInstallationBinding(db, installation, deploymentId(), managedBinding)
   }
 
   async function pause(db: PostgresJsDatabase, input: LifecycleActionInput) {
