@@ -38,9 +38,13 @@ search services, or catalog runtime services.
 - **`./indexer/postgres`** — native Postgres `IndexerAdapter`, the first-party
   managed-cloud default. It keeps a rebuildable catalog projection in the
   deployment database and uses the deployment-owned resident pool. Set the
-  recorded `POSTGRES_SEARCH_VECTOR_STRATEGY=pgvector` capability together with
-  a deployment vector dimension only when the database has provisioned the
-  `vector` extension; otherwise it remains the portable native FTS strategy.
+  recorded `POSTGRES_SEARCH_TEXT_STRATEGY=lakebase` and/or
+  `POSTGRES_SEARCH_VECTOR_STRATEGY=lakebase` only when Lakebase Search has
+  provisioned `lakebase_text` and/or `lakebase_vector`; use
+  `POSTGRES_SEARCH_VECTOR_STRATEGY=pgvector` with a deployment vector dimension
+  when only the `vector` extension is provisioned. Native FTS remains the
+  portable lexical fallback, and `POSTGRES_SEARCH_TYPO_STRATEGY=pgtrgm` enables
+  curated-term typo recovery when `pg_trgm` is provisioned.
   Its private `projectionGeneration(slice)` token changes after successful
   writes and is intended for deployment-level cache keys, not public responses.
 - **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a

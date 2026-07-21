@@ -457,7 +457,7 @@ type CatalogSnapshot = {
 
 ### 5.4. Search index projection
 
-The search index is the place where cross-entity denormalization happens. Vertical adapters emit normalized search documents; the indexer joins referenced entities (hotel data inside a package's search doc) at index time. The catalog plane ships **Typesense as the default native integration** (§5.4.1), with a **swappable adapter interface** (§5.4.2) so deployments that prefer Algolia, Meilisearch, Postgres FTS, Elasticsearch, or any other engine can substitute their own implementation without touching the catalog plane itself. Browse-time **price sorting and filtering** is a first-class concern handled through an explicit pricing-tier pattern (§5.4.3) — Tier 1 indexed price summaries by default, with Tier 2 live rerank available as opt-in orchestration.
+The search index is the place where cross-entity denormalization happens. Vertical adapters emit normalized search documents; the indexer joins referenced entities (hotel data inside a package's search doc) at index time. The catalog plane ships **Postgres and Typesense as first-party integrations** (§5.4.1), with a **swappable adapter interface** (§5.4.2) so deployments that prefer Algolia, Meilisearch, Elasticsearch, or any other engine can substitute their own implementation without touching the catalog plane itself. Browse-time **price sorting and filtering** is a first-class concern handled through an explicit pricing-tier pattern (§5.4.3) — Tier 1 indexed price summaries by default, with Tier 2 live rerank available as opt-in orchestration.
 
 Three rules govern the indexer regardless of which engine sits behind it:
 
@@ -467,7 +467,7 @@ Three rules govern the indexer regardless of which engine sits behind it:
 
 Volatile-live fields **never** appear in the search index. Volatile-indexed fields appear with a TTL, refreshed via the source's freshness mode.
 
-#### 5.4.1. Default: native Typesense integration
+#### 5.4.1. First-party Postgres and Typesense integrations
 
 Typesense is the default search engine because it fits Voyant's deployment model: open-source (Apache-2.0, aligned with Voyant's licensing posture), self-hostable (aligned with single-tenant-per-deployment), fast, low operational overhead, with first-class support for faceted search, typo tolerance, locale-aware tokenization, and hybrid keyword+vector search. The native Typesense adapter ships as part of `packages/catalog` and provides:
 
@@ -477,13 +477,13 @@ Typesense is the default search engine because it fits Voyant's deployment model
 - **Search query construction** for the storefront and admin layers, exposing facet aggregations driven by the registry's structural fields.
 - **Bulk reindex tooling** for cold-starts and major schema changes (e.g. when a vertical's field-policy file gains a new indexed field).
 
-The Typesense adapter is the only search adapter Voyant maintains as a first-party integration. It is declared as the `catalog.indexer` graph provider for `{ role: "search", value: "typesense" }`; deployments select it explicitly with `deployment.providers.search: "typesense"`. Managed-cloud deployments use that selection by default. The standard self-hosted operator starts with `search: "none"` until an operator enables a search provider. `TYPESENSE_HOST` and `TYPESENSE_API_KEY` configure the selected Typesense provider; the presence of those values never selects it. Operational expectations and composition examples live in `packages/catalog/README.md`.
+Voyant maintains two first-party adapters. The Postgres provider is declared for `{ role: "search", value: "postgres" }` and owns a rebuildable search projection in the deployment database. It records optional `lakebase_text`, `lakebase_vector`, `pgvector`, and `pg_trgm` capabilities at deployment composition; it never probes provider management APIs on a search request. Native FTS remains available when Lakebase Text is not provisioned, and pgvector remains available when Lakebase Vector is not provisioned. Typesense is declared for `{ role: "search", value: "typesense" }` and remains a selectable first-party provider. Deployments select either provider explicitly. The standard self-hosted operator starts with `search: "none"` until an operator enables a search provider. `TYPESENSE_HOST` and `TYPESENSE_API_KEY` configure the selected Typesense provider; the presence of those values never selects it. Operational expectations and composition examples live in `packages/catalog/README.md`.
 
 #### 5.4.2. Swap-in alternatives
 
 The engine-neutral `IndexerAdapter`, `IndexerProvider`, and optional `IndexerAdmin` contracts live in `@voyant-travel/catalog-contracts/indexer/contract`. This keeps external engine packages dependent on the pure contract package rather than the catalog runtime. `@voyant-travel/catalog/indexer/contract` remains a compatibility re-export, not the canonical adapter dependency.
 
-A deployment selects one graph provider by setting `deployment.providers.search` to `typesense`, `algolia`, `custom`, or `none`. A selected adapter package declares a provider for runtime port `catalog.indexer` with a matching `{ role: "search", value }`. `custom` is the public selection for an operator-owned engine; it is not an implicit fallback and does not mean "choose any provider." Embedded hosts and tests may inject an `IndexerAdapter` or `IndexerProvider` directly at that port only when the deployment selects `search: "custom"`; the host value then takes precedence over a graph-declared custom provider. For every non-custom selection, the host value is ignored and the selected graph provider remains authoritative.
+A deployment selects one graph provider by setting `deployment.providers.search` to `postgres`, `typesense`, `algolia`, `custom`, or `none`. A selected adapter package declares a provider for runtime port `catalog.indexer` with a matching `{ role: "search", value }`. `custom` is the public selection for an operator-owned engine; it is not an implicit fallback and does not mean "choose any provider." Embedded hosts and tests may inject an `IndexerAdapter` or `IndexerProvider` directly at that port only when the deployment selects `search: "custom"`; the host value then takes precedence over a graph-declared custom provider. For every non-custom selection, the host value is ignored and the selected graph provider remains authoritative.
 
 The contract is intentionally narrow:
 

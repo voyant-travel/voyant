@@ -115,8 +115,8 @@ describe("Postgres graph indexer provider", () => {
         id === CURSOR_SIGNING_KEY_SECRET_ID ? CURSOR_SIGNING_KEY : undefined) as never,
     })
 
-    expect(provider.create({ registries: new Map() }).diagnostics()).toMatchObject({
-      textStrategy: "lakebase",
+    expect(provider.create({ registries: new Map() }).capabilities).toMatchObject({
+      supportsKeywordSearch: true,
     })
   })
 
