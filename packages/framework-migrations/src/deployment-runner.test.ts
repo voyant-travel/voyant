@@ -350,7 +350,7 @@ CREATE TABLE "product_itinerary_translations" (
 --> statement-breakpoint
 ALTER TABLE "product_day_service_translations" ADD CONSTRAINT "product_day_service_translations_service_id_product_day_services_id_fk" FOREIGN KEY ("service_id") REFERENCES "public"."product_day_services"("id") ON DELETE cascade ON UPDATE no action;
 --> statement-breakpoint
-CREATE UNIQUE INDEX "uidx_product_day_service_translations_service_language" ON "product_day_service_translations" USING btree ("service_id","language_tag");
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_product_day_service_translations_service_language" ON "product_day_service_translations" USING btree ("service_id","language_tag");
 --> statement-breakpoint
 CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerary_translations" USING btree ("itinerary_id");`,
       },

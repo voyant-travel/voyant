@@ -166,6 +166,7 @@ function normalizeIndexDefinition(value: string): string {
     normalizeQuotedIdentifiers(value)
       .trim()
       .replace(/;$/, "")
+      .replace(/\b(CREATE\s+(?:UNIQUE\s+)?INDEX)\s+IF\s+NOT\s+EXISTS\b/i, "$1")
       .replace(/\bpublic\./gi, "")
       .replace(/\s+/g, " ")
       .replace(/\s*([(),])\s*/g, "$1"),
