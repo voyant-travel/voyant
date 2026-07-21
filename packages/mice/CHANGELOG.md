@@ -1,5 +1,16 @@
 # @voyant-travel/mice
 
+## 0.45.0
+
+### Patch Changes
+
+- @voyant-travel/accommodations@0.149.0
+- @voyant-travel/distribution@0.179.0
+- @voyant-travel/operations@0.8.30
+- @voyant-travel/bookings@0.189.0
+- @voyant-travel/quotes@0.131.33
+- @voyant-travel/relationships@0.128.29
+
 ## 0.44.0
 
 ### Patch Changes

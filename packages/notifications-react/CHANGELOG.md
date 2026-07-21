@@ -1,5 +1,11 @@
 # @voyant-travel/notifications-react
 
+## 0.132.14
+
+### Patch Changes
+
+- @voyant-travel/notifications@0.132.14
+
 ## 0.132.13
 
 ### Patch Changes
