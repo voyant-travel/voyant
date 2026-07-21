@@ -377,6 +377,29 @@ export interface VoyantGraphWorkflowSchedule extends VoyantGraphFacetEntity {
   name?: string
 }
 
+/** Package-owned cadence for a built-in product job. */
+export type VoyantGraphJobSchedule = (
+  | { cron: string; every?: never }
+  | { every: string | number; cron?: never }
+) & {
+  timezone?: string
+  overlap?: "skip" | "queue" | "allow"
+}
+
+/**
+ * A package-owned background operation selected with its owning graph unit.
+ *
+ * Jobs deliberately have no input or payload declaration. Durable work remains
+ * in the owning domain, while a host only schedules or wakes the fixed runtime
+ * export selected by this declaration.
+ */
+export interface VoyantGraphJob extends VoyantGraphFacetEntity {
+  runtime: VoyantGraphRuntimeReference
+  schedule?: VoyantGraphJobSchedule
+  /** Marks a job that may be prompted after its domain records durable work. */
+  wakeup?: boolean
+}
+
 export interface VoyantGraphUnitManifest {
   schemaVersion:
     | typeof VOYANT_GRAPH_MODULE_SCHEMA_VERSION
@@ -400,6 +423,7 @@ export interface VoyantGraphUnitManifest {
   links?: readonly VoyantGraphLinkDeclaration[]
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]
+  jobs?: readonly VoyantGraphJob[]
   workflows?: readonly VoyantGraphWorkflow[]
   setupMigrations?: readonly VoyantGraphSetupMigration[]
   config?: readonly VoyantGraphConfigDeclaration[]

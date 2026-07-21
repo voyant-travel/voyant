@@ -3,6 +3,7 @@
 import type { VoyantGraphCustomFieldTarget } from "@voyant-travel/core/project"
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
+import { invokeVoyantGraphJob } from "./runtime-composition.js"
 import {
   createVoyantGraphRuntime,
   registerVoyantGraphTools,
@@ -357,6 +358,106 @@ describe("graph runtime lowering", () => {
     await expect(runtime.modules[0]?.load()).resolves.toEqual([unitFactory])
     await expect(runtime.modules[0]?.routes[0]?.load()).resolves.toBe(routeFactory)
     expect(importRuntime).toHaveBeenCalledTimes(1)
+  })
+
+  it("exposes selected product jobs as lazy payload-free handlers", async () => {
+    const runJob = vi.fn(async () => {})
+    const importRuntime = vi.fn(async () => ({ runJob }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:job-runtime",
+      entries: { "@acme/notifications/jobs": importRuntime },
+      modules: [
+        {
+          id: "@acme/notifications",
+          kind: "module",
+          packageName: "@acme/notifications",
+          order: 0,
+          references: [
+            {
+              id: "notifications-job",
+              unitId: "@acme/notifications",
+              facet: "jobs.runtime",
+              entityId: "notifications.deliver",
+              runtime: { entry: "./jobs", export: "runJob" },
+              importEntry: "@acme/notifications/jobs",
+            },
+          ],
+          jobs: [
+            {
+              unitId: "@acme/notifications",
+              declaration: {
+                id: "notifications.deliver",
+                wakeup: true,
+                runtime: { entry: "./jobs", export: "runJob" },
+              },
+              referenceId: "notifications-job",
+            },
+          ],
+          selectedIds: selectedIds(),
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(importRuntime).not.toHaveBeenCalled()
+    const handler = await runtime.jobs[0]?.load()
+    expect(handler).toBe(runJob)
+    expect(runtime.modules[0]?.jobs[0]?.declaration.wakeup).toBe(true)
+    expect(importRuntime).toHaveBeenCalledTimes(1)
+    await invokeVoyantGraphJob(runtime, "notifications.deliver")
+    expect(runJob).toHaveBeenCalledWith(expect.objectContaining({ unitId: "@acme/notifications" }))
+    await expect(invokeVoyantGraphJob(runtime, "notifications.missing")).rejects.toThrow(
+      'job "notifications.missing" is not selected',
+    )
+  })
+
+  it("rejects non-callable product job exports", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:invalid-job-runtime",
+      entries: { "@acme/notifications/jobs": async () => ({ runJob: { steps: [] } }) },
+      modules: [
+        {
+          id: "@acme/notifications",
+          kind: "module",
+          packageName: "@acme/notifications",
+          order: 0,
+          references: [
+            {
+              id: "notifications-job",
+              unitId: "@acme/notifications",
+              facet: "jobs.runtime",
+              entityId: "notifications.deliver",
+              runtime: { entry: "./jobs", export: "runJob" },
+              importEntry: "@acme/notifications/jobs",
+            },
+          ],
+          jobs: [
+            {
+              unitId: "@acme/notifications",
+              declaration: {
+                id: "notifications.deliver",
+                wakeup: true,
+                runtime: { entry: "./jobs", export: "runJob" },
+              },
+              referenceId: "notifications-job",
+            },
+          ],
+          selectedIds: selectedIds(),
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(runtime.jobs[0]?.load()).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+      context: {
+        facet: "jobs.runtime",
+        entityId: "notifications.deliver",
+        exportName: "runJob",
+      },
+    })
   })
 
   it("loads workflow exports independently from the unit runtime", async () => {
