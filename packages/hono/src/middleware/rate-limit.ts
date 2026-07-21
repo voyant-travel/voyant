@@ -173,6 +173,23 @@ export function createMemoryRateLimitStore(options?: { maxEntries?: number }): R
 
 export interface RedisRateLimitStoreOptions {
   client?: LazyRedisClient
+  keyPrefix?: string
+}
+
+function normalizeRedisRateLimitKeyPrefix(keyPrefix: string | undefined): string {
+  if (keyPrefix === undefined || keyPrefix.length === 0) return ""
+  if (hasControlCharacter(keyPrefix)) {
+    throw new Error("Redis rate-limit keyPrefix must not contain control characters.")
+  }
+  return keyPrefix
+}
+
+function hasControlCharacter(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    if (code <= 0x1f || code === 0x7f) return true
+  }
+  return false
 }
 
 export function createRedisRateLimitStore(
@@ -180,13 +197,14 @@ export function createRedisRateLimitStore(
   options: RedisRateLimitStoreOptions = {},
 ): RateLimitStore {
   const lazyClient = options.client ?? createLazyRedisClient(redisUrl)
+  const keyPrefix = normalizeRedisRateLimitKeyPrefix(options.keyPrefix)
 
   return {
     async limit(key, { max, windowSeconds }) {
       const client = await lazyClient.get()
       const nowSeconds = Math.floor(Date.now() / 1000)
       const windowKey = Math.floor(nowSeconds / windowSeconds)
-      const storageKey = `${key}:${windowKey}`
+      const storageKey = `${keyPrefix}${key}:${windowKey}`
       const count = await client.incr(storageKey)
       if (count === 1) {
         await client.expire(storageKey, Math.max(1, windowSeconds * 2))
