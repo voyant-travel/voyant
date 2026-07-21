@@ -288,6 +288,7 @@ export function createVoyantWorkerJobHealthReporter(
   const originTrustSecret = env.ORIGIN_TRUST_SECRET?.trim()
   if (!endpoint || !workloadEnvironmentId || !originTrustSecret) return undefined
   return async (report) => {
+    if (!report.releaseId || !report.executionToken) return
     const response = await fetchImplementation(endpoint, {
       method: "POST",
       headers: {

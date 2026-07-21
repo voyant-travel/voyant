@@ -276,10 +276,15 @@ describe("Voyant Worker product job host", () => {
       attempts: 1,
       retryExhausted: false,
       finishedAt: "2026-07-21T00:00:00.000Z",
+      releaseId: "rel_current",
+      executionToken: "00000000-0000-4000-8000-000000000001",
     })
     expect(fetchImplementation).toHaveBeenCalledWith(
       "https://cloud.test/health",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"releaseId":"rel_current"'),
+      }),
     )
   })
 })

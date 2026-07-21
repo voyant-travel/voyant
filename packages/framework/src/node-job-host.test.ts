@@ -86,10 +86,12 @@ describe("Voyant Node product job host", () => {
   it("authenticates fixed payload-free HTTP invocation and returns 202 promptly", async () => {
     let release!: () => void
     const handler = vi.fn(() => new Promise<void>((resolve) => (release = resolve)))
+    const reportExecution = vi.fn(async () => {})
     const host = createVoyantNodeJobHost({
       runtime: jobRuntime(handler),
       jobs: inventory(),
       originTrustSecret: "secret",
+      reportExecution,
     })
     const endpoint = `https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}/${encodeURIComponent(jobId)}`
 
@@ -106,11 +108,27 @@ describe("Voyant Node product job host", () => {
         }),
       ),
     ).resolves.toMatchObject({ status: 400 })
+    await expect(
+      host.handleRequest(
+        new Request(endpoint, {
+          method: "POST",
+          headers: {
+            "x-voyant-origin-trust": "secret",
+            "x-voyant-product-job-release": "rel_current",
+          },
+        }),
+      ),
+    ).resolves.toMatchObject({ status: 400 })
 
     const response = await host.handleRequest(
       new Request(endpoint, {
         method: "POST",
-        headers: { "x-voyant-origin-trust": "secret" },
+        headers: {
+          "x-voyant-origin-trust": "secret",
+          "x-voyant-product-job-release": "rel_current",
+          "x-voyant-product-job-execution":
+            "00000000-0000-4000-8000-000000000001",
+        },
       }),
     )
     expect(response?.status).toBe(202)
@@ -118,6 +136,12 @@ describe("Voyant Node product job host", () => {
     expect(host.health()[0]).toMatchObject({ status: "running", lastSource: "wakeup" })
     release()
     await vi.waitFor(() => expect(host.health()[0]?.status).toBe("succeeded"))
+    expect(reportExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        releaseId: "rel_current",
+        executionToken: "00000000-0000-4000-8000-000000000001",
+      }),
+    )
   })
 
   it("returns the closed managed-registration inventory envelope", async () => {
@@ -196,6 +220,46 @@ describe("Voyant Node product job host", () => {
     releases.shift()?.()
     await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
     releases.shift()?.()
+  })
+
+  it("reports the correlation attached to each accepted coalesced execution", async () => {
+    const releases: Array<() => void> = []
+    const reports: Array<{ releaseId?: string; executionToken?: string }> = []
+    const handler = vi.fn(() => new Promise<void>((resolve) => releases.push(resolve)))
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      reportExecution: async (report) => {
+        reports.push(report)
+      },
+    })
+    const first = {
+      releaseId: "rel_current",
+      executionToken: "00000000-0000-4000-8000-000000000001",
+    }
+    const queued = {
+      releaseId: "rel_current",
+      executionToken: "00000000-0000-4000-8000-000000000002",
+    }
+    const laterCoalesced = {
+      releaseId: "rel_current",
+      executionToken: "00000000-0000-4000-8000-000000000003",
+    }
+
+    await expect(host.invoke(jobId, "wakeup", first)).resolves.toBe("started")
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+    await expect(host.invoke(jobId, "wakeup", queued)).resolves.toBe("queued")
+    await expect(host.invoke(jobId, "wakeup", laterCoalesced)).resolves.toBe(
+      "queued",
+    )
+    releases.shift()?.()
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
+    releases.shift()?.()
+    await vi.waitFor(() => expect(reports).toHaveLength(2))
+    expect(reports).toEqual([
+      expect.objectContaining(first),
+      expect.objectContaining(queued),
+    ])
   })
 
   it("runs one documented startup safety sweep before every-cadence polling", async () => {

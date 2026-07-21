@@ -5,6 +5,8 @@ import { invokeVoyantGraphJob, type VoyantGraphRuntimePorts } from "./runtime-co
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 
 export const VOYANT_PRODUCT_JOB_ROUTE = "/__voyant/jobs"
+export const VOYANT_PRODUCT_JOB_RELEASE_HEADER = "x-voyant-product-job-release"
+export const VOYANT_PRODUCT_JOB_EXECUTION_HEADER = "x-voyant-product-job-execution"
 
 export type VoyantNodeJobInvocationSource = "schedule" | "wakeup" | "recovery"
 export type VoyantNodeJobHealthStatus = "idle" | "running" | "retrying" | "succeeded" | "failed"
@@ -31,6 +33,13 @@ export interface VoyantNodeJobExecutionReport {
   startedAt?: string
   finishedAt: string
   error?: string
+  releaseId?: string
+  executionToken?: string
+}
+
+export interface VoyantProductJobExecutionCorrelation {
+  releaseId: string
+  executionToken: string
 }
 
 export interface VoyantNodeJobHostRetryOptions {
@@ -67,6 +76,7 @@ export interface VoyantNodeJobHost {
   invoke: (
     jobId: string,
     source: VoyantNodeJobInvocationSource,
+    correlation?: VoyantProductJobExecutionCorrelation,
   ) => Promise<"started" | "queued" | "skipped">
   dispatchSchedule: (event: { scheduleId?: string; cron?: string }) => Promise<void>
   handleRequest: (request: Request, originTrustSecret?: string) => Promise<Response | undefined>
@@ -83,6 +93,7 @@ interface JobExecutionState {
   running?: Promise<void>
   pending: boolean
   pendingSource?: VoyantNodeJobInvocationSource
+  pendingCorrelation?: VoyantProductJobExecutionCorrelation
 }
 
 /**
@@ -122,7 +133,11 @@ export function createVoyantNodeJobHost(
   const nextEveryTick = new Map<string, number>()
   let timer: ReturnType<typeof setInterval> | undefined
 
-  const run = async (jobId: string, source: VoyantNodeJobInvocationSource): Promise<void> => {
+  const run = async (
+    jobId: string,
+    source: VoyantNodeJobInvocationSource,
+    correlation?: VoyantProductJobExecutionCorrelation,
+  ): Promise<void> => {
     const health = requireMapValue(healthById, jobId)
     health.lastSource = source
     health.retryExhausted = false
@@ -156,6 +171,7 @@ export function createVoyantNodeJobHost(
           retryExhausted: false,
           startedAt,
           finishedAt: health.lastSuccessAt,
+          ...correlation,
         })
         return
       } catch (error) {
@@ -173,6 +189,7 @@ export function createVoyantNodeJobHost(
             startedAt,
             finishedAt: health.lastFailureAt,
             error: failure.slice(0, 2_000),
+            ...correlation,
           })
           return
         }
@@ -186,16 +203,19 @@ export function createVoyantNodeJobHost(
     jobId: string,
     source: VoyantNodeJobInvocationSource,
     lease?: { release(): Promise<void> | void },
+    correlation?: VoyantProductJobExecutionCorrelation,
   ): Promise<void> => {
     const state = requireMapValue(states, jobId)
-    const execution = run(jobId, source).finally(async () => {
+    const execution = run(jobId, source, correlation).finally(async () => {
       await lease?.release()
       delete state.running
       if (!state.pending) return
       const pendingSource = state.pendingSource ?? "wakeup"
+      const pendingCorrelation = state.pendingCorrelation
       state.pending = false
       delete state.pendingSource
-      await invoke(jobId, pendingSource)
+      delete state.pendingCorrelation
+      await invoke(jobId, pendingSource, pendingCorrelation)
     })
     state.running = execution
     return execution
@@ -204,6 +224,7 @@ export function createVoyantNodeJobHost(
   const invoke = async (
     jobId: string,
     source: VoyantNodeJobInvocationSource,
+    correlation?: VoyantProductJobExecutionCorrelation,
   ): Promise<"started" | "queued" | "skipped"> => {
     const job = jobsById.get(jobId)
     if (!job) {
@@ -214,13 +235,14 @@ export function createVoyantNodeJobHost(
       if (job.schedule?.overlap === "queue" || source === "wakeup") {
         state.pending = true
         state.pendingSource = source
+        state.pendingCorrelation ??= correlation
         return "queued"
       }
       return "skipped"
     }
     const distributedLease = await options.acquireDistributedLease?.(jobId)
     if (options.acquireDistributedLease && !distributedLease) return "skipped"
-    void begin(jobId, source, distributedLease)
+    void begin(jobId, source, distributedLease, correlation)
     return "started"
   }
 
@@ -282,7 +304,13 @@ export function createVoyantNodeJobHost(
     }
     const job = jobsById.get(jobId)
     if (!job) return new Response("Unknown product job", { status: 404 })
-    const result = await invoke(jobId, job.wakeup ? "wakeup" : "schedule")
+    const correlation = productJobExecutionCorrelation(request)
+    if (correlation instanceof Response) return correlation
+    const result = await invoke(
+      jobId,
+      job.wakeup ? "wakeup" : "schedule",
+      correlation,
+    )
     return Response.json({ accepted: true, jobId, result }, { status: 202 })
   }
 
@@ -345,6 +373,29 @@ export function createVoyantNodeJobHost(
       timer = undefined
     },
   }
+}
+
+function productJobExecutionCorrelation(
+  request: Request,
+): VoyantProductJobExecutionCorrelation | undefined | Response {
+  const releaseId = request.headers.get(VOYANT_PRODUCT_JOB_RELEASE_HEADER)?.trim()
+  const executionToken = request.headers
+    .get(VOYANT_PRODUCT_JOB_EXECUTION_HEADER)
+    ?.trim()
+  if (!releaseId && !executionToken) return undefined
+  if (!releaseId || !executionToken) {
+    return new Response("Product job execution correlation headers must be paired", {
+      status: 400,
+    })
+  }
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      executionToken,
+    )
+  ) {
+    return new Response("Invalid product job execution token", { status: 400 })
+  }
+  return { releaseId, executionToken }
 }
 
 function assertRuntimeInventoryParity(
