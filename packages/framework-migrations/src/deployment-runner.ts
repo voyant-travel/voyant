@@ -63,11 +63,7 @@ async function recordedCollectorSources(client: MigrationClient): Promise<Set<st
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
 export async function detectExisting(client: MigrationClient): Promise<boolean> {
-  const frameworkRows = await ledgerRowCount(
-    client,
-    collectorLedger,
-    `"source" = 'framework'`,
-  )
+  const frameworkRows = await ledgerRowCount(client, collectorLedger, `"source" = 'framework'`)
   if (frameworkRows > 0) return true
   const graphSchemaRows = await ledgerRowCount(
     client,
@@ -126,9 +122,7 @@ function isWhollyAbsentSource(source: MigrationSource, live: LiveSchema): boolea
     [...expected.tables].every((table) => !live.tables.has(table)) &&
     [...expected.columns].every((column) => !live.columns.has(column)) &&
     [...expected.dropped].every((table) => !live.tables.has(table)) &&
-    [...expected.droppedConstraints].every(
-      (constraint) => !live.constraints.has(constraint),
-    )
+    [...expected.droppedConstraints].every((constraint) => !live.constraints.has(constraint))
   )
 }
 
@@ -366,9 +360,7 @@ export async function runDeploymentMigrations(
           .filter((source) => isWhollyAbsentSource(source, live))
           .map((source) => source.name),
       )
-      const baselinePending = pending.filter(
-        (source) => !expandingSources.has(source.name),
-      )
+      const baselinePending = pending.filter((source) => !expandingSources.has(source.name))
       if (baselinePending.length > 0) {
         await assertSchemaAtBaseline(client, baselinePending)
       }

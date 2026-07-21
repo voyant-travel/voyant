@@ -117,11 +117,13 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
     expect(result.existing).toBe(true)
   })
 
-  function expansionClient(options: {
-    tables?: string[]
-    columns?: Array<[string, string]>
-    recordedSources?: string[]
-  } = {}) {
+  function expansionClient(
+    options: {
+      tables?: string[]
+      columns?: Array<[string, string]>
+      recordedSources?: string[]
+    } = {},
+  ) {
     const executedCreates: string[] = []
     const inserted: Array<{ source: string; tag: string; contentHash: string }> = []
     const recordedSources = options.recordedSources ?? []
@@ -228,21 +230,24 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
     expect(executedCreates).toEqual([])
   })
 
-  it("refuses a partially-present unledgered source instead of executing or baselining it", async () => {
-    const source = profileExpansionSource("accommodations", 8)
-    const firstTable = "accommodations_0"
-    const { client, executedCreates } = expansionClient({
-      tables: [firstTable],
-      columns: [[firstTable, "id"]],
-    })
+  it(
+    "refuses a partially-present unledgered source instead of executing or baselining it",
+    async () => {
+      const source = profileExpansionSource("accommodations", 8)
+      const firstTable = "accommodations_0"
+      const { client, executedCreates } = expansionClient({
+        tables: [firstTable],
+        columns: [[firstTable, "id"]],
+      })
 
-    await expect(
-      runDeploymentMigrations(client, [source], {
-        accommodations: ["0000_accommodations_baseline"],
-      }),
-    ).rejects.toThrow("7 expected table(s) missing")
-    expect(executedCreates).toEqual([])
-  })
+      await expect(
+        runDeploymentMigrations(client, [source], {
+          accommodations: ["0000_accommodations_baseline"],
+        }),
+      ).rejects.toThrow("7 expected table(s) missing")
+      expect(executedCreates).toEqual([])
+    },
+  )
 
   it("refuses an absent source with existing ledger lineage", async () => {
     const source = profileExpansionSource("accommodations", 8)
