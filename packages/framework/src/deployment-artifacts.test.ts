@@ -475,6 +475,30 @@ describe("deployment graph artifacts", () => {
     expect(source).not.toContain('import("@acme/voyant-loyalty/api")')
   })
 
+  it("lowers package-owned jobs into the generated runtime inventory", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-notifications",
+        jobs: [
+          {
+            id: "notifications.deliver",
+            wakeup: true,
+            schedule: { every: "5m", overlap: "skip" },
+            runtime: { entry: "./jobs", export: "deliverNotifications" },
+          },
+        ],
+      }),
+    ])
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain('"facet": "jobs.runtime"')
+    expect(source).toContain('"jobs": [')
+    expect(source).toContain('"notifications.deliver"')
+    expect(source).toContain('"deliverNotifications"')
+    expect(source).toContain('"wakeup": true')
+  })
+
   it("preserves and lowers unit runtimes for modules, extensions, and plugins", async () => {
     const module = defineModule({
       id: "@acme/catalog",
