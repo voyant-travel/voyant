@@ -69,8 +69,7 @@
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "pg": "^8.22.0",
-    "redis": "^6.1.0"
+    "pg": "^8.22.0"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",
