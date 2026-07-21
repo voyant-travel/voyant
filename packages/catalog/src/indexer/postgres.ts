@@ -15,6 +15,8 @@ import {
   resolveSearchSort,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { withOptionalTransaction } from "@voyant-travel/db/transaction"
+import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
 import { type SQL, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry } from "../contract.js"
@@ -80,6 +82,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
   const vectorDimensions = resolveVectorDimensions(vectorStrategy, options.vectorDimensions)
   let vectorStorageVerified = vectorStrategy !== "pgvector"
   let typoStorageVerified = typoStrategy !== "pgtrgm"
+  let rebuildSequence = 0
 
   const ensureStorage = async () => {
     await db.execute(sql`
@@ -149,6 +152,31 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         term text NOT NULL,
         PRIMARY KEY (vertical, locale, audience, market, channel, document_id, term)
       )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_rebuild_documents (
+        rebuild_id text NOT NULL,
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        id text NOT NULL,
+        fields jsonb NOT NULL,
+        embeddings jsonb,
+        embedding_model_id text,
+        document_text text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (rebuild_id, vertical, locale, audience, market, channel, id)
+      )
+    `)
+    await db.execute(sql`
+      ALTER TABLE voyant_catalog_search_rebuild_documents
+      ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()
+    `)
+    await db.execute(sql`
+      DELETE FROM voyant_catalog_search_rebuild_documents
+      WHERE created_at < now() - interval '1 day'
     `)
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_vector_idx
@@ -466,15 +494,33 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     },
 
     async bulkReindex(slice, stream) {
-      let batch: IndexerDocument[] = []
-      for await (const document of stream) {
-        batch.push(document)
-        if (batch.length === 100) {
-          await this.upsert(slice, batch)
-          batch = []
-        }
+      if (dbSupportsTransactions(db) === false) {
+        throw new Error(
+          "Postgres catalog indexer atomic bulk reindex requires a transaction-capable database adapter.",
+        )
       }
-      await this.upsert(slice, batch)
+      await ensureStorage()
+      await ensureSlice(slice)
+      const rebuildId = `rebuild-${Date.now().toString(36)}-${(++rebuildSequence).toString(36)}`
+      try {
+        let batch: IndexerDocument[] = []
+        for await (const document of stream) {
+          batch.push(document)
+          if (batch.length === 100) {
+            await stageRebuildDocuments(db, rebuildId, slice, batch, vectorDimensions)
+            batch = []
+          }
+        }
+        await stageRebuildDocuments(db, rebuildId, slice, batch, vectorDimensions)
+        await withOptionalTransaction(db, async (tx) => {
+          await publishStagedRebuild(tx, rebuildId, slice, vectorStrategy, typoStrategy)
+        })
+      } finally {
+        await db.execute(sql`
+          DELETE FROM voyant_catalog_search_rebuild_documents
+          WHERE rebuild_id = ${rebuildId}
+        `)
+      }
     },
   }
 }
@@ -697,6 +743,162 @@ async function replaceTypoTerms(
     )}
     ON CONFLICT DO NOTHING
   `)
+}
+
+async function stageRebuildDocuments(
+  db: AnyDrizzleDb,
+  rebuildId: string,
+  slice: IndexerSlice,
+  documents: IndexerDocument[],
+  vectorDimensions: number | null,
+): Promise<void> {
+  if (documents.length === 0) return
+  for (const document of documents) {
+    if (vectorDimensions) selectedEmbedding(document, vectorDimensions)
+  }
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_rebuild_documents (
+      rebuild_id, vertical, locale, audience, market, channel, id, fields, embeddings,
+      embedding_model_id, document_text
+    ) VALUES ${sql.join(
+      documents.map(
+        (document) => sql`(
+          ${rebuildId}, ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
+          ${slice.channel ?? ""}, ${document.id}, ${JSON.stringify(document.fields)}::jsonb,
+          ${document.embeddings ? JSON.stringify(document.embeddings) : null}::jsonb,
+          ${document.embedding_model_id ?? null}, ${documentText(document.fields)}
+        )`,
+      ),
+      sql`, `,
+    )}
+    ON CONFLICT (rebuild_id, vertical, locale, audience, market, channel, id)
+    DO UPDATE SET
+      fields = EXCLUDED.fields,
+      embeddings = EXCLUDED.embeddings,
+      embedding_model_id = EXCLUDED.embedding_model_id,
+      document_text = EXCLUDED.document_text
+  `)
+}
+
+async function publishStagedRebuild(
+  db: AnyDrizzleDb,
+  rebuildId: string,
+  slice: IndexerSlice,
+  vectorStrategy: PostgresVectorStrategy,
+  typoStrategy: PostgresTypoStrategy,
+): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_facets
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_terms
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_documents
+    WHERE ${slicePredicate(slice)}
+  `)
+  if (vectorStrategy === "pgvector") {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_documents (
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text, search_embedding
+      )
+      SELECT
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text,
+        CASE
+          WHEN embeddings IS NULL THEN NULL
+          ELSE (SELECT value::text::vector FROM jsonb_each(embeddings) LIMIT 1)
+        END
+      FROM voyant_catalog_search_rebuild_documents
+      WHERE rebuild_id = ${rebuildId}
+        AND ${stagingSlicePredicate(slice)}
+    `)
+  } else {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_documents (
+        vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text
+      )
+      SELECT vertical, locale, audience, market, channel, id, fields, embeddings,
+        embedding_model_id, document_text
+      FROM voyant_catalog_search_rebuild_documents
+      WHERE rebuild_id = ${rebuildId}
+        AND ${stagingSlicePredicate(slice)}
+    `)
+  }
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_facets (
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+    )
+    SELECT
+      staged.vertical,
+      staged.locale,
+      staged.audience,
+      staged.market,
+      staged.channel,
+      staged.id,
+      entry.key,
+      jsonb_typeof(value_item.value),
+      value_item.value #>> '{}'
+    FROM voyant_catalog_search_rebuild_documents AS staged
+    CROSS JOIN LATERAL jsonb_each(staged.fields) AS entry(key, value)
+    CROSS JOIN LATERAL jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(entry.value) = 'array' THEN entry.value
+        ELSE jsonb_build_array(entry.value)
+      END
+    ) AS value_item(value)
+    WHERE staged.rebuild_id = ${rebuildId}
+      AND ${stagingSlicePredicate(slice)}
+      AND jsonb_typeof(value_item.value) IN ('string', 'number', 'boolean')
+    ON CONFLICT DO NOTHING
+  `)
+  if (typoStrategy === "pgtrgm") {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_terms (
+        vertical, locale, audience, market, channel, document_id, term
+      )
+      SELECT DISTINCT
+        staged.vertical,
+        staged.locale,
+        staged.audience,
+        staged.market,
+        staged.channel,
+        staged.id,
+        lower(value_item.value #>> '{}')
+      FROM voyant_catalog_search_rebuild_documents AS staged
+      CROSS JOIN LATERAL jsonb_each(staged.fields) AS entry(key, value)
+      CROSS JOIN LATERAL jsonb_array_elements(
+        CASE
+          WHEN jsonb_typeof(entry.value) = 'array' THEN entry.value
+          ELSE jsonb_build_array(entry.value)
+        END
+      ) AS value_item(value)
+      WHERE staged.rebuild_id = ${rebuildId}
+        AND ${stagingSlicePredicate(slice)}
+        AND jsonb_typeof(value_item.value) IN ('string', 'number', 'boolean')
+        AND char_length(value_item.value #>> '{}') BETWEEN 3 AND 64
+      ON CONFLICT DO NOTHING
+    `)
+  }
+  await db.execute(sql`
+    UPDATE voyant_catalog_search_slices
+    SET generation = generation + 1, updated_at = now()
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+}
+
+function stagingSlicePredicate(slice: IndexerSlice) {
+  return sql`
+    vertical = ${slice.vertical}
+    AND locale = ${slice.locale}
+    AND audience = ${slice.audience}
+    AND market = ${slice.market}
+    AND channel = ${slice.channel ?? ""}
+  `
 }
 
 function curatedTerms(fields: Record<string, unknown>): string[] {
