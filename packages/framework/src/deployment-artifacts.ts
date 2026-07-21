@@ -707,6 +707,10 @@ export function buildProjectRuntimeModule(input: BuildProjectRuntimeModuleInput)
   return `${graphRuntime}
 export const GENERATED_PROJECT_RUNTIME_KIND = "application" as const
 export const GENERATED_PROJECT_RUNTIME_DEPLOYMENT = ${formatGeneratedValue(deployment, 0)} as const
+export const GENERATED_PROJECT_PRODUCT_JOBS = ${formatGeneratedValue(
+    input.graph.provisioning.jobs,
+    0,
+  )} as const
 
 export function createGeneratedProjectRuntime() {
   return {
@@ -715,6 +719,7 @@ export function createGeneratedProjectRuntime() {
     deployment: GENERATED_PROJECT_RUNTIME_DEPLOYMENT,
     graphRuntime: createGeneratedGraphRuntime(),
     createRuntimePorts: createGeneratedGraphRuntimePorts,
+    productJobs: GENERATED_PROJECT_PRODUCT_JOBS,
   }
 }
 

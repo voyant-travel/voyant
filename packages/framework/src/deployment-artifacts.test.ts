@@ -720,8 +720,34 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('GENERATED_PROJECT_RUNTIME_KIND = "application"')
     expect(source).toContain(`graphHash: GENERATED_GRAPH_RUNTIME_HASH`)
     expect(source).toContain(`GENERATED_GRAPH_RUNTIME_HASH = "${graph.contentHash}"`)
+    expect(source).toContain("GENERATED_PROJECT_PRODUCT_JOBS")
+    expect(source).toContain("productJobs: GENERATED_PROJECT_PRODUCT_JOBS")
     expect(source).not.toContain("starters/")
     expect(() => buildProjectRuntimeModule({ graph })).toThrow(/must be target-neutral/)
+  })
+
+  it("exports selected package jobs from the generated project runtime", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/worker-jobs",
+        jobs: [
+          {
+            id: "acme.worker.reconcile",
+            schedule: { every: "5m" },
+            runtime: { entry: "./jobs", export: "reconcile" },
+          },
+        ],
+      }),
+    ])
+    const source = buildProjectRuntimeModule({
+      graph: {
+        ...graph,
+        deployment: { mode: graph.deployment.mode, providers: graph.deployment.providers },
+      },
+    })
+    expect(source).toContain('"id": "acme.worker.reconcile"')
+    expect(source).toContain('"every": "5m"')
+    expect(source).toContain("productJobs: GENERATED_PROJECT_PRODUCT_JOBS")
   })
 
   it("removes package importers and loaders when the package is not selected", async () => {
