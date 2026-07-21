@@ -1,5 +1,6 @@
 import { handleApiError } from "@voyant-travel/hono"
-import { PgDialect, type SQL } from "drizzle-orm/pg-core"
+import type { SQL } from "drizzle-orm"
+import { PgDialect } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
