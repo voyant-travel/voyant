@@ -139,7 +139,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     }
   })
 
-  it("rejects tampered opaque keyset cursors", async () => {
+  it("rejects tampered and stale opaque keyset cursors", async () => {
     const registry = createIndexerConformanceRegistry()
     const adapter = createPostgresIndexer({
       db,
@@ -166,6 +166,14 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
           pagination: { limit: 1, cursor: `${firstPage.next_cursor}x` },
         }),
       ).rejects.toThrow("Search cursor is invalid")
+      await adapter.upsert(slice, [{ id: "third", fields: { title: "Island voyage" } }])
+      await expect(
+        adapter.search(slice, {
+          mode: "keyword",
+          query: "Island",
+          pagination: { limit: 1, cursor: firstPage.next_cursor },
+        }),
+      ).rejects.toThrow("Search cursor is stale")
     } finally {
       await adapter.admin!.drop(slice)
     }

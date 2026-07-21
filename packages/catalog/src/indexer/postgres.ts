@@ -655,6 +655,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       }
       await ensureStorage()
       return withConsistentSearchSnapshot(db, async (snapshotDb) => {
+        const generation = await readSearchGeneration(snapshotDb, slice)
         const audiences =
           request.search_audiences?.length && slice.audience === "staff-admin"
             ? request.search_audiences
@@ -691,6 +692,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           slice,
           request.pagination?.cursor,
           cursorSigningKey,
+          generation,
         )
         const limit = boundedPageSize(request.pagination?.limit)
         const page = pagedHits.slice(0, limit)
@@ -699,7 +701,16 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           total: candidates.length,
           ...(capped ? { totalRelation: "gte" as const } : {}),
           ...(limit < pagedHits.length
-            ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice, cursorSigningKey) }
+            ? {
+                next_cursor: encodeCursor(
+                  page.at(-1)!,
+                  request,
+                  registry,
+                  slice,
+                  cursorSigningKey,
+                  generation,
+                ),
+              }
             : {}),
         }
         if (request.facets?.length) {
@@ -771,6 +782,18 @@ async function withConsistentSearchSnapshot<T>(
     }
     return callback(tx)
   })
+}
+
+async function readSearchGeneration(db: AnyDrizzleDb, slice: IndexerSlice): Promise<number> {
+  const [row] = readRows(
+    await db.execute(sql`
+      SELECT generation
+      FROM voyant_catalog_search_slices
+      WHERE ${facetSlicePredicate(slice)}
+      LIMIT 1
+    `),
+  ) as Array<{ generation: number | string }>
+  return Number(row?.generation ?? 0)
 }
 
 async function searchKeywordRows(
@@ -1838,7 +1861,8 @@ function boundedBatchSize(batchSize: number | undefined): number {
 }
 
 type SearchCursor = {
-  v: 1
+  generation: number
+  v: 2
   id: string
   sort: string
   score?: number
@@ -1851,13 +1875,15 @@ function encodeCursor(
   registry: FieldPolicyRegistry | undefined,
   slice: IndexerSlice,
   signingKey: string,
+  generation: number,
 ): string {
   const sort = request.sort ?? "relevance"
   const cursor: SearchCursor =
     sort === "relevance"
-      ? { v: 1, id: hit.id, sort, score: hit.score }
+      ? { v: 2, generation, id: hit.id, sort, score: hit.score }
       : {
-          v: 1,
+          v: 2,
+          generation,
           id: hit.id,
           sort,
           value: hit.document.fields[resolveSortField(sort, registry, slice)[0]],
@@ -1873,9 +1899,13 @@ function afterCursor(
   slice: IndexerSlice,
   encoded: string | undefined,
   signingKey: string,
+  generation: number,
 ): SearchHit[] {
   if (!encoded) return hits
   const cursor = decodeCursor(encoded, request.sort ?? "relevance", signingKey)
+  if (cursor.generation !== generation) {
+    throw new RangeError("Search cursor is stale; repeat the search from its first page.")
+  }
   if (cursor.sort === "relevance") {
     return hits.filter(
       (hit) =>
@@ -1912,7 +1942,9 @@ function decodeCursor(encoded: string, expectedSort: string, signingKey: string)
     if (
       !decoded ||
       typeof decoded !== "object" ||
-      (decoded as { v?: unknown }).v !== 1 ||
+      (decoded as { v?: unknown }).v !== 2 ||
+      !Number.isSafeInteger((decoded as { generation?: unknown }).generation) ||
+      (decoded as { generation: number }).generation < 0 ||
       typeof (decoded as { id?: unknown }).id !== "string" ||
       (decoded as { sort?: unknown }).sort !== expectedSort
     ) {
