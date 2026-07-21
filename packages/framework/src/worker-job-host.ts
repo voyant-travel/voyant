@@ -1,3 +1,5 @@
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+
 import type { VoyantGraphProvisionedJob } from "./deployment-graph.js"
 import {
   createVoyantNodeJobHost,
@@ -7,6 +9,7 @@ import {
   VOYANT_PRODUCT_JOB_ROUTE,
 } from "./node-job-host.js"
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
+import type { VoyantGraphRuntimePorts } from "./runtime-composition.js"
 
 export { VOYANT_PRODUCT_JOB_ROUTE }
 
@@ -47,27 +50,139 @@ export interface VoyantWorkerJobHost {
 export interface VoyantGeneratedProjectJobRuntime {
   graphRuntime: VoyantGraphRuntime
   productJobs: readonly VoyantGraphProvisionedJob[]
+  createRuntimePorts(host: {
+    primitives: VoyantRuntimeHostPrimitives
+    runtimePorts?: VoyantGraphRuntimePorts
+  }): VoyantGraphRuntimePorts
+}
+
+export type CreateVoyantWorkerJobHostFromProjectRuntimeOptions = Omit<
+  CreateVoyantWorkerJobHostOptions,
+  "runtime" | "jobs" | "ports"
+> & {
+  primitives: VoyantRuntimeHostPrimitives
+  providerPorts?: VoyantGraphRuntimePorts
 }
 
 /** Bind the standard generated project runtime without authoring job IDs locally. */
 export function createVoyantWorkerJobHostFromProjectRuntime(
   projectRuntime: VoyantGeneratedProjectJobRuntime,
-  options: Omit<CreateVoyantWorkerJobHostOptions, "runtime" | "jobs">,
+  options: CreateVoyantWorkerJobHostFromProjectRuntimeOptions,
 ): VoyantWorkerJobHost {
+  const { primitives, providerPorts, ...hostOptions } = options
   return createVoyantWorkerJobHost({
-    ...options,
+    ...hostOptions,
     runtime: projectRuntime.graphRuntime,
     jobs: projectRuntime.productJobs,
+    ports: projectRuntime.createRuntimePorts({
+      primitives,
+      ...(providerPorts ? { runtimePorts: providerPorts } : {}),
+    }),
   })
+}
+
+export interface CreateVoyantWorkerRuntimeHostPrimitivesOptions<TBindings extends object> {
+  bindings: TBindings
+  resolveDatabase(bindings: TBindings): unknown
+  databaseFromContext?(context: unknown, bindings: TBindings): unknown
+  transaction?<T>(
+    bindings: TBindings,
+    operation: (database: unknown) => Promise<T>,
+  ): Promise<T>
+  resolveStorage?(bindings: TBindings, name: string): unknown
+  readStorage?(bindings: TBindings, key: string): Promise<string | null>
+  resolveDownloadUrl?(bindings: TBindings, key: string): Promise<string | null>
+  deliverEvent?(event: unknown, bindings: TBindings): Promise<unknown>
+  readConfig?(bindings: TBindings, key: string): unknown
+}
+
+export class VoyantWorkerHostRequirementError extends Error {
+  readonly code = "VOYANT_WORKER_HOST_REQUIREMENT_MISSING"
+
+  constructor(readonly requirement: string) {
+    super(
+      `Voyant Worker host requirement "${requirement}" is not configured. Provide it through createVoyantWorkerRuntimeHostPrimitives().`,
+    )
+    this.name = "VoyantWorkerHostRequirementError"
+  }
+}
+
+/**
+ * Adapt one Worker's bindings to the domain-neutral primitives captured by
+ * graph runtime contributors. Create/cache these once per bindings object.
+ */
+export function createVoyantWorkerRuntimeHostPrimitives<TBindings extends object>(
+  options: CreateVoyantWorkerRuntimeHostPrimitivesOptions<TBindings>,
+): VoyantRuntimeHostPrimitives {
+  const bindingsFor = (candidate: unknown): TBindings => {
+    if (candidate && typeof candidate === "object") return candidate as TBindings
+    return options.bindings
+  }
+  const missing = (requirement: string): never => {
+    throw new VoyantWorkerHostRequirementError(requirement)
+  }
+
+  return {
+    env: (bindings) => ({ ...bindingsFor(bindings) }),
+    database: {
+      resolve: <TDatabase>(bindings: unknown) =>
+        options.resolveDatabase(bindingsFor(bindings)) as TDatabase,
+      fromContext: <TDatabase>(context: unknown) => {
+        if (options.databaseFromContext) {
+          return options.databaseFromContext(context, options.bindings) as TDatabase
+        }
+        const contextEnv = Reflect.get((context ?? {}) as object, "env")
+        return options.resolveDatabase(bindingsFor(contextEnv)) as TDatabase
+      },
+      transaction: async (bindings, operation) => {
+        const resolved = bindingsFor(bindings)
+        if (options.transaction) return options.transaction(resolved, operation)
+        const database = options.resolveDatabase(resolved) as {
+          transaction?<T>(operation: (database: unknown) => Promise<T>): Promise<T>
+        }
+        if (!database.transaction) return missing("database.transaction")
+        return database.transaction(operation)
+      },
+    },
+    storage: {
+      resolve: (bindings, name) => {
+        if (!options.resolveStorage) return missing(`storage.${name}`)
+        return options.resolveStorage(bindingsFor(bindings), name)
+      },
+      read: (bindings, key) =>
+        options.readStorage?.(bindingsFor(bindings), key) ?? missing("storage.read"),
+      downloadUrl: (bindings, key) =>
+        options.resolveDownloadUrl?.(bindingsFor(bindings), key) ??
+        missing("storage.downloadUrl"),
+    },
+    events: {
+      deliver: (event, bindings) =>
+        options.deliverEvent?.(event, bindingsFor(bindings)) ?? missing("events.deliver"),
+    },
+    config: {
+      read: (bindings, key) =>
+        options.readConfig?.(bindingsFor(bindings), key) ??
+        Reflect.get(bindingsFor(bindings), key),
+    },
+  }
 }
 
 /** Unique Cron Trigger values suitable for a generated Wrangler configuration. */
 export function cloudflareCronTriggersForProductJobs(
   jobs: readonly VoyantGraphProvisionedJob[],
 ): readonly string[] {
+  const schedules = compileCloudflareProductJobSchedules(jobs)
+  const external = schedules.filter((schedule) => schedule.owner === "managed-http")
+  if (external.length > 0) {
+    throw new Error(
+      `Cannot generate Cloudflare Cron Triggers for product jobs: ${external
+        .map((schedule) => schedule.jobId)
+        .join(", ")}.`,
+    )
+  }
   return [
     ...new Set(
-      compileCloudflareProductJobSchedules(jobs).flatMap((schedule) =>
+      schedules.flatMap((schedule) =>
         schedule.owner === "cloudflare-cron" && schedule.cron ? [schedule.cron] : [],
       ),
     ),
