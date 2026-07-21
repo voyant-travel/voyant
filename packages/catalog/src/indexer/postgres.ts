@@ -52,6 +52,17 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
 
   const ensureStorage = async () => {
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_slices (
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (vertical, locale, audience, market, channel)
+      )
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS voyant_catalog_search_documents (
         vertical text NOT NULL,
         locale text NOT NULL,
@@ -80,6 +91,15 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
     `)
   }
 
+  const ensureSlice = async (slice: IndexerSlice) => {
+    await db.execute(sql`
+      INSERT INTO voyant_catalog_search_slices (vertical, locale, audience, market, channel)
+      VALUES (
+        ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market}, ${slice.channel ?? ""}
+      ) ON CONFLICT DO NOTHING
+    `)
+  }
+
   return {
     capabilities: {
       supportsKeywordSearch: true,
@@ -98,7 +118,10 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         await ensureStorage()
         const rows = readRows(
           await db.execute(sql`
-            SELECT DISTINCT vertical, locale, audience, market, channel
+            SELECT vertical, locale, audience, market, channel
+            FROM voyant_catalog_search_slices
+            UNION
+            SELECT vertical, locale, audience, market, channel
             FROM voyant_catalog_search_documents
             ORDER BY vertical, locale, audience, market, channel
           `),
@@ -114,12 +137,17 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
 
       async drop(slice) {
         await ensureStorage()
-        const result = await db.execute(sql`
+        const documentResult = await db.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
           RETURNING id
         `)
-        return readRows(result).length > 0
+        const sliceResult = await db.execute(sql`
+          DELETE FROM voyant_catalog_search_slices
+          WHERE ${slicePredicate(slice)}
+          RETURNING vertical
+        `)
+        return readRows(documentResult).length > 0 || readRows(sliceResult).length > 0
       },
 
       async *scan(slice, scanOptions: IndexerScanOptions = {}) {
@@ -146,11 +174,13 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
 
     async ensureCollection(_slice: IndexerSlice, _registry: FieldPolicyRegistry) {
       await ensureStorage()
+      await ensureSlice(_slice)
     },
 
     async upsert(slice, documents) {
       if (documents.length === 0) return
       await ensureStorage()
+      await ensureSlice(slice)
       for (const document of documents) {
         await db.execute(sql`
           INSERT INTO voyant_catalog_search_documents (
