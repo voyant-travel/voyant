@@ -224,6 +224,27 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       }
       await ensureStorage()
       const query = request.query.trim()
+      const prefixQuery = toPrefixTsQuery(query)
+      const keywordScoreSql = query
+        ? prefixQuery
+          ? sql`
+              GREATEST(
+                ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query})),
+                ts_rank_cd(search_vector, to_tsquery('simple', ${prefixQuery}))
+              )
+            `
+          : sql`ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query}))`
+        : sql`0`
+      const keywordPredicate = query
+        ? prefixQuery
+          ? sql`
+              AND (
+                search_vector @@ websearch_to_tsquery('simple', ${query})
+                OR search_vector @@ to_tsquery('simple', ${prefixQuery})
+              )
+            `
+          : sql`AND search_vector @@ websearch_to_tsquery('simple', ${query})`
+        : sql``
       const audiences =
         request.search_audiences?.length && slice.audience === "staff-admin"
           ? request.search_audiences
@@ -236,14 +257,10 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
             embeddings,
             embedding_model_id,
             document_text,
-            ${
-              query
-                ? sql`ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query}))`
-                : sql`0`
-            } AS keyword_score
+            ${keywordScoreSql} AS keyword_score
           FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice, audiences)}
-            ${query ? sql`AND search_vector @@ websearch_to_tsquery('simple', ${query})` : sql``}
+            ${keywordPredicate}
           ORDER BY keyword_score DESC, id
           LIMIT ${MAX_CANDIDATES + 1}
         `),
@@ -394,6 +411,13 @@ function occurrences(text: string, token: string): number {
     index = text.indexOf(token, index + token.length)
   }
   return count
+}
+
+/** Build a plain-text prefix tsquery; quoted/operator queries retain websearch semantics only. */
+function toPrefixTsQuery(query: string): string | undefined {
+  if (!query || !/^[\p{L}\p{N}_\s]+$/u.test(query)) return undefined
+  const tokens = query.match(/[\p{L}\p{N}_]+/gu) ?? []
+  return tokens.length > 0 ? tokens.map((token) => `${token}:*`).join(" & ") : undefined
 }
 
 function orderHits(

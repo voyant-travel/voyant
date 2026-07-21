@@ -77,4 +77,24 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       await adapter.admin!.drop(slice)
     }
   })
+
+  it("finds plain-text prefix queries through the native FTS index", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[slice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(slice, registry)
+    await adapter.upsert(slice, [
+      { id: "alpine", fields: { title: "Alpine escape" } },
+      { id: "coastal", fields: { title: "Coastal escape" } },
+    ])
+
+    try {
+      const results = await adapter.search(slice, { mode: "keyword", query: "Alp" })
+      expect(results.hits.map(({ id }) => id)).toEqual(["alpine"])
+    } finally {
+      await adapter.admin!.drop(slice)
+    }
+  })
 })
