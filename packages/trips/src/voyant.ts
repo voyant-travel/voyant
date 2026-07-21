@@ -71,6 +71,13 @@ export const tripsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  config: [
+    {
+      id: "@voyant-travel/trips#config.payment-callback-base-url",
+      key: "PAYMENT_CALLBACK_BASE_URL",
+      required: false,
+    },
+  ],
   access: {
     resources: [
       {
