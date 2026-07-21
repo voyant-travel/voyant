@@ -139,6 +139,86 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     }
   })
 
+  it("aggregates exact facets beyond the bounded candidate page", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const facetSlice: IndexerSlice = {
+      ...slice,
+      market: `exact-facets-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[facetSlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(facetSlice, registry)
+    const documentCount = 10_002
+
+    try {
+      await adapter.bulkReindex(
+        facetSlice,
+        toAsyncIterable(
+          Array.from({ length: documentCount }, (_, index) => ({
+            id: `browse-${index}`,
+            fields: { bucket: index < 7_000 ? "coast" : "mountain", title: "Browse result" },
+          })),
+        ),
+      )
+      const results = await adapter.search(facetSlice, {
+        facets: [{ field: "bucket" }],
+        mode: "keyword",
+        query: "",
+      })
+      expect(results.totalRelation).toBe("gte")
+      expect(results.facets).toEqual({
+        bucket: [
+          { count: 7_000, value: "coast" },
+          { count: 3_002, value: "mountain" },
+        ],
+      })
+    } finally {
+      await adapter.admin!.drop(facetSlice)
+    }
+  })
+
+  it("aggregates federated facets across every requested audience", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const market = `federated-facets-${Date.now()}`
+    const adminSlice: IndexerSlice = { ...slice, audience: "staff-admin", market }
+    const customerSlice: IndexerSlice = { ...slice, audience: "customer", market }
+    const partnerSlice: IndexerSlice = { ...slice, audience: "partner", market }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[adminSlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(adminSlice, registry)
+    await adapter.ensureCollection(customerSlice, registry)
+    await adapter.ensureCollection(partnerSlice, registry)
+    await adapter.upsert(customerSlice, [
+      { id: "customer", fields: { audienceBucket: "customer", title: "Island break" } },
+    ])
+    await adapter.upsert(partnerSlice, [
+      { id: "partner", fields: { audienceBucket: "partner", title: "Island break" } },
+    ])
+
+    try {
+      const results = await adapter.search(adminSlice, {
+        facets: [{ field: "audienceBucket" }],
+        mode: "keyword",
+        query: "Island",
+        search_audiences: ["customer", "partner"],
+      })
+      expect(results.facets).toEqual({
+        audienceBucket: [
+          { count: 1, value: "customer" },
+          { count: 1, value: "partner" },
+        ],
+      })
+    } finally {
+      await adapter.admin!.drop(adminSlice)
+      await adapter.admin!.drop(customerSlice)
+      await adapter.admin!.drop(partnerSlice)
+    }
+  })
+
   it("rejects tampered and stale opaque keyset cursors", async () => {
     const registry = createIndexerConformanceRegistry()
     const adapter = createPostgresIndexer({
@@ -207,7 +287,9 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       expect(afterRebuild).toBeGreaterThan(beforeRebuild)
       expect((await adapter.projectionState(lifecycleSlice)).documentCount).toBe(1)
 
-      await expect(adapter.bulkReindex(lifecycleSlice, failingStream())).rejects.toThrow(
+      await expect(
+        adapter.bulkReindex(lifecycleSlice, failingStream(), { rebuildRunId: "resume" }),
+      ).rejects.toThrow(
         "stream failed",
       )
       expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
@@ -219,6 +301,7 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       await adapter.bulkReindex(
         lifecycleSlice,
         toAsyncIterable([{ id: "resumed", fields: { title: "Resumed projection" } }]),
+        { rebuildRunId: "resume" },
       )
       const resumed = await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })
       expect(resumed.hits.map(({ id }) => id)).toEqual(["partial", "resumed"])
@@ -232,6 +315,38 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       expect(await adapter.rollbackProjection(lifecycleSlice)).toBe(false)
     } finally {
       await adapter.admin!.drop(lifecycleSlice)
+    }
+  })
+
+  it("does not publish staged documents from a different rebuild snapshot", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const rebuildSlice: IndexerSlice = {
+      ...slice,
+      market: `rebuild-snapshot-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[rebuildSlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(rebuildSlice, registry)
+
+    try {
+      await expect(
+        adapter.bulkReindex(rebuildSlice, failingStream(), { rebuildRunId: "stale-source" }),
+      ).rejects.toThrow("stream failed")
+      expect((await adapter.projectionState(rebuildSlice)).stagedDocumentCount).toBe(1)
+
+      await adapter.bulkReindex(
+        rebuildSlice,
+        toAsyncIterable([{ id: "current", fields: { title: "Current projection" } }]),
+        { rebuildRunId: "current-source" },
+      )
+      expect((await adapter.search(rebuildSlice, { mode: "keyword", query: "" })).hits).toEqual([
+        expect.objectContaining({ id: "current" }),
+      ])
+      expect((await adapter.projectionState(rebuildSlice)).stagedDocumentCount).toBe(0)
+    } finally {
+      await adapter.admin!.drop(rebuildSlice)
     }
   })
 

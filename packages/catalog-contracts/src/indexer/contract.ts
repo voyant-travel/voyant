@@ -267,7 +267,15 @@ export interface IndexerAdapter {
   bulkReindex(
     slice: IndexerSlice,
     stream: AsyncIterable<IndexerDocument>,
-    options?: { forceReembed?: boolean },
+    options?: {
+      forceReembed?: boolean
+      /**
+       * Stable identity for one authoritative source snapshot. Reuse it only
+       * when resuming that same snapshot after an interrupted stream; provide
+       * a new value when the source has changed.
+       */
+      rebuildRunId?: string
+    },
   ): Promise<void>
 }
 

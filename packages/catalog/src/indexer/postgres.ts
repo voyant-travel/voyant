@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto"
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto"
 import type {
   FacetRequest,
   IndexerAdapter,
@@ -340,8 +340,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     storageEnsured = true
   }
 
-  const ensureSlice = async (slice: IndexerSlice) => {
-    await db.execute(sql`
+  const ensureSlice = async (targetDb: AnyDrizzleDb, slice: IndexerSlice) => {
+    await targetDb.execute(sql`
       INSERT INTO voyant_catalog_search_slices (vertical, locale, audience, market, channel)
       VALUES (
         ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market}, ${slice.channel ?? ""}
@@ -349,8 +349,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     `)
   }
 
-  const bumpGeneration = async (slice: IndexerSlice) => {
-    await db.execute(sql`
+  const bumpGeneration = async (targetDb: AnyDrizzleDb, slice: IndexerSlice) => {
+    await targetDb.execute(sql`
       UPDATE voyant_catalog_search_slices
       SET generation = generation + 1, updated_at = now()
       WHERE ${facetSlicePredicate(slice)}
@@ -388,7 +388,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
 
   const readProjectionState = async (slice: IndexerSlice): Promise<PostgresProjectionState> => {
     await ensureStorage()
-    await ensureSlice(slice)
+    await ensureSlice(db, slice)
     const [row] = readRows(
       await db.execute(sql`
         SELECT
@@ -398,8 +398,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           (
             SELECT count(*)::integer
             FROM voyant_catalog_search_rebuild_documents AS staged
-            WHERE staged.rebuild_id = ${rebuildIdForSlice(slice)}
-              AND staged.vertical = slices.vertical
+            WHERE staged.vertical = slices.vertical
               AND staged.locale = slices.locale
               AND staged.audience = slices.audience
               AND staged.market = slices.market
@@ -467,7 +466,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         )
       }
       await ensureStorage()
-      await ensureSlice(slice)
+      await ensureSlice(db, slice)
       return withOptionalTransaction(db, async (tx) =>
         restoreProjectionSnapshot(tx, slice, vectorStrategy, typoStrategy),
       )
@@ -553,19 +552,21 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
 
     async ensureCollection(_slice: IndexerSlice, _registry: FieldPolicyRegistry) {
       await ensureStorage()
-      await ensureSlice(_slice)
+      await ensureSlice(db, _slice)
     },
 
     async upsert(slice, documents) {
       if (documents.length === 0) return
+      requireTransactionSupport(db, "incremental upsert")
       await ensureStorage()
-      await ensureSlice(slice)
-      for (const document of documents) {
-        const embedding = vectorDimensions
-          ? selectedEmbedding(document, vectorDimensions)
-          : undefined
-        if (vectorStrategy !== "none") {
-          await db.execute(sql`
+      await ensureSlice(db, slice)
+      await withOptionalTransaction(db, async (tx) => {
+        for (const document of documents) {
+          const embedding = vectorDimensions
+            ? selectedEmbedding(document, vectorDimensions)
+            : undefined
+          if (vectorStrategy !== "none") {
+            await tx.execute(sql`
             INSERT INTO voyant_catalog_search_documents (
               vertical, locale, audience, market, channel, id, fields, embeddings,
               embedding_model_id, document_text, search_embedding
@@ -583,9 +584,9 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
               document_text = EXCLUDED.document_text,
               search_embedding = EXCLUDED.search_embedding,
               updated_at = now()
-          `)
-        } else {
-          await db.execute(sql`
+            `)
+          } else {
+            await tx.execute(sql`
             INSERT INTO voyant_catalog_search_documents (
               vertical, locale, audience, market, channel, id, fields, embeddings,
               embedding_model_id, document_text
@@ -601,21 +602,25 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
               embedding_model_id = EXCLUDED.embedding_model_id,
               document_text = EXCLUDED.document_text,
               updated_at = now()
-          `)
+            `)
+          }
+          await replaceFacetValues(tx, slice, document)
+          if (typoStrategy === "pgtrgm") await replaceTypoTerms(tx, slice, document)
         }
-        await replaceFacetValues(db, slice, document)
-        if (typoStrategy === "pgtrgm") await replaceTypoTerms(db, slice, document)
-      }
-      await bumpGeneration(slice)
-      await discardProjectionSnapshot(db, slice)
+        await bumpGeneration(tx, slice)
+        await discardProjectionSnapshot(tx, slice)
+      })
       await ensureLakebaseTextIndex()
       await ensureLakebaseVectorIndex()
     },
 
     async delete(slice, ids) {
       if (ids.length === 0) return
+      requireTransactionSupport(db, "incremental delete")
       await ensureStorage()
-      await db.execute(sql`
+      await ensureSlice(db, slice)
+      await withOptionalTransaction(db, async (tx) => {
+        await tx.execute(sql`
         DELETE FROM voyant_catalog_search_facets
         WHERE ${facetSlicePredicate(slice)}
           AND document_id IN (
@@ -624,8 +629,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
               sql`, `,
             )}
           )
-      `)
-      await db.execute(sql`
+        `)
+        await tx.execute(sql`
         DELETE FROM voyant_catalog_search_terms
         WHERE ${facetSlicePredicate(slice)}
           AND document_id IN (
@@ -634,8 +639,8 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
               sql`, `,
             )}
           )
-      `)
-      await db.execute(sql`
+        `)
+        await tx.execute(sql`
           DELETE FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice)}
           AND id IN (
@@ -644,9 +649,10 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
               sql`, `,
             )}
           )
-      `)
-      await bumpGeneration(slice)
-      await discardProjectionSnapshot(db, slice)
+        `)
+        await bumpGeneration(tx, slice)
+        await discardProjectionSnapshot(tx, slice)
+      })
     },
 
     async search(slice, request) {
@@ -671,7 +677,9 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
                 textStrategy,
                 lakebaseTextIndexReady,
               )
-        if (typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic") {
+        const usedTypoFallback =
+          typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic"
+        if (usedTypoFallback) {
           keywordRows = await searchTypoRows(snapshotDb, slice, audiences, request)
         }
         const vectorRows =
@@ -717,26 +725,28 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           results.facets = await buildFacets(
             snapshotDb,
             slice,
-            candidates.map(({ document }) => document),
+            audiences,
+            request,
             request.facets,
+            usedTypoFallback,
+            vectorDimensions,
           )
         }
         return results
       })
     },
 
-    async bulkReindex(slice, stream) {
-      if (dbSupportsTransactions(db) === false) {
-        throw new Error(
-          "Postgres catalog indexer atomic bulk reindex requires a transaction-capable database adapter.",
-        )
-      }
+    async bulkReindex(slice, stream, rebuildOptions) {
+      requireTransactionSupport(db, "atomic bulk reindex")
       await ensureStorage()
-      await ensureSlice(slice)
-      // The stable id keeps successfully staged chunks available after a
-      // stream/process failure. A retry may resume from the next chunk or
-      // replay the full source; idempotent staging converges in either case.
-      const rebuildId = rebuildIdForSlice(slice)
+      await ensureSlice(db, slice)
+      // A stable source snapshot identity lets a retry keep its staged chunks
+      // without letting a changed source publish documents from an older run.
+      // Callers that do not need resume semantics receive an isolated run.
+      const rebuildId = rebuildIdForSlice(slice, rebuildOptions?.rebuildRunId ?? randomUUID())
+      await withOptionalTransaction(db, async (tx) => {
+        await discardOtherStagedRebuilds(tx, rebuildId, slice)
+      })
       let batch: IndexerDocument[] = []
       try {
         for await (const document of stream) {
@@ -782,6 +792,17 @@ async function withConsistentSearchSnapshot<T>(
     }
     return callback(tx)
   })
+}
+
+function requireTransactionSupport(db: AnyDrizzleDb, operation: string): void {
+  if (
+    dbSupportsTransactions(db) === false ||
+    typeof (db as { transaction?: unknown }).transaction !== "function"
+  ) {
+    throw new Error(
+      `Postgres catalog indexer ${operation} requires a transaction-capable database adapter.`,
+    )
+  }
 }
 
 async function readSearchGenerationToken(
@@ -1058,18 +1079,31 @@ async function replaceTypoTerms(
   `)
 }
 
-function rebuildIdForSlice(slice: IndexerSlice): string {
+function rebuildIdForSlice(slice: IndexerSlice, rebuildRunId: string): string {
   const identity = [
     slice.vertical,
     slice.locale,
     slice.audience,
     slice.market,
     slice.channel ?? "",
+    rebuildRunId,
   ].join("\u0000")
   const digest = createHmac("sha256", "voyant-catalog-rebuild-staging")
     .update(identity)
     .digest("hex")
   return `rebuild-${digest}`
+}
+
+async function discardOtherStagedRebuilds(
+  db: AnyDrizzleDb,
+  rebuildId: string,
+  slice: IndexerSlice,
+): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_rebuild_documents
+    WHERE ${stagingSlicePredicate(slice)}
+      AND rebuild_id <> ${rebuildId}
+  `)
 }
 
 async function stageRebuildDocuments(
@@ -1812,25 +1846,31 @@ function compareSortValues(left: unknown, right: unknown): number {
 async function buildFacets(
   db: AnyDrizzleDb,
   slice: IndexerSlice,
-  documents: IndexerDocument[],
+  audiences: readonly string[],
+  request: SearchRequest,
   facets: readonly FacetRequest[],
+  usedTypoFallback: boolean,
+  vectorDimensions: number | null,
 ) {
-  const documentIds = [...new Set(documents.map(({ id }) => id))]
-  if (documentIds.length === 0) return Object.fromEntries(facets.map(({ field }) => [field, []]))
+  const matchingDocuments = facetMatchPredicate(request, usedTypoFallback, vectorDimensions)
   const rows = readRows(
     await db.execute(sql`
-      SELECT field, value_type, value_text, COUNT(*)::int AS count
-      FROM voyant_catalog_search_facets
-      WHERE ${facetSlicePredicate(slice)}
-        AND document_id IN (${sql.join(
-          documentIds.map((id) => sql`${id}`),
-          sql`, `,
-        )})
-        AND field IN (${sql.join(
+      SELECT facet.field, facet.value_type, facet.value_text, COUNT(*)::int AS count
+      FROM voyant_catalog_search_facets AS facet
+      INNER JOIN voyant_catalog_search_documents
+        ON voyant_catalog_search_documents.vertical = facet.vertical
+        AND voyant_catalog_search_documents.locale = facet.locale
+        AND voyant_catalog_search_documents.audience = facet.audience
+        AND voyant_catalog_search_documents.market = facet.market
+        AND voyant_catalog_search_documents.channel = facet.channel
+        AND voyant_catalog_search_documents.id = facet.document_id
+      WHERE ${slicePredicate(slice, audiences)}
+        AND ${matchingDocuments}
+        AND facet.field IN (${sql.join(
           facets.map(({ field }) => sql`${field}`),
           sql`, `,
         )})
-      GROUP BY field, value_type, value_text
+      GROUP BY facet.field, facet.value_type, facet.value_text
     `),
   ) as Array<{ field: string; value_type: string; value_text: string; count: number | string }>
   return Object.fromEntries(
@@ -1849,6 +1889,79 @@ async function buildFacets(
         .slice(0, resolveFacetBucketLimit(facet.limit)),
     ]),
   )
+}
+
+/**
+ * Facet aggregation deliberately has no candidate limit: it evaluates the
+ * same filters and retrieval semantics over every matching projection row.
+ * Native FTS supplies the complete lexical predicate even when Lakebase ranks
+ * the top candidate page with BM25.
+ */
+function facetMatchPredicate(
+  request: SearchRequest,
+  usedTypoFallback: boolean,
+  vectorDimensions: number | null,
+): SQL {
+  const keyword = usedTypoFallback
+    ? typoFacetPredicate(request)
+    : nativeKeywordFacetPredicate(request)
+  const vector =
+    request.mode === "keyword"
+      ? sql`FALSE`
+      : vectorFacetPredicate(request, vectorDimensions!)
+  const retrieval =
+    request.mode === "keyword"
+      ? keyword
+      : request.mode === "semantic"
+        ? vector
+        : sql`(${keyword} OR ${vector})`
+  return sql`(${retrieval}) ${filterPredicate(request.filters ?? [])}`
+}
+
+function nativeKeywordFacetPredicate(request: SearchRequest): SQL {
+  const query = request.query.trim()
+  if (!query) return sql`TRUE`
+  const prefixQuery = toPrefixTsQuery(query)
+  return prefixQuery
+    ? sql`(
+        search_vector @@ websearch_to_tsquery('simple', ${query})
+        OR search_vector @@ to_tsquery('simple', ${prefixQuery})
+      )`
+    : sql`search_vector @@ websearch_to_tsquery('simple', ${query})`
+}
+
+function typoFacetPredicate(request: SearchRequest): SQL {
+  const query = request.query.trim().toLocaleLowerCase()
+  if (query.length < 3 || query.length > 64) return sql`FALSE`
+  return sql`EXISTS (
+    SELECT 1
+    FROM voyant_catalog_search_terms AS terms
+    WHERE terms.vertical = voyant_catalog_search_documents.vertical
+      AND terms.locale = voyant_catalog_search_documents.locale
+      AND terms.audience = voyant_catalog_search_documents.audience
+      AND terms.market = voyant_catalog_search_documents.market
+      AND terms.channel = voyant_catalog_search_documents.channel
+      AND terms.document_id = voyant_catalog_search_documents.id
+      AND terms.term % ${query}
+  )`
+}
+
+function vectorFacetPredicate(request: SearchRequest, dimensions: number): SQL {
+  const embedding = queryEmbedding(request, dimensions)
+  const threshold = distanceThreshold(request.distance_threshold)
+  return sql`
+    search_embedding IS NOT NULL
+    ${
+      request.query_embedding_model_id
+        ? sql`AND embedding_model_id = ${request.query_embedding_model_id}`
+        : sql``
+    }
+    ${
+      threshold === undefined
+        ? sql``
+        : sql`AND search_embedding <=> ${embedding}::vector <= ${threshold}`
+    }
+  `
 }
 
 function boundedPageSize(limit: number | undefined): number {
