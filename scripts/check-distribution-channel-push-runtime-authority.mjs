@@ -85,9 +85,8 @@ if (
 }
 for (const required of [
   "catalogRuntime.getSourceRegistryFromContext",
-  "createChannelPushWorkflowRuntimeEntries",
   "primitives.database.resolve",
-  "primitives.database.transaction",
+  "withDeps",
 ]) {
   if (!runtime.includes(required)) {
     violations.push(`Distribution runtime must contain ${JSON.stringify(required)}`)
@@ -96,14 +95,15 @@ for (const required of [
 if (
   !extension.includes("defineGraphRuntimeFactory") ||
   !extension.includes("getPort(channelPushRuntimePort)") ||
-  !extension.includes("runtime.registerWorkflowService(context)")
+  !extension.includes("runtime.registerSubscriberRuntime(context)")
 ) {
-  violations.push("Distribution must own channel-push route and workflow-service composition")
+  violations.push("Distribution must own channel-push route and subscriber composition")
 }
 if (
   !runtimePort.includes('id: "distribution.channel-push-runtime"') ||
   !runtimePort.includes("resolveRegistry") ||
-  !runtimePort.includes("registerWorkflowService")
+  !runtimePort.includes("registerSubscriberRuntime") ||
+  !runtimePort.includes("withDeps")
 ) {
   violations.push("Distribution must publish the typed channel-push runtime dependency contract")
 }
@@ -126,14 +126,8 @@ if (
 if (existsSync(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))) {
   violations.push("Operator channel-push compatibility entrypoint must stay deleted")
 }
-if (
-  workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
-  workflowServices.includes("registerDistributionWorkflowService")
-) {
-  violations.push("Operator workflow services must not compose Distribution channel-push")
-}
-if (workflowServices.includes("OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution")) {
-  violations.push("Operator must not restore central Distribution workflow selection")
+if (workflowServices) {
+  violations.push("Operator must not restore retired workflow-service composition")
 }
 const compatibilityRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
 if (existsSync(compatibilityRoutePath)) {

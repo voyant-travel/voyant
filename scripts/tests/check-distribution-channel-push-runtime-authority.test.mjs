@@ -22,17 +22,17 @@ async function createFixture(overrides = {}) {
     "distribution/src/voyant-extensions.ts":
       'runtimePorts: [requirePort(channelPushRuntimePort)]\nexport: "createChannelPushVoyantRuntime"\n',
     "distribution/src/channel-push/extension.ts":
-      "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
+      "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerSubscriberRuntime(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
-      'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
+      'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterSubscriberRuntime\nwithDeps\n',
     "distribution/package.json":
       '{\n  "name": "@voyant-travel/distribution",\n  "exports": { "./runtime-contributor": "./src/runtime-contributor.ts" },\n  "voyant": { "runtime": { "export": "createDistributionRuntimePortContribution" } }\n}\n',
     "distribution/src/runtime-contributor.ts":
       "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
     "distribution/src/runtime.ts":
-      "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
+      "catalogRuntime.getSourceRegistryFromContext\nprimitives.database.resolve\nwithDeps\n",
     "runtime/src/deployment-resources.ts": "options.createRuntimePorts({ primitives })\n",
-    "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
+    "operator/src/api/runtime/operator-workflow-services.ts": "",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,
@@ -123,14 +123,14 @@ describe("check-distribution-channel-push-runtime-authority", () => {
     })
   })
 
-  it("rejects Distribution composition restored in Operator workflow services", async () => {
+  it("rejects restoration of the retired Operator workflow services", async () => {
     const root = await createFixture({
       "operator/src/api/runtime/operator-workflow-services.ts":
         "createChannelPushWorkflowRuntimeEntries\nexport async function registerDistributionWorkflowService() {}\n",
     })
 
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must not compose Distribution channel-push/)
+      assert.match(error.stderr, /must not restore retired workflow-service composition/)
       return true
     })
   })
