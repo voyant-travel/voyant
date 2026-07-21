@@ -111,7 +111,7 @@ export interface ChannelPushSubscribersOptions {
   /**
    * When `true` (default), the subscriber drains intent rows inline
    * after writing them. Useful for dev / single-process templates.
-   * Production deployments with the workflow runtime wired set this
+   * Production deployments with the package job host wired set this
    * to `false` and rely on `channel.booking.push` to drain.
    */
   drainInline?: boolean
@@ -153,8 +153,8 @@ export function createChannelPushSubscribers(
       await upsertPendingBookingLinks(deps.db, payload.bookingId, targets)
 
       if (drainInline) {
-        // Inline drain — simple deployments without the workflow runtime
-        // wired (dev templates, demo mode). Production uses the workflow
+        // Inline drain — simple deployments without the package job host
+        // wired (dev templates, demo mode). Production uses the selected job
         // and skips this branch.
         await processBookingPush({ bookingId: payload.bookingId }, deps)
       }
@@ -200,7 +200,7 @@ export function createChannelPushSubscribers(
 
       if (drainInline) {
         // Drain only this channel's intents to keep latency bounded.
-        // (v1 dev behavior; production runs the scheduled workflow.)
+        // (v1 dev behavior; production runs the scheduled job.)
         for (const target of targets) {
           await processAvailabilityPushIntents({ channelId: target.channelId, limit: 50 }, deps)
         }

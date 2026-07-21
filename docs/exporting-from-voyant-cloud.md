@@ -114,9 +114,9 @@ journal-rewrite fallback.
 
 After restore, run the generated project's migration command. Package migrations
 already represented in the restored journal are no-ops. New migrations selected
-only by the self-host provider plan, such as the standalone workflow runtime,
-apply on the same lineage. A content-hash mismatch is migration drift and must
-be investigated; never bypass it by editing the journal.
+only by the self-host provider plan apply on the same lineage. A content-hash
+mismatch is migration drift and must be investigated; never bypass it by editing
+the journal.
 
 ## 5. Restore Object Storage
 

@@ -36,8 +36,8 @@
 </h4>
 
 <p align="center">
-  Voyant ships deployable starter apps, durable workflow orchestration, and a
-  wide set of headless domain modules (catalog, commerce, inventory, operations,
+  Voyant ships deployable starter apps, package-owned background execution, and
+  a wide set of headless domain modules (catalog, commerce, inventory, operations,
   relationships, quotes, bookings, finance, distribution, legal, charters,
   cruises, accommodation resale, and more) that you compose into your own
   travel platform.
@@ -82,8 +82,8 @@ and deployable application shells that you own and extend.
   relationships, quotes, bookings, finance, distribution, legal, charters,
   cruises, accommodation resale, and more.
 - **Hono-based API transport** with optional Next.js route helpers.
-- **Durable, step-based workflow orchestration** that runs on self-host
-  infrastructure or Voyant Cloud's hosted runtime.
+- **Package-owned subscribers and jobs** selected with their domain modules and
+  hosted by self-managed infrastructure or Voyant Cloud.
 - **Better Auth wiring** in first-party starters, with core packages staying
   auth-provider agnostic.
 - **Versioned React packages per domain** (`relationships-react`,
@@ -104,7 +104,7 @@ Voyant ships one first-party starter:
 
 | Starter | Purpose | Stack |
 | --- | --- | --- |
-| [`starters/operator`](./starters/operator/README.md) | Tour operator workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
+| [`starters/operator`](./starters/operator/README.md) | Tour operator platform | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
 
 ## The framework surface
 
@@ -188,7 +188,7 @@ Voyant keeps a strict boundary between reusable business logic and deployment sh
 - `starters/*` and app shells own UI, auth wiring, deployment shape, and runtime-specific configuration
 - Core packages stay framework-agnostic even when first-party starters use React, TanStack Start, Hono, Better Auth, and Cloudflare Workers
 - Transport adapters stay thin and call shared domain services rather than owning business logic
-- Workflow business logic ships as plain SDK packages; orchestrator/runner apps wrap them for a given runtime
+- Package manifests contribute required subscribers and jobs; deployment hosts provide their runtime infrastructure
 
 Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions
 live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes

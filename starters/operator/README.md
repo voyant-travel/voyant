@@ -20,7 +20,7 @@ than adding them to the generated starter.
 - **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node
   production default); neon-http/WS remain fallback adapters
 - **Auth**: Better Auth
-- **Jobs**: Voyant Workflows
+- **Jobs**: package-owned jobs selected through the resolved deployment graph
 
 ## Quick start
 

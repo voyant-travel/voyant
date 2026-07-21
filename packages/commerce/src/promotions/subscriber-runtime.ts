@@ -60,7 +60,7 @@ export function createPromotionRedemptionSubscriberRuntime<TBindings = unknown>(
   }
 }
 
-/** Selected-graph factory for redemption recording and promotion workflow services. */
+/** Selected-graph factory for redemption recording and the shared reindex service. */
 export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) => {
     const [database, bulkReindex] = await Promise.all([

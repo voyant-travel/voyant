@@ -21,13 +21,7 @@
       "@voyant-travel/storefront-react",
       "@voyant-travel/storefront-sdk"
     ],
-    ["@voyant-travel/trips", "@voyant-travel/trips-react"],
-    [
-      "@voyant-travel/workflow-runs",
-      "@voyant-travel/workflows",
-      "@voyant-travel/workflows-orchestrator",
-      "@voyant-travel/workflows-react"
-    ]
+    ["@voyant-travel/trips", "@voyant-travel/trips-react"]
   ],
   "linked": [],
   "ignore": ["@voyant-travel/voyant-test-utils", "@voyant-travel/voyant-typescript-config"],

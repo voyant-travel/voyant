@@ -312,7 +312,6 @@ These are what a security questionnaire / procurement review will flag, independ
 - Verify Netopia callback signatures (C1).
 - Bump liquidjs ≥10.26.0 and tighten the axios override (M11).
 - Add `cookie` to log redaction / switch the error-boundary to an allowlist (H7).
-- Make the workflow orchestrator fail closed when no verifier is configured (H4).
 - Throttle + captcha the verification-start endpoints (C3).
 
 **Sprint 1–2 — close the structural holes:**

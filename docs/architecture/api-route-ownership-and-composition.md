@@ -18,11 +18,19 @@ Related:
 Implemented for the operator starter. The route-ownership checker (Phase 0),
 first-class context-preserving lazy contributions including the multi-prefix
 `lazyRoutes` variant (Phase 1), and the full route-family migration (Phases 3–4)
-have landed. Workflow Runs was the final generic Node host mount and now composes
-through its package-owned selected-graph runtime port. The Operator starter and
-generic Runtime contain no `additionalRoutes` product composition. See
+have landed. Workflow Runs was the final generic Node host mount during this
+migration and was subsequently retired with the workflow product. The Operator
+starter and generic Runtime contain no `additionalRoutes` product composition. See
 [Route Ownership Inventory](./route-ownership-inventory.md) for the per-family
 result.
+
+## Status update (2026-07-21)
+
+The workflow product was subsequently retired. Checkout finalization now uses
+Commerce's selected payment subscriber and explicit `finalizeCheckout` domain
+operation, ordered by Catalog's in-process saga. References to workflow runtime
+code in the migration inventory below describe the pre-removal source shape,
+not a current execution surface.
 
 ## Summary
 

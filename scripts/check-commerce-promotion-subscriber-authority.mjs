@@ -80,11 +80,6 @@ requireMatch(
   "Commerce runtime must register the bulk-reindex service before the redemption subscriber",
 )
 requireMatch(
-  sources.descriptor,
-  /container\.register\(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,[\s\S]*database\.withDb\(context\.bindings/,
-  "Commerce runtime must register its promotion-boundary workflow runtime",
-)
-requireMatch(
   sources.runtime,
   /promotionRedemptionDatabase:\s*\{[\s\S]*?primitives\.database\.transaction\(bindings/,
   "Commerce promotion redemption must use generic database primitives",

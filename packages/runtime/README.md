@@ -5,7 +5,7 @@ The public Node host for a generated Voyant project. Applications normally use
 Voyant CLI uses `startVoyantProject()` for `voyant start`.
 
 This package owns graph admission, runtime composition, API and admin hosting,
-scheduled workflow dispatch, and deployment resources. Low-level HTTP and
+package-owned job dispatch, and deployment resources. Low-level HTTP and
 storage primitives live in `@voyant-travel/runtime-core`; application starters
 should not depend on that package directly.
 

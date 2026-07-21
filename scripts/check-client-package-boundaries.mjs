@@ -90,7 +90,7 @@ const forbiddenImports = [
     module: "@voyant-travel/distribution",
     replacement: "@voyant-travel/distribution/validation or @voyant-travel/distribution/linkables",
     reason:
-      "the distribution root barrel mixes client schemas/static metadata with routes, services, and workflow runtime code; browser code must use narrow client-safe subpaths",
+      "the distribution root barrel mixes client schemas/static metadata with routes, services, and job runtime code; browser code must use narrow client-safe subpaths",
   },
   {
     module: "@voyant-travel/mice",

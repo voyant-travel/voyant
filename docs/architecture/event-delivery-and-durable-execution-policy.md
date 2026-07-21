@@ -120,7 +120,7 @@ Rule:
 If the side effect is part of the correctness boundary, do not hide it in a
 fire-and-forget subscriber.
 
-### 6. Use durable jobs or workflows for retryable background execution
+### 6. Use domain-owned durable state and jobs for retryable background execution
 
 When a side effect needs:
 
@@ -130,16 +130,19 @@ When a side effect needs:
 - explicit job identity or idempotency
 - queue-backed isolation from the request path
 
-it should move to the `JobRunner` / workflow side, not stay on the plain event
-bus.
+the subscriber should record durable domain intent and let a package-owned job
+claim and process it. The event is a signal; the intent, checkpoint, outbox row,
+or delivery record is the source of truth.
 
-Voyant already has the right boundary for this in
-[`@voyant-travel/core/orchestration`](../../packages/core/src/orchestration.ts) and
-[`@voyant-travel/core/workflows`](../../packages/core/src/workflows.ts).
+The standard job host supplies cadence, wakeups, bounded invocation retry, and
+health. It does not replace domain idempotency or durable progress. See
+[`execution-architecture.md`](./execution-architecture.md) for the product
+execution shapes and ownership rules.
 
 Rule:
 
-Use events for signaling. Use jobs or workflows for durable background work.
+Use events for signaling. Use domain state plus package-owned jobs for durable
+background work.
 
 ### 7. Do not promise queue semantics through EventBus adapters implicitly
 

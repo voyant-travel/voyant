@@ -25,12 +25,7 @@
     // Migration collector validation harnesses are documented architecture
     // evidence and run directly against throwaway databases.
     "spikes/d1-migration-collector/run.mjs",
-    "spikes/d2-migration-collector/run.mjs",
-    // Workflow examples are compiled by `pnpm --filter @voyant-travel/workflows
-    // build:examples`; simple-greeting is a standalone CLI demo workflow.
-    "packages/workflows/examples/drive.ts",
-    "packages/workflows/examples/simple-greeting.ts",
-    "packages/workflows/examples-dist/simple-greeting.js"
+    "spikes/d2-migration-collector/run.mjs"
   ],
   "dynamicallyLoaded": [
     // Deployment-local generated Drizzle schema consumed through config string
@@ -41,7 +36,6 @@
     "apps/agent-control-plane/**",
     "apps/agent-runner/**",
     "apps/registry/**",
-    "packages/plugins/voyant-connect/**",
-    "packages/workflows-orchestrator-node/**"
+    "packages/plugins/voyant-connect/**"
   ]
 }

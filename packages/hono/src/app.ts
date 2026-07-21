@@ -112,9 +112,8 @@ export interface ModuleMount {
 /**
  * App handle returned alongside the Hono instance. Carries `ready()` for
  * headless / sibling-process deployments that need to fire the lazy
- * bootstrap before the first HTTP request — workflow runtimes (node
- * sibling-process pattern, tests) call this so the time wheel and
- * manifest registration kick off without traffic.
+ * bootstrap before the first HTTP request. Resident hosts and tests call this
+ * so selected runtime registration completes without waiting for traffic.
  *
  * Returned via the augmented Hono instance: `app.ready` is attached
  * directly so the existing call sites (which destructure / pass `app`
