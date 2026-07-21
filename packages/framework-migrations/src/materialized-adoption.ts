@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework-migrations; exact PostgreSQL footprint parsing and catalog comparison stay co-located so adoption fails closed through one reviewable verifier.
 import type { MigrationClient, PlannedMigration } from "./collector.js"
 
 /** An exact migration identity that may be adopted when its DDL already exists. */
@@ -15,6 +16,12 @@ interface ExpectedColumn {
   defaultExpression: string | null
   identity: string
   generated: string
+}
+
+interface ExpectedTable {
+  name: string
+  kind: "r"
+  persistence: "p"
 }
 
 interface ExpectedConstraint {
@@ -36,17 +43,24 @@ interface ExpectedIndex {
   table: string
   name: string
   definition: string
+  valid: boolean
+  ready: boolean
+  live: boolean
 }
 
 interface ExpectedFootprint {
-  tables: string[]
+  tables: ExpectedTable[]
   columns: ExpectedColumn[]
   constraints: ExpectedConstraint[]
   indexes: ExpectedIndex[]
 }
 
 interface LiveFootprint {
-  tables: string[]
+  tables: Array<{
+    name: string
+    kind: string
+    persistence: string
+  }>
   columns: ExpectedColumn[]
   constraints: ExpectedConstraint[]
   indexes: ExpectedIndex[]
@@ -121,12 +135,22 @@ function normalizeType(value: string): string {
     .toLowerCase()
 }
 
-function lowercaseOutsideStringLiterals(value: string): string {
+function normalizeOutsideStringLiterals(
+  value: string,
+  normalizeOutside: (value: string) => string,
+): string {
   let result = ""
+  let outside = ""
   let inLiteral = false
+  const flushOutside = () => {
+    if (!outside) return
+    result += normalizeOutside(outside)
+    outside = ""
+  }
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index] as string
     if (character === "'") {
+      if (!inLiteral) flushOutside()
       result += character
       if (inLiteral && value[index + 1] === "'") {
         result += "'"
@@ -136,32 +160,43 @@ function lowercaseOutsideStringLiterals(value: string): string {
       }
       continue
     }
-    result += inLiteral ? character : character.toLowerCase()
+    if (inLiteral) {
+      result += character
+    } else {
+      outside += character
+    }
   }
+  flushOutside()
   return result
+}
+
+function normalizeSqlSyntaxOutsideStringLiterals(
+  value: string,
+  options: { stripPublicPrefix?: boolean } = {},
+): string {
+  return normalizeOutsideStringLiterals(value, (outside) => {
+    let normalized = outside.replaceAll('"', "")
+    if (options.stripPublicPrefix) normalized = normalized.replace(/\bpublic\./gi, "")
+    return normalized
+      .replace(/\s+/g, " ")
+      .replace(/\s*([(),])\s*/g, "$1")
+      .toLowerCase()
+  }).trim()
 }
 
 function normalizeExpression(value: string | null | undefined): string | null {
   if (value == null) return null
-  let normalized = value.trim().replace(/;$/, "").replace(/\s+/g, " ")
+  let normalized = value.trim().replace(/;$/, "")
   while (normalized.startsWith("(") && normalized.endsWith(")")) {
     normalized = normalized.slice(1, -1).trim()
   }
-  return lowercaseOutsideStringLiterals(
-    normalized.replaceAll('"', "").replace(/\s*([(),])\s*/g, "$1"),
-  )
+  return normalizeSqlSyntaxOutsideStringLiterals(normalized)
 }
 
 function normalizeIndexDefinition(value: string): string {
-  return lowercaseOutsideStringLiterals(
-    value
-      .trim()
-      .replace(/;$/, "")
-      .replaceAll('"', "")
-      .replace(/\bpublic\./gi, "")
-      .replace(/\s+/g, " ")
-      .replace(/\s*([(),])\s*/g, "$1"),
-  )
+  return normalizeSqlSyntaxOutsideStringLiterals(value.trim().replace(/;$/, ""), {
+    stripPublicPrefix: true,
+  })
 }
 
 function unsupported(migration: PlannedMigration, detail: string): never {
@@ -344,7 +379,7 @@ function parseColumn(
 }
 
 function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint {
-  const tables: string[] = []
+  const tableNames: string[] = []
   const columns: ExpectedColumn[] = []
   const constraints: ExpectedConstraint[] = []
   const indexes: ExpectedIndex[] = []
@@ -359,8 +394,9 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
     )
     if (create) {
       const table = postgresIdentifier(create[1] as string)
-      if (tables.includes(table)) unsupported(migration, `table ${table} is created more than once`)
-      tables.push(table)
+      if (tableNames.includes(table))
+        unsupported(migration, `table ${table} is created more than once`)
+      tableNames.push(table)
       let position = 0
       for (const item of splitTopLevel(create[2] as string)) {
         const tableConstraint = item.match(
@@ -391,7 +427,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
     )
     if (alterConstraint) {
       const table = postgresIdentifier(alterConstraint[1] as string)
-      if (!tables.includes(table)) {
+      if (!tableNames.includes(table)) {
         unsupported(
           migration,
           `constraint targets table ${table}, which this migration does not create`,
@@ -416,7 +452,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
     )
     if (index) {
       const table = postgresIdentifier(index[2] as string)
-      if (!tables.includes(table)) {
+      if (!tableNames.includes(table)) {
         unsupported(
           migration,
           `index ${index[1]} targets table ${table}, which this migration does not create`,
@@ -426,6 +462,9 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
         table,
         name: postgresIdentifier(index[1] as string),
         definition: normalizeIndexDefinition(statement),
+        valid: true,
+        ready: true,
+        live: true,
       })
       continue
     }
@@ -433,8 +472,13 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
     unsupported(migration, `unsupported statement ${statement.slice(0, 80)}`)
   }
 
-  if (tables.length === 0) unsupported(migration, "the migration creates no tables")
-  return { tables, columns, constraints, indexes }
+  if (tableNames.length === 0) unsupported(migration, "the migration creates no tables")
+  return {
+    tables: tableNames.map((name) => ({ name, kind: "r", persistence: "p" })),
+    columns,
+    constraints,
+    indexes,
+  }
 }
 
 function createdTables(migration: PlannedMigration): string[] {
@@ -461,24 +505,29 @@ function strings(value: unknown): string[] {
 async function readLiveTables(
   client: MigrationClient,
   tables: readonly string[],
-): Promise<string[]> {
+): Promise<LiveFootprint["tables"]> {
   const tableRows = await client.query(
-    `SELECT c.relname AS table_name
+    `SELECT c.relname AS table_name,
+            c.relkind AS relation_kind,
+            c.relpersistence AS relation_persistence
        FROM pg_class c
        JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public'
-        AND c.relkind IN ('r', 'p')
         AND c.relname = ANY($1::text[])
       ORDER BY c.relname`,
     [tables],
   )
-  return tableRows.rows.map((row) => String(row.table_name))
+  return tableRows.rows.map((row) => ({
+    name: String(row.table_name),
+    kind: String(row.relation_kind ?? ""),
+    persistence: String(row.relation_persistence ?? ""),
+  }))
 }
 
 async function readLiveFootprint(
   client: MigrationClient,
   tables: readonly string[],
-  liveTables: string[],
+  liveTables: LiveFootprint["tables"],
 ): Promise<LiveFootprint> {
   if (liveTables.length !== tables.length) {
     return { tables: liveTables, columns: [], constraints: [], indexes: [] }
@@ -544,7 +593,10 @@ async function readLiveFootprint(
   const indexRows = await client.query(
     `SELECT rel.relname AS table_name,
             idx.relname AS index_name,
-            pg_get_indexdef(idx.oid, 0, true) AS index_definition
+            pg_get_indexdef(idx.oid, 0, true) AS index_definition,
+            i.indisvalid AS is_valid,
+            i.indisready AS is_ready,
+            i.indislive AS is_live
        FROM pg_index i
        JOIN pg_class rel ON rel.oid = i.indrelid
        JOIN pg_namespace ns ON ns.oid = rel.relnamespace
@@ -587,6 +639,9 @@ async function readLiveFootprint(
       table: String(row.table_name),
       name: String(row.index_name),
       definition: normalizeIndexDefinition(String(row.index_definition)),
+      valid: Boolean(row.is_valid),
+      ready: Boolean(row.is_ready),
+      live: Boolean(row.is_live),
     })),
   }
 }
@@ -601,8 +656,8 @@ function compareFootprint(
   live: LiveFootprint,
 ): void {
   const problems: string[] = []
-  const expectedTables = [...expected.tables].sort()
-  const liveTables = [...live.tables].sort()
+  const expectedTables = [...expected.tables].sort((a, b) => stable(a).localeCompare(stable(b)))
+  const liveTables = [...live.tables].sort((a, b) => stable(a).localeCompare(stable(b)))
   if (stable(expectedTables) !== stable(liveTables)) {
     problems.push(`tables expected ${stable(expectedTables)}, found ${stable(liveTables)}`)
   }
@@ -643,7 +698,11 @@ export async function classifyMaterializedMigration(
   if (liveTables.length === 0) return { status: "absent" }
 
   const expected = parseExpectedFootprint(migration)
-  const live = await readLiveFootprint(client, expected.tables, liveTables)
+  const live = await readLiveFootprint(
+    client,
+    expected.tables.map((table) => table.name),
+    liveTables,
+  )
   compareFootprint(migration, expected, live)
   return { status: "materialized" }
 }
