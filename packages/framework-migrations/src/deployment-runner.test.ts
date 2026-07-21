@@ -545,13 +545,14 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
         }
         if (sql.includes("FROM pg_class c") && sql.includes("c.relkind")) {
           return {
-            rows:
+            rows: (
               options.tableRows ??
               (options.tables ?? []).map((table_name) => ({
                 table_name,
                 relation_kind: "r",
                 relation_persistence: "p",
-              })),
+              }))
+            ).map((row) => ({ ...row })),
           }
         }
         if (sql.includes("FROM pg_attribute a")) return { rows: options.columns ?? [] }
