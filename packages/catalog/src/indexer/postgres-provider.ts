@@ -5,6 +5,7 @@ import { createPostgresIndexer } from "./postgres.js"
 
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
 const VECTOR_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-vector-strategy"
+const TYPO_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-typo-strategy"
 
 interface PostgresGraphProviderContext {
   getResource: <T = unknown>(declarationId: string) => T | undefined
@@ -27,11 +28,18 @@ export function createPostgresGraphIndexerProvider(
     )
   }
   const vectorStrategy = resolveVectorStrategy(context.getConfig(VECTOR_STRATEGY_CONFIG_ID))
+  const typoStrategy = resolveTypoStrategy(context.getConfig(TYPO_STRATEGY_CONFIG_ID))
 
   return {
     create: ({ registries, vectorDimensions }) =>
-      createPostgresIndexer({ db, registries, vectorDimensions, vectorStrategy }),
+      createPostgresIndexer({ db, registries, vectorDimensions, vectorStrategy, typoStrategy }),
   }
+}
+
+function resolveTypoStrategy(value: unknown): "none" | "pgtrgm" {
+  if (value === undefined || value === "" || value === "none") return "none"
+  if (value === "pgtrgm") return value
+  throw new Error('POSTGRES_SEARCH_TYPO_STRATEGY must be either "none" or "pgtrgm".')
 }
 
 function resolveVectorStrategy(value: unknown): "none" | "pgvector" {

@@ -140,6 +140,11 @@ export const catalogVoyantModule = defineModule({
       key: "POSTGRES_SEARCH_VECTOR_STRATEGY",
       required: false,
     },
+    {
+      id: "@voyant-travel/catalog#config.postgres-search-typo-strategy",
+      key: "POSTGRES_SEARCH_TYPO_STRATEGY",
+      required: false,
+    },
   ],
   secrets: [
     {
@@ -165,7 +170,10 @@ export const catalogVoyantModule = defineModule({
       selection: { role: "search", value: "postgres" },
       uses: {
         resources: ["@voyant-travel/catalog#resource.database"],
-        config: ["@voyant-travel/catalog#config.postgres-search-vector-strategy"],
+        config: [
+          "@voyant-travel/catalog#config.postgres-search-vector-strategy",
+          "@voyant-travel/catalog#config.postgres-search-typo-strategy",
+        ],
       },
       runtime: {
         entry: "@voyant-travel/catalog/indexer/postgres-provider",

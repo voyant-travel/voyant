@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import { createPostgresGraphIndexerProvider } from "./postgres-provider.js"
 
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
+const VECTOR_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-vector-strategy"
+const TYPO_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-typo-strategy"
 
 describe("Postgres graph indexer provider", () => {
   it("binds the adapter to its declared deployment database resource", () => {
@@ -32,7 +34,7 @@ describe("Postgres graph indexer provider", () => {
     const db = { execute: async () => [] }
     const provider = createPostgresGraphIndexerProvider({
       getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-      getConfig: (() => "pgvector") as never,
+      getConfig: ((id: string) => (id === VECTOR_STRATEGY_CONFIG_ID ? "pgvector" : undefined)) as never,
     })
 
     expect(
@@ -50,8 +52,18 @@ describe("Postgres graph indexer provider", () => {
     expect(() =>
       createPostgresGraphIndexerProvider({
         getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-        getConfig: (() => "lakebase") as never,
+        getConfig: ((id: string) => (id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined)) as never,
       }),
     ).toThrow("POSTGRES_SEARCH_VECTOR_STRATEGY")
+  })
+
+  it("rejects unrecorded Postgres typo strategies", () => {
+    const db = { execute: async () => [] }
+    expect(() =>
+      createPostgresGraphIndexerProvider({
+        getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
+        getConfig: ((id: string) => (id === TYPO_STRATEGY_CONFIG_ID ? "lakebase" : undefined)) as never,
+      }),
+    ).toThrow("POSTGRES_SEARCH_TYPO_STRATEGY")
   })
 })

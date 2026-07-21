@@ -10,7 +10,10 @@ describe("catalog deployment declaration", () => {
         selection: { role: "search", value: "postgres" },
         uses: {
           resources: ["@voyant-travel/catalog#resource.database"],
-          config: ["@voyant-travel/catalog#config.postgres-search-vector-strategy"],
+          config: [
+            "@voyant-travel/catalog#config.postgres-search-vector-strategy",
+            "@voyant-travel/catalog#config.postgres-search-typo-strategy",
+          ],
         },
         runtime: {
           entry: "@voyant-travel/catalog/indexer/postgres-provider",
@@ -53,6 +56,9 @@ describe("catalog deployment declaration", () => {
     )
     expect(catalogVoyantModule.config).toContainEqual(
       expect.objectContaining({ key: "POSTGRES_SEARCH_VECTOR_STRATEGY", required: false }),
+    )
+    expect(catalogVoyantModule.config).toContainEqual(
+      expect.objectContaining({ key: "POSTGRES_SEARCH_TYPO_STRATEGY", required: false }),
     )
   })
 })

@@ -36,6 +36,7 @@ type StoredRow = {
 }
 
 type PostgresVectorStrategy = "none" | "pgvector"
+type PostgresTypoStrategy = "none" | "pgtrgm"
 
 export interface PostgresIndexerOptions extends IndexerProviderOptions {
   /** The deployment-owned pooled database client. */
@@ -45,6 +46,8 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
    * extension; the adapter never creates extensions or probes per request.
    */
   vectorStrategy?: PostgresVectorStrategy
+  /** Recorded typo-recovery capability; pg_trgm remains deployment-owned. */
+  typoStrategy?: PostgresTypoStrategy
 }
 
 /**
@@ -59,8 +62,10 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
 export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerAdapter {
   const { db } = options
   const vectorStrategy = options.vectorStrategy ?? "none"
+  const typoStrategy = options.typoStrategy ?? "none"
   const vectorDimensions = resolveVectorDimensions(vectorStrategy, options.vectorDimensions)
   let vectorStorageVerified = vectorStrategy !== "pgvector"
+  let typoStorageVerified = typoStrategy !== "pgtrgm"
 
   const ensureStorage = async () => {
     await db.execute(sql`
@@ -110,6 +115,18 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       )
     `)
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_terms (
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        document_id text NOT NULL,
+        term text NOT NULL,
+        PRIMARY KEY (vertical, locale, audience, market, channel, document_id, term)
+      )
+    `)
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_vector_idx
         ON voyant_catalog_search_documents USING gin (search_vector)
     `)
@@ -121,8 +138,25 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_facets_lookup_idx
         ON voyant_catalog_search_facets (
           vertical, locale, audience, market, channel, field, value_type, value_text
-        )
+      )
     `)
+    if (typoStrategy === "pgtrgm") {
+      if (!typoStorageVerified) {
+        const trgmType = readRows(
+          await db.execute(sql`SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm' LIMIT 1`),
+        )
+        if (trgmType.length === 0) {
+          throw new Error(
+            "Postgres catalog indexer recorded pgtrgm typo strategy requires the pg_trgm extension to be provisioned.",
+          )
+        }
+        typoStorageVerified = true
+      }
+      await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS voyant_catalog_search_terms_trgm_idx
+          ON voyant_catalog_search_terms USING gist (term gist_trgm_ops)
+      `)
+    }
     if (vectorStrategy === "pgvector") {
       if (!vectorStorageVerified) {
         const vectorType = readRows(
@@ -195,6 +229,10 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         await ensureStorage()
         await db.execute(sql`
           DELETE FROM voyant_catalog_search_facets
+          WHERE ${facetSlicePredicate(slice)}
+        `)
+        await db.execute(sql`
+          DELETE FROM voyant_catalog_search_terms
           WHERE ${facetSlicePredicate(slice)}
         `)
         const documentResult = await db.execute(sql`
@@ -285,6 +323,7 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
           `)
         }
         await replaceFacetValues(db, slice, document)
+        if (typoStrategy === "pgtrgm") await replaceTypoTerms(db, slice, document)
       }
     },
 
@@ -293,6 +332,16 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       await ensureStorage()
       await db.execute(sql`
         DELETE FROM voyant_catalog_search_facets
+        WHERE ${facetSlicePredicate(slice)}
+          AND document_id IN (
+            ${sql.join(
+              ids.map((id) => sql`${id}`),
+              sql`, `,
+            )}
+          )
+      `)
+      await db.execute(sql`
+        DELETE FROM voyant_catalog_search_terms
         WHERE ${facetSlicePredicate(slice)}
           AND document_id IN (
             ${sql.join(
@@ -322,8 +371,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
         request.search_audiences?.length && slice.audience === "staff-admin"
           ? request.search_audiences
           : [slice.audience]
-      const keywordRows =
+      let keywordRows =
         request.mode === "semantic" ? [] : await searchKeywordRows(db, slice, audiences, request)
+      if (typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic") {
+        keywordRows = await searchTypoRows(db, slice, audiences, request)
+      }
       const vectorRows =
         request.mode === "keyword"
           ? []
@@ -446,6 +498,57 @@ async function searchVectorRows(
   ) as StoredRow[]
 }
 
+async function searchTypoRows(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  audiences: readonly string[],
+  request: SearchRequest,
+): Promise<StoredRow[]> {
+  const query = request.query.trim().toLocaleLowerCase()
+  if (query.length < 3 || query.length > 64) return []
+  return readRows(
+    await db.execute(sql`
+      WITH typo_candidates AS (
+        SELECT
+          terms.vertical,
+          terms.locale,
+          terms.audience,
+          terms.market,
+          terms.channel,
+          terms.document_id,
+          terms.term <-> ${query} AS distance
+        FROM voyant_catalog_search_terms AS terms
+        WHERE ${termSlicePredicate(slice, audiences)}
+          AND terms.term % ${query}
+        ORDER BY terms.term <-> ${query}
+        LIMIT ${MAX_CANDIDATES + 1}
+      ), typo_documents AS (
+        SELECT DISTINCT ON (documents.id)
+          documents.id,
+          documents.fields,
+          documents.embeddings,
+          documents.embedding_model_id,
+          documents.document_text,
+          1 - typo_candidates.distance AS keyword_score
+        FROM typo_candidates
+        INNER JOIN voyant_catalog_search_documents AS documents
+          ON documents.vertical = typo_candidates.vertical
+          AND documents.locale = typo_candidates.locale
+          AND documents.audience = typo_candidates.audience
+          AND documents.market = typo_candidates.market
+          AND documents.channel = typo_candidates.channel
+          AND documents.id = typo_candidates.document_id
+        WHERE TRUE
+          ${filterPredicate(request.filters ?? [])}
+        ORDER BY documents.id, typo_candidates.distance
+      )
+      SELECT * FROM typo_documents
+      ORDER BY keyword_score DESC, id
+      LIMIT ${MAX_CANDIDATES + 1}
+    `),
+  ) as StoredRow[]
+}
+
 function slicePredicate(slice: IndexerSlice, audiences: readonly string[] = [slice.audience]) {
   return sql`
     vertical = ${slice.vertical}
@@ -468,6 +571,21 @@ function facetSlicePredicate(slice: IndexerSlice) {
     AND audience = ${slice.audience}
     AND market = ${slice.market}
     AND channel = ${slice.channel ?? ""}
+  `
+}
+
+function termSlicePredicate(slice: IndexerSlice, audiences: readonly string[]) {
+  return sql`
+    terms.vertical = ${slice.vertical}
+    AND terms.locale = ${slice.locale}
+    AND terms.audience IN (
+      ${sql.join(
+        audiences.map((audience) => sql`${audience}`),
+        sql`, `,
+      )}
+    )
+    AND terms.market = ${slice.market}
+    AND terms.channel = ${slice.channel ?? ""}
   `
 }
 
@@ -496,6 +614,45 @@ async function replaceFacetValues(
     )}
     ON CONFLICT DO NOTHING
   `)
+}
+
+async function replaceTypoTerms(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  document: IndexerDocument,
+): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_terms
+    WHERE ${facetSlicePredicate(slice)} AND document_id = ${document.id}
+  `)
+  const terms = curatedTerms(document.fields)
+  if (terms.length === 0) return
+  await db.execute(sql`
+    INSERT INTO voyant_catalog_search_terms (
+      vertical, locale, audience, market, channel, document_id, term
+    ) VALUES ${sql.join(
+      terms.map(
+        (term) => sql`(
+          ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
+          ${slice.channel ?? ""}, ${document.id}, ${term}
+        )`,
+      ),
+      sql`, `,
+    )}
+    ON CONFLICT DO NOTHING
+  `)
+}
+
+function curatedTerms(fields: Record<string, unknown>): string[] {
+  const terms = new Set<string>()
+  for (const value of flattenValues(fields)) {
+    const normalized = value.trim().toLocaleLowerCase()
+    if (normalized.length >= 3 && normalized.length <= 64) terms.add(normalized)
+    for (const token of normalized.match(/[\p{L}\p{N}_-]+/gu) ?? []) {
+      if (token.length >= 3 && token.length <= 64) terms.add(token)
+    }
+  }
+  return [...terms].sort()
 }
 
 function facetValues(fields: Record<string, unknown>): Array<{
