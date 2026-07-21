@@ -490,7 +490,7 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
   function adoptionClient(options: {
     existing?: boolean
     tables?: string[]
-    tableRows?: Array<{
+    tableRows?: ReadonlyArray<{
       table_name: string
       relation_kind: string
       relation_persistence: string
