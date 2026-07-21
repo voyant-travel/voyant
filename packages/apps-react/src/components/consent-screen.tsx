@@ -28,8 +28,7 @@ import { useApp, useAppReleases, useApps } from "../hooks/use-apps.js"
 import { useInstallationActions } from "../hooks/use-installation-actions.js"
 import { useMarketplaceInstallIntent } from "../hooks/use-marketplace-install-intent.js"
 import { useAppsUiI18nOrDefault } from "../i18n/index.js"
-import type { AppReleaseRecord } from "../schemas.js"
-import type { MarketplaceInstallIntentResult } from "../schemas.js"
+import type { AppReleaseRecord, MarketplaceInstallIntentResult } from "../schemas.js"
 import { ConsentDisclosures, readConsentDisclosures } from "./consent-disclosures.js"
 
 const UPDATE_POLICIES = ["compatible", "patch", "manual", "pinned"] as const
