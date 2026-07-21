@@ -117,7 +117,7 @@ export function createVoyantWorkerRuntimeHostPrimitives<TBindings extends object
   }
 
   return {
-    env: (bindings) => ({ ...bindingsFor(bindings) }),
+    env: (bindings) => Object.fromEntries(Object.entries(bindingsFor(bindings))),
     database: {
       resolve: <TDatabase>(bindings: unknown) =>
         options.resolveDatabase(bindingsFor(bindings)) as TDatabase,
