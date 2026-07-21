@@ -126,6 +126,12 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
       // The verified OAuth App API context is the sole identity input. This
       // operation intentionally has no request schema/body and no tenant-
       // supplied Cloud credential.
+      if (c.req.raw.body !== null) {
+        throw new ApiHttpError("Marketplace setup completion does not accept a request body.", {
+          status: 400,
+          code: "app_api_setup_completion_body_not_allowed",
+        })
+      }
       const context = appContext(c)
       await withAppApiDeadline(completeMarketplaceSetup(context), options.deadlineMs)
       c.header("cache-control", "no-store")
