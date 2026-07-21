@@ -135,13 +135,12 @@ Both Liquid engines are constructed without `outputEscape`, and the Mustache fal
 The shipped authoring snippets reinforce the unsafe pattern (`{{ traveler.firstName | default: "traveler" }}` with no `| escape`).
 **Fix:** Set `outputEscape: "escape"` on the Liquid engines for `html` body formats; HTML-escape in `renderMustacheTemplate`/`stringifyValue`; sanitize (e.g. `sanitize-html`, already a dep in products) before handing HTML to Browser Rendering; render the PDF path with JS disabled or a `default-src 'none'` CSP. See also dependency advisory M11 (liquidjs RCE).
 
-### H4 — Workflow orchestrator fails open; run state is forgeable
-**`packages/workflows-orchestrator/src/resume-run.ts:77`, `packages/workflows-orchestrator/src/node/dashboard-server.ts`**
+### H4 — Resolved: workflow orchestrator retired
 
-The orchestrator's auth gate is skipped entirely when no token is configured (`verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined`), and its own comment admits this is "dangerous in production." The Node self-host server (`apps/workflows-selfhost-node-server`) has no auth hook at all. Separately, `POST /api/runs/:id/resume` accepts `seedResults` (validated only as "an object") and writes them verbatim into the new run's journal before resuming, and runs are addressed by an attacker-suppliable `runId` with weak default ids (`run_<ts36>_<Math.random()*1e6>`), with no per-tenant authorization.
-
-**Impact:** With auth misconfigured/absent: anonymous triggering of arbitrary workflows, reading run payloads (booking PII), and manifest registration. With a shared token: forge "completed" step outputs (e.g. a `charge-payment` success that never ran), and read/cancel/resume/inject into any run by id; cross-tenant enumeration where one token fronts multiple tenants.
-**Fix:** Fail closed when no verifier is configured outside explicit development; bind run access to a tenant claim in the verified token checked against `run.tenantMeta`; restrict `seedResults` to a privileged operator scope; add a `verifyRequest` option to the Node self-host server.
+The affected self-hosted orchestrator, resume endpoint, generic run state, and
+workflow dashboard were removed with the Voyant workflow product. Product jobs
+now expose only fixed authenticated invocation and minimal health, and accept
+neither arbitrary payloads nor caller-supplied step results.
 
 ### H5 — Resolved: checkout-collection routes require booking capability
 **Current owner: `packages/finance/src/checkout-routes.ts`, `packages/finance/src/checkout-service.ts`**
