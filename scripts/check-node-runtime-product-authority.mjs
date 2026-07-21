@@ -216,6 +216,7 @@ const allowedInfrastructureImports = new Map([
   ["@voyant-travel/storage/runtime", "adapts the generic Node document object store"],
   ["@voyant-travel/storage/types", "types the provider-neutral object storage contract"],
   ["@voyant-travel/utils/cache", "types the generic cache resource"],
+  ["@voyant-travel/utils/redis-client", "types the generic lazy Redis client contract"],
   ["@voyant-travel/utils/redis-kv", "adapts Redis to the generic cache resource"],
   ["@voyant-travel/utils/tiered-kv", "composes process and durable cache resources"],
   ["@voyant-travel/workflows/client", "adapts the generic workflow driver to Voyant Cloud"],
