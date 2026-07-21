@@ -72,7 +72,7 @@ describe("createVoyantDeploymentResources", () => {
               referenceId: "search-provider",
             },
           ],
-          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
           routes: [],
         },
       ],
