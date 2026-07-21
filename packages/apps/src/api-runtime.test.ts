@@ -30,6 +30,7 @@ function context(
       resolveAcquisitionIntent: () => Promise<null>
       createSetupHandoff: () => Promise<{ redirectUrl: string }>
       notifyInstallationLifecycle: () => Promise<void>
+      completeInstallationSetup: () => Promise<void>
     }
   },
 ): VoyantGraphRuntimeFactoryContext {
@@ -103,6 +104,7 @@ describe("createAppsApiModule", () => {
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
           notifyInstallationLifecycle: async () => undefined,
+          completeInstallationSetup: async () => undefined,
         },
       }),
     )
@@ -158,6 +160,7 @@ describe("createAppsApiModule", () => {
                 redirectUrl: "https://app.example.com/setup?code=opaque",
               }),
               notifyInstallationLifecycle: async () => undefined,
+              completeInstallationSetup: async () => undefined,
             },
           },
         ),

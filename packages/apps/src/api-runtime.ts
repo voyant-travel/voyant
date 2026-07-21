@@ -99,6 +99,16 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
             customFieldValueLifecycles,
             customFieldValueOperations,
             finance,
+            ...(managedMarketplace
+              ? {
+                  completeMarketplaceSetup: (context) =>
+                    managedMarketplace.acquisitionResolver.completeInstallationSetup({
+                      installationId: context.installationId,
+                      appId: context.appId,
+                      releaseId: context.releaseId,
+                    }),
+                }
+              : {}),
           }),
       },
     } satisfies ApiModule
