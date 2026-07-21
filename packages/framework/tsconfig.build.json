@@ -473,6 +473,7 @@
       "@voyant-travel/catalog/indexer/reconciliation-node": [
         "../catalog/dist/indexer/reconciliation-node.d.ts"
       ],
+      "@voyant-travel/catalog/indexer/relevance": ["../catalog/dist/indexer/relevance.d.ts"],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
       "@voyant-travel/catalog/indexer/typesense-provider": [
         "../catalog/dist/indexer/typesense-provider.d.ts"
