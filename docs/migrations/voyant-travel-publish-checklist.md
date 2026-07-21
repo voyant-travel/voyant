@@ -98,10 +98,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/utils`
 - `@voyant-travel/vite-config`
 - `@voyant-travel/runtime-core`
-- `@voyant-travel/workflow-runs`
-- `@voyant-travel/workflows-orchestrator`
-- `@voyant-travel/workflows-react`
-- `@voyant-travel/workflows`
 
 Regenerate this list with:
 

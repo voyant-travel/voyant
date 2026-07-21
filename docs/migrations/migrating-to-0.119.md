@@ -73,5 +73,5 @@ route composition through the package manifest.
 
 ## Full Changelogs
 
-- [`@voyant-travel/workflow-runs`](../../packages/workflow-runs/CHANGELOG.md)
+- `@voyant-travel/workflow-runs` (retired)
 - [`@voyant-travel/runtime`](../../packages/runtime/CHANGELOG.md)
