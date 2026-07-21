@@ -1,8 +1,11 @@
+import { handleApiError } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { createAppsAppApiRoutes } from "./app-api-routes.js"
+
+type RouteOptions = NonNullable<Parameters<typeof createAppsAppApiRoutes>[0]>
 
 type TestEnv = {
   Bindings: Record<string, never>
@@ -71,6 +74,7 @@ describe("managed Marketplace setup App API", () => {
   it("rejects requests without an App API access-token context", async () => {
     const completeMarketplaceSetup = vi.fn(async () => undefined)
     const app = new Hono<TestEnv>()
+    app.onError((error, c) => handleApiError(error, c))
     app.use("*", async (c, next) => {
       c.set("db", {} as PostgresJsDatabase)
       c.set("callerType", "staff")
@@ -86,13 +90,10 @@ describe("managed Marketplace setup App API", () => {
 })
 
 function authenticatedApp(
-  options: {
-    completeMarketplaceSetup?: Parameters<
-      typeof createAppsAppApiRoutes
-    >[0]["completeMarketplaceSetup"]
-  } = {},
+  options: { completeMarketplaceSetup?: RouteOptions["completeMarketplaceSetup"] } = {},
 ) {
   const app = new Hono<TestEnv>()
+  app.onError((error, c) => handleApiError(error, c))
   app.use("*", async (c, next) => {
     c.set("db", {} as PostgresJsDatabase)
     c.set("callerType", "app")
