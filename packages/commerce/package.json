@@ -14,8 +14,8 @@
     "./promotion-redemption-subscriber": "./src/promotions/subscriber-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
-    "./product-reindex-workflow-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
-    "./product-reindex-workflow": "./src/promotions/workflow-bulk-reindex.ts",
+    "./promotion-reindex-job": "./src/promotions/reindex-job.ts",
+    "./promotion-reindex-subscriber": "./src/promotions/reindex-subscriber.ts",
     "./promotion-boundary-job": "./src/promotions/job-boundary-scheduler.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin/markets": "./openapi/admin/markets.json",
@@ -49,7 +49,6 @@
     "@voyant-travel/products-contracts": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "rrule": "^2.8.1",
@@ -120,15 +119,15 @@
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
       },
-      "./product-reindex-workflow-manifest": {
-        "types": "./dist/promotions/workflow-bulk-reindex-manifest.d.ts",
-        "import": "./dist/promotions/workflow-bulk-reindex-manifest.js",
-        "default": "./dist/promotions/workflow-bulk-reindex-manifest.js"
+      "./promotion-reindex-job": {
+        "types": "./dist/promotions/reindex-job.d.ts",
+        "import": "./dist/promotions/reindex-job.js",
+        "default": "./dist/promotions/reindex-job.js"
       },
-      "./product-reindex-workflow": {
-        "types": "./dist/promotions/workflow-bulk-reindex.d.ts",
-        "import": "./dist/promotions/workflow-bulk-reindex.js",
-        "default": "./dist/promotions/workflow-bulk-reindex.js"
+      "./promotion-reindex-subscriber": {
+        "types": "./dist/promotions/reindex-subscriber.d.ts",
+        "import": "./dist/promotions/reindex-subscriber.js",
+        "default": "./dist/promotions/reindex-subscriber.js"
       },
       "./promotion-boundary-job": {
         "types": "./dist/promotions/job-boundary-scheduler.d.ts",

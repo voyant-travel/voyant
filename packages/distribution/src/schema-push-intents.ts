@@ -88,6 +88,14 @@ export const channelContentPushIntents = pgTable(
   ],
 )
 
+/** Cross-instance leases for the fixed channel-push drain/reconciler jobs. */
+export const channelPushJobLeases = pgTable("channel_push_job_leases", {
+  jobId: text("job_id").primaryKey(),
+  owner: text("owner").notNull(),
+  leaseUntil: timestamp("lease_until", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type ChannelAvailabilityPushIntent = typeof channelAvailabilityPushIntents.$inferSelect
 export type NewChannelAvailabilityPushIntent = typeof channelAvailabilityPushIntents.$inferInsert
 export type ChannelContentPushIntent = typeof channelContentPushIntents.$inferSelect

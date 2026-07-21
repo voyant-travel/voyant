@@ -3,6 +3,17 @@
 Status: draft / proposal — pre-implementation
 Audience: anyone designing the outbound supplier integration that pushes booking commits, availability changes, and content updates from Voyant to upstream channels (TUI, Voyant Connect peers, GDS, OTAs).
 
+## Job-host migration note
+
+The execution terminology and wiring in this document are superseded by
+`workflow-product-removal-rfc.md`: channel push now uses package-owned,
+payload-free jobs over `channel_booking_links` and the availability/content
+intent tables. Subscribers only persist those records. Fixed drain and
+reconciler jobs use renewable, owner-guarded database leases for cross-instance
+exclusion and scheduled recovery; adapter idempotency keys and
+`webhook_deliveries` remain the per-attempt durability/diagnostic boundary.
+There is no customer-authored workflow or invocation payload in this path.
+
 This document specifies the **outbound** direction of supplier integration. Inbound — adapters fetching catalog projections, prices, and content from upstream — is covered in [`catalog-architecture.md`](./catalog-architecture.md) and [`catalog-sourced-content.md`](./catalog-sourced-content.md). Channel push is the inverse: when something happens on Voyant (booking commits, inventory changes, content edits), push that change to one or more upstream channels.
 
 This is **v1 scope**, not future. Real deployments need to integrate with TUI, Voyant Connect peers, and similar systems where Voyant must keep upstream in sync — otherwise inventory double-books and customer support implodes.

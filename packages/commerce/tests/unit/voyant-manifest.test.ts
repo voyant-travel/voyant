@@ -20,11 +20,11 @@ import {
 } from "../../src/checkout/runtime-ports.js"
 import { publicMarketsRoutes } from "../../src/markets/routes-public.js"
 import { publicPricingRoutes } from "../../src/pricing/routes-public.js"
+import { promotionBoundaryJobRuntimePort } from "../../src/promotions/job-boundary-scheduler.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "../../src/promotions/runtime-ports.js"
-import { promotionBoundaryJobRuntimePort } from "../../src/promotions/job-boundary-scheduler.js"
 import {
   commerceCardPaymentRuntimePort,
   commerceInventoryRuntimePort,
@@ -145,22 +145,20 @@ describe("commerce deployment manifest", () => {
       ],
       jobs: [
         {
+          id: "promotions.reindex-all-products",
+          schedule: { every: "2m", overlap: "skip" },
+          wakeup: true,
+          runtime: {
+            entry: "@voyant-travel/commerce/promotion-reindex-job",
+            export: "runPromotionReindexJob",
+          },
+        },
+        {
           id: "commerce.process-promotion-boundaries",
           schedule: { cron: "*/5 * * * *", overlap: "skip" },
           runtime: {
             entry: "@voyant-travel/commerce/promotion-boundary-job",
             export: "runPromotionBoundaryJob",
-          },
-        },
-      ],
-      workflows: [
-        {
-          id: "promotions.reindex-all-products",
-          source: "@voyant-travel/commerce/product-reindex-workflow",
-          config: { defaultRuntime: "node" },
-          runtime: {
-            entry: "@voyant-travel/commerce/product-reindex-workflow",
-            export: "bulkReindexProductsWorkflow",
           },
         },
       ],
@@ -175,14 +173,11 @@ describe("commerce deployment manifest", () => {
           },
         },
         {
-          id: "@voyant-travel/commerce#subscriber.ef_6f8e4b4ce409d04c",
+          id: "@voyant-travel/commerce#subscriber.promotion-reindex-intent",
           eventType: "promotion.changed",
-          eventFilterId: "ef_6f8e4b4ce409d04c",
-          workflowId: "promotions.reindex-all-products",
-          filter: {
-            where: {
-              eq: [{ path: "data.affected.kind" }, { lit: "all" }],
-            },
+          runtime: {
+            entry: "@voyant-travel/commerce/promotion-reindex-subscriber",
+            export: "createPromotionReindexIntentSubscriberGraphRuntime",
           },
         },
       ],

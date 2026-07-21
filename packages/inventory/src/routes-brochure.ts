@@ -20,7 +20,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { idempotencyKey, openApiValidationHook } from "@voyant-travel/hono"
 import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { Context } from "hono"
@@ -139,9 +139,9 @@ export function createProductBrochureRoutes(
 ): OpenAPIHono<Env> {
   const maxSizeBytes = options.maxSizeBytes ?? DEFAULT_MAX_BROCHURE_PDF_BYTES
 
-  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(
-    generateBrochureRoute,
-    async (c) => {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .use("*", idempotencyKey())
+    .openapi(generateBrochureRoute, async (c) => {
       const storage = options.resolveStorage(c)
       if (!storage) {
         return c.json({ error: "Storage not configured" }, 503)
@@ -189,8 +189,7 @@ export function createProductBrochureRoutes(
         },
         200,
       )
-    },
-  )
+    })
 }
 
 export const productBrochureExtension: Extension = {
