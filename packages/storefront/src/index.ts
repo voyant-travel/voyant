@@ -209,9 +209,11 @@ export const storefrontModule: Module = {
 
 export const storefrontAnonymousPublicPaths = [
   "/bookings",
+  "/departures",
   "/leads",
   "/newsletter",
   "/offers",
+  "/settings",
 ] as const
 export const storefrontOptionalCustomerAuthPaths = ["/bookings"] as const
 
