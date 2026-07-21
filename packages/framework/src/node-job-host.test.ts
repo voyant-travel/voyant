@@ -1,0 +1,194 @@
+import { describe, expect, it, vi } from "vitest"
+
+import { createVoyantNodeJobHost, VOYANT_PRODUCT_JOB_ROUTE } from "./node-job-host.js"
+import { createVoyantGraphRuntime, type VoyantGraphRuntime } from "./runtime-lowering.js"
+
+const unitId = "@acme/notifications"
+const jobId = "notifications.deliver"
+
+function jobRuntime(
+  handler: () => Promise<void> | void,
+  schedule: { every: string; overlap?: "skip" | "queue" } | { cron: string; timezone?: string } = {
+    every: "5m",
+    overlap: "queue",
+  },
+): VoyantGraphRuntime {
+  return createVoyantGraphRuntime({
+    graphHash: "sha256:job-host",
+    entries: { "@acme/notifications/jobs": async () => ({ runJob: handler }) },
+    modules: [
+      {
+        id: unitId,
+        kind: "module",
+        packageName: unitId,
+        order: 0,
+        references: [
+          {
+            id: "notifications-job",
+            unitId,
+            facet: "jobs.runtime",
+            entityId: jobId,
+            runtime: { entry: "./jobs", export: "runJob" },
+            importEntry: "@acme/notifications/jobs",
+          },
+        ],
+        jobs: [
+          {
+            unitId,
+            declaration: {
+              id: jobId,
+              wakeup: true,
+              schedule,
+              runtime: { entry: "./jobs", export: "runJob" },
+            },
+            referenceId: "notifications-job",
+          },
+        ],
+        selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+        routes: [],
+      },
+    ],
+    plugins: [],
+  })
+}
+
+function inventory(
+  schedule: { every: string; overlap?: "skip" | "queue" } | { cron: string; timezone?: string } = {
+    every: "5m",
+    overlap: "queue",
+  },
+) {
+  return [
+    {
+      id: jobId,
+      unitId,
+      packageName: unitId,
+      schedule,
+      wakeup: true,
+    },
+  ]
+}
+
+describe("Voyant Node product job host", () => {
+  it("requires exact parity between provisioning.jobs and runtime.jobs", () => {
+    expect(() =>
+      createVoyantNodeJobHost({
+        runtime: jobRuntime(() => {}),
+        jobs: [{ ...inventory()[0]!, id: "notifications.detached" }],
+      }),
+    ).toThrow('provisioning job "notifications.detached" has no matching runtime job')
+  })
+
+  it("authenticates fixed payload-free HTTP invocation and returns 202 promptly", async () => {
+    let release!: () => void
+    const handler = vi.fn(() => new Promise<void>((resolve) => (release = resolve)))
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      originTrustSecret: "secret",
+    })
+    const endpoint = `https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}/${encodeURIComponent(jobId)}`
+
+    await expect(host.handleRequest(new Request(endpoint, { method: "POST" }))).resolves.toMatchObject({
+      status: 403,
+    })
+    await expect(
+      host.handleRequest(
+        new Request(endpoint, {
+          method: "POST",
+          headers: { "x-voyant-origin-trust": "secret", "transfer-encoding": "chunked" },
+        }),
+      ),
+    ).resolves.toMatchObject({ status: 400 })
+
+    const response = await host.handleRequest(
+      new Request(endpoint, {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret" },
+      }),
+    )
+    expect(response?.status).toBe(202)
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+    expect(host.health()[0]).toMatchObject({ status: "running", lastSource: "wakeup" })
+    release()
+    await vi.waitFor(() => expect(host.health()[0]?.status).toBe("succeeded"))
+  })
+
+  it("bounds retries and exposes retry exhaustion without persisting generic runs", async () => {
+    const handler = vi.fn(async () => {
+      throw new Error("delivery failed")
+    })
+    const sleep = vi.fn(async () => {})
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      retry: { maxAttempts: 3, initialBackoffMs: 10, maxBackoffMs: 20 },
+      sleep,
+    })
+
+    await host.invoke(jobId, "wakeup")
+    await vi.waitFor(() => expect(host.health()[0]?.retryExhausted).toBe(true))
+    expect(handler).toHaveBeenCalledTimes(3)
+    expect(sleep).toHaveBeenCalledTimes(2)
+    expect(host.health()[0]).toMatchObject({
+      status: "failed",
+      attempts: 3,
+      lastFailure: "delivery failed",
+    })
+  })
+
+  it("coalesces overlapping wakeups behind one per-job lease", async () => {
+    const releases: Array<() => void> = []
+    const handler = vi.fn(() => new Promise<void>((resolve) => releases.push(resolve)))
+    const host = createVoyantNodeJobHost({ runtime: jobRuntime(handler), jobs: inventory() })
+
+    await expect(host.invoke(jobId, "wakeup")).resolves.toBe("started")
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+    await expect(host.invoke(jobId, "wakeup")).resolves.toBe("queued")
+    await expect(host.invoke(jobId, "wakeup")).resolves.toBe("queued")
+    releases.shift()?.()
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
+    releases.shift()?.()
+  })
+
+  it("runs one documented startup safety sweep before every-cadence polling", async () => {
+    vi.useFakeTimers()
+    const handler = vi.fn(async () => {})
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      schedulerPollMs: 1_000,
+      now: () => new Date(Date.now()),
+    })
+
+    host.start()
+    await vi.runAllTicks()
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+    expect(host.health()[0]?.lastSource).toBe("recovery")
+    await vi.advanceTimersByTimeAsync(300_000)
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
+    host.stop()
+    vi.useRealTimers()
+  })
+
+  it("uses standard cron OR semantics for restricted day-of-month and day-of-week", async () => {
+    vi.useFakeTimers()
+    let current = new Date("2026-07-06T11:59:00.000Z") // Monday, but not day 7.
+    const schedule = { cron: "0 12 7 * 1", timezone: "UTC" }
+    const handler = vi.fn(async () => {})
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler, schedule),
+      jobs: inventory(schedule),
+      schedulerPollMs: 1_000,
+      now: () => current,
+    })
+
+    host.start()
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+    current = new Date("2026-07-06T12:00:00.000Z")
+    await vi.advanceTimersByTimeAsync(1_000)
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
+    host.stop()
+    vi.useRealTimers()
+  })
+})
