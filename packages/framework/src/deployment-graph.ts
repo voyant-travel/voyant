@@ -2800,6 +2800,22 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
         "Job schedules must declare exactly one non-empty cron or positive every cadence.",
       )
     }
+    if (hasCron && !isSupportedProductJobCron(schedule.cron as string)) {
+      invalidFacet(
+        `${facet}.schedule.cron`,
+        source,
+        diagnostics,
+        "Job cron schedules must use five numeric fields with wildcards, lists, ranges, or steps.",
+      )
+    }
+    if (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number)) {
+      invalidFacet(
+        `${facet}.schedule.every`,
+        source,
+        diagnostics,
+        "Job every schedules must use positive milliseconds, a duration such as 5m, or an ISO PT duration.",
+      )
+    }
     if (schedule.timezone !== undefined && typeof schedule.timezone !== "string") {
       invalidFacet(
         `${facet}.schedule.timezone`,
@@ -2809,20 +2825,73 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
       )
     }
     if (
+      typeof schedule.timezone === "string" &&
+      !isSupportedProductJobTimezone(schedule.timezone)
+    ) {
+      invalidFacet(
+        `${facet}.schedule.timezone`,
+        source,
+        diagnostics,
+        "Job schedule timezone must be a valid IANA time zone.",
+      )
+    }
+    if (
       schedule.overlap !== undefined &&
       schedule.overlap !== "skip" &&
-      schedule.overlap !== "queue" &&
-      schedule.overlap !== "allow"
+      schedule.overlap !== "queue"
     ) {
       invalidFacet(
         `${facet}.schedule.overlap`,
         source,
         diagnostics,
-        "Job schedule overlap must be skip, queue, or allow.",
+        "Job schedule overlap must be skip or queue; product jobs never run concurrently in one host.",
       )
     }
   })
   return diagnostics
+}
+
+function isSupportedProductJobCron(expression: string): boolean {
+  const ranges = [
+    [0, 59],
+    [0, 23],
+    [1, 31],
+    [1, 12],
+    [0, 7],
+  ] as const
+  const fields = expression.trim().split(/\s+/)
+  return fields.length === 5 && fields.every((field, index) => {
+    const [minimum, maximum] = ranges[index]!
+    return field.split(",").every((part) => {
+      const [range, stepText, extra] = part.split("/")
+      if (extra !== undefined) return false
+      const step = stepText === undefined ? 1 : Number(stepText)
+      if (!Number.isInteger(step) || step <= 0) return false
+      if (range === "*") return true
+      const values = range!.split("-").map(Number)
+      if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
+      const [start, end = start] = values
+      return start! >= minimum && end! <= maximum && start! <= end!
+    })
+  })
+}
+
+function isSupportedProductJobEvery(value: string | number): boolean {
+  if (typeof value === "number") return Number.isInteger(value) && value > 0
+  if (/^\d+(?:\.\d+)?\s*(?:ms|s|m|h|d)$/i.test(value.trim())) return true
+  const iso = /^PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?$/i.exec(
+    value.trim(),
+  )
+  return Boolean(iso && iso.slice(1).some((part) => Number(part ?? 0) > 0))
+}
+
+function isSupportedProductJobTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format()
+    return true
+  } catch {
+    return false
+  }
 }
 
 function validateWorkflows(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {

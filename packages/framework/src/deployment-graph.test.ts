@@ -1534,6 +1534,11 @@ describe("deployment graph v1", () => {
           wakeup: false,
           runtime: { entry: "./jobs", export: "badCadence" },
         },
+        {
+          id: "notifications.unsupported-schedule",
+          schedule: { cron: "MON 0 * * *", overlap: "allow" },
+          runtime: { entry: "./jobs", export: "unsupportedSchedule" },
+        },
       ],
     })
 
@@ -1545,6 +1550,8 @@ describe("deployment graph v1", () => {
         expect.objectContaining({ facet: "jobs[1].schedule.input" }),
         expect.objectContaining({ facet: "jobs[1].schedule" }),
         expect.objectContaining({ facet: "jobs[1].wakeup" }),
+        expect.objectContaining({ facet: "jobs[2].schedule.cron" }),
+        expect.objectContaining({ facet: "jobs[2].schedule.overlap" }),
       ]),
     )
   })

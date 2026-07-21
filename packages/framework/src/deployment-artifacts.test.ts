@@ -426,6 +426,8 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
     expect(source).toContain('from "./graph-runtime.generated.js"')
     expect(source).toContain("graphRuntime: createGeneratedGraphRuntime()")
+    expect(source).toContain("GENERATED_PRODUCT_JOBS")
+    expect(source).toContain("jobs: GENERATED_PRODUCT_JOBS")
     expect(source).not.toContain("starters/")
   })
 
