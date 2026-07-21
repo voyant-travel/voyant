@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.10.5
+
+### Patch Changes
+
+- ced3987: Add opt-in exact-footprint adoption for explicitly identified materialized migrations.
+
 ## 0.10.4
 
 ### Patch Changes
