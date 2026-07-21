@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.10.24
+
+### Patch Changes
+
+- Updated dependencies [9142b79]
+  - @voyant-travel/action-ledger@0.111.12
+
 ## 0.10.23
 
 ### Patch Changes
