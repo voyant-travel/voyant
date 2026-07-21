@@ -79,6 +79,7 @@ function unit(
     requiredRuntimePorts: [],
     accessScopes: [],
     tools: [],
+    jobs: [],
     workflows: [],
     actions: [],
     selectedIds: {
