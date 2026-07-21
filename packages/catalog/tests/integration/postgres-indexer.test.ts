@@ -13,7 +13,7 @@ import {
 import type { IndexerSlice } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { createTestDb } from "@voyant-travel/db/test-utils"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { beforeAll, describe, it } from "vitest"
+import { beforeAll, describe, expect, it } from "vitest"
 
 import { createPostgresIndexer } from "../../src/indexer/postgres.js"
 
@@ -55,5 +55,26 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       registry,
       slice,
     })
+  })
+
+  it("uses native FTS rank before applying the bounded candidate set", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[slice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(slice, registry)
+    await adapter.upsert(slice, [
+      { id: "single-match", fields: { title: "Alpine escape" } },
+      { id: "strong-match", fields: { title: "Alpine Alpine Alpine escape" } },
+    ])
+
+    try {
+      const results = await adapter.search(slice, { mode: "keyword", query: "Alpine" })
+      expect(results.hits.map(({ id }) => id)).toEqual(["strong-match", "single-match"])
+      expect(results.hits[0]!.score).toBeGreaterThan(results.hits[1]!.score)
+    } finally {
+      await adapter.admin!.drop(slice)
+    }
   })
 })

@@ -31,6 +31,7 @@ type StoredRow = {
   embeddings: Record<string, number[]> | string | null
   embedding_model_id: string | null
   document_text: string
+  keyword_score?: number | string
 }
 
 export interface PostgresIndexerOptions extends IndexerProviderOptions {
@@ -229,19 +230,28 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
           : [slice.audience]
       const rows = readRows(
         await db.execute(sql`
-          SELECT id, fields, embeddings, embedding_model_id, document_text
+          SELECT
+            id,
+            fields,
+            embeddings,
+            embedding_model_id,
+            document_text,
+            ${
+              query
+                ? sql`ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query}))`
+                : sql`0`
+            } AS keyword_score
           FROM voyant_catalog_search_documents
           WHERE ${slicePredicate(slice, audiences)}
             ${query ? sql`AND search_vector @@ websearch_to_tsquery('simple', ${query})` : sql``}
-          ORDER BY id
+          ORDER BY keyword_score DESC, id
           LIMIT ${MAX_CANDIDATES + 1}
         `),
       ) as StoredRow[]
       const capped = rows.length > MAX_CANDIDATES
       const candidates = (capped ? rows.slice(0, MAX_CANDIDATES) : rows)
-        .map(toDocument)
-        .filter((document) => matchesFilters(document, request.filters ?? []))
-        .map((document) => ({ document, score: keywordScore(document, query) }))
+        .map((row) => ({ document: toDocument(row), score: keywordScore(row, query) }))
+        .filter(({ document }) => matchesFilters(document, request.filters ?? []))
 
       const ordered = orderHits(candidates, request, options.registries.get(slice.vertical), slice)
       const start = cursorOffset(ordered, request.pagination?.cursor)
@@ -359,9 +369,16 @@ function sameScalar(value: unknown, expected: string | number | boolean): boolea
   return value === expected
 }
 
-function keywordScore(document: IndexerDocument, query: string): number {
+function keywordScore(row: StoredRow, query: string): number {
+  if (typeof row.keyword_score === "number" && Number.isFinite(row.keyword_score)) {
+    return row.keyword_score
+  }
+  if (typeof row.keyword_score === "string") {
+    const parsed = Number(row.keyword_score)
+    if (Number.isFinite(parsed)) return parsed
+  }
   if (!query) return 0
-  const text = documentText(document.fields).toLocaleLowerCase()
+  const text = row.document_text.toLocaleLowerCase()
   return query
     .toLocaleLowerCase()
     .split(/\s+/)
