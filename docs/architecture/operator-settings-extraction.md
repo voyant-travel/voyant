@@ -53,7 +53,7 @@ So these two values **stay deployment-injected** (they're env/config, correctly 
 
 The RFC and my prior note worried that moving the schema deployment→package entangles with the unbuilt migration-ownership work (Workstream D). It does **not**, because the mechanism already exists:
 
-- `voyant.config.ts` **`additionalSchemas`** already lists *package-owned, migrated-but-not-mounted* schemas (`@voyant-travel/workflow-runs`, `accommodations`, `charters`, `cruises`). Their tables are folded into the deployment's **single combined migration history** exactly as today.
+- `voyant.config.ts` **`additionalSchemas`** already lists *package-owned, migrated-but-not-mounted* schemas (`accommodations`, `charters`, `cruises`). Their tables are folded into the deployment's **single combined migration history** exactly as today.
 - A `@voyant-travel/operator-settings` package exporting its schema would simply move from `schemas: ["./src/db/schema.ts"]` to `additionalSchemas: […, "@voyant-travel/operator-settings"]`. Schema *definition* ownership moves to the package; **migration history ownership stays with the deployment's combined folder** (the #1608 single-history model is untouched).
 - **Data stays per-deployment.** Only the schema + reader/writer *logic* is generalized — every operator deployment already has its own profile/payment/tax rows. This is no different from `bookings` (package owns the schema; each deployment owns its data).
 
