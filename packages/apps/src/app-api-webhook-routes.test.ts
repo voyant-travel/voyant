@@ -1,4 +1,5 @@
 import { handleApiError } from "@voyant-travel/hono"
+import { PgDialect, type SQL } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
@@ -6,7 +7,16 @@ import { createAppsAppApiRoutes } from "./app-api-routes.js"
 import type { AppsWebhookDeliveryRuntime } from "./runtime-port.js"
 import { appGrants, appInstallations, appReleases } from "./schema.js"
 
-function accessDb(capturedAudit: unknown[], activated = 1): PostgresJsDatabase {
+interface WebhookUpdateCapture {
+  patch?: Record<string, unknown>
+  predicate?: SQL
+}
+
+function accessDb(
+  capturedAudit: unknown[],
+  activated = 1,
+  updateCapture?: WebhookUpdateCapture,
+): PostgresJsDatabase {
   const db = Object.create(null) as PostgresJsDatabase
   Object.assign(db, {
     transaction: (callback: (tx: PostgresJsDatabase) => unknown) => callback(db),
@@ -16,12 +26,20 @@ function accessDb(capturedAudit: unknown[], activated = 1): PostgresJsDatabase {
       },
     }),
     update: () => ({
-      set: () => ({
-        where: () => ({
-          returning: async () =>
-            Array.from({ length: activated }, (_, index) => ({ id: `appws_${index + 1}` })),
-        }),
-      }),
+      set: (patch: Record<string, unknown>) => {
+        if (updateCapture) updateCapture.patch = patch
+        return {
+          where: (predicate: SQL) => {
+            if (updateCapture) updateCapture.predicate = predicate
+            return {
+              returning: async () =>
+                Array.from({ length: activated }, (_, index) => ({
+                  id: `appws_${index + 1}`,
+                })),
+            }
+          },
+        }
+      },
     }),
     select: () => ({
       from: (table: unknown) => ({
@@ -148,6 +166,35 @@ describe("App API webhook signing-key provisioning", () => {
         details: { activatedSubscriptions: 2 },
       }),
     ])
+  })
+
+  it("rotates the signing key for active and inactive non-deactivated subscriptions", async () => {
+    const audit: unknown[] = []
+    const updateCapture: WebhookUpdateCapture = {}
+    const response = await mount(accessDb(audit, 2, updateCapture), runtime()).request(
+      "/v1/app/webhooks/signing-key/confirm",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          keyId: "key_2",
+          challenge: "rotated-bounded-challenge",
+          proof: "rotated-proof".repeat(4),
+        }),
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(updateCapture.patch).toEqual({
+      status: "active",
+      signingKeyId: "key_2",
+      failureCount: 0,
+      pausedAt: null,
+      deactivatedAt: null,
+    })
+    const predicate = new PgDialect().sqlToQuery(updateCapture.predicate!)
+    expect(predicate.params).toEqual(["inst_1", "rel_1", "active", "inactive"])
+    expect(predicate.sql).toContain('"app_webhook_subscriptions"."deactivated_at" is null')
   })
 
   it("rejects invalid proof without activating or auditing", async () => {

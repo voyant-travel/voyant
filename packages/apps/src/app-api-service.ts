@@ -13,7 +13,7 @@ import {
   type FinanceAppApiRuntime,
 } from "@voyant-travel/finance-contracts/app-api"
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, asc, eq, isNull, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { assertActiveAppInstallationAccess } from "./access-boundary.js"
 import type {
@@ -552,7 +552,7 @@ export function createAppApiService(options: AppApiServiceOptions = {}) {
           and(
             eq(appWebhookSubscriptions.installationId, context.installationId),
             eq(appWebhookSubscriptions.releaseId, context.releaseId),
-            eq(appWebhookSubscriptions.status, "inactive"),
+            inArray(appWebhookSubscriptions.status, ["active", "inactive"]),
             isNull(appWebhookSubscriptions.deactivatedAt),
           ),
         )
