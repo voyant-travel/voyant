@@ -100,7 +100,7 @@ function splitTopLevel(value: string): string[] {
 }
 
 function postgresIdentifier(value: string): string {
-  const identifierValue = value.replaceAll('"', "").trim()
+  const identifierValue = value.replace(/^"|"$/g, "").replaceAll('""', '"').trim()
   let result = ""
   let bytes = 0
   for (const character of identifierValue) {
@@ -112,33 +112,42 @@ function postgresIdentifier(value: string): string {
   return result
 }
 
-function normalizeType(value: string): string {
-  return value
-    .replaceAll('"', "")
-    .trim()
-    .replace(/^public\./i, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase()
+function normalizeQuotedIdentifiers(value: string): string {
+  return value.replace(/"((?:[^"]|"")+)"/g, (_match, escaped: string) => {
+    const identifierValue = escaped.replaceAll('""', '"')
+    return /^[a-z_][a-z0-9_$]*$/.test(identifierValue)
+      ? identifierValue
+      : `"${identifierValue.replaceAll('"', '""')}"`
+  })
 }
 
-function lowercaseOutsideStringLiterals(value: string): string {
+function lowercaseOutsideQuotedValues(value: string): string {
   let result = ""
-  let inLiteral = false
+  let quote: "'" | '"' | null = null
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index] as string
-    if (character === "'") {
+    if ((character === "'" || character === '"') && (quote === null || quote === character)) {
       result += character
-      if (inLiteral && value[index + 1] === "'") {
-        result += "'"
+      if (quote === character && value[index + 1] === character) {
+        result += character
         index += 1
       } else {
-        inLiteral = !inLiteral
+        quote = quote === null ? character : null
       }
       continue
     }
-    result += inLiteral ? character : character.toLowerCase()
+    result += quote === null ? character.toLowerCase() : character
   }
   return result
+}
+
+function normalizeType(value: string): string {
+  return lowercaseOutsideQuotedValues(
+    normalizeQuotedIdentifiers(value)
+      .trim()
+      .replace(/^public\./i, "")
+      .replace(/\s+/g, " "),
+  )
 }
 
 function normalizeExpression(value: string | null | undefined): string | null {
@@ -147,17 +156,16 @@ function normalizeExpression(value: string | null | undefined): string | null {
   while (normalized.startsWith("(") && normalized.endsWith(")")) {
     normalized = normalized.slice(1, -1).trim()
   }
-  return lowercaseOutsideStringLiterals(
-    normalized.replaceAll('"', "").replace(/\s*([(),])\s*/g, "$1"),
+  return lowercaseOutsideQuotedValues(
+    normalizeQuotedIdentifiers(normalized).replace(/\s*([(),])\s*/g, "$1"),
   )
 }
 
 function normalizeIndexDefinition(value: string): string {
-  return lowercaseOutsideStringLiterals(
-    value
+  return lowercaseOutsideQuotedValues(
+    normalizeQuotedIdentifiers(value)
       .trim()
       .replace(/;$/, "")
-      .replaceAll('"', "")
       .replace(/\bpublic\./gi, "")
       .replace(/\s+/g, " ")
       .replace(/\s*([(),])\s*/g, "$1"),
