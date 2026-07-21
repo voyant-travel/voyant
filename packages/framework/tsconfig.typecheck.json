@@ -1439,9 +1439,7 @@
       "@voyant-travel/notifications/types": ["../notifications/dist/types.d.ts"],
       "@voyant-travel/notifications/validation": ["../notifications/dist/validation.d.ts"],
       "@voyant-travel/notifications/voyant": ["../notifications/dist/voyant.d.ts"],
-      "@voyant-travel/notifications/job-runtime": [
-        "../notifications/dist/job-runtime.d.ts"
-      ],
+      "@voyant-travel/notifications/job-runtime": ["../notifications/dist/job-runtime.d.ts"],
       "@voyant-travel/observability-sentry": ["../observability-sentry/dist/index.d.ts"],
       "@voyant-travel/operations": ["../operations/dist/index.d.ts"],
       "@voyant-travel/operations-react": ["../operations-react/dist/index.d.ts"],

@@ -26,10 +26,7 @@ for (const file of [
 }
 
 const runtime = read("packages/runtime/src/index.ts")
-for (const token of [
-  "loadVoyantProject",
-  "createVoyantProjectServerEntry",
-]) {
+for (const token of ["loadVoyantProject", "createVoyantProjectServerEntry"]) {
   requireText(runtime, token, "packages/runtime/src/index.ts")
 }
 

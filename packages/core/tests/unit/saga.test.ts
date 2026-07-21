@@ -206,9 +206,9 @@ describe("createSaga", () => {
   })
 
   it("throws on duplicate step names at creation time", () => {
-    expect(() => createSaga("dup", [sagaStep("a").run(() => 1), sagaStep("a").run(() => 2)])).toThrow(
-      SagaError,
-    )
+    expect(() =>
+      createSaga("dup", [sagaStep("a").run(() => 1), sagaStep("a").run(() => 2)]),
+    ).toThrow(SagaError)
   })
 
   it("awaits async run functions", async () => {
