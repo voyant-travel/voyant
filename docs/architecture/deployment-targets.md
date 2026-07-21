@@ -121,9 +121,60 @@ deployment-composed runtime ports. This binds immutable `provisioning.jobs`
 without a second registry; application authors do not create
 `src/jobs`, `src/workflows`, or an inline job registry.
 
+The framework package advertises `cloudflare-worker` compatibility solely for
+these target-neutral generation APIs and the `worker-job-host` export. The
+project resolver still rejects a unified composed operator Worker target; this
+does not reopen that deployment shape.
+
 The host requires an explicit `scheduleAuthority`. Self-hosted Wrangler
 deployments select `cloudflare-cron`; managed workloads select `managed-http`.
 This prevents both systems from firing the same cadence during rollout.
+
+The Worker entry owns no product IDs. Its integration shape is:
+
+```ts
+import { createGeneratedProjectRuntime } from "../.voyant/runtime/project-runtime.generated"
+import {
+  createVoyantWorkerJobHealthReporter,
+  createVoyantWorkerJobHostFromProjectRuntime,
+  createVoyantWorkerRuntimeHostPrimitives,
+} from "@voyant-travel/framework/worker-job-host"
+
+const projectRuntime = createGeneratedProjectRuntime()
+const hosts = new WeakMap<object, ReturnType<typeof createVoyantWorkerJobHostFromProjectRuntime>>()
+
+function productJobs(env: CloudflareBindings) {
+  const existing = hosts.get(env)
+  if (existing) return existing
+  const primitives = createVoyantWorkerRuntimeHostPrimitives({
+    bindings: env,
+    resolveDatabase: (bindings) => resolveWorkerDatabase(bindings),
+    deliverEvent: (event, bindings) => deliverOutboxEvent(event, bindings),
+  })
+  const host = createVoyantWorkerJobHostFromProjectRuntime(projectRuntime, {
+    primitives,
+    scheduleAuthority: "cloudflare-cron",
+    originTrustSecret: env.ORIGIN_TRUST_SECRET,
+    reportExecution: createVoyantWorkerJobHealthReporter(env),
+  })
+  hosts.set(env, host)
+  return host
+}
+
+export default {
+  async fetch(request: Request, env: CloudflareBindings, ctx: ExecutionContext) {
+    return (await productJobs(env).fetch(request, ctx)) ?? applicationFetch(request, env, ctx)
+  },
+  scheduled(event: ScheduledController, env: CloudflareBindings, ctx: ExecutionContext) {
+    return productJobs(env).scheduled(event, ctx)
+  },
+}
+```
+
+Runtime contributors capture the domain-neutral primitives, while each host is
+created for one Worker bindings object. This lets DB-, storage-, and event-backed
+package jobs resolve the deployment's actual bindings without globals or a
+project-local runtime-port registry.
 
 The application routes `fetch` through the generated host before its ordinary
 handler and delegates its `scheduled` event to the same host. Both the trusted
@@ -141,6 +192,16 @@ cadences rather than claiming a precision neither scheduler provides. A
 self-hosted Worker deployment must either configure the generated triggers or
 fail admission when a selected schedule is marked `managed-http`; silently
 dropping it is not supported.
+
+```ts
+import { GENERATED_PROJECT_PRODUCT_JOBS } from "./.voyant/runtime/project-runtime.generated"
+import { cloudflareCronTriggersForProductJobs } from "@voyant-travel/framework/worker-job-host"
+
+export default {
+  // ...the remaining Wrangler configuration
+  triggers: { crons: cloudflareCronTriggersForProductJobs(GENERATED_PROJECT_PRODUCT_JOBS) },
+}
+```
 
 **Known limitation for composed operator APIs on Workers:** no isolate residency
 → a per-request composition toll (multi-second graph evaluation). This is a

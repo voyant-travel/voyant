@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  cloudflareCronTriggersForProductJobs,
   compileCloudflareProductJobSchedules,
   createVoyantWorkerJobHostFromProjectRuntime,
   createVoyantWorkerJobHealthReporter,
   createVoyantWorkerJobHost,
+  createVoyantWorkerRuntimeHostPrimitives,
 } from "./worker-job-host.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
@@ -43,6 +45,59 @@ function runtime(handler: (jobId: string) => void) {
           importEntry: `${unitId}/${job.declaration.id}`,
         })),
         jobs,
+        selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+        routes: [],
+      },
+    ],
+    plugins: [],
+  })
+}
+
+function dbBackedRuntime(handler: (value: string) => void) {
+  const id = "acme.database-job"
+  return createVoyantGraphRuntime({
+    graphHash: "sha256:worker-db-job",
+    entries: {
+      [`${unitId}/database-job`]: async () => ({
+        run: async (context: {
+          getPort<T>(port: { id: string; test(provider: T): void }): Promise<T>
+        }) => {
+          const database = await context.getPort<{ read(): string }>({
+            id: "acme.database",
+            test: () => {},
+          })
+          handler(database.read())
+        },
+      }),
+    },
+    modules: [
+      {
+        id: unitId,
+        kind: "module",
+        packageName: unitId,
+        order: 0,
+        runtimePorts: ["acme.database"],
+        references: [
+          {
+            id: `${id}.runtime`,
+            unitId,
+            facet: "jobs.runtime",
+            entityId: id,
+            runtime: { entry: "./database-job", export: "run" },
+            importEntry: `${unitId}/database-job`,
+          },
+        ],
+        jobs: [
+          {
+            unitId,
+            declaration: {
+              id,
+              wakeup: true,
+              runtime: { entry: "./database-job", export: "run" },
+            },
+            referenceId: `${id}.runtime`,
+          },
+        ],
         selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
         routes: [],
       },
@@ -93,11 +148,56 @@ describe("Voyant Worker product job host", () => {
   })
 
   it("binds the immutable jobs exported by the generated project runtime", () => {
+    const primitives = createVoyantWorkerRuntimeHostPrimitives({
+      bindings: { database: {} },
+      resolveDatabase: (bindings) => bindings.database,
+    })
     const host = createVoyantWorkerJobHostFromProjectRuntime(
-      { graphRuntime: runtime(() => {}), productJobs: inventory },
-      { scheduleAuthority: "managed-http" },
+      {
+        graphRuntime: runtime(() => {}),
+        productJobs: inventory,
+        createRuntimePorts: () => ({}),
+      },
+      { scheduleAuthority: "managed-http", primitives },
     )
     expect(host.inventory).toEqual(inventory)
+  })
+
+  it("composes a DB-backed contributor from Worker bindings and invokes it end to end", async () => {
+    const observed = vi.fn()
+    const database = { read: () => "from-worker-binding" }
+    const primitives = createVoyantWorkerRuntimeHostPrimitives({
+      bindings: { DB: database },
+      resolveDatabase: (bindings) => bindings.DB,
+    })
+    const host = createVoyantWorkerJobHostFromProjectRuntime(
+      {
+        graphRuntime: dbBackedRuntime(observed),
+        productJobs: [
+          {
+            id: "acme.database-job",
+            unitId,
+            packageName: unitId,
+            wakeup: true,
+          },
+        ],
+        createRuntimePorts: ({ primitives: contributorPrimitives }) => ({
+          "acme.database": contributorPrimitives.database.resolve(undefined),
+        }),
+      },
+      { scheduleAuthority: "managed-http", primitives, originTrustSecret: "secret" },
+    )
+    const pending: Promise<unknown>[] = []
+    const accepted = await host.fetch(
+      new Request("https://worker.test/__voyant/jobs/acme.database-job", {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret" },
+      }),
+      { waitUntil: (promise) => pending.push(promise) },
+    )
+    expect(accepted?.status).toBe(202)
+    await Promise.all(pending)
+    expect(observed).toHaveBeenCalledWith("from-worker-binding")
   })
 
   it("fans one Cron Trigger out to every graph job with that exact cron", async () => {
@@ -142,6 +242,15 @@ describe("Voyant Worker product job host", () => {
         reason: "Cloudflare Cron Triggers are evaluated in UTC",
       },
     ])
+  })
+
+  it("emits a deduplicated trigger list for generated Wrangler config", () => {
+    expect(cloudflareCronTriggersForProductJobs(inventory)).toEqual(["*/5 * * * *"])
+    expect(() =>
+      cloudflareCronTriggersForProductJobs([
+        { ...inventory[0]!, schedule: { every: "30s" } },
+      ]),
+    ).toThrow("Cannot generate Cloudflare Cron Triggers for product jobs: acme.first")
   })
 
   it("fails closed when a self-hosted Cron authority cannot represent a cadence", () => {
