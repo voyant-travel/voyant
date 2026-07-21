@@ -119,22 +119,26 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
 
   function expansionClient(
     options: {
+      existing?: boolean
       tables?: string[]
       columns?: Array<[string, string]>
       recordedSources?: string[]
     } = {},
   ) {
+    const queries: string[] = []
     const executedCreates: string[] = []
     const inserted: Array<{ source: string; tag: string; contentHash: string }> = []
+    const existing = options.existing ?? true
     const recordedSources = options.recordedSources ?? []
     const client: MigrationClient = {
       async query(sql: string, params: unknown[] = []) {
+        queries.push(sql)
         if (sql.startsWith("SELECT to_regclass")) {
           return { rows: [{ reg: String(params[0]) }] }
         }
         if (sql.includes("count(*)")) {
           if (sql.includes('"drizzle"."__drizzle_migrations"')) {
-            return { rows: [{ n: "45" }] }
+            return { rows: [{ n: existing ? "45" : "0" }] }
           }
           return { rows: [{ n: "0" }] }
         }
@@ -166,7 +170,7 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
         return { rows: [] }
       },
     }
-    return { client, executedCreates, inserted }
+    return { client, executedCreates, inserted, queries }
   }
 
   function profileExpansionSource(name: string, tableCount: number): MigrationSource {
@@ -213,27 +217,31 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
     expect(inserted.map(({ source, tag }) => `${source}/${tag}`)).toEqual(result.executed)
   })
 
-  it("import-baselines a fully materialized unledgered source", async () => {
-    const source = profileExpansionSource("accommodations", 8)
-    const tables = Array.from({ length: 8 }, (_, index) => `accommodations_${index}`)
-    const { client, executedCreates } = expansionClient({
-      tables,
-      columns: tables.map((table) => [table, "id"]),
+  it("import-baselines a fully-present unledgered source when an existing profile expands", async () => {
+    const source = profileExpansionSource("accommodations", 2)
+    const { client, executedCreates, inserted } = expansionClient({
+      tables: ["accommodations_0", "accommodations_1"],
+      columns: [
+        ["accommodations_0", "id"],
+        ["accommodations_1", "id"],
+      ],
     })
 
     const result = await runDeploymentMigrations(client, [source], {
       accommodations: ["0000_accommodations_baseline"],
     })
 
+    expect(result.existing).toBe(true)
     expect(result.executed).toEqual([])
     expect(result.baselined).toEqual(["accommodations/0000_accommodations_baseline"])
     expect(executedCreates).toEqual([])
+    expect(inserted.map(({ source, tag }) => `${source}/${tag}`)).toEqual(result.baselined)
   })
 
   it("refuses a partially-present unledgered source instead of executing or baselining it", async () => {
     const source = profileExpansionSource("accommodations", 8)
     const firstTable = "accommodations_0"
-    const { client, executedCreates } = expansionClient({
+    const { client, executedCreates, queries } = expansionClient({
       tables: [firstTable],
       columns: [[firstTable, "id"]],
     })
@@ -244,12 +252,27 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
       }),
     ).rejects.toThrow("7 expected table(s) missing")
     expect(executedCreates).toEqual([])
+    expect(queries[0]).toContain("pg_advisory_lock")
+    expect(queries.some((sql) => sql.startsWith("CREATE SCHEMA"))).toBe(false)
+    expect(queries.some((sql) => sql.startsWith("INSERT INTO"))).toBe(false)
+    expect(queries.some((sql) => sql === "BEGIN")).toBe(false)
+    expect(queries.at(-1)).toContain("pg_advisory_unlock")
   })
 
-  it("refuses an absent source with existing ledger lineage", async () => {
-    const source = profileExpansionSource("accommodations", 8)
+  it.each([
+    ["stable", undefined, "accommodations"],
+    [
+      "legacy",
+      ["schema:@voyant-travel/accommodations#migrations"],
+      "schema:@voyant-travel/accommodations#migrations",
+    ],
+  ] as const)("refuses an absent source with existing %s ledger lineage", async (_kind, legacyNames, recordedSource) => {
+    const source = {
+      ...profileExpansionSource("accommodations", 8),
+      ...(legacyNames ? { legacyNames } : {}),
+    }
     const { client, executedCreates } = expansionClient({
-      recordedSources: ["accommodations"],
+      recordedSources: [recordedSource],
     })
 
     await expect(
@@ -258,6 +281,50 @@ describe("runDeploymentMigrations on a partially adopted database", () => {
       }),
     ).rejects.toThrow("8 expected table(s) missing")
     expect(executedCreates).toEqual([])
+  })
+
+  it("keeps fresh databases on the normal execute-from-scratch path", async () => {
+    const source = profileExpansionSource("accommodations", 2)
+    const { client, executedCreates } = expansionClient({ existing: false })
+
+    const result = await runDeploymentMigrations(client, [source], {
+      accommodations: ["0000_accommodations_baseline"],
+    })
+
+    expect(result.existing).toBe(false)
+    expect(result.baselined).toEqual([])
+    expect(result.executed).toEqual(["accommodations/0000_accommodations_baseline"])
+    expect(executedCreates).toHaveLength(2)
+  })
+
+  it("still import-baselines cutline rows and executes post-cutline increments", async () => {
+    const source: MigrationSource = {
+      ...profileExpansionSource("accommodations", 1),
+      migrations: [
+        {
+          tag: "0000_accommodations_baseline",
+          sql: 'CREATE TABLE "accommodations_0" (\n\t"id" text PRIMARY KEY NOT NULL\n);',
+        },
+        {
+          tag: "0001_accommodations_increment",
+          sql: 'CREATE TABLE "accommodations_increment" (\n\t"id" text PRIMARY KEY NOT NULL\n);',
+        },
+      ],
+    }
+    const { client, executedCreates } = expansionClient({
+      tables: ["accommodations_0"],
+      columns: [["accommodations_0", "id"]],
+    })
+
+    const result = await runDeploymentMigrations(client, [source], {
+      accommodations: ["0000_accommodations_baseline"],
+    })
+
+    expect(result.baselined).toEqual(["accommodations/0000_accommodations_baseline"])
+    expect(result.executed).toEqual(["accommodations/0001_accommodations_increment"])
+    expect(executedCreates).toEqual([
+      'CREATE TABLE "accommodations_increment" (\n\t"id" text PRIMARY KEY NOT NULL\n);',
+    ])
   })
 })
 
