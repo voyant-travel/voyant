@@ -16,6 +16,14 @@ export interface GatewayStorageProviderOptions {
   fetch?: typeof fetch
   /** Provider name (defaults to `"gateway"`). */
   name?: string
+  /**
+   * Tier segment prepended to every object key on the wire (for example
+   * `"media"` or `"documents"`). The gateway derives the target bucket from the
+   * first key segment, so a per-store provider must pin its tier here. The
+   * prefix is transparent to callers: keys passed in and returned by this
+   * provider are always the un-prefixed, caller-facing keys.
+   */
+  tier?: string
 }
 
 /**
@@ -33,9 +41,15 @@ export function createGatewayStorageProvider(
   const endpoint = options.endpoint.replace(/\/+$/, "")
   const doFetch = options.fetch ?? globalThis.fetch
   const name = options.name ?? "gateway"
+  const tier = options.tier?.replace(/^\/+|\/+$/g, "") || ""
+
+  /** Prepend the pinned tier so the gateway routes to the right bucket. */
+  function wireKey(key: string): string {
+    return tier ? `${tier}/${key}` : key
+  }
 
   function objectUrl(key: string): string {
-    return `${endpoint}/v1/objects/${encodeKey(key)}`
+    return `${endpoint}/v1/objects/${encodeKey(wireKey(key))}`
   }
 
   function authHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -62,7 +76,9 @@ export function createGatewayStorageProvider(
       })
       await assertOk(response, "upload")
       const payload = (await response.json()) as { key: string; url: string }
-      return { key: payload.key, url: payload.url }
+      // Return the caller-facing (un-prefixed) key, not the gateway's
+      // tier-prefixed echo — otherwise a later get/delete would double-prefix.
+      return { key, url: payload.url }
     },
     async delete(key) {
       const response = await doFetch(objectUrl(key), {

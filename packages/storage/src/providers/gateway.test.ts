@@ -201,6 +201,33 @@ describe("createGatewayStorageProvider", () => {
     ).toBe("documents")
   })
 
+  it("prefixes the tier on the wire but keeps caller keys un-prefixed", async () => {
+    const gateway = createFakeGateway()
+    const provider = createGatewayStorageProvider({
+      endpoint: "https://gw.test",
+      token: "t",
+      fetch: gateway.fetch,
+      tier: "media",
+    })
+
+    const result = await provider.upload(new Uint8Array([1, 2, 3]), {
+      key: "uploads/media/x.png",
+      contentType: "image/png",
+    })
+
+    // The caller sees its own key; the object is stored under the tier-prefixed
+    // wire key (so the gateway can route to the media bucket).
+    expect(result.key).toBe("uploads/media/x.png")
+    expect(gateway.store.has("media/uploads/media/x.png")).toBe(true)
+    expect(gateway.store.has("uploads/media/x.png")).toBe(false)
+
+    // get/delete round-trip with the caller key — no double-prefix.
+    const fetched = await provider.get(result.key)
+    expect(new Uint8Array(fetched as ArrayBuffer)).toEqual(new Uint8Array([1, 2, 3]))
+    await provider.delete(result.key)
+    expect(gateway.store.has("media/uploads/media/x.png")).toBe(false)
+  })
+
   it("satisfies the portable storage provider conformance contract", async () => {
     const gateway = createFakeGateway()
     await assertStorageProviderConformance({
