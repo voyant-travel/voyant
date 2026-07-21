@@ -118,13 +118,13 @@ export function createBookingsRuntimePortContribution(
     } satisfies ActionLedgerBookingDriftRuntime,
     [customFieldValueLifecycleRuntimePort.id]: bookingCustomFieldValues,
     [customFieldValueOperationsRuntimePort.id]: bookingCustomFieldValueOperations,
-    [bookingsStaleHoldsJobRuntimePort.id]: Promise.resolve(
-      host.getRuntimePort<BookingsFinanceRuntime>(bookingsFinanceRuntimePort),
-    ).then((finance) =>
-      finance.createStaleBookingHoldsJobRuntime({
-        resolveDb: () => host.primitives.database.resolve<PostgresJsDatabase>(undefined),
-        userId: "system",
-      }),
-    ),
+    [bookingsStaleHoldsJobRuntimePort.id]: Promise.resolve()
+      .then(() => host.getRuntimePort<BookingsFinanceRuntime>(bookingsFinanceRuntimePort))
+      .then((finance) =>
+        finance.createStaleBookingHoldsJobRuntime({
+          resolveDb: () => host.primitives.database.resolve<PostgresJsDatabase>(undefined),
+          userId: "system",
+        }),
+      ),
   }
 }
