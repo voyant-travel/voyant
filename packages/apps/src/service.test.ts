@@ -165,11 +165,7 @@ describe("apps service", () => {
         manifest: {
           ...validManifest,
           scopes: {
-            requested: [
-              "app-webhooks:configure",
-              "bookings:read",
-              "invoices:read",
-            ],
+            requested: ["app-webhooks:configure", "bookings:read", "invoices:read"],
             optional: [],
           },
         },

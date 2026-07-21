@@ -197,7 +197,7 @@ describe("graph runtime composition", () => {
         schemaVersion: "voyant.event-catalog.v1",
         events: [
           {
-            key: "@acme/finance#event.invoice.issued@1.0.0",
+            key: "invoice.issued@1.0.0",
             id: "@acme/finance#event.invoice.issued",
             unitId: "@acme/finance",
             packageName: "@acme/finance",
