@@ -37,6 +37,10 @@ if (pkgs.length === 0) {
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
 const FRAMEWORK_D2_CUTLINE_TAG = "0007_framework_baseline"
+// These tables existed at the frozen D.2 cutline but their owning product has
+// since been retired. Fresh package composition must not recreate them; the
+// framework upgrade path removes them in 0010_retire_workflow_runs.sql.
+const RETIRED_CUTLINE_TABLES = new Set(["workflow_run_steps", "workflow_runs"])
 // NB: extensions are NOT seeded out-of-band — the sources must create them
 // themselves (the framework bundle ships a pg_trgm/unaccent preamble; the db
 // package owns them for the per-package sources). Seeding here would mask a
@@ -245,9 +249,10 @@ async function main() {
         }
         // Reverse coverage: every bundle table must be owned by SOME source —
         // otherwise a schema-owning package was never onboarded (e.g. flights),
-        // and a fresh D.2 database would silently miss those tables.
+        // and a fresh D.2 database would silently miss those tables. Explicitly
+        // retired cutline tables are absent from fresh composition by design.
         for (const table of bundleCols.keys()) {
-          if (!own.has(table)) {
+          if (!own.has(table) && !RETIRED_CUTLINE_TABLES.has(table)) {
             problems.push(
               `bundle table ${table} is owned by no package source (un-onboarded owner?)`,
             )
