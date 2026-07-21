@@ -13,7 +13,7 @@ export type FrameworkProviders = Record<never, never>
 
 /**
  * Config for {@link createVoyantApp}: the injected providers + deployment-local
- * additions, plus everything else `createApp` takes (db, auth, workflows,
+ * additions, plus everything else `createApp` takes (db, auth,
  * outbox, publicPaths, …) — minus the `manifest`/`registry`/`capabilities` the
  * framework now assembles for you.
  */

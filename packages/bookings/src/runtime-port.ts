@@ -9,7 +9,7 @@ import type {
   BookingPersonResolverContact,
   ResolveBookingTravelSnapshot,
 } from "./route-runtime.js"
-import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
+import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
 
 export interface BookingsRuntimeProvider {
   options: BookingsApiModuleOptions
@@ -20,10 +20,10 @@ export interface BookingsAccommodationRuntime {
 }
 
 export interface BookingsFinanceRuntime {
-  createStaleBookingHoldsRuntime(options: {
+  createStaleBookingHoldsJobRuntime(options: {
     resolveDb: () => PostgresJsDatabase | Promise<PostgresJsDatabase>
     userId?: string
-  }): BookingsExpireStaleHoldsWorkflowRuntime
+  }): BookingsExpireStaleHoldsJobRuntime
 }
 
 export interface BookingsInventoryRuntime {
@@ -74,7 +74,7 @@ export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodation
 )
 export const bookingsFinanceRuntimePort = objectPort<BookingsFinanceRuntime>(
   "bookings.finance.runtime",
-  ["createStaleBookingHoldsRuntime"],
+  ["createStaleBookingHoldsJobRuntime"],
 )
 export const bookingsInventoryRuntimePort = objectPort<BookingsInventoryRuntime>(
   "bookings.inventory.runtime",

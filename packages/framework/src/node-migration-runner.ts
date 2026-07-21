@@ -180,13 +180,9 @@ export async function loadNodeSchemaMigrationSource(
       `Unsupported schema migration source ${migration.source.packageName}:${migration.source.path}`,
     )
   }
-  const packageResolveFrom =
-    migration.source.packageName === "@voyant-travel/workflows-orchestrator"
-      ? import.meta.url
-      : resolveFrom
   const source = await loadModuleBundleSource(migration.source.packageName, {
     priority: migration.order,
-    resolveFrom: packageResolveFrom,
+    resolveFrom,
   })
   if (!source) {
     throw new Error(

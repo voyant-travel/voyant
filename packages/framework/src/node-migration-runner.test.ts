@@ -146,49 +146,6 @@ describe("Node migration runner", () => {
     expect(source.priority).toBe(9)
     expect(source.migrations.length).toBeGreaterThan(0)
   })
-
-  it("loads built-in workflow migrations without a deployment-root dependency", async () => {
-    const root = mkdtempSync(path.join(tmpdir(), "voyant-workflow-migrations-"))
-    const resolveFrom = path.join(root, "migration-runner.mjs")
-    writeFileSync(resolveFrom, "export {}\n")
-
-    try {
-      const source = await loadNodeSchemaMigrationSource(
-        {
-          id: "@voyant-travel/workflows-orchestrator#migrations",
-          migrationKind: "schema",
-          order: 1,
-          idempotencyKey: "schema:@voyant-travel/workflows-orchestrator#migrations",
-          owner: "@voyant-travel/workflows-orchestrator",
-          packageName: "@voyant-travel/workflows-orchestrator",
-          source: {
-            kind: "package",
-            packageName: "@voyant-travel/workflows-orchestrator",
-            path: "./migrations",
-          },
-        },
-        resolveFrom,
-      )
-
-      expect(source.name).toBe("workflows-orchestrator")
-      expect(source.migrations.map((migration) => migration.tag)).toEqual([
-        "0000_init",
-        "0001_persist_run_record",
-        "0002_allow_null_input",
-        "0003_idempotency_key",
-        "0004_workflow_manifests",
-        "0005_wakeup_priority",
-      ])
-      expect(source.migrations.map((migration) => migration.sql).join("\n")).toContain(
-        'CREATE TABLE IF NOT EXISTS "voyant_workflow_manifests"',
-      )
-      expect(source.migrations.map((migration) => migration.sql).join("\n")).toContain(
-        'CREATE TABLE IF NOT EXISTS "voyant_wakeups"',
-      )
-    } finally {
-      rmSync(root, { recursive: true, force: true })
-    }
-  })
 })
 
 function plan(includeLater = false): VoyantProjectMigrationPlan {

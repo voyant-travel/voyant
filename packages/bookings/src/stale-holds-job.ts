@@ -1,10 +1,10 @@
 import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 
 import { expireStaleBookingHolds } from "./tasks/expire-stale-holds.js"
-import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
+import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
 
 export const bookingsStaleHoldsJobRuntimePort =
-  definePort<BookingsExpireStaleHoldsWorkflowRuntime>({
+  definePort<BookingsExpireStaleHoldsJobRuntime>({
     id: "bookings.stale-holds-job",
     test(runtime) {
       if (!runtime || typeof runtime.resolveDb !== "function") {

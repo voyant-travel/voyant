@@ -14,7 +14,7 @@
  *   - Availability reconciler: hourly
  *   - Content reconciler: nightly
  *
- * Templates schedule these via cron / the workflows runtime; the
+ * Package jobs schedule these through the selected job host; the
  * functions themselves are plain async so they're testable.
  *
  * Per docs/architecture/channel-push-architecture.md §13.

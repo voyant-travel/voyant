@@ -103,7 +103,7 @@ describe("generateModuleOpenApiDocuments", () => {
 
 describe("splitDocumentByModule", () => {
   // A composed aggregate: two module-owned paths, one publicPath override owned
-  // by `commerce`, and one route (`workflow-runs`) that no mount claims —
+  // by `commerce`, and one route (`audit-log`) that no mount claims —
   // standing in for an `additionalRoutes` mount.
   const full: OpenApiDocument = {
     openapi: "3.1.0",
@@ -111,7 +111,7 @@ describe("splitDocumentByModule", () => {
     paths: {
       "/v1/admin/bookings/list": { get: {} },
       "/v1/public/booking-engine/hold": { post: {} },
-      "/v1/admin/workflow-runs/{id}": { get: {} },
+      "/v1/admin/audit-log/{id}": { get: {} },
       "/v1/webhooks/netopia": { post: {} }, // non-surface — must be ignored
     },
     components: { schemas: {} },
@@ -130,8 +130,8 @@ describe("splitDocumentByModule", () => {
       "/v1/public/booking-engine/hold",
     ])
     // Unclaimed route falls back to its second path segment.
-    expect(Object.keys(docs.get("workflow-runs")?.paths ?? {})).toEqual([
-      "/v1/admin/workflow-runs/{id}",
+    expect(Object.keys(docs.get("audit-log")?.paths ?? {})).toEqual([
+      "/v1/admin/audit-log/{id}",
     ])
     expect(Object.keys(docs.get("bookings")?.paths ?? {})).toEqual(["/v1/admin/bookings/list"])
 
@@ -140,7 +140,7 @@ describe("splitDocumentByModule", () => {
     for (const doc of docs.values()) for (const p of Object.keys(doc.paths ?? {})) covered.add(p)
     expect([...covered].sort()).toEqual([
       "/v1/admin/bookings/list",
-      "/v1/admin/workflow-runs/{id}",
+      "/v1/admin/audit-log/{id}",
       "/v1/public/booking-engine/hold",
     ])
   })

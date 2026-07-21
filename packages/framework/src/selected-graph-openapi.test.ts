@@ -80,12 +80,10 @@ function unit(
     accessScopes: [],
     tools: [],
     jobs: [],
-    workflows: [],
     actions: [],
     selectedIds: {
       routes: routes.map(({ id }) => id),
       tools: [],
-      workflows: [],
       events: [],
       webhooks: [],
     },

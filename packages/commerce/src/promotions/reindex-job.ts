@@ -2,7 +2,7 @@ import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-trave
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { sql } from "drizzle-orm"
 
-import type { BulkReindexProductsService } from "./workflow-runtime.js"
+import type { BulkReindexProductsService } from "./job-runtime.js"
 
 export interface PromotionReindexJobRuntime {
   withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>

@@ -11,7 +11,6 @@ const jobs = [
     description: "Triggers notifications.",
     route: "/__voyant/scheduled",
     module: "notifications",
-    workflowId: "notifications.send-due-reminders",
     input: { limit: 10 },
   },
   {
@@ -52,7 +51,6 @@ describe("renderGoogleCloudSchedulerScript", () => {
           description: "Expire stale booking holds",
           route: "/__voyant/scheduled",
           module: "@voyant-travel/bookings",
-          workflowId: "bookings.expire-stale-holds",
         },
       ],
       {

@@ -105,7 +105,6 @@ function selectedIdSets(selectedIds: VoyantGraphRuntimeSelectedIds): {
   return {
     routes: new Set(selectedIds.routes),
     tools: new Set(selectedIds.tools),
-    workflows: new Set(selectedIds.workflows),
     events: new Set(selectedIds.events),
     webhooks: new Set(selectedIds.webhooks),
   }

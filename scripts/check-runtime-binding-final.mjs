@@ -20,7 +20,6 @@ const contributorRequirements = {
   legal: "createLegalRuntime",
   notifications: "createNotificationsRuntime",
   quotes: "createQuotesRuntime",
-  "workflow-runs": "new WorkflowRunnerRegistry()",
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([

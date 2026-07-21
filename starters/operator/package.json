@@ -12,9 +12,6 @@
     "test": "pnpm run prepare:verify && vitest run --config .voyant/vitest.config.ts --passWithNoTests",
     "graph:check": "node ../../scripts/generate-operator-starter-metadata.mjs --check && voyant db doctor --fail-on-drift",
     "prepare:verify": "node ../../scripts/generate-operator-starter-metadata.mjs --emit && voyant build --artifacts-only && tsx .voyant/generate-routes.mjs",
-    "dev:worker": "voyant dev --file ../../packages/runtime/src/workflow-entry.ts --port 3310",
-    "workflows:build": "voyant workflows build --file ../../packages/runtime/src/workflow-entry.ts --out dist/workflows",
-    "workflows:doctor": "voyant workflows doctor --target entry --file ../../packages/runtime/src/workflow-entry.ts",
     "db:migrate": "voyant migrate",
     "lint": "biome check src/ tests/"
   },
@@ -128,7 +125,6 @@
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/trips": "workspace:^",
     "@voyant-travel/vite-config": "workspace:^",
-    "@voyant-travel/workflow-runs": "workspace:^",
     "jsdom": "^29.1.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "tsx": "catalog:",

@@ -116,7 +116,7 @@ describe("Voyant project runtime composition", () => {
   })
 
   it("passes active modules and a host customer-auth resolver to the auth runtime", async () => {
-    mocks.workflowGraphRuntime.modules = [
+    mocks.graphRuntime.modules = [
       { id: "@voyant-travel/catalog", localId: "catalog" },
       { id: "@acme/loyalty" },
     ]

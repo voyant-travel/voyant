@@ -1,10 +1,6 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
-import type {
-  VoyantGraphJsonObject,
-  VoyantGraphLinkDeclaration,
-  VoyantGraphSubscriber,
-} from "@voyant-travel/core/project"
+import type { VoyantGraphLinkDeclaration, VoyantGraphSubscriber } from "@voyant-travel/core/project"
 
 import ts, { loadTypeScript } from "./lazy-typescript.js"
 import {
@@ -15,8 +11,6 @@ import {
   resolveInsideProject,
 } from "./project-convention-compiler-utils.js"
 import {
-  durableJsonValue,
-  isDurableExpression,
   resolveExpression,
   statementIdentifierName,
   stringProperty,
@@ -36,7 +30,6 @@ import {
   invalidSubscriberDiagnostic,
   missingDefaultExportDiagnostic,
   multipleDefaultExportsDiagnostic,
-  nonDurableSubscriberDiagnostic,
   unsupportedExportDiagnostic,
 } from "./project-subscriber-link-diagnostics.js"
 import {
@@ -64,11 +57,7 @@ export const PROJECT_SUBSCRIBER_LINK_DIAGNOSTIC_CODES = {
     "Link files must default-export a definition created by the imported defineLink helper.",
   PROJECT_SUBSCRIBER_ID_COLLISION: "Subscriber descriptor ids must be unique.",
   PROJECT_SUBSCRIBER_INVALID_DESCRIPTOR:
-    "Subscriber files must default-export an EventFilterDescriptor object with literal id and eventType fields.",
-  PROJECT_SUBSCRIBER_MISSING_MANIFEST:
-    "Subscriber descriptors must include a complete durable event-filter manifest.",
-  PROJECT_SUBSCRIBER_NON_DURABLE_DESCRIPTOR:
-    "Subscriber descriptors must contain only durable, serializable data.",
+    "Subscriber files must default-export a SubscriberRuntimeDescriptor object with literal id and eventType fields.",
 } as const
 
 export type ProjectSubscriberLinkDiagnosticCode =
@@ -89,8 +78,6 @@ export interface ProjectSubscriberConvention extends ProjectConventionFileContri
   kind: "subscriber"
   subscriberId: string
   eventType: string
-  descriptor: VoyantGraphJsonObject
-  manifest: VoyantGraphJsonObject
 }
 
 export interface ProjectLinkConvention extends ProjectConventionFileContribution {
@@ -220,9 +207,6 @@ export async function compileProjectSubscriberLinkConventions(
     graphSubscribers: analysis.subscribers.map((subscriber, index) => ({
       id: subscriber.subscriberId,
       eventType: subscriber.eventType,
-      eventFilterId: subscriber.manifest.id as string,
-      workflowId: subscriber.manifest.targetWorkflowId as string,
-      filter: subscriber.descriptor,
       runtime: {
         entry: `./.voyant/${PROJECT_SUBSCRIBERS_GENERATED_PATH}`,
         export: `projectSubscriber${index}`,
@@ -345,43 +329,12 @@ function analyzeSubscriber(
   if (!subscriberId || !eventType) {
     return { diagnostics: [invalidSubscriberDiagnostic(contribution.sourcePath)] }
   }
-  if (!isDurableExpression(resolved, constants)) {
-    return { diagnostics: [nonDurableSubscriberDiagnostic(contribution.sourcePath, subscriberId)] }
-  }
-  const descriptor = durableJsonValue(resolved, constants)
-  if (!isJsonObject(descriptor)) {
-    return { diagnostics: [nonDurableSubscriberDiagnostic(contribution.sourcePath, subscriberId)] }
-  }
-  const manifest = descriptor.manifest
-  if (
-    !isJsonObject(manifest) ||
-    manifest.id !== subscriberId ||
-    manifest.eventType !== eventType ||
-    typeof manifest.payloadHash !== "string" ||
-    manifest.payloadHash.length === 0 ||
-    typeof manifest.targetWorkflowId !== "string" ||
-    manifest.targetWorkflowId.length === 0
-  ) {
-    return {
-      diagnostics: [
-        {
-          code: "PROJECT_SUBSCRIBER_MISSING_MANIFEST",
-          severity: "error",
-          subscriberId,
-          sourcePaths: [contribution.sourcePath],
-          message: `Subscriber "${subscriberId}" in "${contribution.sourcePath}" must include a manifest with matching id/eventType, payloadHash, and targetWorkflowId.`,
-        },
-      ],
-    }
-  }
   return {
     value: {
       ...contribution,
       kind: "subscriber",
       subscriberId,
       eventType,
-      descriptor,
-      manifest,
     },
     diagnostics: [],
   }
@@ -422,10 +375,6 @@ function recordDefineLinkImports(declaration: ts.ImportDeclaration, imports: Set
       imports.add(element.name.text)
     }
   }
-}
-
-function isJsonObject(value: unknown): value is VoyantGraphJsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function compareConventions(

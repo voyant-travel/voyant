@@ -40,7 +40,6 @@ function createRoutePostureRuntime(
           selectedIds: {
             routes: ["@acme/catalog#api.admin", "@acme/catalog#api.public"],
             tools: [],
-            workflows: [],
             events: [],
             webhooks: [],
           },
@@ -146,7 +145,6 @@ describe("graph runtime route posture", () => {
           selectedIds: {
             routes: ["@voyant-travel/storefront#api.public"],
             tools: [],
-            workflows: [],
             events: [],
             webhooks: [],
           },
@@ -185,7 +183,6 @@ describe("graph runtime route posture", () => {
           selectedIds: {
             routes: ["@voyant-travel/finance#api.public"],
             tools: [],
-            workflows: [],
             events: [],
             webhooks: [],
           },
@@ -272,7 +269,6 @@ describe("graph runtime route posture", () => {
           selectedIds: {
             routes: ["@voyant-travel/storefront#payment-link.api"],
             tools: [],
-            workflows: [],
             events: [],
             webhooks: [],
           },

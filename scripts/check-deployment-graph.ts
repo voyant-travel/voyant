@@ -33,7 +33,6 @@ const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
   "@voyant-travel/catalog-authoring",
-  "@voyant-travel/workflow-runs",
 ] as const
 const PACKAGE_OWNED_RUNTIME_MODULE_SPECIFIERS = [
   "@voyant-travel/charters",
@@ -85,8 +84,7 @@ async function main(): Promise<void> {
     first.deployment.providers.database !== "postgres" ||
     first.deployment.providers.storage !== "memory" ||
     first.deployment.providers.adminAuth === "voyant-cloud" ||
-    first.deployment.providers.customerAuth !== "better-auth" ||
-    first.deployment.providers.workflows === "voyant-cloud"
+    first.deployment.providers.customerAuth !== "better-auth"
   ) {
     failures.push("expected standard Operator graph to preserve self-hosted provider defaults")
   }
@@ -371,7 +369,6 @@ async function main(): Promise<void> {
     "deployment-graph.generated.json",
     "src/runtime-entry.generated.ts",
     "src/graph-runtime.generated.ts",
-    "src/workflows.ts",
   ]) {
     if (existsSync(join(operatorRoot, forbidden))) {
       failures.push(`expected obsolete operator authority/artifact ${forbidden} to stay deleted`)
@@ -380,27 +377,6 @@ async function main(): Promise<void> {
   const operatorGitignore = await readFile(join(operatorRoot, ".gitignore"), "utf8")
   if (!operatorGitignore.split(/\r?\n/).some((line) => line === ".voyant" || line === ".voyant/")) {
     failures.push("expected starters/operator/.gitignore to ignore .voyant/")
-  }
-  for (const [ownerId, workflowId] of [
-    ["@voyant-travel/catalog", "catalog.reap-expired-booking-drafts"],
-    ["@voyant-travel/commerce", "commerce.process-promotion-boundaries"],
-    ["@voyant-travel/bookings", "bookings.expire-stale-holds"],
-    ["@voyant-travel/notifications", "notifications.send-due-reminders"],
-  ] as const) {
-    const owner = operatorGraph.modules.find((unit) => unit.id === ownerId)
-    if (!owner?.workflows?.some((entry) => entry.id === workflowId)) {
-      failures.push(`expected ${ownerId} graph module to own ${workflowId}`)
-    }
-    if (
-      !operatorGraph.provisioning?.scheduledJobs?.some(
-        (job) => job.workflowId === workflowId && job.id.startsWith(`${ownerId}#schedule.`),
-      )
-    ) {
-      failures.push(`expected ${ownerId} graph provisioning to schedule ${workflowId}`)
-    }
-  }
-  if (operatorModuleIds.has("@voyant-travel/operator#workflows")) {
-    failures.push("expected package-owned workflows to replace the operator workflow aggregate")
   }
   const channelPushUnit = operatorGraph.extensions.find(
     (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
