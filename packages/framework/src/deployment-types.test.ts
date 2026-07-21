@@ -33,4 +33,12 @@ describe("deployment provider contracts", () => {
       "none",
     ])
   })
+
+  it("keeps managed-cloud authoritative shared state on Postgres", () => {
+    expect(DEFAULT_MANAGED_CLOUD_PROVIDERS).toMatchObject({
+      cache: "redis",
+      sharedState: "postgres",
+      rateLimit: "redis",
+    })
+  })
 })

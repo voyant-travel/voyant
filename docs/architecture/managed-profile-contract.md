@@ -87,9 +87,10 @@ Validation checks:
 For `mode: "managed-cloud"`, database/cache/storage/auth/email/search are
 framework-owned substrate, not user-selected project config. The standard
 operator profile emits Postgres, S3/R2-compatible storage, Voyant Cloud auth and
-delivery, and Redis for `cache`, `sharedState`, and `rateLimit`. Local or
-self-hosted profiles can include explicit provider selections, including
-`postgres`, `kv`, or `memory` where the provider contract allows them.
+delivery, Redis for `cache` and `rateLimit`, and Postgres for authoritative
+`sharedState`. Local or self-hosted profiles can include explicit provider
+selections, including `postgres`, `kv`, or `memory` where the provider contract
+allows them.
 Payment, accounting, fiscalization, and channel systems are plugins, not
 provider roles; Managed Cloud must not imply a specific payment processor.
 
@@ -107,7 +108,14 @@ The returned requirements include selected modules, plugins, settings, provider
 roles, provider ids, resource keys, required variables/secrets/bindings, the
 `createVoyantApp` module exclusion list, and framework migration metadata.
 Managed operator profiles emit one `redis` resource requirement with
-`REDIS_URL`; its roles include cache, shared state, and rate limiting.
+`REDIS_URL` for cache and rate limiting plus a deployment-static
+`REDIS_NAMESPACE` used to prefix those Redis keys. Managed Cloud requires
+`rediss://` for Redis TCP and still accepts HTTPS Redis REST URLs for
+compatibility; plaintext `redis://` is rejected. Managed profiles keep
+authoritative `sharedState` on Postgres by default. Self-hosted deployments
+that explicitly select Redis for `sharedState` may use `redis://`,
+`rediss://`, HTTP, or HTTPS and may reuse `REDIS_NAMESPACE`; the runtime writes
+that store under `voyant:v1:<namespace>:state:`.
 
 ## Runtime Bridge
 
