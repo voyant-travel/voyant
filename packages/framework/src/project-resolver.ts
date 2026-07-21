@@ -618,6 +618,7 @@ function runtimePackageReferences(
     for (const presentation of unit.presentations ?? []) add(unit, presentation.runtime)
     for (const tool of unit.tools ?? []) add(unit, tool.runtime)
     for (const migration of unit.setupMigrations ?? []) add(unit, migration.runtime)
+    for (const job of unit.jobs) add(unit, job.runtime)
     for (const workflow of unit.workflows) add(unit, workflow.runtime)
     for (const subscriber of unit.subscribers) add(unit, subscriber.runtime)
   }

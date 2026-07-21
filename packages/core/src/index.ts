@@ -106,6 +106,8 @@ export type {
   VoyantGraphFacetEntity,
   VoyantGraphJsonObject,
   VoyantGraphJsonValue,
+  VoyantGraphJob,
+  VoyantGraphJobSchedule,
   VoyantGraphLinkDeclaration,
   VoyantGraphPortDeclaration,
   VoyantGraphProject,
