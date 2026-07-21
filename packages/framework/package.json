@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/framework",
-  "version": "0.58.1",
+  "version": "0.59.0",
   "description": "Voyant deployment graph resolver and Node runtime framework.",
   "license": "Apache-2.0",
   "type": "module",
@@ -69,7 +69,8 @@
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "redis": "^6.1.0"
   },
   "peerDependencies": {
     "@hono/zod-openapi": "^1.4.0",

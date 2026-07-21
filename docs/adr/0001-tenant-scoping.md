@@ -38,11 +38,40 @@ Concretely, this means:
   for the purpose of filtering.
 - Domain modules MAY include an `organizationId` column for reporting
   or grouping, but the framework does not enforce it at the query layer.
+- Non-authoritative Redis cache and rate-limit state MAY share a managed
+  regional Redis substrate when keys are prefixed by an immutable deployment
+  identity. This namespace is deployment-static infrastructure configuration,
+  not per-request organization scoping.
 
 When asked "how is one customer's data isolated from another customer's?"
 the answer is: **separate Postgres database, separate compute runtime.**
 Voyant Cloud's provisioning is the enforcement; customers self-hosting
 inherit the same model.
+
+## Redis cache and rate-limit namespace exception
+
+Managed Cloud may consolidate Redis-backed **cache** and **rate-limit** state
+onto a regional Redis service. The framework-owned Node runtime accepts
+`rediss://` TCP Redis and HTTPS Redis REST for managed deployments; it rejects
+plaintext `redis://`. Those records are non-authoritative: cache entries can be
+recomputed, and rate-limit counters are traffic brakes rather than customer
+data. The framework-owned Node runtime therefore requires a deployment-static
+`REDIS_NAMESPACE` for every managed Redis role and prefixes managed Redis keys
+as:
+
+- `voyant:v1:<namespace>:cache:`
+- `voyant:v1:<namespace>:rate:`
+
+`<namespace>` is an immutable deployment identity assigned by provisioning. It
+is not read from requests, sessions, headers, database rows, or organization
+ids, and package code must not derive tenant filters from it. Authoritative
+state remains governed by the deployment-boundary model above; managed Cloud
+uses Postgres for shared state by default. Self-hosted deployments may still
+choose Redis for shared state explicitly; when they also provide
+`REDIS_NAMESPACE`, the Node runtime uses the distinct
+`voyant:v1:<namespace>:state:` prefix for that shared-state store. That is the
+self-hoster's infrastructure contract rather than a framework-provided
+shared-tenant isolation mechanism.
 
 ## Consequences
 

@@ -28,7 +28,9 @@ function parseRedisRestUrl(rawUrl: string): { url: string; token: string } {
     throw new Error("REDIS_URL must be an HTTP(S) Redis REST URL.")
   }
 
-  const token = parsed.password || parsed.searchParams.get("token") || ""
+  const passwordToken = parsed.password
+  const queryToken = parsed.searchParams.get("token")
+  const token = passwordToken ? decodeURIComponent(passwordToken) : (queryToken ?? "")
   if (!token) {
     throw new Error("REDIS_URL must include a Redis REST token as the URL password or token query.")
   }
@@ -38,7 +40,7 @@ function parseRedisRestUrl(rawUrl: string): { url: string; token: string } {
   parsed.searchParams.delete("token")
   return {
     url: parsed.toString().replace(/\/$/, ""),
-    token: decodeURIComponent(token),
+    token,
   }
 }
 

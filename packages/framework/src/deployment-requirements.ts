@@ -106,10 +106,15 @@ function envForProvider(
     return [
       secret(
         "REDIS_URL",
-        "Redis URL used for cache, shared state, and rate limiting.",
+        "Redis URL used for cache, shared state, and rate limiting. Node runtimes accept redis://, rediss://, or an Upstash-compatible HTTP(S) REST URL with a token.",
         true,
         [],
         "redis-url",
+      ),
+      variable(
+        "REDIS_NAMESPACE",
+        "Immutable deployment namespace for framework-owned Redis cache, shared-state, and rate-limit keys.",
+        false,
       ),
     ]
   }
