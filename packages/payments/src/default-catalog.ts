@@ -37,14 +37,18 @@ const netopia: PaymentProviderDescriptor = {
   modes: ["sandbox", "live"],
   regions: ["RO"],
   currencies: ["RON", "EUR", "USD"],
+  // Netopia API v2 identifies the point of sale by its POS signature and
+  // authenticates requests with the account API key (sent as the Authorization
+  // header). There is no separate "merchant number" — the POS signature is the
+  // identifier — so that confusing field is not collected.
   credentialFieldSchema: [
     {
-      key: "merchantId",
-      label: "Merchant ID",
-      kind: "text",
+      key: "posSignature",
+      label: "POS signature",
+      kind: "secret",
       required: true,
       placeholder: "e.g. 2X4B-1AAA-...",
-      helpText: "Your Netopia merchant / seller identifier.",
+      helpText: "The POS signature (Semnătura) identifying your Netopia point of sale.",
       maxLength: 128,
     },
     {
@@ -52,16 +56,9 @@ const netopia: PaymentProviderDescriptor = {
       label: "API key",
       kind: "secret",
       required: true,
-      helpText: "Netopia API key used to initiate payments.",
+      helpText:
+        "Your Netopia account API key (Security → API key), sent as the Authorization header to initiate payments.",
       maxLength: 512,
-    },
-    {
-      key: "posSignature",
-      label: "POS signature",
-      kind: "secret",
-      required: true,
-      helpText: "The POS signature identifying your Netopia point of sale.",
-      maxLength: 128,
     },
     {
       key: "ipnPublicKey",
