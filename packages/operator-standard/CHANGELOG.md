@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.10.20
+
+### Patch Changes
+
+- Updated dependencies [c2a9f4f]
+  - @voyant-travel/trips@0.179.1
+  - @voyant-travel/trips-react@0.179.1
+
 ## 0.10.19
 
 ### Patch Changes
