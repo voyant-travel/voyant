@@ -224,6 +224,33 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       await adapter.admin!.drop(lifecycleSlice)
     }
   })
+
+  it("rolls a successful rebuild back to an empty predecessor", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const emptySlice: IndexerSlice = {
+      ...slice,
+      market: `empty-rollback-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[emptySlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(emptySlice, registry)
+
+    try {
+      await adapter.bulkReindex(
+        emptySlice,
+        toAsyncIterable([{ id: "new", fields: { title: "New projection" } }]),
+      )
+      expect(await adapter.rollbackProjection(emptySlice)).toBe(true)
+      expect(await adapter.search(emptySlice, { mode: "keyword", query: "" })).toMatchObject({
+        hits: [],
+        total: 0,
+      })
+    } finally {
+      await adapter.admin!.drop(emptySlice)
+    }
+  })
 })
 
 async function* toAsyncIterable(documents: Array<{ id: string; fields: Record<string, unknown> }>) {

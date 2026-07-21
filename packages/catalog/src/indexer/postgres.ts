@@ -236,6 +236,18 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       )
     `)
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS voyant_catalog_search_projection_snapshot_states (
+        vertical text NOT NULL,
+        locale text NOT NULL,
+        audience text NOT NULL,
+        market text NOT NULL,
+        channel text NOT NULL DEFAULT '',
+        source_generation bigint NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (vertical, locale, audience, market, channel)
+      )
+    `)
+    await db.execute(sql`
       ALTER TABLE voyant_catalog_search_rebuild_documents
       ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()
     `)
@@ -1167,6 +1179,14 @@ async function publishStagedRebuild(
 async function snapshotProjection(db: AnyDrizzleDb, slice: IndexerSlice): Promise<void> {
   await discardProjectionSnapshot(db, slice)
   await db.execute(sql`
+    INSERT INTO voyant_catalog_search_projection_snapshot_states (
+      vertical, locale, audience, market, channel, source_generation
+    )
+    SELECT vertical, locale, audience, market, channel, generation
+    FROM voyant_catalog_search_slices
+    WHERE ${facetSlicePredicate(slice)}
+  `)
+  await db.execute(sql`
     INSERT INTO voyant_catalog_search_projection_snapshots (
       vertical, locale, audience, market, channel, id, fields, embeddings,
       embedding_model_id, document_text, source_generation
@@ -1208,7 +1228,7 @@ async function restoreProjectionSnapshot(
   const snapshot = readRows(
     await db.execute(sql`
       SELECT 1
-      FROM voyant_catalog_search_projection_snapshots
+      FROM voyant_catalog_search_projection_snapshot_states
       WHERE ${snapshotSlicePredicate(slice)}
       LIMIT 1
     `),
@@ -1265,6 +1285,10 @@ async function restoreProjectionSnapshot(
 }
 
 async function discardProjectionSnapshot(db: AnyDrizzleDb, slice: IndexerSlice): Promise<void> {
+  await db.execute(sql`
+    DELETE FROM voyant_catalog_search_projection_snapshot_states
+    WHERE ${snapshotSlicePredicate(slice)}
+  `)
   await db.execute(sql`
     DELETE FROM voyant_catalog_search_projection_snapshots
     WHERE ${snapshotSlicePredicate(slice)}
