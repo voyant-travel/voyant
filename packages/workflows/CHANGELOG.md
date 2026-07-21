@@ -1,5 +1,12 @@
 # @voyant-travel/workflows
 
+## 0.122.17
+
+### Patch Changes
+
+- 9ed6114: Serialize each workflow's configured execution timeout in generated manifests
+  so hosted runtimes can enforce the authored timeout.
+
 ## 0.122.16
 
 ## 0.122.15
