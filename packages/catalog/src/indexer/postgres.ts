@@ -179,6 +179,16 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       ADD COLUMN IF NOT EXISTS value_boolean boolean
     `)
     await db.execute(sql`
+      UPDATE voyant_catalog_search_facets
+      SET value_number = value_text::numeric
+      WHERE value_type = 'number' AND value_number IS NULL
+    `)
+    await db.execute(sql`
+      UPDATE voyant_catalog_search_facets
+      SET value_boolean = value_text::boolean
+      WHERE value_type = 'boolean' AND value_boolean IS NULL
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS voyant_catalog_search_terms (
         vertical text NOT NULL,
         locale text NOT NULL,
