@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import { resolveInstalledExtensions } from "./extension-resolution.js"
 import { createAppsAdminRoutes } from "./routes.js"
-import { apps } from "./schema.js"
+import { apps, appWebhookSubscriptions } from "./schema.js"
 import { createAppsService } from "./service.js"
 import { validManifest } from "./test-fixtures.js"
 
@@ -56,7 +57,10 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
       manifest: {
         ...validManifest,
         releaseVersion: "2.0.0",
-        scopes: { requested: ["bookings:read", "customers:read"], optional: ["invoices:read"] },
+        scopes: {
+          requested: ["app-webhooks:configure", "bookings:read", "customers:read"],
+          optional: ["invoices:read"],
+        },
       },
       createdBy: "user_1",
       provenance: { source: "test" },
@@ -114,7 +118,7 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
       pendingReason: unknown
       grants: Array<{ scope: string; status: string }>
       extensions: Array<{ extensionKey: string }>
-      webhooks: { data: Array<{ eventType: string }> }
+      webhooks: { data: Array<{ eventType: string; status: string; signingKeyId: string | null }> }
       recentAudit: Array<{ action: string }>
       availableUpdates: Array<{
         release: { id: string; releaseVersion: string }
@@ -129,13 +133,24 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
     expect(detail.pendingRelease).toBeNull()
     expect(detail.pendingReason).toBeNull()
 
-    // grants are ordered by scope; bookings:read granted, invoices:read optional
-    expect(detail.grants.map((g) => g.scope)).toEqual(["bookings:read", "invoices:read"])
+    // grants are ordered by scope; webhook configuration + bookings are granted.
+    expect(detail.grants.map((g) => g.scope)).toEqual([
+      "app-webhooks:configure",
+      "bookings:read",
+      "invoices:read",
+    ])
     const bookings = detail.grants.find((g) => g.scope === "bookings:read")
     expect(bookings?.status).toBe("granted")
 
     expect(detail.extensions.length).toBeGreaterThan(0)
     expect(detail.webhooks.data.map((w) => w.eventType)).toContain("booking.created")
+    expect(detail.webhooks.data).toContainEqual(
+      expect.objectContaining({
+        eventType: "booking.created",
+        status: "inactive",
+        signingKeyId: null,
+      }),
+    )
     expect(detail.recentAudit.length).toBeGreaterThan(0)
 
     // v2 introduces customers:read which was never granted -> blocked
@@ -215,6 +230,38 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
     expect(purgeBody.data.webhooks).toBeGreaterThan(0)
   })
 
+  it("does not reactivate a retained webhook key after the subscription became inactive", async () => {
+    const { appId, releaseV1 } = await seedAppWithReleases()
+    const installation = await installV1(appId, releaseV1.id)
+    await db
+      .update(appWebhookSubscriptions)
+      .set({
+        status: "inactive",
+        signingKeyId: "key_stale",
+        pausedAt: null,
+        deactivatedAt: null,
+      })
+      .where(eq(appWebhookSubscriptions.installationId, installation.id))
+
+    const paused = await app.request(
+      `/installations/${installation.id}/pause`,
+      json({ actorId: "actor_1" }),
+    )
+    expect(paused.status).toBe(200)
+    const resumed = await app.request(
+      `/installations/${installation.id}/resume`,
+      json({ actorId: "actor_1" }),
+    )
+    expect(resumed.status).toBe(200)
+
+    const subscriptions = await db
+      .select({ status: appWebhookSubscriptions.status })
+      .from(appWebhookSubscriptions)
+      .where(eq(appWebhookSubscriptions.installationId, installation.id))
+    expect(subscriptions).not.toHaveLength(0)
+    expect(subscriptions.every(({ status }) => status === "inactive")).toBe(true)
+  })
+
   it("creates an active installation via /install", async () => {
     const { appId, releaseV1 } = await seedAppWithReleases()
     const response = await app.request(
@@ -227,6 +274,59 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
     }
     expect(body.data.installation.status).toBe("active")
     expect(body.data.outcome).toBe("created")
+  })
+
+  it("preserves a manifest slot entryUrl through install and runtime resolution", async () => {
+    const service = createAppsService()
+    const registration = await service.createCustomApp(db, {
+      ownerId: "owner_1",
+      displayName: "Invoice Sync",
+      slug: "invoice-sync",
+      redirectUris: [],
+      createdBy: "user_1",
+    })
+    const manifest = {
+      ...validManifest,
+      admin: {
+        ...validManifest.admin,
+        slotExtensions: [
+          {
+            key: "invoice-detail",
+            titleKey: "invoice.detail.title",
+            version: "1.0.0",
+            extensionApi: "^1",
+            entryUrl: "https://app.example.com/extensions/invoice-detail/",
+            slots: ["invoice.details.after-summary"],
+          },
+        ],
+      },
+      locales: {
+        ...validManifest.locales,
+        host: {
+          ...validManifest.locales.host,
+          "en-US": {
+            ...validManifest.locales.host["en-US"],
+            extensions: { "invoice-detail": "Invoice accounting" },
+          },
+        },
+      },
+    }
+    const released = await service.releaseFromUpload(db, registration.id, {
+      manifest,
+      createdBy: "user_1",
+      provenance: { source: "test" },
+    })
+    await installV1(registration.id, released.release.id)
+
+    const resolved = await resolveInstalledExtensions(db, {
+      deploymentId: DEPLOYMENT_ID,
+      activeLocale: "en-US",
+    })
+
+    expect(resolved.slots).toHaveLength(1)
+    expect(resolved.slots[0]?.descriptor.entryUrl).toBe(
+      "https://app.example.com/extensions/invoice-detail/",
+    )
   })
 
   it("notifies managed authority after a Marketplace uninstall", async () => {

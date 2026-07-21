@@ -203,6 +203,7 @@
       "@voyant-travel/apps/session-token": ["../apps/dist/session-token.d.ts"],
       "@voyant-travel/apps/session-token-service": ["../apps/dist/session-token-service.d.ts"],
       "@voyant-travel/apps/voyant": ["../apps/dist/voyant.d.ts"],
+      "@voyant-travel/apps/webhook-delivery": ["../apps/dist/webhook-delivery.d.ts"],
       "@voyant-travel/auth": ["../auth/dist/index.d.ts"],
       "@voyant-travel/auth-react": ["../auth-react/dist/index.d.ts"],
       "@voyant-travel/auth-react/account": ["../auth-react/dist/components/account-page.d.ts"],

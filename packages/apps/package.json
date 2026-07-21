@@ -28,6 +28,7 @@
     "./session-token": "./src/session-token.ts",
     "./session-token-service": "./src/session-token-service.ts",
     "./voyant": "./src/voyant.ts",
+    "./webhook-delivery": "./src/webhook-delivery.ts",
     "./openapi/admin": "./openapi/admin/apps.json"
   },
   "scripts": {
@@ -188,6 +189,11 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./webhook-delivery": {
+        "types": "./dist/webhook-delivery.d.ts",
+        "import": "./dist/webhook-delivery.js",
+        "default": "./dist/webhook-delivery.js"
       },
       "./openapi/admin": "./openapi/admin/apps.json"
     },

@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core/events"
 import type { createCustomFieldsService } from "@voyant-travel/custom-fields"
 import {
+  ApiHttpError,
   openApiValidationHook,
   parseJsonBody,
   parseQuery,
@@ -74,6 +75,7 @@ import {
   uninstallAppInstallationRoute,
 } from "./routes-openapi.js"
 import type {
+  AppsWebhookDeliveryRuntime,
   ManagedAppInstallationAuthority,
   ManagedMarketplaceAcquisitionResolver,
 } from "./runtime-port.js"
@@ -119,6 +121,7 @@ export interface AppsAdminRouteOptions extends AppsServiceOptions {
   customFields?: CustomFieldsService
   /** Host-verified Marketplace acquisition and setup authority. */
   managedMarketplace?: ManagedMarketplaceAcquisitionResolver
+  webhookDelivery?: AppsWebhookDeliveryRuntime
 }
 
 export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
@@ -416,12 +419,19 @@ export function createAppsAdminRoutes(options: AppsAdminRouteOptions = {}) {
   })
 
   routes.openapi(replayAppWebhookRoute, async (c) => {
-    parseInstallationParams(c.req.param())
+    const { installationId } = parseInstallationParams(c.req.param())
     const body = await parseJsonBody(c, appWebhookReplaySchema)
+    if (!options.webhookDelivery) {
+      throw new ApiHttpError("App webhook delivery runtime is not configured.", {
+        status: 501,
+        code: "app_webhook_delivery_not_configured",
+      })
+    }
     const delivery = await replayAppWebhookDelivery(c.get("db"), {
       deliveryId: body.deliveryId,
       actorId: body.actorId,
-      signingKey: { id: body.signingKeyId, secret: body.signingSecret },
+      expectedInstallationId: installationId,
+      resolveSigningKey: options.webhookDelivery.resolveSigningKey,
     })
     return c.json({ data: delivery }, 202)
   })

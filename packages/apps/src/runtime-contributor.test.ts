@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 import { createAppsRuntimePortContribution } from "./runtime-contributor.js"
-import { appsManagedAuthRuntimePort, appsManagedMarketplaceRuntimePort } from "./runtime-port.js"
+import {
+  appsManagedAuthRuntimePort,
+  appsManagedMarketplaceRuntimePort,
+  appsWebhookDeliveryRuntimePort,
+} from "./runtime-port.js"
 
 function host(values: Readonly<Record<string, unknown>>) {
   return {
@@ -12,6 +16,23 @@ function host(values: Readonly<Record<string, unknown>>) {
 }
 
 describe("createAppsRuntimePortContribution", () => {
+  it("validates the complete host-owned webhook key ceremony", () => {
+    expect(() =>
+      appsWebhookDeliveryRuntimePort.test({
+        issueSigningKey: async () => ({
+          id: "key_1",
+          secret: "s".repeat(32),
+          challenge: "challenge",
+        }),
+        verifySigningKeyProof: async () => true,
+        resolveSigningKey: async () => ({ id: "key_1", secret: "s".repeat(32) }),
+      }),
+    ).not.toThrow()
+    expect(() =>
+      appsWebhookDeliveryRuntimePort.test({ resolveSigningKey: async () => null } as never),
+    ).toThrow(/issueSigningKey/)
+  })
+
   it("stays off because scalar environment values cannot authorize managed installations", () => {
     expect(createAppsRuntimePortContribution(host({}))).toEqual({})
     expect(

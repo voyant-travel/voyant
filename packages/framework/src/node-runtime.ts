@@ -202,6 +202,10 @@ export interface VoyantNodeRuntimeOptions {
   outboundWebhooks?: {
     enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
   }
+  /** Node-owned durable boundary for installed-app webhook events. */
+  appWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
   /** Generic resources available to deployment-local factories. */
   resources?: VoyantNodeRuntimeResources
   applicationId?: string
@@ -299,6 +303,7 @@ export async function loadVoyantNodeRuntime(
     capabilities: resources,
     ports: options.runtimePorts,
     outboundWebhooks: options.outboundWebhooks,
+    appWebhooks: options.appWebhooks,
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,

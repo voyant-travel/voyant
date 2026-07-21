@@ -1,5 +1,6 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import { isExternalWebhookPayloadSchema } from "@voyant-travel/core/project"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import {
   type InfraWebhookDelivery,
@@ -7,12 +8,15 @@ import {
   infraWebhookDeliverySelectSchema,
 } from "@voyant-travel/db/schema/infra"
 import {
+  type CreateWebhookDeliveryWorkerOptions,
   createAppWebhookDeliveryEnvelope,
   createSelectedExternalWebhookQueue,
+  createWebhookDeliveryWorker,
   type ExternalWebhookEventContract,
   hashWebhookPayload,
   isAppWebhookDeliveryEnvelope,
   type WebhookDeliveryStore,
+  type WebhookDeliveryWorker,
   type WebhookEnqueueOutcome,
   type WebhookSigningKey,
   webhookBodyExcerpt,
@@ -20,6 +24,7 @@ import {
 import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { audit } from "./installation-reconciliation.js"
+import type { AppsWebhookDeliveryRuntime } from "./runtime-port.js"
 import { appInstallations, appWebhookSubscriptions } from "./schema.js"
 
 export interface AppWebhookDeliveryOptions {
@@ -62,7 +67,10 @@ export function createAppWebhookDeliveryStore(
       if (existing[0]) {
         return { attempt: infraWebhookDeliverySelectSchema.parse(existing[0]), created: false }
       }
-      const [row] = await db.insert(infraWebhookDeliveriesTable).values(pending(input)).returning()
+      const [row] = await db
+        .insert(infraWebhookDeliveriesTable)
+        .values(pending({ ...input, sourceModule: "apps" }))
+        .returning()
       if (!row) throw new Error("App webhook attempt insert returned no row")
       return { attempt: infraWebhookDeliverySelectSchema.parse(row), created: true }
     },
@@ -137,7 +145,7 @@ export function createAppWebhookDeliveryStore(
 
     async recordSubscriptionOutcome(subscriptionId, succeeded, at) {
       const patch = succeeded
-        ? { lastDeliveryAt: at, failureCount: 0, signingKeyId: null, updatedAt: at }
+        ? { lastDeliveryAt: at, failureCount: 0, updatedAt: at }
         : {
             lastDeliveryAt: at,
             // agent-quality: raw-sql reviewed -- owner: apps; Drizzle supplies the column identifier and no caller-controlled SQL is interpolated.
@@ -194,6 +202,67 @@ export async function enqueueAppWebhookEvent(
   return createAppWebhookEventQueue(db, options).enqueue(event)
 }
 
+export interface CreateAppWebhookDeliveryEnqueuerOptions extends AppWebhookDeliveryOptions {
+  resolveDatabase(bindings: unknown): AnyDrizzleDb
+}
+
+/** Node-host adapter that persists installed-app deliveries without performing HTTP. */
+export function createAppWebhookDeliveryEnqueuer(
+  options: CreateAppWebhookDeliveryEnqueuerOptions,
+): {
+  enqueue(event: EventEnvelope, bindings: unknown): Promise<WebhookEnqueueOutcome[]>
+} {
+  return {
+    enqueue: (event, bindings) => {
+      const selectedContract = options.contracts.find(
+        (contract) =>
+          contract.eventId === event.metadata?.graphEventId &&
+          contract.eventVersion === event.metadata?.graphEventVersion,
+      )
+      return enqueueAppWebhookEvent(
+        options.resolveDatabase(bindings) as PostgresJsDatabase,
+        event,
+        {
+          // The catalog may retain multiple versions of one event type. Framework
+          // subscribers stamp the exact selected graph contract on each delivery,
+          // so construct this queue with that one version instead of collapsing or
+          // ambiguously duplicating the event type.
+          contracts: selectedContract ? [selectedContract] : options.contracts,
+          resolveSigningKey: options.resolveSigningKey,
+          ...(options.terminalFailureThreshold === undefined
+            ? {}
+            : { terminalFailureThreshold: options.terminalFailureThreshold }),
+          ...(options.now ? { now: options.now } : {}),
+        },
+      )
+    },
+  }
+}
+
+export type CreateAppWebhookDeliveryWorkerOptions = Omit<
+  CreateWebhookDeliveryWorkerOptions,
+  "store"
+> & {
+  resolveSigningKey: AppsWebhookDeliveryRuntime["resolveSigningKey"]
+  terminalFailureThreshold?: number
+}
+
+/** Create a worker that claims only app-owned delivery rows. */
+export function createAppWebhookDeliveryWorker(
+  db: AnyDrizzleDb,
+  options: CreateAppWebhookDeliveryWorkerOptions,
+): WebhookDeliveryWorker {
+  const { resolveSigningKey, terminalFailureThreshold, ...workerOptions } = options
+  return createWebhookDeliveryWorker({
+    ...workerOptions,
+    store: createAppWebhookDeliveryStore(db as PostgresJsDatabase, {
+      resolveSigningKey,
+      ...(terminalFailureThreshold === undefined ? {} : { terminalFailureThreshold }),
+      ...(workerOptions.now ? { now: workerOptions.now } : {}),
+    }),
+  })
+}
+
 export async function listAppWebhookHealth(db: PostgresJsDatabase, installationId: string) {
   const subscriptions = await db
     .select()
@@ -208,7 +277,9 @@ export async function replayAppWebhookDelivery(
   input: {
     deliveryId: string
     actorId: string
-    signingKey: WebhookSigningKey
+    expectedInstallationId: string
+    expectedAppId?: string
+    resolveSigningKey: AppWebhookDeliveryOptions["resolveSigningKey"]
   },
 ) {
   return db.transaction(async (tx) => {
@@ -228,10 +299,37 @@ export async function replayAppWebhookDelivery(
     if (installation?.status !== "active") {
       throw new Error("Replay requires an active app installation.")
     }
+    if (
+      installation.id !== input.expectedInstallationId ||
+      (input.expectedAppId !== undefined && installation.appId !== input.expectedAppId)
+    ) {
+      throw new Error("Replay delivery does not belong to the authenticated app installation.")
+    }
+    const [subscription] = await tx
+      .select()
+      .from(appWebhookSubscriptions)
+      .where(
+        and(
+          eq(appWebhookSubscriptions.id, original.subscriptionId ?? ""),
+          eq(appWebhookSubscriptions.installationId, installation.id),
+          eq(appWebhookSubscriptions.status, "active"),
+        ),
+      )
+      .limit(1)
+    if (!subscription?.signingKeyId) {
+      throw new Error("Replay requires an active subscription with a confirmed signing key.")
+    }
+    const signingKey = await input.resolveSigningKey({
+      appId: installation.appId,
+      installationId: installation.id,
+    })
+    if (signingKey.id !== subscription.signingKeyId) {
+      throw new Error("Replay signing key does not match the confirmed subscription key.")
+    }
     const parsedOriginal = infraWebhookDeliverySelectSchema.parse(original)
     const replayed = replayInput(parsedOriginal, original.requestPayload)
     const store = createAppWebhookDeliveryStore(tx, {
-      resolveSigningKey: async () => input.signingKey,
+      resolveSigningKey: async () => signingKey,
     })
     const enqueued = await store.enqueueAttempt(replayed)
     await audit(tx, installation, input.actorId, "reconciliation", "webhooks.replay", {
@@ -254,6 +352,7 @@ async function selectSubscriptionRows(
       appId: appInstallations.appId,
       eventVersion: appWebhookSubscriptions.eventVersion,
       endpointUrl: appWebhookSubscriptions.endpointUrl,
+      signingKeyId: appWebhookSubscriptions.signingKeyId,
     })
     .from(appWebhookSubscriptions)
     .innerJoin(appInstallations, eq(appInstallations.id, appWebhookSubscriptions.installationId))
@@ -271,7 +370,15 @@ async function toWebhookSubscription(
   row: Awaited<ReturnType<typeof selectSubscriptionRows>>[number],
   resolveSigningKey: AppWebhookDeliveryOptions["resolveSigningKey"],
 ) {
+  if (!row.signingKeyId) {
+    throw new Error(`App webhook subscription ${row.id} has no confirmed signing key.`)
+  }
   const key = await resolveSigningKey({ appId: row.appId, installationId: row.installationId })
+  if (key.id !== row.signingKeyId) {
+    throw new Error(
+      `App webhook subscription ${row.id} expects signing key ${row.signingKeyId}, not ${key.id}.`,
+    )
+  }
   return {
     id: row.id,
     url: row.endpointUrl,

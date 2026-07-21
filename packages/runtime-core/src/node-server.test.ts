@@ -1,6 +1,6 @@
 import type { AddressInfo } from "node:net"
 
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { createNodeServer, type NodeServerHandle } from "./node-server.js"
 import { ORIGIN_TRUST_HEADER } from "./trust.js"
@@ -31,6 +31,113 @@ function boot<Env extends Record<string, unknown>>(
 }
 
 describe("createNodeServer", () => {
+  it("starts resident services and idempotently waits for them during explicit shutdown", async () => {
+    let finishStop!: () => void
+    const stopPending = new Promise<void>((resolve) => {
+      finishStop = resolve
+    })
+    const service = {
+      start: vi.fn(),
+      stop: vi.fn(() => stopPending),
+    }
+    const handle = boot({
+      env: {},
+      fetch: () => new Response("app"),
+      residentServices: [service],
+    })
+    await ready(handle)
+
+    expect(service.start).toHaveBeenCalledOnce()
+    const closing = handle.close()
+    expect(handle.close()).toBe(closing)
+    await vi.waitFor(() => expect(service.stop).toHaveBeenCalledOnce())
+
+    let closed = false
+    void closing.then(() => {
+      closed = true
+    })
+    await Promise.resolve()
+    expect(closed).toBe(false)
+
+    finishStop()
+    await closing
+    expect(closed).toBe(true)
+  })
+
+  it.each([
+    "SIGTERM",
+    "SIGINT",
+  ] as const)("uses the same resident-service shutdown path for %s", async (signal) => {
+    const signalHandlers = new Map<string, () => void>()
+    const once = vi.spyOn(process, "once").mockImplementation(((
+      event: string | symbol,
+      listener: (...args: unknown[]) => void,
+    ) => {
+      if (event === "SIGTERM" || event === "SIGINT") {
+        signalHandlers.set(event, () => listener())
+      }
+      return process
+    }) as typeof process.once)
+    const off = vi.spyOn(process, "off").mockImplementation((() => process) as typeof process.off)
+    const exit = vi
+      .spyOn(process, "exit")
+      .mockImplementation((() => undefined as never) as typeof process.exit)
+    let finishStop!: () => void
+    const service = {
+      start: vi.fn(),
+      stop: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finishStop = resolve
+          }),
+      ),
+    }
+
+    try {
+      const handle = boot({
+        env: {},
+        fetch: () => new Response("app"),
+        residentServices: [service],
+      })
+      await ready(handle)
+      signalHandlers.get(signal)?.()
+
+      await vi.waitFor(() => expect(service.stop).toHaveBeenCalledOnce())
+      expect(exit).not.toHaveBeenCalled()
+      finishStop()
+      await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0))
+      expect(off).toHaveBeenCalledWith("SIGTERM", expect.any(Function))
+      expect(off).toHaveBeenCalledWith("SIGINT", expect.any(Function))
+    } finally {
+      once.mockRestore()
+      off.mockRestore()
+      exit.mockRestore()
+    }
+  })
+
+  it("stops already-admitted resident services when service startup fails", async () => {
+    const startupError = new Error("worker startup failed")
+    const admitted = { start: vi.fn(), stop: vi.fn() }
+    const failing = {
+      start: vi.fn(() => {
+        throw startupError
+      }),
+      stop: vi.fn(),
+    }
+
+    expect(() =>
+      boot({
+        env: {},
+        fetch: () => new Response("app"),
+        residentServices: [admitted, failing],
+      }),
+    ).toThrow(startupError)
+    await vi.waitFor(() => {
+      expect(admitted.stop).toHaveBeenCalledOnce()
+      expect(failing.stop).toHaveBeenCalledOnce()
+    })
+  })
+
   it("runs the app fetch with the composed env and a real waitUntil ctx", async () => {
     let sideEffectDone = false
     const handle = boot({

@@ -14,8 +14,10 @@ import { createAppsAdminRoutes } from "./routes.js"
 import {
   type AppsManagedAuthRuntime,
   type AppsManagedMarketplaceRuntime,
+  type AppsWebhookDeliveryRuntime,
   appsManagedAuthRuntimePort,
   appsManagedMarketplaceRuntimePort,
+  appsWebhookDeliveryRuntimePort,
 } from "./runtime-port.js"
 
 export const createAppsApiModule = defineGraphRuntimeFactory(
@@ -35,6 +37,9 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
       : undefined
     const managedMarketplace = hasPort(appsManagedMarketplaceRuntimePort)
       ? await getPort<AppsManagedMarketplaceRuntime>(appsManagedMarketplaceRuntimePort)
+      : undefined
+    const webhookDelivery = hasPort(appsWebhookDeliveryRuntimePort)
+      ? await getPort<AppsWebhookDeliveryRuntime>(appsWebhookDeliveryRuntimePort)
       : undefined
     if (
       managedAuth &&
@@ -63,6 +68,7 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
         ...(managedMarketplace
           ? { managedMarketplace: managedMarketplace.acquisitionResolver }
           : {}),
+        ...(webhookDelivery ? { webhookDelivery } : {}),
         ...(oauthOptions ? { oauth: oauthOptions } : {}),
         ...(managedAuth
           ? {
@@ -99,6 +105,7 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
             customFieldValueLifecycles,
             customFieldValueOperations,
             finance,
+            ...(webhookDelivery ? { webhookDelivery } : {}),
           }),
       },
     } satisfies ApiModule

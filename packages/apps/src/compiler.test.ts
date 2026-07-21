@@ -30,7 +30,10 @@ describe("app manifest compiler", () => {
     const first = compileAppManifest(validManifest)
     const second = compileAppManifest({
       ...validManifest,
-      scopes: { optional: ["invoices:read"], requested: ["bookings:read"] },
+      scopes: {
+        optional: ["invoices:read"],
+        requested: ["app-webhooks:configure", "bookings:read"],
+      },
     })
 
     expect(first.digest).toMatch(/^sha256:/)
@@ -191,5 +194,14 @@ describe("app manifest compiler", () => {
         ],
       }),
     ).toThrow(/local or private hosts/)
+  })
+
+  it("requires webhook apps to request signing-key configuration authority", () => {
+    expect(() =>
+      compileAppManifest({
+        ...validManifest,
+        scopes: { requested: ["bookings:read"], optional: [] },
+      }),
+    ).toThrow(/app-webhooks:configure/)
   })
 })

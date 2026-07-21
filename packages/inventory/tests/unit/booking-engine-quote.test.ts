@@ -12,6 +12,7 @@ import {
   type ResolvedOptionPrice,
   type ResolvedPaxPricingTier,
 } from "../../src/booking-engine/handler.js"
+import { fillMissingBookingItemSellAmounts } from "../../src/booking-engine/handler-support.js"
 
 const product = {
   id: "prod_a",
@@ -562,6 +563,8 @@ describe("createProductsBookingHandler.commit", () => {
             optionId: "opt_suite",
             optionUnitId: "unit_suite",
             quantity: 2,
+            unitSellAmountCents: 5000,
+            totalSellAmountCents: 10000,
           },
         ],
         optionId: "opt_suite",
@@ -572,6 +575,109 @@ describe("createProductsBookingHandler.commit", () => {
         },
       }),
     )
+  })
+
+  it("keeps excluded tax outside persisted booking-item totals", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const handler = createProductsBookingHandler({ createBooking })
+
+    await handler.commit(makeCtx([product]), {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: {
+          optionSelections: [{ optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 1 }],
+        },
+      },
+      pricing: {
+        base_amount: 40000,
+        taxes: 7600,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+        breakdown: {
+          currency: "RON",
+          lines: [
+            {
+              kind: "base",
+              label: "Suite",
+              quantity: 1,
+              unitAmount: 40000,
+              totalAmount: 40000,
+              optionId: "opt_suite",
+              optionUnitId: "unit_suite",
+            },
+          ],
+          taxes: [
+            {
+              label: "VAT",
+              rate: 0.19,
+              amount: 7600,
+              includedInPrice: false,
+              scope: "excluded",
+            },
+          ],
+          subtotal: 40000,
+          taxTotal: 7600,
+          total: 47600,
+        },
+      },
+    })
+
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sellAmountCentsOverride: 40000,
+        itemLines: [
+          expect.objectContaining({
+            unitSellAmountCents: 40000,
+            totalSellAmountCents: 40000,
+          }),
+        ],
+        taxLines: [expect.objectContaining({ amountCents: 7600, includedInPrice: false })],
+      }),
+    )
+  })
+
+  it("rejects accepted pricing when add-ons exceed the sell total", () => {
+    expect(() =>
+      fillMissingBookingItemSellAmounts({
+        itemLines: [{ optionUnitId: "unit_1", quantity: 1 }],
+        pricing: { base_amount: 500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+        targetSellAmountCents: 500,
+        extraLines: [
+          {
+            productExtraId: "extra_1",
+            name: "Impossible extra",
+            quantity: 1,
+            sellCurrency: "RON",
+            totalSellAmountCents: 501,
+          },
+        ],
+      }),
+    ).toThrow(/add-ons exceed the sell total/)
+  })
+
+  it("rejects accepted pricing when explicit item totals exceed the target", () => {
+    expect(() =>
+      fillMissingBookingItemSellAmounts({
+        itemLines: [
+          {
+            optionUnitId: "unit_explicit",
+            quantity: 1,
+            unitSellAmountCents: 501,
+            totalSellAmountCents: 501,
+          },
+          { optionUnitId: "unit_missing", quantity: 1 },
+        ],
+        pricing: { base_amount: 500, taxes: 0, fees: 0, surcharges: 0, currency: "RON" },
+        targetSellAmountCents: 500,
+      }),
+    ).toThrow(/explicit item lines exceed the item total/)
   })
 
   it("commits multiple selected option quantities as item lines without a single option id", async () => {
@@ -610,11 +716,141 @@ describe("createProductsBookingHandler.commit", () => {
       expect.objectContaining({
         optionId: null,
         itemLines: [
-          { optionId: "opt_standard", optionUnitId: "unit_standard", quantity: 1 },
-          { optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 1 },
+          {
+            optionId: "opt_standard",
+            optionUnitId: "unit_standard",
+            quantity: 1,
+            unitSellAmountCents: 14500,
+            totalSellAmountCents: 14500,
+          },
+          {
+            optionId: "opt_suite",
+            optionUnitId: "unit_suite",
+            quantity: 1,
+            unitSellAmountCents: 14500,
+            totalSellAmountCents: 14500,
+          },
         ],
       }),
     )
+  })
+
+  it("persists accepted quote lines and reconciles add-ons and cent rounding exactly", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const handler = createProductsBookingHandler({
+      createBooking,
+      loadAddonCatalog: async () => [
+        {
+          id: "extra_breakfast",
+          name: "Breakfast",
+          kind: "extras" as const,
+          pricingMode: "per_person",
+          unitAmountCents: 500,
+          currency: "RON",
+        },
+      ],
+    })
+
+    const result = await handler.commit(makeCtx([product]), {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: {
+          optionSelections: [
+            { optionId: "opt_standard", optionUnitId: "unit_standard", quantity: 1 },
+            { optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 1 },
+          ],
+        },
+        travelers: [
+          { firstName: "Ada", lastName: "Lovelace", band: "adult" },
+          { firstName: "Grace", lastName: "Hopper", band: "adult" },
+        ],
+        addons: [{ extraId: "extra_breakfast", quantity: 1 }],
+        priceOverride: { amountCents: 40001, reason: "Accepted manual adjustment" },
+      },
+      pricing: {
+        base_amount: 39000,
+        taxes: 1000,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+        breakdown: {
+          currency: "RON",
+          lines: [
+            {
+              kind: "base",
+              label: "Standard",
+              quantity: 1,
+              unitAmount: 30000,
+              totalAmount: 30000,
+              optionId: "opt_standard",
+              optionUnitId: "unit_standard",
+            },
+            {
+              kind: "base",
+              label: "Suite",
+              quantity: 1,
+              unitAmount: 9000,
+              totalAmount: 9000,
+              optionId: "opt_suite",
+              optionUnitId: "unit_suite",
+            },
+            {
+              kind: "addon",
+              label: "Breakfast",
+              quantity: 2,
+              unitAmount: 500,
+              totalAmount: 1000,
+            },
+          ],
+          taxes: [
+            {
+              label: "VAT",
+              rate: 0.025,
+              amount: 1000,
+              includedInPrice: true,
+              scope: "included",
+            },
+          ],
+          subtotal: 39000,
+          taxTotal: 1000,
+          total: 40000,
+        },
+      },
+    })
+
+    expect(result.status).toBe("held")
+    const input = createBooking.mock.calls[0]?.[0]
+    expect(input?.itemLines).toEqual([
+      expect.objectContaining({
+        optionUnitId: "unit_standard",
+        title: "Standard",
+        unitSellAmountCents: 30000,
+        totalSellAmountCents: 30000,
+      }),
+      expect.objectContaining({
+        optionUnitId: "unit_suite",
+        title: "Suite",
+        unitSellAmountCents: 9001,
+        totalSellAmountCents: 9001,
+      }),
+    ])
+    expect(input?.extraLines).toEqual([
+      expect.objectContaining({
+        productExtraId: "extra_breakfast",
+        totalSellAmountCents: 1000,
+      }),
+    ])
+    const persistedTotal = [...(input?.itemLines ?? []), ...(input?.extraLines ?? [])].reduce(
+      (sum, line) => sum + (line.totalSellAmountCents ?? 0),
+      0,
+    )
+    expect(persistedTotal).toBe(40001)
   })
 
   it("threads trips billing and traveler records into the booking bridge", async () => {

@@ -189,6 +189,73 @@ describe("graph runtime composition", () => {
       { deployment: "node" },
     )
   })
+  it("registers installed-app intake from external catalog without operator webhooks", async () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:app-webhook-runtime",
+      entries: {},
+      eventCatalog: {
+        schemaVersion: "voyant.event-catalog.v1",
+        events: [
+          {
+            key: "invoice.issued@1.0.0",
+            id: "@acme/finance#event.invoice.issued",
+            unitId: "@acme/finance",
+            packageName: "@acme/finance",
+            eventType: "invoice.issued",
+            version: "1.0.0",
+            payloadSchema: {
+              type: "object",
+              properties: { invoiceId: { type: "string" } },
+            },
+            visibility: "external",
+            audit: { sourceModule: "finance", category: "domain" },
+            redactedFields: [],
+          },
+        ],
+      },
+      modules: [
+        {
+          id: "@acme/finance",
+          kind: "module",
+          packageName: "@acme/finance",
+          order: 0,
+          selectedIds: {
+            ...EMPTY_SELECTED_IDS,
+            events: ["@acme/finance#event.invoice.issued"],
+          },
+          routes: [],
+        },
+      ],
+      plugins: [],
+      webhookPlan: { inbound: [], outbound: [] },
+    })
+    const enqueue = vi.fn(async () => {})
+    const composition = await composeVoyantGraphRuntime({
+      runtime,
+      capabilities: {},
+      appWebhooks: { enqueue },
+    })
+    const module = composition.modules.find(
+      (candidate) => candidate.module.name === "graph-app-webhooks",
+    )
+    const eventBus = createEventBus()
+    await module?.module.bootstrap?.({ bindings: { deployment: "node" }, eventBus } as never)
+
+    await eventBus.emit("invoice.issued", { invoiceId: "inv_1" })
+
+    expect(enqueue).toHaveBeenCalledOnce()
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "invoice.issued",
+        metadata: expect.objectContaining({
+          graphEventId: "@acme/finance#event.invoice.issued",
+          graphEventVersion: "1.0.0",
+          graphEventSourceModule: "finance",
+        }),
+      }),
+      { deployment: "node" },
+    )
+  })
   it("requires selected inbound webhook APIs to execute through webhookRoutes", async () => {
     const createRuntime = (webhookRoutes: unknown) =>
       createVoyantGraphRuntime({

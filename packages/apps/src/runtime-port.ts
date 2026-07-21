@@ -1,6 +1,48 @@
 import { definePort } from "@voyant-travel/core/project"
 import type { HostVerifiedMarketplaceAcquisition } from "./marketplace-acquisition.js"
 
+export interface AppsWebhookSigningKey {
+  id: string
+  secret: string
+}
+
+/** Host-owned key authority for installed-app webhook signatures. */
+export interface AppsWebhookDeliveryRuntime {
+  issueSigningKey(input: {
+    appId: string
+    installationId: string
+  }): Promise<AppsWebhookSigningKey & { challenge: string }>
+  verifySigningKeyProof(input: {
+    appId: string
+    installationId: string
+    keyId: string
+    challenge: string
+    proof: string
+  }): Promise<boolean>
+  resolveSigningKey(input: {
+    appId: string
+    installationId: string
+  }): Promise<AppsWebhookSigningKey>
+}
+
+export const appsWebhookDeliveryRuntimePort = definePort<AppsWebhookDeliveryRuntime>({
+  id: "apps.webhook-delivery",
+  test(runtime) {
+    if (!runtime || typeof runtime !== "object") {
+      throw new TypeError("apps.webhook-delivery must be an object.")
+    }
+    if (typeof runtime.resolveSigningKey !== "function") {
+      throw new TypeError("apps.webhook-delivery resolveSigningKey must be a function.")
+    }
+    if (typeof runtime.issueSigningKey !== "function") {
+      throw new TypeError("apps.webhook-delivery issueSigningKey must be a function.")
+    }
+    if (typeof runtime.verifySigningKeyProof !== "function") {
+      throw new TypeError("apps.webhook-delivery verifySigningKeyProof must be a function.")
+    }
+  },
+})
+
 /** Persisted host contract for one managed app installation. */
 export interface ManagedAppInstallationBinding {
   workloadEnvironmentId: string

@@ -26,6 +26,7 @@ import {
   appApiFinanceSettlementObservationSchema,
   appApiVersionHeader,
   appApiWebhookReplaySchema,
+  appApiWebhookSigningKeyConfirmSchema,
 } from "./app-api-contracts.js"
 import {
   type AppApiAccessContext,
@@ -33,7 +34,6 @@ import {
   createAppApiService,
   withAppApiDeadline,
 } from "./app-api-service.js"
-import { replayAppWebhookDelivery } from "./webhook-delivery.js"
 
 type Env = {
   Bindings: {
@@ -313,16 +313,26 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
     run(c, service.listWebhookHealth(c.get("db"), appContext(c)), options.deadlineMs),
   )
 
+  routes.post("/webhooks/signing-key/issue", (c) => {
+    c.header("Cache-Control", "no-store")
+    return run(c, service.issueWebhookSigningKey(c.get("db"), appContext(c)), options.deadlineMs)
+  })
+
+  routes.post("/webhooks/signing-key/confirm", async (c) => {
+    c.header("Cache-Control", "no-store")
+    const body = await parseJsonBody(c, appApiWebhookSigningKeyConfirmSchema)
+    return run(
+      c,
+      service.confirmWebhookSigningKey(c.get("db"), appContext(c), body),
+      options.deadlineMs,
+    )
+  })
+
   routes.post("/webhooks/replay", async (c) => {
-    await service.requireAccess(c.get("db"), appContext(c), ["app-webhooks:replay"])
     const body = await parseJsonBody(c, appApiWebhookReplaySchema)
     return run(
       c,
-      replayAppWebhookDelivery(c.get("db"), {
-        deliveryId: body.deliveryId,
-        actorId: appContext(c).appId,
-        signingKey: { id: body.signingKeyId, secret: body.signingSecret },
-      }),
+      service.replayWebhookDelivery(c.get("db"), appContext(c), body.deliveryId),
       options.deadlineMs,
       202,
     )

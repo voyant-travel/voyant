@@ -1,5 +1,5 @@
 import path from "node:path"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it, type Mock, vi } from "vitest"
 import {
   createGeneratedProject,
   getRuntimeCompositionMocks,
@@ -19,6 +19,7 @@ describe("Voyant outbound webhook composition", () => {
 
     const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
       outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+      appWebhooks?: unknown
     }
     expect(options).toMatchObject({
       runtimePorts: mocks.runtimePorts,
@@ -31,6 +32,7 @@ describe("Voyant outbound webhook composition", () => {
     await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
     expect(mocks.createPostgresWebhookDeliveryEnqueuer).toHaveBeenCalledOnce()
     expect(mocks.postgresEnqueue).toHaveBeenCalledWith(event, bindings)
+    expect(options.appWebhooks).toBeUndefined()
   })
 
   it("uses an explicitly selected host enqueuer", async () => {
@@ -56,6 +58,117 @@ describe("Voyant outbound webhook composition", () => {
     await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["hosted"])
     expect(deliverEvent).toHaveBeenCalledWith(event, bindings)
     expect(mocks.createPostgresWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
+  })
+
+  it("composes installed-app delivery from the selected external catalog", async () => {
+    mocks.workflowGraphRuntime = {
+      modules: [
+        {
+          id: "@voyant-travel/apps",
+          packageName: "@voyant-travel/apps",
+          requiredPorts: ["apps.webhook-delivery"],
+        },
+      ],
+      extensions: [],
+      plugins: [],
+      accessCatalog: { resources: [] },
+      eventCatalog: {
+        schemaVersion: "voyant.event-catalog.v1",
+        events: [
+          {
+            id: "@voyant-travel/finance#event.invoice.issued",
+            eventType: "invoice.issued",
+            version: "1.0.0",
+            visibility: "external",
+            payloadSchema: {
+              type: "object",
+              properties: { invoiceId: { type: "string" } },
+            },
+          },
+        ],
+      },
+    }
+    const webhookDelivery = {
+      issueSigningKey: vi.fn(),
+      verifySigningKeyProof: vi.fn(),
+      resolveSigningKey: vi.fn(async () => ({ id: "key_1", secret: "s".repeat(32) })),
+    }
+    const projectRoot = await createGeneratedProject()
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { runtimePorts: { "apps.webhook-delivery": webhookDelivery } },
+    })
+
+    const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
+      outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+      appWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
+    }
+    const event = { name: "invoice.issued" }
+    const bindings = { DATABASE_URL: "postgres://example.invalid/voyant" }
+
+    await expect(options.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
+    await expect(options.appWebhooks.enqueue(event, bindings)).resolves.toEqual(["app-queued"])
+    expect(mocks.createAppWebhookDeliveryEnqueuer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contracts: [
+          expect.objectContaining({
+            eventType: "invoice.issued",
+            eventVersion: "1.0.0",
+          }),
+        ],
+        resolveSigningKey: webhookDelivery.resolveSigningKey,
+      }),
+    )
+
+    expect(mocks.createAppWebhookDeliveryWorker).not.toHaveBeenCalled()
+    const server = project.start()
+    expect(mocks.createAppWebhookDeliveryWorker).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "database" }),
+      { resolveSigningKey: webhookDelivery.resolveSigningKey },
+    )
+    expect(mocks.createAppWebhookDeliveryLoop).toHaveBeenCalledWith(
+      mocks.appWebhookDeliveryWorker,
+      { onError: expect.any(Function) },
+    )
+    expect(mocks.createNodeServer).toHaveBeenCalledWith(
+      expect.objectContaining({ residentServices: [mocks.appWebhookDeliveryLoop] }),
+    )
+    expect(mocks.appWebhookDeliveryLoop.start).toHaveBeenCalledOnce()
+
+    const nodeServer = mocks.createNodeServer.mock.results[0]?.value as { close: Mock }
+    await server.close()
+    expect(nodeServer.close).toHaveBeenCalledOnce()
+    expect(mocks.appWebhookDeliveryLoop.stop).toHaveBeenCalledOnce()
+  })
+
+  it("does not construct a delivery worker when Apps has no webhook runtime port", async () => {
+    mocks.workflowGraphRuntime = {
+      modules: [
+        {
+          id: "@voyant-travel/apps",
+          packageName: "@voyant-travel/apps",
+          requiredPorts: [],
+        },
+      ],
+      extensions: [],
+      plugins: [],
+      accessCatalog: { resources: [] },
+    }
+    const projectRoot = await createGeneratedProject()
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    const server = project.start()
+    expect(mocks.createAppWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
+    expect(mocks.createAppWebhookDeliveryWorker).not.toHaveBeenCalled()
+    expect(mocks.createAppWebhookDeliveryLoop).not.toHaveBeenCalled()
+    expect(mocks.createNodeServer.mock.calls[0]?.[0]).not.toHaveProperty("residentServices")
+    await server.close()
   })
 
   it("does not let a host callback override the explicitly selected Postgres provider", async () => {

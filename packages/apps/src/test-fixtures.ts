@@ -4,7 +4,10 @@ export const validManifest = {
   schemaVersion: "voyant.app-manifest.v1",
   releaseVersion: "1.0.0",
   apiCompatibility: { min: "2026-07-01", max: "2026-12-31" },
-  scopes: { requested: ["bookings:read"], optional: ["invoices:read"] },
+  scopes: {
+    requested: ["app-webhooks:configure", "bookings:read"],
+    optional: ["invoices:read"],
+  },
   admin: {
     pages: [
       {
