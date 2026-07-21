@@ -34,7 +34,8 @@ describe("Postgres graph indexer provider", () => {
     const db = { execute: async () => [] }
     const provider = createPostgresGraphIndexerProvider({
       getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-      getConfig: ((id: string) => (id === VECTOR_STRATEGY_CONFIG_ID ? "pgvector" : undefined)) as never,
+      getConfig: ((id: string) =>
+        id === VECTOR_STRATEGY_CONFIG_ID ? "pgvector" : undefined) as never,
     })
 
     expect(
@@ -52,7 +53,8 @@ describe("Postgres graph indexer provider", () => {
     expect(() =>
       createPostgresGraphIndexerProvider({
         getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-        getConfig: ((id: string) => (id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined)) as never,
+        getConfig: ((id: string) =>
+          id === VECTOR_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
       }),
     ).toThrow("POSTGRES_SEARCH_VECTOR_STRATEGY")
   })
@@ -62,7 +64,8 @@ describe("Postgres graph indexer provider", () => {
     expect(() =>
       createPostgresGraphIndexerProvider({
         getResource: ((id: string) => (id === DATABASE_RESOURCE_ID ? db : undefined)) as never,
-        getConfig: ((id: string) => (id === TYPO_STRATEGY_CONFIG_ID ? "lakebase" : undefined)) as never,
+        getConfig: ((id: string) =>
+          id === TYPO_STRATEGY_CONFIG_ID ? "lakebase" : undefined) as never,
       }),
     ).toThrow("POSTGRES_SEARCH_TYPO_STRATEGY")
   })
