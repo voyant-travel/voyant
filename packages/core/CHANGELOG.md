@@ -1,5 +1,20 @@
 # @voyant-travel/core
 
+## 0.131.0
+
+### Minor Changes
+
+- 9848276: Host package-owned product jobs by default in the standard self-hosted Operator. The Node host consumes the resolved job inventory and fixed runtime handlers, adds authenticated payload-free invocation, schedule recovery, per-job overlap protection, bounded retry, and minimal health state.
+- dffbdad: Add package-owned product jobs to the resolved deployment graph. Selected
+  modules and plugins can declare fixed scheduled or wakeable jobs with named
+  runtime exports, while project config and runtime invocation cannot supply
+  arbitrary handlers, payloads, or workflow controls.
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+
 ## 0.130.0
 
 ### Minor Changes

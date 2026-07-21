@@ -1,5 +1,46 @@
 # @voyant-travel/framework
 
+## 0.61.0
+
+### Minor Changes
+
+- f945310: Migrate the event outbox, channel push, promotion reindex, and product PDF
+  surfaces away from general workflows. Package-owned jobs are payload-free and
+  recover from durable domain records; product PDF generation remains an
+  authenticated, idempotent brochure command. The Node job host now exposes an
+  origin-trusted immutable inventory and best-effort terminal health reporting.
+- 9848276: Host package-owned product jobs by default in the standard self-hosted Operator. The Node host consumes the resolved job inventory and fixed runtime handlers, adds authenticated payload-free invocation, schedule recovery, per-job overlap protection, bounded retry, and minimal health state.
+- dffbdad: Add package-owned product jobs to the resolved deployment graph. Selected
+  modules and plugins can declare fixed scheduled or wakeable jobs with named
+  runtime exports, while project config and runtime invocation cannot supply
+  arbitrary handlers, payloads, or workflow controls.
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+- fafc12e: Add the generated Cloudflare Worker product-job bridge, including fixed trusted
+  inventory/invocation routes, Worker lifetime handling, terminal health callbacks,
+  and an explicit Cloudflare-versus-managed schedule projection. Align distribution
+  recovery with the minimum one-minute hosted scheduler cadence.
+
+### Patch Changes
+
+- Updated dependencies [228b57d]
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/cruises@0.189.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/operator-standard@0.11.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/action-ledger@0.111.13
+  - @voyant-travel/types@0.109.9
+  - @voyant-travel/mcp@0.4.10
+  - @voyant-travel/storage@0.113.2
+
 ## 0.60.0
 
 ### Minor Changes

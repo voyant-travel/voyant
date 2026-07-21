@@ -1,5 +1,36 @@
 # @voyant-travel/inventory
 
+## 0.15.0
+
+### Minor Changes
+
+- f945310: Migrate the event outbox, channel push, promotion reindex, and product PDF
+  surfaces away from general workflows. Package-owned jobs are payload-free and
+  recover from durable domain records; product PDF generation remains an
+  authenticated, idempotent brochure command. The Node job host now exposes an
+  origin-trusted immutable inventory and best-effort terminal health reporting.
+
+### Patch Changes
+
+- Updated dependencies [228b57d]
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/bookings@0.190.0
+  - @voyant-travel/catalog@0.188.0
+  - @voyant-travel/commerce@0.40.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/finance@0.190.0
+  - @voyant-travel/relationships@0.128.30
+  - @voyant-travel/operations@0.8.31
+  - @voyant-travel/operator-settings@0.14.9
+  - @voyant-travel/action-ledger@0.111.13
+  - @voyant-travel/types@0.109.9
+  - @voyant-travel/storage@0.113.2
+
 ## 0.14.28
 
 ### Patch Changes

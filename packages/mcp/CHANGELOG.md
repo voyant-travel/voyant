@@ -1,5 +1,16 @@
 # @voyant-travel/mcp
 
+## 0.4.10
+
+### Patch Changes
+
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/types@0.109.9
+
 ## 0.4.9
 
 ### Patch Changes

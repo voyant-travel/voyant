@@ -1,5 +1,38 @@
 # @voyant-travel/commerce
 
+## 0.40.0
+
+### Minor Changes
+
+- f945310: Migrate the event outbox, channel push, promotion reindex, and product PDF
+  surfaces away from general workflows. Package-owned jobs are payload-free and
+  recover from durable domain records; product PDF generation remains an
+  authenticated, idempotent brochure command. The Node job host now exposes an
+  origin-trusted immutable inventory and best-effort terminal health reporting.
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+
+### Patch Changes
+
+- 228b57d: Migrate package-owned scheduled product operations from workflow registrations to payload-free jobs selected through the deployment graph. The jobs retain durable authority in their owning domains and resolve execution dependencies through package runtime ports.
+- Updated dependencies [228b57d]
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+- Updated dependencies [fafc12e]
+  - @voyant-travel/bookings@0.190.0
+  - @voyant-travel/catalog@0.188.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/distribution@0.180.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/finance@0.190.0
+  - @voyant-travel/types@0.109.9
+
 ## 0.39.25
 
 ### Patch Changes

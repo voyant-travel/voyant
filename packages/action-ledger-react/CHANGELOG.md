@@ -1,5 +1,22 @@
 # @voyant-travel/action-ledger-react
 
+## 0.78.0
+
+### Minor Changes
+
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.190.0
+- @voyant-travel/action-ledger@0.111.13
+- @voyant-travel/inventory-react@0.72.0
+- @voyant-travel/relationships-react@0.190.0
+
 ## 0.77.0
 
 ### Patch Changes
