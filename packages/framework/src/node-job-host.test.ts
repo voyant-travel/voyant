@@ -8,7 +8,9 @@ const jobId = "notifications.deliver"
 
 function jobRuntime(
   handler: () => Promise<void> | void,
-  schedule: { every: string; overlap?: "skip" | "queue" } | { cron: string; timezone?: string } = {
+  schedule:
+    | { every: string | number; overlap?: "skip" | "queue" }
+    | { cron: string; timezone?: string } = {
     every: "5m",
     overlap: "queue",
   },
@@ -53,7 +55,9 @@ function jobRuntime(
 }
 
 function inventory(
-  schedule: { every: string; overlap?: "skip" | "queue" } | { cron: string; timezone?: string } = {
+  schedule:
+    | { every: string | number; overlap?: "skip" | "queue" }
+    | { cron: string; timezone?: string } = {
     every: "5m",
     overlap: "queue",
   },
@@ -89,7 +93,9 @@ describe("Voyant Node product job host", () => {
     })
     const endpoint = `https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}/${encodeURIComponent(jobId)}`
 
-    await expect(host.handleRequest(new Request(endpoint, { method: "POST" }))).resolves.toMatchObject({
+    await expect(
+      host.handleRequest(new Request(endpoint, { method: "POST" })),
+    ).resolves.toMatchObject({
       status: 403,
     })
     await expect(
@@ -112,6 +118,47 @@ describe("Voyant Node product job host", () => {
     expect(host.health()[0]).toMatchObject({ status: "running", lastSource: "wakeup" })
     release()
     await vi.waitFor(() => expect(host.health()[0]?.status).toBe("succeeded"))
+  })
+
+  it("returns the closed managed-registration inventory envelope", async () => {
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(() => {}),
+      jobs: inventory(),
+      originTrustSecret: "secret",
+    })
+    const response = await host.handleRequest(
+      new Request(`https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}`, {
+        headers: { "x-voyant-origin-trust": "secret" },
+      }),
+    )
+    expect(response?.status).toBe(200)
+    await expect(response?.json()).resolves.toEqual({ provisioning: { jobs: inventory() } })
+  })
+
+  it("reports terminal health best-effort without repeating completed domain work", async () => {
+    const handler = vi.fn(async () => {})
+    const reportExecution = vi.fn(async () => {
+      throw new Error("control plane unavailable")
+    })
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      reportExecution,
+    })
+
+    await host.invoke(jobId, "wakeup")
+    await vi.waitFor(() => expect(host.health()[0]?.status).toBe("succeeded"))
+    expect(handler).toHaveBeenCalledOnce()
+    expect(reportExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobId,
+        status: "succeeded",
+        attempts: 1,
+        retryExhausted: false,
+        finishedAt: expect.any(String),
+      }),
+    )
+    expect(host.health()[0]?.lastReportFailure).toBe("control plane unavailable")
   })
 
   it("bounds retries and exposes retry exhaustion without persisting generic runs", async () => {
@@ -169,6 +216,25 @@ describe("Voyant Node product job host", () => {
     await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
     host.stop()
     vi.useRealTimers()
+  })
+
+  it("matches managed cadence parsing for decimals and rejects ambiguous zero cadences", () => {
+    const decimalSchedule = { every: 0.5 }
+    const decimal = createVoyantNodeJobHost({
+      runtime: jobRuntime(() => {}, decimalSchedule),
+      jobs: inventory(decimalSchedule),
+    })
+    expect(() => decimal.start()).not.toThrow()
+    decimal.stop()
+
+    for (const every of ["5 m", "PT", "PT0S"]) {
+      const schedule = { every }
+      const host = createVoyantNodeJobHost({
+        runtime: jobRuntime(() => {}, schedule),
+        jobs: inventory(schedule),
+      })
+      expect(() => host.start()).toThrow(/unsupported every cadence/)
+    }
   })
 
   it("uses standard cron OR semantics for restricted day-of-month and day-of-week", async () => {

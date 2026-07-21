@@ -52,7 +52,7 @@ export const createChannelPushVoyantRuntime = defineGraphRuntimeFactory(async ({
     extension: {
       ...configured.extension,
       bootstrap: async (context: BootstrapContext) => {
-        await runtime.registerWorkflowService(context)
+        await runtime.registerSubscriberRuntime(context)
         await bootstrap?.(context)
       },
     },

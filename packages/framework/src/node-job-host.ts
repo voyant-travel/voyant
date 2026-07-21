@@ -1,4 +1,3 @@
-import type { VoyantGraphJobSchedule } from "@voyant-travel/core/project"
 import { verifyOriginTrust } from "@voyant-travel/runtime-core"
 
 import type { VoyantGraphProvisionedJob } from "./deployment-graph.js"
@@ -8,12 +7,7 @@ import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 export const VOYANT_PRODUCT_JOB_ROUTE = "/__voyant/jobs"
 
 export type VoyantNodeJobInvocationSource = "schedule" | "wakeup" | "recovery"
-export type VoyantNodeJobHealthStatus =
-  | "idle"
-  | "running"
-  | "retrying"
-  | "succeeded"
-  | "failed"
+export type VoyantNodeJobHealthStatus = "idle" | "running" | "retrying" | "succeeded" | "failed"
 
 export interface VoyantNodeJobHealth {
   id: string
@@ -25,6 +19,18 @@ export interface VoyantNodeJobHealth {
   lastSuccessAt?: string
   lastFailureAt?: string
   lastFailure?: string
+  lastReportFailureAt?: string
+  lastReportFailure?: string
+}
+
+export interface VoyantNodeJobExecutionReport {
+  jobId: string
+  status: "succeeded" | "failed"
+  attempts: number
+  retryExhausted: boolean
+  startedAt?: string
+  finishedAt: string
+  error?: string
 }
 
 export interface VoyantNodeJobHostRetryOptions {
@@ -44,6 +50,16 @@ export interface CreateVoyantNodeJobHostOptions {
   schedulerPollMs?: number
   /** Required for the fixed internal HTTP invocation surface. */
   originTrustSecret?: string
+  /** Best-effort terminal execution reporting; failures never repeat domain work. */
+  reportExecution?: (report: VoyantNodeJobExecutionReport) => Promise<void> | void
+  /**
+   * Optional deployment-owned cluster lease. Without it, host serialization is
+   * process-local and resident scheduling is supported only for one replica;
+   * domain handlers must still claim their own durable work.
+   */
+  acquireDistributedLease?: (
+    jobId: string,
+  ) => Promise<{ release(): Promise<void> | void } | undefined>
 }
 
 export interface VoyantNodeJobHost {
@@ -74,7 +90,9 @@ interface JobExecutionState {
  * records remain authoritative; this layer provides only delivery, bounded
  * retry, in-process overlap protection, cadence recovery, and health signals.
  */
-export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions): VoyantNodeJobHost {
+export function createVoyantNodeJobHost(
+  options: CreateVoyantNodeJobHostOptions,
+): VoyantNodeJobHost {
   const inventory = options.jobs.map((job) => structuredClone(job))
   const jobsById = new Map(inventory.map((job) => [job.id, job]))
   assertRuntimeInventoryParity(options.runtime, inventory)
@@ -84,14 +102,10 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
     options.retry?.initialBackoffMs ?? 250,
     "retry.initialBackoffMs",
   )
-  const maxBackoffMs = nonNegativeNumber(
-    options.retry?.maxBackoffMs ?? 5_000,
-    "retry.maxBackoffMs",
-  )
+  const maxBackoffMs = nonNegativeNumber(options.retry?.maxBackoffMs ?? 5_000, "retry.maxBackoffMs")
   const now = options.now ?? (() => new Date())
   const sleep =
-    options.sleep ??
-    ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)))
+    options.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)))
   const schedulerPollMs = positiveInteger(options.schedulerPollMs ?? 1_000, "schedulerPollMs")
   const states = new Map(
     inventory.map((job) => [job.id, { pending: false } satisfies JobExecutionState]),
@@ -112,6 +126,18 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
     health.retryExhausted = false
     delete health.lastFailure
     let backoffMs = initialBackoffMs
+    const startedAt = now().toISOString()
+
+    const report = async (terminal: VoyantNodeJobExecutionReport): Promise<void> => {
+      if (!options.reportExecution) return
+      try {
+        await options.reportExecution(terminal)
+        delete health.lastReportFailure
+      } catch (error) {
+        health.lastReportFailureAt = now().toISOString()
+        health.lastReportFailure = errorMessage(error)
+      }
+    }
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       health.attempts = attempt
@@ -121,31 +147,53 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
         await invokeVoyantGraphJob(options.runtime, jobId, options.ports)
         health.status = "succeeded"
         health.lastSuccessAt = now().toISOString()
+        await report({
+          jobId,
+          status: "succeeded",
+          attempts: attempt,
+          retryExhausted: false,
+          startedAt,
+          finishedAt: health.lastSuccessAt,
+        })
         return
       } catch (error) {
+        const failure = errorMessage(error)
         health.lastFailureAt = now().toISOString()
-        health.lastFailure = errorMessage(error)
+        health.lastFailure = failure
         if (attempt === maxAttempts) {
           health.status = "failed"
           health.retryExhausted = true
+          await report({
+            jobId,
+            status: "failed",
+            attempts: attempt,
+            retryExhausted: true,
+            startedAt,
+            finishedAt: health.lastFailureAt,
+            error: failure.slice(0, 2_000),
+          })
           return
         }
         await sleep(Math.min(backoffMs, maxBackoffMs))
         backoffMs = Math.min(Math.max(backoffMs * 2, 1), maxBackoffMs)
       }
     }
-
   }
 
-  const begin = (jobId: string, source: VoyantNodeJobInvocationSource): Promise<void> => {
+  const begin = (
+    jobId: string,
+    source: VoyantNodeJobInvocationSource,
+    lease?: { release(): Promise<void> | void },
+  ): Promise<void> => {
     const state = requireMapValue(states, jobId)
-    const execution = run(jobId, source).finally(() => {
+    const execution = run(jobId, source).finally(async () => {
+      await lease?.release()
       delete state.running
       if (!state.pending) return
       const pendingSource = state.pendingSource ?? "wakeup"
       state.pending = false
       delete state.pendingSource
-      state.running = begin(jobId, pendingSource)
+      await invoke(jobId, pendingSource)
     })
     state.running = execution
     return execution
@@ -168,7 +216,9 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
       }
       return "skipped"
     }
-    void begin(jobId, source)
+    const distributedLease = await options.acquireDistributedLease?.(jobId)
+    if (options.acquireDistributedLease && !distributedLease) return "skipped"
+    void begin(jobId, source, distributedLease)
     return "started"
   }
 
@@ -193,8 +243,11 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
     requestOriginTrustSecret?: string,
   ): Promise<Response | undefined> => {
     const url = new URL(request.url)
-    if (!url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)) return undefined
-    if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 })
+    if (
+      url.pathname !== VOYANT_PRODUCT_JOB_ROUTE &&
+      !url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)
+    )
+      return undefined
     const trustSecret = (requestOriginTrustSecret ?? options.originTrustSecret)?.trim()
     if (!trustSecret) {
       return new Response("Product job HTTP invocation requires ORIGIN_TRUST_SECRET", {
@@ -204,6 +257,14 @@ export function createVoyantNodeJobHost(options: CreateVoyantNodeJobHostOptions)
     if (!verifyOriginTrust(request, trustSecret)) {
       return new Response("Forbidden: invalid origin trust", { status: 403 })
     }
+    if (url.pathname === VOYANT_PRODUCT_JOB_ROUTE) {
+      if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405 })
+      if (url.search || request.body !== null || request.headers.has("transfer-encoding")) {
+        return new Response("Product job inventory requests do not accept input", { status: 400 })
+      }
+      return Response.json({ provisioning: { jobs: inventory } })
+    }
+    if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 })
     if (url.search || request.body !== null || request.headers.has("transfer-encoding")) {
       return new Response("Product job invocations do not accept request input", { status: 400 })
     }
@@ -304,32 +365,41 @@ function assertRuntimeInventoryParity(
       runtimeJob.wakeup !== job.wakeup ||
       JSON.stringify(runtimeJob.schedule) !== JSON.stringify(job.schedule)
     ) {
-      throw new Error(`Voyant Node job host: provisioning job "${job.id}" has no matching runtime job.`)
+      throw new Error(
+        `Voyant Node job host: provisioning job "${job.id}" has no matching runtime job.`,
+      )
     }
   }
   for (const job of runtimeJobs) {
     if (!inventoryById.has(job.id)) {
-      throw new Error(`Voyant Node job host: runtime job "${job.id}" is absent from provisioning.jobs.`)
+      throw new Error(
+        `Voyant Node job host: runtime job "${job.id}" is absent from provisioning.jobs.`,
+      )
     }
   }
 }
 
 function everyMilliseconds(value: string | number): number {
-  if (typeof value === "number") return positiveInteger(value, "job schedule every")
-  const shorthand = /^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)$/i.exec(value.trim())
+  if (typeof value === "number") {
+    if (Number.isFinite(value) && value > 0) return value
+    throw new Error(
+      "Voyant Node job host: job schedule every must be finite and greater than zero.",
+    )
+  }
+  const shorthand = /^(\d+(?:\.\d+)?)(ms|s|m|h|d)$/i.exec(value.trim())
   if (shorthand) {
     const factors = { ms: 1, s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 }
-    return Number(shorthand[1]) * factors[shorthand[2]!.toLowerCase() as keyof typeof factors]
+    const milliseconds =
+      Number(shorthand[1]) * factors[shorthand[2]!.toLowerCase() as keyof typeof factors]
+    if (milliseconds > 0) return milliseconds
   }
   const iso = /^PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?$/i.exec(
     value.trim(),
   )
   if (iso) {
-    return (
-      Number(iso[1] ?? 0) * 3_600_000 +
-      Number(iso[2] ?? 0) * 60_000 +
-      Number(iso[3] ?? 0) * 1_000
-    )
+    const milliseconds =
+      Number(iso[1] ?? 0) * 3_600_000 + Number(iso[2] ?? 0) * 60_000 + Number(iso[3] ?? 0) * 1_000
+    if (milliseconds > 0) return milliseconds
   }
   throw new Error(`Voyant Node job host: unsupported every cadence "${value}".`)
 }

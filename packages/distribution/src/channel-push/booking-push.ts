@@ -222,7 +222,7 @@ export async function upsertPendingBookingLinks(
 }
 
 /**
- * Drain pending `channel_booking_links` rows for one booking and call
+ * Drain pending or retryable failed `channel_booking_links` rows for one booking and call
  * `adapter.pushBooking()` per link. Idempotent: re-running the
  * processor against the same booking is safe — the `idempotency_key`
  * column ensures retries don't double-push upstream.
@@ -253,7 +253,7 @@ export async function processBookingPush(
     .where(
       and(
         eq(channelBookingLinks.bookingId, input.bookingId),
-        eq(channelBookingLinks.pushStatus, "pending"),
+        inArray(channelBookingLinks.pushStatus, ["pending", "failed"]),
       ),
     )) as Array<{
     link: typeof channelBookingLinks.$inferSelect

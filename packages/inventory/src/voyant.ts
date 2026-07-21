@@ -127,19 +127,6 @@ export const inventoryVoyantModule = defineModule({
       audit: { sourceModule: "inventory", category: "domain" },
     },
   ],
-  workflows: [
-    {
-      id: "products.generate-pdf",
-      config: {
-        defaultRuntime: "node",
-      },
-      source: "@voyant-travel/inventory/workflows",
-      runtime: {
-        entry: "@voyant-travel/inventory/workflows",
-        export: "productsGeneratePdfWorkflow",
-      },
-    },
-  ],
   access: {
     resources: [
       {

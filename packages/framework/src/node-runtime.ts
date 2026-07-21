@@ -59,9 +59,9 @@ import type {
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
 import {
   createVoyantNodeJobHost,
+  VOYANT_PRODUCT_JOB_ROUTE,
   type VoyantNodeJobHealth,
   type VoyantNodeJobHost,
-  VOYANT_PRODUCT_JOB_ROUTE,
 } from "./node-job-host.js"
 import {
   resolveVoyantNodeProviderPlan,
@@ -113,6 +113,8 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?: string
   VOYANT_CLOUD_APP_SLUG?: string
   VOYANT_CLOUD_ENVIRONMENT?: "production" | "preview" | "development"
+  VOYANT_CLOUD_PRODUCT_JOB_HEALTH_URL?: string
+  VOYANT_CLOUD_WORKLOAD_ENVIRONMENT_ID?: string
   ORIGIN_TRUST_SECRET?: string
   PORT?: string
 }
@@ -327,11 +329,13 @@ export async function loadVoyantNodeRuntime(
     outboundWebhooks: options.outboundWebhooks,
     appWebhooks: options.appWebhooks,
   })
+  const managedJobHealthReporter = createManagedJobHealthReporter(env)
   const jobHost = createVoyantNodeJobHost({
     runtime: options.graphRuntime,
     jobs: options.jobs,
     ...(options.runtimePorts ? { ports: options.runtimePorts } : {}),
     ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
+    ...(managedJobHealthReporter ? { reportExecution: managedJobHealthReporter } : {}),
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,
@@ -425,6 +429,30 @@ export async function loadVoyantNodeRuntime(
             ? [jobHost, ...(serverOptions.residentServices ?? [])]
             : serverOptions.residentServices,
       }),
+  }
+}
+
+function createManagedJobHealthReporter(
+  env: VoyantNodeRuntimeEnv,
+):
+  | ((report: import("./node-job-host.js").VoyantNodeJobExecutionReport) => Promise<void>)
+  | undefined {
+  const endpoint = env.VOYANT_CLOUD_PRODUCT_JOB_HEALTH_URL?.trim()
+  const workloadEnvironmentId = env.VOYANT_CLOUD_WORKLOAD_ENVIRONMENT_ID?.trim()
+  const originTrustSecret = env.ORIGIN_TRUST_SECRET?.trim()
+  if (!endpoint || !workloadEnvironmentId || !originTrustSecret) return undefined
+  return async (report) => {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-voyant-origin-trust": originTrustSecret,
+      },
+      body: JSON.stringify({ workloadEnvironmentId, ...report }),
+    })
+    if (!response.ok) {
+      throw new Error(`Managed product job health reporting failed with HTTP ${response.status}.`)
+    }
   }
 }
 
