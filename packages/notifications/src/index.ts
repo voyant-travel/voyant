@@ -20,7 +20,6 @@ import {
   type NotificationsAutoConfirmAndDispatchOptions,
   type NotificationsSubscriberRuntime,
 } from "./subscriber-runtime.js"
-import { NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY } from "./workflow-runtime.js"
 
 export {
   notificationLiquidEngine,
@@ -275,10 +274,6 @@ export const createNotificationsVoyantRuntime = defineGraphRuntimeFactory(async 
     module: {
       ...configured.module,
       bootstrap: async (context: BootstrapContext) => {
-        context.container.register(
-          NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-          provider.resolveReminderWorkflowRuntime(context.bindings as Record<string, unknown>),
-        )
         await bootstrap?.(context)
       },
     },

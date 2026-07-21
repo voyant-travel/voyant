@@ -179,7 +179,6 @@ export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ ap
     module: {
       ...configured.module,
       bootstrap: async (context: BootstrapContext) => {
-        await provider.registerWorkflowService?.(context)
         await bootstrap?.(context)
       },
     },

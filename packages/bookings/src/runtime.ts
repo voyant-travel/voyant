@@ -1,7 +1,4 @@
 import type { CustomFieldsRuntime } from "@voyant-travel/core/custom-fields"
-import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
-import { createDbClient } from "@voyant-travel/db/runtime"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type {
   BookingsAccommodationRuntime,
@@ -10,7 +7,6 @@ import type {
   BookingsRelationshipsRuntime,
   BookingsRuntimeProvider,
 } from "./runtime-port.js"
-import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "./workflow-entry.js"
 
 interface BookingsRuntimeRequirements {
   accommodation: BookingsAccommodationRuntime
@@ -61,16 +57,6 @@ export function createBookingsRuntime(
       customFieldsForWrite: (db) => customFields.resolveRegistryForWrite(db, "booking"),
       overviewItemEnrichers: { accommodation: accommodation.enrichOverviewItems },
     },
-    registerWorkflowService: ({ container, bindings }) => {
-      const env = resolveWorkflowEnvironment(bindings as Record<string, unknown>)
-      container.register(
-        BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-        finance.createStaleBookingHoldsRuntime({
-          resolveDb: () => createWorkflowDb(env),
-          userId: "system",
-        }),
-      )
-    },
   }
 }
 
@@ -81,9 +67,4 @@ export function createBookingRequirementsRuntime(
   return {
     publicRoutes: { resolveProductSnapshot: inventory.resolveProductSnapshot },
   }
-}
-
-function createWorkflowDb(env: Readonly<Record<string, string | undefined>>): PostgresJsDatabase {
-  if (!env.DATABASE_URL) throw new Error("Workflow runtime requires DATABASE_URL")
-  return createDbClient(env.DATABASE_URL, { adapter: "node" }) as PostgresJsDatabase
 }

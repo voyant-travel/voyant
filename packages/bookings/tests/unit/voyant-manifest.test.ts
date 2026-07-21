@@ -7,10 +7,6 @@ import {
   bookingsSupplierVoyantPlugin,
   bookingsVoyantModule,
 } from "../../src/voyant.js"
-import {
-  bookingsExpireStaleHoldsWorkflow,
-  createBookingsExpireStaleHoldsWorkflow,
-} from "../../src/workflow-entry.js"
 
 describe("bookings deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -24,6 +20,7 @@ describe("bookings deployment manifest", () => {
           { id: "action-ledger.booking-drift-runtime" },
           { id: "custom-fields.value-lifecycle" },
           { id: "custom-fields.value-operations" },
+          { id: "bookings.stale-holds-job" },
         ],
       },
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
@@ -31,6 +28,7 @@ describe("bookings deployment manifest", () => {
         { id: "bookings.accommodation.runtime" },
         { id: "custom-fields.runtime" },
         { id: "bookings.finance.runtime" },
+        { id: "bookings.stale-holds-job" },
         { id: "bookings.relationships.runtime" },
       ],
       api: [
@@ -53,22 +51,18 @@ describe("bookings deployment manifest", () => {
       schema: [{ id: "@voyant-travel/bookings#schema" }],
       migrations: [{ id: "@voyant-travel/bookings#migrations" }],
       links: [{ id: "@voyant-travel/bookings#linkable.booking" }],
-      workflows: [
+      jobs: [
         {
           id: "bookings.expire-stale-holds",
-          source: "@voyant-travel/bookings/workflows",
-          config: {
-            schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-          },
+          schedule: { cron: "*/5 * * * *", overlap: "skip" },
           runtime: {
-            entry: "@voyant-travel/bookings/workflows",
-            export: "bookingsExpireStaleHoldsWorkflow",
+            entry: "@voyant-travel/bookings/stale-holds-job",
+            export: "runBookingsExpireStaleHoldsJob",
           },
         },
       ],
     })
 
-    expect(bookingsExpireStaleHoldsWorkflow.id).toBe(bookingsVoyantModule.workflows[0]?.id)
     expectConcreteEventSchemas(bookingsVoyantModule.events)
   })
 
@@ -295,16 +289,6 @@ describe("bookings deployment manifest", () => {
     )
   })
 
-  it("exposes the scheduled stale-hold workflow factory", () => {
-    const definition = createBookingsExpireStaleHoldsWorkflow({
-      resolveDb: () => ({}) as never,
-    })
-    expect(definition.id).toBe("bookings.expire-stale-holds")
-    expect(definition.config.schedule).toEqual({
-      cron: "*/5 * * * *",
-      name: "every-5-minutes",
-    })
-  })
 })
 
 function readApiIds(routes: OpenApiDocumentSource): unknown[] {

@@ -12,6 +12,7 @@ import {
   bookingFullyPaidEventPayloadSchema,
 } from "./event-payload-schemas.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
+import { notificationsReminderJobRuntimePort } from "./reminder-job.js"
 
 const schemaSource = "@voyant-travel/notifications/schema"
 
@@ -20,13 +21,17 @@ export const notificationsVoyantModule = defineModule({
   id: "@voyant-travel/notifications",
   packageName: "@voyant-travel/notifications",
   localId: "notifications",
-  runtimePorts: [requirePort(notificationsRuntimePort)],
+  runtimePorts: [
+    requirePort(notificationsRuntimePort),
+    requirePort(notificationsReminderJobRuntimePort),
+  ],
   provides: {
     capabilities: ["notifications.delivery"],
     ports: [
       providePort(storefrontVerificationRuntimePort),
       providePort(financeNotificationsRuntimePort),
       providePort(notificationsRuntimePort),
+      providePort(notificationsReminderJobRuntimePort),
       providePort(quotesNotificationsRuntimePort),
     ],
   },
@@ -99,36 +104,13 @@ export const notificationsVoyantModule = defineModule({
       export: "notificationSettingsLinkable",
     },
   ],
-  workflows: [
-    {
-      id: "notifications.deliver-reminder",
-      config: {
-        defaultRuntime: "node",
-        retry: {
-          max: 3,
-          backoff: "exponential",
-          maxDelay: "300s",
-        },
-      },
-      source: "@voyant-travel/notifications/workflows",
-      runtime: {
-        entry: "@voyant-travel/notifications/workflows",
-        export: "notificationsDeliverReminderWorkflow",
-      },
-    },
+  jobs: [
     {
       id: "notifications.send-due-reminders",
-      config: {
-        defaultRuntime: "node",
-        schedule: {
-          cron: "0 * * * *",
-          name: "hourly",
-        },
-      },
-      source: "@voyant-travel/notifications/workflows",
+      schedule: { cron: "0 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/notifications/workflows",
-        export: "notificationsSendDueRemindersWorkflow",
+        entry: "@voyant-travel/notifications/reminder-job",
+        export: "runDueNotificationRemindersJob",
       },
     },
   ],

@@ -62,7 +62,7 @@ export function createNotificationsRuntime(
 
 function notificationProviders(
   primitives: VoyantRuntimeHostPrimitives,
-  bindings: Record<string, unknown>,
+  bindings: unknown,
 ): ReadonlyArray<NotificationProvider> {
   const resolver = primitives.config.read(bindings, "notificationProviders")
   return typeof resolver === "function" ? resolver(primitives.env(bindings)) : []

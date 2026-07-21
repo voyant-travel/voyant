@@ -31,6 +31,7 @@ import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "./promotions/runtime-ports.js"
+import { promotionBoundaryJobRuntimePort } from "./promotions/job-boundary-scheduler.js"
 import { createCommerceRuntime } from "./runtime.js"
 import {
   type CommerceCardPaymentRuntime,
@@ -121,6 +122,11 @@ export function createCommerceRuntimePortContribution(
     [promotionsBulkReindexRuntimePort.id]: contribution.then(
       (runtime) => runtime.promotionsBulkReindex,
     ),
+    [promotionBoundaryJobRuntimePort.id]: contribution.then((runtime) => ({
+      withDb: <T>(operation: (db: import("@voyant-travel/db").AnyDrizzleDb) => Promise<T>) =>
+        runtime.promotionRedemptionDatabase.withDb(undefined, operation),
+      createReindexService: () => runtime.promotionsBulkReindex.createService(undefined),
+    })),
   }
 }
 
