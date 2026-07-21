@@ -1,5 +1,11 @@
 # @voyant-travel/trips
 
+## 0.179.1
+
+### Patch Changes
+
+- c2a9f4f: Separate the operator payment callback origin from the customer-facing checkout URL.
+
 ## 0.179.0
 
 ### Patch Changes
