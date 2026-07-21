@@ -52,12 +52,16 @@ export function createTripsRuntimePortContribution(
   const cardPayment = paymentAdapter
     ? Promise.resolve(paymentAdapter).then(createCommerceCardPaymentRuntime)
     : createUnconfiguredCardPaymentRuntime()
+  const flights =
+    host.hasRuntimePort?.(flightsRuntimePort) === false
+      ? undefined
+      : host.getRuntimePort<FlightsRuntime>(flightsRuntimePort)
   const tripsRoutes = Promise.resolve()
     .then(() =>
       Promise.all([
         host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort),
         host.getRuntimePort<CatalogCheckoutApiRuntime>(catalogCheckoutApiRuntimePort),
-        host.getRuntimePort<FlightsRuntime>(flightsRuntimePort),
+        flights,
         Promise.resolve(cardPayment),
       ]),
     )

@@ -33,7 +33,7 @@ export const tripsVoyantModule = defineModule({
     { ...paymentAdapterRuntimePortReference, optional: true },
     catalogRuntimeServicesPortReference,
     catalogCheckoutApiRuntimePortReference,
-    flightsRuntimePortReference,
+    { ...flightsRuntimePortReference, optional: true },
   ],
   api: [
     {
