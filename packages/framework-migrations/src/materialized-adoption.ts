@@ -432,7 +432,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       if (tableNames.includes(table)) {
         unsupported(migration, `table ${table} is created more than once`)
       }
-      if (/\bDEFAULT\s+E'/i.test(create[2] as string)) {
+      if (/\bDEFAULT\s*(?:\(\s*)*E'/i.test(create[2] as string)) {
         unsupported(migration, `E-string default expressions are not supported in table ${table}`)
       }
       tableNames.push(table)

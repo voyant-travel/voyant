@@ -898,6 +898,38 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     expect(ledgerRows).toEqual([])
   })
 
+  it("fails closed for parenthesized E-string defaults", async () => {
+    const source = src("parenthesized-escaped-literal-defaults", [
+      `CREATE TABLE "parenthesized_escaped_literal_defaults" (
+  "id" text PRIMARY KEY NOT NULL,
+  "label" text DEFAULT (( E'a\\'B, C'::text )) NOT NULL
+);`,
+    ])
+    const { client, ledgerRows } = adoptionClient({
+      tables: ["parenthesized_escaped_literal_defaults"],
+      columns: [],
+      constraints: [],
+      indexes: [],
+    })
+
+    await expect(
+      runDeploymentMigrations(
+        client,
+        [source],
+        {},
+        {
+          materializedMigrationAdoptions: [
+            {
+              source: "parenthesized-escaped-literal-defaults",
+              tag: "0000_parenthesized-escaped-literal-defaults",
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow("E-string default expressions are not supported")
+    expect(ledgerRows).toEqual([])
+  })
+
   it("is idempotent and serializes concurrent adopters under the session lock", async () => {
     const { client, events, ledgerRows } = exactClient({ serializeLocks: true })
     const [first, second] = await Promise.all([
