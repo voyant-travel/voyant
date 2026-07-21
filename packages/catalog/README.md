@@ -35,8 +35,13 @@ search services, or catalog runtime services.
   contracts now owned by `@voyant-travel/catalog-contracts/indexer/contract`.
 - **`./indexer/provider`** — the `catalog.indexer` runtime port used by deployment
   composition.
-- **`./indexer/typesense`** — native Typesense `IndexerAdapter`, Voyant's only
-  first-party search implementation and the managed-cloud default.
+- **`./indexer/postgres`** — native Postgres `IndexerAdapter`, the first-party
+  managed-cloud default. It keeps a rebuildable catalog projection in the
+  deployment database and uses the deployment-owned resident pool.
+- **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a
+  selectable first-party provider.
+- **`./indexer/postgres-provider`** — graph provider factory selected by
+  `deployment.providers.search: "postgres"`.
 - **`./indexer/typesense-provider`** — graph provider factory selected by
   `deployment.providers.search: "typesense"`.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
@@ -67,15 +72,17 @@ import { defineConfig } from "@voyant-travel/framework/project"
 export default defineConfig({
   deployment: {
     target: "node",
-    providers: { search: "typesense" },
+    providers: { search: "postgres" },
   },
 })
 ```
 
-`typesense` selects the first-party provider declared by this package and uses
-`TYPESENSE_HOST` plus `TYPESENSE_API_KEY`. The standard self-hosted operator
-configuration uses `search: "none"` until search is enabled; managed-cloud
-defaults select Typesense.
+`postgres` selects the first-party provider declared by this package. It uses
+the same graph-declared Postgres resource as the application and never opens a
+separate database pool from an environment variable. `typesense` remains
+available and uses `TYPESENSE_HOST` plus `TYPESENSE_API_KEY`. The standard
+self-hosted operator configuration uses `search: "none"` until search is
+enabled.
 
 Embedded hosts and tests can supply a custom implementation by selecting
 `deployment.providers.search: "custom"` and passing either an `IndexerAdapter`

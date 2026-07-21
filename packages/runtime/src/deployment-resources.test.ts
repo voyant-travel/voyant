@@ -27,6 +27,69 @@ function primitives(): VoyantRuntimeHostPrimitives {
 }
 
 describe("createVoyantDeploymentResources", () => {
+  it("passes only declared resources into selected provider factories", async () => {
+    const importProvider = vi.fn(async () => ({
+      createProvider: ({ getResource }: { getResource(id: string): unknown }) => ({
+        database: getResource("resource.database"),
+      }),
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:provider-resource",
+      providerSelections: { search: "postgres" },
+      entries: { "@acme/search/provider": importProvider },
+      modules: [
+        {
+          id: "@acme/search",
+          kind: "module",
+          packageName: "@acme/search",
+          order: 0,
+          references: [
+            {
+              id: "search-provider",
+              unitId: "@acme/search",
+              facet: "providers.runtime",
+              entityId: "search.postgres",
+              runtime: { entry: "./provider", export: "createProvider" },
+              importEntry: "@acme/search/provider",
+            },
+          ],
+          resources: [
+            {
+              unitId: "@acme/search",
+              declaration: { id: "resource.database", kind: "database", required: true },
+            },
+          ],
+          providers: [
+            {
+              unitId: "@acme/search",
+              declaration: {
+                id: "search.postgres",
+                port: "catalog.indexer",
+                selection: { role: "search", value: "postgres" },
+                runtime: { entry: "./provider", export: "createProvider" },
+                uses: { resources: ["resource.database"] },
+              },
+              referenceId: "search-provider",
+            },
+          ],
+          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(
+      resolveSelectedGraphProviderPorts(
+        runtime,
+        {},
+        {
+          resolveResource: (resource) => (resource.kind === "database" ? "shared-db" : undefined),
+        },
+      ),
+    ).resolves.toEqual({ "catalog.indexer": { database: "shared-db" } })
+  })
+
   it("lowers the generated runtime ports from the exact injected primitives", () => {
     const hostPrimitives = primitives()
     const createRuntimePorts = vi.fn(() => ({ "example.port": { ready: true } }))

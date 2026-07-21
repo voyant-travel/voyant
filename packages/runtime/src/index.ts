@@ -145,6 +145,10 @@ export async function loadVoyantProject(
         ...(providerPlan.storage === "custom" && options.host?.storage ? ["storage.object"] : []),
       ],
       deploymentValueAliases: { DATABASE_URL: ["DATABASE_URL_DIRECT"] },
+      resolveResource: (resource) =>
+        resource.kind === "database"
+          ? resolveNodeDatabase(rawEnv as unknown as Parameters<typeof resolveNodeDatabase>[0])
+          : undefined,
     },
   )
   const providerPorts = { ...selectedProviderPorts, ...explicitRuntimePorts }

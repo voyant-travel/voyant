@@ -145,7 +145,26 @@ export const catalogVoyantModule = defineModule({
       rotation: "replace-only",
     },
   ],
+  resources: [
+    {
+      id: "@voyant-travel/catalog#resource.database",
+      kind: "database",
+      required: true,
+      config: { purpose: "catalog-search-projection" },
+    },
+  ],
   providers: [
+    {
+      id: "@voyant-travel/catalog#provider.postgres",
+      port: "catalog.indexer",
+      selection: { role: "search", value: "postgres" },
+      uses: { resources: ["@voyant-travel/catalog#resource.database"] },
+      runtime: {
+        entry: "@voyant-travel/catalog/indexer/postgres-provider",
+        export: "createPostgresGraphIndexerProvider",
+      },
+      config: { engine: "postgres" },
+    },
     {
       id: "@voyant-travel/catalog#provider.typesense",
       port: "catalog.indexer",

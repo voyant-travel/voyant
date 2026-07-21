@@ -19,9 +19,15 @@ describe("deployment provider contracts", () => {
     expect(DEPLOYMENT_PROVIDER_CONTRACTS.outboundWebhooks).toEqual(["postgres", "host", "none"])
   })
 
-  it("defaults managed search to the shipped adapter without advertising absent engines", () => {
-    expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.search).toBe("typesense")
-    expect(DEPLOYMENT_PROVIDER_CONTRACTS.search).toEqual(["typesense", "algolia", "custom", "none"])
+  it("defaults managed search to the shipped Postgres adapter while preserving Typesense selection", () => {
+    expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.search).toBe("postgres")
+    expect(DEPLOYMENT_PROVIDER_CONTRACTS.search).toEqual([
+      "postgres",
+      "typesense",
+      "algolia",
+      "custom",
+      "none",
+    ])
   })
 
   it("makes realtime transport selection explicit", () => {
