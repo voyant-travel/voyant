@@ -29,7 +29,7 @@ describe("createAppWebhookDeliveryLoop", () => {
     })
     const loop = createAppWebhookDeliveryLoop(
       { drain, runNext: vi.fn() },
-      { setInterval: setInterval as typeof globalThis.setInterval },
+      { setInterval: setInterval as unknown as typeof globalThis.setInterval },
     )
 
     loop.start()
