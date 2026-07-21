@@ -50,7 +50,9 @@ search services, or catalog runtime services.
   Policy-backed scalar filters are maintained in typed facet rows before search
   candidate generation. A successful full rebuild retains one predecessor per
   slice; deployment maintenance may use the private `rollbackProjection(slice)`
-  operation before steady writes invalidate that rollback snapshot.
+  operation before steady writes invalidate that rollback snapshot. Interrupted
+  bulk streams retain their staged chunks for a retry; `projectionState(slice)`
+  reports the pending staged-document count until atomic publication succeeds.
 - **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a
   selectable first-party provider.
 - **`./indexer/postgres-provider`** — graph provider factory selected by

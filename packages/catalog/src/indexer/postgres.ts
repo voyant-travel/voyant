@@ -72,6 +72,8 @@ export interface PostgresIndexerDiagnostics {
 export interface PostgresProjectionState {
   documentCount: number
   generation: number
+  /** Documents safely staged for a retryable bulk rebuild but not yet published. */
+  stagedDocumentCount: number
   updatedAt: Date | string
 }
 
@@ -108,7 +110,6 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
   let lakebaseTextStorageVerified = textStrategy !== "lakebase"
   let lakebaseTextIndexReady = textStrategy !== "lakebase"
   let storageEnsured = false
-  let rebuildSequence = 0
 
   const ensureStorage = async () => {
     if (storageEnsured) return
@@ -378,7 +379,20 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
     await ensureSlice(slice)
     const [row] = readRows(
       await db.execute(sql`
-        SELECT slices.generation, slices.updated_at, count(documents.id)::integer AS document_count
+        SELECT
+          slices.generation,
+          slices.updated_at,
+          count(documents.id)::integer AS document_count,
+          (
+            SELECT count(*)::integer
+            FROM voyant_catalog_search_rebuild_documents AS staged
+            WHERE staged.rebuild_id = ${rebuildIdForSlice(slice)}
+              AND staged.vertical = slices.vertical
+              AND staged.locale = slices.locale
+              AND staged.audience = slices.audience
+              AND staged.market = slices.market
+              AND staged.channel = slices.channel
+          ) AS staged_document_count
         FROM voyant_catalog_search_slices AS slices
         LEFT JOIN voyant_catalog_search_documents AS documents
           ON documents.vertical = slices.vertical
@@ -391,16 +405,25 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
           AND slices.audience = ${slice.audience}
           AND slices.market = ${slice.market}
           AND slices.channel = ${slice.channel ?? ""}
-        GROUP BY slices.generation, slices.updated_at
+        GROUP BY
+          slices.vertical,
+          slices.locale,
+          slices.audience,
+          slices.market,
+          slices.channel,
+          slices.generation,
+          slices.updated_at
       `),
     ) as Array<{
       document_count: number | string
       generation: number | string
+      staged_document_count: number | string
       updated_at: Date | string
     }>
     return {
       documentCount: Number(row?.document_count ?? 0),
       generation: Number(row?.generation ?? 1),
+      stagedDocumentCount: Number(row?.staged_document_count ?? 0),
       updatedAt: row?.updated_at ?? new Date(0),
     }
   }
@@ -685,9 +708,12 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       }
       await ensureStorage()
       await ensureSlice(slice)
-      const rebuildId = `rebuild-${Date.now().toString(36)}-${(++rebuildSequence).toString(36)}`
+      // The stable id keeps successfully staged chunks available after a
+      // stream/process failure. A retry may resume from the next chunk or
+      // replay the full source; idempotent staging converges in either case.
+      const rebuildId = rebuildIdForSlice(slice)
+      let batch: IndexerDocument[] = []
       try {
-        let batch: IndexerDocument[] = []
         for await (const document of stream) {
           batch.push(document)
           if (batch.length === 100) {
@@ -695,19 +721,23 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
             batch = []
           }
         }
+      } catch (error) {
+        // A stream can fail between chunk boundaries. Commit its final partial
+        // chunk before surfacing the failure so the next invocation can resume.
         await stageRebuildDocuments(db, rebuildId, slice, batch, vectorDimensions)
-        await withOptionalTransaction(db, async (tx) => {
-          await publishStagedRebuild(tx, rebuildId, slice, vectorStrategy, typoStrategy)
-        })
-        await ensureLakebaseTextIndex()
-        await ensureLakebaseVectorIndex()
-        await refreshLakebaseTextStatistics()
-      } finally {
-        await db.execute(sql`
-          DELETE FROM voyant_catalog_search_rebuild_documents
-          WHERE rebuild_id = ${rebuildId}
-        `)
+        throw error
       }
+      await stageRebuildDocuments(db, rebuildId, slice, batch, vectorDimensions)
+      await withOptionalTransaction(db, async (tx) => {
+        await publishStagedRebuild(tx, rebuildId, slice, vectorStrategy, typoStrategy)
+      })
+      await db.execute(sql`
+        DELETE FROM voyant_catalog_search_rebuild_documents
+        WHERE rebuild_id = ${rebuildId}
+      `)
+      await ensureLakebaseTextIndex()
+      await ensureLakebaseVectorIndex()
+      await refreshLakebaseTextStatistics()
     },
   }
 }
@@ -961,6 +991,20 @@ async function replaceTypoTerms(
     )}
     ON CONFLICT DO NOTHING
   `)
+}
+
+function rebuildIdForSlice(slice: IndexerSlice): string {
+  const identity = [
+    slice.vertical,
+    slice.locale,
+    slice.audience,
+    slice.market,
+    slice.channel ?? "",
+  ].join("\u0000")
+  const digest = createHmac("sha256", "voyant-catalog-rebuild-staging")
+    .update(identity)
+    .digest("hex")
+  return `rebuild-${digest}`
 }
 
 async function stageRebuildDocuments(

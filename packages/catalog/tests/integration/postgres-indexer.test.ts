@@ -204,10 +204,19 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
         expect.objectContaining({ id: "new" }),
       ])
       expect(await adapter.projectionGeneration(lifecycleSlice)).toBe(afterRebuild)
+      expect((await adapter.projectionState(lifecycleSlice)).stagedDocumentCount).toBe(1)
+
+      await adapter.bulkReindex(
+        lifecycleSlice,
+        toAsyncIterable([{ id: "resumed", fields: { title: "Resumed projection" } }]),
+      )
+      const resumed = await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })
+      expect(resumed.hits.map(({ id }) => id)).toEqual(["partial", "resumed"])
+      expect((await adapter.projectionState(lifecycleSlice)).stagedDocumentCount).toBe(0)
 
       expect(await adapter.rollbackProjection(lifecycleSlice)).toBe(true)
       expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
-        expect.objectContaining({ id: "old" }),
+        expect.objectContaining({ id: "new" }),
       ])
       expect(await adapter.projectionGeneration(lifecycleSlice)).toBeGreaterThan(afterRebuild)
       expect(await adapter.rollbackProjection(lifecycleSlice)).toBe(false)
