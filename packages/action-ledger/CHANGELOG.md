@@ -1,5 +1,12 @@
 # @voyant-travel/action-ledger
 
+## 0.111.12
+
+### Patch Changes
+
+- 9142b79: Restore the frozen action-ledger baseline migration bytes so databases adopted
+  by the D.2 collector retain their historical content hash on runtime upgrades.
+
 ## 0.111.11
 
 ### Patch Changes
