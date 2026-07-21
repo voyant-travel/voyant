@@ -866,7 +866,7 @@ async function searchKeywordRows(
       SELECT id, fields, embeddings, embedding_model_id, document_text,
         ${keywordScoreSql} AS keyword_score
       FROM voyant_catalog_search_documents
-      WHERE ${slicePredicate(slice, audiences)}
+      WHERE ${documentSlicePredicate(slice, audiences)}
         ${keywordPredicate}
         ${filterPredicate(request.filters ?? [])}
       ORDER BY keyword_score DESC, id
@@ -995,6 +995,21 @@ function slicePredicate(slice: IndexerSlice, audiences: readonly string[] = [sli
     )
     AND market = ${slice.market}
     AND channel = ${slice.channel ?? ""}
+  `
+}
+
+function documentSlicePredicate(slice: IndexerSlice, audiences: readonly string[]) {
+  return sql`
+    voyant_catalog_search_documents.vertical = ${slice.vertical}
+    AND voyant_catalog_search_documents.locale = ${slice.locale}
+    AND voyant_catalog_search_documents.audience IN (
+      ${sql.join(
+        audiences.map((audience) => sql`${audience}`),
+        sql`, `,
+      )}
+    )
+    AND voyant_catalog_search_documents.market = ${slice.market}
+    AND voyant_catalog_search_documents.channel = ${slice.channel ?? ""}
   `
 }
 
@@ -1864,7 +1879,7 @@ async function buildFacets(
         AND voyant_catalog_search_documents.market = facet.market
         AND voyant_catalog_search_documents.channel = facet.channel
         AND voyant_catalog_search_documents.id = facet.document_id
-      WHERE ${slicePredicate(slice, audiences)}
+      WHERE ${documentSlicePredicate(slice, audiences)}
         AND ${matchingDocuments}
         AND facet.field IN (${sql.join(
           facets.map(({ field }) => sql`${field}`),
