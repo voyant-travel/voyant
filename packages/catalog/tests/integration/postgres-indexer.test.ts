@@ -98,6 +98,47 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
     }
   })
 
+  it("prefilters numeric and boolean constraints through typed facet values", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const filterSlice: IndexerSlice = {
+      ...slice,
+      market: `typed-facets-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[filterSlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(filterSlice, registry)
+    await adapter.upsert(filterSlice, [
+      {
+        id: "in-range",
+        fields: { published: true, title: "Island holiday", price: 420 },
+      },
+      {
+        id: "out-of-range",
+        fields: { published: true, title: "Island holiday", price: 900 },
+      },
+      {
+        id: "unpublished",
+        fields: { published: false, title: "Island holiday", price: 300 },
+      },
+    ])
+
+    try {
+      const results = await adapter.search(filterSlice, {
+        filters: [
+          { field: "price", gte: 200, kind: "range", lte: 500 },
+          { field: "published", kind: "eq", value: true },
+        ],
+        mode: "keyword",
+        query: "Island",
+      })
+      expect(results.hits.map(({ id }) => id)).toEqual(["in-range"])
+    } finally {
+      await adapter.admin!.drop(filterSlice)
+    }
+  })
+
   it("rejects tampered opaque keyset cursors", async () => {
     const registry = createIndexerConformanceRegistry()
     const adapter = createPostgresIndexer({

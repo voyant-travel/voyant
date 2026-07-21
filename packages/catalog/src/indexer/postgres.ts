@@ -163,10 +163,20 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         field text NOT NULL,
         value_type text NOT NULL,
         value_text text NOT NULL,
+        value_number numeric,
+        value_boolean boolean,
         PRIMARY KEY (
           vertical, locale, audience, market, channel, document_id, field, value_type, value_text
         )
       )
+    `)
+    await db.execute(sql`
+      ALTER TABLE voyant_catalog_search_facets
+      ADD COLUMN IF NOT EXISTS value_number numeric
+    `)
+    await db.execute(sql`
+      ALTER TABLE voyant_catalog_search_facets
+      ADD COLUMN IF NOT EXISTS value_boolean boolean
     `)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS voyant_catalog_search_terms (
@@ -235,6 +245,20 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         ON voyant_catalog_search_facets (
           vertical, locale, audience, market, channel, field, value_type, value_text
       )
+    `)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS voyant_catalog_search_facets_number_lookup_idx
+        ON voyant_catalog_search_facets (
+          vertical, locale, audience, market, channel, field, value_number, document_id
+        )
+        WHERE value_number IS NOT NULL
+    `)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS voyant_catalog_search_facets_boolean_lookup_idx
+        ON voyant_catalog_search_facets (
+          vertical, locale, audience, market, channel, field, value_boolean, document_id
+        )
+        WHERE value_boolean IS NOT NULL
     `)
     if (typoStrategy === "pgtrgm") {
       if (!typoStorageVerified) {
@@ -807,24 +831,24 @@ async function searchTypoRows(
         ORDER BY terms.term <-> ${query}
         LIMIT ${MAX_CANDIDATES + 1}
       ), typo_documents AS (
-        SELECT DISTINCT ON (documents.id)
-          documents.id,
-          documents.fields,
-          documents.embeddings,
-          documents.embedding_model_id,
-          documents.document_text,
+        SELECT DISTINCT ON (voyant_catalog_search_documents.id)
+          voyant_catalog_search_documents.id,
+          voyant_catalog_search_documents.fields,
+          voyant_catalog_search_documents.embeddings,
+          voyant_catalog_search_documents.embedding_model_id,
+          voyant_catalog_search_documents.document_text,
           1 - typo_candidates.distance AS keyword_score
         FROM typo_candidates
-        INNER JOIN voyant_catalog_search_documents AS documents
-          ON documents.vertical = typo_candidates.vertical
-          AND documents.locale = typo_candidates.locale
-          AND documents.audience = typo_candidates.audience
-          AND documents.market = typo_candidates.market
-          AND documents.channel = typo_candidates.channel
-          AND documents.id = typo_candidates.document_id
+        INNER JOIN voyant_catalog_search_documents
+          ON voyant_catalog_search_documents.vertical = typo_candidates.vertical
+          AND voyant_catalog_search_documents.locale = typo_candidates.locale
+          AND voyant_catalog_search_documents.audience = typo_candidates.audience
+          AND voyant_catalog_search_documents.market = typo_candidates.market
+          AND voyant_catalog_search_documents.channel = typo_candidates.channel
+          AND voyant_catalog_search_documents.id = typo_candidates.document_id
         WHERE TRUE
           ${filterPredicate(request.filters ?? [])}
-        ORDER BY documents.id, typo_candidates.distance
+        ORDER BY voyant_catalog_search_documents.id, typo_candidates.distance
       )
       SELECT * FROM typo_documents
       ORDER BY keyword_score DESC, id
@@ -886,12 +910,14 @@ async function replaceFacetValues(
   if (values.length === 0) return
   await db.execute(sql`
     INSERT INTO voyant_catalog_search_facets (
-      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text,
+      value_number, value_boolean
     ) VALUES ${sql.join(
       values.map(
         (value) => sql`(
           ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
-          ${slice.channel ?? ""}, ${document.id}, ${value.field}, ${value.type}, ${value.text}
+          ${slice.channel ?? ""}, ${document.id}, ${value.field}, ${value.type}, ${value.text},
+          ${value.number}, ${value.boolean}
         )`,
       ),
       sql`, `,
@@ -1014,7 +1040,8 @@ async function publishStagedRebuild(
   }
   await db.execute(sql`
     INSERT INTO voyant_catalog_search_facets (
-      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text,
+      value_number, value_boolean
     )
     SELECT
       staged.vertical,
@@ -1025,7 +1052,15 @@ async function publishStagedRebuild(
       staged.id,
       entry.key,
       jsonb_typeof(value_item.value),
-      value_item.value #>> '{}'
+      value_item.value #>> '{}',
+      CASE
+        WHEN jsonb_typeof(value_item.value) = 'number' THEN (value_item.value #>> '{}')::numeric
+        ELSE NULL
+      END,
+      CASE
+        WHEN jsonb_typeof(value_item.value) = 'boolean' THEN (value_item.value #>> '{}')::boolean
+        ELSE NULL
+      END
     FROM voyant_catalog_search_rebuild_documents AS staged
     CROSS JOIN LATERAL jsonb_each(staged.fields) AS entry(key, value)
     CROSS JOIN LATERAL jsonb_array_elements(
@@ -1197,7 +1232,8 @@ async function rebuildProjectionFacets(
 ): Promise<void> {
   await db.execute(sql`
     INSERT INTO voyant_catalog_search_facets (
-      vertical, locale, audience, market, channel, document_id, field, value_type, value_text
+      vertical, locale, audience, market, channel, document_id, field, value_type, value_text,
+      value_number, value_boolean
     )
     SELECT
       snapshot.vertical,
@@ -1208,7 +1244,15 @@ async function rebuildProjectionFacets(
       snapshot.id,
       entry.key,
       jsonb_typeof(value_item.value),
-      value_item.value #>> '{}'
+      value_item.value #>> '{}',
+      CASE
+        WHEN jsonb_typeof(value_item.value) = 'number' THEN (value_item.value #>> '{}')::numeric
+        ELSE NULL
+      END,
+      CASE
+        WHEN jsonb_typeof(value_item.value) = 'boolean' THEN (value_item.value #>> '{}')::boolean
+        ELSE NULL
+      END
     FROM ${sql.raw(source)} AS snapshot
     CROSS JOIN LATERAL jsonb_each(snapshot.fields) AS entry(key, value)
     CROSS JOIN LATERAL jsonb_array_elements(
@@ -1288,19 +1332,33 @@ function curatedTerms(fields: Record<string, unknown>): string[] {
 }
 
 function facetValues(fields: Record<string, unknown>): Array<{
+  boolean: boolean | null
   field: string
+  number: number | null
   type: "boolean" | "number" | "string"
   text: string
 }> {
   const values = new Map<
     string,
-    { field: string; type: "boolean" | "number" | "string"; text: string }
+    {
+      boolean: boolean | null
+      field: string
+      number: number | null
+      type: "boolean" | "number" | "string"
+      text: string
+    }
   >()
   for (const [field, rawValue] of Object.entries(fields)) {
     for (const value of Array.isArray(rawValue) ? rawValue : [rawValue]) {
-      const type = typeof value
+      const type: "boolean" | "number" | "string" = typeof value
       if (type !== "string" && type !== "number" && type !== "boolean") continue
-      const typedValue = { field, type, text: String(value) } as const
+      const typedValue = {
+        boolean: typeof value === "boolean" ? value : null,
+        field,
+        number: typeof value === "number" ? value : null,
+        type,
+        text: String(value),
+      } as const
       values.set(`${field}\u0000${type}\u0000${typedValue.text}`, typedValue)
     }
   }
@@ -1308,10 +1366,9 @@ function facetValues(fields: Record<string, unknown>): Array<{
 }
 
 /**
- * Push contract filters into the candidate query before ranking. JSONB is the
- * portable representation until a policy-backed field has an explicit typed
- * projection column; the in-memory predicate remains below as a defensive
- * equivalence check for nested contract expressions.
+ * Push contract filters into typed facet rows before ranking. JSONB remains
+ * the structural document payload; the in-memory predicate below is a
+ * defensive equivalence check for nested contract expressions.
  */
 function filterPredicate(filters: readonly SearchFilter[]): SQL {
   if (filters.length === 0) return sql``
@@ -1328,13 +1385,21 @@ function toFilterPredicate(filter: SearchFilter): SQL {
     return sql`(${sql.join(filter.clauses.map(toFilterPredicate), sql` OR `)})`
   }
   if (filter.kind === "range") {
-    // The contract treats `id` as a string, so a numeric range can never
-    // match it. JSON extraction must be parenthesized before its numeric cast.
+    // The contract treats `id` as a string, so a numeric range can never match it.
     if (filter.field === "id") return sql`FALSE`
-    const value = sql`(fields ->> ${filter.field})::numeric`
-    return sql`(
-      ${filter.gte === undefined ? sql`TRUE` : sql`${value} >= ${filter.gte}`}
-      AND ${filter.lte === undefined ? sql`TRUE` : sql`${value} <= ${filter.lte}`}
+    return sql`EXISTS (
+      SELECT 1
+      FROM voyant_catalog_search_facets AS facet
+      WHERE facet.vertical = voyant_catalog_search_documents.vertical
+        AND facet.locale = voyant_catalog_search_documents.locale
+        AND facet.audience = voyant_catalog_search_documents.audience
+        AND facet.market = voyant_catalog_search_documents.market
+        AND facet.channel = voyant_catalog_search_documents.channel
+        AND facet.document_id = voyant_catalog_search_documents.id
+        AND facet.field = ${filter.field}
+        AND facet.value_number IS NOT NULL
+        ${filter.gte === undefined ? sql`` : sql`AND facet.value_number >= ${filter.gte}`}
+        ${filter.lte === undefined ? sql`` : sql`AND facet.value_number <= ${filter.lte}`}
     )`
   }
   if (filter.kind === "eq") return scalarFilterPredicate(filter.field, filter.value)
@@ -1346,11 +1411,23 @@ function toFilterPredicate(filter: SearchFilter): SQL {
 
 function scalarFilterPredicate(field: string, value: string | number | boolean): SQL {
   if (field === "id") return sql`id = ${String(value)}`
-  const encoded = JSON.stringify(value)
-  const arrayEncoded = JSON.stringify([value])
-  return sql`(
-    fields -> ${field} = ${encoded}::jsonb
-    OR fields -> ${field} @> ${arrayEncoded}::jsonb
+  const typedPredicate =
+    typeof value === "number"
+      ? sql`facet.value_number = ${value}`
+      : typeof value === "boolean"
+        ? sql`facet.value_boolean = ${value}`
+        : sql`facet.value_type = 'string' AND facet.value_text = ${value}`
+  return sql`EXISTS (
+    SELECT 1
+    FROM voyant_catalog_search_facets AS facet
+    WHERE facet.vertical = voyant_catalog_search_documents.vertical
+      AND facet.locale = voyant_catalog_search_documents.locale
+      AND facet.audience = voyant_catalog_search_documents.audience
+      AND facet.market = voyant_catalog_search_documents.market
+      AND facet.channel = voyant_catalog_search_documents.channel
+      AND facet.document_id = voyant_catalog_search_documents.id
+      AND facet.field = ${field}
+      AND ${typedPredicate}
   )`
 }
 
@@ -1628,7 +1705,12 @@ async function buildFacets(
       rows
         .filter((row) => row.field === facet.field)
         .map((row) => ({
-          value: row.value_type === "number" ? Number(row.value_text) : row.value_text,
+          value:
+            row.value_type === "number"
+              ? Number(row.value_text)
+              : row.value_type === "boolean"
+                ? row.value_text === "true"
+                : row.value_text,
           count: Number(row.count),
         }))
         .sort(
