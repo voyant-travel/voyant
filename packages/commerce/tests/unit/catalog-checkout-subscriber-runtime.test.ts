@@ -140,7 +140,9 @@ describe("catalog-checkout subscriber runtimes", () => {
     expect(withDb).not.toHaveBeenCalled()
 
     await expect(
-      subscriptions[0]?.handler(event("payment.completed", { bookingId: "booking_2" })),
+      subscriptions[0]?.handler(
+        event("payment.completed", { bookingId: "booking_2", paymentSessionId: "session_2" }),
+      ),
     ).rejects.toBe(error)
     expect(finalize).toHaveBeenCalledOnce()
     expect(logger.error).toHaveBeenCalledWith(
