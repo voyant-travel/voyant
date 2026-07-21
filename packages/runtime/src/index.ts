@@ -6,6 +6,7 @@ import {
   type AppsWebhookDeliveryRuntime,
   appsWebhookDeliveryRuntimePort,
   createAppWebhookDeliveryEnqueuer,
+  createAppWebhookDeliveryWorker,
 } from "@voyant-travel/apps"
 import {
   type CustomerBusinessAccountOnboardingRuntimeProvider,
@@ -38,7 +39,7 @@ import type { StorageProviderResolver } from "@voyant-travel/storage/types"
 import { resolveOutboundWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery"
 import { createPostgresWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery/postgres"
 import { tsImport } from "tsx/esm/api"
-
+import { createAppWebhookDeliveryLoop } from "./app-webhook-delivery-loop.js"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 import {
@@ -123,6 +124,7 @@ export async function loadVoyantProject(
     generated.deployment.providers.customerAuth,
   )
   const authMode = selectedOperatorAuthMode(adminAuthProvider)
+  const reporter = consoleReporter()
   const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
   const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
@@ -233,7 +235,7 @@ export async function loadVoyantProject(
     activeModules: generated.graphRuntime.modules.map((unit) => unit.localId ?? unit.id),
     appName: path.basename(projectRoot),
     authMode,
-    reporter: consoleReporter(),
+    reporter,
     ...(customerBusinessAccountOnboarding ? { customerBusinessAccountOnboarding } : {}),
     resolveEmailSender: options.host?.resolveAuthEmailSender ?? resolveVoyantCloudAuthEmailSender,
     ...(options.host?.resolveCustomerAuthContext
@@ -278,6 +280,24 @@ export async function loadVoyantProject(
       },
     },
   })
+  const createAppWebhookWorkerLoop =
+    appsSelected && appWebhookRuntime
+      ? () =>
+          createAppWebhookDeliveryLoop(
+            createAppWebhookDeliveryWorker(resolveNodeDatabase(runtime.env) as AnyDrizzleDb, {
+              resolveSigningKey: appWebhookRuntime.resolveSigningKey,
+            }),
+            {
+              onError: (error) =>
+                reporter.captureException({
+                  requestId: "app-webhook-delivery-worker",
+                  app: path.basename(projectRoot),
+                  error,
+                  context: { operation: "app-webhook-delivery.drain" },
+                }),
+            },
+          )
+      : undefined
   const clientAssetsDir = await resolveAdminAssetsDir(
     projectRoot,
     artifactRoot,
@@ -311,8 +331,9 @@ export async function loadVoyantProject(
         authRuntime.getCurrentUserForRequest(request, requireVoyantAuthEnv(requestEnv)),
     },
     fetch,
-    start: ({ port } = {}) =>
-      createNodeServer<VoyantNodeRuntimeEnv>({
+    start: ({ port } = {}) => {
+      const deliveryLoop = createAppWebhookWorkerLoop?.()
+      return createNodeServer<VoyantNodeRuntimeEnv>({
         fetch: (request, env, ctx) => web.fetch(request, env, toExecutionContext(ctx)),
         scheduled: (event, bindings, ctx) =>
           dispatchScheduledProjectJob({
@@ -327,10 +348,12 @@ export async function loadVoyantProject(
           }),
         env: runtime.env,
         port,
+        ...(deliveryLoop ? { residentServices: [deliveryLoop] } : {}),
         ...(runtime.env.ORIGIN_TRUST_SECRET
           ? { originTrustSecret: runtime.env.ORIGIN_TRUST_SECRET }
           : {}),
-      }),
+      })
+    },
   }
 }
 

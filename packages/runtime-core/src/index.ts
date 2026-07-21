@@ -15,6 +15,7 @@ export { createMemoryKvNamespace } from "./memory-kv.js"
 export type {
   CreateNodeServerOptions,
   NodeServerHandle,
+  NodeServerResidentService,
   ScheduledHandlerArgs,
 } from "./node-server.js"
 export {

@@ -14,6 +14,10 @@ interface RuntimeCompositionMocks {
   postgresEnqueue: Mock
   appEnqueue: Mock
   createAppWebhookDeliveryEnqueuer: Mock
+  createAppWebhookDeliveryWorker: Mock
+  createAppWebhookDeliveryLoop: Mock
+  appWebhookDeliveryWorker: { drain: Mock; runNext: Mock }
+  appWebhookDeliveryLoop: { poll: Mock; start: Mock; stop: Mock }
   createPostgresWebhookDeliveryEnqueuer: Mock
   deploymentProviders: Record<string, string>
   loadVoyantNodeRuntime: Mock
@@ -66,10 +70,24 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
       app(request: Request, env: unknown, ctx: unknown): Promise<Response>
     }>,
     authRuntimeOptions: [] as Array<Record<string, unknown>>,
-    createNodeServer: vi.fn((_options: unknown) => ({ close: vi.fn(), port: 8080 })),
+    createNodeServer: vi.fn(
+      (options: { residentServices?: Array<{ start(): void; stop(): void | Promise<void> }> }) => {
+        for (const service of options.residentServices ?? []) service.start()
+        return {
+          close: vi.fn(async () => {
+            await Promise.all((options.residentServices ?? []).map((service) => service.stop()))
+          }),
+          port: 8080,
+        }
+      },
+    ),
     postgresEnqueue: vi.fn(async () => ["queued"]),
     appEnqueue: vi.fn(async () => ["app-queued"]),
     createAppWebhookDeliveryEnqueuer: vi.fn(),
+    createAppWebhookDeliveryWorker: vi.fn(),
+    createAppWebhookDeliveryLoop: vi.fn(),
+    appWebhookDeliveryWorker: { drain: vi.fn(), runNext: vi.fn() },
+    appWebhookDeliveryLoop: { poll: vi.fn(), start: vi.fn(), stop: vi.fn() },
     createPostgresWebhookDeliveryEnqueuer: vi.fn(),
     deploymentProviders: {
       adminAuth: "better-auth",
@@ -126,6 +144,11 @@ vi.mock("@voyant-travel/apps", () => ({
     },
   },
   createAppWebhookDeliveryEnqueuer: mocks.createAppWebhookDeliveryEnqueuer,
+  createAppWebhookDeliveryWorker: mocks.createAppWebhookDeliveryWorker,
+}))
+
+vi.mock("./app-webhook-delivery-loop.js", () => ({
+  createAppWebhookDeliveryLoop: mocks.createAppWebhookDeliveryLoop,
 }))
 
 vi.mock("@voyant-travel/auth/node-runtime", () => ({
@@ -294,6 +317,8 @@ beforeEach(() => {
     enqueue: mocks.postgresEnqueue,
   })
   mocks.createAppWebhookDeliveryEnqueuer.mockReturnValue({ enqueue: mocks.appEnqueue })
+  mocks.createAppWebhookDeliveryWorker.mockReturnValue(mocks.appWebhookDeliveryWorker)
+  mocks.createAppWebhookDeliveryLoop.mockReturnValue(mocks.appWebhookDeliveryLoop)
 })
 
 afterEach(async () => {

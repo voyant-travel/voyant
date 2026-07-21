@@ -217,11 +217,17 @@ These provider selections are durable intake boundaries, not HTTP delivery.
 The package workers own payload hydration, claiming, signing, retry attempts,
 and delivery/subscription outcomes. The app worker claims only rows whose
 source module is `apps`; the generic worker cannot hydrate app subscription
-authority. Deployments must schedule both workers when both intake families are
-enabled. Until the corresponding worker runs, pending rows remain observable
-delivery intents and no external request is made. Generic and app intake
-handlers fail independently through EventBus reporting, so one durable-write
-failure cannot suppress the sibling intake attempt.
+authority. When Apps and its `apps.webhook-delivery` runtime port are selected,
+the standard resident Node host starts the app worker, drains once immediately,
+and continues on a non-overlapping polling cadence. Durable claims coordinate
+multiple host replicas. A failed drain is reported without stopping later
+polls, and both explicit and signal-driven server shutdown stop the poller and
+await its active drain. A replacement host must provide the same lifecycle.
+The generic worker remains deployment-scheduled separately. Until the
+corresponding worker runs, pending rows remain observable delivery intents and
+no external request is made. Generic and app intake handlers fail independently
+through EventBus reporting, so one durable-write failure cannot suppress the
+sibling intake attempt.
 
 ### 9. Defer event priority until durable queued delivery exists
 

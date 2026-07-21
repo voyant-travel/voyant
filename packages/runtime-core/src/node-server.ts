@@ -64,6 +64,13 @@ export interface CreateNodeServerOptions<Env> {
   originTrustSecret?: string
   /** Milliseconds to wait for in-flight `waitUntil` work on shutdown. Default 10s. */
   drainTimeoutMs?: number
+  /** Resident services started with the server and stopped by every shutdown path. */
+  residentServices?: readonly NodeServerResidentService[]
+}
+
+export interface NodeServerResidentService {
+  start(): void
+  stop(): void | Promise<void>
 }
 
 export interface NodeServerHandle {
@@ -113,13 +120,30 @@ export function createNodeServer<Env>(options: CreateNodeServerOptions<Env>): No
 
   const server = serve({ fetch: handler, port })
 
+  const startedServices: NodeServerResidentService[] = []
   let closing: Promise<void> | undefined
   const close = (): Promise<void> => {
     closing ??= (async () => {
-      await new Promise<void>((resolve, reject) => {
+      process.off("SIGTERM", onSignal)
+      process.off("SIGINT", onSignal)
+      const serverClosed = new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()))
       })
-      await registry.drain(options.drainTimeoutMs)
+      const results = await Promise.allSettled([
+        serverClosed,
+        ...startedServices.map(async (service) => service.stop()),
+      ])
+      let drainFailure: { reason: unknown } | undefined
+      try {
+        await registry.drain(options.drainTimeoutMs)
+      } catch (error) {
+        drainFailure = { reason: error }
+      }
+      const shutdownFailure = results.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      )
+      if (shutdownFailure) throw shutdownFailure.reason
+      if (drainFailure) throw drainFailure.reason
     })()
     return closing
   }
@@ -132,6 +156,15 @@ export function createNodeServer<Env>(options: CreateNodeServerOptions<Env>): No
   }
   process.once("SIGTERM", onSignal)
   process.once("SIGINT", onSignal)
+  try {
+    for (const service of options.residentServices ?? []) {
+      startedServices.push(service)
+      service.start()
+    }
+  } catch (error) {
+    void close().catch(() => {})
+    throw error
+  }
 
   return { server, registry, port, close }
 }

@@ -1,5 +1,5 @@
 import path from "node:path"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it, type Mock, vi } from "vitest"
 import {
   createGeneratedProject,
   getRuntimeCompositionMocks,
@@ -94,7 +94,7 @@ describe("Voyant outbound webhook composition", () => {
       resolveSigningKey: vi.fn(async () => ({ id: "key_1", secret: "s".repeat(32) })),
     }
     const projectRoot = await createGeneratedProject()
-    await loadVoyantProject({
+    const project = await loadVoyantProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
@@ -121,6 +121,54 @@ describe("Voyant outbound webhook composition", () => {
         resolveSigningKey: webhookDelivery.resolveSigningKey,
       }),
     )
+
+    expect(mocks.createAppWebhookDeliveryWorker).not.toHaveBeenCalled()
+    const server = project.start()
+    expect(mocks.createAppWebhookDeliveryWorker).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "database" }),
+      { resolveSigningKey: webhookDelivery.resolveSigningKey },
+    )
+    expect(mocks.createAppWebhookDeliveryLoop).toHaveBeenCalledWith(
+      mocks.appWebhookDeliveryWorker,
+      { onError: expect.any(Function) },
+    )
+    expect(mocks.createNodeServer).toHaveBeenCalledWith(
+      expect.objectContaining({ residentServices: [mocks.appWebhookDeliveryLoop] }),
+    )
+    expect(mocks.appWebhookDeliveryLoop.start).toHaveBeenCalledOnce()
+
+    const nodeServer = mocks.createNodeServer.mock.results[0]?.value as { close: Mock }
+    await server.close()
+    expect(nodeServer.close).toHaveBeenCalledOnce()
+    expect(mocks.appWebhookDeliveryLoop.stop).toHaveBeenCalledOnce()
+  })
+
+  it("does not construct a delivery worker when Apps has no webhook runtime port", async () => {
+    mocks.workflowGraphRuntime = {
+      modules: [
+        {
+          id: "@voyant-travel/apps",
+          packageName: "@voyant-travel/apps",
+          requiredPorts: [],
+        },
+      ],
+      extensions: [],
+      plugins: [],
+      accessCatalog: { resources: [] },
+    }
+    const projectRoot = await createGeneratedProject()
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    const server = project.start()
+    expect(mocks.createAppWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
+    expect(mocks.createAppWebhookDeliveryWorker).not.toHaveBeenCalled()
+    expect(mocks.createAppWebhookDeliveryLoop).not.toHaveBeenCalled()
+    expect(mocks.createNodeServer.mock.calls[0]?.[0]).not.toHaveProperty("residentServices")
+    await server.close()
   })
 
   it("does not let a host callback override the explicitly selected Postgres provider", async () => {
