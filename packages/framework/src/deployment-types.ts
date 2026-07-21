@@ -59,7 +59,7 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   database: "postgres",
   storage: "s3-compatible",
   cache: "redis",
-  sharedState: "redis",
+  sharedState: "postgres",
   rateLimit: "redis",
   search: "postgres",
   email: "voyant-cloud",

@@ -262,6 +262,68 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
     expect(subscriptions.every(({ status }) => status === "inactive")).toBe(true)
   })
 
+  it("activates a consented release upgrade and fails legacy keyless webhooks closed", async () => {
+    const { appId, releaseV1, releaseV2 } = await seedAppWithReleases()
+    const installation = await installV1(appId, releaseV1.id)
+    await db
+      .update(appWebhookSubscriptions)
+      .set({
+        status: "active",
+        signingKeyId: null,
+        pausedAt: null,
+        deactivatedAt: null,
+      })
+      .where(eq(appWebhookSubscriptions.installationId, installation.id))
+
+    const upgraded = await app.request(
+      `/installations/${installation.id}/activate`,
+      json({
+        actorId: "actor_1",
+        releaseId: releaseV2.id,
+        grantedRequiredScopes: ["customers:read"],
+        grantedOptionalScopes: [],
+        updatePolicy: "manual",
+      }),
+    )
+    expect(upgraded.status).toBe(200)
+    const body = (await upgraded.json()) as {
+      data: {
+        installation: { id: string; releaseId: string; status: string; updatePolicy: string }
+        outcome: string
+        missingScopes: string[]
+      }
+    }
+    expect(body.data).toMatchObject({
+      installation: {
+        id: installation.id,
+        releaseId: releaseV2.id,
+        status: "active",
+        updatePolicy: "manual",
+      },
+      outcome: "upgraded",
+      missingScopes: [],
+    })
+
+    const subscriptions = await db
+      .select({
+        status: appWebhookSubscriptions.status,
+        signingKeyId: appWebhookSubscriptions.signingKeyId,
+      })
+      .from(appWebhookSubscriptions)
+      .where(eq(appWebhookSubscriptions.installationId, installation.id))
+    expect(subscriptions).not.toHaveLength(0)
+    expect(subscriptions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ status: "inactive", signingKeyId: null })]),
+    )
+
+    const retry = await app.request(
+      `/installations/${installation.id}/activate`,
+      json({ actorId: "actor_1", releaseId: releaseV2.id }),
+    )
+    expect(retry.status).toBe(200)
+    expect((await retry.json()).data.outcome).toBe("unchanged")
+  })
+
   it("creates an active installation via /install", async () => {
     const { appId, releaseV1 } = await seedAppWithReleases()
     const response = await app.request(

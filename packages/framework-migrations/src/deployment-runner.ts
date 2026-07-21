@@ -6,18 +6,41 @@
  *   1. detects whether the database is FRESH or an EXISTING pre-collector deployment
  *      (a `framework/*` ledger row from the retired monolithic bundle, or the legacy
  *      `drizzle.__drizzle_migrations`);
- *   2. on EXISTING, gates the import-baseline with a schema-parity check over
- *      exactly the cutline-covered migrations (so we never record a baseline the
- *      DB doesn't actually have);
- *   3. runs {@link applyMigrations}.
+ *   2. on EXISTING, executes a newly-added source from the beginning only when
+ *      it has no ledger lineage and its whole schema footprint is absent;
+ *   3. gates every other import-baseline with a schema-parity check over exactly
+ *      the cutline-covered migrations (so we never record a baseline the DB
+ *      doesn't actually have);
+ *   4. runs {@link applyMigrations}.
  *
  * Free of dotenv/config/process concerns so it can be driven against an
  * arbitrary database in tests. See docs/architecture/migration-collector-d2.md.
  */
 
 import type { MigrationClient, MigrationSource } from "./collector.js"
-import { applyMigrations, planMigrations, VOYANT_MIGRATION_JOURNAL_LINEAGE } from "./collector.js"
+import {
+  applyMigrations,
+  MigrationImmutabilityError,
+  type PlannedMigration,
+  planMigrations,
+  VOYANT_MIGRATION_JOURNAL_LINEAGE,
+} from "./collector.js"
 import type { Cutline } from "./cutline.js"
+import {
+  classifyMaterializedMigration,
+  type MaterializedMigrationAdoption,
+} from "./materialized-adoption.js"
+
+export interface RunDeploymentMigrationsOptions {
+  onApplied?: (id: string) => void
+  onBaselined?: (id: string) => void
+  /**
+   * Exact migrations whose immutable DDL may already be materialized outside
+   * the collector ledger. Only these identities are eligible for exact-footprint
+   * adoption; omission preserves the normal execute path.
+   */
+  materializedMigrationAdoptions?: readonly MaterializedMigrationAdoption[]
+}
 
 export interface RunResult {
   /** True if the EXISTING (import-baseline) path was taken. */
@@ -26,6 +49,8 @@ export interface RunResult {
   executed: string[]
   /** `"{source}/{tag}"` ids import-baselined (recorded, not executed) this run. */
   baselined: string[]
+  /** Allowlisted materialized migrations included in `baselined`. */
+  adopted: string[]
 }
 
 /** Row count of a ledger table (0 if it doesn't exist), optional WHERE. */
@@ -42,18 +67,146 @@ async function ledgerRowCount(
   return Number((count.rows[0]?.n as string | undefined) ?? 0)
 }
 
+const collectorLedger =
+  `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}".` +
+  `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}"`
+
+async function recordedCollectorSources(client: MigrationClient): Promise<Set<string>> {
+  const exists = await client.query(`SELECT to_regclass($1) AS reg`, [
+    `${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}.${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}`,
+  ])
+  if (!exists.rows[0]?.reg) return new Set()
+  const rows = await client.query(`SELECT DISTINCT "source" FROM ${collectorLedger}`)
+  return new Set(rows.rows.map((row) => String(row.source)))
+}
+
+interface AdoptionCandidate {
+  migration: PlannedMigration
+  source: MigrationSource
+}
+
+function resolveAdoptionCandidates(
+  sources: MigrationSource[],
+  adoptions: readonly MaterializedMigrationAdoption[],
+): AdoptionCandidate[] {
+  const requested = new Set<string>()
+  for (const adoption of adoptions) {
+    const id = `${adoption.source}/${adoption.tag}`
+    if (requested.has(id)) throw new Error(`duplicate materialized migration adoption: ${id}`)
+    requested.add(id)
+  }
+  const sourceByName = new Map(sources.map((source) => [source.name, source]))
+  const candidates: AdoptionCandidate[] = []
+  for (const migration of planMigrations(sources)) {
+    const id = `${migration.source}/${migration.tag}`
+    if (!requested.delete(id)) continue
+    const source = sourceByName.get(migration.source)
+    if (!source) throw new Error(`migration source disappeared while resolving ${id}`)
+    candidates.push({ migration, source })
+  }
+  if (requested.size > 0) {
+    throw new Error(
+      `unknown materialized migration adoption(s): ${[...requested].sort().join(", ")}. ` +
+        "Every adoption must name an exact source/tag in the current migration plan.",
+    )
+  }
+  return candidates
+}
+
+async function pendingAdoptionCandidates(
+  client: MigrationClient,
+  candidates: readonly AdoptionCandidate[],
+): Promise<AdoptionCandidate[]> {
+  if (candidates.length === 0) return []
+  const exists = await client.query(`SELECT to_regclass($1) AS reg`, [
+    `${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}.${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}`,
+  ])
+  if (!exists.rows[0]?.reg) return [...candidates]
+
+  const pending: AdoptionCandidate[] = []
+  for (const candidate of candidates) {
+    const ledgerSources = [
+      ...new Set([candidate.migration.source, ...(candidate.migration.legacySources ?? [])]),
+    ]
+    const seen = await client.query(
+      `SELECT "source", "content_hash" FROM ${collectorLedger}
+        WHERE "source" = ANY($1::text[]) AND "tag" = $2`,
+      [ledgerSources, candidate.migration.tag],
+    )
+    if (seen.rows.length === 0) {
+      pending.push(candidate)
+      continue
+    }
+    for (const row of seen.rows) {
+      const ledgerHash = String(row.content_hash ?? "")
+      if (ledgerHash !== candidate.migration.contentHash) {
+        throw new MigrationImmutabilityError(
+          candidate.migration.source,
+          candidate.migration.tag,
+          ledgerHash,
+          candidate.migration.contentHash,
+        )
+      }
+    }
+  }
+  return pending
+}
+
+function sourcesForAdoptions(candidates: readonly AdoptionCandidate[]): MigrationSource[] {
+  const tagsBySource = new Map<string, Set<string>>()
+  for (const candidate of candidates) {
+    const tags = tagsBySource.get(candidate.source.name) ?? new Set<string>()
+    tags.add(candidate.migration.tag)
+    tagsBySource.set(candidate.source.name, tags)
+  }
+  return [...new Set(candidates.map((candidate) => candidate.source))]
+    .map((source) => ({
+      ...source,
+      migrations: source.migrations.filter((migration) =>
+        tagsBySource.get(source.name)?.has(migration.tag),
+      ),
+    }))
+    .filter((source) => source.migrations.length > 0)
+}
+
+const deploymentMigrationLockKey = "voyant.framework-migrations.runDeploymentMigrations"
+
+async function withDeploymentMigrationLock<T>(
+  client: MigrationClient,
+  run: () => Promise<T>,
+): Promise<T> {
+  await client.query(`SELECT pg_advisory_lock(hashtextextended($1::text, 0))`, [
+    deploymentMigrationLockKey,
+  ])
+  const unlock = () =>
+    client.query(`SELECT pg_advisory_unlock(hashtextextended($1::text, 0))`, [
+      deploymentMigrationLockKey,
+    ])
+  try {
+    const result = await run()
+    await unlock()
+    return result
+  } catch (error) {
+    try {
+      await unlock()
+    } catch {
+      // Preserve the migration failure; the session will close and release locks.
+    }
+    throw error
+  }
+}
+
 /**
  * EXISTING when the retired monolithic bundle or the legacy runner already materialised
  * this schema: a `framework/*` collector-ledger row, or the pre-collector
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
 export async function detectExisting(client: MigrationClient): Promise<boolean> {
-  const ledger = `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}"."${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}"`
-  const frameworkRows = await ledgerRowCount(client, ledger, `"source" = 'framework'`)
+  const frameworkRows = await ledgerRowCount(client, collectorLedger, `"source" = 'framework'`)
   if (frameworkRows > 0) return true
   const graphSchemaRows = await ledgerRowCount(
     client,
-    ledger,
+    collectorLedger,
     `"source" LIKE 'schema:%#migrations'`,
   )
   if (graphSchemaRows > 0) return true
@@ -66,6 +219,50 @@ interface ExpectedSchema {
   dropped: Set<string>
   columns: Set<string>
   droppedConstraints: Set<string>
+}
+
+interface LiveSchema {
+  tables: Set<string>
+  columns: Set<string>
+  constraints: Set<string>
+}
+
+async function readLiveSchema(client: MigrationClient): Promise<LiveSchema> {
+  const liveTablesRows = await client.query(
+    `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
+  )
+  const liveColsRows = await client.query(
+    `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public'`,
+  )
+  const liveConstraintRows = await client.query(
+    `SELECT c.conname FROM pg_constraint c
+       JOIN pg_namespace n ON n.oid = c.connamespace
+      WHERE n.nspname = 'public'`,
+  )
+  return {
+    tables: new Set(liveTablesRows.rows.map((row) => String(row.table_name))),
+    columns: new Set(
+      liveColsRows.rows.map((row) => `${String(row.table_name)}.${String(row.column_name)}`),
+    ),
+    constraints: new Set(liveConstraintRows.rows.map((row) => String(row.conname))),
+  }
+}
+
+/**
+ * A source may join an existing deployment when a managed profile expands.
+ * It is safe to execute that source from the beginning only when it has no
+ * ledger lineage and its entire schema footprint is absent. Anything partial
+ * stays on the ordinary parity-gated baseline path and is rejected there.
+ */
+function isWhollyAbsentSource(source: MigrationSource, live: LiveSchema): boolean {
+  const expected = expectedSchema([source])
+  if (expected.tables.size === 0) return false
+  return (
+    [...expected.tables].every((table) => !live.tables.has(table)) &&
+    [...expected.columns].every((column) => !live.columns.has(column)) &&
+    [...expected.dropped].every((table) => !live.tables.has(table)) &&
+    [...expected.droppedConstraints].every((constraint) => !live.constraints.has(constraint))
+  )
 }
 
 /**
@@ -189,28 +386,13 @@ export async function assertSchemaAtBaseline(
 ): Promise<void> {
   const expected = expectedSchema(sources)
 
-  const liveTablesRows = await client.query(
-    `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
-  )
-  const liveTables = new Set(liveTablesRows.rows.map((r) => r.table_name as string))
-  const liveColsRows = await client.query(
-    `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public'`,
-  )
-  const liveColumns = new Set(
-    liveColsRows.rows.map((r) => `${r.table_name as string}.${r.column_name as string}`),
-  )
-  const liveConstraintRows = await client.query(
-    `SELECT c.conname FROM pg_constraint c
-       JOIN pg_namespace n ON n.oid = c.connamespace
-      WHERE n.nspname = 'public'`,
-  )
-  const liveConstraints = new Set(liveConstraintRows.rows.map((r) => r.conname as string))
+  const live = await readLiveSchema(client)
 
-  const missingTables = [...expected.tables].filter((t) => !liveTables.has(t)).sort()
-  const missingColumns = [...expected.columns].filter((c) => !liveColumns.has(c)).sort()
-  const lingeringDropped = [...expected.dropped].filter((t) => liveTables.has(t)).sort()
+  const missingTables = [...expected.tables].filter((t) => !live.tables.has(t)).sort()
+  const missingColumns = [...expected.columns].filter((c) => !live.columns.has(c)).sort()
+  const lingeringDropped = [...expected.dropped].filter((t) => live.tables.has(t)).sort()
   const lingeringConstraints = [...expected.droppedConstraints]
-    .filter((c) => liveConstraints.has(c))
+    .filter((c) => live.constraints.has(c))
     .sort()
 
   const problems: string[] = []
@@ -267,8 +449,11 @@ async function withoutRecordedMigrations(
   sources: MigrationSource[],
 ): Promise<MigrationSource[]> {
   if (sources.length === 0) return sources
-  const ledger = `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}"."${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}"`
-  const recordedRows = await client.query(`SELECT "source", "tag" FROM ${ledger}`)
+  const ledgerExists = await client.query(`SELECT to_regclass($1) AS reg`, [
+    `${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}.${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}`,
+  ])
+  if (!ledgerExists.rows[0]?.reg) return sources
+  const recordedRows = await client.query(`SELECT "source", "tag" FROM ${collectorLedger}`)
   const recorded = new Set(
     recordedRows.rows.map((row) => `${row.source as string}\0${row.tag as string}`),
   )
@@ -288,21 +473,84 @@ export async function runDeploymentMigrations(
   client: MigrationClient,
   sources: MigrationSource[],
   cutline: Cutline,
-  hooks?: { onApplied?: (id: string) => void; onBaselined?: (id: string) => void },
+  options?: RunDeploymentMigrationsOptions,
 ): Promise<RunResult> {
-  const existing = await detectExisting(client)
-  if (existing) {
-    // Parity-gate only the cutline entries this run will import-baseline;
-    // already-recorded entries' objects may have been legitimately reshaped by
-    // applied post-cutline migrations.
-    const pending = await withoutRecordedMigrations(client, cutlineCovered(sources, cutline))
-    if (pending.length > 0) await assertSchemaAtBaseline(client, pending)
-  }
-  const { executed, baselined } = await applyMigrations(client, sources, {
-    cutline,
-    existing,
-    onApplied: hooks?.onApplied,
-    onBaselined: hooks?.onBaselined,
+  return withDeploymentMigrationLock(client, async () => {
+    const adoptionCandidates = resolveAdoptionCandidates(
+      sources,
+      options?.materializedMigrationAdoptions ?? [],
+    )
+    const existing = await detectExisting(client)
+    let effectiveCutline = cutline
+    const materialized: AdoptionCandidate[] = []
+    if (existing) {
+      // Classify every pending opt-in candidate before any ledger write or
+      // normal migration transaction. A partial or definition mismatch aborts
+      // the whole run without mutation; wholly absent candidates execute later.
+      for (const candidate of await pendingAdoptionCandidates(client, adoptionCandidates)) {
+        const classification = await classifyMaterializedMigration(client, candidate.migration)
+        if (classification.status === "materialized") materialized.push(candidate)
+      }
+
+      // Parity-gate only the cutline entries this run will import-baseline;
+      // already-recorded entries' objects may have been legitimately reshaped by
+      // applied post-cutline migrations.
+      const pending = await withoutRecordedMigrations(client, cutlineCovered(sources, cutline))
+      if (pending.length > 0) {
+        const [recordedSources, live] = await Promise.all([
+          recordedCollectorSources(client),
+          readLiveSchema(client),
+        ])
+        const pendingNames = new Set(pending.map((source) => source.name))
+        const expandingSources = new Set(
+          sources
+            .filter((source) => pendingNames.has(source.name))
+            .filter((source) =>
+              [source.name, ...(source.legacyNames ?? [])].every(
+                (name) => !recordedSources.has(name),
+              ),
+            )
+            .filter((source) => isWhollyAbsentSource(source, live))
+            .map((source) => source.name),
+        )
+        const baselinePending = pending.filter((source) => !expandingSources.has(source.name))
+        if (baselinePending.length > 0) {
+          await assertSchemaAtBaseline(client, baselinePending)
+        }
+        if (expandingSources.size > 0) {
+          effectiveCutline = Object.fromEntries(
+            Object.entries(cutline).filter(([source]) => !expandingSources.has(source)),
+          )
+        }
+      }
+    }
+
+    // Record proven materialized migrations before normal migration commits.
+    // Reusing the collector's baseline path guarantees the exact current SQL
+    // hash, idempotent inserts, and the ordinary baseline hook semantics.
+    let adopted: string[] = []
+    if (materialized.length > 0) {
+      const materializedSources = sourcesForAdoptions(materialized)
+      const adoptionCutline = Object.fromEntries(
+        materializedSources.map((source) => [
+          source.name,
+          source.migrations.map((migration) => migration.tag),
+        ]),
+      )
+      const adoptionResult = await applyMigrations(client, materializedSources, {
+        existing: true,
+        cutline: adoptionCutline,
+        onBaselined: options?.onBaselined,
+      })
+      adopted = adoptionResult.baselined
+    }
+
+    const { executed, baselined } = await applyMigrations(client, sources, {
+      cutline: effectiveCutline,
+      existing,
+      onApplied: options?.onApplied,
+      onBaselined: options?.onBaselined,
+    })
+    return { existing, executed, baselined: [...adopted, ...baselined], adopted }
   })
-  return { existing, executed, baselined }
 }

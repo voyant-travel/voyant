@@ -4,7 +4,7 @@ import {
   customFieldDefinitions,
 } from "@voyant-travel/custom-fields"
 import { ApiHttpError } from "@voyant-travel/hono"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { NormalizedAppReleaseRecord } from "./compiler.js"
 import type { AppCredentialInput } from "./installation-service.js"
@@ -154,6 +154,29 @@ export async function deactivateResolvedRegistrations(
     .update(appWebhookSubscriptions)
     .set({ status: "inactive", deactivatedAt: now })
     .where(eq(appWebhookSubscriptions.installationId, installation.id))
+}
+
+/**
+ * Legacy rows created before the signing-key ceremony can claim to be active
+ * without a resolvable key. Fail them closed while retaining the declaration
+ * so the app can reactivate it only by completing the current ceremony.
+ */
+export async function deactivateKeylessActiveWebhooks(
+  db: PostgresJsDatabase,
+  installation: AppInstallation,
+) {
+  const rows = await db
+    .update(appWebhookSubscriptions)
+    .set({ status: "inactive", pausedAt: new Date() })
+    .where(
+      and(
+        eq(appWebhookSubscriptions.installationId, installation.id),
+        eq(appWebhookSubscriptions.status, "active"),
+        isNull(appWebhookSubscriptions.signingKeyId),
+      ),
+    )
+    .returning({ id: appWebhookSubscriptions.id })
+  return rows.length
 }
 
 export async function markAppDefinitionsInactive(

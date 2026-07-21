@@ -32,7 +32,7 @@ jobs:
     runs-on:
       size: 8x32
       image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NODE_OPTIONS: --conditions=development --max-old-space-size=24576
     steps:
@@ -41,6 +41,13 @@ jobs:
           filter: blob:none
 
       - uses: ./.depot/actions/setup-workspace
+
+      # Several architecture gates regenerate and then inspect the Operator's
+      # `.voyant` graph artifacts. Keep them outside the parallel block so the
+      # starter typecheck/test `prepare:verify` hooks cannot rewrite those
+      # files while a gate is reading them.
+      - name: Architecture checks
+        run: pnpm verify:architecture
 
       - fail-fast: false
         parallel:
@@ -52,11 +59,6 @@ jobs:
 
           - name: Test
             run: pnpm test --summarize --output-logs=new-only
-
-          # verify:architecture already runs the operator graph drift gate via
-          # `operator graph:check`; do not rebuild the full operator here.
-          - name: Architecture checks
-            run: pnpm verify:architecture
 
           - name: i18n checks
             run: pnpm i18n:check
@@ -233,6 +235,8 @@ jobs:
                 pnpm --filter operator db:migrate
               pnpm --filter @voyant-travel/relationships exec vitest run \
                 tests/integration/generic-custom-field-values.test.ts
+              pnpm --filter @voyant-travel/framework-migrations exec vitest run \
+                src/deployment-runner.test.ts
               pnpm --filter @voyant-travel/catalog exec vitest run \
                 tests/integration/postgres-indexer.test.ts
               pnpm --filter @voyant-travel/catalog exec vitest run \

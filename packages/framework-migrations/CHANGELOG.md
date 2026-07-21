@@ -1,5 +1,26 @@
 # @voyant-travel/framework-migrations
 
+## 0.10.6
+
+### Patch Changes
+
+- 42593c6: Tighten materialized migration adoption with fail-closed table identity, index state, and string-literal comparisons.
+
+## 0.10.5
+
+### Patch Changes
+
+- ced3987: Add opt-in exact-footprint adoption for explicitly identified materialized migrations.
+
+## 0.10.4
+
+### Patch Changes
+
+- 96db030: Execute a newly added migration source from the beginning when an existing
+  deployment has no ledger lineage or schema footprint for that source. Partial
+  or previously recorded sources remain protected by the import-baseline parity
+  gate.
+
 ## 0.10.3
 
 ### Patch Changes

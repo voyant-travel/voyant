@@ -1,5 +1,12 @@
 # @voyant-travel/setup
 
+## 0.4.11
+
+### Patch Changes
+
+- Updated dependencies [9db4363]
+  - @voyant-travel/hono@0.133.0
+
 ## 0.4.10
 
 ### Patch Changes

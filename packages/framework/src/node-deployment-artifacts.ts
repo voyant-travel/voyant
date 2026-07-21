@@ -451,7 +451,7 @@ function hasFormat(
     const parsed = new URL(value)
     if (format === "postgres-url")
       return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
-    if (format === "redis-url") return parsed.protocol === "redis:" || parsed.protocol === "rediss:"
+    if (format === "redis-url") return isRedisUrl(parsed)
     return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     return false
@@ -462,8 +462,20 @@ function formatDescription(
   format: NonNullable<VoyantNodeDeploymentGraphEnvRequirement["format"]>,
 ): string {
   if (format === "postgres-url") return "a Postgres URL"
-  if (format === "redis-url") return "a Redis URL"
+  if (format === "redis-url") return "a Redis REST HTTP(S) URL with a token or Redis TCP URL"
   return "an HTTP(S) URL"
+}
+
+function isRedisUrl(parsed: URL): boolean {
+  if (parsed.protocol === "redis:" || parsed.protocol === "rediss:") return true
+  return isRedisRestUrl(parsed)
+}
+
+function isRedisRestUrl(parsed: URL): boolean {
+  return (
+    (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+    (parsed.password.length > 0 || (parsed.searchParams.get("token")?.length ?? 0) > 0)
+  )
 }
 
 function requireEnvFormat(

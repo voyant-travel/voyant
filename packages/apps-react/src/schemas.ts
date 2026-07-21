@@ -212,6 +212,13 @@ export const marketplaceInstallIntentResponse = z.object({
     releaseId: z.string(),
     acquisitionId: z.string(),
     created: z.boolean(),
+    existingInstallation: z
+      .object({
+        id: z.string(),
+        releaseId: z.string(),
+        status: appInstallationStatus,
+      })
+      .nullable(),
   }),
 })
 export type MarketplaceInstallIntentResult = z.infer<

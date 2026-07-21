@@ -120,6 +120,9 @@ export type AppsUiMessages = {
     deniedSummary: string
     approve: string
     approving: string
+    upgrade: string
+    upgrading: string
+    upgradeDescription: string
     selectApp: string
     selectRelease: string
     verifiedApp: string

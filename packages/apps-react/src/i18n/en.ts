@@ -125,6 +125,10 @@ export const appsUiEn = {
     deniedSummary: "{count} optional scopes denied.",
     approve: "Approve & install",
     approving: "Installing…",
+    upgrade: "Approve & upgrade",
+    upgrading: "Upgrading…",
+    upgradeDescription:
+      "This app is already installed. Approval will upgrade the existing installation to version {version} and preserve its identity.",
     selectApp: "App",
     selectRelease: "Release",
     verifiedApp: "Verified app",
