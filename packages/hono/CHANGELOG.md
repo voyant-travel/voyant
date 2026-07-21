@@ -1,5 +1,27 @@
 # @voyant-travel/hono
 
+## 0.133.0
+
+### Minor Changes
+
+- 9db4363: Add framework-owned Redis namespacing for managed regional cache and rate-limit
+  state, plus a Node-only persistent TCP Redis adapter in the Framework boundary.
+  Redis KV and rate-limit adapters still preserve the Upstash-compatible HTTP(S)
+  REST path for edge and self-hosted consumers. Resident Node now accepts
+  `redis://` and `rediss://` TCP Redis URLs in addition to HTTP(S) REST, reuses
+  one lazy Redis client across cache, shared-state, and rate-limit roles, and
+  wires `REDIS_NAMESPACE` to `voyant:v1:<namespace>:cache:`,
+  `voyant:v1:<namespace>:state:`, and `voyant:v1:<namespace>:rate:` prefixes.
+  Managed Cloud requires `REDIS_NAMESPACE` for every Redis role, requires
+  `rediss://` for TCP while retaining HTTPS REST compatibility, rejects plaintext
+  `redis://`, and keeps managed shared state on Postgres by default.
+
+### Patch Changes
+
+- Updated dependencies [9db4363]
+  - @voyant-travel/utils@0.109.0
+  - @voyant-travel/workflows@0.122.18
+
 ## 0.132.0
 
 ### Minor Changes

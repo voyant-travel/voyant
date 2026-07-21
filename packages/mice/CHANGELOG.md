@@ -1,5 +1,18 @@
 # @voyant-travel/mice
 
+## 0.44.0
+
+### Patch Changes
+
+- Updated dependencies [9db4363]
+  - @voyant-travel/hono@0.133.0
+  - @voyant-travel/accommodations@0.148.0
+  - @voyant-travel/bookings@0.188.0
+  - @voyant-travel/distribution@0.178.0
+  - @voyant-travel/operations@0.8.29
+  - @voyant-travel/quotes@0.131.32
+  - @voyant-travel/relationships@0.128.28
+
 ## 0.43.0
 
 ### Patch Changes
