@@ -1428,8 +1428,11 @@ function facetValues(fields: Record<string, unknown>): Array<{
   >()
   for (const [field, rawValue] of Object.entries(fields)) {
     for (const value of Array.isArray(rawValue) ? rawValue : [rawValue]) {
-      const type: "boolean" | "number" | "string" = typeof value
-      if (type !== "string" && type !== "number" && type !== "boolean") continue
+      if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+        continue
+      }
+      const type =
+        typeof value === "boolean" ? "boolean" : typeof value === "number" ? "number" : "string"
       const typedValue = {
         boolean: typeof value === "boolean" ? value : null,
         field,
@@ -1783,12 +1786,7 @@ async function buildFacets(
       rows
         .filter((row) => row.field === facet.field)
         .map((row) => ({
-          value:
-            row.value_type === "number"
-              ? Number(row.value_text)
-              : row.value_type === "boolean"
-                ? row.value_text === "true"
-                : row.value_text,
+          value: row.value_type === "number" ? Number(row.value_text) : row.value_text,
           count: Number(row.count),
         }))
         .sort(
