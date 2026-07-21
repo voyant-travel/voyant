@@ -61,7 +61,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@hono/mcp": "^0.3.0",
+    "@hono/mcp": "^0.3.1",
     "@hono/zod-openapi": "catalog:",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@voyant-travel/core": "workspace:^",
