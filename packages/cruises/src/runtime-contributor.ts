@@ -6,8 +6,6 @@ import {
 } from "@voyant-travel/catalog/runtime-contracts"
 import {
   type VoyantRuntimeHostPrimitives,
-  type VoyantWorkflowServiceContribution,
-  voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
@@ -16,10 +14,8 @@ import {
 } from "@voyant-travel/finance/runtime-port"
 
 import { catalogCruisesRuntimeExtension } from "./catalog-runtime-extension.js"
-import {
-  CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
-  createCruisesExternalRefreshWorkflowRuntime,
-} from "./external-refresh-workflow.js"
+import { cruisesExternalRefreshJobRuntimePort } from "./external-refresh-job.js"
+import { refreshExternalCruiseCatalog } from "./service-external-refresh.js"
 import {
   resolveCruiseBookingPaymentPolicy,
   resolveCruiseEntityPaymentPolicy,
@@ -42,37 +38,33 @@ export function createCruisesRuntimePortContribution(
       resolveEntityPolicy: resolveCruiseEntityPaymentPolicy,
       resolveSupplierId: resolveCruiseSupplierId,
     } satisfies FinanceCruisesPaymentPolicyRuntime,
-    [voyantWorkflowServiceContributionsPort.id]: {
-      serviceId: CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
-      create(context) {
-        return createCruisesExternalRefreshWorkflowRuntime({
-          withOptions: async (operation) => {
-            const rawDb = host.primitives.database.resolve<AnyDrizzleDb>(context.environment)
-            const catalogRuntime = await host.getRuntimePort<CatalogRuntimeServices>(
-              catalogRuntimeServicesPort,
-            )
-            const embeddings = catalogRuntime.buildEmbeddingProvider(context.environment)
-            const indexer = catalogRuntime.buildIndexer(context.environment, embeddings)
-            if (!indexer) return operation({ db: rawDb as never })
+    [cruisesExternalRefreshJobRuntimePort.id]: {
+      async run() {
+        const environment = host.primitives.env(undefined)
+        const rawDb = host.primitives.database.resolve<AnyDrizzleDb>(undefined)
+        const catalogRuntime = await host.getRuntimePort<CatalogRuntimeServices>(
+          catalogRuntimeServicesPort,
+        )
+        const embeddings = catalogRuntime.buildEmbeddingProvider(environment)
+        const indexer = catalogRuntime.buildIndexer(environment, embeddings)
+        if (!indexer) return refreshExternalCruiseCatalog({ db: rawDb as never })
 
-            const indexerService = createIndexerService({
-              adapter: indexer,
-              slices: await catalogRuntime.loadSlices(rawDb),
-              registries: catalogRuntime.fieldPolicyRegistries(),
-            })
-            await indexerService.ensureCollections()
-            return operation({
-              db: rawDb as never,
-              sourceAdapterRegistry: await catalogRuntime.ensureSourceRegistry(context.environment),
-              indexerService,
-              fieldPolicyRegistries: catalogRuntime.fieldPolicyRegistries(),
-              wrapCatalogBuilder: (builder) => catalogRuntime.withEmbedding(builder, embeddings),
-              onCatalogProgress: (event) =>
-                console.info("[external-cruise-refresh] catalog page", event),
-            })
-          },
+        const indexerService = createIndexerService({
+          adapter: indexer,
+          slices: await catalogRuntime.loadSlices(rawDb),
+          registries: catalogRuntime.fieldPolicyRegistries(),
+        })
+        await indexerService.ensureCollections()
+        return refreshExternalCruiseCatalog({
+          db: rawDb as never,
+          sourceAdapterRegistry: await catalogRuntime.ensureSourceRegistry(environment),
+          indexerService,
+          fieldPolicyRegistries: catalogRuntime.fieldPolicyRegistries(),
+          wrapCatalogBuilder: (builder) => catalogRuntime.withEmbedding(builder, embeddings),
+          onCatalogProgress: (event) =>
+            console.info("[external-cruise-refresh] catalog page", event),
         })
       },
-    } satisfies VoyantWorkflowServiceContribution,
+    },
   }
 }

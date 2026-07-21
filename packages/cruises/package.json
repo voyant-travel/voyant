@@ -18,7 +18,7 @@
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-external-refresh": "./src/service-external-refresh.ts",
-    "./external-refresh-workflow": "./src/external-refresh-workflow.ts",
+    "./external-refresh-job": "./src/external-refresh-job.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
@@ -55,7 +55,6 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/cruises-contracts": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
@@ -146,10 +145,10 @@
         "import": "./dist/service-external-refresh.js",
         "default": "./dist/service-external-refresh.js"
       },
-      "./external-refresh-workflow": {
-        "types": "./dist/external-refresh-workflow.d.ts",
-        "import": "./dist/external-refresh-workflow.js",
-        "default": "./dist/external-refresh-workflow.js"
+      "./external-refresh-job": {
+        "types": "./dist/external-refresh-job.d.ts",
+        "import": "./dist/external-refresh-job.js",
+        "default": "./dist/external-refresh-job.js"
       },
       "./service-content-synthesizer": {
         "types": "./dist/service-content-synthesizer.d.ts",

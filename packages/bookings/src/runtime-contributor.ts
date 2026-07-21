@@ -12,9 +12,15 @@ import {
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { checkBookingActionLedgerDrift } from "./action-ledger-drift.js"
+import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job.js"
+import {
+  type BookingsFinanceRuntime,
+  bookingsFinanceRuntimePort,
+} from "./runtime-port.js"
 
 export interface BookingsRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
+  getRuntimePort<T>(port: { id: string }): T | Promise<T>
 }
 
 const bookingCustomFieldValues: CustomFieldValueLifecycleRuntime = {
@@ -104,7 +110,7 @@ const bookingCustomFieldValueOperations: CustomFieldValueOperationsRuntime = {
 
 /** Bind Bookings-owned runtime behavior; domain behavior arrives through graph ports. */
 export function createBookingsRuntimePortContribution(
-  _host: BookingsRuntimeContributorHost,
+  host: BookingsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   return {
     [actionLedgerBookingDriftRuntimePort.id]: {
@@ -112,5 +118,13 @@ export function createBookingsRuntimePortContribution(
     } satisfies ActionLedgerBookingDriftRuntime,
     [customFieldValueLifecycleRuntimePort.id]: bookingCustomFieldValues,
     [customFieldValueOperationsRuntimePort.id]: bookingCustomFieldValueOperations,
+    [bookingsStaleHoldsJobRuntimePort.id]: Promise.resolve(
+      host.getRuntimePort<BookingsFinanceRuntime>(bookingsFinanceRuntimePort),
+    ).then((finance) =>
+      finance.createStaleBookingHoldsRuntime({
+        resolveDb: () => host.primitives.database.resolve<PostgresJsDatabase>(undefined),
+        userId: "system",
+      }),
+    ),
   }
 }

@@ -13,6 +13,7 @@ import { createFinanceNotificationsRuntime } from "./finance-runtime.js"
 import { createQuotesNotificationsRuntime } from "./quotes-runtime.js"
 import { createNotificationsRuntime } from "./runtime.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
+import { notificationsReminderJobRuntimePort } from "./reminder-job.js"
 
 export interface NotificationsRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
@@ -22,6 +23,7 @@ export interface NotificationsRuntimeContributorHost {
 export function createNotificationsRuntimePortContribution(
   host: NotificationsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const runtime = createNotificationsRuntime(host.primitives)
   const verification = {
     resolveProviders(bindings: Record<string, unknown>) {
       const resolver = host.primitives.config.read(bindings, "notificationProviders")
@@ -30,7 +32,8 @@ export function createNotificationsRuntimePortContribution(
     email: { subject: "Your verification code" },
   } satisfies StorefrontVerificationRoutesOptions
   return {
-    [notificationsRuntimePort.id]: createNotificationsRuntime(host.primitives),
+    [notificationsRuntimePort.id]: runtime,
+    [notificationsReminderJobRuntimePort.id]: runtime.resolveReminderWorkflowRuntime(undefined),
     [storefrontVerificationRuntimePort.id]: verification,
     [financeNotificationsRuntimePort.id]: createFinanceNotificationsRuntime(
       host.primitives,

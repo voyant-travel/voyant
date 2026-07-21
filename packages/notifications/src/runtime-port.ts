@@ -7,7 +7,7 @@ export interface NotificationsRuntimeProvider extends CreateNotificationsApiModu
   resolveDb: NonNullable<CreateNotificationsApiModuleOptions["resolveDb"]>
   resolveProviders: NonNullable<CreateNotificationsApiModuleOptions["resolveProviders"]>
   resolveReminderWorkflowRuntime: (
-    bindings: Record<string, unknown>,
+    bindings?: Record<string, unknown>,
   ) => NotificationReminderWorkflowRuntime
 }
 
