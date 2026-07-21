@@ -124,6 +124,39 @@ They do not consume or statically compose the unified application deployment
 graph. A `cloudflare-worker` target must not be offered by its CLI target
 adapters.
 
+### Package-owned jobs in a small Worker application
+
+A separately admitted, deliberately small Worker graph may use the generated
+product-job projection without reintroducing a composed operator Worker. The
+ordinary project resolver emits `GENERATED_PROJECT_PRODUCT_JOBS` from the same
+graph into `.voyant/runtime/project-runtime.generated.ts`. Pass the result of
+`createGeneratedProjectRuntime()` to
+`createVoyantWorkerJobHostFromProjectRuntime(...)`, together with the
+deployment-composed runtime ports. This binds immutable `provisioning.jobs`
+without a second registry; application authors do not create
+`src/jobs`, `src/workflows`, or an inline job registry.
+
+The host requires an explicit `scheduleAuthority`. Self-hosted Wrangler
+deployments select `cloudflare-cron`; managed workloads select `managed-http`.
+This prevents both systems from firing the same cadence during rollout.
+
+The application routes `fetch` through the generated host before its ordinary
+handler and delegates its `scheduled` event to the same host. Both the trusted
+`GET /__voyant/jobs` inventory and bodyless `POST /__voyant/jobs/:id`
+invocation route are fixed. Accepted work is attached to `ctx.waitUntil`.
+There is no generic run store, payload, step graph, or durable scheduler state;
+package handlers retain durable claims and domain checkpoints as authority.
+
+Wrangler configuration passes generated `productJobs` to
+`cloudflareCronTriggersForProductJobs(...)`. Exact UTC cron declarations and
+`every` cadences that map without drift to minute/hour/day Cron Triggers are
+included. Sub-minute, non-divisor, and non-UTC schedules are omitted and remain
+owned by the managed HTTP scheduler. Hosted deployments reject sub-minute
+cadences rather than claiming a precision neither scheduler provides. A
+self-hosted Worker deployment must either configure the generated triggers or
+fail admission when a selected schedule is marked `managed-http`; silently
+dropping it is not supported.
+
 **Known limitation for composed operator APIs on Workers:** no isolate residency
 → a per-request composition toll (multi-second graph evaluation). This is a
 structural property of the runtime for this workload, not a bug for app authors

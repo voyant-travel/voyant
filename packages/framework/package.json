@@ -21,6 +21,7 @@
     "./project-runtime": "./src/project-runtime.ts",
     "./node-host": "./src/node-host.ts",
     "./node-runtime": "./src/node-runtime.ts",
+    "./worker-job-host": "./src/worker-job-host.ts",
     "./scheduled-jobs": "./src/scheduled-jobs.ts"
   },
   "files": [
@@ -158,6 +159,10 @@
       "./node-runtime": {
         "types": "./dist/node-runtime.d.ts",
         "import": "./dist/node-runtime.js"
+      },
+      "./worker-job-host": {
+        "types": "./dist/worker-job-host.d.ts",
+        "import": "./dist/worker-job-host.js"
       },
       "./scheduled-jobs": {
         "types": "./dist/scheduled-jobs.d.ts",
