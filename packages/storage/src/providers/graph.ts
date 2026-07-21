@@ -102,8 +102,13 @@ export function createGatewayGraphStorageProvider(
   )
   const token = requiredString(context.getSecret(SECRET.gatewayToken), "STORAGE_GATEWAY_TOKEN")
   return fixedStores({
-    documents: createGatewayStorageProvider({ endpoint, token, name: "gateway:documents" }),
-    media: createGatewayStorageProvider({ endpoint, token, name: "gateway:media" }),
+    documents: createGatewayStorageProvider({
+      endpoint,
+      token,
+      name: "gateway:documents",
+      tier: "documents",
+    }),
+    media: createGatewayStorageProvider({ endpoint, token, name: "gateway:media", tier: "media" }),
   })
 }
 
