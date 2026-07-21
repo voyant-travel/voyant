@@ -1,5 +1,33 @@
 # @voyant-travel/runtime
 
+## 0.17.0
+
+### Minor Changes
+
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+
+### Patch Changes
+
+- 9848276: Host package-owned product jobs by default in the standard self-hosted Operator. The Node host consumes the resolved job inventory and fixed runtime handlers, adds authenticated payload-free invocation, schedule recovery, per-job overlap protection, bounded retry, and minimal health state.
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+- Updated dependencies [fafc12e]
+  - @voyant-travel/framework@0.61.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/apps@0.12.4
+  - @voyant-travel/auth@0.141.4
+  - @voyant-travel/webhook-delivery@0.4.8
+  - @voyant-travel/storage@0.113.2
+  - @voyant-travel/admin-host@0.40.0
+
 ## 0.16.5
 
 ### Patch Changes

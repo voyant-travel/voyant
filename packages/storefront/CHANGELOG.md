@@ -1,5 +1,26 @@
 # @voyant-travel/storefront
 
+## 0.192.0
+
+### Patch Changes
+
+- Updated dependencies [228b57d]
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/bookings@0.190.0
+  - @voyant-travel/commerce@0.40.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/finance@0.190.0
+  - @voyant-travel/legal@0.190.0
+  - @voyant-travel/relationships@0.128.30
+  - @voyant-travel/auth@0.141.4
+  - @voyant-travel/identity@0.190.0
+  - @voyant-travel/payments@0.5.2
+
 ## 0.191.0
 
 ### Patch Changes

@@ -1,5 +1,36 @@
 # @voyant-travel/distribution
 
+## 0.180.0
+
+### Minor Changes
+
+- f945310: Migrate the event outbox, channel push, promotion reindex, and product PDF
+  surfaces away from general workflows. Package-owned jobs are payload-free and
+  recover from durable domain records; product PDF generation remains an
+  authenticated, idempotent brochure command. The Node job host now exposes an
+  origin-trusted immutable inventory and best-effort terminal health reporting.
+
+### Patch Changes
+
+- fafc12e: Add the generated Cloudflare Worker product-job bridge, including fixed trusted
+  inventory/invocation routes, Worker lifetime handling, terminal health callbacks,
+  and an explicit Cloudflare-versus-managed schedule projection. Align distribution
+  recovery with the minimum one-minute hosted scheduler cadence.
+- Updated dependencies [228b57d]
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/bookings@0.190.0
+  - @voyant-travel/catalog@0.188.0
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/finance@0.190.0
+  - @voyant-travel/identity@0.190.0
+  - @voyant-travel/types@0.109.9
+  - @voyant-travel/webhook-delivery@0.4.8
+
 ## 0.179.0
 
 ### Patch Changes

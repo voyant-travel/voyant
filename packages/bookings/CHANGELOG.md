@@ -1,5 +1,29 @@
 # @voyant-travel/bookings
 
+## 0.190.0
+
+### Minor Changes
+
+- f2c9404: Retire the Voyant workflow product and its workflow-runs administration
+  surface. Product-owned background behavior is now represented by jobs and
+  subscribers, while in-process compensating domain coordination is exposed as a
+  saga. Remove workflow deployment providers, graph facets, source conventions,
+  runtime composition, and starter scripts.
+
+### Patch Changes
+
+- 228b57d: Migrate package-owned scheduled product operations from workflow registrations to payload-free jobs selected through the deployment graph. The jobs retain durable authority in their owning domains and resolve execution dependencies through package runtime ports.
+- Updated dependencies [f945310]
+- Updated dependencies [9848276]
+- Updated dependencies [dffbdad]
+- Updated dependencies [f2c9404]
+  - @voyant-travel/db@0.118.0
+  - @voyant-travel/core@0.131.0
+  - @voyant-travel/hono@0.134.0
+  - @voyant-travel/action-ledger@0.111.13
+  - @voyant-travel/types@0.109.9
+  - @voyant-travel/reporting-contracts@0.3.1
+
 ## 0.189.0
 
 ## 0.188.0
