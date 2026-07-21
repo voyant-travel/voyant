@@ -1,5 +1,11 @@
 # @voyant-travel/framework-migrations
 
+## 0.10.7
+
+### Patch Changes
+
+- 43cc48b: Accept both shipped hashes of the formatting-equivalent action-ledger baseline migration.
+
 ## 0.10.6
 
 ### Patch Changes
