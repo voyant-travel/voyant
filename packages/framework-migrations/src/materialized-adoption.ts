@@ -406,16 +406,28 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
   return { tables, columns, constraints, indexes }
 }
 
+function createdTables(migration: PlannedMigration): string[] {
+  const tables: string[] = []
+  for (const statement of splitStatements(migration.sql)) {
+    const create = statement.match(
+      new RegExp(`^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${identifier}\\s*\\(`, "i"),
+    )
+    if (create && !tables.includes(create[1] as string)) tables.push(create[1] as string)
+  }
+  if (tables.length === 0) unsupported(migration, "the migration creates no tables")
+  return tables
+}
+
 function strings(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String)
   if (typeof value !== "string") return []
   return value.replace(/^\{/, "").replace(/\}$/, "").split(",").filter(Boolean)
 }
 
-async function readLiveFootprint(
+async function readLiveTables(
   client: MigrationClient,
   tables: readonly string[],
-): Promise<LiveFootprint> {
+): Promise<string[]> {
   const tableRows = await client.query(
     `SELECT c.relname AS table_name
        FROM pg_class c
@@ -426,7 +438,14 @@ async function readLiveFootprint(
       ORDER BY c.relname`,
     [tables],
   )
-  const liveTables = tableRows.rows.map((row) => String(row.table_name))
+  return tableRows.rows.map((row) => String(row.table_name))
+}
+
+async function readLiveFootprint(
+  client: MigrationClient,
+  tables: readonly string[],
+  liveTables: string[],
+): Promise<LiveFootprint> {
   if (liveTables.length !== tables.length) {
     return { tables: liveTables, columns: [], constraints: [], indexes: [] }
   }
@@ -582,9 +601,15 @@ export async function classifyMaterializedMigration(
   client: MigrationClient,
   migration: PlannedMigration,
 ): Promise<MaterializedMigrationClassification> {
+  // Absence needs only the CREATE TABLE identities. Do not reject an otherwise
+  // unsupported allowlisted migration when there is nothing to adopt: it must
+  // remain on the ordinary execute path.
+  const tables = createdTables(migration)
+  const liveTables = await readLiveTables(client, tables)
+  if (liveTables.length === 0) return { status: "absent" }
+
   const expected = parseExpectedFootprint(migration)
-  const live = await readLiveFootprint(client, expected.tables)
-  if (live.tables.length === 0) return { status: "absent" }
+  const live = await readLiveFootprint(client, expected.tables, liveTables)
   compareFootprint(migration, expected, live)
   return { status: "materialized" }
 }

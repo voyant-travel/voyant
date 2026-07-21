@@ -594,6 +594,24 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     expect(statements.some((sql) => sql.startsWith('CREATE TABLE "product_'))).toBe(true)
   })
 
+  it("does not require adoption parser support when an existing database has no footprint", async () => {
+    const source = src("custom", [
+      'CREATE TABLE "custom_table" ("id" text PRIMARY KEY);\n--> statement-breakpoint\nCOMMENT ON TABLE "custom_table" IS \'normal execution only\';',
+    ])
+    const { client } = adoptionClient({ existing: true, tables: [] })
+    const result = await runDeploymentMigrations(
+      client,
+      [source],
+      {},
+      {
+        materializedMigrationAdoptions: [{ source: "custom", tag: "0000_custom" }],
+      },
+    )
+
+    expect(result.adopted).toEqual([])
+    expect(result.executed).toEqual(["custom/0000_custom"])
+  })
+
   it("keeps a fresh database on the normal execute path even if adoption is allowlisted", async () => {
     const { client, statements } = adoptionClient({ existing: false, tables: [] })
     const result = await runDeploymentMigrations(
