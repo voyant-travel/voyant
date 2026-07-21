@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.10.16
+
+### Patch Changes
+
+- Updated dependencies [cb04ea8]
+  - @voyant-travel/payments@0.5.1
+
 ## 0.10.15
 
 ### Patch Changes

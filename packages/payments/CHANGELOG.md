@@ -1,5 +1,15 @@
 # @voyant-travel/payments
 
+## 0.5.1
+
+### Patch Changes
+
+- cb04ea8: Simplify the Netopia connect form. Drop the confusing "Merchant ID" field —
+  Netopia API v2 has no separate merchant number; the POS signature (Semnătura) is
+  the point-of-sale identifier, and the adapter already ignores `merchantId` when a
+  POS signature is present. Clarify the "API key" help text to point operators at
+  the account API key (Security → API key) used as the Authorization header.
+
 ## 0.5.0
 
 ### Minor Changes
