@@ -1,5 +1,11 @@
 # @voyant-travel/inventory
 
+## 0.14.26
+
+### Patch Changes
+
+- 406cebb: Persist accepted owned-product quote amounts on booking item lines so invoice generation receives an exact non-zero line total, including add-ons, tax modes, overrides, and cent rounding.
+
 ## 0.14.25
 
 ### Patch Changes

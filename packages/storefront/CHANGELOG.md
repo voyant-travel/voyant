@@ -1,5 +1,11 @@
 # @voyant-travel/storefront
 
+## 0.189.1
+
+### Patch Changes
+
+- 406cebb: Forward the request event bus when verified payment-adapter callbacks update payment sessions, allowing `payment.completed` checkout finalization to run on managed callbacks.
+
 ## 0.189.0
 
 ### Patch Changes
