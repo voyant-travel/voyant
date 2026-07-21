@@ -3,7 +3,6 @@ import {
   defineModule,
   providePort,
   requirePort,
-  voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core/project"
 import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import {
@@ -30,6 +29,7 @@ import {
   catalogProjectionRuntimePort,
 } from "./subscriber-runtime-ports.js"
 import { catalogEventDeclarations, catalogWebhookDeclarations } from "./voyant-events.js"
+import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job.js"
 
 // Importing Cruises here would create a Catalog <-> Cruises package cycle.
 const cruisesRoutesRuntimePortReference = { id: "cruises.routes-runtime" } as const
@@ -76,7 +76,7 @@ export const catalogVoyantModule = defineModule({
       providePort(catalogProjectionRuntimePort),
       providePort(catalogBookingSnapshotRuntimePort),
       providePort(catalogRuntimeServicesPort),
-      providePort(voyantWorkflowServiceContributionsPort),
+      providePort(catalogDraftReaperJobRuntimePort),
       cruisesRoutesRuntimePortReference,
     ],
   },
@@ -84,10 +84,7 @@ export const catalogVoyantModule = defineModule({
     requirePort(catalogSearchRuntimePort),
     requirePort(catalogProjectionRuntimePort),
     requirePort(catalogBookingSnapshotRuntimePort),
-    requirePort(voyantWorkflowServiceContributionsPort, {
-      optional: true,
-      cardinality: "many",
-    }),
+    requirePort(catalogDraftReaperJobRuntimePort),
   ],
   api: [
     {
@@ -181,17 +178,13 @@ export const catalogVoyantModule = defineModule({
       },
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "catalog.reap-expired-booking-drafts",
-      config: {
-        defaultRuntime: "node",
-        schedule: { cron: "5 * * * *", name: "hourly-at-05" },
-      },
-      source: "@voyant-travel/catalog/draft-reaper-workflow",
+      schedule: { cron: "5 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/catalog/draft-reaper-workflow",
-        export: "catalogDraftReaperWorkflow",
+        entry: "@voyant-travel/catalog/draft-reaper-job",
+        export: "runCatalogDraftReaperJob",
       },
     },
   ],

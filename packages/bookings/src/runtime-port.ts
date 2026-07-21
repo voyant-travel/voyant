@@ -1,4 +1,3 @@
-import type { BootstrapContext } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -14,7 +13,6 @@ import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime
 
 export interface BookingsRuntimeProvider {
   options: BookingsApiModuleOptions
-  registerWorkflowService?(context: BootstrapContext): Promise<void> | void
 }
 
 export interface BookingsAccommodationRuntime {
@@ -64,12 +62,6 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
   test(provider) {
     if (provider === null || typeof provider !== "object" || !provider.options) {
       throw new Error("bookings.runtime provider must supply module options.")
-    }
-    if (
-      provider.registerWorkflowService !== undefined &&
-      typeof provider.registerWorkflowService !== "function"
-    ) {
-      throw new Error("bookings.runtime registerWorkflowService must be a function.")
     }
   },
 })

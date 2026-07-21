@@ -1,5 +1,5 @@
+import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { workflow } from "@voyant-travel/workflows"
 
 import {
   deleteBookingDraft,
@@ -8,9 +8,7 @@ import {
   type SourceAdapterRegistry,
 } from "./booking-engine/index.js"
 
-export const CATALOG_DRAFT_REAPER_RUNTIME_KEY = "catalog.workflows.draft-reaper.runtime" as const
-
-export interface CatalogDraftReaperRuntime {
+export interface CatalogDraftReaperJobRuntime {
   withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>
   resolveSourceRegistry(): SourceAdapterRegistry | Promise<SourceAdapterRegistry>
   resolveOwnedHandlers(): OwnedBookingHandlerRegistry | Promise<OwnedBookingHandlerRegistry>
@@ -18,16 +16,20 @@ export interface CatalogDraftReaperRuntime {
   now?(): number
 }
 
-export interface CatalogDraftReaperRuntimeOptions extends Omit<CatalogDraftReaperRuntime, "now"> {
-  now?: () => number
-}
-
-/** Build the package-owned draft reaper runtime from deployment host capabilities. */
-export function createCatalogDraftReaperRuntime(
-  options: CatalogDraftReaperRuntimeOptions,
-): CatalogDraftReaperRuntime {
-  return options
-}
+export const catalogDraftReaperJobRuntimePort = definePort<CatalogDraftReaperJobRuntime>({
+  id: "catalog.draft-reaper-job",
+  test(runtime) {
+    if (
+      !runtime ||
+      typeof runtime.withDb !== "function" ||
+      typeof runtime.resolveSourceRegistry !== "function" ||
+      typeof runtime.resolveOwnedHandlers !== "function" ||
+      typeof runtime.reportFailure !== "function"
+    ) {
+      throw new Error("catalog.draft-reaper-job provider is incomplete.")
+    }
+  },
+})
 
 export interface DraftReaperResult {
   scanned: number
@@ -37,19 +39,14 @@ export interface DraftReaperResult {
   inGrace: number
 }
 
-export const catalogDraftReaperWorkflow = workflow<Record<string, never>, DraftReaperResult>({
-  id: "catalog.reap-expired-booking-drafts",
-  defaultRuntime: "node",
-  schedule: { cron: "5 * * * *", name: "hourly-at-05" },
-  async run(_input, context) {
-    return runCatalogDraftReaper(
-      context.services.resolve<CatalogDraftReaperRuntime>(CATALOG_DRAFT_REAPER_RUNTIME_KEY),
-    )
-  },
-})
+export async function runCatalogDraftReaperJob(
+  context: VoyantGraphRuntimeFactoryContext,
+): Promise<void> {
+  await runCatalogDraftReaper(await context.getPort(catalogDraftReaperJobRuntimePort))
+}
 
 export async function runCatalogDraftReaper(
-  runtime: CatalogDraftReaperRuntime,
+  runtime: CatalogDraftReaperJobRuntime,
 ): Promise<DraftReaperResult> {
   const [registry, ownedHandlers] = await Promise.all([
     runtime.resolveSourceRegistry(),
@@ -100,8 +97,7 @@ function resolveGraceMs(
     return ownedHandlers.resolve(draft.entity_module)?.holdReleaseGraceMs ?? 0
   }
   return draft.source_connection_id
-    ? (registry.resolveByConnection(draft.source_connection_id)?.capabilities.holdReleaseGraceMs ??
-        0)
+    ? (registry.resolveByConnection(draft.source_connection_id)?.capabilities.holdReleaseGraceMs ?? 0)
     : 0
 }
 

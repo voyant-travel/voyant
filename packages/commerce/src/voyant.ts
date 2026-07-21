@@ -28,6 +28,7 @@ import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "./promotions/runtime-ports.js"
+import { promotionBoundaryJobRuntimePort } from "./promotions/job-boundary-scheduler.js"
 import {
   commerceCardPaymentRuntimePort,
   commerceInventoryRuntimePort,
@@ -111,6 +112,7 @@ export const commerceVoyantModule = defineModule({
   runtimePorts: [
     requirePort(promotionRedemptionDatabaseRuntimePort),
     requirePort(promotionsBulkReindexRuntimePort),
+    requirePort(promotionBoundaryJobRuntimePort),
     requirePort(commerceOperatorSettingsRuntimePort),
     requirePort(commerceInventoryRuntimePort),
     requirePort(commerceLegalRuntimePort),
@@ -127,6 +129,7 @@ export const commerceVoyantModule = defineModule({
       providePort(catalogCommerceRuntimeExtensionPort),
       providePort(promotionRedemptionDatabaseRuntimePort),
       providePort(promotionsBulkReindexRuntimePort),
+      providePort(promotionBoundaryJobRuntimePort),
     ],
   },
   api: [
@@ -385,19 +388,17 @@ export const commerceVoyantModule = defineModule({
       },
     },
   ],
-  workflows: [
+  jobs: [
     {
       id: "commerce.process-promotion-boundaries",
-      config: {
-        defaultRuntime: "node",
-        schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
-      },
-      source: "@voyant-travel/commerce/promotion-boundary-workflow",
+      schedule: { cron: "*/5 * * * *", overlap: "skip" },
       runtime: {
-        entry: "@voyant-travel/commerce/promotion-boundary-workflow",
-        export: "promotionBoundarySchedulerWorkflow",
+        entry: "@voyant-travel/commerce/promotion-boundary-job",
+        export: "runPromotionBoundaryJob",
       },
     },
+  ],
+  workflows: [
     {
       id: "promotions.reindex-all-products",
       config: {
