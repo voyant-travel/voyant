@@ -97,7 +97,6 @@ src/
   modules/
   extensions/
   workflows/
-  jobs/
   subscribers/
   links/
 ```
@@ -141,7 +140,7 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 - capabilities and typed runtime ports
 - API bundles and their OpenAPI document membership
 - schemas, migrations, links, and setup migrations
-- workflows, schedules, subscribers, and events
+- package-owned product jobs, workflows, schedules, subscribers, and events
 - admin routes, pages, slots, and contributions
 - reporting datasets, preset widgets, and cross-module grid templates
 - access resources, tools, webhooks, actions, and lifecycle metadata
@@ -376,14 +375,23 @@ surfaces return and render the lowered catalog without importing package manifes
 or rebuilding contracts. Product distributions select the infrastructure module;
 settings packages and application hosts do not own or reconstruct the catalog.
 
-### Workflows, jobs, and schedules
+### Jobs, workflows, and schedules
 
-Packages own workflow and schedule descriptors. Project jobs compile into graph
-workflow descriptors through the project convention. Public scheduled work uses
-stable schedule IDs and package-owned workflow references; the Node host only
-dispatches admitted generated schedules. Cron expressions are scheduling
-metadata, not runtime dispatch identity. A central scheduled-job catalog is not
-allowed.
+Selected packages may own product jobs required by their capabilities. Each job
+has a stable ID, a package-owned schedule or wakeup marker, and a named symbolic
+runtime export. The resolved graph is the only job inventory consumed by a
+deployment host. Job declarations cannot carry execution payloads, steps, waits,
+or generic run controls; durable work state belongs to the owning domain.
+
+Projects cannot author product-job declarations in `voyant.config.ts` or
+through a product-job source convention. Selecting a package selects its jobs.
+Customer-specific scheduled automation runs outside Voyant and integrates
+through events and domain commands.
+
+Workflow and workflow-schedule descriptors remain supported temporarily during
+the workflow-product retirement. Existing `src/workflows` and legacy `src/jobs`
+workflow conventions are removed in that later compatibility-breaking phase and
+must not be used as an alternate path for new product jobs.
 
 ### Tools, access, actions, and audit
 
@@ -442,7 +450,7 @@ The unification is complete only when all of these statements are true:
    typed ports over domain-neutral host primitives.
 7. Central composition and OpenAPI catalogs, package-keyed runtime bindings, and
    compatibility registries are absent.
-8. Adding a local route, admin page, module, workflow, job, subscriber, or link
+8. Adding a local route, admin page, module, workflow, subscriber, or link
    requires adding a file in the corresponding directory, not forking a
    standard package.
 9. Generated artifacts are deterministic, hash-consistent, and rejected when

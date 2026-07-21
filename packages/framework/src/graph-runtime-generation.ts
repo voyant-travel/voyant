@@ -6,6 +6,7 @@ import {
 import type {
   VoyantGraphRuntimeActionDefinition,
   VoyantGraphRuntimeConfigDefinition,
+  VoyantGraphRuntimeJobDefinition,
   VoyantGraphRuntimeProviderDefinition,
   VoyantGraphRuntimeReferenceDefinition,
   VoyantGraphRuntimeReferenceFacet,
@@ -41,6 +42,7 @@ export interface GeneratedRuntimeUnitDefinition {
   requiredRuntimePorts: string[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
+  jobs: VoyantGraphRuntimeJobDefinition[]
   workflows: VoyantGraphRuntimeWorkflowDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
   setupSteps: { id: string; skippable: boolean }[]
@@ -128,6 +130,13 @@ export function lowerGraphRuntimeUnits(
           ...(tool.risk ? { risk: tool.risk } : {}),
         }))
         .sort((left, right) => left.id.localeCompare(right.id))
+      const jobs = (unit.jobs ?? [])
+        .map((job) => ({
+          unitId: unit.id,
+          declaration: job,
+          referenceId: runtimeReferenceId(unit.id, "jobs.runtime", job.id),
+        }))
+        .sort((left, right) => left.declaration.id.localeCompare(right.declaration.id))
       const workflows = unit.workflows
         .filter((workflow) => workflow.runtime !== undefined)
         .map((workflow) => ({
@@ -186,6 +195,7 @@ export function lowerGraphRuntimeUnits(
           .sort(),
         accessScopes,
         tools,
+        jobs,
         workflows,
         actions,
         setupSteps: (unit.admin?.setupSteps ?? []).map(({ id, skippable }) => ({
@@ -267,6 +277,7 @@ function collectRuntimeReferences(
     add("reporting.datasets.runtime", dataset.id, dataset.runtime)
   }
   for (const tool of unit.tools ?? []) add("tools.runtime", tool.id, tool.runtime)
+  for (const job of unit.jobs ?? []) add("jobs.runtime", job.id, job.runtime)
   for (const workflow of unit.workflows) {
     if (workflow.runtime) add("workflows.runtime", workflow.id, workflow.runtime)
   }

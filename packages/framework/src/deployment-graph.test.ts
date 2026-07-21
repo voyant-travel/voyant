@@ -1467,6 +1467,88 @@ describe("deployment graph v1", () => {
     expect(graph.diagnostics).toEqual([])
   })
 
+  it("selects package-owned product jobs as closed graph metadata", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.deliver-reminders",
+          wakeup: true,
+          schedule: { every: "5m", overlap: "skip" },
+          runtime: { entry: "./jobs", export: "deliverReminders" },
+        },
+        {
+          id: "notifications.sweep-due-reminders",
+          schedule: { cron: "0 * * * *", timezone: "UTC" },
+          runtime: { entry: "./jobs", export: "sweepDueReminders" },
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual([])
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+
+    expect(graph.modules[0]?.jobs).toEqual([
+      {
+        id: "notifications.deliver-reminders",
+        wakeup: true,
+        schedule: { every: "5m", overlap: "skip" },
+        runtime: { entry: "./jobs", export: "deliverReminders" },
+      },
+      {
+        id: "notifications.sweep-due-reminders",
+        schedule: { cron: "0 * * * *", timezone: "UTC" },
+        runtime: { entry: "./jobs", export: "sweepDueReminders" },
+      },
+    ])
+    expect(graph.provisioning.jobs).toEqual([
+      {
+        id: "notifications.deliver-reminders",
+        unitId: "@acme/voyant-notifications",
+        packageName: "@acme/voyant-notifications",
+        schedule: { every: "5m", overlap: "skip" },
+        wakeup: true,
+      },
+      {
+        id: "notifications.sweep-due-reminders",
+        unitId: "@acme/voyant-notifications",
+        packageName: "@acme/voyant-notifications",
+        schedule: { cron: "0 * * * *", timezone: "UTC" },
+        wakeup: false,
+      },
+    ])
+  })
+
+  it("rejects workflow-like or host-incomplete product job declarations", () => {
+    const diagnostics = validateGraphUnitManifest({
+      ...defineModule({ id: "@acme/voyant-notifications" }),
+      jobs: [
+        {
+          id: "notifications.inline",
+          runtime: { entry: "./jobs" },
+          input: { customerId: "customer_1" },
+        },
+        {
+          id: "notifications.bad-cadence",
+          schedule: { cron: "* * * * *", every: "1m", input: {} },
+          wakeup: false,
+          runtime: { entry: "./jobs", export: "badCadence" },
+        },
+      ],
+    })
+
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "jobs[0].input" }),
+        expect.objectContaining({ facet: "jobs[0].runtime.export" }),
+        expect.objectContaining({ facet: "jobs[0]" }),
+        expect.objectContaining({ facet: "jobs[1].schedule.input" }),
+        expect.objectContaining({ facet: "jobs[1].schedule" }),
+        expect.objectContaining({ facet: "jobs[1].wakeup" }),
+      ]),
+    )
+  })
+
   it("detects duplicate workflow schedule entity ids after descriptor lowering", async () => {
     const project = defineProject({
       modules: [

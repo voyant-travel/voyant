@@ -252,6 +252,26 @@ export interface VoyantGraphRuntimeRoutePosture {
   transactionalPaths: string[]
 }
 
+/**
+ * Invoke one fixed job from the admitted graph without accepting a run payload.
+ * Scheduling, retries, leases, and health remain deployment-host concerns.
+ */
+export async function invokeVoyantGraphJob(
+  runtime: VoyantGraphRuntime,
+  jobId: string,
+  ports?: VoyantGraphRuntimePorts,
+): Promise<void> {
+  const owner = allRuntimeUnits(runtime).find((unit) =>
+    unit.jobs.some((job) => job.declaration.id === jobId),
+  )
+  const job = owner?.jobs.find((candidate) => candidate.declaration.id === jobId)
+  if (!owner || !job) {
+    throw new Error(`invokeVoyantGraphJob: job "${jobId}" is not selected by the graph.`)
+  }
+  const handler = await job.load()
+  await handler(createRuntimeFactoryContext(runtime, ports, owner))
+}
+
 /** Load graph-owned workflow/subscriber metadata without composing API routes. */
 export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
