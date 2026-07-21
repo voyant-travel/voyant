@@ -271,9 +271,16 @@ function runnerFixture(events: string[]) {
       return { name: migration.idempotencyKey, priority: migration.order, migrations: [] }
     },
     async runSchema(_client, source) {
-      if (schemaLedger.has(source.name)) return { existing: false, executed: [], baselined: [] }
+      if (schemaLedger.has(source.name)) {
+        return { existing: false, executed: [], baselined: [], adopted: [] }
+      }
       schemaLedger.add(source.name)
-      return { existing: false, executed: [`${source.name}/0000`], baselined: [] }
+      return {
+        existing: false,
+        executed: [`${source.name}/0000`],
+        baselined: [],
+        adopted: [],
+      }
     },
   }
   return { dependencies, setupLedger }
