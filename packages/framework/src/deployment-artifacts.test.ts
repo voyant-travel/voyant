@@ -430,18 +430,16 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("createVoyantNodeEnv")
     expect(source).toContain("resolveVoyantNodeProviderPlan(deployment.providers)")
     expect(source).toContain("createVoyantNodeRuntimeHostPrimitives")
-    expect(source).toContain(
-      '"deployment.providers.adminAuth": deployment.providers.adminAuth',
-    )
+    expect(source).toContain('"deployment.providers.adminAuth": deployment.providers.adminAuth')
     expect(source).toContain(
       '"deployment.providers.customerAuth": deployment.providers.customerAuth',
     )
     expect(source).toContain("const runtimePorts = createGeneratedGraphRuntimePorts({")
     expect(source).toContain("env,")
     expect(source).toContain("runtimePorts,")
-    expect(
-      source.indexOf("const runtimePorts = createGeneratedGraphRuntimePorts({"),
-    ).toBeLessThan(source.indexOf("const handle = await startVoyantNodeRuntime({"))
+    expect(source.indexOf("const runtimePorts = createGeneratedGraphRuntimePorts({")).toBeLessThan(
+      source.indexOf("const handle = await startVoyantNodeRuntime({"),
+    )
     expect(source).toContain("GENERATED_PRODUCT_JOBS")
     expect(source).toContain("jobs: GENERATED_PRODUCT_JOBS")
     expect(source).not.toContain("starters/")

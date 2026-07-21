@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job.js"
 import { createBookingsRuntimePortContribution } from "./runtime-contributor.js"
+import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job.js"
 
 describe("createBookingsRuntimePortContribution", () => {
   it("defers dependent port resolution until every contributor is registered", async () => {
@@ -17,8 +17,6 @@ describe("createBookingsRuntimePortContribution", () => {
 
     registered = true
 
-    await expect(contribution[bookingsStaleHoldsJobRuntimePort.id]).resolves.toBe(
-      staleHoldsRuntime,
-    )
+    await expect(contribution[bookingsStaleHoldsJobRuntimePort.id]).resolves.toBe(staleHoldsRuntime)
   })
 })
