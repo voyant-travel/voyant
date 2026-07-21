@@ -164,7 +164,14 @@ describe("apps service", () => {
       service.releaseFromUpload(db, app.id, {
         manifest: {
           ...validManifest,
-          scopes: { requested: ["bookings:read", "invoices:read"], optional: [] },
+          scopes: {
+            requested: [
+              "app-webhooks:configure",
+              "bookings:read",
+              "invoices:read",
+            ],
+            optional: [],
+          },
         },
         createdBy: "user_1",
         provenance: { source: "test" },

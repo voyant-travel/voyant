@@ -213,7 +213,19 @@ describe("graph runtime composition", () => {
           },
         ],
       },
-      modules: [],
+      modules: [
+        {
+          id: "@acme/finance",
+          kind: "module",
+          packageName: "@acme/finance",
+          order: 0,
+          selectedIds: {
+            ...EMPTY_SELECTED_IDS,
+            events: ["@acme/finance#event.invoice.issued"],
+          },
+          routes: [],
+        },
+      ],
       plugins: [],
       webhookPlan: { inbound: [], outbound: [] },
     })

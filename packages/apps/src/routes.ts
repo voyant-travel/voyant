@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core/events"
 import type { createCustomFieldsService } from "@voyant-travel/custom-fields"
 import {
+  ApiHttpError,
   openApiValidationHook,
   parseJsonBody,
   parseQuery,

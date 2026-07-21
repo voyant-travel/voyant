@@ -30,7 +30,10 @@ describe("app manifest compiler", () => {
     const first = compileAppManifest(validManifest)
     const second = compileAppManifest({
       ...validManifest,
-      scopes: { optional: ["invoices:read"], requested: ["bookings:read"] },
+      scopes: {
+        optional: ["invoices:read"],
+        requested: ["app-webhooks:configure", "bookings:read"],
+      },
     })
 
     expect(first.digest).toMatch(/^sha256:/)
