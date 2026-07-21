@@ -41,6 +41,8 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
     const webhookDelivery = hasPort(appsWebhookDeliveryRuntimePort)
       ? await getPort<AppsWebhookDeliveryRuntime>(appsWebhookDeliveryRuntimePort)
       : undefined
+    const completeInstallationSetup =
+      managedMarketplace?.acquisitionResolver.completeInstallationSetup
     if (
       managedAuth &&
       managedMarketplace &&
@@ -106,6 +108,16 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
             customFieldValueOperations,
             finance,
             ...(webhookDelivery ? { webhookDelivery } : {}),
+            ...(completeInstallationSetup
+              ? {
+                  completeMarketplaceSetup: (context) =>
+                    completeInstallationSetup({
+                      installationId: context.installationId,
+                      appId: context.appId,
+                      releaseId: context.releaseId,
+                    }),
+                }
+              : {}),
           }),
       },
     } satisfies ApiModule

@@ -98,6 +98,7 @@ describe("createAppsRuntimePortContribution", () => {
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
           notifyInstallationLifecycle: async () => undefined,
+          completeInstallationSetup: async () => undefined,
         },
       }),
     ).not.toThrow()
@@ -120,6 +121,31 @@ describe("createAppsRuntimePortContribution", () => {
     ).toThrow(/notifyInstallationLifecycle/)
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle: async () => undefined,
+        },
+      } as never),
+    ).not.toThrow()
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
+        deploymentId: "deployment-1",
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle: async () => undefined,
+          completeInstallationSetup: "not-a-function",
+        },
+      } as never),
+    ).toThrow(/completeInstallationSetup/)
+    expect(() =>
+      appsManagedMarketplaceRuntimePort.test({
         deploymentId: "",
         acquisitionResolver: {
           resolveAcquisitionIntent: async () => null,
@@ -127,6 +153,7 @@ describe("createAppsRuntimePortContribution", () => {
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
           notifyInstallationLifecycle: async () => undefined,
+          completeInstallationSetup: async () => undefined,
         },
       }),
     ).toThrow(/deploymentId/)

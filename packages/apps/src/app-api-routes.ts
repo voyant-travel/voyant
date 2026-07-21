@@ -74,11 +74,14 @@ export interface AppsAppApiRouteOptions extends AppApiServiceOptions {
   deadlineMs?: number
   maxPayloadBytes?: number
   maxFinanceArtifactBytes?: number
+  /** Managed-host acknowledgement; absent for self-hosted runtimes. */
+  completeMarketplaceSetup?: (context: AppApiAccessContext) => Promise<void>
 }
 
 export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
   const routes = new Hono<Env>()
   const service = createAppApiService(options)
+  const completeMarketplaceSetup = options.completeMarketplaceSetup
   const maxPayloadBytes = options.maxPayloadBytes ?? 256 * 1024
   const maxFinanceArtifactBytes = options.maxFinanceArtifactBytes ?? 10 * 1024 * 1024
 
@@ -117,6 +120,24 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
   routes.get("/self", (c) =>
     run(c, service.introspect(c.get("db"), appContext(c)), options.deadlineMs),
   )
+
+  if (completeMarketplaceSetup) {
+    routes.post("/marketplace/setup-completion", async (c) => {
+      // The verified OAuth App API context is the sole identity input. This
+      // operation intentionally has no request schema/body and no tenant-
+      // supplied Cloud credential.
+      if (await hasRequestBodyBytes(c)) {
+        throw new ApiHttpError("Marketplace setup completion does not accept a request body.", {
+          status: 400,
+          code: "app_api_setup_completion_body_not_allowed",
+        })
+      }
+      const context = appContext(c)
+      await withAppApiDeadline(completeMarketplaceSetup(context), options.deadlineMs)
+      c.header("cache-control", "no-store")
+      return c.json({ data: { acknowledged: true as const } }, 200)
+    })
+  }
 
   routes.get("/entities/:entity", (c) => {
     const { entity } = parseEntityParams(c.req.param())
@@ -401,6 +422,29 @@ function isFinancePdfArtifactRequest(c: Context<Env>) {
     c.req.method === "PUT" &&
     /^\/v1\/app\/finance\/documents\/[^/]+\/artifacts\/provider-pdf$/.test(c.req.path)
   )
+}
+
+async function hasRequestBodyBytes(c: Context<Env>) {
+  const declaredLength = c.req.header("content-length")
+  if (declaredLength === "0") return false
+  if (declaredLength !== undefined) return true
+
+  const body = c.req.raw.body
+  if (!body) return false
+
+  const reader = body.getReader()
+  try {
+    while (true) {
+      const next = await reader.read()
+      if (next.done) return false
+      if (next.value.byteLength > 0) {
+        await reader.cancel("Marketplace setup completion does not accept a request body.")
+        return true
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
 }
 
 function hasPdfSignature(bytes: Uint8Array) {
