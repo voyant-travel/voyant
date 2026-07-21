@@ -379,7 +379,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
 
     const index = statement.match(
       new RegExp(
-        `^CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${identifier}\\s+ON\\s+${identifier}\\b[\\s\\S]*;?$`,
+        `^CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${identifier}\\s+ON\\s+${identifier}\\s+[\\s\\S]*;?$`,
         "i",
       ),
     )
