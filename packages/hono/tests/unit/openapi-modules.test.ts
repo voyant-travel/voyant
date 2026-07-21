@@ -105,7 +105,7 @@ describe("splitDocumentByModule", () => {
   // A composed aggregate: two module-owned paths, one publicPath override owned
   // by `commerce`, and one route (`audit-log`) that no mount claims —
   // standing in for an `additionalRoutes` mount.
-  const full: OpenApiDocument = {
+  const full = {
     openapi: "3.1.0",
     info: INFO,
     paths: {
@@ -115,7 +115,7 @@ describe("splitDocumentByModule", () => {
       "/v1/webhooks/netopia": { post: {} }, // non-surface — must be ignored
     },
     components: { schemas: {} },
-  } as unknown as OpenApiDocument
+  } satisfies OpenApiDocument
 
   const mounts: ModuleMount[] = [
     { moduleName: "bookings", prefix: "/v1/admin/bookings", load: () => docApp("/list") },
@@ -137,8 +137,8 @@ describe("splitDocumentByModule", () => {
     const covered = new Set<string>()
     for (const doc of docs.values()) for (const p of Object.keys(doc.paths ?? {})) covered.add(p)
     expect([...covered].sort()).toEqual([
-      "/v1/admin/bookings/list",
       "/v1/admin/audit-log/{id}",
+      "/v1/admin/bookings/list",
       "/v1/public/booking-engine/hold",
     ])
   })
@@ -154,7 +154,7 @@ describe("stampModuleMetadata", () => {
       "/v1/public/booking-engine/hold": { post: { responses: {} } },
       "/v1/webhooks/netopia": { post: { responses: {} } },
     },
-  } as unknown as OpenApiDocument
+  } satisfies OpenApiDocument
 
   it("stamps x-voyant-module (authoritative owner) and x-voyant-surface per operation", () => {
     const stamped = stampModuleMetadata(doc, owner)
@@ -190,7 +190,7 @@ describe("stampModuleMetadata", () => {
           },
         },
       },
-    } as unknown as OpenApiDocument
+    } satisfies OpenApiDocument
     const stamped = stampModuleMetadata(tagged, new Map())
     const op = (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[
       "/v1/admin/legal/contracts"
@@ -212,7 +212,7 @@ describe("stampModuleMetadata", () => {
         "/v1/admin/items": { get: { responses: {} } },
         "/v1/admin/things": { get: { operationId: "getAdminItems", responses: {} } },
       },
-    } as unknown as OpenApiDocument
+    } satisfies OpenApiDocument
     const stamped = stampModuleMetadata(collide, new Map())
     const get = (path: string) =>
       (stamped.paths as Record<string, Record<string, Record<string, unknown>>>)[path].get

@@ -5,7 +5,10 @@ import { pathToFileURL } from "node:url"
 import type { LinkDefinition, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
-import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+import type {
+  VoyantGraphDeploymentRequirements,
+  VoyantGraphProvisionedJob,
+} from "@voyant-travel/framework/deployment-graph"
 import type { VoyantNodeRuntime } from "@voyant-travel/framework/node-runtime"
 import { tsImport } from "tsx/esm/api"
 
@@ -121,6 +124,7 @@ export async function readGeneratedDeploymentGraph(
   runtime: GeneratedProjectRuntime,
 ): Promise<{
   requirements: VoyantGraphDeploymentRequirements
+  jobs: readonly VoyantGraphProvisionedJob[]
   scheduledJobs: readonly GeneratedScheduledJob[]
 }> {
   const graph = JSON.parse(
@@ -128,7 +132,7 @@ export async function readGeneratedDeploymentGraph(
   ) as {
     contentHash?: unknown
     requirements?: unknown
-    provisioning?: { scheduledJobs?: unknown }
+    provisioning?: { jobs?: unknown; scheduledJobs?: unknown }
   }
   if (graph.contentHash !== runtime.graphHash) {
     throw new Error("Generated project runtime and deployment graph hashes do not match.")
@@ -143,6 +147,9 @@ export async function readGeneratedDeploymentGraph(
   }
   return {
     requirements: graph.requirements as VoyantGraphDeploymentRequirements,
+    jobs: Array.isArray(graph.provisioning?.jobs)
+      ? (graph.provisioning.jobs as VoyantGraphProvisionedJob[])
+      : [],
     scheduledJobs: Array.isArray(graph.provisioning?.scheduledJobs)
       ? (graph.provisioning.scheduledJobs as GeneratedScheduledJob[])
       : [],

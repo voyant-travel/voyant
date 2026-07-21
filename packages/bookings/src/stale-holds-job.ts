@@ -1,15 +1,8 @@
-import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
-import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
+import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
+import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job-runtime-port.js"
 import { expireStaleBookingHolds } from "./tasks/expire-stale-holds.js"
 
-export const bookingsStaleHoldsJobRuntimePort = definePort<BookingsExpireStaleHoldsJobRuntime>({
-  id: "bookings.stale-holds-job",
-  test(runtime) {
-    if (!runtime || typeof runtime.resolveDb !== "function") {
-      throw new Error("bookings.stale-holds-job provider must implement resolveDb().")
-    }
-  },
-})
+export { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job-runtime-port.js"
 
 /** Expire every durable booking hold whose domain cutoff has passed. */
 export async function runBookingsExpireStaleHoldsJob(

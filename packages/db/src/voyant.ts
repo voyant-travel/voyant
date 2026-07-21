@@ -1,5 +1,5 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
-import { eventOutboxJobRuntimePort } from "./outbox-job.js"
+import { eventOutboxJobRuntimePort } from "./outbox-job-runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the database package. */
 export const dbVoyantModule = defineModule({

@@ -56,7 +56,7 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
     "relationships.upsertPersonFromContact",
     "customFields.resolveRegistry",
     "accommodation.enrichOverviewItems",
-    "finance.createStaleBookingHoldsRuntime",
+    "finance.createStaleBookingHoldsJobRuntime",
     "inventory.resolveProductSnapshot",
   ]) {
     if (!(contributor + runtimeSource).includes(required)) {

@@ -136,8 +136,6 @@ export {
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
   type VoyantGraphWebhookDeclaration,
-  type VoyantGraphWorkflow,
-  type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
 export const VOYANT_GRAPH_RESERVED_FACETS = [

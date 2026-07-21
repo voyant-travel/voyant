@@ -96,11 +96,11 @@ if (
 }
 for (const [source, required] of [
   [
-    movedRuntimeFactories[0],
+    `${movedRuntimeFactories[0]}\n${migratedContributors[0]}`,
     [
       "relationships.upsertPersonFromContact",
       "accommodation.enrichOverviewItems",
-      "finance.createStaleBookingHoldsRuntime",
+      "finance.createStaleBookingHoldsJobRuntime",
       "inventory.resolveProductSnapshot",
     ],
   ],

@@ -51,7 +51,7 @@ ${generatedArguments}
 it("accepts package-owned defaults and generic primitives", async () => {
   const root = await fixture("    primitives,")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /11 package-owned runtime families/)
+  assert.match(result.stdout, /10 package-owned runtime families/)
 })
 
 it("accepts optional provider-neutral graph ports", async () => {
@@ -60,7 +60,7 @@ it("accepts optional provider-neutral graph ports", async () => {
     ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
   `)
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /11 package-owned runtime families/)
+  assert.match(result.stdout, /10 package-owned runtime families/)
 })
 
 it("rejects a package-specific generated runtime argument", async () => {

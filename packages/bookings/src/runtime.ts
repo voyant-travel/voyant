@@ -19,7 +19,7 @@ interface BookingsRuntimeRequirements {
 export function createBookingsRuntime(
   requirements: BookingsRuntimeRequirements,
 ): BookingsRuntimeProvider {
-  const { accommodation, customFields, finance, relationships } = requirements
+  const { accommodation, customFields, relationships } = requirements
 
   return {
     options: {

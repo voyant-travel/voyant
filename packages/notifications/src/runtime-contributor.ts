@@ -11,7 +11,7 @@ import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront"
 import type { StorefrontVerificationRoutesOptions } from "@voyant-travel/storefront/verification"
 import { createFinanceNotificationsRuntime } from "./finance-runtime.js"
 import { createQuotesNotificationsRuntime } from "./quotes-runtime.js"
-import { notificationsReminderJobRuntimePort } from "./reminder-job.js"
+import { notificationsReminderJobRuntimePort } from "./reminder-job-runtime-port.js"
 import { createNotificationsRuntime } from "./runtime.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
 

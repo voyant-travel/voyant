@@ -139,57 +139,58 @@ export function createProductBrochureRoutes(
 ): OpenAPIHono<Env> {
   const maxSizeBytes = options.maxSizeBytes ?? DEFAULT_MAX_BROCHURE_PDF_BYTES
 
-  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .use("*", idempotencyKey())
-    .openapi(generateBrochureRoute, async (c) => {
-      const storage = options.resolveStorage(c)
-      if (!storage) {
-        return c.json({ error: "Storage not configured" }, 503)
+  const app = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  app.use("*", idempotencyKey())
+  app.openapi(generateBrochureRoute, async (c) => {
+    const storage = options.resolveStorage(c)
+    if (!storage) {
+      return c.json({ error: "Storage not configured" }, 503)
+    }
+
+    const productId = c.req.valid("param").id
+    if (!productId) return c.json({ error: "id route param is required" }, 400)
+
+    const printer = options.resolvePrinter?.(c) ?? null
+    const keyPrefix = options.keyPrefix?.(productId) ?? `brochures/products/${productId}`
+
+    let generated: Awaited<ReturnType<typeof generateAndStoreProductBrochure>>
+    try {
+      generated = await generateAndStoreProductBrochure(c.get("db"), productId, {
+        storage,
+        template: options.template ?? createDefaultProductBrochureTemplate(),
+        ...(printer ? { printer } : {}),
+        keyPrefix,
+        filename: ({ productId: generatedProductId, filename }) =>
+          `brochure-${generatedProductId}-${Date.now()}-${filename}`,
+        maxSizeBytes,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("Generated brochure is too large")) {
+        return c.json({ error: message }, 413)
       }
-
-      const productId = c.req.valid("param").id
-      if (!productId) return c.json({ error: "id route param is required" }, 400)
-
-      const printer = options.resolvePrinter?.(c) ?? null
-      const keyPrefix = options.keyPrefix?.(productId) ?? `brochures/products/${productId}`
-
-      let generated: Awaited<ReturnType<typeof generateAndStoreProductBrochure>>
-      try {
-        generated = await generateAndStoreProductBrochure(c.get("db"), productId, {
-          storage,
-          template: options.template ?? createDefaultProductBrochureTemplate(),
-          ...(printer ? { printer } : {}),
-          keyPrefix,
-          filename: ({ productId: generatedProductId, filename }) =>
-            `brochure-${generatedProductId}-${Date.now()}-${filename}`,
-          maxSizeBytes,
-        })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        if (message.includes("Generated brochure is too large")) {
-          return c.json({ error: message }, 413)
-        }
-        if (err instanceof ProductBrochureStorageError) {
-          return c.json({ error: PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE }, 503)
-        }
-        throw err
+      if (err instanceof ProductBrochureStorageError) {
+        return c.json({ error: PRODUCT_BROCHURE_STORAGE_ERROR_MESSAGE }, 503)
       }
+      throw err
+    }
 
-      await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
 
-      return c.json(
-        {
-          data: generated.brochure,
-          metadata: {
-            filename: generated.filename,
-            sizeBytes: generated.sizeBytes,
-            storageKey: generated.storageKey,
-            url: generated.url,
-          },
+    return c.json(
+      {
+        data: generated.brochure,
+        metadata: {
+          filename: generated.filename,
+          sizeBytes: generated.sizeBytes,
+          storageKey: generated.storageKey,
+          url: generated.url,
         },
-        200,
-      )
-    })
+      },
+      200,
+    )
+  })
+  return app
 }
 
 export const productBrochureExtension: Extension = {

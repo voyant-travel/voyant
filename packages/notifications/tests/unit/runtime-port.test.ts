@@ -56,7 +56,7 @@ describe("Notifications runtime port", () => {
     const extension = await createNotificationsSubscribersVoyantRuntime(runtimeFactoryContext())
 
     await module.module.bootstrap?.(context)
-    expect(container.has(NOTIFICATION_REMINDER_JOB_RUNTIME_KEY)).toBe(true)
+    expect(container.has(NOTIFICATION_REMINDER_JOB_RUNTIME_KEY)).toBe(false)
     expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(false)
 
     await extension.extension.bootstrap?.(context)
