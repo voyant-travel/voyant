@@ -177,3 +177,23 @@ export const promotionalOfferSchedulerState = pgTable(
 
 export type PromotionalOfferSchedulerState = typeof promotionalOfferSchedulerState.$inferSelect
 export type NewPromotionalOfferSchedulerState = typeof promotionalOfferSchedulerState.$inferInsert
+
+/**
+ * Durable coalescing checkpoint for catalog-wide promotion reindex requests.
+ * A subscriber increments requestedGeneration before returning. The job only
+ * advances completedGeneration after every current product has been reindexed;
+ * concurrent requests therefore remain visible for the next drain.
+ */
+export const promotionReindexState = pgTable("promotion_reindex_state", {
+  id: text("id").primaryKey().default("all-products"),
+  requestedGeneration: integer("requested_generation").notNull().default(0),
+  completedGeneration: integer("completed_generation").notNull().default(0),
+  claimedGeneration: integer("claimed_generation"),
+  leaseOwner: text("lease_owner"),
+  leaseUntil: timestamp("lease_until", { withTimezone: true }),
+  requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type PromotionReindexState = typeof promotionReindexState.$inferSelect

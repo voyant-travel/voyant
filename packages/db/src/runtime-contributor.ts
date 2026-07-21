@@ -1,13 +1,6 @@
-import {
-  type VoyantRuntimeHostPrimitives,
-  type VoyantWorkflowServiceContribution,
-  voyantWorkflowServiceContributionsPort,
-} from "@voyant-travel/core"
+import type { DeliveryResult, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 
-import {
-  createEventOutboxWorkflowRuntime,
-  EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
-} from "./outbox-workflow.js"
+import { type EventOutboxJobRuntime, eventOutboxJobRuntimePort } from "./outbox-job.js"
 
 export interface DbRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
@@ -17,16 +10,13 @@ export interface DbRuntimeContributorHost {
 export function createDbRuntimePortContribution(
   host: DbRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const outboxRuntime: EventOutboxJobRuntime = {
+    withDb: (operation) => operation(host.primitives.database.resolve(undefined)),
+    deliver: (envelope) =>
+      host.primitives.events.deliver(envelope, undefined) as Promise<DeliveryResult>,
+    warn: (message) => console.warn(message),
+  }
   return {
-    [voyantWorkflowServiceContributionsPort.id]: {
-      serviceId: EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
-      create(context) {
-        return createEventOutboxWorkflowRuntime({
-          withDb: (operation) => operation(host.primitives.database.resolve(context.environment)),
-          resolveEventBus: async () => context.eventBus,
-          warn: (message) => console.warn(message),
-        })
-      },
-    } satisfies VoyantWorkflowServiceContribution,
+    [eventOutboxJobRuntimePort.id]: outboxRuntime,
   }
 }

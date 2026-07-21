@@ -12,11 +12,9 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
  * need. Templates wire this once at startup via `setChannelPushDeps`;
  * callers retrieve via `getChannelPushDeps`.
  *
- * The runtime indirection lets workflows (which can't take closures in
- * their durable input) and EventBus subscribers (which run in the
- * emitter's process) share the same wiring without each consumer
- * re-resolving services. Per §4.5 — subscribers stay write-only and
- * delegate HTTP work to the workflow, which reaches into these deps.
+ * The runtime indirection lets payload-free jobs and EventBus subscribers
+ * share the same package-owned wiring. Subscribers only persist intents;
+ * jobs drain the authoritative rows through this narrow dependency set.
  */
 export interface ChannelPushDeps {
   db: AnyDrizzleDb
@@ -29,8 +27,7 @@ export interface ChannelPushDeps {
   logger?: ChannelPushLogger
 }
 
-export const CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY =
-  "distribution.workflows.channel-push.runtime" as const
+export const CHANNEL_PUSH_RUNTIME_KEY = "distribution.channel-push.runtime" as const
 
 export interface ChannelPushLogger {
   info?: (message: string, meta?: Record<string, unknown>) => void

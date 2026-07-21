@@ -9,8 +9,8 @@ const packages = {
   commerce: {
     required: [
       "./validation",
-      "./product-reindex-workflow",
-      "./product-reindex-workflow-manifest",
+      "./promotion-reindex-job",
+      "./promotion-reindex-subscriber",
       "./promotion-boundary-job",
     ],
     retiredPrefixes: ["./markets", "./promotions", "./sellability"],

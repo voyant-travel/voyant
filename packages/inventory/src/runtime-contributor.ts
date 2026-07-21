@@ -12,25 +12,20 @@ import {
   commerceInventoryRuntimePort,
 } from "@voyant-travel/commerce/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import {
-  createHttpDocumentRendererFromEnv,
-  type DocumentRenderer,
-  documentRendererPort,
-} from "@voyant-travel/core/document-rendering"
+import { type DocumentRenderer, documentRendererPort } from "@voyant-travel/core/document-rendering"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
   type FinanceInventoryPaymentPolicyRuntime,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { and, eq } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { checkProductActionLedgerDrift } from "./action-ledger-drift.js"
 import {
   createInventoryPaymentPolicyRuntime,
   readPolicySourceFromInternalNotes,
   stampPolicySourceOnBooking,
 } from "./booking-payment-policy-runtime.js"
-import { createInventoryBrochureRuntime, createProductBrochurePrinter } from "./brochure-runtime.js"
+import { createInventoryBrochureRuntime } from "./brochure-runtime.js"
 import { catalogInventoryRuntimeExtension } from "./catalog-runtime-extension.js"
 import {
   type InventoryRuntime,
@@ -39,11 +34,6 @@ import {
 } from "./runtime-ports.js"
 import { productCapabilities, products } from "./schema.js"
 import { productsService } from "./service.js"
-import { createBasicPdfProductBrochurePrinter } from "./tasks/brochure-printers.js"
-import {
-  createProductsGeneratePdfWorkflowRuntime,
-  PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-} from "./workflow-runtime.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -58,23 +48,9 @@ export interface InventoryRuntimeContributorHost {
   getRuntimePort?<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
-function createInventoryRuntime(primitives: VoyantRuntimeHostPrimitives): InventoryRuntime {
+function createInventoryRuntime(_primitives: VoyantRuntimeHostPrimitives): InventoryRuntime {
   return {
-    bootstrap: ({ container, bindings }) => {
-      const env = primitives.env(bindings)
-      container.register(
-        PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-        createProductsGeneratePdfWorkflowRuntime({
-          resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
-          resolvePrinter: () => {
-            const renderer = createHttpDocumentRendererFromEnv(env)
-            return renderer
-              ? createProductBrochurePrinter(renderer)
-              : createBasicPdfProductBrochurePrinter()
-          },
-        }),
-      )
-    },
+    bootstrap: () => undefined,
   }
 }
 
