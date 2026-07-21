@@ -18,6 +18,8 @@ import type {
   WorkflowManifestEntry,
   WorkflowReleaseCapabilities,
 } from "../protocol/index.js"
+import { durationToMs } from "../rate-limit/index.js"
+import type { Duration } from "../types.js"
 import type { ConcurrencyPolicy, ScheduleDeclaration } from "../workflow.js"
 import { canonicalJson, shortHash } from "./payload-hash.js"
 
@@ -36,7 +38,7 @@ export interface BuildManifestArgs {
       defaultRuntime?: "node"
       concurrency?: ConcurrencyPolicy<unknown>
       retry?: unknown
-      timeout?: unknown
+      timeout?: Duration
       schedule?: ScheduleDeclaration | readonly ScheduleDeclaration[]
     }
   }>
@@ -76,6 +78,7 @@ export async function buildManifest(args: BuildManifestArgs): Promise<WorkflowMa
         id: wf.id,
         displayName: displayNameFromId(wf.id),
         description: wf.config?.description,
+        ...(wf.config?.timeout === undefined ? {} : { timeoutMs: durationToMs(wf.config.timeout) }),
         capabilities: workflowCapabilities({
           hasSchedules: schedules.length > 0,
           supportsEvents: eventTargetWorkflowIds.has(wf.id),

@@ -197,6 +197,32 @@ describe("buildManifest", () => {
     expect(a.versionId).not.toBe(b.versionId)
   })
 
+  test("workflow timeout is normalized into manifest metadata and identity", async () => {
+    const withoutTimeout = workflow({ id: "timeout-wf", async run() {} })
+    const a = await buildManifest({
+      environment: "production",
+      workflows: [withoutTimeout],
+      eventFilters: [],
+    })
+
+    expect(a.workflows[0]).not.toHaveProperty("timeoutMs")
+
+    __resetRegistry()
+    const withTimeout = workflow({
+      id: "timeout-wf",
+      timeout: "1h",
+      async run() {},
+    })
+    const b = await buildManifest({
+      environment: "production",
+      workflows: [withTimeout],
+      eventFilters: [],
+    })
+
+    expect(b.workflows[0]?.timeoutMs).toBe(3_600_000)
+    expect(b.versionId).not.toBe(a.versionId)
+  })
+
   test("zod schemas are converted before manifest identity is hashed", async () => {
     const bookingSchemaWorkflow = workflow({
       id: "schema-wf",

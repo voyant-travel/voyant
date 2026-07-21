@@ -62,6 +62,8 @@ export interface WorkflowManifestEntry {
   id: string
   displayName?: string
   description?: string
+  /** Workflow-level compute-time budget, normalized from `WorkflowConfig.timeout`. */
+  timeoutMs?: number
   capabilities: WorkflowDefinitionCapabilities
   version: string
   inputSchema?: unknown
