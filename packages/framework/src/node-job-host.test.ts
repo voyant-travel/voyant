@@ -222,7 +222,7 @@ describe("Voyant Node product job host", () => {
     releases.shift()?.()
   })
 
-  it("reports the correlation attached to each accepted coalesced execution", async () => {
+  it("reports the newest correlation for a coalesced execution", async () => {
     const releases: Array<() => void> = []
     const reports: Array<{ releaseId?: string; executionToken?: string }> = []
     const handler = vi.fn(() => new Promise<void>((resolve) => releases.push(resolve)))
@@ -252,13 +252,14 @@ describe("Voyant Node product job host", () => {
     await expect(host.invoke(jobId, "wakeup", laterCoalesced)).resolves.toBe(
       "queued",
     )
+    await expect(host.invoke(jobId, "wakeup")).resolves.toBe("queued")
     releases.shift()?.()
     await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))
     releases.shift()?.()
     await vi.waitFor(() => expect(reports).toHaveLength(2))
     expect(reports).toEqual([
       expect.objectContaining(first),
-      expect.objectContaining(queued),
+      expect.objectContaining(laterCoalesced),
     ])
   })
 

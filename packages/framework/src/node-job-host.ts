@@ -235,7 +235,10 @@ export function createVoyantNodeJobHost(
       if (job.schedule?.overlap === "queue" || source === "wakeup") {
         state.pending = true
         state.pendingSource = source
-        state.pendingCorrelation ??= correlation
+        // Cloud replaces its tracked execution token on each post-lease
+        // dispatch. The one coalesced follow-up must therefore report the
+        // newest correlated claim; an uncorrelated local wake must not erase it.
+        state.pendingCorrelation = correlation ?? state.pendingCorrelation
         return "queued"
       }
       return "skipped"
