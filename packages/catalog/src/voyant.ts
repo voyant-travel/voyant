@@ -135,6 +135,11 @@ export const catalogVoyantModule = defineModule({
       key: "TYPESENSE_COLLECTION_PREFIX",
       required: false,
     },
+    {
+      id: "@voyant-travel/catalog#config.postgres-search-vector-strategy",
+      key: "POSTGRES_SEARCH_VECTOR_STRATEGY",
+      required: false,
+    },
   ],
   secrets: [
     {
@@ -158,7 +163,10 @@ export const catalogVoyantModule = defineModule({
       id: "@voyant-travel/catalog#provider.postgres",
       port: "catalog.indexer",
       selection: { role: "search", value: "postgres" },
-      uses: { resources: ["@voyant-travel/catalog#resource.database"] },
+      uses: {
+        resources: ["@voyant-travel/catalog#resource.database"],
+        config: ["@voyant-travel/catalog#config.postgres-search-vector-strategy"],
+      },
       runtime: {
         entry: "@voyant-travel/catalog/indexer/postgres-provider",
         export: "createPostgresGraphIndexerProvider",

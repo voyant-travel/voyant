@@ -4,9 +4,11 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { createPostgresIndexer } from "./postgres.js"
 
 const DATABASE_RESOURCE_ID = "@voyant-travel/catalog#resource.database"
+const VECTOR_STRATEGY_CONFIG_ID = "@voyant-travel/catalog#config.postgres-search-vector-strategy"
 
 interface PostgresGraphProviderContext {
   getResource: <T = unknown>(declarationId: string) => T | undefined
+  getConfig: <T = unknown>(declarationId: string) => T | undefined
 }
 
 /**
@@ -24,9 +26,16 @@ export function createPostgresGraphIndexerProvider(
       `Postgres catalog indexer requires database resource "${DATABASE_RESOURCE_ID}".`,
     )
   }
+  const vectorStrategy = resolveVectorStrategy(context.getConfig(VECTOR_STRATEGY_CONFIG_ID))
 
   return {
     create: ({ registries, vectorDimensions }) =>
-      createPostgresIndexer({ db, registries, vectorDimensions }),
+      createPostgresIndexer({ db, registries, vectorDimensions, vectorStrategy }),
   }
+}
+
+function resolveVectorStrategy(value: unknown): "none" | "pgvector" {
+  if (value === undefined || value === "" || value === "none") return "none"
+  if (value === "pgvector") return value
+  throw new Error('POSTGRES_SEARCH_VECTOR_STRATEGY must be either "none" or "pgvector".')
 }

@@ -37,7 +37,10 @@ search services, or catalog runtime services.
   composition.
 - **`./indexer/postgres`** — native Postgres `IndexerAdapter`, the first-party
   managed-cloud default. It keeps a rebuildable catalog projection in the
-  deployment database and uses the deployment-owned resident pool.
+  deployment database and uses the deployment-owned resident pool. Set the
+  recorded `POSTGRES_SEARCH_VECTOR_STRATEGY=pgvector` capability together with
+  a deployment vector dimension only when the database has provisioned the
+  `vector` extension; otherwise it remains the portable native FTS strategy.
 - **`./indexer/typesense`** — native Typesense `IndexerAdapter`, retained as a
   selectable first-party provider.
 - **`./indexer/postgres-provider`** — graph provider factory selected by

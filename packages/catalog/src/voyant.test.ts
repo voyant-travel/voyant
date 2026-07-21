@@ -8,7 +8,10 @@ describe("catalog deployment declaration", () => {
       expect.objectContaining({
         port: "catalog.indexer",
         selection: { role: "search", value: "postgres" },
-        uses: { resources: ["@voyant-travel/catalog#resource.database"] },
+        uses: {
+          resources: ["@voyant-travel/catalog#resource.database"],
+          config: ["@voyant-travel/catalog#config.postgres-search-vector-strategy"],
+        },
         runtime: {
           entry: "@voyant-travel/catalog/indexer/postgres-provider",
           export: "createPostgresGraphIndexerProvider",
@@ -47,6 +50,9 @@ describe("catalog deployment declaration", () => {
     )
     expect(catalogVoyantModule.secrets).toContainEqual(
       expect.objectContaining({ key: "TYPESENSE_API_KEY", required: false }),
+    )
+    expect(catalogVoyantModule.config).toContainEqual(
+      expect.objectContaining({ key: "POSTGRES_SEARCH_VECTOR_STRATEGY", required: false }),
     )
   })
 })

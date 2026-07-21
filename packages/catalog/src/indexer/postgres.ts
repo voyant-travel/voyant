@@ -32,11 +32,19 @@ type StoredRow = {
   embedding_model_id: string | null
   document_text: string
   keyword_score?: number | string
+  vector_score?: number | string
 }
+
+type PostgresVectorStrategy = "none" | "pgvector"
 
 export interface PostgresIndexerOptions extends IndexerProviderOptions {
   /** The deployment-owned pooled database client. */
   db: AnyDrizzleDb
+  /**
+   * Recorded deployment capability. `pgvector` requires a provisioned vector
+   * extension; the adapter never creates extensions or probes per request.
+   */
+  vectorStrategy?: PostgresVectorStrategy
 }
 
 /**
@@ -50,6 +58,9 @@ export interface PostgresIndexerOptions extends IndexerProviderOptions {
  */
 export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerAdapter {
   const { db } = options
+  const vectorStrategy = options.vectorStrategy ?? "none"
+  const vectorDimensions = resolveVectorDimensions(vectorStrategy, options.vectorDimensions)
+  let vectorStorageVerified = vectorStrategy !== "pgvector"
 
   const ensureStorage = async () => {
     await db.execute(sql`
@@ -90,6 +101,29 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_slice_idx
         ON voyant_catalog_search_documents (vertical, locale, audience, market, channel, id)
     `)
+    if (vectorStrategy === "pgvector") {
+      if (!vectorStorageVerified) {
+        const vectorType = readRows(
+          await db.execute(sql`SELECT 1 FROM pg_type WHERE typname = 'vector' LIMIT 1`),
+        )
+        if (vectorType.length === 0) {
+          throw new Error(
+            "Postgres catalog indexer recorded pgvector strategy requires the vector extension to be provisioned.",
+          )
+        }
+        vectorStorageVerified = true
+      }
+      await db.execute(sql`
+        ALTER TABLE voyant_catalog_search_documents
+        ADD COLUMN IF NOT EXISTS search_embedding vector
+      `)
+      await db.execute(sql`
+        CREATE INDEX IF NOT EXISTS voyant_catalog_search_documents_embedding_slice_idx
+          ON voyant_catalog_search_documents (
+            vertical, locale, audience, market, channel, embedding_model_id, id
+          )
+      `)
+    }
   }
 
   const ensureSlice = async (slice: IndexerSlice) => {
@@ -104,12 +138,11 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
   return {
     capabilities: {
       supportsKeywordSearch: true,
-      // Vector capability remains false until the pgvector/Lakebase strategy
-      // is selected from recorded deployment capability state.
-      supportsHybridSearch: false,
-      supportsVectorFields: false,
-      vectorDimensions: null,
-      maxVectorsPerDocument: null,
+      supportsHybridSearch: vectorStrategy === "pgvector",
+      supportsVectorFields: vectorStrategy === "pgvector",
+      vectorDimensions,
+      // The native fallback persists one selected embedding per document.
+      maxVectorsPerDocument: vectorStrategy === "pgvector" ? 1 : null,
       supportsCrossAudienceFederation: true,
       supportsAdminDenormalization: true,
     },
@@ -183,23 +216,48 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       await ensureStorage()
       await ensureSlice(slice)
       for (const document of documents) {
-        await db.execute(sql`
-          INSERT INTO voyant_catalog_search_documents (
-            vertical, locale, audience, market, channel, id, fields, embeddings,
-            embedding_model_id, document_text
-          ) VALUES (
-            ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
-            ${slice.channel ?? ""}, ${document.id}, ${JSON.stringify(document.fields)}::jsonb,
-            ${document.embeddings ? JSON.stringify(document.embeddings) : null}::jsonb,
-            ${document.embedding_model_id ?? null}, ${documentText(document.fields)}
-          ) ON CONFLICT (vertical, locale, audience, market, channel, id)
-          DO UPDATE SET
-            fields = EXCLUDED.fields,
-            embeddings = EXCLUDED.embeddings,
-            embedding_model_id = EXCLUDED.embedding_model_id,
-            document_text = EXCLUDED.document_text,
-            updated_at = now()
-        `)
+        const embedding = vectorDimensions
+          ? selectedEmbedding(document, vectorDimensions)
+          : undefined
+        if (vectorStrategy === "pgvector") {
+          await db.execute(sql`
+            INSERT INTO voyant_catalog_search_documents (
+              vertical, locale, audience, market, channel, id, fields, embeddings,
+              embedding_model_id, document_text, search_embedding
+            ) VALUES (
+              ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
+              ${slice.channel ?? ""}, ${document.id}, ${JSON.stringify(document.fields)}::jsonb,
+              ${document.embeddings ? JSON.stringify(document.embeddings) : null}::jsonb,
+              ${document.embedding_model_id ?? null}, ${documentText(document.fields)},
+              ${embedding ?? null}::vector
+            ) ON CONFLICT (vertical, locale, audience, market, channel, id)
+            DO UPDATE SET
+              fields = EXCLUDED.fields,
+              embeddings = EXCLUDED.embeddings,
+              embedding_model_id = EXCLUDED.embedding_model_id,
+              document_text = EXCLUDED.document_text,
+              search_embedding = EXCLUDED.search_embedding,
+              updated_at = now()
+          `)
+        } else {
+          await db.execute(sql`
+            INSERT INTO voyant_catalog_search_documents (
+              vertical, locale, audience, market, channel, id, fields, embeddings,
+              embedding_model_id, document_text
+            ) VALUES (
+              ${slice.vertical}, ${slice.locale}, ${slice.audience}, ${slice.market},
+              ${slice.channel ?? ""}, ${document.id}, ${JSON.stringify(document.fields)}::jsonb,
+              ${document.embeddings ? JSON.stringify(document.embeddings) : null}::jsonb,
+              ${document.embedding_model_id ?? null}, ${documentText(document.fields)}
+            ) ON CONFLICT (vertical, locale, audience, market, channel, id)
+            DO UPDATE SET
+              fields = EXCLUDED.fields,
+              embeddings = EXCLUDED.embeddings,
+              embedding_model_id = EXCLUDED.embedding_model_id,
+              document_text = EXCLUDED.document_text,
+              updated_at = now()
+          `)
+        }
       }
     },
 
@@ -219,56 +277,26 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
     },
 
     async search(slice, request) {
-      if (request.mode !== "keyword") {
+      if (request.mode !== "keyword" && vectorStrategy !== "pgvector") {
         throw new Error("Postgres catalog indexer semantic and hybrid strategies are not enabled.")
       }
       await ensureStorage()
-      const query = request.query.trim()
-      const prefixQuery = toPrefixTsQuery(query)
-      const keywordScoreSql = query
-        ? prefixQuery
-          ? sql`
-              GREATEST(
-                ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query})),
-                ts_rank_cd(search_vector, to_tsquery('simple', ${prefixQuery}))
-              )
-            `
-          : sql`ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query}))`
-        : sql`0`
-      const keywordPredicate = query
-        ? prefixQuery
-          ? sql`
-              AND (
-                search_vector @@ websearch_to_tsquery('simple', ${query})
-                OR search_vector @@ to_tsquery('simple', ${prefixQuery})
-              )
-            `
-          : sql`AND search_vector @@ websearch_to_tsquery('simple', ${query})`
-        : sql``
       const audiences =
         request.search_audiences?.length && slice.audience === "staff-admin"
           ? request.search_audiences
           : [slice.audience]
-      const rows = readRows(
-        await db.execute(sql`
-          SELECT
-            id,
-            fields,
-            embeddings,
-            embedding_model_id,
-            document_text,
-            ${keywordScoreSql} AS keyword_score
-          FROM voyant_catalog_search_documents
-          WHERE ${slicePredicate(slice, audiences)}
-            ${keywordPredicate}
-          ORDER BY keyword_score DESC, id
-          LIMIT ${MAX_CANDIDATES + 1}
-        `),
-      ) as StoredRow[]
-      const capped = rows.length > MAX_CANDIDATES
-      const candidates = (capped ? rows.slice(0, MAX_CANDIDATES) : rows)
-        .map((row) => ({ document: toDocument(row), score: keywordScore(row, query) }))
-        .filter(({ document }) => matchesFilters(document, request.filters ?? []))
+      const keywordRows =
+        request.mode === "semantic"
+          ? []
+          : await searchKeywordRows(db, slice, audiences, request.query)
+      const vectorRows =
+        request.mode === "keyword"
+          ? []
+          : await searchVectorRows(db, slice, audiences, request, vectorDimensions!)
+      const capped = keywordRows.length > MAX_CANDIDATES || vectorRows.length > MAX_CANDIDATES
+      const candidates = combineCandidates(request, keywordRows, vectorRows).filter(
+        ({ document }) => matchesFilters(document, request.filters ?? []),
+      )
 
       const ordered = orderHits(candidates, request, options.registries.get(slice.vertical), slice)
       const start = cursorOffset(ordered, request.pagination?.cursor)
@@ -303,6 +331,78 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): IndexerA
       await this.upsert(slice, batch)
     },
   }
+}
+
+async function searchKeywordRows(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  audiences: readonly string[],
+  rawQuery: string,
+): Promise<StoredRow[]> {
+  const query = rawQuery.trim()
+  const prefixQuery = toPrefixTsQuery(query)
+  const keywordScoreSql = query
+    ? prefixQuery
+      ? sql`
+          GREATEST(
+            ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query})),
+            ts_rank_cd(search_vector, to_tsquery('simple', ${prefixQuery}))
+          )
+        `
+      : sql`ts_rank_cd(search_vector, websearch_to_tsquery('simple', ${query}))`
+    : sql`0`
+  const keywordPredicate = query
+    ? prefixQuery
+      ? sql`
+          AND (
+            search_vector @@ websearch_to_tsquery('simple', ${query})
+            OR search_vector @@ to_tsquery('simple', ${prefixQuery})
+          )
+        `
+      : sql`AND search_vector @@ websearch_to_tsquery('simple', ${query})`
+    : sql``
+  return readRows(
+    await db.execute(sql`
+      SELECT id, fields, embeddings, embedding_model_id, document_text,
+        ${keywordScoreSql} AS keyword_score
+      FROM voyant_catalog_search_documents
+      WHERE ${slicePredicate(slice, audiences)} ${keywordPredicate}
+      ORDER BY keyword_score DESC, id
+      LIMIT ${MAX_CANDIDATES + 1}
+    `),
+  ) as StoredRow[]
+}
+
+async function searchVectorRows(
+  db: AnyDrizzleDb,
+  slice: IndexerSlice,
+  audiences: readonly string[],
+  request: SearchRequest,
+  dimensions: number,
+): Promise<StoredRow[]> {
+  const embedding = queryEmbedding(request, dimensions)
+  const threshold = distanceThreshold(request.distance_threshold)
+  return readRows(
+    await db.execute(sql`
+      SELECT id, fields, embeddings, embedding_model_id, document_text,
+        1 - (search_embedding <=> ${embedding}::vector) AS vector_score
+      FROM voyant_catalog_search_documents
+      WHERE ${slicePredicate(slice, audiences)}
+        AND search_embedding IS NOT NULL
+        ${
+          request.query_embedding_model_id
+            ? sql`AND embedding_model_id = ${request.query_embedding_model_id}`
+            : sql``
+        }
+        ${
+          threshold === undefined
+            ? sql``
+            : sql`AND search_embedding <=> ${embedding}::vector <= ${threshold}`
+        }
+      ORDER BY search_embedding <=> ${embedding}::vector, id
+      LIMIT ${MAX_CANDIDATES + 1}
+    `),
+  ) as StoredRow[]
 }
 
 function slicePredicate(slice: IndexerSlice, audiences: readonly string[] = [slice.audience]) {
@@ -386,6 +486,38 @@ function sameScalar(value: unknown, expected: string | number | boolean): boolea
   return value === expected
 }
 
+function combineCandidates(
+  request: SearchRequest,
+  keywordRows: StoredRow[],
+  vectorRows: StoredRow[],
+): Array<{ document: IndexerDocument; score: number }> {
+  const keywords = keywordRows.slice(0, MAX_CANDIDATES)
+  const vectors = vectorRows.slice(0, MAX_CANDIDATES)
+  if (request.mode === "keyword") {
+    return keywords.map((row) => ({
+      document: toDocument(row),
+      score: keywordScore(row, request.query),
+    }))
+  }
+  if (request.mode === "semantic") {
+    return vectors.map((row) => ({ document: toDocument(row), score: vectorScore(row) }))
+  }
+
+  const alpha = hybridAlpha(request.alpha)
+  const keywordRanks = reciprocalRanks(keywords)
+  const vectorRanks = reciprocalRanks(vectors)
+  const documents = new Map<string, IndexerDocument>()
+  for (const row of [...keywords, ...vectors]) documents.set(row.id, toDocument(row))
+  return [...documents.entries()].map(([id, document]) => ({
+    document,
+    score: (1 - alpha) * (keywordRanks.get(id) ?? 0) + alpha * (vectorRanks.get(id) ?? 0),
+  }))
+}
+
+function reciprocalRanks(rows: StoredRow[]): Map<string, number> {
+  return new Map(rows.map((row, index) => [row.id, 1 / (index + 1)]))
+}
+
 function keywordScore(row: StoredRow, query: string): number {
   if (typeof row.keyword_score === "number" && Number.isFinite(row.keyword_score)) {
     return row.keyword_score
@@ -401,6 +533,76 @@ function keywordScore(row: StoredRow, query: string): number {
     .split(/\s+/)
     .filter(Boolean)
     .reduce((score, token) => score + occurrences(text, token), 0)
+}
+
+function vectorScore(row: StoredRow): number {
+  if (typeof row.vector_score === "number" && Number.isFinite(row.vector_score)) {
+    return row.vector_score
+  }
+  if (typeof row.vector_score === "string") {
+    const parsed = Number(row.vector_score)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return 0
+}
+
+function resolveVectorDimensions(
+  strategy: PostgresVectorStrategy,
+  dimensions: number | null | undefined,
+): number | null {
+  if (strategy === "none") return null
+  if (!Number.isInteger(dimensions) || (dimensions ?? 0) <= 0) {
+    throw new Error(
+      "Postgres catalog indexer pgvector strategy requires a positive vectorDimensions deployment setting.",
+    )
+  }
+  return dimensions ?? null
+}
+
+function selectedEmbedding(document: IndexerDocument, dimensions: number): string | null {
+  const embeddings = Object.entries(document.embeddings ?? {})
+  if (embeddings.length === 0) return null
+  if (embeddings.length > 1) {
+    throw new Error(
+      "Postgres catalog indexer pgvector strategy supports one embedding per document.",
+    )
+  }
+  const [, embedding] = embeddings[0]!
+  return vectorLiteral(embedding, dimensions, `document "${document.id}" embedding`)
+}
+
+function queryEmbedding(request: SearchRequest, dimensions: number): string {
+  if (!request.query_embedding) {
+    throw new Error("Semantic and hybrid Postgres catalog searches require query_embedding.")
+  }
+  return vectorLiteral(request.query_embedding, dimensions, "query_embedding")
+}
+
+function vectorLiteral(values: number[], dimensions: number, label: string): string {
+  if (values.length !== dimensions || values.some((value) => !Number.isFinite(value))) {
+    throw new RangeError(`${label} must contain exactly ${dimensions} finite values.`)
+  }
+  return `[${values.join(",")}]`
+}
+
+function hybridAlpha(value: number | undefined): number {
+  const alpha = value ?? 0.3
+  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) {
+    throw new RangeError(
+      `Hybrid alpha must be a finite number from 0 through 1; received ${String(value)}`,
+    )
+  }
+  return alpha
+}
+
+function distanceThreshold(value: number | undefined): number | undefined {
+  if (value === undefined) return undefined
+  if (!Number.isFinite(value) || value < 0) {
+    throw new RangeError(
+      `distance_threshold must be a finite non-negative number; received ${String(value)}`,
+    )
+  }
+  return value
 }
 
 function occurrences(text: string, token: string): number {
