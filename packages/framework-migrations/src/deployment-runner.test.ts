@@ -830,7 +830,7 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     expect(ledgerRows).toEqual([])
   })
 
-  it("rejects E-string defaults that differ after a backslash-escaped quote", async () => {
+  it("fails closed for E-string defaults with backslash-escaped quotes", async () => {
     const source = src("escaped-literal-defaults", [
       `CREATE TABLE "escaped_literal_defaults" (
   "id" text PRIMARY KEY NOT NULL,
@@ -894,7 +894,7 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
           ],
         },
       ),
-    ).rejects.toThrow("does not exactly match")
+    ).rejects.toThrow("E-string default expressions are not supported")
     expect(ledgerRows).toEqual([])
   })
 

@@ -162,7 +162,6 @@ function normalizeOutsideStringLiterals(
   let result = ""
   let outside = ""
   let inLiteral = false
-  let backslashEscapes = false
   const flushOutside = () => {
     if (!outside) return
     result += normalizeOutside(outside)
@@ -170,31 +169,22 @@ function normalizeOutsideStringLiterals(
   }
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index] as string
-    if (inLiteral) {
-      if (backslashEscapes && character === "\\" && value[index + 1] !== undefined) {
-        result += character + value[index + 1]
-        index += 1
-        continue
-      }
+    if (character === "'") {
+      if (!inLiteral) flushOutside()
       result += character
-      if (character !== "'") continue
-      if (value[index + 1] === "'") {
+      if (inLiteral && value[index + 1] === "'") {
         result += "'"
         index += 1
       } else {
-        inLiteral = false
-        backslashEscapes = false
+        inLiteral = !inLiteral
       }
       continue
     }
-    if (character === "'") {
-      backslashEscapes = /(?:^|[^a-z0-9_$])e$/i.test(outside)
-      flushOutside()
+    if (inLiteral) {
       result += character
-      inLiteral = true
-      continue
+    } else {
+      outside += character
     }
-    outside += character
   }
   flushOutside()
   return result
@@ -441,6 +431,9 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       const table = postgresIdentifier(create[1] as string)
       if (tableNames.includes(table)) {
         unsupported(migration, `table ${table} is created more than once`)
+      }
+      if (/\bDEFAULT\s+E'/i.test(create[2] as string)) {
+        unsupported(migration, `E-string default expressions are not supported in table ${table}`)
       }
       tableNames.push(table)
       let position = 0
