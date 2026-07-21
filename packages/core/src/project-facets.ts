@@ -351,7 +351,6 @@ export interface VoyantGraphWebhookDeclaration extends VoyantGraphFacetEntity {
 export interface VoyantGraphActionBindings {
   routes?: readonly string[]
   tools?: readonly string[]
-  workflows?: readonly string[]
   events?: readonly string[]
   webhooks?: readonly string[]
 }

@@ -211,9 +211,8 @@ export const appsVoyantModule = defineModule({
       },
       {
         id: "@voyant-travel/apps#access.app-webhooks",
-        // Namespaced `app-webhooks` (not `webhooks`) to avoid a duplicate
-        // access-resource authority with @voyant-travel/workflow-runs, which
-        // owns the deployment `webhooks` resource.
+        // Namespaced `app-webhooks` so app delivery policy remains distinct
+        // from the general outbound-webhook resource.
         resource: "app-webhooks",
         label: "App webhooks",
         description: "Configure signing, read webhook health, and request replay.",

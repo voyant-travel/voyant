@@ -73,7 +73,7 @@ export default defineConfig({
 ```
 
 A standard project does not list standard modules, package-owned extensions,
-admin pages, API documents, subscribers, workflows, jobs, links, migrations, or
+admin pages, API documents, subscribers, jobs, links, migrations, or
 runtime bindings. Product defaults change through an explicit distribution
 dependency or lockfile change, so graph diffing and migration planning remain
 reviewable.
@@ -96,7 +96,6 @@ src/
   admin/
   modules/
   extensions/
-  workflows/
   subscribers/
   links/
 ```
@@ -140,7 +139,7 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 - capabilities and typed runtime ports
 - API bundles and their OpenAPI document membership
 - schemas, migrations, links, and setup migrations
-- package-owned product jobs, workflows, schedules, subscribers, and events
+- package-owned product jobs, schedules, subscribers, and events
 - admin routes, pages, slots, and contributions
 - reporting datasets, preset widgets, and cross-module grid templates
 - access resources, tools, webhooks, actions, and lifecycle metadata
@@ -148,7 +147,7 @@ The manifest exports one or more `defineModule`, `defineExtension`, or
 
 Executable code is referenced through symbolic package exports and remains
 behind lazy imports. Importing `./voyant` must not load route trees, schemas, UI,
-workflow implementations, or infrastructure clients.
+job implementations, or infrastructure clients.
 
 Reporting declarations follow the same boundary. Dataset descriptors, preset
 queries, visualizations, and grid templates are source-free JSON metadata;
@@ -281,7 +280,7 @@ ID. The host must not choose Bookings, Finance, Catalog, or any other product
 implementation. Conversely, packages must not reach into a deployment container
 for undeclared services. Infrastructure follows the same authority
 rule: `deployment.providers` selects storage, cache, shared state, rate limit,
-workflow, and delivery implementations; environment values only configure the
+job and delivery implementations; environment values only configure the
 selected implementation.
 
 Object storage is exposed as a vendor-neutral logical-store resolver. The Node
@@ -381,7 +380,7 @@ surfaces return and render the lowered catalog without importing package manifes
 or rebuilding contracts. Product distributions select the infrastructure module;
 settings packages and application hosts do not own or reconstruct the catalog.
 
-### Jobs, workflows, and schedules
+### Jobs and schedules
 
 Selected packages may own product jobs required by their capabilities. Each job
 has a stable ID, a package-owned schedule or wakeup marker, and a named symbolic
@@ -409,12 +408,7 @@ After that sweep, resident cadence dispatch observes cron and `every` metadata.
 External scheduler and wakeup calls use the fixed
 `POST /__voyant/jobs/:jobId` endpoint, require origin-trust authentication, and
 accept no body or query input. The host exposes only in-memory job health (last
-attempt, success, failure, and retry exhaustion), not workflow run controls.
-
-Workflow and workflow-schedule descriptors remain supported temporarily during
-the workflow-product retirement. Existing `src/workflows` and legacy `src/jobs`
-workflow conventions are removed in that later compatibility-breaking phase and
-must not be used as an alternate path for new product jobs.
+attempt, success, failure, and retry exhaustion), not generic run controls.
 
 ### Tools, access, actions, and audit
 
@@ -467,13 +461,13 @@ The unification is complete only when all of these statements are true:
 3. No first-party package ID appears in starter composition code.
 4. Every selected reusable package publishes `voyant.package.v1` metadata and
    owns each facet it activates.
-5. API, admin, OpenAPI, events, subscribers, workflows, jobs, schedules, tools,
+5. API, admin, OpenAPI, events, subscribers, jobs, schedules, tools,
    access, actions, links, schemas, and migrations are selected-graph derived.
 6. Runtime behavior is assembled from package-owned contributors and explicit
    typed ports over domain-neutral host primitives.
 7. Central composition and OpenAPI catalogs, package-keyed runtime bindings, and
    compatibility registries are absent.
-8. Adding a local route, admin page, module, workflow, subscriber, or link
+8. Adding a local route, admin page, module, subscriber, or link
    requires adding a file in the corresponding directory, not forking a
    standard package.
 9. Generated artifacts are deterministic, hash-consistent, and rejected when

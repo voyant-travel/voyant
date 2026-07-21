@@ -11,7 +11,7 @@ export function generateProjectSubscribersSource(
   const ordered = [...subscribers].sort(compareConventions)
   return generatedCollectionSource(
     ordered,
-    "EventFilterDescriptor",
+    "SubscriberRuntimeDescriptor",
     "projectSubscribers",
     "subscriber",
   )
@@ -57,7 +57,7 @@ export function generateSelectedLinksSource(
 
 function generatedCollectionSource(
   contributions: readonly ProjectConventionFileContribution[],
-  typeName: "EventFilterDescriptor" | "LinkDefinition",
+  typeName: "SubscriberRuntimeDescriptor" | "LinkDefinition",
   exportName: "projectSubscribers" | "projectLinks",
   importName: "subscriber" | "link",
 ): string {

@@ -9,7 +9,6 @@ import {
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
-import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   bookingMaintenanceRuntimePort,
@@ -205,7 +204,6 @@ describe("commerce deployment manifest", () => {
         { id: catalogCheckoutDatabaseRuntimePort.id },
         { id: catalogCheckoutLegalRuntimePort.id },
         { id: catalogCheckoutContractPdfRuntimePort.id },
-        { id: workflowRunnerRegistryRuntimePort.id },
       ],
       api: [
         {

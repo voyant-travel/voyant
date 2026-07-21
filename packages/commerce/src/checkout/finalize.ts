@@ -1,8 +1,8 @@
-// agent-quality: file-size exception -- owner: commerce; the checkout-finalize
-// step wiring (confirm booking, issue invoice, link payments, contract PDF) is
-// one cohesive workflow definition; splitting it would scatter a single saga.
+// agent-quality: file-size exception -- owner: commerce; checkout finalization
+// (confirm booking, issue invoice, link payments, contract PDF) is one cohesive
+// domain operation.
 import { bookingsService } from "@voyant-travel/bookings"
-import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
+import { bookings } from "@voyant-travel/bookings/schema"
 import {
   type CheckoutFinalizeDeps,
   type CheckoutFinalizeInput,
@@ -14,14 +14,13 @@ import {
   issueInvoiceFromBooking,
   settleCoveredBookingPaymentSchedules,
 } from "@voyant-travel/finance"
-import { beginWorkflowRun, type WorkflowRunRecorder } from "@voyant-travel/workflow-runs"
 import { and, desc, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
  * Optional callback that generates (or fetches existing) the contract PDF for
  * a booking. Wired by the deployment and forwarded into the explicit
- * `generate_contract_pdf` workflow step. The deployment supplies its
+ * contract-generation step. The deployment supplies its
  * platform bindings (`env`) when constructing it, so this package-level type
  * only carries the booking-scoped inputs the step needs.
  */
@@ -35,23 +34,11 @@ export type CatalogCheckoutContractPdfGenerator = (input: {
 function buildCheckoutFinalizeDeps(
   db: PostgresJsDatabase,
   eventBus: EventBus,
-  recorder: WorkflowRunRecorder,
   generateContractPdf?: CatalogCheckoutContractPdfGenerator,
 ): CheckoutFinalizeDeps {
   return {
     db,
     eventBus,
-    recorder: {
-      startStep: (name) => {
-        void recorder.startStep(name)
-      },
-      completeStep: (name, output) => {
-        void recorder.completeStep(name, output ?? null)
-      },
-      failStep: (name, error) => {
-        void recorder.failStep(name, error)
-      },
-    },
     confirmBooking: async (bookingId) => {
       const result = await bookingsService.confirmBooking(db, bookingId, {}, undefined, {
         eventBus,
@@ -197,7 +184,7 @@ function buildCheckoutFinalizeDeps(
           notes:
             `Checkout-finalize linkage from session ${session.id}` +
             (paymentSessionId && session.id !== paymentSessionId
-              ? ` (workflow input session: ${paymentSessionId})`
+              ? ` (command input session: ${paymentSessionId})`
               : ""),
         })
 
@@ -218,95 +205,23 @@ function buildCheckoutFinalizeDeps(
   }
 }
 
-export interface DispatchCheckoutFinalizeParams {
+export interface FinalizeCheckoutParams {
   db: PostgresJsDatabase
   eventBus: EventBus
   input: CheckoutFinalizeInput
-  trigger: string
-  correlationId: string | null
-  tags: ReadonlyArray<string>
-  parentRunId?: string | null
-  triggeredByUserId?: string | null
-  resumeFromStep?: string
-  seedResults?: Record<string, unknown>
   generateContractPdf?: CatalogCheckoutContractPdfGenerator
 }
 
-function checkoutFinalizeInputRecord(input: CheckoutFinalizeInput): Record<string, unknown> {
-  return { ...input }
-}
-
 /**
- * Run the checkout-finalize workflow for a booking: record a workflow run,
- * build the finalize deps (confirm booking, issue invoice, link payments,
- * generate contract PDF), execute `runCheckoutFinalize`, and mark the run
- * complete/failed. The deployment owns the db + event bus + (optional)
- * contract-pdf generator; this is the reusable saga driver.
+ * Finalize a paid checkout as an idempotent domain operation. The payment
+ * subscriber owns delivery; durable event-outbox retry is the recovery path.
+ * There is no customer-authored execution definition or run record.
  */
-export async function dispatchCheckoutFinalize(
-  params: DispatchCheckoutFinalizeParams,
-): Promise<{ runId: string }> {
-  const recorder = await beginWorkflowRun(params.db, {
-    workflowName: "checkout-finalize",
-    trigger: params.trigger,
-    correlationId: params.correlationId ?? null,
-    tags: [...params.tags],
-    input: checkoutFinalizeInputRecord(params.input),
-    parentRunId: params.parentRunId ?? null,
-    triggeredByUserId: params.triggeredByUserId ?? null,
-    resumeFromStep: params.resumeFromStep ?? null,
-  })
-
-  if (params.parentRunId) {
-    try {
-      const action = params.resumeFromStep ? "resumed" : "rerun"
-      const description = params.resumeFromStep
-        ? `Workflow checkout-finalize ${action} from step "${params.resumeFromStep}"`
-        : `Workflow checkout-finalize ${action}`
-      await params.db.insert(bookingActivityLog).values({
-        bookingId: params.input.bookingId,
-        actorId: params.triggeredByUserId ?? null,
-        activityType: "system_action",
-        description,
-        metadata: {
-          kind: "workflow_rerun",
-          workflowName: "checkout-finalize",
-          parentRunId: params.parentRunId,
-          newRunId: recorder.runId,
-          resumeFromStep: params.resumeFromStep ?? null,
-        },
-      })
-    } catch (err) {
-      console.warn("[catalog-checkout] failed to write rerun activity log", err)
-    }
-  }
-
-  if (params.resumeFromStep && params.seedResults) {
-    for (const [stepName, output] of Object.entries(params.seedResults)) {
-      if (stepName === "__deps") continue
-      await recorder.recordSkippedStep(
-        stepName,
-        output && typeof output === "object" ? (output as Record<string, unknown>) : null,
-      )
-    }
-  }
-
+export async function finalizeCheckout(params: FinalizeCheckoutParams): Promise<void> {
   const deps = buildCheckoutFinalizeDeps(
     params.db,
     params.eventBus,
-    recorder,
     params.generateContractPdf,
   )
-  try {
-    await runCheckoutFinalize(params.input, deps, {
-      skipUntil: params.resumeFromStep,
-      seedResults: params.seedResults,
-    })
-    await recorder.complete()
-    return { runId: recorder.runId }
-  } catch (err) {
-    console.error("[catalog-checkout] checkout-finalize workflow failed", err)
-    await recorder.fail(err)
-    throw err
-  }
+  await runCheckoutFinalize(params.input, deps)
 }

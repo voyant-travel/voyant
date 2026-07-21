@@ -70,26 +70,6 @@ export function getActionLedgerEntry(
   return getJson<ActionLedgerGetResponse>(client, `/v1/admin/action-ledger/entries/${id}`)
 }
 
-/** Summary row of the starter-level workflow-runs admin surface — the
- * filters popover lets operators scope the ledger to one run. */
-export interface WorkflowRunSummary {
-  id: string
-  workflowName: string
-  status: string
-  startedAt: string
-}
-
-export interface WorkflowRunsListResponse {
-  data: WorkflowRunSummary[]
-}
-
-export function listWorkflowRuns(
-  client: ActionLedgerAdminClient,
-  limit = 50,
-): Promise<WorkflowRunsListResponse> {
-  return getJson<WorkflowRunsListResponse>(client, `/v1/admin/workflow-runs?limit=${limit}`)
-}
-
 function joinUrl(baseUrl: string, path: string): string {
   const trimmed = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
   return `${trimmed}${path.startsWith("/") ? path : `/${path}`}`

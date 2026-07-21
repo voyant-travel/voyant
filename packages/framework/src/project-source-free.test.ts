@@ -48,10 +48,8 @@ describe("source-free project resolution", () => {
     expect(resolved.artifacts.files.map(({ path }) => path)).toEqual(
       expect.arrayContaining([
         "runtime/project-api.generated.ts",
-        "runtime/project-jobs.generated.ts",
         "runtime/project-links.generated.ts",
         "runtime/project-subscribers.generated.ts",
-        "runtime/project-workflows.generated.ts",
       ]),
     )
   })

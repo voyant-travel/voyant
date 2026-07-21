@@ -26,7 +26,7 @@ interface StoredRecord {
 
 /**
  * Create an in-memory storage provider. Useful for unit tests and for
- * locally running workflows without touching remote storage. Data is
+ * locally running jobs without touching remote storage. Data is
  * kept in a `Map` held inside the closure and is lost when the process
  * exits.
  */

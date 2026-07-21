@@ -76,17 +76,10 @@ export { createInMemoryExecutionLockManager } from "./locking.js"
 export type {
   BootstrapContext,
   BootstrapHandler,
-  EventFilterDescriptor,
-  EventFilterManifestDescriptor,
   Extension,
   Module,
   SubscriberRuntimeDescriptor,
-  WorkflowConcurrencyDescriptor,
-  WorkflowDescriptor,
-  WorkflowManifestConfigDescriptor,
-  WorkflowScheduleDescriptor,
 } from "./module.js"
-export type { JobOptions, JobRunner } from "./orchestration.js"
 export type {
   Plugin,
   RegisteredPlugins,
@@ -135,15 +128,9 @@ export type {
   VoyantGraphSubscriber,
   VoyantGraphUnitKind,
   VoyantGraphUnitManifest,
-  VoyantGraphWorkflow,
-  VoyantGraphWorkflowSchedule,
-  VoyantWorkflowServiceContribution,
-  VoyantWorkflowServiceContributionContext,
 } from "./project.js"
 export {
   VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
-  VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
-  voyantWorkflowServiceContributionsPort,
 } from "./project.js"
 export type {
   EntityFetcher,
@@ -176,13 +163,13 @@ export {
   customFieldValueReaderRuntimePort,
 } from "./runtime-port.js"
 export type {
-  StepBuilder,
+  SagaDefinition,
+  SagaContext,
+  SagaResult,
+  SagaRunOptions,
+  SagaStepBuilder,
+  SagaStepDefinition,
   StepCompensateFn,
-  StepDefinition,
   StepRunFn,
-  WorkflowContext,
-  WorkflowDefinition,
-  WorkflowResult,
-  WorkflowRunOptions,
-} from "./workflows.js"
-export { createWorkflow, step, WorkflowError } from "./workflows.js"
+} from "./saga.js"
+export { createSaga, SagaError, sagaStep } from "./saga.js"

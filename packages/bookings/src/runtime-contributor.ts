@@ -121,7 +121,7 @@ export function createBookingsRuntimePortContribution(
     [bookingsStaleHoldsJobRuntimePort.id]: Promise.resolve(
       host.getRuntimePort<BookingsFinanceRuntime>(bookingsFinanceRuntimePort),
     ).then((finance) =>
-      finance.createStaleBookingHoldsRuntime({
+      finance.createStaleBookingHoldsJobRuntime({
         resolveDb: () => host.primitives.database.resolve<PostgresJsDatabase>(undefined),
         userId: "system",
       }),

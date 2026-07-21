@@ -95,7 +95,7 @@ function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<void> {
 
 /**
  * Returns the booking-engine registry after the per-connection Connect warm has
- * completed. Use from async batch entry points (scheduled jobs, workflows)
+ * completed. Use from async batch entry points such as scheduled jobs
  * where the connection-enumeration latency is acceptable and per-connection
  * routing matters for the whole run.
  */

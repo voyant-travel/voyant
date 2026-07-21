@@ -14,7 +14,6 @@
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
     "./project-admin-conventions": "./src/project-admin-conventions.ts",
-    "./project-workflow-job-conventions": "./src/project-workflow-job-conventions.ts",
     "./project-subscriber-link-conventions": "./src/project-subscriber-link-conventions.ts",
     "./project-artifacts": "./src/project-artifacts.ts",
     "./project": "./src/project.ts",
@@ -65,8 +64,6 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
-    "@voyant-travel/workflows": "workspace:^",
-    "@voyant-travel/workflows-orchestrator": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "pg": "^8.22.0"
@@ -125,11 +122,6 @@
       "./project-admin-conventions": {
         "types": "./dist/project-admin-conventions.d.ts",
         "import": "./dist/project-admin-conventions.js"
-      },
-      "./project-workflow-job-conventions": {
-        "types": "./dist/project-workflow-job-conventions.d.ts",
-        "import": "./dist/project-workflow-job-conventions.js",
-        "default": "./dist/project-workflow-job-conventions.js"
       },
       "./project-subscriber-link-conventions": {
         "types": "./dist/project-subscriber-link-conventions.d.ts",

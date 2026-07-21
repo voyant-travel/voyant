@@ -7,7 +7,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./deployment-resources": "./src/deployment-resources.ts",
-    "./workflow-entry": "./src/workflow-entry.ts",
     "./openapi": "./src/openapi.ts",
     "./tooling": "./src/tooling.ts"
   },
@@ -37,7 +36,6 @@
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/vite-config": "workspace:^",
     "@voyant-travel/webhook-delivery": "workspace:^",
-    "@voyant-travel/workflow-runs": "workspace:^",
     "hono": "catalog:",
     "srvx": "^0.11.22",
     "tsx": "catalog:",
@@ -70,11 +68,6 @@
         "types": "./dist/deployment-resources.d.ts",
         "import": "./dist/deployment-resources.js",
         "default": "./dist/deployment-resources.js"
-      },
-      "./workflow-entry": {
-        "types": "./dist/workflow-entry.d.ts",
-        "import": "./dist/workflow-entry.js",
-        "default": "./dist/workflow-entry.js"
       },
       "./openapi": {
         "types": "./dist/openapi.d.ts",

@@ -16,7 +16,6 @@ import {
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
-import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
   bookingMaintenanceRuntimePort,
   catalogCheckoutApiRuntimePort,
@@ -458,7 +457,6 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
     requirePort(catalogCheckoutDatabaseRuntimePort),
     requirePort(catalogCheckoutLegalRuntimePort),
     requirePort(catalogCheckoutContractPdfRuntimePort),
-    requirePort(workflowRunnerRegistryRuntimePort),
   ],
   api: [
     {

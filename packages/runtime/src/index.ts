@@ -1,5 +1,4 @@
 import path from "node:path"
-import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import {
@@ -25,10 +24,8 @@ import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import {
   createVoyantNodeEnv,
   createVoyantNodeRuntimeHostPrimitives,
-  createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime,
   resolveVoyantNodeProviderPlan,
-  resolveVoyantNodeWorkflowProvider,
   type VoyantNodeRuntime,
   type VoyantNodeRuntimeEnv,
   validateVoyantNodeProviderPlanEnv,
@@ -38,7 +35,6 @@ import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime-
 import type { StorageProviderResolver } from "@voyant-travel/storage/types"
 import { resolveOutboundWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery"
 import { createPostgresWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery/postgres"
-import { tsImport } from "tsx/esm/api"
 import { createAppWebhookDeliveryLoop } from "./app-webhook-delivery-loop.js"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
@@ -49,7 +45,6 @@ import {
 } from "./deployment-resources.js"
 import { resolveLocalStorageDir, withFilesystemPersistence } from "./filesystem-storage.js"
 import {
-  type GeneratedScheduledJob,
   loadGeneratedProjectLinks,
   loadGeneratedProjectRuntime,
   readGeneratedDeploymentGraph,
@@ -336,17 +331,6 @@ export async function loadVoyantProject(
       const deliveryLoop = createAppWebhookWorkerLoop?.()
       return createNodeServer<VoyantNodeRuntimeEnv>({
         fetch: (request, env, ctx) => web.fetch(request, env, toExecutionContext(ctx)),
-        scheduled: (event, bindings, ctx) =>
-          dispatchScheduledProjectJob({
-            event,
-            bindings,
-            ctx,
-            graph,
-            projectRoot,
-            artifactRoot,
-            runtime,
-            runtimePorts: deploymentResources.ports,
-          }),
         env: runtime.env,
         port,
         ...(deliveryLoop ? { residentServices: [deliveryLoop] } : {}),
@@ -397,97 +381,6 @@ function rewriteLegacyMediaRequest(request: Request): Request {
   if (!url.pathname.startsWith("/api/v1/media/")) return request
   url.pathname = url.pathname.replace("/api/v1/media/", "/api/v1/admin/media/")
   return new Request(url, request)
-}
-
-async function dispatchScheduledProjectJob(input: {
-  event: { cron?: string; scheduledTime: number; scheduleId?: string }
-  bindings: VoyantNodeRuntimeEnv
-  ctx: import("@voyant-travel/runtime-core").ExecutionContextLike
-  graph: { scheduledJobs: readonly GeneratedScheduledJob[] }
-  projectRoot: string
-  artifactRoot: string
-  runtime: VoyantNodeRuntime
-  runtimePorts: VoyantGraphRuntimePorts
-}): Promise<void> {
-  const job = input.graph.scheduledJobs.find(
-    (candidate) =>
-      candidate.id === input.event.scheduleId ||
-      (!input.event.scheduleId && candidate.cron === input.event.cron),
-  )
-  if (!job?.workflowId) return
-  const workflowProvider = resolveVoyantNodeWorkflowProvider(
-    input.runtime.deployment.providers.workflows,
-  )
-  if (workflowProvider === "none") return
-  const { runScheduledWorkflow, isGraphWorkflowScheduledJob } = await import(
-    "@voyant-travel/workflow-runs/scheduled-workflow"
-  )
-  if (!isGraphWorkflowScheduledJob(job)) {
-    throw new Error(`Invalid generated workflow schedule ${job.id}`)
-  }
-  const workflowRuntime = await loadVoyantProjectWorkflowRuntime({
-    projectRoot: input.projectRoot,
-    artifactRoot: input.artifactRoot,
-    runtime: input.runtime,
-    runtimePorts: input.runtimePorts,
-  })
-  await runScheduledWorkflow(
-    job,
-    { scheduledTime: input.event.scheduledTime },
-    {
-      projectId: input.bindings.VOYANT_CLOUD_APP_SLUG ?? path.basename(input.projectRoot),
-      environment: input.bindings.VOYANT_CLOUD_ENVIRONMENT ?? "development",
-      load: async () => workflowRuntime,
-      createDriver: (dependencies) => {
-        const factory = createVoyantNodeWorkflowDriver({
-          deployment: input.runtime.deployment,
-          env: input.bindings,
-          defaultAppSlug: path.basename(input.projectRoot),
-          oneShot: true,
-        })
-        if (!factory) {
-          throw new Error("Scheduled workflow dispatch requires an enabled workflow provider.")
-        }
-        return factory(dependencies)
-      },
-    },
-  )
-}
-
-export async function loadVoyantProjectWorkflowRuntime(
-  options: {
-    projectRoot?: string
-    artifactRoot?: string
-    runtime?: VoyantNodeRuntime
-    runtimePorts?: VoyantGraphRuntimePorts
-  } = {},
-) {
-  const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const host =
-    options.runtime && options.runtimePorts ? undefined : await loadVoyantProject({ projectRoot })
-  const runtime = options.runtime ?? host?.runtime
-  const runtimePorts = options.runtimePorts ?? host?.runtimePorts
-  if (!runtime || !runtimePorts) {
-    throw new Error("The workflow runtime requires the resident runtime and graph ports.")
-  }
-  const artifactRoot = options.artifactRoot ?? (await resolveGeneratedArtifactRoot(projectRoot))
-  const entry = path.join(artifactRoot, "runtime/project-package-workflows.generated.ts")
-  const generated = (await tsImport(pathToFileURL(entry).href, {
-    parentURL: import.meta.url,
-  })) as { createGeneratedWorkflowRuntime(): import("@voyant-travel/framework").VoyantGraphRuntime }
-  const { loadVoyantNodeWorkflowRuntime } = await import("@voyant-travel/framework/node-host")
-  return loadVoyantNodeWorkflowRuntime({
-    graphRuntime: generated.createGeneratedWorkflowRuntime(),
-    environment: runtime.env,
-    runtimePorts,
-    createServices: async () => {
-      await runtime.app.ready(runtime.env)
-      return {
-        services: runtime.app.services,
-        eventBus: runtime.app.eventBus,
-      }
-    },
-  })
 }
 
 function createNoopContext(): import("@voyant-travel/runtime-core").ExecutionContextLike {

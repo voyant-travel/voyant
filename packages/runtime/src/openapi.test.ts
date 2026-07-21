@@ -78,12 +78,10 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
       requiredRuntimePorts: [],
       accessScopes: [],
       tools: [],
-      workflows: [],
       actions: [],
       selectedIds: {
         routes: [route.id],
         tools: [],
-        workflows: [],
         events: [],
         webhooks: [],
       },

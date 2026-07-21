@@ -12,13 +12,12 @@
     "./registry": "./src/registry.ts",
     "./container": "./src/container.ts",
     "./events": "./src/events.ts",
-    "./orchestration": "./src/orchestration.ts",
     "./custom-fields": "./src/custom-fields.ts",
     "./document-rendering": "./src/document-rendering.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./links": "./src/links.ts",
     "./query": "./src/query.ts",
-    "./workflows": "./src/workflows.ts",
+    "./saga": "./src/saga.ts",
     "./plugin": "./src/plugin.ts",
     "./project": "./src/project.ts"
   },
@@ -81,11 +80,6 @@
         "import": "./dist/events.js",
         "default": "./dist/events.js"
       },
-      "./orchestration": {
-        "types": "./dist/orchestration.d.ts",
-        "import": "./dist/orchestration.js",
-        "default": "./dist/orchestration.js"
-      },
       "./custom-fields": {
         "types": "./dist/custom-fields.d.ts",
         "import": "./dist/custom-fields.js",
@@ -111,10 +105,10 @@
         "import": "./dist/query.js",
         "default": "./dist/query.js"
       },
-      "./workflows": {
-        "types": "./dist/workflows.d.ts",
-        "import": "./dist/workflows.js",
-        "default": "./dist/workflows.js"
+      "./saga": {
+        "types": "./dist/saga.d.ts",
+        "import": "./dist/saga.js",
+        "default": "./dist/saga.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",

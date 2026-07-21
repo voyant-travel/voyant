@@ -15,7 +15,6 @@ import {
   type VoyantGraphRuntimeReference,
   type VoyantGraphSecretDeclaration,
   type VoyantGraphUnitKind,
-  type VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
@@ -38,7 +37,6 @@ export type VoyantGraphRuntimeReferenceFacet =
   | "reporting.datasets.runtime"
   | "tools.runtime"
   | "jobs.runtime"
-  | "workflows.runtime"
   | "subscribers.runtime"
 
 export interface VoyantGraphRuntimeReferenceDefinition {
@@ -111,12 +109,6 @@ export interface VoyantGraphRuntimeToolDefinition {
   risk?: "low" | "medium" | "high" | "critical"
 }
 
-export interface VoyantGraphRuntimeWorkflowDefinition {
-  unitId: string
-  declaration: VoyantGraphWorkflow
-  referenceId: string
-}
-
 /** Fixed callable operation exposed to the deployment job host without run payloads. */
 export type VoyantGraphRuntimeJobHandler = (
   context: VoyantGraphRuntimeFactoryContext,
@@ -154,7 +146,6 @@ export interface VoyantGraphRuntimeProviderDefinition {
 export interface VoyantGraphRuntimeSelectedIds {
   routes: readonly string[]
   tools: readonly string[]
-  workflows: readonly string[]
   events: readonly string[]
   webhooks: readonly string[]
 }
@@ -187,7 +178,6 @@ export interface VoyantGraphRuntimeUnitDefinition {
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
   jobs?: readonly VoyantGraphRuntimeJobDefinition[]
-  workflows?: readonly VoyantGraphRuntimeWorkflowDefinition[]
   actions?: readonly VoyantGraphRuntimeActionDefinition[]
   setupSteps?: readonly { id: string; skippable: boolean }[]
   selectedIds: VoyantGraphRuntimeSelectedIds
@@ -205,10 +195,6 @@ export interface VoyantGraphRuntimeReferenceLoader extends VoyantGraphRuntimeRef
 }
 
 export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefinition {
-  load: <T = unknown>() => Promise<T>
-}
-
-export interface VoyantGraphRuntimeWorkflowLoader extends VoyantGraphRuntimeWorkflowDefinition {
   load: <T = unknown>() => Promise<T>
 }
 
@@ -239,7 +225,6 @@ export interface VoyantGraphRuntimeUnitLoader
     | "secrets"
     | "tools"
     | "jobs"
-    | "workflows"
   > {
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
   references: readonly VoyantGraphRuntimeReferenceLoader[]
@@ -254,7 +239,6 @@ export interface VoyantGraphRuntimeUnitLoader
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   jobs: readonly VoyantGraphRuntimeJobLoader[]
-  workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteLoader[]
@@ -290,7 +274,6 @@ export interface VoyantGraphRuntime {
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   jobs: readonly VoyantGraphRuntimeJobLoader[]
-  workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   setupSteps: readonly { id: string; skippable: boolean }[]
   selectedIds: VoyantGraphRuntimeSelectedIds
@@ -359,7 +342,6 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const accessScopes = sortedUnique(units.flatMap((unit) => unit.accessScopes))
   const tools = units.flatMap((unit) => unit.tools)
   const jobs = units.flatMap((unit) => unit.jobs)
-  const workflows = units.flatMap((unit) => unit.workflows)
   const actions = units.flatMap((unit) => unit.actions)
   const setupSteps = units.flatMap((unit) => unit.setupSteps ?? [])
   const selectedIds = mergeSelectedIds(units.map((unit) => unit.selectedIds))
@@ -387,7 +369,6 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     accessScopes,
     tools,
     jobs,
-    workflows,
     actions,
     setupSteps,
     selectedIds,
@@ -423,7 +404,6 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "selectedIds"
     | "tools"
     | "jobs"
-    | "workflows"
   > {
   projectConfig: VoyantGraphJsonObject
   references: readonly VoyantGraphRuntimeReferenceDefinition[]
@@ -438,7 +418,6 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
   jobs: readonly VoyantGraphRuntimeJobDefinition[]
-  workflows: readonly VoyantGraphRuntimeWorkflowDefinition[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
@@ -576,7 +555,6 @@ function normalizeRuntimeUnitDefinition(
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
     jobs: [...(unit.jobs ?? [])],
-    workflows: [...(unit.workflows ?? [])],
     actions: [...(unit.actions ?? [])],
     setupSteps: [...(unit.setupSteps ?? [])],
     selectedIds: normalizeSelectedIds(unit.selectedIds),
@@ -658,20 +636,6 @@ function createRuntimeUnitLoader(
       load: () => loadDeclaredJob(definition, reference),
     }
   })
-  const workflows = unit.workflows.map((definition) => {
-    const reference = requireDeclarationReference(
-      definition.unitId,
-      definition.declaration.id,
-      definition.referenceId,
-      "workflows.runtime",
-      referenceById,
-    )
-    return {
-      ...definition,
-      load: <T = unknown>() => loadDeclaredWorkflow<T>(definition, reference),
-    }
-  })
-
   return {
     id: unit.id,
     ...(unit.localId ? { localId: unit.localId } : {}),
@@ -693,7 +657,6 @@ function createRuntimeUnitLoader(
     accessScopes: unit.accessScopes,
     tools,
     jobs,
-    workflows,
     actions: unit.actions,
     selectedIds: unit.selectedIds,
     routes,
@@ -874,7 +837,6 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const selectedActionBindings = {
     routes: new Set(selectedIds.routes),
     tools: new Set(selectedIds.tools),
-    workflows: new Set(selectedIds.workflows),
     events: new Set(selectedIds.events),
     webhooks: new Set(selectedIds.webhooks),
   } as const
@@ -926,7 +888,6 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
         ["resources", unit.resources],
         ["providers", unit.providers],
         ["jobs", unit.jobs],
-        ["workflows", unit.workflows],
       ] as const) {
         for (const definition of declarations) {
           const declarationId = definition.declaration.id
@@ -1218,28 +1179,6 @@ async function loadDeclaredJob(
   return value as VoyantGraphRuntimeJobHandler
 }
 
-async function loadDeclaredWorkflow<T>(
-  definition: VoyantGraphRuntimeWorkflowDefinition,
-  reference: VoyantGraphRuntimeReferenceLoader,
-): Promise<T> {
-  const value = await reference.load<unknown>()
-  if (!isRecord(value) || value.id !== definition.declaration.id) {
-    throw new VoyantGraphRuntimeLoadError(
-      "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
-      {
-        referenceId: reference.id,
-        unitId: definition.unitId,
-        facet: "workflows.runtime",
-        entityId: definition.declaration.id,
-        entry: reference.importEntry,
-        ...(reference.runtime.export ? { exportName: reference.runtime.export } : {}),
-      },
-      `loaded workflow must declare id "${definition.declaration.id}"`,
-    )
-  }
-  return value as T
-}
-
 function invalidToolExport(
   definition: VoyantGraphRuntimeToolDefinition,
   reference: VoyantGraphRuntimeReferenceLoader,
@@ -1278,7 +1217,6 @@ function normalizeSelectedIds(
   return {
     routes: sortedUnique(selectedIds.routes),
     tools: sortedUnique(selectedIds.tools),
-    workflows: sortedUnique(selectedIds.workflows),
     events: sortedUnique(selectedIds.events),
     webhooks: sortedUnique(selectedIds.webhooks),
   }
@@ -1290,7 +1228,6 @@ function mergeSelectedIds(
   return normalizeSelectedIds({
     routes: selectedIds.flatMap((ids) => ids.routes),
     tools: selectedIds.flatMap((ids) => ids.tools),
-    workflows: selectedIds.flatMap((ids) => ids.workflows),
     events: selectedIds.flatMap((ids) => ids.events),
     webhooks: selectedIds.flatMap((ids) => ids.webhooks),
   })

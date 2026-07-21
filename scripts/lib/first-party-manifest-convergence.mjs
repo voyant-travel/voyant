@@ -102,7 +102,6 @@ function inspectUnit(unit, kind, failures) {
     ...(unit.links ?? []),
     ...(unit.subscribers ?? []),
     ...(unit.events ?? []),
-    ...(unit.workflows ?? []),
     ...(unit.resources ?? []),
     ...(unit.providers ?? []),
     ...(unit.tools ?? []),

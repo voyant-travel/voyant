@@ -77,7 +77,7 @@ export interface QueryGraphResult {
 }
 
 /**
- * Callable query runtime exposed to routes and workflows.
+ * Callable query runtime exposed to routes and subscribers.
  *
  * It wraps a fixed {@link QueryGraphContext} so callers only supply the
  * per-request graph config.

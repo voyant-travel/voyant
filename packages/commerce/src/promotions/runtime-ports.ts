@@ -1,7 +1,7 @@
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
-import type { BulkReindexProductsService } from "./workflow-runtime.js"
+import type { BulkReindexProductsService } from "./job-runtime.js"
 
 export interface PromotionRedemptionDatabaseRuntime {
   withDb<T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>

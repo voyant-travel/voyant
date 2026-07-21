@@ -74,10 +74,6 @@ import {
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
-import {
-  WorkflowRunnerRegistry,
-  workflowRunnerRegistryRuntimePort,
-} from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -142,7 +138,7 @@ describe("selected Operator graph runtime composition", () => {
     )
   })
 
-  it("selects channel-push routes, workflow service, and subscribers exactly once", async () => {
+  it("selects channel-push routes and subscribers exactly once", async () => {
     const runtime = createGeneratedGraphRuntime()
     const channelPush = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/distribution#channel-push-extension",
@@ -492,17 +488,12 @@ describe("selected Operator graph runtime composition", () => {
     ).toBe(false)
   })
 
-  it("activates both selected Commerce checkout subscribers exactly once and registers its runner", async () => {
+  it("activates both selected Commerce checkout subscribers exactly once", async () => {
     const runtime = createGeneratedGraphRuntime()
     const checkout = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
     )
     const ports = await buildSelectedOperatorRuntimePorts(runtime)
-    const registry = await ports[workflowRunnerRegistryRuntimePort.id]
-    expect(registry).toBeInstanceOf(WorkflowRunnerRegistry)
-    if (!(registry instanceof WorkflowRunnerRegistry)) {
-      throw new TypeError("The selected graph did not contribute a workflow runner registry.")
-    }
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),

@@ -1,10 +1,10 @@
 import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 
 import { sendDueNotificationReminders } from "./tasks/send-due-reminders.js"
-import type { NotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
+import type { NotificationReminderJobRuntime } from "./job-runtime.js"
 
 export const notificationsReminderJobRuntimePort =
-  definePort<NotificationReminderWorkflowRuntime>({
+  definePort<NotificationReminderJobRuntime>({
     id: "notifications.reminder-job",
     test(runtime) {
       if (

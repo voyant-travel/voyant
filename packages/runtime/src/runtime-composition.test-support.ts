@@ -21,7 +21,6 @@ interface RuntimeCompositionMocks {
   createPostgresWebhookDeliveryEnqueuer: Mock
   deploymentProviders: Record<string, string>
   loadVoyantNodeRuntime: Mock
-  loadVoyantNodeWorkflowRuntime: Mock
   nodeRuntime: {
     env: { DATABASE_URL: string }
     deployment: { mode: string; providers: Record<string, string> }
@@ -39,10 +38,8 @@ interface RuntimeCompositionMocks {
   }>
   runtimeFetch: Mock<(request: Request) => Promise<Response>>
   tsImport: Mock<(url: string) => Promise<unknown>>
-  createVoyantNodeWorkflowDriver: Mock
-  runScheduledWorkflow: Mock
   runtimePorts: Record<string, unknown>
-  workflowGraphRuntime: Record<string, unknown>
+  graphRuntime: Record<string, unknown>
 }
 
 const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
@@ -52,18 +49,16 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
     plugins: [],
     accessCatalog: { resources: [] },
   }
-  const workflowGraphRuntime: Record<string, unknown> = { ...graphRuntime }
-  const runtimePorts = { "voyant.workflow-services": [{ serviceId: "package.service" }] }
+  const selectedGraphRuntime: Record<string, unknown> = { ...graphRuntime }
+  const runtimePorts = {}
   const services = { has: vi.fn(() => false), register: vi.fn(), resolve: vi.fn() }
   const eventBus = { emit: vi.fn(), subscribe: vi.fn() }
   const runtimeFetch = vi.fn(async (request: Request) => new Response(request.url))
   const nodeRuntime = {
     env: { DATABASE_URL: "postgres://example.invalid/voyant" },
-    deployment: { mode: "self-hosted", providers: { workflows: "self-hosted" } },
+    deployment: { mode: "self-hosted", providers: {} },
     app: { ready: vi.fn(), fetch: runtimeFetch, services, eventBus },
   }
-  const workflowDriver = { kind: "workflow-driver" }
-
   return {
     adminHostOptions: [] as Array<{
       clientAssetsDir: string
@@ -95,7 +90,6 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
       outboundWebhooks: "postgres",
     } as Record<string, string>,
     loadVoyantNodeRuntime: vi.fn(async (_options: unknown) => nodeRuntime),
-    loadVoyantNodeWorkflowRuntime: vi.fn(async (_options: unknown) => ({ workflows: [] })),
     nodeRuntime,
     resolveNodeDatabase: vi.fn(() => ({ kind: "database" })),
     runtimePortHosts: [] as Array<{
@@ -104,22 +98,8 @@ const mocks: RuntimeCompositionMocks = vi.hoisted(() => {
     }>,
     runtimeFetch,
     tsImport: vi.fn(),
-    createVoyantNodeWorkflowDriver: vi.fn(() => () => workflowDriver),
-    runScheduledWorkflow: vi.fn(
-      async (
-        _job: unknown,
-        _event: unknown,
-        runtime: {
-          load(): Promise<{ services: unknown }>
-          createDriver(dependencies: unknown): unknown
-        },
-      ) => {
-        const loaded = await runtime.load()
-        return runtime.createDriver({ services: loaded.services, logger: vi.fn() })
-      },
-    ),
     runtimePorts,
-    workflowGraphRuntime,
+    graphRuntime: selectedGraphRuntime,
   }
 })
 
@@ -185,7 +165,6 @@ vi.mock("@voyant-travel/framework/node-runtime", () => ({
     config: {},
     events: { deliver: options.deliverEvent },
   }),
-  createVoyantNodeWorkflowDriver: mocks.createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime: mocks.loadVoyantNodeRuntime,
   resolveVoyantNodeProviderPlan: () => ({
     storage: "memory",
@@ -193,10 +172,6 @@ vi.mock("@voyant-travel/framework/node-runtime", () => ({
     sharedState: "memory",
     rateLimit: "memory",
   }),
-  resolveVoyantNodeWorkflowProvider: (value: unknown) => {
-    if (value === "voyant-cloud" || value === "self-hosted" || value === "none") return value
-    throw new Error("unsupported workflow provider")
-  },
   validateVoyantNodeProviderPlanEnv: () => [],
 }))
 
@@ -214,10 +189,6 @@ vi.mock("./deployment-resources.js", async (importOriginal) => {
   }
 })
 
-vi.mock("@voyant-travel/framework/node-host", () => ({
-  loadVoyantNodeWorkflowRuntime: mocks.loadVoyantNodeWorkflowRuntime,
-}))
-
 vi.mock("@voyant-travel/hono/observability/reporter", () => ({
   consoleReporter: () => ({}),
 }))
@@ -228,11 +199,6 @@ vi.mock("@voyant-travel/runtime-core", () => ({
 
 vi.mock("@voyant-travel/webhook-delivery/postgres", () => ({
   createPostgresWebhookDeliveryEnqueuer: mocks.createPostgresWebhookDeliveryEnqueuer,
-}))
-
-vi.mock("@voyant-travel/workflow-runs/scheduled-workflow", () => ({
-  isGraphWorkflowScheduledJob: () => true,
-  runScheduledWorkflow: mocks.runScheduledWorkflow,
 }))
 
 vi.mock("tsx/esm/api", () => ({
@@ -246,16 +212,13 @@ mocks.tsImport.mockImplementation(async (url: string) => {
         kind: "application",
         graphHash: "graph-hash",
         deployment: { mode: "self-hosted", providers: mocks.deploymentProviders },
-        graphRuntime: mocks.workflowGraphRuntime,
+        graphRuntime: mocks.graphRuntime,
         createRuntimePorts: (host: (typeof mocks.runtimePortHosts)[number]) => {
           mocks.runtimePortHosts.push(host)
           return { ...host.runtimePorts, ...mocks.runtimePorts }
         },
       }),
     }
-  }
-  if (url.includes("project-package-workflows.generated.ts")) {
-    return { createGeneratedWorkflowRuntime: () => mocks.workflowGraphRuntime }
   }
   if (url.includes("project-links.generated.ts")) return { projectLinks: [] }
   throw new Error(`Unexpected generated import: ${url}`)
@@ -286,13 +249,6 @@ export async function loadVoyantProject(
   })
 }
 
-export async function loadVoyantProjectWorkflowRuntime(
-  ...args: Parameters<RuntimeModule["loadVoyantProjectWorkflowRuntime"]>
-): ReturnType<RuntimeModule["loadVoyantProjectWorkflowRuntime"]> {
-  const runtime = await import("./index.js")
-  return runtime.loadVoyantProjectWorkflowRuntime(...args)
-}
-
 const temporaryRoots: string[] = []
 
 beforeEach(() => {
@@ -300,14 +256,12 @@ beforeEach(() => {
   mocks.adminHostOptions.length = 0
   mocks.authRuntimeOptions.length = 0
   mocks.runtimePortHosts.length = 0
-  mocks.nodeRuntime.deployment.providers.workflows = "self-hosted"
   mocks.deploymentProviders = {
     adminAuth: "better-auth",
     customerAuth: "better-auth",
-    workflows: "self-hosted",
     outboundWebhooks: "postgres",
   }
-  mocks.workflowGraphRuntime = {
+  mocks.graphRuntime = {
     modules: [],
     extensions: [],
     plugins: [],
@@ -370,7 +324,7 @@ export function configureSearchProviderRuntime(
   })
 
   mocks.deploymentProviders.search = selection
-  mocks.workflowGraphRuntime = {
+  mocks.graphRuntime = {
     ...createVoyantGraphRuntime({
       graphHash: `sha256:search-${selection}`,
       providerSelections: { search: selection },
@@ -392,7 +346,7 @@ export function configureSearchProviderRuntime(
             },
             referenceId: references[index]?.id ?? "",
           })),
-          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
           routes: [],
         },
       ],

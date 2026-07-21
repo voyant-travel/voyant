@@ -18,7 +18,6 @@ import {
   buildGraphAdminBundleModule,
   buildGraphPresentationBundleDeclarationModule,
   buildGraphPresentationBundleModule,
-  buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
   createResolvedGraphRuntime,
 } from "./deployment-artifacts.js"
@@ -44,7 +43,6 @@ import {
   VOYANT_PROJECT_PRESENTATION_BUNDLE_ENTRY,
   VOYANT_PROJECT_PRESENTATION_BUNDLE_TYPES_ENTRY,
   VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
-  VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
 import {
   discoverProjectConventions,
@@ -58,18 +56,10 @@ import {
   PROJECT_SUBSCRIBERS_GENERATED_PATH,
   type ProjectSubscriberLinkConventionCompilation,
 } from "./project-subscriber-link-conventions.js"
-import {
-  compileProjectWorkflowJobConventions,
-  PROJECT_JOBS_GENERATED_PATH,
-  PROJECT_WORKFLOWS_GENERATED_PATH,
-  type ProjectWorkflowJobConventionCompilation,
-} from "./project-workflow-job-conventions.js"
 
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
 export const VOYANT_PROJECT_MIGRATION_RUNNER = "runtime/project-migrations.generated.mjs" as const
-export const VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID =
-  "@voyant-travel/workflows-orchestrator#migrations" as const
 
 export interface ResolveProjectInput {
   project: unknown
@@ -123,7 +113,6 @@ export interface VoyantProjectMigrationPlan {
 
 export interface ResolvedProjectArtifacts {
   runtimeEntry: string
-  workflowRuntimeEntry: string
   migrationRunner: string
   files: readonly FrameworkGeneratedProjectFile[]
   migrationPlan: VoyantProjectMigrationPlan
@@ -174,14 +163,13 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   // Published/source-free applications have no project-local contributions.
   // Reusing this snapshot lets every compiler emit its deterministic empty
   // artifact without loading the TypeScript compiler in production.
-  const [projectApi, projectAdmin, projectWorkflowJobs, projectSubscriberLinks] = await Promise.all(
+  const [projectApi, projectAdmin, projectSubscriberLinks] = await Promise.all(
     [
       compileProjectApiConventions({ projectRoot, discovery: conventions }),
       compileProjectAdminConventions({
         projectRoot,
         contributions: conventions.contributions,
       }),
-      compileProjectWorkflowJobConventions({ projectRoot, discovery: conventions }),
       compileProjectSubscriberLinkConventions({ projectRoot, discovery: conventions }),
     ],
   )
@@ -189,7 +177,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const materialized = await materializeProjectSelections(project, projectRoot)
   await materializeProjectModuleConventions(materialized, conventions, projectRoot)
   await materializeProjectApiConventions(materialized, projectApi, projectRoot)
-  await materializeProjectWorkflowJobConventions(materialized, projectWorkflowJobs, projectRoot)
   await materializeProjectSubscriberLinkConventions(
     materialized,
     projectSubscriberLinks,
@@ -240,7 +227,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
         typeof link.export === "string",
     )
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
-  const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY
   const migrationRunner = VOYANT_PROJECT_MIGRATION_RUNNER
   const migrationPlan = buildMigrationPlan(targetNeutralGraph)
   const runtimeEntryOverrides = await buildLocalRuntimeEntryOverrides(
@@ -310,19 +296,10 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
         command: "voyant project resolve",
       }),
     },
-    ...projectWorkflowJobs.generatedFiles,
     ...subscriberLinkFiles,
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({
-        graph: targetNeutralGraph,
-        command: "voyant project resolve",
-        runtimeEntryOverrides,
-      }),
-    },
-    {
-      path: workflowRuntimeEntry,
-      contents: buildGraphWorkflowRuntimeModule({
         graph: targetNeutralGraph,
         command: "voyant project resolve",
         runtimeEntryOverrides,
@@ -349,7 +326,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     conventions,
     artifacts: {
       runtimeEntry,
-      workflowRuntimeEntry,
       migrationRunner,
       files: files.sort((left, right) => left.path.localeCompare(right.path)),
       migrationPlan,
@@ -407,32 +383,6 @@ async function materializeProjectSubscriberLinkConventions(
         meta: {
           source: "project-convention",
           generatedPaths: [PROJECT_SUBSCRIBERS_GENERATED_PATH, PROJECT_LINKS_GENERATED_PATH],
-        },
-      },
-    ],
-  }
-}
-
-async function materializeProjectWorkflowJobConventions(
-  materialized: MaterializedProject,
-  compilation: ProjectWorkflowJobConventionCompilation,
-  projectRoot: string,
-): Promise<void> {
-  if (compilation.graphWorkflows.length === 0) return
-  const packageName = await admitProjectSourcePackage(materialized, projectRoot)
-  materialized.project = {
-    ...materialized.project,
-    modules: [
-      ...materialized.project.modules,
-      {
-        schemaVersion: "voyant.module.v1",
-        id: graphIdForSelection(packageName, `${packageName}#project-workflows`),
-        packageName,
-        localId: "project-workflows",
-        workflows: compilation.graphWorkflows,
-        meta: {
-          source: "project-convention",
-          generatedPaths: [PROJECT_WORKFLOWS_GENERATED_PATH, PROJECT_JOBS_GENERATED_PATH],
         },
       },
     ],
@@ -619,7 +569,6 @@ function runtimePackageReferences(
     for (const tool of unit.tools ?? []) add(unit, tool.runtime)
     for (const migration of unit.setupMigrations ?? []) add(unit, migration.runtime)
     for (const job of unit.jobs) add(unit, job.runtime)
-    for (const workflow of unit.workflows) add(unit, workflow.runtime)
     for (const subscriber of unit.subscribers) add(unit, subscriber.runtime)
   }
 
@@ -993,8 +942,6 @@ function resolveProjectSourceRuntimeTarget(projectRoot: string, entry: string): 
 function isGeneratedProjectRuntimeEntry(entry: string): boolean {
   return [
     PROJECT_API_GENERATED_PATH,
-    PROJECT_WORKFLOWS_GENERATED_PATH,
-    PROJECT_JOBS_GENERATED_PATH,
     PROJECT_SUBSCRIBERS_GENERATED_PATH,
   ].some((generatedPath) => entry === `./.voyant/${generatedPath}`)
 }
@@ -1038,27 +985,6 @@ export function buildMigrationPlan(
     packageSchemaMigrations,
     schemaDependencies,
   )
-  const workflowProviderMigrations: VoyantProjectSchemaMigration[] =
-    graph.deployment.providers.workflows === "self-hosted" &&
-    !orderedPackageMigrations.some(
-      (migration) => migration.id === VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID,
-    )
-      ? [
-          {
-            id: VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID,
-            migrationKind: "schema",
-            order: 0,
-            idempotencyKey: `schema:${VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID}`,
-            owner: "@voyant-travel/workflows-orchestrator",
-            packageName: "@voyant-travel/workflows-orchestrator",
-            source: {
-              kind: "package",
-              packageName: "@voyant-travel/workflows-orchestrator",
-              path: "./migrations",
-            },
-          },
-        ]
-      : []
   const deploymentMigrations: VoyantProjectSchemaMigration[] = (
     graph.deployment.migrations ?? []
   ).map((migration) => ({
@@ -1074,7 +1000,6 @@ export function buildMigrationPlan(
   }))
   const schemaMigrations = [
     ...orderedPackageMigrations,
-    ...workflowProviderMigrations,
     ...deploymentMigrations,
   ]
   const setupMigrations = units

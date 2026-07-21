@@ -6,10 +6,7 @@ import type { LinkDefinition, VoyantRuntimeHostPrimitives } from "@voyant-travel
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
-import {
-  resolveVoyantNodeWorkflowProvider,
-  type VoyantNodeRuntime,
-} from "@voyant-travel/framework/node-runtime"
+import type { VoyantNodeRuntime } from "@voyant-travel/framework/node-runtime"
 import { tsImport } from "tsx/esm/api"
 
 const GENERATED_ARTIFACT_LAYOUTS = [".voyant", "dist/.voyant"] as const
@@ -35,7 +32,6 @@ export interface GeneratedProjectRuntime {
 export interface GeneratedScheduledJob {
   id: string
   cron: string
-  workflowId?: string
 }
 
 interface GeneratedProjectLinks {
@@ -113,10 +109,7 @@ async function loadDeploymentGraphRuntime(artifactRoot: string): Promise<Generat
     graphHash: namespace.GENERATED_GRAPH_RUNTIME_HASH,
     deployment: {
       mode: graph.deployment.mode,
-      providers: {
-        ...providers,
-        workflows: resolveVoyantNodeWorkflowProvider(providers.workflows),
-      },
+      providers: { ...providers },
     },
     graphRuntime: namespace.createGeneratedGraphRuntime(),
     createRuntimePorts: namespace.createGeneratedGraphRuntimePorts,

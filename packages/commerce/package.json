@@ -5,7 +5,6 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./catalog-checkout-runner": "./src/checkout/runner-runtime.ts",
     "./catalog-checkout-subscribers": "./src/checkout/subscriber-runtime.ts",
     "./schema": "./src/schema.ts",
     "./checkout": "./src/checkout/index.ts",
@@ -48,7 +47,6 @@
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
-    "@voyant-travel/workflow-runs": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "rrule": "^2.8.1",
@@ -73,11 +71,6 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
-      },
-      "./catalog-checkout-runner": {
-        "types": "./dist/checkout/runner-runtime.d.ts",
-        "import": "./dist/checkout/runner-runtime.js",
-        "default": "./dist/checkout/runner-runtime.js"
       },
       "./catalog-checkout-subscribers": {
         "types": "./dist/checkout/subscriber-runtime.d.ts",

@@ -60,7 +60,6 @@ describe("standard booking action-ledger authority", () => {
             from: {
               routes: [...(action.from?.routes ?? [])],
               tools: [...(action.from?.tools ?? [])],
-              workflows: [...(action.from?.workflows ?? [])],
               events: [...(action.from?.events ?? [])],
               webhooks: [...(action.from?.webhooks ?? [])],
             },
@@ -68,7 +67,6 @@ describe("standard booking action-ledger authority", () => {
           selectedIds: {
             routes: (bookingsVoyantModule.api ?? []).map(({ id }) => id),
             tools: (bookingsVoyantModule.tools ?? []).map(({ id }) => id),
-            workflows: (bookingsVoyantModule.workflows ?? []).map(({ id }) => id),
             events: (bookingsVoyantModule.events ?? []).map(({ id }) => id),
             webhooks: (bookingsVoyantModule.webhooks ?? []).map(({ id }) => id),
           },

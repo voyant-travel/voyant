@@ -29,9 +29,9 @@ workload class well. On Node none of it is necessary.
 
 - **Entry:** `starters/operator/src/server.ts` is a generic bootstrap for
   `@voyant-travel/runtime`. The package loads the admitted generated
-  graph, links, access catalog, workflow graph, schedules, and provider plan;
+  graph, links, access catalog, jobs, schedules, and provider plan;
   owns API/auth dispatch, admin SSR/static hosting, `waitUntil`, scheduled
-  workflow execution, origin trust, and graceful shutdown; and serves the
+  job execution, origin trust, and graceful shutdown; and serves the
   client build from `dist/client`. Product composition and package-specific
   services must not return to the starter entry.
 - **Managed Cloud entry:** `@voyant-travel/framework/node-runtime` boots the
@@ -120,7 +120,7 @@ accommodation for composed apps.
 Even on Node the app entry (`src/entry.ts`) keeps SSR behind a lazy import: the
 `@tanstack/react-start/server` graph (React + `react-dom/server`, ~2.2 MB) is
 imported on first render, not at module top level, which keeps boot fast. Heavy
-API and workflow graphs stay lazy for the same reason.
+API graphs stay lazy for the same reason.
 
 Prefer:
 
@@ -133,7 +133,6 @@ Avoid:
 
 - `import { app as apiApp } from "./api/app"`;
 - `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`;
-- `import "./workflows.js"`.
 
 The mechanical checks live in `scripts/check-node-entrypoint.mjs`,
 `scripts/check-generic-node-bootstrap-authority.mjs`, and

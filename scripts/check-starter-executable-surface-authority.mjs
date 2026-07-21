@@ -33,7 +33,6 @@ const requiredSourceTokens = new Map([
     ["channel-push-booking-link", "channel-push-availability", "channel-push-content"],
   ],
   ["packages/db/src/voyant.ts", ["outbox-drain"]],
-  ["starters/operator/src/entry.ts", ["@voyant-travel/workflow-runs/scheduled-workflow"]],
   [
     "packages/auth/src/voyant.ts",
     ["authInvitationsVoyantModule", "authTeamVoyantModule", "identityAccessRuntimePort"],

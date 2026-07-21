@@ -1,4 +1,4 @@
-import type { BookingsExpireStaleHoldsWorkflowRuntime } from "@voyant-travel/bookings/workflow-runtime"
+import type { BookingsExpireStaleHoldsJobRuntime } from "@voyant-travel/bookings/job-runtime"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { closeTerminalBookingPaymentSchedules } from "./booking-lifecycle.js"
@@ -11,9 +11,9 @@ export interface FinanceStaleBookingHoldsRuntimeOptions {
 }
 
 /** Finance-owned effects required when Bookings expires stale holds. */
-export function createFinanceStaleBookingHoldsRuntime(
+export function createFinanceStaleBookingHoldsJobRuntime(
   options: FinanceStaleBookingHoldsRuntimeOptions,
-): BookingsExpireStaleHoldsWorkflowRuntime {
+): BookingsExpireStaleHoldsJobRuntime {
   return {
     resolveDb: options.resolveDb,
     resolveRuntime: () => ({

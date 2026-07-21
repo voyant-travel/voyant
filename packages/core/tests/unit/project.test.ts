@@ -195,7 +195,7 @@ describe("defineProject", () => {
         target: " node ",
         mode: "self-hosted",
         providers: {
-          workflows: "trigger",
+          objectStorage: "s3-compatible",
           database: "postgres",
         },
       },
@@ -206,7 +206,7 @@ describe("defineProject", () => {
       mode: "self-hosted",
       providers: {
         database: "postgres",
-        workflows: "trigger",
+        objectStorage: "s3-compatible",
       },
     })
   })
