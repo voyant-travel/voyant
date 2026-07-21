@@ -12,6 +12,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { beforeAll, describe, expect, it } from "vitest"
 
 import { createPostgresIndexer } from "../../src/indexer/postgres.js"
+import { runTravelRelevance, travelRelevanceCorpus } from "../../src/indexer/relevance.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 let databaseAvailable = false
@@ -58,6 +59,35 @@ describe.skipIf(!databaseAvailable)("Postgres pg_trgm catalog indexer integratio
       expect(adapter.diagnostics().typoStrategy).toBe("pgtrgm")
     } finally {
       await adapter.admin!.drop(slice)
+    }
+  })
+
+  it("meets the curated travel relevance assertions with native fallbacks", async () => {
+    const relevanceSlice: IndexerSlice = {
+      ...slice,
+      market: `relevance-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map(),
+      typoStrategy: "pgtrgm",
+    })
+    await adapter.ensureCollection(relevanceSlice)
+    await adapter.upsert(relevanceSlice, [...travelRelevanceCorpus.documents])
+
+    try {
+      const report = await runTravelRelevance(
+        adapter,
+        relevanceSlice,
+        travelRelevanceCorpus.cases,
+      )
+      expect(report.metrics).toEqual({
+        ndcgAtK: 1,
+        recallAtK: 1,
+        zeroResultRate: 0,
+      })
+    } finally {
+      await adapter.admin!.drop(relevanceSlice)
     }
   })
 })
