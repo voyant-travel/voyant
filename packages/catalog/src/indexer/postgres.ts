@@ -654,62 +654,64 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
         throw new Error("Postgres catalog indexer semantic and hybrid strategies are not enabled.")
       }
       await ensureStorage()
-      const audiences =
-        request.search_audiences?.length && slice.audience === "staff-admin"
-          ? request.search_audiences
-          : [slice.audience]
-      let keywordRows =
-        request.mode === "semantic"
-          ? []
-          : await searchKeywordRows(
-              db,
-              slice,
-              audiences,
-              request,
-              textStrategy,
-              lakebaseTextIndexReady,
-            )
-      if (typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic") {
-        keywordRows = await searchTypoRows(db, slice, audiences, request)
-      }
-      const vectorRows =
-        request.mode === "keyword"
-          ? []
-          : await searchVectorRows(db, slice, audiences, request, vectorDimensions!)
-      const capped = keywordRows.length > MAX_CANDIDATES || vectorRows.length > MAX_CANDIDATES
-      const candidates = combineCandidates(request, keywordRows, vectorRows).filter(
-        ({ document }) => matchesFilters(document, request.filters ?? []),
-      )
-
-      const registry = options.registries.get(slice.vertical)
-      const ordered = orderHits(candidates, request, registry, slice)
-      const pagedHits = afterCursor(
-        ordered,
-        request,
-        registry,
-        slice,
-        request.pagination?.cursor,
-        cursorSigningKey,
-      )
-      const limit = boundedPageSize(request.pagination?.limit)
-      const page = pagedHits.slice(0, limit)
-      const results: SearchResults = {
-        hits: page,
-        total: candidates.length,
-        ...(capped ? { totalRelation: "gte" as const } : {}),
-        ...(limit < pagedHits.length
-          ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice, cursorSigningKey) }
-          : {}),
-      }
-      if (request.facets?.length) {
-        results.facets = await buildFacets(
-          db,
-          slice,
-          candidates.map(({ document }) => document),
-          request.facets,
+      return withConsistentSearchSnapshot(db, async (snapshotDb) => {
+        const audiences =
+          request.search_audiences?.length && slice.audience === "staff-admin"
+            ? request.search_audiences
+            : [slice.audience]
+        let keywordRows =
+          request.mode === "semantic"
+            ? []
+            : await searchKeywordRows(
+                snapshotDb,
+                slice,
+                audiences,
+                request,
+                textStrategy,
+                lakebaseTextIndexReady,
+              )
+        if (typoStrategy === "pgtrgm" && keywordRows.length === 0 && request.mode !== "semantic") {
+          keywordRows = await searchTypoRows(snapshotDb, slice, audiences, request)
+        }
+        const vectorRows =
+          request.mode === "keyword"
+            ? []
+            : await searchVectorRows(snapshotDb, slice, audiences, request, vectorDimensions!)
+        const capped = keywordRows.length > MAX_CANDIDATES || vectorRows.length > MAX_CANDIDATES
+        const candidates = combineCandidates(request, keywordRows, vectorRows).filter(
+          ({ document }) => matchesFilters(document, request.filters ?? []),
         )
-      }
-      return results
+
+        const registry = options.registries.get(slice.vertical)
+        const ordered = orderHits(candidates, request, registry, slice)
+        const pagedHits = afterCursor(
+          ordered,
+          request,
+          registry,
+          slice,
+          request.pagination?.cursor,
+          cursorSigningKey,
+        )
+        const limit = boundedPageSize(request.pagination?.limit)
+        const page = pagedHits.slice(0, limit)
+        const results: SearchResults = {
+          hits: page,
+          total: candidates.length,
+          ...(capped ? { totalRelation: "gte" as const } : {}),
+          ...(limit < pagedHits.length
+            ? { next_cursor: encodeCursor(page.at(-1)!, request, registry, slice, cursorSigningKey) }
+            : {}),
+        }
+        if (request.facets?.length) {
+          results.facets = await buildFacets(
+            snapshotDb,
+            slice,
+            candidates.map(({ document }) => document),
+            request.facets,
+          )
+        }
+        return results
+      })
     },
 
     async bulkReindex(slice, stream) {
@@ -752,6 +754,23 @@ export function createPostgresIndexer(options: PostgresIndexerOptions): Postgres
       await refreshLakebaseTextStatistics()
     },
   }
+}
+
+/**
+ * Keep candidate retrieval and facet aggregation on one stable projection.
+ * Drivers explicitly configured without transaction support retain their
+ * existing direct-read behavior.
+ */
+async function withConsistentSearchSnapshot<T>(
+  db: AnyDrizzleDb,
+  callback: (snapshotDb: AnyDrizzleDb) => Promise<T>,
+): Promise<T> {
+  return withOptionalTransaction(db, async (tx) => {
+    if (tx !== db) {
+      await tx.execute(sql`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY`)
+    }
+    return callback(tx)
+  })
 }
 
 async function searchKeywordRows(

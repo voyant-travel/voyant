@@ -47,6 +47,8 @@ search services, or catalog runtime services.
   curated-term typo recovery when `pg_trgm` is provisioned.
   Its private `projectionGeneration(slice)` token changes after successful
   writes and is intended for deployment-level cache keys, not public responses.
+  On transaction-capable deployments, each search reads candidates and facets
+  from a repeatable-read, read-only projection snapshot.
   Policy-backed scalar filters are maintained in typed facet rows before search
   candidate generation. A successful full rebuild retains one predecessor per
   slice; deployment maintenance may use the private `rollbackProjection(slice)`
