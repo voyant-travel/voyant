@@ -97,4 +97,49 @@ describe.skipIf(!databaseAvailable)("Postgres catalog indexer integration", () =
       await adapter.admin!.drop(slice)
     }
   })
+
+  it("publishes bulk rebuilds atomically and preserves the active generation on failure", async () => {
+    const registry = createIndexerConformanceRegistry()
+    const lifecycleSlice: IndexerSlice = {
+      ...slice,
+      market: `lifecycle-${Date.now()}`,
+    }
+    const adapter = createPostgresIndexer({
+      db,
+      registries: new Map([[lifecycleSlice.vertical, registry]]),
+    })
+    await adapter.ensureCollection(lifecycleSlice, registry)
+    await adapter.upsert(lifecycleSlice, [{ id: "old", fields: { title: "Old projection" } }])
+    const beforeRebuild = await adapter.projectionGeneration(lifecycleSlice)
+
+    await adapter.bulkReindex(
+      lifecycleSlice,
+      toAsyncIterable([{ id: "new", fields: { title: "New projection" } }]),
+    )
+    const afterRebuild = await adapter.projectionGeneration(lifecycleSlice)
+
+    try {
+      expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
+        expect.objectContaining({ id: "new" }),
+      ])
+      expect(afterRebuild).toBeGreaterThan(beforeRebuild)
+
+      await expect(adapter.bulkReindex(lifecycleSlice, failingStream())).rejects.toThrow("stream failed")
+      expect((await adapter.search(lifecycleSlice, { mode: "keyword", query: "" })).hits).toEqual([
+        expect.objectContaining({ id: "new" }),
+      ])
+      expect(await adapter.projectionGeneration(lifecycleSlice)).toBe(afterRebuild)
+    } finally {
+      await adapter.admin!.drop(lifecycleSlice)
+    }
+  })
 })
+
+async function* toAsyncIterable(documents: Array<{ id: string; fields: Record<string, unknown> }>) {
+  for (const document of documents) yield document
+}
+
+async function* failingStream() {
+  yield { id: "partial", fields: { title: "Partial projection" } }
+  throw new Error("stream failed")
+}
