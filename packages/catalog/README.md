@@ -161,6 +161,17 @@ Provider-neutral maintenance uses the optional `IndexerAdapter.admin` surface
 (`list`, `drop`, and `scan`). Raw Typesense collection/search maintenance APIs
 are not public catalog package surface.
 
+### Relevance comparison
+
+`@voyant-travel/catalog/indexer/relevance` provides a curated travel corpus and
+an adapter-level harness for comparing Postgres with Typesense (or another
+approved baseline). It reports recall@k, NDCG@k, zero-result rate, and exact
+facet-bucket parity. Provider scores are intentionally excluded from the
+comparison because each engine normalizes relevance differently. Run it against
+the real deployment adapters and retain the resulting report with the rollout
+evidence; the built-in corpus is a minimum regression gate, not a replacement
+for operator-approved travel judgments.
+
 ## Usage
 
 The catalog plane is consumed by vertical modules; templates wire it together.
