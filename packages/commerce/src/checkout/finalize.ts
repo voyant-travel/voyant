@@ -218,10 +218,6 @@ export interface FinalizeCheckoutParams {
  * There is no customer-authored execution definition or run record.
  */
 export async function finalizeCheckout(params: FinalizeCheckoutParams): Promise<void> {
-  const deps = buildCheckoutFinalizeDeps(
-    params.db,
-    params.eventBus,
-    params.generateContractPdf,
-  )
+  const deps = buildCheckoutFinalizeDeps(params.db, params.eventBus, params.generateContractPdf)
   await runCheckoutFinalize(params.input, deps)
 }

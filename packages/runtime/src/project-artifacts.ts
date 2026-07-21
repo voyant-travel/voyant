@@ -5,7 +5,10 @@ import { pathToFileURL } from "node:url"
 import type { LinkDefinition, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
-import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
+import type {
+  VoyantGraphDeploymentRequirements,
+  VoyantGraphProvisionedJob,
+} from "@voyant-travel/framework/deployment-graph"
 import type { VoyantNodeRuntime } from "@voyant-travel/framework/node-runtime"
 import { tsImport } from "tsx/esm/api"
 
@@ -23,6 +26,7 @@ export interface GeneratedProjectRuntime {
     providers: VoyantNodeRuntime["deployment"]["providers"]
   }
   graphRuntime: VoyantGraphRuntime
+  productJobs?: readonly VoyantGraphProvisionedJob[]
   createRuntimePorts(host: {
     primitives: VoyantRuntimeHostPrimitives
     runtimePorts?: VoyantGraphRuntimePorts
@@ -113,6 +117,7 @@ async function loadDeploymentGraphRuntime(artifactRoot: string): Promise<Generat
     },
     graphRuntime: namespace.createGeneratedGraphRuntime(),
     createRuntimePorts: namespace.createGeneratedGraphRuntimePorts,
+    productJobs: [],
   }
 }
 

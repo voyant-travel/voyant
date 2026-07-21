@@ -19,9 +19,6 @@ const failures = []
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
 }
-const rejectMatch = (source, pattern, message) => {
-  if (pattern.test(source)) failures.push(message)
-}
 
 for (const port of ["catalogProjectionRuntimePort", "catalogBookingSnapshotRuntimePort"]) {
   requireMatch(manifest, new RegExp(`requirePort\\(${port}\\)`), `Catalog must require ${port}`)

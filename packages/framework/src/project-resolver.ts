@@ -163,16 +163,14 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   // Published/source-free applications have no project-local contributions.
   // Reusing this snapshot lets every compiler emit its deterministic empty
   // artifact without loading the TypeScript compiler in production.
-  const [projectApi, projectAdmin, projectSubscriberLinks] = await Promise.all(
-    [
-      compileProjectApiConventions({ projectRoot, discovery: conventions }),
-      compileProjectAdminConventions({
-        projectRoot,
-        contributions: conventions.contributions,
-      }),
-      compileProjectSubscriberLinkConventions({ projectRoot, discovery: conventions }),
-    ],
-  )
+  const [projectApi, projectAdmin, projectSubscriberLinks] = await Promise.all([
+    compileProjectApiConventions({ projectRoot, discovery: conventions }),
+    compileProjectAdminConventions({
+      projectRoot,
+      contributions: conventions.contributions,
+    }),
+    compileProjectSubscriberLinkConventions({ projectRoot, discovery: conventions }),
+  ])
 
   const materialized = await materializeProjectSelections(project, projectRoot)
   await materializeProjectModuleConventions(materialized, conventions, projectRoot)
@@ -940,10 +938,9 @@ function resolveProjectSourceRuntimeTarget(projectRoot: string, entry: string): 
 }
 
 function isGeneratedProjectRuntimeEntry(entry: string): boolean {
-  return [
-    PROJECT_API_GENERATED_PATH,
-    PROJECT_SUBSCRIBERS_GENERATED_PATH,
-  ].some((generatedPath) => entry === `./.voyant/${generatedPath}`)
+  return [PROJECT_API_GENERATED_PATH, PROJECT_SUBSCRIBERS_GENERATED_PATH].some(
+    (generatedPath) => entry === `./.voyant/${generatedPath}`,
+  )
 }
 
 function lowerOwnerRuntimeEntry(packageName: string, entry: string): string {
@@ -998,10 +995,7 @@ export function buildMigrationPlan(
       path: migration.source,
     },
   }))
-  const schemaMigrations = [
-    ...orderedPackageMigrations,
-    ...deploymentMigrations,
-  ]
+  const schemaMigrations = [...orderedPackageMigrations, ...deploymentMigrations]
   const setupMigrations = units
     .flatMap((unit) =>
       (unit.setupMigrations ?? []).map((migration) => ({

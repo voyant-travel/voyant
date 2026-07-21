@@ -12,6 +12,7 @@ import {
 } from "./api-runtime-ports.js"
 import { catalogBookingSnapshotSubscriberDeclaration } from "./booking-snapshot-subscriber-declaration.js"
 import { catalogContentRuntimePort } from "./content-runtime-port.js"
+import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
 import { catalogIndexerProviderPort } from "./indexer/provider.js"
 import {
@@ -29,7 +30,6 @@ import {
   catalogProjectionRuntimePort,
 } from "./subscriber-runtime-ports.js"
 import { catalogEventDeclarations, catalogWebhookDeclarations } from "./voyant-events.js"
-import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job.js"
 
 // Importing Cruises here would create a Catalog <-> Cruises package cycle.
 const cruisesRoutesRuntimePortReference = { id: "cruises.routes-runtime" } as const

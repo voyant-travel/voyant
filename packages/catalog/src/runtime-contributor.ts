@@ -21,15 +21,13 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import {
-  type VoyantRuntimeHostPrimitives,
-} from "@voyant-travel/core"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
   type FinanceOperatorSettingsRuntime,
   financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job.js"
+import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogAccommodationsRuntimeExtension,

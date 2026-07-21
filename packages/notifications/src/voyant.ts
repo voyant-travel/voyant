@@ -11,8 +11,8 @@ import {
   bookingDocumentsSentEventPayloadSchema,
   bookingFullyPaidEventPayloadSchema,
 } from "./event-payload-schemas.js"
+import { notificationsReminderJobRuntimePort } from "./reminder-job-runtime-port.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
-import { notificationsReminderJobRuntimePort } from "./reminder-job.js"
 
 const schemaSource = "@voyant-travel/notifications/schema"
 

@@ -22,10 +22,9 @@ import {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
-  type VoyantGraphJsonObject,
-  type VoyantGraphJsonValue,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJsonObject,
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphLinkDeclaration,
   type VoyantGraphMessageReference,
@@ -53,6 +52,7 @@ import {
   type VoyantGraphWebhookDeclaration,
 } from "@voyant-travel/core/project"
 
+export type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 export { defineAdapter, definePlugin, defineProvider } from "@voyant-travel/core/project"
 
 import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
@@ -99,10 +99,9 @@ export {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
-  type VoyantGraphJsonObject,
-  type VoyantGraphJsonValue,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJsonObject,
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
@@ -136,8 +135,6 @@ export {
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
   type VoyantGraphWebhookDeclaration,
-  type VoyantGraphWorkflow,
-  type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
 export const VOYANT_GRAPH_RESERVED_FACETS = [
@@ -1040,13 +1037,6 @@ export function childGraphEntityId(parentId: string, childId: string): string {
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value))
-}
-
-function toGraphJsonValue(value: unknown): VoyantGraphJsonValue | undefined {
-  if (value === undefined || typeof value === "function") return undefined
-  const text = JSON.stringify(value)
-  if (text === undefined) return undefined
-  return JSON.parse(text) as VoyantGraphJsonValue
 }
 
 export async function sha256(value: unknown): Promise<string> {
@@ -2751,20 +2741,23 @@ function isSupportedProductJobCron(expression: string): boolean {
     [0, 7],
   ] as const
   const fields = expression.trim().split(/\s+/)
-  return fields.length === 5 && fields.every((field, index) => {
-    const [minimum, maximum] = ranges[index]!
-    return field.split(",").every((part) => {
-      const [range, stepText, extra] = part.split("/")
-      if (extra !== undefined) return false
-      const step = stepText === undefined ? 1 : Number(stepText)
-      if (!Number.isInteger(step) || step <= 0) return false
-      if (range === "*") return true
-      const values = range!.split("-").map(Number)
-      if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
-      const [start, end = start] = values
-      return start! >= minimum && end! <= maximum && start! <= end!
+  return (
+    fields.length === 5 &&
+    fields.every((field, index) => {
+      const [minimum, maximum] = ranges[index]!
+      return field.split(",").every((part) => {
+        const [range, stepText, extra] = part.split("/")
+        if (extra !== undefined) return false
+        const step = stepText === undefined ? 1 : Number(stepText)
+        if (!Number.isInteger(step) || step <= 0) return false
+        if (range === "*") return true
+        const values = range!.split("-").map(Number)
+        if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
+        const [start, end = start] = values
+        return start! >= minimum && end! <= maximum && start! <= end!
+      })
     })
-  })
+  )
 }
 
 function isSupportedProductJobEvery(value: string | number): boolean {
@@ -4131,10 +4124,6 @@ function isPackageGraphNamespace(graphPackageId: string, packageName: string): b
 
 function isCanonicalGraphId(id: string): boolean {
   return GRAPH_ID_PATTERN.test(id)
-}
-
-function isGraphEntityIdSegment(value: string): boolean {
-  return /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(value)
 }
 
 function usesReservedCapabilityNamespace(token: string): boolean {

@@ -198,7 +198,7 @@ export interface VoyantNodeRuntimeDeployment {
 export interface VoyantNodeRuntimeOptions {
   graphRuntime: VoyantGraphRuntime
   /** Resolved, immutable provisioning.jobs inventory from the admitted graph. */
-  jobs: readonly VoyantGraphProvisionedJob[]
+  jobs?: readonly VoyantGraphProvisionedJob[]
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
@@ -218,10 +218,7 @@ export interface VoyantNodeRuntimeOptions {
   /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
 }
 
@@ -317,7 +314,7 @@ export async function loadVoyantNodeRuntime(
   const managedJobHealthReporter = createManagedJobHealthReporter(env)
   const jobHost = createVoyantNodeJobHost({
     runtime: options.graphRuntime,
-    jobs: options.jobs,
+    jobs: options.jobs ?? [],
     ...(options.runtimePorts ? { ports: options.runtimePorts } : {}),
     ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
     ...(managedJobHealthReporter ? { reportExecution: managedJobHealthReporter } : {}),
@@ -475,10 +472,7 @@ export function createVoyantNodeApp(options: {
   /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
   extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>

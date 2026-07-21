@@ -52,17 +52,27 @@ if (promotionRuntimeReferences?.length !== 1) {
     "Commerce manifest must own the promotion-redemption subscriber runtime reference exactly once",
   )
 }
-for (const port of ["promotionRedemptionDatabaseRuntimePort", "promotionsBulkReindexRuntimePort"]) {
+for (const port of [
+  "promotionRedemptionDatabaseRuntimePort",
+  "promotionsBulkReindexRuntimePort",
+  "promotionBoundaryJobRuntimePort",
+  "promotionReindexJobRuntimePort",
+]) {
   requireMatch(
     sources.manifest,
     new RegExp(`requirePort\\(${port}\\)`),
     `Commerce manifest must require ${port}`,
   )
-  requireMatch(
-    sources.descriptor,
-    new RegExp(`getPort\\(${port}\\)`),
-    `Commerce subscriber runtime must resolve ${port}`,
-  )
+  if (
+    port === "promotionRedemptionDatabaseRuntimePort" ||
+    port === "promotionsBulkReindexRuntimePort"
+  ) {
+    requireMatch(
+      sources.descriptor,
+      new RegExp(`getPort\\(${port}\\)`),
+      `Commerce subscriber runtime must resolve ${port}`,
+    )
+  }
   requireMatch(
     sources.contributor,
     new RegExp(`\\[${port}\\.id\\]`),
@@ -78,11 +88,6 @@ requireMatch(
   sources.descriptor,
   /container\.register\([\s\S]*BULK_REINDEX_SERVICE_KEY[\s\S]*await descriptor\.register\(context\)/,
   "Commerce runtime must register the bulk-reindex service before the redemption subscriber",
-)
-requireMatch(
-  sources.descriptor,
-  /container\.register\(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,[\s\S]*database\.withDb\(context\.bindings/,
-  "Commerce runtime must register its promotion-boundary workflow runtime",
 )
 requireMatch(
   sources.runtime,

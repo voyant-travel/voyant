@@ -19,7 +19,7 @@ import {
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
 } from "./runtime-port.js"
-import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job.js"
+import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job-runtime-port.js"
 import { bookingsVoyantAdmin } from "./voyant-admin.js"
 import {
   bookingCancelledPayloadSchema,

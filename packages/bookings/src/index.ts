@@ -25,6 +25,10 @@ export {
   bookingActionLedgerCapabilityRegistry,
 } from "./action-ledger-capabilities.js"
 export { bookingsSupplierExtension } from "./extensions/suppliers.js"
+export {
+  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
+  type BookingsExpireStaleHoldsJobRuntime,
+} from "./job-runtime.js"
 export { bookingLinkable, bookingsLinkable } from "./linkables.js"
 export {
   type BookingPiiAuditEvent,
@@ -110,10 +114,6 @@ export {
   type ExpireStaleBookingHoldsResult,
   expireStaleBookingHolds,
 } from "./tasks/index.js"
-export {
-  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-  type BookingsExpireStaleHoldsJobRuntime,
-} from "./job-runtime.js"
 
 export const bookingsModule: Module = {
   name: "bookings",

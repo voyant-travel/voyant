@@ -1,27 +1,8 @@
-import type { DeliveryResult, EventEnvelope } from "@voyant-travel/core"
-import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
+import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 
 import { drainOutbox, getOutboxStats, pruneDeliveredOutboxEvents } from "./outbox.js"
-import type { DrizzleClient } from "./types.js"
+import { eventOutboxJobRuntimePort } from "./outbox-job-runtime-port.js"
 import { expireStaleWriteIntents } from "./write-intents.js"
-
-/** The only host capabilities admitted to the database-owned outbox job. */
-export interface EventOutboxJobRuntime {
-  withDb<T>(operation: (db: DrizzleClient) => Promise<T>): Promise<T>
-  deliver(envelope: EventEnvelope): Promise<DeliveryResult>
-  warn(message: string): void
-}
-
-export const eventOutboxJobRuntimePort = definePort<EventOutboxJobRuntime>({
-  id: "infrastructure.event-outbox-delivery",
-  test(runtime) {
-    for (const method of ["withDb", "deliver", "warn"] as const) {
-      if (!runtime || typeof runtime[method] !== "function") {
-        throw new Error(`infrastructure.event-outbox-delivery provider must implement ${method}().`)
-      }
-    }
-  },
-})
 
 /** Drain durable outbox/write-intent state without accepting invocation input. */
 export async function runEventOutboxDrainJob(

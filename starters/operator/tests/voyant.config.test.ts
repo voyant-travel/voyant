@@ -1,14 +1,16 @@
 import path from "node:path"
 
 import { resolveProject } from "@voyant-travel/framework/project"
+import { STANDARD_OPERATOR_DISTRIBUTION_POLICY } from "@voyant-travel/operator-standard"
 import { describe, expect, it } from "vitest"
 import config from "../voyant.config.js"
 
 const operatorRoot = process.cwd()
+const standardModuleCount = STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.length
 
 describe("Operator project config", () => {
   it("authors only deployment differences", () => {
-    expect(config.modules).toHaveLength(49)
+    expect(config.modules).toHaveLength(standardModuleCount)
     expect(config.extensions).toHaveLength(25)
     expect(config.plugins).toHaveLength(0)
     expect(config.productBom).toEqual({
@@ -30,7 +32,7 @@ describe("Operator project config", () => {
       "read-only",
     ])
 
-    expect(config.selections?.modules).toHaveLength(49)
+    expect(config.selections?.modules).toHaveLength(standardModuleCount)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)

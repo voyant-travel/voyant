@@ -157,7 +157,6 @@ const BASE_PROVIDERS = {
   customerAuth: "disabled",
   realtime: "none",
   scheduledJobs: "none",
-  workflows: "none",
   outboundWebhooks: "none",
   payments: "none",
 } satisfies VoyantDeploymentProviders

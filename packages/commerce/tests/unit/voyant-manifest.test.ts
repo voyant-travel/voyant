@@ -19,7 +19,8 @@ import {
 } from "../../src/checkout/runtime-ports.js"
 import { publicMarketsRoutes } from "../../src/markets/routes-public.js"
 import { publicPricingRoutes } from "../../src/pricing/routes-public.js"
-import { promotionBoundaryJobRuntimePort } from "../../src/promotions/job-boundary-scheduler.js"
+import { promotionBoundaryJobRuntimePort } from "../../src/promotions/job-boundary-runtime-port.js"
+import { promotionReindexJobRuntimePort } from "../../src/promotions/reindex-job-runtime-port.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
@@ -48,12 +49,14 @@ describe("commerce deployment manifest", () => {
           { id: promotionRedemptionDatabaseRuntimePort.id },
           { id: promotionsBulkReindexRuntimePort.id },
           { id: promotionBoundaryJobRuntimePort.id },
+          { id: promotionReindexJobRuntimePort.id },
         ],
       },
       runtimePorts: [
         { id: promotionRedemptionDatabaseRuntimePort.id },
         { id: promotionsBulkReindexRuntimePort.id },
         { id: promotionBoundaryJobRuntimePort.id },
+        { id: promotionReindexJobRuntimePort.id },
         { id: commerceOperatorSettingsRuntimePort.id },
         { id: commerceInventoryRuntimePort.id },
         { id: commerceLegalRuntimePort.id },

@@ -1,22 +1,6 @@
-import { definePort, type VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
-
+import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
+import { notificationsReminderJobRuntimePort } from "./reminder-job-runtime-port.js"
 import { sendDueNotificationReminders } from "./tasks/send-due-reminders.js"
-import type { NotificationReminderJobRuntime } from "./job-runtime.js"
-
-export const notificationsReminderJobRuntimePort =
-  definePort<NotificationReminderJobRuntime>({
-    id: "notifications.reminder-job",
-    test(runtime) {
-      if (
-        !runtime ||
-        typeof runtime.resolveDb !== "function" ||
-        typeof runtime.resolveEnv !== "function" ||
-        typeof runtime.resolveRuntimeOptions !== "function"
-      ) {
-        throw new Error("notifications.reminder-job provider is incomplete.")
-      }
-    },
-  })
 
 /** Sweep and deliver reminders whose durable run records are due. */
 export async function runDueNotificationRemindersJob(

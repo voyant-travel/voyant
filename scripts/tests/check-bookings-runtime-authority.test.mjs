@@ -87,11 +87,11 @@ function validFiles() {
   const files = new Map([
     [
       "packages/bookings/src/runtime-contributor.ts",
-      "actionLedgerBookingDriftRuntimePort createBookingsRuntimePortContribution",
+      "actionLedgerBookingDriftRuntimePort createBookingsRuntimePortContribution finance.createStaleBookingHoldsJobRuntime",
     ],
     [
       "packages/bookings/src/runtime.ts",
-      "createBookingsRuntime createBookingRequirementsRuntime customFields.resolveRegistry relationships.upsertPersonFromContact accommodation.enrichOverviewItems finance.createStaleBookingHoldsRuntime inventory.resolveProductSnapshot",
+      "createBookingsRuntime createBookingRequirementsRuntime customFields.resolveRegistry relationships.upsertPersonFromContact accommodation.enrichOverviewItems inventory.resolveProductSnapshot",
     ],
     [
       "packages/bookings/src/runtime-port.ts",

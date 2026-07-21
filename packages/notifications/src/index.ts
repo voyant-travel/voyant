@@ -22,6 +22,13 @@ import {
 } from "./subscriber-runtime.js"
 
 export {
+  type DeliverReminderJobInput,
+  type DeliverReminderJobOutput,
+  NOTIFICATION_REMINDER_JOB_RUNTIME_KEY,
+  type NotificationReminderJobRuntime,
+  type SendDueRemindersJobInput,
+} from "./job-runtime.js"
+export {
   notificationLiquidEngine,
   renderLiquidTemplate,
 } from "./liquid.js"
@@ -214,13 +221,6 @@ export {
   updateNotificationSettingsSchema,
   updateNotificationTemplateSchema,
 } from "./validation.js"
-export {
-  type DeliverReminderJobInput,
-  type DeliverReminderJobOutput,
-  NOTIFICATION_REMINDER_JOB_RUNTIME_KEY,
-  type NotificationReminderJobRuntime,
-  type SendDueRemindersJobInput,
-} from "./job-runtime.js"
 
 export interface CreateNotificationsApiModuleOptions extends NotificationsRoutesOptions {
   /**

@@ -93,8 +93,8 @@ function resolveStringEnvironment(
   bindings: Readonly<Record<string, unknown>>,
 ): Record<string, string | undefined> {
   return Object.fromEntries(
-    Object.entries(bindings).filter((entry): entry is [string, string] =>
-      typeof entry[1] === "string",
+    Object.entries(bindings).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
     ),
   )
 }

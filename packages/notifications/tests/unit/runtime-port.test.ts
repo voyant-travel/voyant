@@ -12,7 +12,6 @@ import {
   notificationsRuntimePort,
 } from "../../src/runtime-port.js"
 import { NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY } from "../../src/subscriber-runtime.js"
-import { NOTIFICATION_REMINDER_JOB_RUNTIME_KEY } from "../../src/job-runtime.js"
 
 const jobRuntime = {
   resolveDb: () => ({}) as PostgresJsDatabase,
@@ -56,7 +55,6 @@ describe("Notifications runtime port", () => {
     const extension = await createNotificationsSubscribersVoyantRuntime(runtimeFactoryContext())
 
     await module.module.bootstrap?.(context)
-    expect(container.has(NOTIFICATION_REMINDER_JOB_RUNTIME_KEY)).toBe(true)
     expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(false)
 
     await extension.extension.bootstrap?.(context)

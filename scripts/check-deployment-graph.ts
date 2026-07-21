@@ -274,11 +274,12 @@ async function main(): Promise<void> {
       OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ??
       (runtimeOnlyPackageNames.has(record.packageName) ? "library" : "module")
     const metadata = record.metadata
+    const targets = metadata?.compatibleWith?.targets
     if (
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
-      JSON.stringify(metadata.compatibleWith.targets) !==
-        JSON.stringify(["node", "cloudflare-worker"]) ||
+      !Array.isArray(targets) ||
+      !targets.includes("node") ||
       typeof metadata.compatibleWith?.framework !== "string" ||
       !metadata.compatibleWith.modes?.includes("local") ||
       !metadata.compatibleWith.modes?.includes("managed-cloud") ||

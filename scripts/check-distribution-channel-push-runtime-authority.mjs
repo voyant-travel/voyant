@@ -85,9 +85,8 @@ if (
 }
 for (const required of [
   "catalogRuntime.getSourceRegistryFromContext",
-  "createChannelPushWorkflowRuntimeEntries",
   "primitives.database.resolve",
-  "primitives.database.transaction",
+  "withDeps",
 ]) {
   if (!runtime.includes(required)) {
     violations.push(`Distribution runtime must contain ${JSON.stringify(required)}`)
@@ -96,14 +95,15 @@ for (const required of [
 if (
   !extension.includes("defineGraphRuntimeFactory") ||
   !extension.includes("getPort(channelPushRuntimePort)") ||
-  !extension.includes("runtime.registerWorkflowService(context)")
+  !extension.includes("runtime.registerSubscriberRuntime(context)")
 ) {
   violations.push("Distribution must own channel-push route and workflow-service composition")
 }
 if (
   !runtimePort.includes('id: "distribution.channel-push-runtime"') ||
   !runtimePort.includes("resolveRegistry") ||
-  !runtimePort.includes("registerWorkflowService")
+  !runtimePort.includes("registerSubscriberRuntime") ||
+  !runtimePort.includes("withDeps")
 ) {
   violations.push("Distribution must publish the typed channel-push runtime dependency contract")
 }

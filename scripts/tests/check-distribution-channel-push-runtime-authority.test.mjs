@@ -22,15 +22,15 @@ async function createFixture(overrides = {}) {
     "distribution/src/voyant-extensions.ts":
       'runtimePorts: [requirePort(channelPushRuntimePort)]\nexport: "createChannelPushVoyantRuntime"\n',
     "distribution/src/channel-push/extension.ts":
-      "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
+      "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerSubscriberRuntime(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
-      'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
+      'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterSubscriberRuntime\nwithDeps\n',
     "distribution/package.json":
       '{\n  "name": "@voyant-travel/distribution",\n  "exports": { "./runtime-contributor": "./src/runtime-contributor.ts" },\n  "voyant": { "runtime": { "export": "createDistributionRuntimePortContribution" } }\n}\n',
     "distribution/src/runtime-contributor.ts":
       "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
     "distribution/src/runtime.ts":
-      "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
+      "catalogRuntime.getSourceRegistryFromContext\nprimitives.database.resolve\nwithDeps\n",
     "runtime/src/deployment-resources.ts": "options.createRuntimePorts({ primitives })\n",
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":

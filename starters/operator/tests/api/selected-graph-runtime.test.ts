@@ -25,10 +25,7 @@ import {
 } from "@voyant-travel/commerce/promotion-redemption-subscriber"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
-import {
-  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
-  channelPushRuntimePort,
-} from "@voyant-travel/distribution"
+import { CHANNEL_PUSH_RUNTIME_KEY, channelPushRuntimePort } from "@voyant-travel/distribution"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
@@ -182,7 +179,7 @@ describe("selected Operator graph runtime composition", () => {
     await channelPushExtension?.extension.bootstrap?.(context)
     await channelPushRuntime?.module.bootstrap?.(context)
 
-    expect(container.has(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY)).toBe(true)
+    expect(container.has(CHANNEL_PUSH_RUNTIME_KEY)).toBe(true)
     expect(subscribe.mock.calls.map(([eventType]) => eventType).sort()).toEqual([
       "availability.slot.changed",
       "booking.confirmed",
@@ -528,11 +525,6 @@ describe("selected Operator graph runtime composition", () => {
     expect(
       subscribe.mock.calls.find(([eventType]) => eventType === "payment.completed")?.[2],
     ).toEqual({ inline: true })
-    expect(registry.get("checkout-finalize")).toMatchObject({
-      name: "checkout-finalize",
-      rerun: expect.any(Function),
-      resume: expect.any(Function),
-    })
   })
 
   it("activates the selected Commerce promotion-redemption subscriber exactly once", async () => {

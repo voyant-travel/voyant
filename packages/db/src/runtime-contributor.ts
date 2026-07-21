@@ -1,6 +1,6 @@
 import type { DeliveryResult, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 
-import { type EventOutboxJobRuntime, eventOutboxJobRuntimePort } from "./outbox-job.js"
+import { type EventOutboxJobRuntime, eventOutboxJobRuntimePort } from "./outbox-job-runtime-port.js"
 
 export interface DbRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives

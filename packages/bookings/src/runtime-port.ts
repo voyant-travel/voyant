@@ -2,6 +2,7 @@ import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { BookingsApiModuleOptions } from "./index.js"
+import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
 import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type { ResolveBookingRequirementsProductSnapshot } from "./requirements/service-public.js"
 import type {
@@ -9,7 +10,6 @@ import type {
   BookingPersonResolverContact,
   ResolveBookingTravelSnapshot,
 } from "./route-runtime.js"
-import type { BookingsExpireStaleHoldsJobRuntime } from "./job-runtime.js"
 
 export interface BookingsRuntimeProvider {
   options: BookingsApiModuleOptions

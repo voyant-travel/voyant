@@ -35,7 +35,7 @@ export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
       id: "automation",
       kind: "api-token",
       label: "Automation",
-      grants: ["webhooks:relay"],
+      grants: ["app-webhooks:replay"],
     },
     {
       id: "read-only",

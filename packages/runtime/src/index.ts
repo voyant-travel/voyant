@@ -243,7 +243,7 @@ export async function loadVoyantProject(
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
     graphRuntime: generated.graphRuntime,
-    jobs: graph.provisioning.jobs,
+    jobs: generated.productJobs ?? [],
     deployment: {
       mode: generated.deployment.mode ?? "self-hosted",
       providers: generated.deployment.providers,
@@ -374,6 +374,26 @@ export async function startVoyantProject(
     loadBuiltStart: loadBuiltProjectStart,
     loadProject: loadVoyantProject,
   })
+}
+
+export interface DispatchScheduledProjectJobOptions extends LoadVoyantProjectOptions {
+  jobId?: string
+  scheduleId?: string
+  cron?: string
+}
+
+export async function dispatchScheduledProjectJob(
+  options: DispatchScheduledProjectJobOptions = {},
+): Promise<"started" | "queued" | "skipped"> {
+  const project = await loadVoyantProject(options)
+  const jobId =
+    options.jobId ??
+    options.scheduleId ??
+    project.runtime.jobs.inventory.find((job) => job.schedule?.cron === options.cron)?.id
+  if (!jobId) {
+    throw new Error("dispatchScheduledProjectJob requires jobId, scheduleId, or matching cron.")
+  }
+  return project.runtime.jobs.invoke(jobId, "schedule")
 }
 
 function rewriteLegacyMediaRequest(request: Request): Request {

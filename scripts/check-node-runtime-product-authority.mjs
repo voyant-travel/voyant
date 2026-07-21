@@ -100,7 +100,6 @@ for (const [source, required] of [
     [
       "relationships.upsertPersonFromContact",
       "accommodation.enrichOverviewItems",
-      "finance.createStaleBookingHoldsRuntime",
       "inventory.resolveProductSnapshot",
     ],
   ],
@@ -152,6 +151,11 @@ for (const [source, required] of [
     if (!source.includes(token))
       violations.push(`package-owned standard runtime is missing ${token}`)
   }
+}
+if (!migratedContributors[0]?.includes("finance.createStaleBookingHoldsJobRuntime")) {
+  violations.push(
+    "package-owned Bookings runtime contributor is missing finance.createStaleBookingHoldsJobRuntime",
+  )
 }
 for (const forbidden of [
   "createCatalogOffersTypesenseResolvers",

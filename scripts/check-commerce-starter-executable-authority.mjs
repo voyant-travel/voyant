@@ -52,13 +52,13 @@ const rejectMatch = (source, pattern, message) => {
 
 requireMatch(
   catalogManifest,
-  /catalog\.reap-expired-booking-drafts[\s\S]*catalogDraftReaperWorkflow/,
-  "Catalog must own the draft-reaper workflow and schedule",
+  /catalog\.reap-expired-booking-drafts[\s\S]*@voyant-travel\/catalog\/draft-reaper-job[\s\S]*runCatalogDraftReaperJob/,
+  "Catalog must own the draft-reaper job and schedule",
 )
 requireMatch(
   commerceManifest,
-  /commerce\.process-promotion-boundaries[\s\S]*promotionBoundarySchedulerWorkflow/,
-  "Commerce must own the promotion-boundary workflow and schedule",
+  /commerce\.process-promotion-boundaries[\s\S]*@voyant-travel\/commerce\/promotion-boundary-job[\s\S]*runPromotionBoundaryJob/,
+  "Commerce must own the promotion-boundary job and schedule",
 )
 requireMatch(
   catalogContributor,

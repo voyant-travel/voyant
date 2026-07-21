@@ -18,6 +18,8 @@ async function createFixture(overrides = {}) {
 runtimePorts: [
   requirePort(promotionRedemptionDatabaseRuntimePort),
   requirePort(promotionsBulkReindexRuntimePort),
+  requirePort(promotionBoundaryJobRuntimePort),
+  requirePort(promotionReindexJobRuntimePort),
 ]
 runtime: {
   entry: "@voyant-travel/commerce/promotion-redemption-subscriber",
@@ -44,6 +46,10 @@ register: async (context) => {
 [promotionRedemptionDatabaseRuntimePort.id]: {
 },
 [promotionsBulkReindexRuntimePort.id]: {
+},
+[promotionBoundaryJobRuntimePort.id]: {
+},
+[promotionReindexJobRuntimePort.id]: {
 },
 `,
     "packages/commerce/src/runtime.ts": `

@@ -9,6 +9,12 @@ import type { ChannelPushDeps } from "./types.js"
 
 const LEASE_MS = 2 * 60 * 1_000
 
+function unrefTimer(timer: unknown): void {
+  if (typeof timer !== "object" || timer === null || !("unref" in timer)) return
+  const { unref } = timer
+  if (typeof unref === "function") unref.call(timer)
+}
+
 async function withRuntime(
   context: VoyantGraphRuntimeFactoryContext,
   jobId: string,
@@ -48,7 +54,7 @@ async function withRuntime(
         })
     }
     const heartbeat = setInterval(renew, 30_000)
-    heartbeat.unref?.()
+    unrefTimer(heartbeat)
     try {
       await operation(deps)
       await renewal

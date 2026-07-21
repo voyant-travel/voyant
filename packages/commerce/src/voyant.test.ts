@@ -23,7 +23,7 @@ describe("commerce deployment manifest", () => {
         },
       },
     ])
-    expect(commerceVoyantModule.workflows).toBeUndefined()
+    expect("workflows" in commerceVoyantModule).toBe(false)
     expect(commerceVoyantModule.subscribers).toEqual([
       {
         id: "@voyant-travel/commerce#subscriber.promotion-redemption-booking-confirmed",
