@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import { Client } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -139,6 +141,82 @@ describe("migration hash compatibility", () => {
 
     expect(result).toEqual({ executed: [], baselined: [] })
     expect(queries.some((sql) => sql === "BEGIN")).toBe(false)
+  })
+
+  const currentActionLedgerBaseline = readFileSync(
+    new URL("../../action-ledger/migrations/0000_action_ledger_baseline.sql", import.meta.url),
+    "utf8",
+  )
+  const formattedActionLedgerBaseline = `${currentActionLedgerBaseline.replace(
+    "WHERE \n",
+    "WHERE\n",
+  )}\n`
+  const actionLedgerHashes = {
+    formatted: "d63e6a73b58f985888e258b318255eba5181db307438b25f3d262350f837b2ce",
+    current: "2c1f05738aedd395ffdecc7d5000144a41e6af7e7a85b85563302e89bb1f4f6c",
+  } as const
+
+  it.each([
+    {
+      direction: "formatted ledger to current migration",
+      sql: currentActionLedgerBaseline,
+      expectedCurrentHash: actionLedgerHashes.current,
+      ledgerHash: actionLedgerHashes.formatted,
+    },
+    {
+      direction: "current ledger to formatted migration",
+      sql: formattedActionLedgerBaseline,
+      expectedCurrentHash: actionLedgerHashes.formatted,
+      ledgerHash: actionLedgerHashes.current,
+    },
+  ])("accepts the action-ledger baseline rewrite from $direction", async (testCase) => {
+    const queries: string[] = []
+    const client: MigrationClient = {
+      async query(sql: string) {
+        queries.push(sql)
+        if (sql.includes(`SELECT "content_hash"`)) {
+          return { rows: [{ content_hash: testCase.ledgerHash }] }
+        }
+        return { rows: [] }
+      },
+    }
+    const source: MigrationSource = {
+      name: "action-ledger",
+      priority: 0,
+      migrations: [{ tag: "0000_action_ledger_baseline", sql: testCase.sql }],
+    }
+
+    expect(planMigrations([source])[0]?.contentHash).toBe(testCase.expectedCurrentHash)
+    await expect(applyMigrations(client, [source], ledgerOpts)).resolves.toEqual({
+      executed: [],
+      baselined: [],
+    })
+    expect(queries).not.toContain("BEGIN")
+  })
+
+  it("still rejects an unrelated hash for the action-ledger baseline", async () => {
+    const client: MigrationClient = {
+      async query(sql: string) {
+        if (sql.includes(`SELECT "content_hash"`)) {
+          return { rows: [{ content_hash: "unrelated-hash" }] }
+        }
+        return { rows: [] }
+      },
+    }
+
+    await expect(
+      applyMigrations(
+        client,
+        [
+          {
+            name: "action-ledger",
+            priority: 0,
+            migrations: [{ tag: "0000_action_ledger_baseline", sql: currentActionLedgerBaseline }],
+          },
+        ],
+        ledgerOpts,
+      ),
+    ).rejects.toBeInstanceOf(MigrationImmutabilityError)
   })
 })
 

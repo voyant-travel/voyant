@@ -129,6 +129,14 @@ const FRAMEWORK_0004_HASHES = [
   "5ba3a342b91d2d48f6b27dd15bc0cbf46478003d73b497709c5f56d2628bac8d",
   "c089643f03ce56e76239ecd96582b9886d3bc4ae26adcbea48308bcf92a71ed3",
 ] as const
+// `action-ledger/0000_action_ledger_baseline`: a formatting-only rewrite
+// removed one trailing space and added a final newline. Both byte sequences
+// describe the same schema and have shipped, so deployments created by either
+// release must remain deployable by the other.
+const ACTION_LEDGER_0000_HASHES = [
+  "d63e6a73b58f985888e258b318255eba5181db307438b25f3d262350f837b2ce",
+  "2c1f05738aedd395ffdecc7d5000144a41e6af7e7a85b85563302e89bb1f4f6c",
+] as const
 
 function equivalenceClosure(
   key: string,
@@ -140,6 +148,7 @@ function equivalenceClosure(
 const EQUIVALENT_MIGRATION_HASHES = new Map<string, ReadonlySet<string>>([
   ...equivalenceClosure("db/0001_db_baseline", DB_0001_HASHES),
   ...equivalenceClosure("framework/0004_framework_baseline", FRAMEWORK_0004_HASHES),
+  ...equivalenceClosure("action-ledger/0000_action_ledger_baseline", ACTION_LEDGER_0000_HASHES),
 ])
 
 function isEquivalentMigrationHash(
