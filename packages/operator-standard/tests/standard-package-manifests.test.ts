@@ -79,6 +79,10 @@ describe("standard package manifests", () => {
     })
   })
 
+  it("runs selected product jobs in the standard Operator by default", () => {
+    expect(STANDARD_OPERATOR_DEPLOYMENT.providers?.scheduledJobs).toBe("node-cron")
+  })
+
   it("selects the composed dashboard with a staff preset that satisfies every source scope", () => {
     expect(STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules).toContainEqual({
       resolve: "@voyant-travel/operations/dashboard",

@@ -47,13 +47,22 @@ import {
 } from "@voyant-travel/workflows-orchestrator/selfhost"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
-import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
+import type {
+  VoyantGraphDeploymentRequirements,
+  VoyantGraphProvisionedJob,
+} from "./deployment-graph.js"
 import type {
   VoyantDeploymentEnvRequirement,
   VoyantDeploymentMode,
   VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
+import {
+  createVoyantNodeJobHost,
+  type VoyantNodeJobHealth,
+  type VoyantNodeJobHost,
+  VOYANT_PRODUCT_JOB_ROUTE,
+} from "./node-job-host.js"
 import {
   resolveVoyantNodeProviderPlan,
   type VoyantNodeKvProvider,
@@ -192,12 +201,16 @@ export type VoyantNodeRuntimeResources = Readonly<Record<string, unknown>>
 /** Graph-native deployment settings consumed by the resident Node host. */
 export interface VoyantNodeRuntimeDeployment {
   mode: VoyantDeploymentMode
-  providers: Readonly<Record<string, string>> & Pick<VoyantDeploymentProviders, "workflows">
+  providers: Readonly<Record<string, string>> &
+    Pick<VoyantDeploymentProviders, "workflows"> &
+    Partial<Pick<VoyantDeploymentProviders, "scheduledJobs">>
 }
 
 /** Inputs for booting a generated application graph in a resident Node process. */
 export interface VoyantNodeRuntimeOptions {
   graphRuntime: VoyantGraphRuntime
+  /** Resolved, immutable provisioning.jobs inventory from the admitted graph. */
+  jobs: readonly VoyantGraphProvisionedJob[]
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
@@ -233,6 +246,11 @@ export interface VoyantNodeRuntime {
   graphValues: ResolvedVoyantGraphRuntimeValues
   app: ReturnType<typeof createVoyantNodeApp>
   actionLedgerCapabilities: ActionLedgerCapabilityRegistry
+  jobs: {
+    inventory: readonly VoyantGraphProvisionedJob[]
+    health: () => readonly VoyantNodeJobHealth[]
+    invoke: VoyantNodeJobHost["invoke"]
+  }
   fetch: (
     request: Request,
     env?: VoyantNodeRuntimeEnv,
@@ -309,6 +327,12 @@ export async function loadVoyantNodeRuntime(
     outboundWebhooks: options.outboundWebhooks,
     appWebhooks: options.appWebhooks,
   })
+  const jobHost = createVoyantNodeJobHost({
+    runtime: options.graphRuntime,
+    jobs: options.jobs,
+    ...(options.runtimePorts ? { ports: options.runtimePorts } : {}),
+    ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
+  })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,
   )
@@ -357,6 +381,19 @@ export async function loadVoyantNodeRuntime(
     ),
   })
 
+  const fetch = async (
+    request: Request,
+    bindings: VoyantNodeRuntimeEnv = env,
+    ctx: ExecutionContextLike = createNoopExecutionContext(),
+  ): Promise<Response> => {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith(`${VOYANT_PRODUCT_JOB_ROUTE}/`)) {
+      const response = await jobHost.handleRequest(request, bindings.ORIGIN_TRUST_SECRET)
+      if (response) return response
+    }
+    return app.fetch(request, bindings, toHonoExecutionContext(ctx))
+  }
+
   return {
     graphRuntime: options.graphRuntime,
     deployment: options.deployment,
@@ -365,16 +402,28 @@ export async function loadVoyantNodeRuntime(
     graphValues,
     app,
     actionLedgerCapabilities,
-    fetch: (request, bindings = env, ctx = createNoopExecutionContext()) =>
-      app.fetch(request, bindings, toHonoExecutionContext(ctx)),
+    jobs: {
+      inventory: jobHost.inventory,
+      health: jobHost.health,
+      invoke: jobHost.invoke,
+    },
+    fetch,
     start: (serverOptions = {}) =>
       createNodeServer<VoyantNodeRuntimeEnv>({
-        fetch: (request, bindings, ctx) =>
-          app.fetch(request, bindings, toHonoExecutionContext(ctx)),
+        fetch,
+        scheduled: (event) =>
+          jobHost.dispatchSchedule({
+            ...(event.scheduleId ? { scheduleId: event.scheduleId } : {}),
+            ...(event.cron ? { cron: event.cron } : {}),
+          }),
         env,
         port: Number.parseInt(env.PORT ?? "8080", 10),
         ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
         ...serverOptions,
+        residentServices:
+          options.deployment.providers.scheduledJobs === "node-cron"
+            ? [jobHost, ...(serverOptions.residentServices ?? [])]
+            : serverOptions.residentServices,
       }),
   }
 }

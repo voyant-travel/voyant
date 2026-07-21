@@ -197,6 +197,14 @@ host may run resident workers or invoke a one-shot internal job command from the
 platform scheduler. The job contract and domain semantics are the same as
 managed Cloud; only deployment mechanics differ.
 
+The resident Node host performs one idempotent recovery sweep for every
+scheduled job when the process starts, then follows the declared cron or
+`every` cadence. This makes missed scheduler delivery recoverable without
+persisting generic run state in the host. It serializes each job in-process,
+uses bounded retries with backoff, and exposes only minimal health state. Fixed
+HTTP wakeup and schedule invocation is origin-trust authenticated and accepts
+neither request bodies nor query input.
+
 Custom deployments can disable a specific optional product capability only when
 the owning package documents the consequences. Disabling a capability removes
 its jobs together with its other runtime surfaces. Required jobs cannot be
