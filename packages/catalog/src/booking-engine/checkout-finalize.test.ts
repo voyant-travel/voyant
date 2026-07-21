@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { type CheckoutFinalizeDeps, runCheckoutFinalize } from "./checkout-finalize.js"
 
 describe("runCheckoutFinalize", () => {
-  it("reuses Legal's document checkpoint after invoice payment linkage", async () => {
+  it("requests a final-payment contract refresh after invoice payment linkage", async () => {
     const calls: string[] = []
     const deps: CheckoutFinalizeDeps = {
       db: {} as CheckoutFinalizeDeps["db"],
@@ -26,7 +26,7 @@ describe("runCheckoutFinalize", () => {
 
     await runCheckoutFinalize({ bookingId: "bk_1", paymentSessionId: "ps_1" }, deps)
 
-    expect(calls).toEqual(["confirm", "invoice", "link", "contract:cached"])
+    expect(calls).toEqual(["confirm", "invoice", "link", "contract:force"])
   })
 
   it("can be redelivered after a post-confirmation failure without duplicating domain effects", async () => {

@@ -1,3 +1,4 @@
+export * from "./checkout/schema-finalizations.js"
 export * from "./markets/schema.js"
 export * from "./pricing/schema.js"
 export * from "./promotions/schema.js"

@@ -57,7 +57,7 @@ interface ContractDocumentGeneratedPayload {
 
 interface PaymentCompletedPayload {
   bookingId: string | null
-  paymentSessionId?: string
+  paymentSessionId: string
   paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
 }
 
