@@ -284,7 +284,17 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
   })
 
   it("creates setup only from active installation identity and an admitted setup origin", async () => {
-    const current = acquisition()
+    const setupManifest = {
+      ...validManifest,
+      urls: { ...validManifest.urls, setup: "https://app.example.com/setup" },
+    }
+    const current = acquisition({
+      release: {
+        ...acquisition().release,
+        manifest: setupManifest,
+        digest: compileAppManifest(setupManifest).digest,
+      },
+    })
     const createSetupHandoff = vi.fn(async () => ({
       redirectUrl: "https://app.example.com/setup?code=one-time-opaque",
     }))
