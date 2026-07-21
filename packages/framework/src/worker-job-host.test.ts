@@ -246,9 +246,7 @@ describe("Voyant Worker product job host", () => {
   it("emits a deduplicated trigger list for generated Wrangler config", () => {
     expect(cloudflareCronTriggersForProductJobs(inventory)).toEqual(["*/5 * * * *"])
     expect(() =>
-      cloudflareCronTriggersForProductJobs([
-        { ...inventory[0]!, schedule: { every: "30s" } },
-      ]),
+      cloudflareCronTriggersForProductJobs([{ ...inventory[0]!, schedule: { every: "30s" } }]),
     ).toThrow("Cannot generate Cloudflare Cron Triggers for product jobs: acme.first")
   })
 

@@ -82,10 +82,7 @@ export interface CreateVoyantWorkerRuntimeHostPrimitivesOptions<TBindings extend
   bindings: TBindings
   resolveDatabase(bindings: TBindings): unknown
   databaseFromContext?(context: unknown, bindings: TBindings): unknown
-  transaction?<T>(
-    bindings: TBindings,
-    operation: (database: unknown) => Promise<T>,
-  ): Promise<T>
+  transaction?<T>(bindings: TBindings, operation: (database: unknown) => Promise<T>): Promise<T>
   resolveStorage?(bindings: TBindings, name: string): unknown
   readStorage?(bindings: TBindings, key: string): Promise<string | null>
   resolveDownloadUrl?(bindings: TBindings, key: string): Promise<string | null>
@@ -148,9 +145,8 @@ export function createVoyantWorkerRuntimeHostPrimitives<TBindings extends object
       },
       read: (bindings, key) =>
         options.readStorage?.(bindingsFor(bindings), key) ?? missing("storage.read"),
-      downloadUrl: (bindings, key) =>
-        options.resolveDownloadUrl?.(bindingsFor(bindings), key) ??
-        missing("storage.downloadUrl"),
+    downloadUrl: (bindings, key) =>
+      options.resolveDownloadUrl?.(bindingsFor(bindings), key) ?? missing("storage.downloadUrl"),
     },
     events: {
       deliver: (event, bindings) =>
@@ -158,8 +154,7 @@ export function createVoyantWorkerRuntimeHostPrimitives<TBindings extends object
     },
     config: {
       read: (bindings, key) =>
-        options.readConfig?.(bindingsFor(bindings), key) ??
-        Reflect.get(bindingsFor(bindings), key),
+        options.readConfig?.(bindingsFor(bindings), key) ?? Reflect.get(bindingsFor(bindings), key),
     },
   }
 }
