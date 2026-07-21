@@ -8,7 +8,13 @@ export function createLazyNodeRedisTcpClient(redisUrl: string): LazyRedisClient 
 
   return {
     get() {
-      clientPromise ??= connectNodeRedisClient(redisUrl)
+      if (!clientPromise) {
+        const connectPromise = connectNodeRedisClient(redisUrl).catch((error: unknown) => {
+          if (clientPromise === connectPromise) clientPromise = undefined
+          throw error
+        })
+        clientPromise = connectPromise
+      }
       return clientPromise
     },
   }

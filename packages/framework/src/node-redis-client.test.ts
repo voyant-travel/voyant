@@ -123,4 +123,28 @@ describe("createLazyNodeRedisTcpClient", () => {
     await expect(lazyClient.get()).rejects.not.toThrow(/secret|example\.redis\.test/u)
     expect(redisClients[0]!.close).toHaveBeenCalled()
   })
+
+  it("retries with a fresh client after an initial sanitized connection failure", async () => {
+    nextConnectError.error = Object.assign(
+      new Error(`connect ${credentialedRedisUrl("rediss:")} failed`),
+      { code: "WRONGPASS" },
+    )
+    const lazyClient = await createTcpClient()
+
+    const firstAttempt = lazyClient.get()
+    const concurrentFirstAttempt = lazyClient.get()
+    expect(concurrentFirstAttempt).toBe(firstAttempt)
+    await expect(firstAttempt).rejects.toThrow("Redis TCP client failed to connect (WRONGPASS)")
+    await expect(concurrentFirstAttempt).rejects.not.toThrow(/default|secret|example\.redis\.test/u)
+    expect(redisClients).toHaveLength(1)
+    expect(redisClients[0]!.connect).toHaveBeenCalledOnce()
+    expect(redisClients[0]!.close).toHaveBeenCalledOnce()
+
+    nextConnectError.error = undefined
+    const client = await lazyClient.get()
+
+    await expect(lazyClient.get()).resolves.toBe(client)
+    expect(redisClients).toHaveLength(2)
+    expect(redisClients[1]!.connect).toHaveBeenCalledOnce()
+  })
 })
