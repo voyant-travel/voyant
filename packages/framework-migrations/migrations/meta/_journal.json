@@ -71,6 +71,13 @@
       "when": 1783872000000,
       "tag": "0009_framework_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784674188000,
+      "tag": "0010_retire_workflow_runs",
+      "breakpoints": true
     }
   ]
 }

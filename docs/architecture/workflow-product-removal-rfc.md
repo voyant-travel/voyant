@@ -245,6 +245,13 @@ The migration removes the general workflow surface, including:
 The removal is a major-version breaking change for public packages. It must
 include migration guidance for any external package consumers.
 
+For self-hosted deployments, the framework cutover migration drops the retired
+`workflow_runs` and `workflow_run_steps` history tables and their status enum
+types. Operators that need that historical data must export it before applying
+the cutover; product-job execution health does not migrate or preserve generic
+workflow-run history. Managed Cloud retention remains a separate control-plane
+migration concern.
+
 ## Migration Plan
 
 ### Phase 0: Establish the job contract
