@@ -326,7 +326,14 @@ function analyzeSubscriber(
   }
   const subscriberId = stringProperty(resolved, "id", constants)
   const eventType = stringProperty(resolved, "eventType", constants)
-  if (!subscriberId || !eventType) {
+  const hasRegister = resolved.properties.some(
+    (property) =>
+      "name" in property &&
+      property.name !== undefined &&
+      ((ts.isIdentifier(property.name) && property.name.text === "register") ||
+        (ts.isStringLiteral(property.name) && property.name.text === "register")),
+  )
+  if (!subscriberId || !eventType || !hasRegister) {
     return { diagnostics: [invalidSubscriberDiagnostic(contribution.sourcePath)] }
   }
   return {

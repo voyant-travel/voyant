@@ -177,6 +177,10 @@ describe("project subscriber and link conventions", () => {
           sourcePaths: ["src/subscribers/call.ts"],
         }),
         expect.objectContaining({
+          code: "PROJECT_SUBSCRIBER_INVALID_DESCRIPTOR",
+          sourcePaths: ["src/subscribers/function.ts"],
+        }),
+        expect.objectContaining({
           code: "PROJECT_LINK_INVALID_DEFINITION",
           sourcePaths: ["src/links/plain.ts"],
         }),
