@@ -165,19 +165,6 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
       const release = await requireReleaseForApp(tx, installation.appId, input.releaseId)
       assertReleaseAvailable(release)
       assertApiCompatible(release, options.platformApiVersion)
-      const managedBinding = await resolveManagedBinding(
-        options.managedInstallation,
-        installation.appId,
-        input.releaseId,
-      )
-      if (managedBinding) {
-        installation = await reconcileManagedInstallationBinding(
-          tx,
-          installation,
-          deploymentId(),
-          managedBinding,
-        )
-      }
       const deactivatedKeylessWebhooks = await deactivateKeylessActiveWebhooks(tx, installation)
       if (deactivatedKeylessWebhooks > 0) {
         await audit(
@@ -192,6 +179,7 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
         )
       }
       if (installation.releaseId === release.id) {
+        installation = await reconcileUpgradeManagedBinding(tx, installation, input.releaseId)
         await audit(tx, installation, input.actorId, "lifecycle", "upgrade.idempotent", {
           releaseId: release.id,
         })
@@ -222,6 +210,7 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
         }
       }
 
+      installation = await reconcileUpgradeManagedBinding(tx, installation, input.releaseId)
       await deactivateResolvedRegistrations(tx, installation)
       if (input.credential) {
         await rotateCredential(tx, installation, input.credential, input.actorId)
@@ -247,6 +236,20 @@ export function createAppInstallationService(options: AppInstallationServiceOpti
       await emitLifecycle(row, "upgraded")
       return { installation: row, outcome: "upgraded" as const, missingScopes: [] }
     })
+  }
+
+  async function reconcileUpgradeManagedBinding(
+    db: PostgresJsDatabase,
+    installation: AppInstallation,
+    releaseId: string,
+  ) {
+    const managedBinding = await resolveManagedBinding(
+      options.managedInstallation,
+      installation.appId,
+      releaseId,
+    )
+    if (!managedBinding) return installation
+    return reconcileManagedInstallationBinding(db, installation, deploymentId(), managedBinding)
   }
 
   async function pause(db: PostgresJsDatabase, input: LifecycleActionInput) {

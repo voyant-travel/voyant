@@ -208,7 +208,14 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
 
   it("advances the managed installation contract when activating an acquired release", async () => {
     const first = acquisition()
-    const nextManifest = { ...validManifest, releaseVersion: "1.1.0" }
+    const nextManifest = {
+      ...validManifest,
+      releaseVersion: "1.1.0",
+      scopes: {
+        ...validManifest.scopes,
+        requested: [...validManifest.scopes.requested, "customers:read"],
+      },
+    }
     const second = acquisition({
       acquisitionId: "acquisition_2",
       release: {
@@ -243,10 +250,26 @@ describe.skipIf(!DB_AVAILABLE)("managed Marketplace acquisition", () => {
     })
     await service.resolveAndAcquire(db, { intent: "opaque-2", actorId: "user_1" })
 
+    const pending = await installations.upgrade(db, {
+      installationId: installed.installation.id,
+      releaseId: second.release.id,
+      actorId: "user_1",
+    })
+    expect(pending).toMatchObject({
+      outcome: "pending_consent",
+      installation: {
+        id: installed.installation.id,
+        releaseId: first.release.id,
+        contractGeneration: 1,
+      },
+      missingScopes: ["customers:read"],
+    })
+
     const upgraded = await installations.upgrade(db, {
       installationId: installed.installation.id,
       releaseId: second.release.id,
       actorId: "user_1",
+      grantedRequiredScopes: ["customers:read"],
     })
 
     expect(upgraded).toMatchObject({
