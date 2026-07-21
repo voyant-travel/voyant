@@ -24,7 +24,7 @@ export interface TripsRuntimeDependencies {
   catalog: CatalogRuntimeServices
   checkout: CatalogCheckoutApiRuntime
   cardPayment: CommerceCardPaymentRuntime
-  flights: FlightsRuntime
+  flights?: FlightsRuntime
 }
 
 /** Compose Trips routes from generic host primitives and selected package ports. */
@@ -56,6 +56,11 @@ export function createTripsRoutesRuntime(
       })
     },
     createFlightAdapter(context) {
+      if (!dependencies.flights) {
+        throw new Error(
+          "trip_flight_components_require_flights_runtime: select @voyant-travel/flights or provide flights.runtime",
+        )
+      }
       return createFlightComponentAdapter({
         adapter: dependencies.flights.resolveAdapter(context),
         adapterContext: {
