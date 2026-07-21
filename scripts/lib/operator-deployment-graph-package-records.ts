@@ -245,7 +245,6 @@ function requireResolvedProjectArtifacts(value: unknown): ResolvedProjectArtifac
   const artifacts = value as Partial<ResolvedProjectArtifacts>
   if (
     typeof artifacts.runtimeEntry !== "string" ||
-    typeof artifacts.workflowRuntimeEntry !== "string" ||
     typeof artifacts.migrationRunner !== "string" ||
     !Array.isArray(artifacts.files) ||
     !artifacts.migrationPlan
@@ -301,7 +300,6 @@ function manifestFromResolvedUnit(
     links: unit.links,
     subscribers: unit.subscribers,
     events: unit.events,
-    workflows: unit.workflows,
     ...(unit.setupMigrations ? { setupMigrations: unit.setupMigrations } : {}),
     ...(unit.config ? { config: unit.config } : {}),
     ...(unit.secrets ? { secrets: unit.secrets } : {}),

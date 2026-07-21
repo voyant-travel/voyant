@@ -22,7 +22,6 @@
     "quotes": ["0000_quotes_baseline"],
     "relationships": ["0000_relationships_baseline"],
     "storefront": ["0000_storefront_baseline"],
-    "trips": ["0000_trips_baseline"],
-    "workflow-runs": ["0000_workflow_runs_baseline"]
+    "trips": ["0000_trips_baseline"]
   }
 }

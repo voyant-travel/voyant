@@ -13,7 +13,7 @@
     "./service": "./src/service.ts",
     "./tasks": "./src/tasks/index.ts",
     "./reminder-job": "./src/reminder-job.ts",
-    "./workflow-runtime": "./src/workflow-runtime.ts",
+    "./job-runtime": "./src/job-runtime.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./subscriber-runtime": "./src/subscriber-runtime.ts",
     "./providers/local": "./src/providers/local.ts",
@@ -112,10 +112,10 @@
         "import": "./dist/reminder-job.js",
         "default": "./dist/reminder-job.js"
       },
-      "./workflow-runtime": {
-        "types": "./dist/workflow-runtime.d.ts",
-        "import": "./dist/workflow-runtime.js",
-        "default": "./dist/workflow-runtime.js"
+      "./job-runtime": {
+        "types": "./dist/job-runtime.d.ts",
+        "import": "./dist/job-runtime.js",
+        "default": "./dist/job-runtime.js"
       },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",

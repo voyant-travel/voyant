@@ -124,9 +124,6 @@ describe("framework project resolver", () => {
     })
     expect(first.graph.deployment).not.toHaveProperty("target")
     expect(first.artifacts.runtimeEntry).toBe("runtime/project-runtime.generated.ts")
-    expect(first.artifacts.workflowRuntimeEntry).toBe(
-      "runtime/project-package-workflows.generated.ts",
-    )
     expect(first.artifacts.migrationRunner).toBe("runtime/project-migrations.generated.mjs")
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "access/selected-access-catalog.generated.ts",
@@ -136,13 +133,10 @@ describe("framework project resolver", () => {
       "presentations/selected-graph-presentations.generated.d.ts",
       "presentations/selected-graph-presentations.generated.js",
       "runtime/project-api.generated.ts",
-      "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
       "runtime/project-migrations.generated.mjs",
-      "runtime/project-package-workflows.generated.ts",
       "runtime/project-runtime.generated.ts",
       "runtime/project-subscribers.generated.ts",
-      "runtime/project-workflows.generated.ts",
     ])
     expect(
       first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.js")
@@ -318,52 +312,6 @@ describe("framework project resolver", () => {
         owner: "deployment",
         source: { kind: "deployment", path: "./migrations" },
       },
-    ])
-  })
-
-  it("includes orchestrator migrations only for the self-hosted workflow provider", async () => {
-    const root = projectRoot()
-    writePackage(root, {
-      name: "@acme/loyalty",
-      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
-    })
-
-    const selfHosted = await resolve(
-      root,
-      defineProject({
-        modules: ["@acme/loyalty"],
-        deployment: {
-          mode: "self-hosted",
-          providers: { workflows: "self-hosted" },
-        },
-      }),
-    )
-    const disabled = await resolve(
-      root,
-      defineProject({
-        modules: ["@acme/loyalty"],
-        deployment: { mode: "self-hosted", providers: { workflows: "none" } },
-      }),
-    )
-
-    expect(selfHosted.artifacts.migrationPlan.migrations).toEqual([
-      expect.objectContaining({ id: "@acme/loyalty#migrations", order: 0 }),
-      {
-        id: "@voyant-travel/workflows-orchestrator#migrations",
-        migrationKind: "schema",
-        order: 1,
-        idempotencyKey: "schema:@voyant-travel/workflows-orchestrator#migrations",
-        owner: "@voyant-travel/workflows-orchestrator",
-        packageName: "@voyant-travel/workflows-orchestrator",
-        source: {
-          kind: "package",
-          packageName: "@voyant-travel/workflows-orchestrator",
-          path: "./migrations",
-        },
-      },
-    ])
-    expect(disabled.artifacts.migrationPlan.migrations.map((migration) => migration.id)).toEqual([
-      "@acme/loyalty#migrations",
     ])
   })
 
@@ -877,213 +825,6 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     })
 
     expect(composed.modules.map((module) => module.module.name)).toEqual(["concierge"])
-  })
-
-  it("compiles every project source convention into graph artifacts", async () => {
-    const root = projectRoot()
-    writePackage(root, {
-      name: "@fixture/health-events",
-      manifest: `export default ${JSON.stringify({
-        ...moduleManifest("@fixture/health-events"),
-        events: [
-          {
-            id: "@fixture/health-events#event.health.updated",
-            eventType: "health.updated",
-            version: "1.0.0",
-            payloadSchema: { type: "object", additionalProperties: true },
-            visibility: "internal",
-            audit: { sourceModule: "project", category: "domain" },
-          },
-        ],
-      })}\n`,
-    })
-    writeFile(
-      root,
-      "src/api/admin/health/route.ts",
-      "export const GET = (c: { json(value: unknown): unknown }) => c.json({ ok: true })\n",
-    )
-    writeFile(root, "src/admin/dashboard/index.tsx", 'export default { id: "project.dashboard" }\n')
-    writeFile(
-      root,
-      "src/workflows/sync-health.ts",
-      [
-        'import { defineWorkflow } from "@voyant-travel/workflows"',
-        'export default defineWorkflow({ id: "health.sync", schedule: { cron: "0 * * * *" }, run: async () => undefined })',
-      ].join("\n"),
-    )
-    writeFile(
-      root,
-      "src/subscribers/health-updated.ts",
-      [
-        "export default {",
-        '  id: "health.updated.sync",',
-        '  eventType: "health.updated",',
-        '  manifest: { id: "health.updated.sync", eventType: "health.updated", payloadHash: "hash", targetWorkflowId: "health.sync" },',
-        "}",
-      ].join("\n"),
-    )
-    writeFile(
-      root,
-      "src/links/health-owner.ts",
-      [
-        'import { defineLink } from "@voyant-travel/core"',
-        'import { left, right } from "../linkables.js"',
-        "export default defineLink(left, right)",
-      ].join("\n"),
-    )
-    writeFile(root, "src/linkables.ts", "export const left = {}; export const right = {}\n")
-    writeFile(
-      root,
-      "src/jobs/cleanup.ts",
-      [
-        'export const schedule = { cron: "0 3 * * *", input: { source: "project" } }',
-        "export default async function cleanup() {}",
-      ].join("\n"),
-    )
-
-    const resolution = await resolve(root, defineProject({ modules: ["@fixture/health-events"] }))
-    const projectApi = resolution.graph.modules.find(({ localId }) => localId === "project-api")
-    const projectWorkflows = resolution.graph.modules.find(
-      ({ localId }) => localId === "project-workflows",
-    )
-    const projectSubscriberLinks = resolution.graph.modules.find(
-      ({ localId }) => localId === "project-subscribers-links",
-    )
-
-    expect(projectApi).toMatchObject({
-      id: "npm/fixture#project-api",
-      packageName: "fixture",
-      api: [
-        {
-          id: "project.api.admin.health",
-          methods: ["GET"],
-          mount: "/health",
-          surface: "admin",
-          runtime: {
-            entry: "./.voyant/runtime/project-api.generated.ts",
-            export: "projectApiModule",
-          },
-        },
-      ],
-    })
-    expect(resolution.graph.packageRecords).toContainEqual(
-      expect.objectContaining({
-        packageName: "fixture",
-        source: { kind: "file", reference: "." },
-      }),
-    )
-    expect(projectWorkflows).toMatchObject({
-      id: "npm/fixture#project-workflows",
-      workflows: [
-        {
-          id: "health.sync",
-          runtime: {
-            entry: "./.voyant/runtime/project-workflows.generated.ts",
-            export: "projectWorkflow0",
-          },
-          schedules: [expect.objectContaining({ cron: "0 * * * *", workflowId: "health.sync" })],
-        },
-        {
-          id: "project.job.cleanup",
-          runtime: {
-            entry: "./.voyant/runtime/project-jobs.generated.ts",
-            export: "projectJobWorkflow0",
-          },
-          schedules: [
-            expect.objectContaining({
-              cron: "0 3 * * *",
-              input: { source: "project" },
-              workflowId: "project.job.cleanup",
-            }),
-          ],
-        },
-      ],
-    })
-    expect(projectSubscriberLinks).toMatchObject({
-      id: "npm/fixture#project-subscribers-links",
-      subscribers: [
-        {
-          id: "health.updated.sync",
-          eventType: "health.updated",
-          eventFilterId: "health.updated.sync",
-          workflowId: "health.sync",
-          runtime: {
-            entry: "./.voyant/runtime/project-subscribers.generated.ts",
-            export: "projectSubscriber0",
-          },
-        },
-      ],
-      links: [
-        {
-          export: "default",
-          id: "project.link.health-owner",
-          kind: "definition",
-          source: "src/links/health-owner.ts",
-        },
-      ],
-    })
-    expect(resolution.graph.provisioning.scheduledJobs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ cron: "0 * * * *", workflowId: "health.sync" }),
-        expect.objectContaining({
-          cron: "0 3 * * *",
-          input: { source: "project" },
-          workflowId: "project.job.cleanup",
-        }),
-      ]),
-    )
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === "runtime/project-api.generated.ts")
-        ?.contents,
-    ).toContain('import * as route0 from "../../src/api/admin/health/route.js"')
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === "admin/project-admin.generated.ts")
-        ?.contents,
-    ).toContain('import projectAdminExtension0 from "../../src/admin/dashboard/index.js"')
-    expect(
-      resolution.artifacts.files.find(
-        ({ path }) => path === "runtime/project-workflows.generated.ts",
-      )?.contents,
-    ).toContain("export { workflow0 as projectWorkflow0 }")
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === "runtime/project-jobs.generated.ts")
-        ?.contents,
-    ).toContain("export const projectJobWorkflow0 = defineWorkflow({")
-    expect(
-      resolution.artifacts.files.find(
-        ({ path }) => path === "runtime/project-subscribers.generated.ts",
-      )?.contents,
-    ).toContain("export { subscriber0 as projectSubscriber0 }")
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === "runtime/project-links.generated.ts")
-        ?.contents,
-    ).toContain("export { link0 as projectLink0 }")
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
-        ?.contents,
-    ).toContain('"./project-api.generated.ts": () => import("./project-api.generated.ts")')
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
-        ?.contents,
-    ).toContain(
-      '"./project-workflows.generated.ts": () => import("./project-workflows.generated.ts")',
-    )
-    expect(
-      resolution.artifacts.files.find(({ path }) => path === resolution.artifacts.runtimeEntry)
-        ?.contents,
-    ).toContain(
-      '"./project-subscribers.generated.ts": () => import("./project-subscribers.generated.ts")',
-    )
-    const workflowRuntimeSource = resolution.artifacts.files.find(
-      ({ path }) => path === resolution.artifacts.workflowRuntimeEntry,
-    )?.contents
-    expect(workflowRuntimeSource).toContain(
-      '"./project-workflows.generated.ts": () => import("./project-workflows.generated.ts")',
-    )
-    expect(workflowRuntimeSource).toContain(
-      '"./project-subscribers.generated.ts": () => import("./project-subscribers.generated.ts")',
-    )
-    expect(workflowRuntimeSource).not.toContain("project-api.generated.ts")
   })
 
   it("rejects convention diagnostics and config paths outside the project root", async () => {

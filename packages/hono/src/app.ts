@@ -1,23 +1,11 @@
 // agent-quality: file-size exception — app.ts is the framework composition root;
 // splitting it is intentional follow-up work, not part of voyant#2114.
 import { OpenAPIHono } from "@hono/zod-openapi"
-import {
-  createContainer,
-  createEventBus,
-  createQueryRunner,
-  type EventFilterDescriptor,
-  type WorkflowDescriptor,
-} from "@voyant-travel/core"
+import { createContainer, createEventBus, createQueryRunner } from "@voyant-travel/core"
 import { createLinkServiceFactory } from "@voyant-travel/db/links"
-import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
 import type { Context, Hono } from "hono"
 
 import { assembleAnonymousPaths, assembleOptionalCustomerAuthPaths } from "./anonymous-paths.js"
-import {
-  containerToServiceResolver,
-  makeFrameworkLogger,
-  wireWorkflowRuntime,
-} from "./app-workflows.js"
 import { composeAuthAugmentations } from "./auth-augmentation.js"
 import {
   type ApiBundle,
@@ -283,47 +271,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     eventBus.subscribe(sub.event, sub.handler, { inline: sub.inline ?? false })
   }
 
-  // ---- Workflow runtime wiring (synchronous setup; manifest registration
-  //      + EventBus forwarder run inside the lazy bootstrap below) ----
-  //
-  // We collect `workflows` + `eventFilters` from every module and plugin
-  // here so the failure mode for "duplicate workflow id across modules"
-  // surfaces at construction time (per architecture doc §18, the workflow
-  // runtime is fail-closed).
-  const collectedWorkflows: WorkflowDescriptor[] = []
-  const collectedFilters: EventFilterDescriptor[] = []
-  function collectModuleRuntimeDescriptors(modules: readonly (typeof allModules)[number][]) {
-    for (const mod of modules) {
-      if (mod.module.workflows) collectedWorkflows.push(...mod.module.workflows)
-      if (mod.module.eventFilters) collectedFilters.push(...mod.module.eventFilters)
-    }
-  }
-  function collectPluginRuntimeDescriptors(plugins: readonly ApiBundle[]) {
-    for (const plugin of plugins) {
-      if (plugin.workflows) collectedWorkflows.push(...plugin.workflows)
-      if (plugin.eventFilters) collectedFilters.push(...plugin.eventFilters)
-    }
-  }
-  function assertUniqueWorkflowIds() {
-    if (!config.workflows || collectedWorkflows.length === 0) return
-    const seen = new Map<string, WorkflowDescriptor>()
-    for (const wf of collectedWorkflows) {
-      const existing = seen.get(wf.id)
-      if (existing && existing !== wf) {
-        throw new Error(
-          `[voyant] duplicate workflow id "${wf.id}" registered by multiple modules/plugins. ` +
-            `Workflow ids must be unique across the app — use a module-scoped prefix ` +
-            `(e.g. "${wf.id.includes(".") ? wf.id : `<module>.${wf.id}`}").`,
-        )
-      }
-      seen.set(wf.id, wf)
-    }
-  }
-
-  collectModuleRuntimeDescriptors(allModules)
-  collectPluginRuntimeDescriptors(eagerPlugins)
-  assertUniqueWorkflowIds()
-
   const txModuleNames = new Set<string>()
   const txRequiringModules: string[] = []
   const txPrefixes: string[] = [...(config.dbTransactionalPaths ?? [])]
@@ -424,8 +371,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     for (const sub of lazyExpanded.subscribers) {
       eventBus.subscribe(sub.event, sub.handler, { inline: sub.inline ?? false })
     }
-    collectModuleRuntimeDescriptors(lazyExpanded.modules)
-    collectPluginRuntimeDescriptors(pending)
     addTransactionalSurfaces(lazyExpanded.modules, lazyExpanded.extensions)
   }
 
@@ -445,51 +390,12 @@ export function mountApp<TBindings extends VoyantBindings>(
     await lazyPluginExpansionPromise
   }
 
-  // Workflow driver construction is **deferred** to the lazy bootstrap
-  // path so callers whose driver options come from `env.*` bindings can
-  // pass a function-of-bindings shape. Node / InMemory users usually
-  // return a direct factory from that function.
-  let workflowDriver: WorkflowDriver | undefined
-
   let bootstrapPromise: Promise<void> | null = null
   function ensureRuntimeBootstrapped(bindings: TBindings) {
     if (!bootstrapPromise) {
       bootstrapPromise = (async () => {
         const ctx = { bindings, container, eventBus }
         await ensureBootstrapLazyPluginsExpanded()
-        assertUniqueWorkflowIds()
-
-        // ---- Workflow runtime FIRST — fail-closed manifest registration
-        //      and EventBus forwarder must be in place before any module
-        //      bootstrap can emit. Otherwise a `module.bootstrap` that
-        //      emits an event during its own bootstrap would route through
-        //      a bus with no workflow forwarder yet, silently losing the
-        //      event. Per architecture doc §21.22 + reviewer feedback P2.3.
-        if (config.workflows) {
-          // `driver` is always a function-of-bindings (per
-          // VoyantWorkflowsConfig — see types.ts + reviewer feedback P2.1).
-          // Node / InMemory users wrap with `() => createXxxDriver({...})`.
-          // Managed-cloud users can derive a forwarding driver from `env`.
-          // We invoke with bindings, then the resulting DriverFactory
-          // with framework deps.
-          const factoryDeps = {
-            services: containerToServiceResolver(container),
-            logger: makeFrameworkLogger(config.logger),
-          }
-          const factory = config.workflows.driver(bindings)
-          workflowDriver = factory(factoryDeps)
-
-          await wireWorkflowRuntime({
-            modules: allModules.map((m) => m.module),
-            collectedWorkflows,
-            collectedFilters,
-            driver: workflowDriver,
-            environment: config.workflows.environment ?? "development",
-            projectId: config.workflows.projectId ?? "default",
-            eventBus,
-          })
-        }
-
         // Run each bootstrap in isolation — a single failing plugin/module/extension
         // must not poison the cached promise and kill the whole app's request pipeline.
         const runIsolated = async (label: string, fn?: (c: typeof ctx) => unknown) => {
@@ -718,9 +624,8 @@ export function mountApp<TBindings extends VoyantBindings>(
 
   app.use("*", async (c, next) => {
     // Bootstrap only after auth has admitted the request. Rejected requests
-    // must not initialize package runtimes or contact workflow infrastructure.
+    // must not initialize package runtimes.
     await ensureRuntimeBootstrapped(c.env)
-    if (workflowDriver) c.set("workflowDriver", workflowDriver)
     return next()
   })
 

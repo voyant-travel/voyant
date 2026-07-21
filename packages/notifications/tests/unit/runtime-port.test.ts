@@ -12,9 +12,9 @@ import {
   notificationsRuntimePort,
 } from "../../src/runtime-port.js"
 import { NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY } from "../../src/subscriber-runtime.js"
-import { NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY } from "../../src/workflow-runtime.js"
+import { NOTIFICATION_REMINDER_JOB_RUNTIME_KEY } from "../../src/job-runtime.js"
 
-const workflowRuntime = {
+const jobRuntime = {
   resolveDb: () => ({}) as PostgresJsDatabase,
   resolveEnv: () => ({}),
   resolveRuntimeOptions: () => ({ providers: [] }),
@@ -24,7 +24,7 @@ function provider(): NotificationsRuntimeProvider {
   return {
     resolveDb: () => ({}) as PostgresJsDatabase,
     resolveProviders: () => [],
-    resolveReminderWorkflowRuntime: () => workflowRuntime,
+    resolveReminderJobRuntime: () => jobRuntime,
     autoConfirmAndDispatch: { enabled: true, templateSlug: "booking-confirmation" },
   }
 }
@@ -46,7 +46,7 @@ describe("Notifications runtime port", () => {
         resolveDb: vi.fn(),
         resolveProviders: vi.fn(),
       } as never),
-    ).rejects.toThrow(/resolveReminderWorkflowRuntime/)
+    ).rejects.toThrow(/resolveReminderJobRuntime/)
   })
 
   it("keeps module and selected subscriber services in their owning factories", async () => {
@@ -56,7 +56,7 @@ describe("Notifications runtime port", () => {
     const extension = await createNotificationsSubscribersVoyantRuntime(runtimeFactoryContext())
 
     await module.module.bootstrap?.(context)
-    expect(container.has(NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY)).toBe(true)
+    expect(container.has(NOTIFICATION_REMINDER_JOB_RUNTIME_KEY)).toBe(true)
     expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(false)
 
     await extension.extension.bootstrap?.(context)

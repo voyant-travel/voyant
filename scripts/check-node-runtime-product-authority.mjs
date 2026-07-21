@@ -8,7 +8,6 @@ const operatorResourcesPath = "packages/runtime/src/deployment-resources.ts"
 const operatorResources = await read(operatorResourcesPath)
 const operatorRuntimePath = "packages/runtime/src/index.ts"
 const operatorRuntime = await read(operatorRuntimePath)
-const operatorStandard = await read("packages/operator-standard/src/index.ts")
 const retiredOperatorAdapterPath = "starters/operator/src/api/runtime/runtime-adapter.ts"
 const violations = []
 
@@ -201,7 +200,7 @@ if (operatorLineDelta > 0 || operatorImportDelta > 0) {
 }
 
 // The resident host may import only generic process, database, storage,
-// composition, and workflow infrastructure. Each exception is intentionally
+// and composition infrastructure. Each exception is intentionally
 // exact so adding another first-party dependency requires architectural review.
 const allowedInfrastructureImports = new Map([
   [
@@ -219,13 +218,6 @@ const allowedInfrastructureImports = new Map([
   ["@voyant-travel/utils/redis-client", "types the generic lazy Redis client contract"],
   ["@voyant-travel/utils/redis-kv", "adapts Redis to the generic cache resource"],
   ["@voyant-travel/utils/tiered-kv", "composes process and durable cache resources"],
-  ["@voyant-travel/workflows/client", "adapts the generic workflow driver to Voyant Cloud"],
-  ["@voyant-travel/workflows/driver", "types the generic workflow driver factory"],
-  ["@voyant-travel/workflows-orchestrator/in-memory", "provides the local workflow driver"],
-  [
-    "@voyant-travel/workflows-orchestrator/selfhost",
-    "provides the graph-selected durable self-hosted workflow driver",
-  ],
 ])
 
 const firstPartyImports = extractFirstPartyImports(nodeRuntime)
@@ -270,36 +262,6 @@ for (const required of ["VoyantNodeRuntimeResources", "runtimePorts?:"]) {
   if (!nodeRuntime.includes(required)) {
     violations.push(`generic graph runtime host contract is missing ${required}`)
   }
-}
-
-for (const required of [
-  "resolveVoyantNodeWorkflowProvider(deployment.providers.workflows)",
-  'provider === "voyant-cloud"',
-  'provider === "self-hosted"',
-  'provider === "none"',
-]) {
-  if (!nodeRuntime.includes(required)) {
-    violations.push(`Node workflow selection must remain provider-driven: missing ${required}`)
-  }
-}
-if (
-  nodeRuntime.includes(
-    "env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()",
-  )
-) {
-  violations.push("Node workflow selection must not infer a provider from Cloud credentials")
-}
-for (const required of [
-  "deployment: input.runtime.deployment",
-  "oneShot: true",
-  'workflowProvider === "none"',
-]) {
-  if (!operatorRuntime.includes(required)) {
-    violations.push(`scheduled workflow dispatch is missing provider authority ${required}`)
-  }
-}
-if (!operatorStandard.includes('workflows: "self-hosted"')) {
-  violations.push("standard Operator must select durable self-hosted workflows")
 }
 
 const packageAuthority = [

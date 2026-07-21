@@ -1356,7 +1356,7 @@ stay unchanged.
 | `@voyant-travel/action-ledger`, `@voyant-travel/action-ledger-react` | Keep separate as an infrastructure/audit Module. | Audit/action timelines cut across domains. |
 | `@voyant-travel/notifications`, `@voyant-travel/notifications-react` | Keep separate. | Notifications are infrastructure with provider/adapters and domain event consumers. |
 | `@voyant-travel/storage` | Keep separate. | Storage is infrastructure. |
-| `@voyant-travel/workflows`, `@voyant-travel/workflows-react`, `@voyant-travel/workflow-runs`, `@voyant-travel/workflows-orchestrator` | Keep as workflow infrastructure family. | These are runtime/orchestration seams, not travel-domain seams. The retired Cloudflare adapter packages, separate Node orchestrator package, and external step-server artifact are removed because workflows are node-only. |
+| Retired workflow infrastructure packages | Remove. | Product-owned background behavior uses package jobs and subscribers; customer-specific orchestration runs outside Voyant. |
 | `@voyant-travel/catalog-rag`, `@voyant-travel/catalog-mcp` | Fold Catalog retrieval into `catalog` and remove first-party `catalog-mcp`. | Semantic/vector/hybrid search and compact agent results are Catalog API capabilities; MCP wrappers belong at the application/runtime edge when needed. |
 | `@voyant-travel/ui`, `@voyant-travel/react`, `@voyant-travel/i18n` | Keep separate. | Shared frontend/runtime infrastructure. |
 | `@voyant-travel/schema-kit`, `@voyant-travel/types`, `@voyant-travel/utils`, `@voyant-travel/templating` | Keep separate. | Shared type, TypeID, formatting, templating, and utility infrastructure. |
@@ -1384,4 +1384,4 @@ stay unchanged.
 | Internal dev-agent tooling | Keep outside the Voyant workspace. | Agent queue, remote sandbox, browser evidence, and code-execution tooling lives in `../internal-dev-agent`, not in the product monorepo. |
 | `examples/operator-demo` | Keep as a private example fixture. | Product-specific seed data is not standard starter or product package authority. |
 | `catalog-demo-api`, `flights-demo-api` | Keep as demo applications. | These may need dependency updates after Catalog, Inventory, or Flights package moves, but they should not drive Module boundaries. |
-| Workflow dashboard/self-host example apps (removed) | Deleted. | The standalone `workflow-runs-dashboard`, `workflows-local-dashboard`, and `workflows-selfhost-node-server` apps were redundant: self-hosting composes the `@voyant-travel/workflows-orchestrator` `./selfhost` runtime with the `@voyant-travel/workflows-react/ui` dashboard, so no in-repo example app is required. |
+| Retired workflow dashboard/self-host example apps | Deleted. | Voyant no longer ships a workflow runner or workflow-run dashboard. |

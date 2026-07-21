@@ -66,4 +66,4 @@ export {
 export {
   BULK_REINDEX_SERVICE_KEY,
   type BulkReindexProductsService,
-} from "./workflow-runtime.js"
+} from "./job-runtime.js"

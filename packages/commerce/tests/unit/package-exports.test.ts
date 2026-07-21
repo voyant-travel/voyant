@@ -33,7 +33,6 @@ const packageJson = JSON.parse(
 
 describe("@voyant-travel/commerce package exports", () => {
   it.each([
-    ["./catalog-checkout-runner", "./src/checkout/runner-runtime.ts", "checkout/runner-runtime"],
     [
       "./catalog-checkout-subscribers",
       "./src/checkout/subscriber-runtime.ts",

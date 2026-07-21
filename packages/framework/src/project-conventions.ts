@@ -5,11 +5,9 @@ export type ProjectConventionKind =
   | "admin"
   | "api-route"
   | "extension"
-  | "job"
   | "link"
   | "module"
   | "subscriber"
-  | "workflow"
 
 export type ProjectConventionRouteSurface = "admin" | "public"
 
@@ -90,8 +88,6 @@ const IGNORED_DIRECTORY_NAMES = new Set([
 ])
 
 const RECURSIVE_CONVENTIONS: readonly RecursiveConvention[] = [
-  { directory: "src/workflows", kind: "workflow", accepts: isTypeScriptFile },
-  { directory: "src/jobs", kind: "job", accepts: isTypeScriptFile },
   { directory: "src/subscribers", kind: "subscriber", accepts: isRuntimeTypeScriptFile },
   { directory: "src/links", kind: "link", accepts: isRuntimeTypeScriptFile },
 ]

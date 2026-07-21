@@ -9,8 +9,6 @@ type StandardNodeStarterContract = {
     "src/admin",
     "src/modules",
     "src/extensions",
-    "src/workflows",
-    "src/jobs",
     "src/subscribers",
     "src/links",
     "src/scripts",

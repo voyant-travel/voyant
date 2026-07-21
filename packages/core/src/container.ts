@@ -1,7 +1,7 @@
 /**
  * A lightweight shared app/runtime container for explicit service resolution.
  *
- * Routes, workflows, subscribers, and bootstraps use this container to resolve
+ * Routes, jobs, subscribers, and bootstraps use this container to resolve
  * app-owned runtime services. It is intentionally minimal (Map-based) — for
  * richer DI (scoping, factory lifetimes) a template can wrap or replace it.
  */

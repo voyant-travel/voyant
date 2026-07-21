@@ -51,8 +51,6 @@ import {
   type VoyantGraphUnitKind,
   type VoyantGraphUnitManifest,
   type VoyantGraphWebhookDeclaration,
-  type VoyantGraphWorkflow,
-  type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
 
 export { defineAdapter, definePlugin, defineProvider } from "@voyant-travel/core/project"
@@ -65,7 +63,7 @@ import type {
   VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
 import { DEPLOYMENT_PROVIDER_ROLES } from "./deployment-types.js"
-import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
+import type { VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
 export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
@@ -241,8 +239,6 @@ export interface VoyantGraphScheduledJob {
   description: string
   route: string
   module: string
-  workflowId?: string
-  input?: VoyantGraphJsonValue
 }
 
 /** Host-facing inventory for fixed jobs selected with product packages. */
@@ -409,7 +405,6 @@ export interface ResolvedVoyantGraphUnit {
   subscribers: readonly VoyantGraphSubscriber[]
   events: readonly VoyantGraphEvent[]
   jobs: readonly VoyantGraphJob[]
-  workflows: readonly VoyantGraphWorkflow[]
   setupMigrations?: readonly VoyantGraphSetupMigration[]
   config?: readonly VoyantGraphConfigDeclaration[]
   secrets?: readonly VoyantGraphSecretDeclaration[]
@@ -498,7 +493,6 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "subscribers",
   "events",
   "jobs",
-  "workflows",
   "setupMigrations",
   "config",
   "secrets",
@@ -688,7 +682,6 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateSubscribers(input.subscribers, source))
   diagnostics.push(...validateEvents(input.events, source))
   diagnostics.push(...validateJobs(input.jobs, source))
-  diagnostics.push(...validateWorkflows(input.workflows, source))
   diagnostics.push(...validatePromotedFacets(input, source))
 
   return sortDiagnostics(diagnostics)
@@ -754,10 +747,7 @@ export async function resolveDeploymentGraph(
     input.project.selections,
     input.packageRecords ?? [],
   )
-  const scheduledJobs = normalizeScheduledJobs([
-    ...deriveWorkflowScheduledJobs(selectedUnits),
-    ...(input.scheduledJobs ?? []),
-  ])
+  const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
   const provisionedJobs = selectedUnits
     .flatMap((unit) =>
       unit.jobs.map((job) => ({
@@ -1106,33 +1096,8 @@ function normalizeScheduledJobs(
       description: job.description,
       route: job.route,
       module: job.module,
-      ...("workflowId" in job && job.workflowId ? { workflowId: job.workflowId } : {}),
-      ...("input" in job && job.input !== undefined ? { input: job.input } : {}),
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
-}
-
-function deriveWorkflowScheduledJobs(
-  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
-): VoyantGraphScheduledJob[] {
-  return units.flatMap((unit) =>
-    unit.workflows.flatMap((workflow) =>
-      (workflow.schedules ?? []).flatMap((schedule) => {
-        if (schedule.enabled === false || !schedule.cron) return []
-        return [
-          {
-            id: schedule.id,
-            cron: schedule.cron,
-            description: `Triggers workflow ${workflow.id} from graph schedule ${schedule.id}.`,
-            route: SCHEDULED_JOB_ROUTE,
-            module: unit.localId ?? unit.id,
-            workflowId: workflow.id,
-            ...(schedule.input !== undefined ? { input: schedule.input } : {}),
-          },
-        ]
-      }),
-    ),
-  )
 }
 
 function compareEnvRequirements(
@@ -1206,7 +1171,6 @@ function resolveUnit(
     subscribers: sortFacetEntities(unit.subscribers ?? []) as VoyantGraphSubscriber[],
     events: sortFacetEntities(unit.events ?? []) as VoyantGraphEvent[],
     jobs: sortFacetEntities(unit.jobs ?? []) as VoyantGraphJob[],
-    workflows: sortWorkflows(normalizeWorkflowScheduleFacets(unit.id, unit.workflows ?? [])),
     ...(unit.setupMigrations?.length
       ? { setupMigrations: sortFacetEntities(unit.setupMigrations) }
       : {}),
@@ -1475,79 +1439,6 @@ function sortResolvedUnits<
         left.packageName.localeCompare(right.packageName),
     )
     .map((unit, index) => ({ ...unit, order: index }))
-}
-
-function normalizeWorkflowScheduleFacets(
-  unitId: string,
-  workflows: readonly VoyantGraphWorkflow[],
-): VoyantGraphWorkflow[] {
-  return workflows.map((workflow) => {
-    const declared = workflow.schedules ?? []
-    const lowered =
-      isRecord(workflow.config) && workflow.config.schedule !== undefined
-        ? lowerWorkflowScheduleFacets(unitId, workflow.id, workflow.config.schedule)
-        : []
-    return lowered.length > 0 ? { ...workflow, schedules: [...declared, ...lowered] } : workflow
-  })
-}
-
-function lowerWorkflowScheduleFacets(
-  unitId: string,
-  workflowId: string,
-  value: unknown,
-): VoyantGraphWorkflowSchedule[] {
-  const schedules = Array.isArray(value) ? value : [value]
-  return schedules.flatMap((schedule, index) => {
-    const lowered = lowerWorkflowScheduleFacet(unitId, workflowId, schedule, index)
-    return lowered ? [lowered] : []
-  })
-}
-
-function lowerWorkflowScheduleFacet(
-  unitId: string,
-  workflowId: string,
-  value: unknown,
-  index: number,
-): VoyantGraphWorkflowSchedule | undefined {
-  if (!isRecord(value)) return undefined
-  const input = typeof value.input === "function" ? undefined : toGraphJsonValue(value.input)
-  const environments = normalizeScheduleEnvironments(value.environments)
-  return {
-    id: childGraphEntityId(unitId, `schedule.${workflowId}.${scheduleEntityKey(value, index)}`),
-    workflowId,
-    ...(typeof value.cron === "string" ? { cron: value.cron } : {}),
-    ...(typeof value.every === "string" || typeof value.every === "number"
-      ? { every: value.every }
-      : {}),
-    ...(typeof value.at === "string"
-      ? { at: value.at }
-      : value.at instanceof Date
-        ? { at: value.at.toISOString() }
-        : {}),
-    ...(typeof value.timezone === "string" ? { timezone: value.timezone } : {}),
-    ...(input !== undefined ? { input } : {}),
-    ...(typeof value.enabled === "boolean" ? { enabled: value.enabled } : {}),
-    ...(value.overlap === "skip" || value.overlap === "queue" || value.overlap === "allow"
-      ? { overlap: value.overlap }
-      : {}),
-    ...(environments.length > 0 ? { environments } : {}),
-    ...(typeof value.name === "string" ? { name: value.name } : {}),
-  }
-}
-
-function scheduleEntityKey(value: Record<string, unknown>, index: number): string {
-  if (typeof value.name === "string" && isGraphEntityIdSegment(value.name)) return value.name
-  return `schedule-${index + 1}`
-}
-
-function normalizeScheduleEnvironments(
-  value: unknown,
-): Array<"production" | "preview" | "development"> {
-  if (!Array.isArray(value)) return []
-  return value.filter(
-    (entry): entry is "production" | "preview" | "development" =>
-      entry === "production" || entry === "preview" || entry === "development",
-  )
 }
 
 function validateCapabilityDeclaration(
@@ -2894,34 +2785,6 @@ function isSupportedProductJobTimezone(value: string): boolean {
   }
 }
 
-function validateWorkflows(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
-  const diagnostics = validateFacetEntities(value, "workflows", source)
-  if (!Array.isArray(value)) return diagnostics
-  for (let workflowIndex = 0; workflowIndex < value.length; workflowIndex++) {
-    const workflow = value[workflowIndex]
-    if (!isRecord(workflow)) continue
-    if (workflow.runtime !== undefined) {
-      validateRuntimeReference(
-        workflow.runtime,
-        `workflows[${workflowIndex}].runtime`,
-        source,
-        diagnostics,
-      )
-    }
-    if (!Array.isArray(workflow.schedules)) continue
-    for (let scheduleIndex = 0; scheduleIndex < workflow.schedules.length; scheduleIndex++) {
-      diagnostics.push(
-        ...validateEntityId(
-          workflow.schedules[scheduleIndex],
-          `workflows[${workflowIndex}].schedules[${scheduleIndex}]`,
-          source,
-        ),
-      )
-    }
-  }
-  return diagnostics
-}
-
 function validateSubscribers(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
   const diagnostics = validateFacetEntities(value, "subscribers", source)
   if (!Array.isArray(value)) return diagnostics
@@ -3093,7 +2956,6 @@ function validateFacetReferences(
   const actionBindings = {
     routes: new Set(units.flatMap((unit) => unit.api.map((entry) => entry.id))),
     tools: new Set(units.flatMap((unit) => (unit.tools ?? []).map((entry) => entry.id))),
-    workflows: new Set(units.flatMap((unit) => unit.workflows.map((entry) => entry.id))),
     events: new Set(units.flatMap((unit) => unit.events.map((entry) => entry.id))),
     webhooks: new Set(units.flatMap((unit) => (unit.webhooks ?? []).map((entry) => entry.id))),
   } as const
@@ -3959,9 +3821,6 @@ function validateRuntimeReferenceAdmission(
     }
     for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
     for (const job of unit.jobs) add(`jobs.runtime.${job.id}.entry`, job.runtime)
-    for (const workflow of unit.workflows) {
-      add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
-    }
     for (const subscriber of unit.subscribers) {
       add(`subscribers.runtime.${subscriber.id}.entry`, subscriber.runtime)
     }
@@ -4109,10 +3968,6 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.actions ?? []).map((entry) => entry.id),
     ...(unit.lifecycle?.cleanup ?? []).map((entry) => entry.id),
     ...unit.jobs.map((entry) => entry.id),
-    ...unit.workflows.flatMap((entry) => [
-      entry.id,
-      ...(entry.schedules ?? []).map((schedule) => schedule.id),
-    ]),
   ]
 }
 
@@ -4224,17 +4079,6 @@ async function graphWithDiagnostics(
     ...next,
     contentHash: `sha256:${await sha256(next)}`,
   }
-}
-
-function sortWorkflows(workflows: readonly VoyantGraphWorkflow[]): VoyantGraphWorkflow[] {
-  return [...workflows]
-    .map((workflow) => ({
-      ...workflow,
-      ...(workflow.schedules
-        ? { schedules: sortFacetEntities(workflow.schedules) as VoyantGraphWorkflowSchedule[] }
-        : {}),
-    }))
-    .sort((a, b) => a.id.localeCompare(b.id))
 }
 
 function sortFacetEntities<T extends { id: string }>(entities: readonly T[]): T[] {

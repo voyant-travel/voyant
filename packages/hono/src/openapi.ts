@@ -329,8 +329,7 @@ export async function buildModulePathOwnership(
  * admin/storefront path (voyant#2733).
  *
  * Uses the ownership map as the authoritative module owner, falling back to the
- * path's own segment for anything the manifest doesn't claim (e.g.
- * `additionalRoutes` mounts like the operator's workflow-runs admin surface).
+ * path's own segment for anything the manifest doesn't claim.
  * The full surface is therefore partitioned exactly: every `/v1/admin/*` and
  * `/v1/public/*` path lands in exactly one module document. Non-surface routes
  * (`/v1/<name>` webhooks, legacy `/v1/*`) live only in the aggregate, as before.

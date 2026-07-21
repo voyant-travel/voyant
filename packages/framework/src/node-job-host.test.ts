@@ -46,7 +46,7 @@ function jobRuntime(
             referenceId: "notifications-job",
           },
         ],
-        selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+        selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
         routes: [],
       },
     ],

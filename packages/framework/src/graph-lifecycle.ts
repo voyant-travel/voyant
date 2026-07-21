@@ -19,7 +19,6 @@ export type VoyantGraphLifecycleFacet =
   | "subscriber"
   | "event"
   | "job"
-  | "workflow"
   | "schedule"
   | "setup-migration"
   | "config"
@@ -494,9 +493,7 @@ function unitFacetEntities(
   add("link", unit.links)
   add("subscriber", unit.subscribers)
   add("event", unit.events)
-  add("workflow", unit.workflows)
   add("job", unit.jobs)
-  for (const workflow of unit.workflows) add("schedule", workflow.schedules)
   add("setup-migration", unit.setupMigrations)
   add("config", unit.config)
   add("secret", unit.secrets)

@@ -62,22 +62,9 @@ export async function start() {
     assert.match(result.stdout, /check-deployment-graph-import-cheap: OK/)
   })
 
-  it("allows serializable workflow manifest descriptor imports", async () => {
-    const root = await createFixture({
-      "manifest.ts": `import { workflowManifest } from "@voyant-travel/commerce/product-reindex-workflow-manifest"
-
-export const graph = { workflows: [workflowManifest] }
-`,
-    })
-
-    const result = await runChecker(root)
-
-    assert.match(result.stdout, /check-deployment-graph-import-cheap: OK/)
-  })
-
   it("allows dedicated runtime port contract imports from package manifests", async () => {
     const root = await createFixture({
-      "voyant.ts": `import { runtimePort } from "@voyant-travel/workflow-runs/runtime-port"
+      "voyant.ts": `import { runtimePort } from "@voyant-travel/bookings/runtime-port"
 export const manifest = { requires: [runtimePort] }
 `,
     })

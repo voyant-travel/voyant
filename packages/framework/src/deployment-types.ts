@@ -13,7 +13,6 @@ export type VoyantDeploymentProviderRole =
   | "customerAuth"
   | "realtime"
   | "scheduledJobs"
-  | "workflows"
   | "outboundWebhooks"
   | "payments"
 
@@ -30,7 +29,6 @@ export interface VoyantDeploymentProviders {
   customerAuth: "better-auth" | "disabled"
   realtime: "voyant-cloud" | "local" | "custom" | "none"
   scheduledJobs: "cloud-scheduler" | "node-cron" | "none"
-  workflows: "voyant-cloud" | "self-hosted" | "none"
   outboundWebhooks: "postgres" | "host" | "none"
   payments: "managed" | "voyant-payments" | "netopia" | "custom" | "none"
 }
@@ -68,7 +66,6 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   customerAuth: "better-auth",
   realtime: "voyant-cloud",
   scheduledJobs: "cloud-scheduler",
-  workflows: "voyant-cloud",
   outboundWebhooks: "postgres",
   payments: "none",
 } as const satisfies VoyantDeploymentProviders
@@ -86,7 +83,6 @@ export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   customerAuth: ["better-auth", "disabled"],
   realtime: ["voyant-cloud", "local", "custom", "none"],
   scheduledJobs: ["cloud-scheduler", "node-cron", "none"],
-  workflows: ["voyant-cloud", "self-hosted", "none"],
   outboundWebhooks: ["postgres", "host", "none"],
   payments: ["managed", "voyant-payments", "netopia", "custom", "none"],
 } as const satisfies Record<VoyantDeploymentProviderRole, readonly string[]>

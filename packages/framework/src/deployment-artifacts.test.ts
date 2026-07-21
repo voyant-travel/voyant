@@ -9,7 +9,6 @@ import {
   buildGraphPresentationBundleDeclarationModule,
   buildGraphPresentationBundleModule,
   buildGraphRuntimeModule,
-  buildGraphWorkflowRuntimeModule,
   buildNodeRuntimeEntry,
   buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
@@ -447,36 +446,6 @@ describe("deployment graph artifacts", () => {
     expect(first).not.toContain("FRAMEWORK_RUNTIME_MANIFEST")
   })
 
-  it("emits a workflow-only runtime without API or module loaders", async () => {
-    const graph = await graphWithSelectedUnits([
-      defineModule({
-        id: "@acme/voyant-loyalty",
-        runtime: { entry: "./runtime", export: "createLoyaltyModule" },
-        api: [
-          {
-            id: "loyalty.api",
-            surface: "admin",
-            runtime: { entry: "./api", export: "loyaltyRoutes" },
-          },
-        ],
-        workflows: [
-          {
-            id: "loyalty.reconcile",
-            runtime: { entry: "./workflows", export: "reconcileWorkflow" },
-          },
-        ],
-      }),
-    ])
-    const source = buildGraphWorkflowRuntimeModule({ graph })
-
-    expect(source).toContain("createGeneratedWorkflowRuntime")
-    expect(source).toContain('"workflows.runtime"')
-    expect(source).toContain('"reconcileWorkflow"')
-    expect(source).not.toContain('"createLoyaltyModule"')
-    expect(source).not.toContain('"loyaltyRoutes"')
-    expect(source).not.toContain('import("@acme/voyant-loyalty/api")')
-  })
-
   it("lowers package-owned jobs into the generated runtime inventory", async () => {
     const graph = await graphWithSelectedUnits([
       defineModule({
@@ -619,12 +588,6 @@ describe("deployment graph artifacts", () => {
             requiredScopes: ["loyalty:write"],
           },
         ],
-        workflows: [
-          {
-            id: "loyalty.reconcile",
-            runtime: { entry: "./runtime", export: "reconcileWorkflow" },
-          },
-        ],
         events: [
           {
             id: "loyalty.event",
@@ -654,7 +617,6 @@ describe("deployment graph artifacts", () => {
             from: {
               routes: ["loyalty.api"],
               tools: ["loyalty.adjust"],
-              workflows: ["loyalty.reconcile"],
               events: ["loyalty.event"],
               webhooks: ["loyalty.webhook"],
             },
@@ -681,7 +643,6 @@ describe("deployment graph artifacts", () => {
       "admin.routes.runtime",
       "admin.contributions.runtime",
       "tools.runtime",
-      "workflows.runtime",
       "subscribers.runtime",
     ]) {
       expect(source).toContain(`"facet": "${facet}"`)
@@ -692,10 +653,6 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"loyalty:write"')
     expect(source).toContain('"tools": [')
     expect(source).toContain('"name": "adjust_loyalty"')
-    expect(source).toContain('"workflows": [')
-    expect(source).toContain(
-      '"referenceId": "%40acme%2Fvoyant-loyalty/workflows.runtime/loyalty.reconcile"',
-    )
     expect(source).toContain('"config": [')
     expect(source).toContain('"declaration": {')
     expect(source).toContain('"key": "loyalty"')
