@@ -126,8 +126,7 @@ describe("Voyant Node product job host", () => {
         headers: {
           "x-voyant-origin-trust": "secret",
           "x-voyant-product-job-release": "rel_current",
-          "x-voyant-product-job-execution":
-            "00000000-0000-4000-8000-000000000001",
+          "x-voyant-product-job-execution": "00000000-0000-4000-8000-000000000001",
         },
       }),
     )
@@ -249,9 +248,7 @@ describe("Voyant Node product job host", () => {
     await expect(host.invoke(jobId, "wakeup", first)).resolves.toBe("started")
     await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
     await expect(host.invoke(jobId, "wakeup", queued)).resolves.toBe("queued")
-    await expect(host.invoke(jobId, "wakeup", laterCoalesced)).resolves.toBe(
-      "queued",
-    )
+    await expect(host.invoke(jobId, "wakeup", laterCoalesced)).resolves.toBe("queued")
     await expect(host.invoke(jobId, "wakeup")).resolves.toBe("queued")
     releases.shift()?.()
     await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(2))

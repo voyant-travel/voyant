@@ -12,11 +12,8 @@ import {
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { checkBookingActionLedgerDrift } from "./action-ledger-drift.js"
+import { type BookingsFinanceRuntime, bookingsFinanceRuntimePort } from "./runtime-port.js"
 import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job.js"
-import {
-  type BookingsFinanceRuntime,
-  bookingsFinanceRuntimePort,
-} from "./runtime-port.js"
 
 export interface BookingsRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives

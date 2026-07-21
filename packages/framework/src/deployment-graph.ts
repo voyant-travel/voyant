@@ -22,10 +22,10 @@ import {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
-  type VoyantGraphJsonObject,
-  type VoyantGraphJsonValue,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJsonObject,
+  type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphLinkDeclaration,
   type VoyantGraphMessageReference,
@@ -99,10 +99,10 @@ export {
   type VoyantGraphEventCatalog,
   type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
-  type VoyantGraphJsonObject,
-  type VoyantGraphJsonValue,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJsonObject,
+  type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
@@ -2751,20 +2751,23 @@ function isSupportedProductJobCron(expression: string): boolean {
     [0, 7],
   ] as const
   const fields = expression.trim().split(/\s+/)
-  return fields.length === 5 && fields.every((field, index) => {
-    const [minimum, maximum] = ranges[index]!
-    return field.split(",").every((part) => {
-      const [range, stepText, extra] = part.split("/")
-      if (extra !== undefined) return false
-      const step = stepText === undefined ? 1 : Number(stepText)
-      if (!Number.isInteger(step) || step <= 0) return false
-      if (range === "*") return true
-      const values = range!.split("-").map(Number)
-      if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
-      const [start, end = start] = values
-      return start! >= minimum && end! <= maximum && start! <= end!
+  return (
+    fields.length === 5 &&
+    fields.every((field, index) => {
+      const [minimum, maximum] = ranges[index]!
+      return field.split(",").every((part) => {
+        const [range, stepText, extra] = part.split("/")
+        if (extra !== undefined) return false
+        const step = stepText === undefined ? 1 : Number(stepText)
+        if (!Number.isInteger(step) || step <= 0) return false
+        if (range === "*") return true
+        const values = range!.split("-").map(Number)
+        if (values.length > 2 || values.some((value) => !Number.isInteger(value))) return false
+        const [start, end = start] = values
+        return start! >= minimum && end! <= maximum && start! <= end!
+      })
     })
-  })
+  )
 }
 
 function isSupportedProductJobEvery(value: string | number): boolean {

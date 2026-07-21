@@ -55,9 +55,7 @@ export type {
   ProjectApiConventionsOptions,
   ProjectApiGeneratedFile,
 } from "./project-api-conventions.js"
-export {
-  VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
-} from "./project-artifact-paths.js"
+export { VOYANT_PROJECT_PRODUCT_BOM_ENTRY } from "./project-artifact-paths.js"
 export {
   type ProjectArtifactWriteEntry,
   type ProjectArtifactWriteMode,

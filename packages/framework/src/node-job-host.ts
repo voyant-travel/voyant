@@ -309,11 +309,7 @@ export function createVoyantNodeJobHost(
     if (!job) return new Response("Unknown product job", { status: 404 })
     const correlation = productJobExecutionCorrelation(request)
     if (correlation instanceof Response) return correlation
-    const result = await invoke(
-      jobId,
-      job.wakeup ? "wakeup" : "schedule",
-      correlation,
-    )
+    const result = await invoke(jobId, job.wakeup ? "wakeup" : "schedule", correlation)
     return Response.json({ accepted: true, jobId, result }, { status: 202 })
   }
 
@@ -382,9 +378,7 @@ function productJobExecutionCorrelation(
   request: Request,
 ): VoyantProductJobExecutionCorrelation | undefined | Response {
   const releaseId = request.headers.get(VOYANT_PRODUCT_JOB_RELEASE_HEADER)?.trim()
-  const executionToken = request.headers
-    .get(VOYANT_PRODUCT_JOB_EXECUTION_HEADER)
-    ?.trim()
+  const executionToken = request.headers.get(VOYANT_PRODUCT_JOB_EXECUTION_HEADER)?.trim()
   if (!releaseId && !executionToken) return undefined
   if (!releaseId || !executionToken) {
     return new Response("Product job execution correlation headers must be paired", {

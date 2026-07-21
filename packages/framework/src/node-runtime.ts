@@ -218,10 +218,7 @@ export interface VoyantNodeRuntimeOptions {
   /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
 }
 
@@ -478,10 +475,7 @@ export function createVoyantNodeApp(options: {
   /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
   extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>

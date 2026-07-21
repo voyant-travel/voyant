@@ -97,7 +97,8 @@ function resolveGraceMs(
     return ownedHandlers.resolve(draft.entity_module)?.holdReleaseGraceMs ?? 0
   }
   return draft.source_connection_id
-    ? (registry.resolveByConnection(draft.source_connection_id)?.capabilities.holdReleaseGraceMs ?? 0)
+    ? (registry.resolveByConnection(draft.source_connection_id)?.capabilities.holdReleaseGraceMs ??
+        0)
     : 0
 }
 

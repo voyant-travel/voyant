@@ -97,10 +97,10 @@ export type {
   VoyantGraphEventCatalog,
   VoyantGraphEventCatalogEntry,
   VoyantGraphFacetEntity,
-  VoyantGraphJsonObject,
-  VoyantGraphJsonValue,
   VoyantGraphJob,
   VoyantGraphJobSchedule,
+  VoyantGraphJsonObject,
+  VoyantGraphJsonValue,
   VoyantGraphLinkDeclaration,
   VoyantGraphPortDeclaration,
   VoyantGraphProject,
@@ -129,9 +129,7 @@ export type {
   VoyantGraphUnitKind,
   VoyantGraphUnitManifest,
 } from "./project.js"
-export {
-  VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
-} from "./project.js"
+export { VOYANT_EVENT_CATALOG_SCHEMA_VERSION } from "./project.js"
 export type {
   EntityFetcher,
   EntityFetcherArgs,
@@ -163,8 +161,8 @@ export {
   customFieldValueReaderRuntimePort,
 } from "./runtime-port.js"
 export type {
-  SagaDefinition,
   SagaContext,
+  SagaDefinition,
   SagaResult,
   SagaRunOptions,
   SagaStepBuilder,
