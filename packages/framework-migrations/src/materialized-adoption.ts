@@ -99,15 +99,46 @@ function splitTopLevel(value: string): string[] {
   return parts.filter(Boolean)
 }
 
-function normalizeIdentifier(value: string): string {
-  return value.replaceAll('"', "").trim()
+function postgresIdentifier(value: string): string {
+  const identifierValue = value.replaceAll('"', "").trim()
+  let result = ""
+  let bytes = 0
+  for (const character of identifierValue) {
+    const width = new TextEncoder().encode(character).length
+    if (bytes + width > 63) break
+    result += character
+    bytes += width
+  }
+  return result
 }
 
 function normalizeType(value: string): string {
-  return normalizeIdentifier(value)
+  return value
+    .replaceAll('"', "")
+    .trim()
     .replace(/^public\./i, "")
     .replace(/\s+/g, " ")
     .toLowerCase()
+}
+
+function lowercaseOutsideStringLiterals(value: string): string {
+  let result = ""
+  let inLiteral = false
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index] as string
+    if (character === "'") {
+      result += character
+      if (inLiteral && value[index + 1] === "'") {
+        result += "'"
+        index += 1
+      } else {
+        inLiteral = !inLiteral
+      }
+      continue
+    }
+    result += inLiteral ? character : character.toLowerCase()
+  }
+  return result
 }
 
 function normalizeExpression(value: string | null | undefined): string | null {
@@ -116,21 +147,21 @@ function normalizeExpression(value: string | null | undefined): string | null {
   while (normalized.startsWith("(") && normalized.endsWith(")")) {
     normalized = normalized.slice(1, -1).trim()
   }
-  return normalized
-    .replaceAll('"', "")
-    .replace(/\s*([(),])\s*/g, "$1")
-    .toLowerCase()
+  return lowercaseOutsideStringLiterals(
+    normalized.replaceAll('"', "").replace(/\s*([(),])\s*/g, "$1"),
+  )
 }
 
 function normalizeIndexDefinition(value: string): string {
-  return value
-    .trim()
-    .replace(/;$/, "")
-    .replaceAll('"', "")
-    .replace(/\bpublic\./gi, "")
-    .replace(/\s+/g, " ")
-    .replace(/\s*([(),])\s*/g, "$1")
-    .toLowerCase()
+  return lowercaseOutsideStringLiterals(
+    value
+      .trim()
+      .replace(/;$/, "")
+      .replaceAll('"', "")
+      .replace(/\bpublic\./gi, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*([(),])\s*/g, "$1"),
+  )
 }
 
 function unsupported(migration: PlannedMigration, detail: string): never {
@@ -141,7 +172,7 @@ function unsupported(migration: PlannedMigration, detail: string): never {
 }
 
 function parseIdentifierList(value: string): string[] {
-  return splitTopLevel(value).map(normalizeIdentifier)
+  return splitTopLevel(value).map(postgresIdentifier)
 }
 
 function actionCode(action: string | undefined): string {
@@ -175,7 +206,7 @@ function constraintFromBody(
     }
     return {
       table,
-      name,
+      name: postgresIdentifier(name),
       type: "p",
       columns: parseIdentifierList(primary[1] as string),
       referencedSchema: null,
@@ -189,7 +220,7 @@ function constraintFromBody(
     }
   }
 
-  const unique = body.match(/^UNIQUE\s*(?:NULLS\s+(?:NOT\s+)?DISTINCT\s*)?\(([^)]+)\)(.*)$/i)
+  const unique = body.match(/^UNIQUE\s*\(([^)]+)\)(.*)$/i)
   if (unique) {
     const suffix = unique[2]?.trim() ?? ""
     if (suffix && !/^DEFERRABLE(?:\s+INITIALLY\s+(?:IMMEDIATE|DEFERRED))?$/i.test(suffix)) {
@@ -197,7 +228,7 @@ function constraintFromBody(
     }
     return {
       table,
-      name,
+      name: postgresIdentifier(name),
       type: "u",
       columns: parseIdentifierList(unique[1] as string),
       referencedSchema: null,
@@ -237,11 +268,11 @@ function constraintFromBody(
     if (known) unsupported(migration, `unsupported FOREIGN KEY definition for constraint ${name}`)
     return {
       table,
-      name,
+      name: postgresIdentifier(name),
       type: "f",
       columns: parseIdentifierList(foreign[1] as string),
-      referencedSchema: foreign[2] ?? "public",
-      referencedTable: foreign[3] as string,
+      referencedSchema: postgresIdentifier(foreign[2] ?? "public"),
+      referencedTable: postgresIdentifier(foreign[3] as string),
       referencedColumns: parseIdentifierList(foreign[4] as string),
       updateAction: actionCode(update),
       deleteAction: actionCode(deletion),
@@ -263,7 +294,7 @@ function parseColumn(
 ): ExpectedColumn {
   const match = definition.match(new RegExp(`^${identifier}\\s+([\\s\\S]+)$`))
   if (!match) unsupported(migration, `cannot parse a column in table ${table}`)
-  const name = match[1] as string
+  const name = postgresIdentifier(match[1] as string)
   const remainder = match[2] as string
   if (/\b(?:REFERENCES|CHECK|GENERATED|COLLATE|UNIQUE)\b/i.test(remainder)) {
     unsupported(migration, `unsupported inline clause on ${table}.${name}`)
@@ -286,7 +317,7 @@ function parseColumn(
   if (/\bPRIMARY\s+KEY\b/i.test(qualifiers)) {
     constraints.push({
       table,
-      name: `${table}_pkey`,
+      name: postgresIdentifier(`${table}_pkey`),
       type: "p",
       columns: [name],
       referencedSchema: null,
@@ -327,7 +358,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       ),
     )
     if (create) {
-      const table = create[1] as string
+      const table = postgresIdentifier(create[1] as string)
       if (tables.includes(table)) unsupported(migration, `table ${table} is created more than once`)
       tables.push(table)
       let position = 0
@@ -359,7 +390,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       ),
     )
     if (alterConstraint) {
-      const table = alterConstraint[1] as string
+      const table = postgresIdentifier(alterConstraint[1] as string)
       if (!tables.includes(table)) {
         unsupported(
           migration,
@@ -384,7 +415,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       ),
     )
     if (index) {
-      const table = index[2] as string
+      const table = postgresIdentifier(index[2] as string)
       if (!tables.includes(table)) {
         unsupported(
           migration,
@@ -393,7 +424,7 @@ function parseExpectedFootprint(migration: PlannedMigration): ExpectedFootprint 
       }
       indexes.push({
         table,
-        name: index[1] as string,
+        name: postgresIdentifier(index[1] as string),
         definition: normalizeIndexDefinition(statement),
       })
       continue
@@ -412,7 +443,10 @@ function createdTables(migration: PlannedMigration): string[] {
     const create = statement.match(
       new RegExp(`^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${identifier}\\s*\\(`, "i"),
     )
-    if (create && !tables.includes(create[1] as string)) tables.push(create[1] as string)
+    if (create) {
+      const table = postgresIdentifier(create[1] as string)
+      if (!tables.includes(table)) tables.push(table)
+    }
   }
   if (tables.length === 0) unsupported(migration, "the migration creates no tables")
   return tables

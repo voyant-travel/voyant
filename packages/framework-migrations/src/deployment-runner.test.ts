@@ -436,7 +436,8 @@ CREATE INDEX "idx_product_itinerary_translations_itinerary" ON "product_itinerar
     },
     {
       table_name: "product_day_service_translations",
-      constraint_name: "product_day_service_translations_service_id_product_day_services_id_fk",
+      // PostgreSQL truncates identifiers to NAMEDATALEN - 1 (63) bytes.
+      constraint_name: "product_day_service_translations_service_id_product_day_service",
       constraint_type: "f",
       column_names: ["service_id"],
       referenced_schema: "public",
