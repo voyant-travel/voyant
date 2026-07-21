@@ -464,10 +464,15 @@
       "@voyant-travel/catalog/graph-runtime": ["../catalog/dist/graph-runtime.d.ts"],
       "@voyant-travel/catalog/index-subscribers": ["../catalog/dist/index-subscriber-runtime.d.ts"],
       "@voyant-travel/catalog/indexer/contract": ["../catalog/dist/indexer/contract.d.ts"],
+      "@voyant-travel/catalog/indexer/postgres": ["../catalog/dist/indexer/postgres.d.ts"],
+      "@voyant-travel/catalog/indexer/postgres-provider": [
+        "../catalog/dist/indexer/postgres-provider.d.ts"
+      ],
       "@voyant-travel/catalog/indexer/provider": ["../catalog/dist/indexer/provider.d.ts"],
       "@voyant-travel/catalog/indexer/reconciliation-node": [
         "../catalog/dist/indexer/reconciliation-node.d.ts"
       ],
+      "@voyant-travel/catalog/indexer/relevance": ["../catalog/dist/indexer/relevance.d.ts"],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
       "@voyant-travel/catalog/indexer/typesense-provider": [
         "../catalog/dist/indexer/typesense-provider.d.ts"
