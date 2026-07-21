@@ -235,6 +235,8 @@ jobs:
                 pnpm --filter operator db:migrate
               pnpm --filter @voyant-travel/relationships exec vitest run \
                 tests/integration/generic-custom-field-values.test.ts
+              pnpm --filter @voyant-travel/framework-migrations exec vitest run \
+                src/deployment-runner.test.ts
               ;;
           esac
 
