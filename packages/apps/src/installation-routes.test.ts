@@ -349,6 +349,7 @@ describe.skipIf(!DB_AVAILABLE)("apps installation admin routes", () => {
             redirectUrl: "https://app.example.com/setup?code=opaque",
           }),
           notifyInstallationLifecycle,
+          completeInstallationSetup: async () => undefined,
         },
       }),
     )

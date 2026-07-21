@@ -74,11 +74,14 @@ export interface AppsAppApiRouteOptions extends AppApiServiceOptions {
   deadlineMs?: number
   maxPayloadBytes?: number
   maxFinanceArtifactBytes?: number
+  /** Managed-host acknowledgement; absent for self-hosted runtimes. */
+  completeMarketplaceSetup?: (context: AppApiAccessContext) => Promise<void>
 }
 
 export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
   const routes = new Hono<Env>()
   const service = createAppApiService(options)
+  const completeMarketplaceSetup = options.completeMarketplaceSetup
   const maxPayloadBytes = options.maxPayloadBytes ?? 256 * 1024
   const maxFinanceArtifactBytes = options.maxFinanceArtifactBytes ?? 10 * 1024 * 1024
 
@@ -117,6 +120,18 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
   routes.get("/self", (c) =>
     run(c, service.introspect(c.get("db"), appContext(c)), options.deadlineMs),
   )
+
+  if (completeMarketplaceSetup) {
+    routes.post("/marketplace/setup-completion", async (c) => {
+      // The verified OAuth App API context is the sole identity input. This
+      // operation intentionally has no request schema/body and no tenant-
+      // supplied Cloud credential.
+      const context = appContext(c)
+      await withAppApiDeadline(completeMarketplaceSetup(context), options.deadlineMs)
+      c.header("cache-control", "no-store")
+      return c.json({ data: { acknowledged: true as const } }, 200)
+    })
+  }
 
   routes.get("/entities/:entity", (c) => {
     const { entity } = parseEntityParams(c.req.param())

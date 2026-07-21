@@ -106,6 +106,16 @@ export const createAppsApiModule = defineGraphRuntimeFactory(
             customFieldValueOperations,
             finance,
             ...(webhookDelivery ? { webhookDelivery } : {}),
+            ...(managedMarketplace
+              ? {
+                  completeMarketplaceSetup: (context) =>
+                    managedMarketplace.acquisitionResolver.completeInstallationSetup({
+                      installationId: context.installationId,
+                      appId: context.appId,
+                      releaseId: context.releaseId,
+                    }),
+                }
+              : {}),
           }),
       },
     } satisfies ApiModule
