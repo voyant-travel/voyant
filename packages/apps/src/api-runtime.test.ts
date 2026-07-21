@@ -30,7 +30,7 @@ function context(
       resolveAcquisitionIntent: () => Promise<null>
       createSetupHandoff: () => Promise<{ redirectUrl: string }>
       notifyInstallationLifecycle: () => Promise<void>
-      completeInstallationSetup: () => Promise<void>
+      completeInstallationSetup?: () => Promise<void>
     }
   },
 ): VoyantGraphRuntimeFactoryContext {
@@ -138,6 +138,29 @@ describe("createAppsApiModule", () => {
       error: "installation transaction reached",
     })
     expect(transaction).toHaveBeenCalledOnce()
+  })
+
+  it("keeps prior managed Marketplace ports valid without exposing setup completion", async () => {
+    const module = await createAppsApiModule(
+      context(undefined, {
+        deploymentId: "deployment-marketplace-1",
+        acquisitionResolver: {
+          resolveAcquisitionIntent: async () => null,
+          createSetupHandoff: async () => ({
+            redirectUrl: "https://app.example.com/setup?code=opaque",
+          }),
+          notifyInstallationLifecycle: async () => undefined,
+        },
+      }),
+    )
+
+    const routes = await module.lazyRoutes.load()
+    expect(routes.routes).not.toContainEqual(
+      expect.objectContaining({
+        method: "POST",
+        path: "/v1/app/marketplace/setup-completion",
+      }),
+    )
   })
 
   it("rejects conflicting managed deployment identities", async () => {

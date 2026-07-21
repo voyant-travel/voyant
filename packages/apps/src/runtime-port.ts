@@ -152,7 +152,7 @@ export interface ManagedMarketplaceAcquisitionResolver {
    * and provider credentials. Identity is supplied by the verified App API
    * token context; publisher request bodies cannot choose these coordinates.
    */
-  completeInstallationSetup(input: {
+  completeInstallationSetup?(input: {
     installationId: string
     appId: string
     releaseId: string
@@ -187,11 +187,6 @@ export const appsManagedMarketplaceRuntimePort = definePort<AppsManagedMarketpla
     if (typeof runtime.acquisitionResolver.notifyInstallationLifecycle !== "function") {
       throw new TypeError(
         "apps.managed-marketplace acquisitionResolver.notifyInstallationLifecycle must be a function.",
-      )
-    }
-    if (typeof runtime.acquisitionResolver.completeInstallationSetup !== "function") {
-      throw new TypeError(
-        "apps.managed-marketplace acquisitionResolver.completeInstallationSetup must be a function.",
       )
     }
   },

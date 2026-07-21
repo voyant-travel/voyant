@@ -130,7 +130,7 @@ describe("createAppsRuntimePortContribution", () => {
           notifyInstallationLifecycle: async () => undefined,
         },
       } as never),
-    ).toThrow(/completeInstallationSetup/)
+    ).not.toThrow()
     expect(() =>
       appsManagedMarketplaceRuntimePort.test({
         deploymentId: "",

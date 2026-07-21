@@ -45,6 +45,21 @@ describe("managed Marketplace setup App API", () => {
     })
   })
 
+  it("accepts a zero-byte POST represented by an empty request stream", async () => {
+    const completeMarketplaceSetup = vi.fn(async () => undefined)
+    const app = authenticatedApp({ completeMarketplaceSetup })
+    const request = new Request("http://test/v1/app/marketplace/setup-completion", {
+      method: "POST",
+      body: "",
+    })
+
+    expect(request.body).not.toBeNull()
+    const response = await app.request(request)
+
+    expect(response.status).toBe(200)
+    expect(completeMarketplaceSetup).toHaveBeenCalledOnce()
+  })
+
   it("rejects caller-selected identity fields instead of parsing them", async () => {
     const completeMarketplaceSetup = vi.fn(async () => undefined)
     const app = authenticatedApp({ completeMarketplaceSetup })

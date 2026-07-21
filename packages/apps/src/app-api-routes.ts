@@ -126,7 +126,7 @@ export function createAppsAppApiRoutes(options: AppsAppApiRouteOptions = {}) {
       // The verified OAuth App API context is the sole identity input. This
       // operation intentionally has no request schema/body and no tenant-
       // supplied Cloud credential.
-      if (c.req.raw.body !== null) {
+      if (await hasRequestBodyBytes(c)) {
         throw new ApiHttpError("Marketplace setup completion does not accept a request body.", {
           status: 400,
           code: "app_api_setup_completion_body_not_allowed",
@@ -422,6 +422,29 @@ function isFinancePdfArtifactRequest(c: Context<Env>) {
     c.req.method === "PUT" &&
     /^\/v1\/app\/finance\/documents\/[^/]+\/artifacts\/provider-pdf$/.test(c.req.path)
   )
+}
+
+async function hasRequestBodyBytes(c: Context<Env>) {
+  const declaredLength = c.req.header("content-length")
+  if (declaredLength === "0") return false
+  if (declaredLength !== undefined) return true
+
+  const body = c.req.raw.body
+  if (!body) return false
+
+  const reader = body.getReader()
+  try {
+    while (true) {
+      const next = await reader.read()
+      if (next.done) return false
+      if (next.value.byteLength > 0) {
+        await reader.cancel("Marketplace setup completion does not accept a request body.")
+        return true
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
 }
 
 function hasPdfSignature(bytes: Uint8Array) {
