@@ -55,17 +55,40 @@ async function recordedCollectorSources(client: MigrationClient): Promise<Set<st
   return new Set(rows.rows.map((row) => String(row.source)))
 }
 
+const deploymentMigrationLockKey = "voyant.framework-migrations.runDeploymentMigrations"
+
+async function withDeploymentMigrationLock<T>(
+  client: MigrationClient,
+  run: () => Promise<T>,
+): Promise<T> {
+  await client.query(`SELECT pg_advisory_lock(hashtextextended($1::text, 0))`, [
+    deploymentMigrationLockKey,
+  ])
+  const unlock = () =>
+    client.query(`SELECT pg_advisory_unlock(hashtextextended($1::text, 0))`, [
+      deploymentMigrationLockKey,
+    ])
+  try {
+    const result = await run()
+    await unlock()
+    return result
+  } catch (error) {
+    try {
+      await unlock()
+    } catch {
+      // Preserve the migration failure; the session will close and release locks.
+    }
+    throw error
+  }
+}
+
 /**
  * EXISTING when the retired monolithic bundle or the legacy runner already materialised
  * this schema: a `framework/*` collector-ledger row, or the pre-collector
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
 export async function detectExisting(client: MigrationClient): Promise<boolean> {
-  const frameworkRows = await ledgerRowCount(
-    client,
-    collectorLedger,
-    `"source" = 'framework'`,
-  )
+  const frameworkRows = await ledgerRowCount(client, collectorLedger, `"source" = 'framework'`)
   if (frameworkRows > 0) return true
   const graphSchemaRows = await ledgerRowCount(
     client,
@@ -124,9 +147,7 @@ function isWhollyAbsentSource(source: MigrationSource, live: LiveSchema): boolea
     [...expected.tables].every((table) => !live.tables.has(table)) &&
     [...expected.columns].every((column) => !live.columns.has(column)) &&
     [...expected.dropped].every((table) => !live.tables.has(table)) &&
-    [...expected.droppedConstraints].every(
-      (constraint) => !live.constraints.has(constraint),
-    )
+    [...expected.droppedConstraints].every((constraint) => !live.constraints.has(constraint))
   )
 }
 
@@ -340,48 +361,48 @@ export async function runDeploymentMigrations(
   cutline: Cutline,
   hooks?: { onApplied?: (id: string) => void; onBaselined?: (id: string) => void },
 ): Promise<RunResult> {
-  const existing = await detectExisting(client)
-  let effectiveCutline = cutline
-  if (existing) {
-    // Parity-gate only the cutline entries this run will import-baseline;
-    // already-recorded entries' objects may have been legitimately reshaped by
-    // applied post-cutline migrations.
-    const pending = await withoutRecordedMigrations(client, cutlineCovered(sources, cutline))
-    if (pending.length > 0) {
-      const [recordedSources, live] = await Promise.all([
-        recordedCollectorSources(client),
-        readLiveSchema(client),
-      ])
-      const pendingNames = new Set(pending.map((source) => source.name))
-      const expandingSources = new Set(
-        sources
-          .filter((source) => pendingNames.has(source.name))
-          .filter((source) =>
-            [source.name, ...(source.legacyNames ?? [])].every(
-              (name) => !recordedSources.has(name),
-            ),
-          )
-          .filter((source) => isWhollyAbsentSource(source, live))
-          .map((source) => source.name),
-      )
-      const baselinePending = pending.filter(
-        (source) => !expandingSources.has(source.name),
-      )
-      if (baselinePending.length > 0) {
-        await assertSchemaAtBaseline(client, baselinePending)
-      }
-      if (expandingSources.size > 0) {
-        effectiveCutline = Object.fromEntries(
-          Object.entries(cutline).filter(([source]) => !expandingSources.has(source)),
+  return withDeploymentMigrationLock(client, async () => {
+    const existing = await detectExisting(client)
+    let effectiveCutline = cutline
+    if (existing) {
+      // Parity-gate only the cutline entries this run will import-baseline;
+      // already-recorded entries' objects may have been legitimately reshaped by
+      // applied post-cutline migrations.
+      const pending = await withoutRecordedMigrations(client, cutlineCovered(sources, cutline))
+      if (pending.length > 0) {
+        const [recordedSources, live] = await Promise.all([
+          recordedCollectorSources(client),
+          readLiveSchema(client),
+        ])
+        const pendingNames = new Set(pending.map((source) => source.name))
+        const expandingSources = new Set(
+          sources
+            .filter((source) => pendingNames.has(source.name))
+            .filter((source) =>
+              [source.name, ...(source.legacyNames ?? [])].every(
+                (name) => !recordedSources.has(name),
+              ),
+            )
+            .filter((source) => isWhollyAbsentSource(source, live))
+            .map((source) => source.name),
         )
+        const baselinePending = pending.filter((source) => !expandingSources.has(source.name))
+        if (baselinePending.length > 0) {
+          await assertSchemaAtBaseline(client, baselinePending)
+        }
+        if (expandingSources.size > 0) {
+          effectiveCutline = Object.fromEntries(
+            Object.entries(cutline).filter(([source]) => !expandingSources.has(source)),
+          )
+        }
       }
     }
-  }
-  const { executed, baselined } = await applyMigrations(client, sources, {
-    cutline: effectiveCutline,
-    existing,
-    onApplied: hooks?.onApplied,
-    onBaselined: hooks?.onBaselined,
+    const { executed, baselined } = await applyMigrations(client, sources, {
+      cutline: effectiveCutline,
+      existing,
+      onApplied: hooks?.onApplied,
+      onBaselined: hooks?.onBaselined,
+    })
+    return { existing, executed, baselined }
   })
-  return { existing, executed, baselined }
 }
