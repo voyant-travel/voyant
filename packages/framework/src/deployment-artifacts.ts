@@ -736,7 +736,10 @@ import type {
   VoyantGraphProvisionedJob,
 } from "@voyant-travel/framework/deployment-graph"
 import type { VoyantNodeRuntimeDeployment } from "@voyant-travel/framework/node-runtime"
-import { createGeneratedGraphRuntime } from ${quote(graphRuntimePath)}
+import {
+  createGeneratedGraphRuntime,
+  createGeneratedGraphRuntimePorts,
+} from ${quote(graphRuntimePath)}
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${quote(input.graph.schemaVersion)} as const
 export const GENERATED_DEPLOYMENT_GRAPH_HASH = ${quote(input.graph.contentHash)} as const
@@ -887,12 +890,33 @@ function readGeneratedDeploymentGraph(): {
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
   assertGeneratedDeploymentGraphArtifact()
-  const { startVoyantNodeRuntime } = await import("@voyant-travel/framework/node-runtime")
+  const deployment = resolveGeneratedRuntimeDeployment()
+  const {
+    createVoyantNodeEnv,
+    createVoyantNodeRuntimeHostPrimitives,
+    resolveVoyantNodeProviderPlan,
+    startVoyantNodeRuntime,
+  } = await import("@voyant-travel/framework/node-runtime")
+  const env = createVoyantNodeEnv(
+    process.env,
+    resolveVoyantNodeProviderPlan(deployment.providers),
+  )
+  const runtimePorts = createGeneratedGraphRuntimePorts({
+    primitives: createVoyantNodeRuntimeHostPrimitives({
+      env,
+      config: {
+        "deployment.providers.adminAuth": deployment.providers.adminAuth,
+        "deployment.providers.customerAuth": deployment.providers.customerAuth,
+      },
+    }),
+  })
   const handle = await startVoyantNodeRuntime({
-    deployment: resolveGeneratedRuntimeDeployment(),
+    deployment,
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
+    env,
     graphRuntime: createGeneratedGraphRuntime(),
     jobs: GENERATED_PRODUCT_JOBS,
+    runtimePorts,
   })
   console.info(
     \`[node-runtime] Node runtime listening on :\${handle.port} (\${GENERATED_DEPLOYMENT_GRAPH_HASH})\`,
