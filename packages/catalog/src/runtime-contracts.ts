@@ -42,10 +42,7 @@ export interface CatalogPolicyRuntimeExtension {
 
 export interface CatalogAccommodationsRuntimeExtension extends CatalogPolicyRuntimeExtension {
   readonly propertyFieldPolicy: readonly FieldPolicy[]
-  createDocumentBuilder(input: {
-    db: AnyDrizzleDb
-    sellerOperatorId: string
-  }): DocumentBuilder
+  createDocumentBuilder(input: { db: AnyDrizzleDb; sellerOperatorId: string }): DocumentBuilder
   listAccommodationOffersReferencingProperty(
     db: AnyDrizzleDb,
     propertyId: string,

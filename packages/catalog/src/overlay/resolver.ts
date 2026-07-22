@@ -268,7 +268,6 @@ export function resolveOverlay(
       values.set(path, sourceValue)
       provenance.set(path, null)
     } else {
-      continue
     }
   }
 

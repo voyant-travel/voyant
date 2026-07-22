@@ -10,7 +10,6 @@
 import {
   buildIndexerDocument,
   buildSnapshotInputFromView,
-  readSourcedEntry,
   type CaptureSnapshotInput,
   createFieldPolicyRegistry,
   type DocumentBuilder,
@@ -24,6 +23,7 @@ import {
   type Provenance,
   type ResolvedView,
   type ResolverScope,
+  readSourcedEntry,
   resolveEntityView,
 } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -63,10 +63,7 @@ export function createCruisesRegistry(
   ...extensionPolicies: ReadonlyArray<ReadonlyArray<FieldPolicy>>
 ): FieldPolicyRegistry {
   if (extensionPolicies.length === 0) return getCruisesRegistry()
-  const composed: FieldPolicy[] = [
-    ...cruiseCatalogPolicy,
-    ...cruiseShipReferenceCatalogPolicy,
-  ]
+  const composed: FieldPolicy[] = [...cruiseCatalogPolicy, ...cruiseShipReferenceCatalogPolicy]
   for (const policies of extensionPolicies) {
     composed.push(...policies)
   }

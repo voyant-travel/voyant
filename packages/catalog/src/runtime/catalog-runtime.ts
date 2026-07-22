@@ -23,10 +23,10 @@ import {
   withCatalogEmbedding,
   withoutCatalogScopeChannel,
 } from "@voyant-travel/catalog/runtime-support"
-import {
-  type DocumentBuilder,
-  type DocumentBuilderContext,
-  type EffectiveReferencedSubjectProjection,
+import type {
+  DocumentBuilder,
+  DocumentBuilderContext,
+  EffectiveReferencedSubjectProjection,
 } from "@voyant-travel/catalog/services/indexer"
 import { fetchOverlaysForEntity } from "@voyant-travel/catalog/services/overlay"
 import { readSourcedEntry } from "@voyant-travel/catalog/services/sourced-entry"
@@ -215,17 +215,12 @@ export function createReferencedSubjectDocumentBuilderContext(
 
       const scope = input.scope ?? slice
       const overlays = await fetchOverlaysForEntity(db, input.entityModule, input.entityId)
-      const resolved = resolveOverlay(
-        registry,
-        sourceValues,
-        overlays,
-        {
-          locale: scope.locale,
-          audience: scope.audience === "staff-admin" ? "staff" : scope.audience,
-          market: scope.market,
-          actor: scope.audience === "staff-admin" ? "staff" : scope.audience,
-        },
-      )
+      const resolved = resolveOverlay(registry, sourceValues, overlays, {
+        locale: scope.locale,
+        audience: scope.audience === "staff-admin" ? "staff" : scope.audience,
+        market: scope.market,
+        actor: scope.audience === "staff-admin" ? "staff" : scope.audience,
+      })
       return {
         subject: { entityModule: input.entityModule, entityId: input.entityId },
         scope,
