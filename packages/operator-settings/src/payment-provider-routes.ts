@@ -204,10 +204,7 @@ export function mountPaymentProviderRoutes(hono: OpenApiMountTarget): void {
           } catch (error) {
             return c.json(
               {
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : "Payment disconnect failed.",
+                error: error instanceof Error ? error.message : "Payment disconnect failed.",
               },
               409,
             )
