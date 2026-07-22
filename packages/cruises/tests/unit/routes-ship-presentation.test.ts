@@ -27,24 +27,26 @@ const presentationMocks = vi.hoisted(() => ({
     locale: { requestedLocale: "ro-RO", servedLocale: "ro-RO" },
     content: { name: "Nava", description: "Descriere" },
   })),
-  writeCruiseShipOverlay: vi.fn(async (
-    _db: unknown,
-    _shipId: string,
-    input: {
-      origin: unknown
-      field_path: string
-      scope: { locale: string; audience: string; market: string }
-    },
-  ) => ({
-    id: "ovl_1",
-    origin: input.origin,
-    entity_module: "cruise-ships",
-    entity_id: "crsh_123",
-    field_path: input.field_path,
-    locale: input.scope.locale,
-    audience: input.scope.audience,
-    market: input.scope.market,
-  })),
+  writeCruiseShipOverlay: vi.fn(
+    async (
+      _db: unknown,
+      _shipId: string,
+      input: {
+        origin: unknown
+        field_path: string
+        scope: { locale: string; audience: string; market: string }
+      },
+    ) => ({
+      id: "ovl_1",
+      origin: input.origin,
+      entity_module: "cruise-ships",
+      entity_id: "crsh_123",
+      field_path: input.field_path,
+      locale: input.scope.locale,
+      audience: input.scope.audience,
+      market: input.scope.market,
+    }),
+  ),
 }))
 
 vi.mock("../../src/service-presentation-subjects.js", () => presentationMocks)
@@ -100,12 +102,8 @@ describe("cruise ship presentation routes", () => {
 
   it("rejects staff and supplier audiences on the public effective route", async () => {
     const app = buildPublicApp()
-    const staff = await app.request(
-      "/ships/crsh_123/effective?locale=ro-RO&audience=staff",
-    )
-    const supplier = await app.request(
-      "/ships/crsh_123/effective?locale=ro-RO&audience=supplier",
-    )
+    const staff = await app.request("/ships/crsh_123/effective?locale=ro-RO&audience=staff")
+    const supplier = await app.request("/ships/crsh_123/effective?locale=ro-RO&audience=supplier")
 
     expect(staff.status).toBe(400)
     expect(supplier.status).toBe(400)

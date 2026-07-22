@@ -19,13 +19,13 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest"
 import type { CatalogProjection } from "../../src/adapter/contract.js"
 import { catalogSourcedEntriesTable } from "../../src/schema-sourced-entries.js"
 import {
-  createSourcedPresentationSubjectIngestion,
   createReadProvenance,
+  createSourcedPresentationSubjectIngestion,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
+  readSourcedEntry,
   readSourcedEntryBySource,
   resolveSourcedPresentationSubject,
-  readSourcedEntry,
   upsertSourcedEntry,
 } from "../../src/services/sourced-entry-service.js"
 
@@ -176,45 +176,42 @@ describe.skipIf(!DB_AVAILABLE)("SourcedEntryService integration", () => {
   it.each([
     ["connected", `conn_concurrent_${testIdPrefix}`],
     ["connection-less", null],
-  ])(
-    "atomically resolves %s provider subjects under concurrent discovery",
-    async (_, connectionId) => {
-      const sourceRef = `ship-concurrent-${connectionId ?? "none"}-${testIdPrefix}`
-      const ingest = createSourcedPresentationSubjectIngestion({
-        entityModule: "cruise-ships",
-        idPrefix: "cruise_ships",
-      })
+  ])("atomically resolves %s provider subjects under concurrent discovery", async (_, connectionId) => {
+    const sourceRef = `ship-concurrent-${connectionId ?? "none"}-${testIdPrefix}`
+    const ingest = createSourcedPresentationSubjectIngestion({
+      entityModule: "cruise-ships",
+      idPrefix: "cruise_ships",
+    })
 
-      const resolved = await Promise.all(
-        Array.from({ length: 6 }, (_, revision) =>
-          ingest(db, {
-            sourceKind: "direct:cruise-line",
-            sourceProvider: "demo-line",
-            sourceConnectionId: connectionId,
-            sourceRef,
-            projection: { name: `River Star ${revision}`, locale: "en-GB" },
-          }),
+    const resolved = await Promise.all(
+      Array.from({ length: 6 }, (_, revision) =>
+        ingest(db, {
+          sourceKind: "direct:cruise-line",
+          sourceProvider: "demo-line",
+          sourceConnectionId: connectionId,
+          sourceRef,
+          projection: { name: `River Star ${revision}`, locale: "en-GB" },
+        }),
+      ),
+    )
+    createdEntityIds.push(resolved[0]!.entity_id)
+
+    expect(new Set(resolved.map((row) => row.entity_id)).size).toBe(1)
+    const rows = await db
+      .select({ entityId: catalogSourcedEntriesTable.entity_id })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, "cruise-ships"),
+          eq(catalogSourcedEntriesTable.source_kind, "direct:cruise-line"),
+          connectionId === null
+            ? isNull(catalogSourcedEntriesTable.source_connection_id)
+            : eq(catalogSourcedEntriesTable.source_connection_id, connectionId),
+          eq(catalogSourcedEntriesTable.source_ref, sourceRef),
         ),
       )
-      createdEntityIds.push(resolved[0]!.entity_id)
-
-      expect(new Set(resolved.map((row) => row.entity_id)).size).toBe(1)
-      const rows = await db
-        .select({ entityId: catalogSourcedEntriesTable.entity_id })
-        .from(catalogSourcedEntriesTable)
-        .where(
-          and(
-            eq(catalogSourcedEntriesTable.entity_module, "cruise-ships"),
-            eq(catalogSourcedEntriesTable.source_kind, "direct:cruise-line"),
-            connectionId === null
-              ? isNull(catalogSourcedEntriesTable.source_connection_id)
-              : eq(catalogSourcedEntriesTable.source_connection_id, connectionId),
-            eq(catalogSourcedEntriesTable.source_ref, sourceRef),
-          ),
-        )
-      expect(rows).toEqual([{ entityId: resolved[0]!.entity_id }])
-    },
-  )
+    expect(rows).toEqual([{ entityId: resolved[0]!.entity_id }])
+  })
 
   it("keeps provider identity distinct across referenced-subject modules", async () => {
     const provenance = {

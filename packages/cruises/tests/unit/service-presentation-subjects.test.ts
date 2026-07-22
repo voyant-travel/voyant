@@ -13,8 +13,8 @@ vi.mock("@voyant-travel/catalog", async (importOriginal) => ({
 
 import {
   assertOverlayableShipValue,
-  projectionReferencesCruiseShip,
   projectEffectiveCruiseShipReference,
+  projectionReferencesCruiseShip,
   resolveCruiseShipEffectiveLocale,
   writeCruiseShipOverlay,
 } from "../../src/service-presentation-subjects.js"
@@ -95,15 +95,13 @@ describe("cruise ship locale and referencing-document projection", () => {
   it("recognizes provider references in discovery and sourced-content projections", () => {
     const candidates = new Set(["crsh_subject", "provider-ship-7", "crus_sr_encoded"])
 
-    expect(
-      projectionReferencesCruiseShip({ defaultShipId: "provider-ship-7" }, candidates),
-    ).toBe(true)
-    expect(
-      projectionReferencesCruiseShip({ ship: { id: "crus_sr_encoded" } }, candidates),
-    ).toBe(true)
-    expect(projectionReferencesCruiseShip({ ship: { id: "another-ship" } }, candidates)).toBe(
-      false,
+    expect(projectionReferencesCruiseShip({ defaultShipId: "provider-ship-7" }, candidates)).toBe(
+      true,
     )
+    expect(projectionReferencesCruiseShip({ ship: { id: "crus_sr_encoded" } }, candidates)).toBe(
+      true,
+    )
+    expect(projectionReferencesCruiseShip({ ship: { id: "another-ship" } }, candidates)).toBe(false)
   })
 
   it("reports fallback-chain when a requested-locale overlay replaces fallback source", () => {
@@ -114,9 +112,7 @@ describe("cruise ship locale and referencing-document projection", () => {
       {
         values: new Map([["name", "Nava"]]),
         hidden: new Set(),
-        provenance: new Map([
-          ["name", { locale: "ro-RO", audience: "customer", market: "RO" }],
-        ]),
+        provenance: new Map([["name", { locale: "ro-RO", audience: "customer", market: "RO" }]]),
       },
     )
 
@@ -153,8 +149,7 @@ describe("cruise ship locale and referencing-document projection", () => {
     expect(after.every((document) => document.fields["ship.name"] === "Nava")).toBe(true)
     expect(
       after.every(
-        (document, index) =>
-          document.fields["ship.name"] !== before[index]?.fields["ship.name"],
+        (document, index) => document.fields["ship.name"] !== before[index]?.fields["ship.name"],
       ),
     ).toBe(true)
   })

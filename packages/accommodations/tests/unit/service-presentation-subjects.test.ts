@@ -3,8 +3,8 @@ import { catalogSourcedEntriesTable } from "@voyant-travel/catalog/schema-source
 import { describe, expect, it } from "vitest"
 
 import {
-  accommodationPropertyProjectionFromContent,
   accommodationPropertyOverlayInvalidationScope,
+  accommodationPropertyProjectionFromContent,
   assertAccommodationPropertyOverlayScope,
   effectiveAccommodationPropertyLocale,
   parseAccommodationPropertyOverlayValue,
@@ -126,9 +126,7 @@ describe("accommodation property overlay contracts", () => {
     expect(() =>
       assertAccommodationPropertyOverlayScope(false, OVERLAY_DEFAULT_SCOPE),
     ).not.toThrow()
-    expect(() => assertAccommodationPropertyOverlayScope(false, "ro-RO")).toThrow(
-      /locale=default/i,
-    )
+    expect(() => assertAccommodationPropertyOverlayScope(false, "ro-RO")).toThrow(/locale=default/i)
   })
 
   it("uses entry-wide wildcard invalidation for non-localized property media", () => {
@@ -155,15 +153,9 @@ describe("accommodation property overlay contracts", () => {
         ["description", "Descriere"],
       ]),
       hidden: new Set<string>(),
-      provenance: new Map<
-        string,
-        { locale: string; audience: "customer"; market: string } | null
-      >([
+      provenance: new Map<string, { locale: string; audience: "customer"; market: string } | null>([
         ["id", null],
-        [
-          "description",
-          { locale: "ro-RO", audience: "customer" as const, market: "default" },
-        ],
+        ["description", { locale: "ro-RO", audience: "customer" as const, market: "default" }],
       ]),
     }
 
@@ -188,10 +180,7 @@ describe("accommodation property overlay contracts", () => {
         ["name", "Hotelul"],
       ]),
       hidden: new Set<string>(),
-      provenance: new Map<
-        string,
-        { locale: string; audience: "customer"; market: string } | null
-      >([
+      provenance: new Map<string, { locale: string; audience: "customer"; market: string } | null>([
         ["id", null],
         ["name", { locale: "ro-RO", audience: "customer" as const, market: "default" }],
       ]),
@@ -215,10 +204,7 @@ describe("accommodation property overlay contracts", () => {
         ["gallery", ["https://cdn.example/property.jpg"]],
       ]),
       hidden: new Set<string>(),
-      provenance: new Map<
-        string,
-        { locale: string; audience: "customer"; market: string } | null
-      >([
+      provenance: new Map<string, { locale: string; audience: "customer"; market: string } | null>([
         ["id", null],
         ["gallery", { locale: "default", audience: "customer", market: "default" }],
       ]),

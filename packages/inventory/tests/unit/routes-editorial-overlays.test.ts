@@ -138,8 +138,7 @@ describe("createProductEditorialOverlayRoutes", () => {
       })
       .mockResolvedValueOnce(null)
     const app = buildApp("usr_editor", eventBus)
-    const url =
-      "/prod_1/editorial-overlays?fieldPath=name&locale=ro-RO&audience=customer&market=RO"
+    const url = "/prod_1/editorial-overlays?fieldPath=name&locale=ro-RO&audience=customer&market=RO"
 
     expect((await app.request(url, { method: "DELETE" })).status).toBe(200)
     expect((await app.request(url, { method: "DELETE" })).status).toBe(200)

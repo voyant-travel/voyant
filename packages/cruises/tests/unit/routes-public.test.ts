@@ -103,9 +103,7 @@ describe("public cruise routes - external encoded keys", () => {
     const app = mountTestApp(cruisePublicRoutes, { db: undefined })
 
     const shipKey = makeExternalSourceKey("voyant-connect", shipRef)
-    const response = await app.request(
-      `/ships/${shipKey}?locale=ro-RO&audience=partner&market=RO`,
-    )
+    const response = await app.request(`/ships/${shipKey}?locale=ro-RO&audience=partner&market=RO`)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ data: { name: "Nava Publica" } })

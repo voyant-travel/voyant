@@ -75,17 +75,18 @@ describe("accommodation property overlay routes", () => {
     presentationMocks.clearAccommodationPropertyOverlay.mockResolvedValue({ id: "ovl_1" })
   })
 
-  it.each(["staff", "supplier", "default"])(
-    "rejects the untrusted %s audience on the public effective route",
-    async (audience) => {
-      const response = await buildApp({ public: true }).request(
-        `/properties/prop_1/effective?locale=ro-RO&audience=${audience}`,
-      )
+  it.each([
+    "staff",
+    "supplier",
+    "default",
+  ])("rejects the untrusted %s audience on the public effective route", async (audience) => {
+    const response = await buildApp({ public: true }).request(
+      `/properties/prop_1/effective?locale=ro-RO&audience=${audience}`,
+    )
 
-      expect(response.status).toBe(400)
-      expect(presentationMocks.readPublicAccommodationPropertyProjection).not.toHaveBeenCalled()
-    },
-  )
+    expect(response.status).toBe(400)
+    expect(presentationMocks.readPublicAccommodationPropertyProjection).not.toHaveBeenCalled()
+  })
 
   it("allows partner storefront projections and returns no source envelope", async () => {
     const response = await buildApp({ public: true }).request(

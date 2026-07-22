@@ -42,10 +42,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "customer",
-                "partner"
-              ],
+              "enum": ["customer", "partner"],
               "default": "customer"
             },
             "required": false,
@@ -79,19 +76,14 @@
                           "properties": {
                             "module": {
                               "type": "string",
-                              "enum": [
-                                "accommodation-properties"
-                              ]
+                              "enum": ["accommodation-properties"]
                             },
                             "id": {
                               "type": "string",
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "module",
-                            "id"
-                          ]
+                          "required": ["module", "id"]
                         },
                         "locale": {
                           "type": "object",
@@ -101,10 +93,7 @@
                               "minLength": 1
                             },
                             "sourceLocale": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "servedLocale": {
@@ -113,11 +102,7 @@
                             },
                             "matchKind": {
                               "type": "string",
-                              "enum": [
-                                "exact",
-                                "mixed",
-                                "overlay-only"
-                              ]
+                              "enum": ["exact", "mixed", "overlay-only"]
                             }
                           },
                           "required": [
@@ -135,22 +120,13 @@
                               "minLength": 1
                             },
                             "name": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "hero_image_url": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "gallery": {
                               "type": "array",
@@ -174,84 +150,46 @@
                               }
                             },
                             "star_rating": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ],
+                              "type": ["integer", "null"],
                               "minimum": 0,
                               "maximum": 10
                             },
                             "brand": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "address": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "postal_code": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "latitude": {
-                              "type": [
-                                "number",
-                                "null"
-                              ]
+                              "type": ["number", "null"]
                             },
                             "longitude": {
-                              "type": [
-                                "number",
-                                "null"
-                              ]
+                              "type": ["number", "null"]
                             },
                             "check_in_time": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "check_out_time": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "id"
-                          ],
+                          "required": ["id"],
                           "additionalProperties": false
                         }
                       },
-                      "required": [
-                        "subject",
-                        "locale",
-                        "content"
-                      ]
+                      "required": ["subject", "locale", "content"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -270,15 +208,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }

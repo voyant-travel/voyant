@@ -3,12 +3,10 @@ import { describe, expect, it } from "vitest"
 
 import { accommodationCatalogPolicy } from "../../src/catalog-policy.js"
 import {
-  accommodationPropertyCatalogPolicy,
   ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+  accommodationPropertyCatalogPolicy,
 } from "../../src/catalog-policy-properties.js"
-import {
-  assertOverlayableAccommodationPropertyField,
-} from "../../src/service-presentation-subjects.js"
+import { assertOverlayableAccommodationPropertyField } from "../../src/service-presentation-subjects.js"
 
 describe("accommodationCatalogPolicy", () => {
   it("compiles into a valid registry without errors", () => {

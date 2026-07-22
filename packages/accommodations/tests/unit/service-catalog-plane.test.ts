@@ -1,5 +1,5 @@
-import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
 import { createReferencedSubjectDocumentBuilderContext } from "@voyant-travel/catalog/catalog-runtime"
+import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
 import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
 import {
   facilities,

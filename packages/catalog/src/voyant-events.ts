@@ -20,7 +20,7 @@ const catalogSourceEventPayloadSchema = {
   additionalProperties: false,
 } as const
 
-const catalogOverlayChangedPayloadSchema = {
+export const catalogOverlayChangedPayloadSchema = {
   type: "object",
   required: [
     "entity_module",
@@ -116,14 +116,6 @@ export const catalogEventDeclarations = [
     visibility: "external",
     audit: { sourceModule: "catalog", category: "domain" },
     payloadSchema: catalogEntityEventPayloadSchema,
-  },
-  {
-    id: "@voyant-travel/catalog#event.entity.overlay-changed",
-    eventType: "catalog.entity.overlay.changed",
-    version: "1.0.0",
-    payloadSchema: catalogOverlayChangedPayloadSchema,
-    visibility: "internal",
-    audit: { sourceModule: "catalog", category: "domain" },
   },
   {
     id: "@voyant-travel/catalog#event.entity.drift-detected",

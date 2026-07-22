@@ -70,11 +70,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "roomTypeId",
-                  "name",
-                  "currency"
-                ]
+                "required": ["roomTypeId", "name", "currency"]
               }
             }
           }
@@ -94,22 +90,13 @@
                           "type": "string"
                         },
                         "programId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "propertyId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "roomTypeId": {
                           "type": "string"
@@ -132,54 +119,30 @@
                           "type": "string"
                         },
                         "netRateCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "sellRateCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "optionDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cutoffDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "attritionTerms": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "depositTerms": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -211,9 +174,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -229,9 +190,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -270,22 +229,13 @@
                               "type": "string"
                             },
                             "programId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "supplierId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "propertyId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "roomTypeId": {
                               "type": "string"
@@ -308,54 +258,30 @@
                               "type": "string"
                             },
                             "netRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "sellRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "optionDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cutoffDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "attritionTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "depositTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "createdAt": {
@@ -387,10 +313,7 @@
                           ]
                         },
                         "summary": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "blockId": {
                               "type": "string"
@@ -420,11 +343,7 @@
                             },
                             "pickupProgress": {
                               "type": "string",
-                              "enum": [
-                                "none",
-                                "partial",
-                                "full"
-                              ]
+                              "enum": ["none", "partial", "full"]
                             }
                           },
                           "required": [
@@ -438,15 +357,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "block",
-                        "summary"
-                      ]
+                      "required": ["block", "summary"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -462,9 +376,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -515,17 +427,12 @@
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "date",
-                        "roomsHeld"
-                      ]
+                      "required": ["date", "roomsHeld"]
                     },
                     "minItems": 1
                   }
                 },
-                "required": [
-                  "nights"
-                ]
+                "required": ["nights"]
               }
             }
           }
@@ -539,10 +446,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "blockId": {
                           "type": "string"
@@ -572,11 +476,7 @@
                         },
                         "pickupProgress": {
                           "type": "string",
-                          "enum": [
-                            "none",
-                            "partial",
-                            "full"
-                          ]
+                          "enum": ["none", "partial", "full"]
                         }
                       },
                       "required": [
@@ -590,9 +490,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -608,9 +506,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -626,9 +522,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -679,10 +573,7 @@
                     "default": 1
                   }
                 },
-                "required": [
-                  "checkIn",
-                  "checkOut"
-                ]
+                "required": ["checkIn", "checkOut"]
               }
             }
           }
@@ -705,16 +596,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -727,19 +612,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -756,9 +635,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -780,16 +657,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -802,19 +673,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -831,9 +696,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -849,9 +712,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -867,9 +728,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -887,9 +746,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "error"
-                      ]
+                      "required": ["error"]
                     },
                     {
                       "type": "object",
@@ -910,17 +767,10 @@
                               "type": "integer"
                             }
                           },
-                          "required": [
-                            "date",
-                            "remaining",
-                            "needed"
-                          ]
+                          "required": ["date", "remaining", "needed"]
                         }
                       },
-                      "required": [
-                        "error",
-                        "detail"
-                      ]
+                      "required": ["error", "detail"]
                     }
                   ]
                 }
@@ -982,16 +832,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -1004,19 +848,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1033,9 +871,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1051,9 +887,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1069,9 +903,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1113,22 +945,13 @@
                               "type": "string"
                             },
                             "programId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "supplierId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "propertyId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "roomTypeId": {
                               "type": "string"
@@ -1151,54 +974,30 @@
                               "type": "string"
                             },
                             "netRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "sellRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "optionDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cutoffDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "attritionTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "depositTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "createdAt": {
@@ -1230,15 +1029,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "releasedRooms",
-                        "block"
-                      ]
+                      "required": ["releasedRooms", "block"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1254,9 +1048,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1290,10 +1082,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "customer",
-                "partner"
-              ],
+              "enum": ["customer", "partner"],
               "default": "customer"
             },
             "required": false,
@@ -1327,19 +1116,14 @@
                           "properties": {
                             "module": {
                               "type": "string",
-                              "enum": [
-                                "accommodation-properties"
-                              ]
+                              "enum": ["accommodation-properties"]
                             },
                             "id": {
                               "type": "string",
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "module",
-                            "id"
-                          ]
+                          "required": ["module", "id"]
                         },
                         "locale": {
                           "type": "object",
@@ -1349,10 +1133,7 @@
                               "minLength": 1
                             },
                             "sourceLocale": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "servedLocale": {
@@ -1361,11 +1142,7 @@
                             },
                             "matchKind": {
                               "type": "string",
-                              "enum": [
-                                "exact",
-                                "mixed",
-                                "overlay-only"
-                              ]
+                              "enum": ["exact", "mixed", "overlay-only"]
                             }
                           },
                           "required": [
@@ -1383,22 +1160,13 @@
                               "minLength": 1
                             },
                             "name": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "hero_image_url": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "gallery": {
                               "type": "array",
@@ -1422,84 +1190,46 @@
                               }
                             },
                             "star_rating": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ],
+                              "type": ["integer", "null"],
                               "minimum": 0,
                               "maximum": 10
                             },
                             "brand": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "address": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "postal_code": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "latitude": {
-                              "type": [
-                                "number",
-                                "null"
-                              ]
+                              "type": ["number", "null"]
                             },
                             "longitude": {
-                              "type": [
-                                "number",
-                                "null"
-                              ]
+                              "type": ["number", "null"]
                             },
                             "check_in_time": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "check_out_time": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "id"
-                          ],
+                          "required": ["id"],
                           "additionalProperties": false
                         }
                       },
-                      "required": [
-                        "subject",
-                        "locale",
-                        "content"
-                      ]
+                      "required": ["subject", "locale", "content"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1518,15 +1248,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1560,13 +1285,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "staff",
-                "customer",
-                "partner",
-                "supplier",
-                "default"
-              ],
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
               "default": "customer"
             },
             "required": false,
@@ -1600,30 +1319,21 @@
                           "properties": {
                             "module": {
                               "type": "string",
-                              "enum": [
-                                "accommodation-properties"
-                              ]
+                              "enum": ["accommodation-properties"]
                             },
                             "id": {
                               "type": "string",
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "module",
-                            "id"
-                          ]
+                          "required": ["module", "id"]
                         }
                       },
-                      "required": [
-                        "subject"
-                      ],
+                      "required": ["subject"],
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1642,15 +1352,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1686,13 +1391,7 @@
                       },
                       "audience": {
                         "type": "string",
-                        "enum": [
-                          "staff",
-                          "customer",
-                          "partner",
-                          "supplier",
-                          "default"
-                        ],
+                        "enum": ["staff", "customer", "partner", "supplier", "default"],
                         "default": "customer"
                       },
                       "market": {
@@ -1701,10 +1400,7 @@
                         "default": "default"
                       },
                       "expectedVersion": {
-                        "type": [
-                          "integer",
-                          "null"
-                        ]
+                        "type": ["integer", "null"]
                       },
                       "editorialNote": {
                         "type": "string"
@@ -1718,65 +1414,48 @@
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "name"
-                            ]
+                            "enum": ["name"]
                           },
                           "value": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "description"
-                            ]
+                            "enum": ["description"]
                           },
                           "value": {
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "hero_image_url"
-                            ]
+                            "enum": ["hero_image_url"]
                           },
                           "value": {
                             "type": "string",
                             "format": "uri"
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "gallery"
-                            ]
+                            "enum": ["gallery"]
                           },
                           "value": {
                             "type": "array",
@@ -1786,19 +1465,14 @@
                             }
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "highlights"
-                            ]
+                            "enum": ["highlights"]
                           },
                           "value": {
                             "type": "array",
@@ -1808,19 +1482,14 @@
                             }
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "fieldPath": {
                             "type": "string",
-                            "enum": [
-                              "amenities"
-                            ]
+                            "enum": ["amenities"]
                           },
                           "value": {
                             "type": "array",
@@ -1830,10 +1499,7 @@
                             }
                           }
                         },
-                        "required": [
-                          "fieldPath",
-                          "value"
-                        ]
+                        "required": ["fieldPath", "value"]
                       }
                     ]
                   }
@@ -1858,15 +1524,11 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "id"
-                      ],
+                      "required": ["id"],
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1885,15 +1547,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1912,15 +1569,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1968,13 +1620,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "staff",
-                "customer",
-                "partner",
-                "supplier",
-                "default"
-              ],
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
               "default": "customer"
             },
             "required": false,
@@ -1993,10 +1639,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "required": false,
             "name": "expectedVersion",
@@ -2018,31 +1661,21 @@
                           "type": "boolean"
                         },
                         "overlay": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string",
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "id"
-                          ],
+                          "required": ["id"],
                           "additionalProperties": {}
                         }
                       },
-                      "required": [
-                        "cleared",
-                        "overlay"
-                      ]
+                      "required": ["cleared", "overlay"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2061,15 +1694,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2088,15 +1716,10 @@
                       "type": "string"
                     },
                     "currentVersion": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": ["integer", "null"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2146,13 +1769,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "staff",
-                "customer",
-                "partner",
-                "supplier",
-                "default"
-              ],
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
               "default": "customer"
             },
             "required": false,
@@ -2171,10 +1788,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": ["integer", "null"]
             },
             "required": false,
             "name": "expectedVersion",
@@ -2199,16 +1813,12 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "id"
-                        ],
+                        "required": ["id"],
                         "additionalProperties": {}
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
