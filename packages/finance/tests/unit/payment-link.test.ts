@@ -15,6 +15,44 @@ describe("buildPaymentLinkUrl", () => {
     )
   })
 
+  it("does not duplicate an exact trailing pay path", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay/" })).toBe(
+      "https://example.com/pay/pmss_123",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/repay" })).toBe(
+      "https://example.com/repay/pay/pmss_123",
+    )
+  })
+
+  it("keeps search and fragment suffixes after the payment session path", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay?lang=ro" })).toBe(
+      "https://example.com/pay/pmss_123?lang=ro",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/ro#checkout" })).toBe(
+      "https://example.com/ro/pay/pmss_123#checkout",
+    )
+    expect(
+      buildPaymentLinkUrl("pmss_123", {
+        baseUrl: "https://example.com/ro?lang=ro#checkout",
+      }),
+    ).toBe("https://example.com/ro/pay/pmss_123?lang=ro#checkout")
+  })
+
+  it("preserves trailing slashes inside search and fragment data", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay?next=/" })).toBe(
+      "https://example.com/pay/pmss_123?next=/",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/ro#return/" })).toBe(
+      "https://example.com/ro/pay/pmss_123#return/",
+    )
+  })
+
+  it("supports relative bases with suffixes", () => {
+    expect(buildPaymentLinkUrl("pmss 123", { baseUrl: "/ro?lang=ro#checkout" })).toBe(
+      "/ro/pay/pmss%20123?lang=ro#checkout",
+    )
+  })
+
   it("falls back to a root-relative URL outside the browser", () => {
     expect(buildPaymentLinkUrl("pmss 123")).toBe("/pay/pmss%20123")
   })

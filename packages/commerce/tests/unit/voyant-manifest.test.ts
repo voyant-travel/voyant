@@ -149,7 +149,13 @@ describe("commerce deployment manifest", () => {
         {
           id: "promotions.reindex-all-products",
           schedule: { every: "2m", overlap: "skip" },
-          wakeup: true,
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { every: "1m", overlap: "skip" },
+              economical: { every: "15m", overlap: "skip" },
+            },
+          },
           runtime: {
             entry: "@voyant-travel/commerce/promotion-reindex-job",
             export: "runPromotionReindexJob",
@@ -158,6 +164,14 @@ describe("commerce deployment manifest", () => {
         {
           id: "commerce.process-promotion-boundaries",
           schedule: { cron: "*/5 * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "* * * * *", overlap: "skip" },
+              economical: { cron: "*/15 * * * *", overlap: "skip" },
+            },
+          },
+          wakeup: true,
           runtime: {
             entry: "@voyant-travel/commerce/promotion-boundary-job",
             export: "runPromotionBoundaryJob",

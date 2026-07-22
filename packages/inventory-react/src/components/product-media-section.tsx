@@ -28,6 +28,8 @@ export interface ProductMediaUploadResult {
   storageKey?: string | null
   mimeType?: string | null
   fileSize?: number | null
+  width?: number | null
+  height?: number | null
   altText?: string | null
   sortOrder?: number
   isCover?: boolean
@@ -143,6 +145,8 @@ export function ProductMediaSection({
           storageKey: asset.storageKey,
           mimeType: asset.mimeType,
           fileSize: asset.fileSize,
+          width: asset.width,
+          height: asset.height,
           altText: asset.alt,
           assetId: asset.id,
           sortOrder: media.length + offset,

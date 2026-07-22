@@ -18,10 +18,12 @@ export function buildPaymentLinkUrl(
   const template = normalizePaymentLinkBaseUrl(options.invoicePayUrlTemplate)
   if (template) return template.replaceAll("{sessionId}", encodeURIComponent(paymentSessionId))
 
-  const path = `/pay/${encodeURIComponent(paymentSessionId)}`
-  const baseUrl = normalizePaymentLinkBaseUrl(options.baseUrl ?? getBrowserOrigin())
+  const baseUrl = trimPaymentLinkBaseUrl(options.baseUrl ?? getBrowserOrigin())
+  const { basePath, suffix } = splitPaymentLinkBaseUrl(baseUrl)
+  const sessionPath = `/${encodeURIComponent(paymentSessionId)}`
+  const path = basePath?.endsWith("/pay") ? sessionPath : `/pay${sessionPath}`
 
-  return baseUrl ? `${baseUrl}${path}` : path
+  return basePath ? `${basePath}${path}${suffix}` : `${path}${suffix}`
 }
 
 export interface BookingCheckoutUrlSettings {
@@ -51,6 +53,37 @@ function normalizePaymentLinkBaseUrl(baseUrl: string | null | undefined): string
   if (!trimmed) return null
 
   return trimmed.replace(/\/+$/, "")
+}
+
+function trimPaymentLinkBaseUrl(baseUrl: string | null | undefined): string | null {
+  const trimmed = baseUrl?.trim()
+  return trimmed || null
+}
+
+function splitPaymentLinkBaseUrl(baseUrl: string | null): {
+  basePath: string | null
+  suffix: string
+} {
+  if (!baseUrl) return { basePath: null, suffix: "" }
+
+  const queryIndex = baseUrl.indexOf("?")
+  const fragmentIndex = baseUrl.indexOf("#")
+  const suffixIndex =
+    queryIndex === -1
+      ? fragmentIndex
+      : fragmentIndex === -1
+        ? queryIndex
+        : Math.min(queryIndex, fragmentIndex)
+  if (suffixIndex === -1) {
+    const basePath = baseUrl.replace(/\/+$/, "")
+    return { basePath: basePath || null, suffix: "" }
+  }
+
+  const basePath = baseUrl.slice(0, suffixIndex).replace(/\/+$/, "")
+  return {
+    basePath: basePath || null,
+    suffix: baseUrl.slice(suffixIndex),
+  }
 }
 
 function getBrowserOrigin(): string | null {

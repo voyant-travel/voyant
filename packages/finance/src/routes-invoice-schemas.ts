@@ -278,6 +278,7 @@ export const paymentSessionSchema = z.object({
   paymentId: z.string().nullable(),
   status: z.enum(paymentSessionStatusValues),
   provider: z.string().nullable(),
+  providerConnectionId: z.string().nullable(),
   providerSessionId: z.string().nullable(),
   providerPaymentId: z.string().nullable(),
   externalReference: z.string().nullable(),

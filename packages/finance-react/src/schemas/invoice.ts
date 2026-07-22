@@ -355,6 +355,7 @@ export const paymentSessionRecordSchema = z
     paymentId: z.string().nullable(),
     status: paymentSessionStatusSchema,
     provider: z.string().nullable(),
+    providerConnectionId: z.string().nullable().optional(),
     providerSessionId: z.string().nullable(),
     providerPaymentId: z.string().nullable(),
     externalReference: z.string().nullable(),

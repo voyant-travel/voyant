@@ -173,8 +173,16 @@ export async function buildOwnedProductContent(
   const productServedLocale = bestProductTrn?.served_locale ?? sourceLocaleFor(productRow)
   const productMatchKind: ContentLocaleMatchKind = bestProductTrn?.match_kind ?? "any"
 
+  const productImages = mediaRows.filter(
+    (m: typeof productMedia.$inferSelect) =>
+      m.dayId === null && m.mediaType === "image" && !m.isBrochure,
+  )
   const cover: typeof productMedia.$inferSelect | undefined =
-    mediaRows.find((m: typeof productMedia.$inferSelect) => m.isCover) ?? mediaRows[0] ?? undefined
+    productImages.find((m: typeof productMedia.$inferSelect) => m.isCover) ??
+    productImages[0] ??
+    undefined
+  const openGraphImage =
+    productImages.find((m: typeof productMedia.$inferSelect) => m.isOpenGraph) ?? cover
 
   const localizedName = bestProductTrn?.candidate.name ?? productRow.name
   const localizedDescription =
@@ -187,6 +195,12 @@ export async function buildOwnedProductContent(
   const localizedExclusions =
     bestProductTrn?.candidate.exclusionsHtml ?? productRow.exclusionsHtml ?? null
   const localizedTerms = bestProductTrn?.candidate.termsHtml ?? productRow.termsHtml ?? null
+  const localizedSeoTitle = bestProductTrn?.candidate.seoTitle ?? localizedName
+  const localizedSeoDescription =
+    bestProductTrn?.candidate.seoDescription ??
+    localizedDescription ??
+    productRow.description ??
+    null
 
   const content: ProductContent = productContentSchema.parse({
     product: {
@@ -194,6 +208,13 @@ export async function buildOwnedProductContent(
       name: localizedName,
       status: productRow.status,
       description: localizedDescription,
+      seo_title: localizedSeoTitle,
+      seo_description: localizedSeoDescription,
+      open_graph_image_url: openGraphImage?.url ?? null,
+      open_graph_image_width: openGraphImage?.width ?? null,
+      open_graph_image_height: openGraphImage?.height ?? null,
+      open_graph_image_type: openGraphImage?.mimeType ?? null,
+      open_graph_image_alt: openGraphImage?.altText ?? localizedName,
       inclusions_html: localizedInclusions,
       exclusions_html: localizedExclusions,
       terms_html: localizedTerms,
@@ -291,6 +312,8 @@ interface ProductTrnCandidate {
   inclusionsHtml: string | null
   exclusionsHtml: string | null
   termsHtml: string | null
+  seoTitle: string | null
+  seoDescription: string | null
 }
 
 interface DayTrnCandidate {
@@ -418,6 +441,8 @@ function pickBestProductTranslation(
     inclusionsHtml: r.inclusionsHtml,
     exclusionsHtml: r.exclusionsHtml,
     termsHtml: r.termsHtml,
+    seoTitle: r.seoTitle,
+    seoDescription: r.seoDescription,
   }))
   return pickBestCachedLocale(candidates, preferred)
 }

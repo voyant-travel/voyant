@@ -96,9 +96,12 @@ export const publicCatalogProductMediaSchema = z.object({
   name: z.string(),
   url: z.string(),
   mimeType: z.string().nullable(),
+  width: z.number().int().nullable(),
+  height: z.number().int().nullable(),
   altText: z.string().nullable(),
   sortOrder: z.number().int(),
   isCover: z.boolean(),
+  isOpenGraph: z.boolean(),
   isBrochure: z.boolean(),
   isBrochureCurrent: z.boolean(),
   brochureVersion: z.number().int().nullable(),
@@ -208,6 +211,7 @@ export const publicCatalogItinerarySchema = z.object({
 
 export const publicCatalogProductDetailSchema = publicCatalogProductSummarySchema.extend({
   brochure: publicCatalogProductMediaSchema.nullable(),
+  openGraphImage: publicCatalogProductMediaSchema.nullable(),
   media: z.array(publicCatalogProductMediaSchema),
   features: z.array(publicCatalogProductFeatureSchema),
   faqs: z.array(publicCatalogProductFaqSchema),

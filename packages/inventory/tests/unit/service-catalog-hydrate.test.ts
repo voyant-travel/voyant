@@ -1,12 +1,22 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it } from "vitest"
 
+import { productMedia } from "../../src/schema.js"
 import { catalogProductsService } from "../../src/service-catalog.js"
 
 // Minimal awaitable query-builder stub: every builder method chains and the
 // final await resolves to an empty result set, so hydration runs against a
 // product row with no relations.
-function createStubDb(): PostgresJsDatabase {
+function createStubDb(rowsByTable = new Map<unknown, unknown[]>()): PostgresJsDatabase {
+  const db = {
+    select: () => ({
+      from: (table: unknown) => createBuilder(rowsByTable.get(table) ?? []),
+    }),
+  }
+  return db as PostgresJsDatabase
+}
+
+function createBuilder(rows: unknown[]): Record<string, unknown> {
   const builder: Record<string, unknown> = {}
   const methods = [
     "select",
@@ -23,8 +33,8 @@ function createStubDb(): PostgresJsDatabase {
     builder[method] = () => builder
   }
   // biome-ignore lint/suspicious/noThenProperty: reason: the stub must be thenable to mimic drizzle's awaitable query builder.
-  builder.then = (resolve: (value: unknown[]) => unknown) => Promise.resolve([]).then(resolve)
-  return builder as PostgresJsDatabase
+  builder.then = (resolve: (value: unknown[]) => unknown) => Promise.resolve(rows).then(resolve)
+  return builder
 }
 
 const LONG_DESCRIPTION = "d".repeat(800)
@@ -81,5 +91,45 @@ describe("catalogProductsService.hydrateProducts — summary content trim", () =
     expect(product?.termsHtml).toBe("<p>Non-refundable</p>")
     expect(product?.description).toBe(LONG_DESCRIPTION)
     expect(product && "media" in product).toBe(true)
+  })
+
+  it("excludes day media from product cover and Open Graph fallbacks", async () => {
+    const dayImage = {
+      id: "pmed_day_cover",
+      productId: makeProductRow().id,
+      dayId: "day_1",
+      mediaType: "image",
+      name: "Day cover",
+      url: "https://example.com/day.jpg",
+      mimeType: "image/jpeg",
+      width: 1200,
+      height: 630,
+      altText: "Day image",
+      sortOrder: 0,
+      isCover: true,
+      isOpenGraph: false,
+      isBrochure: false,
+      isBrochureCurrent: false,
+      brochureVersion: null,
+    }
+    const productImage = {
+      ...dayImage,
+      id: "pmed_product",
+      dayId: null,
+      name: "Product image",
+      url: "https://example.com/product.jpg",
+      altText: "Product image",
+      sortOrder: 1,
+      isCover: false,
+    }
+    const db = createStubDb(new Map([[productMedia, [dayImage, productImage]]]))
+
+    const [product] = await catalogProductsService.hydrateProducts(db, [makeProductRow()], {
+      includeContent: true,
+    })
+
+    expect(product?.coverMedia?.url).toBe(productImage.url)
+    expect(product?.openGraphImage?.url).toBe(productImage.url)
+    expect(product?.media.map((item) => item.url)).toEqual([dayImage.url, productImage.url])
   })
 })

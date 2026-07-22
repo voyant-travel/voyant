@@ -190,6 +190,98 @@ describe("createFinanceCheckoutRoutes", () => {
     })
   })
 
+  it("rejects a provider-neutral card start without a selected adapter before service invocation", async () => {
+    const legacyPaymentStarter = vi.fn()
+    const routes = createFinanceCheckoutRoutes({
+      resolvePaymentStarters: () => ({ netopia: legacyPaymentStarter }),
+    })
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(501)
+    expect(serviceMocks.initiateCheckoutCollection).not.toHaveBeenCalled()
+    expect(legacyPaymentStarter).not.toHaveBeenCalled()
+  })
+
+  it("allows a provider-qualified legacy card start to use keyed starters", async () => {
+    serviceMocks.initiateCheckoutCollection.mockResolvedValue({
+      plan: { bookingId: "book_123", method: "card" },
+      invoice: null,
+      paymentSession: { id: "ps_123" },
+      invoiceNotification: null,
+      paymentSessionNotification: null,
+      bankTransferInstructions: null,
+      providerStart: {
+        provider: "netopia",
+        paymentSessionId: "ps_123",
+        redirectUrl: "https://payments.example/checkout",
+      },
+    })
+    const legacyPaymentStarter = vi.fn()
+    const routes = createFinanceCheckoutRoutes({
+      resolvePaymentStarters: () => ({ netopia: legacyPaymentStarter }),
+    })
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          startProvider: {
+            provider: "netopia",
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(201)
+    expect(serviceMocks.initiateCheckoutCollection).toHaveBeenCalledOnce()
+    expect(serviceMocks.initiateCheckoutCollection.mock.calls[0]?.[4]).toMatchObject({
+      paymentStarters: { netopia: legacyPaymentStarter },
+    })
+  })
+
   it("returns setup guidance when the checkout runtime provider is not registered", async () => {
     const routes = createFinanceCheckoutAdminRoutes()
     const app = new Hono()

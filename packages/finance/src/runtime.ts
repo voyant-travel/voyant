@@ -9,6 +9,7 @@ import {
   createVoyantDataFxExchangeRateResolver,
   type ResolveInvoiceExchangeRate,
 } from "./invoice-fx.js"
+import { refreshPaymentAdapterStatus } from "./payment-adapter-status.js"
 import type {
   FinanceAccommodationsPaymentPolicyRuntime,
   FinanceBookingScheduleRuntime,
@@ -66,6 +67,15 @@ export function createFinanceRuntime(
     resolveBankTransferDetails: (bindings) => resolveBankTransferDetails(primitives.env(bindings)),
     resolvePublicCheckoutBaseUrl: (bindings) =>
       resolvePublicCheckoutBaseUrl(primitives.env(bindings)),
+    refreshPaymentSessionStatus: selectedPaymentAdapter
+      ? ({ bindings, db, paymentSessionId, eventBus }) =>
+          refreshPaymentAdapterStatus(selectedPaymentAdapter, db, paymentSessionId, {
+            context: {
+              env: primitives.env(bindings as Record<string, unknown>),
+            },
+            runtime: { eventBus },
+          })
+      : undefined,
     listBookingReminderRuns: notifications.listBookingReminderRuns,
   }
 }
@@ -87,6 +97,8 @@ function createSelectedPaymentAdapterStarter(
         billing,
         description: stringValue(payload.description),
         returnUrl: stringValue(payload.returnUrl) ?? checkout.paymentSession.returnUrl ?? undefined,
+        cancelUrl: stringValue(payload.cancelUrl) ?? checkout.paymentSession.cancelUrl ?? undefined,
+        shipping: recordValue(payload.shipping),
         metadata: recordValue(payload.metadata),
       },
       {

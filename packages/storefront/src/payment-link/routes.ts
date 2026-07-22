@@ -31,9 +31,18 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
+import {
+  applyPaymentAdapterCallbackEvent,
+  buildPaymentLinkUrl,
+  financeService,
+} from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
-import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
+import {
+  openApiValidationHook,
+  parseJsonBody,
+  parseQuery,
+  stampOpenApiRegistryApiId,
+} from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   type PaymentAdapter,
@@ -46,6 +55,10 @@ import type { Context } from "hono"
 import { storefrontPaymentLinkRuntimePort } from "../runtime-port.js"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+const paymentCallbackQuerySchema = z.object({
+  connectionId: z.string().min(1).optional(),
+  "connection-id": z.string().min(1).optional(),
+})
 
 /** Absolute path matchers for the deployment's lazy route composition. */
 export const PAYMENT_LINK_ROUTE_PATHS = [
@@ -106,6 +119,31 @@ export interface PaymentLinkSessionInput {
   currency: string
 }
 
+export interface PaymentLinkCardPaymentBilling {
+  email: string
+  phone?: string
+  firstName: string
+  lastName?: string
+  city?: string
+  country?: number | string
+  state?: string
+  postalCode?: string
+  details?: string
+}
+
+export interface PaymentLinkStartCardPaymentInput {
+  id: string
+  payerName: string | null
+  payerEmail: string | null
+  notes: string | null
+  redirectUrl: string | null
+  billing?: PaymentLinkCardPaymentBilling
+  description?: string
+  returnUrl?: string
+  cancelUrl?: string
+  shipping?: Record<string, unknown>
+}
+
 /**
  * Deployment-supplied access the payment-link handlers need. Everything here
  * encapsulates a module storefront does not statically depend on, so the
@@ -128,13 +166,7 @@ export interface PaymentLinkRoutesOptions {
    */
   startCardPayment(
     c: Context,
-    session: {
-      id: string
-      payerName: string | null
-      payerEmail: string | null
-      notes: string | null
-      redirectUrl: string | null
-    },
+    session: PaymentLinkStartCardPaymentInput,
   ): Promise<{ configured: true; redirectUrl: string | null } | { configured: false }>
   /**
    * Verify an inbound processor IPN/webhook and apply its event (mark the
@@ -269,6 +301,38 @@ const checkoutStatusSchema = z.object({
 
 const sessionParamsSchema = z.object({ sessionId: z.string() })
 
+const cardPaymentBillingSchema = z
+  .object({
+    email: z.string().min(1),
+    phone: z.string().min(1).optional(),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1).optional(),
+    city: z.string().min(1).optional(),
+    country: z.union([z.number(), z.string().min(1)]).optional(),
+    state: z.string().min(1).optional(),
+    postalCode: z.string().min(1).optional(),
+    details: z.string().min(1).optional(),
+  })
+  .strict()
+
+const startCardPaymentBodySchema = z
+  .object({
+    billing: cardPaymentBillingSchema.optional(),
+    description: z.string().min(1).optional(),
+    shipping: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict()
+
+type StartCardPaymentBody = z.infer<typeof startCardPaymentBodySchema>
+
+const startCardPaymentResponseSessionSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  amountCents: z.number(),
+  currency: z.string(),
+  redirectUrl: z.string().nullable(),
+})
+
 const paymentLinkConfigRoute = createRoute({
   method: "get",
   path: "/v1/public/payment-link-config",
@@ -337,7 +401,12 @@ const startCardPaymentLinkRoute = createRoute({
       description: "The card-provider redirect URL for the session",
       content: {
         "application/json": {
-          schema: z.object({ data: z.object({ redirectUrl: z.string().nullable() }) }),
+          schema: z.object({
+            data: z.object({
+              redirectUrl: z.string().nullable(),
+              session: startCardPaymentResponseSessionSchema.optional(),
+            }),
+          }),
         },
       },
     },
@@ -430,15 +499,52 @@ function toIsoString(value: Date | string | null): string | null {
   return value instanceof Date ? value.toISOString() : value
 }
 
-const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending", "requires_redirect", "processing"])
-const CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES = new Set(["authorized", "paid"])
+const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending"])
+const CARD_PAYMENT_CONTINUATION_STATUSES = new Set([
+  "requires_redirect",
+  "processing",
+  "authorized",
+  "paid",
+])
+const CARD_PAYMENT_RETRY_CREATES_SESSION_STATUSES = new Set(["failed", "cancelled", "expired"])
 
 function canStartCardPayment(status: string): boolean {
   return CARD_PAYMENT_STARTABLE_STATUSES.has(status)
 }
 
 function canReuseCardRedirect(status: string): boolean {
-  return CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES.has(status)
+  return CARD_PAYMENT_CONTINUATION_STATUSES.has(status)
+}
+
+function canUseCardContinuation(status: string): boolean {
+  return CARD_PAYMENT_CONTINUATION_STATUSES.has(status)
+}
+
+function hasJsonRequestBody(c: Context): boolean {
+  const contentLength = c.req.header("content-length")
+  if (contentLength && Number(contentLength) > 0) return true
+  return c.req.header("content-type")?.toLowerCase().includes("application/json") ?? false
+}
+
+async function readStartCardPaymentBody(c: Context): Promise<StartCardPaymentBody> {
+  if (!hasJsonRequestBody(c)) return {}
+  return parseJsonBody(c, startCardPaymentBodySchema)
+}
+
+function publicStartCardSession(session: {
+  id: string
+  status: string
+  amountCents: number
+  currency: string
+  redirectUrl: string | null
+}) {
+  return {
+    id: session.id,
+    status: session.status,
+    amountCents: session.amountCents,
+    currency: session.currency,
+    redirectUrl: session.redirectUrl,
+  }
 }
 
 async function buildPublicBankTransferInstructions(
@@ -508,8 +614,16 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         .where(eq(paymentSessions.id, sessionId))
         .limit(1)
       if (!original) return c.json({ error: "Session not found" }, 404)
-      if (original.status === "paid" || original.status === "authorized") {
-        return c.json({ data: { sessionId: original.id, alreadyPaid: true } }, 200)
+      if (!CARD_PAYMENT_RETRY_CREATES_SESSION_STATUSES.has(original.status)) {
+        return c.json(
+          {
+            data: {
+              sessionId: original.id,
+              alreadyPaid: original.status === "paid" || original.status === "authorized",
+            },
+          },
+          200,
+        )
       }
       const dbCast = db as Parameters<typeof financeService.createPaymentSession>[0]
       const fresh = await financeService.createPaymentSession(dbCast, {
@@ -522,10 +636,11 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         currency: original.currency,
         amountCents: original.amountCents,
         status: "pending",
-        provider: original.provider ?? undefined,
         paymentMethod: original.paymentMethod ?? undefined,
         payerEmail: original.payerEmail ?? undefined,
         payerName: original.payerName ?? undefined,
+        returnUrl: original.returnUrl ?? undefined,
+        cancelUrl: original.cancelUrl ?? undefined,
         notes: original.notes ?? undefined,
       })
       if (!fresh) return c.json({ error: "Failed to create payment session" }, 500)
@@ -559,11 +674,35 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         .limit(1)
       if (!session) return c.json({ error: "Session not found" }, 404)
       if (session.redirectUrl && canReuseCardRedirect(session.status)) {
-        return c.json({ data: { redirectUrl: session.redirectUrl } }, 200)
+        return c.json(
+          {
+            data: {
+              redirectUrl: session.redirectUrl,
+              session: publicStartCardSession(session),
+            },
+          },
+          200,
+        )
       }
       if (!canStartCardPayment(session.status)) {
-        return c.json({ data: { redirectUrl: null } }, 200)
+        return c.json(
+          {
+            data: {
+              redirectUrl: canUseCardContinuation(session.status)
+                ? (session.redirectUrl ?? session.returnUrl ?? null)
+                : null,
+              session: publicStartCardSession(session),
+            },
+          },
+          200,
+        )
       }
+      const body = await readStartCardPaymentBody(c)
+      const paymentLinkUrl = buildPaymentLinkUrl(session.id, {
+        baseUrl: options.resolvePublicCheckoutBaseUrl(c) ?? new URL(c.req.url).origin,
+      })
+      const returnUrl = session.returnUrl ?? paymentLinkUrl
+      const cancelUrl = session.cancelUrl ?? paymentLinkUrl
       try {
         const started = await options.startCardPayment(c, {
           id: session.id,
@@ -571,14 +710,37 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
           payerEmail: session.payerEmail,
           notes: session.notes,
           redirectUrl: session.redirectUrl,
+          billing: body.billing,
+          description: body.description,
+          returnUrl,
+          cancelUrl,
+          shipping: body.shipping,
         })
         if (!started.configured) {
           return c.json({ error: "Card processor not configured" }, 503)
         }
-        return c.json({ data: { redirectUrl: started.redirectUrl } }, 200)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to start card payment"
-        return c.json({ error: message }, 502)
+        const [refreshedSession] = await db
+          .select()
+          .from(paymentSessions)
+          .where(eq(paymentSessions.id, sessionId))
+          .limit(1)
+        const responseSession = refreshedSession ?? session
+        const continuationUrl =
+          started.redirectUrl ??
+          (canUseCardContinuation(responseSession.status)
+            ? (responseSession.returnUrl ?? returnUrl)
+            : null)
+        return c.json(
+          {
+            data: {
+              redirectUrl: continuationUrl,
+              session: publicStartCardSession(responseSession),
+            },
+          },
+          200,
+        )
+      } catch {
+        return c.json({ error: "Card processor failed to start the payment" }, 502)
       }
     })
 
@@ -891,10 +1053,14 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
     c.req.raw.headers.forEach((value, key) => {
       headers[key] = value
     })
+    const query = parseQuery(c, paymentCallbackQuerySchema)
     const result = await options.verifyAndApplyPaymentCallback(c, {
       headers,
       rawBody,
       receivedAt: new Date().toISOString(),
+      // `connectionId` is canonical. Accept the unreleased rollout spelling
+      // temporarily so mixed preview builds cannot strand callbacks.
+      connectionId: query.connectionId ?? query["connection-id"] ?? undefined,
     })
     // 200 when applied; 400 when rejected (a processor may retry on non-2xx).
     return c.json(result, result.ok ? 200 : 400)

@@ -26,6 +26,7 @@ const baseSession: PublicPaymentSession = {
   bookingGuaranteeId: null,
   status: "requires_redirect",
   provider: "netopia",
+  providerConnectionId: null,
   providerSessionId: "provider_session_123",
   providerPaymentId: null,
   externalReference: null,
@@ -62,7 +63,7 @@ describe("PaymentLinkLandingPage", () => {
     container.remove()
   })
 
-  it("starts active card sessions instead of following a stored redirect", async () => {
+  it("continues a redirect session without starting the processor again", async () => {
     await act(async () => {
       root.render(
         <VoyantFinanceProvider baseUrl="https://api.example.test/api/" fetcher={fetcher}>
@@ -75,12 +76,6 @@ describe("PaymentLinkLandingPage", () => {
       container.querySelector<HTMLButtonElement>("button")?.click()
     })
 
-    expect(fetcher).toHaveBeenCalledWith(
-      "https://api.example.test/api/v1/public/payment-link/ps_123/start-card",
-      {
-        method: "POST",
-        headers: { Accept: "application/json" },
-      },
-    )
+    expect(fetcher).not.toHaveBeenCalled()
   })
 })

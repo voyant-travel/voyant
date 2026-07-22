@@ -248,8 +248,15 @@ function resolveCheckoutRouteRuntime(
 
 function assertCheckoutRuntimeSupportsCollection(
   runtime: CheckoutRouteRuntime,
-  input: { method: "card" | "bank_transfer" },
+  input: { method: "card" | "bank_transfer"; startProvider?: { provider?: string } },
 ) {
+  if (input.method === "card" && input.startProvider && !input.startProvider.provider) {
+    if (!runtime.selectedPaymentStarter) {
+      throw new CheckoutRouteRuntimeNotConfiguredError()
+    }
+    return
+  }
+
   if (
     input.method === "card" &&
     !runtime.selectedPaymentStarter &&

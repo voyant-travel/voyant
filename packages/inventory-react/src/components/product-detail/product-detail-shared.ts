@@ -58,9 +58,12 @@ export type ProductMediaItem = {
   storageKey: string | null
   mimeType: string | null
   fileSize: number | null
+  width: number | null
+  height: number | null
   altText: string | null
   sortOrder: number
   isCover: boolean
+  isOpenGraph: boolean
   isBrochure: boolean
   isBrochureCurrent: boolean
   brochureVersion: number | null

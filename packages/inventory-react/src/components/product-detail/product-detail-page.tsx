@@ -34,6 +34,7 @@ import {
 } from "./product-options-shared.js"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section.js"
 import { ScheduleDialog } from "./product-schedule-dialog.js"
+import { ProductSeoSharingSection } from "./product-seo-sharing-section.js"
 import { useProductDetailData } from "./use-product-detail-data.js"
 import { useProductDetailDialogs } from "./use-product-detail-dialogs.js"
 
@@ -116,6 +117,18 @@ export function ProductDetailPage({ id }: { id: string }) {
         {/* ── Left column (main) ── */}
         <div className="flex min-w-0 flex-col gap-6">
           <ProductDetailsSection product={product} onEdit={dialogs.edit.openNow} />
+
+          <ProductSeoSharingSection
+            product={product}
+            media={galleryMedia}
+            isUploading={mutations.uploadMedia.isPending}
+            isSavingImage={mutations.setOpenGraph.isPending}
+            onUpload={async (file) => {
+              const result = await mutations.uploadMedia.mutateAsync({ file })
+              return result.data
+            }}
+            onSetOpenGraph={(mediaId) => mutations.setOpenGraph.mutateAsync(mediaId)}
+          />
 
           <ProductMediaSection
             productId={id}

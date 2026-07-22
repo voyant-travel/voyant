@@ -107,6 +107,8 @@ export {
 export interface DefineVoyantConfigInput extends OperatorDistributionDifferences {
   access?: DefineVoyantGraphProjectInput["access"]
   deployment?: DefineVoyantGraphProjectInput["deployment"]
+  /** Bounded host cadence preferences for package-owned product jobs. */
+  jobScheduling?: DefineVoyantGraphProjectInput["jobScheduling"]
   meta?: DefineVoyantGraphProjectInput["meta"]
 }
 
@@ -136,6 +138,7 @@ export function defineConfig(input: DefineVoyantConfigInput = {}): VoyantGraphPr
     productBom: STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
     access,
     deployment,
+    ...(input.jobScheduling ? { jobScheduling: input.jobScheduling } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
   })
 }

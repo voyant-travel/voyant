@@ -2,6 +2,7 @@ import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -230,10 +231,13 @@ export const productMedia = pgTable(
     storageKey: text("storage_key"),
     mimeType: text("mime_type"),
     fileSize: integer("file_size"),
+    width: integer("width"),
+    height: integer("height"),
     altText: text("alt_text"),
     assetId: text("asset_id"),
     sortOrder: integer("sort_order").notNull().default(0),
     isCover: boolean("is_cover").notNull().default(false),
+    isOpenGraph: boolean("is_open_graph").notNull().default(false),
     isBrochure: boolean("is_brochure").notNull().default(false),
     isBrochureCurrent: boolean("is_brochure_current").notNull().default(false),
     brochureVersion: integer("brochure_version"),
@@ -256,6 +260,14 @@ export const productMedia = pgTable(
       table.isCover,
       table.sortOrder,
       table.createdAt,
+    ),
+    uniqueIndex("uidx_product_media_open_graph")
+      .on(table.productId)
+      // agent-quality: raw-sql reviewed -- owner: inventory; fixed partial-index predicate.
+      .where(sql`${table.isOpenGraph} = true`),
+    check(
+      "chk_product_media_open_graph_image",
+      sql`${table.isOpenGraph} = false OR (${table.mediaType} = 'image' AND ${table.dayId} IS NULL AND ${table.isBrochure} = false)`,
     ),
     index("idx_product_media_product_brochure_current_version").on(
       table.productId,
