@@ -30,7 +30,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { cruiseCatalogPolicy } from "./catalog-policy.js"
-import { CRUISE_SHIP_REFERENCE_FIELD_POLICY } from "./catalog-policy-ships.js"
+import { cruiseShipReferenceCatalogPolicy } from "./catalog-policy-ships.js"
 import { isCustomerCruiseBookable } from "./customer-bookability.js"
 import { cruises } from "./schema-core.js"
 import {
@@ -44,7 +44,7 @@ function getCruisesRegistry(): FieldPolicyRegistry {
   if (!_registry) {
     _registry = createFieldPolicyRegistry([
       ...cruiseCatalogPolicy,
-      ...CRUISE_SHIP_REFERENCE_FIELD_POLICY,
+      ...cruiseShipReferenceCatalogPolicy,
     ])
   }
   return _registry
@@ -65,7 +65,7 @@ export function createCruisesRegistry(
   if (extensionPolicies.length === 0) return getCruisesRegistry()
   const composed: FieldPolicy[] = [
     ...cruiseCatalogPolicy,
-    ...CRUISE_SHIP_REFERENCE_FIELD_POLICY,
+    ...cruiseShipReferenceCatalogPolicy,
   ]
   for (const policies of extensionPolicies) {
     composed.push(...policies)

@@ -141,4 +141,7 @@ const CRUISE_SHIP_REFERENCE_FIELD_POLICY: FieldPolicyInput[] = [
 ]
 
 export const cruiseShipCatalogPolicy = defineFieldPolicy(CRUISE_SHIP_FIELD_POLICY)
+export const cruiseShipReferenceCatalogPolicy = defineFieldPolicy(
+  CRUISE_SHIP_REFERENCE_FIELD_POLICY,
+)
 export { CRUISE_SHIP_FIELD_POLICY, CRUISE_SHIP_REFERENCE_FIELD_POLICY }

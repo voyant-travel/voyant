@@ -31,7 +31,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
-import { ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY } from "./catalog-policy-properties.js"
+import { accommodationPropertyReferenceCatalogPolicy } from "./catalog-policy-properties.js"
 import { isCustomerRoomTypeBookable } from "./customer-bookability.js"
 import { roomTypes } from "./schema-inventory.js"
 import {
@@ -48,7 +48,7 @@ function getAccommodationRegistry(): FieldPolicyRegistry {
   if (!_registry) {
     _registry = createFieldPolicyRegistry([
       ...accommodationCatalogPolicy,
-      ...ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+      ...accommodationPropertyReferenceCatalogPolicy,
     ])
   }
   return _registry

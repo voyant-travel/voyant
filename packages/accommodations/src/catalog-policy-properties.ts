@@ -131,4 +131,7 @@ const ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY: FieldPolicyInput[] = [
 export const accommodationPropertyCatalogPolicy = defineFieldPolicy(
   ACCOMMODATION_PROPERTY_FIELD_POLICY,
 )
+export const accommodationPropertyReferenceCatalogPolicy = defineFieldPolicy(
+  ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+)
 export { ACCOMMODATION_PROPERTY_FIELD_POLICY, ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY }
