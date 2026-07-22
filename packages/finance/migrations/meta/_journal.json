@@ -36,6 +36,13 @@
       "when": 1784375886446,
       "tag": "20260718115806_app_finance_lifecycle_settlement",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784698562480,
+      "tag": "20260722053500_payment_session_provider_connection",
+      "breakpoints": true
     }
   ]
 }

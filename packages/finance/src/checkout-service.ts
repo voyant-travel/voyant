@@ -341,6 +341,30 @@ export async function initiateCheckoutCollection(
   let paymentSessionNotification: CheckoutNotificationDelivery | null = null
   let bankTransferInstructions: CheckoutBankTransferInstructionsRecord | null = null
   let providerStart: CheckoutProviderStartResult | null = null
+  let providerStarter: NonNullable<CheckoutRuntimeOptions["selectedPaymentStarter"]> | null = null
+
+  if (input.startProvider) {
+    if (input.method !== "card") {
+      throw new Error("Provider start is only available for card collections")
+    }
+
+    // Processor selection belongs to the deployment. A selected PaymentAdapter
+    // therefore wins even when an older client still sends a provider hint.
+    // Keyed starters remain as a compatibility path for self-hosted plugins,
+    // but only for provider-qualified requests.
+    const requestedProvider = input.startProvider.provider
+    providerStarter =
+      runtime.selectedPaymentStarter ??
+      (requestedProvider ? runtime.paymentStarters?.[requestedProvider] : undefined) ??
+      null
+    if (!providerStarter) {
+      throw new Error(
+        requestedProvider
+          ? `Payment provider "${requestedProvider}" is not configured`
+          : "No payment adapter is selected for card collection",
+      )
+    }
+  }
 
   if (input.method === "bank_transfer") {
     invoice = await createCollectionInvoice(db, context, plan, input.notes ?? null)
@@ -422,29 +446,15 @@ export async function initiateCheckoutCollection(
   }
 
   if (input.startProvider) {
-    if (input.method !== "card") {
-      throw new Error("Provider start is only available for card collections")
-    }
     if (!paymentSession) {
       throw new Error("No payment session available for provider start")
     }
 
-    // Processor selection belongs to the deployment. A selected PaymentAdapter
-    // therefore wins even when an older client still sends a provider hint.
-    // Keyed starters remain as a compatibility path for self-hosted plugins.
-    const requestedProvider = input.startProvider.provider
-    const starter =
-      runtime.selectedPaymentStarter ??
-      (requestedProvider ? runtime.paymentStarters?.[requestedProvider] : undefined)
-    if (!starter) {
-      throw new Error(
-        requestedProvider
-          ? `Payment provider "${requestedProvider}" is not configured`
-          : "No payment adapter is selected for card collection",
-      )
+    if (!providerStarter) {
+      throw new Error("No payment adapter is selected for card collection")
     }
 
-    providerStart = await starter({
+    providerStart = await providerStarter({
       db,
       bookingId,
       plan,

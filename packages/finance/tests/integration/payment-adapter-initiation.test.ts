@@ -104,6 +104,144 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     expect(events["payment.completed"]).toHaveLength(1)
   })
 
+  it("persists the processor identity returned by a managed initiation", async () => {
+    const { session } = await seedInvoiceSession(db, 7000)
+    const adapter = stubAdapter("processing", {
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_123",
+      },
+    })
+    const starter = createPaymentAdapterCardPaymentStarter(adapter)
+
+    await starter({ env: {} } as Context, {
+      db,
+      sessionId: session.id,
+      billing: { email: "managed@example.com", firstName: "Managed" },
+    })
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      provider: "netopia",
+      providerConnectionId: "payment_connection_123",
+      providerSessionId: "processor_session_processing",
+      providerPaymentId: "processor_payment_processing",
+    })
+  })
+
+  it("rejects a verified callback whose processor identity mismatches the stored session", async () => {
+    const { session } = await seedInvoiceSession(db, 7000, {
+      provider: "netopia",
+      providerConnectionId: "payment_connection_123",
+    })
+
+    await expect(
+      applyPaymentAdapterCallbackEvent(db, {
+        eventId: "evt_identity_mismatch",
+        paymentSessionId: session.id,
+        nextState: "paid",
+        occurredAt: "2026-07-17T00:00:00.000Z",
+        processorIdentity: {
+          providerId: "stripe",
+          connectionId: "payment_connection_123",
+        },
+        idempotencyKey: "callback-identity-mismatch",
+      }),
+    ).rejects.toThrow(/processor identity/i)
+
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(0)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(0)
+    await expect(rowCount(payments)).resolves.toBe(0)
+  })
+
+  it("merges initiation and callback provider payload and metadata details", async () => {
+    const { session } = await seedInvoiceSession(db, 9000, {
+      providerPayload: { created: true },
+      metadata: { createdBy: "test" },
+    })
+    const adapter = stubAdapter("processing", {
+      raw: { hostedCheckoutId: "checkout_123" },
+    })
+    const starter = createPaymentAdapterCardPaymentStarter(adapter)
+
+    await starter({ env: {} } as Context, {
+      db,
+      sessionId: session.id,
+      billing: { email: "merge@example.com", firstName: "Merge" },
+    })
+
+    await applyPaymentAdapterCallbackEvent(db, {
+      eventId: "evt_merge_paid",
+      paymentSessionId: session.id,
+      nextState: "paid",
+      occurredAt: "2026-07-17T00:00:00.000Z",
+      processorSessionId: "processor_session_processing",
+      processorPaymentId: "processor_payment_processing",
+      idempotencyKey: "callback-merge-paid",
+      raw: { ipnId: "ipn_123" },
+    })
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      providerPayload: {
+        created: true,
+        initiation: { hostedCheckoutId: "checkout_123" },
+        callback: { ipnId: "ipn_123" },
+      },
+      metadata: {
+        createdBy: "test",
+        paymentAdapterInitiationIdempotencyKey: `payment:${session.id}`,
+        paymentAdapterEventId: "evt_merge_paid",
+        paymentAdapterOccurredAt: "2026-07-17T00:00:00.000Z",
+      },
+    })
+  })
+
+  it("applies concurrent duplicate paid callbacks exactly once", async () => {
+    const { invoice, session } = await seedInvoiceSession(db, 11000, {
+      provider: "netopia",
+      providerConnectionId: "payment_connection_123",
+    })
+    const eventBus = createEventBus()
+    const events: Record<string, unknown[]> = {
+      "invoice.payment.recorded": [],
+      "invoice.settled": [],
+      "payment.completed": [],
+    }
+    for (const eventName of Object.keys(events)) {
+      eventBus.subscribe(eventName, (event) => events[eventName]?.push(event))
+    }
+    const callback = {
+      eventId: "evt_duplicate_parallel",
+      paymentSessionId: session.id,
+      nextState: "paid" as const,
+      occurredAt: "2026-07-17T00:00:00.000Z",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_123",
+      },
+      processorSessionId: "processor_session_parallel",
+      processorPaymentId: "processor_payment_parallel",
+      idempotencyKey: "callback-duplicate-parallel",
+      raw: { ipnId: "ipn_parallel" },
+    }
+
+    await Promise.all([
+      applyPaymentAdapterCallbackEvent(db, callback, { eventBus }),
+      applyPaymentAdapterCallbackEvent(db, callback, { eventBus }),
+    ])
+
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    await expect(refreshedInvoice(invoice.id)).resolves.toMatchObject({
+      status: "paid",
+      paidCents: 11000,
+      balanceDueCents: 0,
+    })
+    expect(events["invoice.payment.recorded"]).toHaveLength(1)
+    expect(events["invoice.settled"]).toHaveLength(1)
+    expect(events["payment.completed"]).toHaveLength(1)
+  })
+
   it("routes a synchronously authorized initiation through completion once", async () => {
     const { session } = await seedInvoiceSession(db, 8000)
     const adapter = stubAdapter("authorized")
@@ -135,7 +273,11 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     await expect(rowCount(payments)).resolves.toBe(0)
   })
 
-  async function seedInvoiceSession(db: PostgresJsDatabase, amountCents: number) {
+  async function seedInvoiceSession(
+    db: PostgresJsDatabase,
+    amountCents: number,
+    sessionOverrides: Partial<typeof paymentSessions.$inferInsert> = {},
+  ) {
     const [invoice] = await db
       .insert(invoices)
       .values({
@@ -164,6 +306,7 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       notes: "Adapter initiation test",
       targetType: "invoice",
       targetId: invoice.id,
+      ...sessionOverrides,
     })
     if (!session) throw new Error("Payment session seed failed.")
     return { invoice, session }
@@ -187,7 +330,8 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
 })
 
 function stubAdapter(
-  nextState: Extract<PaymentSessionState, "authorized" | "paid">,
+  nextState: Extract<PaymentSessionState, "authorized" | "paid" | "processing">,
+  options: Partial<Awaited<ReturnType<PaymentAdapter["initiate"]>>> = {},
 ): PaymentAdapter {
   return {
     id: "test-adapter",
@@ -211,6 +355,7 @@ function stubAdapter(
       idempotencyKey: input.idempotencyKey,
       processorSessionId: `processor_session_${nextState}`,
       processorPaymentId: `processor_payment_${nextState}`,
+      ...options,
     })),
     verifyCallback: vi.fn(async () => ({ verified: false, reason: "malformed" })),
     health: vi.fn(async () => ({

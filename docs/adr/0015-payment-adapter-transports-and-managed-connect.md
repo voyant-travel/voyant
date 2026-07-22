@@ -168,11 +168,26 @@ trust token — to the Operator's finance callback endpoint, where
 machine. Processor-specific signature code never enters the Operator. In
 self-host mode the in-process adapter verifies callbacks locally, as today.
 
+### 8. Processor identity on payment sessions
+
+Managed transports must preserve the actual processor identity separately from
+the generic remote adapter id. `@voyant-travel/payments` exposes
+`PaymentProcessorIdentity { providerId, connectionId }` on initiation,
+operation/status, and callback event contracts. Finance stores `provider` as
+the processor provider id and `provider_connection_id` as the opaque managed
+connection id on `payment_sessions`.
+
+Self-hosted adapters remain compatible: when no processor identity is supplied,
+finance records the in-process adapter id as `provider` and leaves
+`provider_connection_id` null. Verified callbacks that do supply a processor
+identity are rejected before state mutation when the provider id or connection
+id conflicts with the stored session identity.
+
 ## Non-goals
 
-- Changing the `PaymentAdapter` interface or finance's ownership of payment
-  state. This ADR adds transports and a selection/connect surface, not a new
-  contract.
+- Replacing the `PaymentAdapter` interface or finance's ownership of payment
+  state. This ADR adds transports, selection/connect surfaces, and additive
+  identity fields on the existing contract.
 - Making payment processors installable "apps." Payments remain trusted
   deployment adapters per the Remote App Platform RFC.
 - Storing processor credentials in the Operator database in any mode. Self-host
