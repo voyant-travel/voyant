@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.132.0
+
+### Minor Changes
+
+- a668d0d: Add package-declared, bounded scheduling profiles for product jobs. Deployments can select global or per-job profiles without defining handlers, identifiers, payloads, or arbitrary cadences.
+
 ## 0.131.0
 
 ### Minor Changes

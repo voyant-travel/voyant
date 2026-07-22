@@ -1,5 +1,23 @@
 # @voyant-travel/framework
 
+## 0.62.0
+
+### Minor Changes
+
+- a668d0d: Add package-declared, bounded scheduling profiles for product jobs. Deployments can select global or per-job profiles without defining handlers, identifiers, payloads, or arbitrary cadences.
+
+### Patch Changes
+
+- Updated dependencies [a668d0d]
+  - @voyant-travel/core@0.132.0
+  - @voyant-travel/action-ledger@0.111.14
+  - @voyant-travel/cruises@0.191.1
+  - @voyant-travel/db@0.118.1
+  - @voyant-travel/hono@0.134.1
+  - @voyant-travel/mcp@0.4.11
+  - @voyant-travel/operator-standard@0.11.4
+  - @voyant-travel/storage@0.113.3
+
 ## 0.61.2
 
 ### Patch Changes
