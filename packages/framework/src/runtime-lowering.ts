@@ -658,6 +658,7 @@ function createRuntimeUnitLoader(
     tools,
     jobs,
     actions: unit.actions,
+    setupSteps: unit.setupSteps,
     selectedIds: unit.selectedIds,
     routes,
     load: memoizePromise(() =>
