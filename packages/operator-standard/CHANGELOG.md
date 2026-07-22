@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.11.7
+
+### Patch Changes
+
+- Updated dependencies [84dd9cb]
+  - @voyant-travel/auth@0.142.1
+  - @voyant-travel/auth-react@0.142.1
+
 ## 0.11.6
 
 ### Patch Changes
