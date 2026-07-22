@@ -1,6 +1,10 @@
+import { createContainer } from "@voyant-travel/core"
 import { prepareExternalWebhookEvent } from "@voyant-travel/webhook-delivery"
 import { describe, expect, it } from "vitest"
-import { createFinanceVoyantRuntime } from "../../src/index.js"
+import {
+  createFinanceVoyantRuntime,
+  FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+} from "../../src/index.js"
 import {
   financeBookingScheduleVoyantPlugin,
   financeBookingsCreateVoyantPlugin,
@@ -30,6 +34,7 @@ describe("finance deployment manifest", () => {
         { id: "custom-fields.runtime" },
         { id: "finance.notifications.runtime" },
         { id: "finance.checkout-payment-starters.runtime", optional: true },
+        { id: "payments.adapter.runtime", optional: true },
         { id: "finance.invoice-settlement-poller", optional: true, cardinality: "many" },
       ],
       api: [
@@ -427,6 +432,16 @@ describe("finance deployment manifest", () => {
             listBookingReminderRuns: async () => [],
           },
           "finance.checkout-payment-starters.runtime": { resolvePaymentStarters: () => ({}) },
+          "payments.adapter.runtime": {
+            id: "connected-adapter",
+            label: "Connected adapter",
+            contractVersion: "voyant.payment-adapter.v1",
+            mode: "test",
+            capabilities: { callbackSignatureVerification: true },
+            initiate: async () => ({}),
+            verifyCallback: async () => ({ verified: false, reason: "malformed" }),
+            health: async () => ({ status: "ok", checkedAt: new Date().toISOString() }),
+          },
         }
         return providers[port.id] as TProvider
       },
@@ -435,6 +450,13 @@ describe("finance deployment manifest", () => {
 
     expect(runtime.adminRoutes).toBeDefined()
     expect(runtime.publicRoutes).toBeUndefined()
+    const container = createContainer()
+    await runtime.module.bootstrap?.({ bindings: {}, container })
+    expect(
+      container.resolve<{ selectedPaymentStarter?: unknown }>(
+        FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
+      )?.selectedPaymentStarter,
+    ).toBeTypeOf("function")
   })
 
   it("owns the finance extensions", () => {

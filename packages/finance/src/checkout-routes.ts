@@ -49,6 +49,9 @@ export type CheckoutRoutesOptions = {
     bindings: Record<string, unknown>,
   ) => CheckoutNotificationDispatcher | null
   paymentStarters?: Record<string, CheckoutPaymentStarter>
+  resolveSelectedPaymentStarter?: (
+    bindings: Record<string, unknown>,
+  ) => CheckoutPaymentStarter | null
   resolvePaymentStarters?: (
     bindings: Record<string, unknown>,
   ) => Record<string, CheckoutPaymentStarter>
@@ -75,6 +78,7 @@ export interface CheckoutReminderRunList {
 export type CheckoutRouteRuntime = {
   bindings: Record<string, unknown>
   notificationDispatcher: CheckoutNotificationDispatcher | null
+  selectedPaymentStarter: CheckoutPaymentStarter | null
   paymentStarters: Record<string, CheckoutPaymentStarter>
   bankTransferDetails: CheckoutBankTransferDetails | null
   publicCheckoutBaseUrl?: string | null
@@ -246,7 +250,11 @@ function assertCheckoutRuntimeSupportsCollection(
   runtime: CheckoutRouteRuntime,
   input: { method: "card" | "bank_transfer" },
 ) {
-  if (input.method === "card" && Object.keys(runtime.paymentStarters).length === 0) {
+  if (
+    input.method === "card" &&
+    !runtime.selectedPaymentStarter &&
+    Object.keys(runtime.paymentStarters).length === 0
+  ) {
     throw new CheckoutRouteRuntimeNotConfiguredError()
   }
 }
@@ -259,6 +267,7 @@ export function buildCheckoutRouteRuntime(
     bindings,
     notificationDispatcher:
       options.resolveNotificationDispatcher?.(bindings) ?? options.notificationDispatcher ?? null,
+    selectedPaymentStarter: options.resolveSelectedPaymentStarter?.(bindings) ?? null,
     paymentStarters: options.resolvePaymentStarters?.(bindings) ?? options.paymentStarters ?? {},
     bankTransferDetails:
       options.resolveBankTransferDetails?.(bindings) ?? options.bankTransferDetails ?? null,

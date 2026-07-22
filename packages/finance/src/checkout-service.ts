@@ -429,9 +429,19 @@ export async function initiateCheckoutCollection(
       throw new Error("No payment session available for provider start")
     }
 
-    const starter = runtime.paymentStarters?.[input.startProvider.provider]
+    // Processor selection belongs to the deployment. A selected PaymentAdapter
+    // therefore wins even when an older client still sends a provider hint.
+    // Keyed starters remain as a compatibility path for self-hosted plugins.
+    const requestedProvider = input.startProvider.provider
+    const starter =
+      runtime.selectedPaymentStarter ??
+      (requestedProvider ? runtime.paymentStarters?.[requestedProvider] : undefined)
     if (!starter) {
-      throw new Error(`Payment provider "${input.startProvider.provider}" is not configured`)
+      throw new Error(
+        requestedProvider
+          ? `Payment provider "${requestedProvider}" is not configured`
+          : "No payment adapter is selected for card collection",
+      )
     }
 
     providerStart = await starter({

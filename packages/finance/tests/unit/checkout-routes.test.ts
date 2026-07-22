@@ -136,6 +136,60 @@ describe("createFinanceCheckoutRoutes", () => {
     expect(runtime.paymentStarters.netopia).toBe(paymentStarter)
   })
 
+  it("accepts a provider-neutral card start through the selected adapter", async () => {
+    serviceMocks.initiateCheckoutCollection.mockResolvedValue({
+      plan: { bookingId: "book_123", method: "card" },
+      invoice: null,
+      paymentSession: { id: "ps_123" },
+      invoiceNotification: null,
+      paymentSessionNotification: null,
+      bankTransferInstructions: null,
+      providerStart: {
+        provider: "connected-adapter",
+        paymentSessionId: "ps_123",
+        redirectUrl: "https://payments.example/checkout",
+      },
+    })
+    const selectedPaymentStarter = vi.fn()
+    const routes = createFinanceCheckoutRoutes({
+      resolveSelectedPaymentStarter: () => selectedPaymentStarter,
+    })
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/initiate-collection",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+                lastName: "Ionescu",
+              },
+            },
+          },
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(201)
+    expect(serviceMocks.initiateCheckoutCollection).toHaveBeenCalledOnce()
+    expect(serviceMocks.initiateCheckoutCollection.mock.calls[0]?.[4]).toMatchObject({
+      selectedPaymentStarter,
+    })
+  })
+
   it("returns setup guidance when the checkout runtime provider is not registered", async () => {
     const routes = createFinanceCheckoutAdminRoutes()
     const app = new Hono()

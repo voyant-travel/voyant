@@ -145,6 +145,8 @@ export interface CheckoutRuntimeOptions {
   bindings?: Record<string, unknown>
   bankTransferDetails?: CheckoutBankTransferDetails | null
   notificationDispatcher?: CheckoutNotificationDispatcher | null
+  /** Deployment-selected PaymentAdapter bridge. Takes precedence over legacy keyed starters. */
+  selectedPaymentStarter?: CheckoutPaymentStarter | null
   paymentStarters?: Record<string, CheckoutPaymentStarter>
   publicCheckoutBaseUrl?: string | null
 }

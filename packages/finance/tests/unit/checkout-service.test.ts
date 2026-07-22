@@ -80,6 +80,55 @@ describe("finance checkout service", () => {
     )
   })
 
+  it("starts card collection through the deployment-selected payment adapter", async () => {
+    const db = createCheckoutDb({ insertedInvoices: [] })
+    const paymentSession = {
+      id: "ps_selected",
+      invoiceId: null,
+      targetType: "booking_payment_schedule",
+    }
+    const selectedPaymentStarter = vi.fn(async () => ({
+      provider: "connected-adapter",
+      paymentSessionId: paymentSession.id,
+      redirectUrl: "https://payments.example/checkout",
+      externalReference: null,
+      providerSessionId: "processor_session_123",
+      providerPaymentId: null,
+      response: null,
+    }))
+
+    vi.spyOn(financeService, "createPaymentSessionFromBookingSchedule").mockResolvedValue(
+      paymentSession as never,
+    )
+    vi.spyOn(financeService, "getPaymentSessionById").mockResolvedValue(paymentSession as never)
+
+    const result = await initiateCheckoutCollection(
+      db as never,
+      "booking_123",
+      {
+        method: "card",
+        stage: "initial",
+        startProvider: {
+          payload: {
+            billing: {
+              email: "traveler@example.com",
+              firstName: "Ana",
+              lastName: "Ionescu",
+            },
+          },
+        },
+      },
+      {},
+      { selectedPaymentStarter },
+    )
+
+    expect(selectedPaymentStarter).toHaveBeenCalledOnce()
+    expect(result?.providerStart).toMatchObject({
+      provider: "connected-adapter",
+      redirectUrl: "https://payments.example/checkout",
+    })
+  })
+
   it("keeps base paid cents null when creating a collection invoice without base currency", async () => {
     const insertedInvoices: Array<Record<string, unknown>> = []
     const db = createCheckoutDb({
