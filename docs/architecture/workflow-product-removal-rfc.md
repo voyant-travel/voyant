@@ -126,6 +126,24 @@ provide only:
 - structured logs, metrics, and alerts;
 - a minimal operator-facing health view.
 
+### Bounded host-resolved scheduling policy
+
+Job ownership and cadence policy are separate concerns. A package keeps the
+stable job identifier and runtime handler, and supplies a safe default schedule.
+It may additionally publish named cadence profiles (for example `eager` or
+`economical`) with their complete, validated schedules. A deployment may select
+one published profile globally or for a specific selected job. The resolved
+graph serializes the declared default, bounded profiles, required flag, and
+effective schedule so Node, managed, and other hosts make the same deterministic
+choice.
+
+Deployment configuration never authors cron expressions, intervals, handlers,
+payloads, or job identifiers. Unknown job IDs and profile names are graph
+errors. A configuration can disable an explicitly optional job, but attempting
+to disable a required job is a graph error; no scheduler choice can remove a
+required production capability. When no preference is supplied, the standard
+self-hosted host runs the package default unchanged.
+
 The job host must not acquire workflow features such as arbitrary execution
 payload persistence, generic user-triggered run control, step replay, pauses,
 sleeps, compensation graphs, child invocation, user-defined schedules, or

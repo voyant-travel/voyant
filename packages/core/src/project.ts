@@ -335,6 +335,18 @@ export type VoyantGraphJobSchedule = (
 }
 
 /**
+ * Package-declared scheduling bounds for a product job. Hosts may select only
+ * one of these named profiles; they never receive an arbitrary cron expression
+ * or a different runtime handler.
+ */
+export interface VoyantGraphJobSchedulingPolicy {
+  /** Named, package-owned alternatives to the job's default schedule. */
+  profiles?: Readonly<Record<string, VoyantGraphJobSchedule>>
+  /** Required jobs cannot be disabled by deployment configuration. */
+  required?: boolean
+}
+
+/**
  * A package-owned background operation selected with its owning graph unit.
  *
  * Jobs deliberately have no input or payload declaration. Durable work remains
@@ -343,7 +355,10 @@ export type VoyantGraphJobSchedule = (
  */
 export interface VoyantGraphJob extends VoyantGraphFacetEntity {
   runtime: VoyantGraphRuntimeReference
+  /** The safe package default retained for existing job declarations. */
   schedule?: VoyantGraphJobSchedule
+  /** Bounded host-resolved cadence choices; handlers and identities remain fixed. */
+  scheduling?: VoyantGraphJobSchedulingPolicy
   /** Marks a job that may be prompted after its domain records durable work. */
   wakeup?: boolean
 }
@@ -461,6 +476,14 @@ export interface VoyantGraphProjectDeployment {
   migrations?: readonly VoyantGraphProjectDeploymentMigration[]
 }
 
+/** A host preference may select only package-declared profile names. */
+export interface VoyantGraphProjectJobScheduling {
+  /** Applies to jobs that publish this profile, unless a job preference overrides it. */
+  profile?: string
+  /** Per-job profile selection, or false to disable an optional job. */
+  jobs?: Readonly<Record<string, string | false>>
+}
+
 export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
   productBom?: VoyantProductBomReference
@@ -470,6 +493,7 @@ export interface DefineVoyantGraphProjectInput {
   adapters?: readonly DefineVoyantGraphProjectUnitInput[]
   providers?: readonly DefineVoyantGraphProjectUnitInput[]
   access?: VoyantGraphProjectAccessDeclaration
+  jobScheduling?: VoyantGraphProjectJobScheduling
   deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
@@ -484,6 +508,7 @@ export interface VoyantGraphProject {
   providers: readonly VoyantGraphUnitManifest[]
   selections?: VoyantGraphProjectSelections
   access?: VoyantGraphProjectAccessDeclaration
+  jobScheduling?: VoyantGraphProjectJobScheduling
   deployment?: VoyantGraphProjectDeployment
   meta?: VoyantGraphJsonObject
 }
@@ -549,9 +574,50 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
         }
       : {}),
     ...(input.access ? { access: normalizeProjectAccess(input.access) } : {}),
+    ...(input.jobScheduling
+      ? { jobScheduling: normalizeProjectJobScheduling(input.jobScheduling) }
+      : {}),
     ...(deployment ? { deployment } : {}),
     ...(input.meta ? { meta: input.meta } : {}),
   }
+}
+
+function normalizeProjectJobScheduling(
+  input: VoyantGraphProjectJobScheduling,
+): VoyantGraphProjectJobScheduling {
+  const profile =
+    input.profile === undefined
+      ? undefined
+      : normalizeProfileName(input.profile, "jobScheduling.profile")
+  const jobs = input.jobs
+    ? Object.fromEntries(
+        Object.entries(input.jobs)
+          .map(([id, preference]) => {
+            if (!id.trim()) throw new Error("defineProject: jobScheduling.jobs keys must be non-empty job ids.")
+            if (preference !== false && typeof preference !== "string") {
+              throw new Error(`defineProject: jobScheduling.jobs.${id} must be a profile name or false.`)
+            }
+            return [
+              id,
+              preference === false
+                ? false
+                : normalizeProfileName(preference, `jobScheduling.jobs.${id}`),
+            ]
+          })
+          .sort(([left], [right]) => left.localeCompare(right)),
+      )
+    : undefined
+  return {
+    ...(profile ? { profile } : {}),
+    ...(jobs && Object.keys(jobs).length ? { jobs } : {}),
+  }
+}
+
+function normalizeProfileName(value: string, field: string): string {
+  if (typeof value !== "string" || !/^[a-z][a-z0-9-]*$/.test(value)) {
+    throw new Error(`defineProject: ${field} must be a lower-case profile token.`)
+  }
+  return value
 }
 
 function normalizeProductBomReference(input: VoyantProductBomReference): VoyantProductBomReference {

@@ -24,6 +24,8 @@ import {
   type VoyantGraphFacetEntity,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJobSchedulingPolicy,
+  type VoyantGraphProjectJobScheduling,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
@@ -101,6 +103,7 @@ export {
   type VoyantGraphFacetEntity,
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
+  type VoyantGraphJobSchedulingPolicy,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
@@ -108,6 +111,7 @@ export {
   type VoyantGraphPortDeclaration,
   type VoyantGraphPresentationDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectJobScheduling,
   type VoyantGraphProjectSelection,
   type VoyantGraphProjectSelectionProvenance,
   type VoyantGraphProjectSelections,
@@ -207,6 +211,12 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED:
     "A graph runtime reference points to a package that did not pass admission.",
   VOYANT_GRAPH_UNKNOWN_FACET: "A graph unit manifest contains an unknown top-level facet.",
+  VOYANT_GRAPH_UNKNOWN_JOB:
+    "A deployment scheduling preference references a job not selected by the graph.",
+  VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE:
+    "A deployment scheduling preference is not declared by the package-owned job policy.",
+  VOYANT_GRAPH_REQUIRED_JOB_DISABLED:
+    "A deployment configuration attempted to disable a required package-owned job.",
   VOYANT_GRAPH_UNKNOWN_REFERENCE:
     "A package facet references an entity that is not present in the selected graph.",
   VOYANT_GRAPH_UNSUPPORTED_FACET:
@@ -245,6 +255,13 @@ export interface VoyantGraphProvisionedJob {
   unitId: string
   packageName: string
   schedule?: VoyantGraphJobSchedule
+  /** Declared bounds and the deterministic host-resolved selection. */
+  scheduling?: {
+    default?: VoyantGraphJobSchedule
+    profiles: Readonly<Record<string, VoyantGraphJobSchedule>>
+    required: boolean
+    selected?: string
+  }
   wakeup: boolean
 }
 
@@ -746,17 +763,8 @@ export async function resolveDeploymentGraph(
     input.packageRecords ?? [],
   )
   const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
-  const provisionedJobs = selectedUnits
-    .flatMap((unit) =>
-      unit.jobs.map((job) => ({
-        id: job.id,
-        unitId: unit.id,
-        packageName: unit.packageName,
-        ...(job.schedule ? { schedule: job.schedule } : {}),
-        wakeup: job.wakeup === true,
-      })),
-    )
-    .sort((left, right) => left.id.localeCompare(right.id))
+  const jobResolution = resolveProvisionedJobs(selectedUnits, input.project.jobScheduling)
+  const provisionedJobs = jobResolution.jobs
   const eventCatalog = compileEventCatalog(selectedUnits)
   const webhookPlan = compileWebhookPlan(selectedUnits)
   const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
@@ -779,6 +787,7 @@ export async function resolveDeploymentGraph(
       admission: input.admission,
     }),
     ...validateRuntimeReferenceAdmission(selectedUnits, packageRecords),
+    ...jobResolution.diagnostics,
   ])
 
   const modules = selectedModules.map(({ original: _original, ...unit }) => unit)
@@ -1096,6 +1105,114 @@ function normalizeScheduledJobs(
       module: job.module,
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
+}
+
+function resolveProvisionedJobs(
+  units: readonly ResolvedVoyantGraphUnit[],
+  preferences: VoyantGraphProjectJobScheduling | undefined,
+): { jobs: VoyantGraphProvisionedJob[]; diagnostics: VoyantGraphDiagnostic[] } {
+  const declared = units.flatMap((unit) => unit.jobs.map((job) => ({ unit, job })))
+  const byId = new Map(declared.map((entry) => [entry.job.id, entry]))
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  const configured = preferences?.jobs ?? {}
+
+  for (const id of Object.keys(configured)) {
+    if (!byId.has(id)) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_UNKNOWN_JOB",
+          facet: `jobScheduling.jobs.${id}`,
+          message: `Scheduling preference references unknown selected product job "${id}".`,
+        }),
+      )
+    }
+  }
+  if (
+    preferences?.profile &&
+    !declared.some(({ job }) => Object.hasOwn(job.scheduling?.profiles ?? {}, preferences.profile!))
+  ) {
+    diagnostics.push(
+      diagnostic({
+        code: "VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE",
+        facet: "jobScheduling.profile",
+        message: `Scheduling profile "${preferences.profile}" is not declared by any selected product job.`,
+      }),
+    )
+  }
+
+  const jobs = declared.flatMap(({ unit, job }): VoyantGraphProvisionedJob[] => {
+    const policy = normalizeJobSchedulingPolicy(job.schedule, job.scheduling)
+    const preference = Object.hasOwn(configured, job.id)
+      ? configured[job.id]
+      : policy.profiles[preferences?.profile ?? ""]
+        ? preferences?.profile
+        : undefined
+    if (preference === false) {
+      if (policy.required) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_REQUIRED_JOB_DISABLED",
+            source: unit.id,
+            facet: `jobScheduling.jobs.${job.id}`,
+            message: `Required product job "${job.id}" cannot be disabled.`,
+          }),
+        )
+      } else return []
+    }
+    let schedule = policy.default
+    if (typeof preference === "string") {
+      const selected = policy.profiles[preference]
+      if (!selected) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE",
+            source: unit.id,
+            facet: `jobScheduling.jobs.${job.id}`,
+            message: `Product job "${job.id}" does not declare scheduling profile "${preference}".`,
+          }),
+        )
+      } else schedule = selected
+    }
+    return [
+      {
+        id: job.id,
+        unitId: unit.id,
+        packageName: unit.packageName,
+        ...(schedule ? { schedule } : {}),
+        ...(job.scheduling
+          ? {
+              scheduling: {
+                ...(policy.default ? { default: policy.default } : {}),
+                profiles: policy.profiles,
+                required: policy.required,
+                ...(typeof preference === "string" && policy.profiles[preference]
+                  ? { selected: preference }
+                  : {}),
+              },
+            }
+          : {}),
+        wakeup: job.wakeup === true,
+      },
+    ]
+  })
+  return { jobs: jobs.sort((left, right) => left.id.localeCompare(right.id)), diagnostics }
+}
+
+function normalizeJobSchedulingPolicy(
+  defaultSchedule: VoyantGraphJobSchedule | undefined,
+  policy: VoyantGraphJobSchedulingPolicy | undefined,
+): {
+  default?: VoyantGraphJobSchedule
+  profiles: Record<string, VoyantGraphJobSchedule>
+  required: boolean
+} {
+  return {
+    ...(defaultSchedule ? { default: defaultSchedule } : {}),
+    profiles: Object.fromEntries(
+      Object.entries(policy?.profiles ?? {}).sort(([left], [right]) => left.localeCompare(right)),
+    ),
+    required: policy?.required === true,
+  }
 }
 
 function compareEnvRequirements(
@@ -2625,7 +2742,7 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
     if (!isRecord(job)) return
     const facet = `jobs[${index}]`
     for (const key of Object.keys(job)) {
-      if (["id", "runtime", "schedule", "wakeup"].includes(key)) continue
+      if (["id", "runtime", "schedule", "scheduling", "wakeup"].includes(key)) continue
       invalidFacet(
         `${facet}.${key}`,
         source,
@@ -2656,6 +2773,75 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
     }
     if (job.wakeup !== undefined && job.wakeup !== true) {
       invalidFacet(`${facet}.wakeup`, source, diagnostics, "Job wakeup must be true when declared.")
+    }
+    if (job.scheduling !== undefined) {
+      if (!isRecord(job.scheduling)) {
+        invalidFacet(
+          `${facet}.scheduling`,
+          source,
+          diagnostics,
+          "Job scheduling policy must be an object.",
+        )
+      } else {
+        for (const key of Object.keys(job.scheduling)) {
+          if (["profiles", "required"].includes(key)) continue
+          invalidFacet(
+            `${facet}.scheduling.${key}`,
+            source,
+            diagnostics,
+            `Job scheduling policies do not support "${key}".`,
+          )
+        }
+        if (job.scheduling.required !== undefined && typeof job.scheduling.required !== "boolean") {
+          invalidFacet(
+            `${facet}.scheduling.required`,
+            source,
+            diagnostics,
+            "Job scheduling required must be a boolean.",
+          )
+        }
+        if (job.scheduling.profiles !== undefined) {
+          if (!isRecord(job.scheduling.profiles)) {
+            invalidFacet(
+              `${facet}.scheduling.profiles`,
+              source,
+              diagnostics,
+              "Job scheduling profiles must be a record of named schedules.",
+            )
+          } else {
+            for (const [name, schedule] of Object.entries(job.scheduling.profiles)) {
+              if (!/^[a-z][a-z0-9-]*$/.test(name) || !isRecord(schedule)) {
+                invalidFacet(
+                  `${facet}.scheduling.profiles.${name}`,
+                  source,
+                  diagnostics,
+                  "Job scheduling profile names must be lower-case tokens and values must be schedules.",
+                )
+                continue
+              }
+              const hasCron =
+                typeof schedule.cron === "string" && schedule.cron.trim().length > 0
+              const hasEvery =
+                (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
+                (typeof schedule.every === "number" &&
+                  Number.isFinite(schedule.every) &&
+                  schedule.every > 0)
+              if (
+                hasCron === hasEvery ||
+                (hasCron && !isSupportedProductJobCron(schedule.cron as string)) ||
+                (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number))
+              ) {
+                invalidFacet(
+                  `${facet}.scheduling.profiles.${name}`,
+                  source,
+                  diagnostics,
+                  "Job scheduling profiles must declare one supported cron or every cadence.",
+                )
+              }
+            }
+          }
+        }
+      }
     }
     if (!scheduled) return
     if (!isRecord(job.schedule)) {
@@ -2702,7 +2888,7 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
         `${facet}.schedule.every`,
         source,
         diagnostics,
-        "Job every schedules must use positive milliseconds, a duration such as 5m, or an ISO PT duration.",
+        "Job every schedules must be at least one minute and use milliseconds, a duration such as 5m, or an ISO PT duration.",
       )
     }
     if (schedule.timezone !== undefined && typeof schedule.timezone !== "string") {
@@ -2769,12 +2955,38 @@ function isSupportedProductJobCron(expression: string): boolean {
 }
 
 function isSupportedProductJobEvery(value: string | number): boolean {
-  if (typeof value === "number") return Number.isInteger(value) && value > 0
-  if (/^\d+(?:\.\d+)?\s*(?:ms|s|m|h|d)$/i.test(value.trim())) return true
+  const milliseconds = productJobEveryMilliseconds(value)
+  return milliseconds !== undefined && milliseconds >= 60_000
+}
+
+function productJobEveryMilliseconds(value: string | number): number | undefined {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value > 0 ? value : undefined
+  }
+  const duration = /^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)$/i.exec(value.trim())
+  if (duration) {
+    const unit = duration[2]!.toLowerCase()
+    const multiplier =
+      unit === "ms"
+        ? 1
+        : unit === "s"
+          ? 1_000
+          : unit === "m"
+            ? 60_000
+            : unit === "h"
+              ? 3_600_000
+              : 86_400_000
+    return Number(duration[1]) * multiplier
+  }
   const iso = /^PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?$/i.exec(
     value.trim(),
   )
-  return Boolean(iso && iso.slice(1).some((part) => Number(part ?? 0) > 0))
+  if (!iso) return undefined
+  return (
+    Number(iso[1] ?? 0) * 3_600_000 +
+    Number(iso[2] ?? 0) * 60_000 +
+    Number(iso[3] ?? 0) * 1_000
+  )
 }
 
 function isSupportedProductJobTimezone(value: string): boolean {
