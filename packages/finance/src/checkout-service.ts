@@ -326,6 +326,32 @@ export async function initiateCheckoutCollection(
   options: CheckoutPolicyOptions = {},
   runtime: CheckoutRuntimeOptions = {},
 ): Promise<InitiatedCheckoutCollection | null> {
+  let providerStarter: NonNullable<CheckoutRuntimeOptions["selectedPaymentStarter"]> | null = null
+
+  if (input.startProvider) {
+    if (input.method !== "card") {
+      throw new Error("Provider start is only available for card collections")
+    }
+
+    // Resolve deployment-owned processor readiness before any checkout read
+    // that may materialize a default payment plan. The selected PaymentAdapter
+    // wins over legacy provider hints; keyed starters remain only for explicit
+    // self-hosted provider requests. A missing adapter is a zero-mutation
+    // failure.
+    const requestedProvider = input.startProvider.provider
+    providerStarter =
+      runtime.selectedPaymentStarter ??
+      (requestedProvider ? runtime.paymentStarters?.[requestedProvider] : undefined) ??
+      null
+    if (!providerStarter) {
+      throw new Error(
+        requestedProvider
+          ? `Payment provider "${requestedProvider}" is not configured`
+          : "No payment adapter is selected for card collection",
+      )
+    }
+  }
+
   const context = await loadBookingContext(db, bookingId)
   if (!context) return null
 
@@ -341,30 +367,6 @@ export async function initiateCheckoutCollection(
   let paymentSessionNotification: CheckoutNotificationDelivery | null = null
   let bankTransferInstructions: CheckoutBankTransferInstructionsRecord | null = null
   let providerStart: CheckoutProviderStartResult | null = null
-  let providerStarter: NonNullable<CheckoutRuntimeOptions["selectedPaymentStarter"]> | null = null
-
-  if (input.startProvider) {
-    if (input.method !== "card") {
-      throw new Error("Provider start is only available for card collections")
-    }
-
-    // Processor selection belongs to the deployment. A selected PaymentAdapter
-    // therefore wins even when an older client still sends a provider hint.
-    // Keyed starters remain as a compatibility path for self-hosted plugins,
-    // but only for provider-qualified requests.
-    const requestedProvider = input.startProvider.provider
-    providerStarter =
-      runtime.selectedPaymentStarter ??
-      (requestedProvider ? runtime.paymentStarters?.[requestedProvider] : undefined) ??
-      null
-    if (!providerStarter) {
-      throw new Error(
-        requestedProvider
-          ? `Payment provider "${requestedProvider}" is not configured`
-          : "No payment adapter is selected for card collection",
-      )
-    }
-  }
 
   if (input.method === "bank_transfer") {
     invoice = await createCollectionInvoice(db, context, plan, input.notes ?? null)

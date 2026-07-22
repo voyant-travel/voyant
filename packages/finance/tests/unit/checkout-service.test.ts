@@ -174,6 +174,33 @@ describe("finance checkout service", () => {
     expect(legacyPaymentStarter).not.toHaveBeenCalled()
   })
 
+  it("rejects an unavailable card adapter before any checkout database read", async () => {
+    const select = vi.fn(() => {
+      throw new Error("checkout database must not be touched")
+    })
+
+    await expect(
+      initiateCheckoutCollection(
+        { select } as never,
+        "booking_123",
+        {
+          method: "card",
+          stage: "initial",
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        },
+      ),
+    ).rejects.toThrow("No payment adapter is selected for card collection")
+
+    expect(select).not.toHaveBeenCalled()
+  })
+
   it("allows provider-qualified card starts to use legacy keyed starters", async () => {
     const db = createCheckoutDb({ insertedInvoices: [] })
     const paymentSession = {

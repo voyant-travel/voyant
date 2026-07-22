@@ -20,3 +20,6 @@ Processor callbacks now compare and adopt identities under the payment-session
 row lock, preserve monotonic session states during concurrent delivery, and
 sanitize callback-routing metadata supplied by public clients. Provider-neutral
 cancel and shipping fields flow through the selected adapter contract.
+Public payment-session reads can refresh provider status through the selected
+adapter while resending the session's pinned processor identity and preserving
+the same locked monotonic transition rules as callbacks.

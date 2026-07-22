@@ -4,9 +4,12 @@ import { bookings } from "@voyant-travel/bookings/schema"
 import { handleApiError } from "@voyant-travel/hono"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { publicFinanceRoutes } from "../../src/routes-public.js"
+import {
+  createPublicFinanceRoutes,
+  publicFinanceRoutes,
+} from "../../src/routes-public.js"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -697,6 +700,80 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       .from(paymentSessions)
       .where(eq(paymentSessions.id, created.id))
     expect(sessionRow?.bookingId).toBe(booking.id)
+  })
+
+  it("refreshes provider status before returning a public payment session", async () => {
+    const [session] = await db
+      .insert(paymentSessions)
+      .values({
+        amountCents: 19000,
+        currency: "RON",
+        status: "pending",
+        provider: "netopia",
+        providerConnectionId: "payment_connection_public_status",
+      })
+      .returning()
+    if (!session) throw new Error("Payment session seed failed")
+
+    const refreshPaymentSessionStatus = vi.fn(async (input: { paymentSessionId: string }) => {
+      await db
+        .update(paymentSessions)
+        .set({ status: "processing" })
+        .where(eq(paymentSessions.id, input.paymentSessionId))
+    })
+    const refreshApp = new Hono()
+    refreshApp.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    refreshApp.route(
+      "/",
+      createPublicFinanceRoutes({ refreshPaymentSessionStatus }),
+    )
+
+    const response = await refreshApp.request(`/payment-sessions/${session.id}`)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      data: { id: session.id, status: "processing" },
+    })
+    expect(refreshPaymentSessionStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ db, paymentSessionId: session.id }),
+    )
+  })
+
+  it("returns persisted public status when processor polling fails", async () => {
+    const [session] = await db
+      .insert(paymentSessions)
+      .values({
+        amountCents: 19500,
+        currency: "RON",
+        status: "processing",
+        provider: "netopia",
+      })
+      .returning()
+    if (!session) throw new Error("Payment session seed failed")
+
+    const refreshApp = new Hono()
+    refreshApp.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    refreshApp.route(
+      "/",
+      createPublicFinanceRoutes({
+        refreshPaymentSessionStatus: async () => {
+          throw new Error("provider secret must not leak")
+        },
+      }),
+    )
+
+    const response = await refreshApp.request(`/payment-sessions/${session.id}`)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      data: { id: session.id, status: "processing" },
+    })
   })
 
   it("starts a public payment session from an invoice balance", async () => {

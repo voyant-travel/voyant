@@ -5,6 +5,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { startPaymentAdapterCardPayment } from "./card-payment.js"
 import type { CheckoutPaymentStarter } from "./checkout-service.js"
 import type { FinanceApiModuleOptions } from "./index.js"
+import { refreshPaymentAdapterStatus } from "./payment-adapter-status.js"
 import {
   createVoyantDataFxExchangeRateResolver,
   type ResolveInvoiceExchangeRate,
@@ -66,6 +67,15 @@ export function createFinanceRuntime(
     resolveBankTransferDetails: (bindings) => resolveBankTransferDetails(primitives.env(bindings)),
     resolvePublicCheckoutBaseUrl: (bindings) =>
       resolvePublicCheckoutBaseUrl(primitives.env(bindings)),
+    refreshPaymentSessionStatus: selectedPaymentAdapter
+      ? ({ bindings, db, paymentSessionId, eventBus }) =>
+          refreshPaymentAdapterStatus(selectedPaymentAdapter, db, paymentSessionId, {
+            context: {
+              env: primitives.env(bindings as Record<string, unknown>),
+            },
+            runtime: { eventBus },
+          })
+      : undefined,
     listBookingReminderRuns: notifications.listBookingReminderRuns,
   }
 }
