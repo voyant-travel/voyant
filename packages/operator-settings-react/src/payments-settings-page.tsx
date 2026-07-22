@@ -77,6 +77,17 @@ interface ConnectResult {
 const PROVIDERS_KEY = ["payment-providers"]
 const CONNECTION_KEY = ["payment-connection"]
 
+async function responseError(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as
+    | { error?: unknown; message?: unknown }
+    | null
+  if (typeof body?.error === "string" && body.error.trim()) return body.error
+  if (typeof body?.message === "string" && body.message.trim()) {
+    return body.message
+  }
+  return fallback
+}
+
 export function PaymentsSettingsPage() {
   const queryClient = useQueryClient()
   const { baseUrl, fetcher } = useVoyantReactContext()
@@ -115,7 +126,7 @@ export function PaymentsSettingsPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ providerId: provider.id, mode, credentials }),
       })
-      if (!res.ok) throw new Error(t.connectFailed)
+      if (!res.ok) throw new Error(await responseError(res, t.connectFailed))
       return ((await res.json()) as { data: ConnectResult }).data
     },
     onSuccess: (result, provider) => {
@@ -136,7 +147,7 @@ export function PaymentsSettingsPage() {
       const res = await fetcher(`${baseUrl}/v1/admin/settings/payments/disconnect`, {
         method: "POST",
       })
-      if (!res.ok) throw new Error(t.connectFailed)
+      if (!res.ok) throw new Error(await responseError(res, t.connectFailed))
     },
     onSuccess: () => {
       toast.success(t.disconnectedToast)

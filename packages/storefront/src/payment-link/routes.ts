@@ -53,6 +53,7 @@ import { storefrontPaymentLinkRuntimePort } from "../runtime-port.js"
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
 const paymentCallbackQuerySchema = z.object({
   connectionId: z.string().min(1).optional(),
+  "connection-id": z.string().min(1).optional(),
 })
 
 /** Absolute path matchers for the deployment's lazy route composition. */
@@ -1022,7 +1023,9 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
       headers,
       rawBody,
       receivedAt: new Date().toISOString(),
-      connectionId: query.connectionId ?? undefined,
+      // `connectionId` is canonical. Accept the unreleased rollout spelling
+      // temporarily so mixed preview builds cannot strand callbacks.
+      connectionId: query.connectionId ?? query["connection-id"] ?? undefined,
     })
     // 200 when applied; 400 when rejected (a processor may retry on non-2xx).
     return c.json(result, result.ok ? 200 : 400)

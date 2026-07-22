@@ -3,6 +3,9 @@
 "@voyant-travel/finance": patch
 "@voyant-travel/finance-contracts": patch
 "@voyant-travel/storefront": patch
+"@voyant-travel/framework": patch
+"@voyant-travel/operator-settings": patch
+"@voyant-travel/operator-settings-react": patch
 ---
 
 Add processor identity to payment adapter contracts and persist managed payment

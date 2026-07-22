@@ -151,7 +151,7 @@ describe("createPaymentLinkRoutes", () => {
     expect(applyEvent).toHaveBeenCalledWith(expect.anything(), event, { eventBus })
   })
 
-  it("does not parse the legacy callback connection-id query spelling", async () => {
+  it("temporarily accepts the legacy callback connection-id query spelling", async () => {
     const eventBus = createEventBus()
     const adapter = makePaymentAdapter(
       vi.fn(async () => ({
@@ -182,7 +182,7 @@ describe("createPaymentLinkRoutes", () => {
 
     expect(adapter.verifyCallback).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ connectionId: undefined }),
+      expect.objectContaining({ connectionId: "legacy_conn" }),
     )
   })
 
