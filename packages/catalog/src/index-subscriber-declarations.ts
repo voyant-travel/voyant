@@ -39,4 +39,9 @@ export const catalogIndexSubscriberDeclarations = [
     eventType: "promotion.changed",
     source: "@voyant-travel/catalog/index-subscribers",
   },
+  {
+    id: "@voyant-travel/catalog#subscriber.index-entity-overlay-changed",
+    eventType: "catalog.entity.overlay.changed",
+    source: "@voyant-travel/catalog/index-subscribers",
+  },
 ] as const

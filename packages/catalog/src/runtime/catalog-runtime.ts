@@ -10,6 +10,7 @@ import {
   type FieldPolicyRegistry,
 } from "@voyant-travel/catalog/contract"
 import type { EmbeddingProvider } from "@voyant-travel/catalog/embeddings/contract"
+import { CATALOG_PRESENTATION_SUBJECT_MODULES } from "@voyant-travel/catalog/presentation-subjects"
 import {
   buildCatalogEmbeddingProvider,
   buildCatalogSlices,
@@ -80,8 +81,16 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
       ["products", createFieldPolicyRegistry([...inventory.productFieldPolicy])],
       ["extras", createFieldPolicyRegistry([...inventory.extrasFieldPolicy])],
       ["cruises", cruises.createRegistry(cruises.fieldPolicy)],
+      [
+        CATALOG_PRESENTATION_SUBJECT_MODULES.CRUISE_SHIPS,
+        createFieldPolicyRegistry([...cruises.shipFieldPolicy]),
+      ],
       ["charters", createFieldPolicyRegistry([...charters.fieldPolicy])],
       ["accommodations", createFieldPolicyRegistry([...accommodations.fieldPolicy])],
+      [
+        CATALOG_PRESENTATION_SUBJECT_MODULES.ACCOMMODATION_PROPERTIES,
+        createFieldPolicyRegistry([...accommodations.propertyFieldPolicy]),
+      ],
     ])
   }
   return _registries
@@ -127,6 +136,37 @@ export function createCruisesDocumentBuilder(
     registry,
     extensions: [cruises.createCabinFacetProjectionExtension()],
   })
+}
+
+export function createCatalogDocumentBuilder(
+  db: AnyDrizzleDb,
+  context: { sellerOperatorId: string },
+): DocumentBuilder {
+  const { accommodations, cruises } = catalogRuntimeExtensions()
+  const products = createProductsDocumentBuilder(db, context)
+  const cruiseEntries = createCruisesDocumentBuilder(db, context)
+  const accommodationEntries = accommodations.createDocumentBuilder({
+    db,
+    sellerOperatorId: context.sellerOperatorId,
+  })
+  const shipSubjects = cruises.createShipDocumentBuilder(db)
+  const propertySubjects = accommodations.createPropertyDocumentBuilder(db)
+  return (entityId, slice) => {
+    switch (slice.vertical) {
+      case "products":
+        return products(entityId, slice)
+      case "cruises":
+        return cruiseEntries(entityId, slice)
+      case "cruise-ships":
+        return shipSubjects(entityId, slice)
+      case "accommodations":
+        return accommodationEntries(entityId, slice)
+      case "accommodation-properties":
+        return propertySubjects(entityId, slice)
+      default:
+        return Promise.resolve(null)
+    }
+  }
 }
 
 export function withEmbedding(

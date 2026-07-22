@@ -1,5 +1,8 @@
 import { type OpenAPIHono, z } from "@hono/zod-openapi"
 import { listResponseSchema } from "@voyant-travel/types"
+import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog"
+import { OverlayVersionConflictError } from "@voyant-travel/catalog/services/overlay"
+import { requireUserId } from "@voyant-travel/hono"
 
 import { parseUnifiedKey } from "./lib/key.js"
 import type { CruiseRoutesEnv as Env } from "./routes-env.js"
@@ -14,6 +17,13 @@ import {
   errorResponseSchema,
 } from "./routes-openapi-schemas.js"
 import { cruisesService } from "./service.js"
+import {
+  clearCruiseShipOverlay,
+  listCruiseShipOverlayHistory,
+  readCruiseShipOverlayState,
+  readPublicCruiseShipProjection,
+  writeCruiseShipOverlay,
+} from "./service-presentation-subjects.js"
 import {
   insertCabinCategorySchema,
   insertCabinSchema,
@@ -43,6 +53,33 @@ const shipDetailDataSchema = z.union([
     ship: z.unknown(),
   }),
 ])
+
+const overlayAudienceSchema = z.enum(["staff", "customer", "partner", "supplier", "default"])
+const localizedLocaleSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((value) => value !== OVERLAY_DEFAULT_SCOPE, {
+    message: "locale must be a real locale, not the default scope sentinel",
+  })
+const overlayScopeQuerySchema = z.object({
+  locale: z.string().trim().min(1).default("en-GB"),
+  audience: overlayAudienceSchema.default("customer"),
+  market: z.string().trim().min(1).default(OVERLAY_DEFAULT_SCOPE),
+})
+const overlayTargetQuerySchema = overlayScopeQuerySchema.extend({
+  fieldPath: z.string().trim().min(1),
+  expectedVersion: z.coerce.number().int().optional(),
+})
+const writeShipOverlayBodySchema = z.object({
+  fieldPath: z.string().trim().min(1),
+  locale: localizedLocaleSchema.default("en-GB"),
+  audience: overlayAudienceSchema.default("customer"),
+  market: z.string().trim().min(1).default(OVERLAY_DEFAULT_SCOPE),
+  value: z.unknown(),
+  expectedVersion: z.number().int().nullable().optional(),
+  editorialNote: z.string().optional(),
+})
 
 // --- ships ----------------------------------------------------------------
 
@@ -79,6 +116,64 @@ const getShipRoute = createRoute({
     400: jsonContent("Key is not a valid local id or external key", errorResponseSchema),
     404: jsonContent("Ship not found", errorResponseSchema),
     501: jsonContent("Referenced adapter is not registered", errorResponseSchema),
+  },
+})
+
+const getShipEffectiveRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/effective",
+  request: { params: keyParamSchema, query: overlayScopeQuerySchema },
+  responses: {
+    200: jsonContent("Public effective ship presentation content", dataEnvelope(z.unknown())),
+    400: jsonContent("Key is not a valid local id", errorResponseSchema),
+    404: jsonContent("Ship not found", errorResponseSchema),
+  },
+})
+
+const getShipEditorialOverlayRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/editorial-overlays",
+  request: { params: keyParamSchema, query: overlayScopeQuerySchema },
+  responses: {
+    200: jsonContent("Ship source, overlays, and effective content", dataEnvelope(z.unknown())),
+    400: jsonContent("Key is not a valid local id", errorResponseSchema),
+    404: jsonContent("Ship not found", errorResponseSchema),
+  },
+})
+
+const writeShipEditorialOverlayRoute = createRoute({
+  method: "put",
+  path: "/ships/{key}/editorial-overlays",
+  request: {
+    params: keyParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: writeShipOverlayBodySchema } },
+    },
+  },
+  responses: {
+    200: jsonContent("Ship editorial overlay written", dataEnvelope(z.unknown())),
+    400: jsonContent("Invalid overlay field or value", errorResponseSchema),
+    409: jsonContent("Overlay version conflict", errorResponseSchema),
+  },
+})
+
+const clearShipEditorialOverlayRoute = createRoute({
+  method: "delete",
+  path: "/ships/{key}/editorial-overlays",
+  request: { params: keyParamSchema, query: overlayTargetQuerySchema },
+  responses: {
+    200: jsonContent("Ship editorial overlay cleared", dataEnvelope(z.unknown())),
+    409: jsonContent("Overlay version conflict", errorResponseSchema),
+  },
+})
+
+const shipEditorialOverlayHistoryRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/editorial-overlays/history",
+  request: { params: keyParamSchema, query: overlayTargetQuerySchema.partial() },
+  responses: {
+    200: jsonContent("Ship editorial overlay history", dataEnvelope(z.array(z.unknown()))),
   },
 })
 
@@ -267,6 +362,102 @@ export function registerCruiseShipRoutes(app: OpenAPIHono<Env>) {
     if (!row) return c.json({ error: "not_found" }, 404)
     return c.json({ data: row }, 200)
   })
+  app.openapi(getShipEffectiveRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid" || parsed.kind === "external") {
+      return c.json(invalidKey(c.req.valid("param").key), 400)
+    }
+    const query = c.req.valid("query")
+    const data = await readPublicCruiseShipProjection(c.get("db"), parsed.id, {
+      locale: query.locale,
+      audience: query.audience,
+      market: query.market,
+    })
+    if (!data) return c.json({ error: "not_found" }, 404)
+    return c.json({ data }, 200)
+  })
+  app.openapi(getShipEditorialOverlayRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid" || parsed.kind === "external") {
+      return c.json(invalidKey(c.req.valid("param").key), 400)
+    }
+    const query = c.req.valid("query")
+    const data = await readCruiseShipOverlayState(c.get("db"), parsed.id, {
+      locale: query.locale,
+      audience: query.audience,
+      market: query.market,
+    })
+    if (!data) return c.json({ error: "not_found" }, 404)
+    return c.json({ data }, 200)
+  })
+  app.openapi(writeShipEditorialOverlayRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid" || parsed.kind === "external") {
+      return c.json(invalidKey(c.req.valid("param").key), 400)
+    }
+    const body = c.req.valid("json")
+    const userId = requireUserId(c)
+    try {
+      const row = await writeCruiseShipOverlay(c.get("db"), parsed.id, {
+        field_path: body.fieldPath,
+        scope: {
+          locale: body.locale,
+          audience: body.audience,
+          market: body.market,
+        },
+        value: body.value,
+        expected_version: body.expectedVersion,
+        editorial_note: body.editorialNote,
+        origin: { kind: "admin-ui", user_id: userId },
+      })
+      return c.json({ data: row }, 200)
+    } catch (err) {
+      if (err instanceof OverlayVersionConflictError) {
+        return c.json({ error: "version_conflict", currentVersion: err.currentVersion }, 409)
+      }
+      return c.json({ error: "invalid_editorial_overlay", detail: errorMessage(err) }, 400)
+    }
+  })
+  app.openapi(clearShipEditorialOverlayRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid" || parsed.kind === "external") {
+      return c.json(invalidKey(c.req.valid("param").key), 400)
+    }
+    const query = c.req.valid("query")
+    try {
+      requireUserId(c)
+      const row = await clearCruiseShipOverlay(c.get("db"), parsed.id, {
+        field_path: query.fieldPath,
+        scope: {
+          locale: query.locale,
+          audience: query.audience,
+          market: query.market,
+        },
+        expected_version: query.expectedVersion,
+      })
+      return c.json({ data: { cleared: row != null, overlay: row } }, 200)
+    } catch (err) {
+      if (err instanceof OverlayVersionConflictError) {
+        return c.json({ error: "version_conflict", currentVersion: err.currentVersion }, 409)
+      }
+      throw err
+    }
+  })
+  app.openapi(shipEditorialOverlayHistoryRoute, async (c) => {
+    const parsed = parseUnifiedKey(c.req.valid("param").key)
+    if (parsed.kind === "invalid" || parsed.kind === "external") {
+      return c.json(invalidKey(c.req.valid("param").key), 400)
+    }
+    const query = c.req.valid("query")
+    requireUserId(c)
+    const rows = await listCruiseShipOverlayHistory(c.get("db"), parsed.id, {
+      field_path: query.fieldPath,
+      locale: query.locale,
+      audience: query.audience,
+      market: query.market,
+    })
+    return c.json({ data: rows }, 200)
+  })
   app.openapi(updateShipRoute, async (c) => {
     const parsed = parseUnifiedKey(c.req.valid("param").key)
     if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)
@@ -366,4 +557,8 @@ export function registerCruiseShipRoutes(app: OpenAPIHono<Env>) {
     if (!row) return c.json({ error: "not_found" }, 404)
     return c.json({ data: row }, 200)
   })
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
 }

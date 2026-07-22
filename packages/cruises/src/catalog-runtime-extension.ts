@@ -8,8 +8,13 @@ import { memoizeCruiseAdapter } from "./adapters/memoize.js"
 import { hasCruiseAdapter, registerCruiseAdapter } from "./adapters/registry.js"
 import { registerCruiseBookingHandler } from "./booking-engine/runtime.js"
 import { cruiseCabinFacetsCatalogPolicy } from "./catalog-policy-cabins.js"
+import { cruiseShipCatalogPolicy } from "./catalog-policy-ships.js"
 import { createCruiseDocumentBuilder, createCruisesRegistry } from "./service-catalog-plane.js"
 import { createCruiseCabinFacetProjectionExtension } from "./service-catalog-plane-cabins.js"
+import {
+  createCruiseShipDocumentBuilder,
+  listCruisesReferencingShip,
+} from "./service-presentation-subjects.js"
 
 export const CRUISE_ADAPTER_READ_CACHE_TTL_MS = 60_000
 
@@ -37,6 +42,9 @@ function asCruiseShim(adapter: unknown): CruiseSourceAdapterShim | undefined {
 
 export const catalogCruisesRuntimeExtension = {
   fieldPolicy: cruiseCabinFacetsCatalogPolicy,
+  shipFieldPolicy: cruiseShipCatalogPolicy,
+  listCruisesReferencingShip,
+  createShipDocumentBuilder: createCruiseShipDocumentBuilder,
   createRegistry: (fieldPolicy) => createCruisesRegistry(fieldPolicy),
   createDocumentBuilder: ({ db, sellerOperatorId, registry, extensions }) =>
     createCruiseDocumentBuilder(db, { sellerOperatorId, registry, extensions }),

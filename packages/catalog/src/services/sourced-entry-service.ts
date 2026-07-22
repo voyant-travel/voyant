@@ -28,6 +28,7 @@
  */
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { newId, type PrefixKey } from "@voyant-travel/db/lib/typeid"
 import { and, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm"
 
 import type { CatalogProjection } from "../adapter/contract.js"
@@ -97,6 +98,76 @@ export async function readSourcedEntry(
       and(
         eq(catalogSourcedEntriesTable.entity_module, entityModule),
         eq(catalogSourcedEntriesTable.entity_id, entityId),
+      ),
+    )
+    .limit(1)
+  return rows[0] ?? null
+}
+
+export interface ResolveSourcedPresentationSubjectInput {
+  entityModule: string
+  idPrefix: PrefixKey
+  sourceKind: string
+  sourceRef: string
+  sourceConnectionId?: string | null
+  sourceProvider?: string | null
+  sourceFreshness?: SourceFreshness
+  projection: Record<string, unknown>
+  projectionEtag?: string
+  lastSourcedAt?: Date
+}
+
+export async function resolveSourcedPresentationSubject(
+  db: AnyDrizzleDb,
+  input: ResolveSourcedPresentationSubjectInput,
+): Promise<SelectCatalogSourcedEntry> {
+  const existing = await readSourcedEntryBySource(db, {
+    entityModule: input.entityModule,
+    sourceKind: input.sourceKind,
+    sourceConnectionId: input.sourceConnectionId ?? null,
+    sourceRef: input.sourceRef,
+  })
+  const entityId = existing?.entity_id ?? newId(input.idPrefix)
+
+  return upsertSourcedEntry(db, {
+    projection: {
+      entity_module: input.entityModule,
+      entity_id: entityId,
+      provenance: {
+        source_kind: input.sourceKind as SourceKind,
+        source_provider: input.sourceProvider ?? undefined,
+        source_connection_id: input.sourceConnectionId ?? undefined,
+        source_ref: input.sourceRef,
+        source_freshness: input.sourceFreshness ?? "sync",
+        last_sourced_at: input.lastSourcedAt,
+      },
+      fields: input.projection,
+    },
+    projectionEtag: input.projectionEtag,
+    lastSourcedAt: input.lastSourcedAt,
+  })
+}
+
+export async function readSourcedEntryBySource(
+  db: AnyDrizzleDb,
+  input: {
+    entityModule: string
+    sourceKind: string
+    sourceConnectionId?: string | null
+    sourceRef: string
+  },
+): Promise<SelectCatalogSourcedEntry | null> {
+  const rows = await db
+    .select()
+    .from(catalogSourcedEntriesTable)
+    .where(
+      and(
+        eq(catalogSourcedEntriesTable.entity_module, input.entityModule),
+        eq(catalogSourcedEntriesTable.source_kind, input.sourceKind as SourceKind),
+        input.sourceConnectionId == null
+          ? isNull(catalogSourcedEntriesTable.source_connection_id)
+          : eq(catalogSourcedEntriesTable.source_connection_id, input.sourceConnectionId),
+        eq(catalogSourcedEntriesTable.source_ref, input.sourceRef),
       ),
     )
     .limit(1)

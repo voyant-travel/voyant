@@ -24,6 +24,7 @@ import type {
   SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
+import type { EntityOverlayChangedPayload } from "../events/taxonomy.js"
 
 /**
  * Options for constructing an IndexerService.
@@ -227,4 +228,56 @@ function shouldIndexInDocument(policy: FieldPolicy, audience: IndexerSlice["audi
 
   // Storefront slices: only fields visible to that specific audience.
   return policy.visibility.includes(audience as never)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referenced subject fan-out
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CatalogReverseReference {
+  entityModule: string
+  entityId: string
+}
+
+export interface CatalogReverseReferenceReader {
+  subjectModule: string
+  listReferencingEntries(
+    subjectId: string,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ): Promise<readonly CatalogReverseReference[]>
+}
+
+export interface ReferencedSubjectReindexFanoutOptions {
+  readers: readonly CatalogReverseReferenceReader[]
+  reindexSubject?: (
+    subject: CatalogReverseReference,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ) => Promise<void>
+  reindexReferencingEntry: (
+    reference: CatalogReverseReference,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ) => Promise<void>
+}
+
+export function createReferencedSubjectReindexFanout(
+  options: ReferencedSubjectReindexFanoutOptions,
+): (event: EntityOverlayChangedPayload) => Promise<readonly CatalogReverseReference[]> {
+  const readersBySubject = new Map(options.readers.map((reader) => [reader.subjectModule, reader]))
+
+  return async (event) => {
+    const scope = { locale: event.locale, audience: event.audience, market: event.market }
+    await options.reindexSubject?.(
+      { entityModule: event.entity_module, entityId: event.entity_id },
+      scope,
+    )
+
+    const reader = readersBySubject.get(event.entity_module)
+    if (!reader) return []
+
+    const references = await reader.listReferencingEntries(event.entity_id, scope)
+    for (const reference of references) {
+      await options.reindexReferencingEntry(reference, scope)
+    }
+    return references
+  }
 }

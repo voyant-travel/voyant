@@ -1,4 +1,5 @@
 import { OpenAPIHono, z } from "@hono/zod-openapi"
+import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -9,6 +10,7 @@ import { resolveCruiseAdapter } from "./adapters/registry.js"
 import { encodeSourceRef, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import { createCruisesPublicRoute as createRoute } from "./routes-openapi.js"
 import { cruisesService } from "./service.js"
+import { readPublicCruiseShipProjection } from "./service-presentation-subjects.js"
 import { composeQuote, pricingService } from "./service-pricing.js"
 import { cruisesSearchService } from "./service-search.js"
 import { searchIndexQuerySchema } from "./validation-search.js"
@@ -63,6 +65,11 @@ const quotePayloadSchema = z.object({
 // ---------- response schemas ----------
 
 const errorResponseSchema = z.object({ error: z.string() }).catchall(z.unknown())
+const effectiveScopeQuerySchema = z.object({
+  locale: z.string().trim().min(1).default("en-GB"),
+  audience: z.enum(["customer", "partner"]).default("customer"),
+  market: z.string().trim().min(1).default(OVERLAY_DEFAULT_SCOPE),
+})
 
 /**
  * Wire shape of a `cruise_search_index` row (voyant#2114). The list/slug
@@ -352,6 +359,26 @@ const shipByKeyRoute = createRoute({
   },
 })
 
+const shipEffectiveByKeyRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/effective",
+  request: { params: z.object({ key: z.string() }), query: effectiveScopeQuerySchema },
+  responses: {
+    200: {
+      description: "Effective ship presentation content with no source/origin data",
+      content: { "application/json": { schema: shipDetailResponseSchema } },
+    },
+    400: {
+      description: "Key is not a valid local ship subject id",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Ship subject not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 /**
  * Public/storefront routes. Reads exclusively from `cruise_search_index` for
  * list and slug lookups; detail endpoints (sailing, ship, quote) resolve
@@ -470,6 +497,19 @@ export const cruisePublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
       bookingTerms: payload.bookingTerms ?? matching.bookingTerms ?? null,
     })
     return c.json({ data: quote }, 200)
+  })
+  .openapi(shipEffectiveByKeyRoute, async (c) => {
+    const key = c.req.valid("param").key
+    if (!isTypeId(key)) return c.json({ error: "invalid_key" }, 400)
+    const query = c.req.valid("query")
+    const data = await readPublicCruiseShipProjection(c.get("db"), key, {
+      locale: query.locale,
+      audience: query.audience,
+      market: query.market,
+    })
+    if (!data) return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
+    return c.json({ data }, 200)
   })
   .openapi(shipByKeyRoute, async (c) => {
     const key = c.req.valid("param").key

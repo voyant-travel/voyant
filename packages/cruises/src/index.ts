@@ -97,6 +97,10 @@ export {
   cruiseDeckCatalogPolicy,
 } from "./catalog-policy-cabins.js"
 export {
+  CRUISE_SHIP_FIELD_POLICY,
+  cruiseShipCatalogPolicy,
+} from "./catalog-policy-ships.js"
+export {
   CRUISE_CREATED_EVENT,
   CRUISE_DELETED_EVENT,
   CRUISE_UPDATED_EVENT,
@@ -133,6 +137,23 @@ export {
   type ExternalCruiseCatalogRefreshResult,
   refreshExternalCruiseCatalog,
 } from "./service-external-refresh.js"
+export {
+  assertOverlayableShipField,
+  clearCruiseShipOverlay,
+  createCruiseShipDocumentBuilder,
+  CRUISE_SHIP_SUBJECT_MODULE,
+  listCruiseShipOverlayHistory,
+  listCruisesReferencingShip,
+  readCruiseShipOverlayState,
+  readPublicCruiseShipProjection,
+  resolveSourcedCruiseShipReference,
+  writeCruiseShipOverlay,
+  type ClearCruiseShipOverlayInput,
+  type CruiseShipOverlayScope,
+  type CruiseShipOverlayTarget,
+  type CruiseShipSourceReferenceInput,
+  type WriteCruiseShipOverlayInput,
+} from "./service-presentation-subjects.js"
 export {
   type ComposeQuoteInput,
   composeQuote,

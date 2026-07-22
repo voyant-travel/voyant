@@ -177,6 +177,18 @@ export {
   type SourceReconnectedPayload,
 } from "./events/taxonomy.js"
 export {
+  assertCatalogPresentationSubjectModule,
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
+  catalogPresentationSubjectDefinitions,
+  createPresentationSubjectRegistry,
+  getCatalogPresentationSubjectDefinition,
+  isCatalogPresentationSubjectModule,
+  type CatalogPresentationSubjectDefinition,
+  type CatalogPresentationSubjectKind,
+  type CatalogPresentationSubjectModule,
+  type RegisteredPresentationSubject,
+} from "./presentation-subjects.js"
+export {
   attachEmitter,
   buildCollectionSchema,
   buildDefaultTypesenseQueryBy,
@@ -313,10 +325,14 @@ export {
 } from "./services/content-service.js"
 export {
   buildIndexerDocument,
+  createReferencedSubjectReindexFanout,
   createIndexerService,
+  type CatalogReverseReference,
+  type CatalogReverseReferenceReader,
   type DocumentBuilder,
   type IndexerService,
   type IndexerServiceOptions,
+  type ReferencedSubjectReindexFanoutOptions,
 } from "./services/indexer-service.js"
 // Runtime services — drizzle-bound entry points for verticals.
 export {
@@ -348,7 +364,10 @@ export {
   markSourcedEntryWithdrawn,
   type OwnedChecker,
   type ProvenanceReadResult,
+  readSourcedEntryBySource,
   readSourcedEntry,
+  resolveSourcedPresentationSubject,
+  type ResolveSourcedPresentationSubjectInput,
   type UpsertSourcedEntryInput,
   upsertSourcedEntry,
 } from "./services/sourced-entry-service.js"

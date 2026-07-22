@@ -13,6 +13,7 @@
     "./adapters": "./src/adapters/index.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
     "./catalog-policy-cabins": "./src/catalog-policy-cabins.ts",
+    "./catalog-policy-ships": "./src/catalog-policy-ships.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./service-catalog-plane-cabins": "./src/service-catalog-plane-cabins.ts",
     "./content-shape": "./src/content-shape.ts",
@@ -20,6 +21,7 @@
     "./service-external-refresh": "./src/service-external-refresh.ts",
     "./external-refresh-job": "./src/external-refresh-job.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./service-presentation-subjects": "./src/service-presentation-subjects.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./draft-shape": "./src/draft-shape.ts",
@@ -120,6 +122,11 @@
         "import": "./dist/catalog-policy-cabins.js",
         "default": "./dist/catalog-policy-cabins.js"
       },
+      "./catalog-policy-ships": {
+        "types": "./dist/catalog-policy-ships.d.ts",
+        "import": "./dist/catalog-policy-ships.js",
+        "default": "./dist/catalog-policy-ships.js"
+      },
       "./service-catalog-plane": {
         "types": "./dist/service-catalog-plane.d.ts",
         "import": "./dist/service-catalog-plane.js",
@@ -154,6 +161,11 @@
         "types": "./dist/service-content-synthesizer.d.ts",
         "import": "./dist/service-content-synthesizer.js",
         "default": "./dist/service-content-synthesizer.js"
+      },
+      "./service-presentation-subjects": {
+        "types": "./dist/service-presentation-subjects.d.ts",
+        "import": "./dist/service-presentation-subjects.js",
+        "default": "./dist/service-presentation-subjects.js"
       },
       "./routes-content": {
         "types": "./dist/routes-content.d.ts",

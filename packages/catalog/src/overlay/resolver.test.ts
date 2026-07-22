@@ -199,4 +199,82 @@ describe("resolveOverlay", () => {
     expect(phantomView.values.has("phantom")).toBe(false)
     expect(view.values.get("title")).toBe("Marketing title")
   })
+
+  it("can resolve an overlay-only localized field absent from the source projection", () => {
+    const overlays: ResolverOverlay[] = [
+      {
+        field_path: "title",
+        locale: "ro-RO",
+        audience: "customer",
+        market: OVERLAY_DEFAULT_SCOPE,
+        value: "Titlu romanesc",
+      },
+    ]
+
+    const view = resolveOverlay(registry, new Map(), overlays, {
+      locale: "ro-RO",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      actor: "customer",
+    })
+
+    expect(view.values.get("title")).toBe("Titlu romanesc")
+    expect(view.provenance.get("title")).toEqual({
+      locale: "ro-RO",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+    })
+  })
+
+  it("does not use default-locale overlays as requested-locale translations", () => {
+    const overlays: ResolverOverlay[] = [
+      {
+        field_path: "title",
+        locale: OVERLAY_DEFAULT_SCOPE,
+        audience: "customer",
+        market: OVERLAY_DEFAULT_SCOPE,
+        value: "Default copy",
+      },
+      {
+        field_path: "description",
+        locale: OVERLAY_DEFAULT_SCOPE,
+        audience: "customer",
+        market: OVERLAY_DEFAULT_SCOPE,
+        value: "Locale neutral",
+      },
+    ]
+
+    const view = resolveOverlay(registry, new Map([["title", "Source title"]]), overlays, {
+      locale: "ro-RO",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      actor: "customer",
+    })
+
+    expect(view.values.get("title")).toBe("Source title")
+    expect(view.values.get("description")).toBe("Locale neutral")
+  })
+
+  it("keeps non-root content-node overlays out of the flat projection resolver", () => {
+    const overlays: ResolverOverlay[] = [
+      {
+        field_path: "description",
+        node_kind: "itinerary-day",
+        node_key: "day-1",
+        locale: "en-GB",
+        audience: "customer",
+        market: OVERLAY_DEFAULT_SCOPE,
+        value: "Day copy",
+      },
+    ]
+
+    const view = resolveOverlay(registry, new Map([["description", "Root copy"]]), overlays, {
+      locale: "en-GB",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      actor: "customer",
+    })
+
+    expect(view.values.get("description")).toBe("Root copy")
+  })
 })

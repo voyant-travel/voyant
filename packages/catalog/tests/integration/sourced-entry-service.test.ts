@@ -22,6 +22,8 @@ import {
   createReadProvenance,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
+  readSourcedEntryBySource,
+  resolveSourcedPresentationSubject,
   readSourcedEntry,
   upsertSourcedEntry,
 } from "../../src/services/sourced-entry-service.js"
@@ -141,6 +143,33 @@ describe.skipIf(!DB_AVAILABLE)("SourcedEntryService integration", () => {
   it("readSourcedEntry returns null for entities that aren't in the store", async () => {
     const row = await readSourcedEntry(db, testEntityModule, "missing_entity_xyz")
     expect(row).toBeNull()
+  })
+
+  it("resolves sourced presentation subjects to durable local identity by provenance", async () => {
+    const source = {
+      entityModule: "cruise-ships",
+      idPrefix: "cruise_ships" as const,
+      sourceKind: "direct:cruise-line",
+      sourceProvider: "demo-line",
+      sourceConnectionId: `conn_${testIdPrefix}`,
+      sourceRef: `ship-${testIdPrefix}`,
+    }
+
+    const first = await resolveSourcedPresentationSubject(db, {
+      ...source,
+      projection: { name: "River Star", locale: "en-GB" },
+    })
+    createdEntityIds.push(first.entity_id)
+    const second = await resolveSourcedPresentationSubject(db, {
+      ...source,
+      projection: { name: "River Star Updated", locale: "en-GB" },
+    })
+
+    expect(second.entity_id).toBe(first.entity_id)
+    expect(second.projection).toMatchObject({ name: "River Star Updated" })
+
+    const bySource = await readSourcedEntryBySource(db, source)
+    expect(bySource?.entity_id).toBe(first.entity_id)
   })
 
   it("markSourcedEntryWithdrawn flips status without deleting the row", async () => {

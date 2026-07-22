@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import type { EntityOverlayChangedPayload } from "./events/taxonomy.js"
+
 export {
   type CatalogProjectionRuntimeProvider,
   catalogProjectionRuntimePort,
@@ -13,6 +15,9 @@ export const catalogProjectionTargetSchema = z
   .object({
     entityModule: z.string().trim().min(1),
     entityId: z.string().trim().min(1),
+    locale: z.string().trim().min(1).optional(),
+    audience: z.string().trim().min(1).optional(),
+    market: z.string().trim().min(1).optional(),
   })
   .strict()
 
@@ -31,6 +36,7 @@ export function parseCatalogProjectionTarget(input: unknown): CatalogProjectionT
  */
 export interface CatalogProjectionRuntime {
   reindexEntity(target: CatalogProjectionTarget): Promise<void>
+  reindexReferencedSubject?(event: EntityOverlayChangedPayload): Promise<void>
   deleteEntity(target: CatalogProjectionTarget): Promise<void>
 }
 

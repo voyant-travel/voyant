@@ -358,10 +358,18 @@ export function createCatalogProjectionRuntimeAdapter<TBindings, TDb>(options: {
     })
   }
   return {
-    reindexEntity: ({ entityModule, entityId }) =>
+    reindexEntity: ({ entityModule, entityId, locale, audience, market }) =>
       withIndexer(async ({ adapter, slices, registries, builder }) => {
         const service = createIndexerService({ adapter, slices, registries })
         await ensureCollections(() => service.ensureCollections())
+        if (locale || audience || market) {
+          for (const slice of service
+            .slicesForVertical(entityModule)
+            .filter((slice) => sliceMatchesTarget(slice, { locale, audience, market }))) {
+            await service.reindexEntityForSlice(slice, entityId, builder)
+          }
+          return
+        }
         await service.reindexEntity(entityModule, entityId, builder)
       }),
     deleteEntity: ({ entityModule, entityId }) =>
@@ -372,6 +380,21 @@ export function createCatalogProjectionRuntimeAdapter<TBindings, TDb>(options: {
         )
       }),
   }
+}
+
+function sliceMatchesTarget(
+  slice: IndexerSlice,
+  target: { locale?: string; audience?: string; market?: string },
+): boolean {
+  return (
+    matchesAxis(slice.locale, target.locale) &&
+    matchesAxis(slice.audience, target.audience) &&
+    matchesAxis(slice.market, target.market)
+  )
+}
+
+function matchesAxis(sliceValue: string, targetValue: string | undefined): boolean {
+  return !targetValue || targetValue === "default" || sliceValue === targetValue
 }
 
 export function createCatalogBookingSnapshotRuntimeAdapter<TBindings, TDb>(options: {

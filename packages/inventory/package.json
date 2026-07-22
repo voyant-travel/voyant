@@ -28,6 +28,7 @@
     "./service-catalog-plane-destinations": "./src/service-catalog-plane-destinations.ts",
     "./service-catalog-plane-taxonomy": "./src/service-catalog-plane-taxonomy.ts",
     "./service-public": "./src/service-public.ts",
+    "./service-presentation-references": "./src/service-presentation-references.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -225,6 +226,11 @@
         "types": "./dist/service-public.d.ts",
         "import": "./dist/service-public.js",
         "default": "./dist/service-public.js"
+      },
+      "./service-presentation-references": {
+        "types": "./dist/service-presentation-references.d.ts",
+        "import": "./dist/service-presentation-references.js",
+        "default": "./dist/service-presentation-references.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",

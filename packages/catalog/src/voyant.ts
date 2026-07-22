@@ -48,6 +48,7 @@ const catalogIndexSubscriberRuntimeExports = {
   "pricing.rule.changed": "createCatalogPricingChangedIndexSubscriberGraphRuntime",
   "product.publication.changed": "createCatalogPublicationChangedIndexSubscriberGraphRuntime",
   "promotion.changed": "createCatalogPromotionChangedIndexSubscriberGraphRuntime",
+  "catalog.entity.overlay.changed": "createCatalogEntityOverlayChangedIndexSubscriberGraphRuntime",
 } as const
 
 /** Import-cheap deployment declaration owned by the catalog package. */

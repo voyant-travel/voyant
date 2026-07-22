@@ -15,6 +15,17 @@ const PRODUCTS_ENTITY_MODULE = "products"
 
 const entityIdPayloadSchema = z.object({ id: z.string().min(1) }).passthrough()
 const productIdPayloadSchema = z.object({ productId: z.string().optional() }).passthrough()
+const overlayChangedPayloadSchema = z
+  .object({
+    entity_module: z.string().min(1),
+    entity_id: z.string().min(1),
+    field_path: z.string().min(1),
+    locale: z.string().min(1),
+    audience: z.string().min(1),
+    market: z.string().min(1),
+    occurred_at: z.string().min(1),
+  })
+  .passthrough()
 const promotionPayloadSchema = z
   .object({
     affected: z.discriminatedUnion("kind", [
@@ -111,6 +122,19 @@ function selectPromotionProducts(payload: unknown): readonly CatalogProjectionTa
   return affected.kind === "products" ? affected.productIds.map(productTarget) : []
 }
 
+function selectOverlayChangedEntity(payload: unknown): readonly CatalogProjectionTarget[] {
+  const event = overlayChangedPayloadSchema.parse(payload)
+  return [
+    parseCatalogProjectionTarget({
+      entityModule: event.entity_module,
+      entityId: event.entity_id,
+      locale: event.locale,
+      audience: event.audience,
+      market: event.market,
+    }),
+  ]
+}
+
 const declarationsByEvent = new Map(
   catalogIndexSubscriberDeclarations.map((declaration) => [declaration.eventType, declaration]),
 )
@@ -165,6 +189,26 @@ export const catalogPromotionChangedIndexSubscriber = reindexDescriptor(
   "promotion.changed",
   selectPromotionProducts,
 )
+export const catalogEntityOverlayChangedIndexSubscriber = {
+  ...declaration("catalog.entity.overlay.changed"),
+  register(context) {
+    context.eventBus.subscribe(
+      "catalog.entity.overlay.changed",
+      async ({ data }) => {
+        const event = overlayChangedPayloadSchema.parse(data)
+        const runtime = resolveRuntime(context)
+        if (runtime.reindexReferencedSubject) {
+          await runtime.reindexReferencedSubject(event)
+          return
+        }
+        for (const target of selectOverlayChangedEntity(event)) {
+          await runtime.reindexEntity(target)
+        }
+      },
+      { inline: false },
+    )
+  },
+} satisfies CatalogIndexSubscriberRuntimeDescriptor
 
 export const catalogIndexSubscriberRuntimeDescriptors = [
   catalogProductCreatedIndexSubscriber,
@@ -175,6 +219,7 @@ export const catalogIndexSubscriberRuntimeDescriptors = [
   catalogPricingChangedIndexSubscriber,
   catalogPublicationChangedIndexSubscriber,
   catalogPromotionChangedIndexSubscriber,
+  catalogEntityOverlayChangedIndexSubscriber,
 ] as const
 
 function createCatalogIndexSubscriberGraphRuntime(descriptor: SubscriberRuntimeDescriptor) {
@@ -209,3 +254,5 @@ export const createCatalogPublicationChangedIndexSubscriberGraphRuntime =
   createCatalogIndexSubscriberGraphRuntime(catalogPublicationChangedIndexSubscriber)
 export const createCatalogPromotionChangedIndexSubscriberGraphRuntime =
   createCatalogIndexSubscriberGraphRuntime(catalogPromotionChangedIndexSubscriber)
+export const createCatalogEntityOverlayChangedIndexSubscriberGraphRuntime =
+  createCatalogIndexSubscriberGraphRuntime(catalogEntityOverlayChangedIndexSubscriber)
