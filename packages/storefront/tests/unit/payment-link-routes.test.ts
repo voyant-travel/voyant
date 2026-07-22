@@ -508,7 +508,13 @@ describe("createPaymentLinkRoutes", () => {
           redirectUrl: "https://pay.example.com/fresh",
         }) as const,
     )
-    const app = mountApp(stubOptions({ startCardPayment }), db)
+    const app = mountApp(
+      stubOptions({
+        resolvePublicCheckoutBaseUrl: () => "https://checkout.example.com/pay",
+        startCardPayment,
+      }),
+      db,
+    )
 
     const res = await app.request("/v1/public/payment-link/ps_1/start-card", {
       method: "POST",

@@ -15,6 +15,15 @@ describe("buildPaymentLinkUrl", () => {
     )
   })
 
+  it("does not duplicate an exact trailing pay path", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay/" })).toBe(
+      "https://example.com/pay/pmss_123",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/repay" })).toBe(
+      "https://example.com/repay/pay/pmss_123",
+    )
+  })
+
   it("falls back to a root-relative URL outside the browser", () => {
     expect(buildPaymentLinkUrl("pmss 123")).toBe("/pay/pmss%20123")
   })

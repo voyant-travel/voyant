@@ -18,8 +18,9 @@ export function buildPaymentLinkUrl(
   const template = normalizePaymentLinkBaseUrl(options.invoicePayUrlTemplate)
   if (template) return template.replaceAll("{sessionId}", encodeURIComponent(paymentSessionId))
 
-  const path = `/pay/${encodeURIComponent(paymentSessionId)}`
   const baseUrl = normalizePaymentLinkBaseUrl(options.baseUrl ?? getBrowserOrigin())
+  const sessionPath = `/${encodeURIComponent(paymentSessionId)}`
+  const path = baseUrl?.endsWith("/pay") ? sessionPath : `/pay${sessionPath}`
 
   return baseUrl ? `${baseUrl}${path}` : path
 }
