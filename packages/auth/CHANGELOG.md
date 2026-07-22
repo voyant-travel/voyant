@@ -1,5 +1,11 @@
 # @voyant-travel/auth
 
+## 0.142.1
+
+### Patch Changes
+
+- 84dd9cb: Resolve managed staff sessions with the active Voyant Cloud link's platform organization so organization-scoped admin routes authorize correctly.
+
 ## 0.142.0
 
 ## 0.141.5
