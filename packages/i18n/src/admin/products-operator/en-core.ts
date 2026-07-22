@@ -203,6 +203,7 @@ export const operatorAdminProductsMessagesEnCore = {
     widthWarning: "This image is {width}px wide; at least 1200px is recommended.",
     fileSizeWarning: "This image is {size}; consider optimizing it for faster sharing previews.",
     searchPreview: "Search preview",
+    previewUrl: "example.com/products/{productId}",
     socialPreview: "Social preview",
     noImage: "The storefront default image will be used when available.",
   },

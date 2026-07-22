@@ -207,6 +207,7 @@ export const operatorAdminProductsMessagesRoCore = {
     fileSizeWarning:
       "Imaginea are {size}; optimizeaz-o pentru previzualizari de distribuire mai rapide.",
     searchPreview: "Previzualizare cautare",
+    previewUrl: "example.com/products/{productId}",
     socialPreview: "Previzualizare sociala",
     noImage: "Se va folosi imaginea implicita a storefront-ului, daca este disponibila.",
   },

@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -164,7 +165,7 @@ export function ProductSeoSharingSection({
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <div className="space-y-1.5">
               <Label>{t.locale}</Label>
-              <Select value={languageTag} onValueChange={setLanguageTag}>
+              <Select value={languageTag} onValueChange={(value) => setLanguageTag(value ?? "")}>
                 <SelectTrigger>
                   <SelectValue placeholder={t.selectLocale} />
                 </SelectTrigger>
@@ -262,7 +263,10 @@ export function ProductSeoSharingSection({
             <Label>{t.openGraphImage}</Label>
             <p className="mt-1 text-xs text-muted-foreground">{t.imageGuidance}</p>
           </div>
-          <Select value={selectedMediaId} onValueChange={setSelectedMediaId}>
+          <Select
+            value={selectedMediaId}
+            onValueChange={(value) => setSelectedMediaId(value ?? FALLBACK_MEDIA_VALUE)}
+          >
             <SelectTrigger>
               <SelectValue placeholder={t.selectImage} />
             </SelectTrigger>
@@ -316,7 +320,9 @@ export function ProductSeoSharingSection({
         <div className="grid gap-4 border-t pt-5 xl:grid-cols-2">
           <Preview title={t.searchPreview}>
             <p className="truncate text-blue-700 text-lg">{effectiveTitle}</p>
-            <p className="text-green-700 text-xs">example.com/products/{product.id}</p>
+            <p className="text-green-700 text-xs">
+              {formatMessage(t.previewUrl, { productId: product.id })}
+            </p>
             <p className="line-clamp-2 text-sm text-muted-foreground">{effectiveDescription}</p>
           </Preview>
           <Preview title={t.socialPreview}>
