@@ -208,19 +208,19 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
     "A package metadata record is incompatible with the selected target or deployment mode.",
   VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED:
     "A package source kind is not admitted by the configured graph admission policy.",
+  VOYANT_GRAPH_REQUIRED_JOB_DISABLED:
+    "A deployment configuration attempted to disable a required package-owned job.",
   VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED:
     "A graph runtime reference points to a package that did not pass admission.",
   VOYANT_GRAPH_UNKNOWN_FACET: "A graph unit manifest contains an unknown top-level facet.",
   VOYANT_GRAPH_UNKNOWN_JOB:
     "A deployment scheduling preference references a job not selected by the graph.",
-  VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE:
-    "A deployment scheduling preference is not declared by the package-owned job policy.",
-  VOYANT_GRAPH_REQUIRED_JOB_DISABLED:
-    "A deployment configuration attempted to disable a required package-owned job.",
   VOYANT_GRAPH_UNKNOWN_REFERENCE:
     "A package facet references an entity that is not present in the selected graph.",
   VOYANT_GRAPH_UNSUPPORTED_FACET:
     "A graph unit manifest uses a reserved facet that this toolchain does not support yet.",
+  VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE:
+    "A deployment scheduling preference is not declared by the package-owned job policy.",
 } as const
 
 export type VoyantGraphDiagnosticCode = keyof typeof VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY
