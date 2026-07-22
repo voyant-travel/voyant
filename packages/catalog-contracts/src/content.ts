@@ -209,14 +209,22 @@ function parseArrayIndex(segment: string, pointer: string): number {
   return Number.parseInt(segment, 10)
 }
 
+export const CONTENT_ROOT_NODE_KIND = "root"
+export const CONTENT_ROOT_NODE_KEY = "root"
+
 export interface ContentOverlay {
   field_path: string
   value: unknown
+  node_kind?: string
+  node_key?: string
+  id?: string
+  version?: number
 }
 
 export interface MergeOverlaysOptions {
   validate?: (payload: unknown) => { valid: boolean; reason?: string }
   onOverlayError?: (event: { overlay: ContentOverlay; reason: string }) => void
+  resolveNodePointer?: (payload: unknown, overlay: ContentOverlay) => string | null
 }
 
 export function mergeOverlaysIntoContent(
@@ -228,7 +236,17 @@ export function mergeOverlaysIntoContent(
   for (const overlay of overlays) {
     const before = deepClone(merged)
     try {
-      merged = applyJsonPointerOverlay(merged, overlay.field_path, overlay.value)
+      const pointer = resolveOverlayPointer(merged, overlay, options)
+      if (!pointer) {
+        options.onOverlayError?.({
+          overlay,
+          reason: `node ${overlay.node_kind ?? CONTENT_ROOT_NODE_KIND}/${
+            overlay.node_key ?? CONTENT_ROOT_NODE_KEY
+          } is not present in the content payload`,
+        })
+        continue
+      }
+      merged = applyJsonPointerOverlay(merged, pointer, overlay.value)
     } catch (err) {
       options.onOverlayError?.({
         overlay,
@@ -249,6 +267,19 @@ export function mergeOverlaysIntoContent(
     }
   }
   return merged
+}
+
+function resolveOverlayPointer(
+  payload: unknown,
+  overlay: ContentOverlay,
+  options: MergeOverlaysOptions,
+): string | null {
+  const nodeKind = overlay.node_kind ?? CONTENT_ROOT_NODE_KIND
+  const nodeKey = overlay.node_key ?? CONTENT_ROOT_NODE_KEY
+  if (nodeKind === CONTENT_ROOT_NODE_KIND && nodeKey === CONTENT_ROOT_NODE_KEY) {
+    return options.resolveNodePointer?.(payload, overlay) ?? overlay.field_path
+  }
+  return options.resolveNodePointer?.(payload, overlay) ?? null
 }
 
 function deepClone<T>(value: T): T {

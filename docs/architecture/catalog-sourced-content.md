@@ -571,27 +571,30 @@ catalog plane what was actually served.
 
 ### 3.5.4. Editorial overlays compose on top — content-shape-aware merger
 
-The existing `catalog_overlay` table keys on `(entity, field_path, locale, audience, market)`. **Overlays already work per-locale.** For sourced rows, an operator can curate a `ro-RO` overlay on top of what the adapter served (or didn't serve) — same machinery. Overlay merge happens at read time after locale resolution: pick the best content row, then layer locale-matching overlays on top.
+The existing `catalog_overlay` table now keys logically on `(entity, node_kind, node_key, field_path, locale, audience, market)`. **Overlays already work per-locale.** Existing flat rows are `root/root`. For sourced rows, an operator can curate a `ro-RO` overlay on top of what the adapter served (or didn't serve) — same machinery. Overlay merge happens at read time after locale resolution: pick the best content row, then layer locale-matching overlays on top.
 
 But the existing `resolveOverlay` (`packages/catalog/src/overlay/resolver.ts`) is field-policy-bound — it walks only the fields declared in the field-policy registry, which are flat indexed fields like `title` and `cancellation_policy_rules`. Content blobs are nested (`days[3].description`, `media[0].caption`, `cabinCategories[]`) and not addressable by the current resolver. We need a richer merge engine for content.
 
 Two changes:
 
-1. **`field_path` becomes a JSON-pointer** for content overlays: `/days/3/description`, `/media/0/caption`, `/options/cabin_balcony/inclusions/2`. This is a superset of the current `title` / `cancellation_policy_rules` style — flat names work as `/title`, `/cancellation_policy_rules`. Owned content keeps its existing flat-path overlays unchanged; sourced content rows can carry deeper paths.
-2. **A per-vertical content-shape-aware merger.** Each vertical that adopts content cache exports a `mergeOverlaysIntoContent(payload, overlays)` function. It walks `overlays` and applies each one to the content payload via the JSON-pointer path. Verticals own this because the content shape is theirs; the catalog plane stays neutral.
+1. **`field_path` becomes a JSON-pointer or node-local field path** for content overlays. Root content uses pointers such as `/product/name` or `/media`; nested content uses stable `node_kind` / `node_key` plus a field inside that node, such as `node_kind=itinerary-day`, `node_key=day_abc`, `field_path=description`. Positional paths like `/days/3/description` are not valid durable targets because provider reordering can retarget them.
+2. **A per-vertical content-shape-aware merger.** Each vertical that adopts content cache exports a `mergeOverlaysIntoContent(payload, overlays)` function. It walks `overlays`, resolves stable node keys to the current payload location, and applies each overlay. Verticals own this because the content shape is theirs; the catalog plane stays neutral.
 
 Read-time merge order, after locale resolution picks the best content row:
 
 ```
 content = cached.payload
-for overlay in overlaysFor(entity, locale, audience, market) where field_path startsWith content-content:
-  applyJsonPointerOverlay(content, overlay.field_path, overlay.value)
+for overlay in overlaysFor(entity, locale, audience, market):
+  pointer = vertical.resolveOverlayPointer(content, overlay)
+  applyJsonPointerOverlay(content, pointer, overlay.value)
 return content
 ```
 
 Overlay edits do NOT invalidate the content cache (read-time merge keeps them orthogonal — covered earlier). The overlay store's existing per-(entity, locale) caching applies to sourced reads symmetrically.
 
-This means an operator can ship Romanian content for a TUI product *before* TUI publishes a ro-RO version — an overlay row at `/description` with `locale = "ro-RO"` covers it. When TUI later ships ro-RO natively, the operator can decide to keep their override (overlay wins) or remove it (fall back to the upstream).
+This means an operator can ship Romanian content for a TUI product *before* TUI publishes a ro-RO version — an overlay row at `/product/description` with `locale = "ro-RO"` covers it. When TUI later ships ro-RO natively, the operator can decide to keep their override (overlay wins) or remove it (fall back to the upstream).
+
+Overlay writes carry an expected version when a human editor is replacing or clearing a row. The write path appends history with before/after values and refuses stale versions with a conflict, so comparison/revert UI does not silently overwrite another editor's work.
 
 #### Validation guard
 

@@ -222,12 +222,17 @@ export {
 } from "./overlay/resolver.js"
 // Overlay store — editorial overrides keyed by (entity, field, locale, audience, market).
 export {
+  catalogOverlayHistoryTable,
   catalogOverlayTable,
   type InsertCatalogOverlay,
+  type InsertCatalogOverlayHistory,
   OVERLAY_DEFAULT_SCOPE,
+  OVERLAY_ROOT_NODE_KEY,
+  OVERLAY_ROOT_NODE_KIND,
   type OverlayOrigin,
   overlayIdRef,
   type SelectCatalogOverlay,
+  type SelectCatalogOverlayHistory,
 } from "./overlay/schema.js"
 // Provenance — every CatalogEntry carries this tuple.
 export * from "./provenance.js"
@@ -289,6 +294,8 @@ export {
   applyJsonPointerOverlay,
   type BuiltDriftPredicate,
   buildDriftInvalidationPredicate,
+  CONTENT_ROOT_NODE_KEY,
+  CONTENT_ROOT_NODE_KIND,
   type ContentLocaleMatchKind,
   type ContentLocaleResolution,
   type ContentOverlay,

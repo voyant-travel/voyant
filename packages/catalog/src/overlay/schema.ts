@@ -11,7 +11,7 @@
 
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import type { Visibility } from "../contract.js"
 
@@ -31,6 +31,8 @@ export type OverlayOrigin =
  * "no specific scope" — the broadest fallback in the resolver chain.
  */
 export const OVERLAY_DEFAULT_SCOPE = "default"
+export const OVERLAY_ROOT_NODE_KIND = "root"
+export const OVERLAY_ROOT_NODE_KEY = "root"
 
 /**
  * `catalog_overlay` — single table holding editorial overrides for every
@@ -45,6 +47,11 @@ export const catalogOverlayTable = pgTable(
     // Entity identity (which vertical, which entity).
     entity_module: text("entity_module").notNull(),
     entity_id: text("entity_id").notNull(),
+
+    // Stable content-node identity. Existing flat overlays are root/root.
+    // Nested overlays must target a stable node key, never an array position.
+    node_kind: text("node_kind").notNull().default(OVERLAY_ROOT_NODE_KIND),
+    node_key: text("node_key").notNull().default(OVERLAY_ROOT_NODE_KEY),
 
     // Field-policy path the override targets. Validated against the vertical's
     // field policy at write time (the policy must exist and must allow
@@ -68,6 +75,12 @@ export const catalogOverlayTable = pgTable(
     // Provenance: where this override came from.
     origin: jsonb("origin").$type<OverlayOrigin>().notNull(),
 
+    // Optimistic concurrency token for human editorial writes.
+    version: integer("version").notNull().default(1),
+
+    // Optional note supplied by the writer for audit/review surfaces.
+    editorial_note: text("editorial_note"),
+
     // Soft-delete. When set, the row is preserved for retention / restore but
     // no longer active in the resolver merge.
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
@@ -83,6 +96,8 @@ export const catalogOverlayTable = pgTable(
       .on(
         table.entity_module,
         table.entity_id,
+        table.node_kind,
+        table.node_key,
         table.field_path,
         table.locale,
         table.audience,
@@ -99,8 +114,50 @@ export const catalogOverlayTable = pgTable(
   ],
 )
 
+export const catalogOverlayHistoryTable = pgTable(
+  "catalog_overlay_history",
+  {
+    id: text("id").primaryKey(),
+    overlay_id: typeIdRef("overlay_id"),
+
+    entity_module: text("entity_module").notNull(),
+    entity_id: text("entity_id").notNull(),
+    node_kind: text("node_kind").notNull().default(OVERLAY_ROOT_NODE_KIND),
+    node_key: text("node_key").notNull().default(OVERLAY_ROOT_NODE_KEY),
+    field_path: text("field_path").notNull(),
+    locale: text("locale").notNull().default(OVERLAY_DEFAULT_SCOPE),
+    audience: text("audience")
+      .$type<Visibility | typeof OVERLAY_DEFAULT_SCOPE>()
+      .notNull()
+      .default(OVERLAY_DEFAULT_SCOPE),
+    market: text("market").notNull().default(OVERLAY_DEFAULT_SCOPE),
+
+    action: text("action").$type<"write" | "clear" | "restore">().notNull(),
+    previous_value: jsonb("previous_value"),
+    next_value: jsonb("next_value"),
+    previous_version: integer("previous_version"),
+    next_version: integer("next_version"),
+    origin: jsonb("origin").$type<OverlayOrigin>().notNull(),
+    editorial_note: text("editorial_note"),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("catalog_overlay_history_overlay_idx").on(table.overlay_id),
+    index("catalog_overlay_history_target_idx").on(
+      table.entity_module,
+      table.entity_id,
+      table.node_kind,
+      table.node_key,
+      table.field_path,
+      table.locale,
+    ),
+  ],
+)
+
 export type InsertCatalogOverlay = typeof catalogOverlayTable.$inferInsert
 export type SelectCatalogOverlay = typeof catalogOverlayTable.$inferSelect
+export type InsertCatalogOverlayHistory = typeof catalogOverlayHistoryTable.$inferInsert
+export type SelectCatalogOverlayHistory = typeof catalogOverlayHistoryTable.$inferSelect
 
 /**
  * Foreign-key column helper for tables that reference an overlay row.

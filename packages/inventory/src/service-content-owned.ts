@@ -240,6 +240,7 @@ export async function buildOwnedProductContent(
       )
 
       return {
+        id: d.id,
         day_number: d.dayNumber,
         title: bestDayTrn?.candidate.title ?? d.title ?? null,
         description: bestDayTrn?.candidate.description ?? d.description ?? null,

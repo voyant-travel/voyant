@@ -40,6 +40,7 @@ import { and, eq } from "drizzle-orm"
 
 import {
   mergeOverlaysIntoProductContent,
+  normalizeProductContentOverlay,
   PRODUCTS_CONTENT_SCHEMA_VERSION,
   type ProductContent,
   productContentSchema,
@@ -102,6 +103,11 @@ export interface GetProductContentOptions {
    * sourced departure capacity, where a 24h rich-content TTL is too coarse.
    */
   forceFresh?: boolean
+  /**
+   * Admin comparison reads set this false to see locale-resolved provider/owned
+   * source content without applying editorial overlays.
+   */
+  applyOverlays?: boolean
 }
 
 /**
@@ -154,20 +160,7 @@ export async function getProductContent(
       preferredLocales: scope.preferredLocales,
     })
     if (!owned) return null
-    const overlays = await fetchOverlaysForEntity(db, "products", entityId)
-    const merged = mergeOverlaysIntoProductContent(
-      owned.content,
-      overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
-      {
-        onOverlayError: options.onOverlayError
-          ? (e) =>
-              options.onOverlayError!({
-                field_path: e.overlay.field_path,
-                reason: e.reason,
-              })
-          : undefined,
-      },
-    )
+    const merged = await applyProductEditorialOverlays(db, entityId, owned.content, options)
     return {
       content: merged,
       resolution: {
@@ -528,20 +521,7 @@ async function finalizeFromCache(
     )
   }
   const cachedContent = validation.content
-  const overlays = await fetchOverlaysForEntity(db, "products", entityId)
-  const merged = mergeOverlaysIntoProductContent(
-    cachedContent,
-    overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
-    {
-      onOverlayError: options.onOverlayError
-        ? (e) =>
-            options.onOverlayError!({
-              field_path: e.overlay.field_path,
-              reason: e.reason,
-            })
-        : undefined,
-    },
-  )
+  const merged = await applyProductEditorialOverlays(db, entityId, cachedContent, options)
   return {
     content: merged,
     resolution: {
@@ -566,20 +546,7 @@ async function finalizeFresh(
   provenance: ResolvedProductContentProvenance,
 ): Promise<ResolvedProductContent> {
   const cachedContent = productContentSchema.parse(fresh.content)
-  const overlays = await fetchOverlaysForEntity(db, "products", entityId)
-  const merged = mergeOverlaysIntoProductContent(
-    cachedContent,
-    overlays.map((o) => ({ field_path: o.field_path, value: o.value })),
-    {
-      onOverlayError: options.onOverlayError
-        ? (e) =>
-            options.onOverlayError!({
-              field_path: e.overlay.field_path,
-              reason: e.reason,
-            })
-        : undefined,
-    },
-  )
+  const merged = await applyProductEditorialOverlays(db, entityId, cachedContent, options)
   return {
     content: merged,
     resolution: {
@@ -593,6 +560,38 @@ async function finalizeFresh(
     synthesized: false,
     machine_translated: fresh.machine_translated ?? false,
   }
+}
+
+async function applyProductEditorialOverlays(
+  db: AnyDrizzleDb,
+  entityId: string,
+  content: ProductContent,
+  options: GetProductContentOptions,
+): Promise<ProductContent> {
+  if (options.applyOverlays === false) return content
+  const overlays = await fetchOverlaysForEntity(db, "products", entityId)
+  return mergeOverlaysIntoProductContent(
+    content,
+    overlays.map((o) =>
+      normalizeProductContentOverlay({
+        id: o.id,
+        version: o.version,
+        node_kind: o.node_kind,
+        node_key: o.node_key,
+        field_path: o.field_path,
+        value: o.value,
+      }),
+    ),
+    {
+      onOverlayError: options.onOverlayError
+        ? (e) =>
+            options.onOverlayError!({
+              field_path: e.overlay.field_path,
+              reason: e.reason,
+            })
+        : undefined,
+    },
+  )
 }
 
 function wrapSynthesized(

@@ -33,7 +33,7 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import type { ApiExtension } from "@voyant-travel/hono/module"
 import { productContentSchema } from "@voyant-travel/products-contracts/content-shape"
 import type { Context } from "hono"
-
+import { createProductEditorialOverlayRoutes } from "./routes-editorial-overlays.js"
 import { getProductContent, type ProductContentScope } from "./service-content.js"
 
 const contentProvenanceSchema = z.object({
@@ -46,7 +46,7 @@ const contentProvenanceSchema = z.object({
 const contentResponseSchema = z.object({
   data: z.object({
     content: productContentSchema,
-    provenance: contentProvenanceSchema,
+    provenance: contentProvenanceSchema.optional(),
     served_locale: z.string(),
     match_kind: z.enum(["exact", "language_match", "fallback_chain", "any"]),
     source: z.enum(["sourced-cache", "sourced-fresh", "synthesized", "owned"]),
@@ -107,6 +107,8 @@ export interface CreateProductContentRoutesOptions {
    * `false` so ops sees authored content before deciding to override.
    */
   defaultAcceptMachineTranslated?: boolean
+  /** Public routes set this false so provider/source refs stay staff-only. */
+  exposeProvenance?: boolean
 }
 
 /**
@@ -143,7 +145,7 @@ export function createProductContentRoutes(
       {
         data: {
           content: result.content,
-          provenance: result.provenance,
+          ...(options.exposeProvenance === false ? {} : { provenance: result.provenance }),
           served_locale: result.resolution.served_locale,
           match_kind: result.resolution.match_kind,
           source: result.source,
@@ -232,9 +234,11 @@ export const productContentExtension: Extension = {
 export function createProductContentApiExtension(
   options: ProductContentApiExtensionOptions,
 ): ApiExtension {
+  const adminRoutes = createProductContentRoutes({ ...options.admin, exposeProvenance: true })
+  adminRoutes.route("/", createProductEditorialOverlayRoutes(options.admin) as never)
   return {
     extension: productContentExtension,
-    adminRoutes: createProductContentRoutes(options.admin),
-    publicRoutes: createProductContentRoutes(options.public),
+    adminRoutes,
+    publicRoutes: createProductContentRoutes({ ...options.public, exposeProvenance: false }),
   }
 }

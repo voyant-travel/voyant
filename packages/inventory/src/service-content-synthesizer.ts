@@ -28,6 +28,7 @@ import { fetchOverlaysForEntity, mergeOverlaysIntoContent } from "@voyant-travel
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
+  normalizeProductContentOverlay,
   PRODUCTS_CONTENT_SCHEMA_VERSION,
   type ProductContent,
   productContentSchema,
@@ -99,14 +100,18 @@ export function synthesizeProductContent(
 
   let merged = baseContent
   if (options.overlays && options.overlays.length > 0) {
-    const result = mergeOverlaysIntoContent(baseContent, options.overlays, {
-      validate(p) {
-        const r = productContentSchema.safeParse(p)
-        return r.success
-          ? { valid: true }
-          : { valid: false, reason: r.error.issues[0]?.message ?? "invalid" }
+    const result = mergeOverlaysIntoContent(
+      baseContent,
+      options.overlays.map((overlay) => normalizeProductContentOverlay(overlay)),
+      {
+        validate(p) {
+          const r = productContentSchema.safeParse(p)
+          return r.success
+            ? { valid: true }
+            : { valid: false, reason: r.error.issues[0]?.message ?? "invalid" }
+        },
       },
-    })
+    )
     merged = productContentSchema.parse(result)
   }
 

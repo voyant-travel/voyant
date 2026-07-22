@@ -20,10 +20,14 @@ import { OVERLAY_DEFAULT_SCOPE } from "./schema.js"
 /** A single overlay row reduced to what the resolver needs. */
 export interface ResolverOverlay {
   field_path: string
+  node_kind?: string
+  node_key?: string
   locale: string
   audience: Visibility | typeof OVERLAY_DEFAULT_SCOPE
   market: string
   value: unknown
+  version?: number
+  id?: string
 }
 
 /**
