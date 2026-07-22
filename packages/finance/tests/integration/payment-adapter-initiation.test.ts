@@ -12,7 +12,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createPaymentAdapterCardPaymentStarter } from "../../src/card-payment.js"
+import {
+  createPaymentAdapterCardPaymentStarter,
+  startPaymentAdapterCardPayment,
+} from "../../src/card-payment.js"
 import { applyPaymentAdapterCallbackEvent } from "../../src/payment-adapter-events.js"
 import { refreshPaymentAdapterStatus } from "../../src/payment-adapter-status.js"
 import {
@@ -132,6 +135,298 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     })
   })
 
+  it("does not replace an existing provider with an identity-less adapter result", async () => {
+    const { session } = await seedInvoiceSession(db, 7025, { provider: "netopia" })
+    const baseAdapter = stubAdapter("processing")
+    const adapter: PaymentAdapter = { ...baseAdapter, id: "managed" }
+
+    await startPaymentAdapterCardPayment(
+      adapter,
+      {
+        db,
+        sessionId: session.id,
+        billing: { email: "provider@example.com", firstName: "Provider" },
+      },
+      { context: { env: {} } },
+    )
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: null,
+    })
+  })
+
+  it("atomically admits one initiation even when the adapter cannot safely retry", async () => {
+    const { session } = await seedInvoiceSession(db, 7050)
+    let markInitiationStarted: (() => void) | undefined
+    const initiationStarted = new Promise<void>((resolve) => {
+      markInitiationStarted = resolve
+    })
+    let releaseInitiation: (() => void) | undefined
+    const initiationReleased = new Promise<void>((resolve) => {
+      releaseInitiation = resolve
+    })
+    const baseAdapter = stubAdapter("processing")
+    const status = vi.fn(async () => ({ nextState: "failed" as const }))
+    const initiate = vi.fn(async (_context, input) => {
+      markInitiationStarted?.()
+      await initiationReleased
+      return {
+        nextState: "requires_redirect" as const,
+        idempotencyKey: input.idempotencyKey,
+        checkout: { kind: "redirect" as const, url: "https://pay.example.com/continue" },
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_single_start",
+        },
+      }
+    })
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: {
+        ...baseAdapter.capabilities,
+        idempotencyKeys: false,
+        retrySafeInitiation: false,
+        status: true,
+      },
+      initiate,
+      status,
+    }
+
+    await withConcurrentDbClients(async (firstDb, secondDb) => {
+      const firstStart = startPaymentAdapterCardPayment(
+        adapter,
+        {
+          db: firstDb,
+          sessionId: session.id,
+          billing: { email: "single@example.com", firstName: "Single" },
+        },
+        { context: { env: {} } },
+      )
+      await initiationStarted
+      await refreshPaymentAdapterStatus(adapter, secondDb, session.id, {
+        context: { env: {} },
+      })
+      await expect(
+        startPaymentAdapterCardPayment(
+          adapter,
+          {
+            db: secondDb,
+            sessionId: session.id,
+            billing: { email: "single@example.com", firstName: "Single" },
+          },
+          { context: { env: {} } },
+        ),
+      ).resolves.toEqual({ redirectUrl: null })
+      releaseInitiation?.()
+      await expect(firstStart).resolves.toEqual({
+        redirectUrl: "https://pay.example.com/continue",
+      })
+    })
+
+    expect(initiate).toHaveBeenCalledOnce()
+    expect(status).not.toHaveBeenCalled()
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "requires_redirect",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_single_start",
+      redirectUrl: "https://pay.example.com/continue",
+    })
+  })
+
+  it("rejects an initiation result that races with a different callback identity", async () => {
+    const { session } = await seedInvoiceSession(db, 7075)
+    let markInitiationStarted: (() => void) | undefined
+    const initiationStarted = new Promise<void>((resolve) => {
+      markInitiationStarted = resolve
+    })
+    let releaseInitiation: (() => void) | undefined
+    const initiationReleased = new Promise<void>((resolve) => {
+      releaseInitiation = resolve
+    })
+    const baseAdapter = stubAdapter("processing")
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      initiate: vi.fn(async (_context, input) => {
+        markInitiationStarted?.()
+        await initiationReleased
+        return {
+          nextState: "processing" as const,
+          idempotencyKey: input.idempotencyKey,
+          processorIdentity: {
+            providerId: "netopia",
+            connectionId: "payment_connection_initiation",
+          },
+        }
+      }),
+    }
+
+    const initiation = startPaymentAdapterCardPayment(
+      adapter,
+      {
+        db,
+        sessionId: session.id,
+        billing: { email: "race@example.com", firstName: "Race" },
+      },
+      { context: { env: {} } },
+    )
+    await initiationStarted
+    await applyPaymentAdapterCallbackEvent(db, {
+      eventId: "evt_identity_won_race",
+      paymentSessionId: session.id,
+      nextState: "processing",
+      occurredAt: "2026-07-17T00:00:00.000Z",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_callback",
+      },
+      idempotencyKey: "callback-identity-won-race",
+    })
+    releaseInitiation?.()
+
+    await expect(initiation).rejects.toThrow(/processor identity/i)
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_callback",
+    })
+  })
+
+  it("releases a failed initiation claim only when the adapter guarantees safe retry", async () => {
+    const { session } = await seedInvoiceSession(db, 7080)
+    const baseAdapter = stubAdapter("processing")
+    const initiate = vi
+      .fn<PaymentAdapter["initiate"]>()
+      .mockRejectedValueOnce(new Error("temporary transport failure"))
+      .mockImplementationOnce(async (_context, input) => ({
+        nextState: "requires_redirect",
+        idempotencyKey: input.idempotencyKey,
+        checkout: { kind: "redirect", url: "https://pay.example.com/retry" },
+      }))
+    const adapter: PaymentAdapter = { ...baseAdapter, initiate }
+    const args = {
+      db,
+      sessionId: session.id,
+      billing: { email: "retry@example.com", firstName: "Retry" },
+    }
+
+    await expect(
+      startPaymentAdapterCardPayment(adapter, args, { context: { env: {} } }),
+    ).rejects.toThrow("temporary transport failure")
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "pending",
+      idempotencyKey: `payment:${session.id}`,
+      metadata: {
+        paymentAdapterInitiationClaim: null,
+        paymentAdapterInitiationState: "retryable",
+      },
+    })
+
+    await expect(
+      startPaymentAdapterCardPayment(adapter, args, { context: { env: {} } }),
+    ).resolves.toEqual({ redirectUrl: "https://pay.example.com/retry" })
+    expect(initiate).toHaveBeenCalledTimes(2)
+    expect(initiate.mock.calls[0]?.[1].idempotencyKey).toBe(`payment:${session.id}`)
+    expect(initiate.mock.calls[1]?.[1].idempotencyKey).toBe(`payment:${session.id}`)
+  })
+
+  it("rejects a mismatched initiation idempotency echo without persisting processor data", async () => {
+    const { session } = await seedInvoiceSession(db, 7085)
+    const adapter = stubAdapter("processing", {
+      idempotencyKey: "provider-returned-a-different-key",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_wrong_idempotency",
+      },
+    })
+
+    await expect(
+      startPaymentAdapterCardPayment(
+        adapter,
+        {
+          db,
+          sessionId: session.id,
+          billing: { email: "mismatch@example.com", firstName: "Mismatch" },
+        },
+        { context: { env: {} } },
+      ),
+    ).rejects.toThrow(/idempotency key/i)
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "pending",
+      providerConnectionId: null,
+      providerSessionId: null,
+      providerPaymentId: null,
+      providerPayload: null,
+      metadata: {
+        paymentAdapterInitiationClaim: null,
+        paymentAdapterInitiationState: "retryable",
+      },
+    })
+  })
+
+  it("keeps an unsafe failed initiation claimed for status reconciliation", async () => {
+    const { session } = await seedInvoiceSession(db, 7090)
+    const baseAdapter = stubAdapter("processing")
+    const initiate = vi.fn(async () => {
+      throw new Error("ambiguous transport failure")
+    })
+    const status = vi.fn(async () => ({
+      nextState: "processing" as const,
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_reconciled",
+      },
+      processorSessionId: "processor_session_reconciled",
+    }))
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: {
+        ...baseAdapter.capabilities,
+        idempotencyKeys: false,
+        retrySafeInitiation: false,
+        status: true,
+      },
+      initiate,
+      status,
+    }
+    const args = {
+      db,
+      sessionId: session.id,
+      billing: { email: "unsafe@example.com", firstName: "Unsafe" },
+    }
+
+    await expect(
+      startPaymentAdapterCardPayment(adapter, args, { context: { env: {} } }),
+    ).rejects.toThrow("ambiguous transport failure")
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      idempotencyKey: `payment:${session.id}`,
+      metadata: {
+        paymentAdapterInitiationClaim: `payment:${session.id}`,
+        paymentAdapterInitiationState: "uncertain",
+      },
+    })
+
+    await refreshPaymentAdapterStatus(adapter, db, session.id, {
+      context: { env: {} },
+      checkedAt: new Date("2026-07-17T03:00:00.000Z"),
+    })
+    expect(status).toHaveBeenCalledOnce()
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_reconciled",
+      providerSessionId: "processor_session_reconciled",
+    })
+
+    await expect(
+      startPaymentAdapterCardPayment(adapter, args, { context: { env: {} } }),
+    ).resolves.toEqual({ redirectUrl: null })
+    expect(initiate).toHaveBeenCalledOnce()
+  })
+
   it("polls with persisted processor identity and applies a paid result", async () => {
     const { invoice, session } = await seedInvoiceSession(db, 7100, {
       status: "processing",
@@ -219,6 +514,85 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       provider: "netopia",
       providerConnectionId: "payment_connection_authorized",
     })
+  })
+
+  it("atomically leases provider polling so concurrent public reads call status once", async () => {
+    const { session } = await seedInvoiceSession(db, 7250, {
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_status_lease",
+    })
+    let releaseStatus: (() => void) | undefined
+    const statusReleased = new Promise<void>((resolve) => {
+      releaseStatus = resolve
+    })
+    let markStatusStarted: (() => void) | undefined
+    const statusStarted = new Promise<void>((resolve) => {
+      markStatusStarted = resolve
+    })
+    const status = vi.fn(async () => {
+      markStatusStarted?.()
+      await statusReleased
+      return {
+        nextState: "processing" as const,
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_status_lease",
+        },
+      }
+    })
+    const baseAdapter = stubAdapter("processing")
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: { ...baseAdapter.capabilities, status: true },
+      status,
+    }
+    const checkedAt = new Date("2026-07-17T02:00:00.000Z")
+
+    await withConcurrentDbClients(async (firstDb, secondDb) => {
+      const firstRefresh = refreshPaymentAdapterStatus(adapter, firstDb, session.id, {
+        context: { env: {} },
+        checkedAt,
+      })
+      await statusStarted
+      await refreshPaymentAdapterStatus(adapter, secondDb, session.id, {
+        context: { env: {} },
+        checkedAt,
+      })
+      releaseStatus?.()
+      await firstRefresh
+    })
+
+    expect(status).toHaveBeenCalledOnce()
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      metadata: {
+        paymentAdapterStatusRefreshAfter: checkedAt.getTime() + 30_000,
+        paymentAdapterStatusCheckedAt: "2026-07-17T02:00:00.000Z",
+      },
+    })
+  })
+
+  it("does not poll terminal payment sessions", async () => {
+    const { session } = await seedInvoiceSession(db, 7275, {
+      status: "failed",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_terminal_status",
+    })
+    const baseAdapter = stubAdapter("processing")
+    const status = vi.fn(async () => ({ nextState: "paid" as const }))
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: { ...baseAdapter.capabilities, status: true },
+      status,
+    }
+
+    await refreshPaymentAdapterStatus(adapter, db, session.id, {
+      context: { env: {} },
+    })
+
+    expect(status).not.toHaveBeenCalled()
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({ status: "failed" })
   })
 
   it("rejects a status result that omits identity for a pinned session", async () => {
@@ -504,6 +878,50 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     })
     await expect(refreshedSession(session.id)).resolves.toMatchObject({
       status: "paid",
+      failureCode: null,
+      failureMessage: null,
+    })
+  })
+
+  it("clears terminal failure timestamps when a later callback recovers the session to paid", async () => {
+    const { session } = await seedInvoiceSession(db, 13500, {
+      provider: "netopia",
+      providerConnectionId: "payment_connection_recovery",
+    })
+
+    await applyPaymentAdapterCallbackEvent(db, {
+      eventId: "evt_failure_before_recovery",
+      paymentSessionId: session.id,
+      nextState: "failed",
+      occurredAt: "2026-07-17T00:00:00.000Z",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_recovery",
+      },
+      idempotencyKey: "callback-failure-before-recovery",
+    })
+
+    expect((await refreshedSession(session.id))?.failedAt).toBeInstanceOf(Date)
+
+    await applyPaymentAdapterCallbackEvent(db, {
+      eventId: "evt_paid_recovery",
+      paymentSessionId: session.id,
+      nextState: "paid",
+      occurredAt: "2026-07-17T00:00:01.000Z",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_recovery",
+      },
+      processorSessionId: "processor_session_recovery",
+      processorPaymentId: "processor_payment_recovery",
+      idempotencyKey: "callback-paid-recovery",
+    })
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "paid",
+      failedAt: null,
+      cancelledAt: null,
+      expiredAt: null,
       failureCode: null,
       failureMessage: null,
     })

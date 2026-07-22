@@ -1,5 +1,6 @@
 import type {
   PaymentCallbackEvent,
+  PaymentInitiationResult,
   PaymentProcessorIdentity,
   PaymentSessionState,
   PaymentStatusResult,
@@ -14,6 +15,7 @@ import { paymentSessions } from "./schema/payment-sessions.js"
 import { financePaymentSessionCompletionService } from "./service-payment-session-completion.js"
 import {
   type FinanceServiceRuntime,
+  PaymentValidationError,
   sql,
   toTimestamp,
   touchLinkedBookingUpdatedAt,
@@ -29,13 +31,16 @@ function mergeJsonbColumn(
 }
 
 type PaymentAdapterStateUpdate = {
-  source: "callback" | "status"
+  source: "callback" | "initiation" | "status"
   paymentSessionId: string
   nextState: PaymentSessionState
   occurredAt: string
   processorIdentity?: PaymentProcessorIdentity
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  redirectUrl?: string | null
+  idempotencyKey?: string
+  initiationClaimedAt?: Date
 }
 
 type PaymentAdapterProviderData = {
@@ -46,6 +51,8 @@ type PaymentAdapterProviderData = {
   providerPayload: Record<string, unknown> | undefined
   metadata: Record<string, unknown>
 }
+
+const PAYMENT_ADAPTER_INITIATION_CLAIM_KEY = "paymentAdapterInitiationClaim"
 
 async function applyLockedNonCompletionStateUpdate(
   db: PostgresJsDatabase,
@@ -65,15 +72,23 @@ async function applyLockedNonCompletionStateUpdate(
       session,
       update.processorIdentity,
     )
-    const provider = adoptedIdentity.provider ?? providerData.provider
+    const provider = adoptedIdentity.provider ?? session.provider ?? providerData.provider
     const providerConnectionId =
       adoptedIdentity.providerConnectionId ?? providerData.providerConnectionId
 
     const nextState = update.nextState
-    const shouldTransition = canApplyPaymentAdapterStateTransition(
-      session.status as PaymentSessionState,
-      nextState,
-    )
+    const mayFinalizeUncontestedInitiationClaim =
+      update.source === "initiation" &&
+      session.status === "processing" &&
+      (nextState === "pending" || nextState === "requires_redirect") &&
+      session.metadata?.[PAYMENT_ADAPTER_INITIATION_CLAIM_KEY] === update.idempotencyKey &&
+      session.updatedAt.getTime() === update.initiationClaimedAt?.getTime() &&
+      !session.providerConnectionId &&
+      !session.providerSessionId &&
+      !session.providerPaymentId
+    const shouldTransition =
+      mayFinalizeUncontestedInitiationClaim ||
+      canApplyPaymentAdapterStateTransition(session.status as PaymentSessionState, nextState)
     const failedAt = shouldTransition && nextState === "failed" ? new Date() : undefined
     const cancelledAt = shouldTransition && nextState === "cancelled" ? new Date() : undefined
     const expiredAt = shouldTransition && nextState === "expired" ? new Date() : undefined
@@ -91,6 +106,8 @@ async function applyLockedNonCompletionStateUpdate(
           providerData.providerPayload,
         ),
         metadata: mergeJsonbColumn(paymentSessions.metadata, providerData.metadata),
+        redirectUrl: update.redirectUrl,
+        idempotencyKey: update.idempotencyKey,
         failedAt,
         cancelledAt,
         expiredAt,
@@ -131,11 +148,63 @@ async function applyPaymentAdapterStateUpdate(
         ...providerData,
       },
       runtime,
-      { requireProcessorIdentityWhenConnectionPinned: true },
+      {
+        requireProcessorIdentityWhenConnectionPinned: true,
+        sessionUpdate: {
+          redirectUrl: update.redirectUrl,
+          idempotencyKey: update.idempotencyKey,
+        },
+      },
     )
   }
 
   return applyLockedNonCompletionStateUpdate(db, update, providerData)
+}
+
+export async function applyPaymentAdapterInitiationResult(
+  db: PostgresJsDatabase,
+  paymentSessionId: string,
+  adapterId: string,
+  result: PaymentInitiationResult,
+  claim: { idempotencyKey: string; claimedAt: Date },
+  runtime: FinanceServiceRuntime = {},
+) {
+  if (result.idempotencyKey !== claim.idempotencyKey) {
+    throw new PaymentValidationError(
+      "Payment adapter initiation returned a different idempotency key",
+      { paymentSessionId, expectedIdempotencyKey: claim.idempotencyKey },
+      { status: 409, code: "payment_adapter_idempotency_mismatch" },
+    )
+  }
+
+  return applyPaymentAdapterStateUpdate(
+    db,
+    {
+      source: "initiation",
+      paymentSessionId,
+      nextState: result.nextState,
+      occurredAt: new Date().toISOString(),
+      processorIdentity: result.processorIdentity,
+      processorSessionId: result.processorSessionId,
+      processorPaymentId: result.processorPaymentId,
+      redirectUrl: result.checkout?.url ?? null,
+      idempotencyKey: result.idempotencyKey,
+      initiationClaimedAt: claim.claimedAt,
+    },
+    {
+      provider: result.processorIdentity?.providerId ?? adapterId,
+      providerConnectionId: result.processorIdentity?.connectionId,
+      providerSessionId: result.processorSessionId ?? undefined,
+      providerPaymentId: result.processorPaymentId ?? undefined,
+      providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
+      metadata: {
+        paymentAdapterInitiationClaim: null,
+        paymentAdapterInitiationIdempotencyKey: result.idempotencyKey,
+        paymentAdapterInitiationState: "complete",
+      },
+    },
+    runtime,
+  )
 }
 
 export async function applyPaymentAdapterCallbackEvent(
@@ -181,7 +250,10 @@ export async function applyPaymentAdapterStatusResult(
       providerSessionId: result.processorSessionId ?? undefined,
       providerPaymentId: result.processorPaymentId ?? undefined,
       providerPayload: result.raw === undefined ? undefined : { status: result.raw },
-      metadata: { paymentAdapterStatusCheckedAt: occurredAt },
+      metadata: {
+        paymentAdapterStatusCheckedAt: occurredAt,
+        paymentAdapterStatusRefreshAfter: checkedAt.getTime() + 30_000,
+      },
     },
     runtime,
   )

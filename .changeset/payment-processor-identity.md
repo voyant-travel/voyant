@@ -2,6 +2,7 @@
 "@voyant-travel/payments": minor
 "@voyant-travel/finance": patch
 "@voyant-travel/finance-contracts": patch
+"@voyant-travel/finance-react": patch
 "@voyant-travel/storefront": patch
 "@voyant-travel/trips": patch
 "@voyant-travel/framework": patch
@@ -22,4 +23,6 @@ sanitize callback-routing metadata supplied by public clients. Provider-neutral
 cancel and shipping fields flow through the selected adapter contract.
 Public payment-session reads can refresh provider status through the selected
 adapter while resending the session's pinned processor identity and preserving
-the same locked monotonic transition rules as callbacks.
+the same locked monotonic transition rules as callbacks. Persisted leases bound
+anonymous status polling, and card initiation now uses a single atomic claim so
+active or ambiguous attempts cannot create duplicate processor payments.

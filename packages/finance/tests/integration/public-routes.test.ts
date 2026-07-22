@@ -6,10 +6,7 @@ import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  createPublicFinanceRoutes,
-  publicFinanceRoutes,
-} from "../../src/routes-public.js"
+import { createPublicFinanceRoutes, publicFinanceRoutes } from "../../src/routes-public.js"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -726,10 +723,7 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       c.set("db" as never, db)
       await next()
     })
-    refreshApp.route(
-      "/",
-      createPublicFinanceRoutes({ refreshPaymentSessionStatus }),
-    )
+    refreshApp.route("/", createPublicFinanceRoutes({ refreshPaymentSessionStatus }))
 
     const response = await refreshApp.request(`/payment-sessions/${session.id}`)
 

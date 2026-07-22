@@ -180,22 +180,18 @@ describe("finance checkout service", () => {
     })
 
     await expect(
-      initiateCheckoutCollection(
-        { select } as never,
-        "booking_123",
-        {
-          method: "card",
-          stage: "initial",
-          startProvider: {
-            payload: {
-              billing: {
-                email: "traveler@example.com",
-                firstName: "Ana",
-              },
+      initiateCheckoutCollection({ select } as never, "booking_123", {
+        method: "card",
+        stage: "initial",
+        startProvider: {
+          payload: {
+            billing: {
+              email: "traveler@example.com",
+              firstName: "Ana",
             },
           },
         },
-      ),
+      }),
     ).rejects.toThrow("No payment adapter is selected for card collection")
 
     expect(select).not.toHaveBeenCalled()

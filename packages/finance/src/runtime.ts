@@ -5,11 +5,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { startPaymentAdapterCardPayment } from "./card-payment.js"
 import type { CheckoutPaymentStarter } from "./checkout-service.js"
 import type { FinanceApiModuleOptions } from "./index.js"
-import { refreshPaymentAdapterStatus } from "./payment-adapter-status.js"
 import {
   createVoyantDataFxExchangeRateResolver,
   type ResolveInvoiceExchangeRate,
 } from "./invoice-fx.js"
+import { refreshPaymentAdapterStatus } from "./payment-adapter-status.js"
 import type {
   FinanceAccommodationsPaymentPolicyRuntime,
   FinanceBookingScheduleRuntime,

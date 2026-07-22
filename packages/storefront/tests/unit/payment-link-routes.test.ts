@@ -2,10 +2,11 @@
 // contract coverage stays co-located so callback/start-card/summary behavior
 // shares the same route harness and session query stubs.
 import { createEventBus, type EventBus } from "@voyant-travel/core"
+import { financeService } from "@voyant-travel/finance"
 import { normalizeValidationError } from "@voyant-travel/hono"
 import { PAYMENT_ADAPTER_CONTRACT_VERSION, type PaymentAdapter } from "@voyant-travel/payments"
 import { Hono } from "hono"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   createPaymentLinkApiModule,
@@ -104,6 +105,10 @@ function makePaymentAdapter(verifyCallback: PaymentAdapter["verifyCallback"]): P
 }
 
 describe("createPaymentLinkRoutes", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("describes the package-owned anonymous lazy route module", () => {
     const module = createPaymentLinkApiModule(stubOptions())
 
@@ -290,7 +295,100 @@ describe("createPaymentLinkRoutes", () => {
     expect(startCardPayment).toHaveBeenCalledOnce()
   })
 
-  it("start-card refreshes a pre-completion redirect instead of reusing the stored url", async () => {
+  it("start-card does not expose downstream processor errors", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "pending",
+          redirectUrl: null,
+          returnUrl: null,
+          amountCents: 12000,
+          currency: "RON",
+          payerName: null,
+          payerEmail: null,
+          notes: null,
+        },
+      ],
+    ])
+    const app = mountApp(
+      stubOptions({
+        startCardPayment: vi.fn(async () => {
+          throw new Error("control-plane credential secret")
+        }),
+      }),
+      db,
+    )
+
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
+
+    expect(res.status).toBe(502)
+    expect(await res.json()).toEqual({ error: "Card processor failed to start the payment" })
+  })
+
+  it("retry keeps an active processor attempt on the same Voyant session", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_active",
+          status: "processing",
+        },
+      ],
+    ])
+    const app = mountApp(stubOptions(), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_active/retry", { method: "POST" })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      data: { sessionId: "ps_active", alreadyPaid: false },
+    })
+  })
+
+  it("retry creates an identity-free Voyant session after a terminal attempt", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_failed",
+          status: "failed",
+          targetType: "invoice",
+          targetId: "inv_1",
+          bookingId: "book_1",
+          invoiceId: "inv_1",
+          bookingPaymentScheduleId: null,
+          bookingGuaranteeId: null,
+          currency: "RON",
+          amountCents: 12000,
+          provider: "netopia",
+          providerConnectionId: "payment_connection_old",
+          providerSessionId: "processor_session_old",
+          providerPaymentId: "processor_payment_old",
+          idempotencyKey: "old-idempotency-key",
+          paymentMethod: "credit_card",
+          payerEmail: "payer@example.com",
+          payerName: "Payer",
+          notes: "Deposit",
+        },
+      ],
+    ])
+    const createPaymentSession = vi
+      .spyOn(financeService, "createPaymentSession")
+      .mockResolvedValue({ id: "ps_fresh" } as never)
+    const app = mountApp(stubOptions(), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_failed/retry", { method: "POST" })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ data: { sessionId: "ps_fresh" } })
+    const input = createPaymentSession.mock.calls[0]?.[1]
+    expect(input).not.toHaveProperty("provider")
+    expect(input).not.toHaveProperty("providerConnectionId")
+    expect(input).not.toHaveProperty("providerSessionId")
+    expect(input).not.toHaveProperty("providerPaymentId")
+    expect(input).not.toHaveProperty("idempotencyKey")
+  })
+
+  it("start-card reuses an active session redirect without invoking the provider", async () => {
     const db = makeDb([
       [
         {
@@ -303,16 +401,6 @@ describe("createPaymentLinkRoutes", () => {
           payerName: "Ada Lovelace",
           payerEmail: "ada@example.com",
           notes: "Deposit",
-        },
-      ],
-      [
-        {
-          id: "ps_1",
-          status: "requires_redirect",
-          redirectUrl: "https://pay.example.com/fresh",
-          returnUrl: "https://checkout.example.com/return",
-          amountCents: 12000,
-          currency: "RON",
         },
       ],
     ])
@@ -330,26 +418,55 @@ describe("createPaymentLinkRoutes", () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       data: {
-        redirectUrl: "https://pay.example.com/fresh",
+        redirectUrl: "https://pay.example.com/stale",
         session: {
           id: "ps_1",
           status: "requires_redirect",
           amountCents: 12000,
           currency: "RON",
-          redirectUrl: "https://pay.example.com/fresh",
+          redirectUrl: "https://pay.example.com/stale",
         },
       },
     })
-    expect(startCardPayment).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        id: "ps_1",
-        payerName: "Ada Lovelace",
-        payerEmail: "ada@example.com",
-        notes: "Deposit",
-        redirectUrl: "https://pay.example.com/stale",
-      }),
+    expect(startCardPayment).not.toHaveBeenCalled()
+  })
+
+  it("start-card returns a processing continuation without invoking the provider", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_processing",
+          status: "processing",
+          redirectUrl: null,
+          returnUrl: "https://checkout.example.com/continue",
+          amountCents: 12000,
+          currency: "RON",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(
+      async () => ({ configured: true, redirectUrl: "https://pay.example.com/new" }) as const,
     )
+    const app = mountApp(stubOptions({ startCardPayment }), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_processing/start-card", {
+      method: "POST",
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      data: {
+        redirectUrl: "https://checkout.example.com/continue",
+        session: {
+          id: "ps_processing",
+          status: "processing",
+          amountCents: 12000,
+          currency: "RON",
+          redirectUrl: null,
+        },
+      },
+    })
+    expect(startCardPayment).not.toHaveBeenCalled()
   })
 
   it("start-card forwards neutral body fields to the selected starter", async () => {
@@ -597,6 +714,8 @@ describe("createPaymentLinkRoutes", () => {
           id: "ps_1",
           status: "paid",
           redirectUrl: "https://pay.example.com/success",
+          amountCents: 12000,
+          currency: "RON",
         },
       ],
     ])
@@ -607,7 +726,16 @@ describe("createPaymentLinkRoutes", () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
-      data: { redirectUrl: "https://pay.example.com/success" },
+      data: {
+        redirectUrl: "https://pay.example.com/success",
+        session: {
+          id: "ps_1",
+          status: "paid",
+          amountCents: 12000,
+          currency: "RON",
+          redirectUrl: "https://pay.example.com/success",
+        },
+      },
     })
     expect(startCardPayment).not.toHaveBeenCalled()
   })
@@ -619,6 +747,8 @@ describe("createPaymentLinkRoutes", () => {
           id: "ps_1",
           status: "failed",
           redirectUrl: "https://pay.example.com/failed",
+          amountCents: 12000,
+          currency: "RON",
         },
       ],
     ])
@@ -634,7 +764,18 @@ describe("createPaymentLinkRoutes", () => {
     const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
 
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ data: { redirectUrl: null } })
+    expect(await res.json()).toEqual({
+      data: {
+        redirectUrl: null,
+        session: {
+          id: "ps_1",
+          status: "failed",
+          amountCents: 12000,
+          currency: "RON",
+          redirectUrl: "https://pay.example.com/failed",
+        },
+      },
+    })
     expect(startCardPayment).not.toHaveBeenCalled()
   })
 

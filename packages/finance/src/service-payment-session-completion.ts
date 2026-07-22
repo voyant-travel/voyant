@@ -44,6 +44,10 @@ function mergeJsonbColumn(
 
 export interface PaymentSessionCompletionOptions {
   requireProcessorIdentityWhenConnectionPinned?: boolean
+  sessionUpdate?: {
+    redirectUrl?: string | null
+    idempotencyKey?: string
+  }
 }
 
 export const financePaymentSessionCompletionService = {
@@ -83,7 +87,7 @@ export const financePaymentSessionCompletionService = {
             provider: data.provider ?? undefined,
             providerConnectionId: data.providerConnectionId ?? undefined,
           }
-      const provider = lockedIdentity.provider ?? data.provider ?? session.provider ?? null
+      const provider = lockedIdentity.provider ?? session.provider ?? data.provider ?? null
       const providerConnectionId =
         lockedIdentity.providerConnectionId ??
         data.providerConnectionId ??
@@ -105,6 +109,8 @@ export const financePaymentSessionCompletionService = {
             ),
             metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
             notes: data.notes ?? session.notes ?? undefined,
+            redirectUrl: data.status === "paid" ? null : options.sessionUpdate?.redirectUrl,
+            idempotencyKey: options.sessionUpdate?.idempotencyKey,
             updatedAt: new Date(),
           })
           .where(eq(paymentSessions.id, id))
@@ -330,9 +336,16 @@ export const financePaymentSessionCompletionService = {
           providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
           metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? session.notes ?? undefined,
-          redirectUrl: data.status === "paid" ? null : session.redirectUrl,
+          redirectUrl:
+            data.status === "paid"
+              ? null
+              : (options.sessionUpdate?.redirectUrl ?? session.redirectUrl),
+          idempotencyKey: options.sessionUpdate?.idempotencyKey,
           failureCode: null,
           failureMessage: null,
+          failedAt: null,
+          cancelledAt: null,
+          expiredAt: null,
           expiresAt: data.expiresAt === undefined ? session.expiresAt : toTimestamp(data.expiresAt),
           completedAt: new Date(),
           updatedAt: new Date(),

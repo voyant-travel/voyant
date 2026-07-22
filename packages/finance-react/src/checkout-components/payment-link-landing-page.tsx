@@ -29,10 +29,8 @@ interface StartCardResponse {
   error?: string
 }
 
-const ACTIVE_CARD_REDIRECT_STATUSES = new Set(["pending", "requires_redirect", "processing"])
-
 function shouldStartCardPayment(session: PublicPaymentSession) {
-  return ACTIVE_CARD_REDIRECT_STATUSES.has(session.status)
+  return session.status === "pending"
 }
 
 /**

@@ -340,6 +340,7 @@ export {
 } from "./order-payment-sessions.js"
 export {
   applyPaymentAdapterCallbackEvent,
+  applyPaymentAdapterInitiationResult,
   applyPaymentAdapterStatusResult,
 } from "./payment-adapter-events.js"
 export {

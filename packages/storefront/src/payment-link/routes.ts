@@ -499,9 +499,14 @@ function toIsoString(value: Date | string | null): string | null {
   return value instanceof Date ? value.toISOString() : value
 }
 
-const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending", "requires_redirect", "processing"])
-const CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES = new Set(["authorized", "paid"])
-const CARD_PAYMENT_CONTINUATION_STATUSES = new Set(["processing", "authorized", "paid"])
+const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending"])
+const CARD_PAYMENT_CONTINUATION_STATUSES = new Set([
+  "requires_redirect",
+  "processing",
+  "authorized",
+  "paid",
+])
+const CARD_PAYMENT_RETRY_CREATES_SESSION_STATUSES = new Set(["failed", "cancelled", "expired"])
 const RESERVED_START_CARD_METADATA_KEYS = new Set(["callbackUrl", "notifyUrl"])
 
 function canStartCardPayment(status: string): boolean {
@@ -509,7 +514,7 @@ function canStartCardPayment(status: string): boolean {
 }
 
 function canReuseCardRedirect(status: string): boolean {
-  return CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES.has(status)
+  return CARD_PAYMENT_CONTINUATION_STATUSES.has(status)
 }
 
 function canUseCardContinuation(status: string): boolean {
@@ -620,8 +625,16 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         .where(eq(paymentSessions.id, sessionId))
         .limit(1)
       if (!original) return c.json({ error: "Session not found" }, 404)
-      if (original.status === "paid" || original.status === "authorized") {
-        return c.json({ data: { sessionId: original.id, alreadyPaid: true } }, 200)
+      if (!CARD_PAYMENT_RETRY_CREATES_SESSION_STATUSES.has(original.status)) {
+        return c.json(
+          {
+            data: {
+              sessionId: original.id,
+              alreadyPaid: original.status === "paid" || original.status === "authorized",
+            },
+          },
+          200,
+        )
       }
       const dbCast = db as Parameters<typeof financeService.createPaymentSession>[0]
       const fresh = await financeService.createPaymentSession(dbCast, {
@@ -634,7 +647,6 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         currency: original.currency,
         amountCents: original.amountCents,
         status: "pending",
-        provider: original.provider ?? undefined,
         paymentMethod: original.paymentMethod ?? undefined,
         payerEmail: original.payerEmail ?? undefined,
         payerName: original.payerName ?? undefined,
@@ -671,10 +683,28 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         .limit(1)
       if (!session) return c.json({ error: "Session not found" }, 404)
       if (session.redirectUrl && canReuseCardRedirect(session.status)) {
-        return c.json({ data: { redirectUrl: session.redirectUrl } }, 200)
+        return c.json(
+          {
+            data: {
+              redirectUrl: session.redirectUrl,
+              session: publicStartCardSession(session),
+            },
+          },
+          200,
+        )
       }
       if (!canStartCardPayment(session.status)) {
-        return c.json({ data: { redirectUrl: null } }, 200)
+        return c.json(
+          {
+            data: {
+              redirectUrl: canUseCardContinuation(session.status)
+                ? (session.redirectUrl ?? session.returnUrl ?? null)
+                : null,
+              session: publicStartCardSession(session),
+            },
+          },
+          200,
+        )
       }
       const body = await readStartCardPaymentBody(c)
       const metadata = sanitizePublicStartCardMetadata(body.metadata)
@@ -715,9 +745,8 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
           },
           200,
         )
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to start card payment"
-        return c.json({ error: message }, 502)
+      } catch {
+        return c.json({ error: "Card processor failed to start the payment" }, 502)
       }
     })
 
