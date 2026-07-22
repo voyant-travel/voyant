@@ -1521,7 +1521,10 @@ describe("deployment graph v1", () => {
     )
 
     const unsupported = await resolveDeploymentGraph({
-      project: defineProject({ modules: [module], jobScheduling: { jobs: { "notifications.drain": "unsafe" } } }),
+      project: defineProject({
+        modules: [module],
+        jobScheduling: { jobs: { "notifications.drain": "unsafe" } },
+      }),
     })
     expect(unsupported.diagnostics).toEqual(
       expect.arrayContaining([

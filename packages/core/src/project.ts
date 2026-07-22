@@ -590,22 +590,22 @@ function normalizeProjectJobScheduling(
       ? undefined
       : normalizeProfileName(input.profile, "jobScheduling.profile")
   const jobs = input.jobs
-    ? Object.fromEntries(
-        Object.entries(input.jobs)
-          .map(([id, preference]) => {
-            if (!id.trim()) throw new Error("defineProject: jobScheduling.jobs keys must be non-empty job ids.")
-            if (preference !== false && typeof preference !== "string") {
-              throw new Error(`defineProject: jobScheduling.jobs.${id} must be a profile name or false.`)
-            }
-            return [
-              id,
-              preference === false
-                ? false
-                : normalizeProfileName(preference, `jobScheduling.jobs.${id}`),
-            ]
-          })
-          .sort(([left], [right]) => left.localeCompare(right)),
-      )
+    ? Object.entries(input.jobs)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .reduce<Record<string, string | false>>((normalized, [id, preference]) => {
+          if (!id.trim())
+            throw new Error("defineProject: jobScheduling.jobs keys must be non-empty job ids.")
+          if (preference !== false && typeof preference !== "string") {
+            throw new Error(
+              `defineProject: jobScheduling.jobs.${id} must be a profile name or false.`,
+            )
+          }
+          normalized[id] =
+            preference === false
+              ? false
+              : normalizeProfileName(preference, `jobScheduling.jobs.${id}`)
+          return normalized
+        }, {})
     : undefined
   return {
     ...(profile ? { profile } : {}),

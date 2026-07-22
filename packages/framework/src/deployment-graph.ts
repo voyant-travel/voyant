@@ -25,7 +25,6 @@ import {
   type VoyantGraphJob,
   type VoyantGraphJobSchedule,
   type VoyantGraphJobSchedulingPolicy,
-  type VoyantGraphProjectJobScheduling,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
@@ -36,6 +35,7 @@ import {
   type VoyantGraphProject,
   type VoyantGraphProjectDeploymentMigration,
   type VoyantGraphProjectDeploymentMode,
+  type VoyantGraphProjectJobScheduling,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphReportingCatalog,
@@ -2819,8 +2819,7 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
                 )
                 continue
               }
-              const hasCron =
-                typeof schedule.cron === "string" && schedule.cron.trim().length > 0
+              const hasCron = typeof schedule.cron === "string" && schedule.cron.trim().length > 0
               const hasEvery =
                 (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
                 (typeof schedule.every === "number" &&
@@ -2983,9 +2982,7 @@ function productJobEveryMilliseconds(value: string | number): number | undefined
   )
   if (!iso) return undefined
   return (
-    Number(iso[1] ?? 0) * 3_600_000 +
-    Number(iso[2] ?? 0) * 60_000 +
-    Number(iso[3] ?? 0) * 1_000
+    Number(iso[1] ?? 0) * 3_600_000 + Number(iso[2] ?? 0) * 60_000 + Number(iso[3] ?? 0) * 1_000
   )
 }
 
