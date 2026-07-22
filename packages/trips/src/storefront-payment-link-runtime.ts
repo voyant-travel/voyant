@@ -20,8 +20,25 @@ import { tripsService } from "./service.js"
 const FINANCE_CARD_PAYMENT_MODULE = "@voyant-travel/finance/card-payment"
 
 type StartCardPayment = ReturnType<CommerceCardPaymentRuntime["createStartCardPayment"]>
-type CardPaymentStartArgs = Parameters<NonNullable<StartCardPayment>>[0]
 type CardPaymentStartResult = Awaited<ReturnType<NonNullable<StartCardPayment>>>
+interface AdapterCardPaymentStartArgs {
+  db: PostgresJsDatabase
+  sessionId: string
+  billing: {
+    email: string
+    phone?: string
+    firstName: string
+    lastName?: string
+    city?: string
+    country?: number | string
+    state?: string
+    postalCode?: string
+    details?: string
+  }
+  description?: string
+  returnUrl?: string
+  metadata?: Record<string, unknown>
+}
 type PaymentAdapterCardPaymentStarterFactory = (
   adapter: PaymentAdapter,
   options: {
@@ -30,7 +47,7 @@ type PaymentAdapterCardPaymentStarterFactory = (
     idempotencyKey(sessionId: string): string
     resolveNotifyUrl?(c: Context): string | undefined
   },
-) => (context: Context, args: CardPaymentStartArgs) => Promise<CardPaymentStartResult>
+) => (context: Context, args: AdapterCardPaymentStartArgs) => Promise<CardPaymentStartResult>
 
 /** Standard selected payment provider exposed through Commerce's neutral port. */
 export function createCommerceCardPaymentRuntime(
@@ -44,7 +61,7 @@ export function createCommerceCardPaymentRuntime(
 async function startAdapterCardPayment(
   adapter: PaymentAdapter,
   context: Context,
-  args: CardPaymentStartArgs,
+  args: Parameters<NonNullable<StartCardPayment>>[0],
 ): Promise<CardPaymentStartResult> {
   const { createPaymentAdapterCardPaymentStarter } = (await import(
     FINANCE_CARD_PAYMENT_MODULE
@@ -197,16 +214,21 @@ function createAdapterStartCardPayment(
     })
     const trimmedName = (session.payerName ?? "").trim()
     const [firstName, ...rest] = trimmedName ? trimmedName.split(/\s+/) : []
+    const fallbackBilling = {
+      email: session.payerEmail ?? "",
+      firstName: firstName || session.payerEmail || "Customer",
+      lastName: rest.join(" "),
+    }
+    const billing = session.billing
+      ? { ...session.billing, lastName: session.billing.lastName ?? "" }
+      : fallbackBilling
     const result = await starter(c, {
       db: getDb(c),
       sessionId: session.id,
-      billing: {
-        email: session.payerEmail ?? "",
-        firstName: firstName || session.payerEmail || "Customer",
-        lastName: rest.join(" "),
-      },
-      description: session.notes || "Payment",
-      returnUrl: session.redirectUrl ?? undefined,
+      billing,
+      description: session.description ?? session.notes ?? "Payment",
+      returnUrl: session.returnUrl ?? session.redirectUrl ?? undefined,
+      metadata: session.metadata,
     })
     return { configured: true, redirectUrl: result?.redirectUrl ?? null }
   }

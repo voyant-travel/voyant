@@ -10,4 +10,5 @@ connection ids on finance payment sessions. Payment callbacks now reject
 verified provider/connection mismatches, payment-session provider payload and
 metadata updates merge instead of overwrite, duplicate paid callbacks serialize
 under a row lock, and the public payment-link callback/start-card routes accept
-managed connection forwarding and non-redirect processor outcomes.
+managed `connectionId` callback forwarding, neutral start-card body forwarding,
+additive refreshed session responses, and non-redirect processor continuations.
