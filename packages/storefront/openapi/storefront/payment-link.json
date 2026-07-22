@@ -349,6 +349,89 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "billing": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "phone": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "city": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "country": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        ]
+                      },
+                      "state": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "postalCode": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "details": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["email", "firstName"],
+                    "additionalProperties": false
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "returnUrl": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "cancelUrl": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "shipping": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The card-provider redirect URL for the session",
@@ -362,6 +445,27 @@
                       "properties": {
                         "redirectUrl": {
                           "type": ["string", "null"]
+                        },
+                        "session": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "amountCents": {
+                              "type": "number"
+                            },
+                            "currency": {
+                              "type": "string"
+                            },
+                            "redirectUrl": {
+                              "type": ["string", "null"]
+                            }
+                          },
+                          "required": ["id", "status", "amountCents", "currency", "redirectUrl"]
                         }
                       },
                       "required": ["redirectUrl"]

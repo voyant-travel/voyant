@@ -177,6 +177,11 @@ operation/status, and callback event contracts. Finance stores `provider` as
 the processor provider id and `provider_connection_id` as the opaque managed
 connection id on `payment_sessions`.
 
+Managed callback forwarding appends the selected connection reference to the
+public payment-link callback as the camel-case `connectionId` query parameter;
+the Operator maps that value to `PaymentCallbackRequest.connectionId` before
+delegating verification to the selected adapter.
+
 Self-hosted adapters remain compatible: when no processor identity is supplied,
 finance records the in-process adapter id as `provider` and leaves
 `provider_connection_id` null. Verified callbacks that do supply a processor

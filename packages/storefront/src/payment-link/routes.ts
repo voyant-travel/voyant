@@ -33,7 +33,12 @@ import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
-import { openApiValidationHook, parseQuery, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
+import {
+  openApiValidationHook,
+  parseJsonBody,
+  parseQuery,
+  stampOpenApiRegistryApiId,
+} from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   type PaymentAdapter,
@@ -47,7 +52,7 @@ import { storefrontPaymentLinkRuntimePort } from "../runtime-port.js"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
 const paymentCallbackQuerySchema = z.object({
-  "connection-id": z.string().min(1).optional(),
+  connectionId: z.string().min(1).optional(),
 })
 
 /** Absolute path matchers for the deployment's lazy route composition. */
@@ -109,6 +114,32 @@ export interface PaymentLinkSessionInput {
   currency: string
 }
 
+export interface PaymentLinkCardPaymentBilling {
+  email: string
+  phone?: string
+  firstName: string
+  lastName?: string
+  city?: string
+  country?: number | string
+  state?: string
+  postalCode?: string
+  details?: string
+}
+
+export interface PaymentLinkStartCardPaymentInput {
+  id: string
+  payerName: string | null
+  payerEmail: string | null
+  notes: string | null
+  redirectUrl: string | null
+  billing?: PaymentLinkCardPaymentBilling
+  description?: string
+  returnUrl?: string
+  cancelUrl?: string
+  metadata?: Record<string, unknown>
+  shipping?: Record<string, unknown>
+}
+
 /**
  * Deployment-supplied access the payment-link handlers need. Everything here
  * encapsulates a module storefront does not statically depend on, so the
@@ -131,13 +162,7 @@ export interface PaymentLinkRoutesOptions {
    */
   startCardPayment(
     c: Context,
-    session: {
-      id: string
-      payerName: string | null
-      payerEmail: string | null
-      notes: string | null
-      redirectUrl: string | null
-    },
+    session: PaymentLinkStartCardPaymentInput,
   ): Promise<{ configured: true; redirectUrl: string | null } | { configured: false }>
   /**
    * Verify an inbound processor IPN/webhook and apply its event (mark the
@@ -272,6 +297,41 @@ const checkoutStatusSchema = z.object({
 
 const sessionParamsSchema = z.object({ sessionId: z.string() })
 
+const cardPaymentBillingSchema = z
+  .object({
+    email: z.string().min(1),
+    phone: z.string().min(1).optional(),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1).optional(),
+    city: z.string().min(1).optional(),
+    country: z.union([z.number(), z.string().min(1)]).optional(),
+    state: z.string().min(1).optional(),
+    postalCode: z.string().min(1).optional(),
+    details: z.string().min(1).optional(),
+  })
+  .strict()
+
+const startCardPaymentBodySchema = z
+  .object({
+    billing: cardPaymentBillingSchema.optional(),
+    description: z.string().min(1).optional(),
+    returnUrl: z.string().min(1).optional(),
+    cancelUrl: z.string().min(1).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    shipping: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict()
+
+type StartCardPaymentBody = z.infer<typeof startCardPaymentBodySchema>
+
+const startCardPaymentResponseSessionSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  amountCents: z.number(),
+  currency: z.string(),
+  redirectUrl: z.string().nullable(),
+})
+
 const paymentLinkConfigRoute = createRoute({
   method: "get",
   path: "/v1/public/payment-link-config",
@@ -340,7 +400,12 @@ const startCardPaymentLinkRoute = createRoute({
       description: "The card-provider redirect URL for the session",
       content: {
         "application/json": {
-          schema: z.object({ data: z.object({ redirectUrl: z.string().nullable() }) }),
+          schema: z.object({
+            data: z.object({
+              redirectUrl: z.string().nullable(),
+              session: startCardPaymentResponseSessionSchema.optional(),
+            }),
+          }),
         },
       },
     },
@@ -435,6 +500,7 @@ function toIsoString(value: Date | string | null): string | null {
 
 const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending", "requires_redirect", "processing"])
 const CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES = new Set(["authorized", "paid"])
+const CARD_PAYMENT_CONTINUATION_STATUSES = new Set(["processing", "authorized", "paid"])
 
 function canStartCardPayment(status: string): boolean {
   return CARD_PAYMENT_STARTABLE_STATUSES.has(status)
@@ -442,6 +508,37 @@ function canStartCardPayment(status: string): boolean {
 
 function canReuseCardRedirect(status: string): boolean {
   return CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES.has(status)
+}
+
+function canUseCardContinuation(status: string): boolean {
+  return CARD_PAYMENT_CONTINUATION_STATUSES.has(status)
+}
+
+function hasJsonRequestBody(c: Context): boolean {
+  const contentLength = c.req.header("content-length")
+  if (contentLength && Number(contentLength) > 0) return true
+  return c.req.header("content-type")?.toLowerCase().includes("application/json") ?? false
+}
+
+async function readStartCardPaymentBody(c: Context): Promise<StartCardPaymentBody> {
+  if (!hasJsonRequestBody(c)) return {}
+  return parseJsonBody(c, startCardPaymentBodySchema)
+}
+
+function publicStartCardSession(session: {
+  id: string
+  status: string
+  amountCents: number
+  currency: string
+  redirectUrl: string | null
+}) {
+  return {
+    id: session.id,
+    status: session.status,
+    amountCents: session.amountCents,
+    currency: session.currency,
+    redirectUrl: session.redirectUrl,
+  }
 }
 
 async function buildPublicBankTransferInstructions(
@@ -567,6 +664,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
       if (!canStartCardPayment(session.status)) {
         return c.json({ data: { redirectUrl: null } }, 200)
       }
+      const body = await readStartCardPaymentBody(c)
       try {
         const started = await options.startCardPayment(c, {
           id: session.id,
@@ -574,11 +672,36 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
           payerEmail: session.payerEmail,
           notes: session.notes,
           redirectUrl: session.redirectUrl,
+          billing: body.billing,
+          description: body.description,
+          returnUrl: body.returnUrl,
+          cancelUrl: body.cancelUrl,
+          metadata: body.metadata,
+          shipping: body.shipping,
         })
         if (!started.configured) {
           return c.json({ error: "Card processor not configured" }, 503)
         }
-        return c.json({ data: { redirectUrl: started.redirectUrl } }, 200)
+        const [refreshedSession] = await db
+          .select()
+          .from(paymentSessions)
+          .where(eq(paymentSessions.id, sessionId))
+          .limit(1)
+        const responseSession = refreshedSession ?? session
+        const continuationUrl =
+          started.redirectUrl ??
+          (canUseCardContinuation(responseSession.status)
+            ? (body.returnUrl ?? responseSession.returnUrl ?? null)
+            : null)
+        return c.json(
+          {
+            data: {
+              redirectUrl: continuationUrl,
+              session: publicStartCardSession(responseSession),
+            },
+          },
+          200,
+        )
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to start card payment"
         return c.json({ error: message }, 502)
@@ -899,7 +1022,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
       headers,
       rawBody,
       receivedAt: new Date().toISOString(),
-      connectionId: query["connection-id"] ?? undefined,
+      connectionId: query.connectionId ?? undefined,
     })
     // 200 when applied; 400 when rejected (a processor may retry on non-2xx).
     return c.json(result, result.ok ? 200 : 400)

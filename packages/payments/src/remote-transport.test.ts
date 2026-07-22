@@ -1,10 +1,22 @@
 import { describe, expect, it, vi } from "vitest"
+import type { PaymentOperationResult, PaymentStatusResult } from "./index.js"
 import { createControlPlaneRemotePaymentTransport } from "./remote-transport.js"
 
 describe("control-plane remote payment transport", () => {
   it("forwards status processor identity to the control plane", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
-      jsonResponse({ data: { ok: true, result: { nextState: "paid" } } }),
+      jsonResponse({
+        data: {
+          ok: true,
+          result: {
+            nextState: "paid",
+            processorIdentity: {
+              providerId: "netopia",
+              connectionId: "payment_connection_123",
+            },
+          },
+        },
+      }),
     )
     const transport = createControlPlaneRemotePaymentTransport({
       endpoint: "https://control.example/admin-runtime/payments",
@@ -13,7 +25,7 @@ describe("control-plane remote payment transport", () => {
       fetchImpl,
     })
 
-    await transport.call({
+    const result = await transport.call<PaymentStatusResult>({
       method: "status",
       connectionRef: "conn_ref",
       context: { env: {} },
@@ -35,6 +47,29 @@ describe("control-plane remote payment transport", () => {
         providerId: "netopia",
         connectionId: "payment_connection_123",
       },
+    })
+    expect(result).toMatchObject({
+      nextState: "paid",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_123",
+      },
+    })
+  })
+
+  it("types operation results with processor identity", () => {
+    const result: PaymentOperationResult = {
+      status: "accepted",
+      nextState: "authorized",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_123",
+      },
+    }
+
+    expect(result.processorIdentity).toEqual({
+      providerId: "netopia",
+      connectionId: "payment_connection_123",
     })
   })
 

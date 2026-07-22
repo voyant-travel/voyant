@@ -91,6 +91,7 @@ export interface PaymentOperationInput {
 export interface PaymentOperationResult {
   status: PaymentOperationStatus
   nextState?: PaymentSessionState
+  processorIdentity?: PaymentProcessorIdentity
   processorReference?: string | null
   retryAfterSeconds?: number
   raw?: unknown
@@ -107,6 +108,7 @@ export interface PaymentStatusResult {
   nextState: PaymentSessionState
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  processorIdentity?: PaymentProcessorIdentity
   money?: PaymentMoney
   raw?: unknown
 }
