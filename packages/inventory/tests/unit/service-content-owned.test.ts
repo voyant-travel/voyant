@@ -135,6 +135,99 @@ describe("buildOwnedProductContent", () => {
       }),
     ])
   })
+
+  it("resolves localized SEO fallbacks and an explicit Open Graph image", async () => {
+    const db = fakeDb(
+      new Map<unknown, unknown[]>([
+        [
+          products,
+          [
+            {
+              id: "prod_1",
+              name: "Base tour",
+              status: "active",
+              description: "Base description",
+              inclusionsHtml: null,
+              exclusionsHtml: null,
+              termsHtml: null,
+              contractTemplateId: null,
+              startDate: null,
+              endDate: null,
+              sellCurrency: "EUR",
+              supplierId: null,
+              tags: [],
+            },
+          ],
+        ],
+        [productOptions, []],
+        [productOptionTranslations, []],
+        [
+          productMedia,
+          [
+            {
+              id: "pmed_cover",
+              productId: "prod_1",
+              dayId: null,
+              mediaType: "image",
+              url: "https://example.com/cover.jpg",
+              isCover: true,
+              isOpenGraph: false,
+              isBrochure: false,
+              sortOrder: 0,
+              createdAt: new Date(0),
+              altText: null,
+            },
+            {
+              id: "pmed_og",
+              productId: "prod_1",
+              dayId: null,
+              mediaType: "image",
+              url: "https://example.com/social.jpg",
+              isCover: false,
+              isOpenGraph: true,
+              isBrochure: false,
+              sortOrder: 1,
+              createdAt: new Date(0),
+              mimeType: "image/jpeg",
+              width: 1200,
+              height: 630,
+              altText: "Tur montan",
+            },
+          ],
+        ],
+        [
+          productTranslations,
+          [
+            {
+              productId: "prod_1",
+              languageTag: "ro-RO",
+              name: "Tur localizat",
+              shortDescription: "Descriere scurta",
+              description: "Descriere localizata",
+              inclusionsHtml: null,
+              exclusionsHtml: null,
+              termsHtml: null,
+              seoTitle: null,
+              seoDescription: null,
+            },
+          ],
+        ],
+        [productItineraries, []],
+      ]),
+    )
+
+    const result = await buildOwnedProductContent(db, "prod_1", {
+      preferredLocales: ["ro-RO"],
+    })
+
+    expect(result?.content.product.seo_title).toBe("Tur localizat")
+    expect(result?.content.product.seo_description).toBe("Descriere scurta")
+    expect(result?.content.product.open_graph_image_url).toBe("https://example.com/social.jpg")
+    expect(result?.content.product.open_graph_image_width).toBe(1200)
+    expect(result?.content.product.open_graph_image_height).toBe(630)
+    expect(result?.content.product.open_graph_image_type).toBe("image/jpeg")
+    expect(result?.content.product.open_graph_image_alt).toBe("Tur montan")
+  })
 })
 
 function fakeDb(rowsByTable: Map<unknown, unknown[]>) {

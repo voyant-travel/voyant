@@ -43,6 +43,13 @@
       "when": 1784544007859,
       "tag": "20260720104007_product_media_asset_ref",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784704800000,
+      "tag": "20260722072000_product_open_graph_media",
+      "breakpoints": true
     }
   ]
 }

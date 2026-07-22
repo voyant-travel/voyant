@@ -478,13 +478,17 @@ async function loadCatalogHydrationData(
       .select({
         productId: productMedia.productId,
         id: productMedia.id,
+        dayId: productMedia.dayId,
         mediaType: productMedia.mediaType,
         name: productMedia.name,
         url: productMedia.url,
         mimeType: productMedia.mimeType,
+        width: productMedia.width,
+        height: productMedia.height,
         altText: productMedia.altText,
         sortOrder: productMedia.sortOrder,
         isCover: productMedia.isCover,
+        isOpenGraph: productMedia.isOpenGraph,
         isBrochure: productMedia.isBrochure,
         isBrochureCurrent: productMedia.isBrochureCurrent,
         brochureVersion: productMedia.brochureVersion,
@@ -758,22 +762,40 @@ export const catalogProductsService = {
       const translation = hydrationData.translationByProduct.get(product.id) ?? null
       const allMedia = (hydrationData.mediaByProduct.get(product.id) ?? []).map((row) => ({
         id: row.id,
+        dayId: row.dayId,
         mediaType: row.mediaType,
         name: row.name,
         url: row.url,
         mimeType: row.mimeType ?? null,
+        width: row.width ?? null,
+        height: row.height ?? null,
         altText: row.altText ?? null,
         sortOrder: row.sortOrder,
         isCover: row.isCover,
+        isOpenGraph: row.isOpenGraph,
         isBrochure: row.isBrochure,
         isBrochureCurrent: row.isBrochureCurrent,
         brochureVersion: row.brochureVersion ?? null,
       }))
-      const brochure =
-        allMedia.find((item) => item.isBrochure && item.isBrochureCurrent) ??
-        allMedia.find((item) => item.isBrochure) ??
+      const productLevelMedia = allMedia.filter((item) => item.dayId === null)
+      const brochureWithScope =
+        productLevelMedia.find((item) => item.isBrochure && item.isBrochureCurrent) ??
+        productLevelMedia.find((item) => item.isBrochure) ??
         null
-      const media = allMedia.filter((item) => !item.isBrochure)
+      const brochure = brochureWithScope
+        ? (({ dayId: _dayId, ...item }) => item)(brochureWithScope)
+        : null
+      const media = allMedia
+        .filter((item) => !item.isBrochure)
+        .map(({ dayId: _dayId, ...item }) => item)
+      const eligibleProductMedia = productLevelMedia
+        .filter((item) => !item.isBrochure)
+        .map(({ dayId: _dayId, ...item }) => item)
+      const openGraphImage =
+        eligibleProductMedia.find((item) => item.isOpenGraph && item.mediaType === "image") ??
+        eligibleProductMedia.find((item) => item.isCover && item.mediaType === "image") ??
+        eligibleProductMedia.find((item) => item.mediaType === "image") ??
+        null
 
       const base = {
         id: product.id,
@@ -785,8 +807,13 @@ export const catalogProductsService = {
         contentLanguageTag: translation?.languageTag ?? null,
         slug: translation?.slug ?? null,
         shortDescription: translation?.shortDescription ?? null,
-        seoTitle: translation?.seoTitle ?? null,
-        seoDescription: translation?.seoDescription ?? null,
+        seoTitle: translation?.seoTitle ?? translation?.name ?? product.name,
+        seoDescription:
+          translation?.seoDescription ??
+          translation?.shortDescription ??
+          translation?.description ??
+          product.description ??
+          null,
         bookingMode: product.bookingMode,
         capacityMode: product.capacityMode,
         visibility: product.visibility,
@@ -837,7 +864,8 @@ export const catalogProductsService = {
           longitude: row.longitude ?? null,
           sortOrder: row.sortOrder,
         })),
-        coverMedia: media.find((item) => item.isCover) ?? media[0] ?? null,
+        coverMedia:
+          eligibleProductMedia.find((item) => item.isCover) ?? eligibleProductMedia[0] ?? null,
         isFeatured: hydrationData.featuredIds.has(product.id),
       }
 
@@ -857,6 +885,7 @@ export const catalogProductsService = {
       return {
         ...base,
         brochure,
+        openGraphImage,
         media,
         features: (hydrationData.featuresByProduct.get(product.id) ?? []).map((row) => ({
           id: row.id,

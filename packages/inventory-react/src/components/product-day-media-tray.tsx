@@ -56,6 +56,8 @@ export function ProductDayMediaTray({ productId, dayId, emptyState }: ProductDay
           storageKey: asset.storageKey,
           mimeType: asset.mimeType,
           fileSize: asset.fileSize,
+          width: asset.width,
+          height: asset.height,
           altText: asset.alt,
           assetId: asset.id,
           sortOrder: media.length + offset,

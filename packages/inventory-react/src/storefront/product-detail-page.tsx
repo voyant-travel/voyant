@@ -27,6 +27,7 @@ import {
 } from "@voyant-travel/storefront-react/storefront"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { useEffect, useMemo, useState } from "react"
+import { ProductSeoHead } from "./product-seo-metadata.js"
 
 export function ProductDetailPageProducts({
   entityModule,
@@ -113,56 +114,59 @@ export function ProductDetailPageProducts({
   const currency = quote.data?.pricing?.currency
 
   return (
-    <DetailLayout
-      body={
-        <ProductDetailBody
-          entityModule={entityModule}
-          entityId={entityId}
-          content={content.data?.content ?? null}
-          resolution={content.data?.resolution ?? null}
-          isLoading={content.isLoading}
-        />
-      }
-      sidebar={
-        <BookingSidebar
-          totalPax={totalPax}
-          totalCents={totalCents}
-          currency={currency}
-          isQuoting={quote.isQuoting}
-          quoteData={quote.data}
-          disabled={!selectedSlotId || totalPax < 1 || quote.data?.available === false}
-          onBook={() => {
-            if (!selectedSlotId) return
-            navigate({
-              to: "/shop/book/$entityModule/$entityId",
-              params: { entityModule, entityId },
-              search: {
-                departureSlotId: selectedSlotId,
-                adult: adultCount,
-                ...(childCount > 0 ? { child: childCount } : {}),
-                ...(infantCount > 0 ? { infant: infantCount } : {}),
-              } as never,
-            })
-          }}
-        >
-          <DepartureSelect
-            slots={slotRows ?? []}
-            isLoading={slots.isLoading}
-            isError={slots.isError}
-            value={selectedSlotId}
-            onChange={setSelectedSlotId}
+    <>
+      <ProductSeoHead content={content.data?.content ?? null} />
+      <DetailLayout
+        body={
+          <ProductDetailBody
+            entityModule={entityModule}
+            entityId={entityId}
+            content={content.data?.content ?? null}
+            resolution={content.data?.resolution ?? null}
+            isLoading={content.isLoading}
           />
-          <PaxBlock
-            adult={adultCount}
-            child={childCount}
-            infant={infantCount}
-            setAdult={setAdultCount}
-            setChild={setChildCount}
-            setInfant={setInfantCount}
-          />
-        </BookingSidebar>
-      }
-    />
+        }
+        sidebar={
+          <BookingSidebar
+            totalPax={totalPax}
+            totalCents={totalCents}
+            currency={currency}
+            isQuoting={quote.isQuoting}
+            quoteData={quote.data}
+            disabled={!selectedSlotId || totalPax < 1 || quote.data?.available === false}
+            onBook={() => {
+              if (!selectedSlotId) return
+              navigate({
+                to: "/shop/book/$entityModule/$entityId",
+                params: { entityModule, entityId },
+                search: {
+                  departureSlotId: selectedSlotId,
+                  adult: adultCount,
+                  ...(childCount > 0 ? { child: childCount } : {}),
+                  ...(infantCount > 0 ? { infant: infantCount } : {}),
+                } as never,
+              })
+            }}
+          >
+            <DepartureSelect
+              slots={slotRows ?? []}
+              isLoading={slots.isLoading}
+              isError={slots.isError}
+              value={selectedSlotId}
+              onChange={setSelectedSlotId}
+            />
+            <PaxBlock
+              adult={adultCount}
+              child={childCount}
+              infant={infantCount}
+              setAdult={setAdultCount}
+              setChild={setChildCount}
+              setInfant={setInfantCount}
+            />
+          </BookingSidebar>
+        }
+      />
+    </>
   )
 }
 

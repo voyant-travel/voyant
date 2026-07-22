@@ -32,6 +32,7 @@ import { appendProductMutationLedgerEntry, changedMutationFields } from "./actio
 import { emitProductContentChanged } from "./events.js"
 import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"
+import { ProductOpenGraphMediaError } from "./service-media.js"
 import * as validation from "./validation.js"
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -58,10 +59,13 @@ const mediaSchema = z.object({
   storageKey: z.string().nullable(),
   mimeType: z.string().nullable(),
   fileSize: z.number().nullable(),
+  width: z.number().nullable(),
+  height: z.number().nullable(),
   altText: z.string().nullable(),
   assetId: z.string().nullable(),
   sortOrder: z.number(),
   isCover: z.boolean(),
+  isOpenGraph: z.boolean(),
   isBrochure: z.boolean(),
   isBrochureCurrent: z.boolean(),
   brochureVersion: z.number().nullable(),
@@ -203,6 +207,12 @@ const mediaItemRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     const nextIsCover = body.isCover ?? before.isCover
     if (nextIsCover && nextMediaType !== "image") {
       return c.json({ error: "Only image media can be set as cover" }, 400)
+    }
+    if (
+      before.isOpenGraph &&
+      (nextMediaType !== "image" || body.isBrochure === true || before.dayId !== null)
+    ) {
+      return c.json({ error: "Open Graph media must remain a product-level image" }, 400)
     }
 
     const row = await productsService.updateMedia(c.get("db"), mediaId, body)
@@ -503,6 +513,32 @@ const reorderProductMediaRoute = createRoute({
   },
 })
 
+const setProductOpenGraphMediaRoute = createRoute({
+  method: "patch",
+  path: "/{id}/open-graph-image",
+  request: {
+    params: idParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: validation.setProductOpenGraphMediaSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The resolved explicit Open Graph media item, or null after clearing",
+      content: { "application/json": { schema: z.object({ data: mediaSchema.nullable() }) } },
+    },
+    400: {
+      description: "The media item is not a product-level image owned by this product",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Product not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 const listDayMediaRoute = createRoute({
   method: "get",
   path: "/{id}/days/{dayId}/media",
@@ -542,6 +578,34 @@ const createDayMediaRoute = createRoute({
 })
 
 const productMediaNestedRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  .openapi(setProductOpenGraphMediaRoute, async (c) => {
+    const productId = c.req.valid("param").id
+    const { mediaId } = c.req.valid("json")
+    let row: Awaited<ReturnType<typeof productsService.setOpenGraphMedia>>
+    try {
+      row = await productsService.setOpenGraphMedia(c.get("db"), productId, mediaId)
+    } catch (error) {
+      if (error instanceof ProductOpenGraphMediaError) {
+        if (error.code === "product_not_found") {
+          return c.json({ error: error.message }, 404)
+        }
+        return c.json({ error: error.message }, 400)
+      }
+      throw error
+    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId,
+      changedFields: ["isOpenGraph"],
+      subject: "product Open Graph image",
+      actionName: "product.media.set_open_graph",
+      routeOrToolName: "products.media.set_open_graph",
+      summary:
+        mediaId === null ? "Cleared product Open Graph image" : "Set product Open Graph image",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "media" })
+    return c.json({ data: row }, 200)
+  })
   .openapi(reorderProductMediaRoute, async (c) => {
     const productId = c.req.valid("param").id
     const data = c.req.valid("json")

@@ -192,6 +192,7 @@ export {
   productVisibilitySettingListQuerySchema,
   reorderProductMediaSchema,
   selectProductSchema,
+  setProductOpenGraphMediaSchema,
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,

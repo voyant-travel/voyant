@@ -49,6 +49,7 @@ describe("public catalog product validation", () => {
     const parsed = publicCatalogProductDetailSchema.parse({
       ...publicProductSummary,
       brochure: null,
+      openGraphImage: null,
       media: [],
       features: [],
       faqs: [],
