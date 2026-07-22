@@ -28,6 +28,7 @@ vi.mock("../../src/service-presentation-subjects.js", async () => {
   const { z } = await import("zod")
   return {
     ...presentationMocks,
+    ACCOMMODATION_PROPERTY_SUBJECT_MODULE: "accommodation-properties",
     publicAccommodationPropertyProjectionSchema: z.object({
       id: z.string(),
       name: z.string().nullable().optional(),

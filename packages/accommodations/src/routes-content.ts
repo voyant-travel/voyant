@@ -10,13 +10,9 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import {
-  CATALOG_EVENTS,
-  emitCatalogEvent,
-  OVERLAY_DEFAULT_SCOPE,
-} from "@voyant-travel/catalog"
-import { OverlayVersionConflictError } from "@voyant-travel/catalog/services/overlay"
+import { CATALOG_EVENTS, emitCatalogEvent, OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import { OverlayVersionConflictError } from "@voyant-travel/catalog/services/overlay"
 import type { EventBus, Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
@@ -30,13 +26,13 @@ import type { Context } from "hono"
 
 import { type AccommodationContentScope, getAccommodationContent } from "./service-content.js"
 import {
-  accommodationPropertyOverlayInvalidationScope,
   ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+  accommodationPropertyOverlayInvalidationScope,
   clearAccommodationPropertyOverlay,
   listAccommodationPropertyOverlayHistory,
+  publicAccommodationPropertyProjectionSchema,
   readAccommodationPropertyOverlayState,
   readPublicAccommodationPropertyProjection,
-  publicAccommodationPropertyProjectionSchema,
   writeAccommodationPropertyOverlay,
 } from "./service-presentation-subjects.js"
 
@@ -166,10 +162,7 @@ export function createAccommodationContentRoutes(
         if (err instanceof OverlayVersionConflictError) {
           return c.json({ error: "version_conflict", currentVersion: err.currentVersion }, 409)
         }
-        return c.json(
-          { error: "invalid_editorial_overlay", detail: errorMessage(err) },
-          400,
-        )
+        return c.json({ error: "invalid_editorial_overlay", detail: errorMessage(err) }, 400)
       }
       await emitAccommodationPropertyOverlayChanged(
         c.var.eventBus,
@@ -211,10 +204,7 @@ export function createAccommodationContentRoutes(
         if (err instanceof OverlayVersionConflictError) {
           return c.json({ error: "version_conflict", currentVersion: err.currentVersion }, 409)
         }
-        return c.json(
-          { error: "invalid_editorial_overlay", detail: errorMessage(err) },
-          400,
-        )
+        return c.json({ error: "invalid_editorial_overlay", detail: errorMessage(err) }, 400)
       }
       if (row) {
         await emitAccommodationPropertyOverlayChanged(
@@ -339,6 +329,12 @@ const propertyOverlayAudienceSchema = z.enum([
 ])
 const publicPropertyOverlayAudienceSchema = z.enum(["customer", "partner"])
 const nonemptyString = z.string().trim().min(1)
+const httpUrl = z
+  .string()
+  .url()
+  .refine((value) => ["http:", "https:"].includes(new URL(value).protocol), {
+    message: "Expected an HTTP(S) URL",
+  })
 const propertyIdParamSchema = z.object({ id: nonemptyString })
 const propertyOverlayScopeSchema = z.object({
   locale: nonemptyString.default("en-GB"),
@@ -362,8 +358,8 @@ const propertyOverlayWriteBodySchema = z.intersection(
   z.discriminatedUnion("fieldPath", [
     z.object({ fieldPath: z.literal("name"), value: nonemptyString }),
     z.object({ fieldPath: z.literal("description"), value: z.string() }),
-    z.object({ fieldPath: z.literal("hero_image_url"), value: z.string().url() }),
-    z.object({ fieldPath: z.literal("gallery"), value: z.array(z.string().url()) }),
+    z.object({ fieldPath: z.literal("hero_image_url"), value: httpUrl }),
+    z.object({ fieldPath: z.literal("gallery"), value: z.array(httpUrl) }),
     z.object({ fieldPath: z.literal("highlights"), value: z.array(nonemptyString) }),
     z.object({ fieldPath: z.literal("amenities"), value: z.array(nonemptyString) }),
   ]),

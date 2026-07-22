@@ -1,22 +1,22 @@
 import {
-  CATALOG_PRESENTATION_SUBJECT_MODULES,
   buildIndexerDocument,
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
   clearOverlayByTarget,
-  createSourcedPresentationSubjectIngestion,
   createFieldPolicyRegistry,
+  createSourcedPresentationSubjectIngestion,
+  type DocumentBuilder,
+  type EffectiveReferencedSubjectProjection,
   fetchOverlaysForEntity,
+  type IndexerSlice,
   listOverlayHistoryForTarget,
   OVERLAY_DEFAULT_SCOPE,
   OVERLAY_ROOT_NODE_KEY,
   OVERLAY_ROOT_NODE_KIND,
-  readSourcedEntry,
-  resolveOverlay,
-  type DocumentBuilder,
-  type EffectiveReferencedSubjectProjection,
-  type IndexerSlice,
   type OverlayOrigin,
   type ResolverOverlay,
   type ResolverScope,
+  readSourcedEntry,
+  resolveOverlay,
   type SelectCatalogOverlay,
   type SelectCatalogOverlayHistory,
   writeOverlay,
@@ -46,13 +46,19 @@ const ingestAccommodationPropertySubject = createSourcedPresentationSubjectInges
 
 const nonemptyString = z.string().trim().min(1)
 const nullableString = z.string().nullable()
+const httpUrl = z
+  .string()
+  .url()
+  .refine((value) => ["http:", "https:"].includes(new URL(value).protocol), {
+    message: "Expected an HTTP(S) URL",
+  })
 
 /** Canonical field value contracts for the accommodation-property subject. */
 export const accommodationPropertyOverlayValueSchemas = {
   name: nonemptyString,
   description: z.string(),
-  hero_image_url: z.string().url(),
-  gallery: z.array(z.string().url()),
+  hero_image_url: httpUrl,
+  gallery: z.array(httpUrl),
   highlights: z.array(nonemptyString),
   amenities: z.array(nonemptyString),
 } as const
@@ -68,8 +74,8 @@ export const accommodationPropertyProjectionSchema = z
     "source.ref": nonemptyString.optional(),
     name: nullableString.optional(),
     description: nullableString.optional(),
-    hero_image_url: nullableString.optional(),
-    gallery: z.array(z.string().url()).optional(),
+    hero_image_url: httpUrl.nullable().optional(),
+    gallery: z.array(httpUrl).optional(),
     highlights: z.array(nonemptyString).optional(),
     amenities: z.array(nonemptyString).optional(),
     star_rating: z.number().int().min(0).max(10).nullable().optional(),
@@ -106,8 +112,7 @@ export interface AccommodationPropertyOverlayTarget {
   field_path: string
 }
 
-export interface WriteAccommodationPropertyOverlayInput
-  extends AccommodationPropertyOverlayTarget {
+export interface WriteAccommodationPropertyOverlayInput extends AccommodationPropertyOverlayTarget {
   scope: AccommodationPropertyOverlayScope
   value: unknown
   expected_version?: number | null
@@ -115,8 +120,7 @@ export interface WriteAccommodationPropertyOverlayInput
   editorial_note?: string
 }
 
-export interface ClearAccommodationPropertyOverlayInput
-  extends AccommodationPropertyOverlayTarget {
+export interface ClearAccommodationPropertyOverlayInput extends AccommodationPropertyOverlayTarget {
   scope: AccommodationPropertyOverlayScope
   expected_version?: number | null
 }
@@ -180,10 +184,7 @@ export async function refreshSourcedAccommodationPropertyReference(
     sourceConnectionId: input.sourceConnectionId ?? null,
     sourceProvider: input.sourceProvider ?? null,
     sourceRef,
-    projection: accommodationPropertyProjectionFromContent(
-      input.content,
-      input.returnedLocale,
-    ),
+    projection: accommodationPropertyProjectionFromContent(input.content, input.returnedLocale),
   })
 }
 
@@ -427,19 +428,17 @@ export function assertOverlayableAccommodationPropertyField(fieldPath: string) {
 }
 
 export function parseAccommodationPropertyOverlayValue(fieldPath: string, value: unknown): unknown {
-  const schema = accommodationPropertyOverlayValueSchemas[
-    fieldPath as keyof typeof accommodationPropertyOverlayValueSchemas
-  ]
+  const schema =
+    accommodationPropertyOverlayValueSchemas[
+      fieldPath as keyof typeof accommodationPropertyOverlayValueSchemas
+    ]
   if (!schema) {
     throw new Error(`Field ${fieldPath} has no accommodation property value contract`)
   }
   return schema.parse(value)
 }
 
-export function assertAccommodationPropertyOverlayScope(
-  localized: boolean,
-  locale: string,
-): void {
+export function assertAccommodationPropertyOverlayScope(localized: boolean, locale: string): void {
   if (localized && locale === OVERLAY_DEFAULT_SCOPE) {
     throw new Error("Localized accommodation property overlays require a real locale")
   }
@@ -570,10 +569,7 @@ async function readAccommodationPropertySourceProjection(db: AnyDrizzleDb, prope
       ["hero_image_url", null],
       ["gallery", []],
       ["highlights", featureRows.filter((row) => row.highlighted).map((row) => row.name)],
-      [
-        "amenities",
-        featureRows.filter((row) => row.category === "amenity").map((row) => row.name),
-      ],
+      ["amenities", featureRows.filter((row) => row.category === "amenity").map((row) => row.name)],
       ["star_rating", propertyRow.rating ?? null],
       ["brand", propertyRow.brandName ?? propertyRow.groupName ?? null],
       ["country", addressRow?.country ?? null],
