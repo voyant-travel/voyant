@@ -26,6 +26,7 @@ const baseSession: PublicPaymentSession = {
   bookingGuaranteeId: null,
   status: "requires_redirect",
   provider: "netopia",
+  providerConnectionId: null,
   providerSessionId: "provider_session_123",
   providerPaymentId: null,
   externalReference: null,

@@ -102,6 +102,7 @@ export function createControlPlaneRemotePaymentTransport(
               headers: flattenHeaders(request.headers),
               rawBody,
               receivedAt: request.receivedAt,
+              connectionId: request.connectionId ?? undefined,
             })) as { data?: PaymentCallbackVerificationResult }
             return (body.data ?? rejected) as TResult
           } catch {

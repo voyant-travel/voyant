@@ -32,6 +32,7 @@ export const publicStartPaymentSessionSchema = z.object({
   target: paymentTargetSchema.optional(),
   provenance: paymentProvenanceSchema.optional(),
   provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   paymentMethod: paymentMethodSchema.optional().nullable(),
   paymentInstrumentId: z.string().optional().nullable(),
   payerPersonId: z.string().optional().nullable(),
@@ -163,6 +164,7 @@ export const publicPaymentSessionSchema = z
     bookingGuaranteeId: z.string().nullable(),
     status: paymentSessionStatusSchema,
     provider: z.string().nullable(),
+    providerConnectionId: z.string().nullable().optional(),
     providerSessionId: z.string().nullable(),
     providerPaymentId: z.string().nullable(),
     externalReference: z.string().nullable(),
@@ -192,6 +194,7 @@ export const publicPaymentSessionSchema = z
     return {
       ...value,
       legacyOrderId: resolvedLegacyOrderId,
+      providerConnectionId: value.providerConnectionId ?? null,
       target:
         target ??
         derivePublicPaymentTarget({

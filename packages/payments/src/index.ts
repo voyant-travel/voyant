@@ -21,6 +21,11 @@ export interface PaymentMoney {
   currency: string
 }
 
+export interface PaymentProcessorIdentity {
+  providerId: string
+  connectionId: string
+}
+
 export interface PaymentAdapterCapabilities {
   hostedCheckout: boolean
   redirectCheckout: boolean
@@ -66,6 +71,7 @@ export interface PaymentInitiationInput {
 export interface PaymentInitiationResult {
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  processorIdentity?: PaymentProcessorIdentity
   checkout?: PaymentHostedCheckout | null
   nextState: PaymentSessionState
   idempotencyKey: string
@@ -76,6 +82,7 @@ export interface PaymentOperationInput {
   paymentSessionId: string
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  processorIdentity?: PaymentProcessorIdentity
   money?: PaymentMoney
   reason?: string
   idempotencyKey: string
@@ -93,6 +100,7 @@ export interface PaymentStatusInput {
   paymentSessionId: string
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  processorIdentity?: PaymentProcessorIdentity
 }
 
 export interface PaymentStatusResult {
@@ -108,6 +116,7 @@ export interface PaymentCallbackRequest {
   rawBody: string | Uint8Array
   parsedBody?: unknown
   receivedAt: string
+  connectionId?: string | null
 }
 
 export interface PaymentCallbackEvent {
@@ -117,6 +126,7 @@ export interface PaymentCallbackEvent {
   occurredAt: string
   processorSessionId?: string | null
   processorPaymentId?: string | null
+  processorIdentity?: PaymentProcessorIdentity
   money?: PaymentMoney
   idempotencyKey: string
   raw?: unknown

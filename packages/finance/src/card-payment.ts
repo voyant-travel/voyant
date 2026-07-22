@@ -129,6 +129,8 @@ export async function startPaymentAdapterCardPayment(
   })
 
   const providerData = {
+    provider: result.processorIdentity?.providerId ?? adapter.id,
+    providerConnectionId: result.processorIdentity?.connectionId ?? undefined,
     providerSessionId: result.processorSessionId ?? undefined,
     providerPaymentId: result.processorPaymentId ?? undefined,
     providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
@@ -137,7 +139,8 @@ export async function startPaymentAdapterCardPayment(
 
   if (result.nextState === "paid" || result.nextState === "authorized") {
     await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-      provider: adapter.id,
+      provider: providerData.provider,
+      providerConnectionId: providerData.providerConnectionId,
       redirectUrl: result.checkout?.url ?? undefined,
       idempotencyKey,
     })
@@ -153,7 +156,6 @@ export async function startPaymentAdapterCardPayment(
     )
   } else {
     await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-      provider: adapter.id,
       status: result.nextState,
       redirectUrl: result.checkout?.url ?? undefined,
       idempotencyKey,

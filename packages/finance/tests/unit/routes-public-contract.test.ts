@@ -188,6 +188,7 @@ const paymentSession: PublicPaymentSession = {
   bookingGuaranteeId: null,
   status: "pending",
   provider: "netopia",
+  providerConnectionId: null,
   providerSessionId: null,
   providerPaymentId: null,
   externalReference: null,

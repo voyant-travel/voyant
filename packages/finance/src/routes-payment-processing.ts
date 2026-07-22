@@ -91,6 +91,7 @@ const paymentSessionListQueryParamsSchema = paginationSchema.extend({
   targetType: paymentSessionTargetTypeSchema.optional(),
   status: paymentSessionStatusSchema.optional(),
   provider: z.string().optional(),
+  providerConnectionId: z.string().optional(),
   providerSessionId: z.string().optional(),
   providerPaymentId: z.string().optional(),
   externalReference: z.string().optional(),

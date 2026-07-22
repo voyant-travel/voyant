@@ -1,5 +1,5 @@
-import type { EventBus } from "@voyant-travel/core"
-import type { PaymentAdapter } from "@voyant-travel/payments"
+import { createEventBus, type EventBus } from "@voyant-travel/core"
+import { PAYMENT_ADAPTER_CONTRACT_VERSION, type PaymentAdapter } from "@voyant-travel/payments"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -67,6 +67,33 @@ function stubOptions(overrides: Partial<PaymentLinkRoutesOptions> = {}): Payment
   }
 }
 
+function makePaymentAdapter(verifyCallback: PaymentAdapter["verifyCallback"]): PaymentAdapter {
+  return {
+    id: "test-payment-adapter",
+    label: "Test payment adapter",
+    contractVersion: PAYMENT_ADAPTER_CONTRACT_VERSION,
+    mode: "test",
+    capabilities: {
+      hostedCheckout: true,
+      redirectCheckout: true,
+      authorize: false,
+      capture: false,
+      void: false,
+      refund: false,
+      status: false,
+      callbackSignatureVerification: true,
+      idempotencyKeys: true,
+      retrySafeInitiation: true,
+    },
+    initiate: vi.fn(async (_context, input) => ({
+      nextState: "processing",
+      idempotencyKey: input.idempotencyKey,
+    })),
+    verifyCallback,
+    health: vi.fn(async () => ({ status: "ok", checkedAt: "2026-07-22T00:00:00.000Z" })),
+  }
+}
+
 describe("createPaymentLinkRoutes", () => {
   it("describes the package-owned anonymous lazy route module", () => {
     const module = createPaymentLinkApiModule(stubOptions())
@@ -81,16 +108,14 @@ describe("createPaymentLinkRoutes", () => {
   })
 
   it("applies a verified managed callback with the request event bus", async () => {
-    const eventBus = { emit: vi.fn() } as unknown as EventBus
+    const eventBus = createEventBus()
     const event = {
       eventId: "evt_paid",
       paymentSessionId: "ps_paid",
       nextState: "paid" as const,
       occurredAt: "2026-07-21T10:00:00.000Z",
     }
-    const adapter = {
-      verifyCallback: vi.fn(async () => ({ verified: true as const, event })),
-    } as unknown as PaymentAdapter
+    const adapter = makePaymentAdapter(vi.fn(async () => ({ verified: true as const, event })))
     const applyEvent = vi.fn(async () => undefined)
     const app = mountApp(
       stubOptions({
@@ -102,24 +127,31 @@ describe("createPaymentLinkRoutes", () => {
       eventBus,
     )
 
-    const response = await app.request("/v1/public/payment-link/callback", {
-      method: "POST",
-      headers: { "x-payment-signature": "valid" },
-      body: "signed-body",
-    })
+    const response = await app.request(
+      "/v1/public/payment-link/callback?connection-id=payment_connection_123",
+      {
+        method: "POST",
+        headers: { "x-payment-signature": "valid" },
+        body: "signed-body",
+      },
+    )
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ok: true })
+    expect(adapter.verifyCallback).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ connectionId: "payment_connection_123" }),
+    )
     expect(applyEvent).toHaveBeenCalledWith(expect.anything(), event, { eventBus })
   })
 
   it("rejects an unverified managed callback without applying an event", async () => {
-    const adapter = {
-      verifyCallback: vi.fn(async () => ({
+    const adapter = makePaymentAdapter(
+      vi.fn(async () => ({
         verified: false as const,
         reason: "invalid_signature" as const,
       })),
-    } as unknown as PaymentAdapter
+    )
     const applyEvent = vi.fn(async () => undefined)
     const app = mountApp(
       stubOptions({
@@ -252,6 +284,35 @@ describe("createPaymentLinkRoutes", () => {
         redirectUrl: "https://pay.example.com/stale",
       }),
     )
+  })
+
+  it("start-card accepts configured non-redirect processor outcomes", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "pending",
+          redirectUrl: null,
+          payerName: "Ada Lovelace",
+          payerEmail: "ada@example.com",
+          notes: "Deposit",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(
+      async () =>
+        ({
+          configured: true,
+          redirectUrl: null,
+        }) as const,
+    )
+    const app = mountApp(stubOptions({ startCardPayment }), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ data: { redirectUrl: null } })
+    expect(startCardPayment).toHaveBeenCalledOnce()
   })
 
   it("start-card preserves successful sessions without invoking the provider", async () => {

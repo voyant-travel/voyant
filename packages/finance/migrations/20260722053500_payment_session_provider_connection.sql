@@ -1,0 +1,2 @@
+ALTER TABLE "payment_sessions" ADD COLUMN "provider_connection_id" text;--> statement-breakpoint
+CREATE INDEX "idx_payment_sessions_provider_connection" ON "payment_sessions" USING btree ("provider_connection_id");

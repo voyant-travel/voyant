@@ -33,7 +33,7 @@ import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
-import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
+import { openApiValidationHook, parseQuery, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   type PaymentAdapter,
@@ -46,6 +46,9 @@ import type { Context } from "hono"
 import { storefrontPaymentLinkRuntimePort } from "../runtime-port.js"
 
 const PUBLIC_PAYMENT_LINK_CONFIG_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=600"
+const paymentCallbackQuerySchema = z.object({
+  "connection-id": z.string().min(1).optional(),
+})
 
 /** Absolute path matchers for the deployment's lazy route composition. */
 export const PAYMENT_LINK_ROUTE_PATHS = [
@@ -891,10 +894,12 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
     c.req.raw.headers.forEach((value, key) => {
       headers[key] = value
     })
+    const query = parseQuery(c, paymentCallbackQuerySchema)
     const result = await options.verifyAndApplyPaymentCallback(c, {
       headers,
       rawBody,
       receivedAt: new Date().toISOString(),
+      connectionId: query["connection-id"] ?? undefined,
     })
     // 200 when applied; 400 when rejected (a processor may retry on non-2xx).
     return c.json(result, result.ok ? 200 : 400)
