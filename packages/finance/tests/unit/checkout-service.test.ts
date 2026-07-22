@@ -174,6 +174,49 @@ describe("finance checkout service", () => {
     expect(legacyPaymentStarter).not.toHaveBeenCalled()
   })
 
+  it("rejects provider-neutral card start before default payment-plan writes when no selected starter exists", async () => {
+    const insertedInvoices: Array<Record<string, unknown>> = []
+    const db = createCheckoutDb({ insertedInvoices, schedules: [] })
+    const legacyPaymentStarter = vi.fn()
+    const applyDefaultBookingPaymentPlan = vi.spyOn(
+      financeService,
+      "applyDefaultBookingPaymentPlan",
+    )
+    const createPaymentSessionFromBookingSchedule = vi.spyOn(
+      financeService,
+      "createPaymentSessionFromBookingSchedule",
+    )
+
+    await expect(
+      initiateCheckoutCollection(
+        db as never,
+        "booking_123",
+        {
+          method: "card",
+          stage: "initial",
+          ensureDefaultPaymentPlan: true,
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        },
+        {},
+        {
+          paymentStarters: { netopia: legacyPaymentStarter },
+        },
+      ),
+    ).rejects.toThrow("No payment adapter is selected for card collection")
+
+    expect(applyDefaultBookingPaymentPlan).not.toHaveBeenCalled()
+    expect(createPaymentSessionFromBookingSchedule).not.toHaveBeenCalled()
+    expect(insertedInvoices).toHaveLength(0)
+    expect(legacyPaymentStarter).not.toHaveBeenCalled()
+  })
+
   it("allows provider-qualified card starts to use legacy keyed starters", async () => {
     const db = createCheckoutDb({ insertedInvoices: [] })
     const paymentSession = {
@@ -266,9 +309,11 @@ describe("finance checkout service", () => {
 function createCheckoutDb({
   insertedInvoices,
   booking: bookingOverrides = {},
+  schedules,
 }: {
   insertedInvoices: Array<Record<string, unknown>>
   booking?: Partial<Record<string, unknown>>
+  schedules?: Array<Record<string, unknown>>
 }) {
   const booking = {
     id: "booking_123",
@@ -285,19 +330,21 @@ function createCheckoutDb({
   const rowsFor = (table: unknown) => {
     if (table === invoiceNumberSeries) return []
     if (table === bookingPaymentSchedules) {
-      return [
-        {
-          id: "schedule_123",
-          bookingId: "booking_123",
-          bookingItemId: null,
-          scheduleType: "deposit",
-          status: "pending",
-          amountCents: 5_000,
-          dueDate: "2026-06-30",
-          notes: null,
-          createdAt: new Date("2026-06-01T00:00:00.000Z"),
-        },
-      ]
+      return (
+        schedules ?? [
+          {
+            id: "schedule_123",
+            bookingId: "booking_123",
+            bookingItemId: null,
+            scheduleType: "deposit",
+            status: "pending",
+            amountCents: 5_000,
+            dueDate: "2026-06-30",
+            notes: null,
+            createdAt: new Date("2026-06-01T00:00:00.000Z"),
+          },
+        ]
+      )
     }
     if (table === invoices) return []
     return []

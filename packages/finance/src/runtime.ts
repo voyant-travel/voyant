@@ -60,6 +60,7 @@ export function createFinanceRuntime(
     resolveNotificationDispatcher: notifications.resolveNotificationDispatcher,
     resolvePaymentStarters: (bindings) =>
       checkoutPaymentStarters?.resolvePaymentStarters(bindings) ?? {},
+    paymentStatusAdapter: selectedPaymentAdapter ?? null,
     resolveSelectedPaymentStarter: selectedPaymentAdapter
       ? (bindings) => createSelectedPaymentAdapterStarter(host, selectedPaymentAdapter, bindings)
       : undefined,

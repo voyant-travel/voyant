@@ -442,7 +442,7 @@ describe("createFinanceCheckoutRoutes", () => {
   it("accepts guest booking access for booking-scoped collection routes", async () => {
     serviceMocks.previewCheckoutCollection.mockResolvedValue({
       bookingId: "book_123",
-      method: "card",
+      method: "bank_transfer",
       stage: "initial",
       paymentSessionTarget: "invoice",
       documentType: "invoice",
@@ -468,13 +468,41 @@ describe("createFinanceCheckoutRoutes", () => {
       {
         method: "POST",
         headers: { "content-type": "application/json", ...(await guestAccessHeaders()) },
-        body: JSON.stringify({ method: "card" }),
+        body: JSON.stringify({ method: "bank_transfer" }),
       },
       TEST_CAPABILITY_ENV,
     )
 
     expect(res.status).toBe(200)
     expect(serviceMocks.previewCheckoutCollection).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects card collection preview before service invocation when no card starter exists", async () => {
+    const routes = createFinanceCheckoutRoutes()
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.use("*", async (c, next) => {
+      c.set("db", {} as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    const res = await app.request(
+      "/bookings/book_123/collection-plan",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await capabilityHeaders()) },
+        body: JSON.stringify({
+          method: "card",
+          ensureDefaultPaymentPlan: true,
+        }),
+      },
+      TEST_CAPABILITY_ENV,
+    )
+
+    expect(res.status).toBe(501)
+    expect(await res.json()).toEqual({ error: CHECKOUT_ROUTE_RUNTIME_NOT_CONFIGURED_MESSAGE })
+    expect(serviceMocks.previewCheckoutCollection).not.toHaveBeenCalled()
   })
 
   it("lists booking reminder runs through the injected checkout reader", async () => {

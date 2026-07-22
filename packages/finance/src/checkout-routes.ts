@@ -131,10 +131,13 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
       // the other collection mutations.
       .post("/bookings/:bookingId/collection-plan", collectionIdempotency(), async (c) => {
         try {
+          const input = await parseOptionalJsonBody(c, previewCheckoutCollectionSchema)
+          const runtime = getRuntime(c.env, c.var.container)
+          assertCheckoutRuntimeSupportsCollection(runtime, input)
           const plan = await previewCheckoutCollection(
             c.get("db"),
             c.req.param("bookingId")!,
-            await parseOptionalJsonBody(c, previewCheckoutCollectionSchema),
+            input,
             options.policy,
           )
 
@@ -146,6 +149,9 @@ function attachCollectionRoutes<TEnv extends Env>(app: Hono<TEnv>, options: Chec
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Failed to preview checkout collection"
+          if (error instanceof CheckoutRouteRuntimeNotConfiguredError) {
+            return c.json({ error: message }, 501)
+          }
           return c.json({ error: message }, 400)
         }
       })

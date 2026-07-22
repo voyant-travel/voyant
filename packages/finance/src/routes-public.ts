@@ -4,11 +4,14 @@ import {
   requireCheckoutCapability,
 } from "@voyant-travel/bookings/checkout-capability"
 import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
+import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
 import type { Context, MiddlewareHandler } from "hono"
 
+import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY } from "./route-runtime.js"
 import { createPublicAccountantRoutes } from "./routes-public-accountant.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { publicFinanceService } from "./service-public.js"
+import type { FinanceServiceRuntime } from "./service-shared.js"
 import {
   publicBookingFinanceDocumentsSchema,
   publicBookingFinancePaymentsSchema,
@@ -27,6 +30,11 @@ export interface PublicFinanceRouteOptions {
     bindings: unknown,
     storageKey: string,
   ) => Promise<string | null> | string | null
+  paymentStatusAdapter?: PaymentAdapter | null
+  resolvePaymentStatusAdapter?: (bindings: unknown) => PaymentAdapter | null | undefined
+  resolvePaymentStatusContext?: (
+    bindings: unknown,
+  ) => PaymentAdapterRuntimeContext | null | undefined
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -73,6 +81,25 @@ function invoiceCheckoutCapability(action: CheckoutCapabilityAction): Middleware
 
     await requireBookingCheckoutCapability(c, bookingId, action)
     await next()
+  }
+}
+
+function resolvePaymentStatusRefresh(c: Context<Env>, options: PublicFinanceRouteOptions) {
+  const adapter =
+    options.resolvePaymentStatusAdapter?.(c.env) ?? options.paymentStatusAdapter ?? null
+  if (!adapter) return undefined
+
+  const container = c.var.container
+  const routeRuntime = container?.has(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+    ? container.resolve<FinanceServiceRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+    : undefined
+  const eventBus = c.var.eventBus ?? routeRuntime?.eventBus
+  const runtime = routeRuntime ?? (eventBus ? { eventBus } : undefined)
+
+  return {
+    adapter,
+    context: options.resolvePaymentStatusContext?.(c.env) ?? { env: getRuntimeEnv(c) },
+    ...(runtime ? { runtime } : {}),
   }
 }
 
@@ -392,9 +419,11 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
       // to share when issuing the link). Trip-issued sessions already
       // worked this way (no bookingId attached → no check); admin-
       // initiated booking sessions need the same access.
+      const paymentStatusRefresh = resolvePaymentStatusRefresh(c, options)
       const session = await publicFinanceService.getPaymentSession(
         c.get("db"),
         c.req.valid("param").sessionId,
+        paymentStatusRefresh ? { paymentStatusRefresh } : undefined,
       )
 
       return session ? c.json({ data: session }, 200) : notFound(c, "Payment session not found")

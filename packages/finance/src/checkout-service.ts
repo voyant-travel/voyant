@@ -326,21 +326,6 @@ export async function initiateCheckoutCollection(
   options: CheckoutPolicyOptions = {},
   runtime: CheckoutRuntimeOptions = {},
 ): Promise<InitiatedCheckoutCollection | null> {
-  const context = await loadBookingContext(db, bookingId)
-  if (!context) return null
-
-  const plan = await previewCheckoutCollection(db, bookingId, input, options)
-  if (!plan) return null
-  if (plan.amountCents <= 0) {
-    throw new Error("No outstanding amount available for collection")
-  }
-
-  let invoice = plan.selectedInvoice
-  let paymentSession: PaymentSession | null = null
-  let invoiceNotification: CheckoutNotificationDelivery | null = null
-  let paymentSessionNotification: CheckoutNotificationDelivery | null = null
-  let bankTransferInstructions: CheckoutBankTransferInstructionsRecord | null = null
-  let providerStart: CheckoutProviderStartResult | null = null
   let providerStarter: NonNullable<CheckoutRuntimeOptions["selectedPaymentStarter"]> | null = null
 
   if (input.startProvider) {
@@ -365,6 +350,22 @@ export async function initiateCheckoutCollection(
       )
     }
   }
+
+  const context = await loadBookingContext(db, bookingId)
+  if (!context) return null
+
+  const plan = await previewCheckoutCollection(db, bookingId, input, options)
+  if (!plan) return null
+  if (plan.amountCents <= 0) {
+    throw new Error("No outstanding amount available for collection")
+  }
+
+  let invoice = plan.selectedInvoice
+  let paymentSession: PaymentSession | null = null
+  let invoiceNotification: CheckoutNotificationDelivery | null = null
+  let paymentSessionNotification: CheckoutNotificationDelivery | null = null
+  let bankTransferInstructions: CheckoutBankTransferInstructionsRecord | null = null
+  let providerStart: CheckoutProviderStartResult | null = null
 
   if (input.method === "bank_transfer") {
     invoice = await createCollectionInvoice(db, context, plan, input.notes ?? null)

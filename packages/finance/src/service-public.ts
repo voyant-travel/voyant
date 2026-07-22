@@ -4,6 +4,10 @@ import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
+  type PaymentAdapterStatusRefreshOptions,
+  refreshPaymentSessionStatusWithAdapter,
+} from "./payment-adapter-status.js"
+import {
   bookingGuarantees,
   bookingPaymentSchedules,
   invoiceRenditions,
@@ -27,6 +31,10 @@ import type {
 
 export interface PublicFinanceRuntimeOptions {
   resolveDocumentDownloadUrl?: (storageKey: string) => Promise<string | null> | string | null
+}
+
+export interface PublicPaymentSessionRuntimeOptions {
+  paymentStatusRefresh?: PaymentAdapterStatusRefreshOptions
 }
 
 function normalizeDateTime(value: Date | string | null | undefined) {
@@ -581,8 +589,15 @@ export const publicFinanceService = {
     }
   },
 
-  async getPaymentSession(db: PostgresJsDatabase, sessionId: string) {
-    const session = await financeService.getPaymentSessionById(db, sessionId)
+  async getPaymentSession(
+    db: PostgresJsDatabase,
+    sessionId: string,
+    runtime: PublicPaymentSessionRuntimeOptions = {},
+  ) {
+    const refreshed = runtime.paymentStatusRefresh
+      ? await refreshPaymentSessionStatusWithAdapter(db, sessionId, runtime.paymentStatusRefresh)
+      : null
+    const session = refreshed ?? (await financeService.getPaymentSessionById(db, sessionId))
     return session ? toPublicPaymentSession(session) : null
   },
 

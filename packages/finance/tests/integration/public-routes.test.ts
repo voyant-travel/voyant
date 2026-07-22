@@ -2,11 +2,12 @@
 import { issueCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
 import { bookings } from "@voyant-travel/bookings/schema"
 import { handleApiError } from "@voyant-travel/hono"
+import { PAYMENT_ADAPTER_CONTRACT_VERSION, type PaymentAdapter } from "@voyant-travel/payments"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { publicFinanceRoutes } from "../../src/routes-public.js"
+import { createPublicFinanceRoutes, publicFinanceRoutes } from "../../src/routes-public.js"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -273,6 +274,66 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.recommendedTarget).toEqual({
       targetType: "booking_payment_schedule",
       targetId: body.data.schedules[0].id,
+    })
+  })
+
+  it("refreshes public payment-session reads through the selected payment adapter", async () => {
+    const booking = await seedBooking()
+    const invoice = await seedInvoice(booking.id, { totalCents: 25000, balanceDueCents: 25000 })
+    const [session] = await db
+      .insert(paymentSessions)
+      .values({
+        invoiceId: invoice.id,
+        targetType: "invoice",
+        targetId: invoice.id,
+        status: "processing",
+        provider: "netopia",
+        providerConnectionId: "payment_connection_public_old",
+        providerSessionId: "processor_session_public_old",
+        currency: "USD",
+        amountCents: 25000,
+        paymentMethod: "credit_card",
+      })
+      .returning()
+    const status = vi.fn(async () => ({
+      nextState: "failed" as const,
+      processorSessionId: "processor_session_public_old",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_public_old",
+      },
+      raw: { status: "declined" },
+    }))
+    const statusApp = new Hono()
+    statusApp.onError(handleApiError)
+    statusApp.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    statusApp.route("/", createPublicFinanceRoutes({ paymentStatusAdapter: statusAdapter(status) }))
+
+    const res = await statusApp.request(`/payment-sessions/${session.id}`)
+
+    expect(res.status).toBe(200)
+    expect(status).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        paymentSessionId: session.id,
+        processorSessionId: "processor_session_public_old",
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_public_old",
+        },
+      }),
+    )
+    await expect(res.json()).resolves.toMatchObject({
+      data: {
+        id: session.id,
+        status: "failed",
+        provider: "netopia",
+        providerConnectionId: "payment_connection_public_old",
+        providerSessionId: "processor_session_public_old",
+      },
     })
   })
 
@@ -811,3 +872,34 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.reason).toBe("booking_mismatch")
   })
 })
+
+function statusAdapter(status: NonNullable<PaymentAdapter["status"]>): PaymentAdapter {
+  return {
+    id: "managed-payment-adapter",
+    label: "Managed Payment Adapter",
+    contractVersion: PAYMENT_ADAPTER_CONTRACT_VERSION,
+    mode: "test",
+    capabilities: {
+      hostedCheckout: true,
+      redirectCheckout: true,
+      authorize: false,
+      capture: false,
+      void: false,
+      refund: false,
+      status: true,
+      callbackSignatureVerification: true,
+      idempotencyKeys: true,
+      retrySafeInitiation: true,
+    },
+    initiate: vi.fn(async (_context, input) => ({
+      nextState: "processing",
+      idempotencyKey: input.idempotencyKey,
+    })),
+    verifyCallback: vi.fn(async () => ({ verified: false, reason: "malformed" })),
+    health: vi.fn(async () => ({
+      status: "ok",
+      checkedAt: "2026-07-17T00:00:00.000Z",
+    })),
+    status,
+  }
+}
