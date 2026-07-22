@@ -1,4 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { handleApiError } from "@voyant-travel/hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const presentationMocks = vi.hoisted(() => ({
@@ -51,6 +52,13 @@ vi.mock("../../src/service-presentation-subjects.js", () => presentationMocks)
 import { cruisePublicRoutes } from "../../src/routes-public.js"
 import { registerCruiseShipRoutes } from "../../src/routes-ships.js"
 
+function buildPublicApp() {
+  const app = new OpenAPIHono()
+  app.onError(handleApiError)
+  app.route("/", cruisePublicRoutes)
+  return app
+}
+
 function buildAdminApp(userId?: string, eventBus?: { emit: ReturnType<typeof vi.fn> }) {
   const app = new OpenAPIHono()
   app.onError((error, c) => {
@@ -80,7 +88,7 @@ describe("cruise ship presentation routes", () => {
   })
 
   it("redacts source and provenance from the public effective projection", async () => {
-    const res = await cruisePublicRoutes.request("/ships/crsh_123/effective?locale=ro-RO")
+    const res = await buildPublicApp().request("/ships/crsh_123/effective?locale=ro-RO")
 
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -91,10 +99,11 @@ describe("cruise ship presentation routes", () => {
   })
 
   it("rejects staff and supplier audiences on the public effective route", async () => {
-    const staff = await cruisePublicRoutes.request(
+    const app = buildPublicApp()
+    const staff = await app.request(
       "/ships/crsh_123/effective?locale=ro-RO&audience=staff",
     )
-    const supplier = await cruisePublicRoutes.request(
+    const supplier = await app.request(
       "/ships/crsh_123/effective?locale=ro-RO&audience=supplier",
     )
 
