@@ -90,6 +90,21 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("preserves selected setup steps on unit loaders and the aggregate runtime", () => {
+    const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
+    const setupSteps = [
+      { id: "@acme/voyant-loyalty#setup.connect", skippable: false },
+      { id: "@acme/voyant-loyalty#setup.import", skippable: true },
+    ]
+    const runtime = createVoyantGraphRuntime({
+      ...input,
+      modules: input.modules.map((module) => ({ ...module, setupSteps })),
+    })
+
+    expect(runtime.modules[0]?.setupSteps).toEqual(setupSteps)
+    expect(runtime.setupSteps).toEqual(setupSteps)
+  })
+
   it("exposes selected custom-field targets to graph runtime factories", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
     const runtime = createVoyantGraphRuntime({
