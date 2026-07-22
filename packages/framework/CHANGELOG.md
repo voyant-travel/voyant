@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.62.2
+
+### Patch Changes
+
+- 373186a: Preserve package-declared setup steps while lowering selected graph units so runtime setup flows receive the selected project contract.
+
 ## 0.62.1
 
 ### Patch Changes
