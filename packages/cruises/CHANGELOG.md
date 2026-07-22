@@ -1,5 +1,17 @@
 # @voyant-travel/cruises
 
+## 0.192.0
+
+### Patch Changes
+
+- 2c79bef: Add referenced presentation-subject overlay support for cruise ships and accommodation properties.
+- Updated dependencies [a43267a]
+- Updated dependencies [90d44c0]
+- Updated dependencies [2c79bef]
+  - @voyant-travel/catalog@0.191.0
+  - @voyant-travel/bookings@0.193.0
+  - @voyant-travel/finance@0.193.0
+
 ## 0.191.1
 
 ### Patch Changes

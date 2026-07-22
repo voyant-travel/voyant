@@ -1,5 +1,25 @@
 # @voyant-travel/catalog
 
+## 0.191.0
+
+### Patch Changes
+
+- a43267a: Add node-aware localized editorial overlays for sourced product content, including stable content-node targeting, optimistic overlay versions, audit history, product admin read/write/clear routes, and public provenance redaction.
+
+  Tighten editorial overlay scope isolation for product content reads and writes, require admin overlay mutations to carry an authenticated user id, and make overlay mutations/history atomic with race-safe optimistic version checks.
+
+- 90d44c0: Add the operator editorial-overlay editor for sourced products: configured-locale switching, side-by-side provider/overlay/effective comparison on wide screens with an accessible tabbed compare on narrow ones, overlay-only translation authoring, media-library-backed image overlays, customer preview, confirmed clear, and optimistic-concurrency conflict reporting.
+
+  The product editorial-overlay admin read model now enumerates every eligible field (not only fields that already carry an overlay) and reports per-field `exact`, `language-fallback`, `source-fallback`, `overlaid`, `overlay-only`, `missing`, `invalid`, and `orphaned` state plus drift against the provider's last source update, the cached source locales, and whether the entity is provider-sourced.
+
+  `useLocale()` now exposes the deployment's `supportedLocales`, and the catalog overlay service exposes `fetchOverlayRowsForEntity` for admin surfaces that need overlay audit columns.
+
+- 2c79bef: Add referenced presentation-subject overlay support for cruise ships and accommodation properties.
+- Updated dependencies [a43267a]
+  - @voyant-travel/catalog-contracts@0.112.1
+  - @voyant-travel/bookings@0.193.0
+  - @voyant-travel/finance@0.193.0
+
 ## 0.190.1
 
 ### Patch Changes

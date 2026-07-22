@@ -1,5 +1,7 @@
 # @voyant-travel/admin-client
 
+## 0.129.0
+
 ## 0.128.3
 
 ## 0.128.2

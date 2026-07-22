@@ -1,5 +1,30 @@
 # @voyant-travel/inventory-react
 
+## 0.75.0
+
+### Minor Changes
+
+- 90d44c0: Add the operator editorial-overlay editor for sourced products: configured-locale switching, side-by-side provider/overlay/effective comparison on wide screens with an accessible tabbed compare on narrow ones, overlay-only translation authoring, media-library-backed image overlays, customer preview, confirmed clear, and optimistic-concurrency conflict reporting.
+
+  The product editorial-overlay admin read model now enumerates every eligible field (not only fields that already carry an overlay) and reports per-field `exact`, `language-fallback`, `source-fallback`, `overlaid`, `overlay-only`, `missing`, `invalid`, and `orphaned` state plus drift against the provider's last source update, the cached source locales, and whether the entity is provider-sourced.
+
+  `useLocale()` now exposes the deployment's `supportedLocales`, and the catalog overlay service exposes `fetchOverlayRowsForEntity` for admin surfaces that need overlay audit columns.
+
+### Patch Changes
+
+- Updated dependencies [a43267a]
+- Updated dependencies [90d44c0]
+- Updated dependencies [2c79bef]
+  - @voyant-travel/catalog-contracts@0.112.1
+  - @voyant-travel/inventory@0.16.0
+  - @voyant-travel/admin@0.129.0
+  - @voyant-travel/i18n@0.117.0
+  - @voyant-travel/catalog-react@0.191.0
+  - @voyant-travel/finance-react@0.193.0
+  - @voyant-travel/media-react@0.4.0
+  - @voyant-travel/storefront-react@0.195.0
+  - @voyant-travel/finance@0.193.0
+
 ## 0.74.1
 
 ### Patch Changes

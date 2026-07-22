@@ -1,5 +1,16 @@
 # @voyant-travel/products-contracts
 
+## 0.107.8
+
+### Patch Changes
+
+- a43267a: Add node-aware localized editorial overlays for sourced product content, including stable content-node targeting, optimistic overlay versions, audit history, product admin read/write/clear routes, and public provenance redaction.
+
+  Tighten editorial overlay scope isolation for product content reads and writes, require admin overlay mutations to carry an authenticated user id, and make overlay mutations/history atomic with race-safe optimistic version checks.
+
+- Updated dependencies [a43267a]
+  - @voyant-travel/catalog-contracts@0.112.1
+
 ## 0.107.7
 
 ### Patch Changes
