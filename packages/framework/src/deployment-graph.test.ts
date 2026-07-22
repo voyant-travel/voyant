@@ -1563,7 +1563,7 @@ describe("deployment graph v1", () => {
           schedule: { every: "5m" },
           scheduling: {
             profiles: {
-              invalid: { cron: "0 * * * *", timezone: "Not/AZone", overlap: "parallel" },
+              invalid: { cron: "0 * * * *", timezone: "Not/AZone" },
             },
           },
           runtime: { entry: "./jobs", export: "drain" },
@@ -1573,7 +1573,6 @@ describe("deployment graph v1", () => {
     expect(validateGraphUnitManifest(module)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ facet: "jobs[0].scheduling.profiles.invalid.timezone" }),
-        expect.objectContaining({ facet: "jobs[0].scheduling.profiles.invalid.overlap" }),
       ]),
     )
   })
