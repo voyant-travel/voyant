@@ -191,9 +191,12 @@ const publicCatalogMediaSchema = z.object({
   name: z.string(),
   url: z.string(),
   mimeType: z.string().nullable(),
+  width: z.number().int().nullable(),
+  height: z.number().int().nullable(),
   altText: z.string().nullable(),
   sortOrder: z.number().int(),
   isCover: z.boolean(),
+  isOpenGraph: z.boolean(),
   isBrochure: z.boolean(),
   isBrochureCurrent: z.boolean(),
   brochureVersion: z.number().int().nullable(),
@@ -271,6 +274,7 @@ export const publicCatalogProductSchema = z.object({
   // Detail-only (`includeContent`):
   media: z.array(publicCatalogMediaSchema).optional(),
   brochure: publicCatalogMediaSchema.nullable().optional(),
+  openGraphImage: publicCatalogMediaSchema.nullable().optional(),
   features: z.array(publicCatalogFeatureSchema).optional(),
   faqs: z.array(publicCatalogFaqSchema).optional(),
   // Present only when requested via `?include=itinerary` (voyant#2910).

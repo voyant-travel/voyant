@@ -58,6 +58,7 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
 
   const uploadMedia = useMemo<ProductMediaUploadHandler>(
     () => async (file) => {
+      const dimensions = file.type.startsWith("image/") ? await readImageDimensions(file) : null
       const formData = new FormData()
       formData.append("file", file)
       const response = await fetcher(joinUrl(baseUrl, "/v1/admin/uploads"), {
@@ -83,6 +84,8 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
         mimeType: upload.mimeType,
         fileSize: upload.size,
         mediaType,
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
       }
     },
     [baseUrl, fetcher],
@@ -111,6 +114,17 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
       <ProductDetailPage id={id} />
     </ProductDetailHostProvider>
   )
+}
+
+async function readImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  try {
+    const bitmap = await createImageBitmap(file)
+    const dimensions = { width: bitmap.width, height: bitmap.height }
+    bitmap.close()
+    return dimensions
+  } catch {
+    return null
+  }
 }
 
 function joinUrl(baseUrl: string, path: string): string {

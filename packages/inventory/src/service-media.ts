@@ -16,6 +16,16 @@ type UpdateProductMediaInput = z.infer<typeof updateProductMediaSchema>
 type UpsertProductBrochureInput = z.infer<typeof upsertProductBrochureSchema>
 type ReorderProductMediaInput = z.infer<typeof reorderProductMediaSchema>
 
+export class ProductOpenGraphMediaError extends Error {
+  constructor(
+    readonly code: "product_not_found" | "invalid_media_target",
+    message: string,
+  ) {
+    super(message)
+    this.name = "ProductOpenGraphMediaError"
+  }
+}
+
 async function ensureProductExists(db: PostgresJsDatabase, productId: string) {
   const [product] = await db
     .select({ id: products.id })
@@ -186,6 +196,8 @@ export const mediaProductsService = {
         storageKey: data.storageKey ?? null,
         mimeType: data.mimeType ?? null,
         fileSize: data.fileSize ?? null,
+        width: data.width ?? null,
+        height: data.height ?? null,
         altText: data.altText ?? null,
         assetId: data.assetId ?? null,
         sortOrder: data.sortOrder,
@@ -277,6 +289,71 @@ export const mediaProductsService = {
       .returning()
 
     return row ?? null
+  },
+
+  async setOpenGraphMedia(db: PostgresJsDatabase, productId: string, mediaId: string | null) {
+    return db.transaction(async (tx) => {
+      // Lock the owning product to serialize replacements for one product. This
+      // prevents concurrent requests from racing the partial unique index.
+      const [product] = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, productId))
+        .for("update")
+        .limit(1)
+      if (!product) {
+        throw new ProductOpenGraphMediaError("product_not_found", "Product not found")
+      }
+
+      if (mediaId === null) {
+        await tx
+          .update(productMedia)
+          .set({ isOpenGraph: false, updatedAt: new Date() })
+          .where(and(eq(productMedia.productId, productId), eq(productMedia.isOpenGraph, true)))
+        return null
+      }
+
+      const [target] = await tx
+        .select()
+        .from(productMedia)
+        .where(
+          and(
+            eq(productMedia.id, mediaId),
+            eq(productMedia.productId, productId),
+            eq(productMedia.mediaType, "image"),
+            eq(productMedia.isBrochure, false),
+            // agent-quality: raw-sql reviewed -- owner: inventory; product-level media has no day.
+            sql`${productMedia.dayId} is null`,
+          ),
+        )
+        .for("update")
+        .limit(1)
+      if (!target) {
+        throw new ProductOpenGraphMediaError(
+          "invalid_media_target",
+          "Open Graph media must be a product-level image owned by this product",
+        )
+      }
+
+      await tx
+        .update(productMedia)
+        .set({ isOpenGraph: false, updatedAt: new Date() })
+        .where(and(eq(productMedia.productId, productId), eq(productMedia.isOpenGraph, true)))
+
+      const [row] = await tx
+        .update(productMedia)
+        .set({ isOpenGraph: true, updatedAt: new Date() })
+        .where(and(eq(productMedia.id, mediaId), eq(productMedia.productId, productId)))
+        .returning()
+      if (!row) {
+        throw new ProductOpenGraphMediaError(
+          "invalid_media_target",
+          "Open Graph media target no longer exists",
+        )
+      }
+
+      return row
+    })
   },
 
   async reorderMedia(db: PostgresJsDatabase, data: ReorderProductMediaInput) {

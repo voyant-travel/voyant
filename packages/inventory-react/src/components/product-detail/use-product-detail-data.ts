@@ -40,12 +40,15 @@ export interface UseProductDetailDataResult {
     deleteProduct: ReturnType<typeof useMutation<unknown, Error, void>>
     deleteSlot: ReturnType<typeof useMutation<unknown, Error, string>>
     deleteRule: ReturnType<typeof useMutation<unknown, Error, string>>
-    uploadMedia: ReturnType<typeof useMutation<unknown, Error, { file: File; dayId?: string }>>
+    uploadMedia: ReturnType<
+      typeof useMutation<{ data: ProductMediaItem }, Error, { file: File; dayId?: string }>
+    >
     addMediaFromLibrary: ReturnType<
       typeof useMutation<unknown, Error, { assets: MediaAsset[]; dayId?: string }>
     >
     deleteMedia: ReturnType<typeof useMutation<unknown, Error, string>>
     setCover: ReturnType<typeof useMutation<unknown, Error, string>>
+    setOpenGraph: ReturnType<typeof useMutation<unknown, Error, string | null>>
     generateBrochure: ReturnType<typeof useMutation<unknown, Error, void>>
   }
   invalidateProduct: () => void
@@ -129,13 +132,15 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
       const endpoint = dayId
         ? `/v1/admin/products/${productId}/days/${dayId}/media`
         : `/v1/admin/products/${productId}/media`
-      return api.post(endpoint, {
+      return api.post<{ data: ProductMediaItem }>(endpoint, {
         mediaType: result.mediaType,
         name: result.name,
         url: result.url,
         storageKey: result.storageKey,
         mimeType: result.mimeType,
         fileSize: result.fileSize,
+        width: result.width,
+        height: result.height,
       })
     },
     onSuccess: () => {
@@ -157,6 +162,8 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
           storageKey: asset.storageKey,
           mimeType: asset.mimeType,
           fileSize: asset.fileSize,
+          width: asset.width,
+          height: asset.height,
           altText: asset.alt,
           assetId: asset.id,
         })
@@ -178,6 +185,15 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
 
   const setCover = useMutation({
     mutationFn: (mediaId: string) => api.patch(`/v1/admin/products/media/${mediaId}/set-cover`, {}),
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
+  })
+
+  const setOpenGraph = useMutation({
+    mutationFn: (mediaId: string | null) =>
+      api.patch(`/v1/admin/products/${productId}/open-graph-image`, { mediaId }),
     onSuccess: () => {
       void mediaQuery.refetch()
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
@@ -234,6 +250,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
       addMediaFromLibrary,
       deleteMedia,
       setCover,
+      setOpenGraph,
       generateBrochure,
     },
     invalidateProduct,

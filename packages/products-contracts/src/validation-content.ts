@@ -315,6 +315,8 @@ const productMediaCoreSchema = z.object({
   storageKey: z.string().max(1024).optional().nullable(),
   mimeType: z.string().max(255).optional().nullable(),
   fileSize: z.number().int().min(0).optional().nullable(),
+  width: z.number().int().positive().optional().nullable(),
+  height: z.number().int().positive().optional().nullable(),
   altText: z.string().max(1000).optional().nullable(),
   assetId: z.string().max(255).optional().nullable(),
   sortOrder: z.number().int().default(0),
@@ -349,11 +351,15 @@ export const productMediaListQuerySchema = z.object({
 export const reorderProductMediaSchema = z.object({
   items: z.array(z.object({ id: z.string(), sortOrder: z.number().int() })),
 })
+export const setProductOpenGraphMediaSchema = z.object({
+  mediaId: z.string().nullable(),
+})
 export type InsertProductMedia = z.infer<typeof insertProductMediaSchema>
 export type UpdateProductMedia = z.infer<typeof updateProductMediaSchema>
 export type UpsertProductBrochure = z.infer<typeof upsertProductBrochureSchema>
 export type ProductMediaListQuery = z.infer<typeof productMediaListQuerySchema>
 export type ReorderProductMedia = z.infer<typeof reorderProductMediaSchema>
+export type SetProductOpenGraphMedia = z.infer<typeof setProductOpenGraphMediaSchema>
 
 const productTypeCoreSchema = z.object({
   name: z.string().min(1).max(255),
