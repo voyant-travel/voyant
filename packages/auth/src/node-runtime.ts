@@ -10,12 +10,7 @@
  */
 
 import { type NodeDatabaseEnv, openNodeDatabase } from "@voyant-travel/db/runtime"
-import {
-  authUser,
-  cloudAuthUserLinks,
-  type SelectApikey,
-  userProfilesTable,
-} from "@voyant-travel/db/schema/iam"
+import { authUser, type SelectApikey, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import {
   parseJsonBody,
   type Reporter,
@@ -29,7 +24,6 @@ import {
 } from "@voyant-travel/hono/middleware/error-boundary"
 import { getRequestId } from "@voyant-travel/hono/observability"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
-import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
@@ -68,6 +62,7 @@ import {
   handleApiTokenManagementRequest,
   handleOrganizationMembersRequest,
 } from "./server.js"
+import { resolveStaffAccess } from "./staff-access.js"
 import { StorefrontCustomerAuthResolutionError } from "./storefront-customer-auth-resolver.js"
 import { ensureCurrentUserProfile } from "./workspace.js"
 
@@ -917,56 +912,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     })
   }
 
-  const FULL_ACCESS_SCOPES = ["*"]
-
-  function scopesForOperatorRole(role: string | null | undefined): string[] | null {
-    const base = accessCatalogScopesForRole(role, runtimeOptions.accessCatalog)
-    if (!base) return null
-    const normalizedRole = (role ?? "").trim().toLowerCase()
-    const presetId =
-      normalizedRole === "member"
-        ? "editor"
-        : normalizedRole === "guest"
-          ? "viewer"
-          : normalizedRole
-    const selected = runtimeOptions.accessCatalog.presets.find(
-      (preset) => preset.kind === "staff" && preset.id === presetId,
-    )
-    return [...new Set([...base, ...(selected?.grants ?? [])])].sort()
-  }
-
-  /**
-   * Resolve a member's RBAC scope set for the request (`resource:action` strings,
-   * shared with API keys — see @voyant-travel/types/member-roles, RFC voyant#2085).
-   *
-   * Phase 1: storage + seam are wired but default to full access, so behavior is
-   * unchanged until an admin assigns permissions (Phase 2) and routes gate on them
-   * (Phase 3).
-   *  - voyant-cloud: assertion-mirrored `cloud_auth_user_links.scopes` if the
-   *    platform sent them, else the role bundle for `roleSlug`, else full access.
-   *  - local: the member's `user_profiles.permissions` if assigned, else full
-   *    access (no local role concept yet).
-   */
-  async function resolveMemberScopes(db: VoyantDb, env: Env, userId: string): Promise<string[]> {
-    if (isVoyantCloudAuthMode(env)) {
-      const [link] = await db
-        .select({ scopes: cloudAuthUserLinks.scopes, roleSlug: cloudAuthUserLinks.roleSlug })
-        .from(cloudAuthUserLinks)
-        .where(eq(cloudAuthUserLinks.userId, userId))
-        .limit(1)
-      const fullAccessScopes = scopesForOperatorRole("admin") ?? FULL_ACCESS_SCOPES
-      const roleScopes = scopesForOperatorRole(link?.roleSlug) ?? fullAccessScopes
-      return isFullAccessRole(link?.roleSlug) ? roleScopes : (link?.scopes ?? roleScopes)
-    }
-
-    const [profile] = await db
-      .select({ permissions: userProfilesTable.permissions })
-      .from(userProfilesTable)
-      .where(eq(userProfilesTable.id, userId))
-      .limit(1)
-    return profile?.permissions ?? FULL_ACCESS_SCOPES
-  }
-
+  /** Resolve the authenticated session and its realm-specific access context. */
   async function resolveAuthRequest(
     request: Request,
     env: Env,
@@ -1072,10 +1018,19 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         }
       }
 
+      const staffAccess = await resolveStaffAccess({
+        accessCatalog: runtimeOptions.accessCatalog,
+        authMode: resolveOperatorAuthMode(env),
+        db,
+        deploymentId: env.VOYANT_CLOUD_DEPLOYMENT_ID,
+        userId: session.user.id,
+      })
+      if (!staffAccess) return null
+
       return {
         userId: session.user.id,
         sessionId: session.session.id,
-        organizationId: null,
+        organizationId: staffAccess.organizationId,
         callerType: "session",
         actor: "staff",
         realm: "admin",
@@ -1083,7 +1038,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         // an admin assigns permissions, so existing deployments are unchanged.
         // `actor: "staff"` is retained, so actor-gated paths (incl. the
         // bookings-pii reveal, which short-circuits on staff) are unaffected.
-        scopes: await resolveMemberScopes(db, env, session.user.id),
+        scopes: staffAccess.scopes,
         email: session.user.email ?? null,
       }
     } finally {
