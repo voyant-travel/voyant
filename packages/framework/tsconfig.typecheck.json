@@ -20,6 +20,9 @@
       "@voyant-travel/accommodations/catalog-policy": [
         "../accommodations/dist/catalog-policy.d.ts"
       ],
+      "@voyant-travel/accommodations/catalog-policy-properties": [
+        "../accommodations/dist/catalog-policy-properties.d.ts"
+      ],
       "@voyant-travel/accommodations/catalog-runtime-extension": [
         "../accommodations/dist/catalog-runtime-extension.d.ts"
       ],
@@ -48,6 +51,9 @@
       ],
       "@voyant-travel/accommodations/service-owned-stays": [
         "../accommodations/dist/service-owned-stays.d.ts"
+      ],
+      "@voyant-travel/accommodations/service-presentation-subjects": [
+        "../accommodations/dist/service-presentation-subjects.d.ts"
       ],
       "@voyant-travel/accommodations/standard-links": [
         "../accommodations/dist/standard-links.d.ts"
@@ -481,6 +487,9 @@
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/ports": ["../catalog/dist/runtime-contracts.d.ts"],
+      "@voyant-travel/catalog/presentation-subjects": [
+        "../catalog/dist/presentation-subjects.d.ts"
+      ],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/runtime-contracts": ["../catalog/dist/runtime-contracts.d.ts"],
@@ -718,6 +727,7 @@
       "@voyant-travel/cruises/catalog-policy-cabins": [
         "../cruises/dist/catalog-policy-cabins.d.ts"
       ],
+      "@voyant-travel/cruises/catalog-policy-ships": ["../cruises/dist/catalog-policy-ships.d.ts"],
       "@voyant-travel/cruises/catalog-runtime-extension": [
         "../cruises/dist/catalog-runtime-extension.d.ts"
       ],
@@ -746,6 +756,9 @@
       ],
       "@voyant-travel/cruises/service-external-refresh": [
         "../cruises/dist/service-external-refresh.d.ts"
+      ],
+      "@voyant-travel/cruises/service-presentation-subjects": [
+        "../cruises/dist/service-presentation-subjects.d.ts"
       ],
       "@voyant-travel/cruises/service-pricing": ["../cruises/dist/service-pricing.d.ts"],
       "@voyant-travel/cruises/tools": ["../cruises/dist/mcp-runtime.d.ts"],
@@ -1230,6 +1243,9 @@
       "@voyant-travel/inventory/routes": ["../inventory/dist/routes.d.ts"],
       "@voyant-travel/inventory/routes-brochure": ["../inventory/dist/routes-brochure.d.ts"],
       "@voyant-travel/inventory/routes-content": ["../inventory/dist/routes-content.d.ts"],
+      "@voyant-travel/inventory/routes-editorial-overlays": [
+        "../inventory/dist/routes-editorial-overlays.d.ts"
+      ],
       "@voyant-travel/inventory/runtime-contributor": [
         "../inventory/dist/runtime-contributor.d.ts"
       ],
@@ -1246,6 +1262,12 @@
       "@voyant-travel/inventory/service-content": ["../inventory/dist/service-content.d.ts"],
       "@voyant-travel/inventory/service-content-synthesizer": [
         "../inventory/dist/service-content-synthesizer.d.ts"
+      ],
+      "@voyant-travel/inventory/service-editorial-overlays": [
+        "../inventory/dist/service-editorial-overlays.d.ts"
+      ],
+      "@voyant-travel/inventory/service-presentation-references": [
+        "../inventory/dist/service-presentation-references.d.ts"
       ],
       "@voyant-travel/inventory/service-public": ["../inventory/dist/service-public.d.ts"],
       "@voyant-travel/inventory/standard-links": ["../inventory/dist/standard-links.d.ts"],

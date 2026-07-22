@@ -27,13 +27,14 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Visibility } from "@voyant-travel/catalog/contract"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { ApiExtension } from "@voyant-travel/hono/module"
 import { productContentSchema } from "@voyant-travel/products-contracts/content-shape"
 import type { Context } from "hono"
-
+import { createProductEditorialOverlayRoutes } from "./routes-editorial-overlays.js"
 import { getProductContent, type ProductContentScope } from "./service-content.js"
 
 const contentProvenanceSchema = z.object({
@@ -46,7 +47,7 @@ const contentProvenanceSchema = z.object({
 const contentResponseSchema = z.object({
   data: z.object({
     content: productContentSchema,
-    provenance: contentProvenanceSchema,
+    provenance: contentProvenanceSchema.optional(),
     served_locale: z.string(),
     match_kind: z.enum(["exact", "language_match", "fallback_chain", "any"]),
     source: z.enum(["sourced-cache", "sourced-fresh", "synthesized", "owned"]),
@@ -107,6 +108,12 @@ export interface CreateProductContentRoutesOptions {
    * `false` so ops sees authored content before deciding to override.
    */
   defaultAcceptMachineTranslated?: boolean
+  /** Public routes set this false so provider/source refs stay staff-only. */
+  exposeProvenance?: boolean
+  /** Default audience for overlay resolution on this route surface. */
+  defaultAudience?: Visibility
+  /** Admin routes may opt into previewing another audience via query string. */
+  allowAudienceQuery?: boolean
 }
 
 /**
@@ -143,7 +150,7 @@ export function createProductContentRoutes(
       {
         data: {
           content: result.content,
-          provenance: result.provenance,
+          ...(options.exposeProvenance === false ? {} : { provenance: result.provenance }),
           served_locale: result.resolution.served_locale,
           match_kind: result.resolution.match_kind,
           source: result.source,
@@ -172,6 +179,7 @@ export function createProductContentRoutes(
 
     const market = c.req.query("market") ?? undefined
     const currency = c.req.query("currency") ?? undefined
+    const audience = parseAudience(c.req.query("audience"), options)
     const acceptMTQuery = c.req.query("accept_mt")
     const acceptMachineTranslated =
       acceptMTQuery != null
@@ -180,11 +188,24 @@ export function createProductContentRoutes(
 
     return {
       preferredLocales,
+      audience,
       market,
       currency,
       acceptMachineTranslated,
     }
   }
+}
+
+const CONTENT_AUDIENCES = new Set<Visibility>(["staff", "customer", "partner", "supplier"])
+
+function parseAudience(
+  value: string | undefined,
+  options: CreateProductContentRoutesOptions,
+): Visibility {
+  const fallback = options.defaultAudience ?? "customer"
+  if (!value) return fallback
+  if (!options.allowAudienceQuery) return fallback
+  return CONTENT_AUDIENCES.has(value as Visibility) ? (value as Visibility) : fallback
 }
 
 /**
@@ -232,9 +253,21 @@ export const productContentExtension: Extension = {
 export function createProductContentApiExtension(
   options: ProductContentApiExtensionOptions,
 ): ApiExtension {
+  const adminRoutes = createProductContentRoutes({
+    ...options.admin,
+    defaultAudience: options.admin.defaultAudience ?? "staff",
+    allowAudienceQuery: options.admin.allowAudienceQuery ?? true,
+    exposeProvenance: true,
+  })
+  adminRoutes.route("/", createProductEditorialOverlayRoutes(options.admin) as never)
   return {
     extension: productContentExtension,
-    adminRoutes: createProductContentRoutes(options.admin),
-    publicRoutes: createProductContentRoutes(options.public),
+    adminRoutes,
+    publicRoutes: createProductContentRoutes({
+      ...options.public,
+      defaultAudience: options.public.defaultAudience ?? "customer",
+      allowAudienceQuery: false,
+      exposeProvenance: false,
+    }),
   }
 }

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; overlay persistence, optimistic concurrency, and audit history stay co-located so all mutation paths share one transaction/concurrency implementation.
 /**
  * OverlayService — drizzle-bound entry point for the catalog overlay store.
  *
@@ -16,7 +17,8 @@
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { and, eq, inArray, isNull, sql } from "drizzle-orm"
+import { withOptionalTransaction } from "@voyant-travel/db/transaction"
+import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry, Visibility } from "../contract.js"
 import {
@@ -27,10 +29,14 @@ import {
   resolveOverlay,
 } from "../overlay/resolver.js"
 import {
+  catalogOverlayHistoryTable,
   catalogOverlayTable,
   OVERLAY_DEFAULT_SCOPE,
+  OVERLAY_ROOT_NODE_KEY,
+  OVERLAY_ROOT_NODE_KIND,
   type OverlayOrigin,
   type SelectCatalogOverlay,
+  type SelectCatalogOverlayHistory,
 } from "../overlay/schema.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,10 +56,14 @@ export async function fetchOverlaysForEntity(
   const rows = await db
     .select({
       field_path: catalogOverlayTable.field_path,
+      node_kind: catalogOverlayTable.node_kind,
+      node_key: catalogOverlayTable.node_key,
       locale: catalogOverlayTable.locale,
       audience: catalogOverlayTable.audience,
       market: catalogOverlayTable.market,
       value: catalogOverlayTable.value,
+      version: catalogOverlayTable.version,
+      id: catalogOverlayTable.id,
     })
     .from(catalogOverlayTable)
     .where(
@@ -66,11 +76,39 @@ export async function fetchOverlaysForEntity(
 
   return rows.map((row) => ({
     field_path: row.field_path,
+    node_kind: row.node_kind,
+    node_key: row.node_key,
     locale: row.locale,
     audience: row.audience,
     market: row.market,
     value: row.value,
+    version: row.version,
+    id: row.id,
   }))
+}
+
+/**
+ * Fetch full overlay rows for one entity, including the audit columns the
+ * resolver does not need (`origin`, `editorial_note`, timestamps).
+ *
+ * Admin compare/authoring surfaces use this; the merge path keeps using the
+ * narrow `fetchOverlaysForEntity` projection.
+ */
+export async function fetchOverlayRowsForEntity(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<SelectCatalogOverlay[]> {
+  return db
+    .select()
+    .from(catalogOverlayTable)
+    .where(
+      and(
+        eq(catalogOverlayTable.entity_module, entityModule),
+        eq(catalogOverlayTable.entity_id, entityId),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
 }
 
 /**
@@ -98,10 +136,14 @@ export async function fetchOverlaysForEntities(
     .select({
       entity_id: catalogOverlayTable.entity_id,
       field_path: catalogOverlayTable.field_path,
+      node_kind: catalogOverlayTable.node_kind,
+      node_key: catalogOverlayTable.node_key,
       locale: catalogOverlayTable.locale,
       audience: catalogOverlayTable.audience,
       market: catalogOverlayTable.market,
       value: catalogOverlayTable.value,
+      version: catalogOverlayTable.version,
+      id: catalogOverlayTable.id,
     })
     .from(catalogOverlayTable)
     .where(
@@ -115,10 +157,14 @@ export async function fetchOverlaysForEntities(
   for (const row of rows) {
     byEntity.get(row.entity_id)?.push({
       field_path: row.field_path,
+      node_kind: row.node_kind,
+      node_key: row.node_key,
       locale: row.locale,
       audience: row.audience,
       market: row.market,
       value: row.value,
+      version: row.version,
+      id: row.id,
     })
   }
   return byEntity
@@ -212,12 +258,30 @@ export async function listOverlaysByOrigin(
 export interface WriteOverlayInput {
   entity_module: string
   entity_id: string
+  node_kind?: string
+  node_key?: string
   field_path: string
   locale?: string
   audience?: Visibility | typeof OVERLAY_DEFAULT_SCOPE
   market?: string
   value: unknown
   origin: OverlayOrigin
+  expected_version?: number | null
+  editorial_note?: string
+}
+
+export class OverlayVersionConflictError extends Error {
+  constructor(
+    public readonly currentVersion: number | null,
+    public readonly expectedVersion: number | null,
+  ) {
+    super(
+      `overlay version conflict: expected ${expectedVersion ?? "none"}, current ${
+        currentVersion ?? "none"
+      }`,
+    )
+    this.name = "OverlayVersionConflictError"
+  }
 }
 
 /**
@@ -241,47 +305,128 @@ export async function writeOverlay(
   db: AnyDrizzleDb,
   input: WriteOverlayInput,
 ): Promise<SelectCatalogOverlay> {
+  return withOptionalTransaction(db, (tx) => writeOverlayInTransaction(tx, input))
+}
+
+async function writeOverlayInTransaction(
+  db: AnyDrizzleDb,
+  input: WriteOverlayInput,
+): Promise<SelectCatalogOverlay> {
   const locale = input.locale ?? OVERLAY_DEFAULT_SCOPE
   const audience = input.audience ?? OVERLAY_DEFAULT_SCOPE
   const market = input.market ?? OVERLAY_DEFAULT_SCOPE
+  const nodeKind = input.node_kind ?? OVERLAY_ROOT_NODE_KIND
+  const nodeKey = input.node_key ?? OVERLAY_ROOT_NODE_KEY
+  const existing = await findActiveOverlay(db, {
+    entity_module: input.entity_module,
+    entity_id: input.entity_id,
+    node_kind: nodeKind,
+    node_key: nodeKey,
+    field_path: input.field_path,
+    locale,
+    audience,
+    market,
+  })
 
-  // Insert with ON CONFLICT for the active-row composite unique key.
-  // Drizzle's onConflictDoUpdate is the right primitive here.
+  if (input.expected_version !== undefined) {
+    const current = existing?.version ?? null
+    if (current !== input.expected_version) {
+      throw new OverlayVersionConflictError(current, input.expected_version)
+    }
+  }
+
+  if (existing) {
+    const nextVersion = existing.version + 1
+    const versionPredicate = input.expected_version ?? existing.version
+    const updated = await db
+      .update(catalogOverlayTable)
+      .set({
+        value: input.value,
+        origin: input.origin,
+        version: nextVersion,
+        editorial_note: input.editorial_note ?? null,
+        updated_at: new Date(),
+      })
+      .where(
+        and(
+          eq(catalogOverlayTable.id, existing.id),
+          eq(catalogOverlayTable.version, versionPredicate),
+          isNull(catalogOverlayTable.deleted_at),
+        ),
+      )
+      .returning()
+    const row = updated[0]
+    if (!row) {
+      const current = await findActiveOverlay(db, {
+        entity_module: input.entity_module,
+        entity_id: input.entity_id,
+        node_kind: nodeKind,
+        node_key: nodeKey,
+        field_path: input.field_path,
+        locale,
+        audience,
+        market,
+      })
+      throw new OverlayVersionConflictError(current?.version ?? null, versionPredicate)
+    }
+    await appendOverlayHistory(db, {
+      row,
+      action: "write",
+      previous_value: existing.value,
+      next_value: input.value,
+      previous_version: existing.version,
+      next_version: nextVersion,
+      origin: input.origin,
+      editorial_note: input.editorial_note,
+    })
+    return row
+  }
+
   const inserted = await db
     .insert(catalogOverlayTable)
     .values({
       id: newId("catalog_overlay"),
       entity_module: input.entity_module,
       entity_id: input.entity_id,
+      node_kind: nodeKind,
+      node_key: nodeKey,
       field_path: input.field_path,
       locale,
       audience,
       market,
       value: input.value,
       origin: input.origin,
+      version: 1,
+      editorial_note: input.editorial_note ?? null,
     })
-    .onConflictDoUpdate({
-      target: [
-        catalogOverlayTable.entity_module,
-        catalogOverlayTable.entity_id,
-        catalogOverlayTable.field_path,
-        catalogOverlayTable.locale,
-        catalogOverlayTable.audience,
-        catalogOverlayTable.market,
-      ],
-      targetWhere: isNull(catalogOverlayTable.deleted_at),
-      set: {
-        value: input.value,
-        origin: input.origin,
-        updated_at: new Date(),
-      },
-    })
+    .onConflictDoNothing()
     .returning()
 
-  if (!inserted[0]) {
-    throw new Error("writeOverlay: insert returned no rows")
+  const row = inserted[0]
+  if (!row) {
+    const current = await findActiveOverlay(db, {
+      entity_module: input.entity_module,
+      entity_id: input.entity_id,
+      node_kind: nodeKind,
+      node_key: nodeKey,
+      field_path: input.field_path,
+      locale,
+      audience,
+      market,
+    })
+    throw new OverlayVersionConflictError(current?.version ?? null, input.expected_version ?? null)
   }
-  return inserted[0]
+  await appendOverlayHistory(db, {
+    row,
+    action: "write",
+    previous_value: null,
+    next_value: input.value,
+    previous_version: null,
+    next_version: 1,
+    origin: input.origin,
+    editorial_note: input.editorial_note,
+  })
+  return row
 }
 
 /**
@@ -289,10 +434,34 @@ export async function writeOverlay(
  * for retention / restore but no longer participates in resolver merges.
  */
 export async function softDeleteOverlay(db: AnyDrizzleDb, id: string): Promise<void> {
-  await db
-    .update(catalogOverlayTable)
-    .set({ deleted_at: new Date(), updated_at: new Date() })
-    .where(eq(catalogOverlayTable.id, id))
+  await withOptionalTransaction(db, async (tx) => {
+    const existing = (
+      await tx.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
+    )[0]
+    if (!existing) return
+    const updated = await tx
+      .update(catalogOverlayTable)
+      .set({ deleted_at: new Date(), updated_at: new Date() })
+      .where(
+        and(
+          eq(catalogOverlayTable.id, id),
+          eq(catalogOverlayTable.version, existing.version),
+          isNull(catalogOverlayTable.deleted_at),
+        ),
+      )
+      .returning()
+    const row = updated[0]
+    if (!row) throw new OverlayVersionConflictError(null, existing.version)
+    await appendOverlayHistory(tx, {
+      row,
+      action: "clear",
+      previous_value: existing.value,
+      next_value: null,
+      previous_version: existing.version,
+      next_version: existing.version,
+      origin: existing.origin,
+    })
+  })
 }
 
 /**
@@ -301,8 +470,178 @@ export async function softDeleteOverlay(db: AnyDrizzleDb, id: string): Promise<v
  * window.
  */
 export async function restoreOverlay(db: AnyDrizzleDb, id: string): Promise<void> {
-  await db
+  await withOptionalTransaction(db, async (tx) => {
+    const existing = (
+      await tx.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
+    )[0]
+    if (!existing?.deleted_at) return
+    const updated = await tx
+      .update(catalogOverlayTable)
+      .set({ deleted_at: null, updated_at: new Date() })
+      .where(
+        and(
+          eq(catalogOverlayTable.id, id),
+          eq(catalogOverlayTable.version, existing.version),
+          isNotNull(catalogOverlayTable.deleted_at),
+        ),
+      )
+      .returning()
+    const row = updated[0]
+    if (!row) return
+    await appendOverlayHistory(tx, {
+      row,
+      action: "restore",
+      previous_value: null,
+      next_value: existing.value,
+      previous_version: existing.version,
+      next_version: existing.version,
+      origin: existing.origin,
+    })
+  })
+}
+
+interface OverlayKey {
+  entity_module: string
+  entity_id: string
+  node_kind: string
+  node_key: string
+  field_path: string
+  locale: string
+  audience: Visibility | typeof OVERLAY_DEFAULT_SCOPE
+  market: string
+}
+
+async function findActiveOverlay(
+  db: AnyDrizzleDb,
+  key: OverlayKey,
+): Promise<SelectCatalogOverlay | null> {
+  const rows = await db
+    .select()
+    .from(catalogOverlayTable)
+    .where(
+      and(
+        eq(catalogOverlayTable.entity_module, key.entity_module),
+        eq(catalogOverlayTable.entity_id, key.entity_id),
+        eq(catalogOverlayTable.node_kind, key.node_kind),
+        eq(catalogOverlayTable.node_key, key.node_key),
+        eq(catalogOverlayTable.field_path, key.field_path),
+        eq(catalogOverlayTable.locale, key.locale),
+        eq(catalogOverlayTable.audience, key.audience),
+        eq(catalogOverlayTable.market, key.market),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
+    .limit(1)
+  return rows[0] ?? null
+}
+
+interface AppendOverlayHistoryInput {
+  row: SelectCatalogOverlay
+  action: "write" | "clear" | "restore"
+  previous_value: unknown
+  next_value: unknown
+  previous_version: number | null
+  next_version: number | null
+  origin: OverlayOrigin
+  editorial_note?: string | null
+}
+
+async function appendOverlayHistory(
+  db: AnyDrizzleDb,
+  input: AppendOverlayHistoryInput,
+): Promise<void> {
+  await db.insert(catalogOverlayHistoryTable).values({
+    id: newId("catalog_overlay"),
+    overlay_id: input.row.id,
+    entity_module: input.row.entity_module,
+    entity_id: input.row.entity_id,
+    node_kind: input.row.node_kind,
+    node_key: input.row.node_key,
+    field_path: input.row.field_path,
+    locale: input.row.locale,
+    audience: input.row.audience,
+    market: input.row.market,
+    action: input.action,
+    previous_value: input.previous_value,
+    next_value: input.next_value,
+    previous_version: input.previous_version,
+    next_version: input.next_version,
+    origin: input.origin,
+    editorial_note: input.editorial_note ?? null,
+  })
+}
+
+export interface ClearOverlayByTargetInput extends OverlayKey {
+  expected_version?: number | null
+}
+
+export async function clearOverlayByTarget(
+  db: AnyDrizzleDb,
+  input: ClearOverlayByTargetInput,
+): Promise<SelectCatalogOverlay | null> {
+  return withOptionalTransaction(db, (tx) => clearOverlayByTargetInTransaction(tx, input))
+}
+
+async function clearOverlayByTargetInTransaction(
+  db: AnyDrizzleDb,
+  input: ClearOverlayByTargetInput,
+): Promise<SelectCatalogOverlay | null> {
+  const existing = await findActiveOverlay(db, input)
+  if (!existing) {
+    if (input.expected_version !== undefined && input.expected_version !== null) {
+      throw new OverlayVersionConflictError(null, input.expected_version)
+    }
+    return null
+  }
+  if (input.expected_version !== undefined && existing.version !== input.expected_version) {
+    throw new OverlayVersionConflictError(existing.version, input.expected_version)
+  }
+  const versionPredicate = input.expected_version ?? existing.version
+  const updated = await db
     .update(catalogOverlayTable)
-    .set({ deleted_at: null, updated_at: new Date() })
-    .where(eq(catalogOverlayTable.id, id))
+    .set({ deleted_at: new Date(), updated_at: new Date() })
+    .where(
+      and(
+        eq(catalogOverlayTable.id, existing.id),
+        eq(catalogOverlayTable.version, versionPredicate),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
+    .returning()
+  const row = updated[0]
+  if (!row) {
+    const current = await findActiveOverlay(db, input)
+    throw new OverlayVersionConflictError(current?.version ?? null, versionPredicate)
+  }
+  await appendOverlayHistory(db, {
+    row,
+    action: "clear",
+    previous_value: existing.value,
+    next_value: null,
+    previous_version: existing.version,
+    next_version: existing.version,
+    origin: existing.origin,
+  })
+  return row
+}
+
+export async function listOverlayHistoryForTarget(
+  db: AnyDrizzleDb,
+  input: Partial<OverlayKey> & Pick<OverlayKey, "entity_module" | "entity_id">,
+): Promise<SelectCatalogOverlayHistory[]> {
+  const conditions = [
+    eq(catalogOverlayHistoryTable.entity_module, input.entity_module),
+    eq(catalogOverlayHistoryTable.entity_id, input.entity_id),
+  ]
+  if (input.node_kind) conditions.push(eq(catalogOverlayHistoryTable.node_kind, input.node_kind))
+  if (input.node_key) conditions.push(eq(catalogOverlayHistoryTable.node_key, input.node_key))
+  if (input.field_path) conditions.push(eq(catalogOverlayHistoryTable.field_path, input.field_path))
+  if (input.locale) conditions.push(eq(catalogOverlayHistoryTable.locale, input.locale))
+  if (input.audience) conditions.push(eq(catalogOverlayHistoryTable.audience, input.audience))
+  if (input.market) conditions.push(eq(catalogOverlayHistoryTable.market, input.market))
+
+  return db
+    .select()
+    .from(catalogOverlayHistoryTable)
+    .where(and(...conditions))
 }

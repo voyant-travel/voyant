@@ -37,6 +37,8 @@ import type { ContentDriftEvent } from "../drift/events.js"
 
 export {
   applyJsonPointerOverlay,
+  CONTENT_ROOT_NODE_KEY,
+  CONTENT_ROOT_NODE_KIND,
   type ContentLocaleMatchKind,
   type ContentLocaleResolution,
   type ContentOverlay,

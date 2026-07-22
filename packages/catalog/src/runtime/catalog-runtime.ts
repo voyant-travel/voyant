@@ -10,6 +10,11 @@ import {
   type FieldPolicyRegistry,
 } from "@voyant-travel/catalog/contract"
 import type { EmbeddingProvider } from "@voyant-travel/catalog/embeddings/contract"
+import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
+import {
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
+  getCatalogPresentationSubjectDefinition,
+} from "@voyant-travel/catalog/presentation-subjects"
 import {
   buildCatalogEmbeddingProvider,
   buildCatalogSlices,
@@ -18,7 +23,13 @@ import {
   withCatalogEmbedding,
   withoutCatalogScopeChannel,
 } from "@voyant-travel/catalog/runtime-support"
-import type { DocumentBuilder } from "@voyant-travel/catalog/services/indexer"
+import type {
+  DocumentBuilder,
+  DocumentBuilderContext,
+  EffectiveReferencedSubjectProjection,
+} from "@voyant-travel/catalog/services/indexer"
+import { fetchOverlaysForEntity } from "@voyant-travel/catalog/services/overlay"
+import { readSourcedEntry } from "@voyant-travel/catalog/services/sourced-entry"
 import type {
   IndexerAdapter,
   IndexerProvider,
@@ -80,8 +91,16 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
       ["products", createFieldPolicyRegistry([...inventory.productFieldPolicy])],
       ["extras", createFieldPolicyRegistry([...inventory.extrasFieldPolicy])],
       ["cruises", cruises.createRegistry(cruises.fieldPolicy)],
+      [
+        CATALOG_PRESENTATION_SUBJECT_MODULES.CRUISE_SHIPS,
+        createFieldPolicyRegistry([...cruises.shipFieldPolicy]),
+      ],
       ["charters", createFieldPolicyRegistry([...charters.fieldPolicy])],
       ["accommodations", createFieldPolicyRegistry([...accommodations.fieldPolicy])],
+      [
+        CATALOG_PRESENTATION_SUBJECT_MODULES.ACCOMMODATION_PROPERTIES,
+        createFieldPolicyRegistry([...accommodations.propertyFieldPolicy]),
+      ],
     ])
   }
   return _registries
@@ -127,6 +146,88 @@ export function createCruisesDocumentBuilder(
     registry,
     extensions: [cruises.createCabinFacetProjectionExtension()],
   })
+}
+
+export function createCatalogDocumentBuilder(
+  db: AnyDrizzleDb,
+  context: { sellerOperatorId: string },
+): DocumentBuilder {
+  const { accommodations, cruises } = catalogRuntimeExtensions()
+  const products = createProductsDocumentBuilder(db, context)
+  const cruiseEntries = createCruisesDocumentBuilder(db, context)
+  const accommodationEntries = accommodations.createDocumentBuilder({
+    db,
+    sellerOperatorId: context.sellerOperatorId,
+  })
+  const shipSubjects = cruises.createShipDocumentBuilder(db)
+  const propertySubjects = accommodations.createPropertyDocumentBuilder(db)
+  return (entityId, slice, context) => {
+    const buildContext =
+      context ??
+      createReferencedSubjectDocumentBuilderContext(db, slice, getFieldPolicyRegistries())
+    switch (slice.vertical) {
+      case "products":
+        return products(entityId, slice, buildContext)
+      case "cruises":
+        return cruiseEntries(entityId, slice, buildContext)
+      case "cruise-ships":
+        return shipSubjects(entityId, slice, buildContext)
+      case "accommodations":
+        return accommodationEntries(entityId, slice, buildContext)
+      case "accommodation-properties":
+        return propertySubjects(entityId, slice, buildContext)
+      default:
+        return Promise.resolve(null)
+    }
+  }
+}
+
+/**
+ * Resolve referenced-subject copy from Catalog's durable sourced projection
+ * and active overlays. The context is internal to document construction: it is
+ * never serialized into index documents or public event payloads.
+ */
+export function createReferencedSubjectDocumentBuilderContext(
+  db: AnyDrizzleDb,
+  slice: Pick<IndexerSlice, "locale" | "audience" | "market">,
+  registries: ReadonlyMap<string, FieldPolicyRegistry> = getFieldPolicyRegistries(),
+): DocumentBuilderContext {
+  return {
+    async resolveReferencedSubject(input): Promise<EffectiveReferencedSubjectProjection | null> {
+      const definition = getCatalogPresentationSubjectDefinition(input.entityModule)
+      if (definition?.kind !== "referenced") return null
+      const registry = registries.get(input.entityModule)
+      if (!registry) return null
+
+      const sourced = input.sourceValues
+        ? null
+        : await readSourcedEntry(db, input.entityModule, input.entityId)
+      if (sourced && sourced.status !== "active") return null
+      const sourceValues = sourced
+        ? new Map<string, unknown>([
+            ...Object.entries(sourced.projection),
+            ["id", sourced.entity_id],
+            ["source.kind", sourced.source_kind],
+            ["source.ref", sourced.source_ref],
+          ])
+        : input.sourceValues
+      if (!sourceValues) return null
+
+      const scope = input.scope ?? slice
+      const overlays = await fetchOverlaysForEntity(db, input.entityModule, input.entityId)
+      const resolved = resolveOverlay(registry, sourceValues, overlays, {
+        locale: scope.locale,
+        audience: scope.audience === "staff-admin" ? "staff" : scope.audience,
+        market: scope.market,
+        actor: scope.audience === "staff-admin" ? "staff" : scope.audience,
+      })
+      return {
+        subject: { entityModule: input.entityModule, entityId: input.entityId },
+        scope,
+        values: resolved.values,
+      }
+    },
+  }
 }
 
 export function withEmbedding(

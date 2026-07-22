@@ -19,6 +19,7 @@ import type {
 } from "./booking-snapshot-subscriber-runtime.js"
 import type { FieldPolicy, FieldPolicyRegistry } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
+import type { EntityOverlayChangedPayload } from "./events/taxonomy.js"
 import type { DocumentBuilder } from "./services/indexer-service.js"
 
 export interface CatalogProjectionExtension {
@@ -40,6 +41,13 @@ export interface CatalogPolicyRuntimeExtension {
 }
 
 export interface CatalogAccommodationsRuntimeExtension extends CatalogPolicyRuntimeExtension {
+  readonly propertyFieldPolicy: readonly FieldPolicy[]
+  createDocumentBuilder(input: { db: AnyDrizzleDb; sellerOperatorId: string }): DocumentBuilder
+  listAccommodationOffersReferencingProperty(
+    db: AnyDrizzleDb,
+    propertyId: string,
+  ): Promise<Array<{ entityModule: "accommodations"; entityId: string }>>
+  createPropertyDocumentBuilder(db: AnyDrizzleDb): DocumentBuilder
   registerOwnedBookingHandler(
     registry: OwnedBookingHandlerRegistry,
     host: CatalogOwnedBookingHandlerHost,
@@ -72,6 +80,12 @@ export interface CatalogDistributionRuntimeExtension {
 }
 
 export interface CatalogCruisesRuntimeExtension extends CatalogPolicyRuntimeExtension {
+  readonly shipFieldPolicy: readonly FieldPolicy[]
+  listCruisesReferencingShip(
+    db: AnyDrizzleDb,
+    shipId: string,
+  ): Promise<Array<{ entityModule: "cruises"; entityId: string }>>
+  createShipDocumentBuilder(db: AnyDrizzleDb): DocumentBuilder
   createRegistry(fieldPolicy: readonly FieldPolicy[]): FieldPolicyRegistry
   createDocumentBuilder(input: {
     db: AnyDrizzleDb
@@ -98,6 +112,7 @@ export type CatalogProductQuoteEnricher = (input: {
   entityModule: string
   entityId: string
   locale?: string
+  audience?: string
   market?: string
   currency?: string
   registry: SourceAdapterRegistry
@@ -121,6 +136,10 @@ export interface CatalogInventoryRuntimeExtension {
   createStorefrontCardProjectionExtension(): CatalogProjectionExtension
   createDestinationsProjectionExtension(): CatalogProjectionExtension
   createTaxonomyProjectionExtension(): CatalogProjectionExtension
+  listProductsReferencingAccommodationProperty(
+    db: AnyDrizzleDb,
+    propertyId: string,
+  ): Promise<Array<{ entityModule: "products"; entityId: string }>>
   registerOwnedBookingHandler(
     registry: OwnedBookingHandlerRegistry,
     host: CatalogOwnedBookingHandlerHost,
@@ -200,7 +219,22 @@ export interface CatalogRuntimeServices {
   ): IndexerAdapter | undefined
   loadSlices(db: AnyDrizzleDb): Promise<IndexerSlice[]>
   fieldPolicyRegistries(): Map<string, FieldPolicyRegistry>
+  reindexReferencedSubjectOverlayChange(
+    db: AnyDrizzleDb,
+    event: EntityOverlayChangedPayload,
+    reindex: (target: {
+      entityModule: string
+      entityId: string
+      locale?: string
+      audience?: string
+      market?: string
+    }) => Promise<void>,
+  ): Promise<void>
   createProductsDocumentBuilder(
+    db: AnyDrizzleDb,
+    context: { sellerOperatorId: string },
+  ): DocumentBuilder
+  createCatalogDocumentBuilder(
     db: AnyDrizzleDb,
     context: { sellerOperatorId: string },
   ): DocumentBuilder
@@ -229,7 +263,9 @@ export const catalogRuntimeServicesPort = definePort<CatalogRuntimeServices>({
       "buildIndexer",
       "loadSlices",
       "fieldPolicyRegistries",
+      "reindexReferencedSubjectOverlayChange",
       "createProductsDocumentBuilder",
+      "createCatalogDocumentBuilder",
       "withEmbedding",
       "applyTaxToQuoteResult",
     ] as const) {

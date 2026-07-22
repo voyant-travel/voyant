@@ -1,6 +1,8 @@
 import { validateEmbeddingCompatibility } from "@voyant-travel/catalog/embeddings/model-registry"
 import { type CatalogIndexer, resolveCatalogIndexer } from "@voyant-travel/catalog/indexer/provider"
+import { CATALOG_PRESENTATION_SUBJECT_MODULES } from "@voyant-travel/catalog/presentation-subjects"
 import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
+import { createReferencedSubjectReindexFanout } from "@voyant-travel/catalog/services/indexer"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import {
@@ -15,6 +17,7 @@ import {
 } from "./runtime/booking-runtime.js"
 import {
   buildEmbeddingProvider,
+  createCatalogDocumentBuilder,
   createProductsDocumentBuilder,
   DEFAULT_SLICES,
   getFieldPolicyRegistries,
@@ -82,7 +85,41 @@ export function createCatalogRuntime(
     buildIndexer: (_env, embeddings) => resolveIndexer(embeddings),
     loadSlices: loadCatalogSlices,
     fieldPolicyRegistries: getFieldPolicyRegistries,
+    reindexReferencedSubjectOverlayChange: async (db, event, reindex) => {
+      await createReferencedSubjectReindexFanout({
+        readers: [
+          {
+            subjectModule: CATALOG_PRESENTATION_SUBJECT_MODULES.CRUISE_SHIPS,
+            listReferencingEntries: (subjectId) =>
+              extensions.cruises.listCruisesReferencingShip(db, subjectId),
+          },
+          {
+            subjectModule: CATALOG_PRESENTATION_SUBJECT_MODULES.ACCOMMODATION_PROPERTIES,
+            async listReferencingEntries(subjectId) {
+              const [products, accommodationOffers] = await Promise.all([
+                extensions.inventory.listProductsReferencingAccommodationProperty(db, subjectId),
+                extensions.accommodations.listAccommodationOffersReferencingProperty(db, subjectId),
+              ])
+              return [...products, ...accommodationOffers]
+            },
+          },
+        ],
+        reindexSubject: (subject, scope) =>
+          reindex({
+            entityModule: subject.entityModule,
+            entityId: subject.entityId,
+            ...scope,
+          }),
+        reindexReferencingEntry: (reference, scope) =>
+          reindex({
+            entityModule: reference.entityModule,
+            entityId: reference.entityId,
+            ...scope,
+          }),
+      })(event)
+    },
     createProductsDocumentBuilder,
+    createCatalogDocumentBuilder,
     withEmbedding,
     applyTaxToQuoteResult: (db, result, entityModule, entityId, sourceKind) =>
       applyOperatorTaxToQuoteResult(

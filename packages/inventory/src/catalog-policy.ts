@@ -730,6 +730,30 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+
+  // Effective accommodation-property presentation copied into products that
+  // reference a hotel/property. These are derived fields: the property owns
+  // its source and overlays, while product documents carry a namespaced copy
+  // so storefront search never has to join at query time.
+  ...[
+    ["property.name", true, "indexed-column"],
+    ["property.description", true, "indexed-column"],
+    ["property.heroImageUrl", false, "indexed-column"],
+    ["property.gallery", false, "indexed-column"],
+  ].map(([path, localized, query]) => ({
+    path: path as string,
+    class: "merchandisable" as const,
+    merge: "source-only" as const,
+    drift: "low" as const,
+    reindex: localized ? ("entry-locale" as const) : ("entry" as const),
+    snapshot: "on-book" as const,
+    query: query as "indexed-column" | "blob-only",
+    localized: localized as boolean,
+    visibility: ["staff", "customer", "partner"] as Array<"staff" | "customer" | "partner">,
+    editRole: "none" as const,
+    overrideFriction: "none" as const,
+    sourceFreshness: "sync" as const,
+  })),
 ]
 
 /**

@@ -1,4 +1,5 @@
 import { OpenAPIHono, z } from "@hono/zod-openapi"
+import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -9,6 +10,10 @@ import { resolveCruiseAdapter } from "./adapters/registry.js"
 import { encodeSourceRef, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import { createCruisesPublicRoute as createRoute } from "./routes-openapi.js"
 import { cruisesService } from "./service.js"
+import {
+  findExistingExternalCruiseShipSubject,
+  readPublicCruiseShipProjection,
+} from "./service-presentation-subjects.js"
 import { composeQuote, pricingService } from "./service-pricing.js"
 import { cruisesSearchService } from "./service-search.js"
 import { searchIndexQuerySchema } from "./validation-search.js"
@@ -24,6 +29,29 @@ const PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
 
 function cachePublicRead(c: Context) {
   c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
+}
+
+const PUBLIC_SOURCE_METADATA_KEYS = new Set([
+  "source",
+  "sourceRef",
+  "sourceProvider",
+  "externalRefs",
+  "origin",
+  "provenance",
+  "source.kind",
+  "source.ref",
+])
+
+function redactPublicSourceMetadata(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactPublicSourceMetadata)
+  if (!value || typeof value !== "object") return value
+  const redacted: Record<string, unknown> = {}
+  for (const [key, child] of Object.entries(value)) {
+    if (!PUBLIC_SOURCE_METADATA_KEYS.has(key)) {
+      redacted[key] = redactPublicSourceMetadata(child)
+    }
+  }
+  return redacted
 }
 
 const TYPEID_RE = /^[a-z]+_[0-9a-zA-Z]+$/
@@ -63,6 +91,11 @@ const quotePayloadSchema = z.object({
 // ---------- response schemas ----------
 
 const errorResponseSchema = z.object({ error: z.string() }).catchall(z.unknown())
+const effectiveScopeQuerySchema = z.object({
+  locale: z.string().trim().min(1).default("en-GB"),
+  audience: z.enum(["customer", "partner"]).default("customer"),
+  market: z.string().trim().min(1).default(OVERLAY_DEFAULT_SCOPE),
+})
 
 /**
  * Wire shape of a `cruise_search_index` row (voyant#2114). The list/slug
@@ -331,7 +364,7 @@ const quoteSailingRoute = createRoute({
 const shipByKeyRoute = createRoute({
   method: "get",
   path: "/ships/{key}",
-  request: { params: z.object({ key: z.string() }) },
+  request: { params: z.object({ key: z.string() }), query: effectiveScopeQuerySchema },
   responses: {
     200: {
       description: "A ship by unified key (local aggregate or external adapter shape)",
@@ -343,6 +376,30 @@ const shipByKeyRoute = createRoute({
     },
     404: {
       description: "Ship not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    501: {
+      description: "Referenced adapter is not registered",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
+const shipEffectiveByKeyRoute = createRoute({
+  method: "get",
+  path: "/ships/{key}/effective",
+  request: { params: z.object({ key: z.string() }), query: effectiveScopeQuerySchema },
+  responses: {
+    200: {
+      description: "Effective ship presentation content with no source/origin data",
+      content: { "application/json": { schema: shipDetailResponseSchema } },
+    },
+    400: {
+      description: "Key is not a valid local ship subject id",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "Ship subject not found",
       content: { "application/json": { schema: errorResponseSchema } },
     },
     501: {
@@ -471,8 +528,33 @@ export const cruisePublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
     })
     return c.json({ data: quote }, 200)
   })
+  .openapi(shipEffectiveByKeyRoute, async (c) => {
+    const key = c.req.valid("param").key
+    let subjectId = key
+    if (!isTypeId(key)) {
+      const parsed = resolveExternalKey(key)
+      if (!parsed) return c.json({ error: "invalid_key" }, 400)
+      const adapter = resolveCruiseAdapter(parsed.provider)
+      if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
+      const ship = await adapter.fetchShip(parsed.sourceRef)
+      if (!ship) return c.json({ error: "not_found" }, 404)
+      const subject = await findExistingExternalCruiseShipSubject(c.get("db"), adapter.name, ship)
+      if (!subject) return c.json({ error: "not_found" }, 404)
+      subjectId = subject.entity_id
+    }
+    const query = c.req.valid("query")
+    const data = await readPublicCruiseShipProjection(c.get("db"), subjectId, {
+      locale: query.locale,
+      audience: query.audience,
+      market: query.market,
+    })
+    if (!data) return c.json({ error: "not_found" }, 404)
+    cachePublicRead(c)
+    return c.json({ data }, 200)
+  })
   .openapi(shipByKeyRoute, async (c) => {
     const key = c.req.valid("param").key
+    const query = c.req.valid("query")
     if (isTypeId(key)) {
       const ship = await cruisesService.getShipById(c.get("db"), key)
       if (!ship) return c.json({ error: "not_found" }, 404)
@@ -480,8 +562,23 @@ export const cruisePublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
         cruisesService.listShipDecks(c.get("db"), key),
         cruisesService.listShipCabinCategories(c.get("db"), key),
       ])
+      const presentation = await readPublicCruiseShipProjection(c.get("db"), key, {
+        locale: query.locale,
+        audience: query.audience,
+        market: query.market,
+      })
       cachePublicRead(c)
-      return c.json({ data: { ...ship, decks, categories } }, 200)
+      return c.json(
+        {
+          data: redactPublicSourceMetadata({
+            ...ship,
+            ...(presentation?.content ?? {}),
+            decks,
+            categories,
+          }),
+        },
+        200,
+      )
     }
     const parsed = resolveExternalKey(key)
     if (!parsed) return c.json({ error: "invalid_key" }, 400)
@@ -489,8 +586,19 @@ export const cruisePublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiVal
     if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
     const ship = await adapter.fetchShip(parsed.sourceRef)
     if (!ship) return c.json({ error: "not_found" }, 404)
+    const subject = await findExistingExternalCruiseShipSubject(c.get("db"), adapter.name, ship)
+    const presentation = subject
+      ? await readPublicCruiseShipProjection(c.get("db"), subject.entity_id, {
+          locale: query.locale,
+          audience: query.audience,
+          market: query.market,
+        })
+      : null
     cachePublicRead(c)
-    return c.json({ data: ship }, 200)
+    return c.json(
+      { data: redactPublicSourceMetadata({ ...ship, ...(presentation?.content ?? {}) }) },
+      200,
+    )
   })
   .openapi(cruiseBySlugRoute, async (c) => {
     const slug = c.req.valid("param").slug

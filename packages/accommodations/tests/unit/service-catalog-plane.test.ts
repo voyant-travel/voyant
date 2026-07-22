@@ -1,8 +1,16 @@
+import { createReferencedSubjectDocumentBuilderContext } from "@voyant-travel/catalog/catalog-runtime"
 import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
 import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
+import {
+  facilities,
+  facilityAddressProjections,
+  facilityFeatures,
+  properties,
+} from "@voyant-travel/operations"
 import { describe, expect, it } from "vitest"
 
 import { accommodationCatalogPolicy } from "../../src/catalog-policy.js"
+import { accommodationPropertyCatalogPolicy } from "../../src/catalog-policy-properties.js"
 import {
   ratePlanDailyRates,
   ratePlanRoomTypes,
@@ -265,6 +273,54 @@ describe("createRoomTypeDocumentBuilder", () => {
     )
 
     await expect(builderWithInventory("rmtp_abc", customerSlice)).resolves.not.toBeNull()
+  })
+
+  it("falls back from the real sourced-subject context to an effective owned property", async () => {
+    const db = fakeDb(
+      new Map<unknown, unknown[]>([
+        [roomTypes, [sampleRow]],
+        [
+          properties,
+          [
+            {
+              id: "prop_mitsis",
+              facilityId: "fac_mitsis",
+              brandName: "Mitsis",
+              groupName: null,
+              rating: 5,
+              checkInTime: "14:00",
+              checkOutTime: "11:00",
+            },
+          ],
+        ],
+        [
+          facilities,
+          [
+            {
+              id: "fac_mitsis",
+              name: "Effective Property Name",
+              description: "Effective property description",
+            },
+          ],
+        ],
+        [facilityAddressProjections, []],
+        [facilityFeatures, []],
+      ]),
+    )
+    const builder = createRoomTypeDocumentBuilder(db, { sellerOperatorId: "op_xyz" })
+    const runtimeContext = createReferencedSubjectDocumentBuilderContext(
+      db,
+      staffSlice,
+      new Map([
+        ["accommodation-properties", createFieldPolicyRegistry(accommodationPropertyCatalogPolicy)],
+      ]),
+    )
+
+    const document = await builder("rmtp_abc", staffSlice, runtimeContext)
+
+    expect(document?.fields.name).toBe("Family Garden View")
+    expect(document?.fields["property.name"]).toBe("Effective Property Name")
+    expect(document?.fields["property.description"]).toBe("Effective property description")
   })
 })
 

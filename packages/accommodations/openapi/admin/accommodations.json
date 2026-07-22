@@ -12,118 +12,7 @@
     }
   ],
   "components": {
-    "schemas": {
-      "CatalogSearchFilter": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["eq"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              }
-            },
-            "required": ["kind", "field", "value"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["in"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "values": {
-                "type": "array",
-                "items": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ]
-                }
-              }
-            },
-            "required": ["kind", "field", "values"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["range"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "gte": {
-                "type": "number"
-              },
-              "lte": {
-                "type": "number"
-              }
-            },
-            "required": ["kind", "field"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["and"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["or"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          }
-        ]
-      }
-    },
+    "schemas": {},
     "parameters": {}
   },
   "paths": {
@@ -306,12 +195,7 @@
               }
             }
           }
-        },
-        "operationId": "postAdminAccommodationsRoomBlocks",
-        "summary": "POST /v1/admin/accommodations/room-blocks",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}": {
@@ -497,12 +381,7 @@
               }
             }
           }
-        },
-        "operationId": "getAdminAccommodationsRoomBlocksById",
-        "summary": "GET /v1/admin/accommodations/room-blocks/{id}",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/nights": {
@@ -648,12 +527,7 @@
               }
             }
           }
-        },
-        "operationId": "putAdminAccommodationsRoomBlocksByIdNights",
-        "summary": "PUT /v1/admin/accommodations/room-blocks/{id}/nights",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups": {
@@ -903,12 +777,7 @@
               }
             }
           }
-        },
-        "operationId": "postAdminAccommodationsRoomBlocksByIdPickups",
-        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups/reverse": {
@@ -1039,12 +908,7 @@
               }
             }
           }
-        },
-        "operationId": "postAdminAccommodationsRoomBlocksByIdPickupsReverse",
-        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups/reverse",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/accommodations/room-blocks/{id}/release": {
@@ -1189,12 +1053,777 @@
               }
             }
           }
+        }
+      }
+    },
+    "/v1/admin/accommodations/properties/{id}/effective": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["customer", "partner"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Effective accommodation property content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "module": {
+                              "type": "string",
+                              "enum": ["accommodation-properties"]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["module", "id"]
+                        },
+                        "locale": {
+                          "type": "object",
+                          "properties": {
+                            "requestedLocale": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "sourceLocale": {
+                              "type": ["string", "null"],
+                              "minLength": 1
+                            },
+                            "servedLocale": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "matchKind": {
+                              "type": "string",
+                              "enum": ["exact", "mixed", "overlay-only"]
+                            }
+                          },
+                          "required": [
+                            "requestedLocale",
+                            "sourceLocale",
+                            "servedLocale",
+                            "matchKind"
+                          ]
+                        },
+                        "content": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "name": {
+                              "type": ["string", "null"]
+                            },
+                            "description": {
+                              "type": ["string", "null"]
+                            },
+                            "hero_image_url": {
+                              "type": ["string", "null"]
+                            },
+                            "gallery": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            },
+                            "highlights": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "amenities": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "star_rating": {
+                              "type": ["integer", "null"],
+                              "minimum": 0,
+                              "maximum": 10
+                            },
+                            "brand": {
+                              "type": ["string", "null"]
+                            },
+                            "country": {
+                              "type": ["string", "null"]
+                            },
+                            "city": {
+                              "type": ["string", "null"]
+                            },
+                            "address": {
+                              "type": ["string", "null"]
+                            },
+                            "postal_code": {
+                              "type": ["string", "null"]
+                            },
+                            "latitude": {
+                              "type": ["number", "null"]
+                            },
+                            "longitude": {
+                              "type": ["number", "null"]
+                            },
+                            "check_in_time": {
+                              "type": ["string", "null"]
+                            },
+                            "check_out_time": {
+                              "type": ["string", "null"]
+                            }
+                          },
+                          "required": ["id"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": ["subject", "locale", "content"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Accommodation property was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/properties/{id}/editorial-overlays": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property source, overlays, and effective content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "module": {
+                              "type": "string",
+                              "enum": ["accommodation-properties"]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["module", "id"]
+                        }
+                      },
+                      "required": ["subject"],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Accommodation property was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "locale": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "en-GB"
+                      },
+                      "audience": {
+                        "type": "string",
+                        "enum": ["staff", "customer", "partner", "supplier", "default"],
+                        "default": "customer"
+                      },
+                      "market": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "default"
+                      },
+                      "expectedVersion": {
+                        "type": ["integer", "null"]
+                      },
+                      "editorialNote": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["name"]
+                          },
+                          "value": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["description"]
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["hero_image_url"]
+                          },
+                          "value": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["gallery"]
+                          },
+                          "value": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uri"
+                            }
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["highlights"]
+                          },
+                          "value": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "fieldPath": {
+                            "type": "string",
+                            "enum": ["amenities"]
+                          },
+                          "value": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        },
+                        "required": ["fieldPath", "value"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
         },
-        "operationId": "postAdminAccommodationsRoomBlocksByIdRelease",
-        "summary": "POST /v1/admin/accommodations/room-blocks/{id}/release",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        "responses": {
+          "200": {
+            "description": "Property editorial overlay written",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["id"],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid overlay field, scope, or value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlay version conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "description",
+                "hero_image_url",
+                "gallery",
+                "highlights",
+                "amenities"
+              ]
+            },
+            "required": true,
+            "name": "fieldPath",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"]
+            },
+            "required": false,
+            "name": "expectedVersion",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property editorial overlay cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cleared": {
+                          "type": "boolean"
+                        },
+                        "overlay": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id"],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": ["cleared", "overlay"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid overlay field or scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlay version conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "currentVersion": {
+                      "type": ["integer", "null"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accommodations/properties/{id}/editorial-overlays/history": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#content-extension.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "description",
+                "hero_image_url",
+                "gallery",
+                "highlights",
+                "amenities"
+              ]
+            },
+            "required": false,
+            "name": "fieldPath",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"]
+            },
+            "required": false,
+            "name": "expectedVersion",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property editorial overlay audit history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["id"],
+                        "additionalProperties": {}
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/admin/accommodations/{id}/content": {
@@ -1208,11 +1837,7 @@
           "404": {
             "description": "Accommodation content was not found."
           }
-        },
-        "operationId": "getAdminAccommodationsByIdContent",
-        "tags": ["accommodations"],
-        "x-voyant-module": "accommodations",
-        "x-voyant-surface": "admin"
+        }
       }
     }
   },

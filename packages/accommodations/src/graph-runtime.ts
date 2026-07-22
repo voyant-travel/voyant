@@ -10,10 +10,12 @@ export const createAccommodationsContentVoyantRuntime = defineGraphRuntimeFactor
       admin: {
         resolveRegistry: runtime.resolveRegistry,
         defaultAcceptMachineTranslated: false,
+        allowEditorialWrites: true,
       },
       public: {
         resolveRegistry: runtime.resolveRegistry,
         defaultAcceptMachineTranslated: true,
+        allowEditorialWrites: false,
       },
     })
     return {

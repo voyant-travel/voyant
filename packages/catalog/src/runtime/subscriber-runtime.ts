@@ -25,7 +25,7 @@ export function createOperatorCatalogProjectionRuntime(
 ): CatalogProjectionRuntime {
   const env = bindings as CatalogSubscriberBindings
   const sellerOperatorId = env.TENANT_ID ?? "default"
-  return createCatalogProjectionRuntimeAdapter<CatalogSubscriberBindings, AnyDrizzleDb>({
+  const runtime = createCatalogProjectionRuntimeAdapter<CatalogSubscriberBindings, AnyDrizzleDb>({
     bindings: env,
     withDb: (bindings, operation) =>
       catalogRuntimeHost().database.transaction(bindings, (database) =>
@@ -40,12 +40,30 @@ export function createOperatorCatalogProjectionRuntime(
         slices: await services.loadSlices(db),
         registries: services.fieldPolicyRegistries(),
         builder: services.withEmbedding(
-          services.createProductsDocumentBuilder(db, { sellerOperatorId }),
+          services.createCatalogDocumentBuilder(db, { sellerOperatorId }),
           embeddings,
         ),
       }
     },
   })
+  return {
+    ...runtime,
+    async reindexReferencedSubject(event) {
+      const targets: Parameters<typeof runtime.reindexEntity>[0][] = []
+      await catalogRuntimeHost().database.transaction(env, async (database) =>
+        services.reindexReferencedSubjectOverlayChange(
+          database as AnyDrizzleDb,
+          event,
+          async (target) => {
+            targets.push(target)
+          },
+        ),
+      )
+      for (const target of targets) {
+        await runtime.reindexEntity(target)
+      }
+    },
+  }
 }
 
 export function createOperatorCatalogBookingSnapshotRuntime(

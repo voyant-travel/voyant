@@ -10,7 +10,11 @@
 import { describe, expect, it, vi } from "vitest"
 
 import type { CatalogProjection } from "../adapter/contract.js"
-import { createReadProvenance, type OwnedChecker } from "./sourced-entry-service.js"
+import {
+  createReadProvenance,
+  createSourcedPresentationSubjectIngestion,
+  type OwnedChecker,
+} from "./sourced-entry-service.js"
 
 // Minimal stub mirroring the columns `readSourcedEntry` selects. We don't
 // exercise any drizzle methods here — we replace the `readSourcedEntry`
@@ -74,5 +78,23 @@ describe("CatalogProjection input shape", () => {
       fields: { title: "Sample" },
     }
     expect(projection.provenance.source_kind).toBe("direct:tui")
+  })
+})
+
+describe("sourced presentation-subject ingestion", () => {
+  it("binds only centrally registered referenced-subject modules", () => {
+    expect(() =>
+      createSourcedPresentationSubjectIngestion({
+        entityModule: "products",
+        idPrefix: "products",
+      }),
+    ).toThrow(/registered referenced module/)
+
+    expect(() =>
+      createSourcedPresentationSubjectIngestion({
+        entityModule: "cruise-ships",
+        idPrefix: "cruise_ships",
+      }),
+    ).not.toThrow()
   })
 })

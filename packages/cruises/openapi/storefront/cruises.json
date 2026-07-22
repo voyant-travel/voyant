@@ -12,123 +12,13 @@
     }
   ],
   "components": {
-    "schemas": {
-      "CatalogSearchFilter": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["eq"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              }
-            },
-            "required": ["kind", "field", "value"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["in"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "values": {
-                "type": "array",
-                "items": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ]
-                }
-              }
-            },
-            "required": ["kind", "field", "values"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["range"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "gte": {
-                "type": "number"
-              },
-              "lte": {
-                "type": "number"
-              }
-            },
-            "required": ["kind", "field"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["and"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["or"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          }
-        ]
-      }
-    },
+    "schemas": {},
     "parameters": {}
   },
   "paths": {
     "/v1/public/cruises": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -472,16 +362,12 @@
               }
             }
           }
-        },
-        "operationId": "getPublicCruises",
-        "summary": "GET /v1/public/cruises",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        }
       }
     },
     "/v1/public/cruises/sailings/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -575,16 +461,12 @@
               }
             }
           }
-        },
-        "operationId": "getPublicCruisesSailingsByKey",
-        "summary": "GET /v1/public/cruises/sailings/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        }
       }
     },
     "/v1/public/cruises/sailings/{key}/quote": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -829,16 +711,12 @@
               }
             }
           }
-        },
-        "operationId": "postPublicCruisesSailingsByKeyQuote",
-        "summary": "POST /v1/public/cruises/sailings/{key}/quote",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        }
       }
     },
-    "/v1/public/cruises/ships/{key}": {
+    "/v1/public/cruises/ships/{key}/effective": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -847,6 +725,147 @@
             "required": true,
             "name": "key",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["customer", "partner"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Effective ship presentation content with no source/origin data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Key is not a valid local ship subject id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship subject not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/cruises/ships/{key}": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["customer", "partner"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
           }
         ],
         "responses": {
@@ -914,16 +933,12 @@
               }
             }
           }
-        },
-        "operationId": "getPublicCruisesShipsByKey",
-        "summary": "GET /v1/public/cruises/ships/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        }
       }
     },
     "/v1/public/cruises/{slug}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -1184,12 +1199,7 @@
               }
             }
           }
-        },
-        "operationId": "getPublicCruisesBySlug",
-        "summary": "GET /v1/public/cruises/{slug}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        }
       }
     }
   },

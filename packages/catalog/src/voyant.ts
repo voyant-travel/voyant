@@ -29,7 +29,11 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "./subscriber-runtime-ports.js"
-import { catalogEventDeclarations, catalogWebhookDeclarations } from "./voyant-events.js"
+import {
+  catalogEventDeclarations,
+  catalogOverlayChangedPayloadSchema,
+  catalogWebhookDeclarations,
+} from "./voyant-events.js"
 
 // Importing Cruises here would create a Catalog <-> Cruises package cycle.
 const cruisesRoutesRuntimePortReference = { id: "cruises.routes-runtime" } as const
@@ -48,6 +52,7 @@ const catalogIndexSubscriberRuntimeExports = {
   "pricing.rule.changed": "createCatalogPricingChangedIndexSubscriberGraphRuntime",
   "product.publication.changed": "createCatalogPublicationChangedIndexSubscriberGraphRuntime",
   "promotion.changed": "createCatalogPromotionChangedIndexSubscriberGraphRuntime",
+  "catalog.entity.overlay.changed": "createCatalogEntityOverlayChangedIndexSubscriberGraphRuntime",
 } as const
 
 /** Import-cheap deployment declaration owned by the catalog package. */
@@ -210,7 +215,17 @@ export const catalogVoyantModule = defineModule({
       config: { engine: "typesense" },
     },
   ],
-  events: catalogEventDeclarations,
+  events: [
+    ...catalogEventDeclarations,
+    {
+      id: "@voyant-travel/catalog#event.entity.overlay-changed",
+      eventType: "catalog.entity.overlay.changed",
+      version: "1.0.0",
+      payloadSchema: catalogOverlayChangedPayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "catalog", category: "domain" },
+    },
+  ],
   subscribers: [
     ...catalogIndexSubscriberDeclarations.map((subscriber) => ({
       ...subscriber,

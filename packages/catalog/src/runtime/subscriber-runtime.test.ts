@@ -1,22 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { reindexEntity, ensureCollections, deleteEntity, buildProductSnapshotInput, db } =
-  vi.hoisted(() => {
-    const rows = [{ productId: "product_1" }, { productId: null }]
-    const where = vi.fn(async () => rows)
-    const from = vi.fn(() => ({ where }))
-    const select = vi.fn(() => ({ from }))
-    return {
-      reindexEntity: vi.fn(async () => undefined),
-      ensureCollections: vi.fn(async () => undefined),
-      deleteEntity: vi.fn(async () => undefined),
-      buildProductSnapshotInput: vi.fn(async () => null),
-      db: { select },
-    }
-  })
+const {
+  reindexEntity,
+  reindexEntityForSlice,
+  ensureCollections,
+  deleteEntity,
+  buildProductSnapshotInput,
+  db,
+} = vi.hoisted(() => {
+  const rows = [{ productId: "product_1" }, { productId: null }]
+  const where = vi.fn(async () => rows)
+  const from = vi.fn(() => ({ where }))
+  const select = vi.fn(() => ({ from }))
+  return {
+    reindexEntity: vi.fn(async () => undefined),
+    reindexEntityForSlice: vi.fn(async () => undefined),
+    ensureCollections: vi.fn(async () => undefined),
+    deleteEntity: vi.fn(async () => undefined),
+    buildProductSnapshotInput: vi.fn(async () => null),
+    db: { select },
+  }
+})
 
 vi.mock("../services/indexer-service.js", () => ({
-  createIndexerService: () => ({ reindexEntity, ensureCollections, deleteEntity }),
+  createIndexerService: ({ slices }: { slices: Array<{ vertical: string }> }) => ({
+    reindexEntity,
+    reindexEntityForSlice,
+    ensureCollections,
+    deleteEntity,
+    slicesForVertical: (entityModule: string) =>
+      slices.filter((slice) => slice.vertical === entityModule),
+  }),
 }))
 
 vi.mock("@voyant-travel/inventory/service-catalog-plane", () => ({
@@ -56,6 +70,92 @@ describe("Operator Catalog subscriber runtime ports", () => {
 
     expect(ensureCollections).toHaveBeenCalledTimes(1)
     expect(reindexEntity).toHaveBeenCalledWith("products", "product_1", expect.anything())
+  })
+
+  it("reindexes only matching slices for scoped overlay targets", async () => {
+    const runtime = createProjectionRuntime(
+      {
+        TYPESENSE_HOST: "http://localhost:8108",
+      },
+      {
+        loadSlices: async () => [
+          { vertical: "products", locale: "ro-RO", audience: "customer", market: "RO" },
+          { vertical: "products", locale: "en-GB", audience: "customer", market: "GB" },
+          { vertical: "cruises", locale: "ro-RO", audience: "customer", market: "RO" },
+        ],
+      },
+    )
+
+    await runtime.reindexEntity({
+      entityModule: "products",
+      entityId: "product_1",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+    })
+
+    expect(reindexEntity).not.toHaveBeenCalled()
+    expect(reindexEntityForSlice).toHaveBeenCalledTimes(1)
+    expect(reindexEntityForSlice).toHaveBeenCalledWith(
+      { vertical: "products", locale: "ro-RO", audience: "customer", market: "RO" },
+      "product_1",
+      expect.anything(),
+    )
+  })
+
+  it("fans referenced-subject changes out through only matching scoped slices", async () => {
+    const event = {
+      entity_module: "cruise-ships",
+      entity_id: "crsh_1",
+      field_path: "name",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    }
+    const runtime = createProjectionRuntime(
+      { TYPESENSE_HOST: "http://localhost:8108" },
+      {
+        loadSlices: async () => [
+          { vertical: "cruise-ships", locale: "ro-RO", audience: "customer", market: "RO" },
+          { vertical: "cruises", locale: "ro-RO", audience: "customer", market: "RO" },
+          { vertical: "cruises", locale: "en-GB", audience: "customer", market: "GB" },
+        ],
+        reindexReferencedSubjectOverlayChange: async (_db, received, reindex) => {
+          expect(received).toEqual(event)
+          await reindex({
+            entityModule: received.entity_module,
+            entityId: received.entity_id,
+            locale: received.locale,
+            audience: received.audience,
+            market: received.market,
+          })
+          await reindex({
+            entityModule: "cruises",
+            entityId: "cruise_1",
+            locale: received.locale,
+            audience: received.audience,
+            market: received.market,
+          })
+        },
+      },
+    )
+
+    await runtime.reindexReferencedSubject?.(event)
+
+    expect(reindexEntityForSlice).toHaveBeenCalledTimes(2)
+    expect(reindexEntityForSlice).toHaveBeenNthCalledWith(
+      1,
+      { vertical: "cruise-ships", locale: "ro-RO", audience: "customer", market: "RO" },
+      "crsh_1",
+      expect.anything(),
+    )
+    expect(reindexEntityForSlice).toHaveBeenNthCalledWith(
+      2,
+      { vertical: "cruises", locale: "ro-RO", audience: "customer", market: "RO" },
+      "cruise_1",
+      expect.anything(),
+    )
   })
 
   it("serializes collection setup across concurrent deliveries", async () => {
@@ -108,14 +208,20 @@ describe("Operator Catalog subscriber runtime ports", () => {
   })
 })
 
-function createProjectionRuntime(bindings: Record<string, unknown>) {
+function createProjectionRuntime(
+  bindings: Record<string, unknown>,
+  overrides: Partial<Parameters<typeof createOperatorCatalogProjectionRuntime>[1]> = {},
+) {
   return createOperatorCatalogProjectionRuntime(bindings, {
     buildEmbeddingProvider: () => undefined,
     buildIndexer: () => ({}),
     loadSlices: async () => [],
     fieldPolicyRegistries: () => new Map(),
+    reindexReferencedSubjectOverlayChange: vi.fn(async () => undefined),
     createProductsDocumentBuilder: () => vi.fn(),
+    createCatalogDocumentBuilder: () => vi.fn(),
     withEmbedding: (builder: unknown) => builder,
+    ...overrides,
   } as never)
 }
 

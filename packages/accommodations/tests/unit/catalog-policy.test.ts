@@ -2,6 +2,11 @@ import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
 import { describe, expect, it } from "vitest"
 
 import { accommodationCatalogPolicy } from "../../src/catalog-policy.js"
+import {
+  ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+  accommodationPropertyCatalogPolicy,
+} from "../../src/catalog-policy-properties.js"
+import { assertOverlayableAccommodationPropertyField } from "../../src/service-presentation-subjects.js"
 
 describe("accommodationCatalogPolicy", () => {
   it("compiles into a valid registry without errors", () => {
@@ -42,5 +47,36 @@ describe("accommodationCatalogPolicy", () => {
   it("requires confirmation when ops edits accessibility notes", () => {
     const registry = createFieldPolicyRegistry(accommodationCatalogPolicy)
     expect(registry.byPath.get("accessibilityNotes")?.overrideFriction).toBe("confirm")
+  })
+})
+
+describe("accommodationPropertyCatalogPolicy", () => {
+  it("compiles into a presentation-subject registry", () => {
+    const registry = createFieldPolicyRegistry(accommodationPropertyCatalogPolicy)
+    expect(registry.policies.length).toBeGreaterThan(0)
+    expect(registry.byPath.get("name")?.class).toBe("merchandisable")
+  })
+
+  it("allows only vertical-owned merchandisable property overlays", () => {
+    expect(() => assertOverlayableAccommodationPropertyField("name")).not.toThrow()
+    expect(() => assertOverlayableAccommodationPropertyField("highlights")).not.toThrow()
+    expect(() => assertOverlayableAccommodationPropertyField("latitude")).toThrow(
+      /not an overlayable/i,
+    )
+    expect(() => assertOverlayableAccommodationPropertyField("source.ref")).toThrow(
+      /not an overlayable/i,
+    )
+  })
+
+  it("declares namespaced property fields for referencing room documents", () => {
+    const registry = createFieldPolicyRegistry([
+      ...accommodationCatalogPolicy,
+      ...ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+    ])
+    expect(registry.byPath.get("property.name")?.merge).toBe("source-only")
+    expect(registry.byPath.get("property.heroImageUrl")?.localized).toBe(false)
+    expect(() => assertOverlayableAccommodationPropertyField("property.name")).toThrow(
+      /not an overlayable/i,
+    )
   })
 })

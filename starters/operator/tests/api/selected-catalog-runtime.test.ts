@@ -52,15 +52,18 @@ describe("selected Operator Catalog subscriber composition", () => {
       catalog?.references
         .filter((reference) => reference.facet === "subscribers.runtime")
         .map((reference) => reference.entityId),
-    ).toHaveLength(9)
+    ).toHaveLength(10)
     expect(catalogRuntimeIndex).toBeGreaterThanOrEqual(0)
     expect(commerceRuntimeIndex).toBeGreaterThan(catalogRuntimeIndex)
     expect(container.has(CATALOG_PROJECTION_RUNTIME_CONTAINER_KEY)).toBe(true)
     expect(container.has(CATALOG_BOOKING_SNAPSHOT_RUNTIME_CONTAINER_KEY)).toBe(true)
-    expect(subscribe).toHaveBeenCalledTimes(9)
+    expect(subscribe).toHaveBeenCalledTimes(10)
     expect(subscribe.mock.calls.filter(([event]) => event === "booking.confirmed")).toHaveLength(1)
     expect(
       subscribe.mock.calls.filter(([event]) => event === "product.publication.changed"),
+    ).toHaveLength(1)
+    expect(
+      subscribe.mock.calls.filter(([event]) => event === "catalog.entity.overlay.changed"),
     ).toHaveLength(1)
   })
 

@@ -2,6 +2,11 @@ import { createFieldPolicyRegistry } from "@voyant-travel/catalog/contract"
 import { describe, expect, it } from "vitest"
 
 import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"
+import { cruiseShipCatalogPolicy } from "../../src/catalog-policy-ships.js"
+import {
+  assertOverlayableShipField,
+  cruiseShipOverlayInvalidationScope,
+} from "../../src/service-presentation-subjects.js"
 
 describe("cruiseCatalogPolicy", () => {
   it("compiles into a valid registry without errors", () => {
@@ -70,5 +75,37 @@ describe("cruiseCatalogPolicy", () => {
     const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
     expect(registry.byPath.get("regions[]")?.overrideFriction).toBe("confirm")
     expect(registry.byPath.get("themes[]")?.overrideFriction).toBe("confirm")
+  })
+})
+
+describe("cruiseShipCatalogPolicy", () => {
+  it("compiles into a presentation-subject registry", () => {
+    const registry = createFieldPolicyRegistry(cruiseShipCatalogPolicy)
+    expect(registry.policies.length).toBeGreaterThan(0)
+    expect(registry.byPath.get("name")?.class).toBe("merchandisable")
+  })
+
+  it("allows only vertical-owned merchandisable ship overlays", () => {
+    expect(() => assertOverlayableShipField("name")).not.toThrow()
+    expect(() => assertOverlayableShipField("deckPlanUrl")).not.toThrow()
+    expect(() => assertOverlayableShipField("capacityGuests")).toThrow(/not an overlayable/i)
+    expect(() => assertOverlayableShipField("source.ref")).toThrow(/not an overlayable/i)
+  })
+
+  it("invalidates nonlocalized entry-wide ship fields across every slice", () => {
+    expect(
+      cruiseShipOverlayInvalidationScope("gallery", {
+        locale: "default",
+        audience: "customer",
+        market: "RO",
+      }),
+    ).toEqual({ locale: "default", audience: "default", market: "default" })
+    expect(
+      cruiseShipOverlayInvalidationScope("name", {
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+      }),
+    ).toEqual({ locale: "ro-RO", audience: "customer", market: "RO" })
   })
 })

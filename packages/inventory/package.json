@@ -28,10 +28,13 @@
     "./service-catalog-plane-destinations": "./src/service-catalog-plane-destinations.ts",
     "./service-catalog-plane-taxonomy": "./src/service-catalog-plane-taxonomy.ts",
     "./service-public": "./src/service-public.ts",
+    "./service-presentation-references": "./src/service-presentation-references.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
+    "./routes-editorial-overlays": "./src/routes-editorial-overlays.ts",
+    "./service-editorial-overlays": "./src/service-editorial-overlays.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine.ts",
     "./booking-engine/runtime": "./src/booking-engine/product-runtime.ts",
@@ -224,6 +227,11 @@
         "import": "./dist/service-public.js",
         "default": "./dist/service-public.js"
       },
+      "./service-presentation-references": {
+        "types": "./dist/service-presentation-references.d.ts",
+        "import": "./dist/service-presentation-references.js",
+        "default": "./dist/service-presentation-references.js"
+      },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",
         "import": "./dist/content-shape.js",
@@ -243,6 +251,16 @@
         "types": "./dist/routes-content.d.ts",
         "import": "./dist/routes-content.js",
         "default": "./dist/routes-content.js"
+      },
+      "./routes-editorial-overlays": {
+        "types": "./dist/routes-editorial-overlays.d.ts",
+        "import": "./dist/routes-editorial-overlays.js",
+        "default": "./dist/routes-editorial-overlays.js"
+      },
+      "./service-editorial-overlays": {
+        "types": "./dist/service-editorial-overlays.d.ts",
+        "import": "./dist/service-editorial-overlays.js",
+        "default": "./dist/service-editorial-overlays.js"
       },
       "./draft-shape": {
         "types": "./dist/draft-shape.d.ts",

@@ -47,6 +47,7 @@ describe("enrichProductQuoteShape", () => {
       entityModule: "products",
       entityId: "prod_1",
       locale: "ro-RO",
+      audience: "customer",
       market: "default",
       currency: "EUR",
       registry: {} as never,
@@ -59,6 +60,7 @@ describe("enrichProductQuoteShape", () => {
       "prod_1",
       {
         preferredLocales: ["ro-RO", "en-GB", "en"],
+        audience: "customer",
         market: "default",
         currency: "EUR",
       },
@@ -77,6 +79,7 @@ describe("enrichProductQuoteShape", () => {
       entityModule: "products",
       entityId: "prod_1",
       locale: "en-GB",
+      audience: "staff",
       market: "default",
       registry: {} as never,
     })
@@ -87,6 +90,7 @@ describe("enrichProductQuoteShape", () => {
       "prod_1",
       {
         preferredLocales: ["en-GB", "en"],
+        audience: "staff",
         market: "default",
         currency: undefined,
       },

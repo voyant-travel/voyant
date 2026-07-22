@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
-import { CATALOG_EVENT_CATEGORIES, CATALOG_EVENTS, filterByVisibility } from "./taxonomy.js"
+import {
+  CATALOG_EVENT_CATEGORIES,
+  CATALOG_EVENTS,
+  type EntityOverlayChangedPayload,
+  filterByVisibility,
+} from "./taxonomy.js"
 
 describe("CATALOG_EVENTS / CATALOG_EVENT_CATEGORIES", () => {
   it("declares an internal category for overlay-changed and drift-detected", () => {
@@ -12,6 +17,27 @@ describe("CATALOG_EVENTS / CATALOG_EVENT_CATEGORIES", () => {
   it("declares domain category for booking and source events", () => {
     expect(CATALOG_EVENT_CATEGORIES[CATALOG_EVENTS.BOOKING_COMMITTED]).toBe("domain")
     expect(CATALOG_EVENT_CATEGORIES[CATALOG_EVENTS.SOURCE_DISCONNECTED]).toBe("domain")
+  })
+
+  it("keeps stable node identity optional for legacy root and nested overlay events", () => {
+    const root = {
+      entity_module: "products",
+      entity_id: "prod_1",
+      field_path: "title",
+      locale: "en-GB",
+      audience: "customer",
+      market: "default",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    } satisfies EntityOverlayChangedPayload
+    const nested = {
+      ...root,
+      node_kind: "itinerary-day",
+      node_key: "day_1",
+      field_path: "description",
+    } satisfies EntityOverlayChangedPayload
+
+    expect(root).not.toHaveProperty("node_kind")
+    expect(nested).toMatchObject({ node_kind: "itinerary-day", node_key: "day_1" })
   })
 })
 

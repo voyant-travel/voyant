@@ -14,11 +14,13 @@
     "./booking-overview-enricher": "./src/booking-overview-enricher.ts",
     "./service-owned-stays": "./src/service-owned-stays.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
+    "./catalog-policy-properties": "./src/catalog-policy-properties.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
     "./booking-engine/runtime": "./src/booking-engine/runtime.ts",
     "./routes-content": "./src/routes-content.ts",
+    "./service-presentation-subjects": "./src/service-presentation-subjects.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -122,6 +124,11 @@
         "import": "./dist/catalog-policy.js",
         "default": "./dist/catalog-policy.js"
       },
+      "./catalog-policy-properties": {
+        "types": "./dist/catalog-policy-properties.d.ts",
+        "import": "./dist/catalog-policy-properties.js",
+        "default": "./dist/catalog-policy-properties.js"
+      },
       "./service-catalog-plane": {
         "types": "./dist/service-catalog-plane.d.ts",
         "import": "./dist/service-catalog-plane.js",
@@ -146,6 +153,11 @@
         "types": "./dist/routes-content.d.ts",
         "import": "./dist/routes-content.js",
         "default": "./dist/routes-content.js"
+      },
+      "./service-presentation-subjects": {
+        "types": "./dist/service-presentation-subjects.d.ts",
+        "import": "./dist/service-presentation-subjects.js",
+        "default": "./dist/service-presentation-subjects.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",

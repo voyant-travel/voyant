@@ -2,6 +2,7 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 import {
   catalogAvailabilityChangedIndexSubscriber,
+  catalogEntityOverlayChangedIndexSubscriber,
   catalogIndexSubscriberRuntimeDescriptors,
   catalogPricingChangedIndexSubscriber,
   catalogProductContentChangedIndexSubscriber,
@@ -28,7 +29,7 @@ function runtimeHarness() {
 }
 
 describe("Catalog index subscriber runtime descriptors", () => {
-  it("match the eight inert package declarations", () => {
+  it("match the inert package declarations", () => {
     expect(
       catalogIndexSubscriberRuntimeDescriptors.map(({ id, eventType }) => ({ id, eventType })),
     ).toMatchInlineSnapshot(`
@@ -64,6 +65,10 @@ describe("Catalog index subscriber runtime descriptors", () => {
           {
             "eventType": "promotion.changed",
             "id": "@voyant-travel/catalog#subscriber.index-product-promotion-changed",
+          },
+          {
+            "eventType": "catalog.entity.overlay.changed",
+            "id": "@voyant-travel/catalog#subscriber.index-entity-overlay-changed",
           },
         ]
       `)
@@ -127,6 +132,52 @@ describe("Catalog index subscriber runtime descriptors", () => {
       entityId: "product_2",
     })
     expect(harness.runtime.reindexEntity).toHaveBeenCalledTimes(2)
+  })
+
+  it("reindexes overlay changes as scoped projection targets", async () => {
+    const harness = runtimeHarness()
+    await catalogEntityOverlayChangedIndexSubscriber.register(harness.context)
+    await harness.eventBus.emit("catalog.entity.overlay.changed", {
+      entity_module: "cruise-ships",
+      entity_id: "crsh_123",
+      field_path: "name",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    })
+
+    expect(harness.runtime.reindexEntity).toHaveBeenCalledWith({
+      entityModule: "cruise-ships",
+      entityId: "crsh_123",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+    })
+  })
+
+  it("delegates referenced-subject overlay events once with the complete scope", async () => {
+    const harness = runtimeHarness()
+    const reindexReferencedSubject = vi.fn(async () => undefined)
+    harness.runtime.reindexReferencedSubject = reindexReferencedSubject
+    await catalogEntityOverlayChangedIndexSubscriber.register(harness.context)
+    const event = {
+      entity_module: "accommodation-properties",
+      entity_id: "prop_123",
+      node_kind: "room-type",
+      node_key: "room_deluxe",
+      field_path: "description",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    }
+
+    await harness.eventBus.emit("catalog.entity.overlay.changed", event)
+
+    expect(reindexReferencedSubject).toHaveBeenCalledOnce()
+    expect(reindexReferencedSubject).toHaveBeenCalledWith(event)
+    expect(harness.runtime.reindexEntity).not.toHaveBeenCalled()
   })
 
   it("skips non-targeting events without resolving a projection runtime", async () => {

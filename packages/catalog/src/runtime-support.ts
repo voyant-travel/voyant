@@ -20,7 +20,7 @@ import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,
 } from "./booking-snapshot-subscriber-runtime.js"
-import type { FieldPolicyRegistry } from "./contract.js"
+import type { FieldPolicyRegistry, Visibility } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
 import { createGeminiEmbeddingProvider } from "./embeddings/gemini.js"
 import type {
@@ -111,17 +111,17 @@ function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {
 }
 
 export function withCatalogEmbedding(
-  inner: (entityId: string, slice: IndexerSlice) => Promise<IndexerDocument | null>,
+  inner: DocumentBuilder,
   embeddings:
     | {
         capabilities: { modelId: string }
         embed(input: string[]): Promise<number[][]>
       }
     | undefined,
-): typeof inner {
+): DocumentBuilder {
   if (!embeddings) return inner
-  return async (entityId, slice) => {
-    const document = await inner(entityId, slice)
+  return async (entityId, slice, context) => {
+    const document = await inner(entityId, slice, context)
     if (!document) return null
     const text = merchandisableText(document)
     if (!text) return document
@@ -273,6 +273,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
     db: unknown
     entityId: string
     locales: string[]
+    audience: Visibility
     market?: string
     currency?: string
     registry: SourceAdapterRegistry
@@ -289,6 +290,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
     entityModule: string
     entityId: string
     locale?: string
+    audience?: string
     market?: string
     currency?: string
     registry: SourceAdapterRegistry
@@ -303,6 +305,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
         db: input.db,
         entityId: input.entityId,
         locales,
+        audience: narrowContentAudience(input.audience),
         market: input.market,
         currency: input.currency,
         registry: input.registry,
@@ -318,6 +321,13 @@ export function createProductQuoteShapeEnricher(dependencies: {
       return input.result
     }
   }
+}
+
+const CONTENT_AUDIENCES = new Set<Visibility>(["staff", "customer", "partner", "supplier"])
+
+function narrowContentAudience(audience: string | undefined): Visibility {
+  if (audience === "staff-admin") return "staff"
+  return CONTENT_AUDIENCES.has(audience as Visibility) ? (audience as Visibility) : "customer"
 }
 
 export interface SourcedBookingRowValues {
@@ -348,10 +358,18 @@ export function createCatalogProjectionRuntimeAdapter<TBindings, TDb>(options: {
     })
   }
   return {
-    reindexEntity: ({ entityModule, entityId }) =>
+    reindexEntity: ({ entityModule, entityId, locale, audience, market }) =>
       withIndexer(async ({ adapter, slices, registries, builder }) => {
         const service = createIndexerService({ adapter, slices, registries })
         await ensureCollections(() => service.ensureCollections())
+        if (locale || audience || market) {
+          for (const slice of service
+            .slicesForVertical(entityModule)
+            .filter((slice) => sliceMatchesTarget(slice, { locale, audience, market }))) {
+            await service.reindexEntityForSlice(slice, entityId, builder)
+          }
+          return
+        }
         await service.reindexEntity(entityModule, entityId, builder)
       }),
     deleteEntity: ({ entityModule, entityId }) =>
@@ -362,6 +380,21 @@ export function createCatalogProjectionRuntimeAdapter<TBindings, TDb>(options: {
         )
       }),
   }
+}
+
+function sliceMatchesTarget(
+  slice: IndexerSlice,
+  target: { locale?: string; audience?: string; market?: string },
+): boolean {
+  return (
+    matchesAxis(slice.locale, target.locale) &&
+    matchesAxis(slice.audience, target.audience) &&
+    matchesAxis(slice.market, target.market)
+  )
+}
+
+function matchesAxis(sliceValue: string, targetValue: string | undefined): boolean {
+  return !targetValue || targetValue === "default" || sliceValue === targetValue
 }
 
 export function createCatalogBookingSnapshotRuntimeAdapter<TBindings, TDb>(options: {

@@ -285,7 +285,9 @@ describe("listResolvedProducts (batched overlay fetch)", () => {
     // Spot-check the overlays actually landed (guards against a vacuously
     // equal pair of broken outputs).
     expect(batched[0]?.values.get("name")).toBe("✨ Sunset Wellness Escape")
-    expect(batched[0]?.values.get("description")).toBe("Overlaid description")
+    // Localized fields do not consume a `locale=default` overlay when a real
+    // locale was requested; that would silently serve the wrong language.
+    expect(batched[0]?.values.get("description")).toBe("Source description")
     expect(batched[1]?.values.get("name")).toBe("Alps Hiking Week — Last Seats")
   })
 

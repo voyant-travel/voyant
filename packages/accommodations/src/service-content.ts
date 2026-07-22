@@ -47,6 +47,7 @@ import {
   type SynthesizedAccommodationContent,
   synthesizeAccommodationContent,
 } from "./service-content-synthesizer.js"
+import { refreshSourcedAccommodationPropertyReference } from "./service-presentation-subjects.js"
 
 export type {
   BuildOwnedAccommodationContentOptions,
@@ -176,6 +177,7 @@ export async function getAccommodationContent(
       market,
       currency: scope.currency,
     })
+    await refreshPropertyReference(db, sourcedEntry, fresh)
     return finalizeFresh(db, entityId, fresh, scope, options, resultProvenance)
   }
 
@@ -193,13 +195,19 @@ export async function getAccommodationContent(
 
   if (best && isStale(best.candidate)) {
     if (adapter?.getContent) {
-      void scheduleRefresh(db, adapter, adapterCtx, {
-        entity_module: "accommodations",
-        entity_id: entityId,
-        locale: scope.preferredLocales[0] ?? best.candidate.locale,
-        market,
-        currency: scope.currency,
-      })
+      void scheduleRefresh(
+        db,
+        adapter,
+        adapterCtx,
+        {
+          entity_module: "accommodations",
+          entity_id: entityId,
+          locale: scope.preferredLocales[0] ?? best.candidate.locale,
+          market,
+          currency: scope.currency,
+        },
+        sourcedEntry,
+      )
     }
     return finalizeFromCache(db, entityId, best, true, options, resultProvenance)
   }
@@ -216,13 +224,19 @@ export async function getAccommodationContent(
     return wrapSynthesized(synthesized, scope, false, resultProvenance)
   }
 
-  const fresh = await fetchFreshContent(db, adapter, adapterCtx, {
-    entity_module: "accommodations",
-    entity_id: entityId,
-    locale: scope.preferredLocales[0] ?? "en-GB",
-    market,
-    currency: scope.currency,
-  })
+  const fresh = await fetchFreshContent(
+    db,
+    adapter,
+    adapterCtx,
+    {
+      entity_module: "accommodations",
+      entity_id: entityId,
+      locale: scope.preferredLocales[0] ?? "en-GB",
+      market,
+      currency: scope.currency,
+    },
+    sourcedEntry,
+  )
   if (!fresh) {
     const overlays = await fetchOverlaysForEntity(db, "accommodations", entityId)
     const synthesized = synthesizeAccommodationContent(
@@ -263,6 +277,11 @@ async function fetchFreshContent(
   adapter: SourceAdapter,
   ctx: SourceAdapterContext,
   request: GetContentRequest,
+  sourcedEntry: {
+    source_kind: string
+    source_provider?: string | null
+    source_connection_id?: string | null
+  },
 ): Promise<GetContentResult | null> {
   const result = await withContentRefreshLock(
     db,
@@ -280,6 +299,7 @@ async function fetchFreshContent(
           `accommodation getContent for ${request.entity_id} failed validation: ${validation.reason}`,
         )
       }
+      await refreshPropertyReference(db, sourcedEntry, got)
       await writeCacheRow(db, request, got)
       return got
     },
@@ -307,6 +327,11 @@ function scheduleRefresh(
   adapter: SourceAdapter,
   ctx: SourceAdapterContext,
   request: GetContentRequest,
+  sourcedEntry: {
+    source_kind: string
+    source_provider?: string | null
+    source_connection_id?: string | null
+  },
 ): void {
   void withContentRefreshLock(
     db,
@@ -320,10 +345,30 @@ function scheduleRefresh(
       const got = await adapter.getContent!(ctx, request)
       const validation = validateAccommodationContent(got.content)
       if (!validation.valid) return
+      await refreshPropertyReference(db, sourcedEntry, got)
       await writeCacheRow(db, request, got)
     },
   ).catch(() => {
     // intentional swallow — see §3.4 SWR refresh contract
+  })
+}
+
+async function refreshPropertyReference(
+  db: AnyDrizzleDb,
+  sourcedEntry: {
+    source_kind: string
+    source_provider?: string | null
+    source_connection_id?: string | null
+  },
+  result: GetContentResult,
+): Promise<void> {
+  const content = accommodationContentSchema.parse(result.content)
+  await refreshSourcedAccommodationPropertyReference(db, {
+    sourceKind: sourcedEntry.source_kind,
+    sourceProvider: sourcedEntry.source_provider ?? null,
+    sourceConnectionId: sourcedEntry.source_connection_id ?? null,
+    returnedLocale: result.returned_locale,
+    content,
   })
 }
 

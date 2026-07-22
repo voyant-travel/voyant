@@ -18,6 +18,8 @@ export const DEFAULT_ADMIN_LOCALE = "en"
 export interface LocaleContextValue {
   locale: string
   resolvedLocale: string
+  /** Locales this deployment is configured to serve, in preference order. */
+  supportedLocales: readonly string[]
   setLocale: (locale: string) => Promise<void>
   timeZone: string | null
   setTimeZone: (timeZone: string | null) => Promise<void>
@@ -281,6 +283,7 @@ export function LocaleProvider({
       value={{
         locale,
         resolvedLocale,
+        supportedLocales,
         setLocale,
         timeZone,
         setTimeZone,

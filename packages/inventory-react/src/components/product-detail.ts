@@ -1,4 +1,7 @@
 export {
+  type EditorialOverlayField,
+  type EditorialOverlayFieldState,
+  type EditorialOverlayState,
   getChannelsQueryOptions,
   getProductChannelMappingsQueryOptions,
   getProductDetailMediaQueryOptions,
@@ -17,5 +20,7 @@ export {
   type ProductDetailNavigation,
   ProductDetailPage,
   ProductDetailSkeleton,
+  ProductEditorialOverlaySection,
+  type ProductEditorialOverlaySectionProps,
   useProductDetailHost,
 } from "./product-detail/index.js"

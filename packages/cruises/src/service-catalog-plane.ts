@@ -13,6 +13,7 @@ import {
   type CaptureSnapshotInput,
   createFieldPolicyRegistry,
   type DocumentBuilder,
+  type DocumentBuilderContext,
   type DocumentEmitter,
   type FieldPolicy,
   type FieldPolicyRegistry,
@@ -22,19 +23,29 @@ import {
   type Provenance,
   type ResolvedView,
   type ResolverScope,
+  readSourcedEntry,
   resolveEntityView,
 } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { eq } from "drizzle-orm"
 
 import { cruiseCatalogPolicy } from "./catalog-policy.js"
+import { cruiseShipReferenceCatalogPolicy } from "./catalog-policy-ships.js"
 import { isCustomerCruiseBookable } from "./customer-bookability.js"
 import { cruises } from "./schema-core.js"
+import {
+  findSourcedCruiseShipSubjectId,
+  projectEffectiveCruiseShipReference,
+  readEffectiveCruiseShipReferenceProjection,
+} from "./service-presentation-subjects.js"
 
 let _registry: FieldPolicyRegistry | undefined
 function getCruisesRegistry(): FieldPolicyRegistry {
   if (!_registry) {
-    _registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
+    _registry = createFieldPolicyRegistry([
+      ...cruiseCatalogPolicy,
+      ...cruiseShipReferenceCatalogPolicy,
+    ])
   }
   return _registry
 }
@@ -52,7 +63,7 @@ export function createCruisesRegistry(
   ...extensionPolicies: ReadonlyArray<ReadonlyArray<FieldPolicy>>
 ): FieldPolicyRegistry {
   if (extensionPolicies.length === 0) return getCruisesRegistry()
-  const composed: FieldPolicy[] = [...cruiseCatalogPolicy]
+  const composed: FieldPolicy[] = [...cruiseCatalogPolicy, ...cruiseShipReferenceCatalogPolicy]
   for (const policies of extensionPolicies) {
     composed.push(...policies)
   }
@@ -251,25 +262,55 @@ export function createCruiseDocumentBuilder(
 ): DocumentBuilder {
   const registry = context.registry ?? getCruisesRegistry()
   const extensions = context.extensions ?? []
-  const emitter = createCruiseDocumentEmitter({ ...context, registry })
-  return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
+  return async (
+    entityId: string,
+    slice: IndexerSlice,
+    builderContext?: DocumentBuilderContext,
+  ): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(cruises).where(eq(cruises.id, entityId)).limit(1)
     const row = rows[0]
-    if (!row) return null
-    if (slice.audience === "customer" && !(await isCustomerCruiseBookable(db, row))) return null
-    if (extensions.length === 0) return emitter.emit(row, slice)
+    if (row && slice.audience === "customer" && !(await isCustomerCruiseBookable(db, row))) {
+      return null
+    }
+    const sourced = row ? null : await readSourcedEntry(db, "cruises", entityId)
+    if (!row && (!sourced || sourced.status !== "active")) return null
 
-    const baseProjection = cruiseRowToProjection(row, {
-      sellerOperatorId: context.sellerOperatorId,
-      sourceKind: context.sourceKind,
-      sourceRef: context.sourceRef,
-    })
+    const baseProjection = row
+      ? cruiseRowToProjection(row, {
+          sellerOperatorId: context.sellerOperatorId,
+          sourceKind: context.sourceKind,
+          sourceRef: context.sourceRef,
+        })
+      : new Map<string, unknown>(Object.entries(sourced!.projection))
     const extensionProjections = await Promise.all(
       extensions.map((ext) => ext.project(db, entityId, slice)),
     )
+    const shipSubjectId = row?.defaultShipId ?? (await findSourcedCruiseShipSubjectId(db, sourced))
+    const canonicalShipProjection =
+      shipSubjectId && builderContext
+        ? await builderContext.resolveReferencedSubject({
+            entityModule: "cruise-ships",
+            entityId: shipSubjectId,
+            scope: {
+              locale: slice.locale,
+              audience: slice.audience === "staff-admin" ? "staff" : slice.audience,
+              market: slice.market,
+            },
+          })
+        : null
+    const shipProjection =
+      canonicalShipProjection ??
+      (shipSubjectId
+        ? await readEffectiveCruiseShipReferenceProjection(db, shipSubjectId, slice)
+        : null)
     const merged = new Map<string, unknown>(baseProjection)
     for (const projection of extensionProjections) {
       for (const [path, value] of projection) {
+        merged.set(path, value)
+      }
+    }
+    if (shipProjection) {
+      for (const [path, value] of projectEffectiveCruiseShipReference(shipProjection)) {
         merged.set(path, value)
       }
     }

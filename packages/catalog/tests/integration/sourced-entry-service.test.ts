@@ -12,7 +12,7 @@
 
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { createTestDb } from "@voyant-travel/db/test-utils"
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
 
@@ -20,9 +20,12 @@ import type { CatalogProjection } from "../../src/adapter/contract.js"
 import { catalogSourcedEntriesTable } from "../../src/schema-sourced-entries.js"
 import {
   createReadProvenance,
+  createSourcedPresentationSubjectIngestion,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
   readSourcedEntry,
+  readSourcedEntryBySource,
+  resolveSourcedPresentationSubject,
   upsertSourcedEntry,
 } from "../../src/services/sourced-entry-service.js"
 
@@ -141,6 +144,95 @@ describe.skipIf(!DB_AVAILABLE)("SourcedEntryService integration", () => {
   it("readSourcedEntry returns null for entities that aren't in the store", async () => {
     const row = await readSourcedEntry(db, testEntityModule, "missing_entity_xyz")
     expect(row).toBeNull()
+  })
+
+  it("resolves sourced presentation subjects to durable local identity by provenance", async () => {
+    const source = {
+      entityModule: "cruise-ships",
+      idPrefix: "cruise_ships" as const,
+      sourceKind: "direct:cruise-line",
+      sourceProvider: "demo-line",
+      sourceConnectionId: `conn_${testIdPrefix}`,
+      sourceRef: `ship-${testIdPrefix}`,
+    }
+
+    const first = await resolveSourcedPresentationSubject(db, {
+      ...source,
+      projection: { name: "River Star", locale: "en-GB" },
+    })
+    createdEntityIds.push(first.entity_id)
+    const second = await resolveSourcedPresentationSubject(db, {
+      ...source,
+      projection: { name: "River Star Updated", locale: "en-GB" },
+    })
+
+    expect(second.entity_id).toBe(first.entity_id)
+    expect(second.projection).toMatchObject({ name: "River Star Updated" })
+
+    const bySource = await readSourcedEntryBySource(db, source)
+    expect(bySource?.entity_id).toBe(first.entity_id)
+  })
+
+  it.each([
+    ["connected", `conn_concurrent_${testIdPrefix}`],
+    ["connection-less", null],
+  ])("atomically resolves %s provider subjects under concurrent discovery", async (_, connectionId) => {
+    const sourceRef = `ship-concurrent-${connectionId ?? "none"}-${testIdPrefix}`
+    const ingest = createSourcedPresentationSubjectIngestion({
+      entityModule: "cruise-ships",
+      idPrefix: "cruise_ships",
+    })
+
+    const resolved = await Promise.all(
+      Array.from({ length: 6 }, (_, revision) =>
+        ingest(db, {
+          sourceKind: "direct:cruise-line",
+          sourceProvider: "demo-line",
+          sourceConnectionId: connectionId,
+          sourceRef,
+          projection: { name: `River Star ${revision}`, locale: "en-GB" },
+        }),
+      ),
+    )
+    createdEntityIds.push(resolved[0]!.entity_id)
+
+    expect(new Set(resolved.map((row) => row.entity_id)).size).toBe(1)
+    const rows = await db
+      .select({ entityId: catalogSourcedEntriesTable.entity_id })
+      .from(catalogSourcedEntriesTable)
+      .where(
+        and(
+          eq(catalogSourcedEntriesTable.entity_module, "cruise-ships"),
+          eq(catalogSourcedEntriesTable.source_kind, "direct:cruise-line"),
+          connectionId === null
+            ? isNull(catalogSourcedEntriesTable.source_connection_id)
+            : eq(catalogSourcedEntriesTable.source_connection_id, connectionId),
+          eq(catalogSourcedEntriesTable.source_ref, sourceRef),
+        ),
+      )
+    expect(rows).toEqual([{ entityId: resolved[0]!.entity_id }])
+  })
+
+  it("keeps provider identity distinct across referenced-subject modules", async () => {
+    const provenance = {
+      sourceKind: "direct:shared-provider",
+      sourceConnectionId: `conn_cross_module_${testIdPrefix}`,
+      sourceRef: `shared-ref-${testIdPrefix}`,
+      projection: { name: "Shared upstream ref" },
+    }
+    const ship = await createSourcedPresentationSubjectIngestion({
+      entityModule: "cruise-ships",
+      idPrefix: "cruise_ships",
+    })(db, provenance)
+    const property = await createSourcedPresentationSubjectIngestion({
+      entityModule: "accommodation-properties",
+      idPrefix: "properties",
+    })(db, provenance)
+    createdEntityIds.push(ship.entity_id, property.entity_id)
+
+    expect(ship.entity_module).toBe("cruise-ships")
+    expect(property.entity_module).toBe("accommodation-properties")
+    expect(ship.entity_id).not.toBe(property.entity_id)
   })
 
   it("markSourcedEntryWithdrawn flips status without deleting the row", async () => {

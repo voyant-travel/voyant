@@ -25,11 +25,16 @@ export {
   type SelectCatalogQuote,
 } from "./booking-engine/schema.js"
 export {
+  catalogOverlayHistoryTable,
   catalogOverlayTable,
   type InsertCatalogOverlay,
+  type InsertCatalogOverlayHistory,
   OVERLAY_DEFAULT_SCOPE,
+  OVERLAY_ROOT_NODE_KEY,
+  OVERLAY_ROOT_NODE_KIND,
   type OverlayOrigin,
   type SelectCatalogOverlay,
+  type SelectCatalogOverlayHistory,
 } from "./overlay/schema.js"
 export {
   catalogSourcedEntriesTable,

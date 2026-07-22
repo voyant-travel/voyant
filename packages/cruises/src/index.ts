@@ -97,12 +97,18 @@ export {
   cruiseDeckCatalogPolicy,
 } from "./catalog-policy-cabins.js"
 export {
+  CRUISE_SHIP_FIELD_POLICY,
+  CRUISE_SHIP_REFERENCE_FIELD_POLICY,
+  cruiseShipCatalogPolicy,
+} from "./catalog-policy-ships.js"
+export {
   CRUISE_CREATED_EVENT,
   CRUISE_DELETED_EVENT,
   CRUISE_UPDATED_EVENT,
   type CruiseLifecycleEvent,
   type CruiseLifecycleEventName,
   emitCruiseLifecycleEvent,
+  emitCruiseShipOverlayChanged,
 } from "./events.js"
 export type { CruiseAdminRoutes } from "./routes.js"
 export { cruiseAdminRoutes } from "./routes.js"
@@ -133,6 +139,24 @@ export {
   type ExternalCruiseCatalogRefreshResult,
   refreshExternalCruiseCatalog,
 } from "./service-external-refresh.js"
+export {
+  assertOverlayableShipField,
+  type ClearCruiseShipOverlayInput,
+  CRUISE_SHIP_SUBJECT_MODULE,
+  type CruiseShipOverlayScope,
+  type CruiseShipOverlayTarget,
+  type CruiseShipSourceReferenceInput,
+  clearCruiseShipOverlay,
+  createCruiseShipDocumentBuilder,
+  findExistingExternalCruiseShipSubject,
+  listCruiseShipOverlayHistory,
+  listCruisesReferencingShip,
+  readCruiseShipOverlayState,
+  readPublicCruiseShipProjection,
+  resolveSourcedCruiseShipReference,
+  type WriteCruiseShipOverlayInput,
+  writeCruiseShipOverlay,
+} from "./service-presentation-subjects.js"
 export {
   type ComposeQuoteInput,
   composeQuote,

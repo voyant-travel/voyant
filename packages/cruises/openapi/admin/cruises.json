@@ -12,123 +12,13 @@
     }
   ],
   "components": {
-    "schemas": {
-      "CatalogSearchFilter": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["eq"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              }
-            },
-            "required": ["kind", "field", "value"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["in"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "values": {
-                "type": "array",
-                "items": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ]
-                }
-              }
-            },
-            "required": ["kind", "field", "values"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["range"]
-              },
-              "field": {
-                "type": "string",
-                "minLength": 1
-              },
-              "gte": {
-                "type": "number"
-              },
-              "lte": {
-                "type": "number"
-              }
-            },
-            "required": ["kind", "field"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["and"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["or"]
-              },
-              "clauses": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/CatalogSearchFilter"
-                }
-              }
-            },
-            "required": ["kind", "clauses"]
-          }
-        ]
-      }
-    },
+    "schemas": {},
     "parameters": {}
   },
   "paths": {
     "/v1/admin/cruises": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -266,14 +156,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruises",
-        "summary": "GET /v1/admin/cruises",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -639,16 +525,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruises",
-        "summary": "POST /v1/admin/cruises",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -861,14 +743,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesVoyageGroups",
-        "summary": "GET /v1/admin/cruises/voyage-groups",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -1133,16 +1011,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesVoyageGroups",
-        "summary": "POST /v1/admin/cruises/voyage-groups",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1417,14 +1291,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesVoyageGroupsById",
-        "summary": "GET /v1/admin/cruises/voyage-groups/{id}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1715,14 +1585,10 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesVoyageGroupsById",
-        "summary": "PUT /v1/admin/cruises/voyage-groups/{id}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1885,16 +1751,12 @@
               }
             }
           }
-        },
-        "operationId": "deleteAdminCruisesVoyageGroupsById",
-        "summary": "DELETE /v1/admin/cruises/voyage-groups/{id}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups/{id}/segments": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2095,14 +1957,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesVoyageGroupsByIdSegments",
-        "summary": "GET /v1/admin/cruises/voyage-groups/{id}/segments",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2332,16 +2190,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesVoyageGroupsByIdSegments",
-        "summary": "POST /v1/admin/cruises/voyage-groups/{id}/segments",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/voyage-group-segments/{segmentId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2587,14 +2441,10 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesVoyageGroupSegmentsBySegmentId",
-        "summary": "PUT /v1/admin/cruises/voyage-group-segments/{segmentId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2626,16 +2476,12 @@
               }
             }
           }
-        },
-        "operationId": "deleteAdminCruisesVoyageGroupSegmentsBySegmentId",
-        "summary": "DELETE /v1/admin/cruises/voyage-group-segments/{segmentId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/enrichment/{programId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2795,14 +2641,10 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesEnrichmentByProgramId",
-        "summary": "PUT /v1/admin/cruises/enrichment/{programId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2834,16 +2676,12 @@
               }
             }
           }
-        },
-        "operationId": "deleteAdminCruisesEnrichmentByProgramId",
-        "summary": "DELETE /v1/admin/cruises/enrichment/{programId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3026,14 +2864,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesSailings",
-        "summary": "GET /v1/admin/cruises/sailings",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -3208,16 +3042,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesSailings",
-        "summary": "POST /v1/admin/cruises/sailings",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3293,14 +3123,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesSailingsByKey",
-        "summary": "GET /v1/admin/cruises/sailings/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3518,16 +3344,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesSailingsByKey",
-        "summary": "PUT /v1/admin/cruises/sailings/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/itinerary": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3590,16 +3412,12 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesSailingsByKeyItinerary",
-        "summary": "GET /v1/admin/cruises/sailings/{key}/itinerary",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/days/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3815,16 +3633,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesSailingsByKeyDaysBulk",
-        "summary": "PUT /v1/admin/cruises/sailings/{key}/days/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/pricing": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3896,16 +3710,12 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesSailingsByKeyPricing",
-        "summary": "GET /v1/admin/cruises/sailings/{key}/pricing",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/pricing/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4241,16 +4051,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesSailingsByKeyPricingBulk",
-        "summary": "PUT /v1/admin/cruises/sailings/{key}/pricing/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/quote": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4394,16 +4200,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesSailingsByKeyQuote",
-        "summary": "POST /v1/admin/cruises/sailings/{key}/quote",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/bookings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4627,16 +4429,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesSailingsByKeyBookings",
-        "summary": "POST /v1/admin/cruises/sailings/{key}/bookings",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/party-bookings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4695,16 +4493,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesSailingsByKeyPartyBookings",
-        "summary": "POST /v1/admin/cruises/sailings/{key}/party-bookings",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/prices": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4930,14 +4724,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesPrices",
-        "summary": "GET /v1/admin/cruises/prices",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -5191,16 +4981,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesPrices",
-        "summary": "POST /v1/admin/cruises/prices",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/prices/{priceId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5474,16 +5260,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesPricesByPriceId",
-        "summary": "PUT /v1/admin/cruises/prices/{priceId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/ships": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5669,14 +5451,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesShips",
-        "summary": "GET /v1/admin/cruises/ships",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -5903,16 +5681,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesShips",
-        "summary": "POST /v1/admin/cruises/ships",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6117,14 +5891,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesShipsByKey",
-        "summary": "GET /v1/admin/cruises/ships/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6394,16 +6164,644 @@
               }
             }
           }
+        }
+      }
+    },
+    "/v1/admin/cruises/ships/{key}/effective": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["customer", "partner"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public effective ship presentation content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Key is not a valid local id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/cruises/ships/{key}/editorial-overlays": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ship source, overlays, and effective content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Key is not a valid local id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fieldPath": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 1,
+                    "default": "en-GB"
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": ["staff", "customer", "partner", "supplier", "default"],
+                    "default": "customer"
+                  },
+                  "market": {
+                    "type": "string",
+                    "minLength": 1,
+                    "default": "default"
+                  },
+                  "value": {},
+                  "expectedVersion": {
+                    "type": ["integer", "null"]
+                  },
+                  "editorialNote": {
+                    "type": "string"
+                  }
+                },
+                "required": ["fieldPath"]
+              }
+            }
+          }
         },
-        "operationId": "putAdminCruisesShipsByKey",
-        "summary": "PUT /v1/admin/cruises/ships/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        "responses": {
+          "200": {
+            "description": "Ship editorial overlay written",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid overlay field or value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlay version conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "fieldPath",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"]
+            },
+            "required": false,
+            "name": "expectedVersion",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ship editorial overlay cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Key is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlay version conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/cruises/ships/{key}/editorial-overlays/history": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "en-GB"
+            },
+            "required": false,
+            "name": "locale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["staff", "customer", "partner", "supplier", "default"],
+              "default": "customer"
+            },
+            "required": false,
+            "name": "audience",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "default": "default"
+            },
+            "required": false,
+            "name": "market",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "fieldPath",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"]
+            },
+            "required": false,
+            "name": "expectedVersion",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ship editorial overlay history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Key is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Referenced adapter is not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/decks": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6466,14 +6864,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesShipsByKeyDecks",
-        "summary": "GET /v1/admin/cruises/ships/{key}/decks",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6592,16 +6986,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesShipsByKeyDecks",
-        "summary": "POST /v1/admin/cruises/ships/{key}/decks",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/decks/{deckId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6705,16 +7095,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesDecksByDeckId",
-        "summary": "PUT /v1/admin/cruises/decks/{deckId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/categories": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6777,16 +7163,12 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesShipsByKeyCategories",
-        "summary": "GET /v1/admin/cruises/ships/{key}/categories",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/categories/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7125,16 +7507,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesShipsByKeyCategoriesBulk",
-        "summary": "PUT /v1/admin/cruises/ships/{key}/categories/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7436,16 +7814,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesCategoriesByCategoryId",
-        "summary": "PUT /v1/admin/cruises/categories/{categoryId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7520,16 +7894,12 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesCategoriesByCategoryIdCabins",
-        "summary": "GET /v1/admin/cruises/categories/{categoryId}/cabins",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7647,16 +8017,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesCategoriesByCategoryIdCabinsBulk",
-        "summary": "PUT /v1/admin/cruises/categories/{categoryId}/cabins/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/cabins/{cabinId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7781,16 +8147,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesCabinsByCabinId",
-        "summary": "PUT /v1/admin/cruises/cabins/{cabinId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/search-index/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -8016,16 +8378,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesSearchIndexBulk",
-        "summary": "PUT /v1/admin/cruises/search-index/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/search-index/{crsiId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8057,16 +8415,12 @@
               }
             }
           }
-        },
-        "operationId": "deleteAdminCruisesSearchIndexByCrsiId",
-        "summary": "DELETE /v1/admin/cruises/search-index/{crsiId}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/search-index/rebuild": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "responses": {
           "200": {
             "description": "Rebuild counts for local + external search-index entries",
@@ -8116,16 +8470,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesSearchIndexRebuild",
-        "summary": "POST /v1/admin/cruises/search-index/rebuild",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8201,14 +8551,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesByKey",
-        "summary": "GET /v1/admin/cruises/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8618,14 +8964,10 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesByKey",
-        "summary": "PUT /v1/admin/cruises/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8884,16 +9226,12 @@
               }
             }
           }
-        },
-        "operationId": "deleteAdminCruisesByKey",
-        "summary": "DELETE /v1/admin/cruises/{key}",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/aggregates/recompute": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9152,16 +9490,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesByKeyAggregatesRecompute",
-        "summary": "POST /v1/admin/cruises/{key}/aggregates/recompute",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/sailings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9233,16 +9567,12 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesByKeySailings",
-        "summary": "GET /v1/admin/cruises/{key}/sailings",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/days/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9454,16 +9784,12 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesByKeyDaysBulk",
-        "summary": "PUT /v1/admin/cruises/{key}/days/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/refresh": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9539,16 +9865,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesByKeyRefresh",
-        "summary": "POST /v1/admin/cruises/{key}/refresh",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/detach": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9790,16 +10112,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesByKeyDetach",
-        "summary": "POST /v1/admin/cruises/{key}/detach",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/enrichment": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9916,14 +10234,10 @@
               }
             }
           }
-        },
-        "operationId": "getAdminCruisesByKeyEnrichment",
-        "summary": "GET /v1/admin/cruises/{key}/enrichment",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10081,16 +10395,12 @@
               }
             }
           }
-        },
-        "operationId": "postAdminCruisesByKeyEnrichment",
-        "summary": "POST /v1/admin/cruises/{key}/enrichment",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     },
     "/v1/admin/cruises/{key}/enrichment/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10260,12 +10570,7 @@
               }
             }
           }
-        },
-        "operationId": "putAdminCruisesByKeyEnrichmentBulk",
-        "summary": "PUT /v1/admin/cruises/{key}/enrichment/bulk",
-        "tags": ["cruises"],
-        "x-voyant-module": "cruises",
-        "x-voyant-surface": "admin"
+        }
       }
     }
   },

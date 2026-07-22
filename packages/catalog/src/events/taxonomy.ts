@@ -116,6 +116,10 @@ export interface EntityAvailabilityChangedPayload extends EntityScope, Provenanc
 }
 
 export interface EntityOverlayChangedPayload extends EntityScope {
+  /** Stable nested-content identity. Omitted by legacy root-overlay emitters. */
+  node_kind?: string
+  /** Stable key within node_kind. Omitted by legacy root-overlay emitters. */
+  node_key?: string
   field_path: string
   locale: string
   audience: string

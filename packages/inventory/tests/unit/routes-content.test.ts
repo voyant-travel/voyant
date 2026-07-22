@@ -158,6 +158,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     await app.request("/prod_abc/content?locale=ro-RO&locale=en-GB")
     const callArgs = mockedGetProductContent.mock.calls[0]
     expect(callArgs?.[2].preferredLocales).toEqual(["ro-RO", "en-GB"])
+    expect(callArgs?.[2].audience).toBe("customer")
   })
 
   it("falls back to Accept-Language header when ?locale not set", async () => {
@@ -168,6 +169,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     })
     const callArgs = mockedGetProductContent.mock.calls[0]
     expect(callArgs?.[2].preferredLocales).toEqual(["ro-RO", "en-GB"])
+    expect(callArgs?.[2].audience).toBe("customer")
   })
 
   it("falls back to en-GB when neither ?locale nor Accept-Language set", async () => {
@@ -176,6 +178,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     await app.request("/prod_abc/content")
     const callArgs = mockedGetProductContent.mock.calls[0]
     expect(callArgs?.[2].preferredLocales).toEqual(["en-GB"])
+    expect(callArgs?.[2].audience).toBe("customer")
   })
 
   it("forwards market + currency from query params", async () => {
@@ -185,6 +188,7 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     const callArgs = mockedGetProductContent.mock.calls[0]
     expect(callArgs?.[2].market).toBe("GB")
     expect(callArgs?.[2].currency).toBe("GBP")
+    expect(callArgs?.[2].audience).toBe("customer")
   })
 
   it("respects ?accept_mt=false to filter out machine-translated rows", async () => {
@@ -209,6 +213,33 @@ describe("createProductContentRoutes — GET /:id/content", () => {
     await app.request("/prod_abc/content")
     const callArgs = mockedGetProductContent.mock.calls[0]
     expect(callArgs?.[2].acceptMachineTranslated).toBe(true)
+  })
+
+  it("ignores audience query params unless enabled for the route surface", async () => {
+    mockedGetProductContent.mockResolvedValueOnce(null)
+    const { app } = buildApp()
+    await app.request("/prod_abc/content?audience=staff")
+    const callArgs = mockedGetProductContent.mock.calls[0]
+    expect(callArgs?.[2].audience).toBe("customer")
+  })
+
+  it("allows admin-style audience previews when enabled", async () => {
+    mockedGetProductContent.mockResolvedValueOnce(null)
+    const registry = makeStubRegistry()
+    const app = createProductContentRoutes({
+      resolveRegistry: () => registry,
+      defaultAudience: "staff",
+      allowAudienceQuery: true,
+    })
+    const stubDb = {} as never
+    app.use("*", async (c, next) => {
+      // biome-ignore lint/suspicious/noExplicitAny: stub db variable -- owner: products; existing suppression is intentional pending typed cleanup.
+      ;(c as any).set("db", stubDb)
+      await next()
+    })
+    await app.request("/prod_abc/content?audience=customer")
+    const callArgs = mockedGetProductContent.mock.calls[0]
+    expect(callArgs?.[2].audience).toBe("customer")
   })
 
   it("respects defaultAcceptMachineTranslated factory option", async () => {

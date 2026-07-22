@@ -22,13 +22,23 @@ import {
 import { createProductDestinationsProjectionExtension } from "./service-catalog-plane-destinations.js"
 import { createProductTaxonomyProjectionExtension } from "./service-catalog-plane-taxonomy.js"
 import { getProductContent } from "./service-content.js"
+import { listProductsReferencingAccommodationProperty } from "./service-presentation-references.js"
 
 export const enrichProductQuoteShape = createProductQuoteShapeEnricher({
-  resolveContent: ({ db, entityId, locales, market, currency, registry, adapterContext }) =>
+  resolveContent: ({
+    db,
+    entityId,
+    locales,
+    audience,
+    market,
+    currency,
+    registry,
+    adapterContext,
+  }) =>
     getProductContent(
       db as Parameters<typeof getProductContent>[0],
       entityId,
-      { preferredLocales: locales, market, currency },
+      { preferredLocales: locales, audience, market, currency },
       { registry, buildAdapterContext: () => adapterContext },
     ),
   buildShape: (content, options) =>
@@ -61,6 +71,7 @@ export const catalogInventoryRuntimeExtension = {
   createStorefrontCardProjectionExtension: () => createProductStorefrontCardProjectionExtension(),
   createDestinationsProjectionExtension: () => createProductDestinationsProjectionExtension(),
   createTaxonomyProjectionExtension: () => createProductTaxonomyProjectionExtension(),
+  listProductsReferencingAccommodationProperty,
   registerOwnedBookingHandler: registerProductBookingHandler,
   getProductContent: (db, productId, scope, context) =>
     getProductContent(db, productId, scope, context),

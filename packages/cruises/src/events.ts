@@ -6,6 +6,11 @@
  * before updating catalog/search projections.
  */
 
+import {
+  CATALOG_EVENTS,
+  type EntityOverlayChangedPayload,
+  emitCatalogEvent,
+} from "@voyant-travel/catalog"
 import type { EventBus } from "@voyant-travel/core"
 
 /** Stable string identifier for local cruise creation. */
@@ -37,4 +42,13 @@ export async function emitCruiseLifecycleEvent(
     category: "domain",
     source: "service",
   })
+}
+
+/** Emit the canonical index/read-model invalidation after a durable overlay mutation. */
+export async function emitCruiseShipOverlayChanged(
+  eventBus: EventBus | undefined,
+  payload: EntityOverlayChangedPayload,
+): Promise<void> {
+  if (!eventBus) return
+  await emitCatalogEvent(eventBus, CATALOG_EVENTS.ENTITY_OVERLAY_CHANGED, payload)
 }

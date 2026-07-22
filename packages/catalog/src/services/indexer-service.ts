@@ -24,6 +24,7 @@ import type {
   SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
+import type { EntityOverlayChangedPayload } from "../events/taxonomy.js"
 
 /**
  * Options for constructing an IndexerService.
@@ -55,7 +56,41 @@ export interface IndexerServiceOptions {
 export type DocumentBuilder = (
   entityId: string,
   slice: IndexerSlice,
+  context?: DocumentBuilderContext,
 ) => Promise<IndexerDocument | null>
+
+export type ReferencedSubjectScope = Pick<IndexerSlice, "locale" | "audience" | "market">
+
+export interface ReferencedSubjectResolutionInput {
+  entityModule: string
+  entityId: string
+  /** Defaults to the slice currently being built. */
+  scope?: ReferencedSubjectScope
+  /**
+   * Canonical source values for an owned subject that has no sourced-entry
+   * row. The subject-owning policy registry still governs visibility and
+   * overlay resolution; callers do not merge overlays themselves.
+   */
+  sourceValues?: ReadonlyMap<string, unknown>
+}
+
+export interface EffectiveReferencedSubjectProjection {
+  subject: CatalogReverseReference
+  scope: ReferencedSubjectScope
+  /** Canonical, policy-filtered source + overlay projection for this slice. */
+  values: ReadonlyMap<string, unknown>
+}
+
+/**
+ * Optional per-build services. Existing two-argument document builders remain
+ * valid; builders that denormalize referenced subjects can resolve their
+ * effective projection without importing the subject-owning vertical.
+ */
+export interface DocumentBuilderContext {
+  resolveReferencedSubject(
+    input: ReferencedSubjectResolutionInput,
+  ): Promise<EffectiveReferencedSubjectProjection | null>
+}
 
 /**
  * The IndexerService surface.
@@ -72,7 +107,12 @@ export interface IndexerService {
    * Used when a source projection update affects all variant combinations
    * (e.g. a managed-class field changes).
    */
-  reindexEntity(entityModule: string, entityId: string, builder: DocumentBuilder): Promise<void>
+  reindexEntity(
+    entityModule: string,
+    entityId: string,
+    builder: DocumentBuilder,
+    context?: DocumentBuilderContext,
+  ): Promise<void>
 
   /**
    * Reindex one entity for **one specific slice only**. Used when an
@@ -83,6 +123,7 @@ export interface IndexerService {
     slice: IndexerSlice,
     entityId: string,
     builder: DocumentBuilder,
+    context?: DocumentBuilderContext,
   ): Promise<void>
 
   /**
@@ -132,10 +173,10 @@ export function createIndexerService(options: IndexerServiceOptions): IndexerSer
       }
     },
 
-    async reindexEntity(entityModule, entityId, builder) {
+    async reindexEntity(entityModule, entityId, builder, context) {
       const verticalSlices = slicesForVertical(entityModule)
       for (const slice of verticalSlices) {
-        const document = await builder(entityId, slice)
+        const document = await builder(entityId, slice, context)
         if (!document) {
           await adapter.delete(slice, [entityId])
           continue
@@ -144,8 +185,8 @@ export function createIndexerService(options: IndexerServiceOptions): IndexerSer
       }
     },
 
-    async reindexEntityForSlice(slice, entityId, builder) {
-      const document = await builder(entityId, slice)
+    async reindexEntityForSlice(slice, entityId, builder, context) {
+      const document = await builder(entityId, slice, context)
       if (!document) {
         await adapter.delete(slice, [entityId])
         return
@@ -227,4 +268,56 @@ function shouldIndexInDocument(policy: FieldPolicy, audience: IndexerSlice["audi
 
   // Storefront slices: only fields visible to that specific audience.
   return policy.visibility.includes(audience as never)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referenced subject fan-out
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CatalogReverseReference {
+  entityModule: string
+  entityId: string
+}
+
+export interface CatalogReverseReferenceReader {
+  subjectModule: string
+  listReferencingEntries(
+    subjectId: string,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ): Promise<readonly CatalogReverseReference[]>
+}
+
+export interface ReferencedSubjectReindexFanoutOptions {
+  readers: readonly CatalogReverseReferenceReader[]
+  reindexSubject?: (
+    subject: CatalogReverseReference,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ) => Promise<void>
+  reindexReferencingEntry: (
+    reference: CatalogReverseReference,
+    scope: Pick<EntityOverlayChangedPayload, "locale" | "audience" | "market">,
+  ) => Promise<void>
+}
+
+export function createReferencedSubjectReindexFanout(
+  options: ReferencedSubjectReindexFanoutOptions,
+): (event: EntityOverlayChangedPayload) => Promise<readonly CatalogReverseReference[]> {
+  const readersBySubject = new Map(options.readers.map((reader) => [reader.subjectModule, reader]))
+
+  return async (event) => {
+    const scope = { locale: event.locale, audience: event.audience, market: event.market }
+    await options.reindexSubject?.(
+      { entityModule: event.entity_module, entityId: event.entity_id },
+      scope,
+    )
+
+    const reader = readersBySubject.get(event.entity_module)
+    if (!reader) return []
+
+    const references = await reader.listReferencingEntries(event.entity_id, scope)
+    for (const reference of references) {
+      await options.reindexReferencingEntry(reference, scope)
+    }
+    return references
+  }
 }

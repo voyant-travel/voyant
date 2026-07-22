@@ -38,6 +38,7 @@ export type { PublicProductRoutes } from "./routes-public.js"
 export { publicProductRoutes } from "./routes-public.js"
 export { productsService } from "./service.js"
 export { catalogProductsService } from "./service-catalog.js"
+export { listProductsReferencingAccommodationProperty } from "./service-presentation-references.js"
 export { publicProductsService } from "./service-public.js"
 export const productsModule: Module = {
   name: "products",

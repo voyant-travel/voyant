@@ -6,7 +6,11 @@ import type {
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { describe, expect, it } from "vitest"
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
-import { createIndexerService } from "./indexer-service.js"
+import {
+  createIndexerService,
+  createReferencedSubjectReindexFanout,
+  type DocumentBuilderContext,
+} from "./indexer-service.js"
 
 interface AdapterCall {
   op: "ensureCollection" | "upsert" | "delete" | "search" | "bulkReindex"
@@ -191,6 +195,49 @@ describe("IndexerService", () => {
     expect(deleteCalls[0]?.ids).toEqual(["prod_xyz"])
   })
 
+  it("passes canonical referenced-subject resolution into document builders", async () => {
+    const adapter = createStubAdapter()
+    const service = createIndexerService({
+      adapter,
+      slices: [productSlices[1]!],
+      registries: new Map([["products", productsRegistry]]),
+    })
+    const context: DocumentBuilderContext = {
+      async resolveReferencedSubject(input) {
+        expect(input).toEqual({
+          entityModule: "accommodation-properties",
+          entityId: "prop_1",
+        })
+        return {
+          subject: { entityModule: input.entityModule, entityId: input.entityId },
+          scope: productSlices[1]!,
+          values: new Map([["name", "Operator hotel name"]]),
+        }
+      },
+    }
+
+    await service.reindexEntity(
+      "products",
+      "prod_xyz",
+      async (entityId, _slice, buildContext) => {
+        const property = await buildContext?.resolveReferencedSubject({
+          entityModule: "accommodation-properties",
+          entityId: "prop_1",
+        })
+        return {
+          id: entityId,
+          fields: { accommodationName: property?.values.get("name") },
+        }
+      },
+      context,
+    )
+
+    expect(adapter.calls.find((call) => call.op === "upsert")?.documents?.[0]).toEqual({
+      id: "prod_xyz",
+      fields: { accommodationName: "Operator hotel name" },
+    })
+  })
+
   it("throws when reindexing for a vertical without a registered registry", async () => {
     const adapter = createStubAdapter()
     const service = createIndexerService({
@@ -215,5 +262,86 @@ describe("IndexerService", () => {
     expect(service.slicesForVertical("products")).toHaveLength(2)
     expect(service.slicesForVertical("cruises")).toHaveLength(1)
     expect(service.slicesForVertical("phantom")).toHaveLength(0)
+  })
+
+  it("fans out referenced-subject overlay changes to all referencing entries", async () => {
+    const calls: Array<{ entityModule: string; entityId: string; locale: string }> = []
+    const fanout = createReferencedSubjectReindexFanout({
+      readers: [
+        {
+          subjectModule: "cruise-ships",
+          async listReferencingEntries(subjectId, scope) {
+            expect(subjectId).toBe("crsh_shared")
+            expect(scope).toEqual({
+              locale: "ro-RO",
+              audience: "customer",
+              market: "default",
+            })
+            return [
+              { entityModule: "cruises", entityId: "cruise_a" },
+              { entityModule: "cruises", entityId: "cruise_b" },
+            ]
+          },
+        },
+      ],
+      async reindexReferencingEntry(reference, scope) {
+        calls.push({ ...reference, locale: scope.locale })
+      },
+    })
+
+    const references = await fanout({
+      entity_module: "cruise-ships",
+      entity_id: "crsh_shared",
+      field_path: "description",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "default",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    })
+
+    expect(references).toEqual([
+      { entityModule: "cruises", entityId: "cruise_a" },
+      { entityModule: "cruises", entityId: "cruise_b" },
+    ])
+    expect(calls).toEqual([
+      { entityModule: "cruises", entityId: "cruise_a", locale: "ro-RO" },
+      { entityModule: "cruises", entityId: "cruise_b", locale: "ro-RO" },
+    ])
+  })
+
+  it("fans out accommodation-property overlays to products and accommodation offers", async () => {
+    const calls: Array<{ entityModule: string; entityId: string; market: string }> = []
+    const fanout = createReferencedSubjectReindexFanout({
+      readers: [
+        {
+          subjectModule: "accommodation-properties",
+          async listReferencingEntries(subjectId) {
+            expect(subjectId).toBe("prop_shared")
+            return [
+              { entityModule: "products", entityId: "prod_package" },
+              { entityModule: "accommodations", entityId: "room_offer" },
+            ]
+          },
+        },
+      ],
+      async reindexReferencingEntry(reference, scope) {
+        calls.push({ ...reference, market: scope.market })
+      },
+    })
+
+    await fanout({
+      entity_module: "accommodation-properties",
+      entity_id: "prop_shared",
+      field_path: "description",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    })
+
+    expect(calls).toEqual([
+      { entityModule: "products", entityId: "prod_package", market: "RO" },
+      { entityModule: "accommodations", entityId: "room_offer", market: "RO" },
+    ])
   })
 })

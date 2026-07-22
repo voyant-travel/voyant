@@ -319,7 +319,12 @@ describe("GET /catalog/slots", () => {
     expect(getProductContent).toHaveBeenCalledWith(
       expect.anything(),
       "prod_1",
-      { preferredLocales: ["ro-RO", "en-GB"], market: "mkt_ro", currency: "RON" },
+      {
+        preferredLocales: ["ro-RO", "en-GB"],
+        audience: "staff",
+        market: "mkt_ro",
+        currency: "RON",
+      },
       expect.objectContaining({ forceFresh: true }),
     )
   })

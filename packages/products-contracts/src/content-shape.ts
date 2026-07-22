@@ -91,6 +91,8 @@ export const productOptionSchema = z.object({
 })
 
 export const productDaySchema = z.object({
+  /** Stable local/source-derived day identity. Required for granular overlays. */
+  id: z.string().optional(),
   day_number: z.number().int().positive(),
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),

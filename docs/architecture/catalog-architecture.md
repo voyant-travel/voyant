@@ -130,7 +130,9 @@ Examples: cruise `departures[]`, package `flights[]`, accommodation `room_option
 
 Examples: a TUI package referencing sourced accommodation; a tour referencing an excursion; a DMC re-using a 3-day mini-tour module across multiple longer tours.
 
-A fourth category exists for non-sellable infrastructure: **shared master entities** (ships, ports, airports, accommodation brands/chains). These are plain reference tables outside the catalog plane, referenced by FK from vertical modules. They are not CatalogEntries and have no overlay surface.
+A fourth category exists for non-sellable infrastructure: **shared master entities** (ports, airports, accommodation brands/chains). These are plain reference tables outside the catalog plane, referenced by FK from vertical modules. They are not CatalogEntries.
+
+Ships and accommodation properties need a narrower distinction: they are not sellable CatalogEntries, but their customer-facing presentation content can be material storefront content. A ship or property may therefore register as a presentation subject with a durable local id, provenance, field policy, source-content reader, effective-content projector, and reverse references. Identifiers, source refs, operational facts, machine rules, availability, pricing, and booking semantics remain provider-managed; only explicitly merchandisable presentation fields are overlayable.
 
 ### 3.3. Vertical packages and the shared catalog package
 
@@ -343,6 +345,7 @@ Where:
 
 - `entity_module` — the vertical that owns the entity (`"products"`, `"cruises"`, `"accommodations"`, `"charters"`, `"extras"`).
 - `entity_id` — the typed ID within that vertical's table.
+- `node_kind` / `node_key` — stable content-node identity. Existing flat overlays use `root/root`; nested overlays use source- or locally-derived keys such as an itinerary-day id and never array positions.
 - `field_path` — the dotted path matching a row in that vertical's field-policy file.
 - `locale` — IETF language tag (`"en-GB"`, `"fr-FR"`, …) plus a `default` sentinel for non-localized fields and fallback.
 - `audience` — actor-aligned vocabulary: `staff`, `customer`, `partner`, `supplier`, plus a `default` sentinel.
@@ -362,7 +365,9 @@ The resolver applies a fallback chain when reading. With three variant axes, the
 source projection
 ```
 
-Overrides are entity-scoped — never cross-reference scoped. A package's editorial override on `title` does not propagate to its referenced hotel's `title`. Hotel overrides live on the hotel row.
+Overrides are entity-scoped — never cross-reference scoped. A package's editorial override on `title` does not propagate to its referenced hotel's or ship's `title`. Referenced presentation-subject overrides live on the referenced subject row and reindex referencing entries through the reverse-reference index.
+
+Overlay writes carry a monotonically increasing version and append history so staff-facing compare/revert workflows can use optimistic concurrency instead of silent last-write-wins. Public reads never expose source/origin/history details; they receive only the effective projection and compact locale/fallback metadata.
 
 #### 5.2.2. Variant axes — default vs scale
 
@@ -985,7 +990,9 @@ The practical test: if marketing asks "where do I edit this?" and the right answ
 
 ### 6.4. Shared master entities (not CatalogEntries)
 
-Ships, ports, airports, terminals, hotel chains, airlines, currencies. These are referenced by FK from CatalogEntries but are not themselves sellable, not editorially overrideable per-tenant in any meaningful way, and not surfaced through the catalog plane.
+Ports, airports, terminals, hotel chains, airlines, currencies. These are referenced by FK from CatalogEntries but are not themselves sellable, not editorially overrideable per-tenant in any meaningful way, and not surfaced through the catalog plane.
+
+Ships and accommodation properties are the exception called out in §3.2: they stay non-sellable reference/presentation subjects, but their names, descriptions, gallery curation, alt text, and amenities/facilities copy may be overlayable when the owning package registers durable identity, provenance, field policy, source reader, effective projector, and reverse references. They must not be promoted into the sellable catalog discriminator just to make their presentation content editable.
 
 They live as plain reference tables (probably in `packages/db` or a small dedicated reference module) and are referenced by ID from vertical schemas. Promoting them to CatalogEntries would balloon the discriminator with non-revenue surfaces and confuse the overlay model.
 

@@ -222,13 +222,30 @@ export {
 } from "./overlay/resolver.js"
 // Overlay store — editorial overrides keyed by (entity, field, locale, audience, market).
 export {
+  catalogOverlayHistoryTable,
   catalogOverlayTable,
   type InsertCatalogOverlay,
+  type InsertCatalogOverlayHistory,
   OVERLAY_DEFAULT_SCOPE,
+  OVERLAY_ROOT_NODE_KEY,
+  OVERLAY_ROOT_NODE_KIND,
   type OverlayOrigin,
   overlayIdRef,
   type SelectCatalogOverlay,
+  type SelectCatalogOverlayHistory,
 } from "./overlay/schema.js"
+export {
+  assertCatalogPresentationSubjectModule,
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
+  type CatalogPresentationSubjectDefinition,
+  type CatalogPresentationSubjectKind,
+  type CatalogPresentationSubjectModule,
+  catalogPresentationSubjectDefinitions,
+  createPresentationSubjectRegistry,
+  getCatalogPresentationSubjectDefinition,
+  isCatalogPresentationSubjectModule,
+  type RegisteredPresentationSubject,
+} from "./presentation-subjects.js"
 // Provenance — every CatalogEntry carries this tuple.
 export * from "./provenance.js"
 // Sourced-entry store — durable provenance + projection capture (sourced-content §2.5).
@@ -289,6 +306,8 @@ export {
   applyJsonPointerOverlay,
   type BuiltDriftPredicate,
   buildDriftInvalidationPredicate,
+  CONTENT_ROOT_NODE_KEY,
+  CONTENT_ROOT_NODE_KIND,
   type ContentLocaleMatchKind,
   type ContentLocaleResolution,
   type ContentOverlay,
@@ -306,15 +325,25 @@ export {
 } from "./services/content-service.js"
 export {
   buildIndexerDocument,
+  type CatalogReverseReference,
+  type CatalogReverseReferenceReader,
   createIndexerService,
+  createReferencedSubjectReindexFanout,
   type DocumentBuilder,
+  type DocumentBuilderContext,
+  type EffectiveReferencedSubjectProjection,
   type IndexerService,
   type IndexerServiceOptions,
+  type ReferencedSubjectReindexFanoutOptions,
+  type ReferencedSubjectResolutionInput,
+  type ReferencedSubjectScope,
 } from "./services/indexer-service.js"
 // Runtime services — drizzle-bound entry points for verticals.
 export {
+  clearOverlayByTarget,
   fetchOverlaysForEntities,
   fetchOverlaysForEntity,
+  listOverlayHistoryForTarget,
   listOverlaysByOrigin,
   type OverlayOriginFilter,
   resolveEntityView,
@@ -337,11 +366,17 @@ export {
 } from "./services/snapshot-service.js"
 export {
   createReadProvenance,
+  createSourcedPresentationSubjectIngestion,
+  type IngestSourcedPresentationSubjectInput,
   markMissingSourcedEntriesWithdrawn,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
   type ProvenanceReadResult,
+  type ResolveSourcedPresentationSubjectInput,
   readSourcedEntry,
+  readSourcedEntryBySource,
+  resolveSourcedPresentationSubject,
+  type SourcedPresentationSubjectDefinition,
   type UpsertSourcedEntryInput,
   upsertSourcedEntry,
 } from "./services/sourced-entry-service.js"

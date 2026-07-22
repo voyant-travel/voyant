@@ -20,10 +20,14 @@ import { OVERLAY_DEFAULT_SCOPE } from "./schema.js"
 /** A single overlay row reduced to what the resolver needs. */
 export interface ResolverOverlay {
   field_path: string
+  node_kind?: string
+  node_key?: string
   locale: string
   audience: Visibility | typeof OVERLAY_DEFAULT_SCOPE
   market: string
   value: unknown
+  version?: number
+  id?: string
 }
 
 /**
@@ -101,9 +105,14 @@ export function variantFallbackChain(
  * resolver's fallback walk. Idempotent — passing the same overlay twice
  * produces a deterministic last-write-wins (by array position) result.
  */
+function isRootOverlay(overlay: ResolverOverlay): boolean {
+  return (overlay.node_kind ?? "root") === "root" && (overlay.node_key ?? "root") === "root"
+}
+
 function indexOverlays(overlays: OverlayLookup): Map<string, Map<string, ResolverOverlay>> {
   const byField = new Map<string, Map<string, ResolverOverlay>>()
   for (const overlay of overlays) {
+    if (!isRootOverlay(overlay)) continue
     let inner = byField.get(overlay.field_path)
     if (!inner) {
       inner = new Map<string, ResolverOverlay>()
@@ -123,11 +132,19 @@ function indexOverlays(overlays: OverlayLookup): Map<string, Map<string, Resolve
 function lookupOverlay(
   byField: Map<string, Map<string, ResolverOverlay>>,
   fieldPath: string,
+  policy: FieldPolicy,
   scope: ResolverScope,
 ): ResolverOverlay | undefined {
   const inner = byField.get(fieldPath)
   if (!inner) return undefined
   for (const variant of variantFallbackChain(scope)) {
+    if (
+      policy.localized &&
+      scope.locale !== OVERLAY_DEFAULT_SCOPE &&
+      variant.locale === OVERLAY_DEFAULT_SCOPE
+    ) {
+      continue
+    }
     const key = `${variant.locale}|${variant.audience}|${variant.market}`
     const hit = inner.get(key)
     if (hit) return hit
@@ -218,7 +235,13 @@ export function resolveOverlay(
   const hidden = new Set<string>()
   const provenance = new Map<string, ResolvedFieldProvenance | null>()
 
-  for (const [path, sourceValue] of sourceProjection) {
+  const candidatePaths = new Set<string>(sourceProjection.keys())
+  for (const overlay of overlays) {
+    if (isRootOverlay(overlay)) candidatePaths.add(overlay.field_path)
+  }
+
+  for (const path of candidatePaths) {
+    const sourceValue = sourceProjection.get(path)
     const policy = registry.resolve(path)
     if (!policy) {
       // Field exists in the source projection but not in the registry. The
@@ -233,7 +256,7 @@ export function resolveOverlay(
       continue
     }
 
-    const overlay = lookupOverlay(indexed, path, scope)
+    const overlay = lookupOverlay(indexed, path, policy, scope)
     if (overlay && policy.merge !== "source-only") {
       values.set(path, applyMerge(policy, sourceValue, overlay.value))
       provenance.set(path, {
@@ -241,9 +264,10 @@ export function resolveOverlay(
         audience: overlay.audience,
         market: overlay.market,
       })
-    } else {
+    } else if (sourceProjection.has(path)) {
       values.set(path, sourceValue)
       provenance.set(path, null)
+    } else {
     }
   }
 

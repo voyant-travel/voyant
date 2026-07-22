@@ -16,6 +16,7 @@ import {
   type CaptureSnapshotInput,
   createFieldPolicyRegistry,
   type DocumentBuilder,
+  type DocumentBuilderContext,
   type DocumentEmitter,
   type FieldPolicyRegistry,
   type IndexerDocument,
@@ -30,17 +31,25 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
+import { accommodationPropertyReferenceCatalogPolicy } from "./catalog-policy-properties.js"
 import { isCustomerRoomTypeBookable } from "./customer-bookability.js"
 import { roomTypes } from "./schema-inventory.js"
 import {
   ACCOMMODATION_CONTENT_MARKET_ANY,
   accommodationSourcedContentTable,
 } from "./schema-sourced-content.js"
+import {
+  projectEffectiveAccommodationPropertyReference,
+  readEffectiveAccommodationPropertyReferenceProjection,
+} from "./service-presentation-subjects.js"
 
 let _registry: FieldPolicyRegistry | undefined
 function getAccommodationRegistry(): FieldPolicyRegistry {
   if (!_registry) {
-    _registry = createFieldPolicyRegistry(accommodationCatalogPolicy)
+    _registry = createFieldPolicyRegistry([
+      ...accommodationCatalogPolicy,
+      ...accommodationPropertyReferenceCatalogPolicy,
+    ])
   }
   return _registry
 }
@@ -214,7 +223,11 @@ export function createRoomTypeDocumentBuilder(
   context: { sellerOperatorId: string; sourceKind?: string; sourceRef?: string },
 ): DocumentBuilder {
   const registry = getAccommodationRegistry()
-  return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
+  return async (
+    entityId: string,
+    slice: IndexerSlice,
+    builderContext?: DocumentBuilderContext,
+  ): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(roomTypes).where(eq(roomTypes.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
@@ -229,6 +242,27 @@ export function createRoomTypeDocumentBuilder(
     const sourcedThumbnailUrl = await fetchSourcedContentThumbnailUrl(db, entityId, slice)
     if (sourcedThumbnailUrl) {
       projection.set("thumbnailUrl", sourcedThumbnailUrl)
+    }
+    const canonicalPropertyProjection = builderContext
+      ? await builderContext.resolveReferencedSubject({
+          entityModule: "accommodation-properties",
+          entityId: row.propertyId,
+          scope: {
+            locale: slice.locale,
+            audience: slice.audience === "staff-admin" ? "staff" : slice.audience,
+            market: slice.market,
+          },
+        })
+      : null
+    const propertyProjection =
+      canonicalPropertyProjection ??
+      (await readEffectiveAccommodationPropertyReferenceProjection(db, row.propertyId, slice))
+    if (propertyProjection) {
+      for (const [path, value] of projectEffectiveAccommodationPropertyReference(
+        propertyProjection,
+      )) {
+        projection.set(path, value)
+      }
     }
     return buildIndexerDocument(registry, projection, slice, entityId)
   }

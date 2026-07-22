@@ -9,6 +9,7 @@
     "./schema-sourced-entries": "./src/schema-sourced-entries.ts",
     "./contract": "./src/contract.ts",
     "./provenance": "./src/provenance.ts",
+    "./presentation-subjects": "./src/presentation-subjects.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./overlay/schema": "./src/overlay/schema.ts",
     "./overlay/resolver": "./src/overlay/resolver.ts",
@@ -130,6 +131,11 @@
         "types": "./dist/provenance.d.ts",
         "import": "./dist/provenance.js",
         "default": "./dist/provenance.js"
+      },
+      "./presentation-subjects": {
+        "types": "./dist/presentation-subjects.d.ts",
+        "import": "./dist/presentation-subjects.js",
+        "default": "./dist/presentation-subjects.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",
