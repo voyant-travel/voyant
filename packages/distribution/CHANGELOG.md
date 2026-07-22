@@ -1,5 +1,15 @@
 # @voyant-travel/distribution
 
+## 0.182.0
+
+### Patch Changes
+
+- Updated dependencies [e68a705]
+  - @voyant-travel/finance@0.192.0
+  - @voyant-travel/bookings@0.192.0
+  - @voyant-travel/catalog@0.190.0
+  - @voyant-travel/identity@0.192.0
+
 ## 0.181.0
 
 ### Patch Changes

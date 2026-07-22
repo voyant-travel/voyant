@@ -1,5 +1,12 @@
 # @voyant-travel/charters
 
+## 0.190.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.192.0
+- @voyant-travel/catalog@0.190.0
+
 ## 0.189.0
 
 ### Patch Changes
