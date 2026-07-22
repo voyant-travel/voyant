@@ -104,14 +104,6 @@ describe("Voyant Node product job host", () => {
       host.handleRequest(
         new Request(endpoint, {
           method: "POST",
-          headers: { "x-voyant-origin-trust": "secret", "transfer-encoding": "chunked" },
-        }),
-      ),
-    ).resolves.toMatchObject({ status: 400 })
-    await expect(
-      host.handleRequest(
-        new Request(endpoint, {
-          method: "POST",
           headers: {
             "x-voyant-origin-trust": "secret",
             "x-voyant-product-job-release": "rel_current",
@@ -141,6 +133,51 @@ describe("Voyant Node product job host", () => {
         executionToken: "00000000-0000-4000-8000-000000000001",
       }),
     )
+  })
+
+  it("accepts an empty streamed invocation body while rejecting actual request input", async () => {
+    const handler = vi.fn(async () => {})
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      originTrustSecret: "secret",
+    })
+    const endpoint = `https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}/${encodeURIComponent(jobId)}`
+    const emptyStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.close()
+      },
+    })
+
+    const emptyResponse = await host.handleRequest(
+      new Request(endpoint, {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret", "transfer-encoding": "chunked" },
+        body: emptyStream,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" }),
+    )
+    expect(emptyResponse?.status).toBe(202)
+    await host.settled(jobId)
+    expect(handler).toHaveBeenCalledOnce()
+
+    const bodyResponse = await host.handleRequest(
+      new Request(endpoint, {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret" },
+        body: "unexpected",
+      }),
+    )
+    expect(bodyResponse?.status).toBe(400)
+
+    const queryResponse = await host.handleRequest(
+      new Request(`${endpoint}?payload=unexpected`, {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret" },
+      }),
+    )
+    expect(queryResponse?.status).toBe(400)
+    expect(handler).toHaveBeenCalledOnce()
   })
 
   it("returns the closed managed-registration inventory envelope", async () => {
