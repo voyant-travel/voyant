@@ -1,5 +1,53 @@
 # @voyant-travel/operator-standard
 
+## 0.11.2
+
+### Patch Changes
+
+- f6aa3a1: Route Finance checkout collections through the deployment-selected `PaymentAdapter`. Providerless card-start requests now use that adapter, legacy provider hints remain compatible but cannot override deployment selection, and full generic billing metadata reaches hosted-checkout adapters.
+- Updated dependencies [f6aa3a1]
+  - @voyant-travel/finance@0.191.0
+  - @voyant-travel/accommodations@0.151.0
+  - @voyant-travel/bookings-react@0.191.0
+  - @voyant-travel/catalog@0.189.0
+  - @voyant-travel/commerce@0.40.1
+  - @voyant-travel/cruises@0.190.0
+  - @voyant-travel/distribution@0.181.0
+  - @voyant-travel/finance-react@0.191.0
+  - @voyant-travel/flights@0.191.0
+  - @voyant-travel/flights-react@0.191.0
+  - @voyant-travel/inventory@0.15.1
+  - @voyant-travel/inventory-react@0.73.0
+  - @voyant-travel/legal@0.191.0
+  - @voyant-travel/notifications@0.133.1
+  - @voyant-travel/operator-settings@0.14.10
+  - @voyant-travel/operator-settings-react@0.45.0
+  - @voyant-travel/storefront@0.193.0
+  - @voyant-travel/trips@0.183.0
+  - @voyant-travel/trips-react@0.183.0
+  - @voyant-travel/action-ledger-react@0.79.0
+  - @voyant-travel/distribution-react@0.181.0
+  - @voyant-travel/identity-react@0.191.0
+  - @voyant-travel/legal-react@0.191.0
+  - @voyant-travel/operations-react@0.72.0
+  - @voyant-travel/admin-app@0.83.0
+  - @voyant-travel/catalog-react@0.189.0
+  - @voyant-travel/commerce-react@0.73.0
+  - @voyant-travel/relationships-react@0.191.0
+  - @voyant-travel/admin-host@0.41.0
+  - @voyant-travel/cruises-react@0.190.0
+  - @voyant-travel/storefront-react@0.193.0
+  - @voyant-travel/mice-react@0.59.0
+  - @voyant-travel/quotes-react@0.189.0
+  - @voyant-travel/bookings@0.191.0
+  - @voyant-travel/charters@0.189.0
+  - @voyant-travel/identity@0.191.0
+  - @voyant-travel/notifications-react@0.133.1
+  - @voyant-travel/operations@0.8.32
+  - @voyant-travel/mice@0.47.0
+  - @voyant-travel/quotes@0.131.35
+  - @voyant-travel/relationships@0.128.31
+
 ## 0.11.1
 
 ### Patch Changes
