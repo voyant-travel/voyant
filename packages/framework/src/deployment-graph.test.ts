@@ -1452,6 +1452,131 @@ describe("deployment graph v1", () => {
     ])
   })
 
+  it("resolves only package-declared product-job scheduling profiles", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.drain",
+          wakeup: true,
+          schedule: { every: "5m" },
+          scheduling: {
+            required: true,
+            profiles: { eager: { every: "1m" }, economical: { every: "15m" } },
+          },
+          runtime: { entry: "./jobs", export: "drain" },
+        },
+        {
+          id: "notifications.optional-sweep",
+          schedule: { every: "1h" },
+          scheduling: { profiles: { economical: { every: "6h" } } },
+          runtime: { entry: "./jobs", export: "sweep" },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [module],
+        jobScheduling: { profile: "economical", jobs: { "notifications.drain": "eager" } },
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.modules[0]?.jobs.map(({ id, schedule }) => ({ id, schedule }))).toEqual([
+      { id: "notifications.drain", schedule: { every: "1m" } },
+      { id: "notifications.optional-sweep", schedule: { every: "6h" } },
+    ])
+    expect(graph.provisioning.jobs).toEqual([
+      expect.objectContaining({
+        id: "notifications.drain",
+        schedule: { every: "1m" },
+        scheduling: expect.objectContaining({ selected: "eager", required: true }),
+      }),
+      expect.objectContaining({
+        id: "notifications.optional-sweep",
+        schedule: { every: "6h" },
+        scheduling: expect.objectContaining({ selected: "economical", required: false }),
+      }),
+    ])
+  })
+
+  it("rejects unknown profiles, unknown jobs, and disabling required product jobs", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.drain",
+          schedule: { every: "5m" },
+          scheduling: { required: true, profiles: { eager: { every: "1m" } } },
+          runtime: { entry: "./jobs", export: "drain" },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [module],
+        jobScheduling: {
+          jobs: { "notifications.drain": false, "notifications.missing": "eager" },
+        },
+      }),
+    })
+    expect(graph.diagnostics.map(({ code }) => code)).toEqual(
+      expect.arrayContaining(["VOYANT_GRAPH_REQUIRED_JOB_DISABLED", "VOYANT_GRAPH_UNKNOWN_JOB"]),
+    )
+
+    const unsupported = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [module],
+        jobScheduling: { jobs: { "notifications.drain": "unsafe" } },
+      }),
+    })
+    expect(unsupported.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE" }),
+      ]),
+    )
+  })
+
+  it("rejects unsafe product-job cadence intervals", () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.drain",
+          schedule: { every: "30s" },
+          scheduling: { profiles: { eager: { every: 1_000 } } },
+          runtime: { entry: "./jobs", export: "drain" },
+        },
+      ],
+    })
+    expect(validateGraphUnitManifest(module)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET" })]),
+    )
+  })
+
+  it("validates complete named profile schedules", () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.drain",
+          schedule: { every: "5m" },
+          scheduling: {
+            profiles: {
+              invalid: { cron: "0 * * * *", timezone: "Not/AZone" },
+            },
+          },
+          runtime: { entry: "./jobs", export: "drain" },
+        },
+      ],
+    })
+    expect(validateGraphUnitManifest(module)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "jobs[0].scheduling.profiles.invalid.timezone" }),
+      ]),
+    )
+  })
+
   it("hashes deterministic canonical graph content", async () => {
     const project = defineProject({
       modules: [
@@ -1904,10 +2029,13 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_MISSING_PORT",
       "VOYANT_GRAPH_PACKAGE_INCOMPATIBLE",
       "VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED",
+      "VOYANT_GRAPH_REQUIRED_JOB_DISABLED",
       "VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED",
       "VOYANT_GRAPH_UNKNOWN_FACET",
+      "VOYANT_GRAPH_UNKNOWN_JOB",
       "VOYANT_GRAPH_UNKNOWN_REFERENCE",
       "VOYANT_GRAPH_UNSUPPORTED_FACET",
+      "VOYANT_GRAPH_UNSUPPORTED_JOB_SCHEDULE_PROFILE",
     ])
   })
 
