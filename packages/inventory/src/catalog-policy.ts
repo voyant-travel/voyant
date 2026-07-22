@@ -749,9 +749,7 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
     snapshot: "on-book" as const,
     query: query as "indexed-column" | "blob-only",
     localized: localized as boolean,
-    visibility: ["staff", "customer", "partner"] as Array<
-      "staff" | "customer" | "partner"
-    >,
+    visibility: ["staff", "customer", "partner"] as Array<"staff" | "customer" | "partner">,
     editRole: "none" as const,
     overrideFriction: "none" as const,
     sourceFreshness: "sync" as const,

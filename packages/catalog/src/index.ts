@@ -177,18 +177,6 @@ export {
   type SourceReconnectedPayload,
 } from "./events/taxonomy.js"
 export {
-  assertCatalogPresentationSubjectModule,
-  CATALOG_PRESENTATION_SUBJECT_MODULES,
-  catalogPresentationSubjectDefinitions,
-  createPresentationSubjectRegistry,
-  getCatalogPresentationSubjectDefinition,
-  isCatalogPresentationSubjectModule,
-  type CatalogPresentationSubjectDefinition,
-  type CatalogPresentationSubjectKind,
-  type CatalogPresentationSubjectModule,
-  type RegisteredPresentationSubject,
-} from "./presentation-subjects.js"
-export {
   attachEmitter,
   buildCollectionSchema,
   buildDefaultTypesenseQueryBy,
@@ -246,6 +234,18 @@ export {
   type SelectCatalogOverlay,
   type SelectCatalogOverlayHistory,
 } from "./overlay/schema.js"
+export {
+  assertCatalogPresentationSubjectModule,
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
+  type CatalogPresentationSubjectDefinition,
+  type CatalogPresentationSubjectKind,
+  type CatalogPresentationSubjectModule,
+  catalogPresentationSubjectDefinitions,
+  createPresentationSubjectRegistry,
+  getCatalogPresentationSubjectDefinition,
+  isCatalogPresentationSubjectModule,
+  type RegisteredPresentationSubject,
+} from "./presentation-subjects.js"
 // Provenance — every CatalogEntry carries this tuple.
 export * from "./provenance.js"
 // Sourced-entry store — durable provenance + projection capture (sourced-content §2.5).
@@ -325,17 +325,17 @@ export {
 } from "./services/content-service.js"
 export {
   buildIndexerDocument,
-  createReferencedSubjectReindexFanout,
-  createIndexerService,
   type CatalogReverseReference,
   type CatalogReverseReferenceReader,
+  createIndexerService,
+  createReferencedSubjectReindexFanout,
   type DocumentBuilder,
   type DocumentBuilderContext,
   type EffectiveReferencedSubjectProjection,
   type IndexerService,
   type IndexerServiceOptions,
-  type ReferencedSubjectResolutionInput,
   type ReferencedSubjectReindexFanoutOptions,
+  type ReferencedSubjectResolutionInput,
   type ReferencedSubjectScope,
 } from "./services/indexer-service.js"
 // Runtime services — drizzle-bound entry points for verticals.
@@ -365,17 +365,17 @@ export {
   viewToOverlayState,
 } from "./services/snapshot-service.js"
 export {
-  createSourcedPresentationSubjectIngestion,
   createReadProvenance,
+  createSourcedPresentationSubjectIngestion,
+  type IngestSourcedPresentationSubjectInput,
   markMissingSourcedEntriesWithdrawn,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
-  type IngestSourcedPresentationSubjectInput,
   type ProvenanceReadResult,
-  readSourcedEntryBySource,
-  readSourcedEntry,
-  resolveSourcedPresentationSubject,
   type ResolveSourcedPresentationSubjectInput,
+  readSourcedEntry,
+  readSourcedEntryBySource,
+  resolveSourcedPresentationSubject,
   type SourcedPresentationSubjectDefinition,
   type UpsertSourcedEntryInput,
   upsertSourcedEntry,

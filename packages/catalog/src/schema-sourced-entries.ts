@@ -87,20 +87,11 @@ export const catalogSourcedEntriesTable = pgTable(
     // connection an actual identity value (Postgres normally treats NULLs as
     // distinct) while allowing source_ref-less diagnostic rows.
     uniqueIndex("catalog_sourced_entries_source_connected_uniq")
-      .on(
-        table.entity_module,
-        table.source_kind,
-        table.source_connection_id,
-        table.source_ref,
-      )
-      .where(
-        sql`${table.source_connection_id} IS NOT NULL AND ${table.source_ref} IS NOT NULL`,
-      ),
+      .on(table.entity_module, table.source_kind, table.source_connection_id, table.source_ref)
+      .where(sql`${table.source_connection_id} IS NOT NULL AND ${table.source_ref} IS NOT NULL`),
     uniqueIndex("catalog_sourced_entries_source_connectionless_uniq")
       .on(table.entity_module, table.source_kind, table.source_ref)
-      .where(
-        sql`${table.source_connection_id} IS NULL AND ${table.source_ref} IS NOT NULL`,
-      ),
+      .where(sql`${table.source_connection_id} IS NULL AND ${table.source_ref} IS NOT NULL`),
     // Per-vertical × source listings.
     index("catalog_sourced_entries_module_kind_idx").on(table.entity_module, table.source_kind),
     // Withdrawal sweepers — find rows that haven't been seen in N days.

@@ -1,35 +1,34 @@
 import {
-  CATALOG_PRESENTATION_SUBJECT_MODULES,
   buildIndexerDocument,
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
   catalogSourcedEntriesTable,
   clearOverlayByTarget,
-  createSourcedPresentationSubjectIngestion,
   createFieldPolicyRegistry,
+  createSourcedPresentationSubjectIngestion,
+  type DocumentBuilder,
+  type EffectiveReferencedSubjectProjection,
   fetchOverlaysForEntity,
+  type IndexerSlice,
   listOverlayHistoryForTarget,
   OVERLAY_DEFAULT_SCOPE,
   OVERLAY_ROOT_NODE_KEY,
   OVERLAY_ROOT_NODE_KIND,
+  type OverlayOrigin,
+  type ResolverScope,
   readSourcedEntry,
   readSourcedEntryBySource,
   resolveOverlay,
-  type DocumentBuilder,
-  type EffectiveReferencedSubjectProjection,
-  type IndexerSlice,
-  type OverlayOrigin,
-  type ResolverScope,
   type SelectCatalogOverlay,
   type SelectCatalogOverlayHistory,
   writeOverlay,
 } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, or } from "drizzle-orm"
-
-import { cruiseShipCatalogPolicy } from "./catalog-policy-ships.js"
 import type { ExternalShip, SourceRef } from "./adapters/index.js"
+import { cruiseShipCatalogPolicy } from "./catalog-policy-ships.js"
 import { decodeSourceRef, encodeSourceRef } from "./lib/key.js"
 import { cruiseShips } from "./schema-cabins.js"
-import { cruises, cruiseSailings } from "./schema-core.js"
+import { cruiseSailings, cruises } from "./schema-core.js"
 import { cruisesSourcedContentTable } from "./schema-sourced-content.js"
 import { z } from "./validation-shared.js"
 
@@ -407,9 +406,10 @@ export async function findSourcedCruiseShipSubjectId(
       .select({ payload: cruisesSourcedContentTable.payload })
       .from(cruisesSourcedContentTable)
       .where(eq(cruisesSourcedContentTable.entity_id, cruiseEntry.entity_id))
-    externalId = cachedRows
-      .map((row) => referencedShipExternalId(row.payload))
-      .find((value): value is string => value !== null) ?? null
+    externalId =
+      cachedRows
+        .map((row) => referencedShipExternalId(row.payload))
+        .find((value): value is string => value !== null) ?? null
   }
   if (!externalId) return null
   const candidates = await db
@@ -537,7 +537,10 @@ async function readCruiseShipSourceProjection(db: AnyDrizzleDb, shipId: string) 
   }
 }
 
-function toResolverScope(scope: CruiseShipOverlayScope, actor: ResolverScope["actor"]): ResolverScope {
+function toResolverScope(
+  scope: CruiseShipOverlayScope,
+  actor: ResolverScope["actor"],
+): ResolverScope {
   return {
     locale: scope.locale,
     audience: scope.audience === OVERLAY_DEFAULT_SCOPE ? actor : scope.audience,
@@ -680,11 +683,7 @@ function shipIdCandidates(
   externalId: string,
   encodedSourceRef: string | null,
 ): ReadonlySet<string> {
-  return new Set([
-    shipId,
-    externalId,
-    ...(encodedSourceRef ? [`crus_${encodedSourceRef}`] : []),
-  ])
+  return new Set([shipId, externalId, ...(encodedSourceRef ? [`crus_${encodedSourceRef}`] : [])])
 }
 
 export function projectionReferencesCruiseShip(

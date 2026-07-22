@@ -8,8 +8,8 @@
 
 import {
   CATALOG_EVENTS,
-  emitCatalogEvent,
   type EntityOverlayChangedPayload,
+  emitCatalogEvent,
 } from "@voyant-travel/catalog"
 import type { EventBus } from "@voyant-travel/core"
 

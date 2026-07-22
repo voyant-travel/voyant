@@ -440,12 +440,7 @@ export function createProductDocumentBuilder(
     )
     if (propertyProjection) {
       copyReferencedPropertyValue(propertyProjection, "name", merged, "property.name")
-      copyReferencedPropertyValue(
-        propertyProjection,
-        "description",
-        merged,
-        "property.description",
-      )
+      copyReferencedPropertyValue(propertyProjection, "description", merged, "property.description")
       copyReferencedPropertyValue(
         propertyProjection,
         "hero_image_url",

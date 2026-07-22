@@ -107,9 +107,7 @@ describe("referenced subject document context", () => {
           from() {
             return {
               where() {
-                return selection
-                  ? Promise.resolve(overlays)
-                  : { limit: async () => [source] }
+                return selection ? Promise.resolve(overlays) : { limit: async () => [source] }
               },
             }
           },
