@@ -1,15 +1,6 @@
-name: CI
+name: CI on demand
 
-on:
-  workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-      - develop
-  push:
-    branches:
-      - main
-      - develop
+on: workflow_dispatch
 
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
@@ -22,9 +13,9 @@ env:
   HUSKY: 0
   TURBO_RUN_SUMMARY: "true"
 
-# Branch protection should require `CI / checks`, `CI / build`,
-# `CI / db-checks`, and `CI / node-smoke`. Depot reports each native workflow
-# job as a GitHub check, so these contexts remain stable after the cutover.
+# Routine validation runs for free on standard GitHub-hosted runners via
+# `.github/workflows/ci.yml`. Keep this as an explicit escape hatch for jobs
+# that benefit from Depot's custom image, local patches, metrics, or SSH.
 
 jobs:
   checks:
