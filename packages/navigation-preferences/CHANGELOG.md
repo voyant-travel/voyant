@@ -1,5 +1,7 @@
 # @voyant-travel/navigation-preferences
 
+## 0.15.0
+
 ## 0.14.5
 
 ### Patch Changes

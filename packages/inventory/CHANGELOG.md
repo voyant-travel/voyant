@@ -1,5 +1,34 @@
 # @voyant-travel/inventory
 
+## 0.16.0
+
+### Minor Changes
+
+- 90d44c0: Add the operator editorial-overlay editor for sourced products: configured-locale switching, side-by-side provider/overlay/effective comparison on wide screens with an accessible tabbed compare on narrow ones, overlay-only translation authoring, media-library-backed image overlays, customer preview, confirmed clear, and optimistic-concurrency conflict reporting.
+
+  The product editorial-overlay admin read model now enumerates every eligible field (not only fields that already carry an overlay) and reports per-field `exact`, `language-fallback`, `source-fallback`, `overlaid`, `overlay-only`, `missing`, `invalid`, and `orphaned` state plus drift against the provider's last source update, the cached source locales, and whether the entity is provider-sourced.
+
+  `useLocale()` now exposes the deployment's `supportedLocales`, and the catalog overlay service exposes `fetchOverlayRowsForEntity` for admin surfaces that need overlay audit columns.
+
+### Patch Changes
+
+- a43267a: Add node-aware localized editorial overlays for sourced product content, including stable content-node targeting, optimistic overlay versions, audit history, product admin read/write/clear routes, and public provenance redaction.
+
+  Tighten editorial overlay scope isolation for product content reads and writes, require admin overlay mutations to carry an authenticated user id, and make overlay mutations/history atomic with race-safe optimistic version checks.
+
+- 2c79bef: Add referenced presentation-subject overlay support for cruise ships and accommodation properties.
+- Updated dependencies [a43267a]
+- Updated dependencies [90d44c0]
+- Updated dependencies [2c79bef]
+  - @voyant-travel/catalog@0.191.0
+  - @voyant-travel/products-contracts@0.107.8
+  - @voyant-travel/bookings@0.193.0
+  - @voyant-travel/finance@0.193.0
+  - @voyant-travel/commerce@0.40.4
+  - @voyant-travel/operations@0.8.35
+  - @voyant-travel/relationships@0.128.34
+  - @voyant-travel/operator-settings@0.14.13
+
 ## 0.15.4
 
 ### Patch Changes
