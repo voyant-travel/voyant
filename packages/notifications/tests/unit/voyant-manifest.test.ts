@@ -46,6 +46,14 @@ describe("notifications deployment manifest", () => {
         {
           id: "notifications.send-due-reminders",
           schedule: { cron: "0 * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "*/15 * * * *", overlap: "skip" },
+              economical: { cron: "0 */6 * * *", overlap: "skip" },
+            },
+          },
+          wakeup: true,
           runtime: {
             entry: "@voyant-travel/notifications/reminder-job",
             export: "runDueNotificationRemindersJob",

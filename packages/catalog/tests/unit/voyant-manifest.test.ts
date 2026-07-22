@@ -116,6 +116,14 @@ describe("catalog deployment manifest", () => {
       {
         id: "catalog.reap-expired-booking-drafts",
         schedule: { cron: "5 * * * *", overlap: "skip" },
+        scheduling: {
+          required: true,
+          profiles: {
+            eager: { cron: "*/15 * * * *", overlap: "skip" },
+            economical: { cron: "5 */6 * * *", overlap: "skip" },
+          },
+        },
+        wakeup: true,
         runtime: {
           entry: "@voyant-travel/catalog/draft-reaper-job",
           export: "runCatalogDraftReaperJob",

@@ -160,9 +160,9 @@ Domain packages retain the durable records that make a job safe to retry:
 | --- | --- | --- |
 | Event delivery | event outbox rows and webhook delivery rows | Wake after a write and poll as a safety net; claim with a visibility lease; expose failed delivery state. |
 | Channel push | channel push intent and link state | Per-channel or per-booking claiming; retry from the intent state; periodic reconciliation. |
-| Notification reminders | reminder and delivery records | Sweep due records; make delivery idempotent at the record level. |
-| Promotion boundaries | promotion state and product index state | Idempotent time-based sweep; reindex affected products. |
-| Booking draft expiry | booking draft and hold state | Idempotent expiry sweep; release a hold before deleting the draft. |
+| Notification reminders | reminder and delivery records | Wake after a reminder becomes due; sweep due records as recovery and make delivery idempotent at the record level. |
+| Promotion boundaries | promotion state and product index state | Wake after a promotion changes; retain an idempotent time-based sweep for missed boundaries and reindex affected products. |
+| Booking draft expiry | booking draft and hold state | Wake after draft or hold state changes; retain an idempotent expiry sweep that releases a hold before deleting the draft. |
 
 The event outbox is particularly important: an immediate wakeup improves
 latency, but a scheduled drain remains mandatory so a missed wakeup cannot lose
@@ -181,12 +181,12 @@ The current first-party workflow definitions move as follows:
 | `distribution.channel-push-reconcile-booking-links` | Scheduled job | Booking-link and channel state. |
 | `distribution.channel-push-reconcile-availability` | Scheduled job | Availability and channel state. |
 | `distribution.channel-push-reconcile-content` | Scheduled job | Product content and channel state. |
-| `notifications.send-due-reminders` | Scheduled job | Reminder rules and reminder-run records. |
+| `notifications.send-due-reminders` | Wakeable job with scheduled recovery | Reminder rules and reminder-run records. |
 | `notifications.deliver-reminder` | Wakeable job with scheduled recovery | Reminder delivery records. |
-| `commerce.process-promotion-boundaries` | Scheduled job | Promotion and product-index state. |
+| `commerce.process-promotion-boundaries` | Wakeable job with scheduled recovery | Promotion and product-index state. |
 | `promotions.reindex-all-products` | Wakeable job with scheduled recovery | A domain-owned reindex intent or checkpoint, added before cutover. |
-| `catalog.reap-expired-booking-drafts` | Scheduled job | Booking draft and hold state; reconcile ownership with stale-hold expiry before migration. |
-| `bookings.expire-stale-holds` | Scheduled job | Booking hold and payment-session state; reconcile ownership with draft reaping before migration. |
+| `catalog.reap-expired-booking-drafts` | Wakeable job with scheduled recovery | Booking draft and hold state; reconcile ownership with stale-hold expiry before migration. |
+| `bookings.expire-stale-holds` | Wakeable job with scheduled recovery | Booking hold and payment-session state; reconcile ownership with draft reaping before migration. |
 | `cruises.external-catalog-refresh` | Scheduled job | Selected cruises capability state and refresh checkpoint. |
 | `products.generate-pdf` | Domain command, not a job | Generate synchronously or persist a document-generation intent consumed by a package job. |
 
@@ -222,6 +222,14 @@ persisting generic run state in the host. It serializes each job in-process,
 uses bounded retries with backoff, and exposes only minimal health state. Fixed
 HTTP wakeup and schedule invocation is origin-trust authenticated and accepts
 neither request bodies nor query input.
+
+First-party maintenance jobs declare the package-owned default cadence together
+with the bounded `eager` and `economical` profiles. `eager` reduces recovery
+latency at the cost of more database work; `economical` increases the maximum
+time until a missed wakeup is repaired. Self-hosted installations retain the
+safe default unless an operator explicitly selects one of those declared
+profiles. A wakeup is only a prompt: the package's durable state and scheduled
+recovery remain authoritative across process restarts and missed delivery.
 
 Custom deployments can disable a specific optional product capability only when
 the owning package documents the consequences. Disabling a capability removes

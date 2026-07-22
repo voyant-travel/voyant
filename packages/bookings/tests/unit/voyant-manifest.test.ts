@@ -55,6 +55,14 @@ describe("bookings deployment manifest", () => {
         {
           id: "bookings.expire-stale-holds",
           schedule: { cron: "*/5 * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "* * * * *", overlap: "skip" },
+              economical: { cron: "*/15 * * * *", overlap: "skip" },
+            },
+          },
+          wakeup: true,
           runtime: {
             entry: "@voyant-travel/bookings/stale-holds-job",
             export: "runBookingsExpireStaleHoldsJob",
