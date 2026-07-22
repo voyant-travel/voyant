@@ -27,6 +27,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Visibility } from "@voyant-travel/catalog/contract"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
@@ -109,6 +110,10 @@ export interface CreateProductContentRoutesOptions {
   defaultAcceptMachineTranslated?: boolean
   /** Public routes set this false so provider/source refs stay staff-only. */
   exposeProvenance?: boolean
+  /** Default audience for overlay resolution on this route surface. */
+  defaultAudience?: Visibility
+  /** Admin routes may opt into previewing another audience via query string. */
+  allowAudienceQuery?: boolean
 }
 
 /**
@@ -174,6 +179,7 @@ export function createProductContentRoutes(
 
     const market = c.req.query("market") ?? undefined
     const currency = c.req.query("currency") ?? undefined
+    const audience = parseAudience(c.req.query("audience"), options)
     const acceptMTQuery = c.req.query("accept_mt")
     const acceptMachineTranslated =
       acceptMTQuery != null
@@ -182,11 +188,24 @@ export function createProductContentRoutes(
 
     return {
       preferredLocales,
+      audience,
       market,
       currency,
       acceptMachineTranslated,
     }
   }
+}
+
+const CONTENT_AUDIENCES = new Set<Visibility>(["staff", "customer", "partner", "supplier"])
+
+function parseAudience(
+  value: string | undefined,
+  options: CreateProductContentRoutesOptions,
+): Visibility {
+  const fallback = options.defaultAudience ?? "customer"
+  if (!value) return fallback
+  if (!options.allowAudienceQuery) return fallback
+  return CONTENT_AUDIENCES.has(value as Visibility) ? (value as Visibility) : fallback
 }
 
 /**
@@ -234,11 +253,21 @@ export const productContentExtension: Extension = {
 export function createProductContentApiExtension(
   options: ProductContentApiExtensionOptions,
 ): ApiExtension {
-  const adminRoutes = createProductContentRoutes({ ...options.admin, exposeProvenance: true })
+  const adminRoutes = createProductContentRoutes({
+    ...options.admin,
+    defaultAudience: options.admin.defaultAudience ?? "staff",
+    allowAudienceQuery: options.admin.allowAudienceQuery ?? true,
+    exposeProvenance: true,
+  })
   adminRoutes.route("/", createProductEditorialOverlayRoutes(options.admin) as never)
   return {
     extension: productContentExtension,
     adminRoutes,
-    publicRoutes: createProductContentRoutes({ ...options.public, exposeProvenance: false }),
+    publicRoutes: createProductContentRoutes({
+      ...options.public,
+      defaultAudience: options.public.defaultAudience ?? "customer",
+      allowAudienceQuery: false,
+      exposeProvenance: false,
+    }),
   }
 }

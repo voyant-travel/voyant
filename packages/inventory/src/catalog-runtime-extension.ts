@@ -24,11 +24,20 @@ import { createProductTaxonomyProjectionExtension } from "./service-catalog-plan
 import { getProductContent } from "./service-content.js"
 
 export const enrichProductQuoteShape = createProductQuoteShapeEnricher({
-  resolveContent: ({ db, entityId, locales, market, currency, registry, adapterContext }) =>
+  resolveContent: ({
+    db,
+    entityId,
+    locales,
+    audience,
+    market,
+    currency,
+    registry,
+    adapterContext,
+  }) =>
     getProductContent(
       db as Parameters<typeof getProductContent>[0],
       entityId,
-      { preferredLocales: locales, market, currency },
+      { preferredLocales: locales, audience, market, currency },
       { registry, buildAdapterContext: () => adapterContext },
     ),
   buildShape: (content, options) =>

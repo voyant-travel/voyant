@@ -18,8 +18,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 
 import { catalogOverlayTable, OVERLAY_DEFAULT_SCOPE } from "../../src/overlay/schema.js"
 import {
+  clearOverlayByTarget,
   fetchOverlaysForEntity,
+  listOverlayHistoryForTarget,
   listOverlaysByOrigin,
+  OverlayVersionConflictError,
   restoreOverlay,
   softDeleteOverlay,
   writeOverlay,
@@ -140,6 +143,87 @@ describe.skipIf(!DB_AVAILABLE)("OverlayService integration", () => {
 
     const overlays = await fetchOverlaysForEntity(db, testEntityModule, entityId)
     expect(overlays).toHaveLength(1)
+  })
+
+  it("detects stale write versions with a conditional update", async () => {
+    const entityId = `${testEntityIdPrefix}stale_write`
+    createdEntityIds.push(entityId)
+
+    await writeOverlay(db, {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      field_path: "title",
+      locale: "en-GB",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      value: "First value",
+      origin: { kind: "admin-ui", user_id: "usrp_test" },
+    })
+    await writeOverlay(db, {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      field_path: "title",
+      locale: "en-GB",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      value: "Second value",
+      origin: { kind: "admin-ui", user_id: "usrp_test" },
+      expected_version: 1,
+    })
+
+    await expect(
+      writeOverlay(db, {
+        entity_module: testEntityModule,
+        entity_id: entityId,
+        field_path: "title",
+        locale: "en-GB",
+        audience: "customer",
+        market: OVERLAY_DEFAULT_SCOPE,
+        value: "Stale value",
+        origin: { kind: "admin-ui", user_id: "usrp_test" },
+        expected_version: 1,
+      }),
+    ).rejects.toBeInstanceOf(OverlayVersionConflictError)
+
+    const overlays = await fetchOverlaysForEntity(db, testEntityModule, entityId)
+    expect(overlays[0]?.value).toBe("Second value")
+  })
+
+  it("writes mutation history in the same service call as the overlay mutation", async () => {
+    const entityId = `${testEntityIdPrefix}history`
+    createdEntityIds.push(entityId)
+
+    const row = await writeOverlay(db, {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      field_path: "title",
+      locale: "en-GB",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+      value: "First value",
+      origin: { kind: "admin-ui", user_id: "usrp_test" },
+    })
+    await clearOverlayByTarget(db, {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      node_kind: row.node_kind,
+      node_key: row.node_key,
+      field_path: row.field_path,
+      locale: row.locale,
+      audience: row.audience,
+      market: row.market,
+      expected_version: row.version,
+    })
+
+    const history = await listOverlayHistoryForTarget(db, {
+      entity_module: testEntityModule,
+      entity_id: entityId,
+      field_path: "title",
+      locale: "en-GB",
+      audience: "customer",
+      market: OVERLAY_DEFAULT_SCOPE,
+    })
+    expect(history.map((entry) => entry.action)).toEqual(["write", "clear"])
   })
 
   it("softDeleteOverlay removes the row from active fetches; restoreOverlay brings it back", async () => {

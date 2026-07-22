@@ -96,6 +96,7 @@ export interface CatalogAvailabilitySlotsScope {
 /** Locale/market scope passed to the injected `getProductContent` reader. */
 export interface CatalogProductContentScope {
   preferredLocales: ReadonlyArray<string>
+  audience: "staff" | "customer" | "partner" | "supplier"
   market?: string
   currency?: string
 }
@@ -648,6 +649,7 @@ async function handleListSlots(
       entityId,
       {
         preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"],
+        audience: defaultAudienceForPath(c),
         market: scope.market,
         currency: scope.currency,
       },
@@ -696,6 +698,10 @@ function uniqueStrings(values: ReadonlyArray<string | undefined>): string[] {
     result.push(value)
   }
   return result
+}
+
+function defaultAudienceForPath(c: Context): "staff" | "customer" {
+  return c.req.path.startsWith("/v1/public/") ? "customer" : "staff"
 }
 
 /**

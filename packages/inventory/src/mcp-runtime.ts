@@ -42,6 +42,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
           input.id,
           {
             preferredLocales: input.preferredLocales ?? [context.resolverScope.locale],
+            audience: "staff",
             ...(input.market ? { market: input.market } : {}),
             ...(input.currency ? { currency: input.currency } : {}),
             acceptMachineTranslated: input.acceptMachineTranslated,

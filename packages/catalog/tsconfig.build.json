@@ -1154,6 +1154,9 @@
       "@voyant-travel/inventory/routes": ["../inventory/dist/routes.d.ts"],
       "@voyant-travel/inventory/routes-brochure": ["../inventory/dist/routes-brochure.d.ts"],
       "@voyant-travel/inventory/routes-content": ["../inventory/dist/routes-content.d.ts"],
+      "@voyant-travel/inventory/routes-editorial-overlays": [
+        "../inventory/dist/routes-editorial-overlays.d.ts"
+      ],
       "@voyant-travel/inventory/runtime-contributor": [
         "../inventory/dist/runtime-contributor.d.ts"
       ],
@@ -1170,6 +1173,9 @@
       "@voyant-travel/inventory/service-content": ["../inventory/dist/service-content.d.ts"],
       "@voyant-travel/inventory/service-content-synthesizer": [
         "../inventory/dist/service-content-synthesizer.d.ts"
+      ],
+      "@voyant-travel/inventory/service-editorial-overlays": [
+        "../inventory/dist/service-editorial-overlays.d.ts"
       ],
       "@voyant-travel/inventory/service-public": ["../inventory/dist/service-public.d.ts"],
       "@voyant-travel/inventory/standard-links": ["../inventory/dist/standard-links.d.ts"],

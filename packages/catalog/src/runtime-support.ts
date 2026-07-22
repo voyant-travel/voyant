@@ -20,7 +20,7 @@ import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,
 } from "./booking-snapshot-subscriber-runtime.js"
-import type { FieldPolicyRegistry } from "./contract.js"
+import type { FieldPolicyRegistry, Visibility } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
 import { createGeminiEmbeddingProvider } from "./embeddings/gemini.js"
 import type {
@@ -273,6 +273,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
     db: unknown
     entityId: string
     locales: string[]
+    audience: Visibility
     market?: string
     currency?: string
     registry: SourceAdapterRegistry
@@ -289,6 +290,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
     entityModule: string
     entityId: string
     locale?: string
+    audience?: string
     market?: string
     currency?: string
     registry: SourceAdapterRegistry
@@ -303,6 +305,7 @@ export function createProductQuoteShapeEnricher(dependencies: {
         db: input.db,
         entityId: input.entityId,
         locales,
+        audience: narrowContentAudience(input.audience),
         market: input.market,
         currency: input.currency,
         registry: input.registry,
@@ -318,6 +321,13 @@ export function createProductQuoteShapeEnricher(dependencies: {
       return input.result
     }
   }
+}
+
+const CONTENT_AUDIENCES = new Set<Visibility>(["staff", "customer", "partner", "supplier"])
+
+function narrowContentAudience(audience: string | undefined): Visibility {
+  if (audience === "staff-admin") return "staff"
+  return CONTENT_AUDIENCES.has(audience as Visibility) ? (audience as Visibility) : "customer"
 }
 
 export interface SourcedBookingRowValues {

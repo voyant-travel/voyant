@@ -75,7 +75,6 @@ export async function readProductEditorialOverlayState(
   productId: string,
   scope: ProductContentScope,
   options: ProductEditorialOverlayServiceOptions,
-  overlayScope?: Partial<Pick<ProductEditorialOverlayScope, "audience">>,
 ) {
   const source = await getProductContent(db, productId, scope, {
     registry: options.registry,
@@ -90,7 +89,7 @@ export async function readProductEditorialOverlayState(
   if (!effective) return null
 
   const overlays = await fetchOverlaysForEntity(db, "products", productId)
-  const active = overlays.filter((overlay) => overlayMatchesReadScope(overlay, scope, overlayScope))
+  const active = overlays.filter((overlay) => overlayMatchesReadScope(overlay, scope))
   const fields: Record<string, unknown> = {}
   for (const overlay of active) {
     const target = targetKey(overlay.node_kind, overlay.node_key, overlay.field_path)
@@ -133,9 +132,11 @@ export async function writeProductEditorialOverlay(
   input: ProductEditorialOverlayWriteInput,
   options: ProductEditorialOverlayServiceOptions,
 ): Promise<SelectCatalogOverlay> {
+  const overlayScope = normalizeOverlayScope(input.scope)
   const scope: ProductContentScope = {
-    preferredLocales: [input.scope.locale],
-    market: input.scope.market,
+    preferredLocales: [overlayScope.locale],
+    audience: normalizeAudience(overlayScope.audience),
+    market: overlayScope.market,
     acceptMachineTranslated: false,
   }
   const source = await getProductContent(db, productId, scope, {
@@ -149,8 +150,8 @@ export async function writeProductEditorialOverlay(
 
   const existing = await fetchOverlaysForEntity(db, "products", productId)
   const candidateOverlays = [
-    ...existing
-      .filter((overlay) => !sameTarget(overlay, target, input.scope))
+    ...selectProductEditorialOverlaysForScope(existing, scope)
+      .filter((overlay) => !sameContentTarget(overlay, target))
       .map((overlay) =>
         normalizeProductContentOverlay({
           field_path: overlay.field_path,
@@ -178,9 +179,9 @@ export async function writeProductEditorialOverlay(
     node_kind: target.node_kind,
     node_key: target.node_key,
     field_path: target.field_path,
-    locale: input.scope.locale,
-    audience: input.scope.audience,
-    market: input.scope.market,
+    locale: overlayScope.locale,
+    audience: overlayScope.audience,
+    market: overlayScope.market,
     value: input.value,
     origin: input.origin,
     expected_version: input.expected_version,
@@ -193,6 +194,7 @@ export async function clearProductEditorialOverlay(
   productId: string,
   input: ProductEditorialOverlayClearInput,
 ): Promise<SelectCatalogOverlay | null> {
+  const overlayScope = normalizeOverlayScope(input.scope)
   const target = normalizeTarget(input)
   return clearOverlayByTarget(db, {
     entity_module: "products",
@@ -200,9 +202,9 @@ export async function clearProductEditorialOverlay(
     node_kind: target.node_kind,
     node_key: target.node_key,
     field_path: target.field_path,
-    locale: input.scope.locale,
-    audience: input.scope.audience,
-    market: input.scope.market,
+    locale: overlayScope.locale,
+    audience: overlayScope.audience,
+    market: overlayScope.market,
     expected_version: input.expected_version,
   })
 }
@@ -237,11 +239,12 @@ function normalizeTarget(
   target: ProductEditorialOverlayTarget,
 ): Required<ProductEditorialOverlayTarget> {
   const nodeKind = target.node_kind ?? OVERLAY_ROOT_NODE_KIND
-  const nodeKey = target.node_key ?? OVERLAY_ROOT_NODE_KEY
+  const nodeKey = normalizeNonEmpty(target.node_key ?? OVERLAY_ROOT_NODE_KEY, "node_key")
+  const fieldPath = normalizeNonEmpty(target.field_path, "field_path")
   return {
     node_kind: nodeKind,
     node_key: nodeKey,
-    field_path: normalizeFieldPath(target),
+    field_path: normalizeFieldPath({ ...target, field_path: fieldPath }),
   }
 }
 
@@ -281,42 +284,97 @@ function validateTarget(
   throw new Error(`Unsupported product editorial overlay node kind ${target.node_kind}`)
 }
 
-function sameTarget(
+function sameContentTarget(
   overlay: {
     node_kind?: string
     node_key?: string
     field_path: string
-    locale: string
-    audience: string
-    market: string
   },
   target: Required<ProductEditorialOverlayTarget>,
-  scope: ProductEditorialOverlayScope,
 ): boolean {
   return (
     (overlay.node_kind ?? OVERLAY_ROOT_NODE_KIND) === target.node_kind &&
     (overlay.node_key ?? OVERLAY_ROOT_NODE_KEY) === target.node_key &&
     normalizeFieldPath({ node_kind: target.node_kind, field_path: overlay.field_path }) ===
-      target.field_path &&
-    overlay.locale === scope.locale &&
-    overlay.audience === scope.audience &&
-    overlay.market === scope.market
+      target.field_path
   )
+}
+
+function selectProductEditorialOverlaysForScope(
+  overlays: Awaited<ReturnType<typeof fetchOverlaysForEntity>>,
+  scope: ProductContentScope,
+) {
+  const chosen = new Map<string, (typeof overlays)[number]>()
+  for (const variant of overlayFallbackChain(scope)) {
+    for (const overlay of overlays) {
+      if (
+        overlay.locale !== variant.locale ||
+        overlay.audience !== variant.audience ||
+        overlay.market !== variant.market
+      ) {
+        continue
+      }
+      const key = `${overlay.node_kind ?? OVERLAY_ROOT_NODE_KIND}:${
+        overlay.node_key ?? OVERLAY_ROOT_NODE_KEY
+      }:${overlay.field_path}`
+      if (!chosen.has(key)) chosen.set(key, overlay)
+    }
+  }
+  return [...chosen.values()]
+}
+
+function overlayFallbackChain(scope: ProductContentScope) {
+  const locale = scope.preferredLocales[0] ?? "en-GB"
+  const audience = scope.audience
+  const market = scope.market ?? OVERLAY_DEFAULT_SCOPE
+  const D = OVERLAY_DEFAULT_SCOPE
+  return [
+    { locale, audience, market },
+    { locale, audience, market: D },
+    { locale, audience: D, market },
+    { locale, audience: D, market: D },
+    { locale: D, audience, market },
+    { locale: D, audience, market: D },
+    { locale: D, audience: D, market },
+    { locale: D, audience: D, market: D },
+  ]
 }
 
 function overlayMatchesReadScope(
   overlay: { locale: string; audience: string; market: string },
   scope: ProductContentScope,
-  overlayScope?: Partial<Pick<ProductEditorialOverlayScope, "audience">>,
 ): boolean {
   const requestedLocale = scope.preferredLocales[0] ?? "en-GB"
-  const requestedAudience = overlayScope?.audience ?? "customer"
+  const requestedAudience = scope.audience
   return (
     (overlay.locale === requestedLocale || overlay.locale === OVERLAY_DEFAULT_SCOPE) &&
     (overlay.audience === requestedAudience || overlay.audience === OVERLAY_DEFAULT_SCOPE) &&
     (overlay.market === (scope.market ?? OVERLAY_DEFAULT_SCOPE) ||
       overlay.market === OVERLAY_DEFAULT_SCOPE)
   )
+}
+
+function normalizeOverlayScope(scope: ProductEditorialOverlayScope): ProductEditorialOverlayScope {
+  const locale = normalizeNonEmpty(scope.locale, "locale")
+  if (locale === OVERLAY_DEFAULT_SCOPE) {
+    throw new Error("Localized product editorial overlays must use a real locale")
+  }
+  return {
+    locale,
+    audience: scope.audience,
+    market: normalizeNonEmpty(scope.market, "market"),
+  }
+}
+
+function normalizeAudience(audience: ProductEditorialOverlayScope["audience"]): Visibility {
+  if (audience === OVERLAY_DEFAULT_SCOPE) return "customer"
+  return audience
+}
+
+function normalizeNonEmpty(value: string | undefined, field: string): string {
+  const trimmed = value?.trim()
+  if (!trimmed) throw new Error(`${field} must be nonempty`)
+  return trimmed
 }
 
 function readProductTargetValue(

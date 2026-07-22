@@ -35,6 +35,8 @@ import {
   withContentRefreshLock,
 } from "@voyant-travel/catalog"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
+import type { Visibility } from "@voyant-travel/catalog/contract"
+import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog/overlay/schema"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq } from "drizzle-orm"
 
@@ -67,6 +69,8 @@ export interface ProductContentScope {
    * `["ro-RO", "ro", "en-GB", "en"]` for a ro-RO storefront request).
    */
   preferredLocales: ReadonlyArray<string>
+  /** Audience whose product content is being resolved. */
+  audience: Visibility
   /** Optional market — `'*'` (any) by default. */
   market?: string
   /** Optional currency for SWR refresh. Not used by the cache. */
@@ -160,13 +164,22 @@ export async function getProductContent(
       preferredLocales: scope.preferredLocales,
     })
     if (!owned) return null
-    const merged = await applyProductEditorialOverlays(db, entityId, owned.content, options)
+    const overlayResult = await applyProductEditorialOverlays(
+      db,
+      entityId,
+      owned.content,
+      scope,
+      options,
+    )
     return {
-      content: merged,
+      content: overlayResult.content,
       resolution: {
-        candidate: { locale: owned.servedLocale, payload: merged },
-        served_locale: owned.servedLocale,
-        match_kind: owned.matchKind,
+        candidate: {
+          locale: effectiveServedLocale(owned.servedLocale, scope, overlayResult),
+          payload: overlayResult.content,
+        },
+        served_locale: effectiveServedLocale(owned.servedLocale, scope, overlayResult),
+        match_kind: effectiveMatchKind(owned.matchKind, scope, overlayResult),
       },
       provenance: { source_kind: "owned" },
       source: "owned",
@@ -258,7 +271,16 @@ export async function getProductContent(
     : false
 
   if (best && !isStale(best.candidate) && !shouldRefreshLegacyAvailability) {
-    return finalizeFromCache(db, entityId, best, "sourced-cache", false, options, resultProvenance)
+    return finalizeFromCache(
+      db,
+      entityId,
+      best,
+      "sourced-cache",
+      false,
+      scope,
+      options,
+      resultProvenance,
+    )
   }
 
   if (best && (isStale(best.candidate) || shouldRefreshLegacyAvailability)) {
@@ -280,14 +302,26 @@ export async function getProductContent(
         void scheduleRefresh(db, adapter, adapterCtx, refreshRequest)
       }
     }
-    return finalizeFromCache(db, entityId, best, "sourced-cache", true, options, resultProvenance)
+    return finalizeFromCache(
+      db,
+      entityId,
+      best,
+      "sourced-cache",
+      true,
+      scope,
+      options,
+      resultProvenance,
+    )
   }
 
   // No cache row at all — must produce content somehow.
   if (!adapter?.getContent) {
     // Thin adapter or no adapter registered — synthesize from
     // projection + overlay + plane metadata (§3.6).
-    const overlays = await fetchOverlaysForEntity(db, "products", entityId)
+    const overlays = selectProductEditorialOverlays(
+      await fetchOverlaysForEntity(db, "products", entityId),
+      scope,
+    )
     const synthesized = synthesizeProductContent(
       { locale: scope.preferredLocales[0] ?? "en-GB" },
       {
@@ -316,7 +350,10 @@ export async function getProductContent(
   if (!fresh) {
     // The adapter call could not get the lock AND there's no cached
     // row — fall back to synthesizer rather than blocking forever.
-    const overlays = await fetchOverlaysForEntity(db, "products", entityId)
+    const overlays = selectProductEditorialOverlays(
+      await fetchOverlaysForEntity(db, "products", entityId),
+      scope,
+    )
     const synthesized = synthesizeProductContent(
       { locale: scope.preferredLocales[0] ?? "en-GB" },
       {
@@ -507,6 +544,7 @@ async function finalizeFromCache(
   best: NonNullable<ReturnType<typeof pickBestCachedLocale<SelectProductsSourcedContent>>>,
   source: "sourced-cache",
   servedStale: boolean,
+  scope: ProductContentScope,
   options: GetProductContentOptions,
   provenance: ResolvedProductContentProvenance,
 ): Promise<ResolvedProductContent> {
@@ -521,13 +559,20 @@ async function finalizeFromCache(
     )
   }
   const cachedContent = validation.content
-  const merged = await applyProductEditorialOverlays(db, entityId, cachedContent, options)
+  const overlayResult = await applyProductEditorialOverlays(
+    db,
+    entityId,
+    cachedContent,
+    scope,
+    options,
+  )
+  const servedLocale = effectiveServedLocale(best.candidate.returned_locale, scope, overlayResult)
   return {
-    content: merged,
+    content: overlayResult.content,
     resolution: {
-      candidate: { locale: best.candidate.locale, payload: merged },
-      served_locale: best.candidate.returned_locale,
-      match_kind: best.match_kind,
+      candidate: { locale: servedLocale, payload: overlayResult.content },
+      served_locale: servedLocale,
+      match_kind: effectiveMatchKind(best.match_kind, scope, overlayResult),
     },
     provenance,
     source,
@@ -546,13 +591,24 @@ async function finalizeFresh(
   provenance: ResolvedProductContentProvenance,
 ): Promise<ResolvedProductContent> {
   const cachedContent = productContentSchema.parse(fresh.content)
-  const merged = await applyProductEditorialOverlays(db, entityId, cachedContent, options)
+  const overlayResult = await applyProductEditorialOverlays(
+    db,
+    entityId,
+    cachedContent,
+    scope,
+    options,
+  )
+  const servedLocale = effectiveServedLocale(fresh.returned_locale, scope, overlayResult)
   return {
-    content: merged,
+    content: overlayResult.content,
     resolution: {
-      candidate: { locale: scope.preferredLocales[0] ?? fresh.returned_locale, payload: merged },
-      served_locale: fresh.returned_locale,
-      match_kind: scope.preferredLocales[0] === fresh.returned_locale ? "exact" : "language_match",
+      candidate: { locale: servedLocale, payload: overlayResult.content },
+      served_locale: servedLocale,
+      match_kind: effectiveMatchKind(
+        scope.preferredLocales[0] === fresh.returned_locale ? "exact" : "language_match",
+        scope,
+        overlayResult,
+      ),
     },
     provenance,
     source: "sourced-fresh",
@@ -566,13 +622,20 @@ async function applyProductEditorialOverlays(
   db: AnyDrizzleDb,
   entityId: string,
   content: ProductContent,
+  scope: ProductContentScope,
   options: GetProductContentOptions,
-): Promise<ProductContent> {
-  if (options.applyOverlays === false) return content
-  const overlays = await fetchOverlaysForEntity(db, "products", entityId)
-  return mergeOverlaysIntoProductContent(
+): Promise<{
+  content: ProductContent
+  appliedOverlays: ReturnType<typeof selectProductEditorialOverlays>
+}> {
+  if (options.applyOverlays === false) return { content, appliedOverlays: [] }
+  const appliedOverlays = selectProductEditorialOverlays(
+    await fetchOverlaysForEntity(db, "products", entityId),
+    scope,
+  )
+  const merged = mergeOverlaysIntoProductContent(
     content,
-    overlays.map((o) =>
+    appliedOverlays.map((o) =>
       normalizeProductContentOverlay({
         id: o.id,
         version: o.version,
@@ -592,6 +655,83 @@ async function applyProductEditorialOverlays(
         : undefined,
     },
   )
+  return { content: merged, appliedOverlays }
+}
+
+function selectProductEditorialOverlays(
+  overlays: Awaited<ReturnType<typeof fetchOverlaysForEntity>>,
+  scope: ProductContentScope,
+) {
+  const chosen = new Map<string, (typeof overlays)[number]>()
+  for (const variant of overlayFallbackChain(scope)) {
+    for (const overlay of overlays) {
+      if (
+        overlay.locale !== variant.locale ||
+        overlay.audience !== variant.audience ||
+        overlay.market !== variant.market
+      ) {
+        continue
+      }
+      const key = productOverlayTargetKey(overlay)
+      if (!chosen.has(key)) chosen.set(key, overlay)
+    }
+  }
+  return [...chosen.values()]
+}
+
+function overlayFallbackChain(scope: ProductContentScope) {
+  const locale = scope.preferredLocales[0] ?? "en-GB"
+  const audience = scope.audience
+  const market = scope.market ?? OVERLAY_DEFAULT_SCOPE
+  const D = OVERLAY_DEFAULT_SCOPE
+  return [
+    { locale, audience, market },
+    { locale, audience, market: D },
+    { locale, audience: D, market },
+    { locale, audience: D, market: D },
+    { locale: D, audience, market },
+    { locale: D, audience, market: D },
+    { locale: D, audience: D, market },
+    { locale: D, audience: D, market: D },
+  ]
+}
+
+function productOverlayTargetKey(overlay: {
+  node_kind?: string
+  node_key?: string
+  field_path: string
+}): string {
+  return `${overlay.node_kind ?? "root"}:${overlay.node_key ?? "root"}:${overlay.field_path}`
+}
+
+function effectiveServedLocale(
+  sourceLocale: string,
+  scope: ProductContentScope,
+  overlayResult: { appliedOverlays: ReadonlyArray<{ locale: string }> },
+): string {
+  const requestedLocale = scope.preferredLocales[0]
+  if (
+    requestedLocale &&
+    overlayResult.appliedOverlays.some((overlay) => overlay.locale === requestedLocale)
+  ) {
+    return requestedLocale
+  }
+  return sourceLocale
+}
+
+function effectiveMatchKind(
+  sourceMatchKind: ContentLocaleResolution<unknown>["match_kind"],
+  scope: ProductContentScope,
+  overlayResult: { appliedOverlays: ReadonlyArray<{ locale: string }> },
+): ContentLocaleResolution<unknown>["match_kind"] {
+  const requestedLocale = scope.preferredLocales[0]
+  if (
+    requestedLocale &&
+    overlayResult.appliedOverlays.some((overlay) => overlay.locale === requestedLocale)
+  ) {
+    return "exact"
+  }
+  return sourceMatchKind
 }
 
 function wrapSynthesized(

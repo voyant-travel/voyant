@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: catalog; overlay persistence, optimistic concurrency, and audit history stay co-located so all mutation paths share one transaction/concurrency implementation.
 /**
  * OverlayService — drizzle-bound entry point for the catalog overlay store.
  *
@@ -16,6 +17,7 @@
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
+import { withOptionalTransaction } from "@voyant-travel/db/transaction"
 import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry, Visibility } from "../contract.js"
@@ -279,6 +281,13 @@ export async function writeOverlay(
   db: AnyDrizzleDb,
   input: WriteOverlayInput,
 ): Promise<SelectCatalogOverlay> {
+  return withOptionalTransaction(db, (tx) => writeOverlayInTransaction(tx, input))
+}
+
+async function writeOverlayInTransaction(
+  db: AnyDrizzleDb,
+  input: WriteOverlayInput,
+): Promise<SelectCatalogOverlay> {
   const locale = input.locale ?? OVERLAY_DEFAULT_SCOPE
   const audience = input.audience ?? OVERLAY_DEFAULT_SCOPE
   const market = input.market ?? OVERLAY_DEFAULT_SCOPE
@@ -304,6 +313,7 @@ export async function writeOverlay(
 
   if (existing) {
     const nextVersion = existing.version + 1
+    const versionPredicate = input.expected_version ?? existing.version
     const updated = await db
       .update(catalogOverlayTable)
       .set({
@@ -313,10 +323,28 @@ export async function writeOverlay(
         editorial_note: input.editorial_note ?? null,
         updated_at: new Date(),
       })
-      .where(eq(catalogOverlayTable.id, existing.id))
+      .where(
+        and(
+          eq(catalogOverlayTable.id, existing.id),
+          eq(catalogOverlayTable.version, versionPredicate),
+          isNull(catalogOverlayTable.deleted_at),
+        ),
+      )
       .returning()
     const row = updated[0]
-    if (!row) throw new Error("writeOverlay: update returned no rows")
+    if (!row) {
+      const current = await findActiveOverlay(db, {
+        entity_module: input.entity_module,
+        entity_id: input.entity_id,
+        node_kind: nodeKind,
+        node_key: nodeKey,
+        field_path: input.field_path,
+        locale,
+        audience,
+        market,
+      })
+      throw new OverlayVersionConflictError(current?.version ?? null, versionPredicate)
+    }
     await appendOverlayHistory(db, {
       row,
       action: "write",
@@ -330,24 +358,45 @@ export async function writeOverlay(
     return row
   }
 
-  const inserted = await db
-    .insert(catalogOverlayTable)
-    .values({
-      id: newId("catalog_overlay"),
-      entity_module: input.entity_module,
-      entity_id: input.entity_id,
-      node_kind: nodeKind,
-      node_key: nodeKey,
-      field_path: input.field_path,
-      locale,
-      audience,
-      market,
-      value: input.value,
-      origin: input.origin,
-      version: 1,
-      editorial_note: input.editorial_note ?? null,
-    })
-    .returning()
+  let inserted: SelectCatalogOverlay[]
+  try {
+    inserted = await db
+      .insert(catalogOverlayTable)
+      .values({
+        id: newId("catalog_overlay"),
+        entity_module: input.entity_module,
+        entity_id: input.entity_id,
+        node_kind: nodeKind,
+        node_key: nodeKey,
+        field_path: input.field_path,
+        locale,
+        audience,
+        market,
+        value: input.value,
+        origin: input.origin,
+        version: 1,
+        editorial_note: input.editorial_note ?? null,
+      })
+      .returning()
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const current = await findActiveOverlay(db, {
+        entity_module: input.entity_module,
+        entity_id: input.entity_id,
+        node_kind: nodeKind,
+        node_key: nodeKey,
+        field_path: input.field_path,
+        locale,
+        audience,
+        market,
+      })
+      throw new OverlayVersionConflictError(
+        current?.version ?? null,
+        input.expected_version ?? null,
+      )
+    }
+    throw error
+  }
 
   const row = inserted[0]
   if (!row) throw new Error("writeOverlay: insert returned no rows")
@@ -369,17 +418,26 @@ export async function writeOverlay(
  * for retention / restore but no longer participates in resolver merges.
  */
 export async function softDeleteOverlay(db: AnyDrizzleDb, id: string): Promise<void> {
-  const existing = (
-    await db.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
-  )[0]
-  const updated = await db
-    .update(catalogOverlayTable)
-    .set({ deleted_at: new Date(), updated_at: new Date() })
-    .where(eq(catalogOverlayTable.id, id))
-    .returning()
-  if (existing && updated[0]) {
-    await appendOverlayHistory(db, {
-      row: updated[0],
+  await withOptionalTransaction(db, async (tx) => {
+    const existing = (
+      await tx.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
+    )[0]
+    if (!existing) return
+    const updated = await tx
+      .update(catalogOverlayTable)
+      .set({ deleted_at: new Date(), updated_at: new Date() })
+      .where(
+        and(
+          eq(catalogOverlayTable.id, id),
+          eq(catalogOverlayTable.version, existing.version),
+          isNull(catalogOverlayTable.deleted_at),
+        ),
+      )
+      .returning()
+    const row = updated[0]
+    if (!row) throw new OverlayVersionConflictError(null, existing.version)
+    await appendOverlayHistory(tx, {
+      row,
       action: "clear",
       previous_value: existing.value,
       next_value: null,
@@ -387,7 +445,7 @@ export async function softDeleteOverlay(db: AnyDrizzleDb, id: string): Promise<v
       next_version: existing.version,
       origin: existing.origin,
     })
-  }
+  })
 }
 
 /**
@@ -396,17 +454,20 @@ export async function softDeleteOverlay(db: AnyDrizzleDb, id: string): Promise<v
  * window.
  */
 export async function restoreOverlay(db: AnyDrizzleDb, id: string): Promise<void> {
-  const existing = (
-    await db.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
-  )[0]
-  const updated = await db
-    .update(catalogOverlayTable)
-    .set({ deleted_at: null, updated_at: new Date() })
-    .where(eq(catalogOverlayTable.id, id))
-    .returning()
-  if (existing && updated[0]) {
-    await appendOverlayHistory(db, {
-      row: updated[0],
+  await withOptionalTransaction(db, async (tx) => {
+    const existing = (
+      await tx.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
+    )[0]
+    if (!existing) return
+    const updated = await tx
+      .update(catalogOverlayTable)
+      .set({ deleted_at: null, updated_at: new Date() })
+      .where(and(eq(catalogOverlayTable.id, id), eq(catalogOverlayTable.version, existing.version)))
+      .returning()
+    const row = updated[0]
+    if (!row) throw new OverlayVersionConflictError(null, existing.version)
+    await appendOverlayHistory(tx, {
+      row,
       action: "restore",
       previous_value: null,
       next_value: existing.value,
@@ -414,7 +475,7 @@ export async function restoreOverlay(db: AnyDrizzleDb, id: string): Promise<void
       next_version: existing.version,
       origin: existing.origin,
     })
-  }
+  })
 }
 
 interface OverlayKey {
@@ -496,6 +557,13 @@ export async function clearOverlayByTarget(
   db: AnyDrizzleDb,
   input: ClearOverlayByTargetInput,
 ): Promise<SelectCatalogOverlay | null> {
+  return withOptionalTransaction(db, (tx) => clearOverlayByTargetInTransaction(tx, input))
+}
+
+async function clearOverlayByTargetInTransaction(
+  db: AnyDrizzleDb,
+  input: ClearOverlayByTargetInput,
+): Promise<SelectCatalogOverlay | null> {
   const existing = await findActiveOverlay(db, input)
   if (!existing) {
     if (input.expected_version !== undefined && input.expected_version !== null) {
@@ -506,12 +574,23 @@ export async function clearOverlayByTarget(
   if (input.expected_version !== undefined && existing.version !== input.expected_version) {
     throw new OverlayVersionConflictError(existing.version, input.expected_version)
   }
+  const versionPredicate = input.expected_version ?? existing.version
   const updated = await db
     .update(catalogOverlayTable)
     .set({ deleted_at: new Date(), updated_at: new Date() })
-    .where(eq(catalogOverlayTable.id, existing.id))
+    .where(
+      and(
+        eq(catalogOverlayTable.id, existing.id),
+        eq(catalogOverlayTable.version, versionPredicate),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
     .returning()
-  const row = updated[0] ?? existing
+  const row = updated[0]
+  if (!row) {
+    const current = await findActiveOverlay(db, input)
+    throw new OverlayVersionConflictError(current?.version ?? null, versionPredicate)
+  }
   await appendOverlayHistory(db, {
     row,
     action: "clear",
@@ -522,6 +601,14 @@ export async function clearOverlayByTarget(
     origin: existing.origin,
   })
   return row
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const code = (error as { code?: unknown }).code
+  if (code === "23505") return true
+  const cause = (error as { cause?: unknown }).cause
+  return cause ? isUniqueViolation(cause) : false
 }
 
 export async function listOverlayHistoryForTarget(

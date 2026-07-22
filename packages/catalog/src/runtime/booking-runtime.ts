@@ -66,6 +66,7 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
         entityModule: request.entityModule,
         entityId: request.entityId,
         locale: request.scope?.locale ?? "en-GB",
+        audience: request.scope?.audience,
         market: request.scope?.market ?? "default",
         currency: request.scope?.currency,
         registry: getBookingEngineRegistryFromContext(c),

@@ -98,6 +98,7 @@ export type CatalogProductQuoteEnricher = (input: {
   entityModule: string
   entityId: string
   locale?: string
+  audience?: string
   market?: string
   currency?: string
   registry: SourceAdapterRegistry

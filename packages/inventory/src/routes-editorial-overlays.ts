@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog/overlay/schema"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { ApiHttpError, openApiValidationHook, requireUserId } from "@voyant-travel/hono"
 import type { Context } from "hono"
 
 import {
@@ -14,17 +14,21 @@ import {
 } from "./service-editorial-overlays.js"
 
 const audienceSchema = z.enum(["staff", "customer", "partner", "supplier", "default"])
+const nonemptyString = z.string().trim().min(1)
+const localizedLocaleSchema = nonemptyString.refine((value) => value !== OVERLAY_DEFAULT_SCOPE, {
+  message: "locale must be a real locale, not the default scope sentinel",
+})
 
 const targetSchema = z.object({
   nodeKind: z.enum(["root", "itinerary-day"]).optional(),
-  nodeKey: z.string().optional(),
-  fieldPath: z.string(),
+  nodeKey: nonemptyString.optional(),
+  fieldPath: nonemptyString,
 })
 
 const scopeQuerySchema = z.object({
-  locale: z.string().default("en-GB"),
+  locale: localizedLocaleSchema.default("en-GB"),
   audience: audienceSchema.default("customer"),
-  market: z.string().default(OVERLAY_DEFAULT_SCOPE),
+  market: nonemptyString.default(OVERLAY_DEFAULT_SCOPE),
 })
 
 const targetQuerySchema = scopeQuerySchema.extend({
@@ -35,9 +39,9 @@ const targetQuerySchema = scopeQuerySchema.extend({
 })
 
 const writeOverlayBodySchema = targetSchema.extend({
-  locale: z.string().default("en-GB"),
+  locale: localizedLocaleSchema.default("en-GB"),
   audience: audienceSchema.default("customer"),
-  market: z.string().default(OVERLAY_DEFAULT_SCOPE),
+  market: nonemptyString.default(OVERLAY_DEFAULT_SCOPE),
   value: z.unknown(),
   expectedVersion: z.number().int().nullable().optional(),
   editorialNote: z.string().optional(),
@@ -141,11 +145,11 @@ export function createProductEditorialOverlayRoutes(
         c.req.valid("param").id,
         {
           preferredLocales: [query.locale],
+          audience: query.audience === OVERLAY_DEFAULT_SCOPE ? "customer" : query.audience,
           market: query.market,
           acceptMachineTranslated: false,
         },
         { registry: options.resolveRegistry(c) },
-        { audience: query.audience },
       )
       if (!data) {
         return c.json({ error: "not_found", detail: "Product not found" }, 404)
@@ -155,6 +159,7 @@ export function createProductEditorialOverlayRoutes(
     .openapi(writeEditorialOverlayRoute, async (c) => {
       const body = c.req.valid("json")
       try {
+        const userId = requireUserId(c)
         const row = await writeProductEditorialOverlay(
           c.var.db,
           c.req.valid("param").id,
@@ -170,7 +175,7 @@ export function createProductEditorialOverlayRoutes(
             value: body.value,
             expected_version: body.expectedVersion,
             editorial_note: body.editorialNote,
-            origin: { kind: "admin-ui", user_id: c.var.userId ?? "system" },
+            origin: { kind: "admin-ui", user_id: userId },
           },
           { registry: options.resolveRegistry(c) },
         )
@@ -186,12 +191,16 @@ export function createProductEditorialOverlayRoutes(
             409,
           )
         }
+        if (err instanceof ApiHttpError) {
+          throw err
+        }
         return c.json({ error: "invalid_editorial_overlay", detail: errorMessage(err) }, 400)
       }
     })
     .openapi(clearEditorialOverlayRoute, async (c) => {
       const query = c.req.valid("query")
       try {
+        requireUserId(c)
         const row = await clearProductEditorialOverlay(c.var.db, c.req.valid("param").id, {
           node_kind: query.nodeKind,
           node_key: query.nodeKey,
