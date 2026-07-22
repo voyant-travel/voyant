@@ -1,5 +1,15 @@
 # @voyant-travel/finance
 
+## 0.191.0
+
+### Minor Changes
+
+- f6aa3a1: Route Finance checkout collections through the deployment-selected `PaymentAdapter`. Providerless card-start requests now use that adapter, legacy provider hints remain compatible but cannot override deployment selection, and full generic billing metadata reaches hosted-checkout adapters.
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.191.0
+
 ## 0.190.0
 
 ### Patch Changes
