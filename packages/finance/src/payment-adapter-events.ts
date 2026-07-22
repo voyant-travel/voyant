@@ -9,7 +9,9 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   assertPaymentAdapterProcessorIdentityForLockedSession,
+  assertPaymentAdapterProcessorReferencesForLockedSession,
   canApplyPaymentAdapterStateTransition,
+  PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY,
 } from "./payment-adapter-session-guard.js"
 import { paymentSessions } from "./schema/payment-sessions.js"
 import { financePaymentSessionCompletionService } from "./service-payment-session-completion.js"
@@ -41,6 +43,7 @@ type PaymentAdapterStateUpdate = {
   redirectUrl?: string | null
   idempotencyKey?: string
   initiationClaimedAt?: Date
+  statusLeaseToken?: string
 }
 
 type PaymentAdapterProviderData = {
@@ -68,10 +71,21 @@ async function applyLockedNonCompletionStateUpdate(
       .limit(1)
     if (!session) return null
 
+    if (
+      update.source === "status" &&
+      session.metadata?.[PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY] !== update.statusLeaseToken
+    ) {
+      return null
+    }
+
     const adoptedIdentity = assertPaymentAdapterProcessorIdentityForLockedSession(
       session,
       update.processorIdentity,
     )
+    const pinnedReferences = assertPaymentAdapterProcessorReferencesForLockedSession(session, {
+      processorSessionId: update.processorSessionId,
+      processorPaymentId: update.processorPaymentId,
+    })
     const provider = adoptedIdentity.provider ?? session.provider ?? providerData.provider
     const providerConnectionId =
       adoptedIdentity.providerConnectionId ?? providerData.providerConnectionId
@@ -99,8 +113,8 @@ async function applyLockedNonCompletionStateUpdate(
         status: shouldTransition ? nextState : undefined,
         provider,
         providerConnectionId,
-        providerSessionId: providerData.providerSessionId,
-        providerPaymentId: providerData.providerPaymentId,
+        providerSessionId: pinnedReferences.providerSessionId,
+        providerPaymentId: pinnedReferences.providerPaymentId,
         providerPayload: mergeJsonbColumn(
           paymentSessions.providerPayload,
           providerData.providerPayload,
@@ -150,6 +164,7 @@ async function applyPaymentAdapterStateUpdate(
       runtime,
       {
         requireProcessorIdentityWhenConnectionPinned: true,
+        expectedPaymentAdapterStatusLeaseToken: update.statusLeaseToken,
         sessionUpdate: {
           redirectUrl: update.redirectUrl,
           idempotencyKey: update.idempotencyKey,
@@ -229,6 +244,7 @@ export async function applyPaymentAdapterStatusResult(
   db: PostgresJsDatabase,
   paymentSessionId: string,
   result: PaymentStatusResult,
+  statusLeaseToken: string,
   runtime: FinanceServiceRuntime = {},
   checkedAt = new Date(),
 ) {
@@ -243,6 +259,7 @@ export async function applyPaymentAdapterStatusResult(
       processorIdentity: result.processorIdentity,
       processorSessionId: result.processorSessionId,
       processorPaymentId: result.processorPaymentId,
+      statusLeaseToken,
     },
     {
       provider: result.processorIdentity?.providerId,
@@ -253,6 +270,7 @@ export async function applyPaymentAdapterStatusResult(
       metadata: {
         paymentAdapterStatusCheckedAt: occurredAt,
         paymentAdapterStatusRefreshAfter: checkedAt.getTime() + 30_000,
+        [PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY]: null,
       },
     },
     runtime,

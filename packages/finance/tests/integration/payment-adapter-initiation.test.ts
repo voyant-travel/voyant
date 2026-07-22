@@ -573,6 +573,105 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     })
   })
 
+  it("fences a late expired status result after a newer poll completes payment", async () => {
+    const { invoice, session } = await seedInvoiceSession(db, 7260, {
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_status_fence",
+    })
+    const eventBus = createEventBus()
+    const completedEvents: unknown[] = []
+    eventBus.subscribe("payment.completed", (event) => completedEvents.push(event))
+    let markFirstStarted: (() => void) | undefined
+    const firstStarted = new Promise<void>((resolve) => {
+      markFirstStarted = resolve
+    })
+    let releaseFirst: (() => void) | undefined
+    const firstReleased = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    const status = vi
+      .fn<PaymentAdapter["status"]>()
+      .mockImplementationOnce(async () => {
+        markFirstStarted?.()
+        await firstReleased
+        return {
+          nextState: "processing",
+          processorIdentity: {
+            providerId: "netopia",
+            connectionId: "payment_connection_status_fence",
+          },
+          processorSessionId: "processor_session_stale",
+          processorPaymentId: "processor_payment_stale",
+          raw: { providerStatus: "stale-processing" },
+        }
+      })
+      .mockResolvedValueOnce({
+        nextState: "paid",
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_status_fence",
+        },
+        processorSessionId: "processor_session_paid",
+        processorPaymentId: "processor_payment_paid",
+        raw: { providerStatus: "confirmed" },
+      })
+    const baseAdapter = stubAdapter("processing")
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: { ...baseAdapter.capabilities, status: true },
+      status,
+    }
+    const firstCheckedAt = new Date("2026-07-17T02:30:00.000Z")
+    const secondCheckedAt = new Date(firstCheckedAt.getTime() + 120_001)
+
+    await withConcurrentDbClients(async (firstDb, secondDb) => {
+      const firstRefresh = refreshPaymentAdapterStatus(adapter, firstDb, session.id, {
+        context: { env: {} },
+        runtime: { eventBus },
+        checkedAt: firstCheckedAt,
+      })
+      await firstStarted
+
+      await expect(
+        refreshPaymentAdapterStatus(adapter, secondDb, session.id, {
+          context: { env: {} },
+          runtime: { eventBus },
+          checkedAt: secondCheckedAt,
+        }),
+      ).resolves.toMatchObject({ status: "paid" })
+      const afterPaid = await refreshedSession(session.id)
+
+      releaseFirst?.()
+      await expect(firstRefresh).resolves.toBeNull()
+      const afterLateResult = await refreshedSession(session.id)
+
+      expect(afterLateResult).toMatchObject({
+        status: "paid",
+        providerSessionId: "processor_session_paid",
+        providerPaymentId: "processor_payment_paid",
+        providerPayload: { status: { providerStatus: "confirmed" } },
+        metadata: {
+          paymentAdapterStatusCheckedAt: secondCheckedAt.toISOString(),
+          paymentAdapterStatusRefreshAfter: secondCheckedAt.getTime() + 30_000,
+          paymentAdapterStatusLeaseToken: null,
+        },
+      })
+      expect(afterLateResult?.updatedAt.getTime()).toBe(afterPaid?.updatedAt.getTime())
+    })
+
+    expect(status).toHaveBeenCalledTimes(2)
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    await expect(refreshedInvoice(invoice.id)).resolves.toMatchObject({
+      status: "paid",
+      paidCents: 7260,
+      balanceDueCents: 0,
+    })
+    expect(completedEvents).toHaveLength(1)
+  })
+
   it("does not poll terminal payment sessions", async () => {
     const { session } = await seedInvoiceSession(db, 7275, {
       status: "failed",
@@ -619,6 +718,45 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       provider: "netopia",
       providerConnectionId: "payment_connection_pinned_status",
     })
+    await expect(rowCount(payments)).resolves.toBe(0)
+  })
+
+  it("rejects status results that replace pinned processor references", async () => {
+    const { session } = await seedInvoiceSession(db, 7310, {
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_pinned_references",
+      providerSessionId: "processor_session_canonical",
+      providerPaymentId: "processor_payment_canonical",
+    })
+    const baseAdapter = stubAdapter("processing")
+    const adapter: PaymentAdapter = {
+      ...baseAdapter,
+      capabilities: { ...baseAdapter.capabilities, status: true },
+      status: vi.fn(async () => ({
+        nextState: "paid" as const,
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_pinned_references",
+        },
+        processorSessionId: "processor_session_conflict",
+        processorPaymentId: "processor_payment_canonical",
+      })),
+    }
+
+    await expect(
+      refreshPaymentAdapterStatus(adapter, db, session.id, {
+        context: { env: {} },
+      }),
+    ).rejects.toMatchObject({ code: "payment_processor_reference_mismatch" })
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      providerSessionId: "processor_session_canonical",
+      providerPaymentId: "processor_payment_canonical",
+    })
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(0)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(0)
     await expect(rowCount(payments)).resolves.toBe(0)
   })
 
@@ -881,6 +1019,54 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
       failureCode: null,
       failureMessage: null,
     })
+  })
+
+  it("rejects an already-paid callback that replaces pinned processor references", async () => {
+    const { session } = await seedInvoiceSession(db, 13100, {
+      provider: "netopia",
+      providerConnectionId: "payment_connection_paid_reference",
+    })
+    const eventBus = createEventBus()
+    const completedEvents: unknown[] = []
+    eventBus.subscribe("payment.completed", (event) => completedEvents.push(event))
+    const canonicalCallback = {
+      eventId: "evt_paid_reference_canonical",
+      paymentSessionId: session.id,
+      nextState: "paid" as const,
+      occurredAt: "2026-07-17T00:00:00.000Z",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_paid_reference",
+      },
+      processorSessionId: "processor_session_canonical",
+      processorPaymentId: "processor_payment_canonical",
+      idempotencyKey: "callback-paid-reference-canonical",
+    }
+
+    await applyPaymentAdapterCallbackEvent(db, canonicalCallback, { eventBus })
+    await expect(
+      applyPaymentAdapterCallbackEvent(
+        db,
+        {
+          ...canonicalCallback,
+          eventId: "evt_paid_reference_conflict",
+          occurredAt: "2026-07-17T00:00:01.000Z",
+          processorPaymentId: "processor_payment_conflict",
+          idempotencyKey: "callback-paid-reference-conflict",
+        },
+        { eventBus },
+      ),
+    ).rejects.toMatchObject({ code: "payment_processor_reference_mismatch" })
+
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "paid",
+      providerSessionId: "processor_session_canonical",
+      providerPaymentId: "processor_payment_canonical",
+    })
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    expect(completedEvents).toHaveLength(1)
   })
 
   it("clears terminal failure timestamps when a later callback recovers the session to paid", async () => {

@@ -31,7 +31,11 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { applyPaymentAdapterCallbackEvent, financeService } from "@voyant-travel/finance"
+import {
+  applyPaymentAdapterCallbackEvent,
+  buildPaymentLinkUrl,
+  financeService,
+} from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import {
   openApiValidationHook,
@@ -137,7 +141,6 @@ export interface PaymentLinkStartCardPaymentInput {
   description?: string
   returnUrl?: string
   cancelUrl?: string
-  metadata?: Record<string, unknown>
   shipping?: Record<string, unknown>
 }
 
@@ -316,9 +319,6 @@ const startCardPaymentBodySchema = z
   .object({
     billing: cardPaymentBillingSchema.optional(),
     description: z.string().min(1).optional(),
-    returnUrl: z.string().min(1).optional(),
-    cancelUrl: z.string().min(1).optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
     shipping: z.record(z.string(), z.unknown()).optional(),
   })
   .strict()
@@ -507,7 +507,6 @@ const CARD_PAYMENT_CONTINUATION_STATUSES = new Set([
   "paid",
 ])
 const CARD_PAYMENT_RETRY_CREATES_SESSION_STATUSES = new Set(["failed", "cancelled", "expired"])
-const RESERVED_START_CARD_METADATA_KEYS = new Set(["callbackUrl", "notifyUrl"])
 
 function canStartCardPayment(status: string): boolean {
   return CARD_PAYMENT_STARTABLE_STATUSES.has(status)
@@ -530,16 +529,6 @@ function hasJsonRequestBody(c: Context): boolean {
 async function readStartCardPaymentBody(c: Context): Promise<StartCardPaymentBody> {
   if (!hasJsonRequestBody(c)) return {}
   return parseJsonBody(c, startCardPaymentBodySchema)
-}
-
-function sanitizePublicStartCardMetadata(
-  metadata: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  if (!metadata) return undefined
-  const sanitized = Object.fromEntries(
-    Object.entries(metadata).filter(([key]) => !RESERVED_START_CARD_METADATA_KEYS.has(key)),
-  )
-  return Object.keys(sanitized).length ? sanitized : undefined
 }
 
 function publicStartCardSession(session: {
@@ -650,6 +639,8 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         paymentMethod: original.paymentMethod ?? undefined,
         payerEmail: original.payerEmail ?? undefined,
         payerName: original.payerName ?? undefined,
+        returnUrl: original.returnUrl ?? undefined,
+        cancelUrl: original.cancelUrl ?? undefined,
         notes: original.notes ?? undefined,
       })
       if (!fresh) return c.json({ error: "Failed to create payment session" }, 500)
@@ -707,7 +698,11 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         )
       }
       const body = await readStartCardPaymentBody(c)
-      const metadata = sanitizePublicStartCardMetadata(body.metadata)
+      const paymentLinkUrl = buildPaymentLinkUrl(session.id, {
+        baseUrl: options.resolvePublicCheckoutBaseUrl(c) ?? new URL(c.req.url).origin,
+      })
+      const returnUrl = session.returnUrl ?? paymentLinkUrl
+      const cancelUrl = session.cancelUrl ?? paymentLinkUrl
       try {
         const started = await options.startCardPayment(c, {
           id: session.id,
@@ -717,9 +712,8 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
           redirectUrl: session.redirectUrl,
           billing: body.billing,
           description: body.description,
-          returnUrl: body.returnUrl,
-          cancelUrl: body.cancelUrl,
-          metadata,
+          returnUrl,
+          cancelUrl,
           shipping: body.shipping,
         })
         if (!started.configured) {
@@ -734,7 +728,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         const continuationUrl =
           started.redirectUrl ??
           (canUseCardContinuation(responseSession.status)
-            ? (body.returnUrl ?? responseSession.returnUrl ?? null)
+            ? (responseSession.returnUrl ?? returnUrl)
             : null)
         return c.json(
           {

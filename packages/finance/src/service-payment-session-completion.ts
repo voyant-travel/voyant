@@ -1,6 +1,8 @@
 import {
   assertPaymentAdapterProcessorIdentityForLockedSession,
+  assertPaymentAdapterProcessorReferencesForLockedSession,
   canApplyPaymentAdapterStateTransition,
+  PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY,
 } from "./payment-adapter-session-guard.js"
 import type {
   BookingPaymentSchedulePaidEvent,
@@ -44,6 +46,7 @@ function mergeJsonbColumn(
 
 export interface PaymentSessionCompletionOptions {
   requireProcessorIdentityWhenConnectionPinned?: boolean
+  expectedPaymentAdapterStatusLeaseToken?: string
   sessionUpdate?: {
     redirectUrl?: string | null
     idempotencyKey?: string
@@ -76,6 +79,20 @@ export const financePaymentSessionCompletionService = {
         }
       }
 
+      if (
+        options.expectedPaymentAdapterStatusLeaseToken !== undefined &&
+        session.metadata?.[PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY] !==
+          options.expectedPaymentAdapterStatusLeaseToken
+      ) {
+        return {
+          updated: null,
+          settlement: null,
+          recordedPayment: null,
+          bookingSchedulePaid: null,
+          shouldEmitPaymentCompleted: false,
+        }
+      }
+
       const lockedIdentity = options.requireProcessorIdentityWhenConnectionPinned
         ? assertPaymentAdapterProcessorIdentityForLockedSession(
             session,
@@ -93,6 +110,15 @@ export const financePaymentSessionCompletionService = {
         data.providerConnectionId ??
         session.providerConnectionId ??
         undefined
+      const pinnedReferences = options.requireProcessorIdentityWhenConnectionPinned
+        ? assertPaymentAdapterProcessorReferencesForLockedSession(session, {
+            processorSessionId: data.providerSessionId,
+            processorPaymentId: data.providerPaymentId,
+          })
+        : {
+            providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
+            providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+          }
 
       if (!canApplyPaymentAdapterStateTransition(session.status, data.status)) {
         const [updated] = await tx
@@ -100,8 +126,8 @@ export const financePaymentSessionCompletionService = {
           .set({
             provider: provider ?? undefined,
             providerConnectionId,
-            providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
-            providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+            providerSessionId: pinnedReferences.providerSessionId,
+            providerPaymentId: pinnedReferences.providerPaymentId,
             externalReference: data.externalReference ?? session.externalReference ?? undefined,
             providerPayload: mergeJsonbColumn(
               paymentSessions.providerPayload,
@@ -171,10 +197,7 @@ export const financePaymentSessionCompletionService = {
             amountCents: session.amountCents,
             provider,
             externalAuthorizationId:
-              data.externalAuthorizationId ??
-              data.providerPaymentId ??
-              session.providerPaymentId ??
-              null,
+              data.externalAuthorizationId ?? pinnedReferences.providerPaymentId ?? null,
             approvalCode: data.approvalCode ?? null,
             authorizedAt: toTimestamp(data.authorizedAt) ?? new Date(),
             expiresAt: toTimestamp(data.expiresAt),
@@ -213,8 +236,7 @@ export const financePaymentSessionCompletionService = {
             currency: session.currency,
             amountCents: session.amountCents,
             provider,
-            externalCaptureId:
-              data.externalCaptureId ?? data.providerPaymentId ?? session.providerPaymentId ?? null,
+            externalCaptureId: data.externalCaptureId ?? pinnedReferences.providerPaymentId ?? null,
             capturedAt: toTimestamp(data.capturedAt) ?? new Date(),
             settledAt: toTimestamp(data.settledAt),
             notes: data.notes ?? session.notes ?? null,
@@ -330,8 +352,8 @@ export const financePaymentSessionCompletionService = {
           paymentCaptureId: captureId,
           paymentId,
           invoiceId: invoiceForPayment?.id ?? session.invoiceId ?? undefined,
-          providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
-          providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+          providerSessionId: pinnedReferences.providerSessionId,
+          providerPaymentId: pinnedReferences.providerPaymentId,
           externalReference: data.externalReference ?? session.externalReference ?? undefined,
           providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
           metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),

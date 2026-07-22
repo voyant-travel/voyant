@@ -229,10 +229,9 @@ function createAdapterStartCardPayment(
       sessionId: session.id,
       billing,
       description: session.description ?? session.notes ?? "Payment",
-      returnUrl: session.returnUrl ?? session.redirectUrl ?? undefined,
+      returnUrl: session.returnUrl,
       cancelUrl: session.cancelUrl,
       shipping: session.shipping,
-      metadata: session.metadata,
     })
     return { configured: true, redirectUrl: result?.redirectUrl ?? null }
   }

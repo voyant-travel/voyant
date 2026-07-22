@@ -13,6 +13,8 @@ const CALLBACK_STATE_RANK: Record<PaymentSessionState, number> = {
   paid: 5,
 }
 
+export const PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY = "paymentAdapterStatusLeaseToken"
+
 export function canApplyPaymentAdapterStateTransition(
   currentState: PaymentSessionState,
   nextState: PaymentSessionState,
@@ -67,4 +69,37 @@ export function assertPaymentAdapterProcessorIdentityForLockedSession(
   }
 
   return { provider: providerId, providerConnectionId: connectionId }
+}
+
+export function assertPaymentAdapterProcessorReferencesForLockedSession(
+  session: PaymentSession,
+  references: {
+    processorSessionId?: string | null
+    processorPaymentId?: string | null
+  },
+) {
+  const pinReference = (
+    field: "providerSessionId" | "providerPaymentId",
+    incoming: string | null | undefined,
+  ) => {
+    const stored = session[field]
+    if (stored !== null && incoming != null && stored !== incoming) {
+      throw new PaymentValidationError(
+        "Payment adapter processor reference does not match the stored payment session reference",
+        {
+          paymentSessionId: session.id,
+          field,
+          expectedReference: stored,
+          receivedReference: incoming,
+        },
+        { status: 409, code: "payment_processor_reference_mismatch" },
+      )
+    }
+    return stored ?? incoming ?? undefined
+  }
+
+  return {
+    providerSessionId: pinReference("providerSessionId", references.processorSessionId),
+    providerPaymentId: pinReference("providerPaymentId", references.processorPaymentId),
+  }
 }

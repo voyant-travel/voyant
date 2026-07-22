@@ -3,6 +3,7 @@ import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { applyPaymentAdapterStatusResult } from "./payment-adapter-events.js"
+import { PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY } from "./payment-adapter-session-guard.js"
 import { paymentSessions } from "./schema/payment-sessions.js"
 import type { FinanceServiceRuntime } from "./service-shared.js"
 
@@ -34,13 +35,14 @@ export async function refreshPaymentAdapterStatus(
   if (!adapter.capabilities.status || typeof adapter.status !== "function") return null
 
   const checkedAt = execution.checkedAt ?? new Date()
+  const statusLeaseToken = crypto.randomUUID()
   const databaseNowEpochMs = execution.checkedAt
     ? sql`${execution.checkedAt.getTime()}::numeric`
     : sql`floor(extract(epoch from clock_timestamp()) * 1000)`
   const [session] = await db
     .update(paymentSessions)
     .set({
-      metadata: sql`coalesce(${paymentSessions.metadata}, '{}'::jsonb) || jsonb_build_object(${PAYMENT_ADAPTER_STATUS_REFRESH_AFTER_KEY}::text, ${databaseNowEpochMs} + ${PAYMENT_ADAPTER_STATUS_REFRESH_LEASE_MS}::numeric)`,
+      metadata: sql`coalesce(${paymentSessions.metadata}, '{}'::jsonb) || jsonb_build_object(${PAYMENT_ADAPTER_STATUS_REFRESH_AFTER_KEY}::text, ${databaseNowEpochMs} + ${PAYMENT_ADAPTER_STATUS_REFRESH_LEASE_MS}::numeric, ${PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY}::text, ${statusLeaseToken}::text)`,
       updatedAt: checkedAt,
     })
     .where(
@@ -75,5 +77,12 @@ export async function refreshPaymentAdapterStatus(
   })
   const completedAt = execution.checkedAt ?? new Date()
 
-  return applyPaymentAdapterStatusResult(db, session.id, result, execution.runtime, completedAt)
+  return applyPaymentAdapterStatusResult(
+    db,
+    session.id,
+    result,
+    statusLeaseToken,
+    execution.runtime,
+    completedAt,
+  )
 }

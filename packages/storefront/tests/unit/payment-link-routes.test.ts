@@ -367,6 +367,8 @@ describe("createPaymentLinkRoutes", () => {
           paymentMethod: "credit_card",
           payerEmail: "payer@example.com",
           payerName: "Payer",
+          returnUrl: "https://checkout.example.com/stored-return",
+          cancelUrl: "https://checkout.example.com/stored-cancel",
           notes: "Deposit",
         },
       ],
@@ -386,6 +388,10 @@ describe("createPaymentLinkRoutes", () => {
     expect(input).not.toHaveProperty("providerSessionId")
     expect(input).not.toHaveProperty("providerPaymentId")
     expect(input).not.toHaveProperty("idempotencyKey")
+    expect(input).toMatchObject({
+      returnUrl: "https://checkout.example.com/stored-return",
+      cancelUrl: "https://checkout.example.com/stored-cancel",
+    })
   })
 
   it("start-card reuses an active session redirect without invoking the provider", async () => {
@@ -469,7 +475,7 @@ describe("createPaymentLinkRoutes", () => {
     expect(startCardPayment).not.toHaveBeenCalled()
   })
 
-  it("start-card forwards neutral body fields to the selected starter", async () => {
+  it("start-card forwards safe body fields with server-derived processor URLs", async () => {
     const db = makeDb([
       [
         {
@@ -489,7 +495,7 @@ describe("createPaymentLinkRoutes", () => {
           id: "ps_1",
           status: "requires_redirect",
           redirectUrl: "https://pay.example.com/fresh",
-          returnUrl: "https://old.example.com/ignored",
+          returnUrl: null,
           amountCents: 12000,
           currency: "RON",
         },
@@ -520,13 +526,6 @@ describe("createPaymentLinkRoutes", () => {
           details: "Line 1",
         },
         description: "Body description",
-        returnUrl: "https://checkout.example.com/continue",
-        cancelUrl: "https://checkout.example.com/cancel",
-        metadata: {
-          source: "temporary-shim",
-          callbackUrl: "https://attacker.example.com/callback",
-          notifyUrl: "https://attacker.example.com/notify",
-        },
         shipping: { method: "courier" },
       }),
     })
@@ -560,12 +559,97 @@ describe("createPaymentLinkRoutes", () => {
           details: "Line 1",
         },
         description: "Body description",
-        returnUrl: "https://checkout.example.com/continue",
-        cancelUrl: "https://checkout.example.com/cancel",
-        metadata: { source: "temporary-shim" },
+        returnUrl: "https://checkout.example.com/pay/ps_1",
+        cancelUrl: "https://checkout.example.com/pay/ps_1",
         shipping: { method: "courier" },
       }),
     )
+    expect(startCardPayment.mock.calls[0]?.[1]).not.toHaveProperty("metadata")
+  })
+
+  it("start-card rejects anonymous processor URLs and metadata", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_1",
+          status: "pending",
+          redirectUrl: null,
+          returnUrl: null,
+          cancelUrl: null,
+          amountCents: 12000,
+          currency: "RON",
+          payerName: null,
+          payerEmail: null,
+          notes: null,
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(async () => ({ configured: false }) as const)
+    const app = mountApp(stubOptions({ startCardPayment }), db)
+
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        returnUrl: "https://attacker.example.com/return",
+        cancelUrl: "https://attacker.example.com/cancel",
+        metadata: { notifyUrl: "https://attacker.example.com/notify" },
+      }),
+    })
+
+    expect(res.status).toBe(400)
+    expect(startCardPayment).not.toHaveBeenCalled()
+  })
+
+  it("start-card falls back to the request origin for its canonical landing URL", async () => {
+    const db = makeDb([
+      [
+        {
+          id: "ps_origin",
+          status: "pending",
+          redirectUrl: null,
+          returnUrl: null,
+          cancelUrl: null,
+          amountCents: 12000,
+          currency: "RON",
+          payerName: null,
+          payerEmail: null,
+          notes: null,
+        },
+      ],
+      [
+        {
+          id: "ps_origin",
+          status: "processing",
+          redirectUrl: null,
+          returnUrl: null,
+          amountCents: 12000,
+          currency: "RON",
+        },
+      ],
+    ])
+    const startCardPayment = vi.fn(async () => ({ configured: true, redirectUrl: null }) as const)
+    const app = mountApp(
+      stubOptions({ resolvePublicCheckoutBaseUrl: () => null, startCardPayment }),
+      db,
+    )
+
+    const res = await app.request(
+      "https://operator.example.com/v1/public/payment-link/ps_origin/start-card",
+      { method: "POST" },
+    )
+
+    expect(res.status).toBe(200)
+    expect(startCardPayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        returnUrl: "https://operator.example.com/pay/ps_origin",
+        cancelUrl: "https://operator.example.com/pay/ps_origin",
+      }),
+    )
+    expect(await res.json()).toMatchObject({
+      data: { redirectUrl: "https://operator.example.com/pay/ps_origin" },
+    })
   })
 
   it("start-card accepts configured non-redirect processor outcomes", async () => {
@@ -621,7 +705,7 @@ describe("createPaymentLinkRoutes", () => {
     expect(startCardPayment).toHaveBeenCalledOnce()
   })
 
-  it("start-card prefers the explicit body returnUrl for immediate authorized outcomes", async () => {
+  it("start-card preserves persisted processor URLs for immediate authorized outcomes", async () => {
     const db = makeDb([
       [
         {
@@ -629,6 +713,7 @@ describe("createPaymentLinkRoutes", () => {
           status: "pending",
           redirectUrl: null,
           returnUrl: "https://checkout.example.com/stored-return",
+          cancelUrl: "https://checkout.example.com/stored-cancel",
           amountCents: 12000,
           currency: "RON",
           payerName: "Ada Lovelace",
@@ -656,16 +741,12 @@ describe("createPaymentLinkRoutes", () => {
     )
     const app = mountApp(stubOptions({ startCardPayment }), db)
 
-    const res = await app.request("/v1/public/payment-link/ps_1/start-card", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ returnUrl: "https://checkout.example.com/body-return" }),
-    })
+    const res = await app.request("/v1/public/payment-link/ps_1/start-card", { method: "POST" })
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({
       data: {
-        redirectUrl: "https://checkout.example.com/body-return",
+        redirectUrl: "https://checkout.example.com/stored-return",
         session: {
           id: "ps_1",
           status: "authorized",
@@ -675,7 +756,13 @@ describe("createPaymentLinkRoutes", () => {
         },
       },
     })
-    expect(startCardPayment).toHaveBeenCalledOnce()
+    expect(startCardPayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        returnUrl: "https://checkout.example.com/stored-return",
+        cancelUrl: "https://checkout.example.com/stored-cancel",
+      }),
+    )
   })
 
   it("start-card rejects provider-specific body fields", async () => {
