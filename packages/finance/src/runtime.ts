@@ -63,6 +63,9 @@ export function createFinanceRuntime(
     resolveSelectedPaymentStarter: selectedPaymentAdapter
       ? (bindings) => createSelectedPaymentAdapterStarter(host, selectedPaymentAdapter, bindings)
       : undefined,
+    resolveSelectedPaymentAdapter: selectedPaymentAdapter
+      ? () => selectedPaymentAdapter
+      : undefined,
     resolveBankTransferDetails: (bindings) => resolveBankTransferDetails(primitives.env(bindings)),
     resolvePublicCheckoutBaseUrl: (bindings) =>
       resolvePublicCheckoutBaseUrl(primitives.env(bindings)),

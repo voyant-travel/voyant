@@ -14,6 +14,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { createPaymentAdapterCardPaymentStarter } from "../../src/card-payment.js"
 import { applyPaymentAdapterCallbackEvent } from "../../src/payment-adapter-events.js"
+import { refreshPaymentSessionFromPaymentAdapterStatus } from "../../src/payment-adapter-status.js"
 import {
   invoices,
   paymentAuthorizations,
@@ -482,6 +483,149 @@ describe.skipIf(!DB_AVAILABLE)("payment adapter initiation", () => {
     })
   })
 
+  it("polls adapter status with stored identity and does not downgrade paid sessions", async () => {
+    const { invoice, session } = await seedInvoiceSession(db, 15000, {
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_status",
+      providerSessionId: "processor_session_stored",
+      providerPaymentId: "processor_payment_stored",
+    })
+    const adapter = stubStatusAdapter("paid", {
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_status",
+      },
+      processorSessionId: "processor_session_refreshed",
+      processorPaymentId: "processor_payment_refreshed",
+      raw: { providerStatus: "settled" },
+    })
+
+    await refreshPaymentSessionFromPaymentAdapterStatus(db, session.id, {
+      adapter,
+      context: { env: { PAYMENT_MODE: "test" } },
+      now: () => new Date("2026-07-18T00:00:00.000Z"),
+    })
+
+    expect(adapter.status).toHaveBeenCalledWith(
+      { env: { PAYMENT_MODE: "test" } },
+      {
+        paymentSessionId: session.id,
+        processorSessionId: "processor_session_stored",
+        processorPaymentId: "processor_payment_stored",
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_status",
+        },
+      },
+    )
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    await expect(refreshedInvoice(invoice.id)).resolves.toMatchObject({
+      status: "paid",
+      paidCents: 15000,
+      balanceDueCents: 0,
+    })
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "paid",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_status",
+      providerSessionId: "processor_session_refreshed",
+      providerPaymentId: "processor_payment_refreshed",
+      providerPayload: { status: { providerStatus: "settled" } },
+      metadata: { paymentAdapterStatusCheckedAt: "2026-07-18T00:00:00.000Z" },
+    })
+
+    vi.mocked(adapter.status!).mockResolvedValueOnce({
+      nextState: "failed",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_status",
+      },
+      raw: { providerStatus: "failed_after_settlement" },
+    })
+
+    await refreshPaymentSessionFromPaymentAdapterStatus(db, session.id, {
+      adapter,
+      context: { env: {} },
+      now: () => new Date("2026-07-18T00:00:01.000Z"),
+    })
+
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "paid",
+      failureCode: null,
+      failureMessage: null,
+      providerPayload: { status: { providerStatus: "failed_after_settlement" } },
+    })
+  })
+
+  it("lets a late paid status recover a failed adapter session", async () => {
+    const { invoice, session } = await seedInvoiceSession(db, 16000, {
+      status: "failed",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_recovery",
+      providerSessionId: "processor_session_recovery",
+      providerPaymentId: "processor_payment_recovery",
+      failureCode: "processor_failed",
+      failureMessage: "Processor previously reported failure",
+    })
+    const adapter = stubStatusAdapter("paid", {
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_recovery",
+      },
+      raw: { providerStatus: "settled_late" },
+    })
+
+    await refreshPaymentSessionFromPaymentAdapterStatus(db, session.id, {
+      adapter,
+      context: { env: {} },
+    })
+
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(1)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(1)
+    await expect(rowCount(payments)).resolves.toBe(1)
+    await expect(refreshedInvoice(invoice.id)).resolves.toMatchObject({
+      status: "paid",
+      paidCents: 16000,
+      balanceDueCents: 0,
+    })
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "paid",
+      failureCode: null,
+      failureMessage: null,
+    })
+  })
+
+  it("fails closed when status omits identity for a pinned processor connection", async () => {
+    const { session } = await seedInvoiceSession(db, 17000, {
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_required",
+    })
+    const adapter = stubStatusAdapter("paid")
+
+    await expect(
+      refreshPaymentSessionFromPaymentAdapterStatus(db, session.id, {
+        adapter,
+        context: { env: {} },
+      }),
+    ).rejects.toThrow(/processor identity is required/i)
+
+    await expect(rowCount(paymentAuthorizations)).resolves.toBe(0)
+    await expect(rowCount(paymentCaptures)).resolves.toBe(0)
+    await expect(rowCount(payments)).resolves.toBe(0)
+    await expect(refreshedSession(session.id)).resolves.toMatchObject({
+      status: "processing",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_required",
+    })
+  })
+
   it("routes a synchronously authorized initiation through completion once", async () => {
     const { session } = await seedInvoiceSession(db, 8000)
     const adapter = stubAdapter("authorized")
@@ -633,6 +777,24 @@ function stubAdapter(
     health: vi.fn(async () => ({
       status: "ok",
       checkedAt: "2026-07-17T00:00:00.000Z",
+    })),
+  }
+}
+
+function stubStatusAdapter(
+  nextState: PaymentSessionState,
+  options: Partial<Awaited<ReturnType<NonNullable<PaymentAdapter["status"]>>>> = {},
+): PaymentAdapter {
+  const adapter = stubAdapter("processing")
+  return {
+    ...adapter,
+    capabilities: {
+      ...adapter.capabilities,
+      status: true,
+    },
+    status: vi.fn(async () => ({
+      nextState,
+      ...options,
     })),
   }
 }

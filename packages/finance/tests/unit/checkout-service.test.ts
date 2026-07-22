@@ -174,6 +174,45 @@ describe("finance checkout service", () => {
     expect(legacyPaymentStarter).not.toHaveBeenCalled()
   })
 
+  it("rejects provider-neutral card start before preview can create a default plan", async () => {
+    const insertedInvoices: Array<Record<string, unknown>> = []
+    const db = createCheckoutDb({ insertedInvoices })
+    const applyDefaultBookingPaymentPlan = vi.spyOn(
+      financeService,
+      "applyDefaultBookingPaymentPlan",
+    )
+    const createPaymentSessionFromBookingSchedule = vi.spyOn(
+      financeService,
+      "createPaymentSessionFromBookingSchedule",
+    )
+
+    await expect(
+      initiateCheckoutCollection(
+        db as never,
+        "booking_123",
+        {
+          method: "card",
+          stage: "initial",
+          ensureDefaultPaymentPlan: true,
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        },
+        {},
+        {},
+      ),
+    ).rejects.toThrow("No payment adapter is selected for card collection")
+
+    expect(applyDefaultBookingPaymentPlan).not.toHaveBeenCalled()
+    expect(createPaymentSessionFromBookingSchedule).not.toHaveBeenCalled()
+    expect(insertedInvoices).toHaveLength(0)
+  })
+
   it("allows provider-qualified card starts to use legacy keyed starters", async () => {
     const db = createCheckoutDb({ insertedInvoices: [] })
     const paymentSession = {

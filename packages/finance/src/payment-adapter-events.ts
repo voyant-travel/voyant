@@ -23,9 +23,30 @@ function mergeJsonbColumn(
   return sql`coalesce(${column}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`
 }
 
-async function applyLockedNonCompletionCallbackEvent(
+function safeJsonValue(value: unknown): unknown {
+  if (value === undefined) return undefined
+  try {
+    const serialized = JSON.stringify(value)
+    return serialized === undefined ? undefined : JSON.parse(serialized)
+  } catch {
+    return { unserializable: true }
+  }
+}
+
+export interface PaymentAdapterReportedState {
+  paymentSessionId: string
+  nextState: PaymentSessionState
+  occurredAt: string
+  processorIdentity?: PaymentCallbackEvent["processorIdentity"]
+  processorSessionId?: string | null
+  processorPaymentId?: string | null
+  providerPayload?: Record<string, unknown>
+  metadata: Record<string, unknown>
+}
+
+async function applyLockedNonCompletionAdapterState(
   db: PostgresJsDatabase,
-  event: PaymentCallbackEvent,
+  event: PaymentAdapterReportedState,
   providerData: {
     provider: string | undefined
     providerConnectionId: string | undefined
@@ -101,13 +122,37 @@ export async function applyPaymentAdapterCallbackEvent(
   event: PaymentCallbackEvent,
   runtime: FinanceServiceRuntime = {},
 ) {
+  return applyPaymentAdapterReportedState(
+    db,
+    {
+      paymentSessionId: event.paymentSessionId,
+      nextState: event.nextState as PaymentSessionState,
+      occurredAt: event.occurredAt,
+      processorIdentity: event.processorIdentity,
+      processorSessionId: event.processorSessionId,
+      processorPaymentId: event.processorPaymentId,
+      providerPayload: event.raw === undefined ? undefined : { callback: safeJsonValue(event.raw) },
+      metadata: {
+        paymentAdapterEventId: event.eventId,
+        paymentAdapterOccurredAt: event.occurredAt,
+      },
+    },
+    runtime,
+  )
+}
+
+export async function applyPaymentAdapterReportedState(
+  db: PostgresJsDatabase,
+  event: PaymentAdapterReportedState,
+  runtime: FinanceServiceRuntime = {},
+) {
   const providerData = {
     provider: event.processorIdentity?.providerId,
     providerConnectionId: event.processorIdentity?.connectionId,
     providerSessionId: event.processorSessionId ?? undefined,
     providerPaymentId: event.processorPaymentId ?? undefined,
-    providerPayload: event.raw === undefined ? undefined : { callback: event.raw },
-    metadata: { paymentAdapterEventId: event.eventId, paymentAdapterOccurredAt: event.occurredAt },
+    providerPayload: event.providerPayload,
+    metadata: event.metadata,
   }
 
   if (event.nextState === "paid" || event.nextState === "authorized") {
@@ -124,5 +169,9 @@ export async function applyPaymentAdapterCallbackEvent(
     )
   }
 
-  return applyLockedNonCompletionCallbackEvent(db, event, providerData)
+  return applyLockedNonCompletionAdapterState(db, event, providerData)
+}
+
+export function paymentAdapterRawPayload(value: unknown) {
+  return safeJsonValue(value)
 }

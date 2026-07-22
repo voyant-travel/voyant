@@ -4,8 +4,10 @@ import {
   requireCheckoutCapability,
 } from "@voyant-travel/bookings/checkout-capability"
 import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
+import type { PaymentAdapter } from "@voyant-travel/payments"
 import type { Context, MiddlewareHandler } from "hono"
 
+import { refreshPaymentSessionFromPaymentAdapterStatus } from "./payment-adapter-status.js"
 import { createPublicAccountantRoutes } from "./routes-public-accountant.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { publicFinanceService } from "./service-public.js"
@@ -27,6 +29,7 @@ export interface PublicFinanceRouteOptions {
     bindings: unknown,
     storageKey: string,
   ) => Promise<string | null> | string | null
+  resolveSelectedPaymentAdapter?: (bindings: Record<string, unknown>) => PaymentAdapter | null
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -392,10 +395,21 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
       // to share when issuing the link). Trip-issued sessions already
       // worked this way (no bookingId attached → no check); admin-
       // initiated booking sessions need the same access.
-      const session = await publicFinanceService.getPaymentSession(
-        c.get("db"),
-        c.req.valid("param").sessionId,
-      )
+      const sessionId = c.req.valid("param").sessionId
+      try {
+        await refreshPaymentSessionFromPaymentAdapterStatus(c.get("db"), sessionId, {
+          adapter: options.resolveSelectedPaymentAdapter?.(c.env as Record<string, unknown>),
+          context: { env: getRuntimeEnv(c) },
+          runtime: {
+            eventBus: c.get("eventBus" as never),
+          },
+        })
+      } catch {
+        // Public reads must not leak processor availability, transport, or
+        // identity errors. A failed poll leaves the stored session untouched.
+      }
+
+      const session = await publicFinanceService.getPaymentSession(c.get("db"), sessionId)
 
       return session ? c.json({ data: session }, 200) : notFound(c, "Payment session not found")
     })

@@ -2,11 +2,12 @@
 import { issueCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
 import { bookings } from "@voyant-travel/bookings/schema"
 import { handleApiError } from "@voyant-travel/hono"
+import { PAYMENT_ADAPTER_CONTRACT_VERSION, type PaymentAdapter } from "@voyant-travel/payments"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { publicFinanceRoutes } from "../../src/routes-public.js"
+import { createPublicFinanceRoutes, publicFinanceRoutes } from "../../src/routes-public.js"
 import {
   bookingGuarantees,
   bookingPaymentSchedules,
@@ -699,6 +700,86 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(sessionRow?.bookingId).toBe(booking.id)
   })
 
+  it("refreshes a public payment-session read through the selected adapter status path", async () => {
+    const booking = await seedBooking()
+    const invoice = await seedInvoice(booking.id, {
+      totalCents: 24000,
+      paidCents: 0,
+      balanceDueCents: 24000,
+    })
+    const [session] = await db
+      .insert(paymentSessions)
+      .values({
+        targetType: "invoice",
+        targetId: invoice.id,
+        bookingId: booking.id,
+        invoiceId: invoice.id,
+        status: "processing",
+        provider: "netopia",
+        providerConnectionId: "payment_connection_public",
+        providerSessionId: "provider_session_public",
+        providerPaymentId: "provider_payment_public",
+        currency: "USD",
+        amountCents: 24000,
+        paymentMethod: "credit_card",
+      })
+      .returning()
+    const adapter = stubStatusAdapter({
+      nextState: "paid",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_public",
+      },
+      processorPaymentId: "provider_payment_paid",
+      raw: { status: "paid" },
+    })
+    const pollingApp = new Hono()
+    pollingApp.onError(handleApiError)
+    pollingApp.use("*", async (c, next) => {
+      c.set("db" as never, db)
+      await next()
+    })
+    pollingApp.route(
+      "/",
+      createPublicFinanceRoutes({
+        resolveSelectedPaymentAdapter: () => adapter,
+      }),
+    )
+
+    const res = await pollingApp.request(`/payment-sessions/${session.id}`)
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data).toMatchObject({
+      id: session.id,
+      status: "paid",
+      provider: "netopia",
+      providerConnectionId: "payment_connection_public",
+      providerPaymentId: "provider_payment_paid",
+    })
+    expect(adapter.status).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        paymentSessionId: session.id,
+        processorSessionId: "provider_session_public",
+        processorPaymentId: "provider_payment_public",
+        processorIdentity: {
+          providerId: "netopia",
+          connectionId: "payment_connection_public",
+        },
+      }),
+    )
+    const [stored] = await db
+      .select()
+      .from(paymentSessions)
+      .where(eq(paymentSessions.id, session.id))
+    expect(stored).toMatchObject({
+      status: "paid",
+      providerPaymentId: "provider_payment_paid",
+      providerPayload: { status: { status: "paid" } },
+    })
+  })
+
   it("starts a public payment session from an invoice balance", async () => {
     const booking = await seedBooking()
     const invoice = await seedInvoice(booking.id, {
@@ -811,3 +892,37 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.reason).toBe("booking_mismatch")
   })
 })
+
+function stubStatusAdapter(
+  result: Awaited<ReturnType<NonNullable<PaymentAdapter["status"]>>>,
+): PaymentAdapter {
+  return {
+    id: "selected-test-adapter",
+    label: "Selected Test Adapter",
+    contractVersion: PAYMENT_ADAPTER_CONTRACT_VERSION,
+    mode: "test",
+    capabilities: {
+      hostedCheckout: true,
+      redirectCheckout: true,
+      authorize: false,
+      capture: false,
+      void: false,
+      refund: false,
+      status: true,
+      callbackSignatureVerification: true,
+      idempotencyKeys: true,
+      retrySafeInitiation: true,
+    },
+    initiate: vi.fn(async (context, input) => ({
+      nextState: "processing",
+      idempotencyKey: input.idempotencyKey,
+      raw: { envKeys: Object.keys(context.env) },
+    })),
+    verifyCallback: vi.fn(async () => ({ verified: false, reason: "malformed" })),
+    health: vi.fn(async () => ({
+      status: "ok",
+      checkedAt: "2026-07-18T00:00:00.000Z",
+    })),
+    status: vi.fn(async () => result),
+  }
+}
