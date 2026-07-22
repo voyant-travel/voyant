@@ -53,7 +53,6 @@ describe("notifications deployment manifest", () => {
               economical: { cron: "0 */6 * * *", overlap: "skip" },
             },
           },
-          wakeup: true,
           runtime: {
             entry: "@voyant-travel/notifications/reminder-job",
             export: "runDueNotificationRemindersJob",

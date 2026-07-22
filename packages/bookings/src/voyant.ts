@@ -356,7 +356,6 @@ export const bookingsVoyantModule = defineModule({
           economical: { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
-      wakeup: true,
       runtime: {
         entry: "@voyant-travel/bookings/stale-holds-job",
         export: "runBookingsExpireStaleHoldsJob",

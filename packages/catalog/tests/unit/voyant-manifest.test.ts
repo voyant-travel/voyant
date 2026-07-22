@@ -123,7 +123,6 @@ describe("catalog deployment manifest", () => {
             economical: { cron: "5 */6 * * *", overlap: "skip" },
           },
         },
-        wakeup: true,
         runtime: {
           entry: "@voyant-travel/catalog/draft-reaper-job",
           export: "runCatalogDraftReaperJob",

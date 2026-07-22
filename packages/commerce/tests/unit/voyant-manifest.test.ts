@@ -156,7 +156,6 @@ describe("commerce deployment manifest", () => {
               economical: { every: "15m", overlap: "skip" },
             },
           },
-          wakeup: true,
           runtime: {
             entry: "@voyant-travel/commerce/promotion-reindex-job",
             export: "runPromotionReindexJob",
