@@ -1,4 +1,3 @@
-import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { Visibility } from "@voyant-travel/catalog/contract"
 import {
   OVERLAY_DEFAULT_SCOPE,
@@ -21,18 +20,25 @@ import {
   mergeOverlaysIntoProductContent,
   normalizeProductContentOverlay,
   type ProductContent,
-  productContentFieldToPointer,
   validateProductContent,
 } from "./content-shape.js"
+import {
+  DAY_FIELDS,
+  normalizeFieldPath,
+  normalizeNonEmpty,
+  normalizeTarget,
+  type ProductEditorialOverlayTarget,
+  ROOT_FIELDS,
+} from "./editorial-overlay-fields.js"
 import { getProductContent, type ProductContentScope } from "./service-content.js"
+import type { ProductEditorialOverlayServiceOptions } from "./service-editorial-overlay-state.js"
 
-export type ProductEditorialNodeKind = typeof OVERLAY_ROOT_NODE_KIND | "itinerary-day"
-
-export interface ProductEditorialOverlayTarget {
-  node_kind?: ProductEditorialNodeKind
-  node_key?: string
-  field_path: string
-}
+export type {
+  ProductEditorialFieldKind,
+  ProductEditorialNodeKind,
+  ProductEditorialOverlayTarget,
+} from "./editorial-overlay-fields.js"
+export type { ProductEditorialOverlayServiceOptions } from "./service-editorial-overlay-state.js"
 
 export interface ProductEditorialOverlayScope {
   locale: string
@@ -51,79 +57,6 @@ export interface ProductEditorialOverlayWriteInput extends ProductEditorialOverl
 export interface ProductEditorialOverlayClearInput extends ProductEditorialOverlayTarget {
   scope: ProductEditorialOverlayScope
   expected_version?: number | null
-}
-
-export interface ProductEditorialOverlayServiceOptions {
-  registry: SourceAdapterRegistry
-}
-
-const ROOT_FIELDS = new Set([
-  "/product/name",
-  "/product/description",
-  "/product/inclusions_html",
-  "/product/exclusions_html",
-  "/product/terms_html",
-  "/product/highlights",
-  "/product/hero_image_url",
-  "/media",
-])
-
-const DAY_FIELDS = new Set(["title", "description", "hero_image_url", "services"])
-
-export async function readProductEditorialOverlayState(
-  db: AnyDrizzleDb,
-  productId: string,
-  scope: ProductContentScope,
-  options: ProductEditorialOverlayServiceOptions,
-) {
-  const source = await getProductContent(db, productId, scope, {
-    registry: options.registry,
-    applyOverlays: false,
-  })
-  if (!source) return null
-
-  const effective = await getProductContent(db, productId, scope, {
-    registry: options.registry,
-    applyOverlays: true,
-  })
-  if (!effective) return null
-
-  const overlays = await fetchOverlaysForEntity(db, "products", productId)
-  const active = overlays.filter((overlay) => overlayMatchesReadScope(overlay, scope))
-  const fields: Record<string, unknown> = {}
-  for (const overlay of active) {
-    const target = targetKey(overlay.node_kind, overlay.node_key, overlay.field_path)
-    const sourceValue = readProductTargetValue(source.content, overlay)
-    const effectiveValue = readProductTargetValue(effective.content, overlay)
-    fields[target] = {
-      state: overlayState(sourceValue, overlay.value, effectiveValue),
-      sourceValue,
-      overlayValue: overlay.value,
-      effectiveValue,
-      drifted: false,
-      version: overlay.version ?? null,
-      id: overlay.id ?? null,
-      nodeKind: overlay.node_kind ?? OVERLAY_ROOT_NODE_KIND,
-      nodeKey: overlay.node_key ?? OVERLAY_ROOT_NODE_KEY,
-      fieldPath: overlay.field_path,
-    }
-  }
-
-  return {
-    subject: { module: "products", id: productId },
-    locale: {
-      requestedLocale: scope.preferredLocales[0] ?? "en-GB",
-      sourceLocale: source.resolution.served_locale,
-      servedLocale: effective.resolution.served_locale,
-      matchKind: effectiveLocaleMatchKind(source, active),
-    },
-    source: source.content,
-    effective: effective.content,
-    fields,
-    overlays: active,
-    availableSourceLocales: [source.resolution.served_locale],
-    availableOverlayLocales: unique(overlays.map((overlay) => overlay.locale)),
-  }
 }
 
 export async function writeProductEditorialOverlay(
@@ -233,28 +166,14 @@ export async function listProductEditorialOverlayHistory(
   })
 }
 
+export {
+  type ProductEditorialFieldState,
+  type ProductEditorialFieldView,
+  type ProductEditorialNodeView,
+  readProductEditorialOverlayState,
+} from "./service-editorial-overlay-state.js"
+
 export { OverlayVersionConflictError }
-
-function normalizeTarget(
-  target: ProductEditorialOverlayTarget,
-): Required<ProductEditorialOverlayTarget> {
-  const nodeKind = target.node_kind ?? OVERLAY_ROOT_NODE_KIND
-  const nodeKey = normalizeNonEmpty(target.node_key ?? OVERLAY_ROOT_NODE_KEY, "node_key")
-  const fieldPath = normalizeNonEmpty(target.field_path, "field_path")
-  return {
-    node_kind: nodeKind,
-    node_key: nodeKey,
-    field_path: normalizeFieldPath({ ...target, field_path: fieldPath }),
-  }
-}
-
-function normalizeFieldPath(target: ProductEditorialOverlayTarget): string {
-  const nodeKind = target.node_kind ?? OVERLAY_ROOT_NODE_KIND
-  if (nodeKind === OVERLAY_ROOT_NODE_KIND) {
-    return productContentFieldToPointer(target.field_path) ?? target.field_path
-  }
-  return target.field_path.startsWith("/") ? target.field_path.slice(1) : target.field_path
-}
 
 function validateTarget(
   content: ProductContent,
@@ -340,20 +259,6 @@ function overlayFallbackChain(scope: ProductContentScope) {
   ]
 }
 
-function overlayMatchesReadScope(
-  overlay: { locale: string; audience: string; market: string },
-  scope: ProductContentScope,
-): boolean {
-  const requestedLocale = scope.preferredLocales[0] ?? "en-GB"
-  const requestedAudience = scope.audience
-  return (
-    (overlay.locale === requestedLocale || overlay.locale === OVERLAY_DEFAULT_SCOPE) &&
-    (overlay.audience === requestedAudience || overlay.audience === OVERLAY_DEFAULT_SCOPE) &&
-    (overlay.market === (scope.market ?? OVERLAY_DEFAULT_SCOPE) ||
-      overlay.market === OVERLAY_DEFAULT_SCOPE)
-  )
-}
-
 function normalizeOverlayScope(scope: ProductEditorialOverlayScope): ProductEditorialOverlayScope {
   const locale = normalizeNonEmpty(scope.locale, "locale")
   if (locale === OVERLAY_DEFAULT_SCOPE) {
@@ -369,83 +274,4 @@ function normalizeOverlayScope(scope: ProductEditorialOverlayScope): ProductEdit
 function normalizeAudience(audience: ProductEditorialOverlayScope["audience"]): Visibility {
   if (audience === OVERLAY_DEFAULT_SCOPE) return "customer"
   return audience
-}
-
-function normalizeNonEmpty(value: string | undefined, field: string): string {
-  const trimmed = value?.trim()
-  if (!trimmed) throw new Error(`${field} must be nonempty`)
-  return trimmed
-}
-
-function readProductTargetValue(
-  content: ProductContent,
-  overlay: { node_kind?: string; node_key?: string; field_path: string },
-): unknown {
-  const nodeKind = toProductEditorialNodeKind(overlay.node_kind)
-  if (!nodeKind) return undefined
-  const normalized = normalizeTarget({ ...overlay, node_kind: nodeKind })
-  if (normalized.node_kind === "itinerary-day") {
-    const day = content.days.find((candidate) => candidate.id === normalized.node_key)
-    return day ? (day as Record<string, unknown>)[normalized.field_path] : undefined
-  }
-  return readPointer(content, normalized.field_path)
-}
-
-function toProductEditorialNodeKind(value?: string): ProductEditorialNodeKind | undefined {
-  if (!value || value === OVERLAY_ROOT_NODE_KIND) return OVERLAY_ROOT_NODE_KIND
-  if (value === "itinerary-day") return value
-  return undefined
-}
-
-function readPointer(value: unknown, pointer: string): unknown {
-  if (!pointer.startsWith("/")) return undefined
-  let cursor = value
-  for (const raw of pointer.slice(1).split("/")) {
-    const segment = raw.replaceAll("~1", "/").replaceAll("~0", "~")
-    if (Array.isArray(cursor)) {
-      cursor = cursor[Number.parseInt(segment, 10)]
-    } else if (cursor && typeof cursor === "object") {
-      cursor = (cursor as Record<string, unknown>)[segment]
-    } else {
-      return undefined
-    }
-  }
-  return cursor
-}
-
-function overlayState(
-  sourceValue: unknown,
-  overlayValue: unknown,
-  effectiveValue: unknown,
-): string {
-  if (sourceValue === undefined && effectiveValue !== undefined) return "overlay-only"
-  if (overlayValue !== undefined) return "overlaid"
-  if (effectiveValue === undefined) return "missing"
-  return "inherited"
-}
-
-function effectiveLocaleMatchKind(
-  source: Awaited<ReturnType<typeof getProductContent>> & {},
-  overlays: ReadonlyArray<{ locale: string }>,
-): string {
-  if (!source) return "missing"
-  const requested = source.resolution.candidate.locale
-  const hasRequestedOverlay = overlays.some((overlay) => overlay.locale === requested)
-  if (hasRequestedOverlay && source.resolution.match_kind !== "exact") return "mixed"
-  if (hasRequestedOverlay) return "overlay-only"
-  if (source.resolution.match_kind === "exact") return "exact"
-  if (source.resolution.match_kind === "language_match") return "language-fallback"
-  return "source-fallback"
-}
-
-function targetKey(
-  nodeKind = OVERLAY_ROOT_NODE_KIND,
-  nodeKey = OVERLAY_ROOT_NODE_KEY,
-  path: string,
-) {
-  return `${nodeKind}:${nodeKey}:${path}`
-}
-
-function unique(values: string[]): string[] {
-  return [...new Set(values)].sort()
 }

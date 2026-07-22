@@ -3,6 +3,7 @@ import { Button } from "@voyant-travel/ui/components"
 import { useMemo } from "react"
 import { ProductsUiMessagesProvider } from "../../i18n/index.js"
 import { ProductOptionsSection } from "../product-options-section.js"
+import { ProductEditorialOverlaySection } from "./editorial-overlay/product-editorial-overlay-section.js"
 import {
   useProductDetailApi,
   useProductDetailHost,
@@ -157,6 +158,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           />
 
           <ProductDetailItinerarySection productId={id} />
+
+          <ProductEditorialOverlaySection productId={id} />
 
           <ProductsUiMessagesProvider locale={resolvedLocale}>
             <ProductOptionsSection
