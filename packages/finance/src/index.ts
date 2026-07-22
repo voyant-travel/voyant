@@ -296,8 +296,8 @@ export type {
   CardPaymentStartArgs,
   CardPaymentStarter,
   CardPaymentStartResult,
-  PaymentAdapterCardPaymentStarterOptions,
   PaymentAdapterCardPaymentExecution,
+  PaymentAdapterCardPaymentStarterOptions,
 } from "./card-payment.js"
 export {
   createPaymentAdapterCardPaymentStarter,
