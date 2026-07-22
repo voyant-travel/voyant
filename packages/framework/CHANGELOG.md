@@ -1,5 +1,11 @@
 # @voyant-travel/framework
 
+## 0.62.3
+
+### Patch Changes
+
+- 88a89bc: Accept empty streamed product-job requests while rejecting non-empty request bodies with bounded memory use.
+
 ## 0.62.2
 
 ### Patch Changes
