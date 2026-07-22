@@ -2,14 +2,9 @@ name: Build CI image
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - .depot/workflows/build-ci-image.yml
+
+# Rebuild deliberately when the manual Depot CI escape hatch needs a refreshed
+# toolchain or dependency snapshot.
 
 permissions:
   contents: read

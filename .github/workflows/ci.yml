@@ -1,7 +1,15 @@
-name: CI fallback
+name: CI
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
 
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
@@ -10,17 +18,18 @@ concurrency:
 permissions:
   contents: read
 
-# Manual fallback only. The native workflow in `.depot/workflows/ci.yml` owns
-# pull-request and push triggers so routine CI is never duplicated.
+# Standard GitHub-hosted runners are free and unlimited for this public
+# repository. Depot CI remains available as a manual, job-selectable escape
+# hatch in `.depot/workflows/ci.yml`.
 
 jobs:
   quality-graph:
     name: quality-graph
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -39,7 +48,7 @@ jobs:
       - name: Typecheck changed graph
         shell: bash
         run: |
-          args=(--concurrency=4)
+          args=(--concurrency=2)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             args+=(--affected)
           fi
@@ -56,15 +65,15 @@ jobs:
           name: turbo-runs-quality-${{ github.run_attempt }}
           path: .turbo/runs/*.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
   tests:
     name: tests
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -97,11 +106,11 @@ jobs:
           name: turbo-runs-tests-${{ github.run_attempt }}
           path: .turbo/runs/*.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
   architecture:
     name: architecture
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       HUSKY: 0
@@ -130,7 +139,7 @@ jobs:
       - quality-graph
       - tests
       - architecture
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Enforce all quality lanes
@@ -142,11 +151,11 @@ jobs:
 
   build-graph:
     name: build-graph
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -160,7 +169,7 @@ jobs:
       - uses: ./.github/actions/setup-workspace
 
       - name: Build
-        run: pnpm turbo build --concurrency=4 --summarize --output-logs=new-only
+        run: pnpm turbo build --concurrency=2 --summarize --output-logs=new-only
 
       - name: Record Turbo metrics
         if: always()
@@ -173,16 +182,16 @@ jobs:
           name: turbo-runs-build-graph-${{ github.run_attempt }}
           path: .turbo/runs/*.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
   packaged-acceptance:
     name: packaged-acceptance
     needs: build-graph
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=12288
       TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
       TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -209,19 +218,11 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
-      - name: Restore build while preparing acceptance browser
-        shell: bash
-        run: |
-          set +e
-          pnpm exec playwright install --with-deps chromium &
-          browser_pid=$!
-          pnpm turbo build --concurrency=4 --output-logs=new-only
-          build_status=$?
-          wait "$browser_pid"
-          browser_status=$?
-          if (( build_status != 0 || browser_status != 0 )); then
-            exit 1
-          fi
+      - name: Install acceptance browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Restore build graph
+        run: pnpm turbo build --concurrency=2 --output-logs=new-only
 
       - name: Packaged starter production and development acceptance
         run: |
@@ -231,11 +232,11 @@ jobs:
   package-artifacts:
     name: package-artifacts
     needs: build-graph
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -248,21 +249,15 @@ jobs:
       - uses: ./.github/actions/setup-workspace
 
       - name: Restore build graph
-        run: pnpm turbo build --concurrency=4 --output-logs=new-only
+        run: pnpm turbo build --concurrency=2 --output-logs=new-only
 
-      - name: Verify built artifacts in parallel
-        shell: bash
-        run: |
-          set +e
-          pnpm verify:package-exports &
-          exports_pid=$!
-          VOYANT_PACK_REUSE_DIST=1 pnpm verify:publish-tarballs &
-          tarballs_pid=$!
+      - name: Verify package exports
+        run: pnpm verify:package-exports
 
-          status=0
-          wait "$exports_pid" || status=1
-          wait "$tarballs_pid" || status=1
-          exit "$status"
+      - name: Verify publish tarballs
+        env:
+          VOYANT_PACK_REUSE_DIST: "1"
+        run: pnpm verify:publish-tarballs
 
   build:
     name: build
@@ -271,7 +266,7 @@ jobs:
       - build-graph
       - packaged-acceptance
       - package-artifacts
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Enforce build and package lanes
@@ -289,11 +284,11 @@ jobs:
       matrix:
         include:
           - lane: replay
-            runner: depot-ubuntu-24.04-4
+            runner: ubuntu-24.04
           - lane: union
-            runner: depot-ubuntu-24.04-4
+            runner: ubuntu-24.04
           - lane: integration
-            runner: depot-ubuntu-24.04-8
+            runner: ubuntu-24.04
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     env:
@@ -353,7 +348,7 @@ jobs:
     name: db-checks
     if: always()
     needs: db-lanes
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Enforce all database lanes
@@ -361,7 +356,7 @@ jobs:
 
   node-smoke:
     name: node-smoke
-    runs-on: depot-ubuntu-24.04-4
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       HUSKY: 0
