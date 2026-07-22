@@ -223,6 +223,15 @@ uses bounded retries with backoff, and exposes only minimal health state. Fixed
 HTTP wakeup and schedule invocation is origin-trust authenticated and accepts
 neither request bodies nor query input.
 
+First-party maintenance jobs declare the package-owned default cadence together
+with the bounded `eager` and `economical` profiles. `eager` reduces recovery
+latency at the cost of more database work; `economical` increases the maximum
+time until scheduled reconciliation runs. Self-hosted installations retain the
+safe default unless an operator explicitly selects one of those declared
+profiles. A wakeable job must be paired with an owned durable-state dispatcher;
+a wakeup is only a prompt, and the package's durable state and scheduled
+recovery remain authoritative across process restarts and missed delivery.
+
 Custom deployments can disable a specific optional product capability only when
 the owning package documents the consequences. Disabling a capability removes
 its jobs together with its other runtime surfaces. Required jobs cannot be

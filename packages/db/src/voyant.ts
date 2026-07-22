@@ -62,6 +62,13 @@ export const dbVoyantModule = defineModule({
     {
       id: "infrastructure.event-outbox-drain",
       schedule: { cron: "*/2 * * * *", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { every: "1m", overlap: "skip" },
+          economical: { every: "10m", overlap: "skip" },
+        },
+      },
       wakeup: true,
       runtime: {
         entry: "@voyant-travel/db/outbox-job",
