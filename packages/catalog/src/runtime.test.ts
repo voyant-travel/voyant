@@ -34,6 +34,7 @@ vi.mock("./runtime/catalog-runtime.js", () => ({
       modelId: "test/embedding/v1",
     },
   })),
+  createCatalogDocumentBuilder: vi.fn(),
   createProductsDocumentBuilder: vi.fn(),
   DEFAULT_SLICES: [],
   getFieldPolicyRegistries: vi.fn(() => state.registries),

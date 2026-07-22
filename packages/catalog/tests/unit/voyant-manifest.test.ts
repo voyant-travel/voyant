@@ -80,6 +80,7 @@ describe("catalog deployment manifest", () => {
         ["index-product-pricing-changed", "pricing.rule.changed"],
         ["index-product-publication-changed", "product.publication.changed"],
         ["index-product-promotion-changed", "promotion.changed"],
+        ["index-entity-overlay-changed", "catalog.entity.overlay.changed"],
         ["capture-booking-snapshot", "booking.confirmed"],
       ].map(([localId, eventType]) => ({
         id: `@voyant-travel/catalog#subscriber.${localId}`,
