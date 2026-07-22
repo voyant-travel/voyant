@@ -180,6 +180,36 @@ describe("Voyant Node product job host", () => {
     expect(handler).toHaveBeenCalledOnce()
   })
 
+  it("rejects and cancels a large invocation stream without waiting for EOF", async () => {
+    const handler = vi.fn(async () => {})
+    const cancel = vi.fn()
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      originTrustSecret: "secret",
+    })
+    const endpoint = `https://operator.test${VOYANT_PRODUCT_JOB_ROUTE}/${encodeURIComponent(jobId)}`
+    const neverEndingStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(1024 * 1024))
+      },
+      cancel,
+    })
+
+    const response = await host.handleRequest(
+      new Request(endpoint, {
+        method: "POST",
+        headers: { "x-voyant-origin-trust": "secret", "transfer-encoding": "chunked" },
+        body: neverEndingStream,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" }),
+    )
+
+    expect(response?.status).toBe(400)
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it("returns the closed managed-registration inventory envelope", async () => {
     const host = createVoyantNodeJobHost({
       runtime: jobRuntime(() => {}),

@@ -376,10 +376,15 @@ export function createVoyantNodeJobHost(
 
 async function requestHasBodyBytes(request: Request): Promise<boolean> {
   if (request.body === null) return false
+  const reader = request.body.getReader()
   try {
-    return (await request.arrayBuffer()).byteLength > 0
+    const { done } = await reader.read()
+    if (done) return false
+    void reader.cancel().catch(() => {})
+    return true
   } catch {
     // An unreadable stream cannot be validated as the required empty body.
+    void reader.cancel().catch(() => {})
     return true
   }
 }
