@@ -43,6 +43,8 @@ import {
   paymentCompletedPayloadSchema,
 } from "./voyant-event-schemas.js"
 
+const paymentAdapterRuntimePortReference = { id: "payments.adapter.runtime" } as const
+
 /** Import-cheap deployment declaration owned by the finance package. */
 export const financeVoyantModule = defineModule({
   id: "@voyant-travel/finance",
@@ -54,6 +56,7 @@ export const financeVoyantModule = defineModule({
     requirePort(customFieldsRuntimePort),
     requirePort(financeNotificationsRuntimePort),
     requirePort(financeCheckoutPaymentStartersRuntimePort, { optional: true }),
+    { ...paymentAdapterRuntimePortReference, optional: true },
     requirePort(financeInvoiceSettlementPollerRuntimePort, {
       optional: true,
       cardinality: "many",

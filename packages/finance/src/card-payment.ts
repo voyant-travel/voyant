@@ -47,6 +47,7 @@ export interface CardPaymentStartArgs {
   billing: CardPaymentBilling
   description?: string
   returnUrl?: string
+  metadata?: Record<string, unknown>
 }
 
 /** Result of a card-payment start: the hosted-payment URL to redirect to. */
@@ -81,69 +82,98 @@ export interface PaymentAdapterCardPaymentStarterOptions {
   resolveNotifyUrl?(c: Context): string | undefined
 }
 
+export interface PaymentAdapterCardPaymentExecution {
+  context: PaymentAdapterRuntimeContext
+  runtime?: FinanceServiceRuntime
+  notifyUrl?: string
+  idempotencyKey?: string
+}
+
+/**
+ * Start a payment through a selected adapter without requiring an HTTP
+ * framework context. Package runtimes use this function; the Hono-oriented
+ * starter below remains the checkout-surface convenience wrapper.
+ */
+export async function startPaymentAdapterCardPayment(
+  adapter: PaymentAdapter,
+  args: CardPaymentStartArgs,
+  execution: PaymentAdapterCardPaymentExecution,
+): Promise<CardPaymentStartResult | null> {
+  const [session] = await args.db
+    .select()
+    .from(paymentSessions)
+    .where(eq(paymentSessions.id, args.sessionId))
+    .limit(1)
+  if (!session) return null
+
+  const idempotencyKey =
+    session.idempotencyKey ?? execution.idempotencyKey ?? `payment:${session.id}`
+  const metadata = {
+    ...(args.metadata ?? {}),
+    billing: args.billing,
+    ...(execution.notifyUrl ? { notifyUrl: execution.notifyUrl } : {}),
+  }
+  const result = await adapter.initiate(execution.context, {
+    paymentSessionId: session.id,
+    money: { amountMinor: session.amountCents, currency: session.currency },
+    description: args.description ?? session.notes ?? undefined,
+    returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
+    idempotencyKey,
+    customer: {
+      email: args.billing.email,
+      phone: args.billing.phone ?? null,
+      firstName: args.billing.firstName,
+      lastName: args.billing.lastName ?? null,
+    },
+    metadata,
+  })
+
+  const providerData = {
+    providerSessionId: result.processorSessionId ?? undefined,
+    providerPaymentId: result.processorPaymentId ?? undefined,
+    providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
+    metadata: { paymentAdapterInitiationIdempotencyKey: result.idempotencyKey },
+  }
+
+  if (result.nextState === "paid" || result.nextState === "authorized") {
+    await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
+      provider: adapter.id,
+      redirectUrl: result.checkout?.url ?? undefined,
+      idempotencyKey,
+    })
+    await financePaymentSessionCompletionService.completePaymentSession(
+      args.db,
+      session.id,
+      {
+        status: result.nextState,
+        captureMode: "automatic",
+        ...providerData,
+      },
+      execution.runtime,
+    )
+  } else {
+    await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
+      provider: adapter.id,
+      status: result.nextState,
+      redirectUrl: result.checkout?.url ?? undefined,
+      idempotencyKey,
+      ...providerData,
+    })
+  }
+
+  return { redirectUrl: result.checkout?.url ?? null }
+}
+
 export function createPaymentAdapterCardPaymentStarter(
   adapter: PaymentAdapter,
   options: PaymentAdapterCardPaymentStarterOptions = {},
 ): CardPaymentStarter {
   return async (c, args) => {
-    const [session] = await args.db
-      .select()
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, args.sessionId))
-      .limit(1)
-    if (!session) return null
-
-    const idempotencyKey =
-      session.idempotencyKey ?? options.idempotencyKey?.(session.id) ?? `payment:${session.id}`
-    const notifyUrl = options.resolveNotifyUrl?.(c)
-    const result = await adapter.initiate(options.resolveContext?.(c) ?? { env: c.env }, {
-      paymentSessionId: session.id,
-      money: { amountMinor: session.amountCents, currency: session.currency },
-      description: args.description ?? session.notes ?? undefined,
-      returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
-      idempotencyKey,
-      customer: {
-        email: args.billing.email,
-        phone: args.billing.phone ?? null,
-        firstName: args.billing.firstName,
-        lastName: args.billing.lastName ?? null,
-      },
-      ...(notifyUrl ? { metadata: { notifyUrl } } : {}),
+    return startPaymentAdapterCardPayment(adapter, args, {
+      context: options.resolveContext?.(c) ?? { env: c.env },
+      runtime: options.resolveRuntime?.(c),
+      notifyUrl: options.resolveNotifyUrl?.(c),
+      idempotencyKey: options.idempotencyKey?.(args.sessionId),
     })
-
-    const providerData = {
-      providerSessionId: result.processorSessionId ?? undefined,
-      providerPaymentId: result.processorPaymentId ?? undefined,
-      providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
-      metadata: { paymentAdapterInitiationIdempotencyKey: result.idempotencyKey },
-    }
-
-    if (result.nextState === "paid" || result.nextState === "authorized") {
-      await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-        provider: adapter.id,
-        redirectUrl: result.checkout?.url ?? undefined,
-        idempotencyKey,
-      })
-      await financePaymentSessionCompletionService.completePaymentSession(
-        args.db,
-        session.id,
-        {
-          status: result.nextState,
-          captureMode: "automatic",
-          ...providerData,
-        },
-        options.resolveRuntime?.(c),
-      )
-    } else {
-      await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-        provider: adapter.id,
-        status: result.nextState,
-        redirectUrl: result.checkout?.url ?? undefined,
-        idempotencyKey,
-        ...providerData,
-      })
-    }
-
-    return { redirectUrl: result.checkout?.url ?? null }
   }
 }

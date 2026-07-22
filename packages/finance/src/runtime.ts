@@ -1,6 +1,9 @@
 import type { CustomFieldsRuntime } from "@voyant-travel/core/custom-fields"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { PaymentAdapter } from "@voyant-travel/payments"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { startPaymentAdapterCardPayment } from "./card-payment.js"
+import type { CheckoutPaymentStarter } from "./checkout-service.js"
 import type { FinanceApiModuleOptions } from "./index.js"
 import {
   createVoyantDataFxExchangeRateResolver,
@@ -18,6 +21,7 @@ import type {
   FinanceNotificationsRuntime,
   FinanceOperatorSettingsRuntime,
 } from "./runtime-port.js"
+import { financeService } from "./service.js"
 import type { InvoiceSettlementPoller } from "./service-settlement.js"
 
 /** Compose Finance's main HTTP runtime from generic host and selected providers. */
@@ -27,6 +31,7 @@ export function createFinanceRuntime(
   notifications: FinanceNotificationsRuntime,
   checkoutPaymentStarters?: FinanceCheckoutPaymentStartersRuntime,
   invoiceSettlementPollerProviders: readonly FinanceInvoiceSettlementPollerProvider[] = [],
+  selectedPaymentAdapter?: PaymentAdapter,
 ): FinanceApiModuleOptions {
   const { primitives } = host
   return {
@@ -55,11 +60,109 @@ export function createFinanceRuntime(
     resolveNotificationDispatcher: notifications.resolveNotificationDispatcher,
     resolvePaymentStarters: (bindings) =>
       checkoutPaymentStarters?.resolvePaymentStarters(bindings) ?? {},
+    resolveSelectedPaymentStarter: selectedPaymentAdapter
+      ? (bindings) => createSelectedPaymentAdapterStarter(host, selectedPaymentAdapter, bindings)
+      : undefined,
     resolveBankTransferDetails: (bindings) => resolveBankTransferDetails(primitives.env(bindings)),
     resolvePublicCheckoutBaseUrl: (bindings) =>
       resolvePublicCheckoutBaseUrl(primitives.env(bindings)),
     listBookingReminderRuns: notifications.listBookingReminderRuns,
   }
+}
+
+function createSelectedPaymentAdapterStarter(
+  host: FinanceHostRuntime,
+  adapter: PaymentAdapter,
+  bindings: Record<string, unknown>,
+): CheckoutPaymentStarter {
+  return async (checkout) => {
+    const payload = checkout.startProvider.payload ?? {}
+    const billing = readCardPaymentBilling(payload.billing)
+    const env = host.primitives.env(bindings)
+    const started = await startPaymentAdapterCardPayment(
+      adapter,
+      {
+        db: checkout.db,
+        sessionId: checkout.paymentSession.id,
+        billing,
+        description: stringValue(payload.description),
+        returnUrl: stringValue(payload.returnUrl) ?? checkout.paymentSession.returnUrl ?? undefined,
+        metadata: recordValue(payload.metadata),
+      },
+      {
+        context: { env },
+        notifyUrl: resolvePaymentCallbackUrl(env),
+      },
+    )
+    const session =
+      (await financeService.getPaymentSessionById(checkout.db, checkout.paymentSession.id)) ??
+      checkout.paymentSession
+    return {
+      provider: adapter.id,
+      paymentSessionId: session.id,
+      redirectUrl: started?.redirectUrl ?? null,
+      externalReference: session.externalReference,
+      providerSessionId: session.providerSessionId,
+      providerPaymentId: session.providerPaymentId,
+      response: null,
+    }
+  }
+}
+
+function readCardPaymentBilling(value: unknown) {
+  const billing = recordValue(value)
+  const email = nonEmpty(billing.email)
+  const firstName = nonEmpty(billing.firstName)
+  if (!email || !firstName) {
+    throw new Error("Card payment billing requires email and firstName")
+  }
+  const phone = nonEmpty(billing.phone)
+  const lastName = nonEmpty(billing.lastName)
+  const city = nonEmpty(billing.city)
+  const country =
+    typeof billing.country === "number" || typeof billing.country === "string"
+      ? billing.country
+      : undefined
+  const state = nonEmpty(billing.state)
+  const postalCode = nonEmpty(billing.postalCode)
+  const details = nonEmpty(billing.details)
+  return {
+    email,
+    firstName,
+    ...(phone ? { phone } : {}),
+    ...(lastName ? { lastName } : {}),
+    ...(city ? { city } : {}),
+    ...(country !== undefined ? { country } : {}),
+    ...(state ? { state } : {}),
+    ...(postalCode ? { postalCode } : {}),
+    ...(details ? { details } : {}),
+  }
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+}
+
+function resolvePaymentCallbackUrl(env: Readonly<Record<string, unknown>>): string | undefined {
+  const configured =
+    nonEmpty(env.PAYMENT_CALLBACK_BASE_URL) ??
+    nonEmpty(env.DASH_BASE_URL) ??
+    nonEmpty(env.APP_URL)?.replace(/\/api\/?$/, "")
+  if (!configured) return undefined
+  const url = new URL(configured)
+  if (
+    (url.protocol !== "http:" && url.protocol !== "https:") ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("Payment callback base must be an absolute HTTP(S) origin")
+  }
+  return `${url.origin}/api/v1/public/payment-link/callback`
 }
 
 /** Compose Finance's payment schedule from statically selected domain providers. */

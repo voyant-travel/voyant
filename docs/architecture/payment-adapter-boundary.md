@@ -53,3 +53,8 @@ Deployments can adapt a selected `PaymentAdapter` through
 `createPaymentAdapterCardPaymentStarter(...)`, and verified callback events are
 applied to the finance payment-session state machine through
 `applyPaymentAdapterCallbackEvent(...)`.
+
+Finance checkout collection routes also consume the selected
+`payments.adapter.runtime` port directly. Clients request a card start without
+selecting or naming a processor; a legacy provider hint may be accepted for
+compatibility, but it never overrides the deployment-selected adapter.

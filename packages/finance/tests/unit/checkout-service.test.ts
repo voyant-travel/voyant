@@ -80,6 +80,61 @@ describe("finance checkout service", () => {
     )
   })
 
+  it("prefers the deployment-selected payment adapter over a legacy provider hint", async () => {
+    const db = createCheckoutDb({ insertedInvoices: [] })
+    const paymentSession = {
+      id: "ps_selected",
+      invoiceId: null,
+      targetType: "booking_payment_schedule",
+    }
+    const selectedPaymentStarter = vi.fn(async () => ({
+      provider: "connected-adapter",
+      paymentSessionId: paymentSession.id,
+      redirectUrl: "https://payments.example/checkout",
+      externalReference: null,
+      providerSessionId: "processor_session_123",
+      providerPaymentId: null,
+      response: null,
+    }))
+    const legacyPaymentStarter = vi.fn()
+
+    vi.spyOn(financeService, "createPaymentSessionFromBookingSchedule").mockResolvedValue(
+      paymentSession as never,
+    )
+    vi.spyOn(financeService, "getPaymentSessionById").mockResolvedValue(paymentSession as never)
+
+    const result = await initiateCheckoutCollection(
+      db as never,
+      "booking_123",
+      {
+        method: "card",
+        stage: "initial",
+        startProvider: {
+          provider: "netopia",
+          payload: {
+            billing: {
+              email: "traveler@example.com",
+              firstName: "Ana",
+              lastName: "Ionescu",
+            },
+          },
+        },
+      },
+      {},
+      {
+        selectedPaymentStarter,
+        paymentStarters: { netopia: legacyPaymentStarter },
+      },
+    )
+
+    expect(selectedPaymentStarter).toHaveBeenCalledOnce()
+    expect(legacyPaymentStarter).not.toHaveBeenCalled()
+    expect(result?.providerStart).toMatchObject({
+      provider: "connected-adapter",
+      redirectUrl: "https://payments.example/checkout",
+    })
+  })
+
   it("keeps base paid cents null when creating a collection invoice without base currency", async () => {
     const insertedInvoices: Array<Record<string, unknown>> = []
     const db = createCheckoutDb({

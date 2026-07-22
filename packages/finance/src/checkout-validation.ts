@@ -33,7 +33,12 @@ export const checkoutReminderTargetTypeSchema = z.enum([
   "invoice",
 ])
 export const checkoutProviderStartInputSchema = z.object({
-  provider: z.string().min(1).max(255),
+  /**
+   * Legacy provider hint. Deployments with a selected PaymentAdapter ignore
+   * this value and always use their selected adapter. New clients should omit
+   * it so processor selection remains deployment-owned.
+   */
+  provider: z.string().min(1).max(255).optional(),
   payload: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 

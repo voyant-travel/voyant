@@ -6,6 +6,7 @@ import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
+import { type PaymentAdapter, paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import { financeBookingLifecycle } from "./booking-lifecycle.js"
 import { type BookingTaxRouteOptions, createBookingTaxSettingsRoutes } from "./booking-tax.js"
 import {
@@ -207,6 +208,9 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
           ? await getPort(financeCheckoutPaymentStartersRuntimePort)
           : undefined,
         await getPorts(financeInvoiceSettlementPollerRuntimePort),
+        hasPort(paymentAdapterRuntimePort)
+          ? await getPort<PaymentAdapter>(paymentAdapterRuntimePort)
+          : undefined,
       ),
     )
     const bootstrap = configured.module.bootstrap
@@ -292,9 +296,13 @@ export type {
   CardPaymentStartArgs,
   CardPaymentStarter,
   CardPaymentStartResult,
+  PaymentAdapterCardPaymentExecution,
   PaymentAdapterCardPaymentStarterOptions,
 } from "./card-payment.js"
-export { createPaymentAdapterCardPaymentStarter } from "./card-payment.js"
+export {
+  createPaymentAdapterCardPaymentStarter,
+  startPaymentAdapterCardPayment,
+} from "./card-payment.js"
 export {
   type DocumentDownloadEnvelope,
   type DocumentDownloadResolution,
