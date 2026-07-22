@@ -78,9 +78,10 @@ const PROVIDERS_KEY = ["payment-providers"]
 const CONNECTION_KEY = ["payment-connection"]
 
 async function responseError(response: Response, fallback: string) {
-  const body = (await response.json().catch(() => null)) as
-    | { error?: unknown; message?: unknown }
-    | null
+  const body = (await response.json().catch(() => null)) as {
+    error?: unknown
+    message?: unknown
+  } | null
   if (typeof body?.error === "string" && body.error.trim()) return body.error
   if (typeof body?.message === "string" && body.message.trim()) {
     return body.message
