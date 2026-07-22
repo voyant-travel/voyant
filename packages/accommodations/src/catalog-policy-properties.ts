@@ -111,6 +111,7 @@ const ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY: FieldPolicyInput[] = [
     class: "merchandisable",
     merge: "source-only",
     editRole: "none",
+    query: "indexed-column",
   }),
   propertyField("property.heroImageUrl", {
     class: "merchandisable",
