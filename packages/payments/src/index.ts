@@ -57,6 +57,7 @@ export interface PaymentInitiationInput {
   money: PaymentMoney
   description?: string
   returnUrl?: string
+  cancelUrl?: string
   captureMode?: PaymentCaptureMode
   idempotencyKey: string
   customer?: {
@@ -65,6 +66,7 @@ export interface PaymentInitiationInput {
     firstName?: string | null
     lastName?: string | null
   }
+  shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }
 

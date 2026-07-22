@@ -1,3 +1,7 @@
+import {
+  assertPaymentAdapterProcessorIdentityForLockedSession,
+  canApplyPaymentAdapterStateTransition,
+} from "./payment-adapter-session-guard.js"
 import type {
   BookingPaymentSchedulePaidEvent,
   CompletePaymentSessionInput,
@@ -38,12 +42,17 @@ function mergeJsonbColumn(
   return sql`coalesce(${column}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`
 }
 
+export interface PaymentSessionCompletionOptions {
+  requireProcessorIdentityWhenConnectionPinned?: boolean
+}
+
 export const financePaymentSessionCompletionService = {
   async completePaymentSession(
     db: PostgresJsDatabase,
     id: string,
     data: CompletePaymentSessionInput,
     runtime: FinanceServiceRuntime = {},
+    options: PaymentSessionCompletionOptions = {},
   ) {
     const txResult = await db.transaction(async (tx) => {
       const [session] = await tx
@@ -63,11 +72,57 @@ export const financePaymentSessionCompletionService = {
         }
       }
 
+      const lockedIdentity = options.requireProcessorIdentityWhenConnectionPinned
+        ? assertPaymentAdapterProcessorIdentityForLockedSession(
+            session,
+            data.provider && data.providerConnectionId
+              ? { providerId: data.provider, connectionId: data.providerConnectionId }
+              : undefined,
+          )
+        : {
+            provider: data.provider ?? undefined,
+            providerConnectionId: data.providerConnectionId ?? undefined,
+          }
+      const provider = lockedIdentity.provider ?? data.provider ?? session.provider ?? null
+      const providerConnectionId =
+        lockedIdentity.providerConnectionId ??
+        data.providerConnectionId ??
+        session.providerConnectionId ??
+        undefined
+
+      if (!canApplyPaymentAdapterStateTransition(session.status, data.status)) {
+        const [updated] = await tx
+          .update(paymentSessions)
+          .set({
+            provider: provider ?? undefined,
+            providerConnectionId,
+            providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
+            providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+            externalReference: data.externalReference ?? session.externalReference ?? undefined,
+            providerPayload: mergeJsonbColumn(
+              paymentSessions.providerPayload,
+              data.providerPayload,
+            ),
+            metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
+            notes: data.notes ?? session.notes ?? undefined,
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentSessions.id, id))
+          .returning()
+
+        return {
+          updated: updated ?? session,
+          settlement: null,
+          recordedPayment: null,
+          bookingSchedulePaid: null,
+          shouldEmitPaymentCompleted: false,
+        }
+      }
+
       const shouldEmitPaymentCompleted = data.status === "paid" && session.status !== "paid"
       let authorizationId = session.paymentAuthorizationId
       let captureId = session.paymentCaptureId
       let paymentId = session.paymentId
-      const provider = data.provider ?? session.provider ?? null
       const invoiceForPayment =
         data.status === "paid" && !paymentId
           ? await resolveInvoiceForPaymentSession(tx, session)
@@ -262,8 +317,7 @@ export const financePaymentSessionCompletionService = {
         .set({
           status: data.status,
           provider: provider ?? undefined,
-          providerConnectionId:
-            data.providerConnectionId ?? session.providerConnectionId ?? undefined,
+          providerConnectionId,
           paymentMethod: data.paymentMethod ?? session.paymentMethod ?? undefined,
           paymentInstrumentId: data.paymentInstrumentId ?? session.paymentInstrumentId ?? undefined,
           paymentAuthorizationId: authorizationId,

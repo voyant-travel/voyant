@@ -47,6 +47,8 @@ export interface CardPaymentStartArgs {
   billing: CardPaymentBilling
   description?: string
   returnUrl?: string
+  cancelUrl?: string
+  shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }
 
@@ -118,6 +120,7 @@ export async function startPaymentAdapterCardPayment(
     money: { amountMinor: session.amountCents, currency: session.currency },
     description: args.description ?? session.notes ?? undefined,
     returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
+    cancelUrl: args.cancelUrl ?? session.cancelUrl ?? undefined,
     idempotencyKey,
     customer: {
       email: args.billing.email,
@@ -125,6 +128,7 @@ export async function startPaymentAdapterCardPayment(
       firstName: args.billing.firstName,
       lastName: args.billing.lastName ?? null,
     },
+    shipping: args.shipping,
     metadata,
   })
 

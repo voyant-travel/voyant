@@ -502,6 +502,7 @@ function toIsoString(value: Date | string | null): string | null {
 const CARD_PAYMENT_STARTABLE_STATUSES = new Set(["pending", "requires_redirect", "processing"])
 const CARD_PAYMENT_REDIRECT_REUSABLE_STATUSES = new Set(["authorized", "paid"])
 const CARD_PAYMENT_CONTINUATION_STATUSES = new Set(["processing", "authorized", "paid"])
+const RESERVED_START_CARD_METADATA_KEYS = new Set(["callbackUrl", "notifyUrl"])
 
 function canStartCardPayment(status: string): boolean {
   return CARD_PAYMENT_STARTABLE_STATUSES.has(status)
@@ -524,6 +525,16 @@ function hasJsonRequestBody(c: Context): boolean {
 async function readStartCardPaymentBody(c: Context): Promise<StartCardPaymentBody> {
   if (!hasJsonRequestBody(c)) return {}
   return parseJsonBody(c, startCardPaymentBodySchema)
+}
+
+function sanitizePublicStartCardMetadata(
+  metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!metadata) return undefined
+  const sanitized = Object.fromEntries(
+    Object.entries(metadata).filter(([key]) => !RESERVED_START_CARD_METADATA_KEYS.has(key)),
+  )
+  return Object.keys(sanitized).length ? sanitized : undefined
 }
 
 function publicStartCardSession(session: {
@@ -666,6 +677,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
         return c.json({ data: { redirectUrl: null } }, 200)
       }
       const body = await readStartCardPaymentBody(c)
+      const metadata = sanitizePublicStartCardMetadata(body.metadata)
       try {
         const started = await options.startCardPayment(c, {
           id: session.id,
@@ -677,7 +689,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
           description: body.description,
           returnUrl: body.returnUrl,
           cancelUrl: body.cancelUrl,
-          metadata: body.metadata,
+          metadata,
           shipping: body.shipping,
         })
         if (!started.configured) {
