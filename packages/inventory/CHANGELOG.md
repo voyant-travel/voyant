@@ -1,5 +1,13 @@
 # @voyant-travel/inventory
 
+## 0.15.4
+
+### Patch Changes
+
+- 130f62c: Expose owned-product SEO metadata and Open Graph images through the product admin and storefront surfaces.
+- Updated dependencies [130f62c]
+  - @voyant-travel/products-contracts@0.107.7
+
 ## 0.15.3
 
 ### Patch Changes

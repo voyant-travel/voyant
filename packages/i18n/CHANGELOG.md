@@ -1,5 +1,11 @@
 # @voyant-travel/i18n
 
+## 0.116.1
+
+### Patch Changes
+
+- 130f62c: Expose owned-product SEO metadata and Open Graph images through the product admin and storefront surfaces.
+
 ## 0.116.0
 
 ### Minor Changes
