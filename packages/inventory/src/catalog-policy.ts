@@ -737,9 +737,9 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
   // so storefront search never has to join at query time.
   ...[
     ["property.name", true, "indexed-column"],
-    ["property.description", true, "blob-only"],
-    ["property.heroImageUrl", false, "blob-only"],
-    ["property.gallery", false, "blob-only"],
+    ["property.description", true, "indexed-column"],
+    ["property.heroImageUrl", false, "indexed-column"],
+    ["property.gallery", false, "indexed-column"],
   ].map(([path, localized, query]) => ({
     path: path as string,
     class: "merchandisable" as const,
