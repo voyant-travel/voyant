@@ -88,6 +88,30 @@ export async function fetchOverlaysForEntity(
 }
 
 /**
+ * Fetch full overlay rows for one entity, including the audit columns the
+ * resolver does not need (`origin`, `editorial_note`, timestamps).
+ *
+ * Admin compare/authoring surfaces use this; the merge path keeps using the
+ * narrow `fetchOverlaysForEntity` projection.
+ */
+export async function fetchOverlayRowsForEntity(
+  db: AnyDrizzleDb,
+  entityModule: string,
+  entityId: string,
+): Promise<SelectCatalogOverlay[]> {
+  return db
+    .select()
+    .from(catalogOverlayTable)
+    .where(
+      and(
+        eq(catalogOverlayTable.entity_module, entityModule),
+        eq(catalogOverlayTable.entity_id, entityId),
+        isNull(catalogOverlayTable.deleted_at),
+      ),
+    )
+}
+
+/**
  * Batched form of `fetchOverlaysForEntity`: fetch all active overlays for
  * many entities of one module in a single query, grouped by entity id.
  *

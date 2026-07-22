@@ -37,7 +37,7 @@ export interface ProductDetailPageComponentProps {
 
 export default function ProductDetailDefaultPage({ id }: ProductDetailPageComponentProps) {
   const messages = useOperatorAdminMessages()
-  const { resolvedLocale } = useLocale()
+  const { resolvedLocale, supportedLocales } = useLocale()
   const navigateTo = useAdminNavigate()
   const { baseUrl, fetcher } = useVoyantProductsContext()
   const [breadcrumbs, setBreadcrumbs] = useState<ProductDetailBreadcrumb[]>([])
@@ -93,6 +93,7 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
       messages,
       api,
       locale: resolvedLocale,
+      configuredLocales: supportedLocales,
       navigate: navigation,
       uploadMedia,
       setBreadcrumbs,
@@ -103,7 +104,7 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
         />
       ),
     }),
-    [messages, api, resolvedLocale, navigation, uploadMedia],
+    [messages, api, resolvedLocale, supportedLocales, navigation, uploadMedia],
   )
 
   return (

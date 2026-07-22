@@ -21,6 +21,11 @@ export interface ProductDetailApi {
   get: <T = unknown>(path: string) => Promise<T>
   post: <T = unknown>(path: string, body?: unknown) => Promise<T>
   patch: <T = unknown>(path: string, body?: unknown) => Promise<T>
+  /**
+   * Optional so existing hosts keep compiling. Surfaces that need PUT (the
+   * editorial-overlay editor) render read-only when a host omits it.
+   */
+  put?: <T = unknown>(path: string, body?: unknown) => Promise<T>
   delete: <T = unknown>(path: string) => Promise<T>
 }
 
@@ -44,6 +49,12 @@ export interface ProductDetailHostValue {
   uploadMedia?: ProductMediaUploadHandler
   /** Optional app-shell breadcrumb sink (e.g. the operator admin shell). */
   setBreadcrumbs?: (items: ProductDetailBreadcrumb[]) => void
+  /**
+   * Storefront locales the deployment has configured. The editorial-overlay
+   * editor switches among these; falls back to the locales the backend
+   * reports when a host does not supply the list.
+   */
+  configuredLocales?: readonly string[]
   /** Optional extra content rendered under each product option (e.g. an app-specific resource panel). */
   renderOptionExtras?: (productId: string, optionId: string) => ReactNode
 }

@@ -18,8 +18,12 @@ if (!/productDaySchema[\s\S]*id: z\.string\(\)\.optional\(\)/.test(productConten
   failures.push("product day content must expose a stable optional id for node overlays")
 }
 
-const productOverlayService = read("packages/inventory/src/service-editorial-overlays.ts")
-const rootFieldsMatch = productOverlayService.match(/const ROOT_FIELDS = new Set\(\[([\s\S]*?)\]\)/)
+// The overlayable field policy lives in one module so the write path and the
+// admin read model cannot drift apart.
+const productOverlayFields = read("packages/inventory/src/editorial-overlay-fields.ts")
+const rootFieldsMatch = productOverlayFields.match(
+  /export const ROOT_FIELD_KINDS[\s\S]*?new Map\(\[([\s\S]*?)\]\)/,
+)
 if (!rootFieldsMatch) {
   failures.push("product editorial overlay service must declare an explicit ROOT_FIELDS allowlist")
 } else {
@@ -40,7 +44,10 @@ if (!rootFieldsMatch) {
   }
 }
 
-if (!productOverlayService.includes('const DAY_FIELDS = new Set(["title", "description"')) {
+const dayFieldsMatch = productOverlayFields.match(
+  /export const DAY_FIELD_KINDS[\s\S]*?new Map\(\[([\s\S]*?)\]\)/,
+)
+if (!dayFieldsMatch || !/\["title",[\s\S]*\["description",/.test(dayFieldsMatch[1])) {
   failures.push("product itinerary-day overlays must use a narrow presentation-only allowlist")
 }
 

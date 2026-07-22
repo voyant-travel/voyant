@@ -1,4 +1,13 @@
 export {
+  ProductEditorialOverlaySection,
+  type ProductEditorialOverlaySectionProps,
+} from "./editorial-overlay/product-editorial-overlay-section.js"
+export type {
+  EditorialOverlayField,
+  EditorialOverlayFieldState,
+  EditorialOverlayState,
+} from "./editorial-overlay/types.js"
+export {
   type ProductDetailApi,
   type ProductDetailBreadcrumb,
   ProductDetailHostProvider,
