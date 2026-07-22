@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/relationships",
-  "version": "0.128.30",
+  "version": "0.128.31",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

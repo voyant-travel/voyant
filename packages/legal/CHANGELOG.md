@@ -1,5 +1,18 @@
 # @voyant-travel/legal
 
+## 0.191.0
+
+### Patch Changes
+
+- Updated dependencies [f6aa3a1]
+  - @voyant-travel/finance@0.191.0
+  - @voyant-travel/commerce@0.40.1
+  - @voyant-travel/distribution@0.181.0
+  - @voyant-travel/inventory@0.15.1
+  - @voyant-travel/operator-settings@0.14.10
+  - @voyant-travel/bookings@0.191.0
+  - @voyant-travel/relationships@0.128.31
+
 ## 0.190.0
 
 ### Patch Changes
