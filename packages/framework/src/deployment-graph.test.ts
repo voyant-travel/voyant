@@ -1482,6 +1482,10 @@ describe("deployment graph v1", () => {
     })
 
     expect(graph.diagnostics).toEqual([])
+    expect(graph.modules[0]?.jobs.map(({ id, schedule }) => ({ id, schedule }))).toEqual([
+      { id: "notifications.drain", schedule: { every: "1m" } },
+      { id: "notifications.optional-sweep", schedule: { every: "6h" } },
+    ])
     expect(graph.provisioning.jobs).toEqual([
       expect.objectContaining({
         id: "notifications.drain",
@@ -1547,6 +1551,30 @@ describe("deployment graph v1", () => {
     })
     expect(validateGraphUnitManifest(module)).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: "VOYANT_GRAPH_INVALID_FACET" })]),
+    )
+  })
+
+  it("validates complete named profile schedules", () => {
+    const module = defineModule({
+      id: "@acme/voyant-notifications",
+      jobs: [
+        {
+          id: "notifications.drain",
+          schedule: { every: "5m" },
+          scheduling: {
+            profiles: {
+              invalid: { cron: "0 * * * *", timezone: "Not/AZone", overlap: "parallel" },
+            },
+          },
+          runtime: { entry: "./jobs", export: "drain" },
+        },
+      ],
+    })
+    expect(validateGraphUnitManifest(module)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "jobs[0].scheduling.profiles.invalid.timezone" }),
+        expect.objectContaining({ facet: "jobs[0].scheduling.profiles.invalid.overlap" }),
+      ]),
     )
   })
 

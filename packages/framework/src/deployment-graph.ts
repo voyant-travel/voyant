@@ -765,6 +765,7 @@ export async function resolveDeploymentGraph(
   const scheduledJobs = normalizeScheduledJobs(input.scheduledJobs ?? [])
   const jobResolution = resolveProvisionedJobs(selectedUnits, input.project.jobScheduling)
   const provisionedJobs = jobResolution.jobs
+  const provisionedJobsById = new Map(provisionedJobs.map((job) => [job.id, job]))
   const eventCatalog = compileEventCatalog(selectedUnits)
   const webhookPlan = compileWebhookPlan(selectedUnits)
   const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
@@ -790,11 +791,21 @@ export async function resolveDeploymentGraph(
     ...jobResolution.diagnostics,
   ])
 
-  const modules = selectedModules.map(({ original: _original, ...unit }) => unit)
-  const extensions = selectedExtensions.map(({ original: _original, ...unit }) => unit)
-  const plugins = selectedPlugins.map(({ original: _original, ...unit }) => unit)
-  const adapters = selectedAdapters.map(({ original: _original, ...unit }) => unit)
-  const providerUnits = selectedProviders.map(({ original: _original, ...unit }) => unit)
+  const modules = selectedModules.map(({ original: _original, ...unit }) =>
+    applyResolvedJobSchedules(unit, provisionedJobsById),
+  )
+  const extensions = selectedExtensions.map(({ original: _original, ...unit }) =>
+    applyResolvedJobSchedules(unit, provisionedJobsById),
+  )
+  const plugins = selectedPlugins.map(({ original: _original, ...unit }) =>
+    applyResolvedJobSchedules(unit, provisionedJobsById),
+  )
+  const adapters = selectedAdapters.map(({ original: _original, ...unit }) =>
+    applyResolvedJobSchedules(unit, provisionedJobsById),
+  )
+  const providerUnits = selectedProviders.map(({ original: _original, ...unit }) =>
+    applyResolvedJobSchedules(unit, provisionedJobsById),
+  )
   const graphWithoutHash: Omit<ResolvedVoyantDeploymentGraph, "contentHash"> = {
     schemaVersion: VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
     project: {
@@ -1105,6 +1116,27 @@ function normalizeScheduledJobs(
       module: job.module,
     }))
     .sort((left, right) => left.id.localeCompare(right.id))
+}
+
+/** Keep generated runtime job declarations aligned with the resolved host inventory. */
+function applyResolvedJobSchedules(
+  unit: Omit<ResolvedVoyantGraphUnit, "original">,
+  provisionedJobsById: ReadonlyMap<string, VoyantGraphProvisionedJob>,
+): Omit<ResolvedVoyantGraphUnit, "original"> {
+  return {
+    ...unit,
+    jobs: unit.jobs.flatMap((job) => {
+      const provisioned = provisionedJobsById.get(job.id)
+      if (!provisioned || provisioned.unitId !== unit.id) return []
+      const { schedule: _schedule, ...withoutDeclaredSchedule } = job
+      return [
+        {
+          ...withoutDeclaredSchedule,
+          ...(provisioned.schedule ? { schedule: provisioned.schedule } : {}),
+        },
+      ]
+    }),
+  }
 }
 
 function resolveProvisionedJobs(
@@ -2810,119 +2842,107 @@ function validateJobs(value: unknown, source: string | undefined): VoyantGraphDi
             )
           } else {
             for (const [name, schedule] of Object.entries(job.scheduling.profiles)) {
-              if (!/^[a-z][a-z0-9-]*$/.test(name) || !isRecord(schedule)) {
+              if (!/^[a-z][a-z0-9-]*$/.test(name)) {
                 invalidFacet(
                   `${facet}.scheduling.profiles.${name}`,
                   source,
                   diagnostics,
-                  "Job scheduling profile names must be lower-case tokens and values must be schedules.",
+                  "Job scheduling profile names must be lower-case tokens.",
                 )
                 continue
               }
-              const hasCron = typeof schedule.cron === "string" && schedule.cron.trim().length > 0
-              const hasEvery =
-                (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
-                (typeof schedule.every === "number" &&
-                  Number.isFinite(schedule.every) &&
-                  schedule.every > 0)
-              if (
-                hasCron === hasEvery ||
-                (hasCron && !isSupportedProductJobCron(schedule.cron as string)) ||
-                (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number))
-              ) {
-                invalidFacet(
-                  `${facet}.scheduling.profiles.${name}`,
-                  source,
-                  diagnostics,
-                  "Job scheduling profiles must declare one supported cron or every cadence.",
-                )
-              }
+              validateJobSchedule(
+                schedule,
+                `${facet}.scheduling.profiles.${name}`,
+                source,
+                diagnostics,
+              )
             }
           }
         }
       }
     }
-    if (!scheduled) return
-    if (!isRecord(job.schedule)) {
-      invalidFacet(
-        `${facet}.schedule`,
-        source,
-        diagnostics,
-        "Job schedules must declare exactly one cron or every cadence.",
-      )
-      return
-    }
-    const schedule = job.schedule
-    for (const key of Object.keys(schedule)) {
-      if (["cron", "every", "timezone", "overlap"].includes(key)) continue
-      invalidFacet(
-        `${facet}.schedule.${key}`,
-        source,
-        diagnostics,
-        `Job schedules do not support "${key}".`,
-      )
-    }
-    const hasCron = typeof schedule.cron === "string" && schedule.cron.trim().length > 0
-    const hasEvery =
-      (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
-      (typeof schedule.every === "number" && Number.isFinite(schedule.every) && schedule.every > 0)
-    if (hasCron === hasEvery) {
-      invalidFacet(
-        `${facet}.schedule`,
-        source,
-        diagnostics,
-        "Job schedules must declare exactly one non-empty cron or positive every cadence.",
-      )
-    }
-    if (hasCron && !isSupportedProductJobCron(schedule.cron as string)) {
-      invalidFacet(
-        `${facet}.schedule.cron`,
-        source,
-        diagnostics,
-        "Job cron schedules must use five numeric fields with wildcards, lists, ranges, or steps.",
-      )
-    }
-    if (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number)) {
-      invalidFacet(
-        `${facet}.schedule.every`,
-        source,
-        diagnostics,
-        "Job every schedules must be at least one minute and use milliseconds, a duration such as 5m, or an ISO PT duration.",
-      )
-    }
-    if (schedule.timezone !== undefined && typeof schedule.timezone !== "string") {
-      invalidFacet(
-        `${facet}.schedule.timezone`,
-        source,
-        diagnostics,
-        "Job schedule timezone must be a string.",
-      )
-    }
-    if (
-      typeof schedule.timezone === "string" &&
-      !isSupportedProductJobTimezone(schedule.timezone)
-    ) {
-      invalidFacet(
-        `${facet}.schedule.timezone`,
-        source,
-        diagnostics,
-        "Job schedule timezone must be a valid IANA time zone.",
-      )
-    }
-    if (
-      schedule.overlap !== undefined &&
-      schedule.overlap !== "skip" &&
-      schedule.overlap !== "queue"
-    ) {
-      invalidFacet(
-        `${facet}.schedule.overlap`,
-        source,
-        diagnostics,
-        "Job schedule overlap must be skip or queue; product jobs never run concurrently in one host.",
-      )
-    }
+    if (scheduled) validateJobSchedule(job.schedule, `${facet}.schedule`, source, diagnostics)
   })
   return diagnostics
+}
+
+function validateJobSchedule(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (!isRecord(value)) {
+    invalidFacet(
+      facet,
+      source,
+      diagnostics,
+      "Job schedules must declare exactly one cron or every cadence.",
+    )
+    return
+  }
+  const schedule = value
+  for (const key of Object.keys(schedule)) {
+    if (["cron", "every", "timezone", "overlap"].includes(key)) continue
+    invalidFacet(`${facet}.${key}`, source, diagnostics, `Job schedules do not support "${key}".`)
+  }
+  const hasCron = typeof schedule.cron === "string" && schedule.cron.trim().length > 0
+  const hasEvery =
+    (typeof schedule.every === "string" && schedule.every.trim().length > 0) ||
+    (typeof schedule.every === "number" && Number.isFinite(schedule.every) && schedule.every > 0)
+  if (hasCron === hasEvery) {
+    invalidFacet(
+      facet,
+      source,
+      diagnostics,
+      "Job schedules must declare exactly one non-empty cron or positive every cadence.",
+    )
+  }
+  if (hasCron && !isSupportedProductJobCron(schedule.cron as string)) {
+    invalidFacet(
+      `${facet}.cron`,
+      source,
+      diagnostics,
+      "Job cron schedules must use five numeric fields with wildcards, lists, ranges, or steps.",
+    )
+  }
+  if (hasEvery && !isSupportedProductJobEvery(schedule.every as string | number)) {
+    invalidFacet(
+      `${facet}.every`,
+      source,
+      diagnostics,
+      "Job every schedules must be at least one minute and use milliseconds, a duration such as 5m, or an ISO PT duration.",
+    )
+  }
+  if (schedule.timezone !== undefined && typeof schedule.timezone !== "string") {
+    invalidFacet(
+      `${facet}.timezone`,
+      source,
+      diagnostics,
+      "Job schedule timezone must be a string.",
+    )
+  }
+  if (typeof schedule.timezone === "string" && !isSupportedProductJobTimezone(schedule.timezone)) {
+    invalidFacet(
+      `${facet}.timezone`,
+      source,
+      diagnostics,
+      "Job schedule timezone must be a valid IANA time zone.",
+    )
+  }
+  if (
+    schedule.overlap !== undefined &&
+    schedule.overlap !== "skip" &&
+    schedule.overlap !== "queue"
+  ) {
+    invalidFacet(
+      `${facet}.overlap`,
+      source,
+      diagnostics,
+      "Job schedule overlap must be skip or queue; product jobs never run concurrently in one host.",
+    )
+  }
 }
 
 function isSupportedProductJobCron(expression: string): boolean {
