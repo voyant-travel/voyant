@@ -1,5 +1,34 @@
 # @voyant-travel/operator-settings-react
 
+## 0.46.0
+
+### Patch Changes
+
+- e68a705: Add processor identity to payment adapter contracts and persist managed payment
+  connection ids on finance payment sessions. Payment callbacks now reject
+  verified provider/connection mismatches, payment-session provider payload and
+  metadata updates merge instead of overwrite, duplicate paid callbacks serialize
+  under a row lock, and the public payment-link callback/start-card routes accept
+  managed `connectionId` callback forwarding, additive refreshed session
+  responses, and non-redirect processor continuations.
+  Processor callbacks now compare and adopt identities under the payment-session
+  row lock, preserve monotonic session states during concurrent delivery, and
+  reject callback-routing metadata and return URLs supplied by public clients.
+  Provider-neutral cancel and shipping fields flow through the selected adapter
+  contract, with processor return and cancel URLs derived from server-owned
+  session and deployment configuration.
+  Public payment-session reads can refresh provider status through the selected
+  adapter while resending the session's pinned processor identity and preserving
+  the same locked monotonic transition rules as callbacks. Persisted, uniquely
+  fenced leases bound anonymous status polling, and processor session/payment
+  references cannot change after they are first pinned. Card initiation now uses
+  a single atomic claim so active or ambiguous attempts cannot create duplicate
+  processor payments.
+- Updated dependencies [e68a705]
+  - @voyant-travel/finance@0.192.0
+  - @voyant-travel/finance-react@0.192.0
+  - @voyant-travel/admin-app@0.84.0
+
 ## 0.45.0
 
 ### Patch Changes
