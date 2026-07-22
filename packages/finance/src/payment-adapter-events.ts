@@ -1,44 +1,99 @@
-import type { PaymentCallbackEvent } from "@voyant-travel/payments"
+import type { PaymentCallbackEvent, PaymentSessionState } from "@voyant-travel/payments"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import {
+  assertPaymentAdapterProcessorIdentityForLockedSession,
+  canApplyPaymentAdapterStateTransition,
+} from "./payment-adapter-session-guard.js"
+import { paymentSessions } from "./schema/payment-sessions.js"
 import { financePaymentSessionCompletionService } from "./service-payment-session-completion.js"
-import { financePaymentSessionService } from "./service-payment-sessions.js"
-import { type FinanceServiceRuntime, PaymentValidationError } from "./service-shared.js"
+import {
+  type FinanceServiceRuntime,
+  sql,
+  toTimestamp,
+  touchLinkedBookingUpdatedAt,
+} from "./service-shared.js"
 
-async function assertProcessorIdentityMatchesSession(
+function mergeJsonbColumn(
+  column: typeof paymentSessions.providerPayload | typeof paymentSessions.metadata,
+  value: Record<string, unknown> | null | undefined,
+) {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return sql`coalesce(${column}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`
+}
+
+async function applyLockedNonCompletionCallbackEvent(
   db: PostgresJsDatabase,
   event: PaymentCallbackEvent,
+  providerData: {
+    provider: string | undefined
+    providerConnectionId: string | undefined
+    providerSessionId: string | undefined
+    providerPaymentId: string | undefined
+    providerPayload: Record<string, unknown> | undefined
+    metadata: Record<string, unknown>
+  },
 ) {
-  if (!event.processorIdentity) return
+  return db.transaction(async (tx) => {
+    const [session] = await tx
+      .select()
+      .from(paymentSessions)
+      .where(eq(paymentSessions.id, event.paymentSessionId))
+      .for("update")
+      .limit(1)
+    if (!session) return null
 
-  const session = await financePaymentSessionService.getPaymentSessionById(
-    db,
-    event.paymentSessionId,
-  )
-  if (!session) return
+    const adoptedIdentity = assertPaymentAdapterProcessorIdentityForLockedSession(
+      session,
+      event.processorIdentity,
+    )
+    const provider = adoptedIdentity.provider ?? providerData.provider
+    const providerConnectionId =
+      adoptedIdentity.providerConnectionId ?? providerData.providerConnectionId
 
-  const { providerId, connectionId } = event.processorIdentity
-  if (session.provider && session.provider !== providerId) {
-    throw new PaymentValidationError(
-      "Payment callback processor identity does not match the stored payment session provider",
-      {
-        paymentSessionId: session.id,
-        expectedProvider: session.provider,
-        receivedProvider: providerId,
-      },
-      { status: 409, code: "payment_processor_identity_mismatch" },
+    const nextState = event.nextState as PaymentSessionState
+    const shouldTransition = canApplyPaymentAdapterStateTransition(
+      session.status as PaymentSessionState,
+      nextState,
     )
-  }
-  if (session.providerConnectionId && session.providerConnectionId !== connectionId) {
-    throw new PaymentValidationError(
-      "Payment callback processor identity does not match the stored payment session connection",
-      {
-        paymentSessionId: session.id,
-        expectedConnectionId: session.providerConnectionId,
-        receivedConnectionId: connectionId,
-      },
-      { status: 409, code: "payment_processor_identity_mismatch" },
-    )
-  }
+    const failedAt = shouldTransition && nextState === "failed" ? new Date() : undefined
+    const cancelledAt = shouldTransition && nextState === "cancelled" ? new Date() : undefined
+    const expiredAt = shouldTransition && nextState === "expired" ? new Date() : undefined
+
+    const [updated] = await tx
+      .update(paymentSessions)
+      .set({
+        status: shouldTransition ? nextState : undefined,
+        provider,
+        providerConnectionId,
+        providerSessionId: providerData.providerSessionId,
+        providerPaymentId: providerData.providerPaymentId,
+        providerPayload: mergeJsonbColumn(
+          paymentSessions.providerPayload,
+          providerData.providerPayload,
+        ),
+        metadata: mergeJsonbColumn(paymentSessions.metadata, providerData.metadata),
+        failedAt,
+        cancelledAt,
+        expiredAt,
+        failureCode:
+          shouldTransition && nextState === "failed" ? "payment_adapter_callback" : undefined,
+        failureMessage:
+          shouldTransition && nextState === "failed"
+            ? "Payment adapter callback mapped this session to failed."
+            : undefined,
+        completedAt: shouldTransition && nextState === "paid" ? new Date() : undefined,
+        expiresAt:
+          shouldTransition && nextState === "expired" ? toTimestamp(event.occurredAt) : undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentSessions.id, event.paymentSessionId))
+      .returning()
+
+    await touchLinkedBookingUpdatedAt(tx, updated?.bookingId)
+    return updated ?? null
+  })
 }
 
 export async function applyPaymentAdapterCallbackEvent(
@@ -46,8 +101,6 @@ export async function applyPaymentAdapterCallbackEvent(
   event: PaymentCallbackEvent,
   runtime: FinanceServiceRuntime = {},
 ) {
-  await assertProcessorIdentityMatchesSession(db, event)
-
   const providerData = {
     provider: event.processorIdentity?.providerId,
     providerConnectionId: event.processorIdentity?.connectionId,
@@ -67,47 +120,9 @@ export async function applyPaymentAdapterCallbackEvent(
         ...providerData,
       },
       runtime,
+      { requireProcessorIdentityWhenConnectionPinned: true },
     )
   }
 
-  if (event.nextState === "failed") {
-    return financePaymentSessionService.failPaymentSession(
-      db,
-      event.paymentSessionId,
-      {
-        ...providerData,
-        failureCode: "payment_adapter_callback",
-        failureMessage: "Payment adapter callback mapped this session to failed.",
-      },
-      runtime,
-    )
-  }
-
-  if (event.nextState === "cancelled") {
-    return financePaymentSessionService.cancelPaymentSession(
-      db,
-      event.paymentSessionId,
-      providerData,
-      runtime,
-    )
-  }
-
-  if (event.nextState === "expired") {
-    return financePaymentSessionService.expirePaymentSession(
-      db,
-      event.paymentSessionId,
-      providerData,
-      runtime,
-    )
-  }
-
-  return financePaymentSessionService.updatePaymentSession(
-    db,
-    event.paymentSessionId,
-    {
-      status: event.nextState,
-      ...providerData,
-    },
-    runtime,
-  )
+  return applyLockedNonCompletionCallbackEvent(db, event, providerData)
 }

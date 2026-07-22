@@ -405,7 +405,11 @@ describe("createPaymentLinkRoutes", () => {
         description: "Body description",
         returnUrl: "https://checkout.example.com/continue",
         cancelUrl: "https://checkout.example.com/cancel",
-        metadata: { source: "temporary-shim" },
+        metadata: {
+          source: "temporary-shim",
+          callbackUrl: "https://attacker.example.com/callback",
+          notifyUrl: "https://attacker.example.com/notify",
+        },
         shipping: { method: "courier" },
       }),
     })

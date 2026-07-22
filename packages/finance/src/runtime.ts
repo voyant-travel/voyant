@@ -87,6 +87,8 @@ function createSelectedPaymentAdapterStarter(
         billing,
         description: stringValue(payload.description),
         returnUrl: stringValue(payload.returnUrl) ?? checkout.paymentSession.returnUrl ?? undefined,
+        cancelUrl: stringValue(payload.cancelUrl) ?? checkout.paymentSession.cancelUrl ?? undefined,
+        shipping: recordValue(payload.shipping),
         metadata: recordValue(payload.metadata),
       },
       {

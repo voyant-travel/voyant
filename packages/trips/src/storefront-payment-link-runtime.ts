@@ -37,6 +37,8 @@ interface AdapterCardPaymentStartArgs {
   }
   description?: string
   returnUrl?: string
+  cancelUrl?: string
+  shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }
 type PaymentAdapterCardPaymentStarterFactory = (
@@ -228,6 +230,8 @@ function createAdapterStartCardPayment(
       billing,
       description: session.description ?? session.notes ?? "Payment",
       returnUrl: session.returnUrl ?? session.redirectUrl ?? undefined,
+      cancelUrl: session.cancelUrl,
+      shipping: session.shipping,
       metadata: session.metadata,
     })
     return { configured: true, redirectUrl: result?.redirectUrl ?? null }
