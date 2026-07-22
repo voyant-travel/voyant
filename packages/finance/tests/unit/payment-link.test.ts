@@ -38,6 +38,15 @@ describe("buildPaymentLinkUrl", () => {
     ).toBe("https://example.com/ro/pay/pmss_123?lang=ro#checkout")
   })
 
+  it("preserves trailing slashes inside search and fragment data", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay?next=/" })).toBe(
+      "https://example.com/pay/pmss_123?next=/",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/ro#return/" })).toBe(
+      "https://example.com/ro/pay/pmss_123#return/",
+    )
+  })
+
   it("supports relative bases with suffixes", () => {
     expect(buildPaymentLinkUrl("pmss 123", { baseUrl: "/ro?lang=ro#checkout" })).toBe(
       "/ro/pay/pmss%20123?lang=ro#checkout",

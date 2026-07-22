@@ -18,8 +18,8 @@ export function buildPaymentLinkUrl(
   const template = normalizePaymentLinkBaseUrl(options.invoicePayUrlTemplate)
   if (template) return template.replaceAll("{sessionId}", encodeURIComponent(paymentSessionId))
 
-  const normalizedBaseUrl = normalizePaymentLinkBaseUrl(options.baseUrl ?? getBrowserOrigin())
-  const { basePath, suffix } = splitPaymentLinkBaseUrl(normalizedBaseUrl)
+  const baseUrl = trimPaymentLinkBaseUrl(options.baseUrl ?? getBrowserOrigin())
+  const { basePath, suffix } = splitPaymentLinkBaseUrl(baseUrl)
   const sessionPath = `/${encodeURIComponent(paymentSessionId)}`
   const path = basePath?.endsWith("/pay") ? sessionPath : `/pay${sessionPath}`
 
@@ -55,6 +55,11 @@ function normalizePaymentLinkBaseUrl(baseUrl: string | null | undefined): string
   return trimmed.replace(/\/+$/, "")
 }
 
+function trimPaymentLinkBaseUrl(baseUrl: string | null | undefined): string | null {
+  const trimmed = baseUrl?.trim()
+  return trimmed || null
+}
+
 function splitPaymentLinkBaseUrl(baseUrl: string | null): {
   basePath: string | null
   suffix: string
@@ -69,7 +74,10 @@ function splitPaymentLinkBaseUrl(baseUrl: string | null): {
       : fragmentIndex === -1
         ? queryIndex
         : Math.min(queryIndex, fragmentIndex)
-  if (suffixIndex === -1) return { basePath: baseUrl, suffix: "" }
+  if (suffixIndex === -1) {
+    const basePath = baseUrl.replace(/\/+$/, "")
+    return { basePath: basePath || null, suffix: "" }
+  }
 
   const basePath = baseUrl.slice(0, suffixIndex).replace(/\/+$/, "")
   return {
