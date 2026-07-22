@@ -35,7 +35,7 @@ function makeRegistry(): SourceAdapterRegistry {
   } as never
 }
 
-function buildApp(userId?: string) {
+function buildApp(userId?: string, eventBus?: { emit: ReturnType<typeof vi.fn> }) {
   const app = new OpenAPIHono()
   app.onError((error, c) => {
     const status = (error as { status?: number }).status ?? 500
@@ -44,6 +44,10 @@ function buildApp(userId?: string) {
   app.use("*", async (c, next) => {
     // biome-ignore lint/suspicious/noExplicitAny: route unit test injects only context variables used by the handler. -- owner: products
     ;(c as any).set("db", {})
+    if (eventBus) {
+      // biome-ignore lint/suspicious/noExplicitAny: route unit test injects only context variables used by the handler. -- owner: products
+      ;(c as any).set("eventBus", eventBus)
+    }
     if (userId) {
       // biome-ignore lint/suspicious/noExplicitAny: route unit test injects only context variables used by the handler. -- owner: products
       ;(c as any).set("userId", userId)
@@ -81,6 +85,69 @@ describe("createProductEditorialOverlayRoutes", () => {
       expect.objectContaining({
         origin: { kind: "admin-ui", user_id: "usr_editor" },
       }),
+      expect.anything(),
+    )
+  })
+
+  it("emits one catalog overlay-change event after a successful write", async () => {
+    const eventBus = { emit: vi.fn().mockResolvedValue(undefined) }
+    const app = buildApp("usr_editor", eventBus)
+
+    const res = await app.request("/prod_1/editorial-overlays", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        nodeKind: "itinerary-day",
+        nodeKey: "day_2",
+        fieldPath: "title",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+        value: "Ziua doi",
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(eventBus.emit).toHaveBeenCalledTimes(1)
+    expect(eventBus.emit).toHaveBeenCalledWith(
+      "catalog.entity.overlay.changed",
+      expect.objectContaining({
+        entity_module: "products",
+        entity_id: "prod_1",
+        node_kind: "itinerary-day",
+        node_key: "day_2",
+        field_path: "title",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+      }),
+      expect.anything(),
+    )
+  })
+
+  it("emits only when clear actually mutates an overlay", async () => {
+    const eventBus = { emit: vi.fn().mockResolvedValue(undefined) }
+    serviceMocks.clearProductEditorialOverlay
+      .mockResolvedValueOnce({
+        node_kind: "root",
+        node_key: "root",
+        field_path: "name",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+      })
+      .mockResolvedValueOnce(null)
+    const app = buildApp("usr_editor", eventBus)
+    const url =
+      "/prod_1/editorial-overlays?fieldPath=name&locale=ro-RO&audience=customer&market=RO"
+
+    expect((await app.request(url, { method: "DELETE" })).status).toBe(200)
+    expect((await app.request(url, { method: "DELETE" })).status).toBe(200)
+
+    expect(eventBus.emit).toHaveBeenCalledTimes(1)
+    expect(eventBus.emit).toHaveBeenCalledWith(
+      "catalog.entity.overlay.changed",
+      expect.objectContaining({ entity_module: "products", entity_id: "prod_1" }),
       expect.anything(),
     )
   })

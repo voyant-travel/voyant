@@ -19,6 +19,8 @@ const overlayChangedPayloadSchema = z
   .object({
     entity_module: z.string().min(1),
     entity_id: z.string().min(1),
+    node_kind: z.string().min(1).optional(),
+    node_key: z.string().min(1).optional(),
     field_path: z.string().min(1),
     locale: z.string().min(1),
     audience: z.string().min(1),

@@ -60,6 +60,13 @@ const ACCOMMODATION_PROPERTY_FIELD_POLICY: FieldPolicyInput[] = [
     localized: false,
     reindex: "entry",
   }),
+  propertyField("gallery", {
+    class: "merchandisable",
+    merge: "replace",
+    editRole: "marketing",
+    localized: false,
+    reindex: "entry",
+  }),
   propertyField("highlights", {
     class: "merchandisable",
     merge: "replace",
@@ -92,7 +99,36 @@ const ACCOMMODATION_PROPERTY_FIELD_POLICY: FieldPolicyInput[] = [
   ),
 ]
 
+/** Effective property fields denormalized onto referencing room-type documents. */
+const ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY: FieldPolicyInput[] = [
+  propertyField("property.name", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+  }),
+  propertyField("property.description", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+  }),
+  propertyField("property.heroImageUrl", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    localized: false,
+    reindex: "entry",
+  }),
+  propertyField("property.gallery", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    localized: false,
+    reindex: "entry",
+  }),
+]
+
 export const accommodationPropertyCatalogPolicy = defineFieldPolicy(
   ACCOMMODATION_PROPERTY_FIELD_POLICY,
 )
-export { ACCOMMODATION_PROPERTY_FIELD_POLICY }
+export { ACCOMMODATION_PROPERTY_FIELD_POLICY, ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY }

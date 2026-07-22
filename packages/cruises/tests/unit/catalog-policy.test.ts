@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest"
 
 import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"
 import { cruiseShipCatalogPolicy } from "../../src/catalog-policy-ships.js"
-import { assertOverlayableShipField } from "../../src/service-presentation-subjects.js"
+import {
+  assertOverlayableShipField,
+  cruiseShipOverlayInvalidationScope,
+} from "../../src/service-presentation-subjects.js"
 
 describe("cruiseCatalogPolicy", () => {
   it("compiles into a valid registry without errors", () => {
@@ -87,5 +90,22 @@ describe("cruiseShipCatalogPolicy", () => {
     expect(() => assertOverlayableShipField("deckPlanUrl")).not.toThrow()
     expect(() => assertOverlayableShipField("capacityGuests")).toThrow(/not an overlayable/i)
     expect(() => assertOverlayableShipField("source.ref")).toThrow(/not an overlayable/i)
+  })
+
+  it("invalidates nonlocalized entry-wide ship fields across every slice", () => {
+    expect(
+      cruiseShipOverlayInvalidationScope("gallery", {
+        locale: "default",
+        audience: "customer",
+        market: "RO",
+      }),
+    ).toEqual({ locale: "default", audience: "default", market: "default" })
+    expect(
+      cruiseShipOverlayInvalidationScope("name", {
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+      }),
+    ).toEqual({ locale: "ro-RO", audience: "customer", market: "RO" })
   })
 })

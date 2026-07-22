@@ -111,17 +111,17 @@ function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {
 }
 
 export function withCatalogEmbedding(
-  inner: (entityId: string, slice: IndexerSlice) => Promise<IndexerDocument | null>,
+  inner: DocumentBuilder,
   embeddings:
     | {
         capabilities: { modelId: string }
         embed(input: string[]): Promise<number[][]>
       }
     | undefined,
-): typeof inner {
+): DocumentBuilder {
   if (!embeddings) return inner
-  return async (entityId, slice) => {
-    const document = await inner(entityId, slice)
+  return async (entityId, slice, context) => {
+    const document = await inner(entityId, slice, context)
     if (!document) return null
     const text = merchandisableText(document)
     if (!text) return document

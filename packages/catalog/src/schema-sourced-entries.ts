@@ -18,6 +18,7 @@
  */
 
 import { typeId } from "@voyant-travel/db/lib/typeid-column"
+import { sql } from "drizzle-orm"
 import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import type { SourceFreshness } from "./contract.js"
@@ -33,8 +34,10 @@ export type SourcedEntryStatus = "active" | "withdrawn" | "delisted"
 /**
  * `catalog_sourced_entries` — single durable record per sourced entity,
  * keyed two ways: by Voyant-side `(entity_module, entity_id)` for
- * read-path lookup, and by upstream-side `(source_kind,
- * source_connection_id, source_ref)` for discover-time idempotency.
+ * read-path lookup, and by upstream-side `(entity_module, source_kind,
+ * source_connection_id, source_ref)` for discover-time
+ * idempotency. The module is part of the identity because one upstream ref can
+ * legitimately denote different presentation-subject kinds.
  *
  * The `projection` JSONB column is the canonical local copy of what
  * `adapter.discover()` returned. Read it for thin-content synthesis (when
@@ -80,15 +83,24 @@ export const catalogSourcedEntriesTable = pgTable(
   (table) => [
     // Voyant-side lookup: one entity per (module, id).
     uniqueIndex("catalog_sourced_entries_entity_uniq").on(table.entity_module, table.entity_id),
-    // Upstream-side idempotency: one row per (kind, connection, source_ref).
-    // Conditional partial-uniqueness skipped — discover() should always
-    // emit all three components for a sourced row, and the entity-uniq
-    // covers the rare case where source_ref is null.
-    uniqueIndex("catalog_sourced_entries_source_uniq").on(
-      table.source_kind,
-      table.source_connection_id,
-      table.source_ref,
-    ),
+    // Upstream-side idempotency. Separate partial indexes make a missing
+    // connection an actual identity value (Postgres normally treats NULLs as
+    // distinct) while allowing source_ref-less diagnostic rows.
+    uniqueIndex("catalog_sourced_entries_source_connected_uniq")
+      .on(
+        table.entity_module,
+        table.source_kind,
+        table.source_connection_id,
+        table.source_ref,
+      )
+      .where(
+        sql`${table.source_connection_id} IS NOT NULL AND ${table.source_ref} IS NOT NULL`,
+      ),
+    uniqueIndex("catalog_sourced_entries_source_connectionless_uniq")
+      .on(table.entity_module, table.source_kind, table.source_ref)
+      .where(
+        sql`${table.source_connection_id} IS NULL AND ${table.source_ref} IS NOT NULL`,
+      ),
     // Per-vertical × source listings.
     index("catalog_sourced_entries_module_kind_idx").on(table.entity_module, table.source_kind),
     // Withdrawal sweepers — find rows that haven't been seen in N days.

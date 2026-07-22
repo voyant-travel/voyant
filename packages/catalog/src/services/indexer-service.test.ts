@@ -6,7 +6,11 @@ import type {
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { describe, expect, it } from "vitest"
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
-import { createIndexerService, createReferencedSubjectReindexFanout } from "./indexer-service.js"
+import {
+  createIndexerService,
+  createReferencedSubjectReindexFanout,
+  type DocumentBuilderContext,
+} from "./indexer-service.js"
 
 interface AdapterCall {
   op: "ensureCollection" | "upsert" | "delete" | "search" | "bulkReindex"
@@ -189,6 +193,49 @@ describe("IndexerService", () => {
     expect(deleteCalls).toHaveLength(1)
     expect(deleteCalls[0]?.slice).toEqual(customerSlice)
     expect(deleteCalls[0]?.ids).toEqual(["prod_xyz"])
+  })
+
+  it("passes canonical referenced-subject resolution into document builders", async () => {
+    const adapter = createStubAdapter()
+    const service = createIndexerService({
+      adapter,
+      slices: [productSlices[1]!],
+      registries: new Map([["products", productsRegistry]]),
+    })
+    const context: DocumentBuilderContext = {
+      async resolveReferencedSubject(input) {
+        expect(input).toEqual({
+          entityModule: "accommodation-properties",
+          entityId: "prop_1",
+        })
+        return {
+          subject: { entityModule: input.entityModule, entityId: input.entityId },
+          scope: productSlices[1]!,
+          values: new Map([["name", "Operator hotel name"]]),
+        }
+      },
+    }
+
+    await service.reindexEntity(
+      "products",
+      "prod_xyz",
+      async (entityId, _slice, buildContext) => {
+        const property = await buildContext?.resolveReferencedSubject({
+          entityModule: "accommodation-properties",
+          entityId: "prop_1",
+        })
+        return {
+          id: entityId,
+          fields: { accommodationName: property?.values.get("name") },
+        }
+      },
+      context,
+    )
+
+    expect(adapter.calls.find((call) => call.op === "upsert")?.documents?.[0]).toEqual({
+      id: "prod_xyz",
+      fields: { accommodationName: "Operator hotel name" },
+    })
   })
 
   it("throws when reindexing for a vertical without a registered registry", async () => {

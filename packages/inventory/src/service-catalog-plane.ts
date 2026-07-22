@@ -26,6 +26,7 @@ import {
   type CaptureSnapshotInput,
   createFieldPolicyRegistry,
   type DocumentBuilder,
+  type DocumentBuilderContext,
   type DocumentEmitter,
   type FieldPolicy,
   type FieldPolicyRegistry,
@@ -41,6 +42,7 @@ import {
   type Visibility,
 } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { facilities, properties } from "@voyant-travel/operations"
 import { asc, eq, sql } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
@@ -409,7 +411,11 @@ export function createProductDocumentBuilder(
 ): DocumentBuilder {
   const registry = context.registry ?? getProductsRegistry()
   const extensions = context.extensions ?? []
-  return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
+  return async (
+    entityId: string,
+    slice: IndexerSlice,
+    buildContext?: DocumentBuilderContext,
+  ): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(products).where(eq(products.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
@@ -418,10 +424,6 @@ export function createProductDocumentBuilder(
     const baseProjection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
     })
-    if (extensions.length === 0) {
-      return buildIndexerDocument(registry, baseProjection, slice, entityId)
-    }
-
     const extensionProjections = await Promise.all(
       extensions.map((ext) => ext.project(db, entityId, slice)),
     )
@@ -431,8 +433,77 @@ export function createProductDocumentBuilder(
         merged.set(path, value)
       }
     }
+    const propertyProjection = await resolveProductAccommodationPropertyReference(
+      db,
+      row,
+      buildContext,
+    )
+    if (propertyProjection) {
+      copyReferencedPropertyValue(propertyProjection, "name", merged, "property.name")
+      copyReferencedPropertyValue(
+        propertyProjection,
+        "description",
+        merged,
+        "property.description",
+      )
+      copyReferencedPropertyValue(
+        propertyProjection,
+        "hero_image_url",
+        merged,
+        "property.heroImageUrl",
+      )
+      copyReferencedPropertyValue(propertyProjection, "gallery", merged, "property.gallery")
+    }
     return buildIndexerDocument(registry, merged, slice, entityId)
   }
+}
+
+async function resolveProductAccommodationPropertyReference(
+  db: AnyDrizzleDb,
+  product: Product,
+  context: DocumentBuilderContext | undefined,
+): Promise<ReadonlyMap<string, unknown> | null> {
+  if (!product.facilityId || !context) return null
+
+  const [ownedProperty] = await db
+    .select({
+      id: properties.id,
+      brandName: properties.brandName,
+      groupName: properties.groupName,
+      facilityName: facilities.name,
+      facilityDescription: facilities.description,
+    })
+    .from(properties)
+    .innerJoin(facilities, eq(facilities.id, properties.facilityId))
+    .where(eq(properties.facilityId, product.facilityId))
+    .limit(1)
+
+  const propertyId = ownedProperty?.id ?? product.facilityId
+  const sourceValues = ownedProperty
+    ? new Map<string, unknown>([
+        ["id", propertyId],
+        ["source.kind", "owned"],
+        ["name", ownedProperty.facilityName ?? ownedProperty.brandName ?? ownedProperty.groupName],
+        ["description", ownedProperty.facilityDescription ?? null],
+        ["hero_image_url", null],
+        ["gallery", []],
+      ])
+    : undefined
+  const subject = await context.resolveReferencedSubject({
+    entityModule: "accommodation-properties",
+    entityId: propertyId,
+    ...(sourceValues ? { sourceValues } : {}),
+  })
+  return subject?.values ?? null
+}
+
+function copyReferencedPropertyValue(
+  source: ReadonlyMap<string, unknown>,
+  sourcePath: string,
+  target: Map<string, unknown>,
+  targetPath: string,
+): void {
+  if (source.has(sourcePath)) target.set(targetPath, source.get(sourcePath))
 }
 
 /**

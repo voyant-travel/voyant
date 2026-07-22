@@ -1,7 +1,9 @@
 import {
   CATALOG_PRESENTATION_SUBJECT_MODULES,
   buildIndexerDocument,
+  catalogSourcedEntriesTable,
   clearOverlayByTarget,
+  createSourcedPresentationSubjectIngestion,
   createFieldPolicyRegistry,
   fetchOverlaysForEntity,
   listOverlayHistoryForTarget,
@@ -9,9 +11,10 @@ import {
   OVERLAY_ROOT_NODE_KEY,
   OVERLAY_ROOT_NODE_KIND,
   readSourcedEntry,
+  readSourcedEntryBySource,
   resolveOverlay,
-  resolveSourcedPresentationSubject,
   type DocumentBuilder,
+  type EffectiveReferencedSubjectProjection,
   type IndexerSlice,
   type OverlayOrigin,
   type ResolverScope,
@@ -20,17 +23,55 @@ import {
   writeOverlay,
 } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { eq, or } from "drizzle-orm"
+import { and, eq, or } from "drizzle-orm"
 
 import { cruiseShipCatalogPolicy } from "./catalog-policy-ships.js"
-import type { SourceRef } from "./adapters/index.js"
-import { encodeSourceRef } from "./lib/key.js"
+import type { ExternalShip, SourceRef } from "./adapters/index.js"
+import { decodeSourceRef, encodeSourceRef } from "./lib/key.js"
 import { cruiseShips } from "./schema-cabins.js"
 import { cruises, cruiseSailings } from "./schema-core.js"
+import { cruisesSourcedContentTable } from "./schema-sourced-content.js"
+import { z } from "./validation-shared.js"
 
 export const CRUISE_SHIP_SUBJECT_MODULE = CATALOG_PRESENTATION_SUBJECT_MODULES.CRUISE_SHIPS
 
 const cruiseShipRegistry = createFieldPolicyRegistry(cruiseShipCatalogPolicy)
+const ingestSourcedCruiseShip = createSourcedPresentationSubjectIngestion({
+  entityModule: CRUISE_SHIP_SUBJECT_MODULE,
+  idPrefix: "cruise_ships",
+})
+
+const shipOverlayValueSchemas = {
+  name: z.string().trim().min(1).max(255),
+  description: z.string().nullable(),
+  gallery: z.array(z.string().min(1)),
+  amenities: z.record(z.string(), z.unknown()),
+  deckPlanUrl: z.string().url().nullable(),
+} as const
+
+const cruiseShipPresentationSchema = z
+  .object({
+    id: z.string().min(1),
+    "source.kind": z.string().min(1).optional(),
+    "source.ref": z.string().min(1).nullable().optional(),
+    name: shipOverlayValueSchemas.name,
+    description: shipOverlayValueSchemas.description.optional(),
+    gallery: shipOverlayValueSchemas.gallery.optional(),
+    amenities: shipOverlayValueSchemas.amenities.optional(),
+    deckPlanUrl: shipOverlayValueSchemas.deckPlanUrl.optional(),
+    shipType: z.string().min(1),
+    capacityGuests: z.number().int().nonnegative().nullable().optional(),
+    capacityCrew: z.number().int().nonnegative().nullable().optional(),
+    cabinCount: z.number().int().nonnegative().nullable().optional(),
+    deckCount: z.number().int().nonnegative().nullable().optional(),
+    lengthMeters: z.string().nullable().optional(),
+    cruisingSpeedKnots: z.string().nullable().optional(),
+    yearBuilt: z.number().int().nonnegative().nullable().optional(),
+    yearRefurbished: z.number().int().nonnegative().nullable().optional(),
+    imo: z.string().nullable().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
 
 export interface CruiseShipOverlayScope {
   locale: string
@@ -40,6 +81,10 @@ export interface CruiseShipOverlayScope {
 
 export interface CruiseShipOverlayTarget {
   field_path: string
+}
+
+export type PublicCruiseShipOverlayScope = Omit<CruiseShipOverlayScope, "audience"> & {
+  audience: "customer" | "partner"
 }
 
 export interface WriteCruiseShipOverlayInput extends CruiseShipOverlayTarget {
@@ -63,15 +108,67 @@ export interface CruiseShipSourceReferenceInput {
   projection: Record<string, unknown>
 }
 
+export function externalCruiseShipToProjection(ship: ExternalShip): Record<string, unknown> {
+  return {
+    id: encodeSourceRef(ship.sourceRef),
+    name: ship.name,
+    description: ship.description ?? null,
+    gallery: ship.gallery ?? [],
+    amenities: ship.amenities ?? {},
+    deckPlanUrl: ship.deckPlanUrl ?? null,
+    shipType: ship.shipType,
+    capacityGuests: ship.capacityGuests ?? null,
+    capacityCrew: ship.capacityCrew ?? null,
+    cabinCount: ship.cabinCount ?? null,
+    deckCount: ship.deckCount ?? null,
+    lengthMeters: ship.lengthMeters ?? null,
+    cruisingSpeedKnots: ship.cruisingSpeedKnots ?? null,
+    yearBuilt: ship.yearBuilt ?? null,
+    yearRefurbished: ship.yearRefurbished ?? null,
+    imo: ship.imo ?? null,
+    isActive: true,
+  }
+}
+
+export function ingestExternalCruiseShip(
+  db: AnyDrizzleDb,
+  sourceProvider: string,
+  ship: ExternalShip,
+) {
+  return resolveSourcedCruiseShipReference(db, {
+    sourceKind: `cruise:${sourceProvider}`,
+    sourceProvider,
+    sourceConnectionId: ship.sourceRef.connectionId ?? null,
+    sourceRef: ship.sourceRef,
+    projection: externalCruiseShipToProjection(ship),
+  })
+}
+
+/**
+ * Resolve an already-ingested provider ship without mutating catalog state.
+ * Public GET routes use this lookup so storefront reads never become an
+ * implicit discovery/write boundary.
+ */
+export function findExistingExternalCruiseShipSubject(
+  db: AnyDrizzleDb,
+  sourceProvider: string,
+  ship: ExternalShip,
+) {
+  return readSourcedEntryBySource(db, {
+    entityModule: CRUISE_SHIP_SUBJECT_MODULE,
+    sourceKind: `cruise:${sourceProvider}`,
+    sourceConnectionId: ship.sourceRef.connectionId ?? null,
+    sourceRef: encodeSourceRef(ship.sourceRef),
+  })
+}
+
 export async function resolveSourcedCruiseShipReference(
   db: AnyDrizzleDb,
   input: CruiseShipSourceReferenceInput,
 ) {
   const sourceRef =
     typeof input.sourceRef === "string" ? input.sourceRef : encodeSourceRef(input.sourceRef)
-  return resolveSourcedPresentationSubject(db, {
-    entityModule: CRUISE_SHIP_SUBJECT_MODULE,
-    idPrefix: "cruise_ships",
+  return ingestSourcedCruiseShip(db, {
     sourceKind: input.sourceKind,
     sourceConnectionId: input.sourceConnectionId,
     sourceProvider: input.sourceProvider,
@@ -108,7 +205,12 @@ export async function readCruiseShipOverlayState(
   }
   return {
     subject: { module: CRUISE_SHIP_SUBJECT_MODULE, id: shipId },
-    locale: effectiveLocale(scope.locale, source.sourceLocale, source.projection, effective),
+    locale: resolveCruiseShipEffectiveLocale(
+      scope.locale,
+      source.sourceLocale,
+      source.projection,
+      effective,
+    ),
     source: Object.fromEntries(source.projection),
     effective: Object.fromEntries(effective.values),
     fields,
@@ -122,7 +224,7 @@ export async function readCruiseShipOverlayState(
 export async function readPublicCruiseShipProjection(
   db: AnyDrizzleDb,
   shipId: string,
-  scope: CruiseShipOverlayScope,
+  scope: PublicCruiseShipOverlayScope,
 ) {
   const source = await readCruiseShipSourceProjection(db, shipId)
   if (!source) return null
@@ -131,12 +233,20 @@ export async function readPublicCruiseShipProjection(
     cruiseShipRegistry,
     source.projection,
     overlays,
-    toResolverScope(scope, publicActor(scope)),
+    toResolverScope(scope, scope.audience),
   )
+  const content = Object.fromEntries(effective.values)
+  delete content["source.kind"]
+  delete content["source.ref"]
   return {
     subject: { module: CRUISE_SHIP_SUBJECT_MODULE, id: shipId },
-    locale: effectiveLocale(scope.locale, source.sourceLocale, source.projection, effective),
-    content: Object.fromEntries(effective.values),
+    locale: resolveCruiseShipEffectiveLocale(
+      scope.locale,
+      source.sourceLocale,
+      source.projection,
+      effective,
+    ),
+    content,
   }
 }
 
@@ -155,23 +265,79 @@ export function createCruiseShipDocumentBuilder(db: AnyDrizzleDb): DocumentBuild
   }
 }
 
+/** Cruise-owned fallback for builders whose canonical context has no owned-subject loader. */
+export async function readEffectiveCruiseShipReferenceProjection(
+  db: AnyDrizzleDb,
+  shipId: string,
+  slice: IndexerSlice,
+): Promise<EffectiveReferencedSubjectProjection | null> {
+  const source = await readCruiseShipSourceProjection(db, shipId)
+  if (!source) return null
+  const overlays = await fetchOverlaysForEntity(db, CRUISE_SHIP_SUBJECT_MODULE, shipId)
+  const scope = {
+    locale: slice.locale,
+    audience: slice.audience === "staff-admin" ? ("staff" as const) : slice.audience,
+    market: slice.market,
+  }
+  return {
+    subject: { entityModule: CRUISE_SHIP_SUBJECT_MODULE, entityId: shipId },
+    scope,
+    values: resolveOverlay(
+      cruiseShipRegistry,
+      source.projection,
+      overlays,
+      resolverScopeForSlice(slice),
+    ).values,
+  }
+}
+
 export async function writeCruiseShipOverlay(
   db: AnyDrizzleDb,
   shipId: string,
   input: WriteCruiseShipOverlayInput,
 ): Promise<SelectCatalogOverlay> {
-  assertOverlayableShipField(input.field_path)
+  const scope = normalizeShipOverlayScope(input.field_path, input.scope)
+  assertOverlayableShipValue(input.field_path, input.value)
   const source = await readCruiseShipSourceProjection(db, shipId)
   if (!source) throw new Error(`Cruise ship ${shipId} not found`)
+  const overlays = await fetchOverlaysForEntity(db, CRUISE_SHIP_SUBJECT_MODULE, shipId)
+  const candidate = [
+    ...overlays.filter(
+      (overlay) =>
+        !(
+          overlay.field_path === input.field_path &&
+          overlay.locale === scope.locale &&
+          overlay.audience === scope.audience &&
+          overlay.market === scope.market
+        ),
+    ),
+    {
+      field_path: input.field_path,
+      locale: scope.locale,
+      audience: scope.audience,
+      market: scope.market,
+      value: input.value,
+    },
+  ]
+  const merged = resolveOverlay(
+    cruiseShipRegistry,
+    source.projection,
+    candidate,
+    toResolverScope(scope, "staff"),
+  )
+  const validation = cruiseShipPresentationSchema.safeParse(Object.fromEntries(merged.values))
+  if (!validation.success) {
+    throw new Error(`Cruise ship editorial overlay failed validation: ${validation.error.message}`)
+  }
   return writeOverlay(db, {
     entity_module: CRUISE_SHIP_SUBJECT_MODULE,
     entity_id: shipId,
     node_kind: OVERLAY_ROOT_NODE_KIND,
     node_key: OVERLAY_ROOT_NODE_KEY,
     field_path: input.field_path,
-    locale: input.scope.locale,
-    audience: input.scope.audience,
-    market: input.scope.market,
+    locale: scope.locale,
+    audience: scope.audience,
+    market: scope.market,
     value: input.value,
     origin: input.origin,
     expected_version: input.expected_version,
@@ -184,16 +350,16 @@ export async function clearCruiseShipOverlay(
   shipId: string,
   input: ClearCruiseShipOverlayInput,
 ): Promise<SelectCatalogOverlay | null> {
-  assertOverlayableShipField(input.field_path)
+  const scope = normalizeShipOverlayScope(input.field_path, input.scope)
   return clearOverlayByTarget(db, {
     entity_module: CRUISE_SHIP_SUBJECT_MODULE,
     entity_id: shipId,
     node_kind: OVERLAY_ROOT_NODE_KIND,
     node_key: OVERLAY_ROOT_NODE_KEY,
     field_path: input.field_path,
-    locale: input.scope.locale,
-    audience: input.scope.audience,
-    market: input.scope.market,
+    locale: scope.locale,
+    audience: scope.audience,
+    market: scope.market,
     expected_version: input.expected_version,
   })
 }
@@ -217,22 +383,110 @@ export async function listCruisesReferencingShip(
   db: AnyDrizzleDb,
   shipId: string,
 ): Promise<Array<{ entityModule: "cruises"; entityId: string }>> {
-  const rows = await db
+  const ownedRows = await db
     .select({ id: cruises.id })
     .from(cruises)
     .leftJoin(cruiseSailings, eq(cruiseSailings.cruiseId, cruises.id))
     .where(or(eq(cruises.defaultShipId, shipId), eq(cruiseSailings.shipId, shipId)))
-  return unique(rows.map((row) => row.id)).map((entityId) => ({
+  const shipEntry = await readSourcedEntry(db, CRUISE_SHIP_SUBJECT_MODULE, shipId)
+  const sourcedIds = shipEntry ? await listSourcedCruiseReferenceIds(db, shipEntry) : []
+  return unique([...ownedRows.map((row) => row.id), ...sourcedIds]).map((entityId) => ({
     entityModule: "cruises" as const,
     entityId,
   }))
 }
 
-export function assertOverlayableShipField(fieldPath: string): void {
+export async function findSourcedCruiseShipSubjectId(
+  db: AnyDrizzleDb,
+  cruiseEntry: NonNullable<Awaited<ReturnType<typeof readSourcedEntry>>> | null,
+): Promise<string | null> {
+  if (!cruiseEntry) return null
+  let externalId = referencedShipExternalId(cruiseEntry.projection)
+  if (!externalId) {
+    const cachedRows = await db
+      .select({ payload: cruisesSourcedContentTable.payload })
+      .from(cruisesSourcedContentTable)
+      .where(eq(cruisesSourcedContentTable.entity_id, cruiseEntry.entity_id))
+    externalId = cachedRows
+      .map((row) => referencedShipExternalId(row.payload))
+      .find((value): value is string => value !== null) ?? null
+  }
+  if (!externalId) return null
+  const candidates = await db
+    .select({
+      entityId: catalogSourcedEntriesTable.entity_id,
+      sourceRef: catalogSourcedEntriesTable.source_ref,
+      sourceConnectionId: catalogSourcedEntriesTable.source_connection_id,
+    })
+    .from(catalogSourcedEntriesTable)
+    .where(
+      and(
+        eq(catalogSourcedEntriesTable.entity_module, CRUISE_SHIP_SUBJECT_MODULE),
+        eq(catalogSourcedEntriesTable.source_kind, cruiseEntry.source_kind),
+      ),
+    )
+  return (
+    candidates.find(
+      (candidate) =>
+        (candidate.sourceConnectionId === cruiseEntry.source_connection_id ||
+          candidate.sourceConnectionId === null) &&
+        decodeSourceRef(candidate.sourceRef ?? "")?.externalId === externalId,
+    )?.entityId ?? null
+  )
+}
+
+export function assertOverlayableShipField(fieldPath: string) {
   const policy = cruiseShipRegistry.resolve(fieldPath)
   if (!policy || policy.class !== "merchandisable" || policy.merge === "source-only") {
     throw new Error(`Field ${fieldPath} is not an overlayable cruise ship presentation field`)
   }
+  return policy
+}
+
+export function assertOverlayableShipValue(fieldPath: string, value: unknown): void {
+  assertOverlayableShipField(fieldPath)
+  const schema = shipOverlayValueSchemas[fieldPath as keyof typeof shipOverlayValueSchemas]
+  if (!schema) throw new Error(`Field ${fieldPath} has no cruise ship overlay value schema`)
+  const parsed = schema.safeParse(value)
+  if (!parsed.success) {
+    throw new Error(`Invalid cruise ship ${fieldPath} overlay value: ${parsed.error.message}`)
+  }
+}
+
+export function projectEffectiveCruiseShipReference(
+  subject: EffectiveReferencedSubjectProjection,
+): ReadonlyMap<string, unknown> {
+  const projection = new Map<string, unknown>()
+  copyReferencedValue(subject.values, "name", projection, "ship.name")
+  copyReferencedValue(subject.values, "description", projection, "ship.description")
+  const gallery = subject.values.get("gallery")
+  if (Array.isArray(gallery)) projection.set("ship.heroImageUrl", gallery[0] ?? null)
+  copyReferencedValue(subject.values, "gallery", projection, "ship.gallery")
+  copyReferencedValue(subject.values, "deckPlanUrl", projection, "ship.deckPlanUrl")
+  return projection
+}
+
+/** Convert field-policy reindex granularity into catalog wildcard axes. */
+export function cruiseShipOverlayInvalidationScope(
+  fieldPath: string,
+  scope: CruiseShipOverlayScope,
+): Pick<CruiseShipOverlayScope, "locale" | "audience" | "market"> {
+  const policy = assertOverlayableShipField(fieldPath)
+  if (policy.reindex === "entry-locale") return scope
+  return {
+    locale: OVERLAY_DEFAULT_SCOPE,
+    audience: OVERLAY_DEFAULT_SCOPE,
+    market: OVERLAY_DEFAULT_SCOPE,
+  }
+}
+
+function copyReferencedValue(
+  source: ReadonlyMap<string, unknown>,
+  sourcePath: string,
+  target: Map<string, unknown>,
+  targetPath: string,
+): void {
+  if (source.has(sourcePath)) target.set(targetPath, source.get(sourcePath))
 }
 
 async function readCruiseShipSourceProjection(db: AnyDrizzleDb, shipId: string) {
@@ -240,10 +494,10 @@ async function readCruiseShipSourceProjection(db: AnyDrizzleDb, shipId: string) 
   if (sourced) {
     return {
       projection: new Map<string, unknown>([
+        ...Object.entries(sourced.projection),
         ["id", sourced.entity_id],
         ["source.kind", sourced.source_kind],
         ["source.ref", sourced.source_ref],
-        ...Object.entries(sourced.projection),
       ]),
       sourceLocale: stringOr(sourced.projection.locale, null),
       provenance: {
@@ -292,11 +546,6 @@ function toResolverScope(scope: CruiseShipOverlayScope, actor: ResolverScope["ac
   }
 }
 
-function publicActor(scope: CruiseShipOverlayScope): ResolverScope["actor"] {
-  if (scope.audience === "partner" || scope.audience === "supplier") return scope.audience
-  return "customer"
-}
-
 function resolverScopeForSlice(slice: IndexerSlice): ResolverScope {
   const actor = slice.audience === "staff-admin" ? "staff" : publicAudience(slice.audience)
   return {
@@ -323,22 +572,169 @@ function overlayMatchesScope(
   )
 }
 
-function effectiveLocale(
+export function resolveCruiseShipEffectiveLocale(
   requestedLocale: string,
   sourceLocale: string | null,
   source: ReadonlyMap<string, unknown>,
   effective: ReturnType<typeof resolveOverlay>,
 ) {
-  const hasOverlayOnly = [...effective.provenance.entries()].some(
-    ([path, provenance]) => provenance && !source.has(path),
+  const requestedOverlayPaths = [...effective.provenance.entries()].filter(
+    ([, provenance]) => provenance?.locale === requestedLocale,
   )
+  const hasRequestedOverlay = requestedOverlayPaths.length > 0
+  const hasOverlayOnly = requestedOverlayPaths.some(([path]) => !source.has(path))
+  const sourceIsExact = sourceLocale === requestedLocale
   return {
     requestedLocale,
     sourceLocale,
-    servedLocale: hasOverlayOnly ? requestedLocale : (sourceLocale ?? requestedLocale),
+    servedLocale: hasRequestedOverlay ? requestedLocale : (sourceLocale ?? requestedLocale),
     matchKind:
-      hasOverlayOnly ? "overlay-only" : sourceLocale === requestedLocale ? "exact" : "mixed",
+      hasRequestedOverlay && !sourceIsExact
+        ? "fallback_chain"
+        : hasOverlayOnly
+          ? "overlay_only"
+          : sourceIsExact
+            ? "exact"
+            : "source_fallback",
   }
+}
+
+function normalizeShipOverlayScope(
+  fieldPath: string,
+  scope: CruiseShipOverlayScope,
+): CruiseShipOverlayScope {
+  assertOverlayableShipField(fieldPath)
+  const policy = cruiseShipRegistry.resolve(fieldPath)
+  if (!policy) throw new Error(`Missing cruise ship field policy for ${fieldPath}`)
+  const locale = normalizeNonEmpty(scope.locale, "locale")
+  if (policy.localized && locale === OVERLAY_DEFAULT_SCOPE) {
+    throw new Error(`Localized cruise ship field ${fieldPath} requires a real locale`)
+  }
+  if (!policy.localized && locale !== OVERLAY_DEFAULT_SCOPE) {
+    throw new Error(
+      `Nonlocalized cruise ship field ${fieldPath} must use locale=${OVERLAY_DEFAULT_SCOPE}`,
+    )
+  }
+  return {
+    locale,
+    audience: scope.audience,
+    market: normalizeNonEmpty(scope.market, "market"),
+  }
+}
+
+async function listSourcedCruiseReferenceIds(
+  db: AnyDrizzleDb,
+  shipEntry: NonNullable<Awaited<ReturnType<typeof readSourcedEntry>>>,
+): Promise<string[]> {
+  const shipExternalId = decodeSourceRef(shipEntry.source_ref ?? "")?.externalId
+  if (!shipExternalId) return []
+  const sourceRows = await db
+    .select({
+      entityId: catalogSourcedEntriesTable.entity_id,
+      sourceConnectionId: catalogSourcedEntriesTable.source_connection_id,
+      projection: catalogSourcedEntriesTable.projection,
+    })
+    .from(catalogSourcedEntriesTable)
+    .where(
+      and(
+        eq(catalogSourcedEntriesTable.entity_module, "cruises"),
+        eq(catalogSourcedEntriesTable.source_kind, shipEntry.source_kind),
+      ),
+    )
+  const sameSource = sourceRows.filter(
+    (row) =>
+      shipEntry.source_connection_id === null ||
+      row.sourceConnectionId === shipEntry.source_connection_id,
+  )
+  const direct = sameSource
+    .filter((row) =>
+      projectionReferencesCruiseShip(
+        row.projection,
+        shipIdCandidates(shipEntry.entity_id, shipExternalId, shipEntry.source_ref),
+      ),
+    )
+    .map((row) => row.entityId)
+
+  const cachedRows = await db
+    .select({
+      entityId: cruisesSourcedContentTable.entity_id,
+      payload: cruisesSourcedContentTable.payload,
+    })
+    .from(cruisesSourcedContentTable)
+  const sameSourceIds = new Set(sameSource.map((row) => row.entityId))
+  const cached = cachedRows
+    .filter(
+      (row) =>
+        sameSourceIds.has(row.entityId) &&
+        projectionReferencesCruiseShip(
+          row.payload,
+          shipIdCandidates(shipEntry.entity_id, shipExternalId, shipEntry.source_ref),
+        ),
+    )
+    .map((row) => row.entityId)
+  return unique([...direct, ...cached])
+}
+
+function shipIdCandidates(
+  shipId: string,
+  externalId: string,
+  encodedSourceRef: string | null,
+): ReadonlySet<string> {
+  return new Set([
+    shipId,
+    externalId,
+    ...(encodedSourceRef ? [`crus_${encodedSourceRef}`] : []),
+  ])
+}
+
+export function projectionReferencesCruiseShip(
+  projection: Record<string, unknown>,
+  candidates: ReadonlySet<string>,
+): boolean {
+  const direct = [
+    projection.defaultShipId,
+    projection.default_ship_id,
+    projection.shipExternalId,
+    projection.ship_external_id,
+  ]
+  if (direct.some((value) => typeof value === "string" && candidates.has(value))) return true
+  const ship = asRecord(projection.ship)
+  if (ship && typeof ship.id === "string" && candidates.has(ship.id)) return true
+  const ref = asRecord(projection.defaultShipRef ?? projection.default_ship_ref)
+  return !!ref && typeof ref.externalId === "string" && candidates.has(ref.externalId)
+}
+
+function referencedShipExternalId(projection: Record<string, unknown>): string | null {
+  const direct = [
+    projection.defaultShipId,
+    projection.default_ship_id,
+    projection.shipExternalId,
+    projection.ship_external_id,
+  ].find((value): value is string => typeof value === "string" && value.length > 0)
+  if (direct) return normalizeExternalShipId(direct)
+  const ship = asRecord(projection.ship)
+  if (ship && typeof ship.id === "string" && ship.id.length > 0) {
+    return normalizeExternalShipId(ship.id)
+  }
+  const ref = asRecord(projection.defaultShipRef ?? projection.default_ship_ref)
+  return ref && typeof ref.externalId === "string" ? ref.externalId : null
+}
+
+function normalizeExternalShipId(value: string): string {
+  const encoded = value.startsWith("crus_") ? value.slice("crus_".length) : value
+  return decodeSourceRef(encoded)?.externalId ?? value
+}
+
+function normalizeNonEmpty(value: string, field: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) throw new Error(`${field} must be nonempty`)
+  return trimmed
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
 }
 
 function unique<T>(values: readonly T[]): T[] {

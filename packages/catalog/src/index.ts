@@ -330,14 +330,20 @@ export {
   type CatalogReverseReference,
   type CatalogReverseReferenceReader,
   type DocumentBuilder,
+  type DocumentBuilderContext,
+  type EffectiveReferencedSubjectProjection,
   type IndexerService,
   type IndexerServiceOptions,
+  type ReferencedSubjectResolutionInput,
   type ReferencedSubjectReindexFanoutOptions,
+  type ReferencedSubjectScope,
 } from "./services/indexer-service.js"
 // Runtime services — drizzle-bound entry points for verticals.
 export {
+  clearOverlayByTarget,
   fetchOverlaysForEntities,
   fetchOverlaysForEntity,
+  listOverlayHistoryForTarget,
   listOverlaysByOrigin,
   type OverlayOriginFilter,
   resolveEntityView,
@@ -359,15 +365,18 @@ export {
   viewToOverlayState,
 } from "./services/snapshot-service.js"
 export {
+  createSourcedPresentationSubjectIngestion,
   createReadProvenance,
   markMissingSourcedEntriesWithdrawn,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
+  type IngestSourcedPresentationSubjectInput,
   type ProvenanceReadResult,
   readSourcedEntryBySource,
   readSourcedEntry,
   resolveSourcedPresentationSubject,
   type ResolveSourcedPresentationSubjectInput,
+  type SourcedPresentationSubjectDefinition,
   type UpsertSourcedEntryInput,
   upsertSourcedEntry,
 } from "./services/sourced-entry-service.js"

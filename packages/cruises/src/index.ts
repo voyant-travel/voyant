@@ -97,6 +97,7 @@ export {
   cruiseDeckCatalogPolicy,
 } from "./catalog-policy-cabins.js"
 export {
+  CRUISE_SHIP_REFERENCE_FIELD_POLICY,
   CRUISE_SHIP_FIELD_POLICY,
   cruiseShipCatalogPolicy,
 } from "./catalog-policy-ships.js"
@@ -107,6 +108,7 @@ export {
   type CruiseLifecycleEvent,
   type CruiseLifecycleEventName,
   emitCruiseLifecycleEvent,
+  emitCruiseShipOverlayChanged,
 } from "./events.js"
 export type { CruiseAdminRoutes } from "./routes.js"
 export { cruiseAdminRoutes } from "./routes.js"
@@ -142,6 +144,7 @@ export {
   clearCruiseShipOverlay,
   createCruiseShipDocumentBuilder,
   CRUISE_SHIP_SUBJECT_MODULE,
+  findExistingExternalCruiseShipSubject,
   listCruiseShipOverlayHistory,
   listCruisesReferencingShip,
   readCruiseShipOverlayState,

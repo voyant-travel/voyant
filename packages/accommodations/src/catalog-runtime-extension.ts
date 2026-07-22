@@ -4,7 +4,10 @@ import type {
 
 import { registerAccommodationBookingHandler } from "./booking-engine/runtime.js"
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
-import { accommodationPropertyCatalogPolicy } from "./catalog-policy-properties.js"
+import {
+  accommodationPropertyCatalogPolicy,
+  ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+} from "./catalog-policy-properties.js"
 import { createRoomTypeDocumentBuilder } from "./service-catalog-plane.js"
 import {
   createAccommodationPropertyDocumentBuilder,
@@ -12,7 +15,7 @@ import {
 } from "./service-presentation-subjects.js"
 
 export const catalogAccommodationsRuntimeExtension = {
-  fieldPolicy: accommodationCatalogPolicy,
+  fieldPolicy: [...accommodationCatalogPolicy, ...ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY],
   propertyFieldPolicy: accommodationPropertyCatalogPolicy,
   createDocumentBuilder: ({ db, sellerOperatorId }) =>
     createRoomTypeDocumentBuilder(db, { sellerOperatorId }),

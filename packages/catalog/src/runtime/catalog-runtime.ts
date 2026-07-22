@@ -10,7 +10,11 @@ import {
   type FieldPolicyRegistry,
 } from "@voyant-travel/catalog/contract"
 import type { EmbeddingProvider } from "@voyant-travel/catalog/embeddings/contract"
-import { CATALOG_PRESENTATION_SUBJECT_MODULES } from "@voyant-travel/catalog/presentation-subjects"
+import { resolveOverlay } from "@voyant-travel/catalog/overlay/resolver"
+import {
+  CATALOG_PRESENTATION_SUBJECT_MODULES,
+  getCatalogPresentationSubjectDefinition,
+} from "@voyant-travel/catalog/presentation-subjects"
 import {
   buildCatalogEmbeddingProvider,
   buildCatalogSlices,
@@ -19,7 +23,13 @@ import {
   withCatalogEmbedding,
   withoutCatalogScopeChannel,
 } from "@voyant-travel/catalog/runtime-support"
-import type { DocumentBuilder } from "@voyant-travel/catalog/services/indexer"
+import {
+  type DocumentBuilder,
+  type DocumentBuilderContext,
+  type EffectiveReferencedSubjectProjection,
+} from "@voyant-travel/catalog/services/indexer"
+import { fetchOverlaysForEntity } from "@voyant-travel/catalog/services/overlay"
+import { readSourcedEntry } from "@voyant-travel/catalog/services/sourced-entry"
 import type {
   IndexerAdapter,
   IndexerProvider,
@@ -151,21 +161,77 @@ export function createCatalogDocumentBuilder(
   })
   const shipSubjects = cruises.createShipDocumentBuilder(db)
   const propertySubjects = accommodations.createPropertyDocumentBuilder(db)
-  return (entityId, slice) => {
+  return (entityId, slice, context) => {
+    const buildContext =
+      context ??
+      createReferencedSubjectDocumentBuilderContext(db, slice, getFieldPolicyRegistries())
     switch (slice.vertical) {
       case "products":
-        return products(entityId, slice)
+        return products(entityId, slice, buildContext)
       case "cruises":
-        return cruiseEntries(entityId, slice)
+        return cruiseEntries(entityId, slice, buildContext)
       case "cruise-ships":
-        return shipSubjects(entityId, slice)
+        return shipSubjects(entityId, slice, buildContext)
       case "accommodations":
-        return accommodationEntries(entityId, slice)
+        return accommodationEntries(entityId, slice, buildContext)
       case "accommodation-properties":
-        return propertySubjects(entityId, slice)
+        return propertySubjects(entityId, slice, buildContext)
       default:
         return Promise.resolve(null)
     }
+  }
+}
+
+/**
+ * Resolve referenced-subject copy from Catalog's durable sourced projection
+ * and active overlays. The context is internal to document construction: it is
+ * never serialized into index documents or public event payloads.
+ */
+export function createReferencedSubjectDocumentBuilderContext(
+  db: AnyDrizzleDb,
+  slice: Pick<IndexerSlice, "locale" | "audience" | "market">,
+  registries: ReadonlyMap<string, FieldPolicyRegistry> = getFieldPolicyRegistries(),
+): DocumentBuilderContext {
+  return {
+    async resolveReferencedSubject(input): Promise<EffectiveReferencedSubjectProjection | null> {
+      const definition = getCatalogPresentationSubjectDefinition(input.entityModule)
+      if (definition?.kind !== "referenced") return null
+      const registry = registries.get(input.entityModule)
+      if (!registry) return null
+
+      const sourced = input.sourceValues
+        ? null
+        : await readSourcedEntry(db, input.entityModule, input.entityId)
+      if (sourced && sourced.status !== "active") return null
+      const sourceValues = sourced
+        ? new Map<string, unknown>([
+            ...Object.entries(sourced.projection),
+            ["id", sourced.entity_id],
+            ["source.kind", sourced.source_kind],
+            ["source.ref", sourced.source_ref],
+          ])
+        : input.sourceValues
+      if (!sourceValues) return null
+
+      const scope = input.scope ?? slice
+      const overlays = await fetchOverlaysForEntity(db, input.entityModule, input.entityId)
+      const resolved = resolveOverlay(
+        registry,
+        sourceValues,
+        overlays,
+        {
+          locale: scope.locale,
+          audience: scope.audience === "staff-admin" ? "staff" : scope.audience,
+          market: scope.market,
+          actor: scope.audience === "staff-admin" ? "staff" : scope.audience,
+        },
+      )
+      return {
+        subject: { entityModule: input.entityModule, entityId: input.entityId },
+        scope,
+        values: resolved.values,
+      }
+    },
   }
 }
 

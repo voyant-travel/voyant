@@ -2,6 +2,7 @@ import {
   CATALOG_PRESENTATION_SUBJECT_MODULES,
   buildIndexerDocument,
   clearOverlayByTarget,
+  createSourcedPresentationSubjectIngestion,
   createFieldPolicyRegistry,
   fetchOverlaysForEntity,
   listOverlayHistoryForTarget,
@@ -10,8 +11,8 @@ import {
   OVERLAY_ROOT_NODE_KIND,
   readSourcedEntry,
   resolveOverlay,
-  resolveSourcedPresentationSubject,
   type DocumentBuilder,
+  type EffectiveReferencedSubjectProjection,
   type IndexerSlice,
   type OverlayOrigin,
   type ResolverScope,
@@ -27,19 +28,77 @@ import {
   properties,
 } from "@voyant-travel/operations"
 import { eq } from "drizzle-orm"
+import { z } from "zod"
 
 import { accommodationPropertyCatalogPolicy } from "./catalog-policy-properties.js"
+import type { AccommodationContent } from "./content-shape.js"
 import { roomTypes } from "./schema-inventory.js"
 
 export const ACCOMMODATION_PROPERTY_SUBJECT_MODULE =
   CATALOG_PRESENTATION_SUBJECT_MODULES.ACCOMMODATION_PROPERTIES
 
 const propertyRegistry = createFieldPolicyRegistry(accommodationPropertyCatalogPolicy)
+const ingestAccommodationPropertySubject = createSourcedPresentationSubjectIngestion({
+  entityModule: ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+  idPrefix: "properties",
+})
+
+const nonemptyString = z.string().trim().min(1)
+const nullableString = z.string().nullable()
+
+/** Canonical field value contracts for the accommodation-property subject. */
+export const accommodationPropertyOverlayValueSchemas = {
+  name: nonemptyString,
+  description: z.string(),
+  hero_image_url: z.string().url(),
+  gallery: z.array(z.string().url()),
+  highlights: z.array(nonemptyString),
+  amenities: z.array(nonemptyString),
+} as const
+
+/**
+ * The effective property document is deliberately closed. Provider-specific
+ * keys cannot leak into storefront responses or be persisted as overlays.
+ */
+export const accommodationPropertyProjectionSchema = z
+  .object({
+    id: nonemptyString,
+    "source.kind": nonemptyString.optional(),
+    "source.ref": nonemptyString.optional(),
+    name: nullableString.optional(),
+    description: nullableString.optional(),
+    hero_image_url: nullableString.optional(),
+    gallery: z.array(z.string().url()).optional(),
+    highlights: z.array(nonemptyString).optional(),
+    amenities: z.array(nonemptyString).optional(),
+    star_rating: z.number().int().min(0).max(10).nullable().optional(),
+    brand: nullableString.optional(),
+    country: nullableString.optional(),
+    city: nullableString.optional(),
+    address: nullableString.optional(),
+    postal_code: nullableString.optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
+    check_in_time: nullableString.optional(),
+    check_out_time: nullableString.optional(),
+  })
+  .strict()
+
+export const publicAccommodationPropertyProjectionSchema =
+  accommodationPropertyProjectionSchema.omit({
+    "source.kind": true,
+    "source.ref": true,
+  })
 
 export interface AccommodationPropertyOverlayScope {
   locale: string
   audience: "staff" | "customer" | "partner" | "supplier" | typeof OVERLAY_DEFAULT_SCOPE
   market: string
+}
+
+export interface PublicAccommodationPropertyOverlayScope
+  extends Omit<AccommodationPropertyOverlayScope, "audience"> {
+  audience: "customer" | "partner"
 }
 
 export interface AccommodationPropertyOverlayTarget {
@@ -61,25 +120,82 @@ export interface ClearAccommodationPropertyOverlayInput
   expected_version?: number | null
 }
 
+export interface SourcedAccommodationPropertyReferenceInput {
+  sourceKind: string
+  sourceRef: string
+  sourceConnectionId?: string | null
+  sourceProvider?: string | null
+  projection: Record<string, unknown>
+}
+
 export async function resolveSourcedAccommodationPropertyReference(
   db: AnyDrizzleDb,
-  input: {
-    sourceKind: string
-    sourceRef: string
-    sourceConnectionId?: string | null
-    sourceProvider?: string | null
-    projection: Record<string, unknown>
-  },
+  input: SourcedAccommodationPropertyReferenceInput,
 ) {
-  return resolveSourcedPresentationSubject(db, {
-    entityModule: ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
-    idPrefix: "properties",
+  return ingestAccommodationPropertySubject(db, {
     sourceKind: input.sourceKind,
     sourceConnectionId: input.sourceConnectionId,
     sourceProvider: input.sourceProvider,
     sourceRef: input.sourceRef,
     projection: input.projection,
   })
+}
+
+/**
+ * DB-owning discovery normalizers can use this before persisting a provider
+ * product/offer reference. The returned value is the durable Voyant property
+ * subject id; persist it instead of the provider's external hotel/facility id.
+ *
+ * Source adapters themselves do not receive a DB handle, so the generic
+ * discovery orchestrator still needs an explicit referenced-subject
+ * normalization hook before this can be guaranteed for every provider.
+ */
+export async function resolveSourcedAccommodationPropertySubjectId(
+  db: AnyDrizzleDb,
+  input: SourcedAccommodationPropertyReferenceInput,
+): Promise<string> {
+  return (await resolveSourcedAccommodationPropertyReference(db, input)).entity_id
+}
+
+/**
+ * Capture the referenced hotel identity while adapter content is being
+ * refreshed. The hotel id, not the sellable room/offer id, is the upstream
+ * identity for this referenced presentation subject.
+ */
+export async function refreshSourcedAccommodationPropertyReference(
+  db: AnyDrizzleDb,
+  input: {
+    sourceKind: string
+    sourceConnectionId?: string | null
+    sourceProvider?: string | null
+    returnedLocale: string
+    content: AccommodationContent
+  },
+) {
+  const sourceRef = input.content.hotel.id.trim()
+  if (!sourceRef) throw new Error("Sourced accommodation content requires a non-empty hotel id")
+  return resolveSourcedAccommodationPropertySubjectId(db, {
+    sourceKind: input.sourceKind,
+    sourceConnectionId: input.sourceConnectionId ?? null,
+    sourceProvider: input.sourceProvider ?? null,
+    sourceRef,
+    projection: accommodationPropertyProjectionFromContent(
+      input.content,
+      input.returnedLocale,
+    ),
+  })
+}
+
+export function accommodationPropertyProjectionFromContent(
+  content: AccommodationContent,
+  returnedLocale: string,
+): Record<string, unknown> {
+  return {
+    ...content.hotel,
+    locale: returnedLocale,
+    gallery: unique(content.room_types.flatMap((room) => room.images)),
+    amenities: unique(content.amenities.map((amenity) => amenity.name)),
+  }
 }
 
 export async function readAccommodationPropertyOverlayState(
@@ -89,7 +205,11 @@ export async function readAccommodationPropertyOverlayState(
 ) {
   const source = await readAccommodationPropertySourceProjection(db, propertyId)
   if (!source) return null
-  const overlays = await fetchOverlaysForEntity(db, ACCOMMODATION_PROPERTY_SUBJECT_MODULE, propertyId)
+  const overlays = await fetchOverlaysForEntity(
+    db,
+    ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+    propertyId,
+  )
   const effective = resolveOverlay(
     propertyRegistry,
     source.projection,
@@ -114,7 +234,12 @@ export async function readAccommodationPropertyOverlayState(
   }
   return {
     subject: { module: ACCOMMODATION_PROPERTY_SUBJECT_MODULE, id: propertyId },
-    locale: effectiveLocale(scope.locale, source.sourceLocale, source.projection, effective),
+    locale: effectiveAccommodationPropertyLocale(
+      scope.locale,
+      source.sourceLocale,
+      source.projection,
+      effective,
+    ),
     source: Object.fromEntries(source.projection),
     effective: Object.fromEntries(effective.values),
     fields,
@@ -128,11 +253,15 @@ export async function readAccommodationPropertyOverlayState(
 export async function readPublicAccommodationPropertyProjection(
   db: AnyDrizzleDb,
   propertyId: string,
-  scope: AccommodationPropertyOverlayScope,
+  scope: PublicAccommodationPropertyOverlayScope,
 ) {
   const source = await readAccommodationPropertySourceProjection(db, propertyId)
   if (!source) return null
-  const overlays = await fetchOverlaysForEntity(db, ACCOMMODATION_PROPERTY_SUBJECT_MODULE, propertyId)
+  const overlays = await fetchOverlaysForEntity(
+    db,
+    ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+    propertyId,
+  )
   const effective = resolveOverlay(
     propertyRegistry,
     source.projection,
@@ -141,8 +270,15 @@ export async function readPublicAccommodationPropertyProjection(
   )
   return {
     subject: { module: ACCOMMODATION_PROPERTY_SUBJECT_MODULE, id: propertyId },
-    locale: effectiveLocale(scope.locale, source.sourceLocale, source.projection, effective),
-    content: Object.fromEntries(effective.values),
+    locale: effectiveAccommodationPropertyLocale(
+      scope.locale,
+      source.sourceLocale,
+      source.projection,
+      effective,
+    ),
+    content: publicAccommodationPropertyProjectionSchema.parse(
+      Object.fromEntries(effective.values),
+    ),
   }
 }
 
@@ -150,7 +286,11 @@ export function createAccommodationPropertyDocumentBuilder(db: AnyDrizzleDb): Do
   return async (propertyId: string, slice: IndexerSlice) => {
     const source = await readAccommodationPropertySourceProjection(db, propertyId)
     if (!source) return null
-    const overlays = await fetchOverlaysForEntity(db, ACCOMMODATION_PROPERTY_SUBJECT_MODULE, propertyId)
+    const overlays = await fetchOverlaysForEntity(
+      db,
+      ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+      propertyId,
+    )
     const effective = resolveOverlay(
       propertyRegistry,
       source.projection,
@@ -161,14 +301,55 @@ export function createAccommodationPropertyDocumentBuilder(db: AnyDrizzleDb): Do
   }
 }
 
+/** Accommodation-owned fallback when the shared context has no owned-subject loader. */
+export async function readEffectiveAccommodationPropertyReferenceProjection(
+  db: AnyDrizzleDb,
+  propertyId: string,
+  slice: IndexerSlice,
+): Promise<EffectiveReferencedSubjectProjection | null> {
+  const source = await readAccommodationPropertySourceProjection(db, propertyId)
+  if (!source) return null
+  const overlays = await fetchOverlaysForEntity(
+    db,
+    ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+    propertyId,
+  )
+  const scope = {
+    locale: slice.locale,
+    audience: slice.audience === "staff-admin" ? ("staff" as const) : slice.audience,
+    market: slice.market,
+  }
+  return {
+    subject: { entityModule: ACCOMMODATION_PROPERTY_SUBJECT_MODULE, entityId: propertyId },
+    scope,
+    values: resolveOverlay(
+      propertyRegistry,
+      source.projection,
+      overlays,
+      resolverScopeForSlice(slice),
+    ).values,
+  }
+}
+
 export async function writeAccommodationPropertyOverlay(
   db: AnyDrizzleDb,
   propertyId: string,
   input: WriteAccommodationPropertyOverlayInput,
 ): Promise<SelectCatalogOverlay> {
-  assertOverlayableAccommodationPropertyField(input.field_path)
+  const policy = assertOverlayableAccommodationPropertyField(input.field_path)
+  assertAccommodationPropertyOverlayScope(policy.localized, input.scope.locale)
+  const value = parseAccommodationPropertyOverlayValue(input.field_path, input.value)
   const source = await readAccommodationPropertySourceProjection(db, propertyId)
   if (!source) throw new Error(`Accommodation property ${propertyId} not found`)
+  const overlays = await fetchOverlaysForEntity(
+    db,
+    ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
+    propertyId,
+  )
+  validateEffectiveAccommodationPropertyProjection(source.projection, overlays, {
+    ...input,
+    value,
+  })
   return writeOverlay(db, {
     entity_module: ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
     entity_id: propertyId,
@@ -178,7 +359,7 @@ export async function writeAccommodationPropertyOverlay(
     locale: input.scope.locale,
     audience: input.scope.audience,
     market: input.scope.market,
-    value: input.value,
+    value,
     origin: input.origin,
     expected_version: input.expected_version,
     editorial_note: input.editorial_note,
@@ -190,7 +371,8 @@ export async function clearAccommodationPropertyOverlay(
   propertyId: string,
   input: ClearAccommodationPropertyOverlayInput,
 ): Promise<SelectCatalogOverlay | null> {
-  assertOverlayableAccommodationPropertyField(input.field_path)
+  const policy = assertOverlayableAccommodationPropertyField(input.field_path)
+  assertAccommodationPropertyOverlayScope(policy.localized, input.scope.locale)
   return clearOverlayByTarget(db, {
     entity_module: ACCOMMODATION_PROPERTY_SUBJECT_MODULE,
     entity_id: propertyId,
@@ -233,13 +415,110 @@ export async function listAccommodationOffersReferencingProperty(
   }))
 }
 
-export function assertOverlayableAccommodationPropertyField(fieldPath: string): void {
+export function assertOverlayableAccommodationPropertyField(fieldPath: string) {
   const policy = propertyRegistry.resolve(fieldPath)
   if (!policy || policy.class !== "merchandisable" || policy.merge === "source-only") {
     throw new Error(
       `Field ${fieldPath} is not an overlayable accommodation property presentation field`,
     )
   }
+  return policy
+}
+
+export function parseAccommodationPropertyOverlayValue(fieldPath: string, value: unknown): unknown {
+  const schema = accommodationPropertyOverlayValueSchemas[
+    fieldPath as keyof typeof accommodationPropertyOverlayValueSchemas
+  ]
+  if (!schema) {
+    throw new Error(`Field ${fieldPath} has no accommodation property value contract`)
+  }
+  return schema.parse(value)
+}
+
+export function assertAccommodationPropertyOverlayScope(
+  localized: boolean,
+  locale: string,
+): void {
+  if (localized && locale === OVERLAY_DEFAULT_SCOPE) {
+    throw new Error("Localized accommodation property overlays require a real locale")
+  }
+  if (!localized && locale !== OVERLAY_DEFAULT_SCOPE) {
+    throw new Error("Non-localized accommodation property overlays require locale=default")
+  }
+}
+
+/** Convert the field policy's reindex granularity into event scope axes. */
+export function accommodationPropertyOverlayInvalidationScope(
+  fieldPath: string,
+  scope: AccommodationPropertyOverlayScope,
+): Pick<AccommodationPropertyOverlayScope, "locale" | "audience" | "market"> {
+  const policy = assertOverlayableAccommodationPropertyField(fieldPath)
+  if (policy.reindex === "entry-locale") {
+    return scope
+  }
+  // `default` is the catalog projection runtime's wildcard. Entry-wide and
+  // facet-affecting changes therefore fan out to every configured slice.
+  return {
+    locale: OVERLAY_DEFAULT_SCOPE,
+    audience: OVERLAY_DEFAULT_SCOPE,
+    market: OVERLAY_DEFAULT_SCOPE,
+  }
+}
+
+export function projectEffectiveAccommodationPropertyReference(
+  subject: EffectiveReferencedSubjectProjection,
+): ReadonlyMap<string, unknown> {
+  const projection = new Map<string, unknown>()
+  copyReferencedValue(subject.values, "name", projection, "property.name")
+  copyReferencedValue(subject.values, "description", projection, "property.description")
+  copyReferencedValue(subject.values, "hero_image_url", projection, "property.heroImageUrl")
+  copyReferencedValue(subject.values, "gallery", projection, "property.gallery")
+  return projection
+}
+
+function copyReferencedValue(
+  source: ReadonlyMap<string, unknown>,
+  sourcePath: string,
+  target: Map<string, unknown>,
+  targetPath: string,
+): void {
+  if (source.has(sourcePath)) target.set(targetPath, source.get(sourcePath))
+}
+
+export function validateEffectiveAccommodationPropertyProjection(
+  source: ReadonlyMap<string, unknown>,
+  overlays: readonly SelectCatalogOverlay[],
+  input: WriteAccommodationPropertyOverlayInput,
+): void {
+  const withoutCurrentTarget = overlays.filter(
+    (overlay) =>
+      !(
+        (overlay.node_kind ?? OVERLAY_ROOT_NODE_KIND) === OVERLAY_ROOT_NODE_KIND &&
+        (overlay.node_key ?? OVERLAY_ROOT_NODE_KEY) === OVERLAY_ROOT_NODE_KEY &&
+        overlay.field_path === input.field_path &&
+        overlay.locale === input.scope.locale &&
+        overlay.audience === input.scope.audience &&
+        overlay.market === input.scope.market
+      ),
+  )
+  const effective = resolveOverlay(
+    propertyRegistry,
+    source,
+    [
+      ...withoutCurrentTarget,
+      {
+        field_path: input.field_path,
+        node_kind: OVERLAY_ROOT_NODE_KIND,
+        node_key: OVERLAY_ROOT_NODE_KEY,
+        locale: input.scope.locale,
+        audience: input.scope.audience,
+        market: input.scope.market,
+        value: input.value,
+      },
+    ],
+    toResolverScope(input.scope, "staff"),
+  )
+  accommodationPropertyProjectionSchema.parse(Object.fromEntries(effective.values))
 }
 
 async function readAccommodationPropertySourceProjection(db: AnyDrizzleDb, propertyId: string) {
@@ -247,10 +526,10 @@ async function readAccommodationPropertySourceProjection(db: AnyDrizzleDb, prope
   if (sourced) {
     return {
       projection: new Map<string, unknown>([
+        ...Object.entries(sourced.projection),
         ["id", sourced.entity_id],
         ["source.kind", sourced.source_kind],
         ["source.ref", sourced.source_ref],
-        ...Object.entries(sourced.projection),
       ]),
       sourceLocale: stringOr(sourced.projection.locale, null),
       provenance: {
@@ -288,6 +567,7 @@ async function readAccommodationPropertySourceProjection(db: AnyDrizzleDb, prope
       ["name", facilityRow?.name ?? propertyRow.brandName ?? propertyRow.groupName],
       ["description", facilityRow?.description ?? null],
       ["hero_image_url", null],
+      ["gallery", []],
       ["highlights", featureRows.filter((row) => row.highlighted).map((row) => row.name)],
       [
         "amenities",
@@ -309,9 +589,8 @@ async function readAccommodationPropertySourceProjection(db: AnyDrizzleDb, prope
   }
 }
 
-function publicActor(scope: AccommodationPropertyOverlayScope): ResolverScope["actor"] {
-  if (scope.audience === "partner" || scope.audience === "supplier") return scope.audience
-  return "customer"
+function publicActor(scope: PublicAccommodationPropertyOverlayScope): ResolverScope["actor"] {
+  return scope.audience
 }
 
 function toResolverScope(
@@ -352,21 +631,41 @@ function overlayMatchesScope(
   )
 }
 
-function effectiveLocale(
+export function effectiveAccommodationPropertyLocale(
   requestedLocale: string,
   sourceLocale: string | null,
   source: ReadonlyMap<string, unknown>,
   effective: ReturnType<typeof resolveOverlay>,
-) {
+): {
+  requestedLocale: string
+  sourceLocale: string | null
+  servedLocale: string
+  matchKind: "exact" | "mixed" | "overlay-only"
+} {
   const hasOverlayOnly = [...effective.provenance.entries()].some(
-    ([path, provenance]) => provenance && !source.has(path),
+    ([path, provenance]) =>
+      provenance?.locale === requestedLocale &&
+      propertyRegistry.resolve(path)?.localized === true &&
+      !source.has(path),
   )
+  const hasRequestedLocaleOverlay = [...effective.provenance.entries()].some(
+    ([path, provenance]) =>
+      provenance?.locale === requestedLocale && propertyRegistry.resolve(path)?.localized === true,
+  )
+  const overlayReplacesFallback =
+    sourceLocale != null && sourceLocale !== requestedLocale && hasRequestedLocaleOverlay
   return {
     requestedLocale,
     sourceLocale,
-    servedLocale: hasOverlayOnly ? requestedLocale : (sourceLocale ?? requestedLocale),
-    matchKind:
-      hasOverlayOnly ? "overlay-only" : sourceLocale === requestedLocale ? "exact" : "mixed",
+    servedLocale:
+      hasOverlayOnly || overlayReplacesFallback
+        ? requestedLocale
+        : (sourceLocale ?? requestedLocale),
+    matchKind: hasOverlayOnly
+      ? "overlay-only"
+      : sourceLocale === requestedLocale
+        ? "exact"
+        : "mixed",
   }
 }
 

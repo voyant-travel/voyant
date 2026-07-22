@@ -95,5 +95,50 @@ const CRUISE_SHIP_FIELD_POLICY: FieldPolicyInput[] = [
   ),
 ]
 
+/**
+ * Effective ship presentation fields denormalized onto every cruise document
+ * that references the subject. These are deliberately distinct from the
+ * cruise's own fields: a ship overlay must never overwrite the cruise title or
+ * description while still making the referencing document observably change.
+ */
+const CRUISE_SHIP_REFERENCE_FIELD_POLICY: FieldPolicyInput[] = [
+  shipField("ship.name", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+  }),
+  shipField("ship.description", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+  }),
+  shipField("ship.heroImageUrl", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+    localized: false,
+    reindex: "entry",
+  }),
+  shipField("ship.gallery", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+    localized: false,
+    reindex: "entry",
+  }),
+  shipField("ship.deckPlanUrl", {
+    class: "merchandisable",
+    merge: "source-only",
+    editRole: "none",
+    query: "indexed-column",
+    localized: false,
+    reindex: "entry",
+  }),
+]
+
 export const cruiseShipCatalogPolicy = defineFieldPolicy(CRUISE_SHIP_FIELD_POLICY)
-export { CRUISE_SHIP_FIELD_POLICY }
+export { CRUISE_SHIP_FIELD_POLICY, CRUISE_SHIP_REFERENCE_FIELD_POLICY }

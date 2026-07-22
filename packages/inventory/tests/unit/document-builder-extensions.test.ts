@@ -1,4 +1,4 @@
-import type { IndexerSlice } from "@voyant-travel/catalog"
+import type { IndexerSlice, ReferencedSubjectResolutionInput } from "@voyant-travel/catalog"
 import { describe, expect, it, vi } from "vitest"
 
 import { productDestinationsCatalogPolicy } from "../../src/catalog-policy-destinations.js"
@@ -65,6 +65,24 @@ function stubQueuedDb(rowSets: unknown[][]) {
       from: vi.fn(() => ({
         where: vi.fn(result),
       })),
+    })),
+  }
+}
+
+function stubProductAndPropertyDb(productRow: unknown, propertyRow: unknown) {
+  const queue = [[productRow], propertyRow ? [propertyRow] : []]
+  return {
+    select: vi.fn(() => ({
+      from: vi.fn(() => {
+        const rows = queue.shift() ?? []
+        const tail = {
+          where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue(rows) })),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({ limit: vi.fn().mockResolvedValue(rows) })),
+          })),
+        }
+        return tail
+      }),
     })),
   }
 }
@@ -233,6 +251,70 @@ describe("createProductDocumentBuilder — projection extensions", () => {
     const doc = await build("prod_abc", customerSlice)
     expect(doc?.fields).toHaveProperty("regions", ["Mediterranean"])
     expect(doc?.fields).toHaveProperty("countries", ["Italy"])
+  })
+
+  it("copies effective overlays from an owned property into namespaced product fields", async () => {
+    const db = stubProductAndPropertyDb(
+      { ...sampleRow, facilityId: "fac_1" },
+      {
+        id: "prop_1",
+        brandName: null,
+        groupName: null,
+        facilityName: "Source hotel",
+        facilityDescription: "Source description",
+      },
+    )
+    const resolveReferencedSubject = vi.fn(async (input: ReferencedSubjectResolutionInput) => ({
+      subject: { entityModule: input.entityModule, entityId: input.entityId },
+      scope: customerSlice,
+      values: new Map<string, unknown>([
+        ["name", "Operator hotel name"],
+        ["description", "Operator hotel description"],
+        ["hero_image_url", "https://cdn.example/hotel.jpg"],
+        ["gallery", ["https://cdn.example/room.jpg"]],
+      ]),
+    }))
+    const build = createProductDocumentBuilder(
+      // biome-ignore lint/suspicious/noExplicitAny: focused drizzle stub -- owner: products
+      db as any,
+      { sellerOperatorId: "op_xyz" },
+    )
+
+    const doc = await build("prod_abc", customerSlice, { resolveReferencedSubject })
+
+    expect(resolveReferencedSubject).toHaveBeenCalledWith({
+      entityModule: "accommodation-properties",
+      entityId: "prop_1",
+      sourceValues: expect.any(Map),
+    })
+    expect(doc?.fields).toMatchObject({
+      "property.name": "Operator hotel name",
+      "property.description": "Operator hotel description",
+      "property.heroImageUrl": "https://cdn.example/hotel.jpg",
+      "property.gallery": ["https://cdn.example/room.jpg"],
+    })
+  })
+
+  it("resolves a provider property subject id retained by the product reference", async () => {
+    const db = stubProductAndPropertyDb({ ...sampleRow, facilityId: "properties_provider1" }, null)
+    const resolveReferencedSubject = vi.fn(async (input: ReferencedSubjectResolutionInput) => ({
+      subject: { entityModule: input.entityModule, entityId: input.entityId },
+      scope: customerSlice,
+      values: new Map<string, unknown>([["name", "Provider hotel overlay"]]),
+    }))
+    const build = createProductDocumentBuilder(
+      // biome-ignore lint/suspicious/noExplicitAny: focused drizzle stub -- owner: products
+      db as any,
+      { sellerOperatorId: "op_xyz" },
+    )
+
+    const doc = await build("prod_abc", customerSlice, { resolveReferencedSubject })
+
+    expect(resolveReferencedSubject).toHaveBeenCalledWith({
+      entityModule: "accommodation-properties",
+      entityId: "properties_provider1",
+    })
+    expect(doc?.fields["property.name"]).toBe("Provider hotel overlay")
   })
 
   it("propagates extension errors instead of producing a partial document", async () => {

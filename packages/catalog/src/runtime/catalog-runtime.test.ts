@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { CATALOG_VERTICALS, loadCatalogSlices } from "./catalog-runtime.js"
+import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
+import {
+  CATALOG_VERTICALS,
+  createReferencedSubjectDocumentBuilderContext,
+  loadCatalogSlices,
+} from "./catalog-runtime.js"
 import { configureCatalogRuntimeHost } from "./host.js"
 
 function createRuntimeDb(
@@ -72,5 +77,123 @@ describe("loadCatalogSlices", () => {
         expect.objectContaining({ locale: "fr-FR", channel: "chan_b2b" }),
       ]),
     )
+  })
+})
+
+describe("referenced subject document context", () => {
+  it("resolves the canonical sourced projection with slice-scoped overlays", async () => {
+    const source = {
+      entity_module: "cruise-ships",
+      entity_id: "crsh_1",
+      status: "active",
+      projection: { name: "Provider name" },
+    }
+    const overlays = [
+      {
+        field_path: "name",
+        node_kind: "root",
+        node_key: "root",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+        value: "Nume operator",
+        version: 1,
+        id: "overlay_1",
+      },
+    ]
+    const db = {
+      select(selection?: unknown) {
+        return {
+          from() {
+            return {
+              where() {
+                return selection
+                  ? Promise.resolve(overlays)
+                  : { limit: async () => [source] }
+              },
+            }
+          },
+        }
+      },
+    }
+    const registry = createFieldPolicyRegistry(
+      defineFieldPolicy([
+        {
+          path: "name",
+          class: "merchandisable",
+          merge: "replace",
+          editRole: "marketing",
+          visibility: ["staff", "customer"],
+          overrideFriction: "none",
+          snapshot: "on-book",
+          localized: true,
+        },
+      ]),
+    )
+    const context = createReferencedSubjectDocumentBuilderContext(
+      db as never,
+      { locale: "ro-RO", audience: "customer", market: "RO" },
+      new Map([["cruise-ships", registry]]),
+    )
+
+    const resolved = await context.resolveReferencedSubject({
+      entityModule: "cruise-ships",
+      entityId: "crsh_1",
+    })
+
+    expect(resolved?.values.get("name")).toBe("Nume operator")
+    expect(resolved?.scope).toEqual({ locale: "ro-RO", audience: "customer", market: "RO" })
+  })
+
+  it("applies overlays to caller-supplied owned subject values", async () => {
+    const overlays = [
+      {
+        field_path: "name",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+        value: "Hotel operator",
+      },
+    ]
+    const db = {
+      select(selection?: unknown) {
+        return {
+          from() {
+            return {
+              where() {
+                return selection ? Promise.resolve(overlays) : { limit: async () => [] }
+              },
+            }
+          },
+        }
+      },
+    }
+    const registry = createFieldPolicyRegistry(
+      defineFieldPolicy([
+        {
+          path: "name",
+          class: "merchandisable",
+          merge: "replace",
+          editRole: "marketing",
+          visibility: ["staff", "customer"],
+          overrideFriction: "none",
+          snapshot: "on-book",
+          localized: true,
+        },
+      ]),
+    )
+    const context = createReferencedSubjectDocumentBuilderContext(
+      db as never,
+      { locale: "ro-RO", audience: "customer", market: "RO" },
+      new Map([["accommodation-properties", registry]]),
+    )
+
+    const resolved = await context.resolveReferencedSubject({
+      entityModule: "accommodation-properties",
+      entityId: "prop_1",
+      sourceValues: new Map([["name", "Source hotel"]]),
+    })
+
+    expect(resolved?.values.get("name")).toBe("Hotel operator")
   })
 })

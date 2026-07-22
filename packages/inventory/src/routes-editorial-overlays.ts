@@ -1,6 +1,8 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { CATALOG_EVENTS, emitCatalogEvent } from "@voyant-travel/catalog"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import { OVERLAY_DEFAULT_SCOPE } from "@voyant-travel/catalog/overlay/schema"
+import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { ApiHttpError, openApiValidationHook, requireUserId } from "@voyant-travel/hono"
 import type { Context } from "hono"
@@ -126,6 +128,7 @@ const overlayHistoryRoute = createRoute({
 export interface ProductEditorialOverlayRoutesEnv {
   Variables: {
     db: AnyDrizzleDb
+    eventBus?: EventBus
     userId?: string
   }
 }
@@ -179,6 +182,14 @@ export function createProductEditorialOverlayRoutes(
           },
           { registry: options.resolveRegistry(c) },
         )
+        await emitProductOverlayChanged(c.var.eventBus, c.req.valid("param").id, {
+          nodeKind: row.node_kind ?? body.nodeKind ?? "root",
+          nodeKey: row.node_key ?? body.nodeKey ?? "root",
+          fieldPath: row.field_path ?? body.fieldPath,
+          locale: row.locale ?? body.locale,
+          audience: row.audience ?? body.audience,
+          market: row.market ?? body.market,
+        })
         return c.json({ data: row }, 200)
       } catch (err) {
         if (err instanceof OverlayVersionConflictError) {
@@ -212,6 +223,16 @@ export function createProductEditorialOverlayRoutes(
           },
           expected_version: query.expectedVersion,
         })
+        if (row) {
+          await emitProductOverlayChanged(c.var.eventBus, c.req.valid("param").id, {
+            nodeKind: row.node_kind ?? query.nodeKind ?? "root",
+            nodeKey: row.node_key ?? query.nodeKey ?? "root",
+            fieldPath: row.field_path ?? query.fieldPath,
+            locale: row.locale ?? query.locale,
+            audience: row.audience ?? query.audience,
+            market: row.market ?? query.market,
+          })
+        }
         return c.json({ data: { cleared: row != null, overlay: row } }, 200)
       } catch (err) {
         if (err instanceof OverlayVersionConflictError) {
@@ -239,6 +260,32 @@ export function createProductEditorialOverlayRoutes(
       })
       return c.json({ data: rows }, 200)
     })
+}
+
+async function emitProductOverlayChanged(
+  eventBus: EventBus | undefined,
+  productId: string,
+  target: {
+    nodeKind: string
+    nodeKey: string
+    fieldPath: string
+    locale: string
+    audience: string
+    market: string
+  },
+): Promise<void> {
+  if (!eventBus) return
+  await emitCatalogEvent(eventBus, CATALOG_EVENTS.ENTITY_OVERLAY_CHANGED, {
+    entity_module: "products",
+    entity_id: productId,
+    node_kind: target.nodeKind,
+    node_key: target.nodeKey,
+    field_path: target.fieldPath,
+    locale: target.locale,
+    audience: target.audience,
+    market: target.market,
+    occurred_at: new Date().toISOString(),
+  })
 }
 
 function errorMessage(err: unknown): string {

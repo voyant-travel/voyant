@@ -5,8 +5,10 @@ import type {
 import { describe, expect, it, vi } from "vitest"
 import {
   createCatalogOffersSearchResolvers,
+  withCatalogEmbedding,
   withoutCatalogScopeChannel,
 } from "./runtime-support.js"
+import type { DocumentBuilderContext } from "./services/indexer-service.js"
 
 const scope = withoutCatalogScopeChannel({
   locale: "ro-RO",
@@ -155,5 +157,28 @@ describe("catalog offer search resolvers", () => {
     ).resolves.toEqual([])
     await expect(failing.fetchIndexFields({}, ["product-1"])).resolves.toEqual(new Map())
     await expect(failing.resolveDynamicHotelIds({}, { countryCode: "RO" }, 10)).resolves.toEqual([])
+  })
+})
+
+describe("withCatalogEmbedding", () => {
+  it("preserves referenced-subject builder context", async () => {
+    const context = {
+      resolveReferencedSubject: vi.fn(async () => null),
+    } satisfies DocumentBuilderContext
+    const inner = vi.fn(async () => ({ id: "product-1", fields: { name: "Danube" } }))
+    const builder = withCatalogEmbedding(inner, {
+      capabilities: { modelId: "test-model" },
+      embed: vi.fn(async () => [[0.1, 0.2]]),
+    })
+    const slice = {
+      vertical: "products",
+      locale: "ro-RO",
+      audience: "customer" as const,
+      market: "RO",
+    }
+
+    await builder("product-1", slice, context)
+
+    expect(inner).toHaveBeenCalledWith("product-1", slice, context)
   })
 })

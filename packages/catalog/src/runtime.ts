@@ -85,8 +85,8 @@ export function createCatalogRuntime(
     buildIndexer: (_env, embeddings) => resolveIndexer(embeddings),
     loadSlices: loadCatalogSlices,
     fieldPolicyRegistries: getFieldPolicyRegistries,
-    reindexReferencedSubjectOverlayChange: (db, event, reindex) =>
-      createReferencedSubjectReindexFanout({
+    reindexReferencedSubjectOverlayChange: async (db, event, reindex) => {
+      await createReferencedSubjectReindexFanout({
         readers: [
           {
             subjectModule: CATALOG_PRESENTATION_SUBJECT_MODULES.CRUISE_SHIPS,
@@ -116,7 +116,8 @@ export function createCatalogRuntime(
             entityId: reference.entityId,
             ...scope,
           }),
-      })(event),
+      })(event)
+    },
     createProductsDocumentBuilder,
     createCatalogDocumentBuilder,
     withEmbedding,

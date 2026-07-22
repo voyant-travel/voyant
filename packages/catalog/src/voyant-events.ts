@@ -34,6 +34,8 @@ const catalogOverlayChangedPayloadSchema = {
   properties: {
     entity_module: { type: "string" },
     entity_id: { type: "string" },
+    node_kind: { type: "string" },
+    node_key: { type: "string" },
     field_path: { type: "string" },
     locale: { type: "string" },
     audience: { type: "string" },

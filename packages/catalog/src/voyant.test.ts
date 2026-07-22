@@ -3,6 +3,24 @@ import { describe, expect, it } from "vitest"
 import { catalogVoyantModule } from "./voyant.js"
 
 describe("catalog deployment declaration", () => {
+  it("declares optional stable node identity for overlay-change events", () => {
+    const declaration = catalogVoyantModule.events?.find(
+      (event) => event.eventType === "catalog.entity.overlay.changed",
+    )
+
+    expect(declaration?.payloadSchema).toMatchObject({
+      properties: {
+        node_kind: { type: "string" },
+        node_key: { type: "string" },
+      },
+      additionalProperties: false,
+    })
+    expect(declaration).toBeDefined()
+    const required = declaration?.payloadSchema?.required ?? []
+    expect(required).not.toContain("node_kind")
+    expect(required).not.toContain("node_key")
+  })
+
   it("declares Postgres as a selected catalog.indexer provider using the database resource", () => {
     expect(catalogVoyantModule.providers).toContainEqual(
       expect.objectContaining({

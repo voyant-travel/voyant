@@ -103,6 +103,61 @@ describe("Operator Catalog subscriber runtime ports", () => {
     )
   })
 
+  it("fans referenced-subject changes out through only matching scoped slices", async () => {
+    const event = {
+      entity_module: "cruise-ships",
+      entity_id: "crsh_1",
+      field_path: "name",
+      locale: "ro-RO",
+      audience: "customer",
+      market: "RO",
+      occurred_at: "2026-07-22T00:00:00.000Z",
+    }
+    const runtime = createProjectionRuntime(
+      { TYPESENSE_HOST: "http://localhost:8108" },
+      {
+        loadSlices: async () => [
+          { vertical: "cruise-ships", locale: "ro-RO", audience: "customer", market: "RO" },
+          { vertical: "cruises", locale: "ro-RO", audience: "customer", market: "RO" },
+          { vertical: "cruises", locale: "en-GB", audience: "customer", market: "GB" },
+        ],
+        reindexReferencedSubjectOverlayChange: async (_db, received, reindex) => {
+          expect(received).toEqual(event)
+          await reindex({
+            entityModule: received.entity_module,
+            entityId: received.entity_id,
+            locale: received.locale,
+            audience: received.audience,
+            market: received.market,
+          })
+          await reindex({
+            entityModule: "cruises",
+            entityId: "cruise_1",
+            locale: received.locale,
+            audience: received.audience,
+            market: received.market,
+          })
+        },
+      },
+    )
+
+    await runtime.reindexReferencedSubject?.(event)
+
+    expect(reindexEntityForSlice).toHaveBeenCalledTimes(2)
+    expect(reindexEntityForSlice).toHaveBeenNthCalledWith(
+      1,
+      { vertical: "cruise-ships", locale: "ro-RO", audience: "customer", market: "RO" },
+      "crsh_1",
+      expect.anything(),
+    )
+    expect(reindexEntityForSlice).toHaveBeenNthCalledWith(
+      2,
+      { vertical: "cruises", locale: "ro-RO", audience: "customer", market: "RO" },
+      "cruise_1",
+      expect.anything(),
+    )
+  })
+
   it("serializes collection setup across concurrent deliveries", async () => {
     let activeEnsures = 0
     let maxActiveEnsures = 0

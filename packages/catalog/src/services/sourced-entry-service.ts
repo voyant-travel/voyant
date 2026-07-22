@@ -29,10 +29,12 @@
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId, type PrefixKey } from "@voyant-travel/db/lib/typeid"
+import { withOptionalTransaction } from "@voyant-travel/db/transaction"
 import { and, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm"
 
 import type { CatalogProjection } from "../adapter/contract.js"
 import type { SourceFreshness } from "../contract.js"
+import { getCatalogPresentationSubjectDefinition } from "../presentation-subjects.js"
 import type { Provenance, SourceKind } from "../provenance.js"
 import {
   catalogSourcedEntriesTable,
@@ -117,35 +119,83 @@ export interface ResolveSourcedPresentationSubjectInput {
   lastSourcedAt?: Date
 }
 
+export interface SourcedPresentationSubjectDefinition {
+  entityModule: string
+  idPrefix: PrefixKey
+}
+
+export type IngestSourcedPresentationSubjectInput = Omit<
+  ResolveSourcedPresentationSubjectInput,
+  "entityModule" | "idPrefix"
+>
+
+/**
+ * Bind a referenced-subject identity once at an adapter ingestion boundary.
+ * Discovery implementations can reuse the returned helper for every page
+ * instead of each vertical reimplementing provenance identity handling.
+ */
+export function createSourcedPresentationSubjectIngestion(
+  definition: SourcedPresentationSubjectDefinition,
+): (
+  db: AnyDrizzleDb,
+  input: IngestSourcedPresentationSubjectInput,
+) => Promise<SelectCatalogSourcedEntry> {
+  assertReferencedPresentationSubject(definition.entityModule)
+  return (db, input) => resolveSourcedPresentationSubject(db, { ...definition, ...input })
+}
+
 export async function resolveSourcedPresentationSubject(
   db: AnyDrizzleDb,
   input: ResolveSourcedPresentationSubjectInput,
 ): Promise<SelectCatalogSourcedEntry> {
-  const existing = await readSourcedEntryBySource(db, {
-    entityModule: input.entityModule,
-    sourceKind: input.sourceKind,
-    sourceConnectionId: input.sourceConnectionId ?? null,
-    sourceRef: input.sourceRef,
-  })
-  const entityId = existing?.entity_id ?? newId(input.idPrefix)
+  assertReferencedPresentationSubject(input.entityModule)
+  return withOptionalTransaction(db, async (tx) => {
+    // Postgres unique indexes do not consider nullable values equal. Serialize
+    // on the complete provenance identity so first discovery is atomic for
+    // both connected and connection-less provider subjects.
+    const identityKey = JSON.stringify([
+      "catalog.presentation-subject",
+      input.entityModule,
+      input.sourceKind,
+      input.sourceConnectionId ?? null,
+      input.sourceRef,
+    ])
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${identityKey}, 0))`)
 
-  return upsertSourcedEntry(db, {
-    projection: {
-      entity_module: input.entityModule,
-      entity_id: entityId,
-      provenance: {
-        source_kind: input.sourceKind as SourceKind,
-        source_provider: input.sourceProvider ?? undefined,
-        source_connection_id: input.sourceConnectionId ?? undefined,
-        source_ref: input.sourceRef,
-        source_freshness: input.sourceFreshness ?? "sync",
-        last_sourced_at: input.lastSourcedAt,
+    const existing = await readSourcedEntryBySource(tx, {
+      entityModule: input.entityModule,
+      sourceKind: input.sourceKind,
+      sourceConnectionId: input.sourceConnectionId ?? null,
+      sourceRef: input.sourceRef,
+    })
+    const entityId = existing?.entity_id ?? newId(input.idPrefix)
+
+    return upsertSourcedEntry(tx, {
+      projection: {
+        entity_module: input.entityModule,
+        entity_id: entityId,
+        provenance: {
+          source_kind: input.sourceKind as SourceKind,
+          source_provider: input.sourceProvider ?? undefined,
+          source_connection_id: input.sourceConnectionId ?? undefined,
+          source_ref: input.sourceRef,
+          source_freshness: input.sourceFreshness ?? "sync",
+          last_sourced_at: input.lastSourcedAt,
+        },
+        fields: input.projection,
       },
-      fields: input.projection,
-    },
-    projectionEtag: input.projectionEtag,
-    lastSourcedAt: input.lastSourcedAt,
+      projectionEtag: input.projectionEtag,
+      lastSourcedAt: input.lastSourcedAt,
+    })
   })
+}
+
+function assertReferencedPresentationSubject(entityModule: string): void {
+  if (getCatalogPresentationSubjectDefinition(entityModule)?.kind !== "referenced") {
+    throw new Error(
+      `Sourced presentation-subject ingestion requires a registered referenced module; received "${entityModule}"`,
+    )
+  }
 }
 
 export async function readSourcedEntryBySource(
