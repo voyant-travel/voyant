@@ -80,7 +80,7 @@ describe("finance checkout service", () => {
     )
   })
 
-  it("starts card collection through the deployment-selected payment adapter", async () => {
+  it("prefers the deployment-selected payment adapter over a legacy provider hint", async () => {
     const db = createCheckoutDb({ insertedInvoices: [] })
     const paymentSession = {
       id: "ps_selected",
@@ -96,6 +96,7 @@ describe("finance checkout service", () => {
       providerPaymentId: null,
       response: null,
     }))
+    const legacyPaymentStarter = vi.fn()
 
     vi.spyOn(financeService, "createPaymentSessionFromBookingSchedule").mockResolvedValue(
       paymentSession as never,
@@ -109,6 +110,7 @@ describe("finance checkout service", () => {
         method: "card",
         stage: "initial",
         startProvider: {
+          provider: "netopia",
           payload: {
             billing: {
               email: "traveler@example.com",
@@ -119,10 +121,14 @@ describe("finance checkout service", () => {
         },
       },
       {},
-      { selectedPaymentStarter },
+      {
+        selectedPaymentStarter,
+        paymentStarters: { netopia: legacyPaymentStarter },
+      },
     )
 
     expect(selectedPaymentStarter).toHaveBeenCalledOnce()
+    expect(legacyPaymentStarter).not.toHaveBeenCalled()
     expect(result?.providerStart).toMatchObject({
       provider: "connected-adapter",
       redirectUrl: "https://payments.example/checkout",
