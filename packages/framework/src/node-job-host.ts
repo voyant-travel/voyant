@@ -286,13 +286,13 @@ export function createVoyantNodeJobHost(
     }
     if (url.pathname === VOYANT_PRODUCT_JOB_ROUTE) {
       if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405 })
-      if (url.search || request.body !== null || request.headers.has("transfer-encoding")) {
+      if (url.search || (await requestHasBodyBytes(request))) {
         return new Response("Product job inventory requests do not accept input", { status: 400 })
       }
       return Response.json({ provisioning: { jobs: inventory } })
     }
     if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 })
-    if (url.search || request.body !== null || request.headers.has("transfer-encoding")) {
+    if (url.search || (await requestHasBodyBytes(request))) {
       return new Response("Product job invocations do not accept request input", { status: 400 })
     }
     const encodedId = url.pathname.slice(VOYANT_PRODUCT_JOB_ROUTE.length + 1)
@@ -371,6 +371,21 @@ export function createVoyantNodeJobHost(
       if (timer) clearInterval(timer)
       timer = undefined
     },
+  }
+}
+
+async function requestHasBodyBytes(request: Request): Promise<boolean> {
+  if (request.body === null) return false
+  const reader = request.body.getReader()
+  try {
+    const { done } = await reader.read()
+    if (done) return false
+    void reader.cancel().catch(() => {})
+    return true
+  } catch {
+    // An unreadable stream cannot be validated as the required empty body.
+    void reader.cancel().catch(() => {})
+    return true
   }
 }
 
