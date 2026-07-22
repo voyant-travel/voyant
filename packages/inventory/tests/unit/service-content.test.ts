@@ -22,8 +22,12 @@ const catalogMocks = vi.hoisted(() => ({
   readSourcedEntry: vi.fn(),
   withContentRefreshLock: vi.fn(async (_db: unknown, _key: unknown, fn: () => unknown) => fn()),
 }))
+const ownedMocks = vi.hoisted(() => ({
+  buildOwnedProductContent: vi.fn(),
+}))
 
 vi.mock("@voyant-travel/catalog", () => catalogMocks)
+vi.mock("../../src/service-content-owned.js", () => ownedMocks)
 
 import { PRODUCTS_CONTENT_SCHEMA_VERSION } from "../../src/content-shape.js"
 import { getProductContent } from "../../src/service-content.js"
@@ -120,6 +124,7 @@ describe("getProductContent cache ownership", () => {
     catalogMocks.withContentRefreshLock.mockImplementation(
       async (_db: unknown, _key: unknown, fn: () => unknown) => fn(),
     )
+    ownedMocks.buildOwnedProductContent.mockResolvedValue(null)
   })
 
   it("passes through every read and skips sourced-content cache storage when the adapter owns content cache", async () => {
@@ -322,7 +327,51 @@ describe("getProductContent cache ownership", () => {
     expect(result?.content.product.name).toBe("Exact overlay")
   })
 
-  it("reports the requested locale when requested-locale overlays augment provider fallback content", async () => {
+  it("reports fallback_chain when requested-locale overlays augment cached provider fallback content", async () => {
+    const cachedContent = makeProductContent("English source")
+    const row = {
+      entity_id: "prod_1",
+      locale: "ro-RO",
+      market: "RO",
+      returned_locale: "en-GB",
+      payload: cachedContent,
+      content_schema_version: PRODUCTS_CONTENT_SCHEMA_VERSION,
+      machine_translated: false,
+      fresh_until: new Date("2026-01-02T00:00:00Z"),
+    }
+    const db = makeDb([row])
+    const adapter = makeAdapter(false)
+    catalogMocks.pickBestCachedLocale.mockReturnValue({
+      candidate: row,
+      match_kind: "fallback_chain",
+    })
+    catalogMocks.fetchOverlaysForEntity.mockResolvedValue([
+      {
+        id: "ovl_ro",
+        version: 1,
+        field_path: "/product/name",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+        value: "Nume romanesc",
+      },
+    ])
+
+    const result = await getProductContent(
+      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
+      db.db as any,
+      "prod_1",
+      { preferredLocales: ["ro-RO"], audience: "customer", market: "RO" },
+      { registry: makeRegistry(adapter) },
+    )
+
+    expect(result?.content.product.name).toBe("Nume romanesc")
+    expect(result?.resolution.served_locale).toBe("ro-RO")
+    expect(result?.resolution.match_kind).toBe("fallback_chain")
+    expect(result?.source).toBe("sourced-cache")
+  })
+
+  it("reports fallback_chain when requested-locale overlays augment fresh provider fallback content", async () => {
     const freshContent = makeProductContent("English source")
     const db = makeDb()
     const adapter = makeAdapter(true)
@@ -356,7 +405,42 @@ describe("getProductContent cache ownership", () => {
 
     expect(result?.content.product.name).toBe("Nume romanesc")
     expect(result?.resolution.served_locale).toBe("ro-RO")
-    expect(result?.resolution.match_kind).toBe("exact")
+    expect(result?.resolution.match_kind).toBe("fallback_chain")
     expect(result?.source).toBe("sourced-fresh")
+  })
+
+  it("reports fallback_chain when requested-locale overlays augment owned fallback content", async () => {
+    const db = makeDb()
+    const adapter = makeAdapter(false)
+    catalogMocks.readSourcedEntry.mockResolvedValue(null)
+    ownedMocks.buildOwnedProductContent.mockResolvedValue({
+      content: makeProductContent("Owned English"),
+      servedLocale: "en-GB",
+      matchKind: "any",
+    })
+    catalogMocks.fetchOverlaysForEntity.mockResolvedValue([
+      {
+        id: "ovl_ro",
+        version: 1,
+        field_path: "/product/name",
+        locale: "ro-RO",
+        audience: "customer",
+        market: "RO",
+        value: "Nume romanesc",
+      },
+    ])
+
+    const result = await getProductContent(
+      // biome-ignore lint/suspicious/noExplicitAny: this unit test stubs only the db calls used here. -- owner: products; existing suppression is intentional pending typed cleanup.
+      db.db as any,
+      "prod_1",
+      { preferredLocales: ["ro-RO"], audience: "customer", market: "RO" },
+      { registry: makeRegistry(adapter) },
+    )
+
+    expect(result?.content.product.name).toBe("Nume romanesc")
+    expect(result?.resolution.served_locale).toBe("ro-RO")
+    expect(result?.resolution.match_kind).toBe("fallback_chain")
+    expect(result?.source).toBe("owned")
   })
 })

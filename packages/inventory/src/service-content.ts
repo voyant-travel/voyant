@@ -729,7 +729,7 @@ function effectiveMatchKind(
     requestedLocale &&
     overlayResult.appliedOverlays.some((overlay) => overlay.locale === requestedLocale)
   ) {
-    return "exact"
+    return sourceMatchKind === "exact" ? "exact" : "fallback_chain"
   }
   return sourceMatchKind
 }

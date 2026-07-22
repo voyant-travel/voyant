@@ -18,7 +18,7 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { withOptionalTransaction } from "@voyant-travel/db/transaction"
-import { and, eq, inArray, isNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm"
 
 import type { FieldPolicyRegistry, Visibility } from "../contract.js"
 import {
@@ -358,48 +358,40 @@ async function writeOverlayInTransaction(
     return row
   }
 
-  let inserted: SelectCatalogOverlay[]
-  try {
-    inserted = await db
-      .insert(catalogOverlayTable)
-      .values({
-        id: newId("catalog_overlay"),
-        entity_module: input.entity_module,
-        entity_id: input.entity_id,
-        node_kind: nodeKind,
-        node_key: nodeKey,
-        field_path: input.field_path,
-        locale,
-        audience,
-        market,
-        value: input.value,
-        origin: input.origin,
-        version: 1,
-        editorial_note: input.editorial_note ?? null,
-      })
-      .returning()
-  } catch (error) {
-    if (isUniqueViolation(error)) {
-      const current = await findActiveOverlay(db, {
-        entity_module: input.entity_module,
-        entity_id: input.entity_id,
-        node_kind: nodeKind,
-        node_key: nodeKey,
-        field_path: input.field_path,
-        locale,
-        audience,
-        market,
-      })
-      throw new OverlayVersionConflictError(
-        current?.version ?? null,
-        input.expected_version ?? null,
-      )
-    }
-    throw error
-  }
+  const inserted = await db
+    .insert(catalogOverlayTable)
+    .values({
+      id: newId("catalog_overlay"),
+      entity_module: input.entity_module,
+      entity_id: input.entity_id,
+      node_kind: nodeKind,
+      node_key: nodeKey,
+      field_path: input.field_path,
+      locale,
+      audience,
+      market,
+      value: input.value,
+      origin: input.origin,
+      version: 1,
+      editorial_note: input.editorial_note ?? null,
+    })
+    .onConflictDoNothing()
+    .returning()
 
   const row = inserted[0]
-  if (!row) throw new Error("writeOverlay: insert returned no rows")
+  if (!row) {
+    const current = await findActiveOverlay(db, {
+      entity_module: input.entity_module,
+      entity_id: input.entity_id,
+      node_kind: nodeKind,
+      node_key: nodeKey,
+      field_path: input.field_path,
+      locale,
+      audience,
+      market,
+    })
+    throw new OverlayVersionConflictError(current?.version ?? null, input.expected_version ?? null)
+  }
   await appendOverlayHistory(db, {
     row,
     action: "write",
@@ -458,14 +450,20 @@ export async function restoreOverlay(db: AnyDrizzleDb, id: string): Promise<void
     const existing = (
       await tx.select().from(catalogOverlayTable).where(eq(catalogOverlayTable.id, id)).limit(1)
     )[0]
-    if (!existing) return
+    if (!existing?.deleted_at) return
     const updated = await tx
       .update(catalogOverlayTable)
       .set({ deleted_at: null, updated_at: new Date() })
-      .where(and(eq(catalogOverlayTable.id, id), eq(catalogOverlayTable.version, existing.version)))
+      .where(
+        and(
+          eq(catalogOverlayTable.id, id),
+          eq(catalogOverlayTable.version, existing.version),
+          isNotNull(catalogOverlayTable.deleted_at),
+        ),
+      )
       .returning()
     const row = updated[0]
-    if (!row) throw new OverlayVersionConflictError(null, existing.version)
+    if (!row) return
     await appendOverlayHistory(tx, {
       row,
       action: "restore",
@@ -601,14 +599,6 @@ async function clearOverlayByTargetInTransaction(
     origin: existing.origin,
   })
   return row
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false
-  const code = (error as { code?: unknown }).code
-  if (code === "23505") return true
-  const cause = (error as { cause?: unknown }).cause
-  return cause ? isUniqueViolation(cause) : false
 }
 
 export async function listOverlayHistoryForTarget(
