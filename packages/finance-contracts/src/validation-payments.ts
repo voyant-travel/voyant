@@ -129,6 +129,7 @@ const paymentSessionCoreSchema = z.object({
   paymentId: z.string().optional().nullable(),
   status: paymentSessionStatusSchema.default("pending"),
   provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   providerSessionId: z.string().max(255).optional().nullable(),
   providerPaymentId: z.string().max(255).optional().nullable(),
   externalReference: z.string().max(255).optional().nullable(),
@@ -175,6 +176,7 @@ export const paymentSessionListQuerySchema = withLegacyOrderCompatibility(
     targetType: paymentSessionTargetTypeSchema.optional(),
     status: paymentSessionStatusSchema.optional(),
     provider: z.string().optional(),
+    providerConnectionId: z.string().optional(),
     providerSessionId: z.string().optional(),
     providerPaymentId: z.string().optional(),
     externalReference: z.string().optional(),
@@ -187,6 +189,7 @@ const paymentSessionProvisioningSchema = z.object({
   target: paymentTargetSchema.optional(),
   provenance: paymentProvenanceSchema.optional(),
   provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   paymentMethod: paymentMethodSchema.optional().nullable(),
   payerPersonId: z.string().optional().nullable(),
   payerOrganizationId: z.string().optional().nullable(),
@@ -221,6 +224,7 @@ export const applyDefaultBookingPaymentPlanSchema = z.object({
 
 export const markPaymentSessionRequiresRedirectSchema = z.object({
   provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   providerSessionId: z.string().max(255).optional().nullable(),
   providerPaymentId: z.string().max(255).optional().nullable(),
   externalReference: z.string().max(255).optional().nullable(),
@@ -236,6 +240,8 @@ export const markPaymentSessionRequiresRedirectSchema = z.object({
 
 export const completePaymentSessionSchema = z.object({
   status: z.enum(["authorized", "paid"]).default("paid"),
+  provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   providerSessionId: z.string().max(255).optional().nullable(),
   providerPaymentId: z.string().max(255).optional().nullable(),
   externalReference: z.string().max(255).optional().nullable(),
@@ -257,6 +263,8 @@ export const completePaymentSessionSchema = z.object({
 })
 
 export const failPaymentSessionSchema = z.object({
+  provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   providerSessionId: z.string().max(255).optional().nullable(),
   providerPaymentId: z.string().max(255).optional().nullable(),
   externalReference: z.string().max(255).optional().nullable(),
@@ -268,6 +276,8 @@ export const failPaymentSessionSchema = z.object({
 })
 
 export const cancelPaymentSessionSchema = z.object({
+  provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   notes: z.string().optional().nullable(),
   providerPayload: z.record(z.string(), z.unknown()).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -275,6 +285,8 @@ export const cancelPaymentSessionSchema = z.object({
 })
 
 export const expirePaymentSessionSchema = z.object({
+  provider: z.string().max(255).optional().nullable(),
+  providerConnectionId: z.string().max(255).optional().nullable(),
   notes: z.string().optional().nullable(),
   providerPayload: z.record(z.string(), z.unknown()).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),

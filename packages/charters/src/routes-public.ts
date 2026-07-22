@@ -563,7 +563,7 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
         withVoyages: true,
         withYacht: true,
       })
-      if (!detail || detail.status !== "live") return c.json({ error: "not_found" }, 404)
+      if (detail?.status !== "live") return c.json({ error: "not_found" }, 404)
       cachePublicRead(c)
       return c.json({ data: detail }, 200)
     }
@@ -579,7 +579,7 @@ export const chartersPublicRoutes = new OpenAPIHono<Env>({ defaultHook: openApiV
       withVoyages: true,
       withYacht: true,
     })
-    if (!detail || detail.status !== "live") return c.json({ error: "not_found" }, 404)
+    if (detail?.status !== "live") return c.json({ error: "not_found" }, 404)
     cachePublicRead(c)
     return c.json({ data: detail }, 200)
   })

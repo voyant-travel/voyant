@@ -36,6 +36,15 @@ type PaymentSessionTargetColumns = {
   orderId?: string
 }
 
+function mergeJsonbColumn(
+  column: typeof paymentSessions.providerPayload | typeof paymentSessions.metadata,
+  value: Record<string, unknown> | null | undefined,
+) {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return sql`coalesce(${column}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`
+}
+
 async function touchPaymentSessionBooking(
   db: PostgresJsDatabase,
   session: typeof paymentSessions.$inferSelect | undefined,
@@ -80,6 +89,9 @@ export const financePaymentSessionService = {
     if (query.targetType) conditions.push(eq(paymentSessions.targetType, query.targetType))
     if (query.status) conditions.push(eq(paymentSessions.status, query.status))
     if (query.provider) conditions.push(eq(paymentSessions.provider, query.provider))
+    if (query.providerConnectionId) {
+      conditions.push(eq(paymentSessions.providerConnectionId, query.providerConnectionId))
+    }
     if (query.providerSessionId) {
       conditions.push(eq(paymentSessions.providerSessionId, query.providerSessionId))
     }
@@ -219,6 +231,8 @@ export const financePaymentSessionService = {
           cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
           expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
           expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           updatedAt: new Date(),
         })
         .where(eq(paymentSessions.id, id))
@@ -264,6 +278,7 @@ export const financePaymentSessionService = {
         .set({
           status: "requires_redirect",
           provider: data.provider ?? undefined,
+          providerConnectionId: data.providerConnectionId ?? undefined,
           providerSessionId: data.providerSessionId ?? undefined,
           providerPaymentId: data.providerPaymentId ?? undefined,
           externalReference: data.externalReference ?? undefined,
@@ -272,8 +287,8 @@ export const financePaymentSessionService = {
           cancelUrl: data.cancelUrl ?? undefined,
           callbackUrl: data.callbackUrl ?? undefined,
           expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-          providerPayload: data.providerPayload ?? undefined,
-          metadata: data.metadata ?? undefined,
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? undefined,
           updatedAt: new Date(),
         })
@@ -319,14 +334,16 @@ export const financePaymentSessionService = {
         .update(paymentSessions)
         .set({
           status: "failed",
+          provider: data.provider ?? undefined,
+          providerConnectionId: data.providerConnectionId ?? undefined,
           providerSessionId: data.providerSessionId ?? undefined,
           providerPaymentId: data.providerPaymentId ?? undefined,
           externalReference: data.externalReference ?? undefined,
           failureCode: data.failureCode ?? undefined,
           failureMessage: data.failureMessage ?? undefined,
           failedAt: new Date(),
-          providerPayload: data.providerPayload ?? undefined,
-          metadata: data.metadata ?? undefined,
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? undefined,
           updatedAt: new Date(),
         })
@@ -372,9 +389,11 @@ export const financePaymentSessionService = {
         .update(paymentSessions)
         .set({
           status: "cancelled",
+          provider: data.provider ?? undefined,
+          providerConnectionId: data.providerConnectionId ?? undefined,
           cancelledAt: data.cancelledAt ? toTimestamp(data.cancelledAt) : new Date(),
-          providerPayload: data.providerPayload ?? undefined,
-          metadata: data.metadata ?? undefined,
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? undefined,
           updatedAt: new Date(),
         })
@@ -420,9 +439,11 @@ export const financePaymentSessionService = {
         .update(paymentSessions)
         .set({
           status: "expired",
+          provider: data.provider ?? undefined,
+          providerConnectionId: data.providerConnectionId ?? undefined,
           expiredAt: data.expiredAt ? toTimestamp(data.expiredAt) : new Date(),
-          providerPayload: data.providerPayload ?? undefined,
-          metadata: data.metadata ?? undefined,
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? undefined,
           updatedAt: new Date(),
         })

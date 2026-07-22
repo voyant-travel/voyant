@@ -165,6 +165,7 @@ const disconnectRoute = createRoute({
   path: "/v1/admin/settings/payments/disconnect",
   responses: {
     200: jsonContent(dataEnvelope(connectionStatusSchema), "The connection after disconnecting"),
+    409: jsonContent(z.object({ error: z.string() }), "The disconnect was rejected"),
   },
 })
 
@@ -198,7 +199,16 @@ export function mountPaymentProviderRoutes(hono: OpenApiMountTarget): void {
       asRouteResponse(
         (async () => {
           const registry = await resolveRegistry(c)
-          await registry.disconnect()
+          try {
+            await registry.disconnect()
+          } catch (error) {
+            return c.json(
+              {
+                error: error instanceof Error ? error.message : "Payment disconnect failed.",
+              },
+              409,
+            )
+          }
           return c.json({ data: await registry.getConnection() }, 200)
         })(),
       ),

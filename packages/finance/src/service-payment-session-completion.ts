@@ -1,3 +1,9 @@
+import {
+  assertPaymentAdapterProcessorIdentityForLockedSession,
+  assertPaymentAdapterProcessorReferencesForLockedSession,
+  canApplyPaymentAdapterStateTransition,
+  PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY,
+} from "./payment-adapter-session-guard.js"
 import type {
   BookingPaymentSchedulePaidEvent,
   CompletePaymentSessionInput,
@@ -29,26 +35,123 @@ import {
   toTimestamp,
 } from "./service-shared.js"
 
+function mergeJsonbColumn(
+  column: typeof paymentSessions.providerPayload | typeof paymentSessions.metadata,
+  value: Record<string, unknown> | null | undefined,
+) {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return sql`coalesce(${column}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`
+}
+
+export interface PaymentSessionCompletionOptions {
+  requireProcessorIdentityWhenConnectionPinned?: boolean
+  expectedPaymentAdapterStatusLeaseToken?: string
+  sessionUpdate?: {
+    redirectUrl?: string | null
+    idempotencyKey?: string
+  }
+}
+
 export const financePaymentSessionCompletionService = {
   async completePaymentSession(
     db: PostgresJsDatabase,
     id: string,
     data: CompletePaymentSessionInput,
     runtime: FinanceServiceRuntime = {},
+    options: PaymentSessionCompletionOptions = {},
   ) {
-    const [session] = await db
-      .select()
-      .from(paymentSessions)
-      .where(eq(paymentSessions.id, id))
-      .limit(1)
-
-    if (!session) {
-      return null
-    }
-
-    const shouldEmitPaymentCompleted = data.status === "paid" && session.status !== "paid"
-
     const txResult = await db.transaction(async (tx) => {
+      const [session] = await tx
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, id))
+        .for("update")
+        .limit(1)
+
+      if (!session) {
+        return {
+          updated: null,
+          settlement: null,
+          recordedPayment: null,
+          bookingSchedulePaid: null,
+          shouldEmitPaymentCompleted: false,
+        }
+      }
+
+      if (
+        options.expectedPaymentAdapterStatusLeaseToken !== undefined &&
+        session.metadata?.[PAYMENT_ADAPTER_STATUS_LEASE_TOKEN_KEY] !==
+          options.expectedPaymentAdapterStatusLeaseToken
+      ) {
+        return {
+          updated: null,
+          settlement: null,
+          recordedPayment: null,
+          bookingSchedulePaid: null,
+          shouldEmitPaymentCompleted: false,
+        }
+      }
+
+      const lockedIdentity = options.requireProcessorIdentityWhenConnectionPinned
+        ? assertPaymentAdapterProcessorIdentityForLockedSession(
+            session,
+            data.provider && data.providerConnectionId
+              ? { providerId: data.provider, connectionId: data.providerConnectionId }
+              : undefined,
+          )
+        : {
+            provider: data.provider ?? undefined,
+            providerConnectionId: data.providerConnectionId ?? undefined,
+          }
+      const provider = lockedIdentity.provider ?? session.provider ?? data.provider ?? null
+      const providerConnectionId =
+        lockedIdentity.providerConnectionId ??
+        data.providerConnectionId ??
+        session.providerConnectionId ??
+        undefined
+      const pinnedReferences = options.requireProcessorIdentityWhenConnectionPinned
+        ? assertPaymentAdapterProcessorReferencesForLockedSession(session, {
+            processorSessionId: data.providerSessionId,
+            processorPaymentId: data.providerPaymentId,
+          })
+        : {
+            providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
+            providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+          }
+
+      if (!canApplyPaymentAdapterStateTransition(session.status, data.status)) {
+        const [updated] = await tx
+          .update(paymentSessions)
+          .set({
+            provider: provider ?? undefined,
+            providerConnectionId,
+            providerSessionId: pinnedReferences.providerSessionId,
+            providerPaymentId: pinnedReferences.providerPaymentId,
+            externalReference: data.externalReference ?? session.externalReference ?? undefined,
+            providerPayload: mergeJsonbColumn(
+              paymentSessions.providerPayload,
+              data.providerPayload,
+            ),
+            metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
+            notes: data.notes ?? session.notes ?? undefined,
+            redirectUrl: data.status === "paid" ? null : options.sessionUpdate?.redirectUrl,
+            idempotencyKey: options.sessionUpdate?.idempotencyKey,
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentSessions.id, id))
+          .returning()
+
+        return {
+          updated: updated ?? session,
+          settlement: null,
+          recordedPayment: null,
+          bookingSchedulePaid: null,
+          shouldEmitPaymentCompleted: false,
+        }
+      }
+
+      const shouldEmitPaymentCompleted = data.status === "paid" && session.status !== "paid"
       let authorizationId = session.paymentAuthorizationId
       let captureId = session.paymentCaptureId
       let paymentId = session.paymentId
@@ -92,12 +195,9 @@ export const financePaymentSessionCompletionService = {
             captureMode: data.captureMode,
             currency: session.currency,
             amountCents: session.amountCents,
-            provider: session.provider ?? null,
+            provider,
             externalAuthorizationId:
-              data.externalAuthorizationId ??
-              data.providerPaymentId ??
-              session.providerPaymentId ??
-              null,
+              data.externalAuthorizationId ?? pinnedReferences.providerPaymentId ?? null,
             approvalCode: data.approvalCode ?? null,
             authorizedAt: toTimestamp(data.authorizedAt) ?? new Date(),
             expiresAt: toTimestamp(data.expiresAt),
@@ -135,9 +235,8 @@ export const financePaymentSessionCompletionService = {
             status: "completed",
             currency: session.currency,
             amountCents: session.amountCents,
-            provider: session.provider ?? null,
-            externalCaptureId:
-              data.externalCaptureId ?? data.providerPaymentId ?? session.providerPaymentId ?? null,
+            provider,
+            externalCaptureId: data.externalCaptureId ?? pinnedReferences.providerPaymentId ?? null,
             capturedAt: toTimestamp(data.capturedAt) ?? new Date(),
             settledAt: toTimestamp(data.settledAt),
             notes: data.notes ?? session.notes ?? null,
@@ -199,7 +298,7 @@ export const financePaymentSessionCompletionService = {
           settlementForEmit = {
             invoiceId: invoiceForPayment.id,
             paymentId: payment.id,
-            provider: session.provider ?? "internal",
+            provider: provider ?? "internal",
             newlyAppliedAmountCents: session.amountCents,
             paidCents,
             balanceDueCents,
@@ -245,21 +344,30 @@ export const financePaymentSessionCompletionService = {
         .update(paymentSessions)
         .set({
           status: data.status,
+          provider: provider ?? undefined,
+          providerConnectionId,
           paymentMethod: data.paymentMethod ?? session.paymentMethod ?? undefined,
           paymentInstrumentId: data.paymentInstrumentId ?? session.paymentInstrumentId ?? undefined,
           paymentAuthorizationId: authorizationId,
           paymentCaptureId: captureId,
           paymentId,
           invoiceId: invoiceForPayment?.id ?? session.invoiceId ?? undefined,
-          providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
-          providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
+          providerSessionId: pinnedReferences.providerSessionId,
+          providerPaymentId: pinnedReferences.providerPaymentId,
           externalReference: data.externalReference ?? session.externalReference ?? undefined,
-          providerPayload: data.providerPayload ?? undefined,
-          metadata: data.metadata ?? undefined,
+          providerPayload: mergeJsonbColumn(paymentSessions.providerPayload, data.providerPayload),
+          metadata: mergeJsonbColumn(paymentSessions.metadata, data.metadata),
           notes: data.notes ?? session.notes ?? undefined,
-          redirectUrl: data.status === "paid" ? null : session.redirectUrl,
+          redirectUrl:
+            data.status === "paid"
+              ? null
+              : (options.sessionUpdate?.redirectUrl ?? session.redirectUrl),
+          idempotencyKey: options.sessionUpdate?.idempotencyKey,
           failureCode: null,
           failureMessage: null,
+          failedAt: null,
+          cancelledAt: null,
+          expiredAt: null,
           expiresAt: data.expiresAt === undefined ? session.expiresAt : toTimestamp(data.expiresAt),
           completedAt: new Date(),
           updatedAt: new Date(),
@@ -320,6 +428,7 @@ export const financePaymentSessionCompletionService = {
         settlement: settlementForEmit,
         recordedPayment: recordedPaymentForEmit,
         bookingSchedulePaid: bookingSchedulePaidForEmit,
+        shouldEmitPaymentCompleted,
       }
     })
 
@@ -352,7 +461,7 @@ export const financePaymentSessionCompletionService = {
     // Some aggregate flows, such as composed trips, intentionally use a
     // generic target instead of booking/order/invoice columns; those still
     // need the completion event keyed by targetType/targetId.
-    if (shouldEmitPaymentCompleted && txResult.updated) {
+    if (txResult.shouldEmitPaymentCompleted && txResult.updated) {
       await runtime.eventBus?.emit(
         "payment.completed",
         buildPaymentCompletedEvent(txResult.updated),

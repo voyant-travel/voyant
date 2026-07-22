@@ -3,7 +3,9 @@ import {
   type CheckoutCapabilityAction,
   requireCheckoutCapability,
 } from "@voyant-travel/bookings/checkout-capability"
+import type { EventBus } from "@voyant-travel/core"
 import { idempotencyKey, openApiValidationHook, UnauthorizedApiError } from "@voyant-travel/hono"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, MiddlewareHandler } from "hono"
 
 import { createPublicAccountantRoutes } from "./routes-public-accountant.js"
@@ -27,6 +29,12 @@ export interface PublicFinanceRouteOptions {
     bindings: unknown,
     storageKey: string,
   ) => Promise<string | null> | string | null
+  refreshPaymentSessionStatus?: (input: {
+    bindings: unknown
+    db: PostgresJsDatabase
+    paymentSessionId: string
+    eventBus?: EventBus
+  }) => Promise<unknown>
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -392,10 +400,22 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
       // to share when issuing the link). Trip-issued sessions already
       // worked this way (no bookingId attached → no check); admin-
       // initiated booking sessions need the same access.
-      const session = await publicFinanceService.getPaymentSession(
-        c.get("db"),
-        c.req.valid("param").sessionId,
-      )
+      const paymentSessionId = c.req.valid("param").sessionId
+      if (options.refreshPaymentSessionStatus) {
+        try {
+          await options.refreshPaymentSessionStatus({
+            bindings: c.env,
+            db: c.get("db"),
+            paymentSessionId,
+            eventBus: c.var.eventBus,
+          })
+        } catch {
+          // Provider polling is best-effort for this read endpoint. Return the
+          // last persisted state without exposing processor internals.
+        }
+      }
+
+      const session = await publicFinanceService.getPaymentSession(c.get("db"), paymentSessionId)
 
       return session ? c.json({ data: session }, 200) : notFound(c, "Payment session not found")
     })

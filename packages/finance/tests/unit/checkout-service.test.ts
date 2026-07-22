@@ -135,6 +135,115 @@ describe("finance checkout service", () => {
     })
   })
 
+  it("rejects provider-neutral card start before creating invoice or session when no selected starter exists", async () => {
+    const insertedInvoices: Array<Record<string, unknown>> = []
+    const db = createCheckoutDb({ insertedInvoices })
+    const legacyPaymentStarter = vi.fn()
+    const createPaymentSessionFromInvoice = vi.spyOn(
+      financeService,
+      "createPaymentSessionFromInvoice",
+    )
+
+    await expect(
+      initiateCheckoutCollection(
+        db as never,
+        "booking_123",
+        {
+          method: "card",
+          stage: "manual",
+          amountCents: 12_000,
+          paymentSessionTarget: "invoice",
+          startProvider: {
+            payload: {
+              billing: {
+                email: "traveler@example.com",
+                firstName: "Ana",
+              },
+            },
+          },
+        },
+        {},
+        {
+          paymentStarters: { netopia: legacyPaymentStarter },
+        },
+      ),
+    ).rejects.toThrow("No payment adapter is selected for card collection")
+
+    expect(insertedInvoices).toHaveLength(0)
+    expect(createPaymentSessionFromInvoice).not.toHaveBeenCalled()
+    expect(legacyPaymentStarter).not.toHaveBeenCalled()
+  })
+
+  it("rejects an unavailable card adapter before any checkout database read", async () => {
+    const select = vi.fn(() => {
+      throw new Error("checkout database must not be touched")
+    })
+
+    await expect(
+      initiateCheckoutCollection({ select } as never, "booking_123", {
+        method: "card",
+        stage: "initial",
+        startProvider: {
+          payload: {
+            billing: {
+              email: "traveler@example.com",
+              firstName: "Ana",
+            },
+          },
+        },
+      }),
+    ).rejects.toThrow("No payment adapter is selected for card collection")
+
+    expect(select).not.toHaveBeenCalled()
+  })
+
+  it("allows provider-qualified card starts to use legacy keyed starters", async () => {
+    const db = createCheckoutDb({ insertedInvoices: [] })
+    const paymentSession = {
+      id: "ps_legacy",
+      invoiceId: null,
+      targetType: "booking_payment_schedule",
+    }
+    const legacyPaymentStarter = vi.fn(async () => ({
+      provider: "netopia",
+      paymentSessionId: paymentSession.id,
+      redirectUrl: "https://payments.example/checkout",
+      externalReference: null,
+      providerSessionId: "processor_session_123",
+      providerPaymentId: null,
+      response: null,
+    }))
+
+    vi.spyOn(financeService, "createPaymentSessionFromBookingSchedule").mockResolvedValue(
+      paymentSession as never,
+    )
+    vi.spyOn(financeService, "getPaymentSessionById").mockResolvedValue(paymentSession as never)
+
+    await initiateCheckoutCollection(
+      db as never,
+      "booking_123",
+      {
+        method: "card",
+        stage: "initial",
+        startProvider: {
+          provider: "netopia",
+          payload: {
+            billing: {
+              email: "traveler@example.com",
+              firstName: "Ana",
+            },
+          },
+        },
+      },
+      {},
+      {
+        paymentStarters: { netopia: legacyPaymentStarter },
+      },
+    )
+
+    expect(legacyPaymentStarter).toHaveBeenCalledOnce()
+  })
+
   it("keeps base paid cents null when creating a collection invoice without base currency", async () => {
     const insertedInvoices: Array<Record<string, unknown>> = []
     const db = createCheckoutDb({

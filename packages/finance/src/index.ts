@@ -338,7 +338,15 @@ export {
   type OrderPaymentSessionTargetType,
   type StartOrderPaymentProvider,
 } from "./order-payment-sessions.js"
-export { applyPaymentAdapterCallbackEvent } from "./payment-adapter-events.js"
+export {
+  applyPaymentAdapterCallbackEvent,
+  applyPaymentAdapterInitiationResult,
+  applyPaymentAdapterStatusResult,
+} from "./payment-adapter-events.js"
+export {
+  type PaymentAdapterStatusRefreshExecution,
+  refreshPaymentAdapterStatus,
+} from "./payment-adapter-status.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,

@@ -12,13 +12,15 @@
  * callers fall back gracefully (bank-transfer paths still work).
  */
 import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
-import { eq } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
+import { applyPaymentAdapterInitiationResult } from "./payment-adapter-events.js"
 import { paymentSessions } from "./schema/payment-sessions.js"
-import { financePaymentSessionCompletionService } from "./service-payment-session-completion.js"
-import { financePaymentSessionService } from "./service-payment-sessions.js"
 import type { FinanceServiceRuntime } from "./service-shared.js"
+
+const PAYMENT_ADAPTER_INITIATION_CLAIM_KEY = "paymentAdapterInitiationClaim"
+const PAYMENT_ADAPTER_INITIATION_STATE_KEY = "paymentAdapterInitiationState"
 
 /**
  * Billing details a card processor needs to start a hosted payment.
@@ -47,6 +49,8 @@ export interface CardPaymentStartArgs {
   billing: CardPaymentBilling
   description?: string
   returnUrl?: string
+  cancelUrl?: string
+  shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }
 
@@ -99,66 +103,102 @@ export async function startPaymentAdapterCardPayment(
   args: CardPaymentStartArgs,
   execution: PaymentAdapterCardPaymentExecution,
 ): Promise<CardPaymentStartResult | null> {
-  const [session] = await args.db
+  const [initialSession] = await args.db
     .select()
     .from(paymentSessions)
     .where(eq(paymentSessions.id, args.sessionId))
     .limit(1)
-  if (!session) return null
+  if (!initialSession) return null
 
   const idempotencyKey =
-    session.idempotencyKey ?? execution.idempotencyKey ?? `payment:${session.id}`
+    initialSession.idempotencyKey ?? execution.idempotencyKey ?? `payment:${initialSession.id}`
+  const [session] = await args.db
+    .update(paymentSessions)
+    .set({
+      status: "processing",
+      idempotencyKey,
+      metadata: sql`coalesce(${paymentSessions.metadata}, '{}'::jsonb) || ${JSON.stringify({
+        [PAYMENT_ADAPTER_INITIATION_CLAIM_KEY]: idempotencyKey,
+        [PAYMENT_ADAPTER_INITIATION_STATE_KEY]: "in_flight",
+      })}::jsonb`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(paymentSessions.id, args.sessionId),
+        eq(paymentSessions.status, "pending"),
+        isNull(paymentSessions.providerConnectionId),
+        isNull(paymentSessions.providerSessionId),
+        isNull(paymentSessions.providerPaymentId),
+      ),
+    )
+    .returning()
+  if (!session) {
+    const [continuation] = await args.db
+      .select({ redirectUrl: paymentSessions.redirectUrl })
+      .from(paymentSessions)
+      .where(eq(paymentSessions.id, args.sessionId))
+      .limit(1)
+    return continuation ? { redirectUrl: continuation.redirectUrl } : null
+  }
+
   const metadata = {
     ...(args.metadata ?? {}),
     billing: args.billing,
     ...(execution.notifyUrl ? { notifyUrl: execution.notifyUrl } : {}),
   }
-  const result = await adapter.initiate(execution.context, {
-    paymentSessionId: session.id,
-    money: { amountMinor: session.amountCents, currency: session.currency },
-    description: args.description ?? session.notes ?? undefined,
-    returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
-    idempotencyKey,
-    customer: {
-      email: args.billing.email,
-      phone: args.billing.phone ?? null,
-      firstName: args.billing.firstName,
-      lastName: args.billing.lastName ?? null,
-    },
-    metadata,
-  })
-
-  const providerData = {
-    providerSessionId: result.processorSessionId ?? undefined,
-    providerPaymentId: result.processorPaymentId ?? undefined,
-    providerPayload: result.raw === undefined ? undefined : { initiation: result.raw },
-    metadata: { paymentAdapterInitiationIdempotencyKey: result.idempotencyKey },
-  }
-
-  if (result.nextState === "paid" || result.nextState === "authorized") {
-    await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-      provider: adapter.id,
-      redirectUrl: result.checkout?.url ?? undefined,
+  let result: Awaited<ReturnType<PaymentAdapter["initiate"]>>
+  try {
+    result = await adapter.initiate(execution.context, {
+      paymentSessionId: session.id,
+      money: { amountMinor: session.amountCents, currency: session.currency },
+      description: args.description ?? session.notes ?? undefined,
+      returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
+      cancelUrl: args.cancelUrl ?? session.cancelUrl ?? undefined,
       idempotencyKey,
+      customer: {
+        email: args.billing.email,
+        phone: args.billing.phone ?? null,
+        firstName: args.billing.firstName,
+        lastName: args.billing.lastName ?? null,
+      },
+      shipping: args.shipping,
+      metadata,
     })
-    await financePaymentSessionCompletionService.completePaymentSession(
+    await applyPaymentAdapterInitiationResult(
       args.db,
       session.id,
-      {
-        status: result.nextState,
-        captureMode: "automatic",
-        ...providerData,
-      },
+      adapter.id,
+      result,
+      { idempotencyKey, claimedAt: session.updatedAt },
       execution.runtime,
     )
-  } else {
-    await financePaymentSessionService.updatePaymentSession(args.db, session.id, {
-      provider: adapter.id,
-      status: result.nextState,
-      redirectUrl: result.checkout?.url ?? undefined,
-      idempotencyKey,
-      ...providerData,
-    })
+  } catch (error) {
+    const retrySafe =
+      adapter.capabilities.idempotencyKeys && adapter.capabilities.retrySafeInitiation
+    await args.db
+      .update(paymentSessions)
+      .set({
+        status: retrySafe ? "pending" : "processing",
+        metadata: sql`coalesce(${paymentSessions.metadata}, '{}'::jsonb) || ${JSON.stringify({
+          [PAYMENT_ADAPTER_INITIATION_CLAIM_KEY]: retrySafe ? null : idempotencyKey,
+          [PAYMENT_ADAPTER_INITIATION_STATE_KEY]: retrySafe ? "retryable" : "uncertain",
+        })}::jsonb`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(paymentSessions.id, session.id),
+          eq(paymentSessions.status, "processing"),
+          eq(paymentSessions.idempotencyKey, idempotencyKey),
+          eq(paymentSessions.updatedAt, session.updatedAt),
+          isNull(paymentSessions.providerConnectionId),
+          isNull(paymentSessions.providerSessionId),
+          isNull(paymentSessions.providerPaymentId),
+          sql`${paymentSessions.metadata}->>${PAYMENT_ADAPTER_INITIATION_CLAIM_KEY} = ${idempotencyKey}`,
+        ),
+      )
+    throw error
   }
 
   return { redirectUrl: result.checkout?.url ?? null }

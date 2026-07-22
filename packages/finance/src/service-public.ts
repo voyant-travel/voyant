@@ -127,6 +127,7 @@ function toPublicPaymentSession(
     bookingGuaranteeId: session.bookingGuaranteeId ?? null,
     status: session.status,
     provider: session.provider ?? null,
+    providerConnectionId: session.providerConnectionId ?? null,
     providerSessionId: session.providerSessionId ?? null,
     providerPaymentId: session.providerPaymentId ?? null,
     externalReference: session.externalReference ?? null,
