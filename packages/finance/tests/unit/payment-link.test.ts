@@ -24,6 +24,26 @@ describe("buildPaymentLinkUrl", () => {
     )
   })
 
+  it("keeps search and fragment suffixes after the payment session path", () => {
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/pay?lang=ro" })).toBe(
+      "https://example.com/pay/pmss_123?lang=ro",
+    )
+    expect(buildPaymentLinkUrl("pmss_123", { baseUrl: "https://example.com/ro#checkout" })).toBe(
+      "https://example.com/ro/pay/pmss_123#checkout",
+    )
+    expect(
+      buildPaymentLinkUrl("pmss_123", {
+        baseUrl: "https://example.com/ro?lang=ro#checkout",
+      }),
+    ).toBe("https://example.com/ro/pay/pmss_123?lang=ro#checkout")
+  })
+
+  it("supports relative bases with suffixes", () => {
+    expect(buildPaymentLinkUrl("pmss 123", { baseUrl: "/ro?lang=ro#checkout" })).toBe(
+      "/ro/pay/pmss%20123?lang=ro#checkout",
+    )
+  })
+
   it("falls back to a root-relative URL outside the browser", () => {
     expect(buildPaymentLinkUrl("pmss 123")).toBe("/pay/pmss%20123")
   })
