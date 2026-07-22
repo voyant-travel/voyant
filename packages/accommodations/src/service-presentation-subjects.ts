@@ -15,6 +15,7 @@ import {
   type EffectiveReferencedSubjectProjection,
   type IndexerSlice,
   type OverlayOrigin,
+  type ResolverOverlay,
   type ResolverScope,
   type SelectCatalogOverlay,
   type SelectCatalogOverlayHistory,
@@ -487,7 +488,7 @@ function copyReferencedValue(
 
 export function validateEffectiveAccommodationPropertyProjection(
   source: ReadonlyMap<string, unknown>,
-  overlays: readonly SelectCatalogOverlay[],
+  overlays: readonly ResolverOverlay[],
   input: WriteAccommodationPropertyOverlayInput,
 ): void {
   const withoutCurrentTarget = overlays.filter(

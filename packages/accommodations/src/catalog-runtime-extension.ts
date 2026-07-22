@@ -6,7 +6,7 @@ import { registerAccommodationBookingHandler } from "./booking-engine/runtime.js
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
 import {
   accommodationPropertyCatalogPolicy,
-  ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY,
+  accommodationPropertyReferenceCatalogPolicy,
 } from "./catalog-policy-properties.js"
 import { createRoomTypeDocumentBuilder } from "./service-catalog-plane.js"
 import {
@@ -15,7 +15,7 @@ import {
 } from "./service-presentation-subjects.js"
 
 export const catalogAccommodationsRuntimeExtension = {
-  fieldPolicy: [...accommodationCatalogPolicy, ...ACCOMMODATION_PROPERTY_REFERENCE_FIELD_POLICY],
+  fieldPolicy: [...accommodationCatalogPolicy, ...accommodationPropertyReferenceCatalogPolicy],
   propertyFieldPolicy: accommodationPropertyCatalogPolicy,
   createDocumentBuilder: ({ db, sellerOperatorId }) =>
     createRoomTypeDocumentBuilder(db, { sellerOperatorId }),
