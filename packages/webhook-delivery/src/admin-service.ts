@@ -26,6 +26,7 @@ import {
   hashWebhookPayload,
   webhookBodyExcerpt,
 } from "./security.js"
+import { generateWebhookTestPayload } from "./test-payload.js"
 import type { EnqueueWebhookAttemptInput } from "./types.js"
 
 export interface OperatorWebhookSubscription
@@ -303,7 +304,7 @@ function validateSubscriptionInput(validate: () => void): void {
 function testEvent(contract: ExternalWebhookEventContract, now: Date): EventEnvelope {
   return {
     name: contract.eventType,
-    data: sampleValue(contract.payloadSchema, now),
+    data: generateWebhookTestPayload(contract.payloadSchema, now),
     emittedAt: now.toISOString(),
     metadata: {
       eventId: `evt_test_${newId("webhook_deliveries")}`,
@@ -312,36 +313,6 @@ function testEvent(contract: ExternalWebhookEventContract, now: Date): EventEnve
       graphEventSourceModule: "operator-webhooks",
     },
   }
-}
-
-function sampleValue(schema: Readonly<Record<string, unknown>>, now: Date): unknown {
-  if (Array.isArray(schema.enum) && schema.enum.length > 0) return schema.enum[0]
-  if ("example" in schema) return schema.example
-  if ("default" in schema) return schema.default
-  if (schema.type === "object") {
-    const properties = isRecord(schema.properties) ? schema.properties : {}
-    const required = new Set(
-      Array.isArray(schema.required)
-        ? schema.required.filter((entry): entry is string => typeof entry === "string")
-        : [],
-    )
-    return Object.fromEntries(
-      Object.entries(properties)
-        .filter(([key, value]) => required.has(key) && isRecord(value))
-        .map(([key, value]) => [key, sampleValue(value as Record<string, unknown>, now)]),
-    )
-  }
-  if (schema.type === "array") return []
-  if (schema.type === "string") {
-    if (schema.format === "date-time") return now.toISOString()
-    if (schema.format === "date") return now.toISOString().slice(0, 10)
-    if (schema.format === "email") return "webhook-test@example.com"
-    return "test"
-  }
-  if (schema.type === "integer" || schema.type === "number") return 0
-  if (schema.type === "boolean") return false
-  if (schema.type === "null") return null
-  return null
 }
 
 function deliveryInput(input: {
