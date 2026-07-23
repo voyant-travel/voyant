@@ -610,6 +610,7 @@ describe("createMcpApiRoutes", () => {
       requiredScopes: ["catalog:read"],
       tier: "read",
       riskPolicy: READ_ONLY_RISK,
+      actionPolicyEnforcement: "handler",
       async handler() {
         return { ok: true }
       },
