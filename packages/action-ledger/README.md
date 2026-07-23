@@ -31,6 +31,15 @@ principal identity with `validateApprovedAction`, and writes required-ledger pre
 terminal records around domain dispatch. Conditional policies remain fail-closed because a
 generic transport cannot safely invent their domain evaluator.
 
+The generic gate also fails closed for actions declaring `targetLifecycle: "created"`. Their
+canonical target does not exist before dispatch, so the caller cannot supply it and the generic
+preflight cannot share the domain transaction. A created-target handler must implement the
+`handler-command-claim-v1` contract: claim a stable pre-create command identity and fingerprint
+before mutation, reject same-key/different-command reuse, replay a typed immutable result
+reference, and atomically append the canonical generated-target result. Approval requests for
+such actions bind to the declared command target type; the successful generated-target entry is
+then linked causally by the handler.
+
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their
 Tool definitions explicitly advertise handler-owned enforcement so MCP does not double-gate them.

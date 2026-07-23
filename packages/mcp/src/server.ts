@@ -92,6 +92,12 @@ export interface GraphMcpRuntime {
     version: string
     kind: "execute" | "read" | "sensitive-read"
     targetType: string
+    targetLifecycle?: "existing" | "created"
+    createdTarget?: {
+      commandTargetType: string
+      resultReferenceType: string
+      durability: "handler-command-claim-v1"
+    }
     risk: "low" | "medium" | "high" | "critical"
     ledger: "required" | "optional"
     approval?: "never" | "conditional" | "required"
@@ -304,6 +310,8 @@ function indexActionsByTool(
       version: action.version,
       kind: action.kind,
       targetType: action.targetType,
+      ...(action.targetLifecycle ? { targetLifecycle: action.targetLifecycle } : {}),
+      ...(action.createdTarget ? { createdTarget: action.createdTarget } : {}),
       risk: action.risk,
       ledger: action.ledger,
       approval: action.approval ?? "never",
@@ -450,14 +458,16 @@ interface McpOutputContract {
   envelopeResult: boolean
 }
 
-const actionInvocationSchema = z.object({
+const actionInvocationFields = {
   confirmed: z.boolean().optional(),
   targetId: z.string().trim().min(1).optional(),
   idempotencyKey: z.string().trim().min(1).max(255).optional(),
   approvalId: z.string().trim().min(1).optional(),
   idempotencyFingerprint: z.string().trim().min(1).optional(),
   reasonCode: z.string().trim().min(1).optional(),
-})
+} satisfies z.ZodRawShape
+
+const actionInvocationSchema = z.object(actionInvocationFields)
 
 type ZodCompositionDef = {
   type?: string
@@ -490,8 +500,22 @@ function toMcpInputSchema(schema: z.ZodType, entry: ToolManifestEntry): z.ZodObj
   }
   return z.looseObject({
     ...shape,
-    [TOOL_ACTION_INVOCATION_FIELD]: actionInvocationSchema.optional(),
+    [TOOL_ACTION_INVOCATION_FIELD]: actionInvocationSchemaFor(entry).optional(),
   })
+}
+
+function actionInvocationSchemaFor(entry: ToolManifestEntry): z.ZodObject {
+  const fields = new Set([
+    ...(entry.actionPolicy?.invocation.requiredFields ?? []),
+    ...(entry.actionPolicy?.invocation.optionalFields ?? []),
+  ])
+  return z.object(
+    Object.fromEntries(
+      Object.entries(actionInvocationFields).filter(([field]) =>
+        fields.has(field as keyof typeof actionInvocationFields),
+      ),
+    ) as z.ZodRawShape,
+  )
 }
 
 function collectInputObjectShapes(schema: unknown, seen = new Set<unknown>()): z.ZodRawShape[] {

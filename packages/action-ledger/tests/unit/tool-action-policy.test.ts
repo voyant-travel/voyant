@@ -235,6 +235,37 @@ describe("generic MCP action-policy gate", () => {
     ).rejects.toThrow("ledger unavailable")
     expect(dispatch).not.toHaveBeenCalled()
   })
+
+  it("fails closed before dispatch for a handler-generated target", async () => {
+    const selected = action({
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "test-create-command",
+        resultReferenceType: "test-target-ref",
+        durability: "handler-command-claim-v1",
+      },
+    })
+    const gate = createToolActionPolicyGate({
+      db: {} as never,
+      selectedActions: [selected],
+      requestContext,
+    })
+    const dispatch = vi.fn(async () => ({ id: "generated_1" }))
+
+    await expect(
+      gate.execute(
+        execution(selected, {
+          confirmed: true,
+          idempotencyKey: "command_1",
+        }),
+        dispatch,
+      ),
+    ).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      message: expect.stringContaining("handler-owned durable command claim"),
+    })
+    expect(dispatch).not.toHaveBeenCalled()
+  })
 })
 
 function action(
@@ -269,6 +300,8 @@ function execution(
     risk: selected.risk,
     ledger: selected.ledger,
     approval: selected.approval ?? "never",
+    targetLifecycle: selected.targetLifecycle ?? "existing",
+    ...(selected.createdTarget ? { createdTarget: selected.createdTarget } : {}),
     allowedActorTypes: selected.allowedActorTypes,
     enforcement: "generic",
     invocation: {

@@ -146,11 +146,22 @@ export function createActionLedgerToolServices(input: {
       const currentPrincipal = writePrincipal(input.requestContext)
       const selected = selectedApprovalRequestAction(input.selectedActions, request)
       const capabilityId = selected.capabilityId ?? selected.id
+      const approvalTargetType =
+        selected.targetLifecycle === "created"
+          ? selected.createdTarget?.commandTargetType
+          : selected.targetType
+      if (!approvalTargetType) {
+        throw new ToolError(
+          "Created-target approval requires a declared pre-create command target type.",
+          "ACTION_POLICY_REQUIRED",
+          { actionId: selected.id },
+        )
+      }
       const reasonCode = request.reasonCode ?? null
       const idempotencyFingerprint = await buildActionApprovalCommandFingerprint({
         actionName: capabilityId,
         actionVersion: selected.version,
-        targetType: selected.targetType,
+        targetType: approvalTargetType,
         targetId: request.targetId,
         commandInput: request.commandInput ?? null,
         approvalPolicy: "required",
@@ -165,7 +176,7 @@ export function createActionLedgerToolServices(input: {
         actionVersion: selected.version,
         actionKind: "execute",
         evaluatedRisk: selected.risk,
-        targetType: selected.targetType,
+        targetType: approvalTargetType,
         targetId: request.targetId,
         routeOrToolName: selected.from?.tools?.[0] ?? null,
         capabilityId,

@@ -3,6 +3,8 @@
 import type { VoyantGraphCustomFieldTarget } from "@voyant-travel/core/project"
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
+import { defineModule, defineProject, resolveDeploymentGraph } from "./deployment-graph.js"
+import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { invokeVoyantGraphJob } from "./runtime-composition.js"
 import {
   createVoyantGraphRuntime,
@@ -90,6 +92,43 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("preserves created-target action command contracts", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.create-account",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "loyalty-account-create-command",
+            resultReferenceType: "loyalty-account",
+            durability: "handler-command-claim-v1",
+          },
+          risk: "medium",
+          ledger: "required",
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [module] }),
+    })
+    const definitions = lowerGraphRuntimeUnits(graph.modules, graph, undefined)
+
+    expect(definitions[0]?.actions).toEqual([
+      expect.objectContaining({
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "loyalty-account-create-command",
+          resultReferenceType: "loyalty-account",
+          durability: "handler-command-claim-v1",
+        },
+      }),
+    ])
+  })
+
   it("preserves selected setup steps on unit loaders and the aggregate runtime", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
     const setupSteps = [

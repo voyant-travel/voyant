@@ -1929,6 +1929,64 @@ function validatePromotedFacets(
     if (entry.action !== undefined) {
       requireNonEmptyString(entry.action, `${facet}.action`, source, diagnostics)
     }
+    if (
+      entry.targetLifecycle !== undefined &&
+      entry.targetLifecycle !== "existing" &&
+      entry.targetLifecycle !== "created"
+    ) {
+      invalidFacet(
+        `${facet}.targetLifecycle`,
+        source,
+        diagnostics,
+        'Action targetLifecycle must be "existing" or "created".',
+      )
+    }
+    if (entry.targetLifecycle === "created") {
+      if (entry.kind !== "execute" || entry.ledger !== "required") {
+        invalidFacet(
+          `${facet}.targetLifecycle`,
+          source,
+          diagnostics,
+          'Created targets are supported only for kind "execute" with ledger "required".',
+        )
+      }
+      if (!isRecord(entry.createdTarget)) {
+        invalidFacet(
+          `${facet}.createdTarget`,
+          source,
+          diagnostics,
+          "Actions that create their target must declare a createdTarget command contract.",
+        )
+      } else {
+        requireNonEmptyString(
+          entry.createdTarget.commandTargetType,
+          `${facet}.createdTarget.commandTargetType`,
+          source,
+          diagnostics,
+        )
+        requireNonEmptyString(
+          entry.createdTarget.resultReferenceType,
+          `${facet}.createdTarget.resultReferenceType`,
+          source,
+          diagnostics,
+        )
+        if (entry.createdTarget.durability !== "handler-command-claim-v1") {
+          invalidFacet(
+            `${facet}.createdTarget.durability`,
+            source,
+            diagnostics,
+            'Created-target actions must use durability "handler-command-claim-v1".',
+          )
+        }
+      }
+    } else if (entry.createdTarget !== undefined) {
+      invalidFacet(
+        `${facet}.createdTarget`,
+        source,
+        diagnostics,
+        'Only actions with targetLifecycle "created" may declare createdTarget.',
+      )
+    }
     if (entry.allowedActorTypes !== undefined && !isStringArray(entry.allowedActorTypes)) {
       invalidFacet(
         `${facet}.allowedActorTypes`,

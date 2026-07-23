@@ -455,6 +455,164 @@ describe("createMcpApiRoutes", () => {
     ).rejects.toThrow(/no selected graph action policy/)
   })
 
+  it("propagates created-target handler policy without advertising caller-owned target identity", async () => {
+    let handlerCalls = 0
+    const createNotificationTool = defineTool({
+      name: "create_notification",
+      description: "Create a notification",
+      inputSchema: z.object({ message: z.string() }),
+      outputSchema: z.object({ notificationId: z.string() }),
+      requiredScopes: ["notifications:send"],
+      tier: "destructive",
+      riskPolicy: {
+        destructive: true,
+        reversible: false,
+        dryRunSupported: false,
+        confirmationRequired: true,
+      },
+      actionPolicyEnforcement: "handler",
+      async handler() {
+        handlerCalls += 1
+        return { notificationId: "notification_1" }
+      },
+    })
+    const toolId = "@voyant-travel/notifications#tool.create-notification"
+    const graphApp = await createGraphMcpApiRoutes({
+      runtime: {
+        accessCatalog,
+        tools: [
+          {
+            id: toolId,
+            unitId: "@voyant-travel/notifications",
+            name: "create_notification",
+            requiredScopes: ["notifications:send"],
+            risk: "critical",
+            referenceId: "notifications-create-runtime",
+            async load<T>() {
+              return createNotificationTool as T
+            },
+          },
+        ],
+        actions: [
+          {
+            id: "@voyant-travel/notifications#action.create-notification",
+            version: "v1",
+            kind: "execute",
+            targetType: "notification",
+            targetLifecycle: "created",
+            createdTarget: {
+              commandTargetType: "notification-command",
+              resultReferenceType: "notification",
+              durability: "handler-command-claim-v1",
+            },
+            risk: "critical",
+            ledger: "required",
+            approval: "never",
+            from: { tools: [toolId] },
+          },
+        ],
+        references: [
+          {
+            id: "notifications-create-runtime",
+            importEntry: "@voyant-travel/notifications/tools",
+            async loadModule<T extends Record<string, unknown>>() {
+              return {} as T
+            },
+          },
+        ],
+      },
+      buildContext: () => buildContext(),
+    })
+    const outer = new Hono()
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["notifications:send"])
+      await next()
+    })
+    outer.route("/", graphApp)
+
+    const listed = await readRpc(await outer.request("/", rpc("tools/list", {})))
+    const listedTool = (
+      listed.result as {
+        tools: Array<{
+          name: string
+          inputSchema: {
+            properties?: {
+              _voyant?: { properties?: Record<string, unknown>; required?: string[] }
+            }
+          }
+          _meta: Record<string, unknown>
+        }>
+      }
+    ).tools.find(({ name }) => name === "create_notification")
+    const invocationSchema = listedTool?.inputSchema.properties?._voyant
+    expect(invocationSchema?.properties).toHaveProperty("confirmed")
+    expect(invocationSchema?.properties).not.toHaveProperty("targetId")
+    expect(invocationSchema?.required ?? []).not.toContain("targetId")
+    expect(listedTool?._meta).toMatchObject({
+      "voyant.travel/tool": {
+        actionPolicy: {
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "notification-command",
+            resultReferenceType: "notification",
+            durability: "handler-command-claim-v1",
+          },
+          enforcement: "handler",
+          invocation: { requiredFields: ["confirmed"] },
+        },
+      },
+    })
+
+    const manifest = (await (await outer.request("/manifest")).json()) as {
+      tools: Array<{
+        name: string
+        actionPolicy?: {
+          targetLifecycle?: string
+          createdTarget?: Record<string, unknown>
+          invocation: { requiredFields: string[] }
+        }
+      }>
+    }
+    expect(manifest.tools.find(({ name }) => name === "create_notification")?.actionPolicy).toEqual(
+      expect.objectContaining({
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "notification-command",
+          resultReferenceType: "notification",
+          durability: "handler-command-claim-v1",
+        },
+        invocation: expect.objectContaining({ requiredFields: ["confirmed"] }),
+      }),
+    )
+
+    const unconfirmed = await readRpc(
+      await outer.request(
+        "/",
+        rpc("tools/call", {
+          name: "create_notification",
+          arguments: { message: "hello" },
+        }),
+      ),
+    )
+    expect((unconfirmed.result as { isError?: boolean }).isError).toBe(true)
+    expect(JSON.stringify(unconfirmed)).toContain("CONFIRMATION_REQUIRED")
+    expect(handlerCalls).toBe(0)
+
+    const called = await readRpc(
+      await outer.request(
+        "/",
+        rpc("tools/call", {
+          name: "create_notification",
+          arguments: { message: "hello", _voyant: { confirmed: true } },
+        }),
+      ),
+    )
+    expect((called.result as { structuredContent?: unknown }).structuredContent).toEqual({
+      notificationId: "notification_1",
+    })
+    expect(handlerCalls).toBe(1)
+  })
+
   it("hides a tool from grant audiences outside its declared audience policy", async () => {
     const app = appWithScopes(["catalog:read"], "customer")
     const listed = await readRpc(await app.request("/", rpc("tools/list", {})))

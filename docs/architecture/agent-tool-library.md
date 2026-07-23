@@ -110,6 +110,15 @@ inside that transaction, its handler claims a fingerprinted command under a stab
 idempotency key, writes the requested and canonical `booking.reserve` ledger entries in
 the same transaction, and returns the immutable booking reference on exact replay.
 
+Graph actions distinguish existing targets from handler-generated targets explicitly.
+Existing-target actions retain the generic `_voyant.targetId` preflight. Created-target actions
+declare a stable pre-create command target, an immutable result-reference type, and the
+`handler-command-claim-v1` durability strategy. The framework rejects a generic Tool binding for
+that lifecycle because it cannot make an arbitrary package transaction atomic with a transport
+wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
+mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
+target in the same transaction (or use a durable outbox/state machine for external effects).
+
 Finance owns two composed operator commands. `create_booking` delegates to the
 booking-create service for product/slot conversion, travelers, room and item lines,
 payment schedules, optional credits, groups, invoice documents, ledger entries, and

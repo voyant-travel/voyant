@@ -46,6 +46,12 @@ export interface ToolActionPolicyBinding {
   version: string
   kind: "execute" | "read" | "sensitive-read"
   targetType: string
+  targetLifecycle?: "existing" | "created"
+  createdTarget?: {
+    commandTargetType: string
+    resultReferenceType: string
+    durability: "handler-command-claim-v1"
+  }
   risk: ToolDeploymentRisk
   ledger: "required" | "optional"
   approval: "never" | "conditional" | "required"
@@ -125,7 +131,7 @@ export interface ToolManifestEntry {
 }
 
 /** Version of the manifest contract, carried so consumers degrade gracefully. */
-export const TOOL_CONTRACT_VERSION = "2026-07-15" as const
+export const TOOL_CONTRACT_VERSION = "2026-07-23" as const
 
 /**
  * A tool reachable over a versioned remote protocol rather than dispatched

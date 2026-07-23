@@ -191,6 +191,37 @@ function deriveActionPolicy(
   action: ToolActionPolicyBinding,
 ): ToolActionPolicyManifest {
   const enforcement = tool.actionPolicyEnforcement ?? "generic"
+  if (action.targetLifecycle === "created") {
+    if (action.kind !== "execute" || action.ledger !== "required") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" may create its target only for a required-ledger execute action`,
+      )
+    }
+    if (!action.createdTarget) {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" declares a created target but is missing createdTarget command metadata`,
+      )
+    }
+    assertNonEmpty(
+      action.createdTarget.commandTargetType,
+      "action createdTarget.commandTargetType",
+      tool.name,
+    )
+    assertNonEmpty(
+      action.createdTarget.resultReferenceType,
+      "action createdTarget.resultReferenceType",
+      tool.name,
+    )
+    if (enforcement !== "handler") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" creates its target and requires actionPolicyEnforcement "handler"`,
+      )
+    }
+  } else if (action.createdTarget) {
+    throw new Error(
+      `Tool "${tool.name}" action "${action.id}" declares createdTarget without targetLifecycle "created"`,
+    )
+  }
   const requiredFields: ToolActionInvocationPolicy["requiredFields"][number][] = []
   if (tool.riskPolicy.confirmationRequired) requiredFields.push("confirmed")
   if (enforcement === "generic") {
