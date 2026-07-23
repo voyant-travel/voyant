@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.62.7
+
+### Patch Changes
+
+- Updated dependencies [6b1e647]
+  - @voyant-travel/operator-standard@0.12.0
+
 ## 0.62.6
 
 ### Patch Changes

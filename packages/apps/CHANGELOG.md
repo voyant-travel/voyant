@@ -1,5 +1,16 @@
 # @voyant-travel/apps
 
+## 0.12.7
+
+### Patch Changes
+
+- 6b1e647: Add first-class operator webhook subscription settings, delivery history, test and replay actions, permission checks, secret redaction, and protected outbound delivery.
+
+  Start the generic Postgres delivery worker only when the webhook module is selected, and compose the new settings surface into the standard operator package.
+
+- Updated dependencies [6b1e647]
+  - @voyant-travel/webhook-delivery@0.5.0
+
 ## 0.12.6
 
 ### Patch Changes
