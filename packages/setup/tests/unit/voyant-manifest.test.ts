@@ -34,5 +34,16 @@ describe("setup package manifest", () => {
       ["@voyant-travel/setup#tool.complete-setup-step"],
       ["@voyant-travel/setup#tool.skip-setup-step"],
     ])
+    expect(
+      setupVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/setup#action.initialize-setup",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
   })
 })

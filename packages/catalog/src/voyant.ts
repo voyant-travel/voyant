@@ -492,6 +492,11 @@ export const catalogBookingEngineVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "booking",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "bookings",
       action: "write",
       requiredScopes: ["catalog:read", "bookings:write"],

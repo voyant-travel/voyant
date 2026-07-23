@@ -588,6 +588,11 @@ export const financeBookingsCreateVoyantPlugin = defineExtension({
       version: "v1",
       kind: "execute",
       targetType: "booking",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "bookings",
       action: "write",
       requiredScopes: ["bookings:write", "finance:write"],

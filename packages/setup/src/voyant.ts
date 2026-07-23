@@ -122,6 +122,11 @@ export const setupVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "setup-state",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "setup",
       action: "write",
       requiredScopes: ["setup:write"],

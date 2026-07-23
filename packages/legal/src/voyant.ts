@@ -448,6 +448,15 @@ export const legalVoyantModule = defineModule({
       version: "v1",
       kind: "execute" as const,
       targetType: "legal-contract",
+      ...((transition === "issue" || transition === "send")
+        ? {
+            availability: {
+              status: "unavailable" as const,
+              reasonCode: "unsafe-nontransactional-effect",
+            },
+            effectBoundary: "multistage" as const,
+          }
+        : {}),
       resource: "legal",
       action: "write",
       requiredScopes: ["legal:write"],
@@ -618,6 +627,11 @@ export const legalContractDocumentVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "booking-contract-document",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "legal",
       action: "write",
       requiredScopes: ["legal:write"],
@@ -633,6 +647,11 @@ export const legalContractDocumentVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "booking-contract-document",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "legal",
       action: "write",
       requiredScopes: ["legal:write"],

@@ -183,6 +183,11 @@ export const chartersVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "charter-booking",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["charters:write", "bookings:write"],
       risk: "critical",
       ledger: "required",

@@ -166,6 +166,32 @@ describe("legal deployment manifest", () => {
       ),
     ).toBe(true)
     expect(legalContractDocumentVoyantModule.meta?.agentTools).toBeUndefined()
+    for (const actionId of [
+      "@voyant-travel/legal#action.generate-booking-contract-document",
+      "@voyant-travel/legal#action.regenerate-booking-contract-document",
+    ]) {
+      expect(
+        legalContractDocumentVoyantModule.actions?.find(({ id }) => id === actionId),
+      ).toMatchObject({
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
+        effectBoundary: "multistage",
+      })
+    }
+    for (const actionId of [
+      "@voyant-travel/legal#action.issue-contract",
+      "@voyant-travel/legal#action.send-contract",
+    ]) {
+      expect(legalVoyantModule.actions?.find(({ id }) => id === actionId)).toMatchObject({
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
+        effectBoundary: "multistage",
+      })
+    }
   })
 
   it("marks every public OpenAPI operation with its graph API id", () => {

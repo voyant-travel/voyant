@@ -201,6 +201,11 @@ export const notificationsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "notification",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "notifications",
       action: "send",
       requiredScopes: ["notifications:send"],

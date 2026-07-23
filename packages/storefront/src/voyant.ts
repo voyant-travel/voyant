@@ -427,6 +427,11 @@ export const storefrontVerificationVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "storefront-verification-challenge",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "storefront",
       action: "write",
       requiredScopes: ["storefront:write"],

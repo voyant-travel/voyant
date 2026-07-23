@@ -76,6 +76,15 @@ function commerceToolAction(
     version: "v1",
     kind: write ? "execute" : "read",
     targetType: resource,
+    ...(suffix === "create-promotion"
+      ? {
+          availability: {
+            status: "unavailable" as const,
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "multistage" as const,
+        }
+      : {}),
     resource,
     action,
     requiredScopes: [`${resource}:${action}`],

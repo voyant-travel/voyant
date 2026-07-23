@@ -86,6 +86,18 @@ describe("relationships deployment manifest", () => {
         })
       }
     }
+    for (const actionId of [
+      "@voyant-travel/relationships#action.create-person",
+      "@voyant-travel/relationships#action.create-organization",
+    ]) {
+      expect(relationshipsVoyantModule.actions?.find(({ id }) => id === actionId)).toMatchObject({
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
+        effectBoundary: "multistage",
+      })
+    }
     expectConcreteEventSchemas(relationshipsVoyantModule.events)
   })
 

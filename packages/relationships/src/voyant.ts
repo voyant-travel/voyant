@@ -409,6 +409,11 @@ export const relationshipsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "person",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["crm:write"],
       risk: "high",
       ledger: "required",
@@ -433,6 +438,11 @@ export const relationshipsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "organization",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["crm:write"],
       risk: "medium",
       ledger: "required",

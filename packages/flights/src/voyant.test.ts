@@ -127,6 +127,17 @@ describe("flights deployment manifest", () => {
     expect(
       operations.every((operation) => operation["x-voyant-api-id"] === FLIGHTS_OPENAPI_API_ID),
     ).toBe(true)
+    expect(
+      flightsVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/flights#action.ticket-order",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "external",
+    })
   })
 
   it("owns runtime assembly and validates Node-host providers", async () => {

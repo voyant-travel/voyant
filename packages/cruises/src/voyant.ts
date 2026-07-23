@@ -239,6 +239,15 @@ export const cruisesVoyantModule = defineModule({
       version: "v1" as const,
       kind: "execute" as const,
       targetType: "cruise",
+      ...(id === "create-cruise"
+        ? {
+            availability: {
+              status: "unavailable" as const,
+              reasonCode: "unsafe-nontransactional-effect",
+            },
+            effectBoundary: "multistage" as const,
+          }
+        : {}),
       requiredScopes: ["cruises:write"],
       risk: "medium" as const,
       ledger: "required" as const,
@@ -252,6 +261,11 @@ export const cruisesVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "cruise-booking",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["cruises:write", "bookings:write"],
       risk: "critical",
       ledger: "required",

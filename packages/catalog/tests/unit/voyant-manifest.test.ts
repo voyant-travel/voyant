@@ -175,6 +175,17 @@ describe("catalog deployment manifest", () => {
       ],
       runtimePorts: [{ id: "catalog.booking-runtime" }],
     })
+    expect(
+      catalogBookingEngineVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/catalog#booking-engine#action.commit-catalog-booking",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
 
     expect(catalogOffersVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

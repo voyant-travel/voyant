@@ -112,6 +112,11 @@ describe("charters deployment manifest", () => {
       action.from?.tools?.includes("@voyant-travel/charters#tool.create-charter-booking"),
     )
     expect(booking).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["charters:write", "bookings:write"],
       risk: "critical",
       ledger: "required",

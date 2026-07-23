@@ -124,6 +124,11 @@ runtime reference are omitted from lowering, so it cannot appear in MCP discover
 Lowering fails closed if an unavailable action's Tool is reintroduced. Actions explicitly marked
 `available` must name an existing/created target lifecycle; external or multi-stage effects must
 also name a transactional, outbox, or saga durability strategy and the test that proves it.
+First-party actions that still cross an external or multi-stage boundary through event
+publication, provider calls, document generation, delivery, ticketing, or booking orchestration
+are declared unavailable with the `unsafe-nontransactional-effect` reason and the corresponding
+effect boundary. Their graph metadata remains visible for diagnostics, but their Tools stay out
+of runtime discovery until the package owns a tested transactional, outbox, or saga boundary.
 MCP passes stripped invocation controls and the selected action policy in a fresh
 `ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
 commands bind their approval request and execution to the same typed created-target fingerprint;
