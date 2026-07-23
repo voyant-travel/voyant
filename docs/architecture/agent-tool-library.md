@@ -118,6 +118,15 @@ that lifecycle because it cannot make an arbitrary package transaction atomic wi
 wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
 mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
 target in the same transaction (or use a durable outbox/state machine for external effects).
+MCP passes stripped invocation controls and the selected action policy in a fresh
+`ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
+commands bind their approval request and execution to the same typed created-target fingerprint;
+the handler-owned transaction locks the approval, validates live authorization before the first
+claim/domain mutation, rejects cross-scope reuse, and derives approval causation from the ledger.
+Exact linked replay checks immutable persisted approval/request/claim continuity without applying
+expiry again. Approval requests bind the exact selected Tool capability (explicitly for multi-Tool
+actions), and handlers use the context capability id as their ledger route identity. Conditional
+created-target approval remains fail-closed.
 
 Finance owns two composed operator commands. `create_booking` delegates to the
 booking-create service for product/slot conversion, travelers, room and item lines,

@@ -37,7 +37,8 @@ preflight cannot share the domain transaction. A created-target handler must imp
 `handler-command-claim-v1` contract: claim a stable pre-create command identity and fingerprint
 before mutation, reject same-key/different-command reuse, replay a typed immutable result
 reference, and atomically append the canonical generated-target result. Approval-bearing created
-commands fail closed until MCP can propagate their approved invocation controls into the handler.
+commands use MCP's request-scoped `handlerActionPolicy` context and are validated inside that same
+transaction before the claim or domain mutation.
 
 Package handlers implement that contract with `executeCreatedTargetCommand` from
 `@voyant-travel/action-ledger/created-command`. It owns the transaction and keeps the claim
@@ -100,11 +101,24 @@ The executor derives those fields from the same top-level input and fails before
 if the supplied digest drifts. Principal admission uses `mapActionLedgerRequestContext`; mismatched
 caller types cannot smuggle an agent or API-token identity into the ledger.
 
-Approval-bearing created commands currently fail closed. MCP strips invocation controls before
-package dispatch and does not yet expose approval id, fingerprint, or reason code through a
-request-scoped handler context. Both the approval request Tool and
-`executeCreatedTargetCommand` reject created actions whose approval policy is not `none` until
-that propagation contract exists.
+For a selected action with `approval: "required"`, `request_action_approval` fingerprints the
+declared command target type, canonical target type, result-reference type, capability/version,
+risk, reason, exact Tool capability, and command input with
+`buildCreatedTargetCommandFingerprint`. A multi-Tool action must name its selected
+`toolCapabilityId`; a single-Tool action derives it unambiguously. The package handler passes the
+fresh `ctx.handlerActionPolicy.invocation` approval id, idempotency key, fingerprint, and reason
+into `approvalControls`, uses `ctx.handlerActionPolicy.capabilityId` as `routeOrToolName`, and
+supplies the selected policy name.
+
+Inside its owned transaction, `executeCreatedTargetCommand` locks the approval before the command
+scope. First execution validates the approved request's fingerprint, command target,
+capability/version, risk, policy snapshot, reason, idempotency key, requester, assignee/decider,
+and expiry, then rejects any prior claim linked to the same approved request even if its command
+scope differs. It derives claim causation and approval linkage from the validated rows. An exact
+linked replay checks immutable approval/request/claim/result continuity without re-running expiry
+authorization, so a completed command remains replayable after its approval expires. Direct
+caller-supplied `approvalId` or `causationActionId` fails closed. Conditional policy remains
+unsupported until a domain evaluator contract exists.
 
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their

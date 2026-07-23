@@ -27,6 +27,7 @@ export {
   getActionLedgerCapability,
 } from "./capability.js"
 export {
+  ActionLedgerCreatedCommandApprovalError,
   ActionLedgerCreatedCommandFingerprintMismatchError,
   ActionLedgerCreatedCommandProtocolError,
   ActionLedgerCreatedCommandReplayCorruptError,

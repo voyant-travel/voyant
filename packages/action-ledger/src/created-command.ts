@@ -18,6 +18,7 @@ import { type ActionLedgerEntry, actionLedgerEntries, actionMutationDetails } fr
 import { insertEntry } from "./service/entries.js"
 import { ActionLedgerIdempotencyConflictError } from "./service/errors.js"
 import type { AppendActionLedgerEntryInput } from "./service/types.js"
+import { actionLedgerService } from "./service.js"
 
 const CLAIM_SCOPE_SUFFIX = ":created-command-claim"
 const RESULT_SCOPE_SUFFIX = ":created-command-result"
@@ -86,12 +87,32 @@ export class ActionLedgerCreatedCommandTransactionRequiredError extends Error {
 export class ActionLedgerCreatedCommandProtocolError extends Error {
   readonly reason:
     | "approval_policy_unsupported"
+    | "forged_approval_linkage"
+    | "invalid_approval_controls"
     | "claim_changed_during_mutation"
     | "result_created_during_mutation"
 
-  constructor(reason: ActionLedgerCreatedCommandProtocolError["reason"]) {
-    super(`Created-target command protocol failed closed: ${reason}`)
+  readonly field?: keyof ActionLedgerEntry
+
+  constructor(
+    reason: ActionLedgerCreatedCommandProtocolError["reason"],
+    field?: keyof ActionLedgerEntry,
+  ) {
+    super(`Created-target command protocol failed closed: ${reason}${field ? ` (${field})` : ""}`)
     this.name = "ActionLedgerCreatedCommandProtocolError"
+    this.reason = reason
+    this.field = field
+  }
+}
+
+export class ActionLedgerCreatedCommandApprovalError extends Error {
+  readonly approvalId: string
+  readonly reason: string
+
+  constructor(approvalId: string, reason: string) {
+    super(`Approval ${approvalId} does not authorize this exact created-target command: ${reason}`)
+    this.name = "ActionLedgerCreatedCommandApprovalError"
+    this.approvalId = approvalId
     this.reason = reason
   }
 }
@@ -137,12 +158,25 @@ export interface ExecuteCreatedTargetCommandInput extends CreatedCommandCommonIn
   capabilityId: string
   capabilityVersion: string
   approvalPolicy: ActionLedgerCapabilityApprovalPolicy
+  /** Selected graph policy name. Required when `approvalPolicy` is `required`. */
+  approvalPolicyName?: string | null
   approvalReasonCode: string | null
   commandInput?: unknown
   idempotency: {
     scope: string
     key: string
     fingerprint: string
+  }
+  /**
+   * Request-scoped controls propagated from the handler-owned Tool dispatch.
+   * Approval and causation ledger fields are derived from these controls and
+   * the validated approval; callers must not supply those fields directly.
+   */
+  approvalControls?: {
+    approvalId: string
+    idempotencyKey: string
+    idempotencyFingerprint: string
+    reasonCode?: string | null
   }
   mutationDetail?: Omit<
     NonNullable<BuildActionLedgerMutationInput["mutationDetail"]>,
@@ -197,6 +231,20 @@ interface CreatedCommandState<TReferenceType extends string> {
   idempotency: { scope: string; key: string; fingerprint: string }
 }
 
+interface PreparedCreatedCommand<TReferenceType extends string> {
+  expectedClaim: AppendActionLedgerEntryInput
+  canonicalTargetType: string
+  resultReferenceType: TReferenceType
+  idempotency: { scope: string; key: string; fingerprint: string }
+}
+
+interface PreparedCreatedCommandApproval {
+  approvalId: string
+  policyName: string
+  principalType: ActionLedgerEntry["principalType"]
+  principalId: string
+}
+
 /**
  * Owns BEGIN → claim → domain mutation → canonical result → COMMIT.
  *
@@ -210,7 +258,11 @@ export async function executeCreatedTargetCommand<TValue, TReferenceType extends
   handlers: ExecuteCreatedTargetCommandHandlers<TValue, TReferenceType>,
 ): Promise<ExecuteCreatedTargetCommandResult<TValue, TReferenceType>> {
   const prepared = await prepareCommand(input)
+  const approval = prepareApproval(input, prepared)
   return requiredTransaction(db, async (tx) => {
+    if (approval) {
+      await lockCommand(tx, "created-command-approval", approval.approvalId)
+    }
     await lockCommand(tx, prepared.idempotency.scope, prepared.idempotency.key)
     const existing = await findClaim(
       tx,
@@ -218,8 +270,14 @@ export async function executeCreatedTargetCommand<TValue, TReferenceType extends
       prepared.idempotency.key,
     )
     if (existing) {
-      assertExactEntry(existing, prepared.expectedClaim)
-      const state = toState(existing, prepared)
+      if (approval) {
+        assertApprovalReplayClaimIdentity(existing, prepared.expectedClaim, approval.approvalId)
+      }
+      const expectedClaim = approval
+        ? await approvedReplayExpectedClaim(tx, input, prepared, approval)
+        : prepared.expectedClaim
+      assertExactEntry(existing, expectedClaim)
+      const state = toState(existing, { ...prepared, expectedClaim })
       const result = await readCompletedResult(tx, state)
       return {
         replayed: true,
@@ -228,8 +286,14 @@ export async function executeCreatedTargetCommand<TValue, TReferenceType extends
       }
     }
 
-    const inserted = await insertEntry(tx, prepared.expectedClaim)
-    const state = toState(inserted.entry, prepared)
+    const expectedClaim = approval
+      ? await approvedLiveExpectedClaim(tx, input, prepared, approval)
+      : prepared.expectedClaim
+    if (approval) {
+      await assertApprovalUnused(tx, expectedClaim)
+    }
+    const inserted = await insertEntry(tx, expectedClaim)
+    const state = toState(inserted.entry, { ...prepared, expectedClaim })
     const mutation = await handlers.create(tx)
     await assertCurrentClaim(tx, state)
     if (await findResultEntry(tx, state)) {
@@ -237,6 +301,21 @@ export async function executeCreatedTargetCommand<TValue, TReferenceType extends
     }
     const result = await appendCompletedResult(tx, state, mutation)
     return { replayed: false, value: mutation.value, result }
+  })
+}
+
+function assertApprovalReplayClaimIdentity(
+  existing: ActionLedgerEntry,
+  expectedClaim: AppendActionLedgerEntryInput,
+  approvalId: string,
+): void {
+  if (!existing.causationActionId) {
+    throw new ActionLedgerCreatedCommandApprovalError(approvalId, "mismatched_action")
+  }
+  assertExactEntry(existing, {
+    ...expectedClaim,
+    approvalId,
+    causationActionId: existing.causationActionId,
   })
 }
 
@@ -270,7 +349,7 @@ export function createCreatedTargetCommandResultReference<TReferenceType extends
 
 async function prepareCommand<TReferenceType extends string>(
   input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
-) {
+): Promise<PreparedCreatedCommand<TReferenceType>> {
   const actor = mapActionLedgerRequestContext(input.context, input)
   if (actor.principalId === "unknown_request") {
     throw new TypeError("Created-target command execution requires a concrete request principal")
@@ -300,8 +379,14 @@ async function prepareCommand<TReferenceType extends string>(
   if (fingerprint !== expectedFingerprint) {
     throw new ActionLedgerCreatedCommandFingerprintMismatchError(expectedFingerprint, fingerprint)
   }
-  if (input.approvalPolicy !== "none" || input.approvalId) {
+  if (input.approvalPolicy === "conditional") {
     throw new ActionLedgerCreatedCommandProtocolError("approval_policy_unsupported")
+  }
+  if (input.approvalPolicy === "none" && (input.approvalControls || input.approvalId)) {
+    throw new ActionLedgerCreatedCommandProtocolError("forged_approval_linkage")
+  }
+  if (input.approvalPolicy === "required" && (input.approvalId || input.causationActionId)) {
+    throw new ActionLedgerCreatedCommandProtocolError("forged_approval_linkage")
   }
 
   const expectedClaim = buildActionLedgerMutationEntryInput({
@@ -328,6 +413,199 @@ async function prepareCommand<TReferenceType extends string>(
     canonicalTargetType,
     resultReferenceType,
     idempotency: { scope, key, fingerprint },
+  }
+}
+
+function prepareApproval<TReferenceType extends string>(
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
+  prepared: PreparedCreatedCommand<TReferenceType>,
+): PreparedCreatedCommandApproval | null {
+  if (input.approvalPolicy === "none") return null
+  if (input.approvalPolicy !== "required") {
+    throw new ActionLedgerCreatedCommandProtocolError("approval_policy_unsupported")
+  }
+
+  const controls = input.approvalControls
+  const policyName = input.approvalPolicyName?.trim()
+  if (
+    !controls ||
+    !policyName ||
+    controls.idempotencyKey.trim() !== prepared.idempotency.key ||
+    controls.idempotencyFingerprint.trim() !== prepared.idempotency.fingerprint ||
+    (controls.reasonCode ?? null) !== input.approvalReasonCode
+  ) {
+    throw new ActionLedgerCreatedCommandProtocolError("invalid_approval_controls")
+  }
+  const approvalId = requiredValue(controls.approvalId, "approval id")
+  const actor = mapActionLedgerRequestContext(input.context, input)
+  return {
+    approvalId,
+    policyName,
+    principalType: actor.principalType,
+    principalId: actor.principalId,
+  }
+}
+
+async function approvedLiveExpectedClaim<TReferenceType extends string>(
+  tx: AnyDrizzleDb,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
+  prepared: PreparedCreatedCommand<TReferenceType>,
+  approval: PreparedCreatedCommandApproval,
+): Promise<AppendActionLedgerEntryInput> {
+  const validation = await actionLedgerService.validateApprovedAction(tx, {
+    approvalId: approval.approvalId,
+    actionName: prepared.expectedClaim.actionName,
+    actionVersion: prepared.expectedClaim.actionVersion,
+    requestedActionKind: "execute",
+    requestedActionStatus: "awaiting_approval",
+    targetType: prepared.expectedClaim.targetType,
+    targetId: prepared.expectedClaim.targetId,
+    routeOrToolName: prepared.expectedClaim.routeOrToolName,
+    principalType: approval.principalType,
+    principalId: approval.principalId,
+    requireApprovalProvenance: true,
+    capabilityId: prepared.expectedClaim.capabilityId,
+    capabilityVersion: prepared.expectedClaim.capabilityVersion,
+    evaluatedRisk: prepared.expectedClaim.evaluatedRisk,
+    policyName: approval.policyName,
+    policyVersion: prepared.expectedClaim.actionVersion,
+    reasonCode: input.approvalReasonCode,
+    idempotencyKey: prepared.idempotency.key,
+    idempotencyFingerprint: prepared.idempotency.fingerprint,
+    executionActionKind: prepared.expectedClaim.actionKind,
+    executionStatus: "succeeded",
+  })
+  if (!validation.ok) {
+    throw new ActionLedgerCreatedCommandApprovalError(approval.approvalId, validation.reason)
+  }
+  return {
+    ...prepared.expectedClaim,
+    causationActionId: validation.requestedAction.id,
+    approvalId: validation.approval.id,
+  }
+}
+
+/**
+ * Re-validates immutable approval continuity only after the exact persisted
+ * command claim has been found under both approval and command locks. This is
+ * intentionally private: the public validator always applies live expiry and
+ * prior-execution authorization.
+ */
+async function approvedReplayExpectedClaim<TReferenceType extends string>(
+  tx: AnyDrizzleDb,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
+  prepared: PreparedCreatedCommand<TReferenceType>,
+  expectedApproval: PreparedCreatedCommandApproval,
+): Promise<AppendActionLedgerEntryInput> {
+  const result = await actionLedgerService.getApproval(tx, expectedApproval.approvalId)
+  if (!result) return approvalFailure(expectedApproval.approvalId, "not_found")
+  const { approval } = result
+  if (approval.status !== "approved") {
+    return approvalFailure(expectedApproval.approvalId, "not_approved")
+  }
+  const requestedAction = result.requestedAction?.entry
+  if (
+    !requestedAction ||
+    approval.requestedActionId !== requestedAction.id ||
+    requestedAction.actionName !== prepared.expectedClaim.actionName ||
+    requestedAction.actionVersion !== prepared.expectedClaim.actionVersion ||
+    requestedAction.actionKind !== "execute" ||
+    requestedAction.status !== "awaiting_approval" ||
+    requestedAction.targetType !== prepared.expectedClaim.targetType ||
+    requestedAction.targetId !== prepared.expectedClaim.targetId ||
+    requestedAction.routeOrToolName !== (prepared.expectedClaim.routeOrToolName ?? null) ||
+    requestedAction.approvalId !== approval.id
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "mismatched_action")
+  }
+  if (!requestedAction.idempotencyFingerprint) {
+    return approvalFailure(expectedApproval.approvalId, "missing_fingerprint")
+  }
+  if (requestedAction.idempotencyFingerprint !== prepared.idempotency.fingerprint) {
+    return approvalFailure(expectedApproval.approvalId, "fingerprint_mismatch")
+  }
+  if (
+    requestedAction.principalType !== expectedApproval.principalType ||
+    requestedAction.principalId !== expectedApproval.principalId ||
+    approval.requestedByPrincipalId !== expectedApproval.principalId
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "principal_mismatch")
+  }
+  if (
+    approval.assignedToPrincipalId &&
+    approval.decidedByPrincipalId !== approval.assignedToPrincipalId
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "assignee_mismatch")
+  }
+  if (
+    requestedAction.capabilityId !== (prepared.expectedClaim.capabilityId ?? null) ||
+    requestedAction.capabilityVersion !== (prepared.expectedClaim.capabilityVersion ?? null)
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "capability_mismatch")
+  }
+  if (
+    requestedAction.evaluatedRisk !== prepared.expectedClaim.evaluatedRisk ||
+    approval.riskSnapshot !== prepared.expectedClaim.evaluatedRisk
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "risk_mismatch")
+  }
+  if (
+    approval.policyName !== expectedApproval.policyName ||
+    approval.policyVersion !== prepared.expectedClaim.actionVersion
+  ) {
+    return approvalFailure(expectedApproval.approvalId, "policy_mismatch")
+  }
+  if (approval.reasonCode !== input.approvalReasonCode) {
+    return approvalFailure(expectedApproval.approvalId, "reason_mismatch")
+  }
+  if (requestedAction.idempotencyKey !== prepared.idempotency.key) {
+    return approvalFailure(expectedApproval.approvalId, "idempotency_key_mismatch")
+  }
+  return {
+    ...prepared.expectedClaim,
+    causationActionId: requestedAction.id,
+    approvalId: approval.id,
+  }
+}
+
+function approvalFailure(approvalId: string, reason: string): never {
+  throw new ActionLedgerCreatedCommandApprovalError(approvalId, reason)
+}
+
+async function assertApprovalUnused(
+  tx: AnyDrizzleDb,
+  expectedClaim: AppendActionLedgerEntryInput,
+): Promise<void> {
+  const approvalId = requiredValue(expectedClaim.approvalId ?? "", "approval id")
+  const requestedActionId = requiredValue(
+    expectedClaim.causationActionId ?? "",
+    "approval requested action id",
+  )
+  const idempotencyKey = requiredValue(expectedClaim.idempotencyKey ?? "", "idempotency key")
+  const idempotencyFingerprint = requiredValue(
+    expectedClaim.idempotencyFingerprint ?? "",
+    "idempotency fingerprint",
+  )
+  const [row] = await tx
+    .select({ approvedClaim: actionLedgerEntries })
+    .from(actionLedgerEntries)
+    .where(
+      and(
+        eq(actionLedgerEntries.actionName, expectedClaim.actionName),
+        eq(actionLedgerEntries.actionVersion, expectedClaim.actionVersion),
+        eq(actionLedgerEntries.actionKind, expectedClaim.actionKind),
+        eq(actionLedgerEntries.status, "requested"),
+        eq(actionLedgerEntries.targetType, expectedClaim.targetType),
+        eq(actionLedgerEntries.targetId, expectedClaim.targetId),
+        eq(actionLedgerEntries.causationActionId, requestedActionId),
+        eq(actionLedgerEntries.approvalId, approvalId),
+        eq(actionLedgerEntries.idempotencyKey, idempotencyKey),
+        eq(actionLedgerEntries.idempotencyFingerprint, idempotencyFingerprint),
+      ),
+    )
+    .limit(1)
+  if (row?.approvedClaim) {
+    throw new ActionLedgerCreatedCommandApprovalError(approvalId, "already_executed")
   }
 }
 
@@ -377,10 +655,9 @@ async function assertCurrentClaim<TReferenceType extends string>(
   if (!current || current.id !== state.claim.id) {
     throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
   }
-  try {
-    assertExactEntry(current, state.expectedClaim)
-  } catch {
-    throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
+  const changedField = CLAIM_IDENTITY_FIELDS.find((field) => current[field] !== state.claim[field])
+  if (changedField) {
+    throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation", changedField)
   }
 }
 
@@ -458,7 +735,10 @@ async function appendCompletedResult<TValue, TReferenceType extends string>(
 
 function assertExactEntry(actual: ActionLedgerEntry, expected: AppendActionLedgerEntryInput): void {
   for (const field of CLAIM_IDENTITY_FIELDS) {
-    if (actual[field] !== expected[field]) {
+    // Drizzle/PostgreSQL persist omitted nullable columns as null. Treat an
+    // omitted expected field as that canonical database representation so an
+    // exact replay does not conflict solely on undefined-versus-null.
+    if (actual[field] !== (expected[field] ?? null)) {
       throw new ActionLedgerIdempotencyConflictError(actual.id)
     }
   }
@@ -529,7 +809,10 @@ function toState<TReferenceType extends string>(
     idempotency: { scope: string; key: string; fingerprint: string }
   },
 ): CreatedCommandState<TReferenceType> {
-  return { claim, ...prepared }
+  // Keep an immutable value snapshot rather than the driver's row object. This
+  // lets the post-mutation re-read detect an in-transaction claim change even
+  // when a test double or adapter reuses object identities for selected rows.
+  return { claim: { ...claim }, ...prepared }
 }
 
 function copyClaimEntry(
