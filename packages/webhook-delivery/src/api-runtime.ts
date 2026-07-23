@@ -6,7 +6,7 @@ import { createOperatorWebhookAdminRoutes } from "./admin-routes.js"
 /** Compose operator webhook settings from the graph-selected external event catalog. */
 export const createOperatorWebhookVoyantRuntime = defineGraphRuntimeFactory(
   ({ graph }): ApiModule => ({
-    module: { name: "operator-webhooks" },
+    module: { name: "webhooks" },
     adminRoutes: createOperatorWebhookAdminRoutes({
       contracts: (graph.eventCatalog?.events ?? [])
         .filter((event) => event.visibility === "external")
