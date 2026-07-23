@@ -170,8 +170,14 @@ export const productListQuerySchema = z.object({
   categoryId: z.string().optional(),
   tag: z.string().optional(),
   search: z.string().optional(),
+  // Product-level start/end window (filters `products.startDate`).
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  // Departure window: keep only products with an upcoming open departure whose
+  // date falls in [departureFrom, departureTo] (filters availability slots, not
+  // the product's own start date).
+  departureFrom: z.string().optional(),
+  departureTo: z.string().optional(),
   paxMin: z.coerce.number().int().min(0).optional(),
   paxMax: z.coerce.number().int().min(0).optional(),
   sellAmountMin: z.coerce.number().int().min(0).optional(),

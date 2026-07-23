@@ -15,12 +15,24 @@ describe("productListQuerySchema", () => {
     expect(result.tag).toBe("luxury")
   })
 
+  it("accepts the departure window filters", () => {
+    const result = productListQuerySchema.parse({
+      departureFrom: "2026-09-01",
+      departureTo: "2026-09-30",
+    })
+
+    expect(result.departureFrom).toBe("2026-09-01")
+    expect(result.departureTo).toBe("2026-09-30")
+  })
+
   it("leaves the new filters undefined when not provided", () => {
     const result = productListQuerySchema.parse({})
 
     expect(result.productTypeId).toBeUndefined()
     expect(result.categoryId).toBeUndefined()
     expect(result.tag).toBeUndefined()
+    expect(result.departureFrom).toBeUndefined()
+    expect(result.departureTo).toBeUndefined()
   })
 
   it("retains existing filters alongside the new ones", () => {

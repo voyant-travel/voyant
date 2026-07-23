@@ -18052,6 +18052,22 @@
           },
           {
             "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "departureFrom",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "departureTo",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": ["integer", "null"],
               "minimum": 0
             },

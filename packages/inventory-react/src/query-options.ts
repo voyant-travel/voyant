@@ -58,6 +58,8 @@ export function getProductsQueryOptions(
       if (filters.search) params.set("search", filters.search)
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom)
       if (filters.dateTo) params.set("dateTo", filters.dateTo)
+      if (filters.departureFrom) params.set("departureFrom", filters.departureFrom)
+      if (filters.departureTo) params.set("departureTo", filters.departureTo)
       if (filters.paxMin !== undefined) params.set("paxMin", String(filters.paxMin))
       if (filters.paxMax !== undefined) params.set("paxMax", String(filters.paxMax))
       if (filters.sellAmountMin !== undefined)

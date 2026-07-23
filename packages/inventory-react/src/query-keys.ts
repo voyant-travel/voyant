@@ -21,6 +21,8 @@ export interface ProductsListFilters {
   search?: string | undefined
   dateFrom?: string | undefined
   dateTo?: string | undefined
+  departureFrom?: string | undefined
+  departureTo?: string | undefined
   paxMin?: number | undefined
   paxMax?: number | undefined
   sellAmountMin?: number | undefined

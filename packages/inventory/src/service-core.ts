@@ -237,6 +237,25 @@ export const coreProductsService = {
       conditions.push(lte(products.startDate, query.dateTo))
     }
 
+    if (query.departureFrom || query.departureTo) {
+      // Match products with at least one upcoming open departure whose date
+      // falls in the requested window. Mirrors the `nextDeparture` subquery.
+      const fromBound = query.departureFrom
+        ? sql`and ${availabilitySlots.startsAt}::date >= ${query.departureFrom}::date`
+        : sql``
+      const toBound = query.departureTo
+        ? sql`and ${availabilitySlots.startsAt}::date <= ${query.departureTo}::date`
+        : sql``
+      conditions.push(
+        // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+        sql`exists (select 1 from ${availabilitySlots}
+          where ${availabilitySlots.productId} = ${products.id}
+            and ${availabilitySlots.status} = 'open'
+            and ${availabilitySlots.startsAt} >= now()
+            ${fromBound} ${toBound})`,
+      )
+    }
+
     if (query.paxMin !== undefined) {
       conditions.push(gte(products.pax, query.paxMin))
     }

@@ -34,6 +34,7 @@ import {
   type ProductsListSortField,
   useProductMutation,
   useProducts,
+  useProductTypes,
 } from "../index.js"
 import { ProductDialog } from "./product-dialog.js"
 
@@ -43,8 +44,20 @@ export interface ProductListProps {
 }
 
 const STATUS_ALL = "__all__"
+const FILTER_ALL = "__all__"
 
 const PRODUCT_STATUSES = ["draft", "active", "archived"] as const
+// Ordered most-common-first, matching the product editor's booking-mode picker.
+const PRODUCT_BOOKING_MODES = [
+  "itinerary",
+  "stay",
+  "date",
+  "date_time",
+  "transfer",
+  "open",
+  "other",
+] as const
+const PRODUCT_VISIBILITIES = ["public", "private", "hidden"] as const
 
 type SortableField = Extract<ProductsListSortField, "name" | "status" | "sellAmount">
 
@@ -96,7 +109,15 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const { create } = useProductMutation()
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<string>(STATUS_ALL)
+  const [productTypeId, setProductTypeId] = React.useState<string>(FILTER_ALL)
+  const [bookingMode, setBookingMode] = React.useState<string>(FILTER_ALL)
+  const [visibility, setVisibility] = React.useState<string>(FILTER_ALL)
+  const [tag, setTag] = React.useState<string>("")
   const [dateRange, setDateRange] = React.useState<{
+    from: string | null
+    to: string | null
+  } | null>(null)
+  const [departureRange, setDepartureRange] = React.useState<{
     from: string | null
     to: string | null
   } | null>(null)
@@ -118,11 +139,20 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const sellAmountMaxCents =
     sellAmountMax === "" ? undefined : Math.round(Number.parseFloat(sellAmountMax) * 100)
 
+  const { data: productTypesData } = useProductTypes({ limit: 100 })
+  const productTypes = productTypesData?.data ?? []
+
   const { data, isPending, isFetching, isError } = useProducts({
     search: search || undefined,
     status: status === STATUS_ALL ? undefined : status,
+    productTypeId: productTypeId === FILTER_ALL ? undefined : productTypeId,
+    bookingMode: bookingMode === FILTER_ALL ? undefined : bookingMode,
+    visibility: visibility === FILTER_ALL ? undefined : visibility,
+    tag: tag.trim() || undefined,
     dateFrom: dateRange?.from ?? undefined,
     dateTo: dateRange?.to ?? undefined,
+    departureFrom: departureRange?.from ?? undefined,
+    departureTo: departureRange?.to ?? undefined,
     paxMin: Number.isFinite(paxMinNumber) ? paxMinNumber : undefined,
     paxMax: Number.isFinite(paxMaxNumber) ? paxMaxNumber : undefined,
     sellAmountMin: Number.isFinite(sellAmountMinCents) ? sellAmountMinCents : undefined,
@@ -158,7 +188,12 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
 
   const activeFilterCount =
     (status !== STATUS_ALL ? 1 : 0) +
+    (productTypeId !== FILTER_ALL ? 1 : 0) +
+    (bookingMode !== FILTER_ALL ? 1 : 0) +
+    (visibility !== FILTER_ALL ? 1 : 0) +
+    (tag.trim() !== "" ? 1 : 0) +
     (dateRange?.from || dateRange?.to ? 1 : 0) +
+    (departureRange?.from || departureRange?.to ? 1 : 0) +
     (paxMin !== "" || paxMax !== "" ? 1 : 0) +
     (sellAmountMin !== "" || sellAmountMax !== "" ? 1 : 0)
   const hasActiveFilters = activeFilterCount > 0 || search !== ""
@@ -166,7 +201,12 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const clearFilters = () => {
     setSearch("")
     setStatus(STATUS_ALL)
+    setProductTypeId(FILTER_ALL)
+    setBookingMode(FILTER_ALL)
+    setVisibility(FILTER_ALL)
+    setTag("")
     setDateRange(null)
+    setDepartureRange(null)
     setPaxMin("")
     setPaxMax("")
     setSellAmountMin("")
@@ -241,7 +281,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </Button>
             }
           />
-          <PopoverContent align="start" className="w-[22rem] p-4">
+          <PopoverContent align="start" className="max-h-[75vh] w-[22rem] overflow-y-auto p-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="products-filter-status">
@@ -269,6 +309,97 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               </div>
 
               <div className="flex flex-col gap-1.5">
+                <Label htmlFor="products-filter-type">{productMessages.filters.typeLabel}</Label>
+                <Select
+                  value={productTypeId}
+                  onValueChange={(value) => {
+                    setProductTypeId(value ?? FILTER_ALL)
+                    resetOffset()
+                  }}
+                >
+                  <SelectTrigger id="products-filter-type" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={FILTER_ALL}>{productMessages.filters.typeAll}</SelectItem>
+                    {productTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="products-filter-booking-mode">
+                  {productMessages.filters.bookingModeLabel}
+                </Label>
+                <Select
+                  value={bookingMode}
+                  onValueChange={(value) => {
+                    setBookingMode(value ?? FILTER_ALL)
+                    resetOffset()
+                  }}
+                >
+                  <SelectTrigger id="products-filter-booking-mode" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={FILTER_ALL}>
+                      {productMessages.filters.bookingModeAll}
+                    </SelectItem>
+                    {PRODUCT_BOOKING_MODES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.productBookingModeLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="products-filter-visibility">
+                  {productMessages.filters.visibilityLabel}
+                </Label>
+                <Select
+                  value={visibility}
+                  onValueChange={(value) => {
+                    setVisibility(value ?? FILTER_ALL)
+                    resetOffset()
+                  }}
+                >
+                  <SelectTrigger id="products-filter-visibility" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={FILTER_ALL}>
+                      {productMessages.filters.visibilityAll}
+                    </SelectItem>
+                    {PRODUCT_VISIBILITIES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.productVisibilityLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="products-filter-tag">{productMessages.filters.tagLabel}</Label>
+                <Input
+                  id="products-filter-tag"
+                  placeholder={productMessages.filters.tagPlaceholder}
+                  value={tag}
+                  onChange={(event) => {
+                    setTag(event.target.value)
+                    resetOffset()
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
                 <Label>{productMessages.filters.dateLabel}</Label>
                 <DateRangePicker
                   value={dateRange}
@@ -277,6 +408,20 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                     resetOffset()
                   }}
                   placeholder={productMessages.filters.datePlaceholder}
+                  clearable
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>{productMessages.filters.departureLabel}</Label>
+                <DateRangePicker
+                  value={departureRange}
+                  onChange={(value) => {
+                    setDepartureRange(value)
+                    resetOffset()
+                  }}
+                  placeholder={productMessages.filters.departurePlaceholder}
                   clearable
                   className="w-full"
                 />
