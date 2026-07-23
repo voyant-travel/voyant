@@ -221,7 +221,7 @@ describe("finance tools", () => {
         actionPolicy: expect.objectContaining({
           enforcement: "handler",
           invocation: expect.objectContaining({
-            requiredFields: ["confirmed"],
+            requiredFields: ["confirmed", "idempotencyKey"],
           }),
         }),
       }),

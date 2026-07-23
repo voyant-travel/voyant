@@ -2,9 +2,10 @@
 import {
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
+  actionLedgerEntries,
+  actionMutationDetails,
   appendActionLedgerMutation,
 } from "@voyant-travel/action-ledger"
-import { actionLedgerEntries, actionMutationDetails } from "@voyant-travel/action-ledger/schema"
 import type { EventBus } from "@voyant-travel/core"
 import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { newId } from "@voyant-travel/db/lib/typeid"

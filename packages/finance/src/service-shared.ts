@@ -1,9 +1,9 @@
 // agent-quality: file-size exception -- owner: finance; compatibility exports and shared service helpers stay co-located while the domain-operation service modules are split out.
 export {
   type ActionLedgerRequestContextValues,
+  actionMutationDetails,
   appendActionLedgerMutation,
 } from "@voyant-travel/action-ledger"
-export { actionMutationDetails } from "@voyant-travel/action-ledger/schema"
 export { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 export type { EventBus } from "@voyant-travel/core"
 export type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -60,7 +60,7 @@ export type { InvoiceSettledEvent } from "./service-settlement.js"
 export { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
-import { actionMutationDetails } from "@voyant-travel/action-ledger/schema"
+import { actionMutationDetails } from "@voyant-travel/action-ledger"
 import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
