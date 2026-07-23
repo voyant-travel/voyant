@@ -1,5 +1,6 @@
 ---
 "@voyant-travel/action-ledger": minor
+"@voyant-travel/bookings": patch
 "@voyant-travel/mcp": patch
 "@voyant-travel/tools": minor
 ---
