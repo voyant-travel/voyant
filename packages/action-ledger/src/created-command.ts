@@ -378,7 +378,7 @@ async function assertCurrentClaim<TReferenceType extends string>(
     throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
   }
   try {
-    assertExactEntry(current, state.expectedClaim)
+    assertExactEntry(current, state.claim)
   } catch {
     throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
   }
@@ -529,7 +529,10 @@ function toState<TReferenceType extends string>(
     idempotency: { scope: string; key: string; fingerprint: string }
   },
 ): CreatedCommandState<TReferenceType> {
-  return { claim, ...prepared }
+  // Keep an immutable value snapshot rather than the driver's row object. This
+  // lets the post-mutation re-read detect an in-transaction claim change even
+  // when a test double or adapter reuses object identities for selected rows.
+  return { claim: { ...claim }, ...prepared }
 }
 
 function copyClaimEntry(
