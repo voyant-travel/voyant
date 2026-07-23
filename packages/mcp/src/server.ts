@@ -490,7 +490,7 @@ function toMcpInputSchema(schema: z.ZodType, entry: ToolManifestEntry): z.ZodObj
     schema instanceof z.ZodObject
       ? schema.shape
       : Object.assign({}, ...collectInputObjectShapes(schema))
-  if (!entry.actionPolicy || entry.actionPolicy.invocation.requiredFields.length === 0) {
+  if (!entry.actionPolicy) {
     return schema instanceof z.ZodObject ? schema : z.looseObject(shape)
   }
   if (TOOL_ACTION_INVOCATION_FIELD in shape) {

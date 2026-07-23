@@ -463,12 +463,12 @@ describe("createMcpApiRoutes", () => {
       inputSchema: z.object({ message: z.string() }),
       outputSchema: z.object({ notificationId: z.string() }),
       requiredScopes: ["notifications:send"],
-      tier: "destructive",
+      tier: "write",
       riskPolicy: {
-        destructive: true,
-        reversible: false,
+        destructive: false,
+        reversible: true,
         dryRunSupported: false,
-        confirmationRequired: true,
+        sideEffects: ["data-write"],
       },
       actionPolicyEnforcement: "handler",
       async handler() {
@@ -486,7 +486,7 @@ describe("createMcpApiRoutes", () => {
             unitId: "@voyant-travel/notifications",
             name: "create_notification",
             requiredScopes: ["notifications:send"],
-            risk: "critical",
+            risk: "medium",
             referenceId: "notifications-create-runtime",
             async load<T>() {
               return createNotificationTool as T
@@ -505,7 +505,7 @@ describe("createMcpApiRoutes", () => {
               resultReferenceType: "notification",
               durability: "handler-command-claim-v1",
             },
-            risk: "critical",
+            risk: "medium",
             ledger: "required",
             approval: "never",
             from: { tools: [toolId] },
@@ -545,7 +545,8 @@ describe("createMcpApiRoutes", () => {
       }
     ).tools.find(({ name }) => name === "create_notification")
     const invocationSchema = listedTool?.inputSchema.properties?._voyant
-    expect(invocationSchema?.properties).toHaveProperty("confirmed")
+    expect(invocationSchema?.properties).toHaveProperty("reasonCode")
+    expect(invocationSchema?.properties).not.toHaveProperty("confirmed")
     expect(invocationSchema?.properties).not.toHaveProperty("targetId")
     expect(invocationSchema?.required ?? []).not.toContain("targetId")
     expect(listedTool?._meta).toMatchObject({
@@ -558,7 +559,7 @@ describe("createMcpApiRoutes", () => {
             durability: "handler-command-claim-v1",
           },
           enforcement: "handler",
-          invocation: { requiredFields: ["confirmed"] },
+          invocation: { requiredFields: [] },
         },
       },
     })
@@ -581,29 +582,16 @@ describe("createMcpApiRoutes", () => {
           resultReferenceType: "notification",
           durability: "handler-command-claim-v1",
         },
-        invocation: expect.objectContaining({ requiredFields: ["confirmed"] }),
+        invocation: expect.objectContaining({ requiredFields: [] }),
       }),
     )
-
-    const unconfirmed = await readRpc(
-      await outer.request(
-        "/",
-        rpc("tools/call", {
-          name: "create_notification",
-          arguments: { message: "hello" },
-        }),
-      ),
-    )
-    expect((unconfirmed.result as { isError?: boolean }).isError).toBe(true)
-    expect(JSON.stringify(unconfirmed)).toContain("CONFIRMATION_REQUIRED")
-    expect(handlerCalls).toBe(0)
 
     const called = await readRpc(
       await outer.request(
         "/",
         rpc("tools/call", {
           name: "create_notification",
-          arguments: { message: "hello", _voyant: { confirmed: true } },
+          arguments: { message: "hello", _voyant: { reasonCode: "operator-request" } },
         }),
       ),
     )
@@ -611,6 +599,64 @@ describe("createMcpApiRoutes", () => {
       notificationId: "notification_1",
     })
     expect(handlerCalls).toBe(1)
+  })
+
+  it("rejects a domain input field reserved for action invocation metadata", async () => {
+    const conflictingTool = defineTool({
+      name: "conflicting_control",
+      description: "Invalid Tool that collides with framework action controls",
+      inputSchema: z.object({ _voyant: z.string() }),
+      outputSchema: z.object({ ok: z.boolean() }),
+      requiredScopes: ["catalog:read"],
+      tier: "read",
+      riskPolicy: READ_ONLY_RISK,
+      async handler() {
+        return { ok: true }
+      },
+    })
+    const toolId = "@voyant-travel/catalog#tool.conflicting-control"
+
+    await expect(
+      createGraphMcpApiRoutes({
+        runtime: {
+          accessCatalog,
+          tools: [
+            {
+              id: toolId,
+              unitId: "@voyant-travel/catalog",
+              name: "conflicting_control",
+              requiredScopes: ["catalog:read"],
+              risk: "low",
+              referenceId: "conflicting-control-runtime",
+              async load<T>() {
+                return conflictingTool as T
+              },
+            },
+          ],
+          actions: [
+            {
+              id: "@voyant-travel/catalog#action.conflicting-control",
+              version: "v1",
+              kind: "read",
+              targetType: "catalog",
+              risk: "low",
+              ledger: "optional",
+              from: { tools: [toolId] },
+            },
+          ],
+          references: [
+            {
+              id: "conflicting-control-runtime",
+              importEntry: "@voyant-travel/catalog/tools",
+              async loadModule<T extends Record<string, unknown>>() {
+                return {} as T
+              },
+            },
+          ],
+        },
+        buildContext: () => buildContext(),
+      }),
+    ).rejects.toThrow(/input conflicts with reserved action metadata field "_voyant"/)
   })
 
   it("hides a tool from grant audiences outside its declared audience policy", async () => {
