@@ -1,4 +1,4 @@
-import { buildIdempotencyFingerprint } from "@voyant-travel/action-ledger"
+import { buildCreatedTargetCommandFingerprint } from "@voyant-travel/action-ledger"
 import type { ToolContext } from "@voyant-travel/tools"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -60,7 +60,7 @@ async function bookingTools() {
 }
 
 describe("reserve_booking MCP runtime", () => {
-  it("passes authoritative idempotency metadata and returns an immutable reference", async () => {
+  it("passes the exact created-command policy fingerprint and returns an immutable reference", async () => {
     const booking = {
       id: "bk_1",
       bookingNumber: reservation.bookingNumber,
@@ -90,12 +90,21 @@ describe("reserve_booking MCP runtime", () => {
       replayed: false,
     })
 
-    const fingerprint = await buildIdempotencyFingerprint({
+    const fingerprint = await buildCreatedTargetCommandFingerprint({
       actionName: "booking.reserve",
       actionVersion: "v1",
-      targetType: "booking_reservation_command",
-      targetId: reservation.bookingNumber,
+      commandTarget: {
+        type: "booking_reservation_command",
+        id: reservation.bookingNumber,
+      },
+      canonicalTargetType: "booking",
+      resultReferenceType: "booking",
       commandInput: reservation,
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      evaluatedRisk: "high",
+      approvalPolicy: "none",
+      approvalReasonCode: null,
     })
     expect(reserve).toHaveBeenCalledWith(db, reservation, "agent_1", {
       eventBus,

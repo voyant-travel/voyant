@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { availabilitySlotsRef } from "../../src/availability-ref.js"
 import { productsRef } from "../../src/products-ref.js"
 import { bookingAllocations, bookingItems, bookings } from "../../src/schema.js"
-import { bookingsService } from "../../src/service.js"
+import { bookingsService, buildBookingReservationCommandFingerprint } from "../../src/service.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -416,14 +416,15 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     }
     const runtime = {
       actionLedgerContext: {
-        userId: "usr_reserve",
+        agentId: "agent_reserve",
         actor: "staff",
         callerType: "agent",
       },
       actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
       actionLedgerIdempotencyScope: "bookings.reserve_booking",
       actionLedgerIdempotencyKey: "reserve-command-1",
-      actionLedgerIdempotencyFingerprint: "sha256:reserve-command-1",
+      actionLedgerIdempotencyFingerprint:
+        await buildBookingReservationCommandFingerprint(reservation),
       actionLedgerRouteOrToolName: "bookings.reserve_booking",
     }
 
@@ -449,33 +450,64 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
       .from(actionLedgerEntries)
       .where(eq(actionLedgerEntries.actionName, "booking.reserve"))
     expect(ledgerEntries).toHaveLength(2)
-    expect(ledgerEntries).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          status: "requested",
-          targetType: "booking_reservation_command",
-          targetId: reservation.bookingNumber,
-        }),
-        expect.objectContaining({
-          status: "succeeded",
-          targetType: "booking",
-          targetId: first.booking.id,
-        }),
-      ]),
-    )
+    const claim = ledgerEntries.find((entry) => entry.status === "requested")
+    const completed = ledgerEntries.find((entry) => entry.status === "succeeded")
+    expect(claim).toMatchObject({
+      actionName: "booking.reserve",
+      actionVersion: "v1",
+      actionKind: "create",
+      evaluatedRisk: "high",
+      targetType: "booking_reservation_command",
+      targetId: reservation.bookingNumber,
+      actorType: "staff",
+      principalType: "agent",
+      principalId: "agent_reserve",
+      callerType: "agent",
+      routeOrToolName: "bookings.reserve_booking",
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      authorizationSource: "selected_graph_mcp_handler",
+      approvalId: null,
+      idempotencyScope: "bookings.reserve_booking:created-command-claim",
+      idempotencyKey: "reserve-command-1",
+      idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
+    })
+    expect(completed).toMatchObject({
+      actionName: "booking.reserve",
+      actionVersion: "v1",
+      actionKind: "create",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: first.booking.id,
+      actorType: "staff",
+      principalType: "agent",
+      principalId: "agent_reserve",
+      callerType: "agent",
+      routeOrToolName: "bookings.reserve_booking",
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      authorizationSource: "selected_graph_mcp_handler",
+      causationActionId: claim?.id,
+      approvalId: null,
+      idempotencyScope: "bookings.reserve_booking:created-command-result",
+      idempotencyKey: "reserve-command-1",
+      idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
+    })
 
+    const conflictingReservation = { ...reservation, bookingNumber: nextBookingNumber() }
     const conflict = await bookingsService.reserveBooking(
       db,
-      { ...reservation, bookingNumber: nextBookingNumber() },
+      conflictingReservation,
       "usr_reserve",
       {
         ...runtime,
-        actionLedgerIdempotencyFingerprint: "sha256:different-command",
+        actionLedgerIdempotencyFingerprint:
+          await buildBookingReservationCommandFingerprint(conflictingReservation),
       },
     )
     expect(conflict).toMatchObject({
       status: "idempotency_conflict",
-      existingActionId: ledgerEntries.find((entry) => entry.status === "requested")?.id,
+      existingActionId: claim?.id,
     })
   })
 })

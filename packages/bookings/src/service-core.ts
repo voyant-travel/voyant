@@ -1,10 +1,13 @@
 // agent-quality: file-size exception -- Bookings service keeps legacy booking lifecycle, traveler, allocation, and accounting workflows together until service modules are split by domain operation.
 import {
+  ActionLedgerCreatedCommandReplayCorruptError,
+  ActionLedgerCreatedCommandReplayIncompleteError,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
+  buildCreatedTargetCommandFingerprint,
+  executeCreatedTargetCommand,
 } from "@voyant-travel/action-ledger"
-import { actionLedgerEntries, actionMutationDetails } from "@voyant-travel/action-ledger/schema"
 import type { EventBus } from "@voyant-travel/core"
 import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { newId } from "@voyant-travel/db/lib/typeid"
@@ -371,7 +374,38 @@ type BookingStatusActionName =
   | "booking.status.override"
 
 const BOOKING_RESERVATION_ACTION_NAME = "booking.reserve"
-const BOOKING_RESERVATION_RESULT_REF_PREFIX = "booking:"
+const BOOKING_RESERVATION_ACTION_VERSION = "v1"
+const BOOKING_RESERVATION_COMMAND_TARGET_TYPE = "booking_reservation_command"
+const BOOKING_RESERVATION_CANONICAL_TARGET_TYPE = "booking"
+const BOOKING_RESERVATION_RESULT_REFERENCE_TYPE = "booking"
+const BOOKING_RESERVATION_CAPABILITY_ID = "bookings:reserve"
+const BOOKING_RESERVATION_CAPABILITY_VERSION = "v1"
+const BOOKING_RESERVATION_EVALUATED_RISK = "high"
+
+function bookingReservationCommand(data: ReserveBookingInput) {
+  return {
+    actionName: BOOKING_RESERVATION_ACTION_NAME,
+    actionVersion: BOOKING_RESERVATION_ACTION_VERSION,
+    commandTarget: {
+      type: BOOKING_RESERVATION_COMMAND_TARGET_TYPE,
+      id: data.bookingNumber,
+    },
+    canonicalTargetType: BOOKING_RESERVATION_CANONICAL_TARGET_TYPE,
+    resultReferenceType: BOOKING_RESERVATION_RESULT_REFERENCE_TYPE,
+    commandInput: data,
+    capabilityId: BOOKING_RESERVATION_CAPABILITY_ID,
+    capabilityVersion: BOOKING_RESERVATION_CAPABILITY_VERSION,
+    evaluatedRisk: BOOKING_RESERVATION_EVALUATED_RISK,
+    approvalPolicy: "none" as const,
+    approvalReasonCode: null,
+  }
+}
+
+export function buildBookingReservationCommandFingerprint(
+  data: ReserveBookingInput,
+): Promise<string> {
+  return buildCreatedTargetCommandFingerprint(bookingReservationCommand(data))
+}
 
 interface BookingReservationLedgerRuntime {
   context: ActionLedgerRequestContextValues
@@ -407,79 +441,7 @@ function bookingReservationLedgerRuntime(
   }
 }
 
-async function claimBookingReservation(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-  bookingNumber: string,
-) {
-  const lockKey = `${runtime.idempotencyScope}:${runtime.idempotencyKey}`
-  await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`)
-  const [existing] = await db
-    .select()
-    .from(actionLedgerEntries)
-    .where(
-      and(
-        eq(actionLedgerEntries.actionName, BOOKING_RESERVATION_ACTION_NAME),
-        eq(actionLedgerEntries.idempotencyScope, `${runtime.idempotencyScope}:claim`),
-        eq(actionLedgerEntries.idempotencyKey, runtime.idempotencyKey),
-      ),
-    )
-    .limit(1)
-  if (existing) {
-    if (existing.idempotencyFingerprint !== runtime.idempotencyFingerprint) {
-      throw new ActionLedgerIdempotencyConflictError(existing.id)
-    }
-    return { entry: existing, replayed: true }
-  }
-
-  return appendActionLedgerMutation(db, {
-    context: runtime.context,
-    actionName: BOOKING_RESERVATION_ACTION_NAME,
-    actionVersion: "v1",
-    actionKind: "create",
-    status: "requested",
-    evaluatedRisk: "high",
-    targetType: "booking_reservation_command",
-    targetId: bookingNumber,
-    routeOrToolName: runtime.routeOrToolName,
-    capabilityId: "bookings:reserve",
-    capabilityVersion: "v1",
-    authorizationSource: runtime.authorizationSource,
-    idempotencyScope: `${runtime.idempotencyScope}:claim`,
-    idempotencyKey: runtime.idempotencyKey,
-    idempotencyFingerprint: runtime.idempotencyFingerprint,
-    mutationDetail: {
-      summary: `Booking reservation ${bookingNumber} claimed`,
-      reversalKind: "none",
-    },
-  })
-}
-
-async function getReplayedBookingReservation(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-) {
-  const [detail] = await db
-    .select({ commandResultRef: actionMutationDetails.commandResultRef })
-    .from(actionLedgerEntries)
-    .innerJoin(actionMutationDetails, eq(actionMutationDetails.actionId, actionLedgerEntries.id))
-    .where(
-      and(
-        eq(actionLedgerEntries.actionName, BOOKING_RESERVATION_ACTION_NAME),
-        eq(actionLedgerEntries.status, "succeeded"),
-        eq(actionLedgerEntries.idempotencyScope, `${runtime.idempotencyScope}:result`),
-        eq(actionLedgerEntries.idempotencyKey, runtime.idempotencyKey),
-      ),
-    )
-    .limit(1)
-  const resultRef = detail?.commandResultRef
-  if (!resultRef?.startsWith(BOOKING_RESERVATION_RESULT_REF_PREFIX)) {
-    throw new BookingServiceError(
-      "reservation_replay_incomplete",
-      "The reservation claim exists without a canonical booking result",
-    )
-  }
-  const bookingId = resultRef.slice(BOOKING_RESERVATION_RESULT_REF_PREFIX.length).trim()
+async function getReplayedBookingReservation(db: PostgresJsDatabase, bookingId: string) {
   const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
   if (!booking) {
     throw new BookingServiceError(
@@ -488,39 +450,6 @@ async function getReplayedBookingReservation(
     )
   }
   return booking
-}
-
-async function appendBookingReservationResult(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-  claimActionId: string,
-  booking: typeof bookings.$inferSelect,
-) {
-  await appendActionLedgerMutation(db, {
-    context: runtime.context,
-    actionName: BOOKING_RESERVATION_ACTION_NAME,
-    actionVersion: "v1",
-    actionKind: "create",
-    status: "succeeded",
-    evaluatedRisk: "high",
-    targetType: "booking",
-    targetId: booking.id,
-    routeOrToolName: runtime.routeOrToolName,
-    capabilityId: "bookings:reserve",
-    capabilityVersion: "v1",
-    authorizationSource: runtime.authorizationSource,
-    causationActionId: claimActionId,
-    idempotencyScope: `${runtime.idempotencyScope}:result`,
-    idempotencyKey: runtime.idempotencyKey,
-    idempotencyFingerprint: runtime.idempotencyFingerprint,
-    mutationDetail: {
-      commandResultRef: `${BOOKING_RESERVATION_RESULT_REF_PREFIX}${booking.id}`,
-      summary: `Booking ${booking.bookingNumber} reserved`,
-      reversalKind: "domain_command",
-      reversalCommandId: "booking.status.cancel",
-      reversalCommandVersion: "v1",
-    },
-  })
 }
 
 async function appendBookingStatusMutationLedger(
@@ -3094,26 +3023,7 @@ export const bookingsService = {
         }),
       )
 
-      const result = await db.transaction(async (tx) => {
-        const reservationLedger = bookingReservationLedgerRuntime(runtime)
-        const reservationClaim = reservationLedger
-          ? await claimBookingReservation(
-              tx as PostgresJsDatabase,
-              reservationLedger,
-              data.bookingNumber,
-            )
-          : null
-        if (reservationLedger && reservationClaim?.replayed) {
-          return {
-            status: "ok" as const,
-            booking: await getReplayedBookingReservation(
-              tx as PostgresJsDatabase,
-              reservationLedger,
-            ),
-            replayed: true,
-          }
-        }
-
+      const reserveInTransaction = async (tx: PostgresJsDatabase) => {
         const [booking] = await tx
           .insert(bookings)
           .values({
@@ -3292,17 +3202,56 @@ export const bookingsService = {
           metadata: { holdExpiresAt: holdExpiresAt.toISOString(), itemCount: data.items.length },
         })
 
-        if (reservationLedger && reservationClaim) {
-          await appendBookingReservationResult(
-            tx as PostgresJsDatabase,
-            reservationLedger,
-            reservationClaim.entry.id,
-            booking,
-          )
-          return { status: "ok" as const, booking, replayed: false }
-        }
-        return { status: "ok" as const, booking }
-      })
+        return booking
+      }
+
+      const reservationLedger = bookingReservationLedgerRuntime(runtime)
+      const reserveAudited = async (ledger: BookingReservationLedgerRuntime) => {
+        const execution = await executeCreatedTargetCommand(
+          db,
+          {
+            context: ledger.context,
+            ...bookingReservationCommand(data),
+            routeOrToolName: ledger.routeOrToolName,
+            authorizationSource: ledger.authorizationSource,
+            idempotency: {
+              scope: ledger.idempotencyScope,
+              key: ledger.idempotencyKey,
+              fingerprint: ledger.idempotencyFingerprint,
+            },
+            mutationDetail: {
+              summary: `Booking reservation ${data.bookingNumber} claimed`,
+              reversalKind: "none",
+            },
+          },
+          {
+            async create(tx) {
+              const booking = await reserveInTransaction(tx as PostgresJsDatabase)
+              return {
+                value: booking,
+                targetId: booking.id,
+                mutationDetail: {
+                  summary: `Booking ${booking.bookingNumber} reserved`,
+                  reversalKind: "domain_command",
+                  reversalCommandId: "booking.status.cancel",
+                  reversalCommandVersion: "v1",
+                },
+              }
+            },
+            async replay(tx, completed) {
+              return getReplayedBookingReservation(tx as PostgresJsDatabase, completed.reference.id)
+            },
+          },
+        )
+        return { status: "ok" as const, booking: execution.value, replayed: execution.replayed }
+      }
+
+      const result = reservationLedger
+        ? await reserveAudited(reservationLedger)
+        : {
+            status: "ok" as const,
+            booking: await db.transaction((tx) => reserveInTransaction(tx as PostgresJsDatabase)),
+          }
       if (result.status === "ok") {
         await emitSlotChanges(runtime, slotChanges)
       }
@@ -3313,6 +3262,12 @@ export const bookingsService = {
           status: "idempotency_conflict" as const,
           existingActionId: error.existingActionId,
         }
+      }
+      if (
+        error instanceof ActionLedgerCreatedCommandReplayIncompleteError ||
+        error instanceof ActionLedgerCreatedCommandReplayCorruptError
+      ) {
+        return { status: "reservation_replay_incomplete" as const }
       }
       if (error instanceof BookingServiceError) {
         return { status: error.code as Exclude<string, "ok"> }

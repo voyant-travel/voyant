@@ -1,7 +1,6 @@
 import {
   type ActionLedgerRequestContextValues,
   buildActionLedgerApprovedExecutionFields,
-  buildIdempotencyFingerprint,
 } from "@voyant-travel/action-ledger"
 import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
@@ -15,7 +14,7 @@ import {
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
 import type { Env } from "./routes-shared.js"
-import { bookingsService } from "./service.js"
+import { bookingsService, buildBookingReservationCommandFingerprint } from "./service.js"
 import { authorizeBookingStatusMutation } from "./status-authorization.js"
 
 export * from "./tools.js"
@@ -65,13 +64,9 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 "AUTHORIZATION_DENIED",
               )
             }
-            const idempotencyFingerprint = await buildIdempotencyFingerprint({
-              actionName: "booking.reserve",
-              actionVersion: "v1",
-              targetType: "booking_reservation_command",
-              targetId: input.reservation.bookingNumber,
-              commandInput: input.reservation,
-            })
+            const idempotencyFingerprint = await buildBookingReservationCommandFingerprint(
+              input.reservation,
+            )
             const result = await bookingsService.reserveBooking(
               db,
               input.reservation,
