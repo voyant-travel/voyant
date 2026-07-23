@@ -146,6 +146,29 @@ describe("Node migration runner", () => {
     expect(source.priority).toBe(9)
     expect(source.migrations.length).toBeGreaterThan(0)
   })
+
+  it("loads Catalog's generated product reindex migration from its journal", async () => {
+    const source = await loadNodeSchemaMigrationSource(
+      {
+        id: "catalog#migrations",
+        migrationKind: "schema",
+        order: 3,
+        idempotencyKey: "schema:catalog#migrations",
+        owner: "catalog",
+        source: {
+          kind: "deployment",
+          path: "../catalog/migrations",
+        },
+      },
+      import.meta.url,
+    )
+
+    const migration = source.migrations.find((entry) => entry.tag === "0003_product_reindex_state")
+    expect(migration?.sql).toContain('CREATE TABLE "catalog_product_reindex_state"')
+    expect(migration?.sql).toContain(
+      'CONSTRAINT "catalog_product_reindex_state_pk" PRIMARY KEY("tenant_id","reindex_key")',
+    )
+  })
 })
 
 function plan(includeLater = false): VoyantProjectMigrationPlan {

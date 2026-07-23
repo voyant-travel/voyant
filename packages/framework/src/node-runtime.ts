@@ -315,6 +315,7 @@ export async function loadVoyantNodeRuntime(
   const jobHost = createVoyantNodeJobHost({
     runtime: options.graphRuntime,
     jobs: options.jobs,
+    bindings: env,
     ...(options.runtimePorts ? { ports: options.runtimePorts } : {}),
     ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
     ...(managedJobHealthReporter ? { reportExecution: managedJobHealthReporter } : {}),

@@ -12,6 +12,7 @@
  *   - `catalogQuotesTable`            — booking-engine quote records
  *   - `catalogSourcedEntriesTable`    — durable sourced-entry store
  *                                       (sourced-content §2.5)
+ *   - `catalogProductReindexStateTable` — durable reindex lease + cursor
  */
 
 export {
@@ -36,6 +37,11 @@ export {
   type SelectCatalogOverlay,
   type SelectCatalogOverlayHistory,
 } from "./overlay/schema.js"
+export {
+  catalogProductReindexStateTable,
+  type InsertCatalogProductReindexState,
+  type SelectCatalogProductReindexState,
+} from "./reindex-state-schema.js"
 export {
   catalogSourcedEntriesTable,
   type InsertCatalogSourcedEntry,

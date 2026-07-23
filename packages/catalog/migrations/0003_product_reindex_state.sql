@@ -1,0 +1,20 @@
+CREATE TABLE "catalog_product_reindex_state" (
+	"tenant_id" text NOT NULL,
+	"reindex_key" text NOT NULL,
+	"requested_generation" bigint DEFAULT 0 NOT NULL,
+	"claimed_generation" bigint,
+	"completed_generation" bigint DEFAULT 0 NOT NULL,
+	"cursor_after_id" text,
+	"batches" integer DEFAULT 0 NOT NULL,
+	"scanned" integer DEFAULT 0 NOT NULL,
+	"indexed" integer DEFAULT 0 NOT NULL,
+	"retries" integer DEFAULT 0 NOT NULL,
+	"lease_owner" text,
+	"lease_until" timestamp with time zone,
+	"completed_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "catalog_product_reindex_state_pk" PRIMARY KEY("tenant_id","reindex_key"),
+	CONSTRAINT "catalog_product_reindex_state_requested_nonnegative" CHECK ("catalog_product_reindex_state"."requested_generation" >= 0),
+	CONSTRAINT "catalog_product_reindex_state_completed_nonnegative" CHECK ("catalog_product_reindex_state"."completed_generation" >= 0),
+	CONSTRAINT "catalog_product_reindex_state_counters_nonnegative" CHECK ("catalog_product_reindex_state"."batches" >= 0 AND "catalog_product_reindex_state"."scanned" >= 0 AND "catalog_product_reindex_state"."indexed" >= 0 AND "catalog_product_reindex_state"."retries" >= 0)
+);

@@ -64,6 +64,12 @@ describe("@voyant-travel/catalog package exports", () => {
       import: "./dist/projection-runtime.js",
       default: "./dist/projection-runtime.js",
     })
+    expect(packageJson.exports["./reindex-job"]).toBe("./src/reindex-job.ts")
+    expect(packageJson.publishConfig.exports["./reindex-job"]).toEqual({
+      types: "./dist/reindex-job.d.ts",
+      import: "./dist/reindex-job.js",
+      default: "./dist/reindex-job.js",
+    })
   })
 
   it("publishes the index subscriber graph runtimes", () => {
