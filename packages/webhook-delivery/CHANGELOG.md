@@ -1,5 +1,13 @@
 # @voyant-travel/webhook-delivery
 
+## 0.5.1
+
+### Patch Changes
+
+- 662d4f3: Mount the operator webhook administration API at the manifest-declared
+  `/v1/admin/webhooks` path so the runtime matches the published OpenAPI contract
+  and webhook settings UI.
+
 ## 0.5.0
 
 ### Minor Changes
