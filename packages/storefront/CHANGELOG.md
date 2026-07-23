@@ -1,5 +1,18 @@
 # @voyant-travel/storefront
 
+## 0.196.0
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/commerce@0.40.5
+  - @voyant-travel/bookings@0.194.0
+  - @voyant-travel/finance@0.194.0
+  - @voyant-travel/identity@0.194.0
+  - @voyant-travel/legal@0.194.0
+  - @voyant-travel/relationships@0.128.35
+
 ## 0.195.0
 
 ### Patch Changes

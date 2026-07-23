@@ -1,5 +1,16 @@
 # @voyant-travel/distribution
 
+## 0.184.0
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/catalog@0.192.0
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/bookings@0.194.0
+  - @voyant-travel/finance@0.194.0
+  - @voyant-travel/identity@0.194.0
+
 ## 0.183.0
 
 ### Patch Changes

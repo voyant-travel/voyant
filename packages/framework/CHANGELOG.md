@@ -1,5 +1,17 @@
 # @voyant-travel/framework
 
+## 0.62.4
+
+### Patch Changes
+
+- dd370ca: Add a provider-agnostic, durable catalog product reindex job that walks canonical inventory
+  products in bounded pages and rebuilds their projections through the selected indexer runtime.
+  Product job hosts now pass concrete deployment bindings to fixed job runtimes.
+- Updated dependencies [dd370ca]
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/cruises@0.193.0
+  - @voyant-travel/operator-standard@0.11.8
+
 ## 0.62.3
 
 ### Patch Changes

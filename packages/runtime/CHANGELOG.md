@@ -1,5 +1,14 @@
 # @voyant-travel/runtime
 
+## 0.17.5
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/framework@0.62.4
+  - @voyant-travel/admin-host@0.44.0
+
 ## 0.17.4
 
 ### Patch Changes

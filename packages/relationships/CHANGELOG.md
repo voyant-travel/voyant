@@ -1,5 +1,14 @@
 # @voyant-travel/crm
 
+## 0.128.35
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/bookings@0.194.0
+  - @voyant-travel/identity@0.194.0
+
 ## 0.128.34
 
 ### Patch Changes

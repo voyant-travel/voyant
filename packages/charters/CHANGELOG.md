@@ -1,5 +1,14 @@
 # @voyant-travel/charters
 
+## 0.192.0
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/catalog@0.192.0
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/bookings@0.194.0
+
 ## 0.191.0
 
 ### Patch Changes
