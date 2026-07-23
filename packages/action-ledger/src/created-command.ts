@@ -1,18 +1,20 @@
 // agent-quality: file-size exception -- owner: action-ledger; claim, replay validation, and canonical completion form one transactional state machine.
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
 import { and, eq, sql } from "drizzle-orm"
 
-import { buildIdempotencyFingerprint } from "./fingerprint.js"
+import type {
+  ActionLedgerCapabilityApprovalPolicy,
+  ActionLedgerCapabilityRisk,
+} from "./capability.js"
+import { buildActionApprovalCommandFingerprint } from "./fingerprint.js"
 import {
   type ActionLedgerRequestContextValues,
   type BuildActionLedgerMutationInput,
   buildActionLedgerMutationEntryInput,
+  mapActionLedgerRequestContext,
 } from "./request-context.js"
-import {
-  type ActionLedgerEntry,
-  actionLedgerEntries,
-  actionMutationDetails,
-} from "./schema.js"
+import { type ActionLedgerEntry, actionLedgerEntries, actionMutationDetails } from "./schema.js"
 import { insertEntry } from "./service/entries.js"
 import { ActionLedgerIdempotencyConflictError } from "./service/errors.js"
 import type { AppendActionLedgerEntryInput } from "./service/types.js"
@@ -30,6 +32,7 @@ export type ActionLedgerCreatedCommandReplayCorruptReason =
   | "result_target_type_mismatch"
   | "result_action_mismatch"
   | "result_fingerprint_mismatch"
+  | "result_identity_mismatch"
 
 export class ActionLedgerCreatedCommandReplayIncompleteError extends Error {
   readonly claimActionId: string
@@ -66,57 +69,80 @@ export class ActionLedgerCreatedCommandFingerprintMismatchError extends Error {
   readonly receivedFingerprint: string
 
   constructor(expectedFingerprint: string, receivedFingerprint: string) {
-    super(
-      "Created-target command fingerprint does not cover its command, target, result-reference, and policy metadata",
-    )
+    super("Created-target command fingerprint does not match its selected action policy")
     this.name = "ActionLedgerCreatedCommandFingerprintMismatchError"
     this.expectedFingerprint = expectedFingerprint
     this.receivedFingerprint = receivedFingerprint
   }
 }
 
+export class ActionLedgerCreatedCommandTransactionRequiredError extends Error {
+  constructor() {
+    super("Created-target command execution requires a transaction-capable database")
+    this.name = "ActionLedgerCreatedCommandTransactionRequiredError"
+  }
+}
+
+export class ActionLedgerCreatedCommandProtocolError extends Error {
+  readonly reason:
+    | "approval_policy_unsupported"
+    | "claim_changed_during_mutation"
+    | "result_created_during_mutation"
+
+  constructor(reason: ActionLedgerCreatedCommandProtocolError["reason"]) {
+    super(`Created-target command protocol failed closed: ${reason}`)
+    this.name = "ActionLedgerCreatedCommandProtocolError"
+    this.reason = reason
+  }
+}
+
 export interface BuildCreatedTargetCommandFingerprintInput {
   actionName: string
   actionVersion: string
-  commandTarget: {
-    type: string
-    id: string
-  }
+  commandTarget: { type: string; id: string }
   canonicalTargetType: string
   resultReferenceType: string
   commandInput?: unknown
-  policyInputs: Record<string, unknown>
+  capabilityId: string
+  capabilityVersion: string
+  evaluatedRisk: ActionLedgerCapabilityRisk
+  approvalPolicy: ActionLedgerCapabilityApprovalPolicy
+  approvalReasonCode: string | null
 }
 
 type CreatedCommandCommonInput = Omit<
   BuildActionLedgerMutationInput,
+  | "actionVersion"
   | "actionKind"
   | "status"
+  | "evaluatedRisk"
   | "targetType"
   | "targetId"
+  | "capabilityId"
+  | "capabilityVersion"
   | "idempotencyScope"
   | "idempotencyKey"
   | "idempotencyFingerprint"
   | "mutationDetail"
 >
 
-export interface ClaimCreatedTargetCommandInput extends CreatedCommandCommonInput {
+export interface ExecuteCreatedTargetCommandInput extends CreatedCommandCommonInput {
   context: ActionLedgerRequestContextValues
+  actionVersion: string
   actionKind?: Extract<ActionLedgerEntry["actionKind"], "create" | "execute">
-  commandTarget: {
-    type: string
-    id: string
-  }
+  evaluatedRisk: ActionLedgerCapabilityRisk
+  commandTarget: { type: string; id: string }
   canonicalTargetType: string
   resultReferenceType: string
+  capabilityId: string
+  capabilityVersion: string
+  approvalPolicy: ActionLedgerCapabilityApprovalPolicy
+  approvalReasonCode: string | null
+  commandInput?: unknown
   idempotency: {
     scope: string
     key: string
     fingerprint: string
-  }
-  fingerprintInput: {
-    commandInput?: unknown
-    policyInputs: Record<string, unknown>
   }
   mutationDetail?: Omit<
     NonNullable<BuildActionLedgerMutationInput["mutationDetail"]>,
@@ -133,31 +159,8 @@ export interface CreatedTargetCommandResultMetadata<TReferenceType extends strin
   }
 }
 
-export interface CreatedTargetCommandClaim<TReferenceType extends string = string> {
-  entry: ActionLedgerEntry
-  canonicalTargetType: string
-  resultReferenceType: TReferenceType
-  idempotency: {
-    scope: string
-    key: string
-    fingerprint: string
-  }
-}
-
-export type ClaimCreatedTargetCommandResult<TReferenceType extends string = string> =
-  | {
-      claim: CreatedTargetCommandClaim<TReferenceType>
-      replayed: false
-      result: null
-    }
-  | {
-      claim: CreatedTargetCommandClaim<TReferenceType>
-      replayed: true
-      result: CreatedTargetCommandResultMetadata<TReferenceType>
-    }
-
-export interface CompleteCreatedTargetCommandInput<TReferenceType extends string = string> {
-  claim: CreatedTargetCommandClaim<TReferenceType>
+export interface CreatedTargetCommandMutation<TValue> {
+  value: TValue
   targetId: string
   mutationDetail?: Omit<
     NonNullable<BuildActionLedgerMutationInput["mutationDetail"]>,
@@ -166,167 +169,96 @@ export interface CompleteCreatedTargetCommandInput<TReferenceType extends string
   payloads?: AppendActionLedgerEntryInput["payloads"]
 }
 
-export interface CompleteCreatedTargetCommandResult<TReferenceType extends string = string>
-  extends CreatedTargetCommandResultMetadata<TReferenceType> {
-  replayed: boolean
+export interface ExecuteCreatedTargetCommandHandlers<TValue, TReferenceType extends string> {
+  create: (tx: AnyDrizzleDb) => Promise<CreatedTargetCommandMutation<TValue>>
+  replay: (
+    tx: AnyDrizzleDb,
+    result: CreatedTargetCommandResultMetadata<TReferenceType>,
+  ) => Promise<TValue>
+}
+
+export type ExecuteCreatedTargetCommandResult<TValue, TReferenceType extends string = string> =
+  | {
+      replayed: false
+      value: TValue
+      result: CreatedTargetCommandResultMetadata<TReferenceType>
+    }
+  | {
+      replayed: true
+      value: TValue
+      result: CreatedTargetCommandResultMetadata<TReferenceType>
+    }
+
+interface CreatedCommandState<TReferenceType extends string> {
+  claim: ActionLedgerEntry
+  expectedClaim: AppendActionLedgerEntryInput
+  canonicalTargetType: string
+  resultReferenceType: TReferenceType
+  idempotency: { scope: string; key: string; fingerprint: string }
 }
 
 /**
- * Claims a created-target command before its domain mutation.
+ * Owns BEGIN → claim → domain mutation → canonical result → COMMIT.
  *
- * The caller must pass the same open transaction handle to this helper, the
- * domain mutation, and `completeCreatedTargetCommand`. The transaction-scoped
- * advisory lock serializes equal `(scope, key)` claims until that transaction
- * commits or rolls back.
+ * The claim is never exposed. Domain code receives only the exact transaction
+ * handle owned by this helper. Exact replays resolve their immutable result
+ * through `handlers.replay` without invoking `handlers.create`.
  */
-export async function claimCreatedTargetCommand<TReferenceType extends string>(
-  tx: AnyDrizzleDb,
-  input: ClaimCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
-): Promise<ClaimCreatedTargetCommandResult<TReferenceType>> {
-  assertConcretePrincipal(input)
-  const actionName = requiredValue(input.actionName, "action name")
-  const actionVersion = requiredValue(input.actionVersion ?? "v1", "action version")
-  const commandTargetType = requiredValue(input.commandTarget.type, "command target type")
-  const commandTargetId = requiredValue(input.commandTarget.id, "command target id")
-  const canonicalTargetType = requiredValue(input.canonicalTargetType, "canonical target type")
-  const resultReferenceType = validReferenceType(input.resultReferenceType)
-  const idempotencyScope = requiredValue(input.idempotency.scope, "idempotency scope")
-  const idempotencyKey = requiredValue(input.idempotency.key, "idempotency key")
-  const idempotencyFingerprint = requiredValue(
-    input.idempotency.fingerprint,
-    "idempotency fingerprint",
-  )
-  if (!input.fingerprintInput || typeof input.fingerprintInput !== "object") {
-    throw new TypeError("Created-target command fingerprint input is required")
-  }
-  const expectedFingerprint = await buildCreatedTargetCommandFingerprint({
-    actionName,
-    actionVersion,
-    commandTarget: {
-      type: commandTargetType,
-      id: commandTargetId,
-    },
-    canonicalTargetType,
-    resultReferenceType,
-    commandInput: input.fingerprintInput.commandInput,
-    policyInputs: input.fingerprintInput.policyInputs,
-  })
-  if (idempotencyFingerprint !== expectedFingerprint) {
-    throw new ActionLedgerCreatedCommandFingerprintMismatchError(
-      expectedFingerprint,
-      idempotencyFingerprint,
+export async function executeCreatedTargetCommand<TValue, TReferenceType extends string>(
+  db: AnyDrizzleDb,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
+  handlers: ExecuteCreatedTargetCommandHandlers<TValue, TReferenceType>,
+): Promise<ExecuteCreatedTargetCommandResult<TValue, TReferenceType>> {
+  const prepared = await prepareCommand(input)
+  return requiredTransaction(db, async (tx) => {
+    await lockCommand(tx, prepared.idempotency.scope, prepared.idempotency.key)
+    const existing = await findClaim(
+      tx,
+      claimScope(prepared.idempotency.scope),
+      prepared.idempotency.key,
     )
-  }
-
-  await tx.execute(
-    sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${idempotencyScope}:${idempotencyKey}`}, 0))`,
-  )
-
-  const claimScope = `${idempotencyScope}${CLAIM_SCOPE_SUFFIX}`
-  const existing = await findClaim(tx, claimScope, idempotencyKey)
-  if (existing) {
-    assertExactClaim(existing, {
-      actionName,
-      actionVersion,
-      targetType: commandTargetType,
-      targetId: commandTargetId,
-      fingerprint: idempotencyFingerprint,
-    })
-    const claim = toClaim(existing, {
-      canonicalTargetType,
-      resultReferenceType,
-      scope: idempotencyScope,
-      key: idempotencyKey,
-      fingerprint: idempotencyFingerprint,
-    })
-    return {
-      claim,
-      replayed: true,
-      result: await readCompletedResult(tx, claim),
+    if (existing) {
+      assertExactEntry(existing, prepared.expectedClaim)
+      const state = toState(existing, prepared)
+      const result = await readCompletedResult(tx, state)
+      return {
+        replayed: true,
+        value: await handlers.replay(tx, result),
+        result,
+      }
     }
-  }
 
-  const entryInput = buildActionLedgerMutationEntryInput({
-    ...input,
-    actionName,
-    actionVersion,
-    actionKind: input.actionKind ?? "create",
-    status: "requested",
-    targetType: commandTargetType,
-    targetId: commandTargetId,
-    idempotencyScope: claimScope,
-    idempotencyKey,
-    idempotencyFingerprint,
-    mutationDetail: {
-      ...input.mutationDetail,
-      commandResultRef: null,
-      reversalKind: input.mutationDetail?.reversalKind ?? "none",
-    },
+    const inserted = await insertEntry(tx, prepared.expectedClaim)
+    const state = toState(inserted.entry, prepared)
+    const mutation = await handlers.create(tx)
+    await assertCurrentClaim(tx, state)
+    if (await findResultEntry(tx, state)) {
+      throw new ActionLedgerCreatedCommandProtocolError("result_created_during_mutation")
+    }
+    const result = await appendCompletedResult(tx, state, mutation)
+    return { replayed: false, value: mutation.value, result }
   })
-  const inserted = await insertEntry(tx, entryInput)
-
-  return {
-    claim: toClaim(inserted.entry, {
-      canonicalTargetType,
-      resultReferenceType,
-      scope: idempotencyScope,
-      key: idempotencyKey,
-      fingerprint: idempotencyFingerprint,
-    }),
-    replayed: false,
-    result: null,
-  }
 }
 
-/** Appends the canonical generated-target result in the claim's transaction. */
-export async function completeCreatedTargetCommand<TReferenceType extends string>(
-  tx: AnyDrizzleDb,
-  input: CompleteCreatedTargetCommandInput<TReferenceType>,
-): Promise<CompleteCreatedTargetCommandResult<TReferenceType>> {
-  const targetId = requiredValue(input.targetId, "canonical target id")
-  const existing = await findResultEntry(tx, input.claim)
-  if (existing) {
-    const result = await validateCompletedResult(tx, input.claim, existing)
-    if (result.reference.id !== targetId) {
-      throw new ActionLedgerCreatedCommandReplayCorruptError(
-        input.claim.entry.id,
-        existing.id,
-        "result_target_id_mismatch",
-      )
-    }
-    return { ...result, replayed: true }
-  }
-
-  const commandResultRef = createCreatedTargetCommandResultReference(
-    input.claim.resultReferenceType,
-    targetId,
-  )
-  const inserted = await insertEntry(tx, {
-    ...copyClaimEntry(input.claim.entry),
-    status: "succeeded",
-    targetType: input.claim.canonicalTargetType,
-    targetId,
-    causationActionId: input.claim.entry.id,
-    idempotencyScope: resultScope(input.claim.idempotency.scope),
-    idempotencyKey: input.claim.idempotency.key,
-    idempotencyFingerprint: input.claim.idempotency.fingerprint,
-    payloads: input.payloads,
-    mutationDetail: {
-      ...input.mutationDetail,
-      commandResultRef,
-      reversalKind: input.mutationDetail?.reversalKind ?? "none",
+export async function buildCreatedTargetCommandFingerprint(
+  input: BuildCreatedTargetCommandFingerprintInput,
+): Promise<string> {
+  return buildActionApprovalCommandFingerprint({
+    actionName: requiredValue(input.actionName, "action name"),
+    actionVersion: requiredValue(input.actionVersion, "action version"),
+    targetType: requiredValue(input.commandTarget.type, "command target type"),
+    targetId: requiredValue(input.commandTarget.id, "command target id"),
+    commandInput: input.commandInput ?? null,
+    approvalPolicy: input.approvalPolicy,
+    capabilityId: requiredValue(input.capabilityId, "capability id"),
+    capabilityVersion: requiredValue(input.capabilityVersion, "capability version"),
+    evaluatedRisk: input.evaluatedRisk,
+    reasonCode: input.approvalReasonCode,
+    createdTarget: {
+      canonicalTargetType: requiredValue(input.canonicalTargetType, "canonical target type"),
+      resultReferenceType: validReferenceType(input.resultReferenceType),
     },
   })
-
-  return {
-    entry: inserted.entry,
-    reference: {
-      type: input.claim.resultReferenceType,
-      id: targetId,
-      value: commandResultRef,
-    },
-    replayed: false,
-  }
 }
 
 export function createCreatedTargetCommandResultReference<TReferenceType extends string>(
@@ -336,40 +268,87 @@ export function createCreatedTargetCommandResultReference<TReferenceType extends
   return `${validReferenceType(referenceType)}:${requiredValue(targetId, "canonical target id")}`
 }
 
-export async function buildCreatedTargetCommandFingerprint(
-  input: BuildCreatedTargetCommandFingerprintInput,
-): Promise<string> {
+async function prepareCommand<TReferenceType extends string>(
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: TReferenceType },
+) {
+  const actor = mapActionLedgerRequestContext(input.context, input)
+  if (actor.principalId === "unknown_request") {
+    throw new TypeError("Created-target command execution requires a concrete request principal")
+  }
   const actionName = requiredValue(input.actionName, "action name")
   const actionVersion = requiredValue(input.actionVersion, "action version")
   const commandTargetType = requiredValue(input.commandTarget.type, "command target type")
   const commandTargetId = requiredValue(input.commandTarget.id, "command target id")
   const canonicalTargetType = requiredValue(input.canonicalTargetType, "canonical target type")
   const resultReferenceType = validReferenceType(input.resultReferenceType)
-  if (
-    !input.policyInputs ||
-    typeof input.policyInputs !== "object" ||
-    Array.isArray(input.policyInputs) ||
-    Object.keys(input.policyInputs).length === 0
-  ) {
-    throw new TypeError(
-      "Created-target command fingerprint policy inputs must be a non-empty object",
-    )
-  }
-
-  return buildIdempotencyFingerprint({
+  const scope = requiredValue(input.idempotency.scope, "idempotency scope")
+  const key = requiredValue(input.idempotency.key, "idempotency key")
+  const fingerprint = requiredValue(input.idempotency.fingerprint, "idempotency fingerprint")
+  const expectedFingerprint = await buildCreatedTargetCommandFingerprint({
     actionName,
     actionVersion,
+    commandTarget: { type: commandTargetType, id: commandTargetId },
+    canonicalTargetType,
+    resultReferenceType,
+    commandInput: input.commandInput,
+    capabilityId: input.capabilityId,
+    capabilityVersion: input.capabilityVersion,
+    evaluatedRisk: input.evaluatedRisk,
+    approvalPolicy: input.approvalPolicy,
+    approvalReasonCode: input.approvalReasonCode,
+  })
+  if (fingerprint !== expectedFingerprint) {
+    throw new ActionLedgerCreatedCommandFingerprintMismatchError(expectedFingerprint, fingerprint)
+  }
+  if (input.approvalPolicy !== "none" || input.approvalId) {
+    throw new ActionLedgerCreatedCommandProtocolError("approval_policy_unsupported")
+  }
+
+  const expectedClaim = buildActionLedgerMutationEntryInput({
+    ...input,
+    actionName,
+    actionVersion,
+    actionKind: input.actionKind ?? "create",
+    status: "requested",
     targetType: commandTargetType,
     targetId: commandTargetId,
-    commandInput: input.commandInput ?? null,
-    policyInputs: {
-      createdTarget: {
-        canonicalTargetType,
-        resultReferenceType,
-      },
-      policy: input.policyInputs,
+    capabilityId: requiredValue(input.capabilityId, "capability id"),
+    capabilityVersion: requiredValue(input.capabilityVersion, "capability version"),
+    idempotencyScope: claimScope(scope),
+    idempotencyKey: key,
+    idempotencyFingerprint: fingerprint,
+    mutationDetail: {
+      ...input.mutationDetail,
+      commandResultRef: null,
+      reversalKind: input.mutationDetail?.reversalKind ?? "none",
     },
   })
+  return {
+    expectedClaim,
+    canonicalTargetType,
+    resultReferenceType,
+    idempotency: { scope, key, fingerprint },
+  }
+}
+
+async function requiredTransaction<T>(
+  db: AnyDrizzleDb,
+  run: (tx: AnyDrizzleDb) => Promise<T>,
+): Promise<T> {
+  if (dbSupportsTransactions(db) === false) {
+    throw new ActionLedgerCreatedCommandTransactionRequiredError()
+  }
+  const transactional = db as AnyDrizzleDb & {
+    transaction?: (callback: (tx: AnyDrizzleDb) => Promise<T>) => Promise<T>
+  }
+  if (typeof transactional.transaction !== "function") {
+    throw new ActionLedgerCreatedCommandTransactionRequiredError()
+  }
+  return transactional.transaction(run)
+}
+
+async function lockCommand(tx: AnyDrizzleDb, scope: string, key: string): Promise<void> {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${scope}:${key}`}, 0))`)
 }
 
 async function findClaim(
@@ -390,19 +369,32 @@ async function findClaim(
   return row?.claim ?? null
 }
 
+async function assertCurrentClaim<TReferenceType extends string>(
+  tx: AnyDrizzleDb,
+  state: CreatedCommandState<TReferenceType>,
+): Promise<void> {
+  const current = await findClaim(tx, claimScope(state.idempotency.scope), state.idempotency.key)
+  if (!current || current.id !== state.claim.id) {
+    throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
+  }
+  try {
+    assertExactEntry(current, state.expectedClaim)
+  } catch {
+    throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
+  }
+}
+
 async function findResultEntry<TReferenceType extends string>(
   tx: AnyDrizzleDb,
-  claim: CreatedTargetCommandClaim<TReferenceType>,
+  state: CreatedCommandState<TReferenceType>,
 ): Promise<ActionLedgerEntry | null> {
   const [row] = await tx
     .select({ result: actionLedgerEntries })
     .from(actionLedgerEntries)
     .where(
       and(
-        eq(actionLedgerEntries.causationActionId, claim.entry.id),
-        eq(actionLedgerEntries.idempotencyScope, resultScope(claim.idempotency.scope)),
-        eq(actionLedgerEntries.idempotencyKey, claim.idempotency.key),
-        eq(actionLedgerEntries.status, "succeeded"),
+        eq(actionLedgerEntries.idempotencyScope, resultScope(state.idempotency.scope)),
+        eq(actionLedgerEntries.idempotencyKey, state.idempotency.key),
       ),
     )
     .limit(1)
@@ -411,117 +403,138 @@ async function findResultEntry<TReferenceType extends string>(
 
 async function readCompletedResult<TReferenceType extends string>(
   tx: AnyDrizzleDb,
-  claim: CreatedTargetCommandClaim<TReferenceType>,
+  state: CreatedCommandState<TReferenceType>,
 ): Promise<CreatedTargetCommandResultMetadata<TReferenceType>> {
-  const resultEntry = await findResultEntry(tx, claim)
-  if (!resultEntry) {
-    throw new ActionLedgerCreatedCommandReplayIncompleteError(claim.entry.id)
-  }
-  return validateCompletedResult(tx, claim, resultEntry)
-}
-
-async function validateCompletedResult<TReferenceType extends string>(
-  tx: AnyDrizzleDb,
-  claim: CreatedTargetCommandClaim<TReferenceType>,
-  resultEntry: ActionLedgerEntry,
-): Promise<CreatedTargetCommandResultMetadata<TReferenceType>> {
-  if (resultEntry.actionName !== claim.entry.actionName) {
-    throw corrupt(claim, resultEntry, "result_action_mismatch")
-  }
-  if (resultEntry.idempotencyFingerprint !== claim.idempotency.fingerprint) {
-    throw corrupt(claim, resultEntry, "result_fingerprint_mismatch")
-  }
-  if (resultEntry.targetType !== claim.canonicalTargetType) {
-    throw corrupt(claim, resultEntry, "result_target_type_mismatch")
-  }
-
+  const entry = await findResultEntry(tx, state)
+  if (!entry) throw new ActionLedgerCreatedCommandReplayIncompleteError(state.claim.id)
+  assertResultIdentity(state, entry)
   const [detail] = await tx
     .select({ commandResultRef: actionMutationDetails.commandResultRef })
     .from(actionMutationDetails)
-    .where(eq(actionMutationDetails.actionId, resultEntry.id))
+    .where(eq(actionMutationDetails.actionId, entry.id))
     .limit(1)
-  const reference = parseResultReference(
-    claim,
-    resultEntry,
-    detail?.commandResultRef ?? null,
-  )
-  if (reference.id !== resultEntry.targetId) {
-    throw corrupt(claim, resultEntry, "result_target_id_mismatch")
+  const reference = parseResultReference(state, entry, detail?.commandResultRef ?? null)
+  if (reference.id !== entry.targetId) {
+    throw corrupt(state, entry, "result_target_id_mismatch")
   }
-  return { entry: resultEntry, reference }
+  return { entry, reference }
+}
+
+async function appendCompletedResult<TValue, TReferenceType extends string>(
+  tx: AnyDrizzleDb,
+  state: CreatedCommandState<TReferenceType>,
+  mutation: CreatedTargetCommandMutation<TValue>,
+): Promise<CreatedTargetCommandResultMetadata<TReferenceType>> {
+  const targetId = requiredValue(mutation.targetId, "canonical target id")
+  const commandResultRef = createCreatedTargetCommandResultReference(
+    state.resultReferenceType,
+    targetId,
+  )
+  const inserted = await insertEntry(tx, {
+    ...copyClaimEntry(state.claim),
+    status: "succeeded",
+    targetType: state.canonicalTargetType,
+    targetId,
+    causationActionId: state.claim.id,
+    idempotencyScope: resultScope(state.idempotency.scope),
+    idempotencyKey: state.idempotency.key,
+    idempotencyFingerprint: state.idempotency.fingerprint,
+    payloads: mutation.payloads,
+    mutationDetail: {
+      ...mutation.mutationDetail,
+      commandResultRef,
+      reversalKind: mutation.mutationDetail?.reversalKind ?? "none",
+    },
+  })
+  return {
+    entry: inserted.entry,
+    reference: {
+      type: state.resultReferenceType,
+      id: targetId,
+      value: commandResultRef,
+    },
+  }
+}
+
+function assertExactEntry(actual: ActionLedgerEntry, expected: AppendActionLedgerEntryInput): void {
+  for (const field of CLAIM_IDENTITY_FIELDS) {
+    if (actual[field] !== expected[field]) {
+      throw new ActionLedgerIdempotencyConflictError(actual.id)
+    }
+  }
+}
+
+function assertResultIdentity<TReferenceType extends string>(
+  state: CreatedCommandState<TReferenceType>,
+  entry: ActionLedgerEntry,
+): void {
+  if (entry.actionName !== state.claim.actionName) {
+    throw corrupt(state, entry, "result_action_mismatch")
+  }
+  if (entry.idempotencyFingerprint !== state.idempotency.fingerprint) {
+    throw corrupt(state, entry, "result_fingerprint_mismatch")
+  }
+  if (entry.targetType !== state.canonicalTargetType) {
+    throw corrupt(state, entry, "result_target_type_mismatch")
+  }
+  for (const field of RESULT_CONTINUITY_FIELDS) {
+    if (entry[field] !== state.claim[field]) {
+      throw corrupt(state, entry, "result_identity_mismatch")
+    }
+  }
+  if (
+    entry.status !== "succeeded" ||
+    entry.causationActionId !== state.claim.id ||
+    entry.idempotencyScope !== resultScope(state.idempotency.scope) ||
+    entry.idempotencyKey !== state.idempotency.key ||
+    entry.approvalId !== state.claim.approvalId
+  ) {
+    throw corrupt(state, entry, "result_identity_mismatch")
+  }
 }
 
 function parseResultReference<TReferenceType extends string>(
-  claim: CreatedTargetCommandClaim<TReferenceType>,
-  resultEntry: ActionLedgerEntry,
+  state: CreatedCommandState<TReferenceType>,
+  entry: ActionLedgerEntry,
   value: string | null,
 ): CreatedTargetCommandResultMetadata<TReferenceType>["reference"] {
-  if (!value) {
-    throw corrupt(claim, resultEntry, "malformed_result_reference")
-  }
+  if (!value) throw corrupt(state, entry, "malformed_result_reference")
   const separator = value.indexOf(":")
   if (separator <= 0 || separator === value.length - 1) {
-    throw corrupt(claim, resultEntry, "malformed_result_reference")
+    throw corrupt(state, entry, "malformed_result_reference")
   }
   const type = value.slice(0, separator)
-  const id = value.slice(separator + 1).trim()
-  if (!id) {
-    throw corrupt(claim, resultEntry, "malformed_result_reference")
+  const rawId = value.slice(separator + 1)
+  const id = rawId.trim()
+  if (!id) throw corrupt(state, entry, "malformed_result_reference")
+  if (type !== state.resultReferenceType) {
+    throw corrupt(state, entry, "wrong_result_reference_type")
   }
-  if (type !== claim.resultReferenceType) {
-    throw corrupt(claim, resultEntry, "wrong_result_reference_type")
+  if (value !== `${state.resultReferenceType}:${id}`) {
+    throw corrupt(state, entry, "malformed_result_reference")
   }
   return {
-    type: claim.resultReferenceType,
+    type: state.resultReferenceType,
     id,
     value: value as CreatedTargetCommandResultReference<TReferenceType>,
   }
 }
 
-function assertExactClaim(
-  existing: ActionLedgerEntry,
-  expected: {
-    actionName: string
-    actionVersion: string
-    targetType: string
-    targetId: string
-    fingerprint: string
-  },
-): void {
-  if (
-    existing.actionName !== expected.actionName ||
-    existing.actionVersion !== expected.actionVersion ||
-    existing.targetType !== expected.targetType ||
-    existing.targetId !== expected.targetId ||
-    existing.idempotencyFingerprint !== expected.fingerprint
-  ) {
-    throw new ActionLedgerIdempotencyConflictError(existing.id)
-  }
-}
-
-function toClaim<TReferenceType extends string>(
-  entry: ActionLedgerEntry,
-  input: {
+function toState<TReferenceType extends string>(
+  claim: ActionLedgerEntry,
+  prepared: {
+    expectedClaim: AppendActionLedgerEntryInput
     canonicalTargetType: string
     resultReferenceType: TReferenceType
-    scope: string
-    key: string
-    fingerprint: string
+    idempotency: { scope: string; key: string; fingerprint: string }
   },
-): CreatedTargetCommandClaim<TReferenceType> {
-  return {
-    entry,
-    canonicalTargetType: input.canonicalTargetType,
-    resultReferenceType: input.resultReferenceType,
-    idempotency: {
-      scope: input.scope,
-      key: input.key,
-      fingerprint: input.fingerprint,
-    },
-  }
+): CreatedCommandState<TReferenceType> {
+  return { claim, ...prepared }
 }
 
-function copyClaimEntry(entry: ActionLedgerEntry): Omit<
+function copyClaimEntry(
+  entry: ActionLedgerEntry,
+): Omit<
   AppendActionLedgerEntryInput,
   | "status"
   | "targetType"
@@ -561,35 +574,72 @@ function copyClaimEntry(entry: ActionLedgerEntry): Omit<
 }
 
 function corrupt<TReferenceType extends string>(
-  claim: CreatedTargetCommandClaim<TReferenceType>,
-  resultEntry: ActionLedgerEntry,
+  state: CreatedCommandState<TReferenceType>,
+  entry: ActionLedgerEntry,
   reason: ActionLedgerCreatedCommandReplayCorruptReason,
 ): ActionLedgerCreatedCommandReplayCorruptError {
-  return new ActionLedgerCreatedCommandReplayCorruptError(
-    claim.entry.id,
-    resultEntry.id,
-    reason,
-  )
+  return new ActionLedgerCreatedCommandReplayCorruptError(state.claim.id, entry.id, reason)
+}
+
+const CLAIM_IDENTITY_FIELDS = [
+  "actionName",
+  "actionVersion",
+  "actionKind",
+  "status",
+  "evaluatedRisk",
+  "actorType",
+  "principalType",
+  "principalId",
+  "principalSubtype",
+  "internalRequest",
+  "delegatedByPrincipalType",
+  "delegatedByPrincipalId",
+  "delegationId",
+  "organizationId",
+  "routeOrToolName",
+  "causationActionId",
+  "idempotencyScope",
+  "idempotencyKey",
+  "idempotencyFingerprint",
+  "targetType",
+  "targetId",
+  "capabilityId",
+  "capabilityVersion",
+  "authorizationSource",
+  "approvalId",
+] as const satisfies readonly (keyof ActionLedgerEntry)[]
+
+const RESULT_CONTINUITY_FIELDS = [
+  "actionVersion",
+  "actionKind",
+  "evaluatedRisk",
+  "actorType",
+  "principalType",
+  "principalId",
+  "principalSubtype",
+  "sessionId",
+  "apiTokenId",
+  "internalRequest",
+  "delegatedByPrincipalType",
+  "delegatedByPrincipalId",
+  "delegationId",
+  "callerType",
+  "organizationId",
+  "routeOrToolName",
+  "workflowRunId",
+  "workflowStepId",
+  "correlationId",
+  "capabilityId",
+  "capabilityVersion",
+  "authorizationSource",
+] as const satisfies readonly (keyof ActionLedgerEntry)[]
+
+function claimScope(scope: string): string {
+  return `${scope}${CLAIM_SCOPE_SUFFIX}`
 }
 
 function resultScope(scope: string): string {
   return `${scope}${RESULT_SCOPE_SUFFIX}`
-}
-
-function assertConcretePrincipal(input: ClaimCreatedTargetCommandInput): void {
-  const context = input.context ?? {}
-  const candidates = [
-    context.userId,
-    context.agentId,
-    context.workflowPrincipalId,
-    context.workflowRunId,
-    context.apiTokenId,
-    context.apiKeyId,
-    input.fallbackPrincipalId,
-  ]
-  if (!candidates.some((value) => typeof value === "string" && value.trim().length > 0)) {
-    throw new TypeError("Created-target command claim requires a concrete request principal")
-  }
 }
 
 function requiredValue(value: string, label: string): string {
@@ -598,9 +648,7 @@ function requiredValue(value: string, label: string): string {
   return normalized
 }
 
-function validReferenceType<TReferenceType extends string>(
-  value: TReferenceType,
-): TReferenceType {
+function validReferenceType<TReferenceType extends string>(value: TReferenceType): TReferenceType {
   const normalized = requiredValue(value, "result reference type")
   if (normalized.includes(":")) {
     throw new TypeError("Created-target command result reference type cannot contain ':'")

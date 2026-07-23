@@ -3,12 +3,13 @@ import { describe, expect, it } from "vitest"
 
 import {
   ActionLedgerCreatedCommandFingerprintMismatchError,
+  ActionLedgerCreatedCommandProtocolError,
   ActionLedgerCreatedCommandReplayCorruptError,
   ActionLedgerCreatedCommandReplayIncompleteError,
+  ActionLedgerCreatedCommandTransactionRequiredError,
   buildCreatedTargetCommandFingerprint,
-  claimCreatedTargetCommand,
-  completeCreatedTargetCommand,
-  type ClaimCreatedTargetCommandInput,
+  type ExecuteCreatedTargetCommandInput,
+  executeCreatedTargetCommand,
 } from "../../src/created-command.js"
 import type {
   ActionLedgerEntry,
@@ -20,88 +21,33 @@ import { actionLedgerEntries, actionMutationDetails } from "../../src/schema.js"
 import { ActionLedgerIdempotencyConflictError } from "../../src/service.js"
 import { makeEntry, makeMutationDetail } from "./service-fixtures.js"
 
+const POLICY_DRIFTS: Array<[string, Partial<ExecuteCreatedTargetCommandInput>]> = [
+  ["capability", { capabilityId: "relationships:person:create:v2" }],
+  ["capability version", { capabilityVersion: "v2" }],
+  ["risk", { evaluatedRisk: "critical" }],
+  ["approval", { approvalPolicy: "conditional" }],
+  ["reason", { approvalReasonCode: "different_reason" }],
+  ["canonical target", { canonicalTargetType: "relationship-organization" }],
+  ["reference type", { resultReferenceType: "wrong-ref" }],
+]
+
 describe("created-target command protocol", () => {
-  it("locks and appends the requested command claim before domain mutation", async () => {
+  it("owns claim, domain mutation, and canonical completion in one transaction", async () => {
     const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
+    const input = await makeInput()
 
-    const claimed = await claimCreatedTargetCommand(harness.db, baseInput)
-    harness.events.push("domain-mutation")
-    const completed = await completeCreatedTargetCommand(harness.db, {
-      claim: claimed.claim,
-      targetId: "person_1",
-      mutationDetail: {
-        summary: "Person created",
-        reversalKind: "domain_command",
-        reversalCommandId: "relationship.person.delete",
-        reversalCommandVersion: "v1",
-      },
-    })
+    const result = await executePersonCommand(harness.db, input)
 
-    expect(claimed).toMatchObject({
+    expect(result).toMatchObject({
       replayed: false,
-      result: null,
-      claim: {
-        entry: {
-          status: "requested",
-          targetType: "relationship-person-create-command",
-          targetId: "command_1",
-          approvalId: "appr_1",
-          causationActionId: "alge_approved_request",
-          idempotencyScope: claimScope("relationships.create_person:usr_1"),
-          idempotencyKey: "idem_1",
-          idempotencyFingerprint: baseInput.idempotency.fingerprint,
-        },
-      },
-    })
-    expect(completed).toMatchObject({
-      replayed: false,
-      entry: {
-        status: "succeeded",
-        targetType: "relationship-person",
-        targetId: "person_1",
-        causationActionId: claimed.claim.entry.id,
-        approvalId: "appr_1",
-        idempotencyScope: resultScope("relationships.create_person:usr_1"),
-        idempotencyKey: "idem_1",
-        idempotencyFingerprint: baseInput.idempotency.fingerprint,
-      },
-      reference: {
-        type: "relationship-person-ref",
-        id: "person_1",
-        value: "relationship-person-ref:person_1",
-      },
-    })
-    expect(harness.events.indexOf(`entry:${claimed.claim.entry.id}:requested`)).toBeLessThan(
-      harness.events.indexOf("domain-mutation"),
-    )
-    expect(harness.mutationDetails.find((row) => row.actionId === completed.entry.id)).toMatchObject(
-      {
-        commandResultRef: "relationship-person-ref:person_1",
-      },
-    )
-  })
-
-  it("returns canonical result metadata for an exact replay without another insert", async () => {
-    const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-    await completeCreatedTargetCommand(harness.db, {
-      claim: first.claim,
-      targetId: "person_1",
-    })
-    const entryCount = harness.entries.length
-
-    const replay = await claimCreatedTargetCommand(harness.db, baseInput)
-
-    expect(replay).toMatchObject({
-      replayed: true,
-      claim: { entry: { id: first.claim.entry.id } },
+      value: { id: "person_1" },
       result: {
         entry: {
+          status: "succeeded",
           targetType: "relationship-person",
           targetId: "person_1",
-          causationActionId: first.claim.entry.id,
+          approvalId: null,
+          idempotencyFingerprint: input.idempotency.fingerprint,
         },
         reference: {
           type: "relationship-person-ref",
@@ -110,203 +56,335 @@ describe("created-target command protocol", () => {
         },
       },
     })
-    expect(harness.entries).toHaveLength(entryCount)
-    expect(harness.advisoryLocks).toHaveLength(2)
+    const claim = harness.entries.find((entry) => entry.status === "requested")
+    expect(claim).toMatchObject({
+      targetType: "relationship-person-create-command",
+      targetId: "command_1",
+      causationActionId: "alge_parent",
+      approvalId: null,
+    })
+    expect(result.result.entry.causationActionId).toBe(claim?.id)
+    expect(harness.events).toEqual([
+      "begin",
+      "advisory-lock",
+      "entry:alge_1:requested",
+      "detail:alge_1",
+      "domain-create",
+      "entry:alge_2:succeeded",
+      "detail:alge_2",
+      "commit",
+    ])
   })
 
-  it("rejects the same scope and key when the command fingerprint changes", async () => {
+  it("replays the typed result without invoking domain creation twice", async () => {
     const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-    const differentCommand = await makeInput({
-      commandInput: { displayName: "Different person" },
-    })
+    const input = await makeInput()
+    await executePersonCommand(harness.db, input)
 
-    await expect(
-      claimCreatedTargetCommand(harness.db, differentCommand),
-    ).rejects.toMatchObject({
-      name: ActionLedgerIdempotencyConflictError.name,
-      existingActionId: first.claim.entry.id,
+    const replay = await executePersonCommand(harness.db, input)
+
+    expect(replay).toMatchObject({
+      replayed: true,
+      value: { id: "person_1" },
+      result: { reference: { id: "person_1" } },
     })
+    expect(harness.events.filter((event) => event === "domain-create")).toHaveLength(1)
+    expect(harness.events.filter((event) => event === "domain-replay")).toHaveLength(1)
   })
 
-  it("rejects the same scope and key when the stable command identity changes", async () => {
+  it("allows exact retries from a new session, correlation, and workflow step", async () => {
     const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-    const differentCommand = await makeInput({ commandTargetId: "command_2" })
+    const input = await makeInput()
+    await executePersonCommand(harness.db, input)
+    const retry = {
+      ...input,
+      context: {
+        ...input.context,
+        sessionId: "session_retry",
+        correlationId: "correlation_retry",
+        workflowStepId: "step_retry",
+      },
+    }
 
-    await expect(
-      claimCreatedTargetCommand(harness.db, differentCommand),
-    ).rejects.toMatchObject({
-      name: ActionLedgerIdempotencyConflictError.name,
-      existingActionId: first.claim.entry.id,
-    })
-  })
-
-  it("fails replay distinctly when a committed claim has no result", async () => {
-    const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-
-    await expect(claimCreatedTargetCommand(harness.db, baseInput)).rejects.toMatchObject({
-      name: ActionLedgerCreatedCommandReplayIncompleteError.name,
-      claimActionId: first.claim.entry.id,
-    })
-  })
-
-  it.each([
-    ["malformed_result_reference", "not-a-reference"],
-    ["wrong_result_reference_type", "wrong-ref:person_1"],
-    ["result_target_id_mismatch", "relationship-person-ref:person_2"],
-  ] as const)("fails closed for %s", async (reason, commandResultRef) => {
-    const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-    const completed = await completeCreatedTargetCommand(harness.db, {
-      claim: first.claim,
-      targetId: "person_1",
-    })
-    const detail = harness.mutationDetails.find((row) => row.actionId === completed.entry.id)
-    if (!detail) throw new Error("expected result mutation detail")
-    detail.commandResultRef = commandResultRef
-
-    await expect(claimCreatedTargetCommand(harness.db, baseInput)).rejects.toMatchObject({
-      name: ActionLedgerCreatedCommandReplayCorruptError.name,
-      claimActionId: first.claim.entry.id,
-      resultActionId: completed.entry.id,
-      reason,
-    })
-  })
-
-  it.each([
-    ["result_target_type_mismatch", { targetType: "wrong-target" }],
-    ["result_action_mismatch", { actionName: "wrong.action" }],
-    ["result_fingerprint_mismatch", { idempotencyFingerprint: "sha256:corrupt" }],
-  ] as const)("fails closed for corrupt result metadata: %s", async (reason, patch) => {
-    const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-    const first = await claimCreatedTargetCommand(harness.db, baseInput)
-    const completed = await completeCreatedTargetCommand(harness.db, {
-      claim: first.claim,
-      targetId: "person_1",
-    })
-    Object.assign(completed.entry, patch)
-
-    await expect(claimCreatedTargetCommand(harness.db, baseInput)).rejects.toMatchObject({
-      name: ActionLedgerCreatedCommandReplayCorruptError.name,
-      claimActionId: first.claim.entry.id,
-      resultActionId: completed.entry.id,
-      reason,
-    })
-  })
-
-  it("rejects fingerprints that omit the created-target and policy metadata", async () => {
-    const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
-
-    await expect(
-      claimCreatedTargetCommand(harness.db, {
-        ...baseInput,
-        idempotency: {
-          ...baseInput.idempotency,
-          fingerprint: "sha256:caller-supplied-without-required-metadata",
+    await expect(executePersonCommand(harness.db, retry)).resolves.toMatchObject({
+      replayed: true,
+      result: {
+        entry: {
+          sessionId: null,
+          correlationId: null,
+          workflowStepId: null,
         },
+      },
+    })
+  })
+
+  it.each([
+    ["principal", { userId: "usr_other" }],
+    ["organization", { organizationId: "org_other" }],
+  ])("rejects retry when immutable %s identity changes", async (_label, contextPatch) => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+    await executePersonCommand(harness.db, input)
+
+    await expect(
+      executePersonCommand(harness.db, {
+        ...input,
+        context: { ...input.context, ...contextPatch },
       }),
     ).rejects.toMatchObject({
+      name: ActionLedgerIdempotencyConflictError.name,
+      existingActionId: "alge_1",
+    })
+  })
+
+  it("uses mapped principal semantics and rejects mismatched caller types", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({
+      context: { agentId: "agent_1", callerType: "session" },
+    })
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toThrow(
+      "requires a concrete request principal",
+    )
+    expect(harness.events).toEqual([])
+  })
+
+  it("rejects API-key identity when callerType does not select API-key mapping", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({
+      context: { apiTokenId: "key_1", callerType: "agent" },
+    })
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toThrow(
+      "requires a concrete request principal",
+    )
+    expect(harness.events).toEqual([])
+  })
+
+  it.each(
+    POLICY_DRIFTS,
+  )("rejects %s drift against the supplied fingerprint", async (_label, patch) => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+
+    await expect(executePersonCommand(harness.db, { ...input, ...patch })).rejects.toMatchObject({
       name: ActionLedgerCreatedCommandFingerprintMismatchError.name,
-      receivedFingerprint: "sha256:caller-supplied-without-required-metadata",
+      receivedFingerprint: input.idempotency.fingerprint,
     })
-    expect(harness.advisoryLocks).toEqual([])
+    expect(harness.events).toEqual([])
   })
 
-  it("requires a concrete principal before acquiring the claim lock", async () => {
+  it("conflicts when the same scope/key identifies a different exact command", async () => {
     const harness = makeCreatedCommandDb()
-    const baseInput = await makeInput()
+    const first = await makeInput()
+    await executePersonCommand(harness.db, first)
+    const changed = await makeInput({ commandInput: { displayName: "Different person" } })
 
-    await expect(
-      claimCreatedTargetCommand(harness.db, {
-        ...baseInput,
-        context: {},
-      }),
-    ).rejects.toThrow("requires a concrete request principal")
-    expect(harness.advisoryLocks).toEqual([])
+    await expect(executePersonCommand(harness.db, changed)).rejects.toMatchObject({
+      name: ActionLedgerIdempotencyConflictError.name,
+      existingActionId: "alge_1",
+    })
   })
 
-  it("requires explicit policy inputs in the command fingerprint", async () => {
+  it("rejects replay when the stored claim tenant identity drifts", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+    await executePersonCommand(harness.db, input)
+    const claim = harness.entries.find((entry) => entry.status === "requested")
+    if (!claim) throw new Error("missing claim")
+    claim.organizationId = "org_other"
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerIdempotencyConflictError.name,
+      existingActionId: claim.id,
+    })
+  })
+
+  it("re-reads the opaque claim and fails if domain code changes it", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+
     await expect(
-      buildCreatedTargetCommandFingerprint({
-        actionName: "relationship.person.create",
-        actionVersion: "v1",
-        commandTarget: {
-          type: "relationship-person-create-command",
-          id: "command_1",
+      executeCreatedTargetCommand(harness.db, input, {
+        async create() {
+          const claim = harness.entries.find((entry) => entry.status === "requested")
+          if (!claim) throw new Error("missing claim")
+          claim.organizationId = "org_tampered"
+          return { value: { id: "person_1" }, targetId: "person_1" }
         },
-        canonicalTargetType: "relationship-person",
-        resultReferenceType: "relationship-person-ref",
-        commandInput: { displayName: "Example person" },
-        policyInputs: {},
+        async replay(_tx, result) {
+          return { id: result.reference.id }
+        },
       }),
-    ).rejects.toThrow("policy inputs must be a non-empty object")
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "claim_changed_during_mutation",
+    })
+  })
+
+  it("fails closed if domain code manufactures a result during creation", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+
+    await expect(
+      executeCreatedTargetCommand(harness.db, input, {
+        async create() {
+          const claim = harness.entries.find((entry) => entry.status === "requested")
+          if (!claim) throw new Error("missing claim")
+          harness.entries.push(
+            makeEntry({
+              ...claim,
+              id: "alge_forged_result",
+              status: "succeeded",
+              targetType: "relationship-person",
+              targetId: "person_1",
+              causationActionId: claim.id,
+              idempotencyScope: resultScope(input.idempotency.scope),
+            }),
+          )
+          return { value: { id: "person_1" }, targetId: "person_1" }
+        },
+        async replay(_tx, result) {
+          return { id: result.reference.id }
+        },
+      }),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "result_created_during_mutation",
+    })
+  })
+
+  it.each([
+    ["organizationId", "org_other"],
+    ["principalId", "usr_other"],
+    ["approvalId", "appr_other"],
+    ["capabilityVersion", "v2"],
+    ["authorizationSource", "other_source"],
+    ["workflowRunId", "workflow_other"],
+    ["causationActionId", "alge_other_claim"],
+  ] as const)("validates immutable replay continuity for %s", async (field, value) => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+    const first = await executePersonCommand(harness.db, input)
+    Object.assign(first.result.entry, { [field]: value })
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandReplayCorruptError.name,
+      resultActionId: first.result.entry.id,
+      reason: "result_identity_mismatch",
+    })
+  })
+
+  it.each([
+    ["leading", "relationship-person-ref: person_1"],
+    ["trailing", "relationship-person-ref:person_1 "],
+  ])("rejects %s result-reference id whitespace as noncanonical", async (_label, value) => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+    const first = await executePersonCommand(harness.db, input)
+    const detail = harness.mutationDetails.find((row) => row.actionId === first.result.entry.id)
+    if (!detail) throw new Error("missing canonical result detail")
+    detail.commandResultRef = value
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandReplayCorruptError.name,
+      resultActionId: first.result.entry.id,
+      reason: "malformed_result_reference",
+    })
+  })
+
+  it("distinguishes a committed claim with no canonical result", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+    await executePersonCommand(harness.db, input)
+    harness.entries.splice(
+      harness.entries.findIndex((entry) => entry.status === "succeeded"),
+      1,
+    )
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandReplayIncompleteError.name,
+      claimActionId: "alge_1",
+    })
+  })
+
+  it("requires a transaction-capable database before claiming", async () => {
+    const input = await makeInput()
+
+    await expect(executePersonCommand({} as AnyDrizzleDb, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandTransactionRequiredError.name,
+    })
+  })
+
+  it("fails closed for approval-bearing created commands until control propagation exists", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({ approvalPolicy: "required" })
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "approval_policy_unsupported",
+    })
+    expect(harness.events).toEqual([])
   })
 })
 
+async function executePersonCommand(db: AnyDrizzleDb, input: ExecuteCreatedTargetCommandInput) {
+  return executeCreatedTargetCommand(db, input, {
+    async create() {
+      const harness = db as AnyDrizzleDb & { __events?: string[] }
+      harness.__events?.push("domain-create")
+      return { value: { id: "person_1" }, targetId: "person_1" }
+    },
+    async replay(_tx, result) {
+      const harness = db as AnyDrizzleDb & { __events?: string[] }
+      harness.__events?.push("domain-replay")
+      return { id: result.reference.id }
+    },
+  })
+}
+
 async function makeInput(
   options: {
-    commandTargetId?: string
+    context?: ExecuteCreatedTargetCommandInput["context"]
     commandInput?: unknown
+    approvalPolicy?: ExecuteCreatedTargetCommandInput["approvalPolicy"]
   } = {},
-): Promise<ClaimCreatedTargetCommandInput> {
-  const commandTarget = {
-    type: "relationship-person-create-command",
-    id: options.commandTargetId ?? "command_1",
-  }
+): Promise<ExecuteCreatedTargetCommandInput> {
   const commandInput = options.commandInput ?? { displayName: "Example person" }
   const fingerprintInput = {
+    actionName: "relationship.person.create",
+    actionVersion: "v1",
+    commandTarget: {
+      type: "relationship-person-create-command",
+      id: "command_1",
+    },
+    canonicalTargetType: "relationship-person",
+    resultReferenceType: "relationship-person-ref",
     commandInput,
-    policyInputs: {
-      approval: "required",
-      capabilityId: "relationships:person:create",
-      capabilityVersion: "v1",
-      evaluatedRisk: "high",
-    },
-  }
-  const fingerprint = await buildCreatedTargetCommandFingerprint({
-    actionName: "relationship.person.create",
-    actionVersion: "v1",
-    commandTarget,
-    canonicalTargetType: "relationship-person",
-    resultReferenceType: "relationship-person-ref",
-    ...fingerprintInput,
-  })
-
-  return {
-    context: {
-      userId: "usr_1",
-      actor: "staff",
-      organizationId: "org_1",
-    },
-    actionName: "relationship.person.create",
-    actionVersion: "v1",
-    evaluatedRisk: "high",
-    commandTarget,
-    canonicalTargetType: "relationship-person",
-    resultReferenceType: "relationship-person-ref",
-    routeOrToolName: "relationships.create_person",
     capabilityId: "relationships:person:create",
     capabilityVersion: "v1",
+    evaluatedRisk: "high" as const,
+    approvalPolicy: options.approvalPolicy ?? ("none" as const),
+    approvalReasonCode: "agent_created_person",
+  }
+  return {
+    context:
+      options.context ??
+      ({
+        userId: "usr_1",
+        callerType: "session",
+        actor: "staff",
+        organizationId: "org_1",
+        workflowRunId: "workflow_1",
+      } satisfies ExecuteCreatedTargetCommandInput["context"]),
+    ...fingerprintInput,
+    routeOrToolName: "relationships.create_person",
     authorizationSource: "relationships.create_person.handler",
-    approvalId: "appr_1",
-    causationActionId: "alge_approved_request",
+    causationActionId: "alge_parent",
     idempotency: {
       scope: "relationships.create_person:usr_1",
       key: "idem_1",
-      fingerprint,
-    },
-    fingerprintInput,
-    mutationDetail: {
-      commandInputRef: "blob://commands/command_1",
-      summary: "Create person command claimed",
+      fingerprint: await buildCreatedTargetCommandFingerprint(fingerprintInput),
     },
   }
 }
@@ -315,11 +393,21 @@ function makeCreatedCommandDb() {
   const entries: ActionLedgerEntry[] = []
   const mutationDetails: ActionMutationDetail[] = []
   const events: string[] = []
-  const advisoryLocks: unknown[] = []
 
   const db = {
-    execute(query: unknown) {
-      advisoryLocks.push(query)
+    __events: events,
+    async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+      events.push("begin")
+      try {
+        const result = await callback(db as unknown as AnyDrizzleDb)
+        events.push("commit")
+        return result
+      } catch (error) {
+        events.push("rollback")
+        throw error
+      }
+    },
+    execute() {
       events.push("advisory-lock")
       return Promise.resolve([])
     },
@@ -404,7 +492,6 @@ function makeCreatedCommandDb() {
               },
             }
           }
-
           const input = values as NewActionMutationDetail
           const detail = makeMutationDetail({
             ...input,
@@ -412,13 +499,6 @@ function makeCreatedCommandDb() {
             commandResultRef: input.commandResultRef ?? null,
             summary: input.summary ?? null,
             reversalKind: input.reversalKind ?? "none",
-            reversalCommandId: input.reversalCommandId ?? null,
-            reversalCommandVersion: input.reversalCommandVersion ?? null,
-            reversalArgsRef: input.reversalArgsRef ?? null,
-            reversalStateProjection: input.reversalStateProjection ?? null,
-            reversalOutcomeProjection: input.reversalOutcomeProjection ?? null,
-            reversesActionId: input.reversesActionId ?? null,
-            reversedByActionIdProjection: input.reversedByActionIdProjection ?? null,
           })
           mutationDetails.push(detail)
           events.push(`detail:${detail.actionId}`)
@@ -426,16 +506,9 @@ function makeCreatedCommandDb() {
         },
       }
     },
-    transaction() {
-      throw new Error("created-command helpers must use the supplied transaction handle directly")
-    },
-  } as unknown as AnyDrizzleDb
+  } as unknown as AnyDrizzleDb & { __events: string[] }
 
-  return { db, entries, mutationDetails, events, advisoryLocks }
-}
-
-function claimScope(scope: string): string {
-  return `${scope}:created-command-claim`
+  return { db, entries, mutationDetails, events }
 }
 
 function resultScope(scope: string): string {

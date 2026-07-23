@@ -36,7 +36,8 @@ data** validated by an `outputSchema` — never transport envelopes or presentat
   claims a stable command key before mutation, returns the prior typed reference on exact replay,
   and commits the claim, domain mutation, and canonical generated-target result together. MCP never
   asks callers to invent `_voyant.targetId` for these actions. A post-dispatch target extractor is
-  not a durable created-target strategy.
+  not a durable created-target strategy. Approval-bearing created targets remain unavailable until
+  MCP propagates their approval controls into the handler's request-scoped context.
 - Authorization is **not** enforced in the registry — the transport binds each tool's
   `requiredScopes` to `hasApiKeyPermission` (AND semantics).
 

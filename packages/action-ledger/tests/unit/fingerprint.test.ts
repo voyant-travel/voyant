@@ -115,4 +115,55 @@ describe("buildActionApprovalCommandFingerprint", () => {
 
     expect(first).not.toBe(second)
   })
+
+  test("binds created-target policy metadata into the approval envelope", async () => {
+    const base = {
+      actionName: "cruise.booking.create",
+      actionVersion: "v1",
+      targetType: "cruise-booking-create-command",
+      targetId: "command_123",
+      commandInput: { sailingId: "sailing_1" },
+      approvalPolicy: "required" as const,
+      capabilityId: "cruises:booking:create",
+      capabilityVersion: "v1",
+      evaluatedRisk: "high" as const,
+      reasonCode: "high_value_booking",
+    }
+    const first = await buildActionApprovalCommandFingerprint({
+      ...base,
+      createdTarget: {
+        canonicalTargetType: "cruise-booking",
+        resultReferenceType: "cruise-booking-ref",
+      },
+    })
+    const drifted = await buildActionApprovalCommandFingerprint({
+      ...base,
+      createdTarget: {
+        canonicalTargetType: "cruise-booking",
+        resultReferenceType: "wrong-ref",
+      },
+    })
+
+    expect(first).not.toBe(drifted)
+    await expect(
+      buildIdempotencyFingerprint({
+        actionName: base.actionName,
+        actionVersion: base.actionVersion,
+        targetType: base.targetType,
+        targetId: base.targetId,
+        commandInput: base.commandInput,
+        policyInputs: {
+          approvalPolicy: base.approvalPolicy,
+          capabilityId: base.capabilityId,
+          capabilityVersion: base.capabilityVersion,
+          evaluatedRisk: base.evaluatedRisk,
+          reasonCode: base.reasonCode,
+          createdTarget: {
+            canonicalTargetType: "cruise-booking",
+            resultReferenceType: "cruise-booking-ref",
+          },
+        },
+      }),
+    ).resolves.toBe(first)
+  })
 })

@@ -2,6 +2,7 @@
 "@voyant-travel/action-ledger": minor
 ---
 
-Add a reusable transactional created-target command protocol with advisory-lock
-claiming, exact replay, canonical typed result references, and distinct
-fail-closed errors for incomplete or corrupt durable results.
+Add an owned-transaction created-target command executor with advisory-lock
+claiming, typed policy fingerprints, opaque claim revalidation, exact replay,
+canonical result references, and fail-closed approval handling where `none` is
+the only admitted no-approval policy.
