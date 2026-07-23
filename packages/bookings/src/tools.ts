@@ -6,7 +6,9 @@
  * `list_bookings` / `get_booking` return non-PII booking state (`bookings:read`).
  * PII fields are a separate concern gated on `bookings-pii:read` (see the booking
  * PII surface) and are not exposed here.
- * `cancel_booking` always uses an action-ledger approval before execution.
+ * `reserve_booking` owns the bookings-only hold flow with handler-owned
+ * idempotency. `cancel_booking` always uses an action-ledger approval before
+ * execution.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
@@ -58,7 +60,7 @@ import {
   updateProductContactRequirementTool as updateProductContactRequirementDefinition,
 } from "./requirements/tools.js"
 import { bookingToolSchema } from "./tool-output-schemas.js"
-import { bookingListQuerySchema } from "./validation.js"
+import { bookingListQuerySchema, reserveBookingSchema } from "./validation.js"
 
 export interface BookingsToolServices {
   listBookings(query: z.infer<typeof bookingListQuerySchema>): Promise<unknown>
@@ -74,6 +76,7 @@ export interface BookingsToolServices {
     idempotencyKey: string
     approvalId?: string
   }): Promise<unknown>
+  reserveBooking(input: z.infer<typeof reserveBookingToolInputSchema>): Promise<unknown>
 }
 
 export type BookingsToolContext = ToolContext & { bookings?: BookingsToolServices }
@@ -206,7 +209,63 @@ export const cancelBookingTool = defineTool<
   },
 })
 
-export const bookingsTools = [listBookingsTool, getBookingTool, cancelBookingTool] as const
+export const reserveBookingToolInputSchema = z.object({
+  reservation: reserveBookingSchema,
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .describe("Stable key used to replay this exact reservation command."),
+})
+
+export const reservedBookingReferenceSchema = z.object({
+  id: z.string(),
+  bookingNumber: z.string(),
+})
+
+export const reserveBookingToolOutputSchema = z.object({
+  status: z.literal("reserved"),
+  booking: reservedBookingReferenceSchema,
+  replayed: z.boolean(),
+})
+
+export const reserveBookingTool = defineTool<
+  z.infer<typeof reserveBookingToolInputSchema>,
+  z.infer<typeof reserveBookingToolOutputSchema>,
+  BookingsToolContext
+>({
+  owner: "@voyant-travel/bookings",
+  capabilityId: "@voyant-travel/bookings#tool.reserve-booking",
+  capabilityVersion: "v1",
+  name: "reserve_booking",
+  description:
+    "Reserve availability and create an on-hold booking. Exact retries return the original booking reference.",
+  inputSchema: reserveBookingToolInputSchema,
+  outputSchema: reserveBookingToolOutputSchema,
+  requiredScopes: ["bookings:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "destructive",
+  riskPolicy: {
+    destructive: true,
+    reversible: true,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write"],
+  },
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  async handler(input, ctx) {
+    return reserveBookingToolOutputSchema.parse(await bookings(ctx).reserveBooking(input))
+  },
+})
+
+export const bookingsTools = [
+  listBookingsTool,
+  getBookingTool,
+  reserveBookingTool,
+  cancelBookingTool,
+] as const
 
 // Extension Tools are wrapped at the package's canonical `./tools` entry so
 // deployment graph selection, MCP discovery, and manifest convergence all use

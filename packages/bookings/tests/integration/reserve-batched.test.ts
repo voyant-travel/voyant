@@ -1,3 +1,4 @@
+import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -392,5 +393,89 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     })
 
     expect(result.status).toBe("slot_not_found")
+  })
+
+  it("replays an audited reservation without consuming capacity twice", async () => {
+    const product = await seedProduct("Idempotent departure")
+    const slot = await seedSlot(product.id, "2026-09-03", 2)
+    const reservation = {
+      bookingNumber: nextBookingNumber(),
+      sellCurrency: "EUR",
+      sourceType: "manual" as const,
+      holdMinutes: 30,
+      items: [
+        {
+          title: "Reserved seat",
+          itemType: "unit" as const,
+          quantity: 1,
+          sellCurrency: "EUR",
+          allocationType: "unit" as const,
+          availabilitySlotId: slot.id,
+        },
+      ],
+    }
+    const runtime = {
+      actionLedgerContext: {
+        userId: "usr_reserve",
+        actor: "staff",
+        callerType: "agent",
+      },
+      actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
+      actionLedgerIdempotencyScope: "bookings.reserve_booking",
+      actionLedgerIdempotencyKey: "reserve-command-1",
+      actionLedgerIdempotencyFingerprint: "sha256:reserve-command-1",
+      actionLedgerRouteOrToolName: "bookings.reserve_booking",
+    }
+
+    const first = await bookingsService.reserveBooking(db, reservation, "usr_reserve", runtime)
+    const replay = await bookingsService.reserveBooking(db, reservation, "usr_reserve", runtime)
+
+    expect(first.status).toBe("ok")
+    expect(replay.status).toBe("ok")
+    if (first.status !== "ok" || replay.status !== "ok") return
+    expect(first).toMatchObject({ replayed: false })
+    expect(replay).toMatchObject({ replayed: true, booking: { id: first.booking.id } })
+
+    const allBookings = await db.select().from(bookings)
+    expect(allBookings).toHaveLength(1)
+    const [refreshed] = await db
+      .select({ remainingPax: availabilitySlotsRef.remainingPax })
+      .from(availabilitySlotsRef)
+      .where(eq(availabilitySlotsRef.id, slot.id))
+    expect(refreshed?.remainingPax).toBe(1)
+
+    const ledgerEntries = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.actionName, "booking.reserve"))
+    expect(ledgerEntries).toHaveLength(2)
+    expect(ledgerEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          status: "requested",
+          targetType: "booking_reservation_command",
+          targetId: reservation.bookingNumber,
+        }),
+        expect.objectContaining({
+          status: "succeeded",
+          targetType: "booking",
+          targetId: first.booking.id,
+        }),
+      ]),
+    )
+
+    const conflict = await bookingsService.reserveBooking(
+      db,
+      { ...reservation, bookingNumber: nextBookingNumber() },
+      "usr_reserve",
+      {
+        ...runtime,
+        actionLedgerIdempotencyFingerprint: "sha256:different-command",
+      },
+    )
+    expect(conflict).toMatchObject({
+      status: "idempotency_conflict",
+      existingActionId: ledgerEntries.find((entry) => entry.status === "requested")?.id,
+    })
   })
 })

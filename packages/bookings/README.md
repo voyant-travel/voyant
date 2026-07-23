@@ -64,6 +64,11 @@ entries consistently link back to the requested action and approval.
 The selected deployment graph exposes package-owned Tools from
 `@voyant-travel/bookings/tools`:
 
+- `reserve_booking` creates an on-hold booking and holds the requested
+  availability with `bookings:write` only. The handler fingerprints the complete
+  reservation command, writes the canonical `booking.reserve` action ledger
+  entries in the booking transaction, and returns the immutable booking
+  reference for exact idempotent replays.
 - `cancel_booking` always enters the action-ledger approval flow for agent
   callers. Its first call returns a pending approval; execution requires the
   approved id and the same command, principal, target snapshot, and

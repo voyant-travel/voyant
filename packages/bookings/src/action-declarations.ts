@@ -30,6 +30,23 @@ const bookingWriteCapability = {
 } as const
 
 export const BOOKING_ACTION_DECLARATIONS = {
+  reserve: {
+    id: "bookings:reserve",
+    version: "v1",
+    resource: "booking",
+    action: "reserve",
+    risk: "high",
+    ledgerPolicy: "required",
+    approvalPolicy: "none",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+    requiredGrants: [{ resource: "bookings", action: "write" }],
+    graph: {
+      id: "booking.reserve",
+      kind: "execute",
+      from: { tools: ["@voyant-travel/bookings#tool.reserve-booking"] },
+    },
+  },
   piiRead: {
     id: "bookings-pii:read",
     version: "v1",
@@ -98,6 +115,7 @@ export const BOOKING_ACTION_DECLARATIONS = {
     },
   },
 } as const satisfies {
+  reserve: BookingActionDeclaration
   piiRead: BookingActionDeclaration
   status: Record<string, BookingActionDeclaration>
 }
@@ -137,6 +155,10 @@ export const BOOKING_PII_READ_CAPABILITY = toCapabilityDefinition(
   BOOKING_ACTION_DECLARATIONS.piiRead,
 )
 
+export const BOOKING_RESERVE_CAPABILITY = toCapabilityDefinition(
+  BOOKING_ACTION_DECLARATIONS.reserve,
+)
+
 export const BOOKING_STATUS_CAPABILITIES = {
   confirm: toCapabilityDefinition(BOOKING_ACTION_DECLARATIONS.status.confirm),
   expire: toCapabilityDefinition(BOOKING_ACTION_DECLARATIONS.status.expire),
@@ -147,11 +169,13 @@ export const BOOKING_STATUS_CAPABILITIES = {
 } as const
 
 export const BOOKING_ACTION_LEDGER_CAPABILITIES = [
+  BOOKING_RESERVE_CAPABILITY,
   BOOKING_PII_READ_CAPABILITY,
   ...Object.values(BOOKING_STATUS_CAPABILITIES),
 ] as const
 
 export const BOOKING_VOYANT_ACTIONS = [
+  toVoyantAction(BOOKING_ACTION_DECLARATIONS.reserve),
   toVoyantAction(BOOKING_ACTION_DECLARATIONS.piiRead),
   ...Object.values(BOOKING_ACTION_DECLARATIONS.status).map(toVoyantAction),
 ] as const
