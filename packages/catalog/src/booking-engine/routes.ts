@@ -727,19 +727,20 @@ async function prepareBookParameters(
     provenance: CatalogBookingProvenance
   },
 ): Promise<Record<string, unknown>> {
-  const parameters = engineParametersFromDraft(
-    input.body.parameters,
-    input.draftPayload ?? input.body.parameters?.draft,
-    {
-      entityModule: input.draftPayload
-        ? (stringValue(asRecord(input.draftPayload)?.entity_module) ??
-          stringValue(asRecord(asRecord(input.draftPayload)?.entity)?.module) ??
-          undefined)
-        : undefined,
-      sourceKind: input.provenance.sourceKind,
-      sourceProvider: input.provenance.sourceProvider,
-    },
-  )
+  // The commit request is the user's latest booking state. A persisted draft
+  // may lag behind it (for example, before newly selected travelers have been
+  // autosaved), so only use the stored payload when the caller does not send
+  // an explicit live draft.
+  const effectiveDraftPayload = input.body.parameters?.draft ?? input.draftPayload
+  const parameters = engineParametersFromDraft(input.body.parameters, effectiveDraftPayload, {
+    entityModule: effectiveDraftPayload
+      ? (stringValue(asRecord(effectiveDraftPayload)?.entity_module) ??
+        stringValue(asRecord(asRecord(effectiveDraftPayload)?.entity)?.module) ??
+        undefined)
+      : undefined,
+    sourceKind: input.provenance.sourceKind,
+    sourceProvider: input.provenance.sourceProvider,
+  })
 
   if (input.body.draftId) {
     parameters.availabilityHoldToken = input.body.draftId

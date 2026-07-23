@@ -501,6 +501,131 @@ describe("createCatalogBookingRoutes", () => {
     )
   })
 
+  it("prefers live commit travelers over a stale persisted draft", async () => {
+    vi.mocked(getBookingDraft).mockResolvedValue({
+      id: "draft_live",
+      source_kind: "voyant-connect",
+      source_connection_id: "conn_live",
+      source_ref: "pkg_live",
+      current_quote_id: "quote_stale",
+      draft_payload: {
+        entity: { module: "products", id: "pkg_live" },
+        configure: { roomTypeId: "ROOM:DOUBLE" },
+        travelers: [],
+      },
+    } as never)
+    vi.mocked(bookEntity).mockResolvedValue({
+      bookingId: "booking_live",
+      orderRef: "package:live",
+      status: "held",
+      snapshotId: "snap_live",
+      pricing,
+    })
+    const { app } = createTestApp()
+
+    const response = await app.request("/v1/public/catalog/book", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        draftId: "draft_live",
+        quoteId: "quote_live",
+        parameters: {
+          draft: {
+            entity: { module: "products", id: "pkg_live" },
+            configure: { roomTypeId: "ROOM:DOUBLE" },
+            travelers: [
+              {
+                firstName: "Live",
+                lastName: "Traveler",
+                band: "adult",
+                isPrimary: true,
+              },
+            ],
+          },
+        },
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(bookEntity).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ registry }),
+      expect.objectContaining({
+        quoteId: "quote_live",
+        parameters: expect.objectContaining({
+          draft: expect.objectContaining({
+            travelers: [expect.objectContaining({ firstName: "Live", lastName: "Traveler" })],
+          }),
+          travelers: [expect.objectContaining({ firstName: "Live", lastName: "Traveler" })],
+          leadTraveler: expect.objectContaining({
+            firstName: "Live",
+            lastName: "Traveler",
+          }),
+        }),
+      }),
+    )
+  })
+
+  it("falls back to persisted draft travelers when the commit has no live draft", async () => {
+    vi.mocked(getBookingDraft).mockResolvedValue({
+      id: "draft_persisted",
+      source_kind: "voyant-connect",
+      source_connection_id: "conn_persisted",
+      source_ref: "pkg_persisted",
+      current_quote_id: "quote_persisted",
+      draft_payload: {
+        entity: { module: "products", id: "pkg_persisted" },
+        configure: { roomTypeId: "ROOM:TWIN" },
+        travelers: [
+          {
+            firstName: "Persisted",
+            lastName: "Traveler",
+            band: "adult",
+            isPrimary: true,
+          },
+        ],
+      },
+    } as never)
+    vi.mocked(bookEntity).mockResolvedValue({
+      bookingId: "booking_persisted",
+      orderRef: "package:persisted",
+      status: "held",
+      snapshotId: "snap_persisted",
+      pricing,
+    })
+    const { app } = createTestApp()
+
+    const response = await app.request("/v1/public/catalog/book", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        draftId: "draft_persisted",
+        quoteId: "quote_explicit",
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(bookEntity).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ registry }),
+      expect.objectContaining({
+        quoteId: "quote_explicit",
+        parameters: expect.objectContaining({
+          travelers: [
+            expect.objectContaining({
+              firstName: "Persisted",
+              lastName: "Traveler",
+            }),
+          ],
+          leadTraveler: expect.objectContaining({
+            firstName: "Persisted",
+            lastName: "Traveler",
+          }),
+        }),
+      }),
+    )
+  })
+
   it("places and releases holds through the owned handler registry", async () => {
     const placeHold = vi.fn(async () => ({
       holdToken: "hold_1",
