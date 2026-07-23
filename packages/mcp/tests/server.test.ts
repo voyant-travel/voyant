@@ -617,47 +617,61 @@ describe("createMcpApiRoutes", () => {
     })
     const toolId = "@voyant-travel/catalog#tool.conflicting-control"
 
-    await expect(
-      createGraphMcpApiRoutes({
-        runtime: {
-          accessCatalog,
-          tools: [
-            {
-              id: toolId,
-              unitId: "@voyant-travel/catalog",
-              name: "conflicting_control",
-              requiredScopes: ["catalog:read"],
-              risk: "low",
-              referenceId: "conflicting-control-runtime",
-              async load<T>() {
-                return conflictingTool as T
-              },
+    const routes = await createGraphMcpApiRoutes({
+      runtime: {
+        accessCatalog,
+        tools: [
+          {
+            id: toolId,
+            unitId: "@voyant-travel/catalog",
+            name: "conflicting_control",
+            requiredScopes: ["catalog:read"],
+            risk: "low",
+            referenceId: "conflicting-control-runtime",
+            async load<T>() {
+              return conflictingTool as T
             },
-          ],
-          actions: [
-            {
-              id: "@voyant-travel/catalog#action.conflicting-control",
-              version: "v1",
-              kind: "read",
-              targetType: "catalog",
-              risk: "low",
-              ledger: "optional",
-              from: { tools: [toolId] },
+          },
+        ],
+        actions: [
+          {
+            id: "@voyant-travel/catalog#action.conflicting-control",
+            version: "v1",
+            kind: "read",
+            targetType: "catalog",
+            risk: "low",
+            ledger: "optional",
+            from: { tools: [toolId] },
+          },
+        ],
+        references: [
+          {
+            id: "conflicting-control-runtime",
+            importEntry: "@voyant-travel/catalog/tools",
+            async loadModule<T extends Record<string, unknown>>() {
+              return {} as T
             },
-          ],
-          references: [
-            {
-              id: "conflicting-control-runtime",
-              importEntry: "@voyant-travel/catalog/tools",
-              async loadModule<T extends Record<string, unknown>>() {
-                return {} as T
-              },
-            },
-          ],
-        },
-        buildContext: () => buildContext(),
-      }),
-    ).rejects.toThrow(/input conflicts with reserved action metadata field "_voyant"/)
+          },
+        ],
+      },
+      buildContext: () => buildContext(),
+    })
+    const outer = new Hono()
+    let caught: Error | undefined
+    outer.onError((error, c) => {
+      caught = error
+      return c.text("invalid Tool schema", 500)
+    })
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      await next()
+    })
+    outer.route("/", routes)
+
+    const response = await outer.request("/", rpc("tools/list", {}))
+
+    expect(response.status).toBe(500)
+    expect(caught?.message).toMatch(/input conflicts with reserved action metadata field "_voyant"/)
   })
 
   it("hides a tool from grant audiences outside its declared audience policy", async () => {
