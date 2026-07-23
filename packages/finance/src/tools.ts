@@ -268,7 +268,7 @@ export const createBookingTool = defineTool<
   name: "create_booking",
   aliases: ["bookings_create"],
   description:
-    "Atomically create a booking from a product or slot with travelers, room/item lines, payment schedules, optional credit, group membership, and invoice documents.",
+    "Create a booking from a product or slot with travelers, room/item lines, payment schedules, optional credit, group membership, and invoice documents.",
   inputSchema: createBookingToolInputSchema,
   outputSchema: bookingCreateSummarySchema,
   requiredScopes: ["bookings:write", "finance:write"],
@@ -281,6 +281,11 @@ export const createBookingTool = defineTool<
     confirmationRequired: true,
     sideEffects: ["data-write", "external-booking", "payment"],
   },
+  // Finance records the authoritative booking.create action with the generated
+  // booking id inside the booking transaction. The generic gate cannot know
+  // that id before dispatch and would create a second, caller-invented ledger
+  // timeline.
+  actionPolicyEnforcement: "handler",
   async handler({ booking }, ctx) {
     const outcome = await finance(ctx).createBooking(booking)
     if (outcome.status !== "ok") {

@@ -525,6 +525,7 @@ describe("finance deployment manifest", () => {
           expect.objectContaining({
             id: "@voyant-travel/finance#bookings-create-extension.tool.create-booking",
             name: "create_booking",
+            requiredScopes: ["bookings:write", "finance:write"],
           }),
         ],
         actions: [
