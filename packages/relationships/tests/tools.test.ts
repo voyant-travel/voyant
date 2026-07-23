@@ -1,7 +1,13 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type RelationshipsToolServices, relationshipsTools } from "../src/tools.js"
+import {
+  addRelationshipAddressTool,
+  addRelationshipContactMethodTool,
+  addRelationshipNoteTool,
+  type RelationshipsToolServices,
+  relationshipsTools,
+} from "../src/tools.js"
 
 function ctx(
   overrides: Partial<RelationshipsToolServices> = {},
@@ -161,12 +167,15 @@ function address(overrides: Record<string, unknown> = {}) {
 }
 
 describe("relationships (crm) tools", () => {
-  it("registers 17 stable staff-only lifecycle capabilities with typed output schemas", () => {
+  it("registers 20 stable staff-only lifecycle capabilities with typed output schemas", () => {
     const manifest = registry().list()
     expect(manifest.map((tool) => tool.name).sort()).toEqual([
-      "add_relationship_address",
-      "add_relationship_contact_method",
-      "add_relationship_note",
+      "add_organization_address",
+      "add_organization_contact_method",
+      "add_organization_note",
+      "add_person_address",
+      "add_person_contact_method",
+      "add_person_note",
       "create_organization",
       "create_person",
       "get_organization",
@@ -202,6 +211,13 @@ describe("relationships (crm) tools", () => {
       requiredScopes: ["crm:read"],
       aliases: ["crm_addresses_list"],
     })
+  })
+
+  it("keeps deprecated generic add exports outside the selected Tool registry", () => {
+    const selected: ReadonlySet<unknown> = new Set(relationshipsTools)
+    expect(selected.has(addRelationshipNoteTool)).toBe(false)
+    expect(selected.has(addRelationshipContactMethodTool)).toBe(false)
+    expect(selected.has(addRelationshipAddressTool)).toBe(false)
   })
 
   it("normalizes typed person reads and strips encrypted profile envelopes", async () => {
@@ -305,9 +321,19 @@ describe("relationships (crm) tools", () => {
         calls.push(`notes:${input.entityType}:${input.entityId}`)
         return [note()]
       },
+      async addNote(input) {
+        calls.push(`note:${input.entityType}:${input.entityId}`)
+        return input.entityType === "person"
+          ? note()
+          : note({ id: "onot_1", personId: undefined, organizationId: "org_1" })
+      },
       async addContactMethod(input) {
         calls.push(`contact:${input.entityType}:${input.entityId}`)
-        return contactMethod()
+        return contactMethod({ entityType: input.entityType, entityId: input.entityId })
+      },
+      async addAddress(input) {
+        calls.push(`new-address:${input.entityType}:${input.entityId}`)
+        return address({ entityType: input.entityType, entityId: input.entityId })
       },
       async updateAddress(input) {
         calls.push(`address:${input.id}`)
@@ -320,9 +346,8 @@ describe("relationships (crm) tools", () => {
       services,
     )
     await registry().dispatch(
-      "crm_contact_method_add",
+      "add_person_contact_method",
       {
-        entityType: "person",
         entityId: "pers_1",
         kind: "email",
         value: "ana@example.com",
@@ -330,11 +355,49 @@ describe("relationships (crm) tools", () => {
       services,
     )
     await registry().dispatch(
+      "add_organization_contact_method",
+      {
+        entityId: "org_1",
+        kind: "website",
+        value: "https://example.com",
+      },
+      services,
+    )
+    await registry().dispatch(
+      "add_person_note",
+      { entityId: "pers_1", content: "Prefers aisle seats" },
+      services,
+    )
+    await registry().dispatch(
+      "add_organization_note",
+      { entityId: "org_1", content: "Annual account review due" },
+      services,
+    )
+    await registry().dispatch(
+      "add_person_address",
+      { entityId: "pers_1", line1: "1 High Street", country: "GB" },
+      services,
+    )
+    await registry().dispatch(
+      "add_organization_address",
+      { entityId: "org_1", line1: "Calea Victoriei 1", country: "RO" },
+      services,
+    )
+    await registry().dispatch(
       "crm_address_update",
       { id: "iadr_1", line1: "Calea Victoriei 2" },
       services,
     )
-    expect(calls).toEqual(["notes:person:pers_1", "contact:person:pers_1", "address:iadr_1"])
+    expect(calls).toEqual([
+      "notes:person:pers_1",
+      "contact:person:pers_1",
+      "contact:organization:org_1",
+      "note:person:pers_1",
+      "note:organization:org_1",
+      "new-address:person:pers_1",
+      "new-address:organization:org_1",
+      "address:iadr_1",
+    ])
     expect(
       registry()
         .list()

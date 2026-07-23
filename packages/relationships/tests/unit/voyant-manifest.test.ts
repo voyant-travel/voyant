@@ -62,11 +62,11 @@ describe("relationships deployment manifest", () => {
         }),
       ]),
     )
-    expect(relationshipsVoyantModule.tools).toHaveLength(17)
+    expect(relationshipsVoyantModule.tools).toHaveLength(20)
     const toolActions = (relationshipsVoyantModule.actions ?? []).filter(
       (action) => action.from?.tools?.length,
     )
-    expect(toolActions).toHaveLength(17)
+    expect(toolActions).toHaveLength(20)
     for (const tool of relationshipsVoyantModule.tools ?? []) {
       const action = toolActions.find((candidate) => candidate.from?.tools?.includes(tool.id))
       expect(action).toBeDefined()
@@ -83,6 +83,18 @@ describe("relationships deployment manifest", () => {
           kind: "sensitive-read",
           ledger: "required",
           approval: "never",
+        })
+      }
+    }
+    for (const ownerType of ["person", "organization"] as const) {
+      for (const childType of ["note", "contact-method", "address"] as const) {
+        const toolId = `@voyant-travel/relationships#tool.add-${ownerType}-${childType}`
+        const matchingActions = toolActions.filter((action) => action.from?.tools?.includes(toolId))
+        expect(matchingActions).toHaveLength(1)
+        expect(matchingActions[0]).toMatchObject({
+          id: `@voyant-travel/relationships#action.add-${ownerType}-${childType}`,
+          targetType: ownerType,
+          targetLifecycle: "existing",
         })
       }
     }

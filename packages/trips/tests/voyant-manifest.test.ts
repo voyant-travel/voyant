@@ -187,6 +187,8 @@ describe("trips deployment manifest", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "@voyant-travel/trips#action.add-requirement",
+          targetType: "trip",
+          targetLifecycle: "existing",
           risk: "medium",
           ledger: "required",
           approval: "never",
