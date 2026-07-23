@@ -1,3 +1,13 @@
+import {
+  type ActionLedgerRequestContextValues,
+  buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
+  type ExecuteCreatedTargetCommandHandlers,
+  type ExecuteCreatedTargetCommandInput,
+  type ExecuteCreatedTargetCommandResult,
+  executeCreatedTargetCommand,
+  mapActionLedgerRequestContext,
+} from "@voyant-travel/action-ledger"
 import type { EventBus } from "@voyant-travel/core"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -5,6 +15,7 @@ import type { Context } from "hono"
 
 import type { CruiseAdapter, ExternalSailing, ExternalShip, SourceRef } from "./adapters/index.js"
 import { resolveCruiseAdapter } from "./adapters/registry.js"
+import { CRUISE_SHIP_CREATED_TARGET_POLICY } from "./created-target-policy.js"
 import { makeExternalSourceKey, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import {
   passengerCompositionMatches,
@@ -20,7 +31,9 @@ import type { CruisesToolServices } from "./tools.js"
 
 export * from "./tools.js"
 
-type CruisesToolRequestEnv = { Variables: { eventBus?: EventBus; userId?: string } }
+type CruisesToolRequestEnv = {
+  Variables: ActionLedgerRequestContextValues & { eventBus?: EventBus }
+}
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["cruises"],
@@ -28,9 +41,10 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const c = request as Context<CruisesToolRequestEnv>
     const db = context.db as PostgresJsDatabase
     const eventBus = c.get("eventBus")
-    const userId = c.get("userId")
+    const userId = c.get("userId") ?? undefined
+    const requestContext = cruisesActionLedgerContext(c)
     const publicOnly = context.actor !== "staff"
-    const execute: CruisesToolServices["execute"] = async (operation, input) => {
+    const execute: CruisesToolServices["execute"] = async (operation, input, admitted) => {
       const args = input as Record<string, unknown>
       switch (operation) {
         case "searchCruises":
@@ -55,8 +69,28 @@ export const voyantToolContextContribution = defineToolContextContribution({
           const { id, ...data } = args
           return cruisesService.updateSailing(db, String(id), data as never)
         }
-        case "createShip":
-          return cruisesService.createShip(db, args as never)
+        case "createShip": {
+          if (!admitted) {
+            throw new ToolError(
+              "Created cruise ship action policy is required.",
+              "ACTION_POLICY_REQUIRED",
+            )
+          }
+          const { idempotencyKey, ...commandInput } = args
+          assertAdmittedIdempotencyKey(admitted, String(idempotencyKey))
+          const result = await executeCruiseShipCreate(
+            db,
+            requestContext,
+            String(idempotencyKey),
+            commandInput,
+            admitted,
+            async (tx) => {
+              const row = await cruisesService.createShip(tx, commandInput as never)
+              return { id: row.id }
+            },
+          )
+          return { status: "created" as const, ship: result.value, replayed: result.replayed }
+        }
         case "updateShip": {
           const { id, ...data } = args
           return cruisesService.updateShip(db, String(id), data as never)
@@ -68,6 +102,113 @@ export const voyantToolContextContribution = defineToolContextContribution({
     return { cruises: { execute } }
   },
 })
+
+type CruiseShipCreatedCommandExecutor = (
+  db: PostgresJsDatabase,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: string },
+  handlers: ExecuteCreatedTargetCommandHandlers<{ id: string }, string>,
+) => Promise<ExecuteCreatedTargetCommandResult<{ id: string }, string>>
+
+export async function executeCruiseShipCreate(
+  db: PostgresJsDatabase,
+  context: ActionLedgerRequestContextValues,
+  idempotencyKey: string,
+  commandInput: unknown,
+  admitted: import("@voyant-travel/tools").ToolHandlerActionPolicyContext,
+  create: (tx: PostgresJsDatabase) => Promise<{ id: string }>,
+  executor: CruiseShipCreatedCommandExecutor = executeCreatedTargetCommand,
+) {
+  const principal = mapActionLedgerRequestContext(context)
+  if (principal.principalId === "unknown_request") {
+    throw new TypeError("Cruise ship created-target commands require a concrete principal")
+  }
+  const policy = CRUISE_SHIP_CREATED_TARGET_POLICY
+  const selectedActionName = admitted.actionPolicy.capabilityId
+  const selectedActionVersion = admitted.actionPolicy.version
+  const fingerprint = await buildCreatedTargetCommandFingerprint({
+    actionName: selectedActionName,
+    actionVersion: selectedActionVersion,
+    commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+    canonicalTargetType: policy.canonicalTargetType,
+    resultReferenceType: policy.resultReferenceType,
+    commandInput,
+    capabilityId: selectedActionName,
+    capabilityVersion: selectedActionVersion,
+    evaluatedRisk: policy.evaluatedRisk,
+    approvalPolicy: policy.approvalPolicy,
+    approvalReasonCode: policy.approvalReasonCode,
+  })
+  const scope = await buildCreatedTargetIdempotencyScope({
+    actionName: selectedActionName,
+    actionVersion: selectedActionVersion,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  return executor(
+    db,
+    {
+      context,
+      actionName: selectedActionName,
+      actionVersion: selectedActionVersion,
+      actionKind: "create",
+      evaluatedRisk: policy.evaluatedRisk,
+      commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+      canonicalTargetType: policy.canonicalTargetType,
+      resultReferenceType: policy.resultReferenceType,
+      capabilityId: selectedActionName,
+      capabilityVersion: selectedActionVersion,
+      approvalPolicy: policy.approvalPolicy,
+      approvalReasonCode: policy.approvalReasonCode,
+      commandInput,
+      routeOrToolName: admitted.capabilityId,
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotency: { scope, key: idempotencyKey, fingerprint },
+    },
+    {
+      async create(tx) {
+        const value = await create(tx as PostgresJsDatabase)
+        return { value, targetId: value.id }
+      },
+      async replay(_tx, result) {
+        return { id: result.reference.id }
+      },
+    },
+  )
+}
+
+function assertAdmittedIdempotencyKey(
+  admitted: import("@voyant-travel/tools").ToolHandlerActionPolicyContext,
+  inputKey: string,
+): void {
+  if (admitted.invocation.idempotencyKey !== inputKey) {
+    throw new ToolError(
+      "Created-target command idempotency key does not match the selected invocation.",
+      "ACTION_POLICY_REQUIRED",
+      { capabilityId: admitted.capabilityId },
+    )
+  }
+}
+
+function cruisesActionLedgerContext(
+  c: Context<CruisesToolRequestEnv>,
+): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
 
 async function searchCruises(
   db: PostgresJsDatabase,

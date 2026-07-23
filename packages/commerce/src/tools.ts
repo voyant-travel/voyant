@@ -1,9 +1,19 @@
 /** Guarded Commerce Tools for sellability, pricing policy, and promotions. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
-
+import {
+  COMMERCE_CREATED_TARGET_POLICIES,
+  commerceHandlerActionPolicyExpectation,
+} from "./created-target-policy.js"
 import {
   cancellationPolicyListQuerySchema,
   insertCancellationPolicySchema,
@@ -30,11 +40,29 @@ const reversibleWriteRisk = {
   confirmationRequired: false,
   sideEffects: ["data-write"],
 } as const
+const createdWriteRisk = {
+  destructive: false,
+  reversible: false,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
 
 const idSchema = z.object({ id: z.string().min(1) })
 const updateCancellationPolicyToolSchema = z.intersection(idSchema, updateCancellationPolicySchema)
 const updatePriceCatalogToolSchema = z.intersection(idSchema, updatePriceCatalogSchema)
 const updatePromotionToolSchema = z.intersection(idSchema, updatePromotionalOfferSchema)
+const createdCommandInput = {
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .describe("Stable key used to replay this exact create command."),
+}
+const createCancellationPolicyToolInputSchema =
+  insertCancellationPolicySchema.extend(createdCommandInput)
+const createPriceCatalogToolInputSchema = insertPriceCatalogSchema.extend(createdCommandInput)
 
 const cancellationPolicySchema = z.object({
   id: z.string(),
@@ -62,6 +90,16 @@ const priceCatalogSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+})
+const createdCancellationPolicyOutputSchema = z.object({
+  status: z.literal("created"),
+  cancellationPolicy: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
+const createdPriceCatalogOutputSchema = z.object({
+  status: z.literal("created"),
+  priceCatalog: z.object({ id: z.string() }),
+  replayed: z.boolean(),
 })
 
 const resolvedComponentSchema = z.object({
@@ -143,11 +181,17 @@ export interface CommerceToolServices {
     input: z.infer<typeof cancellationPolicyListQuerySchema>,
   ): Promise<unknown>
   getCancellationPolicy(id: string): Promise<unknown>
-  createCancellationPolicy(input: z.infer<typeof insertCancellationPolicySchema>): Promise<unknown>
+  createCancellationPolicy(
+    input: z.infer<typeof createCancellationPolicyToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateCancellationPolicy(id: string, input: AnyServiceInput): Promise<unknown>
   listPriceCatalogs(input: z.infer<typeof priceCatalogListQuerySchema>): Promise<unknown>
   getPriceCatalog(id: string): Promise<unknown>
-  createPriceCatalog(input: z.infer<typeof insertPriceCatalogSchema>): Promise<unknown>
+  createPriceCatalog(
+    input: z.infer<typeof createPriceCatalogToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updatePriceCatalog(id: string, input: AnyServiceInput): Promise<unknown>
   listPromotions(input: z.infer<typeof promotionalOfferListQuerySchema>): Promise<unknown>
   getPromotion(id: string): Promise<unknown>
@@ -226,13 +270,23 @@ export const getCancellationPolicyTool = defineTool({
 
 export const createCancellationPolicyTool = defineTool({
   ...writeMetadata(["pricing:write"]),
+  riskPolicy: createdWriteRisk,
   capabilityId: `${OWNER}#tool.create-cancellation-policy`,
   name: "create_cancellation_policy",
-  description: "Create a reversible cancellation policy configuration.",
-  inputSchema: insertCancellationPolicySchema,
-  outputSchema: cancellationPolicySchema,
+  description:
+    "Create a cancellation policy configuration. Exact retries return the original immutable reference.",
+  inputSchema: createCancellationPolicyToolInputSchema,
+  outputSchema: createdCancellationPolicyOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: CommerceToolContext) {
-    return cancellationPolicySchema.parse(await commerce(ctx).createCancellationPolicy(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      commerceHandlerActionPolicyExpectation(COMMERCE_CREATED_TARGET_POLICIES.cancellationPolicy),
+    )
+    return createdCancellationPolicyOutputSchema.parse(
+      await commerce(ctx).createCancellationPolicy(input, admitted),
+    )
   },
 })
 
@@ -279,13 +333,23 @@ export const getPriceCatalogTool = defineTool({
 
 export const createPriceCatalogTool = defineTool({
   ...writeMetadata(["pricing:write"]),
+  riskPolicy: createdWriteRisk,
   capabilityId: `${OWNER}#tool.create-price-catalog`,
   name: "create_price_catalog",
-  description: "Create a price catalog for a commercial audience or channel.",
-  inputSchema: insertPriceCatalogSchema,
-  outputSchema: priceCatalogSchema,
+  description:
+    "Create a price catalog for a commercial audience or channel. Exact retries return the original immutable reference.",
+  inputSchema: createPriceCatalogToolInputSchema,
+  outputSchema: createdPriceCatalogOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: CommerceToolContext) {
-    return priceCatalogSchema.parse(await commerce(ctx).createPriceCatalog(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      commerceHandlerActionPolicyExpectation(COMMERCE_CREATED_TARGET_POLICIES.priceCatalog),
+    )
+    return createdPriceCatalogOutputSchema.parse(
+      await commerce(ctx).createPriceCatalog(input, admitted),
+    )
   },
 })
 
