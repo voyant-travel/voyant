@@ -1,5 +1,53 @@
 # @voyant-travel/operator-standard
 
+## 0.11.8
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/catalog@0.192.0
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/inventory@0.16.1
+  - @voyant-travel/accommodations@0.154.0
+  - @voyant-travel/bookings-react@0.194.0
+  - @voyant-travel/charters@0.192.0
+  - @voyant-travel/commerce@0.40.5
+  - @voyant-travel/cruises@0.193.0
+  - @voyant-travel/distribution@0.184.0
+  - @voyant-travel/flights@0.194.0
+  - @voyant-travel/operations@0.8.36
+  - @voyant-travel/trips@0.186.0
+  - @voyant-travel/trips-react@0.186.0
+  - @voyant-travel/action-ledger-react@0.82.0
+  - @voyant-travel/distribution-react@0.184.0
+  - @voyant-travel/finance-react@0.194.0
+  - @voyant-travel/identity-react@0.194.0
+  - @voyant-travel/legal-react@0.194.0
+  - @voyant-travel/operations-react@0.75.0
+  - @voyant-travel/admin-app@0.86.0
+  - @voyant-travel/catalog-react@0.192.0
+  - @voyant-travel/commerce-react@0.76.0
+  - @voyant-travel/flights-react@0.194.0
+  - @voyant-travel/inventory-react@0.76.0
+  - @voyant-travel/operator-settings-react@0.48.0
+  - @voyant-travel/relationships-react@0.194.0
+  - @voyant-travel/admin-host@0.44.0
+  - @voyant-travel/cruises-react@0.193.0
+  - @voyant-travel/storefront-react@0.196.0
+  - @voyant-travel/mice-react@0.62.0
+  - @voyant-travel/quotes-react@0.192.0
+  - @voyant-travel/bookings@0.194.0
+  - @voyant-travel/finance@0.194.0
+  - @voyant-travel/identity@0.194.0
+  - @voyant-travel/legal@0.194.0
+  - @voyant-travel/storefront@0.196.0
+  - @voyant-travel/mice@0.50.0
+  - @voyant-travel/quotes@0.131.39
+  - @voyant-travel/notifications@0.134.1
+  - @voyant-travel/relationships@0.128.35
+  - @voyant-travel/operator-settings@0.14.14
+  - @voyant-travel/notifications-react@0.134.1
+
 ## 0.11.7
 
 ### Patch Changes

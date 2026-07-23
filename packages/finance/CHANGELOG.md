@@ -1,5 +1,13 @@
 # @voyant-travel/finance
 
+## 0.194.0
+
+### Patch Changes
+
+- Updated dependencies [dd370ca]
+  - @voyant-travel/core@0.132.1
+  - @voyant-travel/bookings@0.194.0
+
 ## 0.193.0
 
 ### Patch Changes
