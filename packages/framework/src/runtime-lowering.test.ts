@@ -129,6 +129,69 @@ describe("graph runtime lowering", () => {
     ])
   })
 
+  it("retains unavailable actions as metadata while excluding their Tool runtime", async () => {
+    const toolId = "@acme/voyant-loyalty#tool.unsafe-sync"
+    const module = defineModule({
+      id: "@acme/voyant-loyalty",
+      tools: [
+        {
+          id: toolId,
+          name: "unsafe_sync",
+          runtime: { entry: "./tools", export: "unsafeSyncTool" },
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.unsafe-sync",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          availability: {
+            status: "unavailable",
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "multistage",
+          risk: "high",
+          ledger: "required",
+          from: { tools: [toolId] },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [module] }),
+    })
+    const definitions = lowerGraphRuntimeUnits(graph.modules, graph, undefined)
+    const definition = definitions[0]!
+
+    expect(definition.actions).toEqual([
+      expect.objectContaining({
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
+      }),
+    ])
+    expect(definition.tools).toEqual([])
+    expect(definition.selectedIds.tools).toEqual([])
+    expect(definition.references).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:unavailable-action",
+        entries: {},
+        modules: [
+          {
+            ...definition,
+            selectedIds: { ...definition.selectedIds, tools: [toolId] },
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/unavailable action .* exposes Tool/)
+  })
+
   it("preserves selected setup steps on unit loaders and the aggregate runtime", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
     const setupSteps = [

@@ -979,6 +979,83 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("validates explicit Tool action availability and durability completeness", () => {
+    const baseAction = {
+      id: "@acme/voyant-actions#action.run",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "task",
+      risk: "medium" as const,
+      ledger: "required" as const,
+      from: { tools: ["@acme/voyant-actions#tool.run"] },
+    }
+    const manifest = (action: Record<string, unknown>) => ({
+      ...defineModule({
+        id: "@acme/voyant-actions",
+        tools: [
+          {
+            id: "@acme/voyant-actions#tool.run",
+            name: "run_action",
+            runtime: { entry: "./tools", export: "runAction" },
+          },
+        ],
+      }),
+      actions: [{ ...baseAction, ...action }],
+    })
+
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          availability: { status: "available" },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].targetLifecycle",
+        message: expect.stringContaining("stable target anchor"),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          availability: { status: "available" },
+          targetLifecycle: "existing",
+          effectBoundary: "external",
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].durability",
+        message: expect.stringContaining("tested durability"),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          kind: "read",
+          risk: "low",
+          durability: { strategy: "transactional", testReference: "run.test.ts" },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].durability",
+        message: expect.stringContaining("classify data-writing actions as execute"),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          availability: {
+            status: "unavailable",
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "multistage",
+        }),
+      ),
+    ).toEqual([])
+  })
+
   it("rejects action bindings that reference the wrong selected facet kind", async () => {
     const module = defineModule({
       id: "@acme/voyant-actions",

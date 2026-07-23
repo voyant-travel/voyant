@@ -94,6 +94,13 @@ export interface GraphMcpRuntime {
     kind: "execute" | "read" | "sensitive-read"
     targetType: string
     targetLifecycle?: "existing" | "created"
+    availability?:
+      | { status: "available" }
+      | {
+          status: "unavailable"
+          reasonCode: string
+          replacementCapabilityId?: string
+        }
     createdTarget?: {
       commandTargetType: string
       resultReferenceType: string
@@ -305,6 +312,7 @@ function indexActionsByTool(
 ): Map<string, ToolActionPolicyBinding> {
   const result = new Map<string, ToolActionPolicyBinding>()
   for (const action of actions) {
+    if (action.availability?.status === "unavailable") continue
     const binding: ToolActionPolicyBinding = {
       id: action.id,
       capabilityId: action.capabilityId ?? action.id,
