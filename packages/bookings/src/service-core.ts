@@ -58,6 +58,7 @@ import {
 } from "./products-ref.js"
 import { bookingTravelerTravelDetails } from "./schema/travel-details.js"
 import {
+  type Booking,
   bookingActivityLog,
   bookingAllocations,
   bookingDocuments,
@@ -398,7 +399,7 @@ function bookingReservationCommand(data: ReserveBookingInput) {
     evaluatedRisk: BOOKING_RESERVATION_EVALUATED_RISK,
     approvalPolicy: "none" as const,
     approvalReasonCode: null,
-  }
+  } as const
 }
 
 export function buildBookingReservationCommandFingerprint(
@@ -3207,7 +3208,10 @@ export const bookingsService = {
 
       const reservationLedger = bookingReservationLedgerRuntime(runtime)
       const reserveAudited = async (ledger: BookingReservationLedgerRuntime) => {
-        const execution = await executeCreatedTargetCommand(
+        const execution = await executeCreatedTargetCommand<
+          Booking,
+          typeof BOOKING_RESERVATION_RESULT_REFERENCE_TYPE
+        >(
           db,
           {
             context: ledger.context,
@@ -3251,6 +3255,7 @@ export const bookingsService = {
         : {
             status: "ok" as const,
             booking: await db.transaction((tx) => reserveInTransaction(tx as PostgresJsDatabase)),
+            replayed: false,
           }
       if (result.status === "ok") {
         await emitSlotChanges(runtime, slotChanges)
