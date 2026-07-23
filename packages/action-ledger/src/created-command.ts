@@ -7,7 +7,7 @@ import type {
   ActionLedgerCapabilityApprovalPolicy,
   ActionLedgerCapabilityRisk,
 } from "./capability.js"
-import { buildActionApprovalCommandFingerprint } from "./fingerprint.js"
+import { buildActionApprovalCommandFingerprint, sha256 } from "./fingerprint.js"
 import {
   type ActionLedgerRequestContextValues,
   type BuildActionLedgerMutationInput,
@@ -345,6 +345,29 @@ export function createCreatedTargetCommandResultReference<TReferenceType extends
   targetId: string,
 ): CreatedTargetCommandResultReference<TReferenceType> {
   return `${validReferenceType(referenceType)}:${requiredValue(targetId, "canonical target id")}`
+}
+
+export interface BuildCreatedTargetIdempotencyScopeInput {
+  actionName: string
+  actionVersion: string
+  principalType: ActionLedgerEntry["principalType"]
+  principalId: string
+  organizationId: string | null
+}
+
+/** Collision-safe scope for caller-selected created-command keys. */
+export async function buildCreatedTargetIdempotencyScope(
+  input: BuildCreatedTargetIdempotencyScopeInput,
+): Promise<string> {
+  const digest = await sha256({
+    protocol: "action-ledger-created-target-scope-v1",
+    actionName: requiredValue(input.actionName, "action name"),
+    actionVersion: requiredValue(input.actionVersion, "action version"),
+    principalType: requiredValue(input.principalType, "principal type"),
+    principalId: requiredValue(input.principalId, "principal id"),
+    organizationId: input.organizationId ?? null,
+  })
+  return `created-target-command:v1:sha256:${digest}`
 }
 
 async function prepareCommand<TReferenceType extends string>(

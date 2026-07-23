@@ -36,6 +36,8 @@ export {
   ActionLedgerCreatedCommandTransactionRequiredError,
   type BuildCreatedTargetCommandFingerprintInput,
   buildCreatedTargetCommandFingerprint,
+  type BuildCreatedTargetIdempotencyScopeInput,
+  buildCreatedTargetIdempotencyScope,
   type CreatedTargetCommandMutation,
   type CreatedTargetCommandResultMetadata,
   type CreatedTargetCommandResultReference,
