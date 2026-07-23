@@ -56,7 +56,7 @@ export function QuoteVersionsPage({
   }
 
   return (
-    <div data-slot="quote-versions-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="quote-versions-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{messages.quoteVersionsPage.title}</h1>

@@ -24,7 +24,7 @@ import { useAuthUiI18nOrDefault } from "../i18n/provider.js"
 export function StorefrontSitesPage() {
   const copy = useAuthUiI18nOrDefault().messages.storefrontsPage.sites
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">{copy.title}</h1>
         <p className="text-sm text-muted-foreground">{copy.description}</p>

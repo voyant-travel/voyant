@@ -11,7 +11,7 @@ import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 export function NotificationSettingsHost() {
   const messages = useNotificationsUiMessagesOrDefault()
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{messages.settings.heading}</h1>
         <p className="text-sm text-muted-foreground">{messages.settings.description}</p>

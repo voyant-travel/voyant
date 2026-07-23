@@ -33,7 +33,7 @@ export function BookingsPage({
   const messages = useBookingsUiMessagesOrDefault().bookingsPage
 
   return (
-    <div data-slot="bookings-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="bookings-page" className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
         <p className="text-sm text-muted-foreground">{messages.description}</p>

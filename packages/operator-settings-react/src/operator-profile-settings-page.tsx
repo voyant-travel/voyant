@@ -507,7 +507,7 @@ export function OperatorProfileSettingsPage() {
 
   return (
     <form
-      className="mx-auto flex max-w-4xl flex-col gap-6 p-6"
+      className="mx-auto flex max-w-4xl flex-col gap-6"
       onSubmit={(e) => {
         e.preventDefault()
         save.mutate(form)

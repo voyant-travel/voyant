@@ -117,7 +117,7 @@ export function ProductDetailPage({
   }
 
   return (
-    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6", className)}>
       <ProductDetailHeader
         product={product}
         onBack={onBack}

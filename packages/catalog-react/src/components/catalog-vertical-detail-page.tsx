@@ -170,7 +170,7 @@ export function CatalogVerticalDetailPage({
 
   if (status === "loading") {
     return (
-      <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
+      <div className="mx-auto w-full max-w-screen-2xl">
         <div className="h-7 w-1/3 animate-pulse rounded bg-muted/40" />
         <div className="mt-2 h-4 w-1/4 animate-pulse rounded bg-muted/20" />
         <div className="mt-6 h-72 w-full animate-pulse rounded-lg bg-muted/30" />

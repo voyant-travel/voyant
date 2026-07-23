@@ -59,7 +59,7 @@ export function InvoiceNumberSeriesPage({ className }: InvoiceNumberSeriesPagePr
   const rows = data?.data ?? []
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{page.title}</h1>

@@ -86,7 +86,7 @@ export function PriceCatalogsPage({
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div data-slot="price-catalogs-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="price-catalogs-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>

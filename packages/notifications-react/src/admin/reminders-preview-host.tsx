@@ -12,7 +12,7 @@ export function RemindersPreviewHost() {
   const t = useNotificationsUiMessagesOrDefault().admin.previewPage
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t.title}</h1>
         <p className="text-sm text-muted-foreground">{t.description}</p>

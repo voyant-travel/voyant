@@ -179,7 +179,7 @@ export function ActionLedgerHost() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>

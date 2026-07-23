@@ -77,7 +77,7 @@ export function PaymentDetailPage({
   const payment = paymentQuery.data.data
 
   return (
-    <div data-slot="payment-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="payment-detail-page" className={cn("flex flex-col gap-6", className)}>
       <PaymentDetailHeader
         payment={payment}
         onBack={onBack}

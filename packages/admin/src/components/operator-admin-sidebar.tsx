@@ -189,6 +189,13 @@ export interface OperatorAdminWorkspaceLayoutProps {
   icons?: OperatorAdminNavigationIcons
   linkComponent?: AdminNavLinkComponent
   mainClassName?: string
+  /**
+   * Classes for the wrapper around the page outlet. Defaults to the shared
+   * page padding (`px-4 py-6 md:px-6`) so every screen gets consistent
+   * top/bottom/left/right spacing. Pass `""` for full-bleed routes that manage
+   * their own edges (e.g. a full-height two-pane layout).
+   */
+  contentClassName?: string
   navItems?: ReadonlyArray<NavItem>
   navigationPreferences?: AdminNavigationPreferences
   onSignOut?: () => void | Promise<void>
@@ -257,6 +264,7 @@ export function OperatorAdminWorkspaceLayout({
   icons,
   linkComponent,
   mainClassName = "flex-1",
+  contentClassName = "px-4 py-6 md:px-6",
   navItems,
   navigationPreferences,
   onSignOut,
@@ -352,7 +360,12 @@ export function OperatorAdminWorkspaceLayout({
           )}
         </header>
       )}
-      {children}
+      <div
+        data-slot="operator-admin-page-content"
+        className={cn("min-w-0 flex-1", contentClassName)}
+      >
+        {children}
+      </div>
     </SidebarInset>
   )
   const workspace =

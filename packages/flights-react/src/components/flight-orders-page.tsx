@@ -114,9 +114,7 @@ export function FlightOrdersPage({
   }
 
   return (
-    <div
-      className={cn("mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-6 lg:px-8", className)}
-    >
+    <div className={cn("mx-auto flex w-full max-w-6xl flex-col gap-6", className)}>
       <header className="flex flex-col gap-1">
         <h1 className="flex items-center gap-2 font-semibold text-2xl">
           <Plane className="h-6 w-6" />

@@ -342,7 +342,7 @@ export function BookingDetailPage({
   ].filter(Boolean) as ReactNode[]
 
   return (
-    <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6", className)}>
       {hideBreadcrumb ? null : (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           {onBack ? (

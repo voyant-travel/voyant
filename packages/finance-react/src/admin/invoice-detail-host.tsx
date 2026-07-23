@@ -164,7 +164,7 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
     error instanceof Error ? error.message : fallback
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{invoice.invoiceNumber}</h1>

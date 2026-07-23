@@ -75,7 +75,7 @@ export function ProgramsPage({ onProgramOpen, labels = {} }: ProgramsPageProps) 
   const [showCreate, setShowCreate] = useState(false)
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>

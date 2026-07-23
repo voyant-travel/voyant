@@ -242,7 +242,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
   }
 
   return (
-    <div data-slot="channel-sync-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="channel-sync-page" className={cn("flex flex-col gap-6", className)}>
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

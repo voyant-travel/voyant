@@ -138,7 +138,7 @@ function TeamManagementView() {
     invitationsQuery.isError
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">{copy.title}</h1>
         <p className="text-sm text-muted-foreground">{copy.description}</p>

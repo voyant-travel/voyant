@@ -174,7 +174,7 @@ export function ContractDetailPage({
 
   if (isPending) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
         </div>

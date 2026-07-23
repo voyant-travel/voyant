@@ -89,7 +89,7 @@ export function WebhookEventDetailPage({
   }
 
   return (
-    <div data-slot="webhook-event-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="webhook-event-detail-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />

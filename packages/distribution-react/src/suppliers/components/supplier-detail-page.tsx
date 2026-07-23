@@ -131,7 +131,7 @@ export function SupplierDetailPage({
   const notes = notesQuery.data?.data ?? []
 
   return (
-    <div data-slot="supplier-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="supplier-detail-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-3">
           {onBack && (

@@ -60,7 +60,7 @@ function InvoicingPageContent({ api }: { api: TaxesPageApi }) {
   const settingsBusy = settingsQuery.isPending || invoicingModeMutation.isPending
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-lg font-semibold tracking-tight">{invoicingMessages.title}</h2>
         <p className="text-sm text-muted-foreground">{invoicingMessages.description}</p>

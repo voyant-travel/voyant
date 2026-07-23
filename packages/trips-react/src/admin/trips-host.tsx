@@ -177,7 +177,7 @@ export function TripsHost() {
   }
 
   return (
-    <main className="flex flex-col gap-6 p-6">
+    <main className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="font-bold text-2xl tracking-tight">{listMessages.title}</h1>

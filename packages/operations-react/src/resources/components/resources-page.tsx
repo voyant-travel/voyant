@@ -402,7 +402,7 @@ export function ResourcesPage({
   const isError = queries.some((query) => query.isError)
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{page.title}</h1>

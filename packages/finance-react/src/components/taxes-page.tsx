@@ -146,7 +146,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
 
   return (
     <TaxesPageApiContext.Provider value={api}>
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">{taxMessages.title}</h2>

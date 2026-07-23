@@ -87,7 +87,7 @@ export function ActivitiesPage() {
   }, [activities])
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{messages.activitiesPage.title}</h1>

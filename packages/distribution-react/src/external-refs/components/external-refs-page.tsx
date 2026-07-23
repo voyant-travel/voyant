@@ -43,7 +43,7 @@ export function ExternalRefsPage({
   }
 
   return (
-    <div data-slot="external-refs-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="external-refs-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center gap-3">
         <Link2 className="size-5 text-muted-foreground" aria-hidden="true" />
         <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>

@@ -133,7 +133,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
 
   if (error || !template) {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4">
         <DestinationLink
           href={resolveHref("notificationTemplate.list", {})}
           onNavigate={() => navigateTo("notificationTemplate.list", {})}

@@ -324,7 +324,7 @@ export function AvailabilitySlotDetailPage({
   )
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       {breadcrumb ? <div className="text-sm">{breadcrumb}</div> : null}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">

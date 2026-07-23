@@ -83,8 +83,11 @@ export function AdminCoreSettingsLayout({
 
   const isActive = (href: string) => pathname.replace(/\/$/, "") === href
 
+  // Full-height two-pane settings shell. It bleeds out of the shared page
+  // padding (px-4 py-6 md:px-6 from the workspace layout) so the panes stay
+  // edge-to-edge; the content pane re-adds its own padding below.
   return (
-    <div className="flex flex-col md:h-[calc(100vh-0px)] md:flex-row">
+    <div className="-mx-4 -my-6 flex flex-col md:-mx-6 md:h-[calc(100vh-0px)] md:flex-row">
       <aside className="w-full shrink-0 border-b p-6 md:w-64 md:overflow-y-auto md:border-r md:border-b-0">
         <h1 className="text-xl font-semibold tracking-tight">{messages.settings.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{messages.settings.description}</p>
@@ -116,7 +119,7 @@ export function AdminCoreSettingsLayout({
           ))}
         </nav>
       </aside>
-      <div className="min-w-0 flex-1 md:overflow-y-auto">
+      <div className="min-w-0 flex-1 p-6 md:overflow-y-auto">
         <Outlet />
       </div>
     </div>
