@@ -54,6 +54,44 @@ describe("operator webhook admin route authentication", () => {
     await expect(response.json()).resolves.toEqual({ data: [] })
   })
 
+  it("allows full-access staff scopes to read, write, and delete webhooks", async () => {
+    vi.mocked(service.createSubscription).mockResolvedValueOnce({
+      subscription: {
+        id: "webhook_subscription_1",
+        url: "https://partner.example.test/hooks",
+        events: ["booking.created"],
+        active: true,
+        maxRetries: 5,
+        description: null,
+        createdAt: new Date("2026-07-23T10:00:00.000Z"),
+        updatedAt: new Date("2026-07-23T10:00:00.000Z"),
+        lastDeliveryAt: null,
+        failureCount: 0,
+      },
+      secret: "whsec_one_time",
+    })
+    vi.mocked(service.deleteSubscription).mockResolvedValueOnce(true)
+    const fullAccessApp = app(["*"])
+
+    const readResponse = await fullAccessApp.request("http://localhost/subscriptions")
+    const writeResponse = await fullAccessApp.request("http://localhost/subscriptions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        url: "https://partner.example.test/hooks",
+        events: ["booking.created"],
+      }),
+    })
+    const deleteResponse = await fullAccessApp.request(
+      "http://localhost/subscriptions/webhook_subscription_1",
+      { method: "DELETE" },
+    )
+
+    expect(readResponse.status).toBe(200)
+    expect(writeResponse.status).toBe(201)
+    expect(deleteResponse.status).toBe(204)
+  })
+
   it("rejects reads without webhooks:read", async () => {
     const response = await app(["webhooks:write"]).request("http://localhost/subscriptions")
     expect(response.status).toBe(403)

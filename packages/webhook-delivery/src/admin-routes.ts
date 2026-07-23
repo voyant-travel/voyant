@@ -14,6 +14,10 @@ import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-tra
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
+  operatorWebhookDeliverySchema,
+  operatorWebhookEventSchema,
+  operatorWebhookOneTimeSecretSchema,
+  operatorWebhookSubscriptionSchema,
   webhookDeliveryListQuerySchema,
   webhookSubscriptionCreateSchema,
   webhookSubscriptionTestSchema,
@@ -29,11 +33,16 @@ import { createPostgresOperatorWebhookAdminStore } from "./postgres-store.js"
 
 const API_ID = "@voyant-travel/webhook-delivery#api.admin"
 const idParams = z.object({ id: z.string().min(1).max(128) })
-const dataResponse = z.object({ data: z.any() })
 const errorResponse = z.object({ error: z.string() })
-const json = (description: string) => ({
+const eventListResponse = z.object({ data: z.array(operatorWebhookEventSchema) })
+const subscriptionListResponse = z.object({ data: z.array(operatorWebhookSubscriptionSchema) })
+const subscriptionResponse = z.object({ data: operatorWebhookSubscriptionSchema })
+const oneTimeSecretResponse = z.object({ data: operatorWebhookOneTimeSecretSchema })
+const deliveryListResponse = z.object({ data: z.array(operatorWebhookDeliverySchema) })
+const deliveryResponse = z.object({ data: operatorWebhookDeliverySchema })
+const json = (description: string, schema: z.ZodType) => ({
   description,
-  content: { "application/json": { schema: dataResponse } },
+  content: { "application/json": { schema } },
 })
 const errors = {
   400: {
@@ -104,7 +113,7 @@ export function createOperatorWebhookAdminRoutes(
       operationId: "listOperatorWebhookEvents",
       "x-voyant-api-id": API_ID,
       responses: {
-        200: json("Graph-selected outbound event catalog"),
+        200: json("Graph-selected outbound event catalog", eventListResponse),
         401: errors[401],
         403: errors[403],
       },
@@ -122,7 +131,7 @@ export function createOperatorWebhookAdminRoutes(
       operationId: "listOperatorWebhookSubscriptions",
       "x-voyant-api-id": API_ID,
       responses: {
-        200: json("Webhook subscriptions"),
+        200: json("Webhook subscriptions", subscriptionListResponse),
         401: errors[401],
         403: errors[403],
       },
@@ -146,7 +155,7 @@ export function createOperatorWebhookAdminRoutes(
         },
       },
       responses: {
-        201: json("Created subscription and one-time secret"),
+        201: json("Created subscription and one-time secret", oneTimeSecretResponse),
         400: errors[400],
         401: errors[401],
         403: errors[403],
@@ -168,7 +177,7 @@ export function createOperatorWebhookAdminRoutes(
       "x-voyant-api-id": API_ID,
       request: { params: idParams },
       responses: {
-        200: json("Webhook subscription"),
+        200: json("Webhook subscription", subscriptionResponse),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -197,7 +206,7 @@ export function createOperatorWebhookAdminRoutes(
         },
       },
       responses: {
-        200: json("Updated webhook subscription"),
+        200: json("Updated webhook subscription", subscriptionResponse),
         400: errors[400],
         401: errors[401],
         403: errors[403],
@@ -248,7 +257,10 @@ export function createOperatorWebhookAdminRoutes(
         "x-voyant-api-id": API_ID,
         request: { params: idParams },
         responses: {
-          200: json(`${active ? "Enabled" : "Disabled"} webhook subscription`),
+          200: json(
+            `${active ? "Enabled" : "Disabled"} webhook subscription`,
+            subscriptionResponse,
+          ),
           401: errors[401],
           403: errors[403],
           404: errors[404],
@@ -272,7 +284,7 @@ export function createOperatorWebhookAdminRoutes(
       "x-voyant-api-id": API_ID,
       request: { params: idParams },
       responses: {
-        200: json("Updated subscription and one-time secret"),
+        200: json("Updated subscription and one-time secret", oneTimeSecretResponse),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -301,7 +313,7 @@ export function createOperatorWebhookAdminRoutes(
         },
       },
       responses: {
-        202: json("Queued test delivery"),
+        202: json("Queued test delivery", deliveryResponse),
         400: errors[400],
         401: errors[401],
         403: errors[403],
@@ -329,7 +341,7 @@ export function createOperatorWebhookAdminRoutes(
       "x-voyant-api-id": API_ID,
       request: { query: webhookDeliveryListQuerySchema },
       responses: {
-        200: json("Subscription delivery history"),
+        200: json("Subscription delivery history", deliveryListResponse),
         401: errors[401],
         403: errors[403],
       },
@@ -349,7 +361,7 @@ export function createOperatorWebhookAdminRoutes(
       "x-voyant-api-id": API_ID,
       request: { params: idParams },
       responses: {
-        200: json("Subscription delivery detail"),
+        200: json("Subscription delivery detail", deliveryResponse),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -372,7 +384,7 @@ export function createOperatorWebhookAdminRoutes(
       "x-voyant-api-id": API_ID,
       request: { params: idParams },
       responses: {
-        202: json("Queued replay delivery"),
+        202: json("Queued replay delivery", deliveryResponse),
         401: errors[401],
         403: errors[403],
         409: errors[409],

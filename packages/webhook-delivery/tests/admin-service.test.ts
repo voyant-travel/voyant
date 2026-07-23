@@ -94,7 +94,6 @@ describe("operator webhook admin service", () => {
       events: ["booking.created"],
       active: true,
       maxRetries: 5,
-      headers: null,
       description: null,
     })
 
@@ -124,7 +123,6 @@ describe("operator webhook admin service", () => {
         events: ["booking.cancelled"],
         active: true,
         maxRetries: 5,
-        headers: null,
         description: null,
       }),
     ).rejects.toMatchObject({ code: "invalid_subscription" })
@@ -146,8 +144,15 @@ describe("operator webhook admin service", () => {
     expect(update.success).toBe(false)
   })
 
-  it("prohibits sensitive and Voyant-reserved custom headers", () => {
-    for (const header of ["Authorization", "x-api-key", "x-voyant-signature"]) {
+  it("prohibits all caller-provided custom headers", () => {
+    for (const header of [
+      "Authorization",
+      "x-api-key",
+      "x-voyant-signature",
+      "X-Webhook-Token",
+      "X-Partner-Secret",
+      "x-partner-id",
+    ]) {
       expect(
         webhookSubscriptionCreateSchema.safeParse({
           url: "https://partner.example.test/voyant",
@@ -158,26 +163,38 @@ describe("operator webhook admin service", () => {
     }
   })
 
-  it("redacts sensitive headers already persisted by a legacy caller", async () => {
+  it("never returns persisted legacy headers or raw delivery audit data", async () => {
     const store = memoryStore()
     const row = subscription("whsec_private")
-    row.headers = { Authorization: "Bearer private", "x-partner-id": "safe" }
+    row.headers = {
+      Authorization: "Bearer private",
+      "X-Webhook-Token": "webhook-private",
+      "X-Partner-Secret": "partner-private",
+    }
     store.rows.push(row)
     const deliveryRow = delivery({
       subscriptionId: row.id,
-      requestHeaders: { Authorization: "Bearer private", "x-partner-id": "safe" },
-      responseHeaders: { "set-cookie": "private", "x-request-id": "safe" },
+      requestHeaders: {
+        Authorization: "Bearer private",
+        "X-Webhook-Token": "webhook-private",
+        "X-Partner-Secret": "partner-private",
+      },
+      responseHeaders: { "set-cookie": "private", "x-request-id": "request-private" },
     })
     store.deliveries.push(deliveryRow)
     const service = createOperatorWebhookAdminService({ contracts: [contract], store })
 
-    await expect(service.getSubscription(row.id)).resolves.toMatchObject({
-      headers: { Authorization: "[REDACTED]", "x-partner-id": "safe" },
-    })
-    await expect(service.getDelivery(deliveryRow.id)).resolves.toMatchObject({
-      requestHeaders: { Authorization: "[REDACTED]", "x-partner-id": "safe" },
-      responseHeaders: { "set-cookie": "[REDACTED]", "x-request-id": "safe" },
-    })
+    const returnedSubscription = await service.getSubscription(row.id)
+    const returnedDelivery = await service.getDelivery(deliveryRow.id)
+
+    expect(returnedSubscription).not.toHaveProperty("headers")
+    expect(returnedSubscription).not.toHaveProperty("secret")
+    expect(returnedDelivery).not.toHaveProperty("requestHeaders")
+    expect(returnedDelivery).not.toHaveProperty("responseHeaders")
+    expect(returnedDelivery).not.toHaveProperty("requestPayload")
+    expect(JSON.stringify([returnedSubscription, returnedDelivery])).not.toMatch(
+      /private|X-Webhook-Token|X-Partner-Secret/i,
+    )
   })
 
   it("does not send tests or replays for inactive subscriptions", async () => {

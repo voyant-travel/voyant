@@ -42,7 +42,11 @@ const SUBSCRIPTION: WebhookSubscription = {
   id: newId("webhook_subscriptions"),
   url: "https://partner.example.test/hooks",
   secret: "s".repeat(40),
-  headers: { Authorization: "Bearer private" },
+  headers: {
+    Authorization: "Bearer private",
+    "X-Webhook-Token": "webhook-private",
+    "X-Partner-Secret": "partner-private",
+  },
   maxRetries: 2,
   active: true,
 }
@@ -82,6 +86,9 @@ describe("durable external webhook delivery", () => {
       const headers = new Headers(init?.headers)
       expect(headers.get("x-voyant-signature")).toMatch(/^sha256=[a-f0-9]{64}$/)
       expect(headers.get("x-voyant-event-contract")).toBe(CONTRACT.eventId)
+      expect(headers.get("authorization")).toBeNull()
+      expect(headers.get("x-webhook-token")).toBeNull()
+      expect(headers.get("x-partner-secret")).toBeNull()
       return new Response(null, { status: 204 })
     })
     const worker = createWebhookDeliveryWorker({
@@ -257,6 +264,13 @@ describe("durable external webhook delivery", () => {
       "https://receiver.example.test/voyant",
       expect.objectContaining({ redirect: "manual" }),
     )
+    for (const call of fetch.mock.calls) {
+      const headers = new Headers(call[1]?.headers)
+      expect(headers.get("x-voyant-signature")).toMatch(/^sha256=[a-f0-9]{64}$/)
+      expect(headers.get("authorization")).toBeNull()
+      expect(headers.get("x-webhook-token")).toBeNull()
+      expect(headers.get("x-partner-secret")).toBeNull()
+    }
   })
 
   it("halts pending deliveries when an app subscription is paused or uninstalled", async () => {

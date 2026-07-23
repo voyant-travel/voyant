@@ -23,14 +23,28 @@ import {
 } from "./contracts.js"
 import {
   assertOutboundWebhookEndpointUrl,
-  assertSafeWebhookCustomHeaders,
   hashWebhookPayload,
-  redactWebhookHeaders,
   webhookBodyExcerpt,
 } from "./security.js"
 import type { EnqueueWebhookAttemptInput } from "./types.js"
 
-export interface OperatorWebhookSubscription extends Omit<InfraWebhookSubscription, "secret"> {}
+export interface OperatorWebhookSubscription
+  extends Omit<InfraWebhookSubscription, "secret" | "headers"> {}
+
+export interface OperatorWebhookDelivery
+  extends Pick<
+    InfraWebhookDelivery,
+    | "id"
+    | "subscriptionId"
+    | "sourceEvent"
+    | "targetUrl"
+    | "status"
+    | "attemptNumber"
+    | "responseStatus"
+    | "errorMessage"
+    | "createdAt"
+    | "finishedAt"
+  > {}
 
 export class OperatorWebhookRequestError extends Error {
   constructor(
@@ -84,10 +98,10 @@ export interface OperatorWebhookAdminService {
   testSubscription(
     id: string,
     input: WebhookSubscriptionTestInput,
-  ): Promise<InfraWebhookDelivery | null>
-  listDeliveries(query: WebhookDeliveryListQuery): Promise<InfraWebhookDelivery[]>
-  getDelivery(id: string): Promise<InfraWebhookDelivery | null>
-  replayDelivery(id: string): Promise<InfraWebhookDelivery | null>
+  ): Promise<OperatorWebhookDelivery | null>
+  listDeliveries(query: WebhookDeliveryListQuery): Promise<OperatorWebhookDelivery[]>
+  getDelivery(id: string): Promise<OperatorWebhookDelivery | null>
+  replayDelivery(id: string): Promise<OperatorWebhookDelivery | null>
 }
 
 export function createOperatorWebhookAdminService(options: {
@@ -124,18 +138,20 @@ export function createOperatorWebhookAdminService(options: {
     async createSubscription(input) {
       validateSubscriptionInput(() => {
         assertOutboundWebhookEndpointUrl(input.url)
-        assertSafeWebhookCustomHeaders(input.headers)
         assertWebhookSubscriptionCreateEvents(input, contracts)
       })
       const secret = generateSecret()
-      const subscription = await options.store.createSubscription({ ...input, secret })
+      const subscription = await options.store.createSubscription({
+        ...input,
+        headers: null,
+        secret,
+      })
       return { subscription: withoutSecret(subscription), secret }
     },
 
     async updateSubscription(id, input) {
       validateSubscriptionInput(() => {
         if (input.url !== undefined) assertOutboundWebhookEndpointUrl(input.url)
-        if (input.headers !== undefined) assertSafeWebhookCustomHeaders(input.headers)
         assertWebhookSubscriptionUpdateEvents(input, contracts)
       })
       const subscription = await options.store.updateSubscription(id, input)
@@ -180,14 +196,16 @@ export function createOperatorWebhookAdminService(options: {
       }
       const at = now()
       const event = prepareExternalWebhookEvent(testEvent(contract, at), contract)
-      return options.store.enqueueAttempt(
-        deliveryInput({
-          subscription,
-          event,
-          contract,
-          now: at,
-          idempotencyPrefix: "operator-webhook-test",
-        }),
+      return safeDelivery(
+        await options.store.enqueueAttempt(
+          deliveryInput({
+            subscription,
+            event,
+            contract,
+            now: at,
+            idempotencyPrefix: "operator-webhook-test",
+          }),
+        ),
       )
     },
 
@@ -233,32 +251,41 @@ export function createOperatorWebhookAdminService(options: {
         )
       }
       const at = now()
-      return options.store.enqueueAttempt(
-        deliveryInput({
-          subscription,
-          event,
-          contract,
-          now: at,
-          idempotencyPrefix: `operator-webhook-replay:${original.id}`,
-          parentDeliveryId: original.id,
-          sourceEntityModule: original.sourceEntityModule,
-          sourceEntityId: original.sourceEntityId,
-        }),
+      return safeDelivery(
+        await options.store.enqueueAttempt(
+          deliveryInput({
+            subscription,
+            event,
+            contract,
+            now: at,
+            idempotencyPrefix: `operator-webhook-replay:${original.id}`,
+            parentDeliveryId: original.id,
+            sourceEntityModule: original.sourceEntityModule,
+            sourceEntityId: original.sourceEntityId,
+          }),
+        ),
       )
     },
   }
 }
 
 function withoutSecret(subscription: InfraWebhookSubscription): OperatorWebhookSubscription {
-  const { secret: _secret, ...safe } = subscription
-  return { ...safe, headers: redactWebhookHeaders(safe.headers ?? undefined) }
+  const { headers: _headers, secret: _secret, ...safe } = subscription
+  return safe
 }
 
-function safeDelivery(delivery: InfraWebhookDelivery): InfraWebhookDelivery {
+function safeDelivery(delivery: InfraWebhookDelivery): OperatorWebhookDelivery {
   return {
-    ...delivery,
-    requestHeaders: redactWebhookHeaders(delivery.requestHeaders ?? undefined),
-    responseHeaders: redactWebhookHeaders(delivery.responseHeaders ?? undefined),
+    id: delivery.id,
+    subscriptionId: delivery.subscriptionId,
+    sourceEvent: delivery.sourceEvent,
+    targetUrl: delivery.targetUrl,
+    status: delivery.status,
+    attemptNumber: delivery.attemptNumber,
+    responseStatus: delivery.responseStatus,
+    errorMessage: delivery.errorMessage,
+    createdAt: delivery.createdAt,
+    finishedAt: delivery.finishedAt,
   }
 }
 
@@ -268,7 +295,7 @@ function validateSubscriptionInput(validate: () => void): void {
   } catch {
     throw new OperatorWebhookRequestError(
       "invalid_subscription",
-      "The webhook subscription contains an invalid URL, event, or custom header.",
+      "The webhook subscription contains an invalid URL or event.",
     )
   }
 }
@@ -339,15 +366,13 @@ function deliveryInput(input: {
     subscriptionId: input.subscription.id,
     targetUrl: input.subscription.url,
     requestMethod: "POST",
-    requestHeaders:
-      redactWebhookHeaders({
-        ...(input.subscription.headers ?? {}),
-        "content-type": "application/json",
-        "idempotency-key": idempotencyKey,
-        "x-voyant-event": input.event.name,
-        "x-voyant-event-contract": input.contract.eventId,
-        "x-voyant-event-version": input.contract.eventVersion,
-      }) ?? {},
+    requestHeaders: {
+      "content-type": "application/json",
+      "idempotency-key": idempotencyKey,
+      "x-voyant-event": input.event.name,
+      "x-voyant-event-contract": input.contract.eventId,
+      "x-voyant-event-version": input.contract.eventVersion,
+    },
     requestBodyHash: hashWebhookPayload(body),
     requestBodyExcerpt: webhookBodyExcerpt(body),
     requestPayload: input.event,

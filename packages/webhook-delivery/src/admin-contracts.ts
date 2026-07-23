@@ -1,39 +1,9 @@
 import { z } from "zod"
 
-import { assertSafeWebhookCustomHeaders } from "./security.js"
-
 const MAX_EVENTS = 64
-const MAX_CUSTOM_HEADERS = 16
 
 const eventNameSchema = z.string().trim().min(1).max(120)
-const headerNameSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(64)
-  .regex(/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/, "Invalid HTTP header name.")
-const headerValueSchema = z
-  .string()
-  .max(512)
-  .refine((value) => !/[\r\n]/.test(value), "HTTP header values must not contain newlines.")
-const customHeadersSchema = z
-  .record(headerNameSchema, headerValueSchema)
-  .superRefine((headers, context) => {
-    if (Object.keys(headers).length > MAX_CUSTOM_HEADERS) {
-      context.addIssue({
-        code: "custom",
-        message: `At most ${MAX_CUSTOM_HEADERS} custom headers are allowed.`,
-      })
-    }
-    try {
-      assertSafeWebhookCustomHeaders(headers)
-    } catch {
-      context.addIssue({
-        code: "custom",
-        message: "Custom headers must not include credentials or Voyant-reserved headers.",
-      })
-    }
-  })
+const dateValueSchema = z.union([z.string(), z.date()])
 
 export const webhookSubscriptionCreateSchema = z
   .object({
@@ -45,7 +15,6 @@ export const webhookSubscriptionCreateSchema = z
       .refine((events) => new Set(events).size === events.length, "Events must be unique."),
     active: z.boolean().optional().default(true),
     maxRetries: z.number().int().min(0).max(10).optional().default(5),
-    headers: customHeadersSchema.nullable().optional().default(null),
     description: z.string().trim().max(500).nullable().optional().default(null),
   })
   .strict()
@@ -72,3 +41,41 @@ export type WebhookSubscriptionCreateInput = z.infer<typeof webhookSubscriptionC
 export type WebhookSubscriptionUpdateInput = z.infer<typeof webhookSubscriptionUpdateSchema>
 export type WebhookSubscriptionTestInput = z.infer<typeof webhookSubscriptionTestSchema>
 export type WebhookDeliveryListQuery = z.infer<typeof webhookDeliveryListQuerySchema>
+
+export const operatorWebhookEventSchema = z.object({
+  id: z.string(),
+  eventType: z.string(),
+  version: z.string(),
+  payloadSchema: z.record(z.string(), z.unknown()),
+})
+
+export const operatorWebhookSubscriptionSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  events: z.array(z.string()),
+  active: z.boolean(),
+  maxRetries: z.number().int(),
+  description: z.string().nullable(),
+  createdAt: dateValueSchema,
+  updatedAt: dateValueSchema,
+  lastDeliveryAt: dateValueSchema.nullable(),
+  failureCount: z.number().int(),
+})
+
+export const operatorWebhookDeliverySchema = z.object({
+  id: z.string(),
+  subscriptionId: z.string().nullable(),
+  sourceEvent: z.string(),
+  targetUrl: z.string(),
+  status: z.enum(["pending", "in_flight", "succeeded", "failed", "abandoned"]),
+  attemptNumber: z.number().int(),
+  responseStatus: z.number().int().nullable(),
+  errorMessage: z.string().nullable(),
+  createdAt: dateValueSchema,
+  finishedAt: dateValueSchema.nullable(),
+})
+
+export const operatorWebhookOneTimeSecretSchema = z.object({
+  subscription: operatorWebhookSubscriptionSchema,
+  secret: z.string(),
+})

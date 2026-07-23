@@ -16,13 +16,6 @@ const REDACTED_HEADERS = new Set([
   "api-key",
   "apikey",
 ])
-const RESERVED_CUSTOM_HEADERS = new Set([
-  ...REDACTED_HEADERS,
-  "content-length",
-  "content-type",
-  "host",
-  "idempotency-key",
-])
 const REDACTED_BODY_KEYS = new Set([
   "password",
   "secret",
@@ -128,16 +121,6 @@ export function assertOutboundWebhookEndpointUrl(value: string): void {
   }
 }
 
-export function assertSafeWebhookCustomHeaders(headers: Record<string, string> | null): void {
-  if (!headers) return
-  for (const name of Object.keys(headers)) {
-    const normalized = name.toLowerCase()
-    if (RESERVED_CUSTOM_HEADERS.has(normalized) || normalized.startsWith("x-voyant-")) {
-      throw new Error(`Webhook custom header "${name}" is reserved or sensitive.`)
-    }
-  }
-}
-
 export function redactWebhookHeaders(
   headers: Record<string, string> | undefined,
 ): Record<string, string> | null {
@@ -190,15 +173,19 @@ function redactString(value: string): string {
 }
 
 function isPrivateIpv4(value: string): boolean {
-  const [a = 0, b = 0] = value.split(".").map((part) => Number(part))
+  const [a = 0, b = 0, c = 0] = value.split(".").map((part) => Number(part))
   return (
     a === 10 ||
     a === 127 ||
     (a === 100 && b >= 64 && b <= 127) ||
     (a === 169 && b === 254) ||
     (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+    (a === 192 && b === 88 && c === 99) ||
     (a === 192 && b === 168) ||
     (a === 198 && (b === 18 || b === 19)) ||
+    (a === 198 && b === 51 && c === 100) ||
+    (a === 203 && b === 0 && c === 113) ||
     a >= 224 ||
     a === 0
   )
@@ -211,6 +198,12 @@ function isPrivateIpv6(value: string): boolean {
     normalized === "::" ||
     normalized.startsWith("fc") ||
     normalized.startsWith("fd") ||
-    normalized.startsWith("fe80:")
+    normalized.startsWith("fe80:") ||
+    normalized.startsWith("fec") ||
+    normalized.startsWith("fed") ||
+    normalized.startsWith("ff") ||
+    normalized.startsWith("::ffff:") ||
+    normalized.startsWith("2001:db8:") ||
+    normalized.startsWith("3fff:")
   )
 }

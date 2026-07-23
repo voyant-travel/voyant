@@ -6,7 +6,6 @@ export interface WebhookSubscriptionRecord {
   events: string[]
   active: boolean
   maxRetries: number
-  headers: Record<string, string> | null
   description: string | null
   createdAt: string
   updatedAt: string

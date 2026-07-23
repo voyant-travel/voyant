@@ -282,6 +282,7 @@ async function dispatch(
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   let currentUrl = url
+  let requestHeaders = headers
   try {
     for (let redirectCount = 0; ; redirectCount += 1) {
       try {
@@ -300,7 +301,7 @@ async function dispatch(
 
       const response = await fetchImpl(currentUrl, {
         method: "POST",
-        headers,
+        headers: requestHeaders,
         body,
         signal: controller.signal,
         redirect: "manual",
@@ -322,7 +323,11 @@ async function dispatch(
           }
         }
         try {
-          currentUrl = new URL(location, currentUrl).href
+          const nextUrl = new URL(location, currentUrl)
+          if (nextUrl.origin !== new URL(currentUrl).origin) {
+            requestHeaders = safeCrossOriginRedirectHeaders(requestHeaders)
+          }
+          currentUrl = nextUrl.href
         } catch {
           return rejectedEndpointResult()
         }
@@ -380,6 +385,19 @@ function isRedirect(status: number): boolean {
   return status === 301 || status === 302 || status === 303 || status === 307 || status === 308
 }
 
+function safeCrossOriginRedirectHeaders(headers: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(headers).filter(([name]) => {
+      const normalized = name.toLowerCase()
+      return (
+        normalized === "content-type" ||
+        normalized === "idempotency-key" ||
+        normalized.startsWith("x-voyant-")
+      )
+    }),
+  )
+}
+
 function retryInput(
   delivery: InfraWebhookDelivery,
   payload: EventEnvelope | AppWebhookDeliveryEnvelope,
@@ -416,7 +434,7 @@ function retryInput(
     subscriptionId: subscription.id,
     targetUrl: delivery.targetUrl,
     requestMethod: "POST",
-    requestHeaders: delivery.requestHeaders ?? {},
+    requestHeaders: {},
     requestBodyHash: hashWebhookPayload(body),
     requestBodyExcerpt: webhookBodyExcerpt(body),
     requestPayload: retryPayload,
@@ -459,7 +477,6 @@ function signedHeaders(
   const eventId = stringMetadata(event, "eventId")
   if (!eventId) throw new Error(`Persisted webhook event "${event.name}" has no event id.`)
   return {
-    ...(subscription.headers ?? {}),
     "content-type": "application/json",
     "idempotency-key": idempotencyKey,
     "x-voyant-event": event.name,
