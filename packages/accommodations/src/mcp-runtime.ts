@@ -116,7 +116,11 @@ export const voyantToolContextContribution = defineToolContextContribution({
           if (!block) return null
           return { block, summary: await summarizeRoomBlock(transactionalDb, blockId) }
         },
-        async createRoomBlock({ idempotencyKey, ...input }, admitted) {
+        async createRoomBlock(
+          requestInput: Parameters<AccommodationsToolServices["createRoomBlock"]>[0],
+          admitted: Parameters<AccommodationsToolServices["createRoomBlock"]>[1],
+        ) {
+          const { idempotencyKey, ...input } = requestInput
           const requestContext = actionLedgerContext(request as Context)
           const principal = mapActionLedgerRequestContext(requestContext)
           const command = {

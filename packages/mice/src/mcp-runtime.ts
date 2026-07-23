@@ -12,6 +12,7 @@ import { defineToolContextContribution } from "@voyant-travel/tools"
 import type { Context } from "hono"
 
 import { miceService } from "./service.js"
+import type { MiceToolServices } from "./tools.js"
 
 export * from "./tools.js"
 
@@ -27,7 +28,11 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listPrograms: (query: Parameters<typeof miceService.listPrograms>[1]) =>
           miceService.listPrograms(db, query),
         getProgram: (id: string) => miceService.getProgram(db, id),
-        async createProgram({ idempotencyKey, ...input }, admitted) {
+        async createProgram(
+          requestInput: Parameters<MiceToolServices["createProgram"]>[0],
+          admitted: Parameters<MiceToolServices["createProgram"]>[1],
+        ) {
+          const { idempotencyKey, ...input } = requestInput
           const requestContext = actionLedgerContext(c)
           const principal = mapActionLedgerRequestContext(requestContext)
           const command = {
