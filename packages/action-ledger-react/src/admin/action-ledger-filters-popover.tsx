@@ -153,7 +153,7 @@ export function ActionLedgerFiltersPopover({
               value={principalType}
               onValueChange={(value) => onPrincipalTypeChange(value ?? PRINCIPAL_TYPE_ALL)}
             >
-              <SelectTrigger id="logs-filter-principal-type">
+              <SelectTrigger className="w-full" id="logs-filter-principal-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +186,7 @@ export function ActionLedgerFiltersPopover({
               value={isKnownTargetType(targetType) ? targetType : TARGET_TYPE_ALL}
               onValueChange={(value) => onTargetTypeChange(value ?? TARGET_TYPE_ALL)}
             >
-              <SelectTrigger id="logs-filter-target-type">
+              <SelectTrigger className="w-full" id="logs-filter-target-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -235,7 +235,7 @@ export function ActionLedgerFiltersPopover({
               value={evaluatedRisk}
               onValueChange={(value) => onEvaluatedRiskChange(value ?? RISK_ALL)}
             >
-              <SelectTrigger id="logs-filter-risk">
+              <SelectTrigger className="w-full" id="logs-filter-risk">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -251,7 +251,7 @@ export function ActionLedgerFiltersPopover({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="logs-filter-status">{f.statusLabel}</Label>
             <Select value={status} onValueChange={(value) => onStatusChange(value ?? STATUS_ALL)}>
-              <SelectTrigger id="logs-filter-status">
+              <SelectTrigger className="w-full" id="logs-filter-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

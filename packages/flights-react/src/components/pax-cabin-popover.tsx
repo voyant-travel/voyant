@@ -88,7 +88,7 @@ export function PaxCabinPopover({ passengers, cabin, onChange, className }: PaxC
                 if (v) onChange({ passengers, cabin: v as CabinClass })
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -185,7 +185,7 @@ export function ConsentScreen({
                   setReleaseId(undefined)
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={t.selectApp} />
                 </SelectTrigger>
                 <SelectContent>
@@ -204,7 +204,7 @@ export function ConsentScreen({
                 onValueChange={(value) => setReleaseId(value ?? undefined)}
                 disabled={!appId}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={t.selectRelease} />
                 </SelectTrigger>
                 <SelectContent>

@@ -549,7 +549,7 @@ function ComposerForm({
           <div className="space-y-2">
             <Label>{f.typeLabel}</Label>
             <Select value={template} onValueChange={(value) => setTemplate(value as never)}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -596,7 +596,7 @@ function ComposerForm({
               value={checkoutIntent}
               onValueChange={(value) => setCheckoutIntent(value as never)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

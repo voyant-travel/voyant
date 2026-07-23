@@ -134,7 +134,7 @@ export function StageChannelEditorDialog({
                     }))
                   }}
                 >
-                  <SelectTrigger id="channel-channel">
+                  <SelectTrigger className="w-full" id="channel-channel">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -186,7 +186,7 @@ export function StageChannelEditorDialog({
                     setField("recipientKind", v as RecipientKind)
                   }}
                 >
-                  <SelectTrigger id="channel-recipient-kind">
+                  <SelectTrigger className="w-full" id="channel-recipient-kind">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -209,7 +209,7 @@ export function StageChannelEditorDialog({
                     setField("provider", v as ProviderOption)
                   }}
                 >
-                  <SelectTrigger id="channel-provider">
+                  <SelectTrigger className="w-full" id="channel-provider">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

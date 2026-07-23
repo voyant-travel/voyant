@@ -470,7 +470,7 @@ function DocumentsSection({ personId }: { personId: string }) {
                 setDraft((prev) => ({ ...prev, type: v as PersonDocumentType }))
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

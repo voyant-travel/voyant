@@ -161,7 +161,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                   if (v === "percentage" || v === "fixed_amount") setField("discountType", v)
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,7 +223,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 }
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

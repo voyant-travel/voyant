@@ -162,7 +162,7 @@ export function PersonDocumentDialog({
                 value={state.type}
                 onValueChange={(value) => set("type", value as PersonDocumentType)}
               >
-                <SelectTrigger id="doc-type">
+                <SelectTrigger className="w-full" id="doc-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

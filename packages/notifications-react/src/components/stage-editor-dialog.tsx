@@ -208,7 +208,7 @@ export function StageEditorDialog({
                     value={form.anchor}
                     onValueChange={(v) => setField("anchor", v as Anchor)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -257,7 +257,7 @@ export function StageEditorDialog({
                     value={form.cadenceKind}
                     onValueChange={(v) => setField("cadenceKind", v as CadenceKind)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

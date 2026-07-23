@@ -166,7 +166,7 @@ export function ProductSeoSharingSection({
             <div className="space-y-1.5">
               <Label>{t.locale}</Label>
               <Select value={languageTag} onValueChange={(value) => setLanguageTag(value ?? "")}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={t.selectLocale} />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,7 +267,7 @@ export function ProductSeoSharingSection({
             value={selectedMediaId}
             onValueChange={(value) => setSelectedMediaId(value ?? FALLBACK_MEDIA_VALUE)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder={t.selectImage} />
             </SelectTrigger>
             <SelectContent>
