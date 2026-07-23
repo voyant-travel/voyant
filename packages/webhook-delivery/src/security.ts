@@ -16,6 +16,13 @@ const REDACTED_HEADERS = new Set([
   "api-key",
   "apikey",
 ])
+const RESERVED_CUSTOM_HEADERS = new Set([
+  ...REDACTED_HEADERS,
+  "content-length",
+  "content-type",
+  "host",
+  "idempotency-key",
+])
 const REDACTED_BODY_KEYS = new Set([
   "password",
   "secret",
@@ -92,7 +99,13 @@ export function hashWebhookPayload(body: string): string {
 export function assertOutboundWebhookEndpointUrl(value: string): void {
   const url = new URL(value)
   if (url.protocol !== "https:") {
-    throw new Error(`Webhook URL must use HTTPS: ${value}`)
+    throw new Error("Webhook URL must use HTTPS.")
+  }
+  if (url.username || url.password) {
+    throw new Error("Webhook URL must not include credentials.")
+  }
+  if (url.hash) {
+    throw new Error("Webhook URL must not include a fragment.")
   }
   const hostname = url.hostname.toLowerCase()
   const address =
@@ -100,16 +113,28 @@ export function assertOutboundWebhookEndpointUrl(value: string): void {
   if (
     hostname === "localhost" ||
     hostname.endsWith(".localhost") ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal") ||
     hostname === "metadata.google.internal"
   ) {
-    throw new Error(`Webhook URL host is not allowed: ${hostname}`)
+    throw new Error("Webhook URL host is not allowed.")
   }
   const ipVersion = isIP(address)
   if (ipVersion === 4 && isPrivateIpv4(address)) {
-    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+    throw new Error("Webhook URL IP is not allowed.")
   }
   if (ipVersion === 6 && isPrivateIpv6(address)) {
-    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+    throw new Error("Webhook URL IP is not allowed.")
+  }
+}
+
+export function assertSafeWebhookCustomHeaders(headers: Record<string, string> | null): void {
+  if (!headers) return
+  for (const name of Object.keys(headers)) {
+    const normalized = name.toLowerCase()
+    if (RESERVED_CUSTOM_HEADERS.has(normalized) || normalized.startsWith("x-voyant-")) {
+      throw new Error(`Webhook custom header "${name}" is reserved or sensitive.`)
+    }
   }
 }
 
@@ -169,9 +194,12 @@ function isPrivateIpv4(value: string): boolean {
   return (
     a === 10 ||
     a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
     (a === 169 && b === 254) ||
     (a === 172 && b >= 16 && b <= 31) ||
     (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) ||
+    a >= 224 ||
     a === 0
   )
 }

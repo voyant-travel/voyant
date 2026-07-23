@@ -78,7 +78,17 @@ describe("webhook delivery security", () => {
     expect(() => assertOutboundWebhookEndpointUrl("http://app.example.test/hook")).toThrow(/HTTPS/)
     expect(() => assertOutboundWebhookEndpointUrl("https://localhost/hook")).toThrow(/not allowed/)
     expect(() => assertOutboundWebhookEndpointUrl("https://127.0.0.1/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://100.64.0.1/hook")).toThrow(/not allowed/)
     expect(() => assertOutboundWebhookEndpointUrl("https://[::1]/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://service.internal/hook")).toThrow(
+      /not allowed/,
+    )
+    expect(() =>
+      assertOutboundWebhookEndpointUrl("https://user:pass@app.example.test/hook"),
+    ).toThrow(/credentials/)
+    expect(() =>
+      assertOutboundWebhookEndpointUrl("https://app.example.test/hook#fragment"),
+    ).toThrow(/fragment/)
     expect(() => assertOutboundWebhookEndpointUrl("https://app.example.test/hook")).not.toThrow()
   })
 })
