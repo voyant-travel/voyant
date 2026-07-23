@@ -21,6 +21,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
+  admitHandlerActionPolicy,
   createToolRegistry,
   TOOL_ACTION_INVOCATION_FIELD,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
@@ -583,7 +584,9 @@ async function dispatchToResult(
         { capabilityId: entry.capabilityId },
       )
     }
-    const dispatch = () => registry.dispatch(name, commandInput, ctx)
+    const baseDispatchContext = withoutHandlerActionPolicy(ctx)
+    const dispatch = (dispatchContext: ToolContext = baseDispatchContext) =>
+      registry.dispatch(name, commandInput, dispatchContext)
     if (
       entry.actionPolicy?.enforcement === "handler" &&
       entry.actionPolicy.invocation.requiredFields.includes("confirmed") &&
@@ -608,7 +611,11 @@ async function dispatchToResult(
             },
             dispatch,
           )
-        : await dispatch()
+        : await dispatch(
+            entry.actionPolicy?.enforcement === "handler"
+              ? handlerDispatchContext(baseDispatchContext, entry, invocation)
+              : baseDispatchContext,
+          )
     return {
       content: [{ type: "text", text: safeStringify(data) }],
       structuredContent: toStructuredContent(data, envelopeResult),
@@ -618,6 +625,49 @@ async function dispatchToResult(
     const message = err instanceof Error ? err.message : String(err)
     return { isError: true, content: [{ type: "text", text: `[${code}] ${message}` }] }
   }
+}
+
+function withoutHandlerActionPolicy(context: ToolContext): ToolContext {
+  if (!("handlerActionPolicy" in context)) return context
+  const { handlerActionPolicy: _handlerActionPolicy, ...base } = context
+  return base
+}
+
+function handlerDispatchContext(
+  context: ToolContext,
+  entry: ToolManifestEntry,
+  invocation: ToolActionInvocationControl,
+): ToolContext {
+  const actionPolicy = entry.actionPolicy
+  if (actionPolicy?.enforcement !== "handler") return context
+  const handlerContext: ToolContext = {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: entry.capabilityId,
+      capabilityVersion: entry.capabilityVersion,
+      canonicalName: entry.name,
+      actionPolicy: {
+        ...actionPolicy,
+        ...(actionPolicy.createdTarget ? { createdTarget: { ...actionPolicy.createdTarget } } : {}),
+        ...(actionPolicy.allowedActorTypes
+          ? { allowedActorTypes: [...actionPolicy.allowedActorTypes] }
+          : {}),
+        invocation: {
+          ...actionPolicy.invocation,
+          requiredFields: [...actionPolicy.invocation.requiredFields],
+          optionalFields: [...actionPolicy.invocation.optionalFields],
+        },
+      },
+      invocation: { ...invocation },
+    },
+  }
+  admitHandlerActionPolicy(handlerContext, {
+    capabilityId: entry.capabilityId,
+    capabilityVersion: entry.capabilityVersion,
+    canonicalName: entry.name,
+    actionPolicy,
+  })
+  return handlerContext
 }
 
 function toStructuredContent(data: unknown, envelopeResult: boolean): Record<string, unknown> {

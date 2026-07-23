@@ -229,6 +229,85 @@ describe("actionLedgerService.validateApprovedAction", () => {
     ])
   })
 
+  const approvedActionDrifts = [
+    ["capability/version", { capabilityVersion: "v2" }, {}, "capability_mismatch"],
+    ["policy/version", { policyVersion: "v2" }, {}, "policy_mismatch"],
+    ["idempotency key", { idempotencyKey: "other-key" }, {}, "idempotency_key_mismatch"],
+    ["reason", { reasonCode: "other-reason" }, {}, "reason_mismatch"],
+    ["target", { targetId: "book_other" }, {}, "mismatched_action"],
+    ["risk", { evaluatedRisk: "critical" }, {}, "risk_mismatch"],
+    [
+      "assignee/decider",
+      {},
+      { assignedToPrincipalId: "usr_approver", decidedByPrincipalId: "usr_other" },
+      "assignee_mismatch",
+    ],
+  ] as const
+
+  test.each(
+    approvedActionDrifts,
+  )("rejects exact approved-action %s drift", async (_label, validationPatch, approvalPatch, reason) => {
+    const requestedAction = makeEntry({
+      id: "alge_requested",
+      actionName: "booking.status.cancel",
+      actionVersion: "v1",
+      actionKind: "execute",
+      status: "awaiting_approval",
+      evaluatedRisk: "high",
+      principalType: "agent",
+      principalId: "agent_1",
+      targetType: "booking",
+      targetId: "book_1",
+      routeOrToolName: "bookings:tool:cancel",
+      capabilityId: "bookings:status:cancel",
+      capabilityVersion: "v1",
+      approvalId: "appr_exact",
+      idempotencyKey: "cancel-key",
+      idempotencyFingerprint: "sha256:approved",
+    })
+    const approval = makeApproval({
+      id: "appr_exact",
+      requestedActionId: requestedAction.id,
+      status: "approved",
+      requestedByPrincipalId: "agent_1",
+      assignedToPrincipalId: "usr_approver",
+      decidedByPrincipalId: "usr_approver",
+      policyName: "booking-cancel-policy",
+      policyVersion: "v1",
+      riskSnapshot: "high",
+      reasonCode: "duplicate",
+      expiresAt: null,
+      ...approvalPatch,
+    })
+    const { db } = makeValidateApprovedActionDb({ approval, entry: requestedAction })
+
+    await expect(
+      actionLedgerService.validateApprovedAction(db, {
+        approvalId: approval.id,
+        actionName: requestedAction.actionName,
+        actionVersion: requestedAction.actionVersion,
+        requestedActionKind: "execute",
+        requestedActionStatus: "awaiting_approval",
+        targetType: requestedAction.targetType,
+        targetId: requestedAction.targetId,
+        routeOrToolName: requestedAction.routeOrToolName,
+        principalType: requestedAction.principalType,
+        principalId: requestedAction.principalId,
+        requireApprovalProvenance: true,
+        capabilityId: requestedAction.capabilityId,
+        capabilityVersion: requestedAction.capabilityVersion,
+        evaluatedRisk: requestedAction.evaluatedRisk,
+        policyName: approval.policyName,
+        policyVersion: approval.policyVersion,
+        reasonCode: approval.reasonCode,
+        idempotencyKey: requestedAction.idempotencyKey,
+        idempotencyFingerprint: "sha256:approved",
+        executionActionKind: "create",
+        ...validationPatch,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason })
+  })
+
   test("rejects an approved action that was already executed", async () => {
     const requestedAction = makeEntry({
       id: "alge_requested",

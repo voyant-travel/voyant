@@ -559,7 +559,7 @@ describe("createMcpApiRoutes", () => {
             durability: "handler-command-claim-v1",
           },
           enforcement: "handler",
-          invocation: { requiredFields: [] },
+          invocation: { requiredFields: ["idempotencyKey"] },
         },
       },
     })
@@ -582,7 +582,7 @@ describe("createMcpApiRoutes", () => {
           resultReferenceType: "notification",
           durability: "handler-command-claim-v1",
         },
-        invocation: expect.objectContaining({ requiredFields: [] }),
+        invocation: expect.objectContaining({ requiredFields: ["idempotencyKey"] }),
       }),
     )
 
@@ -591,7 +591,13 @@ describe("createMcpApiRoutes", () => {
         "/",
         rpc("tools/call", {
           name: "create_notification",
-          arguments: { message: "hello", _voyant: { reasonCode: "operator-request" } },
+          arguments: {
+            message: "hello",
+            _voyant: {
+              idempotencyKey: "notification-command-1",
+              reasonCode: "operator-request",
+            },
+          },
         }),
       ),
     )

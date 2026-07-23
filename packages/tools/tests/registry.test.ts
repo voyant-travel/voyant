@@ -51,6 +51,58 @@ describe("createToolRegistry", () => {
     expect(registry.getByCapabilityId("@voyant-travel/test#tool.echo", "v3")).toBeUndefined()
   })
 
+  it("passes request-scoped handler action policy without retaining it in later calls", async () => {
+    const registry = createToolRegistry()
+    const seen: Array<ToolContext["handlerActionPolicy"]> = []
+    registry.register(
+      defineTool({
+        name: "handler_context",
+        description: "Reads handler-owned action context",
+        inputSchema: z.object({}),
+        outputSchema: z.object({ approvalId: z.string().nullable() }),
+        requiredScopes: ["catalog:read"],
+        tier: "read",
+        riskPolicy: READ_ONLY_RISK,
+        async handler(_input, context) {
+          seen.push(context.handlerActionPolicy)
+          return { approvalId: context.handlerActionPolicy?.invocation.approvalId ?? null }
+        },
+      }),
+    )
+    const handlerActionPolicy = {
+      capabilityId: "test:handler-context",
+      capabilityVersion: "v1",
+      canonicalName: "handler_context",
+      actionPolicy: {
+        id: "test:handler-context",
+        capabilityId: "test:handler-context",
+        version: "v1",
+        kind: "execute" as const,
+        targetType: "test",
+        risk: "high" as const,
+        ledger: "required" as const,
+        approval: "required" as const,
+        enforcement: "handler" as const,
+        invocation: {
+          controlField: "_voyant" as const,
+          requiredFields: [],
+          optionalFields: ["approvalId"] as const,
+          fingerprintAlgorithm: "action-ledger-command-v1" as const,
+        },
+      },
+      invocation: { approvalId: "appr_1" },
+    }
+
+    await expect(
+      registry.dispatch("handler_context", {}, { ...ctx, handlerActionPolicy }),
+    ).resolves.toEqual({ approvalId: "appr_1" })
+    await expect(registry.dispatch("handler_context", {}, ctx)).resolves.toEqual({
+      approvalId: null,
+    })
+    expect(seen).toEqual([handlerActionPolicy, undefined])
+    expect(ctx.handlerActionPolicy).toBeUndefined()
+  })
+
   it("throws NOT_FOUND for an unregistered tool", async () => {
     const registry = createToolRegistry()
     await expect(registry.dispatch("missing", {}, ctx)).rejects.toMatchObject({
@@ -286,7 +338,7 @@ describe("createToolRegistry", () => {
       },
       enforcement: "handler",
       invocation: {
-        requiredFields: [],
+        requiredFields: ["idempotencyKey", "approvalId", "idempotencyFingerprint"],
       },
     })
     expect(registry.list()[0]?.actionPolicy?.invocation.requiredFields).not.toContain("targetId")
