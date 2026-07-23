@@ -2,12 +2,6 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +9,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -149,20 +149,20 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
   const selectedOptionId = form.watch("optionId")
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.optionUnitPriceRuleDialog.titles.edit
               : messages.optionUnitPriceRuleDialog.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.optionUnitPriceRuleDialog.fields.optionPriceRule}</Label>
               <OptionPriceRuleCombobox
@@ -285,8 +285,8 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
               <Label>{messages.optionUnitPriceRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -296,9 +296,9 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
                 ? messages.common.saveChanges
                 : messages.optionUnitPriceRuleDialog.actions.create}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

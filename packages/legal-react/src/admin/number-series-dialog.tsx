@@ -2,12 +2,6 @@ import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +9,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import { Switch } from "@voyant-travel/ui/components/switch"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
@@ -173,16 +173,16 @@ export function NumberSeriesDialog({
   ).padStart(padLength, "0")}`
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? t.titleEdit : t.titleNew}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.nameLabel}</Label>
@@ -313,8 +313,8 @@ export function NumberSeriesDialog({
                 })}
               </p>
             ) : null}
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t.cancel}
             </Button>
@@ -325,9 +325,9 @@ export function NumberSeriesDialog({
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? t.saveChanges : t.createAction}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -2,13 +2,13 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
@@ -139,14 +139,14 @@ export function PersonDocumentDialog({
   const saveError = saveMutation.error
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.title : dialog.addTitle}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-[520px]">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.title : dialog.addTitle}</SheetTitle>
+          <SheetDescription>
             {isEditing ? dialog.description : dialog.addDescription}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         {revealQuery.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{dialog.loading}</p>
         ) : revealError ? (
@@ -155,7 +155,7 @@ export function PersonDocumentDialog({
           </p>
         ) : null}
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 overflow-hidden">
-          <DialogBody className="grid grid-cols-2 gap-3">
+          <SheetBody className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex flex-col gap-1.5">
               <Label htmlFor="doc-type">{dialog.fields.type}</Label>
               <Select
@@ -237,22 +237,22 @@ export function PersonDocumentDialog({
                 rows={3}
               />
             </div>
-          </DialogBody>
+          </SheetBody>
           {saveError ? (
             <p className="text-sm text-destructive">
               {saveError instanceof Error ? saveError.message : dialog.saveFailed}
             </p>
           ) : null}
-          <DialogFooter>
+          <SheetFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {dialog.cancel}
             </Button>
             <Button type="submit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? dialog.saving : dialog.save}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

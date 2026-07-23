@@ -5,14 +5,14 @@ import {
   Button,
   Checkbox,
   DatePicker,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Table,
   TableBody,
   TableCell,
@@ -198,12 +198,12 @@ function CreateRoomingAssignmentDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New rooming assignment</DialogTitle>
-        </DialogHeader>
-        <DialogBody className="space-y-4">
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>New rooming assignment</SheetTitle>
+        </SheetHeader>
+        <SheetBody className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rooming-room-block">Room block</Label>
@@ -273,8 +273,8 @@ function CreateRoomingAssignmentDialog({
               placeholder="Accessible room, late arrival, dietary notes"
             />
           </div>
-        </DialogBody>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -290,9 +290,9 @@ function CreateRoomingAssignmentDialog({
             )}
             Create assignment
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -385,12 +385,12 @@ function ManageRoomingOccupantsDialog({
   const loading = assignmentLoading || delegatesLoading
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Assign room occupants</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="max-w-3xl">
+        <SheetHeader>
+          <SheetTitle>Assign room occupants</SheetTitle>
+        </SheetHeader>
+        <SheetBody>
           {loading && !assignment ? (
             <div className="py-6 text-center text-muted-foreground text-sm">Loading...</div>
           ) : (
@@ -459,8 +459,8 @@ function ManageRoomingOccupantsDialog({
               ) : null}
             </div>
           )}
-        </DialogBody>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -474,8 +474,8 @@ function ManageRoomingOccupantsDialog({
             ) : null}
             Save occupants
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

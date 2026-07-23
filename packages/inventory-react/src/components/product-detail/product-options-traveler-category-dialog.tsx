@@ -1,12 +1,5 @@
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -14,6 +7,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { Checkbox } from "@voyant-travel/ui/components/checkbox"
@@ -173,19 +173,17 @@ export function TravelerCategoryDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? priceRuleMessages.travelerCategoryEditTitle
               : priceRuleMessages.travelerCategoryDialogTitle}
-          </DialogTitle>
-          <DialogDescription>
-            {priceRuleMessages.travelerCategoryDialogDescription}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody className="grid gap-4">
+          </SheetTitle>
+          <SheetDescription>{priceRuleMessages.travelerCategoryDialogDescription}</SheetDescription>
+        </SheetHeader>
+        <SheetBody className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="traveler-category-name">{pricingCategoryMessages.nameLabel}</Label>
@@ -296,8 +294,8 @@ export function TravelerCategoryDialog({
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </DialogBody>
-        <DialogFooter className="-mx-6 -mb-6">
+        </SheetBody>
+        <SheetFooter className="-mx-6 -mb-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {pricingCategoryMessages.cancel}
           </Button>
@@ -306,8 +304,8 @@ export function TravelerCategoryDialog({
               ? priceRuleMessages.updateTravelerCategory
               : priceRuleMessages.createTravelerCategory}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

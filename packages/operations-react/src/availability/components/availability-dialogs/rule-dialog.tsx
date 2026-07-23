@@ -1,13 +1,13 @@
 "use client"
 
 import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { useEffect } from "react"
@@ -110,16 +110,16 @@ export function AvailabilityRuleDialog(props: {
   }
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? ruleMessages.editTitle : ruleMessages.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={props.open} onOpenChange={props.onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? ruleMessages.editTitle : ruleMessages.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <ProductSelect
               label={ruleMessages.productLabel}
               placeholder={ruleMessages.selectProductPlaceholder}
@@ -179,7 +179,7 @@ export function AvailabilityRuleDialog(props: {
               checked={form.watch("active")}
               onCheckedChange={(checked) => form.setValue("active", checked)}
             />
-          </DialogBody>
+          </SheetBody>
           <DialogActions
             cancel={ruleMessages.cancel}
             save={ruleMessages.save}
@@ -189,7 +189,7 @@ export function AvailabilityRuleDialog(props: {
             onCancel={() => props.onOpenChange(false)}
           />
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

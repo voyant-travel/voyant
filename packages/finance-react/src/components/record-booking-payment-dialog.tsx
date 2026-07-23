@@ -3,10 +3,6 @@
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -14,6 +10,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -281,11 +281,11 @@ export function RecordBookingPaymentDialog({
   const showEmptyState = !isEditing && !invoicesQuery.isLoading && selectableInvoices.length === 0
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="gap-0 p-0">
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle>{isEditing ? dialog.editTitle : dialog.title}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg" className="gap-0 p-0">
+        <SheetHeader className="border-b px-6 py-4">
+          <SheetTitle>{isEditing ? dialog.editTitle : dialog.title}</SheetTitle>
+        </SheetHeader>
 
         {showEmptyState ? (
           <>
@@ -571,7 +571,7 @@ export function RecordBookingPaymentDialog({
             </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

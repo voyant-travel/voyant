@@ -4,12 +4,6 @@ import {
   Button,
   CurrencyCombobox,
   DatePicker,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -17,6 +11,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
@@ -163,12 +163,12 @@ export function ProgramFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{editing ? "Edit program" : "New program"}</DialogTitle>
-        </DialogHeader>
-        <DialogBody className="space-y-4">
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{editing ? "Edit program" : "New program"}</SheetTitle>
+        </SheetHeader>
+        <SheetBody className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="program-name">Name</Label>
             <Input
@@ -291,8 +291,8 @@ export function ProgramFormDialog({
           ) : budgetInvalid ? (
             <p className="text-destructive text-xs">Budget must be 0 or more.</p>
           ) : null}
-        </DialogBody>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={pending}>
             Cancel
           </Button>
@@ -300,8 +300,8 @@ export function ProgramFormDialog({
             {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
             {editing ? "Save changes" : "Create program"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

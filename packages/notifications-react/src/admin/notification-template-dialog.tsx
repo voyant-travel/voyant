@@ -2,14 +2,14 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Tabs,
   TabsContent,
@@ -256,16 +256,16 @@ function NotificationTemplateDialogInner({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="h-[calc(100vh-2rem)]">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="xl" className="h-[calc(100vh-2rem)]">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogHeader>
-            <DialogTitle>{isEditing ? t.editTitle : t.createTitle}</DialogTitle>
-          </DialogHeader>
-          <DialogBody className="p-0">
+          <SheetHeader>
+            <SheetTitle>{isEditing ? t.editTitle : t.createTitle}</SheetTitle>
+          </SheetHeader>
+          <SheetBody className="p-0">
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
@@ -500,9 +500,9 @@ function NotificationTemplateDialogInner({
                 <Label className="cursor-pointer">{t.markActiveLabel}</Label>
               </div>
             </div>
-          </DialogBody>
+          </SheetBody>
 
-          <DialogFooter className="mt-0">
+          <SheetFooter className="mt-0">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -510,9 +510,9 @@ function NotificationTemplateDialogInner({
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isEditing ? common.saveChanges : t.createTemplate}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

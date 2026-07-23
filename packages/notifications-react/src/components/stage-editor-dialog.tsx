@@ -2,18 +2,18 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import {
   Field,
@@ -167,14 +167,14 @@ export function StageEditorDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="max-w-2xl">
+        <SheetHeader>
+          <SheetTitle>
             {isEdit ? messages.stage.titles.edit : messages.stage.titles.create}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody>
+          </SheetTitle>
+        </SheetHeader>
+        <SheetBody>
           <FieldGroup>
             {/* Identity */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_8rem]">
@@ -407,8 +407,8 @@ export function StageEditorDialog({
               </FieldGroup>
             </FieldSet>
           </FieldGroup>
-        </DialogBody>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             {messages.common.cancel}
           </Button>
@@ -416,8 +416,8 @@ export function StageEditorDialog({
             {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             {isEdit ? messages.common.save : messages.common.create}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
