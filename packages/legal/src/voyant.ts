@@ -448,7 +448,7 @@ export const legalVoyantModule = defineModule({
       version: "v1",
       kind: "execute" as const,
       targetType: "legal-contract",
-      ...((transition === "issue" || transition === "send")
+      ...(transition === "issue" || transition === "send"
         ? {
             availability: {
               status: "unavailable" as const,
