@@ -110,9 +110,8 @@ export function canAdvanceFromStep(
   step: JourneyStep,
   draft: Draft,
   shape: BookingDraftShape,
-  available: boolean,
+  _available: boolean,
 ): boolean {
-  if (!available) return false
   switch (step) {
     case "departure": {
       // Require a departure when the descriptor marks it required.

@@ -5,6 +5,7 @@ import {
   buildCommitPaymentIntent,
   canAdvanceFromStep,
   defaultMinimalShape,
+  stackedStepComplete,
   validationErrorsForStep,
 } from "../../src/journey/components/booking-journey-rules.js"
 import { emptyDraft, patchBilling, patchConfigure } from "../../src/journey/lib/draft-state.js"
@@ -16,6 +17,20 @@ const ENTITY = {
 } as const
 
 describe("booking-journey-rules", () => {
+  it("unlocks a selected departure while the room-shaped baseline quote is unavailable", () => {
+    const shape: ReturnType<typeof defaultMinimalShape> = {
+      ...defaultMinimalShape(),
+      configureSubSteps: [{ kind: "departure", required: true }, { kind: "option-units" }],
+    }
+    const draft = patchConfigure(emptyDraft(ENTITY), {
+      departureSlotId: "slot_1",
+    })
+
+    expect(canAdvanceFromStep("departure", draft, shape, false)).toBe(true)
+    expect(stackedStepComplete("departure", draft, shape, false)).toBe(true)
+    expect(canAdvanceFromStep("options", draft, shape, false)).toBe(false)
+  })
+
   it("allows a B2C billing contact with phone but no email to unlock the next step", () => {
     const shape = defaultMinimalShape()
     const draft = patchConfigure(
