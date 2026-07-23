@@ -28,9 +28,10 @@ describe("standard Operator distribution", () => {
       target: "node",
     })
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toContain("@voyant-travel/bookings/extras")
-    expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 4)).toEqual([
+    expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 5)).toEqual([
       "@voyant-travel/action-ledger",
       "@voyant-travel/event-catalog",
+      "@voyant-travel/webhook-delivery",
       "@voyant-travel/mcp",
       "@voyant-travel/relationships",
     ])
