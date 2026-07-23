@@ -1,5 +1,12 @@
 # @voyant-travel/finance
 
+## 0.194.1
+
+### Patch Changes
+
+- 9ed0a4f: Keep the composed `create_booking` action policy with its Finance handler so the
+  generated booking ID remains the single authoritative action-ledger target.
+
 ## 0.194.0
 
 ### Patch Changes
