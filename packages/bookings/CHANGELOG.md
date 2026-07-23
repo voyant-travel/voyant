@@ -1,5 +1,11 @@
 # @voyant-travel/bookings
 
+## 0.195.0
+
+### Minor Changes
+
+- e3a1e17: Add the bookings-owned `reserve_booking` Tool with handler-owned idempotency, canonical action-ledger metadata, and an immutable booking result reference.
+
 ## 0.194.1
 
 ## 0.194.0
