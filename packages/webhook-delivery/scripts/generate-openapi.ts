@@ -1,4 +1,6 @@
+import { execFileSync } from "node:child_process"
 import { mkdirSync, writeFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { OpenAPIHono } from "@hono/zod-openapi"
 
 import { createOperatorWebhookAdminRoutes } from "../src/admin-routes.js"
@@ -22,3 +24,6 @@ const document = app.getOpenAPIDocument({
 
 mkdirSync(new URL("../openapi/admin/", import.meta.url), { recursive: true })
 writeFileSync(output, `${JSON.stringify(document, null, 2)}\n`)
+execFileSync("pnpm", ["exec", "biome", "format", "--write", fileURLToPath(output)], {
+  stdio: "inherit",
+})
