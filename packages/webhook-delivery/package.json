@@ -7,20 +7,49 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./postgres": "./src/postgres-store.ts"
+    "./admin-contracts": "./src/admin-contracts.ts",
+    "./api-runtime": "./src/api-runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./postgres": "./src/postgres-store.ts",
+    "./openapi/admin": "./openapi/admin/operator-webhooks.json"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": ">=0.44.0",
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    },
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
-    "lint": "biome check src/ tests/",
+    "lint": "biome check src/ tests/ scripts/",
     "test": "vitest run",
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm --workspace-concurrency=1 --filter @voyant-travel/webhook-delivery... run build"
   },
   "dependencies": {
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
-    "drizzle-orm": "catalog:"
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -29,7 +58,8 @@
     "vitest": "catalog:"
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -41,11 +71,27 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./admin-contracts": {
+        "types": "./dist/admin-contracts.d.ts",
+        "import": "./dist/admin-contracts.js",
+        "default": "./dist/admin-contracts.js"
+      },
+      "./api-runtime": {
+        "types": "./dist/api-runtime.d.ts",
+        "import": "./dist/api-runtime.js",
+        "default": "./dist/api-runtime.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
       "./postgres": {
         "types": "./dist/postgres-store.d.ts",
         "import": "./dist/postgres-store.js",
         "default": "./dist/postgres-store.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/operator-webhooks.json"
     }
   },
   "repository": {

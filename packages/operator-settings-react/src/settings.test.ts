@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { mergeOperatorProfileSetupPrefill } from "./operator-profile-setup-prefill.js"
 import { createSelectedOperatorSettingsAdminExtension } from "./settings.js"
+import { createSelectedOperatorWebhooksAdminExtension } from "./webhooks.js"
 
 describe("operator setup contribution", () => {
   it("uses the existing profile surface and a read-only completion predicate", async () => {
@@ -31,5 +32,21 @@ describe("operator setup contribution", () => {
         { name: "Provisioned", legalName: "Acme SRL", email: 42, ignored: "value" },
       ),
     ).toEqual({ name: "Persisted", legalName: "Acme SRL", email: "" })
+  })
+})
+
+describe("operator webhook settings contribution", () => {
+  it("contributes list and subscription detail settings routes", () => {
+    const extension = createSelectedOperatorWebhooksAdminExtension()
+
+    expect(extension.settingsPages).toEqual([
+      expect.objectContaining({ id: "webhooks", path: "/webhooks", title: "Webhooks" }),
+    ])
+    expect(extension.routes).toEqual([
+      expect.objectContaining({
+        id: "operator-webhooks-detail",
+        path: "/settings/webhooks/$subscriptionId",
+      }),
+    ])
   })
 })

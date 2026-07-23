@@ -11,6 +11,13 @@ import {
 } from "./app-envelope.js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 import {
+  assertPublicWebhookEndpoint,
+  createPinnedWebhookFetch,
+  resolveWebhookHost,
+  UnsafeWebhookEndpointError,
+  type WebhookHostResolver,
+} from "./protected-fetch.js"
+import {
   assertOutboundWebhookEndpointUrl,
   hashWebhookPayload,
   redactWebhookHeaders,
@@ -31,13 +38,15 @@ const DEFAULT_BASE_DELAY_MS = 1_000
 const DEFAULT_MAX_DELAY_MS = 60_000
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000
 const DEFAULT_CLAIM_TIMEOUT_MS = 60_000
+const DEFAULT_MAX_REDIRECTS = 3
 const MAX_RESPONSE_BODY_BYTES = 4 * 1024
 const MAX_ERROR_MESSAGE_LENGTH = 1_000
 
 export function createWebhookDeliveryWorker(
   options: CreateWebhookDeliveryWorkerOptions,
 ): WebhookDeliveryWorker {
-  const fetchImpl = options.fetch ?? globalThis.fetch
+  const resolveHost = options.resolveHost ?? (options.fetch ? undefined : resolveWebhookHost)
+  const fetchImpl = options.fetch ?? createPinnedWebhookFetch(resolveHost)
   const now = options.now ?? (() => new Date())
   const baseDelayMs = positiveInteger(options.retry?.baseDelayMs, DEFAULT_BASE_DELAY_MS)
   const maxDelayMs = positiveInteger(options.retry?.maxDelayMs, DEFAULT_MAX_DELAY_MS)
@@ -46,6 +55,7 @@ export function createWebhookDeliveryWorker(
     DEFAULT_REQUEST_TIMEOUT_MS,
   )
   const claimTimeoutMs = positiveInteger(options.retry?.claimTimeoutMs, DEFAULT_CLAIM_TIMEOUT_MS)
+  const maxRedirects = nonNegativeInteger(options.retry?.maxRedirects, DEFAULT_MAX_REDIRECTS)
 
   return {
     async runNext() {
@@ -101,6 +111,8 @@ export function createWebhookDeliveryWorker(
       requestHeaders,
       body,
       requestTimeoutMs,
+      maxRedirects,
+      resolveHost,
     )
     const finishedAt = now()
     const completion = completionInput(delivery, result, startedAt, finishedAt)
@@ -264,39 +276,87 @@ async function dispatch(
   headers: Record<string, string>,
   body: string,
   timeoutMs: number,
+  maxRedirects: number,
+  resolveHost: WebhookHostResolver | undefined,
 ): Promise<DispatchResult> {
-  assertOutboundWebhookEndpointUrl(url)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  let currentUrl = url
+  let requestHeaders = headers
   try {
-    const response = await fetchImpl(url, {
-      method: "POST",
-      headers,
-      body,
-      signal: controller.signal,
-    })
-    const responseBody = await readBoundedResponseBody(response, MAX_RESPONSE_BODY_BYTES)
-    const responseHeaders = Object.fromEntries(response.headers.entries())
-    if (response.ok) {
+    for (let redirectCount = 0; ; redirectCount += 1) {
+      try {
+        assertOutboundWebhookEndpointUrl(currentUrl)
+      } catch {
+        return rejectedEndpointResult()
+      }
+      if (resolveHost) {
+        try {
+          await assertPublicWebhookEndpoint(currentUrl, resolveHost)
+        } catch (error) {
+          if (error instanceof UnsafeWebhookEndpointError) return rejectedEndpointResult()
+          throw error
+        }
+      }
+
+      const response = await fetchImpl(currentUrl, {
+        method: "POST",
+        headers: requestHeaders,
+        body,
+        signal: controller.signal,
+        redirect: "manual",
+      })
+      if (isRedirect(response.status)) {
+        if (redirectCount >= maxRedirects) {
+          return {
+            ...rejectedEndpointResult(),
+            responseStatus: response.status,
+            errorMessage: "Webhook endpoint exceeded the redirect limit.",
+          }
+        }
+        const location = response.headers.get("location")
+        if (!location) {
+          return {
+            ...rejectedEndpointResult(),
+            responseStatus: response.status,
+            errorMessage: "Webhook endpoint returned a redirect without a location.",
+          }
+        }
+        try {
+          const nextUrl = new URL(location, currentUrl)
+          if (nextUrl.origin !== new URL(currentUrl).origin) {
+            requestHeaders = safeCrossOriginRedirectHeaders(requestHeaders)
+          }
+          currentUrl = nextUrl.href
+        } catch {
+          return rejectedEndpointResult()
+        }
+        continue
+      }
+
+      const responseBody = await readBoundedResponseBody(response, MAX_RESPONSE_BODY_BYTES)
+      const responseHeaders = Object.fromEntries(response.headers.entries())
+      if (response.ok) {
+        return {
+          succeeded: true,
+          retryable: false,
+          responseStatus: response.status,
+          responseHeaders,
+          responseBody,
+          errorClass: null,
+          errorMessage: null,
+        }
+      }
+      const rateLimited = response.status === 429
       return {
-        succeeded: true,
-        retryable: false,
+        succeeded: false,
+        retryable: rateLimited || response.status === 408 || response.status >= 500,
         responseStatus: response.status,
         responseHeaders,
         responseBody,
-        errorClass: null,
-        errorMessage: null,
+        errorClass: rateLimited ? "rate_limited" : response.status >= 500 ? "5xx" : "4xx",
+        errorMessage: boundedMessage(`HTTP ${response.status}`),
       }
-    }
-    const rateLimited = response.status === 429
-    return {
-      succeeded: false,
-      retryable: rateLimited || response.status === 408 || response.status >= 500,
-      responseStatus: response.status,
-      responseHeaders,
-      responseBody,
-      errorClass: rateLimited ? "rate_limited" : response.status >= 500 ? "5xx" : "4xx",
-      errorMessage: boundedMessage(`HTTP ${response.status}`),
     }
   } catch (error) {
     return {
@@ -309,6 +369,33 @@ async function dispatch(
   } finally {
     clearTimeout(timeout)
   }
+}
+
+function rejectedEndpointResult(): DispatchResult {
+  return {
+    succeeded: false,
+    retryable: false,
+    responseStatus: null,
+    errorClass: "network",
+    errorMessage: "Webhook endpoint is not allowed.",
+  }
+}
+
+function isRedirect(status: number): boolean {
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308
+}
+
+function safeCrossOriginRedirectHeaders(headers: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(headers).filter(([name]) => {
+      const normalized = name.toLowerCase()
+      return (
+        normalized === "content-type" ||
+        normalized === "idempotency-key" ||
+        normalized.startsWith("x-voyant-")
+      )
+    }),
+  )
 }
 
 function retryInput(
@@ -347,7 +434,7 @@ function retryInput(
     subscriptionId: subscription.id,
     targetUrl: delivery.targetUrl,
     requestMethod: "POST",
-    requestHeaders: delivery.requestHeaders ?? {},
+    requestHeaders: {},
     requestBodyHash: hashWebhookPayload(body),
     requestBodyExcerpt: webhookBodyExcerpt(body),
     requestPayload: retryPayload,
@@ -390,7 +477,6 @@ function signedHeaders(
   const eventId = stringMetadata(event, "eventId")
   if (!eventId) throw new Error(`Persisted webhook event "${event.name}" has no event id.`)
   return {
-    ...(subscription.headers ?? {}),
     "content-type": "application/json",
     "idempotency-key": idempotencyKey,
     "x-voyant-event": event.name,
@@ -480,6 +566,10 @@ function retryDelay(attemptNumber: number, baseDelayMs: number, maxDelayMs: numb
 
 function positiveInteger(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isInteger(value) && value > 0 ? value : fallback
+}
+
+function nonNegativeInteger(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isInteger(value) && value >= 0 ? value : fallback
 }
 
 function boundedMessage(message: string): string {

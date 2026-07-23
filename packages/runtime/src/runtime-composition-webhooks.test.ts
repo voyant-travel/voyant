@@ -68,6 +68,11 @@ describe("Voyant outbound webhook composition", () => {
           packageName: "@voyant-travel/apps",
           requiredPorts: ["apps.webhook-delivery"],
         },
+        {
+          id: "@voyant-travel/webhook-delivery",
+          packageName: "@voyant-travel/webhook-delivery",
+          requiredPorts: [],
+        },
       ],
       extensions: [],
       plugins: [],
@@ -133,22 +138,31 @@ describe("Voyant outbound webhook composition", () => {
       { onError: expect.any(Function) },
     )
     expect(mocks.createNodeServer).toHaveBeenCalledWith(
-      expect.objectContaining({ residentServices: [mocks.appWebhookDeliveryLoop] }),
+      expect.objectContaining({
+        residentServices: [mocks.webhookDeliveryLoop, mocks.appWebhookDeliveryLoop],
+      }),
     )
+    expect(mocks.webhookDeliveryLoop.start).toHaveBeenCalledOnce()
     expect(mocks.appWebhookDeliveryLoop.start).toHaveBeenCalledOnce()
 
     const nodeServer = mocks.createNodeServer.mock.results[0]?.value as { close: Mock }
     await server.close()
     expect(nodeServer.close).toHaveBeenCalledOnce()
+    expect(mocks.webhookDeliveryLoop.stop).toHaveBeenCalledOnce()
     expect(mocks.appWebhookDeliveryLoop.stop).toHaveBeenCalledOnce()
   })
 
-  it("does not construct a delivery worker when Apps has no webhook runtime port", async () => {
+  it("keeps the selected generic subscription loop resident when Apps has no webhook runtime port", async () => {
     mocks.graphRuntime = {
       modules: [
         {
           id: "@voyant-travel/apps",
           packageName: "@voyant-travel/apps",
+          requiredPorts: [],
+        },
+        {
+          id: "@voyant-travel/webhook-delivery",
+          packageName: "@voyant-travel/webhook-delivery",
           requiredPorts: [],
         },
       ],
@@ -167,7 +181,37 @@ describe("Voyant outbound webhook composition", () => {
     expect(mocks.createAppWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
     expect(mocks.createAppWebhookDeliveryWorker).not.toHaveBeenCalled()
     expect(mocks.createAppWebhookDeliveryLoop).not.toHaveBeenCalled()
-    expect(mocks.createNodeServer.mock.calls[0]?.[0]).not.toHaveProperty("residentServices")
+    expect(mocks.createWebhookDeliveryWorker).toHaveBeenCalledWith({
+      store: { kind: "subscription-store" },
+    })
+    expect(mocks.createNodeServer).toHaveBeenCalledWith(
+      expect.objectContaining({ residentServices: [mocks.webhookDeliveryLoop] }),
+    )
+    await server.close()
+    expect(mocks.webhookDeliveryLoop.start).toHaveBeenCalledOnce()
+    expect(mocks.webhookDeliveryLoop.stop).toHaveBeenCalledOnce()
+  })
+
+  it("does not start the generic worker when the webhook module is not selected", async () => {
+    mocks.graphRuntime = {
+      modules: [],
+      extensions: [],
+      plugins: [],
+      accessCatalog: { resources: [] },
+    }
+    const projectRoot = await createGeneratedProject()
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    const server = project.start()
+    expect(mocks.createWebhookDeliveryWorker).not.toHaveBeenCalled()
+    expect(mocks.createWebhookDeliveryLoop).not.toHaveBeenCalled()
+    expect(mocks.createNodeServer).toHaveBeenCalledWith(
+      expect.not.objectContaining({ residentServices: expect.anything() }),
+    )
     await server.close()
   })
 

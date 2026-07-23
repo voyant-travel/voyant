@@ -144,6 +144,7 @@
     "@voyant-travel/types": "workspace:*",
     "@voyant-travel/ui": "workspace:*",
     "@voyant-travel/vite-config": "workspace:*",
+    "@voyant-travel/webhook-delivery": "workspace:*",
     "@better-auth/api-key": "^1.6.23",
     "@fontsource-variable/inter-tight": "^5.2.7",
     "@scalar/api-reference-react": "^0.9.51",

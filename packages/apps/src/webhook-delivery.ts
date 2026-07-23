@@ -81,7 +81,7 @@ export function createAppWebhookDeliveryStore(
         .from(infraWebhookDeliveriesTable)
         .where(
           and(
-            eq(infraWebhookDeliveriesTable.sourceModule, "apps"),
+            eq(infraWebhookDeliveriesTable.targetKind, "app"),
             or(
               and(
                 eq(infraWebhookDeliveriesTable.status, "pending"),
@@ -109,7 +109,7 @@ export function createAppWebhookDeliveryStore(
         .where(
           and(
             eq(infraWebhookDeliveriesTable.id, id),
-            eq(infraWebhookDeliveriesTable.sourceModule, "apps"),
+            eq(infraWebhookDeliveriesTable.targetKind, "app"),
             or(
               eq(infraWebhookDeliveriesTable.status, "pending"),
               and(
