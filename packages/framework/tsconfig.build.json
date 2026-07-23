@@ -491,6 +491,7 @@
       ],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
+      "@voyant-travel/catalog/reindex-job": ["../catalog/dist/reindex-job.d.ts"],
       "@voyant-travel/catalog/runtime-contracts": ["../catalog/dist/runtime-contracts.d.ts"],
       "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
       "@voyant-travel/catalog/runtime-port": ["../catalog/dist/content-runtime-port.d.ts"],
