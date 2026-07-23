@@ -1,7 +1,7 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type BookingsToolServices, bookingsTools } from "../src/tools.js"
+import { type BookingsToolServices, bookingsTools, reserveBookingTool } from "../src/tools.js"
 
 function ctx(
   services?: Partial<BookingsToolServices>,
@@ -25,8 +25,11 @@ describe("bookings tools", () => {
       "cancel_booking",
       "get_booking",
       "list_bookings",
+      "reserve_booking",
     ])
-    for (const t of list.filter((tool) => tool.name !== "cancel_booking")) {
+    for (const t of list.filter(
+      (tool) => tool.name !== "cancel_booking" && tool.name !== "reserve_booking",
+    )) {
       expect(t.tier).toBe("read")
       expect(t.requiredScopes).toEqual(["bookings:read"])
     }
@@ -34,6 +37,83 @@ describe("bookings tools", () => {
       tier: "destructive",
       requiredScopes: ["bookings:write"],
       riskPolicy: { destructive: true, reversible: false, confirmationRequired: true },
+    })
+    expect(list.find((tool) => tool.name === "reserve_booking")).toMatchObject({
+      capabilityId: "@voyant-travel/bookings#tool.reserve-booking",
+      tier: "destructive",
+      requiredScopes: ["bookings:write"],
+      audience: { source: "grant", allowed: ["staff"] },
+      riskPolicy: { destructive: true, reversible: true, confirmationRequired: true },
+    })
+    expect(reserveBookingTool.actionPolicyEnforcement).toBe("handler")
+  })
+
+  it("returns only the immutable reservation reference", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(bookingsTools)
+    const result = await registry.dispatch(
+      "reserve_booking",
+      {
+        reservation: {
+          bookingNumber: "B-1002",
+          sellCurrency: "EUR",
+          items: [
+            {
+              title: "Guided tour",
+              availabilitySlotId: "slot_1",
+            },
+          ],
+        },
+        idempotencyKey: "reserve-b-1002",
+      },
+      ctx({
+        async reserveBooking() {
+          return {
+            status: "reserved",
+            booking: {
+              id: "bk_2",
+              bookingNumber: "B-1002",
+            },
+            replayed: false,
+          }
+        },
+      }),
+    )
+
+    expect(result).toEqual({
+      status: "reserved",
+      booking: {
+        id: "bk_2",
+        bookingNumber: "B-1002",
+      },
+      replayed: false,
+    })
+  })
+
+  it("keeps reservation idempotency inside the handler-owned command contract", () => {
+    const registry = createToolRegistry()
+    registry.register(reserveBookingTool, {
+      actionPolicy: {
+        id: "booking.reserve",
+        capabilityId: "bookings:reserve",
+        version: "v1",
+        kind: "execute",
+        targetType: "booking",
+        risk: "high",
+        ledger: "required",
+        approval: "never",
+        reversible: true,
+        allowedActorTypes: ["staff"],
+      },
+    })
+
+    expect(registry.list()[0]?.actionPolicy).toMatchObject({
+      id: "booking.reserve",
+      capabilityId: "bookings:reserve",
+      enforcement: "handler",
+      invocation: {
+        requiredFields: ["confirmed"],
+      },
     })
   })
 

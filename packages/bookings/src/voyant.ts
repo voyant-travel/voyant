@@ -484,6 +484,14 @@ export const bookingsVoyantModule = defineModule({
       risk: "low",
     },
     {
+      id: "@voyant-travel/bookings#tool.reserve-booking",
+      name: "reserve_booking",
+      runtime: { entry: "@voyant-travel/bookings/tools", export: "reserveBookingTool" },
+      requiredScopes: ["bookings:write"],
+      context: ["bookings"],
+      risk: "high",
+    },
+    {
       id: "@voyant-travel/bookings#tool.cancel-booking",
       name: "cancel_booking",
       runtime: { entry: "@voyant-travel/bookings/tools", export: "cancelBookingTool" },
