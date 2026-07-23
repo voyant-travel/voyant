@@ -186,6 +186,8 @@ export interface VoyantGraphRuntimeFactoryGraph {
 
 export interface VoyantGraphRuntimeFactoryContext {
   readonly unitId: string
+  /** Deployment bindings for fixed job invocations; absent on non-job facets. */
+  readonly bindings?: unknown
   /** Validated JSON config authored on this package-scoped project selection. */
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
   /** Read validated config for another explicitly selected unit by exact graph id. */

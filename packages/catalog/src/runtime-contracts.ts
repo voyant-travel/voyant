@@ -122,6 +122,10 @@ export type CatalogProductQuoteEnricher = (input: {
 export interface CatalogInventoryRuntimeExtension {
   readonly productFieldPolicy: readonly FieldPolicy[]
   readonly extrasFieldPolicy: readonly FieldPolicy[]
+  listCanonicalProductIds(
+    db: AnyDrizzleDb,
+    input: { afterId?: string; limit: number },
+  ): Promise<readonly string[]>
   createDocumentBuilder(input: {
     db: AnyDrizzleDb
     sellerOperatorId: string

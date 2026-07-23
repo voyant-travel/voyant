@@ -15,6 +15,7 @@ import { catalogContentRuntimePort } from "./content-runtime-port.js"
 import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import { catalogIndexSubscriberDeclarations } from "./index-subscriber-declarations.js"
 import { catalogIndexerProviderPort } from "./indexer/provider.js"
+import { catalogReindexJobRuntimePort } from "./reindex-job-runtime-port.js"
 import {
   catalogAccommodationsRuntimeExtensionPort,
   catalogChartersRuntimeExtensionPort,
@@ -82,6 +83,7 @@ export const catalogVoyantModule = defineModule({
       providePort(catalogBookingSnapshotRuntimePort),
       providePort(catalogRuntimeServicesPort),
       providePort(catalogDraftReaperJobRuntimePort),
+      providePort(catalogReindexJobRuntimePort),
       cruisesRoutesRuntimePortReference,
     ],
   },
@@ -90,6 +92,7 @@ export const catalogVoyantModule = defineModule({
     requirePort(catalogProjectionRuntimePort),
     requirePort(catalogBookingSnapshotRuntimePort),
     requirePort(catalogDraftReaperJobRuntimePort),
+    requirePort(catalogReindexJobRuntimePort),
   ],
   api: [
     {
@@ -243,6 +246,14 @@ export const catalogVoyantModule = defineModule({
     },
   ],
   jobs: [
+    {
+      id: "catalog.reindex-products",
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/catalog/reindex-job",
+        export: "runCatalogReindexProductsJob",
+      },
+    },
     {
       id: "catalog.reap-expired-booking-drafts",
       schedule: { cron: "5 * * * *", overlap: "skip" },

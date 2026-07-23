@@ -257,6 +257,7 @@ export async function invokeVoyantGraphJob(
   runtime: VoyantGraphRuntime,
   jobId: string,
   ports?: VoyantGraphRuntimePorts,
+  bindings?: unknown,
 ): Promise<void> {
   const owner = allRuntimeUnits(runtime).find((unit) =>
     unit.jobs.some((job) => job.declaration.id === jobId),
@@ -266,7 +267,7 @@ export async function invokeVoyantGraphJob(
     throw new Error(`invokeVoyantGraphJob: job "${jobId}" is not selected by the graph.`)
   }
   const handler = await job.load()
-  await handler(createRuntimeFactoryContext(runtime, ports, owner))
+  await handler({ ...createRuntimeFactoryContext(runtime, ports, owner), bindings })
 }
 
 /** Load graph-owned subscriber metadata without composing API routes. */

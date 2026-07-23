@@ -1,6 +1,6 @@
 import type { CatalogInventoryRuntimeExtension } from "@voyant-travel/catalog/runtime-contracts"
 import { createProductQuoteShapeEnricher } from "@voyant-travel/catalog/runtime-support"
-import { eq } from "drizzle-orm"
+import { asc, eq, gt } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { registerProductBookingHandler } from "./booking-engine/product-runtime.js"
@@ -55,6 +55,14 @@ export const catalogInventoryRuntimeExtension = {
     ...productPromotionsCatalogPolicy,
   ],
   extrasFieldPolicy: extrasCatalogPolicy,
+  listCanonicalProductIds: (db, { afterId, limit }) =>
+    db
+      .select({ id: products.id })
+      .from(products)
+      .where(afterId ? gt(products.id, afterId) : undefined)
+      .orderBy(asc(products.id))
+      .limit(limit)
+      .then((rows) => rows.map((row) => row.id)),
   createDocumentBuilder: ({
     db,
     sellerOperatorId,

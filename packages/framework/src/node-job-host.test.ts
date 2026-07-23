@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { createVoyantNodeJobHost, VOYANT_PRODUCT_JOB_ROUTE } from "./node-job-host.js"
-import { createVoyantGraphRuntime, type VoyantGraphRuntime } from "./runtime-lowering.js"
+import {
+  createVoyantGraphRuntime,
+  type VoyantGraphRuntime,
+  type VoyantGraphRuntimeJobHandler,
+} from "./runtime-lowering.js"
 
 const unitId = "@acme/notifications"
 const jobId = "notifications.deliver"
 
 function jobRuntime(
-  handler: () => Promise<void> | void,
+  handler: VoyantGraphRuntimeJobHandler,
   schedule:
     | { every: string | number; overlap?: "skip" | "queue" }
     | { cron: string; timezone?: string } = {
@@ -249,6 +253,21 @@ describe("Voyant Node product job host", () => {
       }),
     )
     expect(host.health()[0]?.lastReportFailure).toBe("control plane unavailable")
+  })
+
+  it("passes concrete deployment bindings to the fixed job runtime", async () => {
+    const bindings = { TENANT_ID: "tenant_pro_travel" }
+    const handler = vi.fn(async () => {})
+    const host = createVoyantNodeJobHost({
+      runtime: jobRuntime(handler),
+      jobs: inventory(),
+      bindings,
+    })
+
+    await host.invoke(jobId, "wakeup")
+    await host.settled(jobId)
+
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ bindings }))
   })
 
   it("bounds retries and exposes retry exhaustion without persisting generic runs", async () => {

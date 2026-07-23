@@ -69,10 +69,11 @@ export function createCatalogRuntime(
     }
     return indexer
   }
-  let projectionRuntime:
+  const projectionRuntimes = new WeakMap<
+    object,
     | ReturnType<typeof createOperatorCatalogProjectionRuntime>
     | Promise<ReturnType<typeof createOperatorCatalogProjectionRuntime>>
-    | undefined
+  >()
   const services: CatalogRuntimeServices = {
     defaultSlices: DEFAULT_SLICES,
     ensureSourceRegistry: (env) => ensureBookingEngineRegistry(env as never),
@@ -147,7 +148,14 @@ export function createCatalogRuntime(
     content: { resolveRegistry: getBookingEngineRegistryFromContext },
     projection: {
       createRuntime(bindings) {
-        projectionRuntime ??= createOperatorCatalogProjectionRuntime(bindings, services)
+        if (!bindings || typeof bindings !== "object") {
+          throw new Error("Catalog projection runtime requires concrete deployment bindings.")
+        }
+        let projectionRuntime = projectionRuntimes.get(bindings)
+        if (!projectionRuntime) {
+          projectionRuntime = createOperatorCatalogProjectionRuntime(bindings, services)
+          projectionRuntimes.set(bindings, projectionRuntime)
+        }
         return projectionRuntime
       },
     },

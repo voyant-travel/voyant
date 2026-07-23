@@ -53,6 +53,8 @@ export interface CreateVoyantNodeJobHostOptions {
   /** Immutable host inventory copied from resolved provisioning.jobs. */
   jobs: readonly VoyantGraphProvisionedJob[]
   ports?: VoyantGraphRuntimePorts
+  /** Concrete deployment bindings passed to fixed product-job runtimes. */
+  bindings?: unknown
   retry?: VoyantNodeJobHostRetryOptions
   now?: () => Date
   sleep?: (milliseconds: number) => Promise<void>
@@ -161,7 +163,7 @@ export function createVoyantNodeJobHost(
       health.status = attempt === 1 ? "running" : "retrying"
       health.lastAttemptAt = now().toISOString()
       try {
-        await invokeVoyantGraphJob(options.runtime, jobId, options.ports)
+        await invokeVoyantGraphJob(options.runtime, jobId, options.ports, options.bindings)
         health.status = "succeeded"
         health.lastSuccessAt = now().toISOString()
         await report({
