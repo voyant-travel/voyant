@@ -110,14 +110,20 @@ inside that transaction, its handler claims a fingerprinted command under a stab
 idempotency key, writes the requested and canonical `booking.reserve` ledger entries in
 the same transaction, and returns the immutable booking reference on exact replay.
 
-Finance owns two composed operator commands. `create_booking` delegates to the atomic
+Finance owns two composed operator commands. `create_booking` delegates to the
 booking-create service for product/slot conversion, travelers, room and item lines,
 payment schedules, optional credits, groups, invoice documents, ledger entries, and
-post-commit events. `issue_invoice_from_booking` delegates to the reusable invoice
-composer extracted from the HTTP route. Invoice/proforma issue requires an exact action
-approval: the command fingerprint is stable across request and execution, successful
-execution carries the approval/causation fields into the ledger, and a replay resolves
-the previously issued invoice instead of creating another.
+post-commit events. Its action policy is handler-owned because the canonical booking id
+is generated during the booking transaction and that service records the authoritative
+`booking.create` entry. The generic pre-dispatch gate must not invent a target or add a
+second ledger timeline. The later invoice, payment, document, and event stages are not
+part of the booking transaction, so callers must not treat the composed command as
+exactly replayable until its durable command workflow lands.
+`issue_invoice_from_booking` delegates to the reusable invoice composer extracted from
+the HTTP route. Invoice/proforma issue requires an exact action approval: the command
+fingerprint is stable across request and execution, successful execution carries the
+approval/causation fields into the ledger, and a replay resolves the previously issued
+invoice instead of creating another.
 
 ## Coverage posture
 

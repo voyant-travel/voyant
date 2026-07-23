@@ -2,6 +2,7 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import { type FinanceToolServices, financeBookingsCreateTools, financeTools } from "../src/tools.js"
+import { financeBookingsCreateVoyantPlugin } from "../src/voyant.js"
 
 function ctx(
   services?: Partial<FinanceToolServices>,
@@ -201,7 +202,31 @@ describe("finance tools", () => {
 
   it("creates a booking through the composing Finance extension Tool", async () => {
     const registry = createToolRegistry()
-    registry.registerAll(financeBookingsCreateTools)
+    const [tool] = financeBookingsCreateTools
+    const [action] = financeBookingsCreateVoyantPlugin.actions ?? []
+    if (!tool || !action) throw new Error("Finance booking-create graph declarations are missing")
+    registry.register(tool, {
+      capabilityId: tool.capabilityId,
+      owner: tool.owner,
+      capabilityVersion: tool.capabilityVersion,
+      name: tool.name,
+      requiredScopes: tool.requiredScopes,
+      deploymentRisk: "high",
+      actionPolicy: action,
+    })
+    expect(registry.list()).toEqual([
+      expect.objectContaining({
+        name: "create_booking",
+        requiredScopes: ["bookings:write", "finance:write"],
+        actionPolicy: expect.objectContaining({
+          enforcement: "handler",
+          invocation: expect.objectContaining({
+            requiredFields: ["confirmed"],
+          }),
+        }),
+      }),
+    ])
+    expect(tool.actionPolicyEnforcement).toBe("handler")
     const services = {
       async createBooking() {
         return {
