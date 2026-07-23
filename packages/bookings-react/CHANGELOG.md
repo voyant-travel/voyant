@@ -1,5 +1,15 @@
 # @voyant-travel/bookings-react
 
+## 0.194.1
+
+### Patch Changes
+
+- 8ef8b37: Keep live booking travelers authoritative at commit time and let room-based journeys reach their option picker before a quote is priceable.
+- Updated dependencies [8ef8b37]
+  - @voyant-travel/catalog@0.192.1
+  - @voyant-travel/bookings@0.194.1
+  - @voyant-travel/catalog-react@0.192.1
+
 ## 0.194.0
 
 ### Patch Changes

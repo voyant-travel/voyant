@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.62.5
+
+### Patch Changes
+
+- 8ef8b37: Keep live booking travelers authoritative at commit time and let room-based journeys reach their option picker before a quote is priceable.
+  - @voyant-travel/operator-standard@0.11.9
+
 ## 0.62.4
 
 ### Patch Changes
