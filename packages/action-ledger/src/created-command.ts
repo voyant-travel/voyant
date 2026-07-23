@@ -458,7 +458,10 @@ async function appendCompletedResult<TValue, TReferenceType extends string>(
 
 function assertExactEntry(actual: ActionLedgerEntry, expected: AppendActionLedgerEntryInput): void {
   for (const field of CLAIM_IDENTITY_FIELDS) {
-    if (actual[field] !== expected[field]) {
+    // Drizzle/PostgreSQL persist omitted nullable columns as null. Treat an
+    // omitted expected field as that canonical database representation so an
+    // exact replay does not conflict solely on undefined-versus-null.
+    if (actual[field] !== (expected[field] ?? null)) {
       throw new ActionLedgerIdempotencyConflictError(actual.id)
     }
   }
