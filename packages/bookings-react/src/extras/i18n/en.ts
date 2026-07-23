@@ -14,13 +14,15 @@ export const extrasUiEn = {
       active: "Active",
       archived: "Archived",
     },
+    // Short booking-mode labels, shared vocabulary with the products table and
+    // editor picker. Keep in sync with the operator catalog `bookingMode*` keys.
     bookingModeLabels: {
-      date: "Date",
-      date_time: "Date and time",
-      open: "Open",
-      stay: "Stay",
+      date: "Day trip",
+      date_time: "Timed activity",
+      open: "Open-dated voucher",
+      stay: "Accommodation",
       transfer: "Transfer",
-      itinerary: "Itinerary",
+      itinerary: "Multi-day tour",
       other: "Other",
     },
   },

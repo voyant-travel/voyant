@@ -177,7 +177,7 @@ describe("sellability-ui i18n", () => {
     expect(html).toContain("Select channel")
     expect(html).toContain("Edit Policy")
     expect(html).toContain("Affiliate")
-    expect(html).toContain("Date and time")
+    expect(html).toContain("Timed activity")
   })
 
   it("renders Romanian copy with the package provider", () => {
@@ -193,7 +193,7 @@ describe("sellability-ui i18n", () => {
     expect(html).toContain("Selecteaza canal")
     expect(html).toContain("Editeaza Politica")
     expect(html).toContain("Afiliat")
-    expect(html).toContain("Data si ora")
+    expect(html).toContain("Activitate cu oră")
   })
 })
 

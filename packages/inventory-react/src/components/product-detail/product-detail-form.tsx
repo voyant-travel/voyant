@@ -149,13 +149,41 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
   // trips). The chosen mode also drives the option pricing layout
   // (rooms vs per-person seats) — see deriveOptionPricingLayout.
   const bookingModes = [
-    { value: "itinerary", label: productMessages.bookingModeItinerary },
-    { value: "stay", label: productMessages.bookingModeStay },
-    { value: "date", label: productMessages.bookingModeDate },
-    { value: "date_time", label: productMessages.bookingModeDateTime },
-    { value: "transfer", label: productMessages.bookingModeTransfer },
-    { value: "open", label: productMessages.bookingModeOpen },
-    { value: "other", label: productMessages.bookingModeOther },
+    {
+      value: "itinerary",
+      label: productMessages.bookingModeItinerary,
+      basis: productMessages.bookingModeItineraryBasis,
+    },
+    {
+      value: "stay",
+      label: productMessages.bookingModeStay,
+      basis: productMessages.bookingModeStayBasis,
+    },
+    {
+      value: "date",
+      label: productMessages.bookingModeDate,
+      basis: productMessages.bookingModeDateBasis,
+    },
+    {
+      value: "date_time",
+      label: productMessages.bookingModeDateTime,
+      basis: productMessages.bookingModeDateTimeBasis,
+    },
+    {
+      value: "transfer",
+      label: productMessages.bookingModeTransfer,
+      basis: productMessages.bookingModeTransferBasis,
+    },
+    {
+      value: "open",
+      label: productMessages.bookingModeOpen,
+      basis: productMessages.bookingModeOpenBasis,
+    },
+    {
+      value: "other",
+      label: productMessages.bookingModeOther,
+      basis: productMessages.bookingModeOtherBasis,
+    },
   ] as const
   const visibilityOptions = [
     { value: "public", label: productMessages.visibilityPublic },
@@ -438,10 +466,15 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              {/* Widen past the narrow half-column trigger so the pricing-basis
+                  hint isn't clipped (RO labels are the longest). */}
+              <SelectContent className="min-w-[19rem]">
                 {bookingModes.map((m) => (
                   <SelectItem key={m.value} value={m.value}>
-                    {m.label}
+                    <span>{m.label}</span>
+                    {m.basis ? (
+                      <span className="ml-auto pl-4 text-muted-foreground text-xs">{m.basis}</span>
+                    ) : null}
                   </SelectItem>
                 ))}
               </SelectContent>

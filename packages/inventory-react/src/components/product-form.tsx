@@ -176,19 +176,19 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       ] as const,
     [messages],
   )
-  const bookingModes = React.useMemo(
-    () =>
-      [
-        { value: "date", label: messages.common.productBookingModeLabels.date },
-        { value: "date_time", label: messages.common.productBookingModeLabels.date_time },
-        { value: "open", label: messages.common.productBookingModeLabels.open },
-        { value: "stay", label: messages.common.productBookingModeLabels.stay },
-        { value: "transfer", label: messages.common.productBookingModeLabels.transfer },
-        { value: "itinerary", label: messages.common.productBookingModeLabels.itinerary },
-        { value: "other", label: messages.common.productBookingModeLabels.other },
-      ] as const,
-    [messages],
-  )
+  const bookingModes = React.useMemo(() => {
+    const labels = messages.common.productBookingModeLabels
+    const basis = messages.common.productBookingModeBasis
+    return [
+      { value: "date", label: labels.date, basis: basis.date },
+      { value: "date_time", label: labels.date_time, basis: basis.date_time },
+      { value: "open", label: labels.open, basis: basis.open },
+      { value: "stay", label: labels.stay, basis: basis.stay },
+      { value: "transfer", label: labels.transfer, basis: basis.transfer },
+      { value: "itinerary", label: labels.itinerary, basis: basis.itinerary },
+      { value: "other", label: labels.other, basis: basis.other },
+    ] as const
+  }, [messages])
   const capacityModes = React.useMemo(
     () =>
       [
@@ -379,10 +379,17 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              {/* Widen past the narrow trigger so the pricing-basis hint isn't
+                  clipped (RO labels are the longest). */}
+              <SelectContent className="min-w-[19rem]">
                 {bookingModes.map((modeOption) => (
                   <SelectItem key={modeOption.value} value={modeOption.value}>
-                    {modeOption.label}
+                    <span>{modeOption.label}</span>
+                    {modeOption.basis ? (
+                      <span className="ml-auto pl-4 text-muted-foreground text-xs">
+                        {modeOption.basis}
+                      </span>
+                    ) : null}
                   </SelectItem>
                 ))}
               </SelectContent>

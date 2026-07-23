@@ -25,13 +25,15 @@ export const sellabilityUiRo = {
       active: "Activ",
       archived: "Arhivat",
     },
+    // Etichete scurte, vocabular comun cu tabelul de produse si selectorul din
+    // editor. Sincronizeaza cu cheile `bookingMode*` din catalogul operatorului.
     productBookingModeLabels: {
-      date: "Data",
-      date_time: "Data si ora",
-      open: "Deschis",
-      stay: "Sejur",
+      date: "Excursie de o zi",
+      date_time: "Activitate cu oră",
+      open: "Voucher cu dată deschisă",
+      stay: "Cazare",
       transfer: "Transfer",
-      itinerary: "Itinerar",
+      itinerary: "Tur de mai multe zile",
       other: "Altul",
     },
     policyScopeLabels: {

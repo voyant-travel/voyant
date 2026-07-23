@@ -36,14 +36,26 @@ export const productsUiCoreRo = {
       active: "Activ",
       archived: "Arhivat",
     },
+    // Etichete scurte partajate de coloana din tabel si de selectorul din editor.
+    // Indiciul de tarifare (`productBookingModeBasis`) apare doar ca text secundar
+    // in selector. Sincronizeaza cu cheile `bookingMode*` din @voyant-travel/i18n.
     productBookingModeLabels: {
-      date: "Data",
-      date_time: "Data si ora",
-      open: "Deschis",
-      stay: "Sejur",
+      date: "Excursie de o zi",
+      date_time: "Activitate cu oră",
+      open: "Voucher cu dată deschisă",
+      stay: "Cazare",
       transfer: "Transfer",
-      itinerary: "Itinerariu",
+      itinerary: "Tur de mai multe zile",
       other: "Altul",
+    },
+    productBookingModeBasis: {
+      date: "per persoană",
+      date_time: "per persoană",
+      open: "",
+      stay: "camere & nopți",
+      transfer: "",
+      itinerary: "camere & nopți",
+      other: "",
     },
     productCapacityModeLabels: {
       free_sale: "Vanzare libera",

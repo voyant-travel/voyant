@@ -36,14 +36,27 @@ export const productsUiCoreEn = {
       active: "Active",
       archived: "Archived",
     },
+    // Short booking-mode labels shared by the products table column and the
+    // editor picker. The pricing-basis hint (`productBookingModeBasis`) is
+    // rendered only as secondary picker text. Keep in sync with the operator
+    // catalog `bookingMode*` keys in @voyant-travel/i18n.
     productBookingModeLabels: {
-      date: "Date",
-      date_time: "Date & Time",
-      open: "Open",
-      stay: "Stay",
+      date: "Day trip",
+      date_time: "Timed activity",
+      open: "Open-dated voucher",
+      stay: "Accommodation",
       transfer: "Transfer",
-      itinerary: "Itinerary",
+      itinerary: "Multi-day tour",
       other: "Other",
+    },
+    productBookingModeBasis: {
+      date: "per person",
+      date_time: "per person",
+      open: "",
+      stay: "rooms & nights",
+      transfer: "",
+      itinerary: "rooms & nights",
+      other: "",
     },
     productCapacityModeLabels: {
       free_sale: "Free sale",

@@ -14,13 +14,24 @@ export const operatorAdminProductsMessagesRoCore = {
   statusDraft: "Ciorna",
   statusActive: "Activ",
   statusArchived: "Arhivat",
-  bookingModeDate: "Excursie de o zi (per persoană)",
-  bookingModeDateTime: "Activitate cu oră (per persoană)",
+  // Etichete scurte pentru selector si pentru coloana "Booking Mode" din tabel.
+  // Indiciul de tarifare (`bookingMode*Basis`) apare doar ca text secundar in
+  // selector. Sincronizeaza cu `productBookingModeLabels`/`productBookingModeBasis`
+  // din inventory-react.
+  bookingModeDate: "Excursie de o zi",
+  bookingModeDateTime: "Activitate cu oră",
   bookingModeOpen: "Voucher cu dată deschisă",
-  bookingModeStay: "Cazare / sejur (camere & nopți)",
+  bookingModeStay: "Cazare",
   bookingModeTransfer: "Transfer",
-  bookingModeItinerary: "Tur de mai multe zile (camere & nopți)",
+  bookingModeItinerary: "Tur de mai multe zile",
   bookingModeOther: "Altul",
+  bookingModeDateBasis: "per persoană",
+  bookingModeDateTimeBasis: "per persoană",
+  bookingModeOpenBasis: "",
+  bookingModeStayBasis: "camere & nopți",
+  bookingModeTransferBasis: "",
+  bookingModeItineraryBasis: "camere & nopți",
+  bookingModeOtherBasis: "",
   dialogEditTitle: "Editeaza produsul",
   dialogNewTitle: "Produs nou",
   dialogEditDescription: "Actualizeaza detaliile produsului, preturile si clasificarea.",

@@ -38,6 +38,7 @@ export type ProductsUiCoreMessages = {
     }
     productStatusLabels: Record<ProductStatus, string>
     productBookingModeLabels: Record<ProductBookingMode, string>
+    productBookingModeBasis: Record<ProductBookingMode, string>
     productCapacityModeLabels: Record<ProductCapacityMode, string>
     productVisibilityLabels: Record<ProductVisibility, string>
   }

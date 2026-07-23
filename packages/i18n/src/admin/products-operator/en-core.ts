@@ -14,13 +14,25 @@ export const operatorAdminProductsMessagesEnCore = {
   statusDraft: "Draft",
   statusActive: "Active",
   statusArchived: "Archived",
-  bookingModeDate: "Day trip / activity (per person)",
-  bookingModeDateTime: "Timed activity (per person)",
+  // Booking-mode labels are intentionally short so they read cleanly as the
+  // primary picker label AND in the products table's "Booking Mode" column.
+  // The pricing-basis hint (`bookingMode*Basis`) is shown only as secondary
+  // text inside the picker. Keep in sync with the inventory-react
+  // `productBookingModeLabels`/`productBookingModeBasis` maps.
+  bookingModeDate: "Day trip",
+  bookingModeDateTime: "Timed activity",
   bookingModeOpen: "Open-dated voucher",
-  bookingModeStay: "Accommodation / stay (rooms & nights)",
+  bookingModeStay: "Accommodation",
   bookingModeTransfer: "Transfer",
-  bookingModeItinerary: "Multi-day tour (rooms & nights)",
+  bookingModeItinerary: "Multi-day tour",
   bookingModeOther: "Other",
+  bookingModeDateBasis: "per person",
+  bookingModeDateTimeBasis: "per person",
+  bookingModeOpenBasis: "",
+  bookingModeStayBasis: "rooms & nights",
+  bookingModeTransferBasis: "",
+  bookingModeItineraryBasis: "rooms & nights",
+  bookingModeOtherBasis: "",
   dialogEditTitle: "Edit product",
   dialogNewTitle: "New product",
   dialogEditDescription: "Update product details, pricing, and classification.",
