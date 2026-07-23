@@ -268,7 +268,11 @@ describe("inventory tools", () => {
             return { productId: "prod_1" }
           },
         },
-        { actor: "staff", audience: "staff" },
+        {
+          actor: "staff",
+          audience: "staff",
+          handlerActionPolicy: admitted(CREATE_PRODUCT_HANDLER_POLICY),
+        },
       ),
     )
     expect(forwarded).toMatchObject({ idempotencyKey: "product-create-1" })
