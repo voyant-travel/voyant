@@ -53,10 +53,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
           getBookingAggregates: (
             query: Parameters<typeof bookingsService.getBookingAggregates>[1],
           ) => bookingsService.getBookingAggregates(db, query),
-          async reserveBooking(input: {
-            reservation: Parameters<typeof bookingsService.reserveBooking>[1]
-            idempotencyKey: string
-          }, admitted: ToolHandlerActionPolicyContext) {
+          async reserveBooking(
+            input: {
+              reservation: Parameters<typeof bookingsService.reserveBooking>[1]
+              idempotencyKey: string
+            },
+            admitted: ToolHandlerActionPolicyContext,
+          ) {
             const requestContext = bookingToolActionLedgerContext(c)
             const principal = mapActionLedgerRequestContext(requestContext)
             if (principal.principalId === "unknown_request") {

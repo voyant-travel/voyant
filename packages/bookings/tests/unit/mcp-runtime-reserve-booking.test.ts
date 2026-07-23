@@ -7,10 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
 import { bookingsService } from "../../src/service.js"
-import {
-  type BookingsToolServices,
-  RESERVE_BOOKING_HANDLER_POLICY,
-} from "../../src/tools.js"
+import { type BookingsToolServices, RESERVE_BOOKING_HANDLER_POLICY } from "../../src/tools.js"
 
 const db = {} as never
 const eventBus = { emit: vi.fn() }
@@ -97,10 +94,13 @@ describe("reserve_booking MCP runtime", () => {
       .mockResolvedValue({ status: "ok", booking, replayed: false } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }, admitted),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+          idempotencyKey: "reserve-b-1002",
+        },
+        admitted,
+      ),
     ).resolves.toEqual({
       status: "reserved",
       booking: {
@@ -159,10 +159,13 @@ describe("reserve_booking MCP runtime", () => {
     } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }, admitted),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+          idempotencyKey: "reserve-b-1002",
+        },
+        admitted,
+      ),
     ).rejects.toMatchObject({
       code: "INVALID_INPUT",
       meta: { existingActionId: "act_existing" },
@@ -175,10 +178,13 @@ describe("reserve_booking MCP runtime", () => {
     } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }, admitted),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+          idempotencyKey: "reserve-b-1002",
+        },
+        admitted,
+      ),
     ).rejects.toMatchObject({ code: "PROVIDER_ERROR" })
   })
 })

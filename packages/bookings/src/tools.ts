@@ -292,9 +292,7 @@ export const reserveBookingTool = defineTool<
   actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
     const admitted = admitHandlerActionPolicy(ctx, RESERVE_BOOKING_HANDLER_POLICY)
-    return reserveBookingToolOutputSchema.parse(
-      await bookings(ctx).reserveBooking(input, admitted),
-    )
+    return reserveBookingToolOutputSchema.parse(await bookings(ctx).reserveBooking(input, admitted))
   },
 })
 
