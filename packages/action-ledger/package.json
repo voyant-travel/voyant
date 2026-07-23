@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./canary": "./src/canary.ts",
     "./capability": "./src/capability.ts",
+    "./created-command": "./src/created-command.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
@@ -72,6 +73,11 @@
         "types": "./dist/capability.d.ts",
         "import": "./dist/capability.js",
         "default": "./dist/capability.js"
+      },
+      "./created-command": {
+        "types": "./dist/created-command.d.ts",
+        "import": "./dist/created-command.js",
+        "default": "./dist/created-command.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
