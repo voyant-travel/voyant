@@ -46,9 +46,7 @@ describe("distribution tools", () => {
     ).toHaveLength(6)
     expect(
       tools
-        .filter(({ name }) =>
-          ["create_supplier", "create_distribution_channel"].includes(name),
-        )
+        .filter(({ name }) => ["create_supplier", "create_distribution_channel"].includes(name))
         .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
     expect(
