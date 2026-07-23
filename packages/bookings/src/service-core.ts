@@ -4,6 +4,8 @@ import {
   ActionLedgerCreatedCommandReplayIncompleteError,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
+  actionLedgerEntries,
+  actionMutationDetails,
   appendActionLedgerMutation,
   buildCreatedTargetCommandFingerprint,
   executeCreatedTargetCommand,
