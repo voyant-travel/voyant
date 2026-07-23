@@ -288,8 +288,14 @@ export const inventoryVoyantModule = defineModule({
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
       allowedActorTypes: ["staff"],
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "product-create-command",
+        resultReferenceType: "product",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/inventory#tool.create-product"] },
     },
     {
@@ -618,8 +624,14 @@ export const inventoryAuthoringVoyantPlugin = defineExtension({
       risk: "high",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
       allowedActorTypes: ["staff"],
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "product-compose-command",
+        resultReferenceType: "product",
+        durability: "handler-command-claim-v1",
+      },
       from: {
         tools: ["@voyant-travel/inventory#authoring.tool.compose-product"],
       },

@@ -122,6 +122,12 @@ describe("inventory deployment manifests", () => {
           ledger: "required",
           approval: "never",
           allowedActorTypes: ["staff"],
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "product-create-command",
+            resultReferenceType: "product",
+            durability: "handler-command-claim-v1",
+          },
         }),
         expect.objectContaining({
           id: "@voyant-travel/inventory#action.publish-product",
@@ -160,7 +166,13 @@ describe("inventory deployment manifests", () => {
         expect.objectContaining({
           id: "@voyant-travel/inventory#authoring.action.compose-product",
           ledger: "required",
-          reversible: true,
+          reversible: false,
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "product-compose-command",
+            resultReferenceType: "product",
+            durability: "handler-command-claim-v1",
+          },
         }),
       ],
     })

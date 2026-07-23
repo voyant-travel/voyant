@@ -1,3 +1,11 @@
+import {
+  type ActionLedgerRequestContextValues,
+  buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
+  executeCreatedTargetCommand,
+} from "@voyant-travel/action-ledger/created-command"
+import { mapActionLedgerRequestContext } from "@voyant-travel/action-ledger/request-context"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { defineToolContextContribution, requireService } from "@voyant-travel/tools"
 import type { Context } from "hono"
 import type { TripsRoutesOptions } from "./routes.js"
@@ -6,6 +14,8 @@ import { tripsService } from "./service.js"
 import type { TripsToolServices } from "./tools.js"
 
 export * from "./tools.js"
+
+type LedgerHttpContext = Pick<Context, "req"> & { var: object }
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["trips"],
@@ -20,8 +30,68 @@ export const voyantToolContextContribution = defineToolContextContribution({
       ),
     )
     const options = await provider()
+    const db = c.var.db as AnyDrizzleDb
     const trips: TripsToolServices = {
-      createTrip: (input) => tripsService.createTrip(c.var.db, input),
+      async createTrip({ idempotencyKey, components, ...input }, admitted) {
+        const requestContext = actionLedgerContext(c)
+        const principal = mapActionLedgerRequestContext(requestContext)
+        const command = {
+          actionName: admitted.actionPolicy.capabilityId,
+          actionVersion: admitted.actionPolicy.version,
+          commandTarget: { type: "trip-create-command", id: idempotencyKey },
+          canonicalTargetType: "trip",
+          resultReferenceType: "trip" as const,
+          commandInput: { ...input, components },
+          capabilityId: admitted.actionPolicy.capabilityId,
+          capabilityVersion: admitted.actionPolicy.version,
+          evaluatedRisk: "medium" as const,
+          approvalPolicy: "none" as const,
+          approvalReasonCode: null,
+        }
+        const fingerprint = await buildCreatedTargetCommandFingerprint(command)
+        const scope = await buildCreatedTargetIdempotencyScope({
+          actionName: command.actionName,
+          actionVersion: command.actionVersion,
+          principalType: principal.principalType,
+          principalId: principal.principalId,
+          organizationId: principal.organizationId,
+        })
+        const result = await executeCreatedTargetCommand(
+          db,
+          {
+            context: requestContext,
+            ...command,
+            routeOrToolName: admitted.capabilityId,
+            authorizationSource: "selected_graph_mcp_handler",
+            idempotency: {
+              scope,
+              key: idempotencyKey,
+              fingerprint,
+            },
+          },
+          {
+            async create(tx) {
+              const trip = await tripsService.createTrip(tx, input)
+              for (const component of components) {
+                trip.components.push(
+                  await tripsService.addComponent(tx, {
+                    ...component,
+                    envelopeId: trip.envelope.id,
+                  }),
+                )
+              }
+              return {
+                value: { envelopeId: trip.envelope.id },
+                targetId: trip.envelope.id,
+              }
+            },
+            async replay(_tx, completed) {
+              return { envelopeId: completed.reference.id }
+            },
+          },
+        )
+        return result.value
+      },
       addComponent: (input) => tripsService.addComponent(c.var.db, input),
       removeComponent: (id) => tripsService.removeComponent(c.var.db, id),
       priceTrip: async (input) => {
@@ -55,6 +125,29 @@ export const voyantToolContextContribution = defineToolContextContribution({
     return { trips }
   },
 })
+
+function actionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {
+  const vars = c.var as Record<string, unknown>
+  return {
+    userId: (vars.userId as string | undefined) ?? null,
+    agentId: (vars.agentId as string | undefined) ?? null,
+    workflowPrincipalId: (vars.workflowPrincipalId as string | undefined) ?? null,
+    principalSubtype: (vars.principalSubtype as string | undefined) ?? null,
+    sessionId: (vars.sessionId as string | undefined) ?? null,
+    apiTokenId: ((vars.apiTokenId ?? vars.apiKeyId) as string | undefined) ?? null,
+    callerType: (vars.callerType as ActionLedgerRequestContextValues["callerType"]) ?? null,
+    actor: (vars.actor as ActionLedgerRequestContextValues["actor"]) ?? null,
+    isInternalRequest: (vars.isInternalRequest as boolean | undefined) ?? false,
+    organizationId: (vars.organizationId as string | undefined) ?? null,
+    workflowRunId: (vars.workflowRunId as string | undefined) ?? null,
+    workflowStepId: (vars.workflowStepId as string | undefined) ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+export function createdTargetPrincipalId(context: ActionLedgerRequestContextValues): string {
+  return mapActionLedgerRequestContext(context).principalId
+}
 
 function resolveDeps<T>(
   c: Context,

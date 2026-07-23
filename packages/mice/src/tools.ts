@@ -1,6 +1,14 @@
 /** Module-owned Tools for the MICE program lifecycle. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { z } from "zod"
 
 import {
@@ -36,6 +44,28 @@ const WRITE_METADATA = {
     sideEffects: ["data-write"],
   },
 } as const
+export const CREATE_PROGRAM_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.create-program`,
+  capabilityVersion: "v1",
+  canonicalName: "create_mice_program",
+  actionPolicy: {
+    id: `${OWNER}#action.create-program`,
+    capabilityId: `${OWNER}#action.create-program`,
+    version: "v1",
+    kind: "execute",
+    targetType: "mice-program",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "mice-program-create-command",
+      resultReferenceType: "mice-program",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 const idArgsSchema = z.object({ id: z.string().min(1) })
 const programValueSchema = z.object({
@@ -64,15 +94,22 @@ const programListValueSchema = z.object({
   offset: z.number().int(),
 })
 const updateProgramToolSchema = updateProgramSchema.and(idArgsSchema)
+export const createProgramToolSchema = createProgramSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255),
+})
+const createProgramResultSchema = z.object({ programId: z.string() })
 
 type ProgramListQuery = z.infer<typeof programListQuerySchema>
-type CreateProgramInput = z.infer<typeof createProgramSchema>
+type CreateProgramInput = z.infer<typeof createProgramToolSchema>
 type UpdateProgramInput = z.infer<typeof updateProgramToolSchema>
 
 export interface MiceToolServices {
   listPrograms(query: ProgramListQuery): Promise<unknown>
   getProgram(id: string): Promise<unknown>
-  createProgram(input: CreateProgramInput): Promise<unknown>
+  createProgram(
+    input: CreateProgramInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateProgram(input: UpdateProgramInput): Promise<unknown>
 }
 
@@ -111,10 +148,13 @@ export const createMiceProgramTool = defineTool({
   capabilityId: `${OWNER}#tool.create-program`,
   name: "create_mice_program",
   description: "Create a MICE program with validated dates, lifecycle status, and budget data.",
-  inputSchema: createProgramSchema,
-  outputSchema: programValueSchema,
+  inputSchema: createProgramToolSchema,
+  outputSchema: createProgramResultSchema,
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler(input, ctx: MiceToolContext) {
-    return parseJsonResult(programValueSchema, await mice(ctx).createProgram(input))
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_PROGRAM_HANDLER_POLICY)
+    return createProgramResultSchema.parse(await mice(ctx).createProgram(input, admitted))
   },
 })
 

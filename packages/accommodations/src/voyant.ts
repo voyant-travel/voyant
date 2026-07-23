@@ -212,7 +212,13 @@ export const accommodationsVoyantModule = defineModule({
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "room-block-create-command",
+        resultReferenceType: "room-block",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/accommodations#tool.create-room-block"] },
     },
     {

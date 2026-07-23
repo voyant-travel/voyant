@@ -2,40 +2,13 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import type { TripComponent } from "../src/schema.js"
-import type { Trip } from "../src/service.js"
-import { createTripTool, priceTripTool, type TripsToolServices, tripsTools } from "../src/tools.js"
-
-function baseDraft(): Trip {
-  return {
-    envelope: {
-      id: "trip_123",
-      status: "draft",
-      title: "AI trip",
-      description: null,
-      travelerParty: {},
-      constraints: {},
-      aggregateCurrency: null,
-      aggregateSubtotalAmountCents: null,
-      aggregateTaxAmountCents: null,
-      aggregateTotalAmountCents: null,
-      aggregatePricingSnapshot: null,
-      currentPriceExpiresAt: null,
-      bookingGroupId: null,
-      orderId: null,
-      paymentSessionId: null,
-      reserveIdempotencyKey: null,
-      reserveStartedAt: null,
-      reservedAt: null,
-      checkoutIdempotencyKey: null,
-      checkoutStartedAt: null,
-      createdBy: null,
-      updatedBy: null,
-      createdAt: new Date("2026-05-18T00:00:00.000Z"),
-      updatedAt: new Date("2026-05-18T00:00:00.000Z"),
-    },
-    components: [],
-  }
-}
+import {
+  CREATE_TRIP_HANDLER_POLICY,
+  createTripTool,
+  priceTripTool,
+  type TripsToolServices,
+  tripsTools,
+} from "../src/tools.js"
 
 function ctxWith(
   services?: Partial<TripsToolServices>,
@@ -147,6 +120,7 @@ describe("trips tools", () => {
       "create_trip",
       {
         title: "AI trip",
+        idempotencyKey: "trip-create-1",
         components: [
           {
             kind: "manual_placeholder",
@@ -154,64 +128,83 @@ describe("trips tools", () => {
           },
         ],
       },
-      ctxWith({
-        async createTrip() {
-          calls.push("createTrip")
-          return baseDraft()
+      ctxWith(
+        {
+          async createTrip() {
+            calls.push("createTrip")
+            return { envelopeId: "trip_123" }
+          },
+          async addComponent(input) {
+            const metadata = input.metadata as { manualService?: { name?: string } }
+            calls.push(`addComponent:${metadata.manualService?.name}`)
+            const now = new Date("2026-05-18T00:00:00.000Z")
+            return {
+              id: "trcp_123",
+              envelopeId: input.envelopeId,
+              sequence: input.sequence,
+              kind: input.kind,
+              status: "draft",
+              title: metadata.manualService?.name ?? null,
+              description: input.description ?? null,
+              entityModule: null,
+              entityId: null,
+              sourceKind: null,
+              sourceConnectionId: null,
+              sourceRef: null,
+              bookingDraftId: null,
+              catalogQuoteId: null,
+              bookingId: null,
+              bookingGroupId: null,
+              orderId: null,
+              paymentSessionId: null,
+              providerRef: null,
+              supplierRef: null,
+              componentCurrency: null,
+              componentSubtotalAmountCents: null,
+              componentTaxAmountCents: null,
+              componentTotalAmountCents: null,
+              pricingSnapshot: input.estimatedPricing ?? null,
+              taxLines: [],
+              cancellationSnapshot: null,
+              holdToken: null,
+              holdExpiresAt: null,
+              priceExpiresAt: null,
+              warningCodes: [],
+              metadata: input.metadata,
+              createdAt: now,
+              updatedAt: now,
+            } satisfies TripComponent
+          },
+          priceTrip: async () => {
+            throw new Error("not used")
+          },
+          reserveTrip: async () => {
+            throw new Error("not used")
+          },
         },
-        async addComponent(input) {
-          const metadata = input.metadata as { manualService?: { name?: string } }
-          calls.push(`addComponent:${metadata.manualService?.name}`)
-          const now = new Date("2026-05-18T00:00:00.000Z")
-          return {
-            id: "trcp_123",
-            envelopeId: input.envelopeId,
-            sequence: input.sequence,
-            kind: input.kind,
-            status: "draft",
-            title: metadata.manualService?.name ?? null,
-            description: input.description ?? null,
-            entityModule: null,
-            entityId: null,
-            sourceKind: null,
-            sourceConnectionId: null,
-            sourceRef: null,
-            bookingDraftId: null,
-            catalogQuoteId: null,
-            bookingId: null,
-            bookingGroupId: null,
-            orderId: null,
-            paymentSessionId: null,
-            providerRef: null,
-            supplierRef: null,
-            componentCurrency: null,
-            componentSubtotalAmountCents: null,
-            componentTaxAmountCents: null,
-            componentTotalAmountCents: null,
-            pricingSnapshot: input.estimatedPricing ?? null,
-            taxLines: [],
-            cancellationSnapshot: null,
-            holdToken: null,
-            holdExpiresAt: null,
-            priceExpiresAt: null,
-            warningCodes: [],
-            metadata: input.metadata,
-            createdAt: now,
-            updatedAt: now,
-          } satisfies TripComponent
+        {
+          handlerActionPolicy: {
+            capabilityId: CREATE_TRIP_HANDLER_POLICY.capabilityId,
+            capabilityVersion: CREATE_TRIP_HANDLER_POLICY.capabilityVersion,
+            canonicalName: CREATE_TRIP_HANDLER_POLICY.canonicalName,
+            actionPolicy: {
+              ...CREATE_TRIP_HANDLER_POLICY.actionPolicy,
+              enforcement: "handler",
+              invocation: {
+                controlField: "_voyant",
+                requiredFields: [],
+                optionalFields: [],
+                fingerprintAlgorithm: "action-ledger-command-v1",
+              },
+            },
+            invocation: {},
+          } as ToolContext["handlerActionPolicy"],
         },
-        priceTrip: async () => {
-          throw new Error("not used")
-        },
-        reserveTrip: async () => {
-          throw new Error("not used")
-        },
-      }),
+      ),
     )
 
-    expect(calls).toEqual(["createTrip", "addComponent:Transfer"])
-    expect(result.envelope).toMatchObject({ id: "trip_123" })
-    expect(result.components).toHaveLength(1)
+    expect(calls).toEqual(["createTrip"])
+    expect(result).toEqual({ envelopeId: "trip_123" })
   })
 
   it("throws MISSING_SERVICE when the trips service is not wired", async () => {
@@ -240,7 +233,7 @@ describe("trips tools", () => {
         ctxWith(
           {
             async createTrip() {
-              return baseDraft()
+              return { envelopeId: "trip_123" }
             },
             async addComponent() {
               throw new Error("not used")
@@ -270,7 +263,7 @@ describe("trips tools", () => {
         ctxWith(
           {
             async createTrip() {
-              return baseDraft()
+              return { envelopeId: "trip_123" }
             },
             async addComponent() {
               throw new Error("not used")
