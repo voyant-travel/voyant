@@ -1,9 +1,15 @@
 import {
   type ActionLedgerRequestContextValues,
   buildActionLedgerApprovedExecutionFields,
+  buildCreatedTargetIdempotencyScope,
+  mapActionLedgerRequestContext,
 } from "@voyant-travel/action-ledger"
 import { isStaffRbacEnforced } from "@voyant-travel/hono"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { Context } from "hono"
 import { contributeBookingsExtrasToolContext } from "./extras/mcp-runtime.js"
 import { redactBookingContact, shouldRevealBookingPii } from "./pii-redaction.js"
@@ -50,35 +56,49 @@ export const voyantToolContextContribution = defineToolContextContribution({
           async reserveBooking(input: {
             reservation: Parameters<typeof bookingsService.reserveBooking>[1]
             idempotencyKey: string
-          }) {
+          }, admitted: ToolHandlerActionPolicyContext) {
             const requestContext = bookingToolActionLedgerContext(c)
-            const principalId =
-              c.get("userId") ??
-              c.get("agentId") ??
-              c.get("workflowPrincipalId") ??
-              c.get("apiTokenId") ??
-              c.get("apiKeyId")
-            if (!principalId) {
+            const principal = mapActionLedgerRequestContext(requestContext)
+            if (principal.principalId === "unknown_request") {
               throw new ToolError(
                 "Booking reservation requires a concrete authenticated principal.",
                 "AUTHORIZATION_DENIED",
               )
             }
+            const actionName = admitted.actionPolicy.capabilityId
+            const actionVersion = admitted.actionPolicy.version
             const idempotencyFingerprint = await buildBookingReservationCommandFingerprint(
               input.reservation,
+              {
+                actionName,
+                actionVersion,
+                capabilityId: admitted.actionPolicy.capabilityId,
+                capabilityVersion: admitted.actionPolicy.version,
+              },
             )
+            const idempotencyScope = await buildCreatedTargetIdempotencyScope({
+              actionName,
+              actionVersion,
+              principalType: principal.principalType,
+              principalId: principal.principalId,
+              organizationId: principal.organizationId,
+            })
             const result = await bookingsService.reserveBooking(
               db,
               input.reservation,
-              principalId,
+              principal.principalId,
               {
                 eventBus: c.get("eventBus"),
                 actionLedgerContext: requestContext,
                 actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
-                actionLedgerIdempotencyScope: `bookings.reserve_booking:${principalId}`,
+                actionLedgerIdempotencyScope: idempotencyScope,
                 actionLedgerIdempotencyKey: input.idempotencyKey,
                 actionLedgerIdempotencyFingerprint: idempotencyFingerprint,
-                actionLedgerRouteOrToolName: "bookings.reserve_booking",
+                actionLedgerRouteOrToolName: admitted.capabilityId,
+                actionLedgerActionName: actionName,
+                actionLedgerActionVersion: actionVersion,
+                actionLedgerCapabilityId: admitted.actionPolicy.capabilityId,
+                actionLedgerCapabilityVersion: admitted.actionPolicy.version,
               },
             )
             if (result.status !== "ok" || !("booking" in result)) {

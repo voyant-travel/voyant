@@ -1,10 +1,20 @@
-import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
+import {
+  createToolRegistry,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type BookingsToolServices, bookingsTools, reserveBookingTool } from "../src/tools.js"
+import {
+  type BookingsToolServices,
+  bookingsTools,
+  RESERVE_BOOKING_HANDLER_POLICY,
+  reserveBookingTool,
+} from "../src/tools.js"
 
 function ctx(
   services?: Partial<BookingsToolServices>,
+  handlerActionPolicy: ToolHandlerActionPolicyContext | null = reserveHandlerContext(),
 ): ToolContext & { bookings?: BookingsToolServices } {
   return {
     db: {},
@@ -13,6 +23,27 @@ function ctx(
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
     bookings: services as BookingsToolServices | undefined,
+    ...(handlerActionPolicy ? { handlerActionPolicy } : {}),
+  }
+}
+
+function reserveHandlerContext(
+  overrides: Partial<ToolHandlerActionPolicyContext> = {},
+): ToolHandlerActionPolicyContext {
+  return {
+    capabilityId: RESERVE_BOOKING_HANDLER_POLICY.capabilityId,
+    capabilityVersion: RESERVE_BOOKING_HANDLER_POLICY.capabilityVersion,
+    canonicalName: RESERVE_BOOKING_HANDLER_POLICY.canonicalName,
+    actionPolicy: {
+      ...RESERVE_BOOKING_HANDLER_POLICY.actionPolicy,
+      enforcement: "handler",
+      invocation: {
+        requiredFields: ["confirmed"],
+        optionalFields: ["targetId", "idempotencyKey", "idempotencyFingerprint"],
+      },
+    },
+    invocation: { confirmed: true, idempotencyKey: "reserve-b-1002" },
+    ...overrides,
   }
 }
 
@@ -124,9 +155,87 @@ describe("bookings tools", () => {
       },
       enforcement: "handler",
       invocation: {
-        requiredFields: ["confirmed"],
+        requiredFields: ["confirmed", "idempotencyKey"],
       },
     })
+  })
+
+  it.each([
+    ["missing", null],
+    [
+      "stale",
+      reserveHandlerContext({
+        actionPolicy: {
+          ...reserveHandlerContext().actionPolicy,
+          version: "v0",
+        },
+      }),
+    ],
+  ])("rejects %s handler policy before service mutation", async (_label, handlerActionPolicy) => {
+    let mutations = 0
+    const registry = createToolRegistry()
+    registry.registerAll(bookingsTools)
+
+    await expect(
+      registry.dispatch(
+        "reserve_booking",
+        {
+          reservation: {
+            bookingNumber: "B-1002",
+            sellCurrency: "EUR",
+            items: [{ title: "Guided tour", availabilitySlotId: "slot_1" }],
+          },
+          idempotencyKey: "reserve-b-1002",
+        },
+        ctx(
+          {
+            async reserveBooking() {
+              mutations += 1
+              return {
+                status: "reserved",
+                booking: { id: "bk_2", bookingNumber: "B-1002" },
+                replayed: false,
+              }
+            },
+          },
+          handlerActionPolicy,
+        ),
+      ),
+    ).rejects.toMatchObject({ code: "ACTION_POLICY_REQUIRED" })
+    expect(mutations).toBe(0)
+  })
+
+  it("rejects a non-staff actor before service mutation", async () => {
+    let mutations = 0
+    const registry = createToolRegistry()
+    registry.registerAll(bookingsTools)
+    const customerContext = ctx({
+      async reserveBooking() {
+        mutations += 1
+        return {
+          status: "reserved",
+          booking: { id: "bk_2", bookingNumber: "B-1002" },
+          replayed: false,
+        }
+      },
+    })
+    customerContext.actor = "customer"
+
+    await expect(
+      registry.dispatch(
+        "reserve_booking",
+        {
+          reservation: {
+            bookingNumber: "B-1002",
+            sellCurrency: "EUR",
+            items: [{ title: "Guided tour", availabilitySlotId: "slot_1" }],
+          },
+          idempotencyKey: "reserve-b-1002",
+        },
+        customerContext,
+      ),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+    expect(mutations).toBe(0)
   })
 
   it("returns a pending approval without executing cancellation", async () => {

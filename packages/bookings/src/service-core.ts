@@ -341,6 +341,10 @@ export interface BookingServiceRuntime {
   actionLedgerIdempotencyKey?: string | null
   actionLedgerIdempotencyFingerprint?: string | null
   actionLedgerRouteOrToolName?: string | null
+  actionLedgerActionName?: string | null
+  actionLedgerActionVersion?: string | null
+  actionLedgerCapabilityId?: string | null
+  actionLedgerCapabilityVersion?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
@@ -383,10 +387,27 @@ const BOOKING_RESERVATION_CAPABILITY_ID = "bookings:reserve"
 const BOOKING_RESERVATION_CAPABILITY_VERSION = "v1"
 const BOOKING_RESERVATION_EVALUATED_RISK = "high"
 
-function bookingReservationCommand(data: ReserveBookingInput) {
+export interface BookingReservationActionIdentity {
+  actionName: string
+  actionVersion: string
+  capabilityId: string
+  capabilityVersion: string
+}
+
+const DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY = {
+  actionName: BOOKING_RESERVATION_ACTION_NAME,
+  actionVersion: BOOKING_RESERVATION_ACTION_VERSION,
+  capabilityId: BOOKING_RESERVATION_CAPABILITY_ID,
+  capabilityVersion: BOOKING_RESERVATION_CAPABILITY_VERSION,
+} as const satisfies BookingReservationActionIdentity
+
+function bookingReservationCommand(
+  data: ReserveBookingInput,
+  identity: BookingReservationActionIdentity = DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY,
+) {
   return {
-    actionName: BOOKING_RESERVATION_ACTION_NAME,
-    actionVersion: BOOKING_RESERVATION_ACTION_VERSION,
+    actionName: identity.actionName,
+    actionVersion: identity.actionVersion,
     commandTarget: {
       type: BOOKING_RESERVATION_COMMAND_TARGET_TYPE,
       id: data.bookingNumber,
@@ -394,8 +415,8 @@ function bookingReservationCommand(data: ReserveBookingInput) {
     canonicalTargetType: BOOKING_RESERVATION_CANONICAL_TARGET_TYPE,
     resultReferenceType: BOOKING_RESERVATION_RESULT_REFERENCE_TYPE,
     commandInput: data,
-    capabilityId: BOOKING_RESERVATION_CAPABILITY_ID,
-    capabilityVersion: BOOKING_RESERVATION_CAPABILITY_VERSION,
+    capabilityId: identity.capabilityId,
+    capabilityVersion: identity.capabilityVersion,
     evaluatedRisk: BOOKING_RESERVATION_EVALUATED_RISK,
     approvalPolicy: "none" as const,
     approvalReasonCode: null,
@@ -404,8 +425,9 @@ function bookingReservationCommand(data: ReserveBookingInput) {
 
 export function buildBookingReservationCommandFingerprint(
   data: ReserveBookingInput,
+  identity: BookingReservationActionIdentity = DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY,
 ): Promise<string> {
-  return buildCreatedTargetCommandFingerprint(bookingReservationCommand(data))
+  return buildCreatedTargetCommandFingerprint(bookingReservationCommand(data, identity))
 }
 
 interface BookingReservationLedgerRuntime {
@@ -415,6 +437,7 @@ interface BookingReservationLedgerRuntime {
   idempotencyKey: string
   idempotencyFingerprint: string
   routeOrToolName: string
+  actionIdentity: BookingReservationActionIdentity
 }
 
 function bookingReservationLedgerRuntime(
@@ -439,6 +462,19 @@ function bookingReservationLedgerRuntime(
     idempotencyKey: runtime.actionLedgerIdempotencyKey,
     idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
     routeOrToolName: runtime.actionLedgerRouteOrToolName ?? "bookings.reserve_booking",
+    actionIdentity: {
+      actionName:
+        runtime.actionLedgerActionName ?? DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.actionName,
+      actionVersion:
+        runtime.actionLedgerActionVersion ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.actionVersion,
+      capabilityId:
+        runtime.actionLedgerCapabilityId ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.capabilityId,
+      capabilityVersion:
+        runtime.actionLedgerCapabilityVersion ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.capabilityVersion,
+    },
   }
 }
 
@@ -3215,7 +3251,7 @@ export const bookingsService = {
           db,
           {
             context: ledger.context,
-            ...bookingReservationCommand(data),
+            ...bookingReservationCommand(data, ledger.actionIdentity),
             routeOrToolName: ledger.routeOrToolName,
             authorizationSource: ledger.authorizationSource,
             idempotency: {
