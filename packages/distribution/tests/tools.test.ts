@@ -46,7 +46,12 @@ describe("distribution tools", () => {
     ).toHaveLength(6)
     expect(
       tools
-        .filter(({ name }) => name.startsWith("create_") || name.startsWith("update_"))
+        .filter(({ name }) => name.startsWith("create_"))
+        .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
+    ).toBe(true)
+    expect(
+      tools
+        .filter(({ name }) => name.startsWith("update_"))
         .every(({ riskPolicy }) => riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
   })
