@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createIdentityAddressTool,
+  createIdentityContactPointTool,
   type IdentityToolContext,
   identityTools,
   listIdentityContactPointsTool,
@@ -83,10 +84,21 @@ describe("identity tools", () => {
       expect(tool.requiredScopes).toEqual(["identity:write"])
       expect(tool.riskPolicy).toMatchObject({
         destructive: false,
-        reversible: true,
         sideEffects: ["data-write"],
       })
     }
+    expect(createIdentityAddressTool.riskPolicy.reversible).toBe(false)
+    expect(updateIdentityNamedContactTool.riskPolicy.reversible).toBe(true)
+  })
+
+  it("rejects missing generated-child policy before calling the service", async () => {
+    const ctx = context()
+    const create = vi.mocked(ctx.identity!.createContactPoint)
+
+    await expect(createIdentityContactPointTool.handler({} as never, ctx)).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+    })
+    expect(create).not.toHaveBeenCalled()
   })
 
   it("registers all capabilities without aliases or duplicate names", () => {

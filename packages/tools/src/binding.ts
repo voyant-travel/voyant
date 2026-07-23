@@ -51,6 +51,12 @@ export interface ToolActionPolicyBinding {
     commandTargetType: string
     resultReferenceType: string
     durability: "handler-command-claim-v1"
+    parentAnchor?: {
+      targetIdField: string
+      targetType?: string
+      targetTypeField?: string
+      relatedTargetIdField?: string
+    }
   }
   risk: ToolDeploymentRisk
   ledger: "required" | "optional"

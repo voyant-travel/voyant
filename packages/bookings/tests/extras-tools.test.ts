@@ -1,7 +1,11 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { type BookingsExtrasToolServices, bookingsExtrasTools } from "../src/extras/tools.js"
+import {
+  type BookingsExtrasToolServices,
+  bookingsExtrasTools,
+  createBookingExtraTool,
+} from "../src/extras/tools.js"
 
 function context(service?: BookingsExtrasToolServices): ToolContext & {
   bookingsExtras?: BookingsExtrasToolServices
@@ -103,5 +107,15 @@ describe("booking extras tools", () => {
     await expect(registry().dispatch("list_booking_extras", {}, context())).rejects.toMatchObject({
       code: "MISSING_SERVICE",
     })
+  })
+
+  it("rejects missing generated-child policy before calling the service", async () => {
+    const execute = vi.fn()
+    const ctx = context({ execute })
+
+    await expect(createBookingExtraTool.handler({} as never, ctx)).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+    })
+    expect(execute).not.toHaveBeenCalled()
   })
 })

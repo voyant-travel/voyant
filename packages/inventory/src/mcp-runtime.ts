@@ -1,14 +1,23 @@
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
+import { executeAdmittedCreatedTargetCommand } from "@voyant-travel/action-ledger/created-command"
 import {
   type CatalogContentRuntime,
   catalogContentRuntimePort,
 } from "@voyant-travel/catalog/runtime-port"
 import type { EventBus } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import { and, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { recordProductAuthoring } from "./authoring/audit.js"
 import { composeProduct } from "./authoring/service.js"
 import { emitProductContentChanged } from "./events.js"
+import { productExtras } from "./extras/schema.js"
 import { inventoryExtrasService } from "./extras/service.js"
+import type { InventoryExtrasToolServices } from "./extras-tools.js"
+import { productOptions, products } from "./schema.js"
 import { productsService } from "./service.js"
 import { getProductContent } from "./service-content.js"
 import type {
@@ -20,6 +29,7 @@ import type {
 export * from "./tools.js"
 
 type InventoryMcpEnv = { Variables: { eventBus?: EventBus; userId?: string } }
+type LedgerHttpContext = Pick<Context, "req"> & { var: object }
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["inventory", "inventoryContent", "inventoryExtras", "inventoryAuthoring"],
@@ -112,8 +122,42 @@ export const voyantToolContextContribution = defineToolContextContribution({
         ) => inventoryExtrasService.listProductExtras(db, input),
         getProductExtraById: (id: string) => inventoryExtrasService.getProductExtraById(db, id),
         createProductExtra: (
-          input: Parameters<typeof inventoryExtrasService.createProductExtra>[1],
-        ) => inventoryExtrasService.createProductExtra(db, input),
+          input: Parameters<InventoryExtrasToolServices["createProductExtra"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) =>
+          executeInventoryGeneratedChild({
+            c,
+            db: db as unknown as AnyDrizzleDb,
+            admitted,
+            idempotencyKey: input.idempotencyKey,
+            commandTargetType: "product-extra-create-command",
+            canonicalTargetType: "product_extra",
+            resultReferenceType: "product_extra",
+            commandInput: input,
+            async create(tx) {
+              const { idempotencyKey: _idempotencyKey, ...data } = input
+              const [parent] = await (tx as unknown as PostgresJsDatabase)
+                .select({ id: products.id })
+                .from(products)
+                .where(eq(products.id, data.productId))
+                .limit(1)
+              if (!parent) {
+                throw new ToolError(
+                  "Product extra parent product was not found.",
+                  "INVALID_INPUT",
+                  {
+                    productId: data.productId,
+                  },
+                )
+              }
+              const row = await inventoryExtrasService.createProductExtra(
+                tx as unknown as PostgresJsDatabase,
+                data,
+              )
+              if (!row) throw new Error("Product extra insert did not return a row")
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          }),
         updateProductExtra: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateProductExtra(
             db,
@@ -126,8 +170,47 @@ export const voyantToolContextContribution = defineToolContextContribution({
         getOptionExtraConfigById: (id: string) =>
           inventoryExtrasService.getOptionExtraConfigById(db, id),
         createOptionExtraConfig: (
-          input: Parameters<typeof inventoryExtrasService.createOptionExtraConfig>[1],
-        ) => inventoryExtrasService.createOptionExtraConfig(db, input),
+          input: Parameters<InventoryExtrasToolServices["createOptionExtraConfig"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) =>
+          executeInventoryGeneratedChild({
+            c,
+            db: db as unknown as AnyDrizzleDb,
+            admitted,
+            idempotencyKey: input.idempotencyKey,
+            commandTargetType: "option-extra-config-create-command",
+            canonicalTargetType: "option_extra_config",
+            resultReferenceType: "option_extra_config",
+            commandInput: input,
+            async create(tx) {
+              const { idempotencyKey: _idempotencyKey, ...data } = input
+              const [anchor] = await (tx as unknown as PostgresJsDatabase)
+                .select({ productId: productExtras.productId })
+                .from(productExtras)
+                .innerJoin(
+                  productOptions,
+                  and(
+                    eq(productOptions.id, data.optionId),
+                    eq(productOptions.productId, productExtras.productId),
+                  ),
+                )
+                .where(eq(productExtras.id, data.productExtraId))
+                .limit(1)
+              if (!anchor) {
+                throw new ToolError(
+                  "Option must belong to the product owning the anchored product extra.",
+                  "INVALID_INPUT",
+                  { productExtraId: data.productExtraId, optionId: data.optionId },
+                )
+              }
+              const row = await inventoryExtrasService.createOptionExtraConfig(
+                tx as unknown as PostgresJsDatabase,
+                data,
+              )
+              if (!row) throw new Error("Option extra config insert did not return a row")
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          }),
         updateOptionExtraConfig: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateOptionExtraConfig(
             db,
@@ -138,6 +221,61 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+async function executeInventoryGeneratedChild<TReferenceType extends string>(input: {
+  c: LedgerHttpContext
+  db: AnyDrizzleDb
+  admitted: ToolHandlerActionPolicyContext
+  idempotencyKey: string
+  commandTargetType: string
+  canonicalTargetType: string
+  resultReferenceType: TReferenceType
+  commandInput: unknown
+  create: Parameters<
+    typeof executeAdmittedCreatedTargetCommand<{ id: string; replayed: boolean }, TReferenceType>
+  >[1]["create"]
+}) {
+  return (
+    await executeAdmittedCreatedTargetCommand(
+      {
+        db: input.db,
+        context: inventoryActionLedgerContext(input.c),
+        admitted: input.admitted,
+        idempotencyKey: input.idempotencyKey,
+        commandTargetType: input.commandTargetType,
+        canonicalTargetType: input.canonicalTargetType,
+        resultReferenceType: input.resultReferenceType,
+        commandInput: input.commandInput,
+        evaluatedRisk: "high",
+      },
+      {
+        create: input.create,
+        async replay(_tx, completed) {
+          return { id: completed.reference.id, replayed: true }
+        },
+      },
+    )
+  ).value
+}
+
+function inventoryActionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {
+  const vars = c.var as Record<string, unknown>
+  return {
+    userId: (vars.userId as string | undefined) ?? null,
+    agentId: (vars.agentId as string | undefined) ?? null,
+    workflowPrincipalId: (vars.workflowPrincipalId as string | undefined) ?? null,
+    principalSubtype: (vars.principalSubtype as string | undefined) ?? null,
+    sessionId: (vars.sessionId as string | undefined) ?? null,
+    apiTokenId: ((vars.apiTokenId ?? vars.apiKeyId) as string | undefined) ?? null,
+    callerType: (vars.callerType as ActionLedgerRequestContextValues["callerType"]) ?? null,
+    actor: (vars.actor as ActionLedgerRequestContextValues["actor"]) ?? null,
+    isInternalRequest: (vars.isInternalRequest as boolean | undefined) ?? false,
+    organizationId: (vars.organizationId as string | undefined) ?? null,
+    workflowRunId: (vars.workflowRunId as string | undefined) ?? null,
+    workflowStepId: (vars.workflowStepId as string | undefined) ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
 
 async function optionalContentRuntime(value: unknown): Promise<CatalogContentRuntime | undefined> {
   const resolved = await Promise.resolve(value)

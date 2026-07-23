@@ -1,6 +1,14 @@
 /** Module-owned Tools for product extras and option-level extra configuration. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -46,19 +54,34 @@ const updateOptionExtraConfigToolSchema = updateOptionExtraConfigSchema.extend({
 
 type ProductExtraListInput = z.infer<typeof productExtraListQuerySchema>
 type OptionExtraConfigListInput = z.infer<typeof optionExtraConfigListQuerySchema>
-type CreateProductExtraInput = z.infer<typeof insertProductExtraSchema>
+const idempotencyKeySchema = z.string().trim().min(1).max(255)
+export const createProductExtraInputSchema = insertProductExtraSchema.extend({
+  idempotencyKey: idempotencyKeySchema,
+})
+export const createOptionExtraConfigInputSchema = insertOptionExtraConfigSchema.extend({
+  idempotencyKey: idempotencyKeySchema,
+})
+const createdChildReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
+
+type CreateProductExtraInput = z.infer<typeof createProductExtraInputSchema>
 type UpdateProductExtraInput = z.infer<typeof updateProductExtraToolSchema>
-type CreateOptionExtraConfigInput = z.infer<typeof insertOptionExtraConfigSchema>
+type CreateOptionExtraConfigInput = z.infer<typeof createOptionExtraConfigInputSchema>
 type UpdateOptionExtraConfigInput = z.infer<typeof updateOptionExtraConfigToolSchema>
 
 export interface InventoryExtrasToolServices {
   listProductExtras(input: ProductExtraListInput): Promise<unknown>
   getProductExtraById(id: string): Promise<unknown>
-  createProductExtra(input: CreateProductExtraInput): Promise<unknown>
+  createProductExtra(
+    input: CreateProductExtraInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateProductExtra(input: UpdateProductExtraInput): Promise<unknown>
   listOptionExtraConfigs(input: OptionExtraConfigListInput): Promise<unknown>
   getOptionExtraConfigById(id: string): Promise<unknown>
-  createOptionExtraConfig(input: CreateOptionExtraConfigInput): Promise<unknown>
+  createOptionExtraConfig(
+    input: CreateOptionExtraConfigInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateOptionExtraConfig(input: UpdateOptionExtraConfigInput): Promise<unknown>
 }
 
@@ -87,6 +110,60 @@ const writeMetadata = {
   tier: "sensitive" as const,
   riskPolicy: WRITE_RISK,
 }
+
+export const CREATE_PRODUCT_EXTRA_HANDLER_POLICY = {
+  capabilityId: `${OWNER}.tool.create-product-extra`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_product_extra",
+  actionPolicy: {
+    id: `${OWNER}.action.create-product-extra`,
+    capabilityId: `${OWNER}.action.create-product-extra`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "product_extra",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "product-extra-create-command",
+      resultReferenceType: "product_extra",
+      durability: "handler-command-claim-v1",
+      parentAnchor: { targetType: "product", targetIdField: "productId" },
+    },
+    risk: "high",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
+export const CREATE_OPTION_EXTRA_CONFIG_HANDLER_POLICY = {
+  capabilityId: `${OWNER}.tool.create-option-extra-config`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_option_extra_config",
+  actionPolicy: {
+    id: `${OWNER}.action.create-option-extra-config`,
+    capabilityId: `${OWNER}.action.create-option-extra-config`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "option_extra_config",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "option-extra-config-create-command",
+      resultReferenceType: "option_extra_config",
+      durability: "handler-command-claim-v1",
+      parentAnchor: {
+        targetType: "product_extra",
+        targetIdField: "productExtraId",
+        relatedTargetIdField: "optionId",
+      },
+    },
+    risk: "high",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 export const listProductExtrasTool = defineTool({
   ...readMetadata,
@@ -120,16 +197,16 @@ export const getProductExtraTool = defineTool({
 
 export const createProductExtraTool = defineTool({
   ...writeMetadata,
+  riskPolicy: { ...WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}.tool.create-product-extra`,
   name: "create_product_extra",
   description: "Create an authored product extra with selection, pricing, and collection defaults.",
-  inputSchema: insertProductExtraSchema,
-  outputSchema: productExtraValueSchema.nullable(),
+  inputSchema: createProductExtraInputSchema,
+  outputSchema: createdChildReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: InventoryExtrasToolContext) {
-    return parseJsonResult(
-      productExtraValueSchema.nullable(),
-      await extras(ctx).createProductExtra(input),
-    )
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_PRODUCT_EXTRA_HANDLER_POLICY)
+    return createdChildReferenceSchema.parse(await extras(ctx).createProductExtra(input, admitted))
   },
 })
 
@@ -181,15 +258,17 @@ export const getOptionExtraConfigTool = defineTool({
 
 export const createOptionExtraConfigTool = defineTool({
   ...writeMetadata,
+  riskPolicy: { ...WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}.tool.create-option-extra-config`,
   name: "create_option_extra_config",
   description: "Create option-level selection or pricing overrides for a product extra.",
-  inputSchema: insertOptionExtraConfigSchema,
-  outputSchema: optionExtraConfigValueSchema.nullable(),
+  inputSchema: createOptionExtraConfigInputSchema,
+  outputSchema: createdChildReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: InventoryExtrasToolContext) {
-    return parseJsonResult(
-      optionExtraConfigValueSchema.nullable(),
-      await extras(ctx).createOptionExtraConfig(input),
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_OPTION_EXTRA_CONFIG_HANDLER_POLICY)
+    return createdChildReferenceSchema.parse(
+      await extras(ctx).createOptionExtraConfig(input, admitted),
     )
   },
 })

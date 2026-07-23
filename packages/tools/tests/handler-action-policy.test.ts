@@ -22,6 +22,7 @@ const expected = {
       commandTargetType: "legal-document-command",
       resultReferenceType: "legal-document",
       durability: "handler-command-claim-v1",
+      parentAnchor: { targetType: "contract", targetIdField: "contractId" },
     },
     risk: "high",
     ledger: "required",
@@ -58,6 +59,22 @@ describe("admitHandlerActionPolicy", () => {
     expect(() => handler(stale)).toThrowError(
       expect.objectContaining<Partial<ToolError>>({ code: "ACTION_POLICY_REQUIRED" }),
     )
+    expect(mutations).toBe(0)
+  })
+
+  it("rejects a stale generated-child parent anchor before mutation", () => {
+    let mutations = 0
+    const stale = context()
+    if (!stale.handlerActionPolicy) throw new Error("Test context is missing its handler policy")
+    stale.handlerActionPolicy.actionPolicy.createdTarget = {
+      ...stale.handlerActionPolicy.actionPolicy.createdTarget!,
+      parentAnchor: { targetType: "contract", targetIdField: "documentId" },
+    }
+
+    expect(() => {
+      admitHandlerActionPolicy(stale, expected)
+      mutations += 1
+    }).toThrowError(expect.objectContaining<Partial<ToolError>>({ code: "ACTION_POLICY_REQUIRED" }))
     expect(mutations).toBe(0)
   })
 

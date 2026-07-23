@@ -180,11 +180,35 @@ export const identityVoyantModule = defineModule({
     })),
     ...(
       [
-        ["create-contact-point", "identity_contact_point"],
+        ["create-contact-point", "identity_contact_point", "contact-point-create-command"],
+        ["create-address", "identity_address", "address-create-command"],
+        ["create-named-contact", "identity_named_contact", "named-contact-create-command"],
+      ] as const
+    ).map(([id, targetType, commandTargetType]) => ({
+      id: `@voyant-travel/identity#action.${id}`,
+      capabilityId: `@voyant-travel/identity#action.${id}`,
+      version: "v1" as const,
+      kind: "execute" as const,
+      targetType,
+      targetLifecycle: "created" as const,
+      createdTarget: {
+        commandTargetType,
+        resultReferenceType: targetType,
+        durability: "handler-command-claim-v1" as const,
+        parentAnchor: { targetTypeField: "entityType", targetIdField: "entityId" },
+      },
+      requiredScopes: ["identity:write"],
+      risk: "high" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: { tools: [`@voyant-travel/identity#tool.${id}`] },
+    })),
+    ...(
+      [
         ["update-contact-point", "identity_contact_point"],
-        ["create-address", "identity_address"],
         ["update-address", "identity_address"],
-        ["create-named-contact", "identity_named_contact"],
         ["update-named-contact", "identity_named_contact"],
       ] as const
     ).map(([id, targetType]) => ({

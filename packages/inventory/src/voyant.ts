@@ -553,9 +553,49 @@ export const inventoryExtrasVoyantModule = defineModule({
     })),
     ...(
       [
-        ["create-product-extra", "product_extra"],
+        [
+          "create-product-extra",
+          "product_extra",
+          "product-extra-create-command",
+          "product_extra",
+          { targetType: "product", targetIdField: "productId" },
+        ],
+        [
+          "create-option-extra-config",
+          "option_extra_config",
+          "option-extra-config-create-command",
+          "option_extra_config",
+          {
+            targetType: "product_extra",
+            targetIdField: "productExtraId",
+            relatedTargetIdField: "optionId",
+          },
+        ],
+      ] as const
+    ).map(([id, targetType, commandTargetType, resultReferenceType, parentAnchor]) => ({
+      id: `@voyant-travel/inventory#extras.action.${id}`,
+      capabilityId: `@voyant-travel/inventory#extras.action.${id}`,
+      version: "v1" as const,
+      kind: "execute" as const,
+      targetType,
+      targetLifecycle: "created" as const,
+      createdTarget: {
+        commandTargetType,
+        resultReferenceType,
+        durability: "handler-command-claim-v1" as const,
+        parentAnchor,
+      },
+      requiredScopes: ["extras:write"],
+      risk: "high" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: { tools: [`@voyant-travel/inventory#extras.tool.${id}`] },
+    })),
+    ...(
+      [
         ["update-product-extra", "product_extra"],
-        ["create-option-extra-config", "option_extra_config"],
         ["update-option-extra-config", "option_extra_config"],
       ] as const
     ).map(([id, targetType]) => ({

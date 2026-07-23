@@ -79,9 +79,20 @@ describe("inventory extras tools", () => {
       expect(tool.tier).toBe("sensitive")
       expect(tool.riskPolicy).toMatchObject({
         destructive: false,
-        reversible: true,
         sideEffects: ["data-write"],
       })
     }
+    expect(createProductExtraTool.riskPolicy.reversible).toBe(false)
+    expect(updateOptionExtraConfigTool.riskPolicy.reversible).toBe(true)
+  })
+
+  it("rejects missing created-child policy before calling the service", async () => {
+    const ctx = context()
+    const create = vi.mocked(ctx.inventoryExtras!.createProductExtra)
+
+    await expect(createProductExtraTool.handler({} as never, ctx)).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+    })
+    expect(create).not.toHaveBeenCalled()
   })
 })

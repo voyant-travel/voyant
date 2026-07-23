@@ -98,6 +98,12 @@ export interface GraphMcpRuntime {
       commandTargetType: string
       resultReferenceType: string
       durability: "handler-command-claim-v1"
+      parentAnchor?: {
+        targetIdField: string
+        targetType?: string
+        targetTypeField?: string
+        relatedTargetIdField?: string
+      }
     }
     risk: "low" | "medium" | "high" | "critical"
     ledger: "required" | "optional"

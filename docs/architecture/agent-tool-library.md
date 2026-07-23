@@ -128,6 +128,13 @@ expiry again. Approval requests bind the exact selected Tool capability (explici
 actions), and handlers use the context capability id as their ledger route identity. Conditional
 created-target approval remains fail-closed.
 
+When the generated target is a child row, `createdTarget.parentAnchor` names the stable existing
+owner carried by the Tool input. A static parent uses `targetType` plus `targetIdField`; polymorphic
+owners use `targetTypeField` plus `targetIdField`. `relatedTargetIdField` declares an additional
+reference whose membership must be checked by the handler (for example, an option must belong to
+the product that owns an extra). Parent validation, the command claim, the child insert, and the
+canonical child reference must share the handler-owned transaction.
+
 Finance owns two composed operator commands. `create_booking` delegates to the
 booking-create service for product/slot conversion, travelers, room and item lines,
 payment schedules, optional credits, groups, invoice documents, ledger entries, and

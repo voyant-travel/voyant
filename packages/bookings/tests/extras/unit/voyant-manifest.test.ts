@@ -41,6 +41,19 @@ describe("bookings extras deployment manifest", () => {
     })
     expect(bookingsExtrasVoyantModule.schema).toBeUndefined()
     expect(bookingsExtrasVoyantModule.migrations).toBeUndefined()
+    expect(bookingsExtrasVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/bookings#extras.action.create-booking-extra",
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "booking-extra-create-command",
+          resultReferenceType: "booking_extra",
+          durability: "handler-command-claim-v1",
+          parentAnchor: { targetType: "booking", targetIdField: "bookingId" },
+        },
+        reversible: false,
+      }),
+    )
   })
 
   it("uses its graph runtime factory to expose only the selected admin surface", async () => {

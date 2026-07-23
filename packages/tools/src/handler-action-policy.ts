@@ -91,7 +91,21 @@ function sameCreatedTarget(
   return (
     actualCreated.commandTargetType === expectedCreated.commandTargetType &&
     actualCreated.resultReferenceType === expectedCreated.resultReferenceType &&
-    actualCreated.durability === expectedCreated.durability
+    actualCreated.durability === expectedCreated.durability &&
+    sameParentAnchor(actualCreated.parentAnchor, expectedCreated.parentAnchor)
+  )
+}
+
+function sameParentAnchor(
+  actual: NonNullable<ToolActionPolicyBinding["createdTarget"]>["parentAnchor"],
+  expected: NonNullable<ToolActionPolicyBinding["createdTarget"]>["parentAnchor"],
+): boolean {
+  if (!actual || !expected) return actual === expected
+  return (
+    actual.targetIdField === expected.targetIdField &&
+    actual.targetType === expected.targetType &&
+    actual.targetTypeField === expected.targetTypeField &&
+    actual.relatedTargetIdField === expected.relatedTargetIdField
   )
 }
 

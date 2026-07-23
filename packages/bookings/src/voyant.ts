@@ -582,7 +582,24 @@ export const bookingsExtrasVoyantModule = defineModule({
     "bookingsExtras",
     BOOKING_EXTRAS_TOOL_SPECS,
   ),
-  actions: declareBookingExtensionActions(BOOKING_EXTRAS_OWNER, BOOKING_EXTRAS_TOOL_SPECS),
+  actions: declareBookingExtensionActions(BOOKING_EXTRAS_OWNER, BOOKING_EXTRAS_TOOL_SPECS).map(
+    (action) =>
+      action.id === `${BOOKING_EXTRAS_OWNER}.action.create-booking-extra`
+        ? {
+            ...action,
+            capabilityId: action.id,
+            targetLifecycle: "created" as const,
+            createdTarget: {
+              commandTargetType: "booking-extra-create-command",
+              resultReferenceType: "booking_extra",
+              durability: "handler-command-claim-v1" as const,
+              parentAnchor: { targetType: "booking", targetIdField: "bookingId" },
+            },
+            approval: "never" as const,
+            reversible: false,
+          }
+        : action,
+  ),
   meta: {
     ownership: "package",
   },

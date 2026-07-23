@@ -1,6 +1,14 @@
 /** Module-owned Tools for booking extras and departure-manifest selections. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -53,6 +61,10 @@ const bookingExtraSchema = bookingExtraCoreSchema.extend({
   updatedAt: timestampSchema,
 })
 const updateBookingExtraToolSchema = updateBookingExtraSchema.extend({ id: z.string().min(1) })
+export const createBookingExtraInputSchema = insertBookingExtraSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255),
+})
+const createdBookingExtraReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
 
 const participantSelectionSchema = z.object({
   id: z.string(),
@@ -190,7 +202,11 @@ type ExtrasOperation =
   | "bulkUpdateSlotExtraCollections"
 
 export interface BookingsExtrasToolServices {
-  execute(operation: ExtrasOperation, input: unknown): Promise<unknown>
+  execute(
+    operation: ExtrasOperation,
+    input: unknown,
+    admitted?: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 export type BookingsExtrasToolContext = ToolContext & {
   bookingsExtras?: BookingsExtrasToolServices
@@ -220,6 +236,31 @@ const writeMetadata = {
   tier: "sensitive" as const,
   riskPolicy: WRITE_RISK,
 }
+
+export const CREATE_BOOKING_EXTRA_HANDLER_POLICY = {
+  capabilityId: `${OWNER}.tool.create-booking-extra`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_booking_extra",
+  actionPolicy: {
+    id: `${OWNER}.action.create-booking-extra`,
+    capabilityId: `${OWNER}.action.create-booking-extra`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "booking-extra",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "booking-extra-create-command",
+      resultReferenceType: "booking_extra",
+      durability: "handler-command-claim-v1",
+      parentAnchor: { targetType: "booking", targetIdField: "bookingId" },
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 const highRiskWriteMetadata = { ...writeMetadata, riskPolicy: HIGH_RISK_WRITE }
 
 export const listBookingExtrasTool = defineTool({
@@ -254,15 +295,17 @@ export const getBookingExtraTool = defineTool({
 
 export const createBookingExtraTool = defineTool({
   ...writeMetadata,
+  riskPolicy: { ...WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}.tool.create-booking-extra`,
   name: "create_booking_extra",
   description: "Create a booking extra without deleting or replacing historical selections.",
-  inputSchema: insertBookingExtraSchema,
-  outputSchema: bookingExtraSchema.nullable(),
+  inputSchema: createBookingExtraInputSchema,
+  outputSchema: createdBookingExtraReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: BookingsExtrasToolContext) {
-    return parseJsonResult(
-      bookingExtraSchema.nullable(),
-      await service(ctx).execute("createBookingExtra", input),
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_BOOKING_EXTRA_HANDLER_POLICY)
+    return createdBookingExtraReferenceSchema.parse(
+      await service(ctx).execute("createBookingExtra", input, admitted),
     )
   },
 })
