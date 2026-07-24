@@ -7,7 +7,7 @@ import {
   type ToolContext,
 } from "@voyant-travel/tools"
 import { Hono } from "hono"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 
 import { createGraphMcpApiRoutes, createMcpApiRoutes } from "../src/index.js"
@@ -453,6 +453,28 @@ describe("createMcpApiRoutes", () => {
         buildContext: () => buildContext(),
       }),
     ).rejects.toThrow(/no selected graph action policy/)
+
+    const unavailableToolLoad = vi.fn(runtimeTool.load)
+    await expect(
+      createGraphMcpApiRoutes({
+        runtime: {
+          accessCatalog,
+          tools: [{ ...runtimeTool, load: unavailableToolLoad }],
+          actions: [
+            {
+              ...actions[0],
+              availability: {
+                status: "unavailable" as const,
+                reasonCode: "unsafe-nontransactional-effect",
+              },
+            },
+          ],
+          references,
+        },
+        buildContext: () => buildContext(),
+      }),
+    ).rejects.toThrow(/bound by an unavailable graph action/)
+    expect(unavailableToolLoad).not.toHaveBeenCalled()
   })
 
   it("propagates created-target handler policy without advertising caller-owned target identity", async () => {
@@ -559,7 +581,7 @@ describe("createMcpApiRoutes", () => {
             durability: "handler-command-claim-v1",
           },
           enforcement: "handler",
-          invocation: { requiredFields: [] },
+          invocation: { requiredFields: ["idempotencyKey"] },
         },
       },
     })
@@ -582,7 +604,7 @@ describe("createMcpApiRoutes", () => {
           resultReferenceType: "notification",
           durability: "handler-command-claim-v1",
         },
-        invocation: expect.objectContaining({ requiredFields: [] }),
+        invocation: expect.objectContaining({ requiredFields: ["idempotencyKey"] }),
       }),
     )
 
@@ -591,7 +613,13 @@ describe("createMcpApiRoutes", () => {
         "/",
         rpc("tools/call", {
           name: "create_notification",
-          arguments: { message: "hello", _voyant: { reasonCode: "operator-request" } },
+          arguments: {
+            message: "hello",
+            _voyant: {
+              idempotencyKey: "notification-command-1",
+              reasonCode: "operator-request",
+            },
+          },
         }),
       ),
     )

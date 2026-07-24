@@ -1,11 +1,14 @@
 import {
+  admitHandlerActionPolicy,
   defineTool,
   READ_ONLY_RISK,
   requireService,
   type ToolContext,
   ToolError,
+  type ToolHandlerActionPolicyContext,
 } from "@voyant-travel/tools"
 import { z } from "zod"
+import { LEGAL_CONTRACT_DRAFT_HANDLER_EXPECTATION } from "./created-target-policy.js"
 
 const OWNER = "@voyant-travel/legal"
 const VERSION = "v1"
@@ -206,6 +209,7 @@ const listContractsInputSchema = z.object({
 })
 const idInputSchema = z.object({ id: z.string().trim().min(1) })
 const createDraftInputSchema = z.object({
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
   title: z.string().trim().min(1).max(500),
   scope: scopeSchema.default("customer"),
   language: z.string().min(2).max(10).default("en"),
@@ -333,7 +337,14 @@ export interface LegalToolServices {
     input: z.infer<typeof listContractsInputSchema>,
   ): Promise<{ data: LegalContractSummary[]; meta: z.infer<typeof pageSchema> }>
   getContract(id: string): Promise<LegalContractDetail | null>
-  createDraft(input: z.infer<typeof createDraftInputSchema>): Promise<LegalContractDetail>
+  createDraft(
+    input: z.infer<typeof createDraftInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<{
+    status: "created"
+    contract: { id: string }
+    replayed: boolean
+  }>
   listTemplates(
     input: z.infer<typeof listTemplatesInputSchema>,
   ): Promise<{ data: ContractTemplateSummary[]; meta: z.infer<typeof pageSchema> }>
@@ -454,14 +465,23 @@ export const getLegalContractTool = defineTool({
 })
 export const createLegalContractDraftTool = defineTool({
   ...writeMetadata,
+  riskPolicy: { ...writeMetadata.riskPolicy, reversible: false },
   capabilityId: `${OWNER}#tool.create-contract-draft`,
   name: "create_legal_contract_draft",
   aliases: ["legal_contract_create"],
-  description:
-    "Create a reversible draft contract only. Lifecycle status cannot be supplied or spoofed.",
+  description: "Create a draft contract only. Lifecycle status cannot be supplied or spoofed.",
   inputSchema: createDraftInputSchema,
-  outputSchema: legalContractDetailSchema,
-  handler: (input, ctx: LegalToolContext) => legal(ctx).createDraft(input),
+  outputSchema: z.object({
+    status: z.literal("created"),
+    contract: z.object({ id: z.string() }),
+    replayed: z.boolean(),
+  }),
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  async handler(input, ctx: LegalToolContext) {
+    const admitted = admitHandlerActionPolicy(ctx, LEGAL_CONTRACT_DRAFT_HANDLER_EXPECTATION)
+    return legal(ctx).createDraft(input, admitted)
+  },
 })
 export const listContractTemplatesTool = defineTool({
   ...readMetadata,

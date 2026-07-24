@@ -46,7 +46,19 @@ describe("distribution tools", () => {
     ).toHaveLength(6)
     expect(
       tools
-        .filter(({ name }) => name.startsWith("create_") || name.startsWith("update_"))
+        .filter(({ name }) => ["create_supplier", "create_distribution_channel"].includes(name))
+        .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
+    ).toBe(true)
+    expect(
+      tools
+        .filter(({ name }) =>
+          [
+            "update_supplier",
+            "update_distribution_channel",
+            "create_external_reference",
+            "update_external_reference",
+          ].includes(name),
+        )
         .every(({ riskPolicy }) => riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
   })

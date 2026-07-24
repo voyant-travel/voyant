@@ -36,9 +36,89 @@ canonical target does not exist before dispatch, so the caller cannot supply it 
 preflight cannot share the domain transaction. A created-target handler must implement the
 `handler-command-claim-v1` contract: claim a stable pre-create command identity and fingerprint
 before mutation, reject same-key/different-command reuse, replay a typed immutable result
-reference, and atomically append the canonical generated-target result. Approval requests for
-such actions bind to the declared command target type; the successful generated-target entry is
-then linked causally by the handler.
+reference, and atomically append the canonical generated-target result. Approval-bearing created
+commands use MCP's request-scoped `handlerActionPolicy` context and are validated inside that same
+transaction before the claim or domain mutation.
+
+Package handlers implement that contract with `executeCreatedTargetCommand` from
+`@voyant-travel/action-ledger/created-command`. It owns the transaction and keeps the claim
+opaque; domain callbacks receive only its exact transaction handle:
+
+```ts
+const command = {
+  actionName: "relationship.person.create",
+  actionVersion: "v1",
+  commandTarget: {
+    type: "relationship-person-create-command",
+    id: commandId,
+  },
+  canonicalTargetType: "relationship-person",
+  resultReferenceType: "relationship-person-ref",
+  commandInput: input,
+  capabilityId: "relationships:person:create",
+  capabilityVersion: "v1",
+  evaluatedRisk: "high",
+  approvalPolicy: "none",
+  approvalReasonCode: null,
+}
+const fingerprint = await buildCreatedTargetCommandFingerprint(command)
+
+return executeCreatedTargetCommand(
+  db,
+  {
+    context,
+    ...command,
+    idempotency: {
+      scope: `relationships.create_person:${principalId}`,
+      key: idempotencyKey,
+      fingerprint,
+    },
+  },
+  {
+    async create(tx) {
+      const person = await insertPerson(tx, input)
+      return { value: person, targetId: person.id }
+    },
+    async replay(tx, result) {
+      return resolvePerson(tx, result.reference.id)
+    },
+  },
+)
+```
+
+The executor requires a transaction-capable database, holds a Postgres transaction-scoped
+advisory lock for the idempotency scope and key, appends the requested command identity before
+calling domain code, re-reads that opaque claim, and appends the canonical result before commit.
+Exact replay validates full principal, tenant, workflow, capability, authorization, and approval
+continuity plus the typed `<reference-type>:<target-id>` result, then calls only `replay`. A
+committed claim without a result throws `ActionLedgerCreatedCommandReplayIncompleteError`;
+malformed or inconsistent result metadata throws
+`ActionLedgerCreatedCommandReplayCorruptError`. Neither condition is dispatched again.
+
+`buildCreatedTargetCommandFingerprint` covers the command identity and input,
+`canonicalTargetType`, `resultReferenceType`, and typed risk/capability/approval/reason metadata.
+The executor derives those fields from the same top-level input and fails before the transaction
+if the supplied digest drifts. Principal admission uses `mapActionLedgerRequestContext`; mismatched
+caller types cannot smuggle an agent or API-token identity into the ledger.
+
+For a selected action with `approval: "required"`, `request_action_approval` fingerprints the
+declared command target type, canonical target type, result-reference type, capability/version,
+risk, reason, exact Tool capability, and command input with
+`buildCreatedTargetCommandFingerprint`. A multi-Tool action must name its selected
+`toolCapabilityId`; a single-Tool action derives it unambiguously. The package handler passes the
+fresh `ctx.handlerActionPolicy.invocation` approval id, idempotency key, fingerprint, and reason
+into `approvalControls`, uses `ctx.handlerActionPolicy.capabilityId` as `routeOrToolName`, and
+supplies the selected policy name.
+
+Inside its owned transaction, `executeCreatedTargetCommand` locks the approval before the command
+scope. First execution validates the approved request's fingerprint, command target,
+capability/version, risk, policy snapshot, reason, idempotency key, requester, assignee/decider,
+and expiry, then rejects any prior claim linked to the same approved request even if its command
+scope differs. It derives claim causation and approval linkage from the validated rows. An exact
+linked replay checks immutable approval/request/claim/result continuity without re-running expiry
+authorization, so a completed command remains replayable after its approval expires. Direct
+caller-supplied `approvalId` or `causationActionId` fails closed. Conditional policy remains
+unsupported until a domain evaluator contract exists.
 
 Existing-target actions may declare `commandTargetField` when their Tool input already carries
 the domain parent id. The generic gate requires that parsed field to exactly match

@@ -7,9 +7,17 @@ import {
   supplierListQuerySchema,
   updateSupplierSchema,
 } from "@voyant-travel/suppliers-contracts"
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
+import { DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS } from "./created-target-policy.js"
 import {
   externalRefListQuerySchema,
   insertExternalRefSchema,
@@ -49,10 +57,26 @@ const updateExternalRefToolSchema = updateExternalRefSchema.extend({ id: z.strin
 
 type SupplierListQuery = z.infer<typeof supplierListQuerySchema>
 type SupplierAggregatesQuery = z.infer<typeof supplierAggregatesQuerySchema>
-type CreateSupplierInput = z.infer<typeof insertSupplierSchema>
+const createSupplierToolInputSchema = insertSupplierSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
+})
+const createdSupplierOutputSchema = z.object({
+  status: z.literal("created"),
+  supplier: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
+type CreateSupplierInput = z.infer<typeof createSupplierToolInputSchema>
 type UpdateSupplierInput = z.infer<typeof updateSupplierToolSchema>
 type ChannelListQuery = z.infer<typeof channelListQuerySchema>
-type CreateChannelInput = z.infer<typeof insertChannelSchema>
+const createChannelToolInputSchema = insertChannelSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
+})
+const createdChannelOutputSchema = z.object({
+  status: z.literal("created"),
+  channel: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
+type CreateChannelInput = z.infer<typeof createChannelToolInputSchema>
 type UpdateChannelInput = z.infer<typeof updateChannelToolSchema>
 type ExternalRefListQuery = z.infer<typeof externalRefListQuerySchema>
 type CreateExternalRefInput = z.infer<typeof insertExternalRefSchema>
@@ -62,11 +86,17 @@ export interface DistributionToolServices {
   listSuppliers(query: SupplierListQuery): Promise<unknown>
   getSupplierById(id: string): Promise<unknown>
   getSupplierAggregates(query: SupplierAggregatesQuery): Promise<unknown>
-  createSupplier(input: CreateSupplierInput): Promise<unknown>
+  createSupplier(
+    input: CreateSupplierInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateSupplier(input: UpdateSupplierInput): Promise<unknown>
   listChannels(query: ChannelListQuery): Promise<unknown>
   getChannelById(id: string): Promise<unknown>
-  createChannel(input: CreateChannelInput): Promise<unknown>
+  createChannel(
+    input: CreateChannelInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateChannel(input: UpdateChannelInput): Promise<unknown>
   listExternalRefs(query: ExternalRefListQuery): Promise<unknown>
   getExternalRefById(id: string): Promise<unknown>
@@ -150,13 +180,23 @@ export const getSupplierAggregatesTool = defineTool({
 
 export const createSupplierTool = defineTool({
   ...writeMetadata(["suppliers:write"]),
+  riskPolicy: { ...REVERSIBLE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-supplier`,
   name: "create_supplier",
   description: "Create a supplier directory profile and its primary operational identity data.",
-  inputSchema: insertSupplierSchema,
-  outputSchema: supplierValueSchema,
+  inputSchema: createSupplierToolInputSchema,
+  outputSchema: createdSupplierOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: DistributionToolContext) {
-    return parseJsonResult(supplierValueSchema, await distribution(ctx).createSupplier(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.supplier,
+    )
+    return parseJsonResult(
+      createdSupplierOutputSchema,
+      await distribution(ctx).createSupplier(input, admitted),
+    )
   },
 })
 
@@ -205,13 +245,23 @@ export const getDistributionChannelTool = defineTool({
 
 export const createDistributionChannelTool = defineTool({
   ...writeMetadata(["distribution:write"]),
+  riskPolicy: { ...REVERSIBLE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-channel`,
   name: "create_distribution_channel",
   description: "Create a sales or distribution channel and its managed contact details.",
-  inputSchema: insertChannelSchema,
-  outputSchema: channelSchema,
+  inputSchema: createChannelToolInputSchema,
+  outputSchema: createdChannelOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: DistributionToolContext) {
-    return parseJsonResult(channelSchema, await distribution(ctx).createChannel(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.channel,
+    )
+    return parseJsonResult(
+      createdChannelOutputSchema,
+      await distribution(ctx).createChannel(input, admitted),
+    )
   },
 })
 

@@ -9,6 +9,7 @@ export const operatorAdminSettingsMessagesEnPart1 = {
   channels: "Channels",
   invoicing: "Invoicing",
   payments: "Payments",
+  webhooks: "Webhooks",
   taxes: "Taxes",
   costCategories: "Cost Categories",
   pricingCategories: "Pricing Categories",

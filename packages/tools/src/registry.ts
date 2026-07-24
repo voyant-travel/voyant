@@ -224,14 +224,12 @@ function deriveActionPolicy(
   }
   const requiredFields: ToolActionInvocationPolicy["requiredFields"][number][] = []
   if (tool.riskPolicy.confirmationRequired) requiredFields.push("confirmed")
-  if (enforcement === "generic") {
-    if (action.ledger === "required") requiredFields.push("targetId")
-    if (action.kind === "execute" && action.ledger === "required") {
-      requiredFields.push("idempotencyKey")
-    }
-    if (action.approval === "required") {
-      requiredFields.push("approvalId", "idempotencyFingerprint")
-    }
+  if (enforcement === "generic" && action.ledger === "required") requiredFields.push("targetId")
+  if (action.kind === "execute" && action.ledger === "required") {
+    requiredFields.push("idempotencyKey")
+  }
+  if (action.approval === "required") {
+    requiredFields.push("approvalId", "idempotencyFingerprint")
   }
   return {
     ...action,

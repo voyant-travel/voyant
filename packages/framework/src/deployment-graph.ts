@@ -1949,6 +1949,112 @@ function validatePromotedFacets(
         'Action targetLifecycle must be "existing" or "created".',
       )
     }
+    const availability = isRecord(entry.availability) ? entry.availability : undefined
+    if (
+      entry.availability !== undefined &&
+      (!availability ||
+        (availability.status !== "available" && availability.status !== "unavailable"))
+    ) {
+      invalidFacet(
+        `${facet}.availability`,
+        source,
+        diagnostics,
+        'Action availability must have status "available" or "unavailable".',
+      )
+    } else if (availability?.status === "unavailable") {
+      requireNonEmptyString(
+        availability.reasonCode,
+        `${facet}.availability.reasonCode`,
+        source,
+        diagnostics,
+      )
+      if (availability.replacementCapabilityId !== undefined) {
+        requireNonEmptyString(
+          availability.replacementCapabilityId,
+          `${facet}.availability.replacementCapabilityId`,
+          source,
+          diagnostics,
+        )
+      }
+    }
+    if (
+      entry.effectBoundary !== undefined &&
+      entry.effectBoundary !== "local" &&
+      entry.effectBoundary !== "external" &&
+      entry.effectBoundary !== "multistage"
+    ) {
+      invalidFacet(
+        `${facet}.effectBoundary`,
+        source,
+        diagnostics,
+        'Action effectBoundary must be "local", "external", or "multistage".',
+      )
+    }
+    if (entry.durability !== undefined) {
+      if (!isRecord(entry.durability)) {
+        invalidFacet(
+          `${facet}.durability`,
+          source,
+          diagnostics,
+          "Action durability must declare a strategy and testReference.",
+        )
+      } else {
+        if (
+          entry.durability.strategy !== "transactional" &&
+          entry.durability.strategy !== "outbox" &&
+          entry.durability.strategy !== "saga"
+        ) {
+          invalidFacet(
+            `${facet}.durability.strategy`,
+            source,
+            diagnostics,
+            'Action durability strategy must be "transactional", "outbox", or "saga".',
+          )
+        }
+        requireNonEmptyString(
+          entry.durability.testReference,
+          `${facet}.durability.testReference`,
+          source,
+          diagnostics,
+        )
+      }
+    }
+    const explicitlyAvailable = availability?.status === "available"
+    const toolBound = isRecord(entry.from) && Array.isArray(entry.from.tools)
+    if (
+      explicitlyAvailable &&
+      entry.kind === "execute" &&
+      toolBound &&
+      entry.targetLifecycle === undefined
+    ) {
+      invalidFacet(
+        `${facet}.targetLifecycle`,
+        source,
+        diagnostics,
+        "Available execute Tool actions must explicitly declare their target lifecycle and stable target anchor.",
+      )
+    }
+    if (
+      explicitlyAvailable &&
+      entry.kind === "execute" &&
+      (entry.effectBoundary === "external" || entry.effectBoundary === "multistage") &&
+      entry.durability === undefined
+    ) {
+      invalidFacet(
+        `${facet}.durability`,
+        source,
+        diagnostics,
+        "Available external and multi-stage execute actions must declare tested durability.",
+      )
+    }
+    if (entry.durability !== undefined && (entry.kind !== "execute" || entry.risk === "low")) {
+      invalidFacet(
+        `${facet}.durability`,
+        source,
+        diagnostics,
+        "Read and low-risk actions cannot declare write durability; classify data-writing actions as execute with non-low risk.",
+      )
+    }
     if (entry.targetLifecycle === "created") {
       if (entry.kind !== "execute" || entry.ledger !== "required") {
         invalidFacet(

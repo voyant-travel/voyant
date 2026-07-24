@@ -9,6 +9,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
   channels: "Canale",
   invoicing: "Facturare",
   payments: "Plati",
+  webhooks: "Webhook-uri",
   taxes: "Taxe",
   costCategories: "Categorii de cost",
   pricingCategories: "Categorii de tarifare",

@@ -231,6 +231,12 @@ export type ValidateApprovedActionFailureReason =
   | "missing_fingerprint"
   | "fingerprint_mismatch"
   | "principal_mismatch"
+  | "assignee_mismatch"
+  | "capability_mismatch"
+  | "risk_mismatch"
+  | "policy_mismatch"
+  | "reason_mismatch"
+  | "idempotency_key_mismatch"
 
 export interface ValidateApprovedActionInput {
   approvalId: string
@@ -243,6 +249,14 @@ export interface ValidateApprovedActionInput {
   routeOrToolName?: string | null
   principalType?: ActionLedgerEntry["principalType"] | null
   principalId?: string | null
+  requireApprovalProvenance?: boolean
+  capabilityId?: string | null
+  capabilityVersion?: string | null
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"] | null
+  policyName?: string | null
+  policyVersion?: string | null
+  reasonCode?: string | null
+  idempotencyKey?: string | null
   idempotencyFingerprint: string
   executionActionKind?: ActionLedgerEntry["actionKind"]
   executionStatus?: ActionLedgerEntry["status"]

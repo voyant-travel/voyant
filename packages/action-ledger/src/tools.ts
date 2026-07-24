@@ -233,6 +233,14 @@ const listDelegationsInputSchema = z.object({
 const requestApprovalInputSchema = z.object({
   actionId: z.string().trim().min(1).describe("Stable id of a selected graph action."),
   actionVersion: z.string().trim().min(1).default("v1"),
+  toolCapabilityId: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      "Exact selected Tool capability being approved. Required when an action is exposed by multiple Tools.",
+    ),
   targetId: z.string().trim().min(1),
   commandInput: z.json().optional(),
   idempotencyKey: z.string().trim().min(1).max(255),
@@ -420,7 +428,7 @@ export const getActionDelegationTool = defineTool({
 export const requestActionApprovalTool = defineTool({
   name: "request_action_approval",
   description:
-    "Request approval for an exact write action admitted by the selected graph with approval=required. Action identity, risk, target type, and policy are derived server-side; conditional and absent policies fail closed.",
+    "Request approval for an exact write Tool action admitted by the selected graph with approval=required. Action identity, canonical Tool capability, risk, target type, and policy are derived server-side; conditional and absent policies fail closed.",
   inputSchema: requestApprovalInputSchema,
   outputSchema: z.object({
     requestedAction: actionLedgerEntryDtoSchema,

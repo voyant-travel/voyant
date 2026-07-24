@@ -3,6 +3,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { TOOL_GRAPH_ACTIONS_RESOURCE } from "@voyant-travel/tools"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { buildCreatedTargetCommandFingerprint } from "../../src/created-command.js"
 import {
   createActionLedgerToolServices,
   voyantToolContextContribution,
@@ -172,6 +173,7 @@ describe("action-ledger Tool services", () => {
           actionKind: "execute",
           targetType: "booking",
           targetId: "book_1",
+          routeOrToolName: "@voyant-travel/bookings#tool.cancel",
           evaluatedRisk: "high",
           principalId: "usr_staff",
           capabilityId: "bookings:status:cancel",
@@ -188,7 +190,12 @@ describe("action-ledger Tool services", () => {
     )
   })
 
-  it("binds created-target approval to the pre-create command identity", async () => {
+  it("requires and binds the exact Tool capability for a multi-Tool action", async () => {
+    const secondTool = "@voyant-travel/bookings#tool.cancel-alternate"
+    const multiToolAction: VoyantGraphActionDeclaration = {
+      ...selectedAction,
+      from: { tools: [...(selectedAction.from?.tools ?? []), secondTool] },
+    }
     vi.spyOn(actionLedgerService, "requestApproval").mockResolvedValue({
       requestedAction: makeEntry({
         actionName: "bookings:status:cancel",
@@ -200,6 +207,30 @@ describe("action-ledger Tool services", () => {
       approval: makeApproval(),
       replayed: false,
     })
+    const services = createServices([multiToolAction])
+    const request = {
+      actionId: multiToolAction.id,
+      actionVersion: "v1",
+      targetId: "book_1",
+      idempotencyKey: "cancel-book-1",
+    }
+
+    await expect(services.requestApproval(request)).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+    })
+    await services.requestApproval({ ...request, toolCapabilityId: secondTool })
+    expect(actionLedgerService.requestApproval).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        requestedAction: expect.objectContaining({ routeOrToolName: secondTool }),
+      }),
+    )
+    await expect(
+      services.requestApproval({ ...request, toolCapabilityId: "unselected:tool" }),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+  })
+
+  it("requests created-target approval with the exact typed command fingerprint", async () => {
     const createdAction: VoyantGraphActionDeclaration = {
       ...selectedAction,
       targetType: "booking",
@@ -210,6 +241,19 @@ describe("action-ledger Tool services", () => {
         durability: "handler-command-claim-v1",
       },
     }
+    vi.spyOn(actionLedgerService, "requestApproval").mockResolvedValue({
+      requestedAction: makeEntry({
+        actionName: "bookings:status:cancel",
+        actionKind: "execute",
+        status: "awaiting_approval",
+        targetType: "booking-create-command",
+        targetId: "client-command-17",
+        capabilityId: "bookings:status:cancel",
+        capabilityVersion: "v1",
+      }),
+      approval: makeApproval(),
+      replayed: false,
+    })
 
     await createServices([createdAction]).requestApproval({
       actionId: createdAction.id,
@@ -219,13 +263,32 @@ describe("action-ledger Tool services", () => {
       idempotencyKey: "create-book-17",
     })
 
+    const expectedFingerprint = await buildCreatedTargetCommandFingerprint({
+      actionName: "bookings:status:cancel",
+      actionVersion: "v1",
+      commandTarget: { type: "booking-create-command", id: "client-command-17" },
+      canonicalTargetType: "booking",
+      resultReferenceType: "booking-ref",
+      commandInput: { bookingNumber: "B-17" },
+      capabilityId: "bookings:status:cancel",
+      capabilityVersion: "v1",
+      evaluatedRisk: "high",
+      approvalPolicy: "required",
+      approvalReasonCode: null,
+    })
     expect(actionLedgerService.requestApproval).toHaveBeenCalledWith(
       db,
       expect.objectContaining({
         requestedAction: expect.objectContaining({
           targetType: "booking-create-command",
           targetId: "client-command-17",
-          idempotencyFingerprint: expect.stringMatching(/^sha256:/),
+          idempotencyKey: "create-book-17",
+          idempotencyFingerprint: expectedFingerprint,
+        }),
+        approval: expect.objectContaining({
+          policyName: "booking-cancel-policy",
+          policyVersion: "v1",
+          riskSnapshot: "high",
         }),
       }),
     )

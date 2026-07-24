@@ -355,6 +355,22 @@ export interface VoyantGraphActionBindings {
   webhooks?: readonly string[]
 }
 
+export type VoyantGraphActionAvailability =
+  | { status: "available" }
+  | {
+      status: "unavailable"
+      /** Stable machine-readable reason retained in deployment graph diagnostics. */
+      reasonCode: string
+      /** Optional safe replacement capability that callers may migrate to. */
+      replacementCapabilityId?: string
+    }
+
+export interface VoyantGraphActionDurability {
+  strategy: "transactional" | "outbox" | "saga"
+  /** Stable test or conformance-kit reference proving the selected durability strategy. */
+  testReference: string
+}
+
 export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
   capabilityId?: string
   version: string
@@ -363,6 +379,14 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
   /** Top-level command input field whose value must equal the policy/ledger target id. */
   commandTargetField?: string
   targetLifecycle?: "existing" | "created"
+  /**
+   * Explicit exposure posture. Unavailable actions remain in graph metadata for
+   * diagnostics, but their Tool bindings are not lowered into callable runtime.
+   */
+  availability?: VoyantGraphActionAvailability
+  /** Required for available external or multi-stage execute effects. */
+  effectBoundary?: "local" | "external" | "multistage"
+  durability?: VoyantGraphActionDurability
   createdTarget?: {
     commandTargetType: string
     resultReferenceType: string

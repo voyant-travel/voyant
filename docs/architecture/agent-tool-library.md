@@ -118,6 +118,21 @@ that lifecycle because it cannot make an arbitrary package transaction atomic wi
 wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
 mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
 target in the same transaction (or use a durable outbox/state machine for external effects).
+Execute Tool actions may also declare an explicit graph `availability`. An action marked
+`unavailable` remains in the resolved graph with a stable `reasonCode`, but its Tool and
+runtime reference are omitted from lowering, so it cannot appear in MCP discovery or dispatch.
+Lowering fails closed if an unavailable action's Tool is reintroduced. Actions explicitly marked
+`available` must name an existing/created target lifecycle; external or multi-stage effects must
+also name a transactional, outbox, or saga durability strategy and the test that proves it.
+MCP passes stripped invocation controls and the selected action policy in a fresh
+`ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
+commands bind their approval request and execution to the same typed created-target fingerprint;
+the handler-owned transaction locks the approval, validates live authorization before the first
+claim/domain mutation, rejects cross-scope reuse, and derives approval causation from the ledger.
+Exact linked replay checks immutable persisted approval/request/claim continuity without applying
+expiry again. Approval requests bind the exact selected Tool capability (explicitly for multi-Tool
+actions), and handlers use the context capability id as their ledger route identity. Conditional
+created-target approval remains fail-closed.
 
 Finance owns two composed operator commands. `create_booking` delegates to the
 booking-create service for product/slot conversion, travelers, room and item lines,

@@ -21,6 +21,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
+  admitHandlerActionPolicy,
   createToolRegistry,
   TOOL_ACTION_INVOCATION_FIELD,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
@@ -94,6 +95,13 @@ export interface GraphMcpRuntime {
     targetType: string
     commandTargetField?: string
     targetLifecycle?: "existing" | "created"
+    availability?:
+      | { status: "available" }
+      | {
+          status: "unavailable"
+          reasonCode: string
+          replacementCapabilityId?: string
+        }
     createdTarget?: {
       commandTargetType: string
       resultReferenceType: string
@@ -220,14 +228,25 @@ export async function createGraphMcpApiRoutes(
   const registry = createToolRegistry()
   const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
-  const actionsByTool = indexActionsByTool(options.runtime.actions ?? [])
+  const actions = options.runtime.actions ?? []
+  const actionsByTool = indexActionsByTool(actions)
+  const unavailableToolIds = new Set(
+    actions
+      .filter((action) => action.availability?.status === "unavailable")
+      .flatMap((action) => action.from?.tools ?? []),
+  )
 
   for (const tool of options.runtime.tools) {
-    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
-    const actionPolicy = tool.id ? actionsByTool.get(tool.id) : undefined
     if (!tool.id) {
       throw new Error(`Selected MCP Tool "${tool.name ?? "unknown"}" has no stable capability id.`)
     }
+    if (unavailableToolIds.has(tool.id)) {
+      throw new Error(
+        `Selected MCP Tool "${tool.name ?? tool.id}" is bound by an unavailable graph action.`,
+      )
+    }
+    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
+    const actionPolicy = actionsByTool.get(tool.id)
     if (!actionPolicy && tool.risk !== "low") {
       throw new Error(
         `Selected MCP Tool "${tool.name ?? tool.id ?? "unknown"}" has no selected graph action policy.`,
@@ -305,6 +324,7 @@ function indexActionsByTool(
 ): Map<string, ToolActionPolicyBinding> {
   const result = new Map<string, ToolActionPolicyBinding>()
   for (const action of actions) {
+    if (action.availability?.status === "unavailable") continue
     const binding: ToolActionPolicyBinding = {
       id: action.id,
       capabilityId: action.capabilityId ?? action.id,
@@ -585,7 +605,9 @@ async function dispatchToResult(
         { capabilityId: entry.capabilityId },
       )
     }
-    const dispatch = () => registry.dispatch(name, commandInput, ctx)
+    const baseDispatchContext = withoutHandlerActionPolicy(ctx)
+    const dispatch = (dispatchContext: ToolContext = baseDispatchContext) =>
+      registry.dispatch(name, commandInput, dispatchContext)
     if (
       entry.actionPolicy?.enforcement === "handler" &&
       entry.actionPolicy.invocation.requiredFields.includes("confirmed") &&
@@ -610,7 +632,11 @@ async function dispatchToResult(
             },
             dispatch,
           )
-        : await dispatch()
+        : await dispatch(
+            entry.actionPolicy?.enforcement === "handler"
+              ? handlerDispatchContext(baseDispatchContext, entry, invocation)
+              : baseDispatchContext,
+          )
     return {
       content: [{ type: "text", text: safeStringify(data) }],
       structuredContent: toStructuredContent(data, envelopeResult),
@@ -620,6 +646,49 @@ async function dispatchToResult(
     const message = err instanceof Error ? err.message : String(err)
     return { isError: true, content: [{ type: "text", text: `[${code}] ${message}` }] }
   }
+}
+
+function withoutHandlerActionPolicy(context: ToolContext): ToolContext {
+  if (!("handlerActionPolicy" in context)) return context
+  const { handlerActionPolicy: _handlerActionPolicy, ...base } = context
+  return base
+}
+
+function handlerDispatchContext(
+  context: ToolContext,
+  entry: ToolManifestEntry,
+  invocation: ToolActionInvocationControl,
+): ToolContext {
+  const actionPolicy = entry.actionPolicy
+  if (actionPolicy?.enforcement !== "handler") return context
+  const handlerContext: ToolContext = {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: entry.capabilityId,
+      capabilityVersion: entry.capabilityVersion,
+      canonicalName: entry.name,
+      actionPolicy: {
+        ...actionPolicy,
+        ...(actionPolicy.createdTarget ? { createdTarget: { ...actionPolicy.createdTarget } } : {}),
+        ...(actionPolicy.allowedActorTypes
+          ? { allowedActorTypes: [...actionPolicy.allowedActorTypes] }
+          : {}),
+        invocation: {
+          ...actionPolicy.invocation,
+          requiredFields: [...actionPolicy.invocation.requiredFields],
+          optionalFields: [...actionPolicy.invocation.optionalFields],
+        },
+      },
+      invocation: { ...invocation },
+    },
+  }
+  admitHandlerActionPolicy(handlerContext, {
+    capabilityId: entry.capabilityId,
+    capabilityVersion: entry.capabilityVersion,
+    canonicalName: entry.name,
+    actionPolicy,
+  })
+  return handlerContext
 }
 
 function toStructuredContent(data: unknown, envelopeResult: boolean): Record<string, unknown> {

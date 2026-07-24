@@ -9,5 +9,7 @@
 
 Add explicit created-target action metadata and fail closed unless handler-owned
 Tools declare a durable command claim, replay, and canonical result-reference
-contract. Bind approvals to the pre-create command identity and stop asking MCP
-callers to invent generated target IDs.
+contract. Adopt the shared transaction-owning created-command executor for
+Bookings reservations, stop asking MCP callers to invent generated target IDs,
+and fail approval-bearing created commands closed until handler control
+propagation exists.

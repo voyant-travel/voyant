@@ -698,6 +698,21 @@ function actionApprovalValidationResponse(
       )
     case "principal_mismatch":
       return c.json({ error: "Action approval belongs to a different principal" }, 403)
+    case "assignee_mismatch":
+      return c.json({ error: "Action approval was decided by a different assignee" }, 403)
+    case "capability_mismatch":
+    case "risk_mismatch":
+    case "policy_mismatch":
+    case "reason_mismatch":
+    case "idempotency_key_mismatch":
+      return c.json(
+        {
+          error: "Action approval metadata does not match this booking status action",
+          approvalId: validation.approval?.id,
+          reason: validation.reason,
+        },
+        409,
+      )
   }
 
   const exhaustiveReason: never = validation.reason

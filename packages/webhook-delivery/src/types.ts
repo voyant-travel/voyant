@@ -3,6 +3,7 @@ import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
 
 import type { AppWebhookDeliveryEnvelope } from "./app-envelope.js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
+import type { WebhookHostResolver } from "./protected-fetch.js"
 
 export interface WebhookSubscription {
   id: string
@@ -102,11 +103,13 @@ export interface WebhookRetryOptions {
   maxDelayMs?: number
   requestTimeoutMs?: number
   claimTimeoutMs?: number
+  maxRedirects?: number
 }
 
 export interface CreateWebhookDeliveryWorkerOptions {
   store: WebhookDeliveryStore
   fetch?: typeof globalThis.fetch
+  resolveHost?: WebhookHostResolver
   now?: () => Date
   retry?: WebhookRetryOptions
   onAudit?: (event: WebhookDeliveryAuditEvent) => void | Promise<void>
