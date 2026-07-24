@@ -11,7 +11,6 @@ import {
   admitHandlerActionPolicy,
   defineTool,
   type HandlerActionPolicyExpectation,
-  READ_ONLY_RISK,
   requireService,
   type ToolContext,
   ToolError,
@@ -54,6 +53,13 @@ const REQUIREMENT_WRITE_RISK = {
   reversible: true,
   dryRunSupported: false,
   confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
+const PRICE_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
   sideEffects: ["data-write"],
 } as const
 const CANDIDATE_WRITE_RISK = {
@@ -219,9 +225,9 @@ export const priceTripTool = defineTool<PriceTripArgs, PriceTripResult, TripsToo
     "failures, and quote expiry data.",
   inputSchema: priceTripSchema,
   outputSchema: priceTripResultSchema,
-  requiredScopes: ["trips:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
+  requiredScopes: ["trips:write"],
+  tier: "write",
+  riskPolicy: PRICE_WRITE_RISK,
   async handler(args, ctx) {
     assertToolAudience(ctx, args.scope.audience)
     return parseJsonResult(priceTripResultSchema, await trips(ctx).priceTrip(args))

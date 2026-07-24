@@ -963,6 +963,17 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
           selectedActionBindings,
         ) as (keyof typeof selectedActionBindings)[]) {
           for (const id of action.from[kind]) {
+            if (kind === "tools" && action.availability?.status === "unavailable") {
+              if (
+                selectedActionBindings.tools.has(id) ||
+                unit.tools.some((tool) => tool.id === id)
+              ) {
+                throw new Error(
+                  `createVoyantGraphRuntime: unavailable action "${action.id}" exposes Tool "${id}".`,
+                )
+              }
+              continue
+            }
             if (selectedActionBindings[kind].has(id)) continue
             throw new Error(
               `createVoyantGraphRuntime: action "${action.id}" selects undeclared ${kind} reference "${id}".`,

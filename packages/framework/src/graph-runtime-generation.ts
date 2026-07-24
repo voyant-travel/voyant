@@ -58,9 +58,29 @@ export function lowerGraphRuntimeUnits(
   graph: ResolvedVoyantDeploymentGraph,
   runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
 ): GeneratedRuntimeUnitDefinition[] {
+  const unavailableToolIds = unavailableActionToolIds(units)
+  const availableToolIds = new Set(
+    units.flatMap((unit) =>
+      (unit.actions ?? [])
+        .filter((action) => action.availability?.status !== "unavailable")
+        .flatMap((action) => action.from?.tools ?? []),
+    ),
+  )
+  const conflictingToolId = [...unavailableToolIds].find((id) => availableToolIds.has(id))
+  if (conflictingToolId) {
+    throw new Error(
+      `VOYANT_GRAPH_UNAVAILABLE_TOOL_SHARED: action Tool "${conflictingToolId}" is bound by both available and unavailable actions.`,
+    )
+  }
+
   return units
     .map((unit) => {
-      const references = collectRuntimeReferences(unit, graph, runtimeEntryOverrides)
+      const references = collectRuntimeReferences(
+        unit,
+        graph,
+        runtimeEntryOverrides,
+        unavailableToolIds,
+      )
       const config = (unit.config ?? []).map((declaration) => ({
         unitId: unit.id,
         declaration,
@@ -115,6 +135,7 @@ export function lowerGraphRuntimeUnits(
         ),
       ].sort((left, right) => left.localeCompare(right))
       const tools = (unit.tools ?? [])
+        .filter((tool) => !unavailableToolIds.has(tool.id))
         .map((tool) => ({
           id: tool.id,
           unitId: unit.id,
@@ -191,7 +212,10 @@ export function lowerGraphRuntimeUnits(
         })),
         selectedIds: {
           routes: unit.api.map(({ id }) => id).sort(),
-          tools: (unit.tools ?? []).map(({ id }) => id).sort(),
+          tools: (unit.tools ?? [])
+            .filter(({ id }) => !unavailableToolIds.has(id))
+            .map(({ id }) => id)
+            .sort(),
           events: unit.events.map(({ id }) => id).sort(),
           webhooks: (unit.webhooks ?? []).map(({ id }) => id).sort(),
         },
@@ -216,6 +240,7 @@ function collectRuntimeReferences(
   unit: ResolvedVoyantGraphUnit,
   graph: ResolvedVoyantDeploymentGraph,
   runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
+  unavailableToolIds: ReadonlySet<string>,
 ): VoyantGraphRuntimeReferenceDefinition[] {
   const admittedPackages = new Set(graph.packageRecords.map((record) => record.packageName))
   const references: VoyantGraphRuntimeReferenceDefinition[] = []
@@ -262,7 +287,9 @@ function collectRuntimeReferences(
   for (const dataset of unit.reporting?.datasets ?? []) {
     add("reporting.datasets.runtime", dataset.id, dataset.runtime)
   }
-  for (const tool of unit.tools ?? []) add("tools.runtime", tool.id, tool.runtime)
+  for (const tool of unit.tools ?? []) {
+    if (!unavailableToolIds.has(tool.id)) add("tools.runtime", tool.id, tool.runtime)
+  }
   for (const job of unit.jobs ?? []) add("jobs.runtime", job.id, job.runtime)
   for (const subscriber of unit.subscribers) {
     if (subscriber.runtime) add("subscribers.runtime", subscriber.id, subscriber.runtime)
@@ -271,6 +298,16 @@ function collectRuntimeReferences(
   return references.sort(
     (left, right) =>
       left.facet.localeCompare(right.facet) || left.entityId.localeCompare(right.entityId),
+  )
+}
+
+function unavailableActionToolIds(units: readonly ResolvedVoyantGraphUnit[]): Set<string> {
+  return new Set(
+    units.flatMap((unit) =>
+      (unit.actions ?? [])
+        .filter((action) => action.availability?.status === "unavailable")
+        .flatMap((action) => action.from?.tools ?? []),
+    ),
   )
 }
 

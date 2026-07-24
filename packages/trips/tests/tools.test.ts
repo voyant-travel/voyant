@@ -104,6 +104,16 @@ describe("trips tools", () => {
     expect(reserve?.tier).toBe("destructive")
     expect(reserve?.requiredScopes).toEqual(["trips:write"])
     expect(reserve?.riskPolicy.destructive).toBe(true)
+    const price = manifest.find((t) => t.name === "price_trip")
+    expect(price).toMatchObject({
+      tier: "write",
+      requiredScopes: ["trips:write"],
+      deploymentRisk: "medium",
+    })
+    expect(price?.riskPolicy).toMatchObject({
+      confirmationRequired: true,
+      sideEffects: ["data-write"],
+    })
     const reshop = manifest.find((t) => t.name === "reshop_trip")
     expect(reshop).toMatchObject({ tier: "destructive", audience: { allowed: ["staff"] } })
     expect(reshop?.riskPolicy).toMatchObject({
@@ -283,7 +293,7 @@ describe("trips tools", () => {
 
   it("exposes tool handlers directly for unit reuse", () => {
     expect(createTripTool.name).toBe("create_trip")
-    expect(priceTripTool.tier).toBe("read")
+    expect(priceTripTool.tier).toBe("write")
   })
 
   it("sources requirement candidates through the injected provider-neutral service", async () => {

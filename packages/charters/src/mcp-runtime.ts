@@ -1,3 +1,12 @@
+import {
+  type ActionLedgerRequestContextValues,
+  buildCreatedTargetIdempotencyScope,
+  type ExecuteCreatedTargetCommandHandlers,
+  type ExecuteCreatedTargetCommandInput,
+  type ExecuteCreatedTargetCommandResult,
+  executeCreatedTargetCommand,
+  mapActionLedgerRequestContext,
+} from "@voyant-travel/action-ledger"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -9,6 +18,10 @@ import type {
   SourceRef,
 } from "./adapters/index.js"
 import { listCharterAdapters, resolveCharterAdapter } from "./adapters/registry.js"
+import {
+  buildChartersCreatedTargetFingerprint,
+  CHARTERS_CREATED_TARGET_POLICIES,
+} from "./created-target-policy.js"
 import { parseUnifiedKey } from "./lib/key.js"
 import { chartersService } from "./service.js"
 import { chartersBookingService } from "./service-bookings.js"
@@ -17,15 +30,17 @@ import type { ChartersToolServices } from "./tools.js"
 
 export * from "./tools.js"
 
-type ChartersToolRequestEnv = { Variables: { userId?: string } }
+type ChartersToolRequestEnv = { Variables: ActionLedgerRequestContextValues }
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["charters"],
   contribute({ request, context }) {
     const db = context.db as PostgresJsDatabase
-    const userId = (request as Context<ChartersToolRequestEnv>).get("userId")
+    const c = request as Context<ChartersToolRequestEnv>
+    const userId = c.get("userId") ?? undefined
+    const requestContext = chartersActionLedgerContext(c)
     const publicOnly = context.actor !== "staff"
-    const execute: ChartersToolServices["execute"] = async (operation, input) => {
+    const execute: ChartersToolServices["execute"] = async (operation, input, admitted) => {
       const args = input as Record<string, unknown>
       switch (operation) {
         case "browseCharters":
@@ -46,8 +61,28 @@ export const voyantToolContextContribution = defineToolContextContribution({
           )
         case "quoteWholeYacht":
           return quoteWholeYacht(db, String(args.key), String(args.currency), publicOnly)
-        case "createProduct":
-          return chartersService.createProduct(db, args as never)
+        case "createProduct": {
+          if (!admitted) {
+            throw new ToolError(
+              "Created charter product action policy is required.",
+              "ACTION_POLICY_REQUIRED",
+            )
+          }
+          const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = args
+          const result = await executeChartersCreate(
+            db,
+            requestContext,
+            CHARTERS_CREATED_TARGET_POLICIES.product,
+            typeof legacyIdempotencyKey === "string" ? legacyIdempotencyKey : undefined,
+            commandInput,
+            admitted,
+            async (tx) => {
+              const row = await chartersService.createProduct(tx, commandInput as never)
+              return { id: row.id }
+            },
+          )
+          return { status: "created" as const, product: result.value, replayed: result.replayed }
+        }
         case "updateProduct": {
           const { id, ...data } = args
           return chartersService.updateProduct(db, String(id), data as never)
@@ -58,8 +93,28 @@ export const voyantToolContextContribution = defineToolContextContribution({
           const { id, ...data } = args
           return chartersService.updateVoyage(db, String(id), data as never)
         }
-        case "createYacht":
-          return chartersService.createYacht(db, args as never)
+        case "createYacht": {
+          if (!admitted) {
+            throw new ToolError(
+              "Created charter yacht action policy is required.",
+              "ACTION_POLICY_REQUIRED",
+            )
+          }
+          const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = args
+          const result = await executeChartersCreate(
+            db,
+            requestContext,
+            CHARTERS_CREATED_TARGET_POLICIES.yacht,
+            typeof legacyIdempotencyKey === "string" ? legacyIdempotencyKey : undefined,
+            commandInput,
+            admitted,
+            async (tx) => {
+              const row = await chartersService.createYacht(tx, commandInput as never)
+              return { id: row.id }
+            },
+          )
+          return { status: "created" as const, yacht: result.value, replayed: result.replayed }
+        }
         case "updateYacht": {
           const { id, ...data } = args
           return chartersService.updateYacht(db, String(id), data as never)
@@ -71,6 +126,124 @@ export const voyantToolContextContribution = defineToolContextContribution({
     return { charters: { execute } }
   },
 })
+
+type ChartersCreatedTargetPolicy =
+  (typeof CHARTERS_CREATED_TARGET_POLICIES)[keyof typeof CHARTERS_CREATED_TARGET_POLICIES]
+
+type ChartersCreatedCommandExecutor = (
+  db: PostgresJsDatabase,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: string },
+  handlers: ExecuteCreatedTargetCommandHandlers<{ id: string }, string>,
+) => Promise<ExecuteCreatedTargetCommandResult<{ id: string }, string>>
+
+export async function executeChartersCreate(
+  db: PostgresJsDatabase,
+  context: ActionLedgerRequestContextValues,
+  policy: ChartersCreatedTargetPolicy,
+  legacyIdempotencyKey: string | undefined,
+  commandInput: unknown,
+  admitted: import("@voyant-travel/tools").ToolHandlerActionPolicyContext,
+  create: (tx: PostgresJsDatabase) => Promise<{ id: string }>,
+  executor: ChartersCreatedCommandExecutor = executeCreatedTargetCommand,
+) {
+  const principal = mapActionLedgerRequestContext(context)
+  if (principal.principalId === "unknown_request") {
+    throw new TypeError("Charters created-target commands require a concrete principal")
+  }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
+  const selectedActionName = admitted.actionPolicy.capabilityId
+  const selectedActionVersion = admitted.actionPolicy.version
+  const fingerprint = await buildChartersCreatedTargetFingerprint(
+    {
+      ...policy,
+      actionName: selectedActionName,
+      actionVersion: selectedActionVersion,
+      capabilityId: selectedActionName,
+      capabilityVersion: selectedActionVersion,
+    } as ChartersCreatedTargetPolicy,
+    idempotencyKey,
+    commandInput,
+  )
+  const scope = await buildCreatedTargetIdempotencyScope({
+    actionName: selectedActionName,
+    actionVersion: selectedActionVersion,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  return executor(
+    db,
+    {
+      context,
+      actionName: selectedActionName,
+      actionVersion: selectedActionVersion,
+      actionKind: "create",
+      evaluatedRisk: policy.evaluatedRisk,
+      commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+      canonicalTargetType: policy.canonicalTargetType,
+      resultReferenceType: policy.resultReferenceType,
+      capabilityId: selectedActionName,
+      capabilityVersion: selectedActionVersion,
+      approvalPolicy: policy.approvalPolicy,
+      approvalReasonCode: policy.approvalReasonCode,
+      commandInput,
+      routeOrToolName: admitted.capabilityId,
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotency: { scope, key: idempotencyKey, fingerprint },
+    },
+    {
+      async create(tx) {
+        const value = await create(tx as PostgresJsDatabase)
+        return { value, targetId: value.id }
+      },
+      async replay(_tx, result) {
+        return { id: result.reference.id }
+      },
+    },
+  )
+}
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: import("@voyant-travel/tools").ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+      { capabilityId: admitted.capabilityId },
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+      { capabilityId: admitted.capabilityId },
+    )
+  }
+  return idempotencyKey
+}
+
+function chartersActionLedgerContext(
+  c: Context<ChartersToolRequestEnv>,
+): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
 
 async function browseCharters(
   db: PostgresJsDatabase,

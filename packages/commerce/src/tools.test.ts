@@ -22,14 +22,15 @@ describe("commerce tools", () => {
     expect(resolveSellabilityTool.outputSchema.safeParse({ data: [] }).success).toBe(false)
   })
 
-  it("keeps authoring and archival writes reversible and staff-scoped", () => {
+  it("keeps writes staff-scoped and reports only concrete reversal support", () => {
     for (const tool of [createCancellationPolicyTool, archivePromotionTool]) {
       expect(tool.audience).toEqual({ source: "grant", allowed: ["staff"] })
       expect(tool.riskPolicy).toMatchObject({
         destructive: false,
-        reversible: true,
         sideEffects: ["data-write"],
       })
     }
+    expect(createCancellationPolicyTool.riskPolicy.reversible).toBe(false)
+    expect(archivePromotionTool.riskPolicy.reversible).toBe(true)
   })
 })

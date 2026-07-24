@@ -30,6 +30,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "custom-fields",
       "navigation-preferences",
       "relationships",
+      "operator-webhooks",
       "distribution",
       "finance",
       "flights",

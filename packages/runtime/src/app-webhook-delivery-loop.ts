@@ -3,7 +3,7 @@ import type { WebhookDeliveryWorker } from "@voyant-travel/webhook-delivery"
 const DEFAULT_POLL_INTERVAL_MS = 1_000
 const DEFAULT_DRAIN_LIMIT = 100
 
-export interface AppWebhookDeliveryLoopOptions {
+export interface WebhookDeliveryLoopOptions {
   intervalMs?: number
   drainLimit?: number
   onError?: (error: unknown) => void | Promise<void>
@@ -11,7 +11,7 @@ export interface AppWebhookDeliveryLoopOptions {
   clearInterval?: typeof clearInterval
 }
 
-export interface AppWebhookDeliveryLoop {
+export interface WebhookDeliveryLoop {
   start(): void
   stop(): Promise<void>
   poll(): Promise<void>
@@ -22,10 +22,10 @@ export interface AppWebhookDeliveryLoop {
  * Durable database claims coordinate multiple hosts; this loop only prevents
  * overlapping drains inside one process and owns its timer lifecycle.
  */
-export function createAppWebhookDeliveryLoop(
+export function createWebhookDeliveryLoop(
   worker: WebhookDeliveryWorker,
-  options: AppWebhookDeliveryLoopOptions = {},
-): AppWebhookDeliveryLoop {
+  options: WebhookDeliveryLoopOptions = {},
+): WebhookDeliveryLoop {
   const intervalMs = positiveInteger(options.intervalMs, DEFAULT_POLL_INTERVAL_MS)
   const drainLimit = positiveInteger(options.drainLimit, DEFAULT_DRAIN_LIMIT)
   const setIntervalImpl = options.setInterval ?? setInterval
@@ -71,6 +71,11 @@ export function createAppWebhookDeliveryLoop(
     poll,
   }
 }
+
+/** Backwards-compatible app-worker name; both workers share the same loop lifecycle. */
+export const createAppWebhookDeliveryLoop = createWebhookDeliveryLoop
+export type AppWebhookDeliveryLoop = WebhookDeliveryLoop
+export type AppWebhookDeliveryLoopOptions = WebhookDeliveryLoopOptions
 
 function positiveInteger(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isInteger(value) && value > 0 ? value : fallback
