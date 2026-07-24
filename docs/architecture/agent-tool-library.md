@@ -129,6 +129,8 @@ publication, provider calls, document generation, delivery, ticketing, or bookin
 are declared unavailable with the `unsafe-nontransactional-effect` reason and the corresponding
 effect boundary. Their graph metadata remains visible for diagnostics, but their Tools stay out
 of runtime discovery until the package owns a tested transactional, outbox, or saga boundary.
+Supplier-side cancellation is an external effect, and legal state transitions remain multi-stage
+while lifecycle-event publication occurs after the state commit; both stay quarantined.
 MCP passes stripped invocation controls and the selected action policy in a fresh
 `ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
 commands bind their approval request and execution to the same typed created-target fingerprint;

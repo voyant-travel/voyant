@@ -183,6 +183,7 @@ describe("legal deployment manifest", () => {
     for (const actionId of [
       "@voyant-travel/legal#action.issue-contract",
       "@voyant-travel/legal#action.send-contract",
+      "@voyant-travel/legal#action.execute-contract",
     ]) {
       expect(legalVoyantModule.actions?.find(({ id }) => id === actionId)).toMatchObject({
         availability: {

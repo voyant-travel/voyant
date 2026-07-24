@@ -448,15 +448,11 @@ export const legalVoyantModule = defineModule({
       version: "v1",
       kind: "execute" as const,
       targetType: "legal-contract",
-      ...(transition === "issue" || transition === "send"
-        ? {
-            availability: {
-              status: "unavailable" as const,
-              reasonCode: "unsafe-nontransactional-effect",
-            },
-            effectBoundary: "multistage" as const,
-          }
-        : {}),
+      availability: {
+        status: "unavailable" as const,
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage" as const,
       resource: "legal",
       action: "write",
       requiredScopes: ["legal:write"],

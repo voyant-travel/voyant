@@ -18,4 +18,5 @@
 Keep first-party Tools with unproven non-transactional external or multi-stage effects out of
 runtime discovery. The affected graph actions remain available as diagnostic metadata with an
 explicit unsafe-effect reason until each package gains tested transactional, outbox, or saga
-durability.
+durability. This also covers supplier-side flight cancellation and contract execution whose
+post-commit lifecycle event is not yet durably published.
