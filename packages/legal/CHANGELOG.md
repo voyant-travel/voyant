@@ -1,5 +1,41 @@
 # @voyant-travel/legal
 
+## 0.197.0
+
+### Minor Changes
+
+- 26b4c9a: Restore the approved issue, send, and execute contract Tools with an existing-target
+  durable command protocol. Each command now commits its action claim, locked contract
+  transition, immutable result snapshot, preserved send payload, and deterministic
+  lifecycle outbox event atomically; exact retries return the original Tool output
+  without repeating state changes or delivery intent.
+
+  This release adds the `contract_lifecycle_command_results` table. Apply the Legal
+  package migration before exposing the restored Tools. Its `contract_id` is an
+  intentional soft reference so replay history outlives a later permitted contract
+  deletion. Existing exported Legal service method signatures and Tool output
+  schemas are unchanged.
+
+### Patch Changes
+
+- Updated dependencies [b07a0a3]
+- Updated dependencies [e44781c]
+- Updated dependencies [fa1cc2c]
+  - @voyant-travel/action-ledger@0.113.0
+  - @voyant-travel/bookings@0.197.0
+  - @voyant-travel/core@0.134.0
+  - @voyant-travel/finance@0.197.0
+  - @voyant-travel/tools@0.5.0
+  - @voyant-travel/commerce@0.42.0
+  - @voyant-travel/relationships@0.130.0
+  - @voyant-travel/distribution@0.187.0
+  - @voyant-travel/inventory@0.18.0
+  - @voyant-travel/db@0.118.3
+  - @voyant-travel/hono@0.134.3
+  - @voyant-travel/operator-settings@0.14.17
+  - @voyant-travel/public-document-delivery@0.4.14
+  - @voyant-travel/storage@0.113.5
+
 ## 0.196.0
 
 ### Minor Changes

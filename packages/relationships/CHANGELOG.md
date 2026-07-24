@@ -1,5 +1,29 @@
 # @voyant-travel/crm
 
+## 0.130.0
+
+### Minor Changes
+
+- fa1cc2c: Restore `create_organization` as a handler-owned created-target command whose
+  organization, optional billing address, deterministic `organization.changed`
+  outbox event, ledger, and immutable result commit atomically.
+
+  The Tool now returns `{ status, organization: { id }, replayed }` instead of
+  the mutable organization and billing-address rows. See
+  `docs/migrations/created-relationships-organization.md` for caller guidance.
+
+### Patch Changes
+
+- Updated dependencies [b07a0a3]
+  - @voyant-travel/action-ledger@0.113.0
+  - @voyant-travel/bookings@0.197.0
+  - @voyant-travel/core@0.134.0
+  - @voyant-travel/tools@0.5.0
+  - @voyant-travel/identity@0.197.0
+  - @voyant-travel/custom-fields@0.2.15
+  - @voyant-travel/db@0.118.3
+  - @voyant-travel/hono@0.134.3
+
 ## 0.129.0
 
 ### Minor Changes

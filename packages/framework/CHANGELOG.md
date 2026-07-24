@@ -1,5 +1,28 @@
 # @voyant-travel/framework
 
+## 0.63.2
+
+### Patch Changes
+
+- b07a0a3: Add an explicit handler-owned durable result protocol for existing-target Tool
+  commands, including atomic package-owned operation intent preparation, exact
+  admission, stable replay context, organization-bound approval continuity, and
+  framework/runtime contract validation. Existing-target command payloads are
+  restricted to immutable, acyclic JSON values so their runtime identity cannot
+  diverge from canonical fingerprinting; that sanitized frozen value is the
+  authoritative target, fingerprint, claim, and handler snapshot.
+- Updated dependencies [b07a0a3]
+- Updated dependencies [a310395]
+  - @voyant-travel/action-ledger@0.113.0
+  - @voyant-travel/core@0.134.0
+  - @voyant-travel/mcp@0.5.1
+  - @voyant-travel/tools@0.5.0
+  - @voyant-travel/cruises@0.196.0
+  - @voyant-travel/operator-standard@0.12.3
+  - @voyant-travel/db@0.118.3
+  - @voyant-travel/hono@0.134.3
+  - @voyant-travel/storage@0.113.5
+
 ## 0.63.1
 
 ### Patch Changes
