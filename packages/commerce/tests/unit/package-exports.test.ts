@@ -8,6 +8,7 @@ import {
   createAcceptanceSignatureSubscriberGraphRuntime,
   createCheckoutFinalizeSubscriberGraphRuntime,
 } from "../../src/checkout/subscriber-runtime.js"
+import * as commerceToolSurface from "../../src/mcp-runtime.js"
 import {
   createPromotionRedemptionSubscriberGraphRuntime,
   promotionRedemptionDatabaseRuntimePort,
@@ -78,5 +79,10 @@ describe("@voyant-travel/commerce package exports", () => {
     expect(createPromotionRedemptionSubscriberGraphRuntime).toBeTypeOf("function")
     expect(promotionRedemptionDatabaseRuntimePort.id).toBe("commerce.promotion-redemption-database")
     expect(promotionsBulkReindexRuntimePort.id).toBe("commerce.promotions-bulk-reindex")
+  })
+
+  it("keeps promotion command internals out of the published Tool surface", () => {
+    expect(commerceToolSurface).not.toHaveProperty("executePromotionCreateCommand")
+    expect(commerceToolSurface).not.toHaveProperty("promotionCreatedEventId")
   })
 })

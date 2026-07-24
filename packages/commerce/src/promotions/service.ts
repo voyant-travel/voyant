@@ -454,6 +454,16 @@ async function createOffer(
   input: InsertPromotionalOffer,
   runtime: OfferMutationRuntime = {},
 ): Promise<PromotionalOffer> {
+  const result = await createOfferMutation(db, input, runtime)
+  await emitChange(runtime, result.event)
+  return result.row
+}
+
+export async function createOfferMutation(
+  db: PostgresJsDatabase,
+  input: InsertPromotionalOffer,
+  runtime: OfferMutationRuntime = {},
+): Promise<{ row: PromotionalOffer; event: PromotionChangedEvent }> {
   await validatePromotionalOfferScopeReferences(db, input.scope, runtime)
 
   let row: PromotionalOffer | undefined
@@ -467,13 +477,14 @@ async function createOffer(
 
   const { productIds } = await recomputeOfferLinks(db, row.id, input.scope, runtime)
 
-  await emitChange(runtime, {
-    offerId: row.id,
-    source: runtime.source ?? "created",
-    affected: toAffected(productIds),
-  })
-
-  return row
+  return {
+    row,
+    event: {
+      offerId: row.id,
+      source: runtime.source ?? "created",
+      affected: toAffected(productIds),
+    },
+  }
 }
 
 async function updateOffer(
