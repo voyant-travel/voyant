@@ -19,13 +19,11 @@ import type { Context } from "hono"
 
 import type { ContractDocumentRoutesOptions } from "./contract-document-routes.js"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
+import { legalContractDetail, legalContractSummary } from "./contract-dto.js"
+import { executeLegalContractLifecycleCommand } from "./contract-lifecycle-command.js"
 import type { ContractLifecycleRuntimeOptions } from "./contracts/lifecycle.js"
 import { buildContractsRouteRuntime } from "./contracts/route-runtime.js"
-import type {
-  ContractAttachment,
-  ContractTemplate,
-  Contract as LegalContract,
-} from "./contracts/schema.js"
+import type { ContractAttachment, ContractTemplate } from "./contracts/schema.js"
 import { contractsService } from "./contracts/service.js"
 import {
   buildLegalContractDraftFingerprint,
@@ -40,9 +38,8 @@ import type {
   ContractAttachmentDto,
   ContractTemplateDetail,
   ContractTemplateSummary,
-  LegalContractDetail,
   LegalContractDocumentToolServices,
-  LegalContractSummary,
+  LegalLifecycleCommandToolServices,
   LegalTermDto,
   LegalToolServices,
   PolicyDetail,
@@ -107,15 +104,15 @@ export function createLegalToolServices(
   db: PostgresJsDatabase,
   lifecycleRuntime?: ContractLifecycleRuntimeOptions,
   requestContext: ActionLedgerRequestContextValues = {},
-): LegalToolServices {
+): LegalToolServices & LegalLifecycleCommandToolServices {
   return {
     async listContracts(query) {
       const result = await contractsService.listContracts(db, query)
-      return { data: result.data.map(contractSummary), meta: pageMeta(result) }
+      return { data: result.data.map(legalContractSummary), meta: pageMeta(result) }
     },
     async getContract(id) {
       const row = await contractsService.getContractById(db, id)
-      return row ? contractDetail(row) : null
+      return row ? legalContractDetail(row) : null
     },
     async createDraft(input, admitted) {
       const result = await executeLegalContractDraftCreate(db, requestContext, input, admitted)
@@ -186,7 +183,7 @@ export function createLegalToolServices(
       if (result.status !== "issued" || !result.contract) {
         throw new ToolError("Only draft contracts can be issued.", "INVALID_INPUT", { contractId })
       }
-      return contractDetail(result.contract)
+      return legalContractDetail(result.contract)
     },
     async sendContract({ contractId, ...delivery }) {
       const result = await contractsService.sendContract(db, contractId, lifecycleRuntime, delivery)
@@ -198,7 +195,7 @@ export function createLegalToolServices(
           contractId,
         })
       }
-      return contractDetail(result.contract)
+      return legalContractDetail(result.contract)
     },
     async executeContract(contractId) {
       const result = await contractsService.executeContract(db, contractId, lifecycleRuntime)
@@ -209,12 +206,40 @@ export function createLegalToolServices(
         throw new ToolError(
           "Only authoritatively signed contracts can be executed.",
           "INVALID_INPUT",
-          {
-            contractId,
-          },
+          { contractId },
         )
       }
-      return contractDetail(result.contract)
+      return legalContractDetail(result.contract)
+    },
+    async issueContractCommand(commandInput, admitted) {
+      const result = await executeLegalContractLifecycleCommand({
+        db,
+        context: requestContext,
+        admitted,
+        transition: "issue",
+        commandInput,
+      })
+      return result.value
+    },
+    async sendContractCommand(commandInput, admitted) {
+      const result = await executeLegalContractLifecycleCommand({
+        db,
+        context: requestContext,
+        admitted,
+        transition: "send",
+        commandInput,
+      })
+      return result.value
+    },
+    async executeContractCommand(commandInput, admitted) {
+      const result = await executeLegalContractLifecycleCommand({
+        db,
+        context: requestContext,
+        admitted,
+        transition: "execute",
+        commandInput,
+      })
+      return result.value
     },
   }
 }
@@ -401,44 +426,6 @@ function iso(value: Date): string {
 }
 function nullableIso(value: Date | null): string | null {
   return value ? iso(value) : null
-}
-function contractSummary(row: LegalContract): LegalContractSummary {
-  return {
-    id: row.id,
-    contractNumber: row.contractNumber,
-    scope: row.scope,
-    status: row.status,
-    title: row.title,
-    bookingId: row.bookingId,
-    personId: row.personId,
-    organizationId: row.organizationId,
-    supplierId: row.supplierId,
-    language: row.language,
-    issuedAt: nullableIso(row.issuedAt),
-    sentAt: nullableIso(row.sentAt),
-    executedAt: nullableIso(row.executedAt),
-    expiresAt: nullableIso(row.expiresAt),
-    voidedAt: nullableIso(row.voidedAt),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  }
-}
-function contractDetail(row: LegalContract): LegalContractDetail {
-  return {
-    ...contractSummary(row),
-    templateVersionId: row.templateVersionId,
-    seriesId: row.seriesId,
-    channelId: row.channelId,
-    targetKind: row.targetKind,
-    targetId: row.targetId,
-    targetProvider: row.targetProvider,
-    targetSourceRef: row.targetSourceRef,
-    renderedBodyFormat: row.renderedBodyFormat,
-    renderedBody: row.renderedBody,
-    variables: row.variables as LegalContractDetail["variables"],
-    metadata: row.metadata as LegalContractDetail["metadata"],
-    stageHistory: row.stageHistory,
-  }
 }
 function templateSummary(row: ContractTemplate): ContractTemplateSummary {
   return {

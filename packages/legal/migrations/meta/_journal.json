@@ -15,6 +15,13 @@
       "when": 1783900800000,
       "tag": "20260713000400_standard_links",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784876748180,
+      "tag": "20260724070548_contract_lifecycle_command_results",
+      "breakpoints": true
     }
   ]
 }

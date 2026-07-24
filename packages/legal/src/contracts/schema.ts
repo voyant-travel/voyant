@@ -274,6 +274,50 @@ export const contracts = pgTable(
 export type Contract = typeof contracts.$inferSelect
 export type NewContract = typeof contracts.$inferInsert
 
+// ---------- contract_lifecycle_command_results ----------
+
+/**
+ * Immutable package-owned result mailbox for handler-admitted lifecycle Tools.
+ *
+ * The action-ledger claim, strict contract transition, this exact result
+ * snapshot, and the matching event-outbox row are committed in one database
+ * transaction. Replays resolve this row by the immutable claim id; they never
+ * derive a fresh result from mutable contract state.
+ */
+export const contractLifecycleCommandResults = pgTable(
+  "contract_lifecycle_command_results",
+  {
+    claimActionId: text("claim_action_id").primaryKey(),
+    actionName: text("action_name").notNull(),
+    actionVersion: text("action_version").notNull(),
+    targetType: text("target_type").notNull(),
+    // Soft reference by design: immutable command/replay history must outlive
+    // a later void + contract deletion.
+    contractId: text("contract_id").notNull(),
+    transition: text("transition").notNull(),
+    idempotencyScope: text("idempotency_scope").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    idempotencyFingerprint: text("idempotency_fingerprint").notNull(),
+    principalType: text("principal_type").notNull(),
+    principalId: text("principal_id").notNull(),
+    organizationId: text("organization_id"),
+    commandPayload: jsonb("command_payload").$type<Record<string, unknown>>().notNull(),
+    result: jsonb("result").$type<Record<string, unknown>>().notNull(),
+    eventId: text("event_id").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_contract_lifecycle_command_results_contract").on(table.contractId, table.createdAt),
+    uniqueIndex("uq_contract_lifecycle_command_results_scope_key").on(
+      table.idempotencyScope,
+      table.idempotencyKey,
+    ),
+  ],
+)
+
+export type ContractLifecycleCommandResult = typeof contractLifecycleCommandResults.$inferSelect
+export type NewContractLifecycleCommandResult = typeof contractLifecycleCommandResults.$inferInsert
+
 // ---------- contract_signatures ----------
 
 export const contractSignatures = pgTable(

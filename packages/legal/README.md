@@ -31,6 +31,8 @@ const app = createApp({
 - **Contract signatures** (`ctsi`) — signing records (who/when/method/ip)
 - **Contract number series** (`ctns`) — series definitions with auto-increment
 - **Contract attachments** (`ctat`) — rendered PDFs and appendices
+- **Contract lifecycle command results** — immutable Tool result and delivery-intent
+  snapshots keyed by the authoritative action-ledger claim
 
 ## Default Storefront Contract Templates
 
@@ -82,6 +84,18 @@ to `stageHistory` and emits a domain event when an event bus is configured:
 `contract.voided`. Event payloads are intentionally minimal: contract IDs,
 relationship IDs, stage names, and timestamps only; rendered bodies, variables,
 metadata, and signature details stay out of the event payload.
+
+The approved issue, send, and execute Tools use a stricter durable command path.
+The action-ledger claim, locked transition, immutable result snapshot, and
+deterministic lifecycle outbox event commit atomically. Exact retries return the
+original snapshot without repeating the transition or event. Send snapshots keep
+the original recipient, subject, and message in both the Legal command record and
+the outbox event, so subscriber-owned delivery never depends on request memory.
+Request-scoped event buses and lifecycle hooks are not part of Tool command
+success; outbox subscribers own durable delivery and retry.
+Lifecycle command records keep `contractId` as a soft immutable reference so
+exact replay and audit history survive a later void and permitted contract
+deletion.
 
 ## Agent Tools
 

@@ -1,10 +1,12 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
 
+import { LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS } from "../../src/existing-target-policy.js"
 import { createLegalContractDocumentToolServices } from "../../src/mcp-runtime.js"
 import {
   createContractTemplateTool,
   generateBookingContractDocumentTool,
+  issueLegalContractTool,
   legalContractDocumentTools,
   legalTools,
   previewBookingContractDocumentTool,
@@ -56,6 +58,60 @@ describe("legal Tools", () => {
       reversible: false,
       confirmationRequired: true,
     })
+  })
+
+  it("keeps legacy service signatures while lifecycle Tools use admitted command methods", async () => {
+    const issueContract = vi.fn()
+    const issueContractCommand = vi.fn(async () => ({ id: "contract_1" }) as never)
+    const legal = {
+      issueContract,
+      issueContractCommand,
+      sendContractCommand: vi.fn(),
+      executeContractCommand: vi.fn(),
+    } as never
+    const expected = LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS.issue
+
+    await issueLegalContractTool.handler(
+      { contractId: "contract_1" },
+      {
+        ...baseContext(),
+        legal,
+        handlerActionPolicy: {
+          capabilityId: expected.capabilityId,
+          capabilityVersion: expected.capabilityVersion,
+          canonicalName: expected.canonicalName,
+          actionPolicy: {
+            ...expected.actionPolicy,
+            enforcement: "handler",
+            invocation: {
+              controlField: "_voyant",
+              requiredFields: [
+                "confirmed",
+                "targetId",
+                "idempotencyKey",
+                "approvalId",
+                "idempotencyFingerprint",
+              ],
+              optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+              fingerprintAlgorithm: "action-ledger-command-v1",
+            },
+          },
+          invocation: {
+            confirmed: true,
+            targetId: "contract_1",
+            idempotencyKey: "issue_1",
+            approvalId: "approval_1",
+            idempotencyFingerprint: "fingerprint_1",
+          },
+        },
+      },
+    )
+
+    expect(issueContractCommand).toHaveBeenCalledWith(
+      { contractId: "contract_1" },
+      expect.objectContaining({ capabilityId: expected.capabilityId }),
+    )
+    expect(issueContract).not.toHaveBeenCalled()
   })
 
   it("rejects contract-document access outside an exact staff audience", async () => {

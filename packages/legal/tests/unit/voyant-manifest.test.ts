@@ -195,11 +195,16 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#action.execute-contract",
     ]) {
       expect(legalVoyantModule.actions?.find(({ id }) => id === actionId)).toMatchObject({
-        availability: {
-          status: "unavailable",
-          reasonCode: "unsafe-nontransactional-effect",
-        },
+        availability: { status: "available" },
         effectBoundary: "multistage",
+        commandTargetField: "contractId",
+        targetLifecycle: "existing",
+        existingTarget: { durability: "handler-command-result-v1" },
+        durability: {
+          strategy: "outbox",
+          testReference: "packages/legal/tests/integration/contract-lifecycle-command.test.ts",
+        },
+        policy: "legal.contract-lifecycle.v1",
       })
     }
   })
