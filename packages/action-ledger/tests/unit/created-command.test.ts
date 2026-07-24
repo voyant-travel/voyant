@@ -10,10 +10,14 @@ import {
   ActionLedgerCreatedCommandTransactionRequiredError,
   buildCreatedTargetCommandFingerprint,
   buildCreatedTargetIdempotencyScope,
+  buildExistingTargetIdempotencyScope,
+  type ExecuteAdmittedExistingTargetCommandInput,
   type ExecuteCreatedTargetCommandInput,
   executeAdmittedCreatedTargetCommand,
+  executeAdmittedExistingTargetCommand,
   executeCreatedTargetCommand,
 } from "../../src/created-command.js"
+import { buildActionApprovalCommandFingerprint } from "../../src/fingerprint.js"
 import type {
   ActionLedgerEntry,
   ActionMutationDetail,
@@ -39,6 +43,182 @@ const POLICY_DRIFTS: Array<[string, Partial<ExecuteCreatedTargetCommandInput>]> 
     { parentAnchor: { targetType: "organization", targetIdField: "organizationId" } },
   ],
 ]
+
+describe("existing-target durable command protocol", () => {
+  it("commits exact admission before dispatch and routes same-command retries to replay", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    const execute = vi.fn(async (command) => {
+      harness.events.push("domain-execute")
+      return { claimId: command.causation.claimActionId }
+    })
+    const replay = vi.fn(async (command) => {
+      harness.events.push("domain-replay")
+      return { claimId: command.causation.claimActionId }
+    })
+    const run = () =>
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), {
+        execute,
+        replay,
+      })
+
+    const first = await run()
+    const second = await run()
+
+    expect(first).toMatchObject({
+      replayed: false,
+      command: {
+        target: { type: "trip", id: "trip_1" },
+        idempotency: { key: "price_1" },
+        authorization: {
+          principalType: "user",
+          principalId: "usr_1",
+          organizationId: "org_1",
+        },
+        causation: {
+          claimActionId: "alge_1",
+          requestedActionId: null,
+          approvalId: null,
+        },
+      },
+    })
+    expect(second).toMatchObject({
+      replayed: true,
+      value: { claimId: "alge_1" },
+    })
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(replay).toHaveBeenCalledTimes(1)
+    expect(harness.events).toEqual([
+      "begin",
+      "advisory-lock",
+      "entry:alge_1:requested",
+      "detail:alge_1",
+      "commit",
+      "domain-execute",
+      "begin",
+      "advisory-lock",
+      "commit",
+      "domain-replay",
+    ])
+    expect(execute.mock.calls[0]?.[0]).not.toHaveProperty("context")
+    expect(execute.mock.calls[0]?.[0]).not.toHaveProperty("sessionId")
+  })
+
+  it.each([
+    ["payload", { commandInput: { tripId: "trip_1", currency: "USD" } }],
+    ["target", { commandInput: { tripId: "trip_2", currency: "EUR" } }],
+  ])("conflicts when an admitted key is reused with altered %s", async (_label, patch) => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    const handlers = { execute: vi.fn(async () => ({ ok: true })), replay: vi.fn() }
+    await executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers)
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), ...patch },
+        handlers,
+      ),
+    ).rejects.toBeInstanceOf(ActionLedgerIdempotencyConflictError)
+    expect(handlers.execute).toHaveBeenCalledTimes(1)
+    expect(handlers.replay).not.toHaveBeenCalled()
+  })
+
+  it("rejects missing protocol metadata and mismatched stable target before claiming", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { execute: vi.fn(), replay: vi.fn() }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, {
+            ...admitted,
+            actionPolicy: { ...admitted.actionPolicy, existingTarget: undefined },
+          }),
+        },
+        handlers,
+      ),
+    ).rejects.toMatchObject({ reason: "admitted_policy_mismatch" })
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), targetId: "trip_other" },
+        handlers,
+      ),
+    ).rejects.toMatchObject({ reason: "admitted_policy_mismatch" })
+    expect(harness.events).toEqual([])
+  })
+
+  it("binds required approval to the exact target, key, fingerprint, and causation", async () => {
+    const harness = makeCreatedCommandDb()
+    const commandInput = { tripId: "trip_1", currency: "EUR" }
+    const admitted = makeAdmittedExistingTargetContext({ approval: "required" })
+    const fingerprint = await buildActionApprovalCommandFingerprint({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      targetType: "trip",
+      targetId: "trip_1",
+      commandInput,
+      approvalPolicy: "required",
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      evaluatedRisk: "high",
+      reasonCode: "operator_approved",
+    })
+    admitted.invocation = {
+      idempotencyKey: "price_1",
+      approvalId: "appr_existing",
+      idempotencyFingerprint: fingerprint,
+      reasonCode: "operator_approved",
+    }
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    mockApprovedExistingCommand(admitted, fingerprint)
+    const handlers = { execute: vi.fn(async () => ({ ok: true })), replay: vi.fn() }
+
+    const result = await executeAdmittedExistingTargetCommand(
+      existingCommandInput(harness.db, admitted),
+      handlers,
+    )
+    expect(result.command.causation).toEqual({
+      claimActionId: "alge_1",
+      requestedActionId: "alge_requested_existing",
+      approvalId: "appr_existing",
+    })
+
+    const changedKey = {
+      ...admitted,
+      invocation: { ...admitted.invocation, idempotencyKey: "price_other" },
+    }
+    await expect(
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, changedKey), handlers),
+    ).rejects.toBeInstanceOf(ActionLedgerIdempotencyConflictError)
+  })
+})
 
 describe("created-target command protocol", () => {
   it("uses admitted graph identity, Tool route identity, and replays the canonical child reference", async () => {
@@ -667,6 +847,114 @@ describe("created-target command protocol", () => {
     expect(harness.events).toEqual([])
   })
 })
+
+function makeAdmittedExistingTargetContext(
+  input: { approval?: "never" | "required" } = {},
+): ExecuteAdmittedExistingTargetCommandInput["admitted"] {
+  const approval = input.approval ?? "never"
+  return {
+    capabilityId: "@voyant-travel/trips#tool.price-trip",
+    capabilityVersion: "v1",
+    canonicalName: "price_trip",
+    actionPolicy: {
+      id: "@voyant-travel/trips#action.price-trip",
+      capabilityId: "@voyant-travel/trips#action.price-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      commandTargetField: "tripId",
+      targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
+      risk: "high",
+      ledger: "required",
+      approval,
+      ...(approval === "required" ? { policy: "trips-price-policy" } : {}),
+      reversible: true,
+      enforcement: "handler",
+      invocation: {
+        controlField: "_voyant",
+        requiredFields:
+          approval === "required"
+            ? ["idempotencyKey", "approvalId", "idempotencyFingerprint"]
+            : ["idempotencyKey"],
+        optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+        fingerprintAlgorithm: "action-ledger-command-v1",
+      },
+    },
+    invocation: { idempotencyKey: "price_1" },
+  }
+}
+
+function existingCommandInput(
+  db: AnyDrizzleDb,
+  admitted: ExecuteAdmittedExistingTargetCommandInput["admitted"],
+): ExecuteAdmittedExistingTargetCommandInput {
+  return {
+    db,
+    context: {
+      userId: "usr_1",
+      organizationId: "org_1",
+      actor: "staff",
+      callerType: "session",
+      sessionId: "session_current",
+    },
+    admitted,
+    commandInput: { tripId: "trip_1", currency: "EUR" },
+    evaluatedRisk: "high",
+  }
+}
+
+function mockApprovedExistingCommand(
+  admitted: ExecuteAdmittedExistingTargetCommandInput["admitted"],
+  fingerprint: string,
+) {
+  const approval = makeApproval({
+    id: "appr_existing",
+    requestedActionId: "alge_requested_existing",
+    status: "approved",
+    requestedByPrincipalId: "usr_1",
+    assignedToPrincipalId: "usr_approver",
+    decidedByPrincipalId: "usr_approver",
+    policyName: "trips-price-policy",
+    policyVersion: "v1",
+    riskSnapshot: "high",
+    reasonCode: "operator_approved",
+    expiresAt: null,
+  })
+  const requestedAction = makeEntry({
+    id: "alge_requested_existing",
+    actionName: admitted.actionPolicy.capabilityId,
+    actionVersion: admitted.actionPolicy.version,
+    actionKind: "execute",
+    status: "awaiting_approval",
+    evaluatedRisk: "high",
+    principalType: "user",
+    principalId: "usr_1",
+    targetType: "trip",
+    targetId: "trip_1",
+    routeOrToolName: admitted.capabilityId,
+    capabilityId: admitted.actionPolicy.capabilityId,
+    capabilityVersion: admitted.actionPolicy.version,
+    approvalId: "appr_existing",
+    idempotencyKey: "price_1",
+    idempotencyFingerprint: fingerprint,
+  })
+  vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue({
+    ok: true,
+    approval,
+    requestedAction,
+    idempotencyFingerprint: fingerprint,
+  })
+  vi.spyOn(actionLedgerService, "getApproval").mockResolvedValue({
+    approval,
+    requestedAction: {
+      entry: requestedAction,
+      mutationDetail: null,
+      sensitiveReadDetail: null,
+      payloads: [],
+    },
+  })
+}
 
 function makeAdmittedCreatedTargetContext(
   input: { actionName?: string; actionVersion?: string } = {},

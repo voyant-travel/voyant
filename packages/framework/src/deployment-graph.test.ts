@@ -1014,6 +1014,66 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("validates existing-target durable result command contracts", () => {
+    const action = {
+      id: "@acme/voyant-actions#action.run-task",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "task",
+      commandTargetField: "taskId",
+      targetLifecycle: "existing" as const,
+      existingTarget: { durability: "handler-command-result-v1" as const },
+      risk: "high" as const,
+      ledger: "required" as const,
+    }
+    const manifest = (candidate: Record<string, unknown>) => ({
+      ...defineModule({ id: "@acme/voyant-actions" }),
+      actions: [{ ...action, ...candidate }],
+    })
+
+    expect(validateGraphUnitManifest(manifest({}))).toEqual([])
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          existingTarget: { durability: "best-effort" },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].existingTarget.durability",
+        message: expect.stringContaining("handler-command-result-v1"),
+      }),
+    )
+    expect(validateGraphUnitManifest(manifest({ commandTargetField: "" }))).toContainEqual(
+      expect.objectContaining({ facet: "actions[0].commandTargetField" }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          targetLifecycle: "created",
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].existingTarget",
+        message: expect.stringContaining('targetLifecycle "existing"'),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          kind: "read",
+          ledger: "optional",
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].existingTarget",
+        message: expect.stringContaining('kind "execute" with ledger "required"'),
+      }),
+    )
+  })
+
   it("validates an action command target field binding", () => {
     const manifest = defineModule({
       id: "@acme/voyant-actions",

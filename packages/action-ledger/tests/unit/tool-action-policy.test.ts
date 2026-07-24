@@ -339,6 +339,39 @@ describe("generic MCP action-policy gate", () => {
     })
     expect(dispatch).not.toHaveBeenCalled()
   })
+
+  it("does not replace generic preflight with replay handling without the explicit handler seam", async () => {
+    const selected = action({
+      commandTargetField: "targetId",
+      targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
+    })
+    const gate = createToolActionPolicyGate({
+      db: {} as never,
+      selectedActions: [selected],
+      requestContext,
+    })
+    const dispatch = vi.fn(async () => ({ id: "target_1" }))
+
+    await expect(
+      gate.execute(
+        execution(
+          selected,
+          {
+            confirmed: true,
+            targetId: "target_1",
+            idempotencyKey: "command_1",
+          },
+          { targetId: "target_1" },
+        ),
+        dispatch,
+      ),
+    ).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      message: expect.stringContaining("handler-owned replay resolution"),
+    })
+    expect(dispatch).not.toHaveBeenCalled()
+  })
 })
 
 function action(
@@ -375,6 +408,7 @@ function execution(
     ledger: selected.ledger,
     approval: selected.approval ?? "never",
     targetLifecycle: selected.targetLifecycle ?? "existing",
+    ...(selected.existingTarget ? { existingTarget: selected.existingTarget } : {}),
     ...(selected.createdTarget ? { createdTarget: selected.createdTarget } : {}),
     allowedActorTypes: selected.allowedActorTypes,
     enforcement: "generic",

@@ -67,10 +67,12 @@ function firstIdentityMismatch(
     "version",
     "kind",
     "targetType",
+    "commandTargetField",
     "targetLifecycle",
   ] as const) {
     if (actual[field] !== expected.actionPolicy[field]) return `actionPolicy.${field}`
   }
+  if (!sameExistingTarget(actual, expected.actionPolicy)) return "actionPolicy.existingTarget"
   if (!sameCreatedTarget(actual, expected.actionPolicy)) return "actionPolicy.createdTarget"
   for (const field of ["risk", "ledger", "approval", "policy", "reversible"] as const) {
     if (actual[field] !== expected.actionPolicy[field]) return `actionPolicy.${field}`
@@ -79,6 +81,16 @@ function firstIdentityMismatch(
     return "actionPolicy.allowedActorTypes"
   }
   return null
+}
+
+function sameExistingTarget(
+  actual: ToolActionPolicyManifest,
+  expected: HandlerActionPolicyExpectation["actionPolicy"],
+): boolean {
+  const actualExisting = actual.existingTarget
+  const expectedExisting = expected.existingTarget
+  if (!actualExisting || !expectedExisting) return actualExisting === expectedExisting
+  return actualExisting.durability === expectedExisting.durability
 }
 
 function sameCreatedTarget(

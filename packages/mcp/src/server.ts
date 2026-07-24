@@ -102,6 +102,9 @@ export interface GraphMcpRuntime {
           reasonCode: string
           replacementCapabilityId?: string
         }
+    existingTarget?: {
+      durability: "handler-command-result-v1"
+    }
     createdTarget?: {
       commandTargetType: string
       resultReferenceType: string
@@ -339,6 +342,7 @@ function indexActionsByTool(
       targetType: action.targetType,
       ...(action.commandTargetField ? { commandTargetField: action.commandTargetField } : {}),
       ...(action.targetLifecycle ? { targetLifecycle: action.targetLifecycle } : {}),
+      ...(action.existingTarget ? { existingTarget: action.existingTarget } : {}),
       ...(action.createdTarget ? { createdTarget: action.createdTarget } : {}),
       risk: action.risk,
       ledger: action.ledger,
@@ -675,6 +679,9 @@ function handlerDispatchContext(
       canonicalName: entry.name,
       actionPolicy: {
         ...actionPolicy,
+        ...(actionPolicy.existingTarget
+          ? { existingTarget: { ...actionPolicy.existingTarget } }
+          : {}),
         ...(actionPolicy.createdTarget ? { createdTarget: { ...actionPolicy.createdTarget } } : {}),
         ...(actionPolicy.allowedActorTypes
           ? { allowedActorTypes: [...actionPolicy.allowedActorTypes] }

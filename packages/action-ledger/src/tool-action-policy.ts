@@ -61,6 +61,13 @@ export function createToolActionPolicyGate(
           { actionId: selected.id, durability: selected.createdTarget?.durability ?? null },
         )
       }
+      if (selected.existingTarget?.durability === "handler-command-result-v1") {
+        throw new ToolError(
+          "Existing-target durable result actions require handler-owned replay resolution; generic dispatch fails closed.",
+          "ACTION_POLICY_REQUIRED",
+          { actionId: selected.id, durability: selected.existingTarget.durability },
+        )
+      }
 
       if (selected.ledger === "optional" && selected.approval !== "required") {
         return dispatch()
@@ -197,6 +204,7 @@ function resolveSelectedAction(
     selected.createdTarget?.resultReferenceType !==
       execution.actionPolicy.createdTarget?.resultReferenceType ||
     selected.createdTarget?.durability !== execution.actionPolicy.createdTarget?.durability ||
+    selected.existingTarget?.durability !== execution.actionPolicy.existingTarget?.durability ||
     !sameParentAnchor(
       selected.createdTarget?.parentAnchor,
       execution.actionPolicy.createdTarget?.parentAnchor,

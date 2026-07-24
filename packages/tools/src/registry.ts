@@ -191,6 +191,32 @@ function deriveActionPolicy(
   action: ToolActionPolicyBinding,
 ): ToolActionPolicyManifest {
   const enforcement = tool.actionPolicyEnforcement ?? "generic"
+  if (action.targetLifecycle === "existing" && action.existingTarget) {
+    if (action.kind !== "execute" || action.ledger !== "required") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" may use the existing-target durable result protocol only for a required-ledger execute action`,
+      )
+    }
+    if (action.existingTarget.durability !== "handler-command-result-v1") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" uses an unsupported existing-target durable result protocol`,
+      )
+    }
+    if (!action.commandTargetField) {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" uses the existing-target durable result protocol but has no commandTargetField`,
+      )
+    }
+    if (enforcement !== "handler") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" uses the existing-target durable result protocol and requires actionPolicyEnforcement "handler"`,
+      )
+    }
+  } else if (action.existingTarget) {
+    throw new Error(
+      `Tool "${tool.name}" action "${action.id}" declares existingTarget without targetLifecycle "existing"`,
+    )
+  }
   if (action.targetLifecycle === "created") {
     if (action.kind !== "execute" || action.ledger !== "required") {
       throw new Error(

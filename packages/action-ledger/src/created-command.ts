@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- owner: action-ledger; claim, replay validation, and canonical completion form one transactional state machine.
+// agent-quality: file-size exception -- owner: action-ledger; durable command admission, replay validation, and canonical completion share one exact state machine.
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
 import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
@@ -23,6 +23,7 @@ import { actionLedgerService } from "./service.js"
 
 const CLAIM_SCOPE_SUFFIX = ":created-command-claim"
 const RESULT_SCOPE_SUFFIX = ":created-command-result"
+const EXISTING_CLAIM_SCOPE_SUFFIX = ":existing-command-claim"
 
 export type CreatedTargetCommandResultReference<TReferenceType extends string = string> =
   `${TReferenceType}:${string}`
@@ -246,6 +247,65 @@ export interface ExecuteAdmittedCreatedTargetCommandInput<TReferenceType extends
   evaluatedRisk: ActionLedgerCapabilityRisk
 }
 
+export interface ExecuteAdmittedExistingTargetCommandInput {
+  db: AnyDrizzleDb
+  context: ActionLedgerRequestContextValues
+  admitted: ToolHandlerActionPolicyContext
+  commandInput: unknown
+  evaluatedRisk: ActionLedgerCapabilityRisk
+  /** Optional compatibility copy; the admitted `_voyant` invocation remains authoritative. */
+  idempotencyKey?: string
+  /** Optional compatibility copy; commandTargetField remains authoritative. */
+  targetId?: string
+}
+
+export interface AdmittedExistingTargetCommand {
+  readonly action: {
+    readonly name: string
+    readonly version: string
+    readonly capabilityId: string
+    readonly capabilityVersion: string
+    readonly routeOrToolName: string
+  }
+  readonly target: {
+    readonly type: string
+    readonly id: string
+  }
+  readonly idempotency: {
+    readonly scope: string
+    readonly key: string
+    readonly fingerprint: string
+  }
+  readonly authorization: {
+    readonly principalType: ActionLedgerEntry["principalType"]
+    readonly principalId: string
+    readonly organizationId: string | null
+  }
+  readonly causation: {
+    readonly claimActionId: string
+    readonly requestedActionId: string | null
+    readonly approvalId: string | null
+  }
+}
+
+export interface ExecuteAdmittedExistingTargetCommandHandlers<TValue> {
+  /**
+   * Starts the package-owned durable operation after the immutable ledger
+   * claim commits. Persist the operation/result before crossing an external
+   * boundary.
+   */
+  execute(command: AdmittedExistingTargetCommand): Promise<TValue>
+  /**
+   * Resolves or resumes the package-owned durable operation for an exact
+   * command replay. This path never receives request-scoped transport context.
+   */
+  replay(command: AdmittedExistingTargetCommand): Promise<TValue>
+}
+
+export type ExecuteAdmittedExistingTargetCommandResult<TValue> =
+  | { replayed: false; value: TValue; command: AdmittedExistingTargetCommand }
+  | { replayed: true; value: TValue; command: AdmittedExistingTargetCommand }
+
 /**
  * Execute a handler-admitted created-target command using the selected graph
  * action as ledger identity and the selected Tool capability as its route.
@@ -309,6 +369,198 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
     },
     handlers,
   )
+}
+
+/**
+ * Admit one existing-target command, then delegate first execution or exact
+ * replay to the package-owned durable result protocol.
+ *
+ * Only the immutable admitted command crosses the transaction boundary. The
+ * raw request context is deliberately not forwarded to either handler.
+ */
+export async function executeAdmittedExistingTargetCommand<TValue>(
+  input: ExecuteAdmittedExistingTargetCommandInput,
+  handlers: ExecuteAdmittedExistingTargetCommandHandlers<TValue>,
+): Promise<ExecuteAdmittedExistingTargetCommandResult<TValue>> {
+  const principal = mapActionLedgerRequestContext(input.context)
+  if (principal.principalId === "unknown_request") {
+    throw new TypeError("Existing-target command execution requires a concrete request principal")
+  }
+  const selected = input.admitted.actionPolicy
+  const existingTarget = selected.existingTarget
+  const commandTargetField = selected.commandTargetField?.trim()
+  const idempotencyKey = input.admitted.invocation.idempotencyKey?.trim()
+  if (
+    selected.kind !== "execute" ||
+    selected.ledger !== "required" ||
+    selected.enforcement !== "handler" ||
+    selected.targetLifecycle !== "existing" ||
+    existingTarget?.durability !== "handler-command-result-v1" ||
+    !commandTargetField ||
+    selected.risk !== input.evaluatedRisk ||
+    (selected.approval !== "never" && selected.approval !== "required") ||
+    !idempotencyKey ||
+    (input.idempotencyKey !== undefined && input.idempotencyKey !== idempotencyKey)
+  ) {
+    throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
+  }
+  const targetId = existingTargetId(input.commandInput, commandTargetField)
+  if (input.targetId !== undefined && input.targetId !== targetId) {
+    throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
+  }
+  const actionName = requiredValue(selected.capabilityId, "capability id")
+  const approvalPolicy = selected.approval === "required" ? "required" : "none"
+  const approvalReasonCode = input.admitted.invocation.reasonCode ?? null
+  const fingerprint = await buildActionApprovalCommandFingerprint({
+    actionName,
+    actionVersion: selected.version,
+    targetType: selected.targetType,
+    targetId,
+    commandInput: input.commandInput,
+    approvalPolicy,
+    capabilityId: actionName,
+    capabilityVersion: selected.version,
+    evaluatedRisk: selected.risk,
+    reasonCode: approvalReasonCode,
+  })
+  const scope = await buildExistingTargetIdempotencyScope({
+    actionName,
+    actionVersion: selected.version,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  const approvalControls =
+    selected.approval === "required"
+      ? {
+          approvalId: input.admitted.invocation.approvalId ?? "",
+          idempotencyKey,
+          idempotencyFingerprint: input.admitted.invocation.idempotencyFingerprint ?? "",
+          reasonCode: input.admitted.invocation.reasonCode ?? null,
+        }
+      : undefined
+  if (
+    selected.approval === "never" &&
+    (input.admitted.invocation.approvalId || input.admitted.invocation.idempotencyFingerprint)
+  ) {
+    throw new ActionLedgerCreatedCommandProtocolError("forged_approval_linkage")
+  }
+  const commandInput: ExecuteCreatedTargetCommandInput & { resultReferenceType: string } = {
+    context: input.context,
+    actionName,
+    actionVersion: selected.version,
+    actionKind: "execute",
+    evaluatedRisk: selected.risk,
+    commandTarget: { type: selected.targetType, id: targetId },
+    canonicalTargetType: selected.targetType,
+    resultReferenceType: selected.targetType,
+    capabilityId: actionName,
+    capabilityVersion: selected.version,
+    approvalPolicy,
+    approvalPolicyName: selected.policy ?? null,
+    approvalReasonCode,
+    commandInput: input.commandInput,
+    idempotency: { scope, key: idempotencyKey, fingerprint },
+    ...(approvalControls ? { approvalControls } : {}),
+    routeOrToolName: input.admitted.capabilityId,
+    authorizationSource: "selected_graph_mcp_handler_existing_target",
+  }
+  const expectedClaim = buildActionLedgerMutationEntryInput({
+    ...commandInput,
+    actionKind: "execute",
+    status: "requested",
+    targetType: selected.targetType,
+    targetId,
+    capabilityId: actionName,
+    capabilityVersion: selected.version,
+    idempotencyScope: existingClaimScope(scope),
+    idempotencyKey,
+    idempotencyFingerprint: fingerprint,
+    mutationDetail: {
+      summary: `Handler-owned Tool ${input.admitted.canonicalName} admitted durable existing-target command`,
+      commandResultRef: null,
+      reversalKind: "none",
+    },
+  })
+  const prepared: PreparedCreatedCommand<string> = {
+    expectedClaim,
+    canonicalTargetType: selected.targetType,
+    resultReferenceType: selected.targetType,
+    idempotency: { scope, key: idempotencyKey, fingerprint },
+  }
+  const approval = prepareApproval(commandInput, prepared)
+  const admission = await requiredTransaction(input.db, async (tx) => {
+    if (approval) {
+      await lockCommand(tx, "existing-command-approval", approval.approvalId)
+    }
+    await lockCommand(tx, scope, idempotencyKey)
+    const existing = await findClaim(tx, existingClaimScope(scope), idempotencyKey)
+    if (existing) {
+      if (approval) {
+        assertApprovalReplayClaimIdentity(existing, prepared.expectedClaim, approval.approvalId)
+      }
+      const exactClaim = approval
+        ? await approvedReplayExpectedClaim(tx, commandInput, prepared, approval)
+        : prepared.expectedClaim
+      assertExactEntry(existing, exactClaim)
+      return { replayed: true as const, command: existingTargetCommand(existing, scope) }
+    }
+    const exactClaim = approval
+      ? await approvedLiveExpectedClaim(tx, commandInput, prepared, approval)
+      : prepared.expectedClaim
+    if (approval) await assertApprovalUnused(tx, exactClaim)
+    const inserted = await insertEntry(tx, exactClaim)
+    return { replayed: false as const, command: existingTargetCommand(inserted.entry, scope) }
+  })
+  const value = admission.replayed
+    ? await handlers.replay(admission.command)
+    : await handlers.execute(admission.command)
+  return { ...admission, value }
+}
+
+function existingTargetId(commandInput: unknown, field: string): string {
+  if (!isPlainRecord(commandInput)) {
+    throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
+  }
+  const value = commandInput[field]
+  if (typeof value !== "string" || !value.trim() || value !== value.trim()) {
+    throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
+  }
+  return value
+}
+
+function existingTargetCommand(
+  claim: ActionLedgerEntry,
+  scope: string,
+): AdmittedExistingTargetCommand {
+  return Object.freeze({
+    action: Object.freeze({
+      name: claim.actionName,
+      version: claim.actionVersion,
+      capabilityId: requiredValue(claim.capabilityId ?? "", "capability id"),
+      capabilityVersion: requiredValue(claim.capabilityVersion ?? "", "capability version"),
+      routeOrToolName: requiredValue(claim.routeOrToolName ?? "", "Tool route"),
+    }),
+    target: Object.freeze({
+      type: claim.targetType,
+      id: claim.targetId,
+    }),
+    idempotency: Object.freeze({
+      scope,
+      key: requiredValue(claim.idempotencyKey ?? "", "idempotency key"),
+      fingerprint: requiredValue(claim.idempotencyFingerprint ?? "", "idempotency fingerprint"),
+    }),
+    authorization: Object.freeze({
+      principalType: claim.principalType,
+      principalId: claim.principalId,
+      organizationId: claim.organizationId,
+    }),
+    causation: Object.freeze({
+      claimActionId: claim.id,
+      requestedActionId: claim.causationActionId,
+      approvalId: claim.approvalId,
+    }),
+  })
 }
 
 function assertCreatedTargetParentAnchor(
@@ -473,6 +725,23 @@ export interface BuildCreatedTargetIdempotencyScopeInput {
   principalType: ActionLedgerEntry["principalType"]
   principalId: string
   organizationId: string | null
+}
+
+export type BuildExistingTargetIdempotencyScopeInput = BuildCreatedTargetIdempotencyScopeInput
+
+/** Collision-safe scope binding a caller-selected key to exactly one target and payload. */
+export async function buildExistingTargetIdempotencyScope(
+  input: BuildExistingTargetIdempotencyScopeInput,
+): Promise<string> {
+  const digest = await sha256({
+    protocol: "action-ledger-existing-target-scope-v1",
+    actionName: requiredValue(input.actionName, "action name"),
+    actionVersion: requiredValue(input.actionVersion, "action version"),
+    principalType: requiredValue(input.principalType, "principal type"),
+    principalId: requiredValue(input.principalId, "principal id"),
+    organizationId: input.organizationId ?? null,
+  })
+  return `existing-target-command:v1:sha256:${digest}`
 }
 
 /** Collision-safe scope for caller-selected created-command keys. */
@@ -1063,6 +1332,10 @@ const RESULT_CONTINUITY_FIELDS = [
 
 function claimScope(scope: string): string {
   return `${scope}${CLAIM_SCOPE_SUFFIX}`
+}
+
+function existingClaimScope(scope: string): string {
+  return `${scope}${EXISTING_CLAIM_SCOPE_SUFFIX}`
 }
 
 function resultScope(scope: string): string {

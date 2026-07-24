@@ -387,6 +387,14 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
   /** Required for available external or multi-stage execute effects. */
   effectBoundary?: "local" | "external" | "multistage"
   durability?: VoyantGraphActionDurability
+  /**
+   * Opt-in contract for handler-owned commands whose canonical target already
+   * exists. The handler must durably persist/resolve its command result; the
+   * action ledger owns exact command admission and replay classification.
+   */
+  existingTarget?: {
+    durability: "handler-command-result-v1"
+  }
   createdTarget?: {
     commandTargetType: string
     resultReferenceType: string

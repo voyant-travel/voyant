@@ -63,6 +63,9 @@ describe("handler-owned MCP action policy", () => {
           version: "v1",
           kind: "execute",
           targetType: "notification",
+          commandTargetField: "approvalId",
+          targetLifecycle: "existing",
+          existingTarget: { durability: "handler-command-result-v1" },
           risk: "critical",
           ledger: "required",
           approval: "required",
@@ -129,6 +132,7 @@ describe("handler-owned MCP action policy", () => {
       actionPolicy: {
         id: "@voyant-travel/notifications#action.handler-guarded-write",
         approval: "required",
+        existingTarget: { durability: "handler-command-result-v1" },
       },
       invocation: {
         confirmed: true,
@@ -143,6 +147,7 @@ describe("handler-owned MCP action policy", () => {
     }
     expect(manifest.tools[0]?.actionPolicy).toMatchObject({
       enforcement: "handler",
+      existingTarget: { durability: "handler-command-result-v1" },
       invocation: {
         requiredFields: ["confirmed", "idempotencyKey", "approvalId", "idempotencyFingerprint"],
       },
