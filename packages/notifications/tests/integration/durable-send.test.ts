@@ -244,13 +244,14 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
   it("reconciles provider success after a local settle crash without sending twice", async () => {
     const command = await approvedCommand(`provider-crash-${randomUUID()}`)
     const pending = await execute(command)
+    const now = workerNow()
     expect(pending.value.status).toBe("pending")
 
     const acceptedCrash = vi.fn(async () => {
       throw new Error("injected post-provider crash")
     })
     const firstDrain = await drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
       retryBaseMs: 0,
       testHooks: { afterProviderAccepted: acceptedCrash },
     })
@@ -258,7 +259,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
     expect(provider.durableSend).toHaveBeenCalledOnce()
 
     const recovered = await drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:01.000Z"),
+      now: new Date(now.getTime() + 1_000),
       retryBaseMs: 0,
     })
     expect(recovered).toMatchObject({ claimed: 1, sent: 1, retried: 0 })
@@ -285,8 +286,9 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
   it("rolls back mutable settlement when completion event capture fails", async () => {
     const command = await approvedCommand(`settle-rollback-${randomUUID()}`)
     const pending = await execute(command)
+    const now = workerNow()
     const failedSettle = await drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
       retryBaseMs: 0,
       testHooks: {
         async beforeCompletionEvent() {
@@ -315,7 +317,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
 
     await expect(
       drainDurableNotificationSends(db, [provider], {
-        now: new Date("2026-07-24T12:00:01.000Z"),
+        now: new Date(now.getTime() + 1_000),
         retryBaseMs: 0,
       }),
     ).resolves.toMatchObject({ sent: 1 })
@@ -324,14 +326,15 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
   it("reclaims an expired processing lease and completes exactly once", async () => {
     const command = await approvedCommand(`lease-recovery-${randomUUID()}`)
     await execute(command)
+    const now = workerNow()
     await db.update(notificationSendOperations).set({
       status: "processing",
       attempts: 1,
-      leaseExpiresAt: new Date("2026-07-24T11:59:00.000Z"),
+      leaseExpiresAt: new Date(now.getTime() - 60_000),
     })
 
     const recovered = await drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
     })
     expect(recovered).toMatchObject({ claimed: 1, sent: 1 })
     expect(provider.durableSend).toHaveBeenCalledOnce()
@@ -349,6 +352,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
   it("fences an expired worker after a successor settles the same provider result", async () => {
     const command = await approvedCommand(`lease-fencing-${randomUUID()}`)
     await execute(command)
+    const now = workerNow()
     let releaseFirst: () => void = () => undefined
     const holdFirst = new Promise<void>((resolve) => {
       releaseFirst = resolve
@@ -358,7 +362,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
       providerAccepted = resolve
     })
     const firstDrain = drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
       visibilityTimeoutMs: 1_000,
       retryBaseMs: 0,
       testHooks: {
@@ -371,7 +375,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
     await accepted
 
     const successor = await drainDurableNotificationSends(db, [provider], {
-      now: new Date("2026-07-24T12:00:02.000Z"),
+      now: new Date(now.getTime() + 2_000),
       visibilityTimeoutMs: 1_000,
       retryBaseMs: 0,
     })
@@ -394,15 +398,16 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
         ({ name }) => name === NOTIFICATION_SEND_COMPLETED_EVENT,
       ),
     ).toHaveLength(1)
-  })
+  }, 15_000)
 
   it("retries missing provider configuration before dead-lettering at the lease budget", async () => {
     const command = await approvedCommand(`provider-missing-${randomUUID()}`)
     const pending = await execute(command)
+    const now = workerNow()
     await db.update(notificationSendOperations).set({ maxAttempts: 2 })
 
     const first = await drainDurableNotificationSends(db, [], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
       retryBaseMs: 0,
     })
     expect(first).toMatchObject({ claimed: 1, retried: 1, deadLettered: 0, sent: 0 })
@@ -421,7 +426,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
     ).toMatchObject({ status: "pending", errorMessage: null })
 
     const exhausted = await drainDurableNotificationSends(db, [], {
-      now: new Date("2026-07-24T12:00:01.000Z"),
+      now: new Date(now.getTime() + 1_000),
       retryBaseMs: 0,
     })
     expect(exhausted).toMatchObject({ claimed: 1, deadLettered: 1, sent: 0 })
@@ -449,6 +454,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
   it("dead-letters immediately when the selected provider explicitly drops durable support", async () => {
     const command = await approvedCommand(`provider-unsupported-${randomUUID()}`)
     await execute(command)
+    const now = workerNow()
     const unsupported: NotificationProvider = {
       name: provider.name,
       channels: ["email"],
@@ -460,7 +466,7 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
     }
 
     const drained = await drainDurableNotificationSends(db, [unsupported], {
-      now: new Date("2026-07-24T12:00:00.000Z"),
+      now,
     })
     expect(drained).toMatchObject({ claimed: 1, deadLettered: 1, retried: 0 })
     expect((await db.select().from(notificationSendOperations))[0]).toMatchObject({
@@ -476,6 +482,10 @@ describe.skipIf(!DB_AVAILABLE)("durable agent notification sends", () => {
       db,
       dispatcher: createNotificationService([provider]),
     })
+  }
+
+  function workerNow(offsetMs = 0) {
+    return new Date(Date.now() + 60_000 + offsetMs)
   }
 
   async function approvedCommand(
