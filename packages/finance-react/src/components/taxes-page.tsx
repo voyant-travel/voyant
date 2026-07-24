@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -257,8 +258,13 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="destructive"
-                            onClick={() => {
-                              if (confirm(taxMessages.deleteConfirm)) {
+                            onClick={async () => {
+                              if (
+                                await confirmDialog({
+                                  description: taxMessages.deleteConfirm,
+                                  destructive: true,
+                                })
+                              ) {
                                 deleteMutation.mutate(row)
                               }
                             }}
@@ -379,8 +385,13 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 variant="destructive"
-                                onClick={() => {
-                                  if (confirm(taxMessages.deletePolicyProfileConfirm)) {
+                                onClick={async () => {
+                                  if (
+                                    await confirmDialog({
+                                      description: taxMessages.deletePolicyProfileConfirm,
+                                      destructive: true,
+                                    })
+                                  ) {
                                     deleteProfileMutation.mutate(profile)
                                   }
                                 }}
@@ -460,8 +471,13 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                       variant="destructive"
-                                      onClick={() => {
-                                        if (confirm(taxMessages.deletePolicyRuleConfirm)) {
+                                      onClick={async () => {
+                                        if (
+                                          await confirmDialog({
+                                            description: taxMessages.deletePolicyRuleConfirm,
+                                            destructive: true,
+                                          })
+                                        ) {
                                           deleteRuleMutation.mutate(rule)
                                         }
                                       }}

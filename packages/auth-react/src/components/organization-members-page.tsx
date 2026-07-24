@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  confirmDialog,
   Input,
   Label,
   NativeSelect,
@@ -214,7 +215,10 @@ export function OrganizationMembersPage({
 
     if (
       typeof window !== "undefined" &&
-      !window.confirm(messages.members.actions.removeConfirm(label))
+      !(await confirmDialog({
+        description: messages.members.actions.removeConfirm(label),
+        destructive: true,
+      }))
     ) {
       return
     }

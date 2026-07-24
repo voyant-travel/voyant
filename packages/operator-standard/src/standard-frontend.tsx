@@ -60,6 +60,7 @@ import {
 } from "@voyant-travel/storefront-react/storefront"
 import { StorefrontComposerPage } from "@voyant-travel/trips-react/storefront"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import { ConfirmDialogHost, PromptDialogHost } from "@voyant-travel/ui/components"
 import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"
 import { emailOTPClient, organizationClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
@@ -362,6 +363,8 @@ export function createStandardOperatorFrontend(
         providers={providers}
       >
         {children}
+        <ConfirmDialogHost />
+        <PromptDialogHost />
       </OperatorAdminShellProvider>
     )
   }

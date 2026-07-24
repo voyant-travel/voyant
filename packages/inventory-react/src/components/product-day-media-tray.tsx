@@ -2,6 +2,7 @@
 
 import type { MediaAsset } from "@voyant-travel/media-react"
 import { MediaPicker } from "@voyant-travel/media-react/ui"
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { ImageIcon, Loader2, Pencil, Plus, Star, Trash2, Upload } from "lucide-react"
@@ -154,8 +155,13 @@ export function ProductDayMediaTray({ productId, dayId, emptyState }: ProductDay
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => {
-                        if (confirm(messages.productMediaSection.deleteConfirm)) {
+                      onClick={async () => {
+                        if (
+                          await confirmDialog({
+                            description: messages.productMediaSection.deleteConfirm,
+                            destructive: true,
+                          })
+                        ) {
                           remove.mutate(item.id)
                         }
                       }}

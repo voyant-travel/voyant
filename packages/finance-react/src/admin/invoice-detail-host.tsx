@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
   Badge,
   Button,
+  confirmDialog,
   Dialog,
   DialogBody,
   DialogContent,
@@ -398,8 +399,13 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
               setEditingLineItem(lineItem)
               setLineItemDialogOpen(true)
             }}
-            onDelete={(lineId) => {
-              if (confirm(messages.finance.detailPage.deleteLineItemConfirm)) {
+            onDelete={async (lineId) => {
+              if (
+                await confirmDialog({
+                  description: messages.finance.detailPage.deleteLineItemConfirm,
+                  destructive: true,
+                })
+              ) {
                 setActionError(null)
                 deleteLineItem.mutate(lineId, {
                   onError: (error) => {

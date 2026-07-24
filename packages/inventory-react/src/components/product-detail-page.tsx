@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
@@ -106,7 +107,13 @@ export function ProductDetailPage({
 
   const handleDelete = async () => {
     setDeleteError(null)
-    if (!confirm(pageMessages.states.deleteConfirm.replace("{name}", product.name))) return
+    if (
+      !(await confirmDialog({
+        description: pageMessages.states.deleteConfirm.replace("{name}", product.name),
+        destructive: true,
+      }))
+    )
+      return
 
     try {
       await remove.mutateAsync(product.id)

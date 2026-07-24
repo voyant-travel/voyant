@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
 import type { MediaAsset } from "@voyant-travel/media-react"
 import { MediaPicker } from "@voyant-travel/media-react/ui"
-import { Button } from "@voyant-travel/ui/components"
+import { Button, confirmDialog } from "@voyant-travel/ui/components"
 import {
   Carousel,
   type CarouselApi,
@@ -339,9 +339,12 @@ function MediaPreview({
           size="sm"
           variant="destructive"
           className="pointer-events-auto h-8 text-xs"
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation()
-            if (confirm(mediaMessages.deleteConfirm)) onDelete(item.id)
+            if (
+              await confirmDialog({ description: mediaMessages.deleteConfirm, destructive: true })
+            )
+              onDelete(item.id)
           }}
         >
           <Trash2 className="mr-1 h-3 w-3" />

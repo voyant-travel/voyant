@@ -4,6 +4,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   Label,
   Select,
   SelectContent,
@@ -189,8 +190,15 @@ export function InvoiceNumberSeriesPage({ className }: InvoiceNumberSeriesPagePr
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(formatMessage(page.deleteConfirm, { name: series.name }))) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: formatMessage(page.deleteConfirm, {
+                                  name: series.name,
+                                }),
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(series.id, { onSuccess: () => void refetch() })
                             }
                           }}

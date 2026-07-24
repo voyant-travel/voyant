@@ -2,6 +2,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   Input,
   Label,
   Popover,
@@ -257,8 +258,15 @@ export function TemplatesPage({
                           size="sm"
                           aria-label={f.deleteAction}
                           title={f.deleteAction}
-                          onClick={() => {
-                            if (confirm(formatMessage(f.deleteConfirm, { name: template.name }))) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: formatMessage(f.deleteConfirm, {
+                                  name: template.name,
+                                }),
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(template.id, { onSuccess: () => void refetch() })
                             }
                           }}

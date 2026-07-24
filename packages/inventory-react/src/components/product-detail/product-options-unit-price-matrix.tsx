@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Button } from "@voyant-travel/ui/components"
+import { Button, confirmDialog } from "@voyant-travel/ui/components"
 import { Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useVoyantProductsContext } from "../../index.js"
@@ -203,8 +203,13 @@ export function UnitPriceMatrix({
                               unitName: unit.name,
                               categoryName: category.name,
                             })}
-                            onClick={() => {
-                              if (confirm(priceRuleMessages.deleteCellConfirm)) {
+                            onClick={async () => {
+                              if (
+                                await confirmDialog({
+                                  description: priceRuleMessages.deleteCellConfirm,
+                                  destructive: true,
+                                })
+                              ) {
                                 deleteMutation.mutate(cell.id)
                               }
                             }}

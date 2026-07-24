@@ -14,6 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  confirmDialog,
   Input,
   Label,
   Skeleton,
@@ -198,11 +199,11 @@ function CustomerBusinessAccountsView({ api }: { api: CustomerBusinessAccountsAd
                                     variant="outline"
                                     disabled={decide.isPending}
                                     aria-label={copy.requests.rejectLabel(request.profile.name)}
-                                    onClick={() => {
+                                    onClick={async () => {
                                       if (
-                                        !window.confirm(
+                                        !(await confirmDialog(
                                           copy.requests.rejectConfirm(request.profile.name),
-                                        )
+                                        ))
                                       )
                                         return
                                       setActionError(null)

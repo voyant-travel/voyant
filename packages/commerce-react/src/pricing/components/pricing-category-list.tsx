@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
@@ -160,14 +161,15 @@ export function PricingCategoryList({ pageSize = 25 }: PricingCategoryListProps 
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
+                          onClick={async () => {
                             if (
-                              confirm(
-                                messages.pricingCategoryList.deleteConfirm.replace(
+                              await confirmDialog({
+                                description: messages.pricingCategoryList.deleteConfirm.replace(
                                   "{name}",
                                   category.name,
                                 ),
-                              )
+                                destructive: true,
+                              })
                             ) {
                               remove.mutate(category.id)
                             }

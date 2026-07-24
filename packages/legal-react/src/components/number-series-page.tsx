@@ -1,5 +1,5 @@
 import { formatMessage } from "@voyant-travel/i18n"
-import { Badge, Button } from "@voyant-travel/ui/components"
+import { Badge, Button, confirmDialog } from "@voyant-travel/ui/components"
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
@@ -118,8 +118,13 @@ export function NumberSeriesPage({ renderNumberSeriesDialog }: NumberSeriesPageP
                         type="button"
                         aria-label={page.deleteAction}
                         title={page.deleteAction}
-                        onClick={() => {
-                          if (confirm(formatMessage(page.deleteConfirm, { name: series.name }))) {
+                        onClick={async () => {
+                          if (
+                            await confirmDialog({
+                              description: formatMessage(page.deleteConfirm, { name: series.name }),
+                              destructive: true,
+                            })
+                          ) {
                             remove.mutate(series.id, { onSuccess: () => void refetch() })
                           }
                         }}

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge, Button } from "@voyant-travel/ui/components"
+import { Badge, Button, confirmDialog } from "@voyant-travel/ui/components"
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -90,8 +90,13 @@ export function ContactPointsTab({ entityType, entityId }: IdentityEntityTabProp
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(tabMessages.actions.deleteConfirm)) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: tabMessages.actions.deleteConfirm,
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -216,8 +221,13 @@ export function AddressesTab({ entityType, entityId }: IdentityEntityTabProps) {
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(tabMessages.actions.deleteConfirm)) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: tabMessages.actions.deleteConfirm,
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}
@@ -347,8 +357,13 @@ export function NamedContactsTab({ entityType, entityId }: IdentityEntityTabProp
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(tabMessages.actions.deleteConfirm)) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: tabMessages.actions.deleteConfirm,
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}

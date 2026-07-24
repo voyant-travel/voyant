@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge, Button } from "@voyant-travel/ui/components"
+import { Badge, Button, confirmDialog } from "@voyant-travel/ui/components"
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Link2, Pencil, Plus, Star, Trash2 } from "lucide-react"
@@ -160,8 +160,13 @@ export function ExternalRefsTab({ entityType, entityId }: ExternalRefsTabProps) 
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(tabMessages.actions.deleteConfirm)) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: tabMessages.actions.deleteConfirm,
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}

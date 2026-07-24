@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  confirmDialog,
   Select,
   SelectContent,
   SelectItem,
@@ -117,8 +118,13 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(messages.bookingItemTravelers.actions.removeConfirm)) {
+                  onClick={async () => {
+                    if (
+                      await confirmDialog({
+                        description: messages.bookingItemTravelers.actions.removeConfirm,
+                        destructive: true,
+                      })
+                    ) {
                       remove.mutate(link.id)
                     }
                   }}

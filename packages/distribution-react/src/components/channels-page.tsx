@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -149,8 +150,13 @@ export function ChannelsPage({ className, pageSize = PAGE_SIZE }: ChannelsPagePr
                       <DropdownMenuItem
                         variant="destructive"
                         disabled={remove.isPending}
-                        onClick={() => {
-                          if (window.confirm(page.deleteConfirm)) {
+                        onClick={async () => {
+                          if (
+                            await confirmDialog({
+                              description: page.deleteConfirm,
+                              destructive: true,
+                            })
+                          ) {
                             void remove.mutateAsync(channel.id).then(() => refetch())
                           }
                         }}

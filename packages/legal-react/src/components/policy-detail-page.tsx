@@ -8,6 +8,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import {
   Table,
@@ -155,8 +156,13 @@ export function PolicyDetailPage({
           ) : null}
           <Button
             variant="destructive"
-            onClick={() => {
-              if (confirm(formatMessage(f.deleteConfirm, { name: policy.name }))) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  description: formatMessage(f.deleteConfirm, { name: policy.name }),
+                  destructive: true,
+                })
+              ) {
                 remove.mutate(id, { onSuccess: () => onBackToPolicies?.() })
               }
             }}
@@ -272,8 +278,13 @@ export function PolicyDetailPage({
                             }
                           : undefined
                       }
-                      onDelete={() => {
-                        if (confirm(f.deleteAssignmentConfirm)) {
+                      onDelete={async () => {
+                        if (
+                          await confirmDialog({
+                            description: f.deleteAssignmentConfirm,
+                            destructive: true,
+                          })
+                        ) {
                           removeAssignment.mutate({ policyId: id, id: assignment.id })
                         }
                       }}
@@ -521,8 +532,13 @@ function PolicyVersionRow({
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                if (confirm(f.deleteRuleConfirm)) {
+                              onClick={async () => {
+                                if (
+                                  await confirmDialog({
+                                    description: f.deleteRuleConfirm,
+                                    destructive: true,
+                                  })
+                                ) {
                                   remove.mutate({ versionId: version.id, id: rule.id })
                                 }
                               }}

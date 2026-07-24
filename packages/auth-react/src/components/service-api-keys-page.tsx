@@ -20,6 +20,7 @@ import {
   CardTitle,
   Checkbox,
   cn,
+  confirmDialog,
   Input,
   Label,
 } from "@voyant-travel/ui/components"
@@ -399,7 +400,7 @@ function ServiceApiKeyRow({
   const mutations = useApiTokenMutation()
   const enabled = apiKey.enabled !== false
   const rotateToken = async () => {
-    if (!window.confirm(messages.list.rotateConfirm)) return
+    if (!(await confirmDialog(messages.list.rotateConfirm))) return
     onError(null)
 
     try {

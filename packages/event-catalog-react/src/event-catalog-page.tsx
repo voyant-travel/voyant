@@ -4,6 +4,7 @@ import type {
   VoyantGraphEventCatalog,
   VoyantGraphEventCatalogEntry,
 } from "@voyant-travel/core/project"
+import { formatMessage } from "@voyant-travel/i18n"
 import { useVoyantReactContext } from "@voyant-travel/react"
 import { AlertCircle, Search } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
@@ -64,7 +65,7 @@ export function EventCatalogPage() {
         <h1 className="text-xl font-semibold">{messages.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {catalog
-            ? messages.selectedContracts.replace("{count}", String(catalog.events.length))
+            ? formatMessage(messages.selectedContracts, { count: catalog.events.length })
             : messages.selectedContractsLoading}
         </p>
       </header>

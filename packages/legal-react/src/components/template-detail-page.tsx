@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   ContractTemplateAuthoringHelp,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import {
   Table,
@@ -143,8 +144,13 @@ export function TemplateDetailPage({
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => {
-              if (confirm(formatMessage(f.deleteConfirm, { name: template.name }))) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  description: formatMessage(f.deleteConfirm, { name: template.name }),
+                  destructive: true,
+                })
+              ) {
                 remove.mutate(template.id, {
                   onSuccess: () => {
                     onBackToTemplates?.()

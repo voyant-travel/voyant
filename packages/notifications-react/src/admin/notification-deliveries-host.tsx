@@ -17,6 +17,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 import { type NotificationsUiMessages, useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type NotificationDeliveryRecord,
@@ -151,9 +152,7 @@ export function NotificationDeliveriesHost() {
                           onClick={() => {
                             deliveryMutation.resend.mutate(delivery.id, {
                               onError(error) {
-                                window.alert(
-                                  error instanceof Error ? error.message : t.resendFailed,
-                                )
+                                toast.error(error instanceof Error ? error.message : t.resendFailed)
                               },
                             })
                           }}
@@ -196,7 +195,7 @@ export function NotificationDeliveriesHost() {
             ? () => {
                 deliveryMutation.resend.mutate(selectedDeliveryId, {
                   onError(error) {
-                    window.alert(error instanceof Error ? error.message : t.resendFailed)
+                    toast.error(error instanceof Error ? error.message : t.resendFailed)
                   },
                 })
               }

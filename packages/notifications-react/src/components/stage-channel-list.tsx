@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -62,8 +63,13 @@ export function StageChannelList({ reminderRuleId, stageId }: StageChannelListPr
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => {
-                  if (window.confirm(messages.channel.deleteConfirm)) {
+                onClick={async () => {
+                  if (
+                    await confirmDialog({
+                      description: messages.channel.deleteConfirm,
+                      destructive: true,
+                    })
+                  ) {
                     void remove.mutateAsync(channel.id)
                   }
                 }}

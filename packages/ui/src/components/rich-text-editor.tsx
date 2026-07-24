@@ -19,6 +19,7 @@ import {
 import { useEffect } from "react"
 import { cn } from "../lib/utils.js"
 import { Button } from "./button.js"
+import { promptDialog } from "./prompt-dialog.js"
 import { RichTextVariable } from "./rich-text-variable-extension.js"
 
 export type RichTextEditorProps = {
@@ -245,13 +246,16 @@ export function RichTextEditor({
     }
   }, [editor, onEditorReady])
 
-  const setLink = () => {
+  const setLink = async () => {
     if (!editor) {
       return
     }
 
     const previousHref = editor.getAttributes("link").href
-    const href = window.prompt("Link URL", typeof previousHref === "string" ? previousHref : "")
+    const href = await promptDialog({
+      title: "Link URL",
+      defaultValue: typeof previousHref === "string" ? previousHref : "",
+    })
 
     if (href === null) {
       return

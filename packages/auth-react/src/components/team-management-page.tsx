@@ -17,6 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  confirmDialog,
   Input,
   Label,
   NativeSelect,
@@ -243,8 +244,13 @@ function TeamManagementView() {
                               title={copy.members.deactivate}
                               aria-label={copy.members.deactivateLabel(label)}
                               disabled={deactivate.isPending}
-                              onClick={() => {
-                                if (window.confirm(copy.members.deactivateConfirm(label))) {
+                              onClick={async () => {
+                                if (
+                                  await confirmDialog({
+                                    description: copy.members.deactivateConfirm(label),
+                                    destructive: true,
+                                  })
+                                ) {
                                   setActionError(null)
                                   deactivate.mutate(member.id)
                                 }

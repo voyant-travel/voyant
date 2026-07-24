@@ -13,6 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  confirmDialog,
   Input,
   Label,
   Separator,
@@ -126,8 +127,14 @@ export function StorefrontDetail({
             variant="destructive"
             size="sm"
             disabled={remove.isPending}
-            onClick={() => {
-              if (!window.confirm(copy.detail.deleteConfirm)) return
+            onClick={async () => {
+              if (
+                !(await confirmDialog({
+                  description: copy.detail.deleteConfirm,
+                  destructive: true,
+                }))
+              )
+                return
               remove.mutate()
             }}
           >
@@ -361,8 +368,8 @@ function KeysSection({
                     variant="outline"
                     size="sm"
                     disabled={rotate.isPending}
-                    onClick={() => {
-                      if (!window.confirm(copy.rotateConfirm)) return
+                    onClick={async () => {
+                      if (!(await confirmDialog(copy.rotateConfirm))) return
                       rotate.mutate(key.id)
                     }}
                   >
@@ -374,8 +381,14 @@ function KeysSection({
                     variant="destructive"
                     size="sm"
                     disabled={revoke.isPending}
-                    onClick={() => {
-                      if (!window.confirm(copy.revokeConfirm)) return
+                    onClick={async () => {
+                      if (
+                        !(await confirmDialog({
+                          description: copy.revokeConfirm,
+                          destructive: true,
+                        }))
+                      )
+                        return
                       revoke.mutate(key.id)
                     }}
                   >

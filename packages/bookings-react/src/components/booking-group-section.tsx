@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import { Link2, Unlink, Users } from "lucide-react"
 import * as React from "react"
@@ -89,7 +90,13 @@ export function BookingGroupSection({
 
   const handleRemove = async () => {
     if (!groupId) return
-    if (!confirm(messages.bookingGroupSection.actions.removeConfirm)) return
+    if (
+      !(await confirmDialog({
+        description: messages.bookingGroupSection.actions.removeConfirm,
+        destructive: true,
+      }))
+    )
+      return
     await removeMember.mutateAsync({ groupId, bookingId })
   }
 

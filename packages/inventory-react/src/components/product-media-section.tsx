@@ -2,6 +2,7 @@
 
 import type { MediaAsset } from "@voyant-travel/media-react"
 import { MediaPicker } from "@voyant-travel/media-react/ui"
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
@@ -326,8 +327,13 @@ export function ProductMediaSection({
                   setDialogOpen(true)
                 }}
                 onSetCover={() => setCover.mutate(item.id)}
-                onDelete={() => {
-                  if (confirm(sectionMessages.deleteConfirm)) {
+                onDelete={async () => {
+                  if (
+                    await confirmDialog({
+                      description: sectionMessages.deleteConfirm,
+                      destructive: true,
+                    })
+                  ) {
                     remove.mutate(item.id)
                   }
                 }}

@@ -2,6 +2,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   Dialog,
   DialogBody,
   DialogContent,
@@ -146,9 +147,14 @@ export function ExtraPriceRulesPanel({
                   <button
                     type="button"
                     aria-label={extraMessages.deleteAction}
-                    onClick={() => {
+                    onClick={async () => {
                       if (
-                        confirm(formatMessage(extraMessages.deleteConfirm, { name: extra.name }))
+                        await confirmDialog({
+                          description: formatMessage(extraMessages.deleteConfirm, {
+                            name: extra.name,
+                          }),
+                          destructive: true,
+                        })
                       ) {
                         removeExtra.mutate(extra.id, {
                           onSuccess: () => void extrasQuery.refetch(),

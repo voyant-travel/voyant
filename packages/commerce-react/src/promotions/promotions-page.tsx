@@ -12,6 +12,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   DateRangePicker,
   Input,
   Label,
@@ -191,21 +192,30 @@ export function PromotionsPage({
   }
 
   async function archiveOffer(offer: PromotionalOfferRecord) {
-    if (!confirm(pageMessages.actions.archiveConfirm)) return
+    if (
+      !(await confirmDialog({
+        description: pageMessages.actions.archiveConfirm,
+        destructive: true,
+      }))
+    )
+      return
     await runPromotionAction(pageMessages.actions.archive, () =>
       archiveMutation.mutateAsync(offer.id),
     )
   }
 
   async function activateOffer(offer: PromotionalOfferRecord) {
-    if (!confirm(pageMessages.actions.activateConfirm)) return
+    if (!(await confirmDialog(pageMessages.actions.activateConfirm))) return
     await runPromotionAction(pageMessages.actions.activate, () =>
       updateMutation.mutateAsync({ id: offer.id, patch: { active: true } }),
     )
   }
 
   async function deleteOffer(offer: PromotionalOfferRecord) {
-    if (!confirm(pageMessages.actions.deleteConfirm)) return
+    if (
+      !(await confirmDialog({ description: pageMessages.actions.deleteConfirm, destructive: true }))
+    )
+      return
     await runPromotionAction(pageMessages.actions.delete, () =>
       deleteMutation.mutateAsync(offer.id),
     )

@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -153,8 +154,13 @@ export function PriceCatalogsPage({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
-                        onClick={() => {
-                          if (confirm(pageMessages.deleteConfirm)) {
+                        onClick={async () => {
+                          if (
+                            await confirmDialog({
+                              description: pageMessages.deleteConfirm,
+                              destructive: true,
+                            })
+                          ) {
                             remove.mutate(catalog.id, { onSuccess: () => void refetch() })
                           }
                         }}

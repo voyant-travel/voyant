@@ -3,6 +3,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -252,11 +253,15 @@ export function OptionPricingGrid({
 
   async function removeTravelerType(category: PricingCategoryRecord) {
     if (
-      !confirm(
-        formatMessage(messages.products.operations.priceRules.travelerCategoryDeleteConfirm, {
-          name: category.name,
-        }),
-      )
+      !(await confirmDialog({
+        description: formatMessage(
+          messages.products.operations.priceRules.travelerCategoryDeleteConfirm,
+          {
+            name: category.name,
+          },
+        ),
+        destructive: true,
+      }))
     ) {
       return
     }
@@ -452,8 +457,15 @@ export function OptionPricingGrid({
                           variant="ghost"
                           size="icon-sm"
                           aria-label={t.deleteRoom}
-                          onClick={() => {
-                            if (confirm(formatMessage(t.deleteRoomConfirm, { name: unit.name }))) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: formatMessage(t.deleteRoomConfirm, {
+                                  name: unit.name,
+                                }),
+                                destructive: true,
+                              })
+                            ) {
                               deleteUnitMutation.mutate(unit.id)
                             }
                           }}
