@@ -1,7 +1,8 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  ActionLedgerCreatedCommandApprovalError,
   ActionLedgerCreatedCommandFingerprintMismatchError,
   ActionLedgerCreatedCommandProtocolError,
   ActionLedgerCreatedCommandReplayCorruptError,
@@ -18,8 +19,10 @@ import type {
   NewActionMutationDetail,
 } from "../../src/schema.js"
 import { actionLedgerEntries, actionMutationDetails } from "../../src/schema.js"
-import { ActionLedgerIdempotencyConflictError } from "../../src/service.js"
-import { makeEntry, makeMutationDetail } from "./service-fixtures.js"
+import { ActionLedgerIdempotencyConflictError, actionLedgerService } from "../../src/service.js"
+import { makeApproval, makeEntry, makeMutationDetail } from "./service-fixtures.js"
+
+afterEach(() => vi.restoreAllMocks())
 
 const POLICY_DRIFTS: Array<[string, Partial<ExecuteCreatedTargetCommandInput>]> = [
   ["capability", { capabilityId: "relationships:person:create:v2" }],
@@ -316,19 +319,106 @@ describe("created-target command protocol", () => {
     })
   })
 
-  it("fails closed for approval-bearing created commands until control propagation exists", async () => {
+  it("validates an approved request before mutation, links causation, and exactly replays", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({ approvalPolicy: "required" })
+    mockApprovedCommand(input)
+
+    const first = await executePersonCommand(harness.db, input)
+    const replay = await executePersonCommand(harness.db, input)
+
+    expect(first.result.entry).toMatchObject({
+      approvalId: "appr_created",
+      causationActionId: "alge_1",
+    })
+    const claim = harness.entries.find((entry) => entry.status === "requested")
+    expect(claim).toMatchObject({
+      approvalId: "appr_created",
+      causationActionId: "alge_requested",
+    })
+    expect(replay.replayed).toBe(true)
+    expect(harness.events.filter((event) => event === "domain-create")).toHaveLength(1)
+    expect(actionLedgerService.validateApprovedAction).toHaveBeenNthCalledWith(
+      1,
+      harness.db,
+      expect.objectContaining({
+        capabilityId: input.capabilityId,
+        capabilityVersion: input.capabilityVersion,
+        evaluatedRisk: input.evaluatedRisk,
+        policyName: input.approvalPolicyName,
+        policyVersion: input.actionVersion,
+        reasonCode: input.approvalReasonCode,
+        idempotencyKey: input.idempotency.key,
+        targetType: input.commandTarget.type,
+        targetId: input.commandTarget.id,
+      }),
+    )
+    expect(actionLedgerService.validateApprovedAction).toHaveBeenCalledTimes(1)
+    expect(actionLedgerService.getApproval).toHaveBeenCalledWith(harness.db, "appr_created")
+  })
+
+  it("uses one approval only once when the same exact command changes idempotency scope", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({ approvalPolicy: "required" })
+    mockApprovedCommand(input)
+    await executePersonCommand(harness.db, input)
+
+    await expect(
+      executePersonCommand(harness.db, {
+        ...input,
+        idempotency: { ...input.idempotency, scope: "relationships.create_person:other-scope" },
+      }),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandApprovalError.name,
+      reason: "already_executed",
+    })
+    expect(harness.events.filter((event) => event === "domain-create")).toHaveLength(1)
+  })
+
+  it.each([
+    "expired",
+    "principal_mismatch",
+    "risk_mismatch",
+  ] as const)("rejects %s approval validation before domain mutation", async (reason) => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput({ approvalPolicy: "required" })
+    vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue({
+      ok: false,
+      reason,
+    })
+
+    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandApprovalError.name,
+      approvalId: "appr_created",
+      reason,
+    })
+    expect(harness.events).toEqual(["begin", "advisory-lock", "advisory-lock", "rollback"])
+    expect(harness.events).not.toContain("domain-create")
+  })
+
+  it("rejects direct approval or causation fields instead of trusting forged linkage", async () => {
     const harness = makeCreatedCommandDb()
     const input = await makeInput({ approvalPolicy: "required" })
 
-    await expect(executePersonCommand(harness.db, input)).rejects.toMatchObject({
+    await expect(
+      executePersonCommand(harness.db, { ...input, approvalId: "appr_forged" }),
+    ).rejects.toMatchObject({
       name: ActionLedgerCreatedCommandProtocolError.name,
-      reason: "approval_policy_unsupported",
+      reason: "forged_approval_linkage",
+    })
+    await expect(
+      executePersonCommand(harness.db, { ...input, causationActionId: "alge_forged" }),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "forged_approval_linkage",
     })
     expect(harness.events).toEqual([])
   })
 })
 
 async function executePersonCommand(db: AnyDrizzleDb, input: ExecuteCreatedTargetCommandInput) {
+  const harness = db as AnyDrizzleDb & { __claimScope?: string }
+  harness.__claimScope = `${input.idempotency.scope}:created-command-claim`
   return executeCreatedTargetCommand(db, input, {
     async create() {
       const harness = db as AnyDrizzleDb & { __events?: string[] }
@@ -367,6 +457,8 @@ async function makeInput(
     approvalPolicy: options.approvalPolicy ?? ("none" as const),
     approvalReasonCode: "agent_created_person",
   }
+  const fingerprint = await buildCreatedTargetCommandFingerprint(fingerprintInput)
+  const approvalRequired = fingerprintInput.approvalPolicy === "required"
   return {
     context:
       options.context ??
@@ -380,13 +472,71 @@ async function makeInput(
     ...fingerprintInput,
     routeOrToolName: "relationships.create_person",
     authorizationSource: "relationships.create_person.handler",
-    causationActionId: "alge_parent",
+    ...(approvalRequired
+      ? {
+          approvalPolicyName: "relationships-create-policy",
+          approvalControls: {
+            approvalId: "appr_created",
+            idempotencyKey: "idem_1",
+            idempotencyFingerprint: fingerprint,
+            reasonCode: "agent_created_person",
+          },
+        }
+      : { causationActionId: "alge_parent" }),
     idempotency: {
       scope: "relationships.create_person:usr_1",
       key: "idem_1",
-      fingerprint: await buildCreatedTargetCommandFingerprint(fingerprintInput),
+      fingerprint,
     },
   }
+}
+
+function mockApprovedCommand(input: ExecuteCreatedTargetCommandInput) {
+  const result = {
+    ok: true,
+    approval: makeApproval({
+      id: "appr_created",
+      requestedActionId: "alge_requested",
+      status: "approved",
+      requestedByPrincipalId: "usr_1",
+      assignedToPrincipalId: "usr_approver",
+      decidedByPrincipalId: "usr_approver",
+      policyName: "relationships-create-policy",
+      policyVersion: "v1",
+      riskSnapshot: "high",
+      reasonCode: input.approvalReasonCode,
+      expiresAt: null,
+    }),
+    requestedAction: makeEntry({
+      id: "alge_requested",
+      actionName: input.actionName,
+      actionVersion: input.actionVersion,
+      actionKind: "execute",
+      status: "awaiting_approval",
+      evaluatedRisk: input.evaluatedRisk,
+      principalType: "user",
+      principalId: "usr_1",
+      targetType: input.commandTarget.type,
+      targetId: input.commandTarget.id,
+      routeOrToolName: input.routeOrToolName ?? null,
+      capabilityId: input.capabilityId,
+      capabilityVersion: input.capabilityVersion,
+      approvalId: "appr_created",
+      idempotencyKey: input.idempotency.key,
+      idempotencyFingerprint: input.idempotency.fingerprint,
+    }),
+    idempotencyFingerprint: input.idempotency.fingerprint,
+  } as const
+  vi.spyOn(actionLedgerService, "getApproval").mockResolvedValue({
+    approval: result.approval,
+    requestedAction: {
+      entry: result.requestedAction,
+      mutationDetail: null,
+      sensitiveReadDetail: null,
+      payloads: [],
+    },
+  })
+  return vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue(result)
 }
 
 function makeCreatedCommandDb() {
@@ -396,6 +546,7 @@ function makeCreatedCommandDb() {
 
   const db = {
     __events: events,
+    __claimScope: "relationships.create_person:usr_1:created-command-claim",
     async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
       events.push("begin")
       try {
@@ -419,10 +570,14 @@ function makeCreatedCommandDb() {
               return {
                 limit() {
                   if (table === actionLedgerEntries && selection && "claim" in selection) {
-                    const claim = entries.find((entry) =>
-                      entry.idempotencyScope?.endsWith(":created-command-claim"),
+                    const claim = entries.find(
+                      (entry) => entry.idempotencyScope === db.__claimScope,
                     )
                     return Promise.resolve(claim ? [{ claim }] : [])
+                  }
+                  if (table === actionLedgerEntries && selection && "approvedClaim" in selection) {
+                    const approvedClaim = entries.find((entry) => entry.status === "requested")
+                    return Promise.resolve(approvedClaim ? [{ approvedClaim }] : [])
                   }
                   if (table === actionLedgerEntries && selection && "result" in selection) {
                     const result = entries.find((entry) =>

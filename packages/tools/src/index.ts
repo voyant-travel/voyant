@@ -28,6 +28,7 @@ export {
   type ToolContext,
   type ToolContextContribution,
   type ToolContextContributionInput,
+  type ToolHandlerActionPolicyContext,
   type Visibility,
 } from "./context.js"
 export { defineTool, type ToolDefinition } from "./define-tool.js"
@@ -37,6 +38,10 @@ export {
   ToolError,
   type ToolErrorCode,
 } from "./errors.js"
+export {
+  admitHandlerActionPolicy,
+  type HandlerActionPolicyExpectation,
+} from "./handler-action-policy.js"
 export { createToolRegistry, type ToolRegistry } from "./registry.js"
 export {
   READ_ONLY_RISK,

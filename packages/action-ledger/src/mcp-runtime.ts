@@ -8,6 +8,7 @@ import {
 } from "@voyant-travel/tools"
 import type { Context } from "hono"
 
+import { buildCreatedTargetCommandFingerprint } from "./created-command.js"
 import { buildActionApprovalCommandFingerprint } from "./fingerprint.js"
 import {
   type ActionLedgerRequestContextValues,
@@ -146,27 +147,44 @@ export function createActionLedgerToolServices(input: {
       const currentPrincipal = writePrincipal(input.requestContext)
       const selected = selectedApprovalRequestAction(input.selectedActions, request)
       const capabilityId = selected.capabilityId ?? selected.id
-      if (selected.targetLifecycle === "created") {
+      const toolCapabilityId = selectedApprovalToolCapabilityId(selected, request)
+      const reasonCode = request.reasonCode ?? null
+      const createdTarget =
+        selected.targetLifecycle === "created" ? selected.createdTarget : undefined
+      if (selected.targetLifecycle === "created" && !createdTarget) {
         throw new ToolError(
-          "Approval-required created-target Tools fail closed until MCP propagates the approved command control context to the package handler.",
+          "The selected created-target action has no command metadata.",
           "ACTION_POLICY_REQUIRED",
           { actionId: selected.id },
         )
       }
-      const approvalTargetType = selected.targetType
-      const reasonCode = request.reasonCode ?? null
-      const idempotencyFingerprint = await buildActionApprovalCommandFingerprint({
-        actionName: capabilityId,
-        actionVersion: selected.version,
-        targetType: approvalTargetType,
-        targetId: request.targetId,
-        commandInput: request.commandInput ?? null,
-        approvalPolicy: "required",
-        capabilityId,
-        capabilityVersion: selected.version,
-        evaluatedRisk: selected.risk,
-        reasonCode,
-      })
+      const approvalTargetType = createdTarget?.commandTargetType ?? selected.targetType
+      const idempotencyFingerprint = createdTarget
+        ? await buildCreatedTargetCommandFingerprint({
+            actionName: capabilityId,
+            actionVersion: selected.version,
+            commandTarget: { type: createdTarget.commandTargetType, id: request.targetId },
+            canonicalTargetType: selected.targetType,
+            resultReferenceType: createdTarget.resultReferenceType,
+            commandInput: request.commandInput ?? null,
+            approvalPolicy: "required",
+            capabilityId,
+            capabilityVersion: selected.version,
+            evaluatedRisk: selected.risk,
+            approvalReasonCode: reasonCode,
+          })
+        : await buildActionApprovalCommandFingerprint({
+            actionName: capabilityId,
+            actionVersion: selected.version,
+            targetType: approvalTargetType,
+            targetId: request.targetId,
+            commandInput: request.commandInput ?? null,
+            approvalPolicy: "required",
+            capabilityId,
+            capabilityVersion: selected.version,
+            evaluatedRisk: selected.risk,
+            reasonCode,
+          })
       const result = await requestActionLedgerApproval(input.db, {
         context: input.requestContext,
         actionName: capabilityId,
@@ -175,7 +193,7 @@ export function createActionLedgerToolServices(input: {
         evaluatedRisk: selected.risk,
         targetType: approvalTargetType,
         targetId: request.targetId,
-        routeOrToolName: selected.from?.tools?.[0] ?? null,
+        routeOrToolName: toolCapabilityId,
         capabilityId,
         capabilityVersion: selected.version,
         authorizationSource: "selected_graph",
@@ -242,6 +260,45 @@ export function createActionLedgerToolServices(input: {
       }
     },
   }
+}
+
+function selectedApprovalToolCapabilityId(
+  selected: SelectedAction,
+  request: RequestActionApprovalToolInput,
+): string {
+  const selectedTools = [...new Set(selected.from?.tools ?? [])]
+  if (request.toolCapabilityId) {
+    if (!selectedTools.includes(request.toolCapabilityId)) {
+      throw new ToolError(
+        "The requested Tool capability is not selected for this graph action.",
+        "AUTHORIZATION_DENIED",
+        {
+          actionId: selected.id,
+          toolCapabilityId: request.toolCapabilityId,
+        },
+      )
+    }
+    return request.toolCapabilityId
+  }
+  if (selectedTools.length !== 1) {
+    throw new ToolError(
+      "An exact Tool capability is required when a graph action is exposed by multiple Tools.",
+      "ACTION_POLICY_REQUIRED",
+      {
+        actionId: selected.id,
+        toolCapabilityIds: selectedTools,
+      },
+    )
+  }
+  const [toolCapabilityId] = selectedTools
+  if (!toolCapabilityId) {
+    throw new ToolError(
+      "The selected graph action has no Tool capability.",
+      "ACTION_POLICY_REQUIRED",
+      { actionId: selected.id },
+    )
+  }
+  return toolCapabilityId
 }
 
 function selectedApprovalRequestAction(

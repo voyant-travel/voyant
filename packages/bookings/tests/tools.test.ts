@@ -124,7 +124,7 @@ describe("bookings tools", () => {
       },
       enforcement: "handler",
       invocation: {
-        requiredFields: ["confirmed"],
+        requiredFields: ["confirmed", "idempotencyKey"],
       },
     })
   })

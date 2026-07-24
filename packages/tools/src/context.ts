@@ -30,6 +30,12 @@ export interface ToolContext {
   waitUntil?(promise: Promise<unknown>): void
   /** Request-scoped selected-graph action gate supplied by the action-ledger package. */
   toolActionPolicy?: ToolActionPolicyGate
+  /**
+   * Invocation controls and selected policy for the current handler-owned
+   * dispatch. The MCP transport creates a fresh value for each call and never
+   * exposes it to generic-policy handlers.
+   */
+  handlerActionPolicy?: ToolHandlerActionPolicyContext
 }
 
 export interface ToolActionInvocationControl {
@@ -49,6 +55,10 @@ export interface ToolActionPolicyExecutionInput {
   commandInput: unknown
   invocation: ToolActionInvocationControl
 }
+
+export type ToolHandlerActionPolicyContext = Readonly<
+  Omit<ToolActionPolicyExecutionInput, "commandInput">
+>
 
 /** Transport-neutral gate: the implementation owns policy checks and audited dispatch. */
 export interface ToolActionPolicyGate {

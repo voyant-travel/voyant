@@ -27,6 +27,7 @@ export {
   getActionLedgerCapability,
 } from "./capability.js"
 export {
+  ActionLedgerCreatedCommandApprovalError,
   ActionLedgerCreatedCommandFingerprintMismatchError,
   ActionLedgerCreatedCommandProtocolError,
   ActionLedgerCreatedCommandReplayCorruptError,
@@ -34,7 +35,9 @@ export {
   ActionLedgerCreatedCommandReplayIncompleteError,
   ActionLedgerCreatedCommandTransactionRequiredError,
   type BuildCreatedTargetCommandFingerprintInput,
+  type BuildCreatedTargetIdempotencyScopeInput,
   buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
   type CreatedTargetCommandMutation,
   type CreatedTargetCommandResultMetadata,
   type CreatedTargetCommandResultReference,

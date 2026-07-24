@@ -343,11 +343,86 @@ export const actionLedgerService = {
       input.principalType &&
       input.principalId &&
       (requestedAction.principalType !== input.principalType ||
-        requestedAction.principalId !== input.principalId)
+        requestedAction.principalId !== input.principalId ||
+        (input.requireApprovalProvenance &&
+          result.approval.requestedByPrincipalId !== input.principalId))
     ) {
       return {
         ok: false,
         reason: "principal_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.requireApprovalProvenance &&
+      result.approval.assignedToPrincipalId &&
+      result.approval.decidedByPrincipalId !== result.approval.assignedToPrincipalId
+    ) {
+      return {
+        ok: false,
+        reason: "assignee_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.capabilityId !== undefined &&
+      (requestedAction.capabilityId !== input.capabilityId ||
+        requestedAction.capabilityVersion !== (input.capabilityVersion ?? null))
+    ) {
+      return {
+        ok: false,
+        reason: "capability_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.evaluatedRisk !== undefined &&
+      (requestedAction.evaluatedRisk !== input.evaluatedRisk ||
+        result.approval.riskSnapshot !== input.evaluatedRisk)
+    ) {
+      return {
+        ok: false,
+        reason: "risk_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.policyName !== undefined &&
+      (result.approval.policyName !== input.policyName ||
+        result.approval.policyVersion !== (input.policyVersion ?? null))
+    ) {
+      return {
+        ok: false,
+        reason: "policy_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (input.reasonCode !== undefined && result.approval.reasonCode !== input.reasonCode) {
+      return {
+        ok: false,
+        reason: "reason_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
+      input.idempotencyKey !== undefined &&
+      requestedAction.idempotencyKey !== input.idempotencyKey
+    ) {
+      return {
+        ok: false,
+        reason: "idempotency_key_mismatch",
         approval: result.approval,
         requestedAction,
       }
