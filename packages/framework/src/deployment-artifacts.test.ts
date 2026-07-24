@@ -21,6 +21,7 @@ import {
   defineModule,
   definePlugin,
   defineProject,
+  defineProvider,
   resolveDeploymentGraph,
   type VoyantGraphUnitManifest,
 } from "./deployment-graph.js"
@@ -65,10 +66,11 @@ async function graphWithSelectedUnits(
   modules: readonly VoyantGraphUnitManifest[],
   plugins: readonly VoyantGraphUnitManifest[] = [],
   extensions: readonly VoyantGraphUnitManifest[] = [],
+  providers: readonly VoyantGraphUnitManifest[] = [],
 ) {
-  const units = [...modules, ...extensions, ...plugins]
+  const units = [...modules, ...extensions, ...plugins, ...providers]
   return resolveDeploymentGraph({
-    project: defineProject({ modules, extensions, plugins }),
+    project: defineProject({ modules, extensions, plugins, providers }),
     target: "node",
     mode: "self-hosted",
     packageRecords: [
@@ -203,6 +205,88 @@ describe("deployment graph artifacts", () => {
     )
     expect(source).toContain("manyPortIds.has(id) ? [value] : value")
     expect(source).toContain("values.push(value)")
+  })
+
+  it("keeps conditional Tool import specifiers out of exported provisional metadata", async () => {
+    const portId = "notifications.durable-send"
+    const toolId = "@acme/notifications#tool.send"
+    const graph = await graphWithSelectedUnits(
+      [
+        defineModule({
+          id: "@acme/notifications",
+          runtimePorts: [
+            {
+              id: portId,
+              optional: true,
+              conformance: { entry: "./durable-port", export: "durablePort" },
+            },
+          ],
+          tools: [
+            {
+              id: toolId,
+              name: "send_notification",
+              runtime: { entry: "./tools", export: "sendNotificationTool" },
+            },
+          ],
+          actions: [
+            {
+              id: "@acme/notifications#action.send",
+              version: "v1",
+              kind: "execute",
+              targetType: "notification",
+              commandTargetField: "notificationId",
+              targetLifecycle: "existing",
+              availability: {
+                status: "unavailable",
+                reasonCode: "provider-not-durable",
+                enableWhen: {
+                  selectedProviderPorts: { mode: "all", ports: [portId] },
+                },
+              },
+              effectBoundary: "external",
+              durability: { strategy: "saga", testReference: "durable-send.test.ts" },
+              existingTarget: { durability: "handler-command-result-v1" },
+              risk: "high",
+              ledger: "required",
+              approval: "required",
+              from: { tools: [toolId] },
+            },
+          ],
+        }),
+      ],
+      [],
+      [],
+      [
+        defineProvider({
+          id: "@acme/notifications-provider",
+          provides: { ports: [{ id: portId }] },
+          providers: [
+            {
+              id: "@acme/notifications-provider#provider",
+              port: portId,
+              selection: { role: "notifications", value: "durable" },
+              runtime: { entry: "./provider", export: "createProvider" },
+            },
+          ],
+        }),
+      ],
+    )
+    const selectedGraph = {
+      ...graph,
+      deployment: {
+        ...graph.deployment,
+        providers: { notifications: "durable" },
+      },
+    }
+    const source = buildGraphRuntimeModule({ graph: selectedGraph })
+    const publicEntries = source.match(
+      /export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = ([^\n]+)/,
+    )?.[1]
+
+    expect(publicEntries).toBeDefined()
+    expect(publicEntries).not.toContain("@acme/notifications/tools")
+    expect(source).toContain('import("@acme/notifications/tools")')
+    expect(source).toContain('"provisionalTools"')
   })
 
   it("selects a canonical package contributor when compatibility provenance is stale", async () => {

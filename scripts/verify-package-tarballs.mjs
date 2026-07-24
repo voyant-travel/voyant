@@ -22,8 +22,13 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 
+import getReleasePlan from "@changesets/get-release-plan"
+
 import { packedFileExportsName } from "./lib/packed-exports.mjs"
-import { verifyPackedPackageInstall } from "./lib/packed-install.mjs"
+import {
+  collectStagedPeerInstallExclusions,
+  verifyPackedPackageInstall,
+} from "./lib/packed-install.mjs"
 import { collectPackedManifestProtocolDependencies } from "./lib/packed-manifest.mjs"
 import { collectPackedSourceMapProblems } from "./lib/packed-sourcemaps.mjs"
 
@@ -594,7 +599,13 @@ async function verifyPackage(packageDir) {
     ;({ problems } = collectTarballProblems(inspection, sourceFiles))
   }
 
-  return { name: pkg.name, packageDir, problems, packedTarball: inspection.packedTarball }
+  return {
+    name: pkg.name,
+    packageDir,
+    problems,
+    packedManifest: inspection.packedManifest,
+    packedTarball: inspection.packedTarball,
+  }
 }
 
 const results = []
@@ -625,7 +636,23 @@ if (failures.length > 0) {
 }
 
 try {
-  await verifyPackedPackageInstall(results.map((result) => result.packedTarball))
+  const releasePlan = await getReleasePlan(rootDir)
+  const projectedVersions = new Map(
+    releasePlan.releases.map(({ name, newVersion }) => [name, newVersion]),
+  )
+  const packedPackages = results.map((result) => ({
+    manifest: result.packedManifest,
+    ...result.packedTarball,
+  }))
+  const stagedPeerExclusions = collectStagedPeerInstallExclusions(packedPackages, projectedVersions)
+  await verifyPackedPackageInstall(
+    packedPackages.filter(({ name }) => !stagedPeerExclusions.has(name)),
+  )
+  if (stagedPeerExclusions.size > 0) {
+    console.log(
+      `Deferred aggregate install for ${[...stagedPeerExclusions].sort().join(", ")} until the release plan applies its required peer versions.`,
+    )
+  }
 } catch (error) {
   console.error(`Publish tarball verification failed:\n\n${error.message}`)
   for (const result of results) result.packedTarball?.cleanup()

@@ -1198,6 +1198,304 @@ describe("deployment graph v1", () => {
         }),
       ),
     ).toEqual([])
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          availability: {
+            status: "unavailable",
+            reasonCode: "provider-not-durable",
+            enableWhen: {
+              selectedProviderPorts: {
+                mode: "all",
+                ports: ["notifications.durable-send"],
+              },
+            },
+          },
+          effectBoundary: "external",
+        }),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          facet: "actions[0].targetLifecycle",
+        }),
+        expect.objectContaining({
+          facet: "actions[0].durability",
+        }),
+      ]),
+    )
+  })
+
+  it("keeps selected provider-conditional actions provisional until runtime preflight", async () => {
+    const provider = (id: string, port: string, role: string, value: string) =>
+      defineProvider({
+        id,
+        provides: { ports: [{ id: port }] },
+        providers: [
+          {
+            id: `${id}#provider`,
+            port,
+            selection: { role, value },
+            runtime: { entry: "./provider", export: "createProvider" },
+          },
+        ],
+      })
+    const actionModule = (
+      mode: "all" | "any",
+      ports: readonly string[],
+      availability: "conditional" | "legacy" = "conditional",
+    ) =>
+      defineModule({
+        id: "@acme/voyant-actions",
+        runtimePorts: ports.map((id) => ({
+          id,
+          optional: true,
+          conformance: { entry: "./durable-port", export: "durablePort" },
+        })),
+        tools: [
+          {
+            id: "@acme/voyant-actions#tool.send",
+            name: "send",
+            runtime: { entry: "./tools", export: "sendTool" },
+          },
+        ],
+        actions: [
+          {
+            id: "@acme/voyant-actions#action.send",
+            version: "v1",
+            kind: "execute",
+            targetType: "message",
+            commandTargetField: "messageId",
+            targetLifecycle: "existing",
+            ...(availability === "conditional"
+              ? {
+                  availability: {
+                    status: "unavailable" as const,
+                    reasonCode: "provider-not-durable",
+                    enableWhen: {
+                      selectedProviderPorts: { mode, ports },
+                    },
+                  },
+                }
+              : {
+                  availability: {
+                    status: "unavailable" as const,
+                    reasonCode: "provider-not-durable",
+                  },
+                }),
+            effectBoundary: "external",
+            durability: { strategy: "saga", testReference: "send.test.ts" },
+            existingTarget: { durability: "handler-command-result-v1" },
+            risk: "high",
+            ledger: "required",
+            approval: "required",
+            from: { tools: ["@acme/voyant-actions#tool.send"] },
+          },
+        ],
+      })
+    const email = provider(
+      "@acme/voyant-email-provider",
+      "notifications.durable-email",
+      "email",
+      "durable",
+    )
+    const sms = provider("@acme/voyant-sms-provider", "notifications.durable-sms", "sms", "durable")
+    const resolve = (
+      mode: "all" | "any",
+      ports: readonly string[],
+      selections: Record<string, string>,
+    ) =>
+      resolveDeploymentGraph({
+        project: defineProject({
+          modules: [actionModule(mode, ports)],
+          providers: [email, sms],
+        }),
+        deployment: {
+          target: "node",
+          providers: selections,
+          requirements: { resources: [] },
+        },
+      })
+
+    const allSelected = await resolve(
+      "all",
+      ["notifications.durable-sms", "notifications.durable-email"],
+      { email: "durable", sms: "durable" },
+    )
+    expect(allSelected.diagnostics).toEqual([])
+    expect(allSelected.modules[0]?.actions?.[0]?.availability).toEqual({
+      status: "unavailable",
+      reasonCode: "provider-not-durable",
+      enableWhen: {
+        selectedProviderPorts: {
+          mode: "all",
+          ports: ["notifications.durable-email", "notifications.durable-sms"],
+        },
+      },
+    })
+
+    const missingOne = await resolve(
+      "all",
+      ["notifications.durable-email", "notifications.durable-sms"],
+      { email: "durable", sms: "none" },
+    )
+    expect(missingOne.modules[0]?.actions?.[0]?.availability?.status).toBe("unavailable")
+
+    const anySelected = await resolve(
+      "any",
+      ["notifications.durable-email", "notifications.durable-sms"],
+      { email: "none", sms: "durable" },
+    )
+    expect(anySelected.modules[0]?.actions?.[0]?.availability?.status).toBe("unavailable")
+
+    const oldManifest = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [actionModule("all", ["notifications.durable-email"], "legacy")],
+        providers: [email],
+      }),
+      deployment: {
+        target: "node",
+        providers: { email: "durable" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(oldManifest.modules[0]?.actions?.[0]?.availability?.status).toBe("unavailable")
+
+    const reordered = await resolve(
+      "all",
+      ["notifications.durable-email", "notifications.durable-sms"],
+      { email: "durable", sms: "durable" },
+    )
+    expect(reordered.contentHash).toBe(allSelected.contentHash)
+    expect(missingOne.contentHash).not.toBe(allSelected.contentHash)
+    const disabledAll = await resolve(
+      "all",
+      ["notifications.durable-email", "notifications.durable-sms"],
+      { email: "none", sms: "none" },
+    )
+    const disabledAny = await resolve(
+      "any",
+      ["notifications.durable-email", "notifications.durable-sms"],
+      { email: "none", sms: "none" },
+    )
+    expect(disabledAny.contentHash).not.toBe(disabledAll.contentHash)
+  })
+
+  it("rejects malformed, unknown, and ambiguous conditional action providers", async () => {
+    const baseAction = {
+      id: "@acme/voyant-actions#action.send",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "message",
+      commandTargetField: "messageId",
+      targetLifecycle: "existing" as const,
+      effectBoundary: "external" as const,
+      durability: { strategy: "saga" as const, testReference: "send.test.ts" },
+      existingTarget: { durability: "handler-command-result-v1" as const },
+      risk: "high" as const,
+      ledger: "required" as const,
+    }
+    const malformed = defineModule({
+      id: "@acme/voyant-actions",
+      actions: [
+        {
+          ...baseAction,
+          availability: {
+            status: "unavailable",
+            reasonCode: "provider-not-durable",
+            enableWhen: {
+              selectedProviderPorts: {
+                mode: "some",
+                ports: ["notifications.durable-send", "notifications.durable-send"],
+                callback: "hostCanSend",
+              },
+            },
+          } as never,
+        },
+      ],
+    })
+    expect(validateGraphUnitManifest(malformed)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "actions[0].availability.enableWhen.selectedProviderPorts",
+        }),
+      ]),
+    )
+
+    const actionModule = defineModule({
+      id: "@acme/voyant-actions",
+      runtimePorts: [
+        {
+          id: "notifications.durable-send",
+          optional: true,
+          conformance: { entry: "./durable-port", export: "durablePort" },
+        },
+      ],
+      actions: [
+        {
+          ...baseAction,
+          availability: {
+            status: "unavailable",
+            reasonCode: "provider-not-durable",
+            enableWhen: {
+              selectedProviderPorts: {
+                mode: "all",
+                ports: ["notifications.durable-send"],
+              },
+            },
+          },
+        },
+      ],
+    })
+    const unknown = await resolveDeploymentGraph({
+      project: defineProject({ modules: [actionModule] }),
+    })
+    expect(unknown.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+          facet: "actions[0].availability.enableWhen.selectedProviderPorts.ports",
+        }),
+      ]),
+    )
+
+    const selectedProvider = (id: string) =>
+      defineProvider({
+        id,
+        provides: { ports: [{ id: "notifications.durable-send" }] },
+        providers: [
+          {
+            id: `${id}#provider`,
+            port: "notifications.durable-send",
+            selection: { role: "notifications", value: "durable" },
+            runtime: { entry: "./provider", export: "createProvider" },
+          },
+        ],
+      })
+    const ambiguous = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [actionModule],
+        providers: [
+          selectedProvider("@acme/voyant-notifications-a"),
+          selectedProvider("@acme/voyant-notifications-b"),
+        ],
+      }),
+      deployment: {
+        target: "node",
+        providers: { notifications: "durable" },
+        requirements: { resources: [] },
+      },
+    })
+    expect(ambiguous.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+          facet: "actions[0].availability.enableWhen.selectedProviderPorts.ports",
+        }),
+      ]),
+    )
+    expect(ambiguous.modules[0]?.actions?.[0]?.availability?.status).toBe("unavailable")
   })
 
   it("rejects action bindings that reference the wrong selected facet kind", async () => {

@@ -4,7 +4,39 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 
+import semver from "semver"
+
 const execFileAsync = promisify(execFile)
+
+export function collectStagedPeerInstallExclusions(packedPackages, projectedVersions) {
+  const packedVersions = new Map(
+    packedPackages.map(({ manifest }) => [manifest.name, manifest.version]),
+  )
+  const exclusions = new Set()
+
+  for (const { manifest } of packedPackages) {
+    for (const [peerName, peerRange] of Object.entries(manifest.peerDependencies ?? {})) {
+      const packedPeerVersion = packedVersions.get(peerName)
+      if (!packedPeerVersion || semver.satisfies(packedPeerVersion, peerRange)) continue
+
+      const projectedPeerVersion = projectedVersions.get(peerName)
+      const projectedConsumerVersion = projectedVersions.get(manifest.name)
+      if (
+        !projectedConsumerVersion ||
+        !projectedPeerVersion ||
+        !semver.satisfies(projectedPeerVersion, peerRange)
+      ) {
+        throw new Error(
+          `Packed peer mismatch is not covered by the release plan: ${manifest.name}@${manifest.version} requires ${peerName}@${peerRange}, packed ${packedPeerVersion}, projected ${projectedPeerVersion ?? "unreleased"}`,
+        )
+      }
+
+      exclusions.add(manifest.name)
+    }
+  }
+
+  return exclusions
+}
 
 export function createPackedInstallManifest(packedPackages) {
   const dependencies = Object.fromEntries(

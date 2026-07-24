@@ -3,7 +3,13 @@
 import type { VoyantGraphCustomFieldTarget } from "@voyant-travel/core/project"
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
-import { defineModule, defineProject, resolveDeploymentGraph } from "./deployment-graph.js"
+import {
+  defineExtension,
+  defineModule,
+  defineProject,
+  defineProvider,
+  resolveDeploymentGraph,
+} from "./deployment-graph.js"
 import { lowerGraphRuntimeUnits } from "./graph-runtime-generation.js"
 import { invokeVoyantGraphJob } from "./runtime-composition.js"
 import {
@@ -236,6 +242,232 @@ describe("graph runtime lowering", () => {
     expect(toolOwnerDefinition?.selectedIds.tools).toEqual([])
     expect(toolOwnerDefinition?.references).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+  })
+
+  it("keeps selected conditional Tools private until framework activation", async () => {
+    const toolId = "@acme/voyant-notifications#tool.send"
+    const actionOwner = defineModule({
+      id: "@acme/voyant-notifications",
+      runtimePorts: [
+        {
+          id: "notifications.durable-send",
+          optional: true,
+          conformance: { entry: "./durable-port", export: "durablePort" },
+        },
+      ],
+      tools: [
+        {
+          id: toolId,
+          name: "send_notification",
+          runtime: { entry: "./tools", export: "sendNotificationTool" },
+        },
+      ],
+      actions: [
+        {
+          id: "@acme/voyant-notifications#action.send",
+          version: "v1",
+          kind: "execute",
+          targetType: "notification",
+          commandTargetField: "notificationId",
+          targetLifecycle: "existing",
+          availability: {
+            status: "unavailable",
+            reasonCode: "provider-not-durable",
+            enableWhen: {
+              selectedProviderPorts: {
+                mode: "all",
+                ports: ["notifications.durable-send"],
+              },
+            },
+          },
+          effectBoundary: "external",
+          durability: { strategy: "saga", testReference: "send.test.ts" },
+          existingTarget: { durability: "handler-command-result-v1" },
+          risk: "high",
+          ledger: "required",
+          approval: "required",
+          from: { tools: [toolId] },
+        },
+      ],
+    })
+    const provider = defineProvider({
+      id: "@acme/voyant-notifications-provider",
+      provides: { ports: [{ id: "notifications.durable-send" }] },
+      providers: [
+        {
+          id: "@acme/voyant-notifications-provider#provider",
+          port: "notifications.durable-send",
+          selection: { role: "notifications", value: "durable" },
+          runtime: { entry: "./provider", export: "createProvider" },
+        },
+      ],
+    })
+    const resolve = (value: string) =>
+      resolveDeploymentGraph({
+        project: defineProject({ modules: [actionOwner], providers: [provider] }),
+        deployment: {
+          target: "node",
+          providers: { notifications: value },
+          requirements: { resources: [] },
+        },
+      })
+
+    const enabledGraph = await resolve("durable")
+    const enabled = lowerGraphRuntimeUnits(enabledGraph.modules, enabledGraph, undefined)[0]!
+    expect(enabled.actions[0]?.availability).toEqual(
+      expect.objectContaining({ status: "unavailable" }),
+    )
+    expect(enabled.tools).toEqual([])
+    expect(enabled.selectedIds.tools).toEqual([])
+    expect(enabled.provisionalTools.map(({ id }) => id)).toEqual([toolId])
+    expect(enabled.runtimePortConformance).toEqual([
+      {
+        portId: "notifications.durable-send",
+        referenceId: expect.any(String),
+      },
+    ])
+    expect(enabled.references).toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "runtimePorts.conformance" })]),
+    )
+    expect(enabled.references).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+    expect(enabled.provisionalReferences).toEqual([
+      expect.objectContaining({ facet: "tools.runtime", entityId: toolId }),
+    ])
+    const enabledProviderUnits = lowerGraphRuntimeUnits(
+      enabledGraph.providers,
+      enabledGraph,
+      undefined,
+    )
+    const importRuntime = vi.fn(async () => ({}))
+    const entries = Object.fromEntries(
+      [
+        ...enabled.references,
+        ...enabled.provisionalReferences,
+        ...enabledProviderUnits.flatMap((unit) => [
+          ...unit.references,
+          ...unit.provisionalReferences,
+        ]),
+      ].map(({ importEntry }) => [importEntry, importRuntime]),
+    )
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:conditional-tool-preflight",
+      providerSelections: { notifications: "durable" },
+      entries,
+      modules: [enabled],
+      plugins: [],
+      providerUnits: enabledProviderUnits,
+    })
+
+    await expect(registerVoyantGraphTools(runtime, createToolRegistry())).rejects.toThrow(
+      /VOYANT_GRAPH_CONDITIONAL_ACTION_NOT_ACTIVATED/,
+    )
+    expect(runtime.actions[0]?.availability?.status).toBe("unavailable")
+    expect(runtime.tools).toEqual([])
+    expect(runtime.references).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+    expect(Object.keys(runtime.modules[0] ?? {})).not.toContain("provisionalTools")
+    expect(importRuntime).not.toHaveBeenCalled()
+
+    const disabledGraph = await resolve("none")
+    const disabled = lowerGraphRuntimeUnits(disabledGraph.modules, disabledGraph, undefined)[0]!
+    expect(disabled.actions[0]?.availability).toEqual(
+      expect.objectContaining({ status: "unavailable" }),
+    )
+    expect(disabled.tools).toEqual([])
+    expect(disabled.provisionalTools).toEqual([])
+    expect(disabled.provisionalReferences).toEqual([])
+    expect(disabled.selectedIds.tools).toEqual([])
+    expect(disabled.references).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+  })
+
+  it("rejects a Tool shared by enabled and disabled conditional actions across graph kinds", async () => {
+    const toolId = "@acme/voyant-tools#tool.send"
+    const toolOwner = defineModule({
+      id: "@acme/voyant-tools",
+      tools: [
+        {
+          id: toolId,
+          name: "send",
+          runtime: { entry: "./tools", export: "sendTool" },
+        },
+      ],
+    })
+    const action = (id: string, port: string, mode: "available" | "conditional") => ({
+      id,
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "message",
+      commandTargetField: "messageId",
+      targetLifecycle: "existing" as const,
+      availability:
+        mode === "available"
+          ? ({ status: "available" } as const)
+          : ({
+              status: "unavailable",
+              reasonCode: "provider-not-durable",
+              enableWhen: {
+                selectedProviderPorts: { mode: "all", ports: [port] },
+              },
+            } as const),
+      effectBoundary: "external" as const,
+      durability: { strategy: "saga" as const, testReference: "send.test.ts" },
+      existingTarget: { durability: "handler-command-result-v1" as const },
+      risk: "high" as const,
+      ledger: "required" as const,
+      approval: "required" as const,
+      from: { tools: [toolId] },
+    })
+    const extension = defineExtension({
+      id: "@acme/voyant-action-owner",
+      actions: [action("@acme/voyant-action-owner#action.enabled", "", "available")],
+    })
+    const providerUnit = defineProvider({
+      id: "@acme/voyant-action-provider",
+      runtimePorts: [
+        {
+          id: "notifications.durable-send",
+          optional: true,
+          conformance: { entry: "./durable-port", export: "durablePort" },
+        },
+      ],
+      actions: [
+        action(
+          "@acme/voyant-action-provider#action.disabled",
+          "notifications.durable-send",
+          "conditional",
+        ),
+      ],
+      provides: { ports: [{ id: "notifications.durable-send" }] },
+      providers: [
+        {
+          id: "@acme/voyant-action-provider#provider",
+          port: "notifications.durable-send",
+          selection: { role: "notifications", value: "durable" },
+          runtime: { entry: "./provider", export: "createProvider" },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [toolOwner],
+        extensions: [extension],
+        providers: [providerUnit],
+      }),
+      deployment: {
+        target: "node",
+        providers: { notifications: "none" },
+        requirements: { resources: [] },
+      },
+    })
+
+    expect(() => lowerGraphRuntimeUnits(graph.modules, graph, undefined)).toThrow(
+      /VOYANT_GRAPH_UNAVAILABLE_TOOL_SHARED/,
     )
   })
 

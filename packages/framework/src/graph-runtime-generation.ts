@@ -1,12 +1,14 @@
 import {
   packageNameFromSpecifier,
   type ResolvedVoyantDeploymentGraph,
+  type ResolvedVoyantGraphActionDeclaration,
   type ResolvedVoyantGraphUnit,
 } from "./deployment-graph.js"
 import type {
   VoyantGraphRuntimeActionDefinition,
   VoyantGraphRuntimeConfigDefinition,
   VoyantGraphRuntimeJobDefinition,
+  VoyantGraphRuntimePortConformanceDefinition,
   VoyantGraphRuntimeProviderDefinition,
   VoyantGraphRuntimeReferenceDefinition,
   VoyantGraphRuntimeReferenceFacet,
@@ -36,11 +38,16 @@ export interface GeneratedRuntimeUnitDefinition {
   providers: VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: string[]
   runtimePorts: string[]
+  runtimePortConformance: VoyantGraphRuntimePortConformanceDefinition[]
   customFieldTargets: ResolvedVoyantGraphUnit["customFieldTargets"]
   manyRuntimePorts: string[]
   requiredRuntimePorts: string[]
   accessScopes: string[]
   tools: VoyantGraphRuntimeToolDefinition[]
+  /** Selected conditional Tools retained only for framework-owned post-preflight activation. */
+  provisionalTools: VoyantGraphRuntimeToolDefinition[]
+  /** Tool references retained only for framework-owned post-preflight activation. */
+  provisionalReferences: VoyantGraphRuntimeReferenceDefinition[]
   jobs: VoyantGraphRuntimeJobDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
   setupSteps: { id: string; skippable: boolean }[]
@@ -58,15 +65,11 @@ export function lowerGraphRuntimeUnits(
   graph: ResolvedVoyantDeploymentGraph,
   runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
 ): GeneratedRuntimeUnitDefinition[] {
-  const unavailableToolIds = unavailableActionToolIds(units)
-  const availableToolIds = new Set(
-    units.flatMap((unit) =>
-      (unit.actions ?? [])
-        .filter((action) => action.availability?.status !== "unavailable")
-        .flatMap((action) => action.from?.tools ?? []),
-    ),
+  const { unavailableToolIds, provisionalToolIds, availableToolIds } =
+    classifyActionToolPostures(graph)
+  const conflictingToolId = [...unavailableToolIds, ...provisionalToolIds].find(
+    (id) => availableToolIds.has(id) || (unavailableToolIds.has(id) && provisionalToolIds.has(id)),
   )
-  const conflictingToolId = [...unavailableToolIds].find((id) => availableToolIds.has(id))
   if (conflictingToolId) {
     throw new Error(
       `VOYANT_GRAPH_UNAVAILABLE_TOOL_SHARED: action Tool "${conflictingToolId}" is bound by both available and unavailable actions.`,
@@ -80,6 +83,13 @@ export function lowerGraphRuntimeUnits(
         graph,
         runtimeEntryOverrides,
         unavailableToolIds,
+        provisionalToolIds,
+      )
+      const provisionalReferences = collectProvisionalToolReferences(
+        unit,
+        graph,
+        runtimeEntryOverrides,
+        provisionalToolIds,
       )
       const config = (unit.config ?? []).map((declaration) => ({
         unitId: unit.id,
@@ -135,7 +145,21 @@ export function lowerGraphRuntimeUnits(
         ),
       ].sort((left, right) => left.localeCompare(right))
       const tools = (unit.tools ?? [])
-        .filter((tool) => !unavailableToolIds.has(tool.id))
+        .filter((tool) => !unavailableToolIds.has(tool.id) && !provisionalToolIds.has(tool.id))
+        .map((tool) => ({
+          id: tool.id,
+          unitId: unit.id,
+          name: tool.name,
+          referenceId: runtimeReferenceId(unit.id, "tools.runtime", tool.id),
+          requiredScopes: [...(tool.requiredScopes ?? [])].sort((left, right) =>
+            left.localeCompare(right),
+          ),
+          ...(tool.context?.length ? { context: [...tool.context].sort() } : {}),
+          ...(tool.risk ? { risk: tool.risk } : {}),
+        }))
+        .sort((left, right) => left.id.localeCompare(right.id))
+      const provisionalTools = (unit.tools ?? [])
+        .filter((tool) => provisionalToolIds.has(tool.id))
         .map((tool) => ({
           id: tool.id,
           unitId: unit.id,
@@ -193,6 +217,13 @@ export function lowerGraphRuntimeUnits(
           .map((port) => port.id)
           .sort(),
         runtimePorts: (unit.runtimePorts ?? []).map((port) => port.id).sort(),
+        runtimePortConformance: (unit.runtimePorts ?? [])
+          .filter((port) => port.conformance !== undefined)
+          .map((port) => ({
+            portId: port.id,
+            referenceId: runtimeReferenceId(unit.id, "runtimePorts.conformance", port.id),
+          }))
+          .sort((left, right) => left.portId.localeCompare(right.portId)),
         customFieldTargets: unit.customFieldTargets,
         manyRuntimePorts: (unit.runtimePorts ?? [])
           .filter((port) => port.cardinality === "many")
@@ -204,6 +235,8 @@ export function lowerGraphRuntimeUnits(
           .sort(),
         accessScopes,
         tools,
+        provisionalTools,
+        provisionalReferences,
         jobs,
         actions,
         setupSteps: (unit.admin?.setupSteps ?? []).map(({ id, skippable }) => ({
@@ -213,7 +246,7 @@ export function lowerGraphRuntimeUnits(
         selectedIds: {
           routes: unit.api.map(({ id }) => id).sort(),
           tools: (unit.tools ?? [])
-            .filter(({ id }) => !unavailableToolIds.has(id))
+            .filter(({ id }) => !unavailableToolIds.has(id) && !provisionalToolIds.has(id))
             .map(({ id }) => id)
             .sort(),
           events: unit.events.map(({ id }) => id).sort(),
@@ -241,6 +274,7 @@ function collectRuntimeReferences(
   graph: ResolvedVoyantDeploymentGraph,
   runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
   unavailableToolIds: ReadonlySet<string>,
+  provisionalToolIds: ReadonlySet<string>,
 ): VoyantGraphRuntimeReferenceDefinition[] {
   const admittedPackages = new Set(graph.packageRecords.map((record) => record.packageName))
   const references: VoyantGraphRuntimeReferenceDefinition[] = []
@@ -288,7 +322,12 @@ function collectRuntimeReferences(
     add("reporting.datasets.runtime", dataset.id, dataset.runtime)
   }
   for (const tool of unit.tools ?? []) {
-    if (!unavailableToolIds.has(tool.id)) add("tools.runtime", tool.id, tool.runtime)
+    if (!unavailableToolIds.has(tool.id) && !provisionalToolIds.has(tool.id)) {
+      add("tools.runtime", tool.id, tool.runtime)
+    }
+  }
+  for (const port of unit.runtimePorts ?? []) {
+    if (port.conformance) add("runtimePorts.conformance", port.id, port.conformance)
   }
   for (const job of unit.jobs ?? []) add("jobs.runtime", job.id, job.runtime)
   for (const subscriber of unit.subscribers) {
@@ -301,14 +340,95 @@ function collectRuntimeReferences(
   )
 }
 
-function unavailableActionToolIds(units: readonly ResolvedVoyantGraphUnit[]): Set<string> {
-  return new Set(
-    units.flatMap((unit) =>
-      (unit.actions ?? [])
-        .filter((action) => action.availability?.status === "unavailable")
-        .flatMap((action) => action.from?.tools ?? []),
-    ),
+function collectProvisionalToolReferences(
+  unit: ResolvedVoyantGraphUnit,
+  graph: ResolvedVoyantDeploymentGraph,
+  runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
+  provisionalToolIds: ReadonlySet<string>,
+): VoyantGraphRuntimeReferenceDefinition[] {
+  const admittedPackages = new Set(graph.packageRecords.map((record) => record.packageName))
+  return (unit.tools ?? [])
+    .filter((tool) => provisionalToolIds.has(tool.id))
+    .map((tool) => {
+      const referencedPackage = tool.runtime.entry.startsWith(".")
+        ? unit.packageName
+        : packageNameFromSpecifier(tool.runtime.entry)
+      if (!admittedPackages.has(referencedPackage)) {
+        throw new Error(
+          `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: buildGraphRuntimeModule: runtime entry "${tool.runtime.entry}" for ${unit.id} tools.runtime ${tool.id} resolves to package "${referencedPackage}", which is not admitted by the graph.`,
+        )
+      }
+      const loweredEntry = lowerRuntimeImportEntry(unit, tool.runtime.entry)
+      return {
+        id: runtimeReferenceId(unit.id, "tools.runtime", tool.id),
+        unitId: unit.id,
+        facet: "tools.runtime" as const,
+        entityId: tool.id,
+        runtime: tool.runtime,
+        importEntry: runtimeEntryOverrides?.[loweredEntry] ?? loweredEntry,
+      }
+    })
+    .sort((left, right) => left.entityId.localeCompare(right.entityId))
+}
+
+function allResolvedGraphUnits(graph: ResolvedVoyantDeploymentGraph): ResolvedVoyantGraphUnit[] {
+  return [
+    ...graph.modules,
+    ...graph.extensions,
+    ...graph.plugins,
+    ...graph.adapters,
+    ...graph.providers,
+  ]
+}
+
+function classifyActionToolPostures(graph: ResolvedVoyantDeploymentGraph): {
+  unavailableToolIds: Set<string>
+  provisionalToolIds: Set<string>
+  availableToolIds: Set<string>
+} {
+  const unavailableToolIds = new Set<string>()
+  const provisionalToolIds = new Set<string>()
+  const availableToolIds = new Set<string>()
+  for (const unit of allResolvedGraphUnits(graph)) {
+    for (const action of unit.actions ?? []) {
+      const target =
+        action.availability?.status !== "unavailable"
+          ? availableToolIds
+          : selectedConditionalAction(action, graph)
+            ? provisionalToolIds
+            : unavailableToolIds
+      for (const toolId of action.from?.tools ?? []) target.add(toolId)
+    }
+  }
+  return { unavailableToolIds, provisionalToolIds, availableToolIds }
+}
+
+function selectedConditionalAction(
+  action: ResolvedVoyantGraphActionDeclaration,
+  graph: ResolvedVoyantDeploymentGraph,
+): boolean {
+  const availability = action.availability
+  const condition = availability?.status === "unavailable" ? availability.enableWhen : undefined
+  if (!condition) return false
+  const units = allResolvedGraphUnits(graph)
+  const selectedCounts = condition.selectedProviderPorts.ports.map(
+    (portId) =>
+      units.flatMap((unit) =>
+        unit.provides.ports.some(({ id }) => id === portId)
+          ? (unit.providers ?? []).filter(({ port, selection }) => {
+              return (
+                port === portId &&
+                selection !== undefined &&
+                graph.deployment.providers[selection.role] === selection.value
+              )
+            })
+          : [],
+      ).length,
   )
+  if (selectedCounts.some((count) => count > 1)) return false
+  return condition.selectedProviderPorts.mode === "all"
+    ? selectedCounts.every((count) => count === 1)
+    : selectedCounts.some((count) => count === 1)
 }
 
 function runtimeReferenceId(

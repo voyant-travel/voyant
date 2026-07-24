@@ -13,6 +13,7 @@ import {
   type VoyantGraphAccessDeclaration,
   type VoyantGraphAccessPreset,
   type VoyantGraphAccessResource,
+  type VoyantGraphActionAvailabilityCondition,
   type VoyantGraphActionDeclaration,
   type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
@@ -91,6 +92,7 @@ export {
   VOYANT_GRAPH_PROJECT_SCHEMA_VERSION,
   VOYANT_GRAPH_PROVIDER_SCHEMA_VERSION,
   type VoyantGraphAccessDeclaration,
+  type VoyantGraphActionAvailabilityCondition,
   type VoyantGraphActionDeclaration,
   type VoyantGraphAdminDeclaration,
   type VoyantGraphCapabilityDeclaration,
@@ -431,8 +433,17 @@ export interface ResolvedVoyantGraphUnit {
   reporting?: VoyantGraphReportingDeclaration
   tools?: readonly VoyantGraphToolDeclaration[]
   webhooks?: readonly VoyantGraphWebhookDeclaration[]
-  actions?: readonly VoyantGraphActionDeclaration[]
+  actions?: readonly ResolvedVoyantGraphActionDeclaration[]
   lifecycle?: VoyantGraphLifecycleDeclaration
+}
+
+export interface ResolvedVoyantGraphActionDeclaration
+  extends Omit<VoyantGraphActionDeclaration, "availability"> {
+  /**
+   * Conditional actions remain authored-unavailable in the resolved graph.
+   * Exact-provider activation is process-local and never changes graph metadata.
+   */
+  availability?: VoyantGraphActionDeclaration["availability"]
 }
 
 export interface ResolvedVoyantDeploymentGraph {
@@ -781,6 +792,7 @@ export async function resolveDeploymentGraph(
     ...validateDuplicateEntityIds(selectedUnits),
     ...validateAccessCatalog(selectedUnits, input.project.access?.presets ?? []),
     ...validateDeploymentProviderSelections(selectedUnits, deploymentProviders),
+    ...validateConditionalActionAvailability(selectedUnits, deploymentProviders),
     ...validatePackageAdmission(packageRecords, {
       frameworkVersion: input.frameworkVersion,
       target,
@@ -792,19 +804,19 @@ export async function resolveDeploymentGraph(
   ])
 
   const modules = selectedModules.map(({ original: _original, ...unit }) =>
-    applyResolvedJobSchedules(unit, provisionedJobsById),
+    applyResolvedJobSchedules(resolveConditionalActionAvailability(unit), provisionedJobsById),
   )
   const extensions = selectedExtensions.map(({ original: _original, ...unit }) =>
-    applyResolvedJobSchedules(unit, provisionedJobsById),
+    applyResolvedJobSchedules(resolveConditionalActionAvailability(unit), provisionedJobsById),
   )
   const plugins = selectedPlugins.map(({ original: _original, ...unit }) =>
-    applyResolvedJobSchedules(unit, provisionedJobsById),
+    applyResolvedJobSchedules(resolveConditionalActionAvailability(unit), provisionedJobsById),
   )
   const adapters = selectedAdapters.map(({ original: _original, ...unit }) =>
-    applyResolvedJobSchedules(unit, provisionedJobsById),
+    applyResolvedJobSchedules(resolveConditionalActionAvailability(unit), provisionedJobsById),
   )
   const providerUnits = selectedProviders.map(({ original: _original, ...unit }) =>
-    applyResolvedJobSchedules(unit, provisionedJobsById),
+    applyResolvedJobSchedules(resolveConditionalActionAvailability(unit), provisionedJobsById),
   )
   const graphWithoutHash: Omit<ResolvedVoyantDeploymentGraph, "contentHash"> = {
     schemaVersion: VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
@@ -1459,6 +1471,14 @@ function validateRuntimePortDeclarations(
         }),
       )
     }
+    if (port.conformance !== undefined) {
+      validateRuntimeReference(
+        port.conformance,
+        `runtimePorts[${index}].conformance`,
+        source,
+        diagnostics,
+      )
+    }
   }
   return diagnostics
 }
@@ -1976,6 +1996,21 @@ function validatePromotedFacets(
           diagnostics,
         )
       }
+      if ("enableWhen" in availability) {
+        validateActionAvailabilityCondition(
+          availability.enableWhen,
+          `${facet}.availability.enableWhen`,
+          source,
+          diagnostics,
+        )
+      }
+    } else if (availability && "enableWhen" in availability) {
+      invalidFacet(
+        `${facet}.availability.enableWhen`,
+        source,
+        diagnostics,
+        'Action enableWhen is valid only with the fail-closed status "unavailable".',
+      )
     }
     if (
       entry.effectBoundary !== undefined &&
@@ -2023,7 +2058,9 @@ function validatePromotedFacets(
     // into any safety metadata, omitted availability has the same callable
     // meaning as runtime lowering: available. This prevents removing only an
     // `unavailable` block from bypassing lifecycle and durability validation.
-    const effectivelyAvailable = availability?.status !== "unavailable"
+    const effectivelyAvailable =
+      availability?.status !== "unavailable" ||
+      (availability !== undefined && "enableWhen" in availability)
     const safetyContractSelected =
       availability !== undefined ||
       entry.effectBoundary !== undefined ||
@@ -2327,6 +2364,55 @@ function validatePromotedFacets(
     }
   }
   return diagnostics
+}
+
+function validateActionAvailabilityCondition(
+  value: unknown,
+  facet: string,
+  source: string | undefined,
+  diagnostics: VoyantGraphDiagnostic[],
+): void {
+  if (!isRecord(value) || !hasExactKeys(value, ["selectedProviderPorts"])) {
+    invalidFacet(
+      facet,
+      source,
+      diagnostics,
+      "Action enableWhen must contain exactly one selectedProviderPorts condition.",
+    )
+    return
+  }
+  const selectedProviderPorts = value.selectedProviderPorts
+  if (!isRecord(selectedProviderPorts) || !hasExactKeys(selectedProviderPorts, ["mode", "ports"])) {
+    invalidFacet(
+      `${facet}.selectedProviderPorts`,
+      source,
+      diagnostics,
+      "selectedProviderPorts must contain exactly mode and ports.",
+    )
+    return
+  }
+  if (selectedProviderPorts.mode !== "all" && selectedProviderPorts.mode !== "any") {
+    invalidFacet(
+      `${facet}.selectedProviderPorts.mode`,
+      source,
+      diagnostics,
+      'selectedProviderPorts.mode must be "all" or "any".',
+    )
+  }
+  const ports = selectedProviderPorts.ports
+  if (
+    !Array.isArray(ports) ||
+    ports.length === 0 ||
+    ports.some((port) => typeof port !== "string" || !PORT_ID_PATTERN.test(port)) ||
+    new Set(ports).size !== ports.length
+  ) {
+    invalidFacet(
+      `${facet}.selectedProviderPorts.ports`,
+      source,
+      diagnostics,
+      "selectedProviderPorts.ports must be a non-empty array of unique dot-case typed port ids.",
+    )
+  }
 }
 
 function facetEntityIds(value: unknown): Set<string> {
@@ -4154,6 +4240,141 @@ function validateDeploymentProviderSelections(
   return [...validatePaymentProviderSelection(units, providers)]
 }
 
+function validateConditionalActionAvailability(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+  selections: Partial<Record<VoyantDeploymentProviderRole | string, string>>,
+): VoyantGraphDiagnostic[] {
+  const diagnostics: VoyantGraphDiagnostic[] = []
+  for (const unit of units) {
+    for (const [actionIndex, action] of (unit.actions ?? []).entries()) {
+      const condition = normalizedActionAvailabilityCondition(action)
+      if (!condition) continue
+      for (const port of condition.selectedProviderPorts.ports) {
+        const facet = `actions[${actionIndex}].availability.enableWhen.selectedProviderPorts.ports`
+        const consumerPort = unit.runtimePorts?.find((candidate) => candidate.id === port)
+        if (
+          !consumerPort ||
+          consumerPort.cardinality === "many" ||
+          consumerPort.conformance === undefined
+        ) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet,
+              message: `Conditional action "${action.id}" must consume one-valued typed runtime port "${port}" with an importable conformance reference in its owning unit runtimePorts.`,
+              hint: "Declare the dedicated typed port with definePort({ conformance }) and consume it as an optional or required one-valued runtime port.",
+            }),
+          )
+        }
+
+        const candidates = closedProviderDeclarationsForPort(units, port)
+        if (candidates.length === 0) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet,
+              message: `Conditional action "${action.id}" references provider port "${port}", but no selected graph unit closes that port with an explicitly selectable provider declaration.`,
+              hint: "Select a provider package that both provides the typed port and declares its deployment provider role/value.",
+            }),
+          )
+          continue
+        }
+
+        const selected = candidates.filter(({ declaration }) =>
+          providerDeclarationIsSelected(declaration, selections),
+        )
+        if (selected.length > 1) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_PROVIDER_SELECTION",
+              source: unit.id,
+              facet,
+              message: `Conditional action "${action.id}" resolves provider port "${port}" ambiguously to ${selected.length} selected provider declarations.`,
+              hint: `Select exactly one provider declaration for "${port}".`,
+            }),
+          )
+        }
+      }
+    }
+  }
+  return diagnostics
+}
+
+function resolveConditionalActionAvailability(
+  unit: ResolvedVoyantGraphUnit,
+): ResolvedVoyantGraphUnit {
+  if (!unit.actions?.some((action) => normalizedActionAvailabilityCondition(action))) return unit
+  return {
+    ...unit,
+    actions: unit.actions.map((action) => {
+      const condition = normalizedActionAvailabilityCondition(action)
+      if (!condition) return action
+      const availability = action.availability
+      if (availability?.status !== "unavailable") return action
+      return {
+        ...action,
+        availability: { ...availability, enableWhen: condition },
+      }
+    }),
+  }
+}
+
+function normalizedActionAvailabilityCondition(
+  action: VoyantGraphActionDeclaration | ResolvedVoyantGraphActionDeclaration,
+): VoyantGraphActionAvailabilityCondition | undefined {
+  const availability = action.availability
+  if (availability?.status !== "unavailable") return undefined
+  const condition = availability.enableWhen
+  if (!isRecord(condition) || !hasExactKeys(condition, ["selectedProviderPorts"])) return undefined
+  const selectedProviderPorts = condition.selectedProviderPorts
+  if (
+    !isRecord(selectedProviderPorts) ||
+    !hasExactKeys(selectedProviderPorts, ["mode", "ports"]) ||
+    (selectedProviderPorts.mode !== "all" && selectedProviderPorts.mode !== "any") ||
+    !Array.isArray(selectedProviderPorts.ports) ||
+    selectedProviderPorts.ports.length === 0 ||
+    selectedProviderPorts.ports.some(
+      (port) => typeof port !== "string" || !PORT_ID_PATTERN.test(port),
+    ) ||
+    new Set(selectedProviderPorts.ports).size !== selectedProviderPorts.ports.length
+  ) {
+    return undefined
+  }
+  return {
+    selectedProviderPorts: {
+      mode: selectedProviderPorts.mode,
+      ports: sortedUnique(selectedProviderPorts.ports as string[]),
+    },
+  }
+}
+
+function closedProviderDeclarationsForPort(
+  units: readonly (ResolvedVoyantGraphUnit & { original?: VoyantGraphUnitManifest })[],
+  port: string,
+): { unitId: string; declaration: VoyantGraphProviderDeclaration }[] {
+  return units.flatMap((unit) => {
+    if (!unit.provides.ports.some((provided) => provided.id === port)) return []
+    return (unit.providers ?? [])
+      .filter(
+        (declaration) =>
+          declaration.port === port &&
+          typeof declaration.selection?.role === "string" &&
+          typeof declaration.selection.value === "string",
+      )
+      .map((declaration) => ({ unitId: unit.id, declaration }))
+  })
+}
+
+function providerDeclarationIsSelected(
+  declaration: VoyantGraphProviderDeclaration,
+  selections: Partial<Record<VoyantDeploymentProviderRole | string, string>>,
+): boolean {
+  const selection = declaration.selection
+  return selection !== undefined && selections[selection.role] === selection.value
+}
+
 function validatePaymentProviderSelection(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
   providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>,
@@ -4719,6 +4940,12 @@ function bytesToHex(bytes: Uint8Array): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const expected = new Set(keys)
+  const actual = Object.keys(value)
+  return actual.length === expected.size && actual.every((key) => expected.has(key))
 }
 
 function errorMessage(error: unknown): string {

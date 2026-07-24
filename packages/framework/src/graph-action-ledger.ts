@@ -6,6 +6,7 @@ import {
   createActionLedgerCapabilityRegistry,
 } from "@voyant-travel/action-ledger/capability"
 
+import { assertConditionalActionRuntimeActivated } from "./conditional-action-availability.js"
 import type {
   VoyantGraphRuntime,
   VoyantGraphRuntimeActionDefinition,
@@ -35,6 +36,7 @@ export function lowerVoyantGraphActionsToActionLedgerRegistry<TContext = unknown
   runtime: VoyantGraphRuntime,
   options: LowerVoyantGraphActionsOptions<TContext> = {},
 ): ActionLedgerCapabilityRegistry<ActionLedgerCapabilityDefinition<TContext>> {
+  assertConditionalActionRuntimeActivated(runtime)
   validateSelectedGraphActions(runtime)
 
   const definitions = runtime.actions

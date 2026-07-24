@@ -15,12 +15,15 @@ function actionRuntime(
   overrides: {
     accessScopes?: readonly string[]
     selectedIds?: VoyantGraphRuntimeSelectedIds
+    conditionalEnabled?: boolean
     unavailable?: boolean
   } = {},
 ) {
   const accessScopes = overrides.accessScopes ?? ["loyalty:write"]
+  const conditionalPortId = "notifications.durable-send"
   return createVoyantGraphRuntime({
     graphHash: "sha256:actions",
+    providerSelections: overrides.conditionalEnabled ? { notifications: "durable" } : {},
     accessCatalog: {
       resources: accessScopes.includes("loyalty:write")
         ? [
@@ -37,7 +40,15 @@ function actionRuntime(
         : [],
       presets: [],
     },
-    entries: {},
+    entries: overrides.conditionalEnabled
+      ? {
+          "@acme/loyalty/provider": async () => ({ createProvider: () => ({}) }),
+          "@acme/loyalty/durable-port": async () => ({
+            durableNotificationPort: { id: conditionalPortId, test: () => undefined },
+          }),
+          "@acme/loyalty/tool": async () => ({}),
+        }
+      : {},
     modules: [
       {
         id: "@acme/loyalty",
@@ -45,6 +56,70 @@ function actionRuntime(
         packageName: "@acme/loyalty",
         order: 0,
         accessScopes,
+        ...(overrides.conditionalEnabled
+          ? {
+              references: [
+                {
+                  id: "notification-provider",
+                  unitId: "@acme/loyalty",
+                  facet: "providers.runtime" as const,
+                  entityId: "@acme/loyalty#provider.durable",
+                  runtime: { entry: "./provider", export: "createProvider" },
+                  importEntry: "@acme/loyalty/provider",
+                },
+                {
+                  id: "notification-port-conformance",
+                  unitId: "@acme/loyalty",
+                  facet: "runtimePorts.conformance" as const,
+                  entityId: conditionalPortId,
+                  runtime: {
+                    entry: "./durable-port",
+                    export: "durableNotificationPort",
+                  },
+                  importEntry: "@acme/loyalty/durable-port",
+                },
+              ],
+              provisionalReferences: [
+                {
+                  id: "loyalty-tool-reference",
+                  unitId: "@acme/loyalty",
+                  facet: "tools.runtime" as const,
+                  entityId: "loyalty.tool",
+                  runtime: { entry: "./tool", export: "loyaltyTool" },
+                  importEntry: "@acme/loyalty/tool",
+                },
+              ],
+              provisionalTools: [
+                {
+                  id: "loyalty.tool",
+                  unitId: "@acme/loyalty",
+                  name: "loyalty_tool",
+                  referenceId: "loyalty-tool-reference",
+                  requiredScopes: ["loyalty:write"],
+                },
+              ],
+              providers: [
+                {
+                  unitId: "@acme/loyalty",
+                  declaration: {
+                    id: "@acme/loyalty#provider.durable",
+                    port: conditionalPortId,
+                    selection: { role: "notifications", value: "durable" },
+                    runtime: { entry: "./provider", export: "createProvider" },
+                  },
+                  referenceId: "notification-provider",
+                },
+              ],
+              requiredPorts: [conditionalPortId],
+              runtimePorts: [conditionalPortId],
+              runtimePortConformance: [
+                {
+                  portId: conditionalPortId,
+                  referenceId: "notification-port-conformance",
+                },
+              ],
+            }
+          : {}),
         actions: [
           {
             id: "loyalty.points.adjust",
@@ -60,7 +135,20 @@ function actionRuntime(
                     reasonCode: "unsafe-nontransactional-effect",
                   },
                 }
-              : {}),
+              : overrides.conditionalEnabled
+                ? {
+                    availability: {
+                      status: "unavailable" as const,
+                      reasonCode: "provider-not-durable",
+                      enableWhen: {
+                        selectedProviderPorts: {
+                          mode: "all" as const,
+                          ports: [conditionalPortId],
+                        },
+                      },
+                    },
+                  }
+                : {}),
             resource: "loyalty_balance",
             action: "adjust_points",
             requiredScopes: ["loyalty:write"],
@@ -77,7 +165,9 @@ function actionRuntime(
             },
           },
         ],
-        selectedIds: overrides.selectedIds ?? selectedIds,
+        selectedIds:
+          overrides.selectedIds ??
+          (overrides.conditionalEnabled ? { ...selectedIds, tools: [] } : selectedIds),
         routes: [],
       },
     ],
@@ -126,6 +216,12 @@ describe("graph action-ledger lowering", () => {
     })
 
     expect(lowerVoyantGraphActionsToActionLedgerRegistry(runtime).definitions).toEqual([])
+  })
+
+  it("rejects a selected conditional action before framework activation", () => {
+    const runtime = actionRuntime({ conditionalEnabled: true })
+
+    expect(() => lowerVoyantGraphActionsToActionLedgerRegistry(runtime)).toThrow(/NOT_ACTIVATED/)
   })
 
   it.each([

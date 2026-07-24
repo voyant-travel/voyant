@@ -11,7 +11,7 @@ import {
   type VoyantPort,
 } from "@voyant-travel/core/project"
 import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
-
+import { assertConditionalActionRuntimeActivated } from "./conditional-action-availability.js"
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
 
 export interface VoyantGraphRuntimeBindingContext<TCapabilities> {
@@ -276,6 +276,7 @@ export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
   ports?: VoyantGraphRuntimePorts,
 ): Promise<ApiModule[]> {
+  assertConditionalActionRuntimeActivated(runtime, ports, true)
   return composeRuntimeFacetModules(runtime, createRuntimeFactoryContexts(runtime, ports))
 }
 
@@ -302,6 +303,7 @@ async function composeRuntimeFacetModules(
 export async function composeVoyantGraphRuntime<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
 ): Promise<VoyantGraphRuntimeComposition> {
+  assertConditionalActionRuntimeActivated(input.runtime, input.ports, true)
   const modules: ApiModule[] = []
   const extensions: ApiExtension[] = []
   const factoryContexts = createRuntimeFactoryContexts(input.runtime, input.ports)

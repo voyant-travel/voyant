@@ -1123,6 +1123,7 @@
       "@voyant-travel/framework/project-subscriber-link-conventions": [
         "./dist/project-subscriber-link-conventions.d.ts"
       ],
+      "@voyant-travel/framework/runtime-attestation": ["./dist/runtime-attestation.d.ts"],
       "@voyant-travel/framework/scheduled-jobs": ["./dist/scheduled-jobs.d.ts"],
       "@voyant-travel/framework/selected-graph-openapi": ["./dist/selected-graph-openapi.d.ts"],
       "@voyant-travel/framework/self-host-export": ["./dist/self-host-export.d.ts"],

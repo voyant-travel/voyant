@@ -91,7 +91,6 @@ const frameworkDependencies = {
   "@voyant-travel/db": "workspace:^",
   "@voyant-travel/framework-migrations": "workspace:^",
   "@voyant-travel/hono": "workspace:^",
-  "@voyant-travel/mcp": "workspace:^",
   "@voyant-travel/operator-standard": "workspace:^",
   "@voyant-travel/plugin-voyant-connect": "^0.3.2",
   "@voyant-travel/runtime-core": "workspace:^",
