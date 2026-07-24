@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.63.1
+
+### Patch Changes
+
+- d12672f: Treat omitted action availability as callable once lifecycle, effect-boundary, or
+  durability metadata is present, so removing an unavailable marker cannot bypass
+  stable-target and tested-durability validation.
+
 ## 0.63.0
 
 ### Minor Changes
