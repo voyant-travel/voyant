@@ -538,6 +538,7 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "invoice",
+      commandTargetField: "invoiceId",
       targetLifecycle: "existing",
       resource: "storefront",
       action: "write",

@@ -40,6 +40,12 @@ reference, and atomically append the canonical generated-target result. Approval
 such actions bind to the declared command target type; the successful generated-target entry is
 then linked causally by the handler.
 
+Existing-target actions may declare `commandTargetField` when their Tool input already carries
+the domain parent id. The generic gate requires that parsed field to exactly match
+`_voyant.targetId` before writing a ledger preflight, validating approval, or dispatching the
+handler. This prevents policy and audit records from naming a different target than the domain
+mutation.
+
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their
 Tool definitions explicitly advertise handler-owned enforcement so MCP does not double-gate them.

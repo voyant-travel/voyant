@@ -94,6 +94,7 @@ describe("relationships deployment manifest", () => {
         expect(matchingActions[0]).toMatchObject({
           id: `@voyant-travel/relationships#action.add-${ownerType}-${childType}`,
           targetType: ownerType,
+          commandTargetField: "entityId",
           targetLifecycle: "existing",
         })
       }

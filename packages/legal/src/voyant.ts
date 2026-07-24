@@ -618,6 +618,7 @@ export const legalContractDocumentVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "booking",
+      commandTargetField: "bookingId",
       targetLifecycle: "existing",
       resource: "legal",
       action: "write",

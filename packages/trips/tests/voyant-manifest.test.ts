@@ -188,6 +188,7 @@ describe("trips deployment manifest", () => {
         expect.objectContaining({
           id: "@voyant-travel/trips#action.add-requirement",
           targetType: "trip",
+          commandTargetField: "envelopeId",
           targetLifecycle: "existing",
           risk: "medium",
           ledger: "required",

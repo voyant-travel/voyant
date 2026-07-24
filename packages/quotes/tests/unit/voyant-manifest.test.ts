@@ -203,7 +203,11 @@ describe("quotes deployment manifests", () => {
       quotesVoyantModule.actions?.find(
         ({ id }) => id === "@voyant-travel/quotes#action.snapshot-quote-version",
       ),
-    ).toMatchObject({ targetType: "quote", targetLifecycle: "existing" })
+    ).toMatchObject({
+      targetType: "quote",
+      commandTargetField: "quoteId",
+      targetLifecycle: "existing",
+    })
     expect(
       quotesVoyantModule.actions?.find(
         ({ id }) => id === "@voyant-travel/quotes#action.accept-quote-version",

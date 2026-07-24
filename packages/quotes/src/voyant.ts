@@ -219,6 +219,7 @@ export const quotesVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "quote",
+      commandTargetField: "quoteId",
       targetLifecycle: "existing",
       resource: "quotes",
       action: "write",

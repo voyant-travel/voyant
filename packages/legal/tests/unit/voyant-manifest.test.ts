@@ -84,7 +84,11 @@ describe("legal deployment manifest", () => {
       legalContractDocumentVoyantModule.actions?.find(
         ({ id }) => id === "@voyant-travel/legal#action.generate-booking-contract-document",
       ),
-    ).toMatchObject({ targetType: "booking", targetLifecycle: "existing" })
+    ).toMatchObject({
+      targetType: "booking",
+      commandTargetField: "bookingId",
+      targetLifecycle: "existing",
+    })
     expect(legalVoyantModule.meta?.agentTools).toBeUndefined()
   })
 

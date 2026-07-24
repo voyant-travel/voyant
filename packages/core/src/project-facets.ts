@@ -360,6 +360,8 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
   version: string
   kind: "execute" | "read" | "sensitive-read"
   targetType: string
+  /** Top-level command input field whose value must equal the policy/ledger target id. */
+  commandTargetField?: string
   targetLifecycle?: "existing" | "created"
   createdTarget?: {
     commandTargetType: string

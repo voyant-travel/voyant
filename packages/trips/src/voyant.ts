@@ -252,6 +252,7 @@ export const tripsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "trip",
+      commandTargetField: "envelopeId",
       targetLifecycle: "existing",
       requiredScopes: ["trips:write"],
       risk: "medium",
