@@ -1,3 +1,4 @@
+import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
 import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -5,7 +6,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { availabilitySlotsRef } from "../../src/availability-ref.js"
 import { productsRef } from "../../src/products-ref.js"
 import { bookingAllocations, bookingItems, bookings } from "../../src/schema.js"
-import { bookingsService, buildBookingReservationCommandFingerprint } from "../../src/service.js"
+import {
+  bookingsService,
+  buildBookingReservationCommandFingerprint,
+  buildLegacyBookingReservationCommandFingerprint,
+} from "../../src/service.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -508,6 +513,137 @@ describe.skipIf(!DB_AVAILABLE)("bookings reserve — batched inserts", () => {
     expect(conflict).toMatchObject({
       status: "idempotency_conflict",
       existingActionId: claim?.id,
+    })
+  })
+
+  it("migrates an exact legacy reservation replay and rejects different commands using its key", async () => {
+    const product = await seedProduct("Legacy idempotent departure")
+    const slot = await seedSlot(product.id, "2026-09-04", 2)
+    const reservation = {
+      bookingNumber: nextBookingNumber(),
+      sellCurrency: "EUR",
+      sourceType: "manual" as const,
+      holdMinutes: 30,
+      items: [
+        {
+          title: "Legacy reserved seat",
+          itemType: "unit" as const,
+          quantity: 1,
+          sellCurrency: "EUR",
+          allocationType: "unit" as const,
+          availabilitySlotId: slot.id,
+        },
+      ],
+    }
+    const original = await bookingsService.reserveBooking(db, reservation, "agent_legacy_reserve")
+    expect(original.status).toBe("ok")
+    if (original.status !== "ok") return
+
+    const context = {
+      agentId: "agent_legacy_reserve",
+      actor: "staff",
+      callerType: "agent",
+    }
+    const idempotencyKey = "legacy-reserve-command-1"
+    const legacyScope = "bookings.reserve_booking:agent_legacy_reserve"
+    const legacyFingerprint = await buildLegacyBookingReservationCommandFingerprint(reservation)
+    const legacyClaim = await appendActionLedgerMutation(db, {
+      context,
+      actionName: "booking.reserve",
+      actionVersion: "v1",
+      actionKind: "create",
+      status: "requested",
+      evaluatedRisk: "high",
+      targetType: "booking_reservation_command",
+      targetId: reservation.bookingNumber,
+      routeOrToolName: "bookings.reserve_booking",
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotencyScope: `${legacyScope}:claim`,
+      idempotencyKey,
+      idempotencyFingerprint: legacyFingerprint,
+      mutationDetail: {
+        summary: `Booking reservation ${reservation.bookingNumber} claimed`,
+        reversalKind: "none",
+      },
+    })
+    await appendActionLedgerMutation(db, {
+      context,
+      actionName: "booking.reserve",
+      actionVersion: "v1",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking",
+      targetId: original.booking.id,
+      routeOrToolName: "bookings.reserve_booking",
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      authorizationSource: "selected_graph_mcp_handler",
+      causationActionId: legacyClaim.entry.id,
+      idempotencyScope: `${legacyScope}:result`,
+      idempotencyKey,
+      idempotencyFingerprint: legacyFingerprint,
+      mutationDetail: {
+        commandResultRef: `booking:${original.booking.id}`,
+        summary: `Booking ${reservation.bookingNumber} reserved`,
+        reversalKind: "domain_command",
+        reversalCommandId: "booking.status.cancel",
+        reversalCommandVersion: "v1",
+      },
+    })
+
+    const runtime = {
+      actionLedgerContext: context,
+      actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
+      actionLedgerIdempotencyScope: "new-reservation-protocol-scope",
+      actionLedgerIdempotencyKey: idempotencyKey,
+      actionLedgerIdempotencyFingerprint:
+        await buildBookingReservationCommandFingerprint(reservation),
+      actionLedgerLegacyIdempotencyScope: legacyScope,
+      actionLedgerLegacyIdempotencyFingerprint: legacyFingerprint,
+      actionLedgerRouteOrToolName: "bookings.reserve_booking",
+    }
+    const replay = await bookingsService.reserveBooking(
+      db,
+      reservation,
+      "agent_legacy_reserve",
+      runtime,
+    )
+    expect(replay).toMatchObject({
+      status: "ok",
+      replayed: true,
+      booking: { id: original.booking.id },
+    })
+    expect(await db.select().from(bookings)).toHaveLength(1)
+    const [refreshed] = await db
+      .select({ remainingPax: availabilitySlotsRef.remainingPax })
+      .from(availabilitySlotsRef)
+      .where(eq(availabilitySlotsRef.id, slot.id))
+    expect(refreshed?.remainingPax).toBe(1)
+    const ledgerEntries = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.actionName, "booking.reserve"))
+    expect(ledgerEntries).toHaveLength(4)
+
+    const conflictingReservation = { ...reservation, bookingNumber: nextBookingNumber() }
+    const conflict = await bookingsService.reserveBooking(
+      db,
+      conflictingReservation,
+      "agent_legacy_reserve",
+      {
+        ...runtime,
+        actionLedgerIdempotencyFingerprint:
+          await buildBookingReservationCommandFingerprint(conflictingReservation),
+        actionLedgerLegacyIdempotencyFingerprint:
+          await buildLegacyBookingReservationCommandFingerprint(conflictingReservation),
+      },
+    )
+    expect(conflict).toMatchObject({
+      status: "idempotency_conflict",
+      existingActionId: legacyClaim.entry.id,
     })
   })
 })

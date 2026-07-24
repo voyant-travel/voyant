@@ -95,7 +95,6 @@ describe("bookings tools", () => {
             },
           ],
         },
-        idempotencyKey: "reserve-b-1002",
       },
       ctx({
         async reserveBooking() {
@@ -185,7 +184,6 @@ describe("bookings tools", () => {
             sellCurrency: "EUR",
             items: [{ title: "Guided tour", availabilitySlotId: "slot_1" }],
           },
-          idempotencyKey: "reserve-b-1002",
         },
         ctx(
           {
@@ -230,7 +228,6 @@ describe("bookings tools", () => {
             sellCurrency: "EUR",
             items: [{ title: "Guided tour", availabilitySlotId: "slot_1" }],
           },
-          idempotencyKey: "reserve-b-1002",
         },
         customerContext,
       ),

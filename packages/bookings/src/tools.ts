@@ -222,12 +222,6 @@ export const cancelBookingTool = defineTool<
 
 export const reserveBookingToolInputSchema = z.object({
   reservation: reserveBookingSchema,
-  idempotencyKey: z
-    .string()
-    .trim()
-    .min(1)
-    .max(255)
-    .describe("Stable key used to replay this exact reservation command."),
 })
 
 export const reservedBookingReferenceSchema = z.object({

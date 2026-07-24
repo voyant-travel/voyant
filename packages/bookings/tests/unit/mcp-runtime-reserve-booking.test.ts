@@ -6,7 +6,10 @@ import type { ToolContext, ToolHandlerActionPolicyContext } from "@voyant-travel
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
-import { bookingsService } from "../../src/service.js"
+import {
+  bookingsService,
+  buildLegacyBookingReservationCommandFingerprint,
+} from "../../src/service.js"
 import { type BookingsToolServices, RESERVE_BOOKING_HANDLER_POLICY } from "../../src/tools.js"
 
 const db = {} as never
@@ -97,7 +100,6 @@ describe("reserve_booking MCP runtime", () => {
       (await bookingTools()).reserveBooking(
         {
           reservation,
-          idempotencyKey: "reserve-b-1002",
         },
         admitted,
       ),
@@ -111,7 +113,7 @@ describe("reserve_booking MCP runtime", () => {
     })
 
     const fingerprint = await buildCreatedTargetCommandFingerprint({
-      actionName: "bookings:reserve",
+      actionName: "booking.reserve",
       actionVersion: "v1",
       commandTarget: {
         type: "booking_reservation_command",
@@ -127,12 +129,13 @@ describe("reserve_booking MCP runtime", () => {
       approvalReasonCode: null,
     })
     const scope = await buildCreatedTargetIdempotencyScope({
-      actionName: "bookings:reserve",
+      actionName: "booking.reserve",
       actionVersion: "v1",
       principalType: "agent",
       principalId: "agent_1",
       organizationId: null,
     })
+    const legacyFingerprint = await buildLegacyBookingReservationCommandFingerprint(reservation)
     expect(reserve).toHaveBeenCalledWith(db, reservation, "agent_1", {
       eventBus,
       actionLedgerContext: expect.objectContaining({
@@ -144,12 +147,27 @@ describe("reserve_booking MCP runtime", () => {
       actionLedgerIdempotencyScope: scope,
       actionLedgerIdempotencyKey: "reserve-b-1002",
       actionLedgerIdempotencyFingerprint: fingerprint,
+      actionLedgerLegacyIdempotencyScope: "bookings.reserve_booking:agent_1",
+      actionLedgerLegacyIdempotencyFingerprint: legacyFingerprint,
       actionLedgerRouteOrToolName: "@voyant-travel/bookings#tool.reserve-booking",
-      actionLedgerActionName: "bookings:reserve",
+      actionLedgerActionName: "booking.reserve",
       actionLedgerActionVersion: "v1",
       actionLedgerCapabilityId: "bookings:reserve",
       actionLedgerCapabilityVersion: "v1",
     })
+  })
+
+  it("sources the command key only from the admitted invocation controls", async () => {
+    const reserve = vi.spyOn(bookingsService, "reserveBooking")
+    const missingKey = {
+      ...admitted,
+      invocation: { confirmed: true },
+    } as ToolHandlerActionPolicyContext
+
+    await expect(
+      (await bookingTools()).reserveBooking({ reservation }, missingKey),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" })
+    expect(reserve).not.toHaveBeenCalled()
   })
 
   it("maps an idempotency conflict to an invalid-input Tool error", async () => {
@@ -162,7 +180,6 @@ describe("reserve_booking MCP runtime", () => {
       (await bookingTools()).reserveBooking(
         {
           reservation,
-          idempotencyKey: "reserve-b-1002",
         },
         admitted,
       ),
@@ -181,7 +198,6 @@ describe("reserve_booking MCP runtime", () => {
       (await bookingTools()).reserveBooking(
         {
           reservation,
-          idempotencyKey: "reserve-b-1002",
         },
         admitted,
       ),

@@ -20,7 +20,11 @@ import {
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
 import type { Env } from "./routes-shared.js"
-import { bookingsService, buildBookingReservationCommandFingerprint } from "./service.js"
+import {
+  bookingsService,
+  buildBookingReservationCommandFingerprint,
+  buildLegacyBookingReservationCommandFingerprint,
+} from "./service.js"
 import { authorizeBookingStatusMutation } from "./status-authorization.js"
 
 export * from "./tools.js"
@@ -56,7 +60,6 @@ export const voyantToolContextContribution = defineToolContextContribution({
           async reserveBooking(
             input: {
               reservation: Parameters<typeof bookingsService.reserveBooking>[1]
-              idempotencyKey: string
             },
             admitted: ToolHandlerActionPolicyContext,
           ) {
@@ -68,7 +71,14 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 "AUTHORIZATION_DENIED",
               )
             }
-            const actionName = admitted.actionPolicy.capabilityId
+            const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+            if (!idempotencyKey) {
+              throw new ToolError(
+                "Booking reservation requires an admitted idempotency key.",
+                "INVALID_INPUT",
+              )
+            }
+            const actionName = admitted.actionPolicy.id
             const actionVersion = admitted.actionPolicy.version
             const idempotencyFingerprint = await buildBookingReservationCommandFingerprint(
               input.reservation,
@@ -86,6 +96,18 @@ export const voyantToolContextContribution = defineToolContextContribution({
               principalId: principal.principalId,
               organizationId: principal.organizationId,
             })
+            const legacyPrincipalId =
+              c.get("userId") ??
+              c.get("agentId") ??
+              c.get("workflowPrincipalId") ??
+              c.get("apiTokenId") ??
+              c.get("apiKeyId")
+            if (!legacyPrincipalId) {
+              throw new ToolError(
+                "Booking reservation requires a legacy-compatible principal.",
+                "AUTHORIZATION_DENIED",
+              )
+            }
             const result = await bookingsService.reserveBooking(
               db,
               input.reservation,
@@ -95,8 +117,11 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 actionLedgerContext: requestContext,
                 actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
                 actionLedgerIdempotencyScope: idempotencyScope,
-                actionLedgerIdempotencyKey: input.idempotencyKey,
+                actionLedgerIdempotencyKey: idempotencyKey,
                 actionLedgerIdempotencyFingerprint: idempotencyFingerprint,
+                actionLedgerLegacyIdempotencyScope: `bookings.reserve_booking:${legacyPrincipalId}`,
+                actionLedgerLegacyIdempotencyFingerprint:
+                  await buildLegacyBookingReservationCommandFingerprint(input.reservation),
                 actionLedgerRouteOrToolName: admitted.capabilityId,
                 actionLedgerActionName: actionName,
                 actionLedgerActionVersion: actionVersion,
