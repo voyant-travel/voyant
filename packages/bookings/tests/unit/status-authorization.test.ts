@@ -1,0 +1,58 @@
+import { actionLedgerService } from "@voyant-travel/action-ledger"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { bookingsService } from "../../src/service.js"
+import { authorizeBookingStatusMutation } from "../../src/status-authorization.js"
+
+afterEach(() => vi.restoreAllMocks())
+
+describe("booking status approval organization continuity", () => {
+  it("passes the request organization into exact approval validation", async () => {
+    vi.spyOn(bookingsService, "getBookingById").mockResolvedValue({
+      status: "confirmed",
+      sellCurrency: "EUR",
+      sellAmountCents: 1000,
+      costAmountCents: 500,
+      customerPaymentPolicy: null,
+      holdExpiresAt: null,
+      confirmedAt: new Date("2026-07-24T00:00:00.000Z"),
+      awaitingPaymentAt: null,
+      paidAt: null,
+      cancelledAt: null,
+      completedAt: null,
+      expiredAt: null,
+    } as never)
+    const validateApprovedAction = vi
+      .spyOn(actionLedgerService, "validateApprovedAction")
+      .mockResolvedValue({ ok: false, reason: "organization_mismatch" })
+
+    await expect(
+      authorizeBookingStatusMutation({
+        db: {} as never,
+        key: "cancel",
+        actionName: "booking.status.cancel",
+        routeOrToolName: "bookings.cancel",
+        bookingId: "booking_1",
+        commandInput: { note: "Cancel" },
+        actor: "staff",
+        callerType: "agent",
+        scopes: ["bookings:write"],
+        requestContext: {
+          agentId: "agent_1",
+          organizationId: "org_1",
+          callerType: "agent",
+          actor: "staff",
+        },
+        conditionalApprovalRequired: true,
+        approvalReasonCode: "agent_cancel",
+        approvalId: "approval_1",
+      }),
+    ).resolves.toMatchObject({
+      status: "invalid_approval",
+      validation: { reason: "organization_mismatch" },
+    })
+    expect(validateApprovedAction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ organizationId: "org_1" }),
+    )
+  })
+})

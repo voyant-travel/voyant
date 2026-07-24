@@ -182,6 +182,117 @@ describe("existing-target durable command protocol", () => {
     expect(harness.events).toEqual([])
   })
 
+  it("clones and recursively freezes a nested JSON command payload", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const commandInput = {
+      tripId: "trip_1",
+      currency: "EUR",
+      pricing: {
+        mode: "retail",
+        legs: [{ origin: "OTP", destination: "LHR" }],
+      },
+    }
+    let preparedPayload: Readonly<typeof commandInput> | undefined
+
+    await executeAdmittedExistingTargetCommand(
+      { ...existingCommandInput(harness.db, admitted), commandInput },
+      {
+        async prepare(_tx, _command, payload) {
+          preparedPayload = payload
+          expect(payload).not.toBe(commandInput)
+          expect(Object.isFrozen(payload)).toBe(true)
+          expect(Object.isFrozen(payload.pricing)).toBe(true)
+          expect(Object.isFrozen(payload.pricing.legs)).toBe(true)
+          expect(Object.isFrozen(payload.pricing.legs[0])).toBe(true)
+          expect(() => {
+            ;(payload.pricing as { mode: string }).mode = "wholesale"
+          }).toThrow(TypeError)
+          expect(() => {
+            ;(payload.pricing.legs as Array<{ origin: string }>).push({ origin: "CDG" })
+          }).toThrow(TypeError)
+        },
+        async execute() {
+          return { ok: true }
+        },
+        async replay() {
+          return { ok: true }
+        },
+      },
+    )
+
+    commandInput.pricing.mode = "wholesale"
+    commandInput.pricing.legs[0]!.origin = "CDG"
+    expect(preparedPayload?.pricing).toEqual({
+      mode: "retail",
+      legs: [{ origin: "OTP", destination: "LHR" }],
+    })
+  })
+
+  it.each([
+    ["Date (which canonicalizes like an empty record)", new Date("2026-07-24T00:00:00.000Z")],
+    ["Map (which canonicalizes like an empty record)", new Map([["currency", "EUR"]])],
+    ["Set (which canonicalizes like an empty record)", new Set(["EUR"])],
+    ["undefined (which canonicalizes like null)", undefined],
+    ["a function", () => "EUR"],
+    ["a bigint", 1n],
+    ["NaN (which JSON serializes like null)", Number.NaN],
+    ["infinity (which JSON serializes like null)", Number.POSITIVE_INFINITY],
+    ["a sparse array (whose hole JSON serializes like null)", Array(1)],
+  ])("rejects non-JSON command payload value %s before claiming", async (_label, invalid) => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { prepare: vi.fn(), execute: vi.fn(), replay: vi.fn() }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, admitted),
+          commandInput: { tripId: "trip_1", currency: "EUR", invalid } as never,
+        },
+        handlers,
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "invalid_command_payload",
+    })
+    expect(harness.events).toEqual([])
+    expect(handlers.prepare).not.toHaveBeenCalled()
+  })
+
+  it("rejects cyclic and accessor-bearing command payloads before fingerprinting", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { prepare: vi.fn(), execute: vi.fn(), replay: vi.fn() }
+    const cyclic: Record<string, unknown> = { tripId: "trip_1", currency: "EUR" }
+    cyclic.self = cyclic
+    const accessor = { tripId: "trip_1", currency: "EUR" } as Record<string, unknown>
+    Object.defineProperty(accessor, "computed", {
+      enumerable: true,
+      get: () => "ambiguous",
+    })
+    const decoratedArray = ["EUR"] as string[] & { ignored?: string }
+    decoratedArray.ignored = "fingerprint-would-ignore-this"
+    const symbolRecord = { tripId: "trip_1", currency: "EUR" } as Record<string | symbol, unknown>
+    symbolRecord[Symbol("ignored")] = "fingerprint-would-ignore-this"
+    const customPrototype = Object.assign(Object.create({ inherited: true }), {
+      tripId: "trip_1",
+      currency: "EUR",
+    })
+
+    for (const commandInput of [cyclic, accessor, decoratedArray, symbolRecord, customPrototype]) {
+      await expect(
+        executeAdmittedExistingTargetCommand(
+          { ...existingCommandInput(harness.db, admitted), commandInput: commandInput as never },
+          handlers,
+        ),
+      ).rejects.toMatchObject({ reason: "invalid_command_payload" })
+    }
+    expect(harness.events).toEqual([])
+    expect(handlers.prepare).not.toHaveBeenCalled()
+  })
+
   it("binds required approval to the exact target, key, fingerprint, and causation", async () => {
     const harness = makeCreatedCommandDb()
     const commandInput = { tripId: "trip_1", currency: "EUR" }

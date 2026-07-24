@@ -156,6 +156,7 @@ export async function authorizeBookingStatusMutation(
       routeOrToolName: input.routeOrToolName,
       principalType: actorFields.principalType,
       principalId: actorFields.principalId,
+      organizationId: actorFields.organizationId,
       idempotencyFingerprint: fingerprint,
       executionActionKind: "update",
       executionStatus: "succeeded",

@@ -698,6 +698,8 @@ function actionApprovalValidationResponse(
       )
     case "principal_mismatch":
       return c.json({ error: "Action approval belongs to a different principal" }, 403)
+    case "organization_mismatch":
+      return c.json({ error: "Action approval belongs to a different organization" }, 403)
     case "assignee_mismatch":
       return c.json({ error: "Action approval was decided by a different assignee" }, 403)
     case "capability_mismatch":

@@ -392,6 +392,7 @@ async function validateApproval(input: {
     routeOrToolName: input.execution.capabilityId,
     principalType: input.principal.principalType,
     principalId: input.principal.principalId,
+    organizationId: input.principal.organizationId,
     idempotencyFingerprint: input.fingerprint,
     executionActionKind: "execute",
     executionStatus: "succeeded",

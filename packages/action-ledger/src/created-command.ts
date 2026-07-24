@@ -93,6 +93,7 @@ export class ActionLedgerCreatedCommandProtocolError extends Error {
     | "approval_policy_unsupported"
     | "forged_approval_linkage"
     | "invalid_approval_controls"
+    | "invalid_command_payload"
     | "claim_changed_during_mutation"
     | "result_created_during_mutation"
 
@@ -552,13 +553,87 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
 function freezeCommandPayload<TCommandPayload>(
   value: TCommandPayload,
 ): ExistingTargetCommandPayload<TCommandPayload> {
-  return deepFreeze(structuredClone(value)) as ExistingTargetCommandPayload<TCommandPayload>
+  return cloneJsonCommandPayload(
+    value,
+    new WeakSet(),
+  ) as ExistingTargetCommandPayload<TCommandPayload>
 }
 
-function deepFreeze<T>(value: T): T {
-  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value
-  for (const child of Object.values(value)) deepFreeze(child)
-  return Object.freeze(value)
+function cloneJsonCommandPayload(value: unknown, ancestors: WeakSet<object>): unknown {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return value
+  }
+  if (typeof value !== "object") {
+    throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+  }
+  if (ancestors.has(value)) {
+    throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+  }
+  ancestors.add(value)
+  try {
+    if (Array.isArray(value)) {
+      if (Object.getPrototypeOf(value) !== Array.prototype) {
+        throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+      }
+      const descriptors = Object.getOwnPropertyDescriptors(value)
+      const allowedKeys = new Set(["length"])
+      for (let index = 0; index < value.length; index += 1) {
+        allowedKeys.add(String(index))
+      }
+      if (
+        Reflect.ownKeys(descriptors).some((key) => {
+          if (typeof key !== "string" || !allowedKeys.has(key)) return true
+          if (key === "length") return false
+          const descriptor = descriptors[key]
+          return !descriptor?.enumerable || !("value" in descriptor)
+        })
+      ) {
+        throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+      }
+      const cloned: unknown[] = []
+      for (let index = 0; index < value.length; index += 1) {
+        if (!Object.hasOwn(value, index)) {
+          throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+        }
+        cloned.push(cloneJsonCommandPayload(descriptors[index]?.value, ancestors))
+      }
+      return Object.freeze(cloned)
+    }
+
+    const prototype = Object.getPrototypeOf(value)
+    if (prototype !== Object.prototype && prototype !== null) {
+      throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+    }
+    const descriptors = Object.getOwnPropertyDescriptors(value)
+    const ownKeys = Reflect.ownKeys(descriptors)
+    if (
+      ownKeys.some(
+        (key) =>
+          typeof key !== "string" ||
+          !descriptors[key]?.enumerable ||
+          !("value" in descriptors[key]),
+      )
+    ) {
+      throw new ActionLedgerCreatedCommandProtocolError("invalid_command_payload")
+    }
+    const cloned: Record<string, unknown> = {}
+    for (const key of Object.keys(descriptors).sort()) {
+      Object.defineProperty(cloned, key, {
+        value: cloneJsonCommandPayload(descriptors[key]?.value, ancestors),
+        enumerable: true,
+        configurable: false,
+        writable: false,
+      })
+    }
+    return Object.freeze(cloned)
+  } finally {
+    ancestors.delete(value)
+  }
 }
 
 function existingTargetId(commandInput: unknown, field: string): string {

@@ -10,6 +10,7 @@ const requestContext = {
   actor: "staff",
   callerType: "agent",
   agentId: "agent_1",
+  organizationId: "org_1",
 }
 
 afterEach(() => vi.restoreAllMocks())
@@ -137,10 +138,12 @@ describe("generic MCP action-policy gate", () => {
     ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
 
     const fingerprint = await exactFingerprint(selected, { value: 1 })
-    vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue({
-      ok: false,
-      reason: "principal_mismatch",
-    })
+    const validateApprovedAction = vi
+      .spyOn(actionLedgerService, "validateApprovedAction")
+      .mockResolvedValue({
+        ok: false,
+        reason: "principal_mismatch",
+      })
     await expect(
       gate.execute(
         execution(
@@ -159,6 +162,47 @@ describe("generic MCP action-policy gate", () => {
     ).rejects.toMatchObject({
       code: "AUTHORIZATION_DENIED",
       meta: { reason: "principal_mismatch" },
+    })
+    expect(validateApprovedAction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ organizationId: "org_1" }),
+    )
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+
+  it("rejects an approval from another organization without dispatch", async () => {
+    const selected = action({ approval: "required" })
+    const commandInput = { value: 1 }
+    const fingerprint = await exactFingerprint(selected, commandInput)
+    vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue({
+      ok: false,
+      reason: "organization_mismatch",
+    })
+    const gate = createToolActionPolicyGate({
+      db: {} as never,
+      selectedActions: [selected],
+      requestContext,
+    })
+    const dispatch = vi.fn(async () => ({ ok: true }))
+
+    await expect(
+      gate.execute(
+        execution(
+          selected,
+          {
+            confirmed: true,
+            targetId: "target_1",
+            idempotencyKey: "command_1",
+            approvalId: "approval_1",
+            idempotencyFingerprint: fingerprint,
+          },
+          commandInput,
+        ),
+        dispatch,
+      ),
+    ).rejects.toMatchObject({
+      code: "AUTHORIZATION_DENIED",
+      meta: { reason: "organization_mismatch" },
     })
     expect(dispatch).not.toHaveBeenCalled()
   })

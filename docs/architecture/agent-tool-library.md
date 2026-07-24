@@ -123,7 +123,9 @@ handler to persist its durable operation intent in that same transaction. Only a
 and intent commit may the handler cross an external boundary. An exact retry is routed to the
 handler's replay/resume path instead of being rejected and is therefore guaranteed to find the
 durable intent. Only frozen admitted command fields and the exact frozen domain payload cross the
-transaction boundary; raw request context is not retained or injected into replay.
+transaction boundary; raw request context is not retained or injected into replay. Command payloads
+must be acyclic JSON values made from primitives, arrays, and plain records; exotic objects,
+accessors, sparse arrays, and non-finite numbers fail closed before fingerprinting.
 Created-target actions declare a stable pre-create command target, an immutable result-reference
 type, and the `handler-command-claim-v1` durability strategy. The framework rejects a generic Tool
 binding for that lifecycle because it cannot make an arbitrary package transaction atomic with a
