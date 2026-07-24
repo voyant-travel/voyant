@@ -183,17 +183,13 @@ export function InvoiceInfoCards({
               <span className="text-muted-foreground">
                 {messages.finance.detailSections.personLabel}:
               </span>{" "}
-              {onOpenPerson ? (
-                <button
-                  type="button"
-                  className="font-mono text-primary text-xs underline"
-                  onClick={() => onOpenPerson(invoice.personId as string)}
-                >
-                  {invoice.personId}
-                </button>
-              ) : (
-                <span className="font-mono text-xs">{invoice.personId}</span>
-              )}
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => onOpenPerson?.(invoice.personId as string)}
+              >
+                {messages.finance.detailSections.viewPerson}
+              </button>
             </div>
           ) : null}
           {invoice.organizationId ? (
@@ -201,17 +197,13 @@ export function InvoiceInfoCards({
               <span className="text-muted-foreground">
                 {messages.finance.detailSections.organizationLabel}:
               </span>{" "}
-              {onOpenOrganization ? (
-                <button
-                  type="button"
-                  className="font-mono text-primary text-xs underline"
-                  onClick={() => onOpenOrganization(invoice.organizationId as string)}
-                >
-                  {invoice.organizationId}
-                </button>
-              ) : (
-                <span className="font-mono text-xs">{invoice.organizationId}</span>
-              )}
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => onOpenOrganization?.(invoice.organizationId as string)}
+              >
+                {messages.finance.detailSections.viewOrganization}
+              </button>
             </div>
           ) : null}
           <div className="mt-2 border-t pt-3">
