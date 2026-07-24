@@ -1,5 +1,54 @@
 # @voyant-travel/admin-app
 
+## 0.90.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Make the settings sub-navigation mobile friendly. On small screens the settings
+  nav previously stacked its full list (heading + every section link) above the
+  content, pushing the actual settings page far down the screen. It now collapses
+  to a thin horizontal, scrollable strip so the settings content is visible
+  immediately; the desktop sidebar is unchanged.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/inventory-react@0.80.1
+  - @voyant-travel/commerce-react@0.80.1
+  - @voyant-travel/finance-react@0.198.1
+  - @voyant-travel/auth-react@0.143.2
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/distribution-react@0.188.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.90.0
 
 ### Patch Changes

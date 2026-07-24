@@ -1,5 +1,49 @@
 # @voyant-travel/mice-react
 
+## 0.66.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Move heavy multi-field forms from centered dialogs to side sheets. Create/edit
+  forms with more than a handful of fields (invoices, bookings, travelers,
+  markets, pricing rules, policies, suppliers, resources, legal templates,
+  notification templates, and similar) were rendered as centered modals; per the
+  dialog-vs-sheet guidance, complex multi-field editing belongs in a side sheet
+  that keeps the parent screen visible. Confirmations, media viewers, and short
+  one-to-three-field dialogs are unchanged.
+- e2cb9f5: Make form-field grids responsive on mobile. Two-column (and three/four-column) field grids that previously rendered multiple columns at every width now stack to a single column on small screens and expand at the `sm`/`lg` breakpoints, so forms and dialogs are no longer cramped on phones.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/relationships-react@0.198.1
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.66.0
 
 ### Patch Changes

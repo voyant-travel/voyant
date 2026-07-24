@@ -1,5 +1,31 @@
 # @voyant-travel/ui
 
+## 0.109.5
+
+### Patch Changes
+
+- e2cb9f5: Match the phone input's border radius to the other form controls. The composed
+  `PhoneInput` hard-coded `rounded-lg` on its outer corners (the country-select
+  button and the number field), so it looked rounder than the sibling inputs,
+  selects and buttons, which all use `rounded-sm`. Align both outer corners to
+  `rounded-sm`.
+- e2cb9f5: Guarantee the sticky-footer layout for sheets. `SheetContent` is now
+  `overflow-hidden` and `SheetHeader`/`SheetFooter` are `shrink-0`, so the header
+  stays pinned at the top and the actions stay pinned at the bottom while the
+  scrollable `SheetBody` region scrolls between them — regardless of content
+  height. This makes the pattern the existing sheets already follow impossible to
+  break. Also switch the action-ledger entry sheet from a hard-coded
+  `h-[calc(100vh-9rem)]` scroll area to a `flex-1` one so it participates in the
+  same frame.
+- e2cb9f5: Replace native browser dialogs with styled UI-package dialogs across the admin
+  surface. Adds `confirmDialog`/`ConfirmDialogHost` and `promptDialog`/
+  `PromptDialogHost` to `@voyant-travel/ui`, mounts both hosts once in the
+  operator admin shell, and migrates every `window.confirm`/`window.prompt` call
+  and stray `window.alert` in the `*-react` packages to the styled equivalents
+  (destructive confirmations rendered with the destructive action variant). Also
+  fixes the event-catalog "selected event contracts" count to use ICU plural
+  formatting.
+
 ## 0.109.4
 
 ### Patch Changes

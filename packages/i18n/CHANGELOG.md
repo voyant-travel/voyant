@@ -1,5 +1,38 @@
 # @voyant-travel/i18n
 
+## 0.117.2
+
+### Patch Changes
+
+- e2cb9f5: Unify the product booking-mode vocabulary. The products table column, detail
+  chips, and the editor picker now all use the same short labels (Multi-day tour,
+  Accommodation, Day trip, Timed activity, Transfer, Open-dated voucher, Other)
+  instead of the table showing terse words (Itinerary, Date, Stay) while the editor
+  showed long descriptive ones. The pricing basis (rooms & nights / per person) is
+  kept as a secondary hint shown only inside the picker.
+- e2cb9f5: On the operator invoice detail page, the Person and Organization links no longer
+  show the raw record id — they now show a "View person" / "View organization"
+  action, matching the Booking link. Adds the corresponding labels to the shared
+  admin finance messages.
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- e2cb9f5: Visual polish pass. Remove duplicated empty-state text in the media library and
+  the product media section (the same message no longer appears twice), and clean
+  up remaining "CRM" jargon the plain-language pass missed in the person/company
+  create dialogs, flight contact picker, and booking traveler picker (now
+  "contacts"/"contact" instead of "CRM").
+
 ## 0.117.1
 
 ### Patch Changes

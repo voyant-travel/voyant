@@ -1,5 +1,35 @@
 # @voyant-travel/cruises-react
 
+## 0.197.1
+
+### Patch Changes
+
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/storefront-react@0.200.1
+  - @voyant-travel/catalog-react@0.196.1
+  - @voyant-travel/ui@0.109.5
+  - @voyant-travel/cruises@0.197.1
+
 ## 0.197.0
 
 ### Patch Changes

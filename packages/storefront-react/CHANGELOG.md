@@ -1,5 +1,38 @@
 # @voyant-travel/storefront-react
 
+## 0.200.1
+
+### Patch Changes
+
+- e2cb9f5: Clean up misused Card components. Cards that added their own vertical padding on
+  top of the Card's built-in padding (double-padded content) now rely on the
+  card's spacing, and the booking "Internal notes" card uses a proper card header
+  and title instead of a label buried in the body. Empty-state, edge-to-edge, and
+  image-tile cards are unchanged.
+- e2cb9f5: Align off-scale spacing utilities to the shared scale: gap-5 to gap-4, p-5 to
+  p-6, space-y-5 to space-y-4, space-y-8 to space-y-6, p-10/p-12 to p-8, gap-8 to
+  gap-6. Keeps spacing on the consistent 1/2/3/4/6/8 scale used across the app.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/auth-react@0.143.2
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/catalog-react@0.196.1
+  - @voyant-travel/ui@0.109.5
+  - @voyant-travel/storefront@0.200.1
+
 ## 0.200.0
 
 ### Patch Changes

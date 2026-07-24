@@ -1,5 +1,51 @@
 # @voyant-travel/admin
 
+## 0.129.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Fix double page padding. The admin shell already applies consistent page
+  padding around the content area, but a number of page and loading-skeleton
+  components still added their own `p-6` on top, pushing their content ~24px
+  further in than the page header and leaving pages inconsistently indented.
+  Those redundant root paddings are removed so every page's content lines up with
+  the header and with each other. Dialog, portal, and card paddings are
+  unchanged.
+- e2cb9f5: Polish pass on flagged UI issues. The product activity feed no longer shows raw
+  principal IDs or camelCase field names (it now shows a readable actor type and
+  plain field names). The product "Extras" section header now matches the sibling
+  "Rooms & prices" header style. Empty dashboard metrics render a lighter,
+  less-prominent placeholder instead of a full-weight dash. And the person and
+  organization create/edit forms now open as right-side sheets with a sticky
+  footer (matching the convention for larger forms) instead of tall centered
+  dialogs.
+- e2cb9f5: Fix a stray vertical scrollbar inside the invoice detail tab bar (the horizontal
+  scroll container was also allowing a 1px vertical overflow to scroll) by clipping
+  the vertical axis. And make the app boot loaders consistent: the initial
+  "Loading workspace" spinner and the workspace-bootstrap spinner no longer show
+  text, so users see one steady spinner instead of a spinner-with-text that
+  flickers into a plain spinner before the shell appears.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/ui@0.109.5
+
 ## 0.129.0
 
 ### Minor Changes

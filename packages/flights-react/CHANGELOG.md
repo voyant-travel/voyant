@@ -1,5 +1,76 @@
 # @voyant-travel/flights-react
 
+## 0.198.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- e2cb9f5: Make form and dialog select triggers full-width. The shared `SelectTrigger`
+  defaults to `w-fit`, so selects that sit in a form or dialog next to full-width
+  inputs rendered noticeably narrower. Add `w-full` at those call sites (filter
+  popovers, dialogs, and stacked form fields). Toolbar and inline selects that
+  carry an intentional fixed width are left unchanged.
+- e2cb9f5: Align off-scale spacing utilities to the shared scale: gap-5 to gap-4, p-5 to
+  p-6, space-y-5 to space-y-4, space-y-8 to space-y-6, p-10/p-12 to p-8, gap-8 to
+  gap-6. Keeps spacing on the consistent 1/2/3/4/6/8 scale used across the app.
+- e2cb9f5: Visual polish pass. Remove duplicated empty-state text in the media library and
+  the product media section (the same message no longer appears twice), and clean
+  up remaining "CRM" jargon the plain-language pass missed in the person/company
+  create dialogs, flight contact picker, and booking traveler picker (now
+  "contacts"/"contact" instead of "CRM").
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/finance-react@0.198.1
+  - @voyant-travel/relationships-react@0.198.1
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+  - @voyant-travel/finance@0.198.1
+  - @voyant-travel/flights@0.198.1
+
 ## 0.198.0
 
 ### Patch Changes

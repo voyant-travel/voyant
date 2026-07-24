@@ -1,5 +1,59 @@
 # @voyant-travel/action-ledger-react
 
+## 0.86.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Make form and dialog select triggers full-width. The shared `SelectTrigger`
+  defaults to `w-fit`, so selects that sit in a form or dialog next to full-width
+  inputs rendered noticeably narrower. Add `w-full` at those call sites (filter
+  popovers, dialogs, and stacked form fields). Toolbar and inline selects that
+  carry an intentional fixed width are left unchanged.
+- e2cb9f5: Guarantee the sticky-footer layout for sheets. `SheetContent` is now
+  `overflow-hidden` and `SheetHeader`/`SheetFooter` are `shrink-0`, so the header
+  stays pinned at the top and the actions stay pinned at the bottom while the
+  scrollable `SheetBody` region scrolls between them — regardless of content
+  height. This makes the pattern the existing sheets already follow impossible to
+  break. Also switch the action-ledger entry sheet from a hard-coded
+  `h-[calc(100vh-9rem)]` scroll area to a `flex-1` one so it participates in the
+  same frame.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/inventory-react@0.80.1
+  - @voyant-travel/bookings-react@0.198.1
+  - @voyant-travel/relationships-react@0.198.1
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.86.0
 
 ### Patch Changes

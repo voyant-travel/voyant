@@ -1,5 +1,94 @@
 # @voyant-travel/crm-react
 
+## 0.198.1
+
+### Patch Changes
+
+- e2cb9f5: Clean up misused Card components. Cards that added their own vertical padding on
+  top of the Card's built-in padding (double-padded content) now rely on the
+  card's spacing, and the booking "Internal notes" card uses a proper card header
+  and title instead of a label buried in the body. Empty-state, edge-to-edge, and
+  image-tile cards are unchanged.
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Fix the person and organization detail tab bars wrapping awkwardly. With many
+  tabs, the wrapped row previously stretched its few tabs across the full width
+  (because tabs default to equal-width). The detail tab bars now keep tabs at
+  their natural width and left-align the wrapped row.
+- e2cb9f5: Fix double page padding. The admin shell already applies consistent page
+  padding around the content area, but a number of page and loading-skeleton
+  components still added their own `p-6` on top, pushing their content ~24px
+  further in than the page header and leaving pages inconsistently indented.
+  Those redundant root paddings are removed so every page's content lines up with
+  the header and with each other. Dialog, portal, and card paddings are
+  unchanged.
+- e2cb9f5: Move heavy multi-field forms from centered dialogs to side sheets. Create/edit
+  forms with more than a handful of fields (invoices, bookings, travelers,
+  markets, pricing rules, policies, suppliers, resources, legal templates,
+  notification templates, and similar) were rendered as centered modals; per the
+  dialog-vs-sheet guidance, complex multi-field editing belongs in a side sheet
+  that keeps the parent screen visible. Confirmations, media viewers, and short
+  one-to-three-field dialogs are unchanged.
+- e2cb9f5: Make form-field grids responsive on mobile. Two-column (and three/four-column) field grids that previously rendered multiple columns at every width now stack to a single column on small screens and expand at the `sm`/`lg` breakpoints, so forms and dialogs are no longer cramped on phones.
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Polish pass on flagged UI issues. The product activity feed no longer shows raw
+  principal IDs or camelCase field names (it now shows a readable actor type and
+  plain field names). The product "Extras" section header now matches the sibling
+  "Rooms & prices" header style. Empty dashboard metrics render a lighter,
+  less-prominent placeholder instead of a full-weight dash. And the person and
+  organization create/edit forms now open as right-side sheets with a sticky
+  footer (matching the convention for larger forms) instead of tall centered
+  dialogs.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- e2cb9f5: Make form and dialog select triggers full-width. The shared `SelectTrigger`
+  defaults to `w-fit`, so selects that sit in a form or dialog next to full-width
+  inputs rendered noticeably narrower. Add `w-full` at those call sites (filter
+  popovers, dialogs, and stacked form fields). Toolbar and inline selects that
+  carry an intentional fixed width are left unchanged.
+- e2cb9f5: Visual polish pass. Remove duplicated empty-state text in the media library and
+  the product media section (the same message no longer appears twice), and clean
+  up remaining "CRM" jargon the plain-language pass missed in the person/company
+  create dialogs, flight contact picker, and booking traveler picker (now
+  "contacts"/"contact" instead of "CRM").
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/identity-react@0.198.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.198.0
 
 ### Patch Changes

@@ -1,5 +1,89 @@
 # @voyant-travel/commerce-react
 
+## 0.80.1
+
+### Patch Changes
+
+- e2cb9f5: Unify the product booking-mode vocabulary. The products table column, detail
+  chips, and the editor picker now all use the same short labels (Multi-day tour,
+  Accommodation, Day trip, Timed activity, Transfer, Open-dated voucher, Other)
+  instead of the table showing terse words (Itinerary, Date, Stay) while the editor
+  showed long descriptive ones. The pricing basis (rooms & nights / per person) is
+  kept as a secondary hint shown only inside the picker.
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Move heavy multi-field forms from centered dialogs to side sheets. Create/edit
+  forms with more than a handful of fields (invoices, bookings, travelers,
+  markets, pricing rules, policies, suppliers, resources, legal templates,
+  notification templates, and similar) were rendered as centered modals; per the
+  dialog-vs-sheet guidance, complex multi-field editing belongs in a side sheet
+  that keeps the parent screen visible. Confirmations, media viewers, and short
+  one-to-three-field dialogs are unchanged.
+- e2cb9f5: Make form-field grids responsive on mobile. Two-column (and three/four-column) field grids that previously rendered multiple columns at every width now stack to a single column on small screens and expand at the `sm`/`lg` breakpoints, so forms and dialogs are no longer cramped on phones.
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Replace raw-ID and raw-format inputs in the pricing and invoicing dialogs with
+  usable controls. Facility, pickup-point, and product-extra fields are now
+  search pickers instead of free-text ID boxes; the price-schedule recurrence
+  field is a guided "repeats yearly/monthly/weekly" builder (with an advanced
+  raw-rule fallback so any RRULE can still be entered); and the developer-facing
+  external provider/config-key fields on the invoice number series dialog are
+  tucked behind an "Advanced" disclosure.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- e2cb9f5: Make form and dialog select triggers full-width. The shared `SelectTrigger`
+  defaults to `w-fit`, so selects that sit in a form or dialog next to full-width
+  inputs rendered noticeably narrower. Add `w-full` at those call sites (filter
+  popovers, dialogs, and stacked form fields). Toolbar and inline selects that
+  carry an intentional fixed width are left unchanged.
+- e2cb9f5: Replace native browser dialogs with styled UI-package dialogs across the admin
+  surface. Adds `confirmDialog`/`ConfirmDialogHost` and `promptDialog`/
+  `PromptDialogHost` to `@voyant-travel/ui`, mounts both hosts once in the
+  operator admin shell, and migrates every `window.confirm`/`window.prompt` call
+  and stray `window.alert` in the `*-react` packages to the styled equivalents
+  (destructive confirmations rendered with the destructive action variant). Also
+  fixes the event-catalog "selected event contracts" count to use ICU plural
+  formatting.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/inventory-react@0.80.1
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/distribution-react@0.188.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.80.0
 
 ### Patch Changes
