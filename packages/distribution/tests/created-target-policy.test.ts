@@ -38,9 +38,14 @@ describe("distribution created-target commands", () => {
     }
   })
 
-  it("requires stable keys and fingerprints command drift", async () => {
-    expect(() => createSupplierTool.inputSchema.parse({ name: "Supplier" })).toThrow()
-    expect(() => createDistributionChannelTool.inputSchema.parse({ name: "Channel" })).toThrow()
+  it("sources stable keys from invocation metadata and fingerprints command drift", async () => {
+    expect(
+      createSupplierTool.inputSchema.safeParse({ name: "Supplier", type: "guide" }).success,
+    ).toBe(true)
+    expect(
+      createDistributionChannelTool.inputSchema.safeParse({ name: "Channel", kind: "direct" })
+        .success,
+    ).toBe(true)
 
     const policy = DISTRIBUTION_CREATED_TARGET_POLICIES.supplier
     const admittedAction = DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.supplier.actionPolicy
@@ -185,7 +190,9 @@ describe("distribution created-target commands", () => {
         DISTRIBUTION_CREATED_TARGET_POLICIES.supplier,
         "key",
         { name: "Supplier" },
-        handlerContext(DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.supplier),
+        handlerContext(DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.supplier, {
+          idempotencyKey: "key",
+        }),
         async () => {
           mutations += 1
           return { id: "supp_never" }
@@ -196,6 +203,38 @@ describe("distribution created-target commands", () => {
         },
       ),
     ).rejects.toThrow("concrete principal")
+    expect(executorCalls).toBe(0)
+    expect(mutations).toBe(0)
+  })
+
+  it("rejects missing or mismatched admitted idempotency before executor or mutation", async () => {
+    const expected = DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS.supplier
+    let executorCalls = 0
+    let mutations = 0
+    const execute = (admitted: ReturnType<typeof handlerContext>, legacyKey?: string) =>
+      executeDistributionCreate(
+        {} as never,
+        { userId: "usr_1", callerType: "session", organizationId: "org_1" },
+        DISTRIBUTION_CREATED_TARGET_POLICIES.supplier,
+        legacyKey,
+        { name: "Supplier" },
+        admitted,
+        async () => {
+          mutations += 1
+          return { id: "supp_never" }
+        },
+        async () => {
+          executorCalls += 1
+          throw new Error("executor must not run")
+        },
+      )
+
+    await expect(
+      execute(handlerContext(expected, { idempotencyKey: undefined })),
+    ).rejects.toMatchObject({ code: "ACTION_POLICY_REQUIRED" })
+    await expect(execute(handlerContext(expected), "different-key")).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    })
     expect(executorCalls).toBe(0)
     expect(mutations).toBe(0)
   })
@@ -254,7 +293,7 @@ function handlerContext(
   expected:
     | (typeof DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS)["supplier"]
     | (typeof DISTRIBUTION_CREATED_TARGET_HANDLER_EXPECTATIONS)["channel"],
-  override: { canonicalName?: string } = {},
+  override: { canonicalName?: string; idempotencyKey?: string } = {},
 ) {
   return {
     capabilityId: expected.capabilityId,
@@ -270,6 +309,13 @@ function handlerContext(
         fingerprintAlgorithm: "action-ledger-command-v1" as const,
       },
     },
-    invocation: { confirmed: true },
+    invocation: {
+      confirmed: true,
+      ...(override.idempotencyKey === undefined
+        ? Object.hasOwn(override, "idempotencyKey")
+          ? {}
+          : { idempotencyKey: "same-key" }
+        : { idempotencyKey: override.idempotencyKey }),
+    },
   }
 }

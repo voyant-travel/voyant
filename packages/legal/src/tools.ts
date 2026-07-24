@@ -209,7 +209,7 @@ const listContractsInputSchema = z.object({
 })
 const idInputSchema = z.object({ id: z.string().trim().min(1) })
 const createDraftInputSchema = z.object({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
   title: z.string().trim().min(1).max(500),
   scope: scopeSchema.default("customer"),
   language: z.string().min(2).max(10).default("en"),

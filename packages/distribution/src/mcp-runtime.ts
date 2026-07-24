@@ -9,6 +9,7 @@ import {
 } from "@voyant-travel/action-ledger"
 import {
   defineToolContextContribution,
+  ToolError,
   type ToolHandlerActionPolicyContext,
 } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -44,13 +45,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
           input: Parameters<import("./tools.js").DistributionToolServices["createSupplier"]>[0],
           admitted: ToolHandlerActionPolicyContext,
         ) {
-          const { idempotencyKey, ...commandInput } = input
+          const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
           const policy = DISTRIBUTION_CREATED_TARGET_POLICIES.supplier
           const result = await executeDistributionCreate(
             db,
             requestContext,
             policy,
-            idempotencyKey,
+            legacyIdempotencyKey,
             commandInput,
             admitted,
             async (tx) => {
@@ -75,13 +76,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
           input: Parameters<import("./tools.js").DistributionToolServices["createChannel"]>[0],
           admitted: ToolHandlerActionPolicyContext,
         ) {
-          const { idempotencyKey, ...commandInput } = input
+          const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
           const policy = DISTRIBUTION_CREATED_TARGET_POLICIES.channel
           const result = await executeDistributionCreate(
             db,
             requestContext,
             policy,
-            idempotencyKey,
+            legacyIdempotencyKey,
             commandInput,
             admitted,
             async (tx) => {
@@ -128,7 +129,7 @@ export async function executeDistributionCreate(
   db: PostgresJsDatabase,
   context: ActionLedgerRequestContextValues,
   policy: DistributionPolicy,
-  idempotencyKey: string,
+  legacyIdempotencyKey: string | undefined,
   commandInput: unknown,
   admitted: ToolHandlerActionPolicyContext,
   create: (tx: PostgresJsDatabase) => Promise<{ id: string }>,
@@ -145,6 +146,7 @@ export async function executeDistributionCreate(
   ) {
     throw new TypeError("Distribution created-target command Tool identity drifted after admission")
   }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
   const fingerprint = await buildDistributionCreatedTargetFingerprint(
     policy,
     admitted.actionPolicy,
@@ -192,6 +194,26 @@ export async function executeDistributionCreate(
       },
     },
   )
+}
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
 }
 
 function distributionActionLedgerContext(

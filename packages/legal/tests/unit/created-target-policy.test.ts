@@ -27,8 +27,10 @@ describe("legal contract draft created-target command", () => {
     })
   })
 
-  it("requires a stable key and fingerprints same-key command drift", async () => {
-    expect(() => createLegalContractDraftTool.inputSchema.parse({ title: "Draft" })).toThrow()
+  it("sources the stable key from invocation metadata and fingerprints command drift", async () => {
+    expect(createLegalContractDraftTool.inputSchema.safeParse({ title: "Draft" }).success).toBe(
+      true,
+    )
 
     const admittedAction = LEGAL_CONTRACT_DRAFT_HANDLER_EXPECTATION.actionPolicy
     const first = await buildLegalContractDraftFingerprint(admittedAction, "same-key", {
@@ -135,6 +137,43 @@ describe("legal contract draft created-target command", () => {
     expect(createCalls).toBe(0)
   })
 
+  it("rejects missing or mismatched admitted idempotency before executor or mutation", async () => {
+    let executorCalls = 0
+    let createCalls = 0
+    const execute = (
+      admitted: ReturnType<typeof legalHandlerContext>,
+      legacyIdempotencyKey?: string,
+    ) =>
+      executeLegalContractDraftCreate(
+        {} as never,
+        { userId: "usr_1", callerType: "session", organizationId: "org_1" },
+        {
+          ...(legacyIdempotencyKey ? { idempotencyKey: legacyIdempotencyKey } : {}),
+          title: "Draft",
+          scope: "customer",
+          language: "en",
+        },
+        admitted,
+        async () => {
+          executorCalls += 1
+          throw new Error("executor must not run")
+        },
+        async () => {
+          createCalls += 1
+          return { id: "cont_never" } as never
+        },
+      )
+
+    await expect(execute(legalHandlerContext({ idempotencyKey: undefined }))).rejects.toMatchObject(
+      { code: "ACTION_POLICY_REQUIRED" },
+    )
+    await expect(execute(legalHandlerContext(), "different-key")).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    })
+    expect(executorCalls).toBe(0)
+    expect(createCalls).toBe(0)
+  })
+
   it("denies missing, stale, and non-staff admission before service mutation", async () => {
     let mutations = 0
     const input = {
@@ -182,7 +221,7 @@ describe("legal contract draft created-target command", () => {
   })
 })
 
-function legalHandlerContext(override: { canonicalName?: string } = {}) {
+function legalHandlerContext(override: { canonicalName?: string; idempotencyKey?: string } = {}) {
   const expected = LEGAL_CONTRACT_DRAFT_HANDLER_EXPECTATION
   return {
     capabilityId: expected.capabilityId,
@@ -198,6 +237,13 @@ function legalHandlerContext(override: { canonicalName?: string } = {}) {
         fingerprintAlgorithm: "action-ledger-command-v1" as const,
       },
     },
-    invocation: { confirmed: true },
+    invocation: {
+      confirmed: true,
+      ...(override.idempotencyKey === undefined
+        ? Object.hasOwn(override, "idempotencyKey")
+          ? {}
+          : { idempotencyKey: "draft-key" }
+        : { idempotencyKey: override.idempotencyKey }),
+    },
   }
 }

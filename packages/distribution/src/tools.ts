@@ -58,7 +58,7 @@ const updateExternalRefToolSchema = updateExternalRefSchema.extend({ id: z.strin
 type SupplierListQuery = z.infer<typeof supplierListQuerySchema>
 type SupplierAggregatesQuery = z.infer<typeof supplierAggregatesQuerySchema>
 const createSupplierToolInputSchema = insertSupplierSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createdSupplierOutputSchema = z.object({
   status: z.literal("created"),
@@ -69,7 +69,7 @@ type CreateSupplierInput = z.infer<typeof createSupplierToolInputSchema>
 type UpdateSupplierInput = z.infer<typeof updateSupplierToolSchema>
 type ChannelListQuery = z.infer<typeof channelListQuerySchema>
 const createChannelToolInputSchema = insertChannelSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createdChannelOutputSchema = z.object({
   status: z.literal("created"),

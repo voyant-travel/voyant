@@ -233,7 +233,7 @@ export async function executeLegalContractDraftCreate(
   executor: LegalCreatedCommandExecutor = executeCreatedTargetCommand,
   createContract: typeof contractsService.createContract = contractsService.createContract,
 ) {
-  const { idempotencyKey, ...commandInput } = input
+  const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
   const policy = LEGAL_CONTRACT_DRAFT_CREATED_TARGET_POLICY
   const principal = mapActionLedgerRequestContext(requestContext)
   if (principal.principalId === "unknown_request") {
@@ -246,6 +246,7 @@ export async function executeLegalContractDraftCreate(
   ) {
     throw new TypeError("Legal created-target command Tool identity drifted after admission")
   }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
   const fingerprint = await buildLegalContractDraftFingerprint(
     admitted.actionPolicy,
     idempotencyKey,
@@ -305,6 +306,26 @@ export async function executeLegalContractDraftCreate(
       },
     },
   )
+}
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
 }
 
 function legalActionLedgerContext(c: LegalMcpContext): ActionLedgerRequestContextValues {
