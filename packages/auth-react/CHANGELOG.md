@@ -1,5 +1,52 @@
 # @voyant-travel/auth-react
 
+## 0.143.2
+
+### Patch Changes
+
+- e2cb9f5: Clean up misused Card components. Cards that added their own vertical padding on
+  top of the Card's built-in padding (double-padded content) now rely on the
+  card's spacing, and the booking "Internal notes" card uses a proper card header
+  and title instead of a label buried in the body. Empty-state, edge-to-edge, and
+  image-tile cards are unchanged.
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Align off-scale spacing utilities to the shared scale: gap-5 to gap-4, p-5 to
+  p-6, space-y-5 to space-y-4, space-y-8 to space-y-6, p-10/p-12 to p-8, gap-8 to
+  gap-6. Keeps spacing on the consistent 1/2/3/4/6/8 scale used across the app.
+- e2cb9f5: Replace native browser dialogs with styled UI-package dialogs across the admin
+  surface. Adds `confirmDialog`/`ConfirmDialogHost` and `promptDialog`/
+  `PromptDialogHost` to `@voyant-travel/ui`, mounts both hosts once in the
+  operator admin shell, and migrates every `window.confirm`/`window.prompt` call
+  and stray `window.alert` in the `*-react` packages to the styled equivalents
+  (destructive confirmations rendered with the destructive action variant). Also
+  fixes the event-catalog "selected event contracts" count to use ICU plural
+  formatting.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+  - @voyant-travel/auth@0.143.2
+
 ## 0.143.1
 
 ### Patch Changes

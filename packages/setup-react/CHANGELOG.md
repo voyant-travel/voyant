@@ -1,5 +1,32 @@
 # @voyant-travel/setup-react
 
+## 0.9.1
+
+### Patch Changes
+
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.9.0
 
 ### Patch Changes

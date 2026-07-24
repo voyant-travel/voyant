@@ -1,5 +1,72 @@
 # @voyant-travel/operations-react
 
+## 0.79.1
+
+### Patch Changes
+
+- e2cb9f5: Give every admin screen consistent page spacing. Previously each page invented
+  its own padding (`p-6`, `px-6 py-6 lg:px-8`, `container mx-auto py-6` with no
+  horizontal padding, or none at all), so screens like the booking engine had no
+  spacing while others differed.
+
+  The admin workspace layout now wraps the page outlet in a single padded content
+  region (`px-4 py-6 md:px-6`), and the per-page root padding was removed so it no
+  longer double-pads (max-width caps are kept). The full-height settings two-pane
+  bleeds back out of that padding and re-applies its own so it stays edge-to-edge.
+
+- e2cb9f5: Fix double page padding. The admin shell already applies consistent page
+  padding around the content area, but a number of page and loading-skeleton
+  components still added their own `p-6` on top, pushing their content ~24px
+  further in than the page header and leaving pages inconsistently indented.
+  Those redundant root paddings are removed so every page's content lines up with
+  the header and with each other. Dialog, portal, and card paddings are
+  unchanged.
+- e2cb9f5: Move heavy multi-field forms from centered dialogs to side sheets. Create/edit
+  forms with more than a handful of fields (invoices, bookings, travelers,
+  markets, pricing rules, policies, suppliers, resources, legal templates,
+  notification templates, and similar) were rendered as centered modals; per the
+  dialog-vs-sheet guidance, complex multi-field editing belongs in a side sheet
+  that keeps the parent screen visible. Confirmations, media viewers, and short
+  one-to-three-field dialogs are unchanged.
+- e2cb9f5: Make form-field grids responsive on mobile. Two-column (and three/four-column) field grids that previously rendered multiple columns at every width now stack to a single column on small screens and expand at the `sm`/`lg` breakpoints, so forms and dialogs are no longer cramped on phones.
+- e2cb9f5: Plain-language copy pass across the admin UI. Rewrites microcopy on the
+  non-developer screens so it reads for travel professionals rather than
+  engineers: removes developer jargon (entity, tenant, adapter/connector,
+  payload, sync/reconcile internals, raw database column names and code
+  fragments), strips internal/roadmap notes that leaked into user copy, cuts
+  verbose and redundant helper text, and aligns terminology to the canonical
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
+  "record" instead of "entity") with consistent sentence case. English catalog
+  copy only; ICU placeholders and en/ro key parity preserved.
+- e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
+  English copy pass — re-translating the updated strings so the Romanian UI drops
+  the same jargon and reads as clearly as the English. Values only; en/ro key
+  parity and ICU placeholders preserved.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/inventory-react@0.80.1
+  - @voyant-travel/bookings-react@0.198.1
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.79.0
 
 ### Patch Changes

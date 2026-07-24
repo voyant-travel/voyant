@@ -1,5 +1,21 @@
 # @voyant-travel/inventory
 
+## 0.19.1
+
+### Patch Changes
+
+- e2cb9f5: Expand the products list Filters with Type, Booking mode, Visibility, Tag, and a
+  Departure window. Type/Booking mode/Visibility/Tag reuse query params the list
+  endpoint already supported; the Departure window is a new `departureFrom`/
+  `departureTo` query param that keeps only products with an upcoming open
+  departure whose date falls in the chosen range (filtered on availability slots,
+  independent of the product's own start date).
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/products-contracts@0.107.9
+  - @voyant-travel/bookings@0.198.1
+  - @voyant-travel/catalog@0.196.1
+  - @voyant-travel/finance@0.198.1
+
 ## 0.19.0
 
 ### Patch Changes

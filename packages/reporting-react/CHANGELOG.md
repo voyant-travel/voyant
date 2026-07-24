@@ -1,5 +1,29 @@
 # @voyant-travel/reporting-react
 
+## 0.5.1
+
+### Patch Changes
+
+- e2cb9f5: Fix double page padding. The admin shell already applies consistent page
+  padding around the content area, but a number of page and loading-skeleton
+  components still added their own `p-6` on top, pushing their content ~24px
+  further in than the page header and leaving pages inconsistently indented.
+  Those redundant root paddings are removed so every page's content lines up with
+  the header and with each other. Dialog, portal, and card paddings are
+  unchanged.
+- e2cb9f5: Align off-scale spacing utilities to the shared scale: gap-5 to gap-4, p-5 to
+  p-6, space-y-5 to space-y-4, space-y-8 to space-y-6, p-10/p-12 to p-8, gap-8 to
+  gap-6. Keeps spacing on the consistent 1/2/3/4/6/8 scale used across the app.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/ui@0.109.5
+
 ## 0.5.0
 
 ### Patch Changes

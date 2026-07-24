@@ -1,5 +1,90 @@
 # @voyant-travel/operator-standard
 
+## 0.12.6
+
+### Patch Changes
+
+- e2cb9f5: Replace native browser dialogs with styled UI-package dialogs across the admin
+  surface. Adds `confirmDialog`/`ConfirmDialogHost` and `promptDialog`/
+  `PromptDialogHost` to `@voyant-travel/ui`, mounts both hosts once in the
+  operator admin shell, and migrates every `window.confirm`/`window.prompt` call
+  and stray `window.alert` in the `*-react` packages to the styled equivalents
+  (destructive confirmations rendered with the destructive action variant). Also
+  fixes the event-catalog "selected event contracts" count to use ICU plural
+  formatting.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/inventory-react@0.80.1
+  - @voyant-travel/commerce-react@0.80.1
+  - @voyant-travel/bookings-react@0.198.1
+  - @voyant-travel/finance-react@0.198.1
+  - @voyant-travel/relationships-react@0.198.1
+  - @voyant-travel/quotes-react@0.196.1
+  - @voyant-travel/legal-react@0.198.1
+  - @voyant-travel/storefront-react@0.200.1
+  - @voyant-travel/auth-react@0.143.2
+  - @voyant-travel/admin@0.129.1
+  - @voyant-travel/admin-app@0.90.1
+  - @voyant-travel/action-ledger-react@0.86.1
+  - @voyant-travel/apps-react@0.5.1
+  - @voyant-travel/catalog-react@0.196.1
+  - @voyant-travel/custom-fields-react@0.5.1
+  - @voyant-travel/distribution-react@0.188.1
+  - @voyant-travel/flights-react@0.198.1
+  - @voyant-travel/identity-react@0.198.1
+  - @voyant-travel/mice-react@0.66.1
+  - @voyant-travel/navigation-preferences-react@0.16.2
+  - @voyant-travel/notifications-react@0.136.1
+  - @voyant-travel/operations-react@0.79.1
+  - @voyant-travel/operator-settings-react@0.53.1
+  - @voyant-travel/trips-react@0.190.1
+  - @voyant-travel/media-react@0.4.1
+  - @voyant-travel/reporting-react@0.5.1
+  - @voyant-travel/ui@0.109.5
+  - @voyant-travel/cruises-react@0.197.1
+  - @voyant-travel/setup-react@0.9.1
+  - @voyant-travel/inventory@0.19.1
+  - @voyant-travel/event-catalog-react@0.17.1
+  - @voyant-travel/admin-react@0.129.1
+  - @voyant-travel/auth@0.143.2
+  - @voyant-travel/bookings@0.198.1
+  - @voyant-travel/catalog@0.196.1
+  - @voyant-travel/charters@0.196.1
+  - @voyant-travel/cruises@0.197.1
+  - @voyant-travel/distribution@0.188.1
+  - @voyant-travel/finance@0.198.1
+  - @voyant-travel/flights@0.198.1
+  - @voyant-travel/identity@0.198.1
+  - @voyant-travel/legal@0.198.1
+  - @voyant-travel/notifications@0.136.1
+  - @voyant-travel/navigation-preferences@0.16.2
+  - @voyant-travel/storefront@0.200.1
+  - @voyant-travel/trips@0.190.1
+
 ## 0.12.5
 
 ### Patch Changes

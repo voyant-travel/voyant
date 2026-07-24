@@ -1,5 +1,29 @@
 # @voyant-travel/event-catalog-react
 
+## 0.17.1
+
+### Patch Changes
+
+- e2cb9f5: Replace native browser dialogs with styled UI-package dialogs across the admin
+  surface. Adds `confirmDialog`/`ConfirmDialogHost` and `promptDialog`/
+  `PromptDialogHost` to `@voyant-travel/ui`, mounts both hosts once in the
+  operator admin shell, and migrates every `window.confirm`/`window.prompt` call
+  and stray `window.alert` in the `*-react` packages to the styled equivalents
+  (destructive confirmations rendered with the destructive action variant). Also
+  fixes the event-catalog "selected event contracts" count to use ICU plural
+  formatting.
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+- Updated dependencies [e2cb9f5]
+  - @voyant-travel/i18n@0.117.2
+  - @voyant-travel/admin@0.129.1
+
 ## 0.17.0
 
 ### Patch Changes
