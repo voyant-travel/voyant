@@ -1,5 +1,12 @@
 # @voyant-travel/setup-react
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [58020ec]
+  - @voyant-travel/setup@0.5.0
+
 ## 0.8.0
 
 ### Patch Changes

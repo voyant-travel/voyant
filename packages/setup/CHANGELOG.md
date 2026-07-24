@@ -1,5 +1,26 @@
 # @voyant-travel/setup
 
+## 0.5.0
+
+### Minor Changes
+
+- 58020ec: Keep first-party Tools with unproven non-transactional external or multi-stage effects out of
+  runtime discovery. The affected graph actions remain available as diagnostic metadata with an
+  explicit unsafe-effect reason until each package gains tested transactional, outbox, or saga
+  durability. This also covers supplier-side flight cancellation and contract execution whose
+  post-commit lifecycle event is not yet durably published.
+
+### Patch Changes
+
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+
 ## 0.4.13
 
 ### Patch Changes

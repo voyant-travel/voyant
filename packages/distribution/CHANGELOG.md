@@ -1,5 +1,38 @@
 # @voyant-travel/distribution
 
+## 0.186.0
+
+### Minor Changes
+
+- 71c08aa: Require `idempotencyKey` for the supplier, distribution-channel, and legal
+  contract-draft create Tools. Successful calls now return an immutable created
+  target reference (`status`, the target `id`, and `replayed`) instead of a mutable
+  full-row snapshot. Equal keys replay the original target; reusing a key with
+  different command input fails with an idempotency conflict.
+- bf548af: Make generated-child Tool creation retry-safe by binding each command to an
+  explicit stable parent anchor, admitting the selected graph action in the
+  handler, and atomically persisting the command claim, child row, and canonical
+  child reference.
+
+### Patch Changes
+
+- Updated dependencies [c1f9cdf]
+- Updated dependencies [58020ec]
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/action-ledger@0.112.0
+  - @voyant-travel/catalog@0.194.0
+  - @voyant-travel/finance@0.196.0
+  - @voyant-travel/bookings@0.196.0
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/identity@0.196.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+  - @voyant-travel/webhook-delivery@0.5.2
+
 ## 0.185.1
 
 ### Patch Changes

@@ -1,5 +1,43 @@
 # @voyant-travel/framework
 
+## 0.63.0
+
+### Minor Changes
+
+- bf548af: Make generated-child Tool creation retry-safe by binding each command to an
+  explicit stable parent anchor, admitting the selected graph action in the
+  handler, and atomically persisting the command claim, child row, and canonical
+  child reference.
+- a6460e2: Add explicit created-target action metadata and fail closed unless handler-owned
+  Tools declare a durable command claim, replay, and canonical result-reference
+  contract. Adopt the shared transaction-owning created-command executor for
+  Bookings reservations, stop asking MCP callers to invent generated target IDs,
+  and fail approval-bearing created commands closed until handler control
+  propagation exists.
+- 8a4f3cd: Add fail-closed graph availability and tested-durability metadata for execute Tool actions.
+  Unavailable actions remain diagnosable in resolved graph metadata while their Tool runtime is
+  excluded from action-ledger and MCP lowering. Reclassify Trips pricing as a write and keep it
+  unavailable until its provider and persistence stages gain tested durable orchestration.
+
+### Patch Changes
+
+- Updated dependencies [78423d3]
+- Updated dependencies [c1f9cdf]
+- Updated dependencies [58020ec]
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/cruises@0.195.0
+  - @voyant-travel/action-ledger@0.112.0
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/mcp@0.5.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/operator-standard@0.12.2
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+  - @voyant-travel/storage@0.113.4
+
 ## 0.62.8
 
 ### Patch Changes

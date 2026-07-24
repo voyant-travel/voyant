@@ -1,5 +1,22 @@
 # @voyant-travel/tools
 
+## 0.4.0
+
+### Minor Changes
+
+- bf548af: Make generated-child Tool creation retry-safe by binding each command to an
+  explicit stable parent anchor, admitting the selected graph action in the
+  handler, and atomically persisting the command claim, child row, and canonical
+  child reference.
+- a6460e2: Add explicit created-target action metadata and fail closed unless handler-owned
+  Tools declare a durable command claim, replay, and canonical result-reference
+  contract. Adopt the shared transaction-owning created-command executor for
+  Bookings reservations, stop asking MCP callers to invent generated target IDs,
+  and fail approval-bearing created commands closed until handler control
+  propagation exists.
+- Propagate isolated handler-owned action controls through Tool context and support
+  transactionally validated approval-required created-target commands.
+
 ## 0.3.0
 
 ### Minor Changes

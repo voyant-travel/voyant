@@ -1,5 +1,37 @@
 # @voyant-travel/action-ledger
 
+## 0.112.0
+
+### Minor Changes
+
+- c1f9cdf: Add an owned-transaction created-target command executor with advisory-lock
+  claiming, typed policy fingerprints, opaque claim revalidation, exact replay,
+  canonical result references, and fail-closed approval handling for unsupported
+  conditional policy.
+- bf548af: Make generated-child Tool creation retry-safe by binding each command to an
+  explicit stable parent anchor, admitting the selected graph action in the
+  handler, and atomically persisting the command claim, child row, and canonical
+  child reference.
+- a6460e2: Add explicit created-target action metadata and fail closed unless handler-owned
+  Tools declare a durable command claim, replay, and canonical result-reference
+  contract. Adopt the shared transaction-owning created-command executor for
+  Bookings reservations, stop asking MCP callers to invent generated target IDs,
+  and fail approval-bearing created commands closed until handler control
+  propagation exists.
+- Propagate isolated handler-owned action controls through Tool context and support
+  transactionally validated approval-required created-target commands.
+
+### Patch Changes
+
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+
 ## 0.111.14
 
 ### Patch Changes
