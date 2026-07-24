@@ -979,6 +979,30 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("validates an action command target field binding", () => {
+    const manifest = defineModule({
+      id: "@acme/voyant-actions",
+      actions: [
+        {
+          id: "@acme/voyant-actions#action.update-task",
+          version: "v1",
+          kind: "execute",
+          targetType: "task",
+          commandTargetField: "",
+          risk: "medium",
+          ledger: "required",
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(manifest)).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].commandTargetField",
+      }),
+    )
+  })
+
   it("validates explicit Tool action availability and durability completeness", () => {
     const baseAction = {
       id: "@acme/voyant-actions#action.run",

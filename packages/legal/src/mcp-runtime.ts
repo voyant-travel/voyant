@@ -1,5 +1,19 @@
+import {
+  type ActionLedgerRequestContextValues,
+  buildCreatedTargetIdempotencyScope,
+  type ExecuteCreatedTargetCommandHandlers,
+  type ExecuteCreatedTargetCommandInput,
+  type ExecuteCreatedTargetCommandResult,
+  executeCreatedTargetCommand,
+  mapActionLedgerRequestContext,
+} from "@voyant-travel/action-ledger"
 import type { EventBus } from "@voyant-travel/core"
-import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  requireService,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -13,6 +27,10 @@ import type {
   Contract as LegalContract,
 } from "./contracts/schema.js"
 import { contractsService } from "./contracts/service.js"
+import {
+  buildLegalContractDraftFingerprint,
+  LEGAL_CONTRACT_DRAFT_CREATED_TARGET_POLICY,
+} from "./created-target-policy.js"
 import type { Policy, PolicyRule, PolicyVersion } from "./policies/schema.js"
 import { policiesService } from "./policies/service.js"
 import { legalRuntimePort } from "./runtime-port.js"
@@ -35,7 +53,23 @@ export * from "./tools.js"
 
 type LegalMcpContext = Context<{
   Bindings: Record<string, unknown>
-  Variables: { db?: PostgresJsDatabase; eventBus?: EventBus }
+  Variables: {
+    db?: PostgresJsDatabase
+    eventBus?: EventBus
+    userId?: string
+    agentId?: string
+    workflowPrincipalId?: string
+    principalSubtype?: string
+    sessionId?: string
+    apiTokenId?: string
+    apiKeyId?: string
+    callerType?: string
+    actor?: string
+    isInternalRequest?: boolean
+    organizationId?: string
+    workflowRunId?: string
+    workflowStepId?: string
+  }
 }>
 
 export const voyantToolContextContribution = defineToolContextContribution({
@@ -54,7 +88,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
       | undefined
 
     return {
-      legal: createLegalToolServices(db, lifecycleRuntime),
+      legal: createLegalToolServices(db, lifecycleRuntime, legalActionLedgerContext(c)),
       ...(documentRuntime
         ? {
             legalContractDocument: createLegalContractDocumentToolServices({
@@ -72,6 +106,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
 export function createLegalToolServices(
   db: PostgresJsDatabase,
   lifecycleRuntime?: ContractLifecycleRuntimeOptions,
+  requestContext: ActionLedgerRequestContextValues = {},
 ): LegalToolServices {
   return {
     async listContracts(query) {
@@ -82,22 +117,9 @@ export function createLegalToolServices(
       const row = await contractsService.getContractById(db, id)
       return row ? contractDetail(row) : null
     },
-    async createDraft(input) {
-      const row = await contractsService.createContract(db, {
-        ...input,
-        status: "draft",
-        bookingId: input.bookingId ?? null,
-        personId: input.personId ?? null,
-        organizationId: input.organizationId ?? null,
-        supplierId: input.supplierId ?? null,
-        templateVersionId: input.templateVersionId ?? null,
-        seriesId: input.seriesId ?? null,
-        expiresAt: input.expiresAt ?? null,
-        variables: input.variables ?? null,
-        metadata: input.metadata ?? null,
-      })
-      if (!row) throw new Error("Contract draft creation did not return a row")
-      return contractDetail(row)
+    async createDraft(input, admitted) {
+      const result = await executeLegalContractDraftCreate(db, requestContext, input, admitted)
+      return { status: "created", contract: result.value, replayed: result.replayed }
     },
     async listTemplates(query) {
       const result = await contractsService.listTemplates(db, query)
@@ -194,6 +216,133 @@ export function createLegalToolServices(
       }
       return contractDetail(result.contract)
     },
+  }
+}
+
+type LegalCreatedCommandExecutor = (
+  db: PostgresJsDatabase,
+  input: ExecuteCreatedTargetCommandInput & { resultReferenceType: string },
+  handlers: ExecuteCreatedTargetCommandHandlers<{ id: string }, string>,
+) => Promise<ExecuteCreatedTargetCommandResult<{ id: string }, string>>
+
+export async function executeLegalContractDraftCreate(
+  db: PostgresJsDatabase,
+  requestContext: ActionLedgerRequestContextValues,
+  input: Parameters<LegalToolServices["createDraft"]>[0],
+  admitted: ToolHandlerActionPolicyContext,
+  executor: LegalCreatedCommandExecutor = executeCreatedTargetCommand,
+  createContract: typeof contractsService.createContract = contractsService.createContract,
+) {
+  const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
+  const policy = LEGAL_CONTRACT_DRAFT_CREATED_TARGET_POLICY
+  const principal = mapActionLedgerRequestContext(requestContext)
+  if (principal.principalId === "unknown_request") {
+    throw new TypeError("Legal created-target commands require a concrete principal")
+  }
+  if (
+    admitted.capabilityId !== policy.toolCapabilityId ||
+    admitted.actionPolicy.capabilityId !== policy.capabilityId ||
+    admitted.actionPolicy.version !== policy.actionVersion
+  ) {
+    throw new TypeError("Legal created-target command Tool identity drifted after admission")
+  }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
+  const fingerprint = await buildLegalContractDraftFingerprint(
+    admitted.actionPolicy,
+    idempotencyKey,
+    commandInput,
+  )
+  const scope = await buildCreatedTargetIdempotencyScope({
+    actionName: admitted.actionPolicy.capabilityId,
+    actionVersion: admitted.actionPolicy.version,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  return executor(
+    db,
+    {
+      context: requestContext,
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      actionKind: "create",
+      evaluatedRisk: policy.evaluatedRisk,
+      commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+      canonicalTargetType: policy.canonicalTargetType,
+      resultReferenceType: policy.resultReferenceType,
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      approvalPolicy: policy.approvalPolicy,
+      approvalReasonCode: policy.approvalReasonCode,
+      commandInput,
+      routeOrToolName: admitted.capabilityId,
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotency: {
+        scope,
+        key: idempotencyKey,
+        fingerprint,
+      },
+    },
+    {
+      async create(tx) {
+        const row = await createContract(tx as PostgresJsDatabase, {
+          ...commandInput,
+          status: "draft",
+          bookingId: commandInput.bookingId ?? null,
+          personId: commandInput.personId ?? null,
+          organizationId: commandInput.organizationId ?? null,
+          supplierId: commandInput.supplierId ?? null,
+          templateVersionId: commandInput.templateVersionId ?? null,
+          seriesId: commandInput.seriesId ?? null,
+          expiresAt: commandInput.expiresAt ?? null,
+          variables: commandInput.variables ?? null,
+          metadata: commandInput.metadata ?? null,
+        })
+        if (!row) throw new Error("Contract draft creation did not return a row")
+        return { value: { id: row.id }, targetId: row.id }
+      },
+      async replay(_tx, completed) {
+        return { id: completed.reference.id }
+      },
+    },
+  )
+}
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
+}
+
+function legalActionLedgerContext(c: LegalMcpContext): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
 }
 

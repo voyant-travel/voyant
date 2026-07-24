@@ -2,11 +2,34 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import {
+  COMPOSE_PRODUCT_HANDLER_POLICY,
+  CREATE_PRODUCT_HANDLER_POLICY,
   type InventoryAuthoringToolServices,
   type InventoryContentToolServices,
   type InventoryToolServices,
   inventoryTools,
 } from "../src/tools.js"
+
+function admitted(
+  expected: typeof CREATE_PRODUCT_HANDLER_POLICY | typeof COMPOSE_PRODUCT_HANDLER_POLICY,
+): ToolContext["handlerActionPolicy"] {
+  return {
+    capabilityId: expected.capabilityId,
+    capabilityVersion: expected.capabilityVersion,
+    canonicalName: expected.canonicalName,
+    actionPolicy: {
+      ...expected.actionPolicy,
+      enforcement: "handler",
+      invocation: {
+        controlField: "_voyant",
+        requiredFields: [],
+        optionalFields: [],
+        fingerprintAlgorithm: "action-ledger-command-v1",
+      },
+    },
+    invocation: {},
+  } as ToolContext["handlerActionPolicy"]
+}
 
 function ctxWith(
   services?: Partial<
@@ -110,12 +133,15 @@ describe("inventory tools", () => {
             return {
               status: "created",
               productId: "prod_1",
-              options: [{ ref: "standard", id: "opt_1", units: [] }],
               reused: false,
             }
           },
         },
-        { actor: "staff", audience: "staff" },
+        {
+          actor: "staff",
+          audience: "staff",
+          handlerActionPolicy: admitted(COMPOSE_PRODUCT_HANDLER_POLICY),
+        },
       ),
     )
     expect(result).toMatchObject({ status: "created", productId: "prod_1", reused: false })
@@ -179,7 +205,11 @@ describe("inventory tools", () => {
             return null
           },
         },
-        { actor: "staff", audience: "staff" },
+        {
+          actor: "staff",
+          audience: "staff",
+          handlerActionPolicy: admitted(CREATE_PRODUCT_HANDLER_POLICY),
+        },
       ),
     )
     expect(forwarded).toMatchObject({ status: "draft", visibility: "hidden", activated: false })
@@ -228,21 +258,25 @@ describe("inventory tools", () => {
 
   it("creates a private draft before any publication operation", async () => {
     let forwarded: unknown
-    const result = await makeRegistry().dispatch<{ status: string; visibility: string }>(
+    const result = await makeRegistry().dispatch<{ productId: string }>(
       "create_product",
-      { name: "Cairo discovery", sellCurrency: "EUR" },
+      { name: "Cairo discovery", sellCurrency: "EUR", idempotencyKey: "product-create-1" },
       ctxWith(
         {
           async createProduct(input) {
             forwarded = input
-            return product(input)
+            return { productId: "prod_1" }
           },
         },
-        { actor: "staff", audience: "staff" },
+        {
+          actor: "staff",
+          audience: "staff",
+          handlerActionPolicy: admitted(CREATE_PRODUCT_HANDLER_POLICY),
+        },
       ),
     )
-    expect(forwarded).toMatchObject({ status: "draft", visibility: "private", activated: false })
-    expect(result).toMatchObject({ status: "draft", visibility: "private" })
+    expect(forwarded).toMatchObject({ idempotencyKey: "product-create-1" })
+    expect(result).toEqual({ productId: "prod_1" })
   })
 
   it("publishes only through the readiness-enforcing update service", async () => {

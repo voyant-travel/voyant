@@ -86,8 +86,11 @@ the real product service. Publication continues to use that service's readiness 
 the Tool does not reproduce the rule. `get_product_content` composes owned and sourced
 content through the selected Catalog content runtime, preserving provider authority.
 `compose_product` accepts the structural `productGraphSpecSchema` and delegates to the
-atomic authoring composer. The runtime records the same mutation ledger entry and
-`product.content.changed` event as the authoring HTTP surface.
+package-owned atomic composer. Created-target Tools return only immutable canonical
+references (`productId`, `programId`, `envelopeId`, or `roomBlockId`); callers that need
+the mutable resource graph must follow with the corresponding read Tool.
+The runtime records the canonical ledger result plus `product.created` and
+`product.content.changed` in the same database transaction through the durable outbox.
 
 There is intentionally no monolithic `update_product_content` Tool. The unified
 product-content service is a read resolver; authored options, itineraries, media,

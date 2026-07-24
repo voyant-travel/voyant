@@ -1,7 +1,15 @@
 /** Provider-neutral accommodation discovery, content, quote, and room-block tools. */
 
 import { accommodationContentSchema } from "@voyant-travel/accommodations-contracts/content-shape"
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { z } from "zod"
 
 import {
@@ -200,6 +208,10 @@ type ContentInput = z.infer<typeof getAccommodationContentInputSchema>
 type SetNightsInput = z.infer<typeof setRoomBlockNightsInputSchema>
 type PickupInput = z.infer<typeof pickupRoomBlockInputSchema>
 type ReversalInput = z.infer<typeof reversePickupInputSchema>
+export const createRoomBlockToolInputSchema = createRoomBlockSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
+})
+const createRoomBlockResultSchema = z.object({ roomBlockId: z.string() })
 
 /** Provider-neutral package services injected for the selected deployment. */
 export interface AccommodationsToolServices {
@@ -207,7 +219,10 @@ export interface AccommodationsToolServices {
   quoteOwned(input: QuoteInput): Promise<unknown>
   getContent(input: ContentInput): Promise<unknown>
   getRoomBlock(blockId: string): Promise<unknown>
-  createRoomBlock(input: z.infer<typeof createRoomBlockSchema>): Promise<unknown>
+  createRoomBlock(
+    input: z.infer<typeof createRoomBlockToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   setRoomBlockNights(input: SetNightsInput): Promise<unknown>
   pickupRoomBlock(input: PickupInput): Promise<unknown>
   reverseRoomBlockPickup(input: ReversalInput): Promise<unknown>
@@ -240,6 +255,28 @@ const writeMetadata = {
   riskPolicy: WRITE_RISK,
 }
 const highRiskWriteMetadata = { ...writeMetadata, riskPolicy: HIGH_RISK_WRITE }
+export const CREATE_ROOM_BLOCK_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.create-room-block`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_room_block",
+  actionPolicy: {
+    id: `${OWNER}#action.create-room-block`,
+    capabilityId: `${OWNER}#action.create-room-block`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "room-block",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "room-block-create-command",
+      resultReferenceType: "room-block",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 export const searchOwnedAccommodationsTool = defineTool<
   SearchInput,
@@ -318,8 +355,8 @@ export const getRoomBlockTool = defineTool<
 })
 
 export const createRoomBlockTool = defineTool<
-  z.infer<typeof createRoomBlockSchema>,
-  z.infer<typeof roomBlockSchema>,
+  z.infer<typeof createRoomBlockToolInputSchema>,
+  z.infer<typeof createRoomBlockResultSchema>,
   AccommodationsToolContext
 >({
   ...writeMetadata,
@@ -327,10 +364,15 @@ export const createRoomBlockTool = defineTool<
   name: "create_room_block",
   description:
     "Create a supplier room-block header in inquiry status. Set held inventory separately per night.",
-  inputSchema: createRoomBlockSchema,
-  outputSchema: roomBlockSchema,
+  inputSchema: createRoomBlockToolInputSchema,
+  outputSchema: createRoomBlockResultSchema,
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler(input, ctx) {
-    return parseJsonResult(roomBlockSchema, await accommodations(ctx).createRoomBlock(input))
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_ROOM_BLOCK_HANDLER_POLICY)
+    return createRoomBlockResultSchema.parse(
+      await accommodations(ctx).createRoomBlock(input, admitted),
+    )
   },
 })
 

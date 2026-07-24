@@ -145,6 +145,9 @@ const createOrganizationOutputSchema = z.object({
 const noteSchema = z.union([personNoteSchema, organizationNoteSchema])
 const noteListOutputSchema = z.array(noteSchema)
 const addNoteInputSchema = relationshipEntityArgsSchema.and(insertPersonNoteSchema)
+const addOwnedNoteInputSchema = z
+  .object({ entityId: z.string().min(1) })
+  .and(insertPersonNoteSchema)
 const editNoteInputSchema = z.object({
   entityType: relationshipEntitySchema,
   id: z.string().min(1),
@@ -156,12 +159,16 @@ const contactMethodWriteSchema = insertContactPointForEntitySchema.omit({
   metadata: true,
 })
 const addContactMethodInputSchema = relationshipEntityArgsSchema.and(contactMethodWriteSchema)
+const addOwnedContactMethodInputSchema = z
+  .object({ entityId: z.string().min(1) })
+  .and(contactMethodWriteSchema)
 const editContactMethodInputSchema = updateContactPointSchema
   .omit({ entityType: true, entityId: true, normalizedValue: true, metadata: true })
   .extend({ id: z.string().min(1) })
 
 const addressWriteSchema = insertAddressForEntitySchema.omit({ metadata: true })
 const addAddressInputSchema = relationshipEntityArgsSchema.and(addressWriteSchema)
+const addOwnedAddressInputSchema = z.object({ entityId: z.string().min(1) }).and(addressWriteSchema)
 const editAddressInputSchema = updateAddressSchema
   .omit({ entityType: true, entityId: true, metadata: true })
   .extend({ id: z.string().min(1) })
@@ -175,10 +182,13 @@ type CreateOrganizationInput = z.infer<typeof createOrganizationToolInputSchema>
 type UpdateOrganizationInput = z.infer<typeof updateOrganizationToolInputSchema>
 type EntityArgs = z.infer<typeof relationshipEntityArgsSchema>
 type AddNoteInput = z.infer<typeof addNoteInputSchema>
+type AddOwnedNoteInput = z.infer<typeof addOwnedNoteInputSchema>
 type EditNoteInput = z.infer<typeof editNoteInputSchema>
 type AddContactMethodInput = z.infer<typeof addContactMethodInputSchema>
+type AddOwnedContactMethodInput = z.infer<typeof addOwnedContactMethodInputSchema>
 type EditContactMethodInput = z.infer<typeof editContactMethodInputSchema>
 type AddAddressInput = z.infer<typeof addAddressInputSchema>
+type AddOwnedAddressInput = z.infer<typeof addOwnedAddressInputSchema>
 type EditAddressInput = z.infer<typeof editAddressInputSchema>
 
 /** Request-scoped Relationships operations used by CRM tools. */
@@ -414,7 +424,37 @@ export const listRelationshipNotesTool = defineTool<
   },
 })
 
-export const addRelationshipNoteTool = defineTool<
+function defineAddNoteTool(
+  ownerType: "person" | "organization",
+  ownerSchema: typeof personNoteSchema | typeof organizationNoteSchema,
+) {
+  return defineTool<
+    AddOwnedNoteInput,
+    z.infer<typeof personNoteSchema> | z.infer<typeof organizationNoteSchema> | null,
+    RelationshipsToolContext
+  >({
+    ...sensitiveWriteMetadata,
+    capabilityId: `${OWNER}#tool.add-${ownerType}-note`,
+    name: `add_${ownerType}_note`,
+    description: `Add a staff-attributed note to a CRM ${ownerType}.`,
+    inputSchema: addOwnedNoteInputSchema,
+    outputSchema: ownerSchema.nullable(),
+    async handler(input, ctx) {
+      return parseJsonResult(
+        ownerSchema.nullable(),
+        await crm(ctx).addNote({ ...input, entityType: ownerType }),
+      )
+    },
+  })
+}
+
+export const addPersonNoteTool = defineTool(defineAddNoteTool("person", personNoteSchema))
+export const addOrganizationNoteTool = defineTool(
+  defineAddNoteTool("organization", organizationNoteSchema),
+)
+
+/** @deprecated Use the person- or organization-specific Tool selected by the graph. */
+const deprecatedAddRelationshipNoteTool = defineTool<
   AddNoteInput,
   z.infer<typeof noteSchema> | null,
   RelationshipsToolContext
@@ -466,7 +506,34 @@ export const listRelationshipContactMethodsTool = defineTool<
   },
 })
 
-export const addRelationshipContactMethodTool = defineTool<
+function defineAddContactMethodTool(ownerType: "person" | "organization") {
+  return defineTool<
+    AddOwnedContactMethodInput,
+    z.infer<typeof contactMethodSchema> | null,
+    RelationshipsToolContext
+  >({
+    ...sensitiveWriteMetadata,
+    capabilityId: `${OWNER}#tool.add-${ownerType}-contact-method`,
+    name: `add_${ownerType}_contact_method`,
+    description: `Add a contact method to a CRM ${ownerType}.`,
+    inputSchema: addOwnedContactMethodInputSchema,
+    outputSchema: contactMethodSchema.nullable(),
+    async handler(input, ctx) {
+      return parseJsonResult(
+        contactMethodSchema.nullable(),
+        await crm(ctx).addContactMethod({ ...input, entityType: ownerType }),
+      )
+    },
+  })
+}
+
+export const addPersonContactMethodTool = defineTool(defineAddContactMethodTool("person"))
+export const addOrganizationContactMethodTool = defineTool(
+  defineAddContactMethodTool("organization"),
+)
+
+/** @deprecated Use the person- or organization-specific Tool selected by the graph. */
+const deprecatedAddRelationshipContactMethodTool = defineTool<
   AddContactMethodInput,
   z.infer<typeof contactMethodSchema> | null,
   RelationshipsToolContext
@@ -521,7 +588,32 @@ export const listRelationshipAddressesTool = defineTool<
   },
 })
 
-export const addRelationshipAddressTool = defineTool<
+function defineAddAddressTool(ownerType: "person" | "organization") {
+  return defineTool<
+    AddOwnedAddressInput,
+    z.infer<typeof addressSchema> | null,
+    RelationshipsToolContext
+  >({
+    ...sensitiveWriteMetadata,
+    capabilityId: `${OWNER}#tool.add-${ownerType}-address`,
+    name: `add_${ownerType}_address`,
+    description: `Add an address to a CRM ${ownerType}.`,
+    inputSchema: addOwnedAddressInputSchema,
+    outputSchema: addressSchema.nullable(),
+    async handler(input, ctx) {
+      return parseJsonResult(
+        addressSchema.nullable(),
+        await crm(ctx).addAddress({ ...input, entityType: ownerType }),
+      )
+    },
+  })
+}
+
+export const addPersonAddressTool = defineTool(defineAddAddressTool("person"))
+export const addOrganizationAddressTool = defineTool(defineAddAddressTool("organization"))
+
+/** @deprecated Use the person- or organization-specific Tool selected by the graph. */
+const deprecatedAddRelationshipAddressTool = defineTool<
   AddAddressInput,
   z.infer<typeof addressSchema> | null,
   RelationshipsToolContext
@@ -566,15 +658,24 @@ export const relationshipsTools = [
   createOrganizationTool,
   updateOrganizationTool,
   listRelationshipNotesTool,
-  addRelationshipNoteTool,
+  addPersonNoteTool,
+  addOrganizationNoteTool,
   updateRelationshipNoteTool,
   listRelationshipContactMethodsTool,
-  addRelationshipContactMethodTool,
+  addPersonContactMethodTool,
+  addOrganizationContactMethodTool,
   updateRelationshipContactMethodTool,
   listRelationshipAddressesTool,
-  addRelationshipAddressTool,
+  addPersonAddressTool,
+  addOrganizationAddressTool,
   updateRelationshipAddressTool,
 ] as const
+
+export {
+  deprecatedAddRelationshipAddressTool as addRelationshipAddressTool,
+  deprecatedAddRelationshipContactMethodTool as addRelationshipContactMethodTool,
+  deprecatedAddRelationshipNoteTool as addRelationshipNoteTool,
+}
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
   return schema.parse(toJsonValue(value))

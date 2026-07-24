@@ -220,7 +220,13 @@ export const miceVoyantModule = defineModule({
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "mice-program-create-command",
+        resultReferenceType: "mice-program",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/mice#tool.create-program"] },
     },
     {

@@ -8,10 +8,13 @@
  * request `db` and mounts the registry through `@voyant-travel/mcp`.
  */
 import {
+  admitHandlerActionPolicy,
   defineTool,
+  type HandlerActionPolicyExpectation,
   requireService,
   type ToolContext,
   ToolError,
+  type ToolHandlerActionPolicyContext,
   type Visibility,
 } from "@voyant-travel/tools"
 import { z } from "zod"
@@ -20,10 +23,8 @@ import type { TripComponent } from "./schema.js"
 import type {
   PriceTripResult as ServicePriceTripResult,
   ReserveTripResult as ServiceReserveTripResult,
-  Trip,
 } from "./service.js"
 import {
-  createTripResultSchema,
   priceTripResultSchema,
   reserveTripResultSchema,
   reshopTripResultSchema,
@@ -82,10 +83,35 @@ const RESHOP_RISK = {
   confirmationRequired: true,
   sideEffects: ["data-write"],
 } as const
+export const CREATE_TRIP_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.create-trip`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_trip",
+  actionPolicy: {
+    id: `${OWNER}#action.create-trip`,
+    capabilityId: `${OWNER}#action.create-trip`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "trip",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "trip-create-command",
+      resultReferenceType: "trip",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 /** The trips service surface a deployment binds into the tool context. */
 export interface TripsToolServices {
-  createTrip(input: z.infer<typeof createTripEnvelopeSchema>): Promise<Trip>
+  createTrip(
+    input: CreateTripArgs,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<{ envelopeId: string }>
   addComponent(input: z.infer<typeof createTripComponentSchema>): Promise<TripComponent>
   removeComponent?(componentId: string): Promise<TripComponent | null>
   priceTrip(input: z.infer<typeof priceTripSchema>): Promise<ServicePriceTripResult>
@@ -117,10 +143,12 @@ function assertToolAudience(ctx: TripsToolContext, audience: Visibility): void {
 
 const createTripArgs = createTripEnvelopeSchema.extend({
   components: z.array(createTripComponentBodySchema).default([]),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 export type CreateTripArgs = z.infer<typeof createTripArgs>
 
-export type CreateTripResult = z.output<typeof createTripResultSchema>
+const createTripReferenceSchema = z.object({ envelopeId: z.string() })
+export type CreateTripResult = z.output<typeof createTripReferenceSchema>
 
 export const createTripTool = defineTool<CreateTripArgs, CreateTripResult, TripsToolContext>({
   name: "create_trip",
@@ -128,26 +156,15 @@ export const createTripTool = defineTool<CreateTripArgs, CreateTripResult, Trips
     "Create a deterministic trip envelope and optional components for a composed itinerary. " +
     "Use this before pricing or reserving a cross-vertical trip.",
   inputSchema: createTripArgs,
-  outputSchema: createTripResultSchema,
+  outputSchema: createTripReferenceSchema,
   requiredScopes: ["trips:write"],
   tier: "write",
   riskPolicy: { destructive: false, reversible: true, dryRunSupported: false },
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler(args, ctx) {
-    const composer = trips(ctx)
-    const trip = await composer.createTrip({
-      title: args.title,
-      description: args.description,
-      travelerParty: args.travelerParty,
-      constraints: args.constraints,
-      createdBy: args.createdBy,
-    })
-
-    const components: TripComponent[] = []
-    for (const component of args.components) {
-      components.push(await composer.addComponent({ ...component, envelopeId: trip.envelope.id }))
-    }
-
-    return parseJsonResult(createTripResultSchema, { envelope: trip.envelope, components })
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_TRIP_HANDLER_POLICY)
+    return createTripReferenceSchema.parse(await trips(ctx).createTrip(args, admitted))
   },
 })
 
