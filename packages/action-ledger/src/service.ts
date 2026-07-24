@@ -356,6 +356,18 @@ export const actionLedgerService = {
     }
 
     if (
+      input.organizationId !== undefined &&
+      requestedAction.organizationId !== input.organizationId
+    ) {
+      return {
+        ok: false,
+        reason: "organization_mismatch",
+        approval: result.approval,
+        requestedAction,
+      }
+    }
+
+    if (
       input.requireApprovalProvenance &&
       result.approval.assignedToPrincipalId &&
       result.approval.decidedByPrincipalId !== result.approval.assignedToPrincipalId

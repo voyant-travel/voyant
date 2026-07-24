@@ -2027,7 +2027,8 @@ function validatePromotedFacets(
     const safetyContractSelected =
       availability !== undefined ||
       entry.effectBoundary !== undefined ||
-      entry.durability !== undefined
+      entry.durability !== undefined ||
+      entry.existingTarget !== undefined
     const toolBound = isRecord(entry.from) && Array.isArray(entry.from.tools)
     if (
       effectivelyAvailable &&
@@ -2063,6 +2064,54 @@ function validatePromotedFacets(
         source,
         diagnostics,
         "Read and low-risk actions cannot declare write durability; classify data-writing actions as execute with non-low risk.",
+      )
+    }
+    if (entry.targetLifecycle === "existing" && entry.existingTarget !== undefined) {
+      if (entry.kind !== "execute" || entry.ledger !== "required") {
+        invalidFacet(
+          `${facet}.existingTarget`,
+          source,
+          diagnostics,
+          'The existing-target durable result protocol is supported only for kind "execute" with ledger "required".',
+        )
+      }
+      if (entry.approval === "conditional") {
+        invalidFacet(
+          `${facet}.approval`,
+          source,
+          diagnostics,
+          "Existing-target durable commands do not support conditional approval.",
+        )
+      }
+      if (!isRecord(entry.existingTarget)) {
+        invalidFacet(
+          `${facet}.existingTarget`,
+          source,
+          diagnostics,
+          "Existing-target durable result metadata must be an object.",
+        )
+      } else if (entry.existingTarget.durability !== "handler-command-result-v1") {
+        invalidFacet(
+          `${facet}.existingTarget.durability`,
+          source,
+          diagnostics,
+          'Existing-target actions must use durability "handler-command-result-v1".',
+        )
+      }
+      if (typeof entry.commandTargetField !== "string" || !entry.commandTargetField.trim()) {
+        invalidFacet(
+          `${facet}.commandTargetField`,
+          source,
+          diagnostics,
+          "Existing-target durable commands must name the stable target input field.",
+        )
+      }
+    } else if (entry.existingTarget !== undefined) {
+      invalidFacet(
+        `${facet}.existingTarget`,
+        source,
+        diagnostics,
+        'Only actions with targetLifecycle "existing" may declare existingTarget.',
       )
     }
     if (entry.targetLifecycle === "created") {

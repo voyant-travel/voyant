@@ -78,6 +78,32 @@ describe("admitHandlerActionPolicy", () => {
     expect(mutations).toBe(0)
   })
 
+  it("rejects stale existing-target durable result metadata before mutation", () => {
+    const existingExpected = {
+      ...expected,
+      actionPolicy: {
+        ...expected.actionPolicy,
+        targetType: "booking",
+        commandTargetField: "bookingId",
+        targetLifecycle: "existing" as const,
+        existingTarget: { durability: "handler-command-result-v1" as const },
+        createdTarget: undefined,
+      },
+    } satisfies HandlerActionPolicyExpectation
+    const stale = context()
+    if (!stale.handlerActionPolicy) throw new Error("Test context is missing its handler policy")
+    stale.handlerActionPolicy.actionPolicy = {
+      ...existingExpected.actionPolicy,
+      existingTarget: undefined,
+      enforcement: "handler",
+      invocation: stale.handlerActionPolicy.actionPolicy.invocation,
+    }
+
+    expect(() => admitHandlerActionPolicy(stale, existingExpected)).toThrowError(
+      expect.objectContaining<Partial<ToolError>>({ code: "ACTION_POLICY_REQUIRED" }),
+    )
+  })
+
   it("rejects an actor excluded by the selected action before mutation", () => {
     let mutations = 0
     const handler = (ctx: ToolContext) => {

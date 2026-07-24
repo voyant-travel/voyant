@@ -143,6 +143,7 @@ export async function authorizeFinanceRefund(
       routeOrToolName: FINANCE_REFUND_ROUTE_OR_TOOL_NAME,
       principalType: principal.principalType,
       principalId: principal.principalId,
+      organizationId: principal.organizationId,
       idempotencyFingerprint: fingerprint,
       executionActionKind: "create",
       executionStatus: "succeeded",
@@ -156,7 +157,8 @@ export async function authorizeFinanceRefund(
         (!principal.principalType ||
           !principal.principalId ||
           (requestedAction.principalType === principal.principalType &&
-            requestedAction.principalId === principal.principalId))
+            requestedAction.principalId === principal.principalId)) &&
+        requestedAction.organizationId === principal.organizationId
       if (isExactReplay && validation.existingActionId) {
         const creditNoteId = await resolveExecutedRefundCreditNoteId(
           input.db,

@@ -10,10 +10,14 @@ import {
   ActionLedgerCreatedCommandTransactionRequiredError,
   buildCreatedTargetCommandFingerprint,
   buildCreatedTargetIdempotencyScope,
+  buildExistingTargetIdempotencyScope,
+  type ExecuteAdmittedExistingTargetCommandInput,
   type ExecuteCreatedTargetCommandInput,
   executeAdmittedCreatedTargetCommand,
+  executeAdmittedExistingTargetCommand,
   executeCreatedTargetCommand,
 } from "../../src/created-command.js"
+import { buildActionApprovalCommandFingerprint } from "../../src/fingerprint.js"
 import type {
   ActionLedgerEntry,
   ActionMutationDetail,
@@ -39,6 +43,539 @@ const POLICY_DRIFTS: Array<[string, Partial<ExecuteCreatedTargetCommandInput>]> 
     { parentAnchor: { targetType: "organization", targetIdField: "organizationId" } },
   ],
 ]
+
+describe("existing-target durable command protocol", () => {
+  it("commits exact admission before dispatch and routes same-command retries to replay", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    const execute = vi.fn(async (command) => {
+      harness.events.push("domain-execute")
+      return { claimId: command.causation.claimActionId }
+    })
+    const replay = vi.fn(async (command) => {
+      harness.events.push("domain-replay")
+      return { claimId: command.causation.claimActionId }
+    })
+    const prepare = vi.fn(async (tx, command, payload) => {
+      expect(Object.isFrozen(command)).toBe(true)
+      expect(Object.isFrozen(payload)).toBe(true)
+      ;(tx as AnyDrizzleDb & { __intents: string[] }).__intents.push(
+        `${command.causation.claimActionId}:${payload.currency}`,
+      )
+      harness.events.push("domain-prepare")
+    })
+    const run = () =>
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), {
+        prepare,
+        execute,
+        replay,
+      })
+
+    const first = await run()
+    const second = await run()
+
+    expect(first).toMatchObject({
+      replayed: false,
+      command: {
+        target: { type: "trip", id: "trip_1" },
+        idempotency: { key: "price_1" },
+        authorization: {
+          principalType: "user",
+          principalId: "usr_1",
+          organizationId: "org_1",
+        },
+        causation: {
+          claimActionId: "alge_1",
+          requestedActionId: null,
+          approvalId: null,
+        },
+      },
+    })
+    expect(second).toMatchObject({
+      replayed: true,
+      value: { claimId: "alge_1" },
+    })
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(replay).toHaveBeenCalledTimes(1)
+    expect(prepare).toHaveBeenCalledTimes(1)
+    expect(harness.intents).toEqual(["alge_1:EUR"])
+    expect(harness.events).toEqual([
+      "begin",
+      "advisory-lock",
+      "entry:alge_1:requested",
+      "detail:alge_1",
+      "domain-prepare",
+      "commit",
+      "domain-execute",
+      "begin",
+      "advisory-lock",
+      "commit",
+      "domain-replay",
+    ])
+    expect(execute.mock.calls[0]?.[0]).not.toHaveProperty("context")
+    expect(execute.mock.calls[0]?.[0]).not.toHaveProperty("sessionId")
+  })
+
+  it.each([
+    ["payload", { commandInput: { tripId: "trip_1", currency: "USD" } }],
+    ["target", { commandInput: { tripId: "trip_2", currency: "EUR" } }],
+  ])("conflicts when an admitted key is reused with altered %s", async (_label, patch) => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    const handlers = {
+      prepare: vi.fn(async () => {}),
+      execute: vi.fn(async () => ({ ok: true })),
+      replay: vi.fn(),
+    }
+    await executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers)
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), ...patch },
+        handlers,
+      ),
+    ).rejects.toBeInstanceOf(ActionLedgerIdempotencyConflictError)
+    expect(handlers.execute).toHaveBeenCalledTimes(1)
+    expect(handlers.replay).not.toHaveBeenCalled()
+  })
+
+  it("rejects missing protocol metadata and mismatched stable target before claiming", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { prepare: vi.fn(), execute: vi.fn(), replay: vi.fn() }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, {
+            ...admitted,
+            actionPolicy: { ...admitted.actionPolicy, existingTarget: undefined },
+          }),
+        },
+        handlers,
+      ),
+    ).rejects.toMatchObject({ reason: "admitted_policy_mismatch" })
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), targetId: "trip_other" },
+        handlers,
+      ),
+    ).rejects.toMatchObject({ reason: "admitted_policy_mismatch" })
+    expect(harness.events).toEqual([])
+  })
+
+  it("clones and recursively freezes a nested JSON command payload", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const commandInput = {
+      tripId: "trip_1",
+      currency: "EUR",
+      pricing: {
+        mode: "retail",
+        legs: [{ origin: "OTP", destination: "LHR" }],
+      },
+    }
+    let preparedPayload: Readonly<typeof commandInput> | undefined
+
+    await executeAdmittedExistingTargetCommand(
+      { ...existingCommandInput(harness.db, admitted), commandInput },
+      {
+        async prepare(_tx, _command, payload) {
+          preparedPayload = payload
+          expect(payload).not.toBe(commandInput)
+          expect(Object.isFrozen(payload)).toBe(true)
+          expect(Object.isFrozen(payload.pricing)).toBe(true)
+          expect(Object.isFrozen(payload.pricing.legs)).toBe(true)
+          expect(Object.isFrozen(payload.pricing.legs[0])).toBe(true)
+          expect(() => {
+            ;(payload.pricing as { mode: string }).mode = "wholesale"
+          }).toThrow(TypeError)
+          expect(() => {
+            ;(payload.pricing.legs as Array<{ origin: string }>).push({ origin: "CDG" })
+          }).toThrow(TypeError)
+        },
+        async execute() {
+          return { ok: true }
+        },
+        async replay() {
+          return { ok: true }
+        },
+      },
+    )
+
+    commandInput.pricing.mode = "wholesale"
+    commandInput.pricing.legs[0]!.origin = "CDG"
+    expect(preparedPayload?.pricing).toEqual({
+      mode: "retail",
+      legs: [{ origin: "OTP", destination: "LHR" }],
+    })
+  })
+
+  it("normalizes negative zero so fingerprint-equivalent retries cannot reach handlers differently", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const negativeZeroInput = { tripId: "trip_1", currency: "EUR", adjustment: -0 }
+    const zeroInput = { tripId: "trip_1", currency: "EUR", adjustment: 0 }
+    const fingerprintInput = {
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      targetType: "trip",
+      targetId: "trip_1",
+      approvalPolicy: "none" as const,
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      evaluatedRisk: "high" as const,
+      reasonCode: null,
+    }
+    const [negativeZeroFingerprint, zeroFingerprint] = await Promise.all([
+      buildActionApprovalCommandFingerprint({
+        ...fingerprintInput,
+        commandInput: negativeZeroInput,
+      }),
+      buildActionApprovalCommandFingerprint({ ...fingerprintInput, commandInput: zeroInput }),
+    ])
+    expect(negativeZeroFingerprint).toBe(zeroFingerprint)
+    const observedAdjustments: number[] = []
+    const handlers = {
+      prepare: vi.fn(async () => {}),
+      execute: vi.fn(async (_command, payload) => {
+        observedAdjustments.push(payload.adjustment)
+        return { path: "execute" }
+      }),
+      replay: vi.fn(async (_command, payload) => {
+        observedAdjustments.push(payload.adjustment)
+        return { path: "replay" }
+      }),
+    }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), commandInput: negativeZeroInput },
+        handlers,
+      ),
+    ).resolves.toMatchObject({ replayed: false })
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), commandInput: zeroInput },
+        handlers,
+      ),
+    ).resolves.toMatchObject({ replayed: true })
+
+    expect(observedAdjustments).toEqual([0, 0])
+    expect(observedAdjustments.some((value) => Object.is(value, -0))).toBe(false)
+    expect(handlers.execute).toHaveBeenCalledTimes(1)
+    expect(handlers.replay).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses one sanitized payload snapshot for target, fingerprint, claim, and handlers", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const descriptorReads = { tripId: 0, currency: 0 }
+    const unstableInput = new Proxy(
+      { tripId: "ignored", currency: "ignored" },
+      {
+        getOwnPropertyDescriptor(_target, property) {
+          if (property === "tripId") {
+            descriptorReads.tripId += 1
+            return {
+              configurable: true,
+              enumerable: true,
+              writable: true,
+              value: descriptorReads.tripId === 1 ? "trip_1" : "trip_changed",
+            }
+          }
+          if (property === "currency") {
+            descriptorReads.currency += 1
+            return {
+              configurable: true,
+              enumerable: true,
+              writable: true,
+              value: descriptorReads.currency === 1 ? "EUR" : "USD",
+            }
+          }
+          return undefined
+        },
+      },
+    )
+    const prepare = vi.fn(async (_tx, command, payload) => {
+      expect(command.target.id).toBe("trip_1")
+      expect(payload).toEqual({ currency: "EUR", tripId: "trip_1" })
+    })
+    const execute = vi.fn(async (command, payload) => ({
+      targetId: command.target.id,
+      currency: payload.currency,
+    }))
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, admitted),
+          commandInput: unstableInput,
+        },
+        { prepare, execute, replay: vi.fn() },
+      ),
+    ).resolves.toMatchObject({
+      replayed: false,
+      value: { targetId: "trip_1", currency: "EUR" },
+    })
+    expect(descriptorReads).toEqual({ tripId: 1, currency: 1 })
+  })
+
+  it.each([
+    ["Date (which canonicalizes like an empty record)", new Date("2026-07-24T00:00:00.000Z")],
+    ["Map (which canonicalizes like an empty record)", new Map([["currency", "EUR"]])],
+    ["Set (which canonicalizes like an empty record)", new Set(["EUR"])],
+    ["undefined (which canonicalizes like null)", undefined],
+    ["a function", () => "EUR"],
+    ["a bigint", 1n],
+    ["NaN (which JSON serializes like null)", Number.NaN],
+    ["infinity (which JSON serializes like null)", Number.POSITIVE_INFINITY],
+    ["a sparse array (whose hole JSON serializes like null)", Array(1)],
+  ])("rejects non-JSON command payload value %s before claiming", async (_label, invalid) => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { prepare: vi.fn(), execute: vi.fn(), replay: vi.fn() }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, admitted),
+          commandInput: { tripId: "trip_1", currency: "EUR", invalid } as never,
+        },
+        handlers,
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "invalid_command_payload",
+    })
+    expect(harness.events).toEqual([])
+    expect(handlers.prepare).not.toHaveBeenCalled()
+  })
+
+  it("rejects cyclic and accessor-bearing command payloads before fingerprinting", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    const handlers = { prepare: vi.fn(), execute: vi.fn(), replay: vi.fn() }
+    const cyclic: Record<string, unknown> = { tripId: "trip_1", currency: "EUR" }
+    cyclic.self = cyclic
+    const accessor = { tripId: "trip_1", currency: "EUR" } as Record<string, unknown>
+    Object.defineProperty(accessor, "computed", {
+      enumerable: true,
+      get: () => "ambiguous",
+    })
+    const decoratedArray = ["EUR"] as string[] & { ignored?: string }
+    decoratedArray.ignored = "fingerprint-would-ignore-this"
+    const symbolRecord = { tripId: "trip_1", currency: "EUR" } as Record<string | symbol, unknown>
+    symbolRecord[Symbol("ignored")] = "fingerprint-would-ignore-this"
+    const customPrototype = Object.assign(Object.create({ inherited: true }), {
+      tripId: "trip_1",
+      currency: "EUR",
+    })
+
+    for (const commandInput of [cyclic, accessor, decoratedArray, symbolRecord, customPrototype]) {
+      await expect(
+        executeAdmittedExistingTargetCommand(
+          { ...existingCommandInput(harness.db, admitted), commandInput: commandInput as never },
+          handlers,
+        ),
+      ).rejects.toMatchObject({ reason: "invalid_command_payload" })
+    }
+    expect(harness.events).toEqual([])
+    expect(handlers.prepare).not.toHaveBeenCalled()
+  })
+
+  it("binds required approval to the exact target, key, fingerprint, and causation", async () => {
+    const harness = makeCreatedCommandDb()
+    const commandInput = { tripId: "trip_1", currency: "EUR" }
+    const admitted = makeAdmittedExistingTargetContext({ approval: "required" })
+    const fingerprint = await buildActionApprovalCommandFingerprint({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      targetType: "trip",
+      targetId: "trip_1",
+      commandInput,
+      approvalPolicy: "required",
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      evaluatedRisk: "high",
+      reasonCode: "operator_approved",
+    })
+    admitted.invocation = {
+      idempotencyKey: "price_1",
+      approvalId: "appr_existing",
+      idempotencyFingerprint: fingerprint,
+      reasonCode: "operator_approved",
+    }
+    const scope = await buildExistingTargetIdempotencyScope({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:existing-command-claim`
+    mockApprovedExistingCommand(admitted, fingerprint)
+    const handlers = {
+      prepare: vi.fn(async () => {}),
+      execute: vi.fn(async () => ({ ok: true })),
+      replay: vi.fn(async () => ({ ok: true })),
+    }
+
+    const result = await executeAdmittedExistingTargetCommand(
+      existingCommandInput(harness.db, admitted),
+      handlers,
+    )
+    expect(result.command.causation).toEqual({
+      claimActionId: "alge_1",
+      requestedActionId: "alge_requested_existing",
+      approvalId: "appr_existing",
+    })
+    await expect(
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers),
+    ).resolves.toMatchObject({ replayed: true })
+    expect(handlers.prepare).toHaveBeenCalledTimes(1)
+    expect(handlers.execute).toHaveBeenCalledTimes(1)
+    expect(handlers.replay).toHaveBeenCalledTimes(1)
+
+    const changedKey = {
+      ...admitted,
+      invocation: { ...admitted.invocation, idempotencyKey: "price_other" },
+    }
+    await expect(
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, changedKey), handlers),
+    ).rejects.toMatchObject({ reason: "idempotency_key_mismatch" })
+  })
+
+  it("rolls back the claim and package intent when intent preparation fails", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+
+    await expect(
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), {
+        async prepare(tx) {
+          ;(tx as AnyDrizzleDb & { __intents: string[] }).__intents.push("partial-intent")
+          throw new Error("intent write failed")
+        },
+        execute: vi.fn(),
+        replay: vi.fn(),
+      }),
+    ).rejects.toThrow("intent write failed")
+    expect(harness.entries).toEqual([])
+    expect(harness.intents).toEqual([])
+    expect(harness.events.at(-1)).toBe("rollback")
+  })
+
+  it("resumes a committed intent after a crash between commit and first execution", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const prepare = vi.fn(async (tx, command) => {
+      ;(tx as AnyDrizzleDb & { __intents: string[] }).__intents.push(
+        command.causation.claimActionId,
+      )
+    })
+    const firstHandlers = {
+      prepare,
+      execute: vi.fn(async () => {
+        throw new Error("process crashed after commit")
+      }),
+      replay: vi.fn(),
+    }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        existingCommandInput(harness.db, admitted),
+        firstHandlers,
+      ),
+    ).rejects.toThrow("process crashed after commit")
+    expect(harness.entries).toHaveLength(1)
+    expect(harness.intents).toEqual(["alge_1"])
+
+    const replay = vi.fn(async (command) => {
+      expect(harness.intents).toContain(command.causation.claimActionId)
+      return { resumed: true }
+    })
+    await expect(
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), {
+        prepare,
+        execute: vi.fn(),
+        replay,
+      }),
+    ).resolves.toMatchObject({ replayed: true, value: { resumed: true } })
+    expect(prepare).toHaveBeenCalledTimes(1)
+    expect(replay).toHaveBeenCalledTimes(1)
+  })
+
+  it("prepares one intent and classifies a concurrent exact call as replay", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const prepare = vi.fn(async (tx, command) => {
+      ;(tx as AnyDrizzleDb & { __intents: string[] }).__intents.push(
+        command.causation.claimActionId,
+      )
+    })
+    const execute = vi.fn(async () => ({ path: "execute" }))
+    const replay = vi.fn(async () => ({ path: "replay" }))
+    const handlers = { prepare, execute, replay }
+
+    const results = await Promise.all([
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers),
+      executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers),
+    ])
+
+    expect(results.map((result) => result.replayed).sort()).toEqual([false, true])
+    expect(prepare).toHaveBeenCalledTimes(1)
+    expect(harness.intents).toEqual(["alge_1"])
+    expect(execute).toHaveBeenCalledTimes(1)
+    expect(replay).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects approved execution and replay across organization boundaries", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = await approvedExistingContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const fingerprint = admitted.invocation.idempotencyFingerprint!
+    mockApprovedExistingCommand(admitted, fingerprint)
+    const handlers = {
+      prepare: vi.fn(async () => {}),
+      execute: vi.fn(async () => ({ ok: true })),
+      replay: vi.fn(async () => ({ ok: true })),
+    }
+    await executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, admitted), handlers)
+
+    const crossOrganization = existingCommandInput(harness.db, admitted)
+    crossOrganization.context = { ...crossOrganization.context, organizationId: "org_2" }
+    await configureExistingClaimLookup(harness.db, admitted, "org_2")
+    await expect(
+      executeAdmittedExistingTargetCommand(crossOrganization, handlers),
+    ).rejects.toMatchObject({ reason: "organization_mismatch" })
+    expect(handlers.replay).not.toHaveBeenCalled()
+  })
+})
 
 describe("created-target command protocol", () => {
   it("uses admitted graph identity, Tool route identity, and replays the canonical child reference", async () => {
@@ -668,6 +1205,171 @@ describe("created-target command protocol", () => {
   })
 })
 
+function makeAdmittedExistingTargetContext(
+  input: { approval?: "never" | "required" } = {},
+): ExecuteAdmittedExistingTargetCommandInput["admitted"] {
+  const approval = input.approval ?? "never"
+  return {
+    capabilityId: "@voyant-travel/trips#tool.price-trip",
+    capabilityVersion: "v1",
+    canonicalName: "price_trip",
+    actionPolicy: {
+      id: "@voyant-travel/trips#action.price-trip",
+      capabilityId: "@voyant-travel/trips#action.price-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      commandTargetField: "tripId",
+      targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
+      risk: "high",
+      ledger: "required",
+      approval,
+      ...(approval === "required" ? { policy: "trips-price-policy" } : {}),
+      reversible: true,
+      enforcement: "handler",
+      invocation: {
+        controlField: "_voyant",
+        requiredFields:
+          approval === "required"
+            ? ["idempotencyKey", "approvalId", "idempotencyFingerprint"]
+            : ["idempotencyKey"],
+        optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+        fingerprintAlgorithm: "action-ledger-command-v1",
+      },
+    },
+    invocation: { idempotencyKey: "price_1" },
+  }
+}
+
+function existingCommandInput(
+  db: AnyDrizzleDb,
+  admitted: ExecuteAdmittedExistingTargetCommandInput["admitted"],
+): ExecuteAdmittedExistingTargetCommandInput<{ tripId: string; currency: string }> {
+  ;(db as AnyDrizzleDb & { __claimKey?: string }).__claimKey = admitted.invocation.idempotencyKey
+  return {
+    db,
+    context: {
+      userId: "usr_1",
+      organizationId: "org_1",
+      actor: "staff",
+      callerType: "session",
+      sessionId: "session_current",
+    },
+    admitted,
+    commandInput: { tripId: "trip_1", currency: "EUR" },
+    evaluatedRisk: "high",
+  }
+}
+
+async function approvedExistingContext() {
+  const admitted = makeAdmittedExistingTargetContext({ approval: "required" })
+  admitted.invocation = {
+    idempotencyKey: "price_1",
+    approvalId: "appr_existing",
+    idempotencyFingerprint: await buildActionApprovalCommandFingerprint({
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      targetType: "trip",
+      targetId: "trip_1",
+      commandInput: { tripId: "trip_1", currency: "EUR" },
+      approvalPolicy: "required",
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      evaluatedRisk: "high",
+      reasonCode: "operator_approved",
+    }),
+    reasonCode: "operator_approved",
+  }
+  return admitted
+}
+
+async function configureExistingClaimLookup(
+  db: AnyDrizzleDb,
+  admitted: ExecuteAdmittedExistingTargetCommandInput["admitted"],
+  organizationId = "org_1",
+) {
+  const scope = await buildExistingTargetIdempotencyScope({
+    actionName: admitted.actionPolicy.capabilityId,
+    actionVersion: admitted.actionPolicy.version,
+    principalType: "user",
+    principalId: "usr_1",
+    organizationId,
+  })
+  const store = db as AnyDrizzleDb & { __claimScope?: string; __claimKey?: string }
+  store.__claimScope = `${scope}:existing-command-claim`
+  store.__claimKey = admitted.invocation.idempotencyKey
+}
+
+function mockApprovedExistingCommand(
+  admitted: ExecuteAdmittedExistingTargetCommandInput["admitted"],
+  fingerprint: string,
+) {
+  const approval = makeApproval({
+    id: "appr_existing",
+    requestedActionId: "alge_requested_existing",
+    status: "approved",
+    requestedByPrincipalId: "usr_1",
+    assignedToPrincipalId: "usr_approver",
+    decidedByPrincipalId: "usr_approver",
+    policyName: "trips-price-policy",
+    policyVersion: "v1",
+    riskSnapshot: "high",
+    reasonCode: "operator_approved",
+    expiresAt: null,
+  })
+  const requestedAction = makeEntry({
+    id: "alge_requested_existing",
+    actionName: admitted.actionPolicy.capabilityId,
+    actionVersion: admitted.actionPolicy.version,
+    actionKind: "execute",
+    status: "awaiting_approval",
+    evaluatedRisk: "high",
+    principalType: "user",
+    principalId: "usr_1",
+    organizationId: "org_1",
+    targetType: "trip",
+    targetId: "trip_1",
+    routeOrToolName: admitted.capabilityId,
+    capabilityId: admitted.actionPolicy.capabilityId,
+    capabilityVersion: admitted.actionPolicy.version,
+    approvalId: "appr_existing",
+    idempotencyKey: "price_1",
+    idempotencyFingerprint: fingerprint,
+  })
+  vi.spyOn(actionLedgerService, "validateApprovedAction").mockImplementation(async (_db, input) =>
+    input.organizationId !== requestedAction.organizationId
+      ? {
+          ok: false,
+          reason: "organization_mismatch",
+          approval,
+          requestedAction,
+        }
+      : input.idempotencyKey !== requestedAction.idempotencyKey
+        ? {
+            ok: false,
+            reason: "idempotency_key_mismatch",
+            approval,
+            requestedAction,
+          }
+        : {
+            ok: true,
+            approval,
+            requestedAction,
+            idempotencyFingerprint: fingerprint,
+          },
+  )
+  vi.spyOn(actionLedgerService, "getApproval").mockResolvedValue({
+    approval,
+    requestedAction: {
+      entry: requestedAction,
+      mutationDetail: null,
+      sensitiveReadDetail: null,
+      payloads: [],
+    },
+  })
+}
+
 function makeAdmittedCreatedTargetContext(
   input: { actionName?: string; actionVersion?: string } = {},
 ) {
@@ -806,6 +1508,7 @@ function mockApprovedCommand(input: ExecuteCreatedTargetCommandInput) {
       evaluatedRisk: input.evaluatedRisk,
       principalType: "user",
       principalId: "usr_1",
+      organizationId: "org_1",
       targetType: input.commandTarget.type,
       targetId: input.commandTarget.id,
       routeOrToolName: input.routeOrToolName ?? null,
@@ -833,19 +1536,37 @@ function makeCreatedCommandDb() {
   const entries: ActionLedgerEntry[] = []
   const mutationDetails: ActionMutationDetail[] = []
   const events: string[] = []
+  const intents: string[] = []
+  let transactionTail = Promise.resolve()
 
   const db = {
     __events: events,
+    __intents: intents,
     __claimScope: "relationships.create_person:usr_1:created-command-claim",
+    __claimKey: undefined as string | undefined,
     async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+      const previous = transactionTail
+      let release!: () => void
+      transactionTail = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await previous
+      const entryCount = entries.length
+      const detailCount = mutationDetails.length
+      const intentCount = intents.length
       events.push("begin")
       try {
         const result = await callback(db as unknown as AnyDrizzleDb)
         events.push("commit")
         return result
       } catch (error) {
+        entries.splice(entryCount)
+        mutationDetails.splice(detailCount)
+        intents.splice(intentCount)
         events.push("rollback")
         throw error
+      } finally {
+        release()
       }
     },
     execute() {
@@ -861,7 +1582,9 @@ function makeCreatedCommandDb() {
                 limit() {
                   if (table === actionLedgerEntries && selection && "claim" in selection) {
                     const claim = entries.find(
-                      (entry) => entry.idempotencyScope === db.__claimScope,
+                      (entry) =>
+                        entry.idempotencyScope === db.__claimScope &&
+                        (db.__claimKey === undefined || entry.idempotencyKey === db.__claimKey),
                     )
                     return Promise.resolve(claim ? [{ claim }] : [])
                   }
@@ -953,7 +1676,7 @@ function makeCreatedCommandDb() {
     },
   } as unknown as AnyDrizzleDb & { __events: string[] }
 
-  return { db, entries, mutationDetails, events }
+  return { db, entries, mutationDetails, events, intents }
 }
 
 function resultScope(scope: string): string {

@@ -48,6 +48,9 @@ export interface ToolActionPolicyBinding {
   targetType: string
   commandTargetField?: string
   targetLifecycle?: "existing" | "created"
+  existingTarget?: {
+    durability: "handler-command-result-v1"
+  }
   createdTarget?: {
     commandTargetType: string
     resultReferenceType: string

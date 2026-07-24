@@ -144,6 +144,7 @@ export async function authorizeFinanceInvoiceIssue(
       routeOrToolName: FINANCE_INVOICE_ISSUE_TOOL_NAME,
       principalType: principal.principalType,
       principalId: principal.principalId,
+      organizationId: principal.organizationId,
       idempotencyFingerprint: fingerprint,
       executionActionKind: "create",
       executionStatus: "succeeded",

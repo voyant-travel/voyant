@@ -25,19 +25,22 @@ describe("refund approval replay", () => {
       balanceDueCents: 0,
       updatedAt: new Date("2026-07-15T10:00:00.000Z"),
     } as never)
-    vi.spyOn(actionLedgerService, "validateApprovedAction").mockImplementation(
-      async (_db, validationInput) =>
-        ({
-          ok: false,
-          reason: "already_executed",
-          existingActionId: "action_execution_1",
-          requestedAction: {
-            idempotencyFingerprint: validationInput.idempotencyFingerprint,
-            principalType: "agent",
-            principalId: "agent_1",
-          },
-        }) as never,
-    )
+    const validateApprovedAction = vi
+      .spyOn(actionLedgerService, "validateApprovedAction")
+      .mockImplementation(
+        async (_db, validationInput) =>
+          ({
+            ok: false,
+            reason: "already_executed",
+            existingActionId: "action_execution_1",
+            requestedAction: {
+              idempotencyFingerprint: validationInput.idempotencyFingerprint,
+              principalType: "agent",
+              principalId: "agent_1",
+              organizationId: "org_1",
+            },
+          }) as never,
+      )
     vi.spyOn(actionLedgerService, "getEntry").mockResolvedValue({
       mutationDetail: { commandResultRef: "credit_note:credit_1" },
     } as never)
@@ -56,11 +59,20 @@ describe("refund approval replay", () => {
         actor: "staff",
         callerType: "agent",
         scopes: ["finance:refund"],
-        requestContext: { agentId: "agent_1", callerType: "agent", actor: "staff" },
+        requestContext: {
+          agentId: "agent_1",
+          organizationId: "org_1",
+          callerType: "agent",
+          actor: "staff",
+        },
         approvalId: "approval_1",
         idempotencyKey: "refund-1",
       }),
     ).resolves.toMatchObject({ status: "already_executed", creditNoteId: "credit_1" })
+    expect(validateApprovedAction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ organizationId: "org_1" }),
+    )
   })
 
   it("fails closed instead of recovering a previous result for a different fingerprint", async () => {

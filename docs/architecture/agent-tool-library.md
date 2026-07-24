@@ -114,13 +114,27 @@ idempotency key, writes the requested and canonical `booking.reserve` ledger ent
 the same transaction, and returns the immutable booking reference on exact replay.
 
 Graph actions distinguish existing targets from handler-generated targets explicitly.
-Existing-target actions retain the generic `_voyant.targetId` preflight. Created-target actions
-declare a stable pre-create command target, an immutable result-reference type, and the
-`handler-command-claim-v1` durability strategy. The framework rejects a generic Tool binding for
-that lifecycle because it cannot make an arbitrary package transaction atomic with a transport
-wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
-mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
-target in the same transaction (or use a durable outbox/state machine for external effects).
+Existing-target actions use the generic `_voyant.targetId` preflight unless they opt into
+`existingTarget.durability: "handler-command-result-v1"`. That opt-in requires a stable
+`commandTargetField`, required-ledger execute policy, non-conditional approval, and handler-owned
+enforcement. The action-ledger transaction binds the selected action, target, organization,
+principal, payload fingerprint, idempotency key, approval, and causation, then requires the domain
+handler to persist its durable operation intent in that same transaction. Only after both claim
+and intent commit may the handler cross an external boundary. An exact retry is routed to the
+handler's replay/resume path instead of being rejected and is therefore guaranteed to find the
+durable intent. Only frozen admitted command fields and the exact frozen domain payload cross the
+transaction boundary; raw request context is not retained or injected into replay. Command payloads
+must be acyclic JSON values made from primitives, arrays, and plain records; exotic objects,
+accessors, sparse arrays, and non-finite numbers fail closed before fingerprinting. The sanitized
+frozen value is the single authoritative snapshot for target extraction, fingerprinting, claim
+construction, intent preparation, execution, and replay.
+Created-target actions declare a stable pre-create command target, an immutable result-reference
+type, and the `handler-command-claim-v1` durability strategy. The framework rejects a generic Tool
+binding for that lifecycle because it cannot make an arbitrary package transaction atomic with a
+transport wrapper. The declaration is a contract, not an after-dispatch hint: the handler must
+claim before mutation, resolve exact replays, conflict on altered commands, and append the
+generated canonical target in the same transaction (or use a durable outbox/state machine for
+external effects).
 Execute Tool actions may also declare an explicit graph `availability`. An action marked
 `unavailable` remains in the resolved graph with a stable `reasonCode`, but its Tool and
 runtime reference are omitted from lowering, so it cannot appear in MCP discovery or dispatch.
@@ -146,6 +160,10 @@ Exact linked replay checks immutable persisted approval/request/claim continuity
 expiry again. Approval requests bind the exact selected Tool capability (explicitly for multi-Tool
 actions), and handlers use the context capability id as their ledger route identity. Conditional
 created-target approval remains fail-closed.
+Existing-target durable commands apply the same exact approval continuity. The first claim uses
+live approval and authorization validation; linked replays validate immutable persisted
+request/approval/claim identity without reapplying expiry. Altered targets, payloads, keys, policy,
+principal, or capability identity conflict before domain dispatch.
 
 When the generated target is a child row, `createdTarget.parentAnchor` names the stable existing
 owner carried by the Tool input. A static parent uses `targetType` plus `targetIdField`; polymorphic

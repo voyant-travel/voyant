@@ -344,6 +344,68 @@ describe("createToolRegistry", () => {
     expect(registry.list()[0]?.actionPolicy?.invocation.requiredFields).not.toContain("targetId")
   })
 
+  it("requires explicit handler-owned result metadata for durable existing-target dispatch", () => {
+    const definition = defineTool({
+      name: "price_record",
+      description: "Price an existing record through a durable handler-owned command.",
+      inputSchema: z.object({ recordId: z.string() }),
+      outputSchema: z.object({ id: z.string() }),
+      requiredScopes: ["records:write"],
+      tier: "write",
+      riskPolicy: {
+        destructive: false,
+        reversible: true,
+        dryRunSupported: false,
+        sideEffects: ["data-write"],
+      },
+      actionPolicyEnforcement: "handler",
+      async handler({ recordId }) {
+        return { id: recordId }
+      },
+    })
+    const action = {
+      id: "action.price-record",
+      capabilityId: "@voyant-travel/test#action.price-record",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "record",
+      commandTargetField: "recordId",
+      targetLifecycle: "existing" as const,
+      existingTarget: { durability: "handler-command-result-v1" as const },
+      risk: "medium" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+    }
+    const registry = createToolRegistry()
+    registry.register(definition, { actionPolicy: action })
+
+    expect(registry.list()[0]?.actionPolicy).toMatchObject({
+      targetLifecycle: "existing",
+      commandTargetField: "recordId",
+      existingTarget: { durability: "handler-command-result-v1" },
+      enforcement: "handler",
+      invocation: { requiredFields: ["idempotencyKey"] },
+    })
+    expect(registry.list()[0]?.actionPolicy?.invocation.requiredFields).not.toContain("targetId")
+
+    expect(() =>
+      createToolRegistry().register(
+        { ...definition, actionPolicyEnforcement: "generic" },
+        { actionPolicy: action },
+      ),
+    ).toThrow(/requires actionPolicyEnforcement "handler"/)
+    expect(() =>
+      createToolRegistry().register(definition, {
+        actionPolicy: { ...action, commandTargetField: undefined },
+      }),
+    ).toThrow(/has no commandTargetField/)
+    expect(() =>
+      createToolRegistry().register(definition, {
+        actionPolicy: { ...action, approval: "conditional" },
+      }),
+    ).toThrow(/conditional approval is unsupported/)
+  })
+
   it("preserves generic targetId requirements when target lifecycle is omitted", () => {
     const registry = createToolRegistry()
     registry.register(echoTool, {
