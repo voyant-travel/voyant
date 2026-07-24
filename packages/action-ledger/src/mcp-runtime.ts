@@ -146,17 +146,14 @@ export function createActionLedgerToolServices(input: {
       const currentPrincipal = writePrincipal(input.requestContext)
       const selected = selectedApprovalRequestAction(input.selectedActions, request)
       const capabilityId = selected.capabilityId ?? selected.id
-      const approvalTargetType =
-        selected.targetLifecycle === "created"
-          ? selected.createdTarget?.commandTargetType
-          : selected.targetType
-      if (!approvalTargetType) {
+      if (selected.targetLifecycle === "created") {
         throw new ToolError(
-          "Created-target approval requires a declared pre-create command target type.",
+          "Approval-required created-target Tools fail closed until MCP propagates the approved command control context to the package handler.",
           "ACTION_POLICY_REQUIRED",
           { actionId: selected.id },
         )
       }
+      const approvalTargetType = selected.targetType
       const reasonCode = request.reasonCode ?? null
       const idempotencyFingerprint = await buildActionApprovalCommandFingerprint({
         actionName: capabilityId,

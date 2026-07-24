@@ -48,6 +48,10 @@ export interface BuildActionApprovalCommandFingerprintInput {
   capabilityVersion: string
   evaluatedRisk: ActionLedgerCapabilityRisk
   reasonCode: string | null
+  createdTarget?: {
+    canonicalTargetType: string
+    resultReferenceType: string
+  } | null
 }
 
 export async function buildActionApprovalCommandFingerprint(
@@ -65,6 +69,7 @@ export async function buildActionApprovalCommandFingerprint(
       capabilityVersion: input.capabilityVersion,
       evaluatedRisk: input.evaluatedRisk,
       reasonCode: input.reasonCode,
+      ...(input.createdTarget ? { createdTarget: input.createdTarget } : {}),
     },
   })
 }

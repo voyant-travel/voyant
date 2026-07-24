@@ -36,9 +36,75 @@ canonical target does not exist before dispatch, so the caller cannot supply it 
 preflight cannot share the domain transaction. A created-target handler must implement the
 `handler-command-claim-v1` contract: claim a stable pre-create command identity and fingerprint
 before mutation, reject same-key/different-command reuse, replay a typed immutable result
-reference, and atomically append the canonical generated-target result. Approval requests for
-such actions bind to the declared command target type; the successful generated-target entry is
-then linked causally by the handler.
+reference, and atomically append the canonical generated-target result. Approval-bearing created
+commands fail closed until MCP can propagate their approved invocation controls into the handler.
+
+Package handlers implement that contract with `executeCreatedTargetCommand` from
+`@voyant-travel/action-ledger/created-command`. It owns the transaction and keeps the claim
+opaque; domain callbacks receive only its exact transaction handle:
+
+```ts
+const command = {
+  actionName: "relationship.person.create",
+  actionVersion: "v1",
+  commandTarget: {
+    type: "relationship-person-create-command",
+    id: commandId,
+  },
+  canonicalTargetType: "relationship-person",
+  resultReferenceType: "relationship-person-ref",
+  commandInput: input,
+  capabilityId: "relationships:person:create",
+  capabilityVersion: "v1",
+  evaluatedRisk: "high",
+  approvalPolicy: "none",
+  approvalReasonCode: null,
+}
+const fingerprint = await buildCreatedTargetCommandFingerprint(command)
+
+return executeCreatedTargetCommand(
+  db,
+  {
+    context,
+    ...command,
+    idempotency: {
+      scope: `relationships.create_person:${principalId}`,
+      key: idempotencyKey,
+      fingerprint,
+    },
+  },
+  {
+    async create(tx) {
+      const person = await insertPerson(tx, input)
+      return { value: person, targetId: person.id }
+    },
+    async replay(tx, result) {
+      return resolvePerson(tx, result.reference.id)
+    },
+  },
+)
+```
+
+The executor requires a transaction-capable database, holds a Postgres transaction-scoped
+advisory lock for the idempotency scope and key, appends the requested command identity before
+calling domain code, re-reads that opaque claim, and appends the canonical result before commit.
+Exact replay validates full principal, tenant, workflow, capability, authorization, and approval
+continuity plus the typed `<reference-type>:<target-id>` result, then calls only `replay`. A
+committed claim without a result throws `ActionLedgerCreatedCommandReplayIncompleteError`;
+malformed or inconsistent result metadata throws
+`ActionLedgerCreatedCommandReplayCorruptError`. Neither condition is dispatched again.
+
+`buildCreatedTargetCommandFingerprint` covers the command identity and input,
+`canonicalTargetType`, `resultReferenceType`, and typed risk/capability/approval/reason metadata.
+The executor derives those fields from the same top-level input and fails before the transaction
+if the supplied digest drifts. Principal admission uses `mapActionLedgerRequestContext`; mismatched
+caller types cannot smuggle an agent or API-token identity into the ledger.
+
+Approval-bearing created commands currently fail closed. MCP strips invocation controls before
+package dispatch and does not yet expose approval id, fingerprint, or reason code through a
+request-scoped handler context. Both the approval request Tool and
+`executeCreatedTargetCommand` reject created actions whose approval policy is not `none` until
+that propagation contract exists.
 
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their

@@ -66,6 +66,9 @@
       "@voyant-travel/action-ledger-react/provider": ["../action-ledger-react/dist/provider.d.ts"],
       "@voyant-travel/action-ledger/canary": ["../action-ledger/dist/canary.d.ts"],
       "@voyant-travel/action-ledger/capability": ["../action-ledger/dist/capability.d.ts"],
+      "@voyant-travel/action-ledger/created-command": [
+        "../action-ledger/dist/created-command.d.ts"
+      ],
       "@voyant-travel/action-ledger/fingerprint": ["../action-ledger/dist/fingerprint.d.ts"],
       "@voyant-travel/action-ledger/graph-runtime": ["../action-ledger/dist/graph-runtime.d.ts"],
       "@voyant-travel/action-ledger/health": ["../action-ledger/dist/health-routes.d.ts"],
