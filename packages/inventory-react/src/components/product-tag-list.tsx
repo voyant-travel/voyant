@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
   DropdownMenu,
@@ -122,8 +123,13 @@ export function ProductTagList({ pageSize = 200 }: ProductTagListProps = {}) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            if (confirm(messages.productTagList.deleteConfirm)) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: messages.productTagList.deleteConfirm,
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(tag.id)
                             }
                           }}

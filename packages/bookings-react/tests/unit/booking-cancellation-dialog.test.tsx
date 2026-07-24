@@ -62,7 +62,7 @@ describe("BookingCancellationDialog", () => {
     )
 
     expect(html).toContain("Paid booking settlement required")
-    expect(html).toContain("refund, credit note, or no-refund decision")
+    expect(html).toContain("decide on a refund, credit note, or no refund")
   })
 })
 

@@ -114,7 +114,7 @@ describe("BookingPaymentReconciliationBanner", () => {
 
     expect(html).toContain("Needs review")
     expect(html).toContain(
-      "Invoice paid totals, recorded payments, and paid schedule rows disagree",
+      "match across invoices, payments, and the schedule. Check them before taking more payment.",
     )
     expect(html).toContain("€165.00")
   })
@@ -127,7 +127,7 @@ describe("BookingPaymentReconciliationBanner", () => {
     const html = renderToStaticMarkup(<BookingPaymentReconciliationBanner bookingId="book_123" />)
 
     expect(html).toContain("Reconciled")
-    expect(html).toContain("currently agree")
+    expect(html).toContain("Paid amounts match across invoices, payments, and the schedule.")
     expect(html).not.toContain("Needs review")
   })
 })

@@ -2,6 +2,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   Input,
   Label,
   Popover,
@@ -94,7 +95,7 @@ export function TemplatesPage({
   const canEditTemplates = !!renderTemplateDialog
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
       </div>
@@ -257,8 +258,15 @@ export function TemplatesPage({
                           size="sm"
                           aria-label={f.deleteAction}
                           title={f.deleteAction}
-                          onClick={() => {
-                            if (confirm(formatMessage(f.deleteConfirm, { name: template.name }))) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: formatMessage(f.deleteConfirm, {
+                                  name: template.name,
+                                }),
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(template.id, { onSuccess: () => void refetch() })
                             }
                           }}

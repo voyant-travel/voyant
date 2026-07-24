@@ -12,6 +12,6 @@ export const setupRo: SetupMessages = {
   back: "Inapoi la panoul principal",
   loading: "Se incarca progresul configurarii...",
   loadFailed: "Progresul configurarii nu a putut fi incarcat.",
-  allDoneTitle: "Ghidul de configurare este finalizat",
-  allDoneDescription: "Panoul principal ramane disponibil pentru produse si activitatea zilnica.",
+  allDoneTitle: "Gata, esti pregatit",
+  allDoneDescription: "Mergi la panoul principal pentru a incepe sa creezi produse.",
 }

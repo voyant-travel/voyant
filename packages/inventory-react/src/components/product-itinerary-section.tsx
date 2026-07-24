@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
   Card,
@@ -157,14 +158,15 @@ export function ProductItinerarySection({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    !confirm(
-                      pageMessages.states.deleteItineraryConfirm.replace(
+                    !(await confirmDialog({
+                      description: pageMessages.states.deleteItineraryConfirm.replace(
                         "{name}",
                         selectedItinerary.name,
                       ),
-                    )
+                      destructive: true,
+                    }))
                   ) {
                     return
                   }
@@ -227,14 +229,15 @@ export function ProductItinerarySection({
                     setEditingDay(day)
                     setDayDialogOpen(true)
                   }}
-                  onDelete={() => {
+                  onDelete={async () => {
                     if (
-                      !confirm(
-                        pageMessages.states.deleteDayConfirm.replace(
+                      !(await confirmDialog({
+                        description: pageMessages.states.deleteDayConfirm.replace(
                           "{dayNumber}",
                           String(day.dayNumber),
                         ),
-                      )
+                        destructive: true,
+                      }))
                     ) {
                       return
                     }
@@ -256,11 +259,15 @@ export function ProductItinerarySection({
                     setExpandedDayId(day.id)
                     setServiceDialogOpen(true)
                   }}
-                  onDeleteService={(service) => {
+                  onDeleteService={async (service) => {
                     if (
-                      !confirm(
-                        pageMessages.states.deleteServiceConfirm.replace("{name}", service.name),
-                      )
+                      !(await confirmDialog({
+                        description: pageMessages.states.deleteServiceConfirm.replace(
+                          "{name}",
+                          service.name,
+                        ),
+                        destructive: true,
+                      }))
                     ) {
                       return
                     }

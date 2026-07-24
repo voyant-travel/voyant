@@ -22,7 +22,7 @@ const HEADER_WIDTHS = ["w-20", "w-14", "w-20", "w-8", "w-20"] as const
  */
 export function BookingsListSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-28" />
         <Skeleton className="h-4 w-80" />

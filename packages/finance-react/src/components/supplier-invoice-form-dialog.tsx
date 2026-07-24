@@ -1,12 +1,6 @@
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -14,6 +8,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
@@ -255,14 +255,14 @@ export function SupplierInvoiceFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEdit ? t.editTitle : messages.supplierInvoicesPage.recordInvoice}
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody className="grid grid-cols-2 gap-3">
+          </SheetTitle>
+        </SheetHeader>
+        <SheetBody className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {extractFromFile ? (
             <label className="col-span-2 cursor-pointer">
               <span className="inline-flex h-9 items-center gap-2 rounded-md border border-dashed px-3 text-sm font-medium hover:bg-muted">
@@ -391,14 +391,14 @@ export function SupplierInvoiceFormDialog({
           <Field label={t.notes} className="col-span-2">
             <Textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} />
           </Field>
-        </DialogBody>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button type="button" disabled={!canSave || pending} onClick={submit}>
             {pending ? t.saving : t.save}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
 

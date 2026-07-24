@@ -113,17 +113,15 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     regimeOverridesLabel: "Suprascrieri",
     regimeOverrideCount: "{count} suprascrieri",
     taxClassSectionTitle: "Clasa de taxe",
-    taxClassSectionDescription:
-      "Clasificarea selectabila salvata pe produse si linii de rezervare.",
+    taxClassSectionDescription: "Clasa de taxe afisata pe produse si linii de rezervare.",
     defaultRegimeSectionTitle: "Regim fiscal implicit",
-    defaultRegimeSectionDescription:
-      "Regula de calcul TVA/taxe legata prin tax_classes.default_regime_id.",
+    defaultRegimeSectionDescription: "Regula TVA implicita folosita pentru aceasta clasa de taxe.",
     regimeOverridesSectionTitle: "Suprascrieri de regim",
     regimeOverridesSectionDescription:
-      "Intrari optionale tax_classes.lines pentru baza, addon, cazare sau toate liniile.",
+      "Optional, seteaza taxe diferite pentru liniile de baza, suplimente sau cazare.",
     addRegimeOverride: "Adauga suprascriere",
     removeRegimeOverride: "Sterge suprascrierea",
-    noRegimeOverrides: "Nu exista suprascrieri de regim. Clasa foloseste regimul implicit.",
+    noRegimeOverrides: "Nu exista suprascrieri — aceasta clasa foloseste regula implicita.",
     appliesToLabel: "Se aplica la",
     taxRegimeLabel: "Regim fiscal",
     appliesToBase: "Baza",
@@ -214,7 +212,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
   bookingTaxSettings: {
     title: "Setari de taxe pentru rezervari",
     description:
-      "Controleaza cum sunt calculate taxele pe partea de vanzare in preview-urile de creare rezervare, recalculul ofertelor si liniile fiscale ale articolelor.",
+      "Cum sunt calculate taxele pe previzualizarile rezervarilor, oferte si liniile de rezervare.",
     catalogPriceModeLabel: "Mod pret catalog",
     priceModeInclusive: "Inclusiv TVA",
     priceModeExclusive: "Exclusiv TVA",
@@ -226,9 +224,9 @@ export const operatorAdminSettingsMessagesRoPart1 = {
   operatorProfilePage: {
     title: "Organizație",
     descriptionPrefix:
-      "Identitatea organizației pentru contracte, blocuri legale publice si colectarea platilor. Aceste detalii populeaza ",
-    descriptionCodeFragment: "operator.*",
-    descriptionSuffix: " in sabloanele de contract.",
+      "Detaliile organizației tale pentru contracte, texte legale si plati. Sunt folosite automat in sabloanele tale de contract.",
+    descriptionCodeFragment: "",
+    descriptionSuffix: "",
     savedToast: "Organizația a fost salvată",
     saveFailed: "Salvarea a esuat",
     saveChanges: "Salveaza modificarile",
@@ -285,7 +283,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     baseCurrency: {
       title: "Moneda de baza",
       description:
-        "Moneda unica in care se consolideaza finantele. Fiecare factura si plata inregistreaza un instantaneu convertit in aceasta moneda in momentul crearii, astfel incat rapoartele pot afisa un total consistent pentru toate monedele tranzactiilor.",
+        "Moneda principala pentru rapoartele tale. Fiecare factura si plata este inregistrata si in aceasta moneda, astfel incat totalurile raman consistente.",
       label: "Moneda de baza",
       placeholder: "Selecteaza o moneda",
       help: "Folosita ca baza de inregistrare FX pentru noile inregistrari financiare. Schimbarea nu reconverteste inregistrarile anterioare — instantaneele lor raman la cursul capturat la crearea lor.",
@@ -310,7 +308,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     defaultPaymentPolicy: {
       title: "Politica implicita de plata pentru clienti",
       description:
-        "Se aplica atunci cand nu exista nicio suprascriere per furnizor, categorie, listing sau rezervare. Defineste impartirea avans / sold afisata pe storefront si stocata ca grafic de plata al rezervarii.",
+        "Impartirea implicita intre avans si sold, folosita cand nu este setat ceva mai specific. Afisata la checkout si salvata in graficul de plata al rezervarii.",
     },
     checkoutLinks: {
       title: "Linkuri de checkout",
@@ -382,7 +380,7 @@ export const operatorAdminSettingsMessagesRoPart1 = {
     capabilities: "Capabilitati",
     configuredViaEnv: "Acest procesator de plati este configurat prin variabile de mediu.",
     configuredViaEnvHint:
-      "Pentru a schimba procesatorul sau datele de acces, actualizeaza mediul de deployment. Conectarea din aplicatie este disponibila pe deployment-urile gestionate.",
+      "Pentru a schimba procesatorul sau datele de acces, actualizeaza setarile de mediu. Conectarea din aplicatie este disponibila pe conturile gestionate.",
     credentialsTitle: "Conecteaza {provider}",
     credentialsDescription:
       "Introdu datele de acces {provider}. Sunt stocate in siguranta si nu vor mai fi afisate.",

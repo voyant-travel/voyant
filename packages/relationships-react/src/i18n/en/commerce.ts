@@ -8,11 +8,11 @@ export const crmUiEnCommerceMessages = {
       status: "Status",
       description: "Description",
       linkTo: "Link to",
-      entityId: "Entity",
+      entityId: "Linked to",
     },
     placeholders: {
       subject: "Discovery call with Acme",
-      entityId: "Search or paste a reference",
+      entityId: "Search a person, company, or quote",
     },
     validation: {
       subjectRequired: "Subject is required",
@@ -91,7 +91,7 @@ export const crmUiEnCommerceMessages = {
     fields: {
       description: "Description",
       quantity: "Qty",
-      priceCents: "Price",
+      priceCents: "Unit price",
     },
     validation: {
       descriptionRequired: "Description is required",
@@ -101,7 +101,7 @@ export const crmUiEnCommerceMessages = {
   },
   activitiesPage: {
     title: "Activities",
-    description: "Calls, emails, meetings, tasks, and follow-ups across your CRM.",
+    description: "Your logged calls, emails, and meetings.",
     create: "New activity",
     filters: {
       type: "Type",

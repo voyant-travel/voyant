@@ -47,7 +47,7 @@ export function InvoicesTableSkeleton({ rows = 8 }: { rows?: number }) {
 
 export function InvoicesPageSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-7 w-32" />

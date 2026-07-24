@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Loader2, MessageSquare } from "lucide-react"
 import { useState } from "react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
@@ -229,7 +230,7 @@ export function PublicProposalPage({
 
   return (
     <div className="min-h-screen bg-[#f7f5ef] text-[#232826]">
-      <main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto grid w-full max-w-5xl gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <header className="border-[#d8d2c3] border-b pb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -390,8 +391,8 @@ export function PublicProposalPage({
                     type="button"
                     className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isMutating}
-                    onClick={() => {
-                      if (window.confirm(t.declineConfirm)) void decline.mutateAsync()
+                    onClick={async () => {
+                      if (await confirmDialog(t.declineConfirm)) void decline.mutateAsync()
                     }}
                   >
                     {decline.isPending ? t.declining : t.decline}

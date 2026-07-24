@@ -35,7 +35,7 @@ export function CostCategoriesPage({ className }: CostCategoriesPageProps = {}) 
   }
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
         <p className="text-sm text-muted-foreground">{t.description}</p>

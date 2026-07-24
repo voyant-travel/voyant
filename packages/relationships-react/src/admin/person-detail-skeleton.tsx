@@ -31,7 +31,7 @@ export function PersonDetailSkeleton() {
         {/* Sidebar */}
         <aside className="col-span-12 flex flex-col gap-4 lg:col-span-3">
           <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-6">
+            <CardContent className="flex flex-col items-center gap-3">
               <Skeleton className="h-20 w-20 rounded-full" />
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-3 w-32" />

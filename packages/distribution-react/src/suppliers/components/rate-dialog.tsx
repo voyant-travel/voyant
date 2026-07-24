@@ -2,12 +2,6 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +9,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
@@ -102,16 +102,16 @@ export function RateDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <Field label={dialog.seasonNameLabel} error={form.formState.errors.name?.message}>
               <Input {...form.register("name")} placeholder={dialog.seasonNamePlaceholder} />
             </Field>
@@ -203,8 +203,8 @@ export function RateDialog({
             <Field label={dialog.notesLabel}>
               <Textarea {...form.register("notes")} placeholder={dialog.notesPlaceholder} />
             </Field>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -212,10 +212,10 @@ export function RateDialog({
               {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
               {isEditing ? messages.common.save : messages.common.create}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 

@@ -2,14 +2,14 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -22,6 +22,7 @@ import { z } from "zod/v4"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { type PriceScheduleRecord, usePriceScheduleMutation } from "../index.js"
 import { PriceCatalogCombobox } from "./price-catalog-combobox.js"
+import { RecurrenceRulePicker } from "./recurrence-rule-picker.js"
 
 function createScheduleFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
   return z.object({
@@ -124,20 +125,20 @@ export function PriceScheduleDialog({
   const isSubmitting = create.isPending || update.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.priceScheduleDialog.titles.edit
               : messages.priceScheduleDialog.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.priceScheduleDialog.fields.catalog}</Label>
               <PriceCatalogCombobox
@@ -157,7 +158,7 @@ export function PriceScheduleDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.name}</Label>
                 <Input
@@ -179,15 +180,15 @@ export function PriceScheduleDialog({
 
             <div className="flex flex-col gap-2">
               <Label>{messages.priceScheduleDialog.fields.recurrenceRule}</Label>
-              <Textarea
-                {...form.register("recurrenceRule")}
-                placeholder={messages.priceScheduleDialog.placeholders.recurrenceRule}
-                rows={2}
-                className="font-mono text-xs"
+              <RecurrenceRulePicker
+                value={form.watch("recurrenceRule")}
+                onChange={(rule) =>
+                  form.setValue("recurrenceRule", rule, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
               />
-              <p className="text-xs text-muted-foreground">
-                {messages.priceScheduleDialog.helpText.recurrenceRuleExample}
-              </p>
               {form.formState.errors.recurrenceRule ? (
                 <p className="text-xs text-destructive">
                   {form.formState.errors.recurrenceRule.message}
@@ -195,7 +196,7 @@ export function PriceScheduleDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.validFrom}</Label>
                 <DatePicker
@@ -216,7 +217,7 @@ export function PriceScheduleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.timezone}</Label>
                 <Input
@@ -242,8 +243,8 @@ export function PriceScheduleDialog({
               <Label>{messages.priceScheduleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -253,9 +254,9 @@ export function PriceScheduleDialog({
                 ? messages.common.saveChanges
                 : messages.priceScheduleDialog.actions.create}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -3,6 +3,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -299,8 +300,13 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
                       setEditingDay(day)
                       setDayDialogOpen(true)
                     }}
-                    onDelete={() => {
-                      if (window.confirm(productMessages.deleteDayConfirm)) {
+                    onDelete={async () => {
+                      if (
+                        await confirmDialog({
+                          description: productMessages.deleteDayConfirm,
+                          destructive: true,
+                        })
+                      ) {
                         dayMutation.remove.mutate(
                           {
                             productId,
@@ -323,8 +329,13 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
                       setEditingService(service)
                       setServiceDialogOpen(true)
                     }}
-                    onDeleteService={(serviceId) => {
-                      if (window.confirm(productMessages.deleteServiceConfirm)) {
+                    onDeleteService={async (serviceId) => {
+                      if (
+                        await confirmDialog({
+                          description: productMessages.deleteServiceConfirm,
+                          destructive: true,
+                        })
+                      ) {
                         void api
                           .delete(
                             `/v1/admin/products/${productId}/days/${day.id}/services/${serviceId}`,

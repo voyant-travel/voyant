@@ -43,7 +43,7 @@ export const chartersUiRo: ChartersUiMessages = {
       apaLabel: "APA (Advance Provisioning Allowance, {percent}% din taxa de charter)",
       totalDue: "Total de plata",
       explanation:
-        "APA acopera combustibilul, mancarea, bauturile, taxele portuare si alte costuri operationale din timpul charterului. Cheltuiala efectiva se reconciliaza la finalul charterului, iar orice surplus se ramburseaza chartererului.",
+        "APA acopera combustibilul, mancarea, bauturile, taxele portuare si costurile curente. Se reconciliaza dupa charter, iar orice surplus se ramburseaza.",
     },
     perSuite: {
       summary: "Oferta charter per suita",

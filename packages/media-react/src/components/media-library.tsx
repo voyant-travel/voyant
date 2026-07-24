@@ -2,12 +2,7 @@
 
 import { Button } from "@voyant-travel/ui/components/button"
 import { Card, CardContent } from "@voyant-travel/ui/components/card"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@voyant-travel/ui/components/empty"
+import { Empty, EmptyHeader, EmptyTitle } from "@voyant-travel/ui/components/empty"
 import {
   Sheet,
   SheetContent,
@@ -96,7 +91,7 @@ export function MediaLibrary({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)} data-slot="media-library">
+    <div className={cn("flex flex-col gap-6", className)} data-slot="media-library">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">{library.title}</h2>
         <p className="text-sm text-muted-foreground">{library.description}</p>
@@ -163,7 +158,6 @@ export function MediaLibrary({
             <Empty>
               <EmptyHeader>
                 <EmptyTitle>{library.empty}</EmptyTitle>
-                <EmptyDescription>{library.upload.hint}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (

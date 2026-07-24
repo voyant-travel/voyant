@@ -6,12 +6,6 @@ import {
 } from "@voyant-travel/finance-react"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -19,6 +13,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
@@ -160,21 +160,21 @@ export function BookingGuaranteeDialog({
   const isSubmitting = create.isPending || update.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.bookingGuaranteeDialog.titles.edit
               : messages.bookingGuaranteeDialog.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+          <SheetBody className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.type}</Label>
                 <Select
@@ -222,7 +222,7 @@ export function BookingGuaranteeDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.currency}</Label>
                 <CurrencyCombobox
@@ -250,7 +250,7 @@ export function BookingGuaranteeDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.provider}</Label>
                 <Input
@@ -289,8 +289,8 @@ export function BookingGuaranteeDialog({
                 placeholder={messages.bookingGuaranteeDialog.placeholders.notes}
               />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -300,9 +300,9 @@ export function BookingGuaranteeDialog({
                 ? messages.common.saveChanges
                 : messages.bookingGuaranteeDialog.actions.addGuarantee}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

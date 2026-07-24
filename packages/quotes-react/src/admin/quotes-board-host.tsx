@@ -86,7 +86,7 @@ export function QuotesBoardHost() {
   const openQuote = (quoteId: string) => navigate("quote.detail", { quoteId })
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-4 p-4 lg:p-6">
+    <div className="flex h-full min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-bold text-2xl tracking-tight">{t.title}</h1>

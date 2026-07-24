@@ -83,30 +83,36 @@ export function AdminCoreSettingsLayout({
 
   const isActive = (href: string) => pathname.replace(/\/$/, "") === href
 
+  // Full-height two-pane settings shell. It bleeds out of the shared page
+  // padding (px-4 py-6 md:px-6 from the workspace layout) so the panes stay
+  // edge-to-edge; the content pane re-adds its own padding below.
   return (
-    <div className="flex flex-col md:h-[calc(100vh-0px)] md:flex-row">
-      <aside className="w-full shrink-0 border-b p-6 md:w-64 md:overflow-y-auto md:border-r md:border-b-0">
-        <h1 className="text-xl font-semibold tracking-tight">{messages.settings.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{messages.settings.description}</p>
-        <nav className="mt-6 flex flex-col gap-6">
+    <div className="-mx-4 -my-6 flex flex-col md:-mx-6 md:h-[calc(100vh-0px)] md:flex-row">
+      <aside className="shrink-0 border-b md:w-64 md:overflow-y-auto md:border-r md:border-b-0 md:p-6">
+        {/* Title only on desktop — on mobile the nav collapses to a thin scroll strip. */}
+        <div className="hidden md:block">
+          <h1 className="text-xl font-semibold tracking-tight">{messages.settings.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{messages.settings.description}</p>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto px-4 py-3 md:mt-6 md:flex-col md:gap-6 md:overflow-x-visible md:px-0 md:py-0">
           {navGroups.map((group) => (
-            <div key={group.title}>
-              <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div key={group.title} className="flex gap-1 md:flex-col md:gap-0">
+              <h3 className="mb-2 hidden px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground md:block">
                 {group.title}
               </h3>
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex gap-1 md:flex-col md:gap-0.5">
                 {group.items.map((item) => (
                   <li key={item.href}>
                     <Link
                       to={item.href}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                        "flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors",
                         isActive(item.href)
                           ? "bg-accent font-medium text-accent-foreground"
                           : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                       )}
                     >
-                      {item.icon ? <item.icon className="h-4 w-4" /> : null}
+                      {item.icon ? <item.icon className="h-4 w-4 shrink-0" /> : null}
                       {item.label}
                     </Link>
                   </li>
@@ -116,7 +122,7 @@ export function AdminCoreSettingsLayout({
           ))}
         </nav>
       </aside>
-      <div className="min-w-0 flex-1 md:overflow-y-auto">
+      <div className="min-w-0 flex-1 p-4 md:overflow-y-auto md:p-6">
         <Outlet />
       </div>
     </div>

@@ -315,7 +315,7 @@ export function DynamicCatalogPage({
     : -1
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl">
       {/* Page header — on top, surface-specific copy. */}
       <div className="mb-4">
         <h1 className="font-semibold text-2xl">{productsLabel}</h1>

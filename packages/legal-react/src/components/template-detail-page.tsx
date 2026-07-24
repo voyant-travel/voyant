@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   ContractTemplateAuthoringHelp,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import {
   Table,
@@ -72,7 +73,7 @@ export function TemplateDetailPage({
 
   if (isPending) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
         </div>
@@ -106,7 +107,7 @@ export function TemplateDetailPage({
     ])
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {onBackToTemplates ? (
           <Button variant="ghost" size="icon" onClick={onBackToTemplates}>
@@ -143,8 +144,13 @@ export function TemplateDetailPage({
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => {
-              if (confirm(formatMessage(f.deleteConfirm, { name: template.name }))) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  description: formatMessage(f.deleteConfirm, { name: template.name }),
+                  destructive: true,
+                })
+              ) {
                 remove.mutate(template.id, {
                   onSuccess: () => {
                     onBackToTemplates?.()

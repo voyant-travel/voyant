@@ -507,7 +507,7 @@ export function OperatorProfileSettingsPage() {
 
   return (
     <form
-      className="mx-auto flex max-w-4xl flex-col gap-6 p-6"
+      className="mx-auto flex max-w-4xl flex-col gap-6"
       onSubmit={(e) => {
         e.preventDefault()
         save.mutate(form)
@@ -527,7 +527,7 @@ export function OperatorProfileSettingsPage() {
           <CardTitle>{t.branding.title}</CardTitle>
           <CardDescription>{t.branding.description}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-6">
           <section className="space-y-3">
             <div>
               <h3 className="text-sm font-semibold">{t.branding.horizontalLogoTitle}</h3>

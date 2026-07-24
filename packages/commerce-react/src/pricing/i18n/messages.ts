@@ -91,6 +91,14 @@ export type PricingUiMessages = {
       placeholder: string
       empty: string
     }
+    pickupPoint: {
+      placeholder: string
+      empty: string
+    }
+    productExtra: {
+      placeholder: string
+      empty: string
+    }
   }
   pricingCategoriesPage: {
     title: string
@@ -249,6 +257,22 @@ export type PricingUiMessages = {
     actions: {
       create: string
     }
+  }
+  recurrence: {
+    frequencyLabel: string
+    frequencyOptions: {
+      yearly: string
+      monthly: string
+      weekly: string
+      custom: string
+    }
+    monthsLabel: string
+    weekdaysLabel: string
+    monthDayLabel: string
+    monthDayPlaceholder: string
+    advancedLabel: string
+    rawRuleLabel: string
+    rawRulePlaceholder: string
   }
   cancellationPolicyRuleDialog: {
     titles: {

@@ -15,13 +15,6 @@ import { ProductCategoryCombobox, ProductCombobox } from "@voyant-travel/invento
 import {
   Badge,
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -29,6 +22,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -109,17 +109,17 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="max-w-2xl">
+        <SheetHeader>
+          <SheetTitle>
             {isEdit ? dialogMessages.titles.edit : dialogMessages.titles.create}
-          </DialogTitle>
-          <DialogDescription>{dialogMessages.description}</DialogDescription>
-        </DialogHeader>
+          </SheetTitle>
+          <SheetDescription>{dialogMessages.description}</SheetDescription>
+        </SheetHeader>
 
-        <DialogBody className="grid gap-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
+        <SheetBody className="grid gap-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-name">{dialogMessages.fields.name}</Label>
               <Input
@@ -152,7 +152,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Discount block */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="grid gap-1.5">
               <Label>{dialogMessages.fields.type}</Label>
               <Select
@@ -161,7 +161,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                   if (v === "percentage" || v === "fixed_amount") setField("discountType", v)
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,7 +223,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 }
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -302,7 +302,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Validity window */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-valid-from">{dialogMessages.fields.validFrom}</Label>
               <DateTimePicker
@@ -320,7 +320,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Code + stacking + minPax + active */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-code">{dialogMessages.fields.code}</Label>
               <Input
@@ -364,9 +364,9 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </DialogBody>
+        </SheetBody>
 
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             {messages.common.cancel}
           </Button>
@@ -377,9 +377,9 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 ? messages.common.saveChanges
                 : messages.common.create}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
 

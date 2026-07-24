@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -77,7 +78,7 @@ export function ChannelsPage({ className, pageSize = PAGE_SIZE }: ChannelsPagePr
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div data-slot="channels-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="channels-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">{page.title}</h2>
@@ -149,8 +150,13 @@ export function ChannelsPage({ className, pageSize = PAGE_SIZE }: ChannelsPagePr
                       <DropdownMenuItem
                         variant="destructive"
                         disabled={remove.isPending}
-                        onClick={() => {
-                          if (window.confirm(page.deleteConfirm)) {
+                        onClick={async () => {
+                          if (
+                            await confirmDialog({
+                              description: page.deleteConfirm,
+                              destructive: true,
+                            })
+                          ) {
                             void remove.mutateAsync(channel.id).then(() => refetch())
                           }
                         }}
@@ -307,7 +313,7 @@ function ChannelSheet({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label id="channel-kind-label" htmlFor="channel-kind">
                   {page.kindLabel}
@@ -377,7 +383,7 @@ function ChannelSheet({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="channel-contact-name">{page.primaryContactLabel}</Label>
                 <Input

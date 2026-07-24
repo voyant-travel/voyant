@@ -22,7 +22,7 @@ export default function BookingJourneyPage({ params, search }: AdminRoutePagePro
   const draftId = useMemo(() => journeySearch.draftId ?? generateDraftId(), [journeySearch.draftId])
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="mx-auto">
       <BookingJourneyHost
         entityModule={params.entityModule ?? ""}
         entityId={params.entityId ?? ""}

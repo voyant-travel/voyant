@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge, Button } from "@voyant-travel/ui/components"
+import { Badge, Button, confirmDialog } from "@voyant-travel/ui/components"
 import { DataTable } from "@voyant-travel/ui/components/data-table"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Link2, Pencil, Plus, Star, Trash2 } from "lucide-react"
@@ -43,7 +43,7 @@ export function ExternalRefsPage({
   }
 
   return (
-    <div data-slot="external-refs-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="external-refs-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center gap-3">
         <Link2 className="size-5 text-muted-foreground" aria-hidden="true" />
         <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
@@ -66,7 +66,7 @@ export function ExternalRefsPage({
       />
 
       {!scopeReady ? (
-        <div className="rounded-md border border-dashed p-12 text-center">
+        <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{pageMessages.emptyScope}</p>
         </div>
       ) : (
@@ -160,8 +160,13 @@ export function ExternalRefsTab({ entityType, entityId }: ExternalRefsTabProps) 
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (confirm(tabMessages.actions.deleteConfirm)) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: tabMessages.actions.deleteConfirm,
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(row.original.id, { onSuccess: () => void refetch() })
                 }
               }}

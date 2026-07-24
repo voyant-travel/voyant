@@ -217,7 +217,7 @@ function Body({
   // session that has neither a redirect URL nor a bank-transfer block).
   if (!cardAvailable && !bankAvailable) {
     return (
-      <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 text-sm">
+      <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-6 text-sm">
         <p className="font-medium">{messages.noMethods.title}</p>
         <p className="mt-2 text-muted-foreground">{messages.noMethods.body}</p>
       </div>
@@ -305,7 +305,7 @@ function CardPanel({
   }
 
   return (
-    <div className="rounded-md border bg-card p-5 shadow-sm">
+    <div className="rounded-md border bg-card p-6 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">{messages.card.description}</p>
       <Button className="w-full" disabled={starting} onClick={handleClick}>
         {starting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -346,7 +346,7 @@ function BankTransferPanel({
   const reference =
     instructions.reference ?? session.externalReference ?? session.clientReference ?? session.id
   return (
-    <div className="rounded-md border bg-card p-5 shadow-sm">
+    <div className="rounded-md border bg-card p-6 shadow-sm">
       <p className="mb-4 text-muted-foreground text-sm">
         {formatMessage(messages.bank.instructions, {
           amount: i18n.formatCurrency(session.amountCents / 100, session.currency),

@@ -246,7 +246,7 @@ export function CruiseDetailPage({
 
   if (status === "loading") {
     return (
-      <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
+      <div className="mx-auto w-full max-w-screen-2xl">
         <div className="grid h-[340px] grid-cols-4 grid-rows-2 gap-2 sm:h-[440px]">
           <div className="col-span-2 row-span-2 animate-pulse rounded-xl bg-muted/40" />
           {Array.from({ length: 4 }).map((_, i) => (

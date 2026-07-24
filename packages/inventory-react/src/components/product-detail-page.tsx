@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: inventory-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
@@ -106,7 +107,13 @@ export function ProductDetailPage({
 
   const handleDelete = async () => {
     setDeleteError(null)
-    if (!confirm(pageMessages.states.deleteConfirm.replace("{name}", product.name))) return
+    if (
+      !(await confirmDialog({
+        description: pageMessages.states.deleteConfirm.replace("{name}", product.name),
+        destructive: true,
+      }))
+    )
+      return
 
     try {
       await remove.mutateAsync(product.id)
@@ -117,7 +124,7 @@ export function ProductDetailPage({
   }
 
   return (
-    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="product-detail-page" className={cn("flex flex-col gap-6", className)}>
       <ProductDetailHeader
         product={product}
         onBack={onBack}
@@ -492,7 +499,7 @@ function ProductDetailPageState({
   const messages = useProductsUiMessagesOrDefault()
 
   return (
-    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4 p-6", className)}>
+    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4", className)}>
       {onBack ? (
         <Button type="button" variant="ghost" className="w-fit" onClick={onBack}>
           <ArrowLeft className="mr-2 size-4" aria-hidden="true" />

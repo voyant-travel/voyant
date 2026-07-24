@@ -3,7 +3,7 @@ import type { MarketsUiMessages } from "./messages.js"
 export const marketsUiEn = {
   settingsPage: {
     title: "Markets",
-    description: "Manage selling regions, default languages, currencies, and tax context.",
+    description: "Manage selling regions, default languages, currencies, and tax rules.",
     empty: "No markets configured yet.",
     add: "Add market",
   },
@@ -32,7 +32,7 @@ export const marketsUiEn = {
       languageTag: "Language tag",
       defaultCurrency: "Default currency",
       timezone: "Timezone",
-      taxContext: "Tax context",
+      taxContext: "Tax rules",
     },
     placeholders: {
       code: "EU-DE",

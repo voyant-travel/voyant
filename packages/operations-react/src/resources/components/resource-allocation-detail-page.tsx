@@ -98,7 +98,7 @@ export function ResourceAllocationDetailPage({
   return (
     <div
       data-slot="resource-allocation-detail-page"
-      className={cn("flex flex-col gap-6 p-6", className)}
+      className={cn("flex flex-col gap-6", className)}
     >
       <ResourceDetailHeader
         title={page.allocation.pageTitle}

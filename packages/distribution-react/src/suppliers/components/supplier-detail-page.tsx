@@ -131,7 +131,7 @@ export function SupplierDetailPage({
   const notes = notesQuery.data?.data ?? []
 
   return (
-    <div data-slot="supplier-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="supplier-detail-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-3">
           {onBack && (
@@ -404,7 +404,7 @@ function EmptyState({
 
 function SupplierDetailSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div className="h-9 w-72 animate-pulse rounded bg-muted" />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="h-64 animate-pulse rounded-md bg-muted" />

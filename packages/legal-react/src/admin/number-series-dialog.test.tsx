@@ -77,6 +77,20 @@ vi.mock("@voyant-travel/ui/components", () => ({
   DialogFooter: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
   DialogHeader: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
   DialogTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
+  Sheet: ({
+    children,
+    open,
+  }: {
+    children?: ReactTypes.ReactNode
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+  }) => (open ? <div>{children}</div> : null),
+  SheetBody: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  SheetContent: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  SheetDescription: ({ children }: { children?: ReactTypes.ReactNode }) => <p>{children}</p>,
+  SheetFooter: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  SheetHeader: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  SheetTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
   Input: (props: ReactTypes.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
   Label: ({ children }: ReactTypes.LabelHTMLAttributes<HTMLLabelElement>) => (
     <span>{children}</span>

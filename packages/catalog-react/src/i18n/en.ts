@@ -23,7 +23,7 @@ export const catalogUiEn = {
       source: "Source",
       supplier: "Supplier",
       bookingMode: "Booking mode",
-      pax: "Pax",
+      pax: "Travelers",
       price: "Price",
       selection: "Selection",
       pricing: "Pricing",
@@ -35,7 +35,7 @@ export const catalogUiEn = {
       yacht: "Yacht",
       from: "From",
       class: "Class",
-      maxPax: "Max pax",
+      maxPax: "Max travelers",
       bedrooms: "Bedrooms",
     },
     filters: {
@@ -54,7 +54,7 @@ export const catalogUiEn = {
       visibility: "Visibility",
       facility: "Facility",
       price: "Price",
-      pax: "Pax",
+      pax: "Travelers",
       any: "Any",
       active: "Active",
       selection: "Selection",
@@ -74,7 +74,7 @@ export const catalogUiEn = {
       class: "Class",
       smoking: "Smoking",
       property: "Property",
-      maxPax: "Max pax",
+      maxPax: "Max travelers",
       bedrooms: "Bedrooms",
       bathrooms: "Bathrooms",
     },
@@ -231,8 +231,8 @@ export const catalogUiEn = {
     },
   },
   catalogBookingPage: {
-    title: "Book this row",
-    descriptionPrefix: "Confirm contact, travelers and payment to commit a booking against",
+    title: "Book this item",
+    descriptionPrefix: "Confirm contact, travelers and payment to book",
     actions: {
       backToCatalog: "Back to catalog",
       refreshPrice: "Refresh price",
@@ -243,7 +243,7 @@ export const catalogUiEn = {
       confirmBooking: "Confirm booking",
     },
     summary: {
-      untitled: "Untitled row",
+      untitled: "Untitled item",
       departure: "Departure",
       available: "Available",
       livePrice: "Live price",
@@ -281,14 +281,14 @@ export const catalogUiEn = {
     notes: {
       title: "Notes for the supplier",
       description:
-        "Optional. Echoed to the adapter parameters payload for special requests, accessibility needs, or dietary restrictions.",
+        "Optional. Add special requests, accessibility needs, or dietary restrictions for the supplier.",
       placeholder: "e.g. Vegetarian dinner. Wheelchair access at pickup.",
     },
     payment: {
       title: "Payment",
       description:
-        "Choose how this commitment is paid. The booking-engine tracer ships with hold-only; card flows arrive once payments are wired through the engine.",
-      intent: "Intent",
+        "Choose how this booking is paid. Card payment is coming soon — for now you can place a hold and pay later.",
+      intent: "How to pay",
       hold: "Hold (pay later)",
       cardComingSoon: "Card - coming soon",
     },
@@ -297,7 +297,7 @@ export const catalogUiEn = {
     },
     validation: {
       waitingForPrice: "Waiting for live price...",
-      notBookable: "This row is no longer bookable.",
+      notBookable: "This item is no longer bookable.",
       contactNameRequired: "Lead contact: first and last name are required.",
       contactEmailRequired: "Lead contact: email is required.",
       travelerNameRequired: "Traveler #{n}: first and last name are required.",

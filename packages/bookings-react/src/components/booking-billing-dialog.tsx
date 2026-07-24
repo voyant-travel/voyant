@@ -13,14 +13,14 @@ import {
 import {
   Button,
   ButtonGroup,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import {
   Combobox,
@@ -341,16 +341,16 @@ export function BookingBillingDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{messages.title}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{messages.title}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.fields.partyType}</Label>
               <ButtonGroup>
@@ -530,7 +530,7 @@ export function BookingBillingDialog({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.email}</Label>
                 <Input type="email" {...form.register("contactEmail")} />
@@ -549,7 +549,7 @@ export function BookingBillingDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.addressLine1}</Label>
                 <Input {...form.register("contactAddressLine1")} />
@@ -560,7 +560,7 @@ export function BookingBillingDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.city}</Label>
                 <Input {...form.register("contactCity")} />
@@ -587,8 +587,8 @@ export function BookingBillingDialog({
                 }
               />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               {messages.actions.cancel}
             </Button>
@@ -596,10 +596,10 @@ export function BookingBillingDialog({
               {update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {messages.actions.save}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 

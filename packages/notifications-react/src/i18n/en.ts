@@ -14,29 +14,28 @@ export const notificationsUiEn: NotificationsUiMessages = {
   },
   stage: {
     listHeading: "Stages",
-    listEmpty: "No stages yet. Add one to define when this rule fires.",
-    addStage: "Add stage",
-    deleteConfirm: "Delete this stage?",
+    listEmpty: "No steps yet. Add one to define when this rule sends.",
+    addStage: "Add step",
+    deleteConfirm: "Delete this step?",
     fields: {
       name: "Name",
       orderIndex: "Order",
-      anchor: "Anchor",
+      anchor: "Measured from",
       windowStartDays: "Window start (days)",
       windowEndDays: "Window end (days)",
-      cadenceKind: "Cadence",
+      cadenceKind: "How often",
       cadenceEveryDays: "Every N days",
-      cadenceIntervals: "Escalation buckets",
-      maxSendsInStage: "Max sends in stage",
+      cadenceIntervals: "Reminder steps",
+      maxSendsInStage: "Max sends in step",
       respectQuietHours: "Respect quiet hours",
     },
     descriptions: {
-      window: "When the eligibility window opens, relative to the chosen anchor.",
-      cadence: "How often this stage may fire while inside the window.",
-      emptyIntervals:
-        "Add buckets keyed on days-until-due to scale cadence as the deadline approaches.",
+      window: "When this step becomes eligible to send, measured from the chosen date.",
+      cadence: "How often this step may send while inside the window.",
+      emptyIntervals: "Send more often as the due date gets closer.",
       stopConditions: "Stop conditions",
       maxSendsInStage: "Leave blank to use the default of 1 send. Enter a finite cap to repeat.",
-      respectQuietHours: "Defer fires that would land inside the tenant's quiet-hours window.",
+      respectQuietHours: "Hold reminders that would land during quiet hours.",
     },
     placeholders: {
       name: "First reminder",
@@ -51,18 +50,18 @@ export const notificationsUiEn: NotificationsUiMessages = {
     cadences: {
       once: "Once",
       every_n_days: "Every N days",
-      escalating: "Escalating buckets",
+      escalating: "Escalating steps",
     },
     intervalRow: {
-      whenDaysUntilDueGT: "When days-until-due >",
+      whenDaysUntilDueGT: "When days until due are more than",
       whenDaysUntilDueLT: "When days-until-due <",
       repeatEveryDays: "Repeat every (days)",
-      addInterval: "Add bucket",
+      addInterval: "Add step",
       removeInterval: "Remove",
     },
     titles: {
-      create: "Add stage",
-      edit: "Edit stage",
+      create: "Add step",
+      edit: "Edit step",
     },
   },
   channel: {
@@ -99,18 +98,18 @@ export const notificationsUiEn: NotificationsUiMessages = {
       template: "Search templates…",
     },
     descriptions: {
-      automaticProvider: "Use Automatic to fall back to the deployment default for this channel.",
+      automaticProvider: "Choose Automatic to use the default for this channel.",
     },
   },
   settings: {
     heading: "Notification settings",
-    description: "Tenant-wide defaults for quiet hours, blackouts, and per-recipient rate limits.",
+    description: "Defaults for quiet hours and reminder limits.",
     sections: {
       quietHours: "Quiet hours",
       quietHoursDesc: "When reminders are eligible to send, in the recipient's timezone.",
       blackouts: "Blackout dates",
       blackoutsDesc: "Specific dates to skip entirely (holidays, company closures).",
-      rateLimits: "Rate limits & dedup",
+      rateLimits: "Rate limits",
       rateLimitsDesc: "Caps that apply across all rules to protect recipients from spam.",
     },
     fields: {
@@ -121,7 +120,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       skipWeekends: "Skip weekends",
       skipWeekendsDesc: "Defer reminders that would land on Saturday or Sunday.",
       recipientRateLimitPerDay: "Per-recipient daily cap",
-      suppressionWindowHours: "Suppression window (hours)",
+      suppressionWindowHours: "Don't repeat within (hours)",
     },
     placeholders: {
       tz: "Search timezones…",
@@ -131,7 +130,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       blackoutDates: "Add a date for each calendar day to skip.",
       recipientRateLimitPerDay:
         "Maximum sent reminders per recipient per channel per 24h. Leave blank for no limit.",
-      suppressionWindowHours: "Window for suppression group dedup across rules sharing a tag.",
+      suppressionWindowHours: "How long to wait before sending a similar reminder again.",
     },
     actions: {
       addBlackoutDate: "Add date",
@@ -150,12 +149,12 @@ export const notificationsUiEn: NotificationsUiMessages = {
   },
   preview: {
     dateLabel: "Date",
-    empty: "Nothing would fire on this date.",
+    empty: "Nothing would send on this date.",
     columns: {
       rule: "Rule",
       stage: "Stage",
       target: "Target",
-      anchor: "Anchor",
+      anchor: "Measured from",
       scheduledAt: "Scheduled at",
       reasoning: "Reasoning",
     },
@@ -178,7 +177,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       statusQueued: "Queued",
       statusProcessing: "Processing",
       statusSkipped: "Skipped",
-      saveChanges: "Save Changes",
+      saveChanges: "Save changes",
       directTemplate: "direct",
       defaultSender: "Default sender",
       previewDataNotObject: "Preview data must be a JSON object.",
@@ -209,7 +208,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
     },
     templatesPage: {
       title: "Notification Templates",
-      description: "Manage email and SMS templates rendered with Liquid.",
+      description: "Manage email and SMS templates for your messages.",
       newTemplate: "New Template",
       searchPlaceholder: "Search templates...",
       empty:
@@ -233,7 +232,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       subjectLabel: "Subject",
       subjectPlaceholder: "Your booking {{ booking.reference }}",
       htmlBodyLabel: "HTML body",
-      htmlBodyPlaceholder: "Compose the email body using Liquid variables...",
+      htmlBodyPlaceholder: "Compose the email body using variables like {{ booking.reference }}...",
       smsBodyLabel: "SMS body",
       smsBodyPlaceholder:
         'Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.',
@@ -241,7 +240,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       tabPreview: "Preview & Test",
       previewDataLabel: "Preview data (JSON)",
       previewDataPlaceholder: '{"booking":{"reference":"BKG-2026-00125"}}',
-      previewDataHint: "Use sample JSON to preview Liquid rendering and send a safe test message.",
+      previewDataHint: "Use sample JSON to preview your message and send a safe test.",
       refreshPreview: "Refresh Preview",
       renderedPreviewTitle: "Rendered preview",
       renderedSubjectLabel: "Subject",
@@ -390,7 +389,7 @@ export const notificationsUiEn: NotificationsUiMessages = {
       stagesHintBefore: "After creating the rule, click",
       stagesHintAction: "Manage stages",
       stagesHintAfter:
-        "on the row to define when it fires (anchor, window, cadence) and which channels deliver it.",
+        "on the row to define when it sends (measured from, window, how often) and which channels deliver it.",
       createRule: "Create Rule",
     },
     reminderRuleDetail: {
@@ -405,12 +404,11 @@ export const notificationsUiEn: NotificationsUiMessages = {
     previewPage: {
       title: "Reminders preview",
       description:
-        "What would fire on a chosen date with the active reminder sequences. Read-only.",
+        "What would send on a chosen date with the active reminder sequences. Read-only.",
     },
     authoringHelp: {
       title: "Notification variables",
-      description:
-        "Notifications render with Liquid. Use variables for subject/body content and control tags for conditionals or loops.",
+      description: "Use variables like {{ booking.reference }} to personalize your messages.",
     },
   },
 }

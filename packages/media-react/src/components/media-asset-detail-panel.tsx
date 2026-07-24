@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import { Input } from "@voyant-travel/ui/components/input"
@@ -277,8 +278,12 @@ export function MediaAssetDetailPanel({
         variant="destructive"
         size="sm"
         disabled={remove.isPending}
-        onClick={() => {
-          if (typeof window !== "undefined" && !window.confirm(detail.deleteConfirm)) return
+        onClick={async () => {
+          if (
+            typeof window !== "undefined" &&
+            !(await confirmDialog({ description: detail.deleteConfirm, destructive: true }))
+          )
+            return
           void del()
         }}
       >

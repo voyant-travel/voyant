@@ -5,12 +5,6 @@ import { type BookingRecord, useBookings } from "@voyant-travel/bookings-react"
 import { type Supplier, useSuppliers } from "@voyant-travel/distribution-react/suppliers"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -18,6 +12,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
@@ -266,13 +266,13 @@ export function RecordPaymentDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{dialog.title}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{dialog.title}</SheetTitle>
+        </SheetHeader>
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{dialog.kindLabel}</Label>
               <div className="flex gap-2">
@@ -322,7 +322,7 @@ export function RecordPaymentDialog({
                 />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{dialog.bookingLabel}</Label>
                   <AsyncCombobox<BookingRecord>
@@ -371,7 +371,7 @@ export function RecordPaymentDialog({
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{f.paymentDialog.amountLabel}</Label>
                 <Input
@@ -406,7 +406,7 @@ export function RecordPaymentDialog({
                     {f.paymentDialog.baseCurrencyHelp}
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label>{f.paymentDialog.baseAmountLabel}</Label>
                     <Input
@@ -424,7 +424,7 @@ export function RecordPaymentDialog({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{f.paymentDialog.paymentMethodLabel}</Label>
                 <Select
@@ -481,8 +481,8 @@ export function RecordPaymentDialog({
             </div>
 
             {error ? <p className="text-xs text-destructive">{error}</p> : null}
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {f.paymentDialog.cancel}
             </Button>
@@ -490,9 +490,9 @@ export function RecordPaymentDialog({
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {f.paymentDialog.submit}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -49,7 +49,7 @@ export function DeveloperAppsPage({
   const selected = list.find((app) => app.id === selectedId)
 
   return (
-    <div data-slot="developer-apps-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="developer-apps-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
           <h2 className="text-lg font-semibold tracking-tight">{t.title}</h2>

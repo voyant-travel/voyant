@@ -1,13 +1,6 @@
 import {
   Button,
   Checkbox,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +8,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import * as React from "react"
@@ -171,13 +171,13 @@ export function ProductExtraDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? extraMessages.editTitle : extraMessages.newTitle}</DialogTitle>
-          <DialogDescription>{extraMessages.dialogDescription}</DialogDescription>
-        </DialogHeader>
-        <DialogBody className="grid gap-4">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? extraMessages.editTitle : extraMessages.newTitle}</SheetTitle>
+          <SheetDescription>{extraMessages.dialogDescription}</SheetDescription>
+        </SheetHeader>
+        <SheetBody className="grid gap-4">
           <div className="grid gap-3 md:grid-cols-2">
             <Field label={extraMessages.nameLabel}>
               <Input
@@ -298,17 +298,17 @@ export function ProductExtraDialog({
               <Label htmlFor="product-extra-active">{extraMessages.activeLabel}</Label>
             </div>
           </div>
-        </DialogBody>
-        <DialogFooter className="-mx-6 -mb-6">
+        </SheetBody>
+        <SheetFooter className="-mx-6 -mb-6">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {extraMessages.cancel}
           </Button>
           <Button onClick={() => void save()} disabled={!form.name.trim()}>
             {isEditing ? extraMessages.saveChanges : extraMessages.create}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
 

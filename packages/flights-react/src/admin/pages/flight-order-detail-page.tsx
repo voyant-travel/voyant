@@ -44,7 +44,7 @@ export default function FlightOrderDetailPage({ params }: AdminRoutePageProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <header className="flex items-center justify-between gap-4">
         <h1 className="font-semibold text-2xl">{t.detailTitle}</h1>
         <Button variant="ghost" onClick={() => navigateTo("flight.orders", {})}>
@@ -59,7 +59,7 @@ export default function FlightOrderDetailPage({ params }: AdminRoutePageProps) {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : orderQuery.isError || !orderQuery.data ? (
-        <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-10 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center text-muted-foreground">
           <span>{t.loadFailed}</span>
           <Button variant="outline" size="sm" onClick={() => orderQuery.refetch()}>
             {t.retry}

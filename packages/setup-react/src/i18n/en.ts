@@ -12,6 +12,6 @@ export const setupEn: SetupMessages = {
   back: "Back to dashboard",
   loading: "Loading setup progress...",
   loadFailed: "Setup progress could not be loaded.",
-  allDoneTitle: "Setup guidance is complete",
-  allDoneDescription: "Your dashboard remains available for creating products and daily work.",
+  allDoneTitle: "You're all set",
+  allDoneDescription: "Head to your dashboard to start creating products.",
 }

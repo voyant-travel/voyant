@@ -101,7 +101,7 @@ export function ApaTracker({ detail, formatPrice, className, ...props }: ApaTrac
             tone="muted"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3 border-t pt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t pt-3">
           <Tile
             label={m.tiles.refundIssued}
             amount={formatPriceValue(detail.apaRefundAmount ?? "0.00", currency)}

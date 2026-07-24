@@ -184,7 +184,7 @@ export function OptionPriceRuleForm({
       className="flex flex-1 flex-col gap-4 overflow-hidden"
     >
       <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{priceRuleMessages.catalogLabel}</Label>
             <PriceCatalogCombobox
@@ -212,7 +212,7 @@ export function OptionPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{priceRuleMessages.scheduleLabel}</Label>
             <PriceScheduleCombobox
@@ -234,7 +234,7 @@ export function OptionPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{priceRuleMessages.pricingModeLabel}</Label>
             <Select
@@ -266,7 +266,7 @@ export function OptionPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{priceRuleMessages.codeLabel}</Label>
             <Input {...form.register("code")} placeholder={priceRuleMessages.codePlaceholder} />
@@ -277,7 +277,7 @@ export function OptionPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{priceRuleMessages.minPerBookingLabel}</Label>
             <Input {...form.register("minPerBooking")} type="number" min="0" />
@@ -288,7 +288,7 @@ export function OptionPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex items-center gap-2">
             <Switch
               checked={form.watch("allPricingCategories")}

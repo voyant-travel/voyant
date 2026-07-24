@@ -326,7 +326,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
         <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {departureMessages.scheduleLegend}
         </legend>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>{departureMessages.startDateLabel}</Label>
             <DatePicker
@@ -351,7 +351,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>
               {departureMessages.endDateLabel}{" "}
@@ -397,7 +397,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
                 days: nights + 1,
               })}
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label>{departureMessages.nightsOverrideLabel}</Label>
                 <Input
@@ -546,7 +546,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
         <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {departureMessages.availabilityLegend}
         </legend>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>{departureMessages.statusLabel}</Label>
             <Select

@@ -183,7 +183,7 @@ export function PaymentsSettingsPage() {
         : t.disconnected
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <header>
         <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>

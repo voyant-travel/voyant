@@ -16,7 +16,7 @@ export const distributionUiRo = {
     none: "-",
     openEnded: "Fara termen",
     noReference: "Fara referinta",
-    unmappedStatus: "Status neasociat",
+    unmappedStatus: "Status nerecunoscut",
     yes: "Da",
     searchPlaceholder: "Cauta distributie...",
     allChannels: "Toate canalele",
@@ -156,13 +156,12 @@ export const distributionUiRo = {
         title: "Conector",
         ready: "Cel putin un conector de canal este configurat.",
         missing:
-          "Adauga un conector de canal inainte ca rezervarile, disponibilitatea sau continutul sa iasa din Voyant.",
+          "Conecteaza un canal de vanzare inainte ca rezervarile, disponibilitatea sau continutul sa fie trimise.",
       },
       mapping: {
         title: "Mapare",
         ready: "Legaturile rezervare-canal sunt create din produse mapate.",
-        missing:
-          "Mapeaza produsele la inventarul canalului ca rezervarile confirmate sa stie unde se distribuie.",
+        missing: "Leaga produsele de canal ca rezervarile confirmate sa stie unde sa mearga.",
       },
       delivery: {
         title: "Livrare",
@@ -174,11 +173,11 @@ export const distributionUiRo = {
     monitoring: {
       title: "Operatiuni",
       description:
-        "Urmareste statusul livrarilor outbound, inspecteaza jurnale, reincearca trimiteri esuate sau reconciliaza un flux.",
+        "Urmareste statusul livrarilor, inspecteaza jurnalele de livrare, reincearca trimiterile esuate sau reverifica si retrimite.",
     },
     throttledTitle: "Limitat.",
     throttledBody:
-      "{count} livrari limitate in ultima ora pe {channels} {channelLabel}. Redu RPS per canal in setari daca persista.",
+      "{count} livrari au fost incetinite in ultima ora pe {channels} {channelLabel}. Daca se repeta, redu rata de trimitere pentru aceste canale in setari.",
     statusLabels: {
       pending: "In asteptare",
       ok: "OK",
@@ -214,20 +213,20 @@ export const distributionUiRo = {
       status: "Status",
       attempts: "Incercari",
       lastPush: "Ultima trimitere",
-      externalRef: "Ref externa",
+      externalRef: "Referinta canal",
       actions: "Actiuni",
       itemPrefix: "element: {id}",
       deliveries: "Jurnal livrari",
       retry: "Reincearca trimiterea",
     },
     reconcile: {
-      trigger: "Reconciliaza flux",
-      menuLabel: "Reconciliaza distributia",
+      trigger: "Reverifica si retrimite",
+      menuLabel: "Reverifica si retrimite",
       bookings: "Rezervari",
       priority: "prioritar",
       availability: "Disponibilitate",
       content: "Continut",
-      lastRun: "Rezultat: scanate {scanned}, declansate {triggered}.",
+      lastRun: "Rezultat: verificate {scanned}, retrimise {triggered}.",
     },
     feedback: {
       dismiss: "Inchide feedbackul",
@@ -235,24 +234,20 @@ export const distributionUiRo = {
         title: "Rezultat reincercare",
         processed:
           "Procesate {attempted} legaturi in asteptare: {succeeded} reusite, {failed} esuate, {compensated} compensate.",
-        bookingMissing:
-          "Nu exista nicio rezervare pentru {bookingId}. Legaturile in asteptare au fost marcate esuate cu booking_missing.",
+        bookingMissing: "Acea rezervare nu mai exista, deci nu a fost trimis nimic.",
         noPendingLinks: "Nu au existat legaturi in asteptare de reincercat pentru {bookingId}.",
         noTargets:
           "Niciun element de rezervare activ sau nicio mapare de canal nu a produs legaturi de livrare pentru {bookingId}.",
-        noAdapter:
-          "Reincercarea a gasit legaturi in asteptare, dar adaptorul canalului lipseste sau nu este suportat.",
-        noMapping:
-          "Reincercarea a gasit legaturi in asteptare, dar lipseste o mapare produs-canal.",
+        noAdapter: "Acest canal nu este inca pregatit sa primeasca rezervari.",
+        noMapping: "Acest produs nu este inca legat de canal.",
         ok: "Reincercarea s-a finalizat pentru {bookingId}, dar serverul nu a raportat legaturi procesate.",
         failed: "Reincercarea a esuat pentru {bookingId}: {message}",
         unknownError: "eroare necunoscută",
       },
       reconcile: {
-        title: "Rezultat reconciliere",
-        success:
-          "Scanate {scanned} inregistrari si declansate {triggered} workflow-uri de trimitere.",
-        failed: "Reconcilierea a esuat: {message}",
+        title: "Reverifica si retrimite",
+        success: "Verificate {scanned} rezervari si retrimise {triggered}.",
+        failed: "Reverificarea si retrimiterea au esuat: {message}",
       },
     },
     refresh: {
@@ -268,9 +263,9 @@ export const distributionUiRo = {
       itemScopeDescription:
         "Jurnal la nivel de rezervare deschis din elementul {itemId}. Poate include livrari pentru elemente surori din aceeasi rezervare.",
       emptyTitle: "Nu exista livrari",
-      emptyDescription: "Incercarile channel-push apar aici dupa expediere.",
+      emptyDescription: "Incercarile de trimitere catre acest canal vor aparea aici.",
       attempt: "incercarea #{number}",
-      httpStatus: "HTTP {status}",
+      httpStatus: "Status {status}",
     },
   },
   tables: {

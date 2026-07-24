@@ -144,7 +144,7 @@ export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
   const relatedNumber = payment.kind === "customer" ? payment.invoiceNumber : payment.bookingNumber
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"

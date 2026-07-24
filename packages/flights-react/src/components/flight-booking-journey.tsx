@@ -139,7 +139,7 @@ export function FlightBookingJourney({
 
       <div className="flex flex-col gap-4">
         {step.id === "review" && (
-          <div className="rounded-md border bg-card p-5 shadow-sm">
+          <div className="rounded-md border bg-card p-6 shadow-sm">
             <h2 className="mb-4 text-base font-semibold">{messages.reviewTitle}</h2>
             <FlightOfferDetail offer={offer} carrierName={carrierName} airportName={airportName} />
           </div>
@@ -262,7 +262,7 @@ function ConfirmSummary({
 }) {
   const messages = i18n.messages.flightBookingJourney
   return (
-    <div className="rounded-md border bg-card p-5 shadow-sm">
+    <div className="rounded-md border bg-card p-6 shadow-sm">
       <h2 className="mb-4 text-base font-semibold">{messages.confirmBooking}</h2>
 
       <Row label={messages.rows.total}>

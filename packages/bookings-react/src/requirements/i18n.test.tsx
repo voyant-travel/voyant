@@ -59,11 +59,11 @@ describe("booking-requirements-ui i18n", () => {
       </>,
     )
 
-    expect(html).toContain("Contact Requirements")
+    expect(html).toContain("Contact requirements")
     expect(html).toContain("Passport number")
-    expect(html).toContain("Custom Questions")
+    expect(html).toContain("Custom questions")
     expect(html).toContain("Single select")
-    expect(html).toContain("Add Choice")
+    expect(html).toContain("Add choice")
   })
 
   it("renders Romanian copy with the package provider", () => {
@@ -92,11 +92,11 @@ describe("booking-requirements-ui i18n", () => {
       </BookingRequirementsUiMessagesProvider>,
     )
 
-    expect(html).toContain("Cerinte de Contact")
+    expect(html).toContain("Cerinte de contact")
     expect(html).toContain("Numar pasaport")
-    expect(html).toContain("Intrebari Personalizate")
+    expect(html).toContain("Intrebari personalizate")
     expect(html).toContain("Selectie simpla")
-    expect(html).toContain("Adauga Optiune")
+    expect(html).toContain("Adauga optiune")
   })
 })
 

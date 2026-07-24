@@ -381,7 +381,7 @@ export const operatorAdminProductsMessagesEnOperations = {
     saveOrder: "Save order",
     reorder: "Reorder",
     upload: "Upload",
-    emptyState: "No media yet. Upload images or videos.",
+    emptyState: "Upload images or videos to get started.",
     setCover: "Set cover",
     cover: "Cover",
     delete: "Delete",

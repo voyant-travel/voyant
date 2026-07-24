@@ -108,7 +108,7 @@ export function FlightServicesStep({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
         <h2 className="font-semibold text-base">{messages.flightServicesStep.title}</h2>
         <p className="text-muted-foreground text-sm">{messages.flightServicesStep.description}</p>
@@ -170,13 +170,13 @@ function AssistanceSection({
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
   return (
-    <section className="rounded-md border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-center gap-2">
         <Accessibility className="h-4 w-4 text-muted-foreground" />
         <h3 className="font-medium text-sm">{messages.flightServicesStep.specialAssistance}</h3>
       </header>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         {passengers.map((pax) => {
           const paxPicks = value.filter((v) => v.passengerId === pax.passengerId)
           return (
@@ -248,7 +248,7 @@ function ExtrasSection({
   const last = itin?.segments[itin.segments.length - 1]
 
   return (
-    <section className="rounded-md border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-2 font-medium text-sm">
           <Sparkles className="h-4 w-4 text-muted-foreground" />

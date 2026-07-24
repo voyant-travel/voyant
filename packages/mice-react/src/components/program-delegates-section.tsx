@@ -222,7 +222,7 @@ function CreateDelegateDialog({ programId, open, onOpenChange }: CreateDelegateD
           <DialogTitle>Add delegate</DialogTitle>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="delegate-role">Role</Label>
               <Select value={role} onValueChange={(value) => setRole(value as DelegateRole)}>

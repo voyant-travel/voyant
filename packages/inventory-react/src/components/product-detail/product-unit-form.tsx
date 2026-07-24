@@ -220,7 +220,7 @@ export function UnitForm({
       className="flex flex-1 flex-col gap-4 overflow-hidden"
     >
       <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{unitMessages.nameLabel}</Label>
             <Input {...form.register("name")} placeholder={unitMessages.namePlaceholder} />
@@ -234,7 +234,7 @@ export function UnitForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {lockUnitType ? null : (
             <div className="flex flex-col gap-2">
               <Label>{unitMessages.typeLabel}</Label>
@@ -262,7 +262,7 @@ export function UnitForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{qtyLabels.min}</Label>
             <Input {...form.register("minQuantity")} type="number" min="0" />
@@ -274,7 +274,7 @@ export function UnitForm({
         </div>
 
         {unitType === "person" && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label>{unitMessages.minAgeLabel}</Label>
               <Input {...form.register("minAge")} type="number" min="0" />
@@ -287,7 +287,7 @@ export function UnitForm({
         )}
 
         {(unitType === "room" || unitType === "vehicle" || unitType === "group") && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label>{occLabels.min}</Label>
               <Input {...form.register("occupancyMin")} type="number" min="0" />
@@ -304,7 +304,7 @@ export function UnitForm({
           <Textarea {...form.register("description")} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
             <Switch
               checked={form.watch("isRequired")}

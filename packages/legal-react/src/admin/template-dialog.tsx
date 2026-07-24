@@ -2,12 +2,6 @@ import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
   ContractTemplateAuthoringHelp,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +9,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
@@ -149,17 +149,17 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? t.titleEdit : t.titleNew}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4 max-h-[70vh]">
-            <div className="grid grid-cols-2 gap-4">
+          <SheetBody className="grid gap-4 max-h-[70vh]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.nameLabel}</Label>
                 <Input {...form.register("name")} placeholder={t.namePlaceholder} />
@@ -180,7 +180,7 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.scopeLabel}</Label>
                 <Select
@@ -276,8 +276,8 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                 </div>
               </div>
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t.cancel}
             </Button>
@@ -287,9 +287,9 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
               ) : null}
               {isEditing ? t.saveChanges : t.createAction}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

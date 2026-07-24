@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
   Dialog,
@@ -140,10 +141,13 @@ export function MediaFolderSidebar({ selectedFolderId, onSelectFolder }: MediaFo
               size="icon-sm"
               aria-label={folderMessages.deleteFolder}
               className="opacity-0 transition group-hover:opacity-100"
-              onClick={() => {
+              onClick={async () => {
                 if (
                   typeof window !== "undefined" &&
-                  !window.confirm(folderMessages.deleteConfirm)
+                  !(await confirmDialog({
+                    description: folderMessages.deleteConfirm,
+                    destructive: true,
+                  }))
                 ) {
                   return
                 }

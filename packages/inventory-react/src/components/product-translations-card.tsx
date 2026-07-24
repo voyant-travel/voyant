@@ -1,5 +1,6 @@
 "use client"
 
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
 import {
@@ -222,9 +223,13 @@ export function ProductTranslationsCard({ product, className }: ProductTranslati
     setError(null)
 
     if (
-      !confirm(
-        cardMessages.states.deleteConfirm.replace("{languageTag}", selectedTranslation.languageTag),
-      )
+      !(await confirmDialog({
+        description: cardMessages.states.deleteConfirm.replace(
+          "{languageTag}",
+          selectedTranslation.languageTag,
+        ),
+        destructive: true,
+      }))
     ) {
       return
     }

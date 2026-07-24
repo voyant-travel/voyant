@@ -85,7 +85,7 @@ export function ProductQuickViewSheet({
             <SheetTitle>{detail.states.loading}</SheetTitle>
           )}
         </SheetHeader>
-        <SheetBody className="flex flex-col gap-5">
+        <SheetBody className="flex flex-col gap-4">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
           ) : !product ? (
@@ -130,7 +130,7 @@ function QuickViewBody({ product, locale }: { product: ProductRecord; locale: st
     : null
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {cover ? (
         <div className="overflow-hidden rounded-md border bg-muted">
           <img src={cover.url} alt={product.name} className="aspect-video w-full object-cover" />

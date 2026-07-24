@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query"
-import { Button } from "@voyant-travel/ui/components"
+import { Button, confirmDialog } from "@voyant-travel/ui/components"
 import { useMemo } from "react"
 import { ProductsUiMessagesProvider } from "../../i18n/index.js"
 import { ProductOptionsSection } from "../product-options-section.js"
@@ -89,7 +89,7 @@ export function ProductDetailPage({ id }: { id: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <ProductDetailHeader
         product={product}
         isDuplicating={mutations.duplicateProduct.isPending}
@@ -103,8 +103,10 @@ export function ProductDetailPage({ id }: { id: string }) {
             },
           })
         }}
-        onDelete={() => {
-          if (confirm(productMessages.deleteConfirm)) {
+        onDelete={async () => {
+          if (
+            await confirmDialog({ description: productMessages.deleteConfirm, destructive: true })
+          ) {
             mutations.deleteProduct.mutate(undefined, {
               onSuccess: () => navigate.toProducts(),
             })
@@ -137,8 +139,13 @@ export function ProductDetailPage({ id }: { id: string }) {
             onUpload={(file) => mutations.uploadMedia.mutate({ file })}
             onSelectFromLibrary={(assets) => mutations.addMediaFromLibrary.mutate({ assets })}
             onSetCover={(mediaId) => mutations.setCover.mutate(mediaId)}
-            onDelete={(mediaId) => {
-              if (confirm(productMessages.deleteMediaConfirm)) {
+            onDelete={async (mediaId) => {
+              if (
+                await confirmDialog({
+                  description: productMessages.deleteMediaConfirm,
+                  destructive: true,
+                })
+              ) {
                 mutations.deleteMedia.mutate(mediaId)
               }
             }}
@@ -152,8 +159,13 @@ export function ProductDetailPage({ id }: { id: string }) {
             onEdit={dialogs.departure.openEdit}
             onOverridePrice={dialogs.departureOverride.openEdit}
             onManageAvailability={(slot) => navigate.toAvailability(slot.id)}
-            onDelete={(slotId) => {
-              if (confirm(productMessages.deleteDepartureConfirm)) {
+            onDelete={async (slotId) => {
+              if (
+                await confirmDialog({
+                  description: productMessages.deleteDepartureConfirm,
+                  destructive: true,
+                })
+              ) {
                 mutations.deleteSlot.mutate(slotId)
               }
             }}
@@ -163,8 +175,13 @@ export function ProductDetailPage({ id }: { id: string }) {
             rules={rules}
             onCreate={dialogs.schedule.openNew}
             onEdit={dialogs.schedule.openEdit}
-            onDelete={(ruleId) => {
-              if (confirm(productMessages.deleteScheduleConfirm)) {
+            onDelete={async (ruleId) => {
+              if (
+                await confirmDialog({
+                  description: productMessages.deleteScheduleConfirm,
+                  destructive: true,
+                })
+              ) {
                 mutations.deleteRule.mutate(ruleId)
               }
             }}

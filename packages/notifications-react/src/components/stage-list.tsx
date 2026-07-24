@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -87,8 +88,13 @@ export function StageList({ reminderRuleId }: StageListProps) {
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => {
-                  if (window.confirm(messages.stage.deleteConfirm)) {
+                onClick={async () => {
+                  if (
+                    await confirmDialog({
+                      description: messages.stage.deleteConfirm,
+                      destructive: true,
+                    })
+                  ) {
                     void remove.mutateAsync(stage.id)
                   }
                 }}

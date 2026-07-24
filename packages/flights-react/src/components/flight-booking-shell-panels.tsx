@@ -23,7 +23,7 @@ export function ReviewStep({
   const messages = useFlightsUiMessagesOrDefault()
   const isRoundTrip = !!selection.return
   return (
-    <div className="flex flex-col gap-5 rounded-md border bg-card p-5 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-md border bg-card p-6 shadow-sm">
       <h2 className="font-semibold text-base">
         {isRoundTrip
           ? messages.flightBookingShell.reviewTrip
@@ -66,7 +66,7 @@ export function ConfirmStep({
   const docsCount = passengers.filter((p) => (p.documents?.length ?? 0) > 0).length
   const isRoundTrip = !!selection.return
   return (
-    <div className="flex flex-col gap-5 rounded-md border bg-card p-5 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-md border bg-card p-6 shadow-sm">
       <h2 className="font-semibold text-base">{messages.flightBookingShell.confirmTitle}</h2>
       <div className="flex flex-col gap-4">
         <FlightItinerary

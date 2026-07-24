@@ -306,7 +306,7 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
 
   if (!landingUrl) {
     return (
-      <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 text-sm">
+      <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-6 text-sm">
         {formatMessage(messages.result.noLink, {
           sessionId: sessionId ?? messages.result.noSession,
         })}
@@ -315,7 +315,7 @@ function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) 
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border bg-card p-5">
+    <div className="flex flex-col gap-4 rounded-md border bg-card p-6">
       <div className="flex items-center gap-2 text-emerald-700">
         <CheckCircle2 className="h-5 w-5" />
         <span className="font-medium">{messages.result.ready}</span>

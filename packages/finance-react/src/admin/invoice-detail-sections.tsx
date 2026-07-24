@@ -92,11 +92,17 @@ export function InvoiceInfoCards({
   onOpenBooking,
   onOpenPerson,
   onOpenOrganization,
+  bookingLabel,
+  personLabel,
+  organizationLabel,
 }: {
   invoice: InvoiceDetail
   onOpenBooking: () => void
   onOpenPerson?: (personId: string) => void
   onOpenOrganization?: (organizationId: string) => void
+  bookingLabel?: string
+  personLabel?: string
+  organizationLabel?: string
 }) {
   const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
@@ -175,7 +181,7 @@ export function InvoiceInfoCards({
               {messages.finance.detailSections.bookingLabel}:
             </span>{" "}
             <button type="button" className="text-primary underline" onClick={onOpenBooking}>
-              {messages.finance.detailSections.viewBooking}
+              {bookingLabel ?? messages.finance.detailSections.viewBooking}
             </button>
           </div>
           {invoice.personId ? (
@@ -183,17 +189,13 @@ export function InvoiceInfoCards({
               <span className="text-muted-foreground">
                 {messages.finance.detailSections.personLabel}:
               </span>{" "}
-              {onOpenPerson ? (
-                <button
-                  type="button"
-                  className="font-mono text-primary text-xs underline"
-                  onClick={() => onOpenPerson(invoice.personId as string)}
-                >
-                  {invoice.personId}
-                </button>
-              ) : (
-                <span className="font-mono text-xs">{invoice.personId}</span>
-              )}
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => onOpenPerson?.(invoice.personId as string)}
+              >
+                {personLabel ?? messages.finance.detailSections.viewPerson}
+              </button>
             </div>
           ) : null}
           {invoice.organizationId ? (
@@ -201,17 +203,13 @@ export function InvoiceInfoCards({
               <span className="text-muted-foreground">
                 {messages.finance.detailSections.organizationLabel}:
               </span>{" "}
-              {onOpenOrganization ? (
-                <button
-                  type="button"
-                  className="font-mono text-primary text-xs underline"
-                  onClick={() => onOpenOrganization(invoice.organizationId as string)}
-                >
-                  {invoice.organizationId}
-                </button>
-              ) : (
-                <span className="font-mono text-xs">{invoice.organizationId}</span>
-              )}
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => onOpenOrganization?.(invoice.organizationId as string)}
+              >
+                {organizationLabel ?? messages.finance.detailSections.viewOrganization}
+              </button>
             </div>
           ) : null}
           <div className="mt-2 border-t pt-3">

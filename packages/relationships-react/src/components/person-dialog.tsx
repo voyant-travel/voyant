@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@voyant-travel/ui/components/dialog"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { PersonRecord } from "../index.js"
 import { PersonForm } from "./person-form.js"
@@ -20,8 +20,10 @@ export interface PersonDialogProps {
 }
 
 /**
- * Dialog wrapper for `<PersonForm />`. Determines create vs edit mode from
- * the presence of `person`. Closes the dialog on successful save.
+ * Sheet wrapper for `<PersonForm />`. Determines create vs edit mode from
+ * the presence of `person`. Closes the sheet on successful save. The form
+ * fills the sheet: fields scroll in a `SheetBody` and the actions pin to a
+ * sticky `SheetFooter`.
  */
 export function PersonDialog({
   open,
@@ -34,19 +36,20 @@ export function PersonDialog({
   const messages = useCrmUiMessagesOrDefault()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-slot="person-dialog" className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent data-slot="person-dialog" side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEdit ? messages.personDialog.titles.edit : messages.personDialog.titles.create}
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             {isEdit
               ? messages.personDialog.descriptions.edit
               : messages.personDialog.descriptions.create}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <PersonForm
+          layout="sheet"
           mode={person ? { kind: "edit", person } : { kind: "create" }}
           initialOrganizationId={initialOrganizationId}
           onSuccess={(saved) => {
@@ -55,7 +58,7 @@ export function PersonDialog({
           }}
           onCancel={() => onOpenChange(false)}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

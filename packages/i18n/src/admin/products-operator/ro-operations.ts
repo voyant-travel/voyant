@@ -381,7 +381,7 @@ export const operatorAdminProductsMessagesRoOperations = {
     saveOrder: "Salveaza ordinea",
     reorder: "Reordoneaza",
     upload: "Incarca",
-    emptyState: "Nu exista media momentan. Incarca imagini sau videoclipuri.",
+    emptyState: "Incarca imagini sau videoclipuri pentru a incepe.",
     setCover: "Seteaza coperta",
     cover: "Coperta",
     delete: "Sterge",

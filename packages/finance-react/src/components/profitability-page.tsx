@@ -289,7 +289,7 @@ export function ProfitabilityPage({
       : String(amount)
 
   return (
-    <div className={cn("flex min-w-0 flex-col gap-6 overflow-hidden p-6", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-6 overflow-hidden", className)}>
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>

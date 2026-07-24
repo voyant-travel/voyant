@@ -40,7 +40,7 @@ export const bookingsUiEnBase = {
   bookingQuickViewSheet: {
     loadingTitle: "Booking",
     viewFullAction: "View full booking",
-    paxSuffix: "pax",
+    paxSuffix: "travelers",
     travelerUnnamed: "Unnamed traveler",
     sectionPayer: "Payer",
     sectionTravelers: "Travelers",
@@ -156,7 +156,7 @@ export const bookingsUiEnBase = {
     billingEmail: "Email",
     billingPhone: "Phone",
     billingAddress: "Address",
-    documentsSlotEmpty: "Provide a documents slot to render booking documents.",
+    documentsSlotEmpty: "No documents yet.",
   },
   travelerDialog: {
     titles: {
@@ -179,7 +179,7 @@ export const bookingsUiEnBase = {
       dateOfBirth: "Date of birth",
       dietaryRequirements: "Dietary requirements",
       accessibilityNeeds: "Accessibility needs",
-      linkedPerson: "Linked CRM contact",
+      linkedPerson: "Linked contact",
     },
     travelerCategoryLabels: {
       adult: "Adult",

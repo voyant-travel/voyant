@@ -250,6 +250,35 @@ export function getProductBookingModeLabel(
   }
 }
 
+/**
+ * Pricing-basis hint for a booking mode (e.g. "per person", "rooms & nights").
+ * Returns "" for modes without a meaningful basis. Shown only as secondary text
+ * inside the booking-mode picker, never in the table column or detail chip.
+ */
+export function getProductBookingModeBasis(
+  bookingMode: ProductRecord["bookingMode"],
+  messages: ProductMessagesRoot,
+): string {
+  switch (bookingMode) {
+    case "date":
+      return messages.products.core.bookingModeDateBasis
+    case "date_time":
+      return messages.products.core.bookingModeDateTimeBasis
+    case "open":
+      return messages.products.core.bookingModeOpenBasis
+    case "stay":
+      return messages.products.core.bookingModeStayBasis
+    case "transfer":
+      return messages.products.core.bookingModeTransferBasis
+    case "itinerary":
+      return messages.products.core.bookingModeItineraryBasis
+    case "other":
+      return messages.products.core.bookingModeOtherBasis
+    default:
+      return ""
+  }
+}
+
 export function getDepartureStatusLabel(
   status: DepartureSlot["status"],
   messages: ProductMessagesRoot,

@@ -79,7 +79,7 @@ export function TripTravelersSection({
   const t = useAdminMessages().trips.adminComposer.panels
 
   return (
-    <section className="flex flex-col gap-3 rounded-md border bg-card p-5">
+    <section className="flex flex-col gap-3 rounded-md border bg-card p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-medium text-base">{t.travelersSectionTitle}</h2>
         <Button variant="outline" size="sm" onClick={() => onChange([...value, newTripTraveler()])}>

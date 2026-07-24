@@ -19,7 +19,7 @@ export function MarketsSettingsPage() {
   const [open, setOpen] = useState(() => Object.keys(setupPrefill).length > 0)
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">{messages.title}</h1>

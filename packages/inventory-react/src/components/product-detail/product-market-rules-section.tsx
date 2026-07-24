@@ -8,6 +8,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import {
   Select,
@@ -92,7 +93,13 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
 
   const removeRule = async (rule: MarketProductRuleRecord) => {
     const marketName = marketById.get(rule.marketId)?.name ?? rule.marketId
-    if (!confirm(formatMessage(t.removeConfirm, { market: marketName }))) return
+    if (
+      !(await confirmDialog({
+        description: formatMessage(t.removeConfirm, { market: marketName }),
+        destructive: true,
+      }))
+    )
+      return
     try {
       await mutations.remove.mutateAsync(rule.id)
     } catch (error) {

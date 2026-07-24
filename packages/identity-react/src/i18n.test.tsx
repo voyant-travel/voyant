@@ -135,9 +135,9 @@ describe("identity-ui i18n", () => {
       </div>,
     )
 
-    expect(html).toContain("Edit Address")
-    expect(html).toContain("Edit Contact Point")
-    expect(html).toContain("Edit Named Contact")
+    expect(html).toContain("Edit address")
+    expect(html).toContain("Edit contact detail")
+    expect(html).toContain("Edit named contact")
     expect(html).toContain("Billing")
     expect(html).toContain("Phone")
     expect(html).toContain("Sales")
@@ -173,9 +173,9 @@ describe("identity-ui i18n", () => {
       </IdentityUiMessagesProvider>,
     )
 
-    expect(html).toContain("Editeaza Adresa")
-    expect(html).toContain("Editeaza Punctul de Contact")
-    expect(html).toContain("Editeaza Contactul Nominal")
+    expect(html).toContain("Editeaza adresa")
+    expect(html).toContain("Editeaza detaliul de contact")
+    expect(html).toContain("Editeaza contactul nominal")
     expect(html).toContain("Facturare")
     expect(html).toContain("Telefon")
     expect(html).toContain("Vanzari")

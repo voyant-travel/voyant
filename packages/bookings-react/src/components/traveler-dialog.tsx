@@ -10,12 +10,6 @@ import {
 } from "@voyant-travel/relationships-react"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -23,6 +17,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
@@ -310,21 +310,21 @@ export function TravelerDialog({
     })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.travelerDialog.titles.edit
               : messages.travelerDialog.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+          <SheetBody className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.firstName}</Label>
                 <Input
@@ -351,7 +351,7 @@ export function TravelerDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.email}</Label>
                 <Input
@@ -429,7 +429,7 @@ export function TravelerDialog({
                 </p>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{messages.travelerDialog.fields.documentType}</Label>
                   <Select
@@ -515,7 +515,7 @@ export function TravelerDialog({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{messages.travelerDialog.fields.dietaryRequirements}</Label>
                   <Textarea
@@ -554,8 +554,8 @@ export function TravelerDialog({
                 </div>
               ) : null}
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -565,9 +565,9 @@ export function TravelerDialog({
                 ? messages.common.saveChanges
                 : messages.travelerDialog.actions.addTraveler}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

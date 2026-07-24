@@ -69,7 +69,7 @@ export function OrganizationMain({
     <main className="col-span-12 flex flex-col gap-4 lg:col-span-9">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {messages.organizationDetail.metrics.people}
             </p>
@@ -77,7 +77,7 @@ export function OrganizationMain({
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {messages.organizationDetail.tabs.activities}
             </p>
@@ -92,7 +92,7 @@ export function OrganizationMain({
           onValueChange={(value) => setActiveTab(value as OrganizationDetailTab)}
         >
           <CardHeader className="pb-0">
-            <TabsList className="h-auto flex-wrap justify-start">
+            <TabsList className="h-auto flex-wrap justify-start [&_[data-slot=tabs-trigger]]:flex-none">
               <TabsTrigger value="overview">
                 {messages.organizationDetail.tabs.overview}
               </TabsTrigger>

@@ -80,7 +80,7 @@ export function BookingSidebar({
       </Card>
 
       <Card>
-        <CardContent className="space-y-3 pt-6">
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {totalPax} {guestsLabel}
@@ -305,7 +305,7 @@ export function BackLink(): React.ReactElement {
 export function BodySkeleton(): React.ReactElement {
   return (
     <Card>
-      <CardContent className="space-y-3 pt-6">
+      <CardContent className="space-y-3">
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />

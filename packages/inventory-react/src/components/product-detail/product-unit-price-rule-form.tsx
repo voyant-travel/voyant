@@ -220,7 +220,7 @@ export function UnitPriceRuleForm({
       className="flex flex-1 flex-col gap-4 overflow-hidden"
     >
       <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{unitPriceMessages.unitLabel}</Label>
             <Select
@@ -278,7 +278,7 @@ export function UnitPriceRuleForm({
           </Select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{unitPriceMessages.sellLabel}</Label>
             <CurrencyInput
@@ -299,7 +299,7 @@ export function UnitPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{cellQuantityLabels(form.watch("pricingMode"), unitPriceMessages).min}</Label>
             <Input {...form.register("minQuantity")} type="number" min="0" />
@@ -310,7 +310,7 @@ export function UnitPriceRuleForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{unitPriceMessages.sortOrderLabel}</Label>
             <Input {...form.register("sortOrder")} type="number" />

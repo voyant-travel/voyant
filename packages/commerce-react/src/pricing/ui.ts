@@ -13,6 +13,7 @@ export {
 export { OptionStartTimeRuleDialog } from "./components/option-start-time-rule-dialog.js"
 export { OptionUnitPriceRuleDialog } from "./components/option-unit-price-rule-dialog.js"
 export { OptionUnitTierDialog } from "./components/option-unit-tier-dialog.js"
+export { PickupPointCombobox } from "./components/pickup-point-combobox.js"
 export { PickupPriceRuleDialog } from "./components/pickup-price-rule-dialog.js"
 export { PriceCatalogCombobox } from "./components/price-catalog-combobox.js"
 export { PriceCatalogsPage, type PriceCatalogsPageProps } from "./components/price-catalogs-page.js"
@@ -56,7 +57,12 @@ export {
   ProductOptionLabel,
 } from "./components/pricing-shared-labels.js"
 export { ProductCombobox } from "./components/product-combobox.js"
+export { ProductExtraCombobox } from "./components/product-extra-combobox.js"
 export { ProductOptionCombobox } from "./components/product-option-combobox.js"
+export {
+  RecurrenceRulePicker,
+  type RecurrenceRulePickerProps,
+} from "./components/recurrence-rule-picker.js"
 export type {
   AddonPricingMode,
   AdjustmentType,

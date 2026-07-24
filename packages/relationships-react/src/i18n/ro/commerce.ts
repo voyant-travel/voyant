@@ -8,11 +8,11 @@ export const crmUiRoCommerceMessages = {
       status: "Status",
       description: "Descriere",
       linkTo: "Leaga de",
-      entityId: "Entitate",
+      entityId: "Legat de",
     },
     placeholders: {
       subject: "Apel de descoperire cu Acme",
-      entityId: "Cauta sau insereaza o referinta",
+      entityId: "Cauta o persoana, companie sau oferta",
     },
     validation: {
       subjectRequired: "Subiectul este obligatoriu",
@@ -101,7 +101,7 @@ export const crmUiRoCommerceMessages = {
   },
   activitiesPage: {
     title: "Activitati",
-    description: "Apeluri, emailuri, intalniri, sarcini si urmariri din CRM-ul tau.",
+    description: "Apelurile, emailurile si intalnirile inregistrate.",
     create: "Activitate noua",
     filters: {
       type: "Tip",

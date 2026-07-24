@@ -335,7 +335,7 @@ export function PaymentScheduleSection({
                   updateInstallment(idx, { paymentMethod: nextValue ?? "bank_transfer" })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -2,11 +2,6 @@
 
 import { useProductOptions } from "@voyant-travel/inventory-react"
 import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -14,6 +9,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
@@ -229,16 +229,16 @@ export function AvailabilitySlotDialog(props: {
   }
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? slotMessages.editTitle : slotMessages.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={props.open} onOpenChange={props.onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? slotMessages.editTitle : slotMessages.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <ProductSelect
               label={slotMessages.productLabel}
               placeholder={slotMessages.selectProductPlaceholder}
@@ -280,7 +280,7 @@ export function AvailabilitySlotDialog(props: {
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.ruleLabel}</Label>
                 <Select
@@ -323,7 +323,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.dateLabel}</Label>
                 <DatePicker
@@ -369,7 +369,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.statusLabel}</Label>
                 <Select
@@ -419,7 +419,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.initialPaxLabel}</Label>
                 <Input {...form.register("initialPax")} type="number" min={0} />
@@ -442,7 +442,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SwitchField
                 title={slotMessages.pastCutoffTitle}
                 description={slotMessages.pastCutoffDescription}
@@ -461,7 +461,7 @@ export function AvailabilitySlotDialog(props: {
               <Label>{slotMessages.notesLabel}</Label>
               <Textarea {...form.register("notes")} placeholder={slotMessages.notesPlaceholder} />
             </div>
-          </DialogBody>
+          </SheetBody>
           <DialogActions
             cancel={slotMessages.cancel}
             save={slotMessages.save}
@@ -472,7 +472,7 @@ export function AvailabilitySlotDialog(props: {
             onCancel={() => props.onOpenChange(false)}
           />
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

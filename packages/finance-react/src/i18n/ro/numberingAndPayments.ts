@@ -47,11 +47,11 @@ export const invoiceNumberSeriesDialog = {
   titleNew: "Serie numere factura noua",
   titleEdit: "Editeaza serie numere factura",
   fields: {
-    code: "Cod",
+    code: "Cod de referinta",
     name: "Nume",
     prefix: "Prefix",
     separator: "Separator",
-    padLength: "Lungime completare",
+    padLength: "Lungime numar",
     currentSequence: "Secventa curenta",
     resetStrategy: "Strategie resetare",
     scope: "Tip",
@@ -60,6 +60,7 @@ export const invoiceNumberSeriesDialog = {
     externalConfigKey: "Cheie configurare externa",
     active: "Activa",
   },
+  advancedLabel: "Avansat",
   placeholders: {
     code: "factura-principala",
     name: "Seria implicita pentru facturi",
@@ -71,7 +72,7 @@ export const invoiceNumberSeriesDialog = {
   help: {
     previewLabel: "Previzualizare",
     previewSample: "Urmatorul numar alocat va folosi acest format.",
-    default: "Seriile implicite active sunt folosite cand nu este ceruta o serie anume.",
+    default: "Folosita automat cand nu este aleasa alta serie.",
     external: "Lasa gol pentru numere alocate intern.",
   },
   actions: {
@@ -123,8 +124,8 @@ export const paymentsPage = {
     method: "Metoda de plata",
   },
   noValue: "-",
-  empty: "Nu au fost gasite inregistrari.",
-  loadFailed: "Incarcarea inregistrarilor a esuat.",
+  empty: "Nu au fost gasite plati.",
+  loadFailed: "Incarcarea platilor a esuat.",
   pagination: {
     showing: "Afisare {count} din {total}",
     page: "Pagina {page} / {pageCount}",
@@ -210,7 +211,7 @@ export const paymentPolicy = {
       balanceDaysHelp: "Cu cate zile inainte de plecare este scadent soldul ramas.",
       graceDaysLabel: "Perioada minima",
       graceDaysHelp:
-        "Numarul minim de zile de acum pana cand soldul poate fi scadent, chiar pentru plecari apropiate.",
+        "Cel mai devreme moment cand soldul poate deveni scadent, chiar pentru plecari de ultim moment.",
       tooltipLabel: "Arata ajutorul campului",
       suffix: "zile",
     },
@@ -255,16 +256,16 @@ export const taxesPage = {
   regimeOverridesLabel: "Suprascrieri",
   regimeOverrideCount: "{count} suprascrieri",
   taxClassSectionTitle: "Clasa de taxe",
-  taxClassSectionDescription: "Clasificarea selectabila salvata pe produse si linii de rezervare.",
+  taxClassSectionDescription:
+    "Clasa de taxe pe care o atribui produselor si liniilor de rezervare.",
   defaultRegimeSectionTitle: "Regim fiscal implicit",
-  defaultRegimeSectionDescription:
-    "Regula de calcul TVA/taxe legata prin tax_classes.default_regime_id.",
+  defaultRegimeSectionDescription: "Regula TVA implicita folosita de aceasta clasa de taxe.",
   regimeOverridesSectionTitle: "Suprascrieri de regim",
   regimeOverridesSectionDescription:
-    "Intrari optionale tax_classes.lines pentru baza, addon, cazare sau toate liniile.",
+    "Optional, seteaza taxe diferite pentru liniile de baza, add-on sau cazare.",
   addRegimeOverride: "Adauga suprascriere",
   removeRegimeOverride: "Sterge suprascrierea",
-  noRegimeOverrides: "Nu exista suprascrieri de regim. Clasa foloseste regimul implicit.",
+  noRegimeOverrides: "Nicio suprascriere — aceasta clasa foloseste regula implicita.",
   appliesToLabel: "Se aplica la",
   taxRegimeLabel: "Regim fiscal",
   appliesToBase: "Baza",

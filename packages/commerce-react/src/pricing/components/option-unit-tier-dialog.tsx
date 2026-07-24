@@ -2,14 +2,14 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
 } from "@voyant-travel/ui/components"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
@@ -119,20 +119,20 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
   const isSubmitting = create.isPending || update.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.optionUnitTierDialog.titles.edit
               : messages.optionUnitTierDialog.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.optionUnitTierDialog.fields.optionUnitPriceRule}</Label>
               <OptionUnitPriceRuleCombobox
@@ -153,7 +153,7 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitTierDialog.fields.minQuantity}</Label>
                 <Input {...form.register("minQuantity")} type="number" min="1" />
@@ -169,7 +169,7 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitTierDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
@@ -180,7 +180,7 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitTierDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
@@ -193,8 +193,8 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
                 <Label>{messages.optionUnitTierDialog.fields.active}</Label>
               </div>
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -204,9 +204,9 @@ export function OptionUnitTierDialog({ open, onOpenChange, tier, onSuccess }: Pr
                 ? messages.common.saveChanges
                 : messages.optionUnitTierDialog.actions.create}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

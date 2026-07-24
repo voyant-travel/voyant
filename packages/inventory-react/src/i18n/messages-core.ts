@@ -38,6 +38,7 @@ export type ProductsUiCoreMessages = {
     }
     productStatusLabels: Record<ProductStatus, string>
     productBookingModeLabels: Record<ProductBookingMode, string>
+    productBookingModeBasis: Record<ProductBookingMode, string>
     productCapacityModeLabels: Record<ProductCapacityMode, string>
     productVisibilityLabels: Record<ProductVisibility, string>
   }
@@ -285,8 +286,18 @@ export type ProductsUiCoreMessages = {
       button: string
       statusLabel: string
       statusAll: string
+      typeLabel: string
+      typeAll: string
+      bookingModeLabel: string
+      bookingModeAll: string
+      visibilityLabel: string
+      visibilityAll: string
+      tagLabel: string
+      tagPlaceholder: string
       dateLabel: string
       datePlaceholder: string
+      departureLabel: string
+      departurePlaceholder: string
       paxLabel: string
       sellAmountLabel: string
       min: string

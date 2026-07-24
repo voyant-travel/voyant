@@ -13,7 +13,7 @@ export function PricingCategoriesPage({ pageSize, className }: PricingCategories
   const messages = usePricingUiMessagesOrDefault().pricingCategoriesPage
 
   return (
-    <div data-slot="pricing-categories-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="pricing-categories-page" className={cn("flex flex-col gap-6", className)}>
       <div>
         <h2 className="text-lg font-semibold tracking-tight">{messages.title}</h2>
         <p className="text-sm text-muted-foreground">{messages.description}</p>

@@ -67,7 +67,7 @@ export function DeliveriesDrawer({
         </SheetHeader>
         <SheetBody className="flex flex-col gap-3">
           {query.isPending ? (
-            <div className="flex items-center justify-center p-12">
+            <div className="flex items-center justify-center p-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : rows.length === 0 ? (

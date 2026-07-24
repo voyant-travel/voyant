@@ -84,7 +84,6 @@ export function AdminPendingFallback() {
         aria-label={adminChromeMessages.en.loadingAdminWorkspace}
       >
         <Loader2 className="size-8 animate-spin" aria-hidden="true" />
-        <span className="text-sm">{adminChromeMessages.en.loadingWorkspace}</span>
       </div>
     </div>
   )

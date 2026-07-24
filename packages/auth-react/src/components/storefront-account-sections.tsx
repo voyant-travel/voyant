@@ -7,7 +7,16 @@ import type {
   StorefrontDto,
   StorefrontSocialProvider,
 } from "@voyant-travel/auth/storefront-admin-contracts"
-import { Badge, Button, Checkbox, cn, Input, Label, Switch } from "@voyant-travel/ui/components"
+import {
+  Badge,
+  Button,
+  Checkbox,
+  cn,
+  confirmDialog,
+  Input,
+  Label,
+  Switch,
+} from "@voyant-travel/ui/components"
 import { useMemo, useState } from "react"
 
 import type { StorefrontsPageMessages } from "../i18n/messages.js"
@@ -364,8 +373,9 @@ function ProviderCredentialRow({
             variant="outline"
             size="sm"
             disabled={disabled || clear.isPending}
-            onClick={() => {
-              if (!window.confirm(copy.clearConfirm)) return
+            onClick={async () => {
+              if (!(await confirmDialog({ description: copy.clearConfirm, destructive: true })))
+                return
               clear.mutate()
             }}
           >

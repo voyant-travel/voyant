@@ -15,7 +15,7 @@ export function PeoplePage({ pageSize, onPersonOpen, className }: PeoplePageProp
   const messages = useCrmUiMessagesOrDefault().peoplePage
 
   return (
-    <div data-slot="people-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="people-page" className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
         <p className="text-sm text-muted-foreground">{messages.description}</p>

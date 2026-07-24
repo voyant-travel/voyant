@@ -86,7 +86,7 @@ export function ActionLedgerEntrySheet({
             </div>
           ) : null}
         </SheetHeader>
-        <div className="h-[calc(100vh-9rem)] overflow-auto px-6 py-5">
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
           {isLoading ? (
             <p className="text-muted-foreground text-sm">{t.loading}</p>
           ) : entry ? (

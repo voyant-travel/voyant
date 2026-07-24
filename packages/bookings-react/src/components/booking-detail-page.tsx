@@ -15,6 +15,8 @@ import {
   Button,
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
   cn,
 } from "@voyant-travel/ui/components"
 import {
@@ -284,7 +286,8 @@ export function BookingDetailPage({
         detailMessages.noValue,
       )}`
     : null
-  const headerPax = booking.pax != null ? `${booking.pax} PAX` : null
+  const headerPax =
+    booking.pax != null ? `${booking.pax} ${messages.bookingQuickViewSheet.paxSuffix}` : null
   const headerProductTitle = primaryItem?.productNameSnapshot ?? primaryItem?.title ?? null
   const headerProductId = primaryItem?.productId ?? null
   const headerSlotId = primaryItem?.availabilitySlotId ?? null
@@ -342,7 +345,7 @@ export function BookingDetailPage({
   ].filter(Boolean) as ReactNode[]
 
   return (
-    <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6", className)}>
       {hideBreadcrumb ? null : (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           {onBack ? (
@@ -494,10 +497,10 @@ export function BookingDetailPage({
           <BookingGroupSection bookingId={id} />
           {visibleInternalNotes(booking.internalNotes) ? (
             <Card>
-              <CardContent className="py-5">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {detailMessages.internalNotesLabel}
-                </p>
+              <CardHeader>
+                <CardTitle>{detailMessages.internalNotesLabel}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="whitespace-pre-wrap text-sm">
                   {visibleInternalNotes(booking.internalNotes)}
                 </p>

@@ -2,6 +2,7 @@
 "use client"
 
 import { useQueries } from "@tanstack/react-query"
+import { confirmDialog } from "@voyant-travel/ui/components"
 import { Alert, AlertDescription, AlertTitle } from "@voyant-travel/ui/components/alert"
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
@@ -222,9 +223,15 @@ export function ProductOptionsSection({
       },
     )
   }
-  const deleteOption = (option: ProductOptionRecord) => {
+  const deleteOption = async (option: ProductOptionRecord) => {
     if (
-      confirm(messages.productOptionsSection.deleteConfirm.option.replace("{name}", option.name))
+      await confirmDialog({
+        description: messages.productOptionsSection.deleteConfirm.option.replace(
+          "{name}",
+          option.name,
+        ),
+        destructive: true,
+      })
     ) {
       remove.mutate(option.id)
     }
@@ -543,14 +550,16 @@ function UnitsPanel({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => {
+                        onClick={async () => {
                           if (
-                            confirm(
-                              messages.productOptionsSection.deleteConfirm.unit.replace(
-                                "{name}",
-                                unit.name,
-                              ),
-                            )
+                            await confirmDialog({
+                              description:
+                                messages.productOptionsSection.deleteConfirm.unit.replace(
+                                  "{name}",
+                                  unit.name,
+                                ),
+                              destructive: true,
+                            })
                           ) {
                             remove.mutate(unit.id)
                           }

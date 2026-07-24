@@ -67,7 +67,7 @@ describe("extras-ui i18n", () => {
     })
 
     expect(result.productCombobox.empty).toBe("Nu exista produse.")
-    expect(result.productCombobox.bookingModeLabels.date_time).toBe("Data si ora")
+    expect(result.productCombobox.bookingModeLabels.date_time).toBe("Activitate cu oră")
   })
 
   it("returns locale-aware formatters from the package helper", () => {
@@ -87,7 +87,7 @@ describe("extras-ui i18n", () => {
 
     expect(html).toContain("Search products")
     expect(html).toContain("Active")
-    expect(html).toContain("Date and time")
+    expect(html).toContain("Timed activity")
   })
 
   it("renders Romanian copy with the package provider", () => {
@@ -102,7 +102,7 @@ describe("extras-ui i18n", () => {
 
     expect(html).toContain("Cauta produse")
     expect(html).toContain("Activ")
-    expect(html).toContain("Data si ora")
+    expect(html).toContain("Activitate cu oră")
   })
 })
 

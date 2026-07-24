@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
   Badge,
   Button,
+  confirmDialog,
   Dialog,
   DialogBody,
   DialogContent,
@@ -32,6 +33,7 @@ import {
   TabsTrigger,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { InvoiceActionLedgerCard } from "../components/invoice-action-ledger-card.js"
@@ -59,6 +61,11 @@ import {
 import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
 import { LineItemDialog } from "./line-item-dialog.js"
 import { PaymentDialog } from "./payment-dialog.js"
+import {
+  useInvoiceBookingLabel,
+  useInvoiceOrganizationLabel,
+  useInvoicePersonLabel,
+} from "./use-invoice-links.js"
 
 function getInvoiceStatusLabel(messages: OperatorAdminMessages, status: string): string {
   switch (status) {
@@ -123,6 +130,13 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
   const { remove: deleteLineItem } = useInvoiceLineItemMutation(id)
   const addNoteMutation = useInvoiceNoteMutation(id)
 
+  // Contextual labels for the "Dates & Links" card — resolve the linked ids to
+  // their display names so operators see what they're clicking into. Called
+  // unconditionally (rules-of-hooks); each is enabled only when its id exists.
+  const bookingLabel = useInvoiceBookingLabel(invoiceData?.data?.bookingId)
+  const personLabel = useInvoicePersonLabel(invoiceData?.data?.personId)
+  const organizationLabel = useInvoiceOrganizationLabel(invoiceData?.data?.organizationId)
+
   const invoicesHref = resolveHref("invoice.list", {})
   const invoiceForBreadcrumb = invoiceData?.data
   useAdminBreadcrumbs(
@@ -164,7 +178,7 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
     error instanceof Error ? error.message : fallback
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{invoice.invoiceNumber}</h1>
@@ -293,60 +307,73 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogTrigger
-              disabled={!canDeleteInvoice || deleteInvoice.isPending}
-              render={<Button type="button" variant="destructive" />}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {messages.finance.detailPage.delete}
-            </AlertDialogTrigger>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{messages.finance.detailPage.delete}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {messages.finance.detailPage.deleteConfirm}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleteInvoice.isPending}>
-                  {messages.finance.detailPage.cancel}
-                </AlertDialogCancel>
-                <AlertDialogAction
+          {canDeleteInvoice ? (
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger
+                disabled={deleteInvoice.isPending}
+                render={<Button type="button" variant="destructive" />}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {messages.finance.detailPage.delete}
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{messages.finance.detailPage.delete}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {messages.finance.detailPage.deleteConfirm}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleteInvoice.isPending}>
+                    {messages.finance.detailPage.cancel}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={deleteInvoice.isPending}
+                    onClick={() => {
+                      setActionError(null)
+                      deleteInvoice.mutate(id, {
+                        onSuccess: () => {
+                          setDeleteDialogOpen(false)
+                          navigateTo("invoice.list", {})
+                        },
+                        onError: (error) => {
+                          setActionError(
+                            getMutationErrorMessage(
+                              messages.finance.detailPage.deleteOnlyDraftAlert,
+                            )(error),
+                          )
+                        },
+                      })
+                    }}
+                  >
+                    {deleteInvoice.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    {messages.finance.detailPage.delete}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <Tooltip>
+              {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable -- owner: finance-react; disabled Delete needs a focusable wrapper to surface its reason. */}
+              <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+                <Button
+                  type="button"
                   variant="destructive"
-                  disabled={deleteInvoice.isPending}
-                  onClick={() => {
-                    setActionError(null)
-                    deleteInvoice.mutate(id, {
-                      onSuccess: () => {
-                        setDeleteDialogOpen(false)
-                        navigateTo("invoice.list", {})
-                      },
-                      onError: (error) => {
-                        setActionError(
-                          getMutationErrorMessage(messages.finance.detailPage.deleteOnlyDraftAlert)(
-                            error,
-                          ),
-                        )
-                      },
-                    })
-                  }}
+                  disabled
+                  className="pointer-events-none"
                 >
-                  {deleteInvoice.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : null}
+                  <Trash2 className="mr-2 h-4 w-4" />
                   {messages.finance.detailPage.delete}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{messages.finance.detailPage.deleteOnlyDraftAlert}</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
-      {!canDeleteInvoice ? (
-        <div className="rounded-md border px-3 py-2 text-muted-foreground text-sm">
-          {messages.finance.detailPage.deleteOnlyDraftAlert}
-        </div>
-      ) : null}
       {actionError ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {actionError}
@@ -356,6 +383,9 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
 
       <InvoiceInfoCards
         invoice={invoice}
+        bookingLabel={bookingLabel}
+        personLabel={personLabel}
+        organizationLabel={organizationLabel}
         onOpenBooking={() => navigateTo("booking.detail", { bookingId: invoice.bookingId })}
         onOpenPerson={(personId) => navigateTo("person.detail", { personId })}
         onOpenOrganization={(organizationId) =>
@@ -368,7 +398,7 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
       />
 
       <Tabs defaultValue="line-items">
-        <TabsList className="max-w-full justify-start overflow-x-auto">
+        <TabsList className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
           <TabsTrigger value="line-items">
             {messages.finance.detailSections.lineItemsTitle}
           </TabsTrigger>
@@ -398,8 +428,13 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
               setEditingLineItem(lineItem)
               setLineItemDialogOpen(true)
             }}
-            onDelete={(lineId) => {
-              if (confirm(messages.finance.detailPage.deleteLineItemConfirm)) {
+            onDelete={async (lineId) => {
+              if (
+                await confirmDialog({
+                  description: messages.finance.detailPage.deleteLineItemConfirm,
+                  destructive: true,
+                })
+              ) {
                 setActionError(null)
                 deleteLineItem.mutate(lineId, {
                   onError: (error) => {

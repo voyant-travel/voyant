@@ -24,7 +24,7 @@ export default function CatalogAccommodationsIndexPage({
   // results opening the dedicated accommodation detail page (the
   // `catalog.detail` destination) in a new tab.
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl">
       <div className="mb-4">
         <h1 className="font-semibold text-2xl">{title}</h1>
       </div>

@@ -171,8 +171,8 @@ export const crmUiEnBaseMessages = {
       edit: "Edit organization",
     },
     descriptions: {
-      create: "Add a new company to your CRM.",
-      edit: "Update company details and account metadata.",
+      create: "Add a new company.",
+      edit: "Update company details.",
     },
   },
   personDialog: {
@@ -181,8 +181,8 @@ export const crmUiEnBaseMessages = {
       edit: "Edit person",
     },
     descriptions: {
-      create: "Add a new person to your CRM.",
-      edit: "Update contact details and reference information.",
+      create: "Add a new person.",
+      edit: "Update contact details.",
     },
   },
 } as const

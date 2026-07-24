@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: legal-react; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
 import { useQueryClient } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
-import { Badge, Button } from "@voyant-travel/ui/components"
+import { Badge, Button, confirmDialog } from "@voyant-travel/ui/components"
 import {
   Table,
   TableBody,
@@ -174,7 +174,7 @@ export function ContractDetailPage({
 
   if (isPending) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
         </div>
@@ -212,7 +212,7 @@ export function ContractDetailPage({
   const targetValue = getContractTargetValue(contract)
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {onBackToContracts ? (
           <Button variant="ghost" size="icon" onClick={onBackToContracts}>
@@ -268,8 +268,8 @@ export function ContractDetailPage({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => {
-                if (confirm(f.voidConfirm)) {
+              onClick={async () => {
+                if (await confirmDialog(f.voidConfirm)) {
                   voidContract.mutate(id)
                 }
               }}
@@ -288,8 +288,13 @@ export function ContractDetailPage({
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => {
-                if (confirm(formatMessage(f.deleteConfirm, { title: contract.title }))) {
+              onClick={async () => {
+                if (
+                  await confirmDialog({
+                    description: formatMessage(f.deleteConfirm, { title: contract.title }),
+                    destructive: true,
+                  })
+                ) {
                   remove.mutate(id, { onSuccess: () => onBackToContracts?.() })
                 }
               }}
@@ -501,8 +506,13 @@ export function ContractDetailPage({
                           setEditingAttachment(attachment)
                           setAttachOpen(true)
                         }}
-                        onDelete={() => {
-                          if (confirm(f.deleteAttachmentConfirm)) {
+                        onDelete={async () => {
+                          if (
+                            await confirmDialog({
+                              description: f.deleteAttachmentConfirm,
+                              destructive: true,
+                            })
+                          ) {
                             removeAttachment.mutate({ contractId: id, id: attachment.id })
                           }
                         }}

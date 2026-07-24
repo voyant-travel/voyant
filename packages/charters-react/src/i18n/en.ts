@@ -43,7 +43,7 @@ export const chartersUiEn: ChartersUiMessages = {
       apaLabel: "APA (Advance Provisioning Allowance, {percent}% of charter fee)",
       totalDue: "Total due",
       explanation:
-        "The APA covers fuel, food, beverages, port charges, and other operational expenses during the charter. The actual spend is reconciled at the end of the charter and any surplus is refunded to the charterer.",
+        "APA covers fuel, food, drinks, port charges and running costs. It's reconciled after the charter and any surplus is refunded.",
     },
     perSuite: {
       summary: "Per-suite charter quote",

@@ -93,7 +93,7 @@ function TripSummaryCard({
   return (
     <section
       aria-label={messages.ariaLabel}
-      className="flex flex-col gap-3 rounded-md border bg-card p-5 shadow-sm"
+      className="flex flex-col gap-3 rounded-md border bg-card p-6 shadow-sm"
     >
       <h2 className="font-medium text-base">{messages.heading}</h2>
       <ul className="flex flex-col gap-3">
@@ -233,7 +233,7 @@ function FxRatesBlock({
 
 function TripSummarySkeleton() {
   return (
-    <section className="flex flex-col gap-3 rounded-md border bg-card p-5 shadow-sm">
+    <section className="flex flex-col gap-3 rounded-md border bg-card p-6 shadow-sm">
       <div className="h-4 w-20 animate-pulse rounded-md bg-muted" />
       <ul className="flex flex-col gap-3">
         {[0, 1].map((index) => (

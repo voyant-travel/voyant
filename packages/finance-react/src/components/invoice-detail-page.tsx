@@ -172,7 +172,7 @@ export function InvoiceDetailPage({
   }
 
   return (
-    <div data-slot="invoice-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="invoice-detail-page" className={cn("flex flex-col gap-6", className)}>
       <InvoiceDetailHeader
         invoice={invoice}
         onBack={onBack}

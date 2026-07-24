@@ -55,10 +55,10 @@ export function KpiCard({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
-                    className="font-data text-3xl font-semibold tracking-tight text-muted-foreground"
+                    className="font-data text-3xl font-normal tracking-tight text-muted-foreground opacity-50"
                     aria-label={emptyLabel ?? description}
                   >
-                    -
+                    —
                   </TooltipTrigger>
                   <TooltipContent>{emptyLabel ?? description}</TooltipContent>
                 </Tooltip>

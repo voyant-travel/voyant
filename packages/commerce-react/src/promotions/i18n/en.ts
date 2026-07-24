@@ -76,8 +76,7 @@ export const promotionsUiEn: PromotionsUiMessages = {
       activate: "Activate",
       delete: "Delete",
       archiveConfirm: "Archive this promotion? It will stop applying to new bookings.",
-      activateConfirm:
-        "Activate this promotion? It can apply again when its validity window matches.",
+      activateConfirm: "Activate this promotion? It can apply again during its active dates.",
       deleteConfirm: "Delete this promotion permanently? Use archive if it should only be retired.",
       deleteConflict: "This promotion has redemptions and cannot be deleted. Archive it instead.",
       actionFailedPrefix: "{action} failed: {message}",
@@ -120,7 +119,7 @@ export const promotionsUiEn: PromotionsUiMessages = {
       edit: "Edit promotion",
     },
     description:
-      "Set discount, scope, and validity. Code-gated offers require a non-empty code; leave it blank for auto-applied offers.",
+      "Set the discount, where it applies, and when. Add a code for code-only offers, or leave it blank to apply automatically.",
     fields: {
       name: "Name",
       slug: "Slug",

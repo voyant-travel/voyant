@@ -31,7 +31,7 @@ export const crmUiRoListsMessages = {
   },
   peoplePage: {
     title: "Persoane",
-    description: "Contacte, calatori, agenti si parteneri din CRM-ul tau.",
+    description: "Toti cei cu care lucrezi.",
   },
   organizationList: {
     searchPlaceholder: "Cauta organizatii...",
@@ -57,7 +57,7 @@ export const crmUiRoListsMessages = {
   },
   organizationsPage: {
     title: "Organizatii",
-    description: "Companii, agentii, furnizori si relatii de cont.",
+    description: "Companii si furnizori.",
   },
   entityComboboxes: {
     person: {

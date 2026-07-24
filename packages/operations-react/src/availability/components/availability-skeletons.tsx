@@ -87,7 +87,7 @@ export function AvailabilityBodySkeleton() {
 
 export function AvailabilityPageSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-40" />
         <Skeleton className="h-4 w-96" />
@@ -99,7 +99,7 @@ export function AvailabilityPageSkeleton() {
 
 export function AvailabilityRuleDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Skeleton className="h-9 w-9 rounded-md" />
         <div className="flex-1 space-y-2">
@@ -168,7 +168,7 @@ export function AvailabilityRuleDetailSkeleton() {
 
 export function AvailabilityStartTimeDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Skeleton className="h-9 w-9 rounded-md" />
         <div className="flex-1 space-y-2">
@@ -223,7 +223,7 @@ export function AvailabilityStartTimeDetailSkeleton() {
 
 export function AvailabilitySlotDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Skeleton className="h-9 w-9 rounded-md" />
         <div className="flex-1 space-y-2">

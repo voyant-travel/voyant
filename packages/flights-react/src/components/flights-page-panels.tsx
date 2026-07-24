@@ -91,7 +91,7 @@ export function ReadyToBookPanel({
           onChange={onChangeReturn}
         />
       </div>
-      <div className="flex flex-col items-stretch gap-3 rounded-md border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col items-stretch gap-3 rounded-md border bg-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col leading-tight">
           <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground">
             {messages.tripTotal}

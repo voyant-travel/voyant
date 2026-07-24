@@ -45,7 +45,7 @@ export const resourcesUiEn: ResourcesUiMessages = {
   resourcesPage: {
     title: "Resources",
     description:
-      "Manage assignable assets, pools, allocation rules, bookings coverage, and closeouts.",
+      "Manage guides, vehicles, rooms and other assets, and how they're assigned to trips.",
     loading: "Loading resources...",
     loadFailed: "Resources could not be loaded.",
     filters: {
@@ -159,8 +159,7 @@ export const resourcesUiEn: ResourcesUiMessages = {
             buttonLabel: "Deactivate",
             confirmLabel: "Deactivate Resources",
             title: "Deactivate {selection}?",
-            description:
-              "This preserves the selected resources but removes them from active operational use.",
+            description: "Keeps them but takes them out of active use.",
             successVerb: "Deactivated",
           },
           delete: {

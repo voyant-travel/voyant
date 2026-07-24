@@ -2,12 +2,6 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +9,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -172,17 +172,17 @@ export function ExternalRefDialog({
   const isSubmitting = form.formState.isSubmitting || create.isPending || update.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? m.titles.edit : m.titles.add}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? m.titles.edit : m.titles.add}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+          <SheetBody className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.sourceSystem}</Label>
                 <Input
@@ -206,7 +206,7 @@ export function ExternalRefDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.namespace}</Label>
                 <Input {...form.register("namespace")} placeholder={m.placeholders.namespace} />
@@ -229,7 +229,7 @@ export function ExternalRefDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.status}</Label>
                 <Select
@@ -275,8 +275,8 @@ export function ExternalRefDialog({
                 </p>
               ) : null}
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {m.actions.cancel}
             </Button>
@@ -284,9 +284,9 @@ export function ExternalRefDialog({
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isEditing ? m.actions.saveChanges : m.actions.addExternalRef}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

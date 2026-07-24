@@ -20,6 +20,7 @@ import {
   CardTitle,
   Checkbox,
   cn,
+  confirmDialog,
   Input,
   Label,
 } from "@voyant-travel/ui/components"
@@ -199,7 +200,7 @@ export function ServiceApiKeysPage({
   }
 
   return (
-    <div data-slot="api-tokens-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="api-tokens-page" className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
         <p className="text-sm text-muted-foreground">{pageDescription}</p>
@@ -238,7 +239,7 @@ export function ServiceApiKeysPage({
           <CardDescription>{selectedDescription}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex flex-col gap-5">
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
@@ -399,7 +400,7 @@ function ServiceApiKeyRow({
   const mutations = useApiTokenMutation()
   const enabled = apiKey.enabled !== false
   const rotateToken = async () => {
-    if (!window.confirm(messages.list.rotateConfirm)) return
+    if (!(await confirmDialog(messages.list.rotateConfirm))) return
     onError(null)
 
     try {
@@ -415,7 +416,7 @@ function ServiceApiKeyRow({
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-medium">{apiKey.name || messages.list.untitled}</h3>

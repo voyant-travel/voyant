@@ -116,7 +116,7 @@ export const supplierInvoiceDetail = {
     target: "Tinta",
     reference: "Referinta",
     amountLabel: "Suma ({currency})",
-    none: "Nicio alocare — costul acestei facturi este neatribuit.",
+    none: "Nicio alocare inca — costul acestei facturi nu este atribuit niciunui produs sau plecare.",
     remainder: "Rest neatribuit: {amount}",
     overAllocated: "Supra-alocat cu {amount}",
     save: "Salveaza alocarile",

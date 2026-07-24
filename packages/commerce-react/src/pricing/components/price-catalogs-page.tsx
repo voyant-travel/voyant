@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -86,7 +87,7 @@ export function PriceCatalogsPage({
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div data-slot="price-catalogs-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="price-catalogs-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">{pageMessages.title}</h2>
@@ -153,8 +154,13 @@ export function PriceCatalogsPage({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
-                        onClick={() => {
-                          if (confirm(pageMessages.deleteConfirm)) {
+                        onClick={async () => {
+                          if (
+                            await confirmDialog({
+                              description: pageMessages.deleteConfirm,
+                              destructive: true,
+                            })
+                          ) {
                             remove.mutate(catalog.id, { onSuccess: () => void refetch() })
                           }
                         }}
@@ -302,7 +308,7 @@ function CatalogSheet({
           className="flex flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor={`${fieldId}-name`}>{messages.nameLabel}</Label>
                 <Input
@@ -328,7 +334,7 @@ function CatalogSheet({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor={`${fieldId}-currency`}>{messages.currencyLabel}</Label>
                 <CurrencyCombobox
@@ -370,7 +376,7 @@ function CatalogSheet({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("isDefault")}

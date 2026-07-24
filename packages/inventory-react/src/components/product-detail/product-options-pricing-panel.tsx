@@ -3,6 +3,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -216,9 +217,14 @@ function AdvancedRatePlans({
                 setEditingRule(rule)
                 setRuleDialogOpen(true)
               }}
-              onDelete={() => {
+              onDelete={async () => {
                 if (
-                  confirm(formatMessage(priceRuleMessages.deleteRuleConfirm, { name: rule.name }))
+                  await confirmDialog({
+                    description: formatMessage(priceRuleMessages.deleteRuleConfirm, {
+                      name: rule.name,
+                    }),
+                    destructive: true,
+                  })
                 ) {
                   deleteMutation.mutate(rule.id)
                 }

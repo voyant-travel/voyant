@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import { ExternalLink, FileText, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
@@ -126,8 +127,13 @@ export function BookingDocumentList({ bookingId }: BookingDocumentListProps) {
                       <td className="p-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(messages.bookingDocumentList.actions.deleteConfirm)) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: messages.bookingDocumentList.actions.deleteConfirm,
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(doc.id)
                             }
                           }}

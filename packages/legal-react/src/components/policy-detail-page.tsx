@@ -8,6 +8,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  confirmDialog,
 } from "@voyant-travel/ui/components"
 import {
   Table,
@@ -106,7 +107,7 @@ export function PolicyDetailPage({
 
   if (isPending) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
         </div>
@@ -128,7 +129,7 @@ export function PolicyDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {onBackToPolicies ? (
           <Button variant="ghost" size="icon" onClick={onBackToPolicies}>
@@ -155,8 +156,13 @@ export function PolicyDetailPage({
           ) : null}
           <Button
             variant="destructive"
-            onClick={() => {
-              if (confirm(formatMessage(f.deleteConfirm, { name: policy.name }))) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  description: formatMessage(f.deleteConfirm, { name: policy.name }),
+                  destructive: true,
+                })
+              ) {
                 remove.mutate(id, { onSuccess: () => onBackToPolicies?.() })
               }
             }}
@@ -170,7 +176,7 @@ export function PolicyDetailPage({
 
       {policy.description ? (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <p className="text-sm">{policy.description}</p>
           </CardContent>
         </Card>
@@ -272,8 +278,13 @@ export function PolicyDetailPage({
                             }
                           : undefined
                       }
-                      onDelete={() => {
-                        if (confirm(f.deleteAssignmentConfirm)) {
+                      onDelete={async () => {
+                        if (
+                          await confirmDialog({
+                            description: f.deleteAssignmentConfirm,
+                            destructive: true,
+                          })
+                        ) {
                           removeAssignment.mutate({ policyId: id, id: assignment.id })
                         }
                       }}
@@ -521,8 +532,13 @@ function PolicyVersionRow({
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                if (confirm(f.deleteRuleConfirm)) {
+                              onClick={async () => {
+                                if (
+                                  await confirmDialog({
+                                    description: f.deleteRuleConfirm,
+                                    destructive: true,
+                                  })
+                                ) {
                                   remove.mutate({ versionId: version.id, id: rule.id })
                                 }
                               }}

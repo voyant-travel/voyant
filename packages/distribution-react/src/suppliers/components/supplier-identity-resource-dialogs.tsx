@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Input,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
@@ -114,16 +114,16 @@ export function ContactPointDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <SelectField
               label={dialog.kindLabel}
               value={form.watch("kind")}
@@ -155,15 +155,15 @@ export function ContactPointDialog({
             <Field label={dialog.notesLabel}>
               <Textarea {...form.register("notes")} placeholder={dialog.notesPlaceholder} />
             </Field>
-          </DialogBody>
+          </SheetBody>
           <DialogActions
             isSubmitting={form.formState.isSubmitting}
             isEditing={isEditing}
             onCancel={() => onOpenChange(false)}
           />
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -253,16 +253,16 @@ export function NamedContactDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <SelectField
               label={dialog.roleLabel}
               value={form.watch("role")}
@@ -296,15 +296,15 @@ export function NamedContactDialog({
             <Field label={dialog.notesLabel}>
               <Textarea {...form.register("notes")} placeholder={dialog.notesPlaceholder} />
             </Field>
-          </DialogBody>
+          </SheetBody>
           <DialogActions
             isSubmitting={form.formState.isSubmitting}
             isEditing={isEditing}
             onCancel={() => onOpenChange(false)}
           />
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -408,16 +408,16 @@ export function AddressDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.editTitle : dialog.newTitle}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <SelectField
               label={dialog.labelLabel}
               value={form.watch("label")}
@@ -466,14 +466,14 @@ export function AddressDialog({
             <Field label={dialog.notesLabel}>
               <Textarea {...form.register("notes")} placeholder={dialog.notesPlaceholder} />
             </Field>
-          </DialogBody>
+          </SheetBody>
           <DialogActions
             isSubmitting={form.formState.isSubmitting}
             isEditing={isEditing}
             onCancel={() => onOpenChange(false)}
           />
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

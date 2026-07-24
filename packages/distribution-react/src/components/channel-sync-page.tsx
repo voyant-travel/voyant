@@ -242,7 +242,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
   }
 
   return (
-    <div data-slot="channel-sync-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="channel-sync-page" className={cn("flex flex-col gap-6", className)}>
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -461,7 +461,7 @@ export function ChannelSyncPage({ baseUrl, fetcher, className }: ChannelSyncPage
         </CardHeader>
         <CardContent className="p-0">
           {linksQuery.isPending ? (
-            <div className="flex items-center justify-center p-12">
+            <div className="flex items-center justify-center p-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : rows.length === 0 ? (

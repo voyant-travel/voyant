@@ -64,7 +64,7 @@ export default function FlightBookRoutePage({ params, search }: AdminRoutePagePr
 
   if (bookedOrder) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <header className="flex items-center justify-between gap-4">
           <h1 className="font-semibold text-2xl">{messages.flightBookingPage.title}</h1>
           <Button variant="ghost" onClick={() => navigateTo("flight.search", {})}>

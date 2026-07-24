@@ -5,12 +5,6 @@ import { useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -18,6 +12,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from "@voyant-travel/ui/components"
 import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
@@ -430,16 +430,20 @@ export function ContractDialog({
   const submitError = create.error ?? update.error ?? null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        size="xl"
+        className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]"
+      >
+        <SheetHeader>
+          <SheetTitle>{isEditing ? t.titleEdit : t.titleNew}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-6">
+          <SheetBody className="grid gap-6">
             <div className="grid gap-4">
               <div>
                 <h3 className="text-sm font-semibold">{t.setupSectionTitle}</h3>
@@ -775,8 +779,8 @@ export function ContractDialog({
               )}
             </div>
             {submitError ? <p className="text-xs text-destructive">{submitError.message}</p> : null}
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -784,9 +788,9 @@ export function ContractDialog({
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isEditing ? messages.common.saveChanges : t.createAction}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

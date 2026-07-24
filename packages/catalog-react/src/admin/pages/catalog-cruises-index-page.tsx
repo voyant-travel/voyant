@@ -26,7 +26,7 @@ export default function CatalogCruisesIndexPage({
   // carry no from-price and don't join cleanly for a live availability
   // calendar, so cruises browse the synced catalog index.)
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl">
       <div className="mb-4">
         <h1 className="font-semibold text-2xl">{title}</h1>
       </div>

@@ -2,12 +2,9 @@
 
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Input,
   Label,
   Select,
@@ -15,10 +12,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
 } from "@voyant-travel/ui/components"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
-import { Loader2 } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 import { type ReactNode, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
@@ -166,16 +169,16 @@ export function InvoiceNumberSeriesDialog({
   })
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? dialog.titleEdit : dialog.titleNew}</SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
               <FieldError label={dialog.fields.code} error={form.formState.errors.code?.message}>
                 <Input {...form.register("code")} placeholder={dialog.placeholders.code} />
@@ -264,23 +267,32 @@ export function InvoiceNumberSeriesDialog({
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label>{dialog.fields.externalProvider}</Label>
-                <Input
-                  {...form.register("externalProvider")}
-                  placeholder={dialog.placeholders.externalProvider}
+            <Collapsible className="flex flex-col gap-3">
+              <CollapsibleTrigger className="group flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                <ChevronDown
+                  className="size-4 transition-transform group-data-[panel-open]:rotate-180"
+                  aria-hidden="true"
                 />
-                <p className="text-xs text-muted-foreground">{dialog.help.external}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>{dialog.fields.externalConfigKey}</Label>
-                <Input
-                  {...form.register("externalConfigKey")}
-                  placeholder={dialog.placeholders.externalConfigKey}
-                />
-              </div>
-            </div>
+                {dialog.advancedLabel}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label>{dialog.fields.externalProvider}</Label>
+                  <Input
+                    {...form.register("externalProvider")}
+                    placeholder={dialog.placeholders.externalProvider}
+                  />
+                  <p className="text-xs text-muted-foreground">{dialog.help.external}</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>{dialog.fields.externalConfigKey}</Label>
+                  <Input
+                    {...form.register("externalConfigKey")}
+                    placeholder={dialog.placeholders.externalConfigKey}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <div className="grid gap-3 rounded-md border p-3 md:grid-cols-2">
               <SwitchField
@@ -295,8 +307,8 @@ export function InvoiceNumberSeriesDialog({
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -306,10 +318,10 @@ export function InvoiceNumberSeriesDialog({
               ) : null}
               {isEditing ? messages.common.saveChanges : dialog.actions.create}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 
   function FieldError({

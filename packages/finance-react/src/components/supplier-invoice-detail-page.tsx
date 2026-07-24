@@ -145,7 +145,7 @@ export function SupplierInvoiceDetailPage({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       {/* Actions (breadcrumb lives in the app shell) */}
       <div className="flex items-center justify-end gap-2">
         <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>

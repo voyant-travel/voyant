@@ -4,6 +4,7 @@ import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
+  confirmDialog,
   Label,
   Select,
   SelectContent,
@@ -59,7 +60,7 @@ export function InvoiceNumberSeriesPage({ className }: InvoiceNumberSeriesPagePr
   const rows = data?.data ?? []
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{page.title}</h1>
@@ -189,8 +190,15 @@ export function InvoiceNumberSeriesPage({ className }: InvoiceNumberSeriesPagePr
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(formatMessage(page.deleteConfirm, { name: series.name }))) {
+                          onClick={async () => {
+                            if (
+                              await confirmDialog({
+                                description: formatMessage(page.deleteConfirm, {
+                                  name: series.name,
+                                }),
+                                destructive: true,
+                              })
+                            ) {
                               remove.mutate(series.id, { onSuccess: () => void refetch() })
                             }
                           }}

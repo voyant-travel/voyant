@@ -125,8 +125,7 @@ export const productsUiOperationsEn = {
       edit: "Edit sellable unit",
     },
     descriptions: {
-      create:
-        "Add what is sold or allocated, such as an adult ticket, child ticket, double room, coach seat, cabin, or service.",
+      create: "What's being sold — e.g. an adult ticket, a double room, or a coach seat.",
       edit: "Update inventory limits, age rules, and occupancy when this unit represents a room.",
     },
   },
@@ -134,7 +133,7 @@ export const productsUiOperationsEn = {
     fields: {
       name: "Name",
       code: "Code",
-      unitType: "What is being allocated?",
+      unitType: "What is this?",
       sortOrder: "Sort order",
       minQuantity: "Minimum per departure",
       maxQuantity: "Available per departure",
@@ -161,8 +160,7 @@ export const productsUiOperationsEn = {
   },
   productVersionDialog: {
     title: "Create version snapshot",
-    description:
-      "Save the current product state, including itinerary and option structure, as a new version.",
+    description: "Save a snapshot of this product, including its itinerary and options.",
     fields: {
       notes: "Notes",
     },
@@ -181,7 +179,7 @@ export const productsUiOperationsEn = {
       default: "Versions",
     },
     descriptions: {
-      default: "Create and browse immutable product snapshots.",
+      default: "Save a snapshot of this product you can look back on.",
     },
     actions: {
       createVersion: "Create version",
@@ -263,7 +261,7 @@ export const productsUiOperationsEn = {
     configurationWarnings: {
       roomOptionsTitle: "This looks like room types configured as options",
       roomOptionsDescription:
-        "Options {options} look like room arrangements. For Single, Double, Triple, or similar room choices, use one option with multiple room units. Use separate options only when the customer is choosing genuinely different packages.",
+        "{options} look like room types. Put Single/Double/Triple under one option as separate rooms. Use separate options only for genuinely different packages.",
     },
     deleteConfirm: {
       option: 'Delete option "{name}" and its setup?',

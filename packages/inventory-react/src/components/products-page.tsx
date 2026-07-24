@@ -13,7 +13,7 @@ export function ProductsPage({ pageSize, onProductOpen, className }: ProductsPag
   const productMessages = useProductsUiMessagesOrDefault().productsPage
 
   return (
-    <div data-slot="products-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="products-page" className={cn("flex flex-col gap-6", className)}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{productMessages.title}</h1>
         <p className="text-sm text-muted-foreground">{productMessages.description}</p>

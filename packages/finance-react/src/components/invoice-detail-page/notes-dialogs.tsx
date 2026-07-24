@@ -297,38 +297,12 @@ export function InvoiceAttachmentDialog({
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>{detail.fields.mimeType}</Label>
+                <Label>{detail.fields.storageKey}</Label>
                 <Input
-                  {...form.register("mimeType")}
-                  placeholder={detail.placeholders.attachmentMimeType}
+                  {...form.register("storageKey")}
+                  placeholder={detail.placeholders.attachmentStorageKey}
                 />
               </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label>{detail.fields.fileSize}</Label>
-                <Input
-                  {...form.register("fileSize")}
-                  type="number"
-                  placeholder={detail.placeholders.attachmentFileSize}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>{detail.fields.checksum}</Label>
-                <Input
-                  {...form.register("checksum")}
-                  placeholder={detail.placeholders.attachmentChecksum}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>{detail.fields.storageKey}</Label>
-              <Input
-                {...form.register("storageKey")}
-                placeholder={detail.placeholders.attachmentStorageKey}
-              />
             </div>
           </DialogBody>
           <DialogFooter>

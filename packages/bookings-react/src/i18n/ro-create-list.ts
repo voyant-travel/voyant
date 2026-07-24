@@ -10,7 +10,7 @@ export const bookingsUiRoCreateList = {
       travelDates: "Date calatorie",
       sellAmountCents: "Pret vanzare",
       costAmountCents: "Cost",
-      pax: "Calatori (pax)",
+      pax: "Calatori",
       internalNotes: "Note interne",
     },
     placeholders: {
@@ -33,7 +33,7 @@ export const bookingsUiRoCreateList = {
       confirmAfterCreateHint: "Dupa creare, rezervarea trece in status confirmat.",
       createAsDraft: "Creeaza ca draft",
       createAsDraftHint:
-        "Altfel, rezervarea va fi creata cu statusul {status}, in functie de plata marcata ca achitata.",
+        "Altfel, rezervarea devine activa — confirmata daca o plata este marcata ca achitata, sau in asteptarea platii daca nu.",
       notifyTraveler: "Anunta calatorul",
       notifyTravelerHint:
         "Cand este activ, trimite emailul de confirmare si documentele (daca auto-dispatch este configurat). Dezactiveaza pentru confirmare silentioasa.",
@@ -61,11 +61,10 @@ export const bookingsUiRoCreateList = {
       confirmFailed: "Rezervarea a fost creata, dar confirmarea a esuat",
       createFailed: "Crearea rezervarii a esuat",
       payloadResolverMismatchDetails:
-        "Optiunile rezervarii nu sunt sincronizate. Verifica aceste linii: {details}.",
+        "Selectia s-a schimbat in timpul rezervarii. Verifica din nou optiunile evidentiate.",
       payloadResolverMismatchFallback:
-        "Optiunile rezervarii nu sunt sincronizate. Verifica randurile de calator si optiune selectate.",
-      payloadResolverMismatchLine:
-        "{label}: trimis {submittedQuantity}, asteptat {resolvedQuantity}",
+        "Selectia s-a schimbat in timpul rezervarii. Verifica din nou optiunile evidentiate.",
+      payloadResolverMismatchLine: "{label}: cantitate modificata",
       paidPaymentDateRequired:
         "Data platii este obligatorie cand plata este marcata ca deja achitata.",
     },
@@ -115,7 +114,7 @@ export const bookingsUiRoCreateList = {
       sharedRoomSelectPlaceholder: "Cauta partaje...",
       sharedRoomNoGroups: "Nu exista partaje pentru acest produs.",
       sharedRoomCreateHint:
-        "Va fi creat un partaj nou, iar aceasta rezervare va fi membrul principal.",
+        "Va fi creat un partaj nou, iar aceasta rezervare va fi rezervarea principala.",
       sharedRoomRemove: "Elimina partajul",
       sharedRoomGeneratedLabelPrefix: "Partaj",
       travelCreditHeading: "Credit de calatorie (optional)",
@@ -143,7 +142,7 @@ export const bookingsUiRoCreateList = {
       paymentFirstInstallment: "Prima rata",
       paymentSecondInstallment: "A doua rata",
       paymentPreset5050: "50 / 50",
-      paymentUnpaidHint: "Nu va fi creat niciun scadentar. Operatorul va factura manual.",
+      paymentUnpaidHint: "Vei factura aceasta rezervare manual — nu se creeaza niciun scadentar.",
       paymentTotalDue: "Total datorat",
       paymentScheduledTotal: "Programat",
       paymentRemaining: "Ramas",
@@ -174,14 +173,14 @@ export const bookingsUiRoCreateList = {
     },
   },
   bookingList: {
-    searchPlaceholder: "Cauta dupa # rezervare, platitor, email, telefon sau articol…",
+    searchPlaceholder: "Cauta rezervari…",
     newBooking: "Rezervare noua",
     columns: {
       bookingNumber: "Rezervare #",
       whatBooked: "Articole",
       status: "Status",
       sellAmount: "Total",
-      pax: "Pax",
+      pax: "Calatori",
       startDate: "Date",
       endDate: "Data/ora final",
       lead: "Platitor",
@@ -216,7 +215,7 @@ export const bookingsUiRoCreateList = {
       departureNeedsProduct: "Alege mai intai un produs.",
       dateRangeLabel: "Data start",
       dateRange: "Orice data",
-      paxLabel: "Pax",
+      paxLabel: "Calatori",
       paxMin: "Min",
       paxMax: "Max",
       clear: "Sterge filtre",
@@ -321,9 +320,9 @@ export const bookingsUiRoCreateList = {
       hold_expired: "Hold expirat",
       status_change: "Status schimbat",
       item_update: "Articol actualizat",
-      allocation_released: "Alocare eliberata",
-      fulfillment_issued: "Livrare emisa",
-      fulfillment_updated: "Livrare actualizata",
+      allocation_released: "Locuri rezervate eliberate",
+      fulfillment_issued: "Voucher/bilet emis",
+      fulfillment_updated: "Voucher/bilet actualizat",
       redemption_recorded: "Voucher de servicii folosit",
       supplier_update: "Furnizor actualizat",
       traveler_update: "Calator actualizat",

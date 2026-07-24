@@ -60,7 +60,7 @@ export const flightsUiRo = {
   },
   flightsPage: {
     title: "Zboruri",
-    description: "Cauta oferte live de zbor in conectorii configurati.",
+    description: "Cauta zboruri live de la companiile si furnizorii tai.",
     searchFailed: "Cautarea a esuat.",
     selectedOutbound: "Zbor dus selectat",
     selectedReturn: "Zbor intors selectat",
@@ -112,7 +112,7 @@ export const flightsUiRo = {
     searchPlaceholder: "Cauta contacte...",
     searching: "Se cauta...",
     empty: "Niciun contact.",
-    addNewContact: "Adauga contact nou in CRM",
+    addNewContact: "Adauga contact nou",
     emptyName: "-",
   },
   billingPickers: {
@@ -204,7 +204,7 @@ export const flightsUiRo = {
       offerExpires: "Oferta expira",
     },
     confirmDescription:
-      "Trimiterea va bloca locurile cu conectorul si, in functie de plata aleasa, va emite biletele imediat sau va deschide o fereastra de emitere. Dupa confirmare, rezervarea apare sub id-ul comenzii de mai jos.",
+      "Aceasta blocheaza locurile si, in functie de cum ai ales sa platesti, emite biletele acum sau deschide o fereastra de emitere. Dupa confirmare, rezervarea apare sub id-ul comenzii de mai jos.",
   },
   flightBookingLedger: {
     flight: "Zbor",
@@ -247,7 +247,7 @@ export const flightsUiRo = {
     documentsSomeAdded: "{count} din {total} adaugate",
     documentsAddAtCheckIn: "Adauga la check-in",
     confirmDescription:
-      "Trimiterea va bloca locurile cu conectorul si, in functie de plata aleasa, va emite biletele imediat sau va deschide o fereastra de emitere. Rezervarea va aparea sub id-ul comenzii dupa confirmare.",
+      "Aceasta blocheaza locurile si, in functie de cum ai ales sa platesti, emite biletele acum sau deschide o fereastra de emitere. Rezervarea va aparea sub id-ul comenzii dupa confirmare.",
     lineItems: {
       fare: "Tarif {label}{suffix}",
       seatsPicked: "{count} loc{plural} alese",
@@ -411,19 +411,19 @@ export const flightsUiRo = {
     },
   },
   flightPaymentSelector: {
-    title: "Intentie de plata",
+    title: "Cum platesti",
     description:
-      "Cum ar trebui platita rezervarea. Hold confirma locurile acum si permite emiterea ulterioara; cardul / creditul emit biletele imediat.",
+      "Cum ar trebui platita rezervarea. Hold confirma locurile acum si permite emiterea ulterioara; cardul sau creditul emit biletele imediat.",
     intents: {
       hold: {
         title: "Pastreaza locurile - plateste mai tarziu",
         description:
-          "Confirma rezervarea acum si blocheaza pretul pe durata ferestrei de hold a conectorului. Biletele se emit dupa plata.",
+          "Confirma rezervarea acum si blocheaza pretul pe durata ferestrei de hold a companiei aeriene. Biletele se emit dupa plata.",
       },
       card: {
         title: "Plata cu cardul",
         description:
-          "Biletele se emit imediat. Datele cardului sunt gestionate in afara formularului de fluxul de tokenizare al conectorului.",
+          "Biletele se emit imediat. Datele cardului se introduc in siguranta la pasul urmator.",
       },
       bank_transfer: {
         title: "Transfer bancar",
@@ -432,8 +432,7 @@ export const flightsUiRo = {
       },
       ticket_on_credit: {
         title: "Emitere pe creditul agentiei",
-        description:
-          "Emite pe linia de credit IATA a operatorului. Decontarea se face prin BSP in urmatorul ciclu de raportare.",
+        description: "Emite acum si factureaza pe linia de credit IATA a agentiei tale.",
       },
     },
   },

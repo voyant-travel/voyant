@@ -39,7 +39,7 @@ export function FlightOfferDetail({
   const messages = i18n.messages
   return (
     <div className={cn("flex flex-col gap-6", className)}>
-      <section className="flex flex-col gap-5">
+      <section className="flex flex-col gap-4">
         {offer.itineraries.map((itin, i) => (
           <FlightItinerary
             // biome-ignore lint/suspicious/noArrayIndexKey: itineraries are positional (outbound/return) -- owner: flights-react; existing suppression is intentional pending typed cleanup.

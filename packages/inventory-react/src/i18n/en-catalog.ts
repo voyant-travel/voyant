@@ -23,7 +23,7 @@ export const productsUiCatalogEn = {
     },
     descriptions: {
       customerPaymentPolicy:
-        "When set, products in this category inherit these terms unless the listing or booking sets its own override. Wins over the supplier-level policy.",
+        "Products in this category use these payment terms by default. A product or booking can override them; this takes priority over supplier terms.",
     },
     placeholders: {
       name: "Adventure",
@@ -134,8 +134,8 @@ export const productsUiCatalogEn = {
       edit: "Edit media",
     },
     descriptions: {
-      create: "Register a product or day-level media item by URL.",
-      edit: "Update metadata, sorting, and cover behavior for this media item.",
+      create: "Add a photo, video, or document by pasting its link.",
+      edit: "Update the details, order, and cover setting for this item.",
     },
   },
   productMediaForm: {
@@ -173,8 +173,8 @@ export const productsUiCatalogEn = {
       dayMedia: "Day media",
     },
     descriptions: {
-      media: "Manage product-level media assets and cover selection.",
-      dayMedia: "Manage media attached to this itinerary day.",
+      media: "Photos and videos for this product. Pick one as the cover.",
+      dayMedia: "Photos and videos for this itinerary day.",
     },
     actions: {
       upload: "Upload",

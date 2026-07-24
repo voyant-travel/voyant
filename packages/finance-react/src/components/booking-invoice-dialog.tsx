@@ -3,11 +3,6 @@
 
 import {
   Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +10,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -484,12 +484,12 @@ export function BookingInvoiceDialog({
 
   // ---- render --------------------------------------------------------------
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full! max-w-3xl! gap-0 p-0">
-        <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>{dialog.titles.create}</DialogTitle>
-          <DialogDescription>{messages.invoicesPage.description}</DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full! max-w-3xl! gap-0 p-0">
+        <SheetHeader className="shrink-0 border-b px-6 py-4">
+          <SheetTitle>{dialog.titles.create}</SheetTitle>
+          <SheetDescription>{messages.invoicesPage.description}</SheetDescription>
+        </SheetHeader>
 
         <div className="max-h-[70vh] overflow-y-auto">
           <div className="flex flex-col gap-4 px-6 py-5">
@@ -566,7 +566,7 @@ export function BookingInvoiceDialog({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{dialog.fields.invoiceNumber}</Label>
                 <Input
@@ -748,7 +748,7 @@ export function BookingInvoiceDialog({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{dialog.fields.subtotalCents}</Label>
                 <CurrencyInput
@@ -778,7 +778,7 @@ export function BookingInvoiceDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{dialog.fields.issueDate}</Label>
                 <DatePicker
@@ -824,7 +824,7 @@ export function BookingInvoiceDialog({
               </div>
 
               {markAsPaid ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label>{dialog.fields.markAsPaidMethod}</Label>
                     <Select
@@ -917,8 +917,8 @@ export function BookingInvoiceDialog({
             {dialog.actions.create}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 

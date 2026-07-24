@@ -31,7 +31,7 @@ export const crmUiEnListsMessages = {
   },
   peoplePage: {
     title: "People",
-    description: "Contacts, travelers, agents, and partners across your CRM.",
+    description: "Everyone you work with.",
   },
   organizationList: {
     searchPlaceholder: "Search organizations...",
@@ -57,7 +57,7 @@ export const crmUiEnListsMessages = {
   },
   organizationsPage: {
     title: "Organizations",
-    description: "Companies, agencies, suppliers, and account relationships.",
+    description: "Companies and suppliers.",
   },
   entityComboboxes: {
     person: {

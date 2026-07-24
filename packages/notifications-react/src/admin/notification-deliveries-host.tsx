@@ -17,6 +17,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 import { type NotificationsUiMessages, useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type NotificationDeliveryRecord,
@@ -48,7 +49,7 @@ export function NotificationDeliveriesHost() {
   })
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
         <p className="text-sm text-muted-foreground">{t.description}</p>
@@ -151,9 +152,7 @@ export function NotificationDeliveriesHost() {
                           onClick={() => {
                             deliveryMutation.resend.mutate(delivery.id, {
                               onError(error) {
-                                window.alert(
-                                  error instanceof Error ? error.message : t.resendFailed,
-                                )
+                                toast.error(error instanceof Error ? error.message : t.resendFailed)
                               },
                             })
                           }}
@@ -196,7 +195,7 @@ export function NotificationDeliveriesHost() {
             ? () => {
                 deliveryMutation.resend.mutate(selectedDeliveryId, {
                   onError(error) {
-                    window.alert(error instanceof Error ? error.message : t.resendFailed)
+                    toast.error(error instanceof Error ? error.message : t.resendFailed)
                   },
                 })
               }
@@ -256,7 +255,7 @@ function DeliveryDetailsDialog({
             ) : null}
           </div>
         </DialogHeader>
-        <DialogBody className="space-y-5">
+        <DialogBody className="space-y-4">
           <section className="grid gap-3 sm:grid-cols-2">
             <Detail label={t.labels.deliveryId} value={delivery.id} mono />
             <Detail label={t.labels.status} value={delivery.status} />

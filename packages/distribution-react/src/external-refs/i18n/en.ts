@@ -11,9 +11,9 @@ export const externalRefsUiEn: ExternalRefsUiMessages = {
   externalRefsPage: {
     title: "External References",
     description:
-      "IDs from third-party systems linked to Voyant entities. Enter the entity type and ID below to manage its external references.",
+      "Link records in Voyant to their IDs in other systems. Pick what you want to link, then add the outside ID.",
     fields: {
-      entityType: "Entity type",
+      entityType: "Record type",
       entity: "Entity",
       customEntityType: "Other entity type",
     },

@@ -58,7 +58,7 @@ export const invoiceDialog = {
     markAsPaid: "Marcheaza ca platita",
     markAsPaidMethod: "Metoda de plata",
     markAsPaidDate: "Data platii",
-    syncToSmartbill: "Sincronizeaza cu SmartBill",
+    syncToSmartbill: "Trimite la e-facturare",
     attachments: "Atasamente",
   },
   typeLabels: {
@@ -74,9 +74,8 @@ export const invoiceDialog = {
   scheduleLoadError:
     "Nu s-a putut incarca scadentarul. Incearca din nou inainte de a crea din scadentar.",
   scheduleLockedHint: "Sumele, moneda si data scadenta sunt preluate din scadentar.",
-  attachmentsHint:
-    "Ataseaza documente suport. Ignorate cand sincronizarea cu SmartBill este activa.",
-  invoiceNumberAutoHint: "SmartBill aloca numarul din urmatoarea secventa la emitere.",
+  attachmentsHint: "Ataseaza documente suport. Ignorate cand e-facturarea este activa.",
+  invoiceNumberAutoHint: "E-facturarea aloca numarul din urmatoarea secventa la emitere.",
   placeholders: {
     invoiceNumber: "INV-2025-1234",
     bookingId: "Cauta dupa numar, client sau produs",
@@ -98,7 +97,7 @@ export const invoiceDialog = {
   lineItems: {
     sectionTitle: "Linii factura",
     addRow: "Adauga linie",
-    empty: "Nicio linie. Adauga linii pentru a suprascrie totalurile.",
+    empty: "Nicio linie. Adauga linii pentru a inlocui totalurile preluate din rezervare.",
     description: "Descriere",
     quantity: "Cant",
     unitPrice: "Pret unitate",
@@ -149,8 +148,8 @@ export const invoicesPage = {
     balanceDue: "Rest de plata",
     dueDate: "Data scadenta",
   },
-  empty: "Nu au fost gasite inregistrari.",
-  loadFailed: "Incarcarea inregistrarilor a esuat.",
+  empty: "Nu au fost gasite facturi.",
+  loadFailed: "Incarcarea facturilor a esuat.",
   pagination: {
     showing: "Afisare {count} din {total}",
     page: "Pagina {page} / {pageCount}",

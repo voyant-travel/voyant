@@ -1,13 +1,8 @@
 "use client"
 
+import { ProductFacilityCombobox } from "@voyant-travel/inventory-react/ui"
 import {
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Select,
@@ -15,6 +10,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Switch,
   Textarea,
 } from "@voyant-travel/ui/components"
@@ -139,20 +140,20 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
   const isSubmitting = create.isPending || update.isPending
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEditing
               ? messages.locationPriceRuleDialog.dropoff.titles.edit
               : messages.locationPriceRuleDialog.dropoff.titles.create}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <DialogBody className="grid gap-4">
+          <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
               <Label>{messages.locationPriceRuleDialog.fields.optionPriceRule}</Label>
               <OptionPriceRuleCombobox
@@ -172,7 +173,7 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.optionId}</Label>
                 <ProductOptionCombobox
@@ -188,14 +189,19 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.facilityId}</Label>
-                <Input
-                  {...form.register("facilityId")}
-                  placeholder={messages.locationPriceRuleDialog.placeholders.facilityId}
+                <ProductFacilityCombobox
+                  value={form.watch("facilityId")}
+                  onChange={(value) =>
+                    form.setValue("facilityId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.dropoffName}</Label>
                 <Input {...form.register("dropoffName")} />
@@ -231,7 +237,7 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
@@ -242,7 +248,7 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />
@@ -260,8 +266,8 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               <Label>{messages.locationPriceRuleDialog.fields.notes}</Label>
               <Textarea {...form.register("notes")} />
             </div>
-          </DialogBody>
-          <DialogFooter>
+          </SheetBody>
+          <SheetFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.common.cancel}
             </Button>
@@ -271,9 +277,9 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
                 ? messages.locationPriceRuleDialog.actions.saveRule
                 : messages.locationPriceRuleDialog.actions.createRule}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
