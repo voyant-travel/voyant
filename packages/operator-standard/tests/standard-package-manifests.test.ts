@@ -3,6 +3,7 @@ import { financeVoyantModule } from "@voyant-travel/finance/voyant"
 import navigationPreferencesVoyantModule from "@voyant-travel/navigation-preferences/voyant"
 import reportingVoyantModule from "@voyant-travel/reporting/voyant"
 import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
+import operatorWebhooksVoyantModule from "@voyant-travel/webhook-delivery/voyant"
 import { describe, expect, it } from "vitest"
 import {
   defineProject,
@@ -18,6 +19,12 @@ import {
 describe("standard package manifests", () => {
   it("selects durable Postgres outbound webhook enqueueing explicitly", () => {
     expect(STANDARD_OPERATOR_DEPLOYMENT.providers?.outboundWebhooks).toBe("postgres")
+    expect(validateGraphUnitManifest(operatorWebhooksVoyantModule, "module")).toEqual([])
+    expect(
+      STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.find(
+        (selection) => selection.resolve === "@voyant-travel/webhook-delivery",
+      ),
+    ).toEqual({ resolve: "@voyant-travel/webhook-delivery", required: true })
   })
 
   it("resolves a package-owned module manifest without starter synthesis", async () => {

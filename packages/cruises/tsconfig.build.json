@@ -1564,6 +1564,9 @@
       "@voyant-travel/operator-settings-react/settings": [
         "../operator-settings-react/dist/settings.d.ts"
       ],
+      "@voyant-travel/operator-settings-react/webhooks": [
+        "../operator-settings-react/dist/webhooks.d.ts"
+      ],
       "@voyant-travel/operator-settings/api-runtime": [
         "../operator-settings/dist/api-runtime.d.ts"
       ],
@@ -1951,7 +1954,12 @@
       "@voyant-travel/utils/timezones": ["../utils/dist/timezones.d.ts"],
       "@voyant-travel/vite-config": ["../vite-config/dist/index.d.ts"],
       "@voyant-travel/webhook-delivery": ["../webhook-delivery/dist/index.d.ts"],
-      "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"]
+      "@voyant-travel/webhook-delivery/admin-contracts": [
+        "../webhook-delivery/dist/admin-contracts.d.ts"
+      ],
+      "@voyant-travel/webhook-delivery/api-runtime": ["../webhook-delivery/dist/api-runtime.d.ts"],
+      "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"],
+      "@voyant-travel/webhook-delivery/voyant": ["../webhook-delivery/dist/voyant.d.ts"]
     }
   }
 }

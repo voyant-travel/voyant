@@ -11,8 +11,9 @@ import {
   infraWebhookSubscriptionsTable,
   infraWebhookSubscriptionUpdateSchema,
 } from "@voyant-travel/db/schema/infra"
-import { and, arrayContains, asc, eq, isNull, lte, or, sql } from "drizzle-orm"
+import { and, arrayContains, asc, desc, eq, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { OperatorWebhookAdminStore } from "./admin-service.js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 import type { OutboundWebhookDeliveryEnqueuer } from "./provider.js"
 import {
@@ -102,17 +103,20 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
         .select({ id: infraWebhookDeliveriesTable.id })
         .from(infraWebhookDeliveriesTable)
         .where(
-          or(
-            and(
-              eq(infraWebhookDeliveriesTable.status, "pending"),
-              or(
-                isNull(infraWebhookDeliveriesTable.scheduledFor),
-                lte(infraWebhookDeliveriesTable.scheduledFor, now),
+          and(
+            eq(infraWebhookDeliveriesTable.targetKind, "subscription"),
+            or(
+              and(
+                eq(infraWebhookDeliveriesTable.status, "pending"),
+                or(
+                  isNull(infraWebhookDeliveriesTable.scheduledFor),
+                  lte(infraWebhookDeliveriesTable.scheduledFor, now),
+                ),
               ),
-            ),
-            and(
-              eq(infraWebhookDeliveriesTable.status, "in_flight"),
-              lte(infraWebhookDeliveriesTable.startedAt, staleBefore),
+              and(
+                eq(infraWebhookDeliveriesTable.status, "in_flight"),
+                lte(infraWebhookDeliveriesTable.startedAt, staleBefore),
+              ),
             ),
           ),
         )
@@ -163,6 +167,7 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
         .where(
           and(
             eq(infraWebhookDeliveriesTable.id, id),
+            eq(infraWebhookDeliveriesTable.targetKind, "subscription"),
             or(
               eq(infraWebhookDeliveriesTable.status, "pending"),
               and(
@@ -248,6 +253,95 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
           updatedAt: at,
         })
         .where(eq(infraWebhookSubscriptionsTable.id, subscriptionId))
+    },
+  }
+}
+
+/** Postgres CRUD/history adapter for the operator webhook admin API. */
+export function createPostgresOperatorWebhookAdminStore(
+  db: PostgresJsDatabase,
+): OperatorWebhookAdminStore {
+  // Intentionally no tenant predicate: ADR-0001 makes this selected
+  // database/runtime the tenant boundary (one database per tenant).
+  const deliveryStore = createPostgresWebhookDeliveryStore(db)
+  return {
+    async listSubscriptions() {
+      const rows = await db
+        .select()
+        .from(infraWebhookSubscriptionsTable)
+        .orderBy(desc(infraWebhookSubscriptionsTable.createdAt))
+      return rows.map((row) => infraWebhookSubscriptionSelectSchema.parse(row))
+    },
+
+    async getSubscription(id) {
+      const rows = await db
+        .select()
+        .from(infraWebhookSubscriptionsTable)
+        .where(eq(infraWebhookSubscriptionsTable.id, id))
+        .limit(1)
+      return rows[0] ? infraWebhookSubscriptionSelectSchema.parse(rows[0]) : null
+    },
+
+    async createSubscription(input) {
+      const values = infraWebhookSubscriptionInsertSchema.parse(input)
+      const rows = await db
+        .insert(infraWebhookSubscriptionsTable)
+        .values({ id: newId("webhook_subscriptions"), ...values })
+        .returning()
+      return requireSubscription(rows[0], "create")
+    },
+
+    async updateSubscription(id, input) {
+      const values = infraWebhookSubscriptionUpdateSchema.parse(input)
+      const rows = await db
+        .update(infraWebhookSubscriptionsTable)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(infraWebhookSubscriptionsTable.id, id))
+        .returning()
+      return rows[0] ? infraWebhookSubscriptionSelectSchema.parse(rows[0]) : null
+    },
+
+    async deleteSubscription(id) {
+      const rows = await db
+        .delete(infraWebhookSubscriptionsTable)
+        .where(eq(infraWebhookSubscriptionsTable.id, id))
+        .returning({ id: infraWebhookSubscriptionsTable.id })
+      return rows.length > 0
+    },
+
+    async listDeliveries({ subscriptionId, limit }) {
+      const rows = await db
+        .select()
+        .from(infraWebhookDeliveriesTable)
+        .where(
+          and(
+            eq(infraWebhookDeliveriesTable.targetKind, "subscription"),
+            subscriptionId
+              ? eq(infraWebhookDeliveriesTable.subscriptionId, subscriptionId)
+              : undefined,
+          ),
+        )
+        .orderBy(desc(infraWebhookDeliveriesTable.createdAt))
+        .limit(limit)
+      return rows.map((row) => infraWebhookDeliverySelectSchema.parse(row))
+    },
+
+    async getDelivery(id) {
+      const rows = await db
+        .select()
+        .from(infraWebhookDeliveriesTable)
+        .where(
+          and(
+            eq(infraWebhookDeliveriesTable.id, id),
+            eq(infraWebhookDeliveriesTable.targetKind, "subscription"),
+          ),
+        )
+        .limit(1)
+      return rows[0] ? infraWebhookDeliverySelectSchema.parse(rows[0]) : null
+    },
+
+    async enqueueAttempt(input) {
+      return (await deliveryStore.enqueueAttempt(input)).attempt
     },
   }
 }

@@ -51,7 +51,9 @@ describe("charter tools", () => {
     for (const tool of chartersTools.filter(
       ({ requiredScopes }) => requiredScopes[0] === "charters:write" && requiredScopes.length === 1,
     )) {
-      expect(tool.riskPolicy.reversible).toBe(true)
+      expect(tool.riskPolicy.reversible).toBe(
+        !["create_charter_product", "create_charter_yacht"].includes(tool.name),
+      )
       expect(tool.audience?.allowed).toEqual(["staff"])
     }
   })

@@ -42,7 +42,11 @@ const SUBSCRIPTION: WebhookSubscription = {
   id: newId("webhook_subscriptions"),
   url: "https://partner.example.test/hooks",
   secret: "s".repeat(40),
-  headers: { Authorization: "Bearer private" },
+  headers: {
+    Authorization: "Bearer private",
+    "X-Webhook-Token": "webhook-private",
+    "X-Partner-Secret": "partner-private",
+  },
   maxRetries: 2,
   active: true,
 }
@@ -82,6 +86,9 @@ describe("durable external webhook delivery", () => {
       const headers = new Headers(init?.headers)
       expect(headers.get("x-voyant-signature")).toMatch(/^sha256=[a-f0-9]{64}$/)
       expect(headers.get("x-voyant-event-contract")).toBe(CONTRACT.eventId)
+      expect(headers.get("authorization")).toBeNull()
+      expect(headers.get("x-webhook-token")).toBeNull()
+      expect(headers.get("x-partner-secret")).toBeNull()
       return new Response(null, { status: 204 })
     })
     const worker = createWebhookDeliveryWorker({
@@ -195,6 +202,75 @@ describe("durable external webhook delivery", () => {
       status: "dead_lettered",
       delivery: { status: "abandoned", errorClass: "4xx" },
     })
+  })
+
+  it("validates every redirect and refuses redirects to private addresses", async () => {
+    const store = await queuedStore()
+    const resolveHost = vi.fn(async () => ["8.8.8.8"])
+    const fetch = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: "https://127.0.0.1/internal" },
+        }),
+    )
+    const worker = createWebhookDeliveryWorker({
+      store,
+      fetch: fetch as typeof globalThis.fetch,
+      resolveHost,
+    })
+
+    await expect(worker.runNext()).resolves.toMatchObject({
+      status: "dead_lettered",
+      delivery: {
+        status: "abandoned",
+        errorClass: "network",
+        errorMessage: "Webhook endpoint is not allowed.",
+      },
+    })
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(resolveHost).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      SUBSCRIPTION.url,
+      expect.objectContaining({ redirect: "manual" }),
+    )
+  })
+
+  it("manually follows a bounded public redirect without external DNS", async () => {
+    const store = await queuedStore()
+    const resolveHost = vi.fn(async () => ["8.8.8.8"])
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 307,
+          headers: { location: "https://receiver.example.test/voyant" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const worker = createWebhookDeliveryWorker({
+      store,
+      fetch: fetch as typeof globalThis.fetch,
+      resolveHost,
+      retry: { maxRedirects: 1 },
+    })
+
+    await expect(worker.runNext()).resolves.toMatchObject({ status: "succeeded" })
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(resolveHost).toHaveBeenNthCalledWith(1, "partner.example.test")
+    expect(resolveHost).toHaveBeenNthCalledWith(2, "receiver.example.test")
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "https://receiver.example.test/voyant",
+      expect.objectContaining({ redirect: "manual" }),
+    )
+    for (const call of fetch.mock.calls) {
+      const headers = new Headers(call[1]?.headers)
+      expect(headers.get("x-voyant-signature")).toMatch(/^sha256=[a-f0-9]{64}$/)
+      expect(headers.get("authorization")).toBeNull()
+      expect(headers.get("x-webhook-token")).toBeNull()
+      expect(headers.get("x-partner-secret")).toBeNull()
+    }
   })
 
   it("halts pending deliveries when an app subscription is paused or uninstalled", async () => {

@@ -92,7 +92,13 @@ export function hashWebhookPayload(body: string): string {
 export function assertOutboundWebhookEndpointUrl(value: string): void {
   const url = new URL(value)
   if (url.protocol !== "https:") {
-    throw new Error(`Webhook URL must use HTTPS: ${value}`)
+    throw new Error("Webhook URL must use HTTPS.")
+  }
+  if (url.username || url.password) {
+    throw new Error("Webhook URL must not include credentials.")
+  }
+  if (url.hash) {
+    throw new Error("Webhook URL must not include a fragment.")
   }
   const hostname = url.hostname.toLowerCase()
   const address =
@@ -100,16 +106,18 @@ export function assertOutboundWebhookEndpointUrl(value: string): void {
   if (
     hostname === "localhost" ||
     hostname.endsWith(".localhost") ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal") ||
     hostname === "metadata.google.internal"
   ) {
-    throw new Error(`Webhook URL host is not allowed: ${hostname}`)
+    throw new Error("Webhook URL host is not allowed.")
   }
   const ipVersion = isIP(address)
   if (ipVersion === 4 && isPrivateIpv4(address)) {
-    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+    throw new Error("Webhook URL IP is not allowed.")
   }
   if (ipVersion === 6 && isPrivateIpv6(address)) {
-    throw new Error(`Webhook URL IP is not allowed: ${address}`)
+    throw new Error("Webhook URL IP is not allowed.")
   }
 }
 
@@ -165,13 +173,20 @@ function redactString(value: string): string {
 }
 
 function isPrivateIpv4(value: string): boolean {
-  const [a = 0, b = 0] = value.split(".").map((part) => Number(part))
+  const [a = 0, b = 0, c = 0] = value.split(".").map((part) => Number(part))
   return (
     a === 10 ||
     a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
     (a === 169 && b === 254) ||
     (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+    (a === 192 && b === 88 && c === 99) ||
     (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) ||
+    (a === 198 && b === 51 && c === 100) ||
+    (a === 203 && b === 0 && c === 113) ||
+    a >= 224 ||
     a === 0
   )
 }
@@ -183,6 +198,12 @@ function isPrivateIpv6(value: string): boolean {
     normalized === "::" ||
     normalized.startsWith("fc") ||
     normalized.startsWith("fd") ||
-    normalized.startsWith("fe80:")
+    normalized.startsWith("fe80:") ||
+    normalized.startsWith("fec") ||
+    normalized.startsWith("fed") ||
+    normalized.startsWith("ff") ||
+    normalized.startsWith("::ffff:") ||
+    normalized.startsWith("2001:db8:") ||
+    normalized.startsWith("3fff:")
   )
 }

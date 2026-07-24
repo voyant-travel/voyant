@@ -1,9 +1,19 @@
 /** Provider-neutral charter Tools over local inventory and selected adapters. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
-
+import {
+  CHARTERS_CREATED_TARGET_POLICIES,
+  chartersHandlerActionPolicyExpectation,
+} from "./created-target-policy.js"
 import {
   insertProductSchema,
   insertVoyageSchema,
@@ -32,6 +42,10 @@ const WRITE_RISK = {
   reversible: true,
   dryRunSupported: false,
   sideEffects: ["data-write"],
+} as const
+const CREATED_WRITE_RISK = {
+  ...WRITE_RISK,
+  reversible: false,
 } as const
 const COMMIT_RISK = {
   destructive: false,
@@ -285,7 +299,11 @@ export type ChartersToolOperation =
   | "updateYacht"
   | "createBooking"
 export interface ChartersToolServices {
-  execute(operation: ChartersToolOperation, input: unknown): Promise<unknown>
+  execute(
+    operation: ChartersToolOperation,
+    input: unknown,
+    admitted?: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 export type ChartersToolContext = ToolContext & { charters?: ChartersToolServices }
 const service = (ctx: ChartersToolContext) => requireService(ctx.charters, "charters")
@@ -381,15 +399,47 @@ export const quoteCharterWholeYachtTool = defineTool({
 })
 
 const idInput = z.object({ id: z.string().min(1) })
+const createdCommandInput = {
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .optional()
+    .describe("Stable key used to replay this exact create command."),
+}
+const createProductToolInputSchema = insertProductSchema.extend(createdCommandInput)
+const createYachtToolInputSchema = insertYachtSchema.extend(createdCommandInput)
+const createdProductOutputSchema = z.object({
+  status: z.literal("created"),
+  product: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
+const createdYachtOutputSchema = z.object({
+  status: z.literal("created"),
+  yacht: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
 export const createCharterProductTool = defineTool({
   ...write,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-charter-product`,
   name: "create_charter_product",
-  description: "Create a locally managed charter product.",
-  inputSchema: insertProductSchema,
-  outputSchema: productRowSchema,
+  description:
+    "Create a locally managed charter product. Exact retries return the original immutable reference.",
+  inputSchema: createProductToolInputSchema,
+  outputSchema: createdProductOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: ChartersToolContext) {
-    return parse(productRowSchema, await service(ctx).execute("createProduct", input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      chartersHandlerActionPolicyExpectation(CHARTERS_CREATED_TARGET_POLICIES.product),
+    )
+    return parse(
+      createdProductOutputSchema,
+      await service(ctx).execute("createProduct", input, admitted),
+    )
   },
 })
 export const updateCharterProductTool = defineTool({
@@ -430,13 +480,24 @@ export const updateCharterVoyageTool = defineTool({
 })
 export const createCharterYachtTool = defineTool({
   ...write,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-charter-yacht`,
   name: "create_charter_yacht",
-  description: "Create a locally managed charter yacht.",
-  inputSchema: insertYachtSchema,
-  outputSchema: yachtRowSchema,
+  description:
+    "Create a locally managed charter yacht. Exact retries return the original immutable reference.",
+  inputSchema: createYachtToolInputSchema,
+  outputSchema: createdYachtOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: ChartersToolContext) {
-    return parse(yachtRowSchema, await service(ctx).execute("createYacht", input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      chartersHandlerActionPolicyExpectation(CHARTERS_CREATED_TARGET_POLICIES.yacht),
+    )
+    return parse(
+      createdYachtOutputSchema,
+      await service(ctx).execute("createYacht", input, admitted),
+    )
   },
 })
 export const updateCharterYachtTool = defineTool({
