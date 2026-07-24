@@ -103,7 +103,7 @@ export const productsUiCoreRo = {
   },
   productsPage: {
     title: "Produse",
-    description: "Administreaza ofertele, pachetele si propunerile tale.",
+    description: "Administreaza produsele pe care le vinzi.",
   },
   productDetailPage: {
     actions: {
@@ -163,7 +163,7 @@ export const productsUiCoreRo = {
       sellAmount: "Pret vanzare",
       costAmount: "Cost",
       margin: "Marja",
-      pax: "Pax",
+      pax: "Calatori",
       startDate: "Data inceput",
       endDate: "Data sfarsit",
       reservationTimeout: "Timeout rezervare",
@@ -175,7 +175,7 @@ export const productsUiCoreRo = {
       loading: "Se incarca produsul...",
       loadFailed: "Produsul nu a putut fi incarcat.",
       notFoundTitle: "Produsul nu a fost gasit",
-      notFoundDescription: "Produsul cerut nu exista sau nu mai este disponibil.",
+      notFoundDescription: "Acest produs nu exista sau a fost eliminat.",
       noDescription: "Nu exista descriere.",
       noInclusions: "Nu sunt specificate incluziuni.",
       noExclusions: "Nu sunt specificate excluziuni.",
@@ -218,7 +218,7 @@ export const productsUiCoreRo = {
       activated: "Vizibil pe site",
       capacityMode: "Mod capacitate",
       timezone: "Fus orar",
-      pax: "Pax",
+      pax: "Calatori",
       reservationTimeout: "Timeout rezervare",
       sellCurrency: "Moneda vanzare",
       sellAmount: "Pret vanzare",
@@ -229,7 +229,7 @@ export const productsUiCoreRo = {
       description: "Prezentare scurta a produsului...",
       inclusions: "Listeaza ce este inclus in pret...",
       exclusions: "Listeaza ce nu este inclus in pret...",
-      terms: "Adauga conditii de anulare, note legale sau termeni de furnizor...",
+      terms: "Conditii de anulare, note legale, conditii de furnizor...",
       tagInput: "Scrie o eticheta si apasa Enter",
       productTypeSearch: "Cauta tipuri de produs...",
       facilitySearch: "Cauta facilitati...",
@@ -257,7 +257,7 @@ export const productsUiCoreRo = {
   },
   productTranslationsCard: {
     title: "Traduceri",
-    description: "Texte localizate folosite in catalog si in paginile publice de produs.",
+    description: "Text tradus al produsului, afisat clientilor pe site-ul tau.",
     languageSelectLabel: "Limba",
     newLanguageLabel: "Adauga limba",
     fields: {
@@ -324,7 +324,7 @@ export const productsUiCoreRo = {
       datePlaceholder: "Orice data",
       departureLabel: "Plecare",
       departurePlaceholder: "Orice plecare",
-      paxLabel: "Pax",
+      paxLabel: "Calatori",
       sellAmountLabel: "Pret vanzare",
       min: "Min",
       max: "Max",

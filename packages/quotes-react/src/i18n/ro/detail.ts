@@ -14,8 +14,7 @@ export const crmUiRoDetailMessages = {
     },
     mergeDialog: {
       title: "Uneste organizatia",
-      description:
-        "Muta istoricul CRM si referintele dintr-o organizatie duplicat in aceasta organizatie.",
+      description: "Muta toata activitatea si legaturile dintr-o companie duplicat in aceasta.",
       keepLabel: "Pastreaza",
       mergeLabel: "Duplicatul de unit",
       placeholder: "Cauta organizatii...",
@@ -66,7 +65,7 @@ export const crmUiRoDetailMessages = {
       noQuotes: "Nu exista oferte.",
       noActivities: "Nu exista activitati.",
     },
-    hint: "Campurile se actualizeaza din panoul din stanga. Treci cu mouse-ul pentru a vedea iconita de editare.",
+    hint: "Treci cu mouse-ul peste un camp pentru a-l edita.",
   },
   personDetailPage: {
     notFound: "Persoana nu a fost gasita",
@@ -80,12 +79,11 @@ export const crmUiRoDetailMessages = {
       delete: "Sterge",
       deleteTitle: "Stergi aceasta persoana?",
       deleteDescription:
-        "Aceasta actiune va sterge definitiv persoana si legaturile CRM din acest workspace.",
+        "Aceasta actiune va sterge definitiv persoana si legaturile ei din acest workspace.",
     },
     mergeDialog: {
       title: "Uneste persoana",
-      description:
-        "Muta rezervarile, facturile, notele si istoricul CRM dintr-un duplicat in aceasta persoana.",
+      description: "Muta tot dintr-un duplicat in aceasta persoana.",
       keepLabel: "Pastreaza",
       mergeLabel: "Duplicatul de unit",
       placeholder: "Cauta persoane...",
@@ -171,11 +169,11 @@ export const crmUiRoDetailMessages = {
       noDocuments: "Nu exista documente.",
       noTravelProfile: "Nu exista date de profil de calatorie.",
     },
-    hint: "Campurile se actualizeaza din panoul din stanga. Treci cu mouse-ul pentru a vedea iconita de editare.",
+    hint: "Treci cu mouse-ul peste un camp pentru a-l edita.",
   },
   personDocument: {
     row: {
-      decrypting: "Se decripteaza…",
+      decrypting: "Se afiseaza…",
       noNumberOnFile: "(niciun numar inregistrat)",
       revealFailed: "Afisarea a esuat.",
       revealAria: "Afiseaza numarul",
@@ -189,7 +187,7 @@ export const crmUiRoDetailMessages = {
     dialog: {
       title: "Editeaza documentul",
       description:
-        "Actualizeaza detaliile documentului. Numerele sunt criptate si fiecare dezvaluire este auditata.",
+        "Actualizeaza detaliile documentului. Numerele de pasaport si de identitate sunt pastrate in siguranta.",
       revealFailed: "Dezvaluirea documentului a esuat.",
       fields: {
         type: "Tip",
@@ -203,7 +201,7 @@ export const crmUiRoDetailMessages = {
       },
       placeholders: {
         number: "Numarul documentului",
-        issuingCountry: "Cod ISO (ex. RO)",
+        issuingCountry: "Tara (ex. Romania)",
       },
       loading: "Se incarca documentul…",
       saveFailed: "Salvarea documentului a esuat.",

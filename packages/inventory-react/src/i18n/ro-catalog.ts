@@ -23,7 +23,7 @@ export const productsUiCatalogRo = {
     },
     descriptions: {
       customerPaymentPolicy:
-        "Când este setată, produsele din această categorie moștenesc acești termeni dacă listarea sau rezervarea nu definește o suprascriere. Are prioritate peste politica de la nivel de furnizor.",
+        "Produsele din aceasta categorie folosesc implicit acesti termeni de plata. Un produs sau o rezervare ii poate suprascrie; acestia au prioritate peste termenii furnizorului.",
     },
     placeholders: {
       name: "Aventura",
@@ -135,8 +135,8 @@ export const productsUiCatalogRo = {
       edit: "Editeaza media",
     },
     descriptions: {
-      create: "Inregistreaza un element media la nivel de produs sau zi prin URL.",
-      edit: "Actualizeaza metadatele, ordinea si comportamentul de cover pentru acest element media.",
+      create: "Adauga o fotografie, un videoclip sau un document prin lipirea link-ului.",
+      edit: "Actualizeaza detaliile, ordinea si setarea de cover pentru acest element.",
     },
   },
   productMediaForm: {
@@ -174,8 +174,8 @@ export const productsUiCatalogRo = {
       dayMedia: "Media zi",
     },
     descriptions: {
-      media: "Gestioneaza activele media la nivel de produs si selectia de cover.",
-      dayMedia: "Gestioneaza media atasata acestei zile din itinerar.",
+      media: "Fotografii si videoclipuri pentru acest produs. Alege unul ca cover.",
+      dayMedia: "Fotografii si videoclipuri pentru aceasta zi din itinerar.",
     },
     actions: {
       upload: "Incarca",

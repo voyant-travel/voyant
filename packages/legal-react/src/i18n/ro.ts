@@ -107,7 +107,7 @@ export const legalUiRo = {
       attachments: "Atasamente",
     },
     messageHint:
-      "Destinatarul va primi acest mesaj impreuna cu PDF-ul contractului. Tot ce modifici aici este ce se va trimite - nu este o previzualizare statica.",
+      "Destinatarul primeste acest mesaj cu PDF-ul contractului atasat. Modificarile tale de aici sunt trimise ca atare.",
     recipientPlaceholder: "-",
     actions: {
       cancel: "Anuleaza",
@@ -262,8 +262,8 @@ export const legalUiRo = {
       channel: "Canal",
       booking: "Rezervare",
       target: "Tinta",
-      legacyTransactionOffer: "Oferta tranzactie legacy",
-      legacyTransactionOrder: "Comanda tranzactie legacy",
+      legacyTransactionOffer: "Oferta",
+      legacyTransactionOrder: "Comanda",
       name: "Nume",
       email: "Email",
       role: "Rol",
@@ -372,7 +372,7 @@ export const legalUiRo = {
   },
   templatesPage: {
     title: "Sabloane contract",
-    description: "Sabloane reutilizabile cu variabile Liquid si istoric de versiuni.",
+    description: "Sabloane reutilizabile cu variabile completabile si istoric de versiuni.",
     create: "Sablon nou",
     searchPlaceholder: "Cauta sabloane...",
     empty: "Nu exista inca sabloane. Creeaza unul pentru a incepe.",
@@ -404,7 +404,7 @@ export const legalUiRo = {
     backToTemplates: "Inapoi la sabloane",
     currentBadge: "Curent",
     variablesDescription:
-      "Sabloanele se randeaza cu Liquid. Foloseste referinta de mai jos pentru variabile, filtre, bucle si conditii.",
+      "Vezi referinta de mai jos pentru variabilele pe care le poti insera in acest sablon.",
     deleteConfirm: 'Stergi sablonul "{name}"?',
     actions: {
       addVersion: "Adauga versiune",

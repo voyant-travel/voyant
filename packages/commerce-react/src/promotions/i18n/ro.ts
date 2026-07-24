@@ -76,8 +76,7 @@ export const promotionsUiRo: PromotionsUiMessages = {
       activate: "Activeaza",
       delete: "Sterge",
       archiveConfirm: "Arhivezi aceasta promotie? Nu se va mai aplica la rezervari noi.",
-      activateConfirm:
-        "Activezi aceasta promotie? Se poate aplica din nou cand intervalul este valid.",
+      activateConfirm: "Activezi aceasta promotie? Se poate aplica din nou in perioada activa.",
       deleteConfirm:
         "Stergi definitiv aceasta promotie? Foloseste arhivarea daca trebuie doar retrasa.",
       deleteConflict:
@@ -122,7 +121,7 @@ export const promotionsUiRo: PromotionsUiMessages = {
       edit: "Editeaza promotia",
     },
     description:
-      "Seteaza discountul, domeniul si valabilitatea. Ofertele pe baza de cod necesita un cod completat; lasa campul gol pentru oferte aplicate automat.",
+      "Seteaza discountul, unde se aplica si cand. Adauga un cod pentru oferte doar cu cod sau lasa campul gol pentru a se aplica automat.",
     fields: {
       name: "Nume",
       slug: "Slug",

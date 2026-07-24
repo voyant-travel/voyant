@@ -123,7 +123,7 @@ export const pricingUiRo = {
   },
   priceCatalogsPage: {
     title: "Cataloage de pret",
-    description: "Creeaza liste de preturi cu moneda si pozitionare tarifara.",
+    description: "Creeaza liste de preturi cu o moneda si un scop (public, contract, net etc.).",
     addCatalog: "Adauga catalog",
     empty:
       "Nu exista cataloage de pret momentan. Creeaza un catalog pentru a defini rate in functie de moneda.",
@@ -256,7 +256,7 @@ export const pricingUiRo = {
       catalog: "Catalog",
       name: "Nume",
       code: "Cod",
-      recurrenceRule: "Regula recurenta (RRULE)",
+      recurrenceRule: "Cand se repeta",
       validFrom: "Valabil de la",
       validTo: "Valabil pana la",
       timezone: "Fus orar",
@@ -279,7 +279,8 @@ export const pricingUiRo = {
       recurrenceRuleRequired: "RRULE este obligatoriu",
     },
     helpText: {
-      recurrenceRuleExample: "ex. FREQ=YEARLY;BYMONTH=6,7,8 pentru iunie-august.",
+      recurrenceRuleExample:
+        "De exemplu, in fiecare an in iunie-august: FREQ=YEARLY;BYMONTH=6,7,8.",
     },
     actions: {
       create: "Creeaza calendarul",
@@ -364,8 +365,8 @@ export const pricingUiRo = {
     fields: {
       optionPriceRule: "Regula de pret pentru optiune",
       optionId: "Optiune",
-      facilityId: "ID facilitate (optional)",
-      pickupPointId: "ID punct preluare",
+      facilityId: "Facilitate (optional)",
+      pickupPointId: "Punct de preluare",
       dropoffName: "Nume dropoff",
       dropoffCode: "Cod dropoff (optional)",
       pricingMode: "Mod tarifare",
@@ -377,8 +378,8 @@ export const pricingUiRo = {
     },
     placeholders: {
       optionId: "Selecteaza optiunea...",
-      facilityId: "fac_…",
-      pickupPointId: "ppnt_…",
+      facilityId: "Cauta facilitati…",
+      pickupPointId: "Cauta puncte de preluare…",
     },
     validation: {
       optionPriceRuleRequired: "Regula de pret pentru optiune este obligatorie",
@@ -408,12 +409,12 @@ export const pricingUiRo = {
         edit: "Editeaza regula de pret pentru extra",
       },
       fields: {
-        productExtraId: "ID extra produs (optional)",
-        optionExtraConfigId: "ID configurare extra optiune (optional)",
+        productExtraId: "Extra produs (optional)",
+        optionExtraConfigId: "Extra optiune (optional)",
       },
       placeholders: {
-        productExtraId: "pext_…",
-        optionExtraConfigId: "oecf_…",
+        productExtraId: "Cauta extra-uri…",
+        optionExtraConfigId: "Cauta extra-uri de optiune…",
       },
     },
   },

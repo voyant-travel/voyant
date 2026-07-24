@@ -156,17 +156,16 @@ export const bookingsUiRoOperations = {
     title: "Reconciliere plati",
     loading: "Se verifica sursele de plata...",
     empty: "Nu exista facturi, plati sau scadente inregistrate inca.",
-    reconciledDescription:
-      "Totalurile achitate pe facturi, platile inregistrate si scadentele platite sunt aliniate.",
+    reconciledDescription: "Sumele achitate coincid pe facturi, plati si scadentar.",
     driftDescription:
-      "Totalurile achitate pe facturi, platile inregistrate si scadentele platite nu coincid. Verifica randurile sursa inainte de a incasa sau inregistra alti bani.",
+      "Sumele achitate nu coincid pe facturi, plati si scadentar. Verifica-le inainte de a incasa alte plati.",
     reconciledBadge: "Reconciliat",
     driftBadge: "Necesita verificare",
     billed: "Facturat",
     invoicePaid: "Achitat pe facturi",
     recordedPayments: "Plati inregistrate",
     schedulePaid: "Scadente platite",
-    drift: "Diferenta",
+    drift: "Nepotrivire",
     emptyValue: "-",
   },
   supplierStatusList: {
@@ -219,7 +218,7 @@ export const bookingsUiRoOperations = {
     paidSettlement: {
       title: "Decontarea rezervarii platite este necesara",
       description:
-        "Anularea pastreaza facturile si platile existente si inregistreaza o nota financiara care cere revizuirea rambursarii, notei de credit sau deciziei fara rambursare.",
+        "Facturile si platile existente raman neschimbate. Departamentul financiar va fi notificat sa decida asupra unei rambursari, note de credit sau fara rambursare.",
     },
     refundTypeLabels: {
       cash: "Rambursare cash",
@@ -365,7 +364,7 @@ export const bookingsUiRoOperations = {
     },
     hints: {
       productFiltered: "Filtrat la grupurile pentru produsul rezervarii.",
-      primaryMember: "Aceasta rezervare va fi marcata ca membrul principal.",
+      primaryMember: "Aceasta rezervare va fi rezervarea principala pentru camera.",
     },
     validation: {
       selectGroup: "Selecteaza un grup la care sa te alaturi",
@@ -381,11 +380,11 @@ export const bookingsUiRoOperations = {
   },
   bookingGroupSection: {
     title: "Camera shared",
-    empty: "Aceasta rezervare nu este legata de un grup de camera shared.",
+    empty: "Aceasta rezervare nu partajeaza inca o camera.",
     group: "Grup",
-    siblingBookings: "Rezervari surori ({count})",
+    siblingBookings: "Alte rezervari din camera ({count})",
     noSiblingBookings:
-      "Nu exista alte rezervari legate inca. Distribuie id-ul grupului unei alte rezervari pentru a o lega.",
+      "Nu exista alte rezervari legate inca. Leaga o alta rezervare pentru a partaja aceasta camera.",
     primaryBadge: "Principal",
     sharedRoomKind: "Camera shared",
     actions: {

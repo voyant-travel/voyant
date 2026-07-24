@@ -3,7 +3,7 @@ import type { MarketsUiMessages } from "./messages.js"
 export const marketsUiRo = {
   settingsPage: {
     title: "Piete",
-    description: "Gestioneaza regiunile de vanzare, limbile, monedele si contextul fiscal.",
+    description: "Gestioneaza regiunile de vanzare, limbile, monedele si regulile fiscale.",
     empty: "Nu exista piete configurate.",
     add: "Adauga piata",
   },
@@ -32,7 +32,7 @@ export const marketsUiRo = {
       languageTag: "Eticheta limba",
       defaultCurrency: "Moneda implicita",
       timezone: "Fus orar",
-      taxContext: "Context fiscal",
+      taxContext: "Reguli fiscale",
     },
     placeholders: {
       code: "EU-DE",

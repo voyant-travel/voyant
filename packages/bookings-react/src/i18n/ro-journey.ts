@@ -53,13 +53,12 @@ export const bookingsUiRoJourney = {
     },
     warnings: {
       phoneMissing: "Numarul de telefon lipseste - util pentru contact furnizor in ultimul moment.",
-      billingCountryMissing:
-        "Tara de facturare lipseste - taxele nu se calculeaza pana la completare.",
+      billingCountryMissing: "Adauga o tara de facturare pentru ca taxele sa poata fi calculate.",
       vatMissing: "Codul fiscal lipseste - necesar pentru facturarea catre companie (B2B).",
       travelerFieldRequired: "{traveler}: {field} este obligatoriu.",
       paymentIntentMissing:
-        "Intentia de plata lipseste - rezervarea va ramane implicit in asteptare.",
-      noTravelers: "Nu exista calatori adaugati - este recomandat cel putin unul pentru operare.",
+        "Nu a fost aleasa nicio optiune de plata - aceasta rezervare va fi pusa in asteptare.",
+      noTravelers: "Adauga cel putin un calator.",
     },
     configure: {
       travelers: "Calatori",
@@ -126,7 +125,7 @@ export const bookingsUiRoJourney = {
     accommodation: {
       title: "Cazare",
       empty: "Nu exista optiuni de cazare pentru acest produs.",
-      extensionsAvailable: "{count} optiune{plural} de extensie disponibila - UI in faza F.",
+      extensionsAvailable: "{count} optiune{plural} de extensie disponibila",
       ratePlan: "Plan tarifar",
       cancellationPrefix: "Anulare:",
       includesPrefix: "Include:",
@@ -142,13 +141,13 @@ export const bookingsUiRoJourney = {
       redirectedAfterConfirm:
         "Vei fi redirectionat catre pagina noastra securizata de plata dupa confirmarea rezervarii.",
       linkSentAfterConfirm:
-        "Dupa confirmare se genereaza un link securizat de plata pentru client, care alege cum plateste. Nu se incaseaza nimic acum.",
+        "Dupa confirmare, clientul primeste un link securizat pentru plata. Nu se incaseaza inca nimic.",
       cardOperatorLabel: "Link de plata online",
       cardOperatorDescription:
         "Clientul plateste online printr-un link securizat dupa confirmare. Nu se incaseaza instant; inventarul este rezervat la confirmare.",
       generateLinkLabel: "Genereaza un link de plata online",
       generateLinkHint:
-        "Creeaza un link securizat de plata online pentru aceasta rezervare dupa confirmare. Lasa nebifat pentru a doar rezerva si a incasa mai tarziu.",
+        "Trimite un link securizat de plata dupa confirmare. Lasa dezactivat pentru a rezerva acum si a incasa mai tarziu.",
       inquiryNotice:
         "Vom trimite detaliile tale catre operator fara a bloca inventar sau a incasa plata. Operatorul va reveni cu disponibilitate si oferta - de obicei intr-o zi lucratoare.",
       bankTransferInstructions: "Instructiuni transfer bancar",
@@ -166,7 +165,7 @@ export const bookingsUiRoJourney = {
         bank_transfer:
           "Iti trimitem detaliile bancare si o referinta. Inventarul este pastrat pana la transfer.",
         hold: "Rezerva inventarul fara plata. Operatorul revine pentru incasare.",
-        ticket_on_credit: "Incaseaza din linia de credit a agentiei. Disponibil doar operatorilor.",
+        ticket_on_credit: "Incaseaza din contul de credit al agentiei.",
         inquiry:
           "Fara plata si fara blocare de inventar. Operatorul revine cu disponibilitate si oferta.",
       },
@@ -214,8 +213,8 @@ export const bookingsUiRoJourney = {
       total: "Total",
       pricingHint: "Adauga calatori pentru a vedea pretul.",
       pricingHintRooms: "Selecteaza camere pentru a vedea pretul.",
-      guestSingular: "oaspete",
-      guestPlural: "oaspeti",
+      guestSingular: "calator",
+      guestPlural: "calatori",
       filledOf: "{filled} din {total} completati",
       roomSingular: "camera",
       roomPlural: "camere",
@@ -243,7 +242,7 @@ export const bookingsUiRoJourney = {
       buyer: "Cumparator",
       company: "Companie",
       individual: "Persoana fizica",
-      vat: "TVA",
+      vat: "Cod fiscal",
       address: "Adresa",
       travelerNumber: "Calator {number}",
       dob: "Data nasterii",

@@ -3,7 +3,7 @@ import type { IdentityUiMessages } from "./messages.js"
 export const identityUiRo = {
   common: {
     cancel: "Anuleaza",
-    saveChanges: "Salveaza Modificarile",
+    saveChanges: "Salveaza modificarile",
     primary: "Principal",
     addressLabelLabels: {
       primary: "Principal",
@@ -42,15 +42,15 @@ export const identityUiRo = {
   identityPage: {
     title: "Identitate",
     description:
-      "Gestioneaza punctele de contact, adresele si contactele nominale atasate oricarei entitati.",
+      "Gestioneaza numerele de telefon, adresele si contactele pentru orice inregistrare.",
     fields: {
-      entityType: "Tip entitate",
-      entity: "Entitate",
-      customEntityType: "Alt tip de entitate",
+      entityType: "Tip inregistrare",
+      entity: "Inregistrare",
+      customEntityType: "Alt tip de inregistrare",
     },
     placeholders: {
       entityType: "person, organization, supplier...",
-      entity: "Insereaza o referinta pentru tipuri custom",
+      entity: "Insereaza o referinta pentru tipuri de inregistrare personalizate",
     },
     entityTypeLabels: {
       person: "Persoana",
@@ -59,17 +59,17 @@ export const identityUiRo = {
       booking: "Rezervare",
       product: "Produs",
     },
-    emptyScope: "Alege o entitate mai sus pentru a vedea inregistrarile de identitate.",
+    emptyScope: "Alege o inregistrare mai sus pentru a vedea contactele si adresele sale.",
     tabs: {
-      contactPoints: "Puncte de contact",
+      contactPoints: "Detalii de contact",
       addresses: "Adrese",
       namedContacts: "Contacte nominale",
     },
   },
   contactPointsTab: {
     description:
-      "Numere de telefon, emailuri si alte canale de comunicare pentru aceasta entitate.",
-    add: "Adauga punct de contact",
+      "Numere de telefon, emailuri si alte canale de comunicare pentru aceasta inregistrare.",
+    add: "Adauga detaliu de contact",
     empty: {
       loading: "Se incarca punctele de contact...",
       none: "Nu exista puncte de contact inca.",
@@ -85,7 +85,7 @@ export const identityUiRo = {
     },
   },
   addressesTab: {
-    description: "Adrese fizice si postale asociate acestei entitati.",
+    description: "Adrese fizice si postale asociate acestei inregistrari.",
     add: "Adauga adresa",
     empty: {
       loading: "Se incarca adresele...",
@@ -103,7 +103,7 @@ export const identityUiRo = {
     },
   },
   namedContactsTab: {
-    description: "Persoane nominale asociate acestei entitati.",
+    description: "Persoane nominale asociate acestei inregistrari.",
     add: "Adauga contact nominal",
     empty: {
       loading: "Se incarca contactele nominale...",
@@ -123,8 +123,8 @@ export const identityUiRo = {
   },
   addressDialog: {
     titles: {
-      create: "Adauga Adresa",
-      edit: "Editeaza Adresa",
+      create: "Adauga adresa",
+      edit: "Editeaza adresa",
     },
     fields: {
       label: "Eticheta",
@@ -143,13 +143,13 @@ export const identityUiRo = {
       timezone: "Europe/Istanbul",
     },
     actions: {
-      create: "Adauga Adresa",
+      create: "Adauga adresa",
     },
   },
   contactPointDialog: {
     titles: {
-      create: "Adauga Punct de Contact",
-      edit: "Editeaza Punctul de Contact",
+      create: "Adauga detaliu de contact",
+      edit: "Editeaza detaliul de contact",
     },
     fields: {
       kind: "Tip",
@@ -162,7 +162,7 @@ export const identityUiRo = {
       value: "nume@example.com",
     },
     actions: {
-      create: "Adauga Punct de Contact",
+      create: "Adauga detaliu de contact",
     },
     validation: {
       valueRequired: "Valoarea este obligatorie",
@@ -170,8 +170,8 @@ export const identityUiRo = {
   },
   namedContactDialog: {
     titles: {
-      create: "Adauga Contact Nominal",
-      edit: "Editeaza Contactul Nominal",
+      create: "Adauga contact nominal",
+      edit: "Editeaza contactul nominal",
     },
     fields: {
       role: "Rol",
@@ -187,7 +187,7 @@ export const identityUiRo = {
       email: "jane@example.com",
     },
     actions: {
-      create: "Adauga Contact Nominal",
+      create: "Adauga contact nominal",
     },
     validation: {
       nameRequired: "Numele este obligatoriu",

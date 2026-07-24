@@ -45,7 +45,7 @@ export const resourcesUiRo: ResourcesUiMessages = {
   resourcesPage: {
     title: "Resurse",
     description:
-      "Gestioneaza active alocabile, pool-uri, reguli de alocare, acoperire pentru rezervari si blocari.",
+      "Gestioneaza ghizi, vehicule, camere si alte active si modul in care sunt alocate calatoriilor.",
     loading: "Se incarca resursele...",
     loadFailed: "Resursele nu au putut fi incarcate.",
     filters: {
@@ -159,8 +159,7 @@ export const resourcesUiRo: ResourcesUiMessages = {
             buttonLabel: "Dezactiveaza",
             confirmLabel: "Dezactiveaza Resursele",
             title: "Dezactivezi {selection}?",
-            description:
-              "Aceasta pastreaza resursele selectate, dar le scoate din utilizarea operationala activa.",
+            description: "Le pastreaza, dar le scoate din utilizarea activa.",
             successVerb: "Dezactivate",
           },
           delete: {

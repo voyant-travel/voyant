@@ -51,7 +51,7 @@ export const bookingRequirementsUiRo = {
       phone: "Telefon",
       date: "Data",
       datetime: "Data si ora",
-      boolean: "Boolean",
+      boolean: "Da/Nu",
       single_select: "Selectie simpla",
       multi_select: "Selectie multipla",
       file: "Fisier",
@@ -60,31 +60,31 @@ export const bookingRequirementsUiRo = {
     },
   },
   contactTab: {
-    title: "Cerinte de Contact",
+    title: "Cerinte de contact",
     description:
       "Campuri standard pentru calatori colectate la rezervare (nume, email, pasaport etc.).",
-    addRequirement: "Adauga Cerinta",
+    addRequirement: "Adauga cerinta",
     empty: "Nu exista inca cerinte de contact. Adauga una pentru a colecta datele calatorului.",
     columns: {
       field: "Camp",
       scope: "Domeniu",
       required: "Obligatoriu",
-      perTraveler: "Per Calator",
+      perTraveler: "Per calator",
       sort: "Ordine",
       status: "Status",
       actions: "Actiuni",
     },
   },
   questionsTab: {
-    title: "Intrebari Personalizate",
+    title: "Intrebari personalizate",
     description:
       "Intrebari specifice produsului puse la rezervare (preferinte, cerinte alimentare etc.).",
-    addQuestion: "Adauga Intrebare",
+    addQuestion: "Adauga intrebare",
     empty: "Nu exista inca intrebari. Adauga una pentru a colecta date personalizate la rezervare.",
     choiceTypesHint:
       "Optiunile se aplica doar pentru tipurile selectie simpla / selectie multipla.",
     choices: "Optiuni",
-    addChoice: "Adauga Optiune",
+    addChoice: "Adauga optiune",
     noChoices: "Nu exista inca optiuni.",
     columns: {
       sort: "Ordine",

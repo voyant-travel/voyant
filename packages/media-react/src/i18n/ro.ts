@@ -79,7 +79,7 @@ export const mediaUiRo: MediaUiMessages = {
       fileSizeLabel: "Marime fisier",
       uploadedByLabel: "Incarcat de",
       whereUsed: "Unde este folosit",
-      whereUsedEmpty: "Acest fisier nu este referentiat nicaieri.",
+      whereUsedEmpty: "Acest fisier nu este folosit nicaieri.",
       usageCount: "{count} referinte",
       saved: "Modificarile au fost salvate.",
       saveFailed: "Modificarile nu au putut fi salvate.",
@@ -87,7 +87,7 @@ export const mediaUiRo: MediaUiMessages = {
       deleteFailed: "Fisierul nu a putut fi sters.",
       inUseTitle: "Fisier in uz",
       inUseWarning:
-        "Acest fisier este referentiat in alta parte si nu poate fi sters pana cand acele referinte nu sunt eliminate.",
+        "Acest fisier este folosit in alta parte si nu poate fi sters pana cand acele referinte nu sunt eliminate.",
     },
   },
   picker: {

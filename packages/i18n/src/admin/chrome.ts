@@ -78,7 +78,7 @@ export const adminChromeMessages = {
     requestFailed: "Solicitarea a eșuat",
     retry: "Încearcă din nou",
     goToDashboard: "Mergi la panou",
-    loadingAdminWorkspace: "Se încarcă spațiul de administrare",
+    loadingAdminWorkspace: "Se încarcă spațiul de lucru",
     loadingWorkspace: "Se încarcă spațiul de lucru",
     pageNotFound: "Pagina nu a fost găsită",
     pageNotFoundDescription: "Pagina solicitată nu există sau nu mai este disponibilă.",

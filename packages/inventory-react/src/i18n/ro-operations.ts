@@ -126,8 +126,7 @@ export const productsUiOperationsRo = {
       edit: "Editeaza unitatea vandabila",
     },
     descriptions: {
-      create:
-        "Adauga ce se vinde sau se aloca: bilet adult, bilet copil, camera dubla, loc in autocar, cabina sau serviciu.",
+      create: "Ce se vinde: de exemplu un bilet adult, o camera dubla sau un loc in autocar.",
       edit: "Actualizeaza limitele de inventar, regulile de varsta si ocuparea cand unitatea este o camera.",
     },
   },
@@ -135,7 +134,7 @@ export const productsUiOperationsRo = {
     fields: {
       name: "Nume",
       code: "Cod",
-      unitType: "Ce se aloca?",
+      unitType: "Ce este aceasta?",
       sortOrder: "Ordine sortare",
       minQuantity: "Minim per plecare",
       maxQuantity: "Disponibil per plecare",
@@ -162,8 +161,7 @@ export const productsUiOperationsRo = {
   },
   productVersionDialog: {
     title: "Creeaza snapshot de versiune",
-    description:
-      "Salveaza starea curenta a produsului, inclusiv itinerarul si structura optiunilor, ca versiune noua.",
+    description: "Salveaza un snapshot al acestui produs, inclusiv itinerarul si optiunile sale.",
     fields: {
       notes: "Note",
     },
@@ -182,7 +180,7 @@ export const productsUiOperationsRo = {
       default: "Versiuni",
     },
     descriptions: {
-      default: "Creeaza si navigheaza snapshot-uri imuabile ale produsului.",
+      default: "Salveaza un snapshot al acestui produs pe care sa il poti consulta ulterior.",
     },
     actions: {
       createVersion: "Creeaza versiunea",
@@ -264,7 +262,7 @@ export const productsUiOperationsRo = {
     configurationWarnings: {
       roomOptionsTitle: "Pare ca tipurile de camera sunt configurate ca optiuni",
       roomOptionsDescription:
-        "Optiunile {options} par aranjamente de camera. Pentru Single, Double, Triple sau alegeri similare, foloseste o singura optiune cu mai multe unitati camera. Foloseste optiuni separate doar cand clientul alege pachete cu adevarat diferite.",
+        "{options} par tipuri de camera. Pune Single/Double/Triple sub o singura optiune, ca si camere separate. Foloseste optiuni separate doar pentru pachete cu adevarat diferite.",
     },
     deleteConfirm: {
       option: 'Stergi optiunea "{name}" si configurarea ei?',

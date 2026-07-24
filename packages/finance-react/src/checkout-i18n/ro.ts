@@ -90,7 +90,7 @@ export const checkoutUiRo: CheckoutUiMessages = {
         body: "Blocheaza comanda si genereaza un link de plata pe care clientul il poate deschide pentru plata cu cardul sau transfer bancar. Distribuie-l cum preferi.",
       },
       cardSecurityNote:
-        "Numerele de card introduse aici sunt tokenizate in productie prin formularul gazduit de procesator - nu sunt trimise niciodata prin acest UI.",
+        "Datele cardului sunt procesate in siguranta de furnizorul de plati si nu sunt stocate aici.",
       brandFallback: "card",
     },
   },

@@ -8,11 +8,11 @@ export const crmUiRoCommerceMessages = {
       status: "Status",
       description: "Descriere",
       linkTo: "Leaga de",
-      entityId: "Entitate",
+      entityId: "Legat de",
     },
     placeholders: {
       subject: "Apel de descoperire cu Acme",
-      entityId: "Cauta sau insereaza o referinta",
+      entityId: "Cauta o persoana, companie sau oferta",
     },
     validation: {
       subjectRequired: "Subiectul este obligatoriu",
@@ -91,7 +91,7 @@ export const crmUiRoCommerceMessages = {
     fields: {
       description: "Descriere",
       quantity: "Cant.",
-      priceCents: "Pret",
+      priceCents: "Pret unitar",
     },
     validation: {
       descriptionRequired: "Descrierea este obligatorie",
@@ -101,7 +101,7 @@ export const crmUiRoCommerceMessages = {
   },
   activitiesPage: {
     title: "Activitati",
-    description: "Apeluri, emailuri, intalniri, sarcini si urmariri din CRM-ul tau.",
+    description: "Apelurile, emailurile si intalnirile inregistrate.",
     create: "Activitate noua",
     filters: {
       type: "Tip",
@@ -173,10 +173,10 @@ export const crmUiRoCommerceMessages = {
     breadcrumbRoot: "Oferte",
     back: "Inapoi la Oferte",
     save: "Salveaza",
-    saveSuccess: "Propunere salvata",
+    saveSuccess: "Oferta salvata",
     saveError: "Salvarea ofertei a esuat",
     discard: "Renunta",
-    newVersion: "Creeaza propunere",
+    newVersion: "Creeaza versiune de oferta",
     markWon: "Marcheaza castigata",
     markLost: "Marcheaza pierduta",
     reopen: "Redeschide",
@@ -195,7 +195,7 @@ export const crmUiRoCommerceMessages = {
     notFound: "Oferta negasita.",
     descriptionTitle: "Descriere",
     descriptionPlaceholder:
-      "Descrie aceasta propunere pentru client (afisata in propunerea partajata)…",
+      "Descrie aceasta oferta pentru client (afisata in versiunea partajata)…",
     versionsTitle: "Versiuni oferta",
     versionsEmpty: "Nicio versiune inca. Creeaza prima.",
     versionsLoadFailed: "Incarcarea versiunilor a esuat.",
@@ -206,9 +206,9 @@ export const crmUiRoCommerceMessages = {
     copyReviewLink: "Copiaza link-ul de review",
     copyReviewOnlyLink: "Copiaza link-ul doar pentru review",
     reviewOnlyNotice:
-      "Doar pentru review: clientii pot cere editari sau refuza, dar nu pot accepta pana cand nu exista un snapshot Trip inghetat.",
+      "Doar pentru review: clientul poate propune modificari sau refuza, dar nu poate accepta inca.",
     proposalLinkCopied: "Link-ul de review a fost copiat",
-    proposalSendFailed: "Partajarea propunerii a esuat",
+    proposalSendFailed: "Partajarea versiunii de oferta a esuat",
     detailsTitle: "Detalii oferta",
     fields: {
       title: "Titlu",
@@ -250,8 +250,8 @@ export const crmUiRoCommerceMessages = {
   },
   quoteTravelersCard: {
     title: "Calatori",
-    pax: "{count} PAX",
-    paxLabel: "PAX",
+    pax: "{count} calatori",
+    paxLabel: "Calatori",
     empty: "Niciun calator inca.",
     addPlaceholder: "Cauta persoane de adaugat…",
     noResults: "Nicio persoana gasita.",
@@ -275,7 +275,7 @@ export const crmUiRoCommerceMessages = {
   },
   quoteMediaCard: {
     title: "Imagini",
-    description: "Fotografii afisate in propunerea pentru client.",
+    description: "Fotografii afisate in versiunea de oferta a clientului.",
     empty: "Nicio imagine inca.",
     add: "Adauga imagini",
   },

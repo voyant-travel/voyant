@@ -28,8 +28,8 @@ export const extrasUiRo = {
   },
   slotManifest: {
     title: "Manifest extra",
-    emptyExtras: "Nu exista extra configurate pentru manifestul acestui produs.",
-    emptyTravelers: "Nu exista calatori activi alocati acestui slot.",
+    emptyExtras: "Nu exista extra configurate pentru acest produs.",
+    emptyTravelers: "Nu exista calatori activi alocati acestui extra.",
     travelerColumn: "Calator",
     bookingColumn: "Rezervare",
     selectedLabel: "Selectat",

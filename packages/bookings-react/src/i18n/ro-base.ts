@@ -39,7 +39,7 @@ export const bookingsUiRoBase = {
   bookingQuickViewSheet: {
     loadingTitle: "Rezervare",
     viewFullAction: "Vezi rezervarea completa",
-    paxSuffix: "pax",
+    paxSuffix: "calatori",
     travelerUnnamed: "Calator fara nume",
     sectionPayer: "Platitor",
     sectionTravelers: "Calatori",
@@ -155,7 +155,7 @@ export const bookingsUiRoBase = {
     billingEmail: "Email",
     billingPhone: "Telefon",
     billingAddress: "Adresa",
-    documentsSlotEmpty: "Furnizeaza un slot de documente pentru rezervare.",
+    documentsSlotEmpty: "Inca nu exista documente.",
   },
   travelerDialog: {
     titles: {

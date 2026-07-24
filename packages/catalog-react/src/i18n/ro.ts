@@ -23,7 +23,7 @@ export const catalogUiRo = {
       source: "Sursa",
       supplier: "Furnizor",
       bookingMode: "Mod rezervare",
-      pax: "Pax",
+      pax: "Calatori",
       price: "Pret",
       selection: "Selectie",
       pricing: "Preturi",
@@ -35,7 +35,7 @@ export const catalogUiRo = {
       yacht: "Iaht",
       from: "De la",
       class: "Clasa",
-      maxPax: "Max pax",
+      maxPax: "Max calatori",
       bedrooms: "Dormitoare",
     },
     filters: {
@@ -54,7 +54,7 @@ export const catalogUiRo = {
       visibility: "Vizibilitate",
       facility: "Facilitate",
       price: "Pret",
-      pax: "Pax",
+      pax: "Calatori",
       any: "Oricare",
       active: "Activ",
       selection: "Selectie",
@@ -74,7 +74,7 @@ export const catalogUiRo = {
       class: "Clasa",
       smoking: "Fumat",
       property: "Proprietate",
-      maxPax: "Max pax",
+      maxPax: "Max calatori",
       bedrooms: "Dormitoare",
       bathrooms: "Bai",
     },
@@ -231,8 +231,8 @@ export const catalogUiRo = {
     },
   },
   catalogBookingPage: {
-    title: "Rezerva randul",
-    descriptionPrefix: "Confirma contactul, calatorii si plata pentru rezervarea",
+    title: "Rezerva acest element",
+    descriptionPrefix: "Confirma contactul, calatorii si plata pentru a rezerva",
     actions: {
       backToCatalog: "Inapoi la catalog",
       refreshPrice: "Actualizeaza pretul",
@@ -243,7 +243,7 @@ export const catalogUiRo = {
       confirmBooking: "Confirma rezervarea",
     },
     summary: {
-      untitled: "Rand fara nume",
+      untitled: "Element fara nume",
       departure: "Plecare",
       available: "Disponibil",
       livePrice: "Pret live",
@@ -281,14 +281,14 @@ export const catalogUiRo = {
     notes: {
       title: "Note pentru furnizor",
       description:
-        "Optional. Notele sunt trimise in parametrii adaptorului pentru cereri speciale, accesibilitate sau restrictii alimentare.",
+        "Optional. Adauga cereri speciale, nevoi de accesibilitate sau restrictii alimentare pentru furnizor.",
       placeholder: "ex. Cina vegetariana. Acces scaun rulant la preluare.",
     },
     payment: {
       title: "Plata",
       description:
-        "Alege cum este platit angajamentul. Tracerul motorului de rezervare livreaza doar hold; fluxurile cu card vin dupa integrarea platilor.",
-      intent: "Intentie",
+        "Alege cum se plateste aceasta rezervare. Plata cu cardul urmeaza in curand; deocamdata poti pune un hold si plati mai tarziu.",
+      intent: "Cum platesti",
       hold: "Hold (plata mai tarziu)",
       cardComingSoon: "Card - in curand",
     },
@@ -297,7 +297,7 @@ export const catalogUiRo = {
     },
     validation: {
       waitingForPrice: "Se asteapta pretul live...",
-      notBookable: "Acest rand nu mai poate fi rezervat.",
+      notBookable: "Acest element nu mai poate fi rezervat.",
       contactNameRequired: "Contact principal: prenumele si numele sunt obligatorii.",
       contactEmailRequired: "Contact principal: emailul este obligatoriu.",
       travelerNameRequired: "Calator #{n}: prenumele si numele sunt obligatorii.",

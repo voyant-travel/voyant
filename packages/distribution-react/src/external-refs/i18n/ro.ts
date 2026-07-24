@@ -11,9 +11,9 @@ export const externalRefsUiRo: ExternalRefsUiMessages = {
   externalRefsPage: {
     title: "Referinte externe",
     description:
-      "ID-uri din sisteme terte legate de entitati Voyant. Introdu tipul entitatii si ID-ul de mai jos pentru a gestiona referintele externe.",
+      "Leaga inregistrari din Voyant de ID-urile lor din alte sisteme. Alege ce vrei sa legi, apoi adauga ID-ul extern.",
     fields: {
-      entityType: "Tip entitate",
+      entityType: "Tip inregistrare",
       entity: "Entitate",
       customEntityType: "Alt tip de entitate",
     },

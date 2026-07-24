@@ -14,31 +14,29 @@ export const notificationsUiRo: NotificationsUiMessages = {
   },
   stage: {
     listHeading: "Etape",
-    listEmpty: "Nicio etapă încă. Adaugă una pentru a defini când se trimite regula.",
-    addStage: "Adaugă etapă",
-    deleteConfirm: "Ștergi această etapă?",
+    listEmpty: "Niciun pas încă. Adaugă unul pentru a defini când se trimite regula.",
+    addStage: "Adaugă pas",
+    deleteConfirm: "Ștergi acest pas?",
     fields: {
       name: "Nume",
       orderIndex: "Ordine",
-      anchor: "Reper",
+      anchor: "Măsurat de la",
       windowStartDays: "Început fereastră (zile)",
       windowEndDays: "Sfârșit fereastră (zile)",
-      cadenceKind: "Cadență",
+      cadenceKind: "Cât de des",
       cadenceEveryDays: "La fiecare N zile",
-      cadenceIntervals: "Praguri de escaladare",
-      maxSendsInStage: "Trimiteri maxime per etapă",
+      cadenceIntervals: "Pași de reamintire",
+      maxSendsInStage: "Trimiteri maxime per pas",
       respectQuietHours: "Respectă orele de liniște",
     },
     descriptions: {
-      window: "Când se deschide fereastra de eligibilitate, relativ la reperul ales.",
-      cadence: "Cât de des se poate declanșa etapa în interiorul ferestrei.",
-      emptyIntervals:
-        "Adaugă praguri bazate pe zile-până-la-scadență pentru a ajusta cadența pe măsură ce se apropie termenul.",
+      window: "Când devine eligibil acest pas pentru trimitere, măsurat de la data aleasă.",
+      cadence: "Cât de des poate trimite acest pas în interiorul ferestrei.",
+      emptyIntervals: "Trimite mai des pe măsură ce se apropie data scadenței.",
       stopConditions: "Condiții de oprire",
       maxSendsInStage:
         "Lasă gol pentru valoarea implicită de 1 trimitere. Introdu un plafon finit pentru repetare.",
-      respectQuietHours:
-        "Amână declanșările care ar cădea în intervalul de ore de liniște al tenantului.",
+      respectQuietHours: "Amână reamintirile care ar cădea în orele de liniște.",
     },
     placeholders: {
       name: "Prima reamintire",
@@ -53,18 +51,18 @@ export const notificationsUiRo: NotificationsUiMessages = {
     cadences: {
       once: "O singură dată",
       every_n_days: "La fiecare N zile",
-      escalating: "Praguri de escaladare",
+      escalating: "Pași crescători",
     },
     intervalRow: {
-      whenDaysUntilDueGT: "Când zile-până-la-scadență >",
+      whenDaysUntilDueGT: "Când zilele până la scadență sunt mai mult de",
       whenDaysUntilDueLT: "Când zile-până-la-scadență <",
       repeatEveryDays: "Repetă la fiecare (zile)",
-      addInterval: "Adaugă prag",
+      addInterval: "Adaugă pas",
       removeInterval: "Șterge",
     },
     titles: {
-      create: "Adaugă etapă",
-      edit: "Editează etapă",
+      create: "Adaugă pas",
+      edit: "Editează pas",
     },
   },
   channel: {
@@ -101,19 +99,18 @@ export const notificationsUiRo: NotificationsUiMessages = {
       template: "Caută șabloane…",
     },
     descriptions: {
-      automaticProvider:
-        "Folosește Automat pentru a utiliza valoarea implicită a deploymentului pentru acest canal.",
+      automaticProvider: "Alege Automat pentru a folosi valoarea implicită pentru acest canal.",
     },
   },
   settings: {
     heading: "Setări notificări",
-    description: "Valori implicite pentru orele de liniște, blocaje și limite per destinatar.",
+    description: "Valori implicite pentru orele de liniște și limitele de reamintiri.",
     sections: {
       quietHours: "Ore de liniște",
       quietHoursDesc: "Când se pot trimite reamintiri, în fusul orar al destinatarului.",
       blackouts: "Date blocate",
       blackoutsDesc: "Date specifice care se ignoră complet (sărbători, închideri).",
-      rateLimits: "Limite și deduplicare",
+      rateLimits: "Limite",
       rateLimitsDesc: "Plafoane care se aplică tuturor regulilor pentru a proteja destinatarii.",
     },
     fields: {
@@ -124,7 +121,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
       skipWeekends: "Sari peste weekend-uri",
       skipWeekendsDesc: "Amână reamintirile care ar cădea sâmbăta sau duminica.",
       recipientRateLimitPerDay: "Plafon zilnic per destinatar",
-      suppressionWindowHours: "Fereastră de supresie (ore)",
+      suppressionWindowHours: "Nu repeta în interval de (ore)",
     },
     placeholders: {
       tz: "Caută fusuri orare…",
@@ -134,8 +131,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
       blackoutDates: "Adaugă o dată pentru fiecare zi calendaristică de ignorat.",
       recipientRateLimitPerDay:
         "Numărul maxim de reamintiri trimise per destinatar/canal în 24h. Lasă gol pentru fără limită.",
-      suppressionWindowHours:
-        "Fereastră pentru deduplicarea regulilor care partajează același grup de supresie.",
+      suppressionWindowHours: "Cât să aștepte înainte de a trimite din nou o reamintire similară.",
     },
     actions: {
       addBlackoutDate: "Adaugă dată",
@@ -154,12 +150,12 @@ export const notificationsUiRo: NotificationsUiMessages = {
   },
   preview: {
     dateLabel: "Dată",
-    empty: "Nimic nu s-ar declanșa la această dată.",
+    empty: "Nimic nu s-ar trimite la această dată.",
     columns: {
       rule: "Regulă",
       stage: "Etapă",
       target: "Țintă",
-      anchor: "Reper",
+      anchor: "Măsurat de la",
       scheduledAt: "Programat la",
       reasoning: "Motiv",
     },
@@ -213,7 +209,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
     },
     templatesPage: {
       title: "Șabloane de notificare",
-      description: "Gestionează șabloanele de email și SMS randate cu Liquid.",
+      description: "Gestionează șabloanele de email și SMS pentru mesajele tale.",
       newTemplate: "Șablon nou",
       searchPlaceholder: "Caută șabloane...",
       empty:
@@ -237,7 +233,8 @@ export const notificationsUiRo: NotificationsUiMessages = {
       subjectLabel: "Subiect",
       subjectPlaceholder: "Rezervarea ta {{ booking.reference }}",
       htmlBodyLabel: "Corp HTML",
-      htmlBodyPlaceholder: "Compune corpul emailului folosind variabile Liquid...",
+      htmlBodyPlaceholder:
+        "Compune corpul emailului folosind variabile precum {{ booking.reference }}...",
       smsBodyLabel: "Corp SMS",
       smsBodyPlaceholder:
         'Salut {{ traveler.firstName | default: "călător" }}, rezervarea ta este confirmată.',
@@ -246,7 +243,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
       previewDataLabel: "Date de previzualizare (JSON)",
       previewDataPlaceholder: '{"booking":{"reference":"BKG-2026-00125"}}',
       previewDataHint:
-        "Folosește JSON de exemplu pentru a previzualiza randarea Liquid și a trimite un mesaj de test sigur.",
+        "Folosește JSON de exemplu pentru a previzualiza mesajul și a trimite un test sigur.",
       refreshPreview: "Reîmprospătează previzualizarea",
       renderedPreviewTitle: "Previzualizare randată",
       renderedSubjectLabel: "Subiect",
@@ -394,7 +391,7 @@ export const notificationsUiRo: NotificationsUiMessages = {
       stagesHintBefore: "După crearea regulii, apasă",
       stagesHintAction: "Gestionează etapele",
       stagesHintAfter:
-        "pe rând pentru a defini când se declanșează (reper, fereastră, cadență) și ce canale o livrează.",
+        "pe rând pentru a defini când se trimite (măsurat de la, fereastră, cât de des) și ce canale o livrează.",
       createRule: "Creează regula",
     },
     reminderRuleDetail: {
@@ -409,12 +406,12 @@ export const notificationsUiRo: NotificationsUiMessages = {
     previewPage: {
       title: "Previzualizare reamintiri",
       description:
-        "Ce s-ar declanșa la o dată aleasă cu secvențele de reamintire active. Doar citire.",
+        "Ce s-ar trimite la o dată aleasă cu secvențele de reamintire active. Doar citire.",
     },
     authoringHelp: {
       title: "Variabile de notificare",
       description:
-        "Notificările se randează cu Liquid. Folosește variabile pentru subiect și corp și taguri de control pentru condiții sau bucle.",
+        "Folosește variabile precum {{ booking.reference }} pentru a personaliza mesajele tale.",
     },
   },
 }
