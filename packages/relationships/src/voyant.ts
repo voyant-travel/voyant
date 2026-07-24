@@ -441,16 +441,25 @@ export const relationshipsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "organization",
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
-      },
+      availability: { status: "available" },
       effectBoundary: "multistage",
+      durability: {
+        strategy: "outbox",
+        testReference:
+          "packages/relationships/tests/integration/organization-created-command.test.ts",
+      },
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "organization_create_command",
+        resultReferenceType: "organization",
+        durability: "handler-command-claim-v1",
+      },
       requiredScopes: ["crm:write"],
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
+      allowedActorTypes: ["staff"],
       from: { tools: ["@voyant-travel/relationships#tool.create-organization"] },
     },
     {

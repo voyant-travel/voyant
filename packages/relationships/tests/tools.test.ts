@@ -1,6 +1,6 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
-
+import { RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY } from "../src/created-target-policy.js"
 import {
   addRelationshipAddressTool,
   addRelationshipContactMethodTool,
@@ -11,6 +11,7 @@ import {
 
 function ctx(
   overrides: Partial<RelationshipsToolServices> = {},
+  contextOverrides: Partial<ToolContext> = {},
 ): ToolContext & { relationships: RelationshipsToolServices } {
   const unavailable = async () => {
     throw new Error("Unexpected Relationships tool service call")
@@ -21,6 +22,7 @@ function ctx(
     audience: "staff",
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
+    ...contextOverrides,
     relationships: {
       listPeople: unavailable,
       getPersonById: unavailable,
@@ -287,17 +289,37 @@ describe("relationships (crm) tools", () => {
         vatNumber: "RO123",
         billingAddress: { label: "billing", line1: "Calea Victoriei 1", country: "RO" },
       },
-      ctx({
-        async createOrganization(input) {
-          created = input
-          return { organization: organization(), billingAddress: address() }
+      ctx(
+        {
+          async createOrganization(input, admitted) {
+            created = input
+            expect(admitted.invocation.idempotencyKey).toBe("organization-create-1")
+            return { status: "created", organization: { id: "org_1" }, replayed: false }
+          },
         },
-      }),
+        {
+          handlerActionPolicy: {
+            ...RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY,
+            actionPolicy: {
+              ...RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY.actionPolicy,
+              enforcement: "handler",
+              invocation: {
+                controlField: "_voyant",
+                requiredFields: ["idempotencyKey"],
+                optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+                fingerprintAlgorithm: "action-ledger-command-v1",
+              },
+            },
+            invocation: { idempotencyKey: "organization-create-1" },
+          },
+        },
+      ),
     )
     expect(created).toMatchObject({ name: "Example Travel", vatNumber: "RO123" })
     expect(createResult).toMatchObject({
+      status: "created",
       organization: { id: "org_1" },
-      billingAddress: { id: "iadr_1" },
+      replayed: false,
     })
 
     let updated: unknown

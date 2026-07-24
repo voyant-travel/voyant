@@ -75,7 +75,7 @@ describe("relationships deployment manifest", () => {
           kind: "execute",
           ledger: "required",
           approval: "never",
-          reversible: true,
+          reversible: action?.targetLifecycle !== "created",
         })
       }
       if (tool.risk === "high" && tool.requiredScopes.includes("crm:read")) {
@@ -86,18 +86,39 @@ describe("relationships deployment manifest", () => {
         })
       }
     }
-    for (const actionId of [
-      "@voyant-travel/relationships#action.create-person",
-      "@voyant-travel/relationships#action.create-organization",
-    ]) {
-      expect(relationshipsVoyantModule.actions?.find(({ id }) => id === actionId)).toMatchObject({
-        availability: {
-          status: "unavailable",
-          reasonCode: "unsafe-nontransactional-effect",
-        },
-        effectBoundary: "multistage",
-      })
-    }
+    expect(
+      relationshipsVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/relationships#action.create-person",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
+    expect(
+      relationshipsVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/relationships#action.create-organization",
+      ),
+    ).toMatchObject({
+      availability: { status: "available" },
+      effectBoundary: "multistage",
+      targetType: "organization",
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "organization_create_command",
+        resultReferenceType: "organization",
+        durability: "handler-command-claim-v1",
+      },
+      durability: {
+        strategy: "outbox",
+        testReference:
+          "packages/relationships/tests/integration/organization-created-command.test.ts",
+      },
+      reversible: false,
+      allowedActorTypes: ["staff"],
+    })
     for (const ownerType of ["person", "organization"] as const) {
       for (const childType of ["note", "contact-method", "address"] as const) {
         const toolId = `@voyant-travel/relationships#tool.add-${ownerType}-${childType}`
