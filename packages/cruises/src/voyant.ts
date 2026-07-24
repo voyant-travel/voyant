@@ -231,7 +231,6 @@ export const cruisesVoyantModule = defineModule({
         "update-cruise",
         "upsert-cruise-sailing",
         "update-cruise-sailing",
-        "create-cruise-ship",
         "update-cruise-ship",
       ] as const
     ).map((id) => ({
@@ -256,6 +255,25 @@ export const cruisesVoyantModule = defineModule({
       allowedActorTypes: ["staff" as const],
       from: { tools: [`@voyant-travel/cruises#tool.${id}`] },
     })),
+    {
+      id: "@voyant-travel/cruises#action.create-cruise-ship",
+      version: "v1",
+      kind: "execute",
+      targetType: "cruise-ship",
+      requiredScopes: ["cruises:write"],
+      risk: "medium",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "cruise_ship_create_command",
+        resultReferenceType: "cruise-ship",
+        durability: "handler-command-claim-v1",
+      },
+      from: { tools: ["@voyant-travel/cruises#tool.create-cruise-ship"] },
+    },
     {
       id: "@voyant-travel/cruises#action.create-cruise-booking",
       version: "v1",

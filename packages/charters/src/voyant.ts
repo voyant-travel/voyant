@@ -158,11 +158,9 @@ export const chartersVoyantModule = defineModule({
     })),
     ...(
       [
-        "create-charter-product",
         "update-charter-product",
         "upsert-charter-voyage",
         "update-charter-voyage",
-        "create-charter-yacht",
         "update-charter-yacht",
       ] as const
     ).map((id) => ({
@@ -176,6 +174,35 @@ export const chartersVoyantModule = defineModule({
       approval: "never" as const,
       reversible: true,
       allowedActorTypes: ["staff" as const],
+      from: { tools: [`@voyant-travel/charters#tool.${id}`] },
+    })),
+    ...(
+      [
+        [
+          "create-charter-product",
+          "charter-product",
+          "charter_product_create_command",
+          "charter-product",
+        ],
+        ["create-charter-yacht", "charter-yacht", "charter_yacht_create_command", "charter-yacht"],
+      ] as const
+    ).map(([id, targetType, commandTargetType, resultReferenceType]) => ({
+      id: `@voyant-travel/charters#action.${id}`,
+      version: "v1" as const,
+      kind: "execute" as const,
+      targetType,
+      requiredScopes: ["charters:write"],
+      risk: "medium" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: false,
+      allowedActorTypes: ["staff" as const],
+      targetLifecycle: "created" as const,
+      createdTarget: {
+        commandTargetType,
+        resultReferenceType,
+        durability: "handler-command-claim-v1" as const,
+      },
       from: { tools: [`@voyant-travel/charters#tool.${id}`] },
     })),
     {

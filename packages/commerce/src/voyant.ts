@@ -71,11 +71,25 @@ function commerceToolAction(
   action: "read" | "write",
 ): VoyantGraphActionDeclaration {
   const write = action === "write"
+  const created =
+    suffix === "create-cancellation-policy"
+      ? {
+          targetType: "cancellation-policy",
+          commandTargetType: "cancellation_policy_create_command",
+          resultReferenceType: "cancellation-policy",
+        }
+      : suffix === "create-price-catalog"
+        ? {
+            targetType: "price-catalog",
+            commandTargetType: "price_catalog_create_command",
+            resultReferenceType: "price-catalog",
+          }
+        : null
   return {
     id: `@voyant-travel/commerce#action.${suffix}`,
     version: "v1",
     kind: write ? "execute" : "read",
-    targetType: resource,
+    targetType: created?.targetType ?? resource,
     ...(suffix === "create-promotion"
       ? {
           availability: {
@@ -91,8 +105,18 @@ function commerceToolAction(
     risk: write ? "medium" : "low",
     ledger: write ? "required" : "optional",
     approval: "never",
-    reversible: write,
+    reversible: write && !created,
     allowedActorTypes: ["staff"],
+    ...(created
+      ? {
+          targetLifecycle: "created" as const,
+          createdTarget: {
+            commandTargetType: created.commandTargetType,
+            resultReferenceType: created.resultReferenceType,
+            durability: "handler-command-claim-v1" as const,
+          },
+        }
+      : {}),
     from: { tools: [`@voyant-travel/commerce#tool.${suffix}`] },
   }
 }

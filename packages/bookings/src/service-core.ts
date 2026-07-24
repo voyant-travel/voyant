@@ -1,11 +1,15 @@
 // agent-quality: file-size exception -- Bookings service keeps legacy booking lifecycle, traveler, allocation, and accounting workflows together until service modules are split by domain operation.
 import {
+  ActionLedgerCreatedCommandReplayCorruptError,
+  ActionLedgerCreatedCommandReplayIncompleteError,
   ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
-  actionLedgerEntries,
-  actionMutationDetails,
   appendActionLedgerMutation,
+  buildCreatedTargetCommandFingerprint,
+  buildIdempotencyFingerprint,
+  executeCreatedTargetCommand,
 } from "@voyant-travel/action-ledger"
+import { actionLedgerEntries, actionMutationDetails } from "@voyant-travel/action-ledger/schema"
 import type { EventBus } from "@voyant-travel/core"
 import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { newId } from "@voyant-travel/db/lib/typeid"
@@ -56,6 +60,7 @@ import {
 } from "./products-ref.js"
 import { bookingTravelerTravelDetails } from "./schema/travel-details.js"
 import {
+  type Booking,
   bookingActivityLog,
   bookingAllocations,
   bookingDocuments,
@@ -337,7 +342,13 @@ export interface BookingServiceRuntime {
   actionLedgerIdempotencyScope?: string | null
   actionLedgerIdempotencyKey?: string | null
   actionLedgerIdempotencyFingerprint?: string | null
+  actionLedgerLegacyIdempotencyScope?: string | null
+  actionLedgerLegacyIdempotencyFingerprint?: string | null
   actionLedgerRouteOrToolName?: string | null
+  actionLedgerActionName?: string | null
+  actionLedgerActionVersion?: string | null
+  actionLedgerCapabilityId?: string | null
+  actionLedgerCapabilityVersion?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
@@ -372,7 +383,69 @@ type BookingStatusActionName =
   | "booking.status.override"
 
 const BOOKING_RESERVATION_ACTION_NAME = "booking.reserve"
-const BOOKING_RESERVATION_RESULT_REF_PREFIX = "booking:"
+const BOOKING_RESERVATION_ACTION_VERSION = "v1"
+const BOOKING_RESERVATION_COMMAND_TARGET_TYPE = "booking_reservation_command"
+const BOOKING_RESERVATION_CANONICAL_TARGET_TYPE = "booking"
+const BOOKING_RESERVATION_RESULT_REFERENCE_TYPE = "booking"
+const BOOKING_RESERVATION_CAPABILITY_ID = "bookings:reserve"
+const BOOKING_RESERVATION_CAPABILITY_VERSION = "v1"
+const BOOKING_RESERVATION_EVALUATED_RISK = "high"
+const BOOKING_RESERVATION_LEGACY_RESULT_REF_PREFIX = "booking:"
+
+export interface BookingReservationActionIdentity {
+  actionName: string
+  actionVersion: string
+  capabilityId: string
+  capabilityVersion: string
+}
+
+const DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY = {
+  actionName: BOOKING_RESERVATION_ACTION_NAME,
+  actionVersion: BOOKING_RESERVATION_ACTION_VERSION,
+  capabilityId: BOOKING_RESERVATION_CAPABILITY_ID,
+  capabilityVersion: BOOKING_RESERVATION_CAPABILITY_VERSION,
+} as const satisfies BookingReservationActionIdentity
+
+function bookingReservationCommand(
+  data: ReserveBookingInput,
+  identity: BookingReservationActionIdentity = DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY,
+) {
+  return {
+    actionName: identity.actionName,
+    actionVersion: identity.actionVersion,
+    commandTarget: {
+      type: BOOKING_RESERVATION_COMMAND_TARGET_TYPE,
+      id: data.bookingNumber,
+    },
+    canonicalTargetType: BOOKING_RESERVATION_CANONICAL_TARGET_TYPE,
+    resultReferenceType: BOOKING_RESERVATION_RESULT_REFERENCE_TYPE,
+    commandInput: data,
+    capabilityId: identity.capabilityId,
+    capabilityVersion: identity.capabilityVersion,
+    evaluatedRisk: BOOKING_RESERVATION_EVALUATED_RISK,
+    approvalPolicy: "none" as const,
+    approvalReasonCode: null,
+  } as const
+}
+
+export function buildBookingReservationCommandFingerprint(
+  data: ReserveBookingInput,
+  identity: BookingReservationActionIdentity = DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY,
+): Promise<string> {
+  return buildCreatedTargetCommandFingerprint(bookingReservationCommand(data, identity))
+}
+
+export function buildLegacyBookingReservationCommandFingerprint(
+  data: ReserveBookingInput,
+): Promise<string> {
+  return buildIdempotencyFingerprint({
+    actionName: BOOKING_RESERVATION_ACTION_NAME,
+    actionVersion: BOOKING_RESERVATION_ACTION_VERSION,
+    targetType: BOOKING_RESERVATION_COMMAND_TARGET_TYPE,
+    targetId: data.bookingNumber,
+    commandInput: data,
+  })
+}
 
 interface BookingReservationLedgerRuntime {
   context: ActionLedgerRequestContextValues
@@ -380,7 +453,10 @@ interface BookingReservationLedgerRuntime {
   idempotencyScope: string
   idempotencyKey: string
   idempotencyFingerprint: string
+  legacyIdempotencyScope: string | null
+  legacyIdempotencyFingerprint: string | null
   routeOrToolName: string
+  actionIdentity: BookingReservationActionIdentity
 }
 
 function bookingReservationLedgerRuntime(
@@ -397,6 +473,14 @@ function bookingReservationLedgerRuntime(
       "Audited booking reservation requires complete idempotency metadata",
     )
   }
+  const hasLegacyScope = !!runtime.actionLedgerLegacyIdempotencyScope
+  const hasLegacyFingerprint = !!runtime.actionLedgerLegacyIdempotencyFingerprint
+  if (hasLegacyScope !== hasLegacyFingerprint) {
+    throw new BookingServiceError(
+      "missing_idempotency_key",
+      "Legacy reservation replay requires complete idempotency metadata",
+    )
+  }
   return {
     context: runtime.actionLedgerContext,
     authorizationSource:
@@ -404,83 +488,26 @@ function bookingReservationLedgerRuntime(
     idempotencyScope: runtime.actionLedgerIdempotencyScope,
     idempotencyKey: runtime.actionLedgerIdempotencyKey,
     idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
+    legacyIdempotencyScope: runtime.actionLedgerLegacyIdempotencyScope ?? null,
+    legacyIdempotencyFingerprint: runtime.actionLedgerLegacyIdempotencyFingerprint ?? null,
     routeOrToolName: runtime.actionLedgerRouteOrToolName ?? "bookings.reserve_booking",
-  }
-}
-
-async function claimBookingReservation(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-  bookingNumber: string,
-) {
-  const lockKey = `${runtime.idempotencyScope}:${runtime.idempotencyKey}`
-  await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`)
-  const [existing] = await db
-    .select()
-    .from(actionLedgerEntries)
-    .where(
-      and(
-        eq(actionLedgerEntries.actionName, BOOKING_RESERVATION_ACTION_NAME),
-        eq(actionLedgerEntries.idempotencyScope, `${runtime.idempotencyScope}:claim`),
-        eq(actionLedgerEntries.idempotencyKey, runtime.idempotencyKey),
-      ),
-    )
-    .limit(1)
-  if (existing) {
-    if (existing.idempotencyFingerprint !== runtime.idempotencyFingerprint) {
-      throw new ActionLedgerIdempotencyConflictError(existing.id)
-    }
-    return { entry: existing, replayed: true }
-  }
-
-  return appendActionLedgerMutation(db, {
-    context: runtime.context,
-    actionName: BOOKING_RESERVATION_ACTION_NAME,
-    actionVersion: "v1",
-    actionKind: "create",
-    status: "requested",
-    evaluatedRisk: "high",
-    targetType: "booking_reservation_command",
-    targetId: bookingNumber,
-    routeOrToolName: runtime.routeOrToolName,
-    capabilityId: "bookings:reserve",
-    capabilityVersion: "v1",
-    authorizationSource: runtime.authorizationSource,
-    idempotencyScope: `${runtime.idempotencyScope}:claim`,
-    idempotencyKey: runtime.idempotencyKey,
-    idempotencyFingerprint: runtime.idempotencyFingerprint,
-    mutationDetail: {
-      summary: `Booking reservation ${bookingNumber} claimed`,
-      reversalKind: "none",
+    actionIdentity: {
+      actionName:
+        runtime.actionLedgerActionName ?? DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.actionName,
+      actionVersion:
+        runtime.actionLedgerActionVersion ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.actionVersion,
+      capabilityId:
+        runtime.actionLedgerCapabilityId ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.capabilityId,
+      capabilityVersion:
+        runtime.actionLedgerCapabilityVersion ??
+        DEFAULT_BOOKING_RESERVATION_ACTION_IDENTITY.capabilityVersion,
     },
-  })
+  }
 }
 
-async function getReplayedBookingReservation(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-) {
-  const [detail] = await db
-    .select({ commandResultRef: actionMutationDetails.commandResultRef })
-    .from(actionLedgerEntries)
-    .innerJoin(actionMutationDetails, eq(actionMutationDetails.actionId, actionLedgerEntries.id))
-    .where(
-      and(
-        eq(actionLedgerEntries.actionName, BOOKING_RESERVATION_ACTION_NAME),
-        eq(actionLedgerEntries.status, "succeeded"),
-        eq(actionLedgerEntries.idempotencyScope, `${runtime.idempotencyScope}:result`),
-        eq(actionLedgerEntries.idempotencyKey, runtime.idempotencyKey),
-      ),
-    )
-    .limit(1)
-  const resultRef = detail?.commandResultRef
-  if (!resultRef?.startsWith(BOOKING_RESERVATION_RESULT_REF_PREFIX)) {
-    throw new BookingServiceError(
-      "reservation_replay_incomplete",
-      "The reservation claim exists without a canonical booking result",
-    )
-  }
-  const bookingId = resultRef.slice(BOOKING_RESERVATION_RESULT_REF_PREFIX.length).trim()
+async function getReplayedBookingReservation(db: PostgresJsDatabase, bookingId: string) {
   const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
   if (!booking) {
     throw new BookingServiceError(
@@ -491,37 +518,97 @@ async function getReplayedBookingReservation(
   return booking
 }
 
-async function appendBookingReservationResult(
-  db: PostgresJsDatabase,
-  runtime: BookingReservationLedgerRuntime,
-  claimActionId: string,
-  booking: typeof bookings.$inferSelect,
-) {
-  await appendActionLedgerMutation(db, {
-    context: runtime.context,
-    actionName: BOOKING_RESERVATION_ACTION_NAME,
-    actionVersion: "v1",
-    actionKind: "create",
-    status: "succeeded",
-    evaluatedRisk: "high",
-    targetType: "booking",
-    targetId: booking.id,
-    routeOrToolName: runtime.routeOrToolName,
-    capabilityId: "bookings:reserve",
-    capabilityVersion: "v1",
-    authorizationSource: runtime.authorizationSource,
-    causationActionId: claimActionId,
-    idempotencyScope: `${runtime.idempotencyScope}:result`,
-    idempotencyKey: runtime.idempotencyKey,
-    idempotencyFingerprint: runtime.idempotencyFingerprint,
-    mutationDetail: {
-      commandResultRef: `${BOOKING_RESERVATION_RESULT_REF_PREFIX}${booking.id}`,
-      summary: `Booking ${booking.bookingNumber} reserved`,
-      reversalKind: "domain_command",
-      reversalCommandId: "booking.status.cancel",
-      reversalCommandVersion: "v1",
-    },
-  })
+interface LegacyBookingReservationReplay {
+  booking: Booking
+}
+
+async function readLegacyBookingReservation(
+  tx: PostgresJsDatabase,
+  ledger: BookingReservationLedgerRuntime,
+  bookingNumber: string,
+): Promise<LegacyBookingReservationReplay | null> {
+  if (!ledger.legacyIdempotencyScope || !ledger.legacyIdempotencyFingerprint) return null
+
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${ledger.legacyIdempotencyScope}:${ledger.idempotencyKey}`}, 0))`,
+  )
+  const [claim] = await tx
+    .select()
+    .from(actionLedgerEntries)
+    .where(
+      and(
+        eq(actionLedgerEntries.idempotencyScope, `${ledger.legacyIdempotencyScope}:claim`),
+        eq(actionLedgerEntries.idempotencyKey, ledger.idempotencyKey),
+      ),
+    )
+    .limit(1)
+  if (!claim) return null
+  if (
+    claim.actionName !== BOOKING_RESERVATION_ACTION_NAME ||
+    claim.actionVersion !== BOOKING_RESERVATION_ACTION_VERSION ||
+    claim.actionKind !== "create" ||
+    claim.status !== "requested" ||
+    claim.evaluatedRisk !== BOOKING_RESERVATION_EVALUATED_RISK ||
+    claim.targetType !== BOOKING_RESERVATION_COMMAND_TARGET_TYPE ||
+    claim.targetId !== bookingNumber ||
+    claim.routeOrToolName !== "bookings.reserve_booking" ||
+    claim.capabilityId !== BOOKING_RESERVATION_CAPABILITY_ID ||
+    claim.capabilityVersion !== BOOKING_RESERVATION_CAPABILITY_VERSION ||
+    claim.idempotencyFingerprint !== ledger.legacyIdempotencyFingerprint
+  ) {
+    throw new ActionLedgerIdempotencyConflictError(claim.id)
+  }
+
+  const [completed] = await tx
+    .select({
+      entry: actionLedgerEntries,
+      commandResultRef: actionMutationDetails.commandResultRef,
+    })
+    .from(actionLedgerEntries)
+    .leftJoin(actionMutationDetails, eq(actionMutationDetails.actionId, actionLedgerEntries.id))
+    .where(
+      and(
+        eq(actionLedgerEntries.idempotencyScope, `${ledger.legacyIdempotencyScope}:result`),
+        eq(actionLedgerEntries.idempotencyKey, ledger.idempotencyKey),
+      ),
+    )
+    .limit(1)
+  const resultRef = completed?.commandResultRef
+  if (
+    !completed ||
+    completed.entry.actionName !== claim.actionName ||
+    completed.entry.actionVersion !== claim.actionVersion ||
+    completed.entry.actionKind !== claim.actionKind ||
+    completed.entry.status !== "succeeded" ||
+    completed.entry.targetType !== BOOKING_RESERVATION_CANONICAL_TARGET_TYPE ||
+    completed.entry.causationActionId !== claim.id ||
+    completed.entry.idempotencyFingerprint !== ledger.legacyIdempotencyFingerprint ||
+    completed.entry.actorType !== claim.actorType ||
+    completed.entry.principalType !== claim.principalType ||
+    completed.entry.principalId !== claim.principalId ||
+    completed.entry.callerType !== claim.callerType ||
+    completed.entry.organizationId !== claim.organizationId ||
+    completed.entry.routeOrToolName !== claim.routeOrToolName ||
+    completed.entry.capabilityId !== claim.capabilityId ||
+    completed.entry.capabilityVersion !== claim.capabilityVersion ||
+    completed.entry.authorizationSource !== claim.authorizationSource ||
+    !resultRef?.startsWith(BOOKING_RESERVATION_LEGACY_RESULT_REF_PREFIX)
+  ) {
+    throw new BookingServiceError(
+      "reservation_replay_incomplete",
+      "The legacy reservation claim exists without a canonical booking result",
+    )
+  }
+  const bookingId = resultRef.slice(BOOKING_RESERVATION_LEGACY_RESULT_REF_PREFIX.length).trim()
+  if (!bookingId || completed.entry.targetId !== bookingId) {
+    throw new BookingServiceError(
+      "reservation_replay_incomplete",
+      "The legacy reservation result has an invalid booking reference",
+    )
+  }
+  return {
+    booking: await getReplayedBookingReservation(tx, bookingId),
+  }
 }
 
 async function appendBookingStatusMutationLedger(
@@ -3095,26 +3182,7 @@ export const bookingsService = {
         }),
       )
 
-      const result = await db.transaction(async (tx) => {
-        const reservationLedger = bookingReservationLedgerRuntime(runtime)
-        const reservationClaim = reservationLedger
-          ? await claimBookingReservation(
-              tx as PostgresJsDatabase,
-              reservationLedger,
-              data.bookingNumber,
-            )
-          : null
-        if (reservationLedger && reservationClaim?.replayed) {
-          return {
-            status: "ok" as const,
-            booking: await getReplayedBookingReservation(
-              tx as PostgresJsDatabase,
-              reservationLedger,
-            ),
-            replayed: true,
-          }
-        }
-
+      const reserveInTransaction = async (tx: PostgresJsDatabase) => {
         const [booking] = await tx
           .insert(bookings)
           .values({
@@ -3293,17 +3361,77 @@ export const bookingsService = {
           metadata: { holdExpiresAt: holdExpiresAt.toISOString(), itemCount: data.items.length },
         })
 
-        if (reservationLedger && reservationClaim) {
-          await appendBookingReservationResult(
+        return booking
+      }
+
+      const reservationLedger = bookingReservationLedgerRuntime(runtime)
+      const reserveAudited = async (ledger: BookingReservationLedgerRuntime) => {
+        return db.transaction(async (tx) => {
+          const legacy = await readLegacyBookingReservation(
             tx as PostgresJsDatabase,
-            reservationLedger,
-            reservationClaim.entry.id,
-            booking,
+            ledger,
+            data.bookingNumber,
           )
-          return { status: "ok" as const, booking, replayed: false }
-        }
-        return { status: "ok" as const, booking }
-      })
+          const execution = await executeCreatedTargetCommand<
+            Booking,
+            typeof BOOKING_RESERVATION_RESULT_REFERENCE_TYPE
+          >(
+            tx,
+            {
+              context: ledger.context,
+              ...bookingReservationCommand(data, ledger.actionIdentity),
+              routeOrToolName: ledger.routeOrToolName,
+              authorizationSource: ledger.authorizationSource,
+              idempotency: {
+                scope: ledger.idempotencyScope,
+                key: ledger.idempotencyKey,
+                fingerprint: ledger.idempotencyFingerprint,
+              },
+              mutationDetail: {
+                summary: `Booking reservation ${data.bookingNumber} claimed`,
+                reversalKind: "none",
+              },
+            },
+            {
+              async create(commandTx) {
+                const booking =
+                  legacy?.booking ?? (await reserveInTransaction(commandTx as PostgresJsDatabase))
+                return {
+                  value: booking,
+                  targetId: booking.id,
+                  mutationDetail: {
+                    summary: legacy
+                      ? `Booking ${booking.bookingNumber} migrated from legacy reservation replay`
+                      : `Booking ${booking.bookingNumber} reserved`,
+                    reversalKind: "domain_command",
+                    reversalCommandId: "booking.status.cancel",
+                    reversalCommandVersion: "v1",
+                  },
+                }
+              },
+              async replay(commandTx, completed) {
+                return getReplayedBookingReservation(
+                  commandTx as PostgresJsDatabase,
+                  completed.reference.id,
+                )
+              },
+            },
+          )
+          return {
+            status: "ok" as const,
+            booking: execution.value,
+            replayed: legacy !== null || execution.replayed,
+          }
+        })
+      }
+
+      const result = reservationLedger
+        ? await reserveAudited(reservationLedger)
+        : {
+            status: "ok" as const,
+            booking: await db.transaction((tx) => reserveInTransaction(tx as PostgresJsDatabase)),
+            replayed: false,
+          }
       if (result.status === "ok") {
         await emitSlotChanges(runtime, slotChanges)
       }
@@ -3314,6 +3442,12 @@ export const bookingsService = {
           status: "idempotency_conflict" as const,
           existingActionId: error.existingActionId,
         }
+      }
+      if (
+        error instanceof ActionLedgerCreatedCommandReplayIncompleteError ||
+        error instanceof ActionLedgerCreatedCommandReplayCorruptError
+      ) {
+        return { status: "reservation_replay_incomplete" as const }
       }
       if (error instanceof BookingServiceError) {
         return { status: error.code as Exclude<string, "ok"> }

@@ -1,3 +1,22 @@
+export type {
+  WebhookDeliveryListQuery,
+  WebhookSubscriptionCreateInput,
+  WebhookSubscriptionTestInput,
+  WebhookSubscriptionUpdateInput,
+} from "./admin-contracts.js"
+export {
+  webhookDeliveryListQuerySchema,
+  webhookSubscriptionCreateSchema,
+  webhookSubscriptionTestSchema,
+  webhookSubscriptionUpdateSchema,
+} from "./admin-contracts.js"
+export type {
+  OperatorWebhookAdminService,
+  OperatorWebhookAdminStore,
+  OperatorWebhookEvent,
+  OperatorWebhookSubscription,
+} from "./admin-service.js"
+export { createOperatorWebhookAdminService } from "./admin-service.js"
 export type { AppWebhookDeliveryEnvelope } from "./app-envelope.js"
 export { createAppWebhookDeliveryEnvelope, isAppWebhookDeliveryEnvelope } from "./app-envelope.js"
 export type {

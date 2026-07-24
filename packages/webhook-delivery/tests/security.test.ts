@@ -78,7 +78,32 @@ describe("webhook delivery security", () => {
     expect(() => assertOutboundWebhookEndpointUrl("http://app.example.test/hook")).toThrow(/HTTPS/)
     expect(() => assertOutboundWebhookEndpointUrl("https://localhost/hook")).toThrow(/not allowed/)
     expect(() => assertOutboundWebhookEndpointUrl("https://127.0.0.1/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://100.64.0.1/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://192.0.2.1/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://198.51.100.1/hook")).toThrow(
+      /not allowed/,
+    )
+    expect(() => assertOutboundWebhookEndpointUrl("https://203.0.113.1/hook")).toThrow(
+      /not allowed/,
+    )
     expect(() => assertOutboundWebhookEndpointUrl("https://[::1]/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://[::ffff:127.0.0.1]/hook")).toThrow(
+      /not allowed/,
+    )
+    expect(() => assertOutboundWebhookEndpointUrl("https://[ff02::1]/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://[fec0::1]/hook")).toThrow(/not allowed/)
+    expect(() => assertOutboundWebhookEndpointUrl("https://[2001:db8::1]/hook")).toThrow(
+      /not allowed/,
+    )
+    expect(() => assertOutboundWebhookEndpointUrl("https://service.internal/hook")).toThrow(
+      /not allowed/,
+    )
+    expect(() =>
+      assertOutboundWebhookEndpointUrl("https://user:pass@app.example.test/hook"),
+    ).toThrow(/credentials/)
+    expect(() =>
+      assertOutboundWebhookEndpointUrl("https://app.example.test/hook#fragment"),
+    ).toThrow(/fragment/)
     expect(() => assertOutboundWebhookEndpointUrl("https://app.example.test/hook")).not.toThrow()
   })
 })

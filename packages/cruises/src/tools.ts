@@ -1,9 +1,16 @@
 /** Provider-neutral cruise Tools over the search index, local owner, and selected adapters. */
 
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
-
+import { CRUISE_SHIP_HANDLER_ACTION_POLICY } from "./created-target-policy.js"
 import { createBookingPayloadSchema, quotePayloadSchema } from "./routes-booking-payloads.js"
 import {
   cruiseRowSchema,
@@ -40,6 +47,10 @@ const WRITE_RISK = {
   reversible: true,
   dryRunSupported: false,
   sideEffects: ["data-write"],
+} as const
+const CREATED_WRITE_RISK = {
+  ...WRITE_RISK,
+  reversible: false,
 } as const
 const COMMIT_RISK = {
   destructive: false,
@@ -153,6 +164,20 @@ const bookingInputSchema = z
   .object({ key: z.string().min(1) })
   .and(createBookingPayloadSchema.omit({ sailingId: true }))
 const idInput = z.object({ id: z.string().min(1) })
+const createShipToolInputSchema = insertShipSchema.extend({
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .optional()
+    .describe("Stable key used to replay this exact create command."),
+})
+const createdShipOutputSchema = z.object({
+  status: z.literal("created"),
+  ship: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
 
 export type CruisesToolOperation =
   | "searchCruises"
@@ -168,7 +193,11 @@ export type CruisesToolOperation =
   | "updateShip"
   | "createBooking"
 export interface CruisesToolServices {
-  execute(operation: CruisesToolOperation, input: unknown): Promise<unknown>
+  execute(
+    operation: CruisesToolOperation,
+    input: unknown,
+    admitted?: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 export type CruisesToolContext = ToolContext & { cruises?: CruisesToolServices }
 const service = (ctx: CruisesToolContext) => requireService(ctx.cruises, "cruises")
@@ -303,13 +332,18 @@ export const updateCruiseSailingTool = defineTool({
 })
 export const createCruiseShipTool = defineTool({
   ...write,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-cruise-ship`,
   name: "create_cruise_ship",
-  description: "Create a locally managed cruise ship.",
-  inputSchema: insertShipSchema,
-  outputSchema: cruiseShipRowSchema,
+  description:
+    "Create a locally managed cruise ship. Exact retries return the original immutable reference.",
+  inputSchema: createShipToolInputSchema,
+  outputSchema: createdShipOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: CruisesToolContext) {
-    return parse(cruiseShipRowSchema, await service(ctx).execute("createShip", input))
+    const admitted = admitHandlerActionPolicy(ctx, CRUISE_SHIP_HANDLER_ACTION_POLICY)
+    return parse(createdShipOutputSchema, await service(ctx).execute("createShip", input, admitted))
   },
 })
 export const updateCruiseShipTool = defineTool({
