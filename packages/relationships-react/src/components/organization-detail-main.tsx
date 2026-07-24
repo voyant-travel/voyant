@@ -92,7 +92,7 @@ export function OrganizationMain({
           onValueChange={(value) => setActiveTab(value as OrganizationDetailTab)}
         >
           <CardHeader className="pb-0">
-            <TabsList className="h-auto flex-wrap justify-start">
+            <TabsList className="h-auto flex-wrap justify-start [&_[data-slot=tabs-trigger]]:flex-none">
               <TabsTrigger value="overview">
                 {messages.organizationDetail.tabs.overview}
               </TabsTrigger>

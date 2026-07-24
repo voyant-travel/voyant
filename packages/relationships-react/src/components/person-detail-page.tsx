@@ -322,7 +322,7 @@ export function PersonMain({
       <Card>
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PersonDetailTab)}>
           <CardHeader className="pb-0">
-            <TabsList className="h-auto flex-wrap justify-start">
+            <TabsList className="h-auto flex-wrap justify-start [&_[data-slot=tabs-trigger]]:flex-none">
               <TabsTrigger value="overview">{messages.personDetail.tabs.overview}</TabsTrigger>
               {hasQuotesSlot ? (
                 <TabsTrigger value="quotes">{messages.personDetail.tabs.quotes}</TabsTrigger>
