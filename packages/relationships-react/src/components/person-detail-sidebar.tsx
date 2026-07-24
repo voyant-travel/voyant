@@ -72,7 +72,7 @@ export function PersonSidebar({
   return (
     <aside className="col-span-12 flex flex-col gap-4 lg:col-span-3">
       <Card>
-        <CardContent className="flex flex-col items-center gap-3 pt-6 text-center">
+        <CardContent className="flex flex-col items-center gap-3 text-center">
           <Avatar className="size-20">
             <AvatarFallback className="text-xl">{initialsFrom(displayName)}</AvatarFallback>
           </Avatar>

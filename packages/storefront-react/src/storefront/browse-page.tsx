@@ -131,7 +131,7 @@ function SearchSkeleton(): React.ReactElement {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => `skel-${i}`).map((key) => (
         <Card key={key}>
-          <CardContent className="space-y-2 pt-6">
+          <CardContent className="space-y-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
             <Skeleton className="h-3 w-2/3" />
@@ -249,7 +249,7 @@ function SearchEmpty({ vertical, query }: { vertical: string; query: string }): 
   const t = useStorefrontUi().messages.shop
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent>
         <p className="text-muted-foreground text-sm">
           {t.emptyPrefix} {vertical} {t.emptyMatch} {query ? <q>{query}</q> : t.emptyYourFilters}.{" "}
           {t.emptySuffix}

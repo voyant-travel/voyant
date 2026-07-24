@@ -176,7 +176,7 @@ export function PolicyDetailPage({
 
       {policy.description ? (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <p className="text-sm">{policy.description}</p>
           </CardContent>
         </Card>

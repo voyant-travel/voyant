@@ -416,7 +416,7 @@ function ServiceApiKeyRow({
 
   return (
     <Card>
-      <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-medium">{apiKey.name || messages.list.untitled}</h3>

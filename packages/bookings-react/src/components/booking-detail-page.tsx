@@ -15,6 +15,8 @@ import {
   Button,
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
   cn,
 } from "@voyant-travel/ui/components"
 import {
@@ -495,10 +497,10 @@ export function BookingDetailPage({
           <BookingGroupSection bookingId={id} />
           {visibleInternalNotes(booking.internalNotes) ? (
             <Card>
-              <CardContent className="py-5">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {detailMessages.internalNotesLabel}
-                </p>
+              <CardHeader>
+                <CardTitle>{detailMessages.internalNotesLabel}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="whitespace-pre-wrap text-sm">
                   {visibleInternalNotes(booking.internalNotes)}
                 </p>
