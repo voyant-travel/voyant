@@ -11,6 +11,7 @@ import {
   type CommerceToolServices,
   createCancellationPolicyTool,
   createPriceCatalogTool,
+  createPromotionTool,
 } from "../../src/tools.js"
 import { commerceVoyantModule } from "../../src/voyant.js"
 
@@ -23,6 +24,7 @@ describe("commerce created-target commands", () => {
         "cancellationPolicy",
       ],
       [COMMERCE_CREATED_TARGET_POLICIES.priceCatalog, createPriceCatalogTool, "priceCatalog"],
+      [COMMERCE_CREATED_TARGET_POLICIES.promotion, createPromotionTool, "promotion"],
     ] as const) {
       expect(tool.actionPolicyEnforcement).toBe("handler")
       expect(tool.riskPolicy.reversible).toBe(false)
@@ -54,6 +56,15 @@ describe("commerce created-target commands", () => {
     )
     expect(
       createPriceCatalogTool.inputSchema.safeParse({ code: "PUBLIC", name: "Public" }).success,
+    ).toBe(true)
+    expect(
+      createPromotionTool.inputSchema.safeParse({
+        name: "Summer",
+        slug: "summer",
+        discountType: "percentage",
+        discountPercent: 10,
+        scope: { kind: "global" },
+      }).success,
     ).toBe(true)
   })
 
@@ -152,6 +163,18 @@ describe("commerce created-target commands", () => {
         createPriceCatalogTool.inputSchema.parse({
           code: "PUBLIC",
           name: "Public",
+          idempotencyKey: "key",
+        }),
+      ],
+      [
+        COMMERCE_CREATED_TARGET_POLICIES.promotion,
+        createPromotionTool,
+        createPromotionTool.inputSchema.parse({
+          name: "Summer",
+          slug: "summer",
+          discountType: "percentage",
+          discountPercent: 10,
+          scope: { kind: "global" },
           idempotencyKey: "key",
         }),
       ],

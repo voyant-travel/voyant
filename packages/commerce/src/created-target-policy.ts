@@ -48,6 +48,20 @@ export const COMMERCE_CREATED_TARGET_POLICIES = {
     approvalPolicy: "none",
     approvalReasonCode: null,
   },
+  promotion: {
+    actionName: "@voyant-travel/commerce#action.create-promotion",
+    actionVersion: "v1",
+    toolName: "create_promotion",
+    toolCapabilityId: "@voyant-travel/commerce#tool.create-promotion",
+    capabilityId: "@voyant-travel/commerce#action.create-promotion",
+    capabilityVersion: "v1",
+    commandTargetType: "promotion_create_command",
+    canonicalTargetType: "promotion",
+    resultReferenceType: "promotion",
+    evaluatedRisk: "medium",
+    approvalPolicy: "none",
+    approvalReasonCode: null,
+  },
 } as const satisfies Record<string, CommerceCreatedTargetPolicy>
 
 export function buildCommerceCreatedTargetFingerprint(

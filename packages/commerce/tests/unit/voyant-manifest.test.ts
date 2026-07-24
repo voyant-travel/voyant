@@ -206,11 +206,19 @@ describe("commerce deployment manifest", () => {
         ({ id }) => id === "@voyant-travel/commerce#action.create-promotion",
       ),
     ).toMatchObject({
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
-      },
+      availability: { status: "available" },
       effectBoundary: "multistage",
+      targetType: "promotion",
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "promotion_create_command",
+        resultReferenceType: "promotion",
+        durability: "handler-command-claim-v1",
+      },
+      durability: {
+        strategy: "outbox",
+        testReference: "packages/commerce/tests/integration/promotion-created-command.test.ts",
+      },
     })
   })
 

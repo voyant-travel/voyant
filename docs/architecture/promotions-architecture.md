@@ -628,7 +628,7 @@ Mirrors the `availability.slot.changed` precedent (PR3 of #493 + the lifecycle w
 - **Bridge subscription**: operator catalog-bridge subscribes and dispatches per `affected.kind`:
   - `products` → call `reindexEntity` for each ID.
   - `all` → walk the products module's owned set and reindex each. Global / large-scope changes are rare events; the cost is acceptable.
-- **Service runtime threading**: per the #510 audit, mutations accept an optional `RuleMutationRuntime` with `eventBus` (matching `availability.slot.changed`). Routes thread `c.get("eventBus")`.
+- **Service runtime threading**: per the #510 audit, mutations accept an optional `RuleMutationRuntime` with `eventBus` (matching `availability.slot.changed`). Routes thread `c.get("eventBus")`. The `create_promotion` Tool is stricter: handler-owned created-target admission fingerprints and claims the command before mutation, then inserts the offer, materialized product links, deterministic `promotion.changed` outbox event, ledger result, and canonical promotion reference in one transaction. The event id is derived from the globally unique canonical promotion id, so identical commands in separate principal or organization scopes cannot collide in the global outbox. Equal retries replay only that immutable reference, while same-key payload drift conflicts before another mutation or event.
 
 ### 9.2. Time-driven: boundary scheduler
 

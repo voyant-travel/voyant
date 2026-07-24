@@ -84,7 +84,13 @@ function commerceToolAction(
             commandTargetType: "price_catalog_create_command",
             resultReferenceType: "price-catalog",
           }
-        : null
+        : suffix === "create-promotion"
+          ? {
+              targetType: "promotion",
+              commandTargetType: "promotion_create_command",
+              resultReferenceType: "promotion",
+            }
+          : null
   return {
     id: `@voyant-travel/commerce#action.${suffix}`,
     version: "v1",
@@ -92,11 +98,12 @@ function commerceToolAction(
     targetType: created?.targetType ?? resource,
     ...(suffix === "create-promotion"
       ? {
-          availability: {
-            status: "unavailable" as const,
-            reasonCode: "unsafe-nontransactional-effect",
-          },
+          availability: { status: "available" as const },
           effectBoundary: "multistage" as const,
+          durability: {
+            strategy: "outbox" as const,
+            testReference: "packages/commerce/tests/integration/promotion-created-command.test.ts",
+          },
         }
       : {}),
     resource,

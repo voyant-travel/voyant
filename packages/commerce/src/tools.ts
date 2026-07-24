@@ -64,6 +64,7 @@ const createdCommandInput = {
 const createCancellationPolicyToolInputSchema =
   insertCancellationPolicySchema.extend(createdCommandInput)
 const createPriceCatalogToolInputSchema = insertPriceCatalogSchema.extend(createdCommandInput)
+const createPromotionToolInputSchema = insertPromotionalOfferSchema.extend(createdCommandInput)
 
 const cancellationPolicySchema = z.object({
   id: z.string(),
@@ -100,6 +101,11 @@ const createdCancellationPolicyOutputSchema = z.object({
 const createdPriceCatalogOutputSchema = z.object({
   status: z.literal("created"),
   priceCatalog: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
+const createdPromotionOutputSchema = z.object({
+  status: z.literal("created"),
+  promotion: z.object({ id: z.string() }),
   replayed: z.boolean(),
 })
 
@@ -196,7 +202,10 @@ export interface CommerceToolServices {
   updatePriceCatalog(id: string, input: AnyServiceInput): Promise<unknown>
   listPromotions(input: z.infer<typeof promotionalOfferListQuerySchema>): Promise<unknown>
   getPromotion(id: string): Promise<unknown>
-  createPromotion(input: z.infer<typeof insertPromotionalOfferSchema>): Promise<unknown>
+  createPromotion(
+    input: z.infer<typeof createPromotionToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updatePromotion(id: string, input: z.infer<typeof updatePromotionalOfferSchema>): Promise<unknown>
   archivePromotion(id: string): Promise<unknown>
 }
@@ -396,13 +405,21 @@ export const getPromotionTool = defineTool({
 
 export const createPromotionTool = defineTool({
   ...writeMetadata(["promotions:write"]),
+  riskPolicy: createdWriteRisk,
   capabilityId: `${OWNER}#tool.create-promotion`,
   name: "create_promotion",
-  description: "Create a promotional offer and materialize its affected product scope.",
-  inputSchema: insertPromotionalOfferSchema,
-  outputSchema: promotionalOfferSchema,
+  description:
+    "Create a promotional offer and materialize its affected product scope. Exact retries return the original immutable reference.",
+  inputSchema: createPromotionToolInputSchema,
+  outputSchema: createdPromotionOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: CommerceToolContext) {
-    return promotionalOfferSchema.parse(await commerce(ctx).createPromotion(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      commerceHandlerActionPolicyExpectation(COMMERCE_CREATED_TARGET_POLICIES.promotion),
+    )
+    return createdPromotionOutputSchema.parse(await commerce(ctx).createPromotion(input, admitted))
   },
 })
 
