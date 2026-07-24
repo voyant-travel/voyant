@@ -41,7 +41,7 @@ function normalizeSenderAddress(value: string | null | undefined) {
   return normalized ? normalized : null
 }
 
-function resolveDeliverySender(input: {
+export function resolveDeliverySender(input: {
   channel: string
   provider: NotificationProvider
   inputFrom?: string | null

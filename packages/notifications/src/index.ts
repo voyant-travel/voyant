@@ -56,10 +56,12 @@ export type {
   NewNotificationDelivery,
   NewNotificationReminderRule,
   NewNotificationReminderRun,
+  NewNotificationSendOperation,
   NewNotificationTemplate,
   NotificationDelivery,
   NotificationReminderRule,
   NotificationReminderRun,
+  NotificationSendOperation,
   NotificationsApiModule,
   NotificationTemplate,
 } from "./schema.js"
@@ -72,6 +74,8 @@ export {
   notificationReminderRuns,
   notificationReminderStatusEnum,
   notificationReminderTargetTypeEnum,
+  notificationSendOperationStatusEnum,
+  notificationSendOperations,
   notificationsModule,
   notificationTargetTypeEnum,
   notificationTemplateStatusEnum,
@@ -169,6 +173,8 @@ export {
   notificationTemplateVariableCatalog,
 } from "./template-authoring.js"
 export type {
+  DurableNotificationDeliveryCapability,
+  DurableNotificationDeliveryContext,
   NotificationAttachment,
   NotificationChannel,
   NotificationPayload,

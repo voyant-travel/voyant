@@ -106,6 +106,21 @@ export const notificationsVoyantModule = defineModule({
   ],
   jobs: [
     {
+      id: "notifications.deliver-durable-sends",
+      schedule: { cron: "* * * * *", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { cron: "* * * * *", overlap: "skip" },
+          economical: { cron: "*/5 * * * *", overlap: "skip" },
+        },
+      },
+      runtime: {
+        entry: "@voyant-travel/notifications/reminder-job",
+        export: "runDueNotificationSendsJob",
+      },
+    },
+    {
       id: "notifications.send-due-reminders",
       schedule: { cron: "0 * * * *", overlap: "skip" },
       scheduling: {
@@ -122,6 +137,62 @@ export const notificationsVoyantModule = defineModule({
     },
   ],
   events: [
+    {
+      id: "@voyant-travel/notifications#event.notification.send-requested",
+      eventType: "notification.send-requested",
+      version: "1.0.0",
+      payloadSchema: {
+        type: "object",
+        required: ["operationId", "deliveryId", "provider", "targetType", "targetId"],
+        properties: {
+          operationId: { type: "string" },
+          deliveryId: { type: "string" },
+          provider: { type: "string" },
+          targetType: { type: "string" },
+          targetId: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/notifications#event.notification.sent",
+      eventType: "notification.sent",
+      version: "1.0.0",
+      payloadSchema: {
+        type: "object",
+        required: ["operationId", "deliveryId", "provider", "providerMessageId"],
+        properties: {
+          operationId: { type: "string" },
+          deliveryId: { type: "string" },
+          provider: { type: "string" },
+          providerMessageId: { anyOf: [{ type: "string" }, { type: "null" }] },
+        },
+        additionalProperties: false,
+      },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/notifications#event.notification.send-dead-lettered",
+      eventType: "notification.send-dead-lettered",
+      version: "1.0.0",
+      payloadSchema: {
+        type: "object",
+        required: ["operationId", "deliveryId", "provider", "attempts", "error"],
+        properties: {
+          operationId: { type: "string" },
+          deliveryId: { type: "string" },
+          provider: { type: "string" },
+          attempts: { type: "number" },
+          error: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
+    },
     {
       id: "@voyant-travel/notifications#event.booking.fully-paid",
       eventType: "booking.fully-paid",
@@ -198,20 +269,28 @@ export const notificationsVoyantModule = defineModule({
   actions: [
     {
       id: "@voyant-travel/notifications#action.send-notification",
-      version: "v1",
+      version: "v2",
       kind: "execute",
-      targetType: "notification",
+      targetType: "notification-template",
+      commandTargetField: "templateSlug",
+      targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
       availability: {
         status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
+        reasonCode: "provider-idempotency-unavailable",
       },
       effectBoundary: "multistage",
+      durability: {
+        strategy: "saga",
+        testReference: "tests/integration/durable-send.test.ts",
+      },
       resource: "notifications",
       action: "send",
       requiredScopes: ["notifications:send"],
       risk: "high",
       ledger: "required",
       approval: "required",
+      policy: "notifications-agent-send",
       reversible: false,
       from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
     },

@@ -11,7 +11,15 @@
  * runtime. Sending is externally-committing (an email/SMS cannot be unsent) and
  * `notifications:send` is never granted by a wildcard — see the api-key taxonomy.
  */
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -33,7 +41,10 @@ export interface SendTemplatedNotificationInput {
 export interface NotificationsToolServices {
   listDeliveries(query: z.infer<typeof notificationDeliveryListQuerySchema>): Promise<unknown>
   getDeliveryById(id: string): Promise<unknown>
-  sendTemplated(input: SendTemplatedNotificationInput): Promise<unknown>
+  sendTemplated(
+    input: SendTemplatedNotificationInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 
 export type NotificationsToolContext = ToolContext & { notifications?: NotificationsToolServices }
@@ -107,16 +118,41 @@ const sendNotificationArgs = z.object({
   organizationId: z.string().optional().describe("Associate the delivery with a CRM organization."),
 })
 
+export const SEND_NOTIFICATION_HANDLER_POLICY = {
+  capabilityId: "@voyant-travel/notifications#tool.send-notification",
+  capabilityVersion: "v2",
+  canonicalName: "send_notification",
+  actionPolicy: {
+    id: "@voyant-travel/notifications#action.send-notification",
+    capabilityId: "@voyant-travel/notifications#action.send-notification",
+    version: "v2",
+    kind: "execute",
+    targetType: "notification-template",
+    commandTargetField: "templateSlug",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "high",
+    ledger: "required",
+    approval: "required",
+    policy: "notifications-agent-send",
+    reversible: false,
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 export const sendNotificationTool = defineTool<
   z.infer<typeof sendNotificationArgs>,
   unknown,
   NotificationsToolContext
 >({
+  owner: "@voyant-travel/notifications",
+  capabilityId: "@voyant-travel/notifications#tool.send-notification",
+  capabilityVersion: "v2",
   name: "send_notification",
   description:
-    "Send a notification by rendering a vetted template to a recipient (externally-committing: an " +
-    "email/SMS cannot be unsent). Only template sends are allowed — arbitrary subject/html/text is " +
-    "not accepted. Requires the notifications:send grant and explicit confirmation.",
+    "Accept a notification for durable asynchronous delivery by rendering a vetted template to a " +
+    "recipient (externally-committing: an email/SMS cannot be unsent). Returns an immutable pending " +
+    "delivery snapshot; poll get_notification_delivery for mutable status. Only template sends are " +
+    "allowed. Requires the notifications:send grant and explicit confirmation.",
   inputSchema: sendNotificationArgs,
   outputSchema: notificationDeliverySchema,
   requiredScopes: ["notifications:send"],
@@ -128,10 +164,13 @@ export const sendNotificationTool = defineTool<
     confirmationRequired: true,
     sideEffects: ["email", "sms"],
   },
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, SEND_NOTIFICATION_HANDLER_POLICY)
     return parseJsonResult(
       notificationDeliverySchema,
-      await notifications(ctx).sendTemplated(input),
+      await notifications(ctx).sendTemplated(input, admitted),
     )
   },
 })

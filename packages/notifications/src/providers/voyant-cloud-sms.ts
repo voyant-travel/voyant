@@ -35,6 +35,11 @@ export function createVoyantCloudSmsProvider(
   return {
     name: "voyant-cloud-sms",
     channels: ["sms"],
+    durableDelivery: {
+      supported: false,
+      reason:
+        "The current Voyant Cloud SMS client does not expose provider idempotency and reconciliation.",
+    },
     async send(payload): Promise<NotificationResult> {
       if (payload.channel !== "sms") {
         throw new Error(

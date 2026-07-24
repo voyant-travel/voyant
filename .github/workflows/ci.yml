@@ -351,6 +351,8 @@ jobs:
                 tests/integration/created-target-tools.test.ts
               pnpm --filter @voyant-travel/legal exec vitest run \
                 tests/integration/contract-lifecycle-command.test.ts
+              pnpm --filter @voyant-travel/notifications exec vitest run \
+                tests/integration/durable-send.test.ts
               ;;
           esac
 

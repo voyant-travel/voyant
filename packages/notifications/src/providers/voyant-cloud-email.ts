@@ -62,6 +62,11 @@ export function createVoyantCloudEmailProvider(
     name: "voyant-cloud-email",
     channels: ["email"],
     defaultFromAddress: normalizeSenderAddress(options.from),
+    durableDelivery: {
+      supported: false,
+      reason:
+        "The current Voyant Cloud email client does not expose provider idempotency and reconciliation.",
+    },
     async send(payload): Promise<NotificationResult> {
       if (payload.channel !== "email") {
         throw new Error(

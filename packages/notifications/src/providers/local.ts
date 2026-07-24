@@ -43,6 +43,11 @@ export function createLocalProvider(options: LocalProviderOptions = {}): Notific
     name,
     channels,
     defaultFromAddress,
+    durableDelivery: {
+      supported: false,
+      reason:
+        "The process-local provider cannot preserve provider idempotency across process restarts.",
+    },
     async send(payload): Promise<NotificationResult> {
       counter += 1
       sink(payload)

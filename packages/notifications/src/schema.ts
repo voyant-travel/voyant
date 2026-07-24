@@ -30,6 +30,14 @@ export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_stat
   "cancelled",
 ])
 
+export const notificationSendOperationStatusEnum = pgEnum("notification_send_operation_status", [
+  "pending",
+  "processing",
+  "retry",
+  "sent",
+  "dead_letter",
+])
+
 export const notificationTargetTypeEnum = pgEnum("notification_target_type", [
   "booking",
   "booking_payment_schedule",
@@ -184,6 +192,62 @@ export const notificationDeliveryRequests = pgTable(
   },
   (table) => [uniqueIndex("uidx_notification_delivery_requests_delivery").on(table.deliveryId)],
 )
+
+/**
+ * Package-owned durable state for agent-initiated notification sends.
+ *
+ * The action ledger owns immutable command admission. This row owns the exact
+ * rendered provider request, the stable provider idempotency key, retry lease,
+ * and canonical delivery result.
+ */
+export const notificationSendOperations = pgTable(
+  "notification_send_operations",
+  {
+    id: typeId("notification_send_operations"),
+    commandScope: text("command_scope").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    claimActionId: text("claim_action_id").notNull().unique(),
+    organizationId: text("organization_id"),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    deliveryId: typeIdRef("delivery_id")
+      .notNull()
+      .references(() => notificationDeliveries.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+    providerIdempotencyKey: text("provider_idempotency_key").notNull(),
+    requestPayload: jsonb("request_payload").$type<Record<string, unknown>>().notNull(),
+    resultSnapshot: jsonb("result_snapshot").$type<Record<string, unknown>>().notNull(),
+    status: notificationSendOperationStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(8),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_notification_send_operations_command").on(
+      table.commandScope,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("uidx_notification_send_operations_provider_key").on(
+      table.provider,
+      table.providerIdempotencyKey,
+    ),
+    index("idx_notification_send_operations_due").on(
+      table.status,
+      table.nextAttemptAt,
+      table.leaseExpiresAt,
+    ),
+    index("idx_notification_send_operations_delivery").on(table.deliveryId),
+  ],
+)
+
+export type NotificationSendOperation = typeof notificationSendOperations.$inferSelect
+export type NewNotificationSendOperation = typeof notificationSendOperations.$inferInsert
 
 export const notificationReminderRules = pgTable(
   "notification_reminder_rules",
