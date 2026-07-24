@@ -169,6 +169,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
   modules: [
     { resolve: "@voyant-travel/action-ledger", required: true },
     { resolve: "@voyant-travel/event-catalog", required: true },
+    { resolve: "@voyant-travel/webhook-delivery", required: true },
     { resolve: "@voyant-travel/mcp", required: true },
     { resolve: "@voyant-travel/relationships", required: true },
     { resolve: "@voyant-travel/custom-fields", required: true },

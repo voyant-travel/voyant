@@ -50,8 +50,27 @@ describe("distribution tools", () => {
     ).toHaveLength(6)
     expect(tools.every(({ riskPolicy }) => !riskPolicy.destructive)).toBe(true)
     expect(
-      tools.find(({ name }) => name === "create_external_reference")?.riskPolicy.reversible,
-    ).toBe(false)
+      tools
+        .filter(({ name }) =>
+          [
+            "create_supplier",
+            "create_distribution_channel",
+            "create_external_reference",
+          ].includes(name),
+        )
+        .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
+    ).toBe(true)
+    expect(
+      tools
+        .filter(({ name }) =>
+          [
+            "update_supplier",
+            "update_distribution_channel",
+            "update_external_reference",
+          ].includes(name),
+        )
+        .every(({ riskPolicy }) => riskPolicy.reversible && !riskPolicy.destructive),
+    ).toBe(true)
   })
 
   it("routes reads through the injected service and normalizes dates", async () => {

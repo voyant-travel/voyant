@@ -1,9 +1,22 @@
 import {
+  buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
+  executeCreatedTargetCommand,
+} from "@voyant-travel/action-ledger/created-command"
+import {
+  type ActionLedgerRequestContextValues,
+  mapActionLedgerRequestContext,
+} from "@voyant-travel/action-ledger/request-context"
+import {
   type CatalogContentRuntime,
   catalogContentRuntimePort,
 } from "@voyant-travel/catalog/runtime-port"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -20,6 +33,8 @@ import {
 import type { AccommodationsToolServices } from "./tools.js"
 
 export * from "./tools.js"
+
+type LedgerHttpContext = Pick<Context, "req"> & { var: object }
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["accommodations"],
@@ -105,8 +120,63 @@ export const voyantToolContextContribution = defineToolContextContribution({
           if (!block) return null
           return { block, summary: await summarizeRoomBlock(transactionalDb, blockId) }
         },
-        createRoomBlock: (input: Parameters<typeof createRoomBlock>[1]) =>
-          createRoomBlock(transactionalDb, input),
+        async createRoomBlock(
+          requestInput: Parameters<AccommodationsToolServices["createRoomBlock"]>[0],
+          admitted: Parameters<AccommodationsToolServices["createRoomBlock"]>[1],
+        ) {
+          const { idempotencyKey: legacyIdempotencyKey, ...input } = requestInput
+          const idempotencyKey = admittedCreatedCommandIdempotencyKey(
+            admitted,
+            legacyIdempotencyKey,
+          )
+          const requestContext = actionLedgerContext(request as Context)
+          const principal = mapActionLedgerRequestContext(requestContext)
+          const command = {
+            actionName: admitted.actionPolicy.capabilityId,
+            actionVersion: admitted.actionPolicy.version,
+            commandTarget: { type: "room-block-create-command", id: idempotencyKey },
+            canonicalTargetType: "room-block",
+            resultReferenceType: "room-block" as const,
+            commandInput: input,
+            capabilityId: admitted.actionPolicy.capabilityId,
+            capabilityVersion: admitted.actionPolicy.version,
+            evaluatedRisk: "medium" as const,
+            approvalPolicy: "none" as const,
+            approvalReasonCode: null,
+          }
+          const fingerprint = await buildCreatedTargetCommandFingerprint(command)
+          const scope = await buildCreatedTargetIdempotencyScope({
+            actionName: command.actionName,
+            actionVersion: command.actionVersion,
+            principalType: principal.principalType,
+            principalId: principal.principalId,
+            organizationId: principal.organizationId,
+          })
+          const result = await executeCreatedTargetCommand(
+            db,
+            {
+              context: requestContext,
+              ...command,
+              routeOrToolName: admitted.capabilityId,
+              authorizationSource: "selected_graph_mcp_handler",
+              idempotency: {
+                scope,
+                key: idempotencyKey,
+                fingerprint,
+              },
+            },
+            {
+              async create(tx) {
+                const block = await createRoomBlock(tx as PostgresJsDatabase, input)
+                return { value: { roomBlockId: block.id }, targetId: block.id }
+              },
+              async replay(_tx, completed) {
+                return { roomBlockId: completed.reference.id }
+              },
+            },
+          )
+          return result.value
+        },
         async setRoomBlockNights(input: {
           blockId: string
           nights: Parameters<typeof setRoomBlockNights>[2]
@@ -123,6 +193,49 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
+}
+
+function actionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {
+  const vars = c.var as Record<string, unknown>
+  return {
+    userId: (vars.userId as string | undefined) ?? null,
+    agentId: (vars.agentId as string | undefined) ?? null,
+    workflowPrincipalId: (vars.workflowPrincipalId as string | undefined) ?? null,
+    principalSubtype: (vars.principalSubtype as string | undefined) ?? null,
+    sessionId: (vars.sessionId as string | undefined) ?? null,
+    apiTokenId: ((vars.apiTokenId ?? vars.apiKeyId) as string | undefined) ?? null,
+    callerType: (vars.callerType as ActionLedgerRequestContextValues["callerType"]) ?? null,
+    actor: (vars.actor as ActionLedgerRequestContextValues["actor"]) ?? null,
+    isInternalRequest: (vars.isInternalRequest as boolean | undefined) ?? false,
+    organizationId: (vars.organizationId as string | undefined) ?? null,
+    workflowRunId: (vars.workflowRunId as string | undefined) ?? null,
+    workflowStepId: (vars.workflowStepId as string | undefined) ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+export function createdTargetPrincipalId(context: ActionLedgerRequestContextValues): string {
+  return mapActionLedgerRequestContext(context).principalId
+}
 
 async function optionalContentRuntime(value: unknown): Promise<CatalogContentRuntime | undefined> {
   const resolved = await Promise.resolve(value)

@@ -86,8 +86,11 @@ the real product service. Publication continues to use that service's readiness 
 the Tool does not reproduce the rule. `get_product_content` composes owned and sourced
 content through the selected Catalog content runtime, preserving provider authority.
 `compose_product` accepts the structural `productGraphSpecSchema` and delegates to the
-atomic authoring composer. The runtime records the same mutation ledger entry and
-`product.content.changed` event as the authoring HTTP surface.
+package-owned atomic composer. Created-target Tools return only immutable canonical
+references (`productId`, `programId`, `envelopeId`, or `roomBlockId`); callers that need
+the mutable resource graph must follow with the corresponding read Tool.
+The runtime records the canonical ledger result plus `product.created` and
+`product.content.changed` in the same database transaction through the durable outbox.
 
 There is intentionally no monolithic `update_product_content` Tool. The unified
 product-content service is a read resolver; authored options, itineraries, media,
@@ -118,6 +121,12 @@ that lifecycle because it cannot make an arbitrary package transaction atomic wi
 wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
 mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
 target in the same transaction (or use a durable outbox/state machine for external effects).
+Execute Tool actions may also declare an explicit graph `availability`. An action marked
+`unavailable` remains in the resolved graph with a stable `reasonCode`, but its Tool and
+runtime reference are omitted from lowering, so it cannot appear in MCP discovery or dispatch.
+Lowering fails closed if an unavailable action's Tool is reintroduced. Actions explicitly marked
+`available` must name an existing/created target lifecycle; external or multi-stage effects must
+also name a transactional, outbox, or saga durability strategy and the test that proves it.
 MCP passes stripped invocation controls and the selected action policy in a fresh
 `ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
 commands bind their approval request and execution to the same typed created-target fingerprint;

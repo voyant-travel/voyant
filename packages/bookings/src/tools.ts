@@ -10,7 +10,15 @@
  * idempotency. `cancel_booking` always uses an action-ledger approval before
  * execution.
  */
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -76,7 +84,10 @@ export interface BookingsToolServices {
     idempotencyKey: string
     approvalId?: string
   }): Promise<unknown>
-  reserveBooking(input: z.infer<typeof reserveBookingToolInputSchema>): Promise<unknown>
+  reserveBooking(
+    input: z.infer<typeof reserveBookingToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 
 export type BookingsToolContext = ToolContext & { bookings?: BookingsToolServices }
@@ -211,12 +222,6 @@ export const cancelBookingTool = defineTool<
 
 export const reserveBookingToolInputSchema = z.object({
   reservation: reserveBookingSchema,
-  idempotencyKey: z
-    .string()
-    .trim()
-    .min(1)
-    .max(255)
-    .describe("Stable key used to replay this exact reservation command."),
 })
 
 export const reservedBookingReferenceSchema = z.object({
@@ -229,6 +234,30 @@ export const reserveBookingToolOutputSchema = z.object({
   booking: reservedBookingReferenceSchema,
   replayed: z.boolean(),
 })
+
+export const RESERVE_BOOKING_HANDLER_POLICY = {
+  capabilityId: "@voyant-travel/bookings#tool.reserve-booking",
+  capabilityVersion: "v1",
+  canonicalName: "reserve_booking",
+  actionPolicy: {
+    id: "booking.reserve",
+    capabilityId: "bookings:reserve",
+    version: "v1",
+    kind: "execute",
+    targetType: "booking",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "booking_reservation_command",
+      resultReferenceType: "booking",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "high",
+    ledger: "required",
+    approval: "never",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 export const reserveBookingTool = defineTool<
   z.infer<typeof reserveBookingToolInputSchema>,
@@ -256,7 +285,8 @@ export const reserveBookingTool = defineTool<
   annotations: { idempotentHint: true },
   actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
-    return reserveBookingToolOutputSchema.parse(await bookings(ctx).reserveBooking(input))
+    const admitted = admitHandlerActionPolicy(ctx, RESERVE_BOOKING_HANDLER_POLICY)
+    return reserveBookingToolOutputSchema.parse(await bookings(ctx).reserveBooking(input, admitted))
   },
 })
 

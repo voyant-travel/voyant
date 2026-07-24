@@ -33,9 +33,18 @@ import {
 import { consoleReporter } from "@voyant-travel/hono/observability/reporter"
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime-core"
 import type { StorageProviderResolver } from "@voyant-travel/storage/types"
-import { resolveOutboundWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery"
-import { createPostgresWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery/postgres"
-import { createAppWebhookDeliveryLoop } from "./app-webhook-delivery-loop.js"
+import {
+  createWebhookDeliveryWorker,
+  resolveOutboundWebhookDeliveryEnqueuer,
+} from "@voyant-travel/webhook-delivery"
+import {
+  createPostgresWebhookDeliveryEnqueuer,
+  createPostgresWebhookDeliveryStore,
+} from "@voyant-travel/webhook-delivery/postgres"
+import {
+  createAppWebhookDeliveryLoop,
+  createWebhookDeliveryLoop,
+} from "./app-webhook-delivery-loop.js"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 import {
@@ -182,6 +191,11 @@ export async function loadVoyantProject(
   const appsSelected = generated.graphRuntime.modules.some(
     (unit) => unit.id === "@voyant-travel/apps" || unit.packageName === "@voyant-travel/apps",
   )
+  const operatorWebhooksSelected = generated.graphRuntime.modules.some(
+    (unit) =>
+      unit.id === "@voyant-travel/webhook-delivery" ||
+      unit.packageName === "@voyant-travel/webhook-delivery",
+  )
   if (appWebhookRuntime) await appsWebhookDeliveryRuntimePort.test(appWebhookRuntime)
   const appWebhooks =
     appsSelected && appWebhookRuntime
@@ -296,6 +310,28 @@ export async function loadVoyantProject(
             },
           )
       : undefined
+  const createOperatorWebhookWorkerLoop =
+    operatorWebhooksSelected && generated.deployment.providers.outboundWebhooks === "postgres"
+      ? () =>
+          createWebhookDeliveryLoop(
+            createWebhookDeliveryWorker({
+              store: createPostgresWebhookDeliveryStore(
+                resolveNodeDatabase(runtime.env) as Parameters<
+                  typeof createPostgresWebhookDeliveryStore
+                >[0],
+              ),
+            }),
+            {
+              onError: (error) =>
+                reporter.captureException({
+                  requestId: "operator-webhook-delivery-worker",
+                  app: path.basename(projectRoot),
+                  error,
+                  context: { operation: "operator-webhook-delivery.drain" },
+                }),
+            },
+          )
+      : undefined
   const clientAssetsDir = await resolveAdminAssetsDir(
     projectRoot,
     artifactRoot,
@@ -330,12 +366,15 @@ export async function loadVoyantProject(
     },
     fetch,
     start: ({ port } = {}) => {
-      const deliveryLoop = createAppWebhookWorkerLoop?.()
+      const residentServices = [
+        createOperatorWebhookWorkerLoop?.(),
+        createAppWebhookWorkerLoop?.(),
+      ].filter((service) => service !== undefined)
       return createNodeServer<VoyantNodeRuntimeEnv>({
         fetch: (request, env, ctx) => web.fetch(request, env, toExecutionContext(ctx)),
         env: runtime.env,
         port,
-        ...(deliveryLoop ? { residentServices: [deliveryLoop] } : {}),
+        ...(residentServices.length > 0 ? { residentServices } : {}),
         ...(runtime.env.ORIGIN_TRUST_SECRET
           ? { originTrustSecret: runtime.env.ORIGIN_TRUST_SECRET }
           : {}),

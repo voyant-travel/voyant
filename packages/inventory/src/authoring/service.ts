@@ -27,6 +27,16 @@ async function getDefaultCatalogId(db: PostgresJsDatabase): Promise<string | und
   return row?.id
 }
 
+/** Build a validated product graph on a transaction owned by the caller. */
+export async function composeProductInTransaction(
+  tx: PostgresJsDatabase,
+  spec: ProductGraphSpec,
+  options: Pick<AuthoringRunOptions, "userId"> = {},
+): Promise<BuildProductGraphResult> {
+  const defaultCatalogId = await getDefaultCatalogId(tx)
+  return buildProductGraph(tx, spec, { userId: options.userId, defaultCatalogId })
+}
+
 /**
  * Resolves an idempotency key inside an open transaction. Returns the previously
  * created product id when the key has been seen, else runs `build`, records the

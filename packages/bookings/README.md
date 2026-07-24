@@ -66,9 +66,10 @@ The selected deployment graph exposes package-owned Tools from
 
 - `reserve_booking` creates an on-hold booking and holds the requested
   availability with `bookings:write` only. The handler fingerprints the complete
-  reservation command, writes the canonical `booking.reserve` action ledger
-  entries in the booking transaction, and returns the immutable booking
-  reference for exact idempotent replays.
+  reservation command and its selected policy inputs, then delegates the entire
+  booking transaction to the shared action-ledger created-command executor.
+  Exact retries resolve the typed immutable booking reference without consuming
+  capacity again.
 - `cancel_booking` always enters the action-ledger approval flow for agent
   callers. Its first call returns a pending approval; execution requires the
   approved id and the same command, principal, target snapshot, and

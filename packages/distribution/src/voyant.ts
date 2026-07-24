@@ -336,7 +336,13 @@ export const distributionVoyantModule = defineModule({
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "supplier_create_command",
+        resultReferenceType: "supplier",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/distribution#tool.create-supplier"] },
     },
     {
@@ -380,7 +386,13 @@ export const distributionVoyantModule = defineModule({
       risk: "medium",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "distribution_channel_create_command",
+        resultReferenceType: "distribution-channel",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/distribution#tool.create-channel"] },
     },
     {

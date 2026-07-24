@@ -4,7 +4,7 @@ import { newId } from "@voyant-travel/db/lib/typeid"
 
 import { createAppWebhookDeliveryEnvelope } from "./app-envelope.js"
 import { type ExternalWebhookEventContract, prepareExternalWebhookEvent } from "./contracts.js"
-import { hashWebhookPayload, redactWebhookHeaders, webhookBodyExcerpt } from "./security.js"
+import { hashWebhookPayload, webhookBodyExcerpt } from "./security.js"
 import type {
   SelectedExternalWebhookQueue,
   WebhookDeliveryStore,
@@ -65,16 +65,14 @@ export function createSelectedExternalWebhookQueue(
               subscriptionId: subscription.id,
               targetUrl: subscription.url,
               requestMethod: "POST",
-              requestHeaders:
-                redactWebhookHeaders({
-                  ...(subscription.headers ?? {}),
-                  "content-type": "application/json",
-                  "idempotency-key": idempotencyKey,
-                  "x-voyant-event": event.name,
-                  "x-voyant-event-id": eventId,
-                  "x-voyant-event-contract": contract.eventId,
-                  "x-voyant-event-version": contract.eventVersion,
-                }) ?? {},
+              requestHeaders: {
+                "content-type": "application/json",
+                "idempotency-key": idempotencyKey,
+                "x-voyant-event": event.name,
+                "x-voyant-event-id": eventId,
+                "x-voyant-event-contract": contract.eventId,
+                "x-voyant-event-version": contract.eventVersion,
+              },
               requestBodyHash: hashWebhookPayload(body),
               requestBodyExcerpt: webhookBodyExcerpt(body),
               requestPayload: payload,
