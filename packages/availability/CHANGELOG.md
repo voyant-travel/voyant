@@ -1,5 +1,13 @@
 # @voyant-travel/availability
 
+## 0.2.26
+
+### Patch Changes
+
+- Updated dependencies [3651ff7]
+  - @voyant-travel/core@0.135.0
+  - @voyant-travel/db@0.118.4
+
 ## 0.2.25
 
 ### Patch Changes

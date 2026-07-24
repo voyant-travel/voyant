@@ -1,5 +1,47 @@
 # @voyant-travel/trips
 
+## 0.191.0
+
+### Minor Changes
+
+- c03ff60: Restore `source_trip_requirement_candidates` as an available handler-owned
+  existing-target command backed by a Trips-owned durable sourcing operation and
+  fixed wakeable worker.
+
+  The Tool now returns an immutable `{ status: "accepted", operationId,
+requirementId, statusTool }` result instead of waiting for provider fan-out and
+  returning mutable requirement/candidate rows. The read-only
+  `get_trip_requirement_sourcing_operation` Tool and matching tenant-bound HTTP
+  route expose pending, retry, completion, and dead-letter outcomes. See
+  `docs/migrations/durable-trips-requirement-sourcing.md` for rollout and caller
+  guidance.
+
+  The old synchronous `sourceRequirementCandidates`, `reshopRequirement`, and
+  `reshopTrip` services, Tools, and HTTP routes are removed. They discarded live
+  candidates before an unfenced provider call and cannot safely coexist with the
+  durable worker.
+
+  Owned availability-search handlers now participate in the same deterministic
+  fan-out as sourced adapters, including owned-only deployments.
+
+### Patch Changes
+
+- Updated dependencies [3651ff7]
+- Updated dependencies [c03ff60]
+  - @voyant-travel/core@0.135.0
+  - @voyant-travel/catalog@0.197.0
+  - @voyant-travel/action-ledger@0.113.1
+  - @voyant-travel/bookings@0.199.0
+  - @voyant-travel/commerce@0.42.2
+  - @voyant-travel/db@0.118.4
+  - @voyant-travel/finance@0.199.0
+  - @voyant-travel/flights@0.199.0
+  - @voyant-travel/hono@0.134.4
+  - @voyant-travel/inventory@0.19.2
+  - @voyant-travel/operator-settings@0.14.19
+  - @voyant-travel/payments@0.6.4
+  - @voyant-travel/storefront@0.201.0
+
 ## 0.190.1
 
 ### Patch Changes

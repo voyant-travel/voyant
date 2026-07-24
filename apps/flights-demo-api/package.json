@@ -1,6 +1,6 @@
 {
   "name": "flights-demo-api",
-  "version": "0.19.95",
+  "version": "0.19.96",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",

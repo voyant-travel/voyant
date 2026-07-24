@@ -1,5 +1,13 @@
 # @voyant-travel/realtime
 
+## 0.6.14
+
+### Patch Changes
+
+- Updated dependencies [3651ff7]
+  - @voyant-travel/core@0.135.0
+  - @voyant-travel/hono@0.134.4
+
 ## 0.6.13
 
 ### Patch Changes
