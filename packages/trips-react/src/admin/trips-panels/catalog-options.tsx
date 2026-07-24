@@ -27,7 +27,7 @@ export function CatalogComponentOptions({
     ((shape.addons?.catalog?.length ?? 0) > 0 || (shape.addons?.groups?.length ?? 0) > 0)
   if (!productOptionStep && !hasAccommodation && !hasAddons) return null
   return (
-    <div className="flex flex-col gap-5 border-t pt-4">
+    <div className="flex flex-col gap-4 border-t pt-4">
       {productOptionStep ? (
         <CatalogProductOptionOptions
           draft={draft}

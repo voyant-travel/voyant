@@ -102,7 +102,7 @@ export function CustomerAccountPage({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="font-semibold text-3xl tracking-normal">Your account</h1>

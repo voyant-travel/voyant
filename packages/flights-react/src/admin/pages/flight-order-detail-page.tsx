@@ -59,7 +59,7 @@ export default function FlightOrderDetailPage({ params }: AdminRoutePageProps) {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : orderQuery.isError || !orderQuery.data ? (
-        <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-10 text-center text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center text-muted-foreground">
           <span>{t.loadFailed}</span>
           <Button variant="outline" size="sm" onClick={() => orderQuery.refetch()}>
             {t.retry}

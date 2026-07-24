@@ -251,7 +251,7 @@ export function FlightBookingShell({
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_360px] lg:items-start">
-      <div className="flex min-w-0 flex-col gap-5">
+      <div className="flex min-w-0 flex-col gap-4">
         <Stepper steps={steps} currentIdx={stepIdx} messages={messages} />
 
         {error && (

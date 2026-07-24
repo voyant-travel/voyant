@@ -107,7 +107,7 @@ function BookingSummaryCard({
   return (
     <section
       aria-label={messages.ariaLabel}
-      className="flex flex-col gap-3 rounded-md border bg-card p-5 shadow-sm"
+      className="flex flex-col gap-3 rounded-md border bg-card p-6 shadow-sm"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-medium text-base">{messages.heading}</h2>
@@ -192,7 +192,7 @@ function ScheduleLine({ item }: { item: BookingSummaryItem }) {
 
 function BookingSummarySkeleton() {
   return (
-    <section className="flex flex-col gap-3 rounded-md border bg-card p-5 shadow-sm">
+    <section className="flex flex-col gap-3 rounded-md border bg-card p-6 shadow-sm">
       <div className="h-4 w-24 animate-pulse rounded-md bg-muted" />
       <ul className="flex flex-col gap-3">
         {[0, 1].map((index) => (

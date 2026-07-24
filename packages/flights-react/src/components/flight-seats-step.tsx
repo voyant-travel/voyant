@@ -99,7 +99,7 @@ export function FlightSeatsStep({
   const activeSegment = segments[activeSegmentIdx] ?? null
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
         <h2 className="font-semibold text-base">{messages.flightSeatsStep.title}</h2>
         <p className="text-muted-foreground text-sm">{messages.flightSeatsStep.description}</p>

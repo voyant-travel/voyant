@@ -104,7 +104,7 @@ export function FlightBaggageStep({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold text-base">{messages.flightBaggageStep.title}</h2>
@@ -183,7 +183,7 @@ function BaggageLegSection({
   const last = itin?.segments[itin.segments.length - 1]
 
   return (
-    <section className="rounded-md border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-6 shadow-sm">
       <header className="mb-4 flex items-baseline justify-between gap-2">
         <h3 className="font-medium text-sm">
           <Luggage className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" />
@@ -197,7 +197,7 @@ function BaggageLegSection({
         )}
       </header>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         {passengers.map((pax) => {
           const pick = value.find(
             (p) => p.passengerId === pax.passengerId && p.sliceIndex === sliceIndex,

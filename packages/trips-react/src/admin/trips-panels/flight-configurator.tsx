@@ -114,7 +114,7 @@ export function FlightConfigurator({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
@@ -258,7 +258,7 @@ export function FlightConfigurator({
       )}
 
       {selectedOffer ? (
-        <div className="flex flex-col gap-5 border-t pt-4">
+        <div className="flex flex-col gap-4 border-t pt-4">
           <FlightFareUpsellStep
             outboundOffer={legOffer(selectedOffer, 0)}
             returnOffer={selectedOffer.itineraries[1] ? legOffer(selectedOffer, 1) : undefined}

@@ -240,7 +240,7 @@ export function ConsentScreen({
         ) : null}
 
         {release ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <section className="space-y-2">
               <div>
                 <h3 className="text-sm font-semibold">{t.requiredHeading}</h3>

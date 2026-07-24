@@ -203,7 +203,7 @@ export function CustomFieldDefinitionSheet({
           <SheetTitle>{isEditing ? messages.sheet.editTitle : messages.sheet.newTitle}</SheetTitle>
         </SheetHeader>
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <SheetBody className="grid gap-5">
+          <SheetBody className="grid gap-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label>{messages.sheet.entity}</Label>

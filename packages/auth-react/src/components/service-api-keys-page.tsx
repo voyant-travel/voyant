@@ -238,7 +238,7 @@ export function ServiceApiKeysPage({
           <CardDescription>{selectedDescription}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex flex-col gap-5">
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}

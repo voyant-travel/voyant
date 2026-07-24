@@ -66,7 +66,7 @@ export function ExternalRefsPage({
       />
 
       {!scopeReady ? (
-        <div className="rounded-md border border-dashed p-12 text-center">
+        <div className="rounded-md border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">{pageMessages.emptyScope}</p>
         </div>
       ) : (

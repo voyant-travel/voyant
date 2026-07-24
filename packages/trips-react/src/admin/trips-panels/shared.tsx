@@ -261,7 +261,7 @@ export function Section({
   className?: string
 }) {
   return (
-    <section className={`flex flex-col gap-4 rounded-md border bg-card p-5 ${className ?? ""}`}>
+    <section className={`flex flex-col gap-4 rounded-md border bg-card p-6 ${className ?? ""}`}>
       {title || description || action ? (
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

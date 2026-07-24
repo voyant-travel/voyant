@@ -37,7 +37,7 @@ export function PendingComponentCard({
   const valid = pendingComponentIsValid(pending)
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border bg-card p-5">
+    <div className="flex flex-col gap-4 rounded-md border bg-card p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">

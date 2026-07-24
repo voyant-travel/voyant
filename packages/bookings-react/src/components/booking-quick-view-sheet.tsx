@@ -123,7 +123,7 @@ export function BookingQuickViewSheet({
             <SheetTitle>{quick.loadingTitle}</SheetTitle>
           )}
         </SheetHeader>
-        <SheetBody className="flex flex-col gap-5">
+        <SheetBody className="flex flex-col gap-4">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
           ) : !booking ? (
@@ -160,7 +160,7 @@ function QuickViewBody({ booking, locale }: { booking: BookingRecord; locale: st
     : detail.tbd
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

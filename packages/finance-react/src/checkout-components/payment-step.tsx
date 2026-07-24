@@ -70,7 +70,7 @@ export function PaymentStep({
 }: PaymentStepProps) {
   const messages = useCheckoutUiMessagesOrDefault().paymentStep
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
         <h2 className="font-semibold text-base">{messages.title}</h2>
         <p className="text-muted-foreground text-sm">{messages.description}</p>
@@ -111,7 +111,7 @@ function SavedMethodsSection({
 }) {
   const messages = useCheckoutUiMessagesOrDefault().paymentStep.savedMethods
   return (
-    <section className="rounded-md border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-6 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-medium text-sm">{messages.title}</h3>
         {methods.length > 0 && (
@@ -225,7 +225,7 @@ function AltMethodsSection({
   }
 
   return (
-    <section className="rounded-md border bg-card p-5 shadow-sm">
+    <section className="rounded-md border bg-card p-6 shadow-sm">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-medium text-sm">{messages.title}</h3>
       </header>

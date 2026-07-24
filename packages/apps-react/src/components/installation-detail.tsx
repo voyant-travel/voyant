@@ -102,7 +102,7 @@ function DetailView({
   const namespaceHref = `${customFieldsHref}?namespace=${encodeURIComponent(installation.namespace)}`
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           {onBack ? (

@@ -256,7 +256,7 @@ function DeliveryDetailsDialog({
             ) : null}
           </div>
         </DialogHeader>
-        <DialogBody className="space-y-5">
+        <DialogBody className="space-y-4">
           <section className="grid gap-3 sm:grid-cols-2">
             <Detail label={t.labels.deliveryId} value={delivery.id} mono />
             <Detail label={t.labels.status} value={delivery.status} />

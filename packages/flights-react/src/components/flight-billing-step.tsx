@@ -100,7 +100,7 @@ export function FlightBillingStep({
   const hasPassengerOptions = (eligiblePassengers?.length ?? 0) > 0
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
         <h2 className="font-semibold text-base">{messages.flightBillingStep.title}</h2>
         <p className="text-muted-foreground text-sm">{messages.flightBillingStep.description}</p>

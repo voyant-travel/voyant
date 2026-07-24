@@ -229,7 +229,7 @@ export function PublicProposalPage({
 
   return (
     <div className="min-h-screen bg-[#f7f5ef] text-[#232826]">
-      <main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto grid w-full max-w-5xl gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <header className="border-[#d8d2c3] border-b pb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
