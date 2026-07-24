@@ -107,7 +107,7 @@ export const legalUiEn = {
       attachments: "Attachments",
     },
     messageHint:
-      "The recipient will receive this message together with the contract PDF. Anything you change here is what gets delivered - this isn't a static preview.",
+      "The recipient gets this message with the contract PDF attached. Your edits here are sent as-is.",
     recipientPlaceholder: "-",
     actions: {
       cancel: "Cancel",
@@ -260,8 +260,8 @@ export const legalUiEn = {
       channel: "Channel",
       booking: "Booking",
       target: "Target",
-      legacyTransactionOffer: "Legacy transaction offer",
-      legacyTransactionOrder: "Legacy transaction order",
+      legacyTransactionOffer: "Offer",
+      legacyTransactionOrder: "Order",
       name: "Name",
       email: "Email",
       role: "Role",
@@ -370,7 +370,7 @@ export const legalUiEn = {
   },
   templatesPage: {
     title: "Contract Templates",
-    description: "Reusable contract templates with Liquid variables and version history.",
+    description: "Reusable contract templates with fill-in variables and version history.",
     create: "New Template",
     searchPlaceholder: "Search templates...",
     empty: "No templates yet. Create one to start building contract templates.",
@@ -402,7 +402,7 @@ export const legalUiEn = {
     backToTemplates: "Back to Templates",
     currentBadge: "Current",
     variablesDescription:
-      "Templates render with Liquid. Use the reference below to see available variables, filters, loops, and conditionals.",
+      "See the reference below for the variables you can insert into this template.",
     deleteConfirm: 'Delete template "{name}"?',
     actions: {
       addVersion: "Add Version",
@@ -475,7 +475,7 @@ export const legalUiEn = {
       sortOrder: "Sort Order",
       label: "Label",
       daysBeforeDeparture: "Days Before Departure",
-      refundPercent: "Refund Percent (basis points)",
+      refundPercent: "Refund percent",
       refundType: "Refund Type",
       currency: "Currency",
       flatAmountCents: "Flat amount",

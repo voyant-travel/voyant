@@ -60,7 +60,7 @@ export const flightsUiEn = {
   },
   flightsPage: {
     title: "Flights",
-    description: "Search live flight offers across configured connectors.",
+    description: "Search live flights from your airlines and providers.",
     searchFailed: "Search failed.",
     selectedOutbound: "Outbound selected",
     selectedReturn: "Return selected",
@@ -204,7 +204,7 @@ export const flightsUiEn = {
       offerExpires: "Offer expires",
     },
     confirmDescription:
-      "Submitting will hold seats with the connector and, depending on the chosen payment intent, either issue tickets immediately or open a ticketing window. Once confirmed, the booking appears under the order id below.",
+      "This holds your seats and, depending on how you chose to pay, issues tickets now or opens a ticketing window. Once confirmed, the booking appears under the order id below.",
   },
   flightBookingLedger: {
     flight: "Flight",
@@ -247,7 +247,7 @@ export const flightsUiEn = {
     documentsSomeAdded: "{count} of {total} added",
     documentsAddAtCheckIn: "Add at check-in",
     confirmDescription:
-      "Submitting will hold seats with the connector and, depending on the chosen payment intent, either issue tickets immediately or open a ticketing window. The booking will appear under the order id once confirmed.",
+      "This holds your seats and, depending on how you chose to pay, issues tickets now or opens a ticketing window. The booking will appear under the order id once confirmed.",
     lineItems: {
       fare: "{label} fare{suffix}",
       seatsPicked: "{count} seat{plural} picked",
@@ -409,19 +409,19 @@ export const flightsUiEn = {
     },
   },
   flightPaymentSelector: {
-    title: "Payment intent",
+    title: "How to pay",
     description:
-      "How the booking should be paid. Hold lets you confirm seats now and ticket later; card / on-credit issue tickets immediately.",
+      "How the booking should be paid. Hold lets you confirm seats now and ticket later; card or on-credit issues tickets immediately.",
     intents: {
       hold: {
         title: "Hold seats - pay later",
         description:
-          "Confirms the booking now and locks in the price for the connector's hold window. Tickets issue when payment lands.",
+          "Confirms the booking now and locks in the price for the airline's hold window. Tickets issue when payment lands.",
       },
       card: {
         title: "Pay by card",
         description:
-          "Tickets issue immediately. Card details handled outside this form by the connector's tokenization flow.",
+          "Tickets issue immediately. Card details are entered securely on the next step.",
       },
       bank_transfer: {
         title: "Bank transfer",
@@ -430,8 +430,7 @@ export const flightsUiEn = {
       },
       ticket_on_credit: {
         title: "Ticket on agency credit",
-        description:
-          "Issue against the operator's IATA office credit line. Settles via BSP in the next reporting cycle.",
+        description: "Issue now and bill it to your agency's IATA credit line.",
       },
     },
   },

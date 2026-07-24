@@ -47,7 +47,7 @@ export const adminChromeMessages = {
     requestFailed: "Request failed",
     retry: "Try again",
     goToDashboard: "Go to dashboard",
-    loadingAdminWorkspace: "Loading admin workspace",
+    loadingAdminWorkspace: "Loading workspace",
     loadingWorkspace: "Loading workspace",
     pageNotFound: "Page not found",
     pageNotFoundDescription: "The page you requested does not exist or is no longer available.",

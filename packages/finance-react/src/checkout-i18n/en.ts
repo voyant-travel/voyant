@@ -90,7 +90,7 @@ export const checkoutUiEn: CheckoutUiMessages = {
         body: "Lock the order and generate a payment link the customer can open to pay by card or bank transfer. Share it however you prefer.",
       },
       cardSecurityNote:
-        "Card numbers entered here are tokenized in production via the processor's hosted form - never sent through this UI.",
+        "Card details are handled securely by the payment provider and never stored here.",
       brandFallback: "card",
     },
   },

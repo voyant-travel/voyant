@@ -33,7 +33,7 @@ export const bookingsUiRoCreateList = {
       confirmAfterCreateHint: "Dupa creare, rezervarea trece in status confirmat.",
       createAsDraft: "Creeaza ca draft",
       createAsDraftHint:
-        "Altfel, rezervarea va fi creata cu statusul {status}, in functie de plata marcata ca achitata.",
+        "Altfel, rezervarea devine activa — confirmata daca o plata este marcata ca achitata, sau in asteptarea platii daca nu.",
       notifyTraveler: "Anunta calatorul",
       notifyTravelerHint:
         "Cand este activ, trimite emailul de confirmare si documentele (daca auto-dispatch este configurat). Dezactiveaza pentru confirmare silentioasa.",
@@ -61,11 +61,10 @@ export const bookingsUiRoCreateList = {
       confirmFailed: "Rezervarea a fost creata, dar confirmarea a esuat",
       createFailed: "Crearea rezervarii a esuat",
       payloadResolverMismatchDetails:
-        "Optiunile rezervarii nu sunt sincronizate. Verifica aceste linii: {details}.",
+        "Selectia s-a schimbat in timpul rezervarii. Verifica din nou optiunile evidentiate.",
       payloadResolverMismatchFallback:
         "Optiunile rezervarii nu sunt sincronizate. Verifica randurile de calator si optiune selectate.",
-      payloadResolverMismatchLine:
-        "{label}: trimis {submittedQuantity}, asteptat {resolvedQuantity}",
+      payloadResolverMismatchLine: "{label}: cantitate modificata",
       paidPaymentDateRequired:
         "Data platii este obligatorie cand plata este marcata ca deja achitata.",
     },

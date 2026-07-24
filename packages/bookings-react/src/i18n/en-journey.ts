@@ -52,11 +52,11 @@ export const bookingsUiEnJourney = {
     },
     warnings: {
       phoneMissing: "Phone number not set — useful for last-minute supplier contact.",
-      billingCountryMissing: "Billing country not set — taxes won't compute until it's filled in.",
+      billingCountryMissing: "Add a billing country so taxes can be calculated.",
       vatMissing: "Tax ID not set — needed for company (B2B) invoicing.",
       travelerFieldRequired: "{traveler}: {field} is required.",
-      paymentIntentMissing: "Payment intent not set — booking will default to hold.",
-      noTravelers: "No travelers added — at least one is recommended for ops handoff.",
+      paymentIntentMissing: "No payment option chosen — this booking will be put on hold.",
+      noTravelers: "Add at least one traveler.",
     },
     configure: {
       travelers: "Travelers",
@@ -123,14 +123,14 @@ export const bookingsUiEnJourney = {
     accommodation: {
       title: "Accommodation",
       empty: "No accommodation options for this product.",
-      extensionsAvailable: "{count} extension option{plural} available — UI lands in Phase F.",
+      extensionsAvailable: "{count} extension option{plural} available",
       ratePlan: "Rate plan",
       cancellationPrefix: "Cancellation:",
       includesPrefix: "Includes:",
     },
     addons: {
-      title: "Add-ons",
-      empty: "No add-ons available for this product.",
+      title: "Extras",
+      empty: "No extras available for this product.",
       otherBucket: "Other",
     },
     payment: {
@@ -139,13 +139,13 @@ export const bookingsUiEnJourney = {
       redirectedAfterConfirm:
         "You'll be redirected to our secure payment page after confirming the booking.",
       linkSentAfterConfirm:
-        "A secure payment link is generated for the customer after you confirm — they choose how to pay. Nothing is charged now.",
+        "After you confirm, the customer gets a secure link to pay. Nothing is charged yet.",
       cardOperatorLabel: "Online payment link",
       cardOperatorDescription:
         "The customer pays online via a secure link after you confirm. Nothing is charged instantly; inventory is reserved on confirmation.",
       generateLinkLabel: "Generate an online payment link",
       generateLinkHint:
-        "Creates a secure online payment link for this booking after you confirm. Leave unchecked to just reserve and collect payment later.",
+        "Sends a secure payment link after you confirm. Leave off to reserve now and collect later.",
       inquiryNotice:
         "We'll send your details to the operator without locking inventory or taking payment. They'll get back to you with availability and a quote — typically within one business day.",
       bankTransferInstructions: "Bank transfer instructions",
@@ -163,7 +163,7 @@ export const bookingsUiEnJourney = {
         bank_transfer:
           "We'll send you bank details and a reference. Inventory is held while we wait for the transfer.",
         hold: "Reserve inventory without paying. The operator follows up to collect payment.",
-        ticket_on_credit: "Charge against an agency's credit line. Operator surfaces only.",
+        ticket_on_credit: "Charge to the agency's credit account.",
         inquiry:
           "No payment, no inventory hold. The operator gets back to you with availability and a quote.",
       },
@@ -210,13 +210,13 @@ export const bookingsUiEnJourney = {
       total: "Total",
       pricingHint: "Add travelers to see pricing.",
       pricingHintRooms: "Select rooms to see pricing.",
-      guestSingular: "guest",
-      guestPlural: "guests",
+      guestSingular: "traveler",
+      guestPlural: "travelers",
       filledOf: "{filled} of {total} filled",
       roomSingular: "room",
       roomPlural: "rooms",
-      addOnSingular: "add-on",
-      addOnPlural: "add-ons",
+      addOnSingular: "extra",
+      addOnPlural: "extras",
       card: "Card",
       hold: "Hold",
       onCredit: "On credit",
@@ -224,7 +224,7 @@ export const bookingsUiEnJourney = {
       reviewDetails: "Review your details and confirm to book.",
       noTravelersYet: "No travelers yet.",
       notSelected: "Not selected.",
-      noAddonsSelected: "No add-ons selected.",
+      noAddonsSelected: "No extras selected.",
       adults: "Adults",
       children: "Children",
       infants: "Infants",
@@ -239,7 +239,7 @@ export const bookingsUiEnJourney = {
       buyer: "Buyer",
       company: "Company",
       individual: "Individual",
-      vat: "VAT",
+      vat: "Tax ID",
       address: "Address",
       travelerNumber: "Traveler {number}",
       dob: "DOB",

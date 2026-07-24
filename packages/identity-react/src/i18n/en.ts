@@ -3,7 +3,7 @@ import type { IdentityUiMessages } from "./messages.js"
 export const identityUiEn = {
   common: {
     cancel: "Cancel",
-    saveChanges: "Save Changes",
+    saveChanges: "Save changes",
     primary: "Primary",
     addressLabelLabels: {
       primary: "Primary",
@@ -41,15 +41,15 @@ export const identityUiEn = {
   },
   identityPage: {
     title: "Identity",
-    description: "Manage contact points, addresses and named contacts attached to any entity.",
+    description: "Manage phone numbers, addresses, and contacts for any record.",
     fields: {
-      entityType: "Entity type",
-      entity: "Entity",
-      customEntityType: "Other entity type",
+      entityType: "Record type",
+      entity: "Record",
+      customEntityType: "Other record type",
     },
     placeholders: {
       entityType: "person, organization, supplier...",
-      entity: "Paste a reference for custom entity types",
+      entity: "Paste a reference for custom record types",
     },
     entityTypeLabels: {
       person: "Person",
@@ -58,16 +58,16 @@ export const identityUiEn = {
       booking: "Booking",
       product: "Product",
     },
-    emptyScope: "Choose an entity above to browse its identity records.",
+    emptyScope: "Choose a record above to see its contacts and addresses.",
     tabs: {
-      contactPoints: "Contact Points",
+      contactPoints: "Contact details",
       addresses: "Addresses",
-      namedContacts: "Named Contacts",
+      namedContacts: "Named contacts",
     },
   },
   contactPointsTab: {
-    description: "Phone numbers, emails and other communication channels for this entity.",
-    add: "Add Contact Point",
+    description: "Phone numbers, emails and other communication channels for this record.",
+    add: "Add contact detail",
     empty: {
       loading: "Loading contact points...",
       none: "No contact points yet.",
@@ -83,8 +83,8 @@ export const identityUiEn = {
     },
   },
   addressesTab: {
-    description: "Physical and postal addresses associated with this entity.",
-    add: "Add Address",
+    description: "Physical and postal addresses associated with this record.",
+    add: "Add address",
     empty: {
       loading: "Loading addresses...",
       none: "No addresses yet.",
@@ -101,8 +101,8 @@ export const identityUiEn = {
     },
   },
   namedContactsTab: {
-    description: "Named people associated with this entity.",
-    add: "Add Named Contact",
+    description: "Named people associated with this record.",
+    add: "Add named contact",
     empty: {
       loading: "Loading named contacts...",
       none: "No named contacts yet.",
@@ -121,8 +121,8 @@ export const identityUiEn = {
   },
   addressDialog: {
     titles: {
-      create: "Add Address",
-      edit: "Edit Address",
+      create: "Add address",
+      edit: "Edit address",
     },
     fields: {
       label: "Label",
@@ -141,13 +141,13 @@ export const identityUiEn = {
       timezone: "Europe/Istanbul",
     },
     actions: {
-      create: "Add Address",
+      create: "Add address",
     },
   },
   contactPointDialog: {
     titles: {
-      create: "Add Contact Point",
-      edit: "Edit Contact Point",
+      create: "Add contact detail",
+      edit: "Edit contact detail",
     },
     fields: {
       kind: "Kind",
@@ -160,7 +160,7 @@ export const identityUiEn = {
       value: "name@example.com",
     },
     actions: {
-      create: "Add Contact Point",
+      create: "Add contact detail",
     },
     validation: {
       valueRequired: "Value is required",
@@ -168,8 +168,8 @@ export const identityUiEn = {
   },
   namedContactDialog: {
     titles: {
-      create: "Add Named Contact",
-      edit: "Edit Named Contact",
+      create: "Add named contact",
+      edit: "Edit named contact",
     },
     fields: {
       role: "Role",
@@ -185,7 +185,7 @@ export const identityUiEn = {
       email: "jane@example.com",
     },
     actions: {
-      create: "Add Named Contact",
+      create: "Add named contact",
     },
     validation: {
       nameRequired: "Name is required",

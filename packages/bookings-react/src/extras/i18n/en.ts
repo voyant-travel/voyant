@@ -28,8 +28,8 @@ export const extrasUiEn = {
   },
   slotManifest: {
     title: "Extras manifest",
-    emptyExtras: "No slot-manifest extras are configured for this product.",
-    emptyTravelers: "No active travelers are assigned to this slot.",
+    emptyExtras: "No extras are configured for this product.",
+    emptyTravelers: "No active travelers are assigned to this extra.",
     travelerColumn: "Traveler",
     bookingColumn: "Booking",
     selectedLabel: "Selected",

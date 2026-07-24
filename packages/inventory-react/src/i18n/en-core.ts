@@ -104,7 +104,7 @@ export const productsUiCoreEn = {
   },
   productsPage: {
     title: "Products",
-    description: "Manage your quotes, packages, and proposals.",
+    description: "Manage the products you sell.",
   },
   productDetailPage: {
     actions: {
@@ -164,7 +164,7 @@ export const productsUiCoreEn = {
       sellAmount: "Sell amount",
       costAmount: "Cost amount",
       margin: "Margin",
-      pax: "Pax",
+      pax: "Travelers",
       startDate: "Start date",
       endDate: "End date",
       reservationTimeout: "Reservation timeout",
@@ -176,7 +176,7 @@ export const productsUiCoreEn = {
       loading: "Loading product...",
       loadFailed: "Failed to load product.",
       notFoundTitle: "Product not found",
-      notFoundDescription: "The requested product does not exist or is no longer available.",
+      notFoundDescription: "This product doesn't exist or was removed.",
       noDescription: "No description provided.",
       noInclusions: "No inclusions specified.",
       noExclusions: "No exclusions specified.",
@@ -219,7 +219,7 @@ export const productsUiCoreEn = {
       activated: "Visible on site",
       capacityMode: "Capacity Mode",
       timezone: "Timezone",
-      pax: "Pax",
+      pax: "Travelers",
       reservationTimeout: "Reservation Timeout",
       sellCurrency: "Sell Currency",
       sellAmount: "Sell Amount",
@@ -230,7 +230,7 @@ export const productsUiCoreEn = {
       description: "Brief overview of the product...",
       inclusions: "List what's included in the price...",
       exclusions: "List what's not included in the price...",
-      terms: "Add cancellation fine print, regulatory disclaimers, or supplier terms...",
+      terms: "Cancellation terms, disclaimers, supplier conditions...",
       tagInput: "Type a tag and press Enter",
       productTypeSearch: "Search product types...",
       facilitySearch: "Search facilities...",
@@ -258,7 +258,7 @@ export const productsUiCoreEn = {
   },
   productTranslationsCard: {
     title: "Translations",
-    description: "Localized product copy used by catalog slices and public product views.",
+    description: "Translated product text shown to customers on your site.",
     languageSelectLabel: "Language",
     newLanguageLabel: "Add language",
     fields: {
@@ -325,7 +325,7 @@ export const productsUiCoreEn = {
       datePlaceholder: "Any date",
       departureLabel: "Departure",
       departurePlaceholder: "Any departure",
-      paxLabel: "Pax",
+      paxLabel: "Travelers",
       sellAmountLabel: "Sell amount",
       min: "Min",
       max: "Max",

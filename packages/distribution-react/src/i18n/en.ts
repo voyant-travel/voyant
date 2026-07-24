@@ -16,7 +16,7 @@ export const distributionUiEn = {
     none: "-",
     openEnded: "Open-ended",
     noReference: "No reference",
-    unmappedStatus: "Unmapped status",
+    unmappedStatus: "Status not recognized",
     yes: "Yes",
     searchPlaceholder: "Search distribution...",
     allChannels: "All channels",
@@ -155,13 +155,12 @@ export const distributionUiEn = {
         title: "Connector",
         ready: "At least one channel connector is configured.",
         missing:
-          "Add a channel connector before bookings, availability, or content can leave Voyant.",
+          "Connect a sales channel before bookings, availability, or content can be sent out.",
       },
       mapping: {
         title: "Mapping",
         ready: "Booking-channel links are being created from mapped products.",
-        missing:
-          "Map products to channel inventory so confirmed bookings know where to distribute.",
+        missing: "Link your products to the channel so confirmed bookings know where to go.",
       },
       delivery: {
         title: "Delivery",
@@ -172,11 +171,11 @@ export const distributionUiEn = {
     monitoring: {
       title: "Operations",
       description:
-        "Watch outbound delivery status, inspect delivery logs, retry failed pushes, or reconcile a flow.",
+        "Watch delivery status, inspect delivery logs, retry failed sends, or re-check and resend.",
     },
     throttledTitle: "Throttled.",
     throttledBody:
-      "{count} rate-limited deliveries in the last hour across {channels} {channelLabel}. Lower the per-channel RPS in settings if this persists.",
+      "{count} deliveries were slowed down in the last hour across {channels} {channelLabel}. If this keeps happening, reduce the send rate for these channels in settings.",
     statusLabels: {
       pending: "Pending",
       ok: "OK",
@@ -212,20 +211,20 @@ export const distributionUiEn = {
       status: "Status",
       attempts: "Attempts",
       lastPush: "Last push",
-      externalRef: "External ref",
+      externalRef: "Channel reference",
       actions: "Actions",
       itemPrefix: "item: {id}",
       deliveries: "Delivery log",
       retry: "Retry push",
     },
     reconcile: {
-      trigger: "Reconcile flow",
-      menuLabel: "Reconcile distribution",
+      trigger: "Re-check and resend",
+      menuLabel: "Re-check and resend",
       bookings: "Bookings",
       priority: "priority",
       availability: "Availability",
       content: "Content",
-      lastRun: "Outcome: scanned {scanned}, triggered {triggered}.",
+      lastRun: "Outcome: checked {scanned}, re-sent {triggered}.",
     },
     feedback: {
       dismiss: "Dismiss feedback",
@@ -233,22 +232,20 @@ export const distributionUiEn = {
         title: "Retry result",
         processed:
           "Processed {attempted} pending link(s): {succeeded} succeeded, {failed} failed, {compensated} compensated.",
-        bookingMissing:
-          "No booking exists for {bookingId}. Pending links were marked failed with booking_missing.",
+        bookingMissing: "That booking no longer exists, so nothing was sent.",
         noPendingLinks: "No pending links were available to retry for {bookingId}.",
         noTargets:
           "No active booking items or channel mappings produced delivery links for {bookingId}.",
-        noAdapter:
-          "Retry reached pending links, but the channel adapter is missing or unsupported.",
-        noMapping: "Retry reached pending links, but a channel product mapping is missing.",
+        noAdapter: "This channel isn't set up to receive bookings yet.",
+        noMapping: "This product isn't linked to the channel yet.",
         ok: "Retry completed for {bookingId}, but the server did not report processed links.",
         failed: "Retry failed for {bookingId}: {message}",
         unknownError: "unknown error",
       },
       reconcile: {
-        title: "Reconcile result",
-        success: "Scanned {scanned} record(s) and triggered {triggered} push workflow(s).",
-        failed: "Reconcile failed: {message}",
+        title: "Re-check and resend",
+        success: "Checked {scanned} booking(s) and re-sent {triggered}.",
+        failed: "Re-check and resend failed: {message}",
       },
     },
     refresh: {
@@ -264,9 +261,9 @@ export const distributionUiEn = {
       itemScopeDescription:
         "Booking-scoped log opened from item {itemId}. It can include deliveries for sibling items on the same booking.",
       emptyTitle: "No deliveries yet",
-      emptyDescription: "Channel-push attempts log here once they dispatch.",
+      emptyDescription: "Send attempts to this channel will appear here.",
       attempt: "attempt #{number}",
-      httpStatus: "HTTP {status}",
+      httpStatus: "Status {status}",
     },
   },
   tables: {

@@ -235,8 +235,7 @@ export const distributionUiRo = {
         title: "Rezultat reincercare",
         processed:
           "Procesate {attempted} legaturi in asteptare: {succeeded} reusite, {failed} esuate, {compensated} compensate.",
-        bookingMissing:
-          "Nu exista nicio rezervare pentru {bookingId}. Legaturile in asteptare au fost marcate esuate cu booking_missing.",
+        bookingMissing: "Acea rezervare nu mai exista, deci nu a fost trimis nimic.",
         noPendingLinks: "Nu au existat legaturi in asteptare de reincercat pentru {bookingId}.",
         noTargets:
           "Niciun element de rezervare activ sau nicio mapare de canal nu a produs legaturi de livrare pentru {bookingId}.",

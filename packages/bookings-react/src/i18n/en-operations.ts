@@ -157,17 +157,16 @@ export const bookingsUiEnOperations = {
     title: "Payment reconciliation",
     loading: "Checking payment sources...",
     empty: "No invoices, payments, or schedule rows have been recorded yet.",
-    reconciledDescription:
-      "Invoice paid totals, recorded payments, and paid schedule rows currently agree.",
+    reconciledDescription: "Paid amounts match across invoices, payments, and the schedule.",
     driftDescription:
-      "Invoice paid totals, recorded payments, and paid schedule rows disagree. Review the source rows before collecting or recording more money.",
+      "Paid amounts don't match across invoices, payments, and the schedule. Check them before taking more payment.",
     reconciledBadge: "Reconciled",
     driftBadge: "Needs review",
     billed: "Billed",
     invoicePaid: "Paid on invoices",
     recordedPayments: "Recorded payments",
     schedulePaid: "Paid schedule rows",
-    drift: "Drift",
+    drift: "Mismatch",
     emptyValue: "-",
   },
   supplierStatusList: {
@@ -220,7 +219,7 @@ export const bookingsUiEnOperations = {
     paidSettlement: {
       title: "Paid booking settlement required",
       description:
-        "Cancelling keeps existing invoices and payments intact and records an action-required finance note to review a refund, credit note, or no-refund decision.",
+        "Existing invoices and payments stay in place. Finance will be flagged to decide on a refund, credit note, or no refund.",
     },
     refundTypeLabels: {
       cash: "Cash refund",
@@ -367,7 +366,7 @@ export const bookingsUiEnOperations = {
     },
     hints: {
       productFiltered: "Filtered to groups for the booking's product.",
-      primaryMember: "This booking will be marked as the primary member.",
+      primaryMember: "This booking will be the lead booking for the room.",
     },
     validation: {
       selectGroup: "Select a group to join",
@@ -383,11 +382,10 @@ export const bookingsUiEnOperations = {
   },
   bookingGroupSection: {
     title: "Shared room",
-    empty: "This booking is not linked to a shared-room group.",
+    empty: "This booking isn't sharing a room yet.",
     group: "Group",
-    siblingBookings: "Sibling bookings ({count})",
-    noSiblingBookings:
-      "No other bookings linked yet. Share the group id with another booking to link them.",
+    siblingBookings: "Other bookings in this room ({count})",
+    noSiblingBookings: "No other bookings linked yet. Link another booking to share this room.",
     primaryBadge: "Primary",
     sharedRoomKind: "Shared room",
     actions: {

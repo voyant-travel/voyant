@@ -114,7 +114,7 @@ export const pricingUiEn = {
   },
   priceCatalogsPage: {
     title: "Price Catalogs",
-    description: "Create named price books with currency and pricing posture.",
+    description: "Create price books with a currency and a purpose (public, contract, net, etc.).",
     addCatalog: "Add Catalog",
     empty: "No price catalogs yet. Create a catalog to define currency-specific rate cards.",
     default: "Default",
@@ -246,7 +246,7 @@ export const pricingUiEn = {
       catalog: "Catalog",
       name: "Name",
       code: "Code",
-      recurrenceRule: "Recurrence rule (RRULE)",
+      recurrenceRule: "When it repeats",
       validFrom: "Valid from",
       validTo: "Valid to",
       timezone: "Timezone",
@@ -269,7 +269,7 @@ export const pricingUiEn = {
       recurrenceRuleRequired: "RRULE is required",
     },
     helpText: {
-      recurrenceRuleExample: "e.g. FREQ=YEARLY;BYMONTH=6,7,8 for June-August.",
+      recurrenceRuleExample: "For example, every year in June-August: FREQ=YEARLY;BYMONTH=6,7,8.",
     },
     actions: {
       create: "Create Schedule",
@@ -338,8 +338,8 @@ export const pricingUiEn = {
     fields: {
       optionPriceRule: "Option price rule",
       optionId: "Option",
-      facilityId: "Facility ID (optional)",
-      pickupPointId: "Pickup point ID",
+      facilityId: "Facility (optional)",
+      pickupPointId: "Pickup point",
       dropoffName: "Dropoff name",
       dropoffCode: "Dropoff code (optional)",
       pricingMode: "Pricing mode",
@@ -351,8 +351,8 @@ export const pricingUiEn = {
     },
     placeholders: {
       optionId: "Select option...",
-      facilityId: "fac_…",
-      pickupPointId: "ppnt_…",
+      facilityId: "Search facilities…",
+      pickupPointId: "Search pickup points…",
     },
     validation: {
       optionPriceRuleRequired: "Option price rule is required",
@@ -382,12 +382,12 @@ export const pricingUiEn = {
         edit: "Edit extra price rule",
       },
       fields: {
-        productExtraId: "Product extra ID (optional)",
-        optionExtraConfigId: "Option extra config ID (optional)",
+        productExtraId: "Product extra (optional)",
+        optionExtraConfigId: "Option extra (optional)",
       },
       placeholders: {
-        productExtraId: "pext_…",
-        optionExtraConfigId: "oecf_…",
+        productExtraId: "Search extras…",
+        optionExtraConfigId: "Search option extras…",
       },
     },
   },

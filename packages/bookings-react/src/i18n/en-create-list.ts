@@ -10,7 +10,7 @@ export const bookingsUiEnCreateList = {
       travelDates: "Travel dates",
       sellAmountCents: "Sell amount",
       costAmountCents: "Cost amount",
-      pax: "Travelers (pax)",
+      pax: "Travelers",
       internalNotes: "Internal notes",
     },
     placeholders: {
@@ -33,10 +33,10 @@ export const bookingsUiEnCreateList = {
       confirmAfterCreateHint: "Transitions the new booking to confirmed.",
       createAsDraft: "Create as draft",
       createAsDraftHint:
-        "Otherwise the booking lands in {status} based on whether any payment is already marked paid.",
+        "Otherwise the booking goes live — confirmed if a payment is marked paid, or awaiting payment if not.",
       notifyTraveler: "Notify traveler",
       notifyTravelerHint:
-        "When on, sends the customer confirmation email + document bundle (if auto-dispatch is wired). Turn off to confirm silently.",
+        "Sends the customer their confirmation email and documents. Turn off to confirm silently.",
     },
     placeholders: {
       departure: "Select a departure...",
@@ -61,10 +61,10 @@ export const bookingsUiEnCreateList = {
       confirmFailed: "Booking created but confirm failed",
       createFailed: "Failed to create booking",
       payloadResolverMismatchDetails:
-        "Booking options are out of sync. Review these lines: {details}.",
+        "Your selection changed while you were booking. Please recheck the highlighted options.",
       payloadResolverMismatchFallback:
-        "Booking options are out of sync. Review the selected traveler and option lines.",
-      payloadResolverMismatchLine: "{label}: sent {submittedQuantity}, expected {resolvedQuantity}",
+        "Your selection changed while you were booking. Please recheck the highlighted options.",
+      payloadResolverMismatchLine: "{label}: quantity changed",
       paidPaymentDateRequired: "Payment date is required when Already paid is checked.",
     },
     actions: {
@@ -113,7 +113,7 @@ export const bookingsUiEnCreateList = {
       sharedRoomSelectPlaceholder: "Search shared rooms...",
       sharedRoomNoGroups: "No shared rooms found for this product.",
       sharedRoomCreateHint:
-        "A new shared room will be created with this booking as the primary member.",
+        "A new shared room will be created with this booking as the lead booking.",
       sharedRoomRemove: "Remove shared room",
       sharedRoomGeneratedLabelPrefix: "Shared room",
       travelCreditHeading: "Travel Credit (optional)",
@@ -141,7 +141,7 @@ export const bookingsUiEnCreateList = {
       paymentFirstInstallment: "First installment",
       paymentSecondInstallment: "Second installment",
       paymentPreset5050: "50 / 50",
-      paymentUnpaidHint: "No payment schedule will be created. Operator will invoice manually.",
+      paymentUnpaidHint: "You'll invoice this booking manually — no schedule is set up.",
       paymentTotalDue: "Total due",
       paymentScheduledTotal: "Scheduled",
       paymentRemaining: "Remaining",
@@ -172,14 +172,14 @@ export const bookingsUiEnCreateList = {
     },
   },
   bookingList: {
-    searchPlaceholder: "Search by booking #, payer, email, phone, or item…",
+    searchPlaceholder: "Search bookings…",
     newBooking: "New booking",
     columns: {
       bookingNumber: "Booking #",
       whatBooked: "Items",
       status: "Status",
       sellAmount: "Total",
-      pax: "Pax",
+      pax: "Travelers",
       startDate: "Dates",
       endDate: "End date/time",
       lead: "Payer",
@@ -214,7 +214,7 @@ export const bookingsUiEnCreateList = {
       departureNeedsProduct: "Select a product first.",
       dateRangeLabel: "Start date",
       dateRange: "Any date",
-      paxLabel: "Pax",
+      paxLabel: "Travelers",
       paxMin: "Min",
       paxMax: "Max",
       clear: "Clear",
@@ -319,9 +319,9 @@ export const bookingsUiEnCreateList = {
       hold_expired: "Hold expired",
       status_change: "Status changed",
       item_update: "Item updated",
-      allocation_released: "Allocation released",
-      fulfillment_issued: "Fulfillment issued",
-      fulfillment_updated: "Fulfillment updated",
+      allocation_released: "Reserved spots released",
+      fulfillment_issued: "Voucher/ticket issued",
+      fulfillment_updated: "Voucher/ticket updated",
       redemption_recorded: "Service Voucher redeemed",
       supplier_update: "Supplier updated",
       traveler_update: "Traveler updated",

@@ -8,11 +8,11 @@ export const crmUiEnCommerceMessages = {
       status: "Status",
       description: "Description",
       linkTo: "Link to",
-      entityId: "Entity",
+      entityId: "Linked to",
     },
     placeholders: {
       subject: "Discovery call with Acme",
-      entityId: "Search or paste a reference",
+      entityId: "Search a person, company, or quote",
     },
     validation: {
       subjectRequired: "Subject is required",
@@ -91,7 +91,7 @@ export const crmUiEnCommerceMessages = {
     fields: {
       description: "Description",
       quantity: "Qty",
-      priceCents: "Price",
+      priceCents: "Unit price",
     },
     validation: {
       descriptionRequired: "Description is required",
@@ -101,7 +101,7 @@ export const crmUiEnCommerceMessages = {
   },
   activitiesPage: {
     title: "Activities",
-    description: "Calls, emails, meetings, tasks, and follow-ups across your CRM.",
+    description: "Your logged calls, emails, and meetings.",
     create: "New activity",
     filters: {
       type: "Type",
@@ -173,10 +173,10 @@ export const crmUiEnCommerceMessages = {
     breadcrumbRoot: "Quotes",
     back: "Back to Quotes",
     save: "Save",
-    saveSuccess: "Proposal saved",
+    saveSuccess: "Quote saved",
     saveError: "Couldn't save the quote",
     discard: "Discard",
-    newVersion: "Create proposal",
+    newVersion: "Create quote version",
     markWon: "Mark won",
     markLost: "Mark lost",
     reopen: "Reopen",
@@ -194,7 +194,7 @@ export const crmUiEnCommerceMessages = {
     },
     notFound: "Quote not found.",
     descriptionTitle: "Description",
-    descriptionPlaceholder: "Describe this proposal for the client (shown on the shared proposal)…",
+    descriptionPlaceholder: "Describe this quote for the client (shown on the shared version)…",
     versionsTitle: "Quote versions",
     versionsEmpty: "No versions yet. Create the first one.",
     versionsLoadFailed: "Failed to load quote versions.",
@@ -205,9 +205,9 @@ export const crmUiEnCommerceMessages = {
     copyReviewLink: "Copy review link",
     copyReviewOnlyLink: "Copy review-only link",
     reviewOnlyNotice:
-      "Review-only: clients can request edits or decline, but cannot accept until a Trip snapshot is frozen.",
+      "Review-only: the client can suggest changes or decline, but can't accept yet.",
     proposalLinkCopied: "Review link copied to clipboard",
-    proposalSendFailed: "Couldn't share the proposal",
+    proposalSendFailed: "Couldn't share the quote version",
     detailsTitle: "Deal details",
     fields: {
       title: "Title",
@@ -218,7 +218,7 @@ export const crmUiEnCommerceMessages = {
       currency: "Currency",
       expectedClose: "Expected close date",
       source: "Source",
-      sourceRef: "Source ref",
+      sourceRef: "Source reference",
       lostReason: "Lost reason",
     },
     participantsTitle: "Client",
@@ -249,8 +249,8 @@ export const crmUiEnCommerceMessages = {
   },
   quoteTravelersCard: {
     title: "Travelers",
-    pax: "{count} PAX",
-    paxLabel: "PAX",
+    pax: "{count} travelers",
+    paxLabel: "Travelers",
     empty: "No travelers yet.",
     addPlaceholder: "Search people to add…",
     noResults: "No people found.",
@@ -274,7 +274,7 @@ export const crmUiEnCommerceMessages = {
   },
   quoteMediaCard: {
     title: "Images",
-    description: "Photos shown on the client proposal.",
+    description: "Photos shown on the client's quote version.",
     empty: "No images yet.",
     add: "Add images",
   },

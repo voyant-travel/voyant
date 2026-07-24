@@ -63,7 +63,7 @@ export const cruisesUiEn: CruisesUiMessages = {
       onboard_credit: "Onboard credit",
       port_charge: "Port charges",
       tax: "Tax",
-      ncf: "Non-comm fees",
+      ncf: "Non-commissionable fees",
       airfare: "Airfare",
       transfer: "Transfer",
       insurance: "Insurance",

@@ -14,8 +14,7 @@ export const crmUiEnDetailMessages = {
     },
     mergeDialog: {
       title: "Merge organization",
-      description:
-        "Move CRM history and references from a duplicate organization into this organization.",
+      description: "Move all activity and links from a duplicate company into this one.",
       keepLabel: "Keep",
       mergeLabel: "Duplicate to merge",
       placeholder: "Search organizations...",
@@ -74,7 +73,7 @@ export const crmUiEnDetailMessages = {
       addPerson: "Add person",
       addActivity: "Add activity",
     },
-    hint: "Fields update on the left panel. Hover to reveal the edit icon.",
+    hint: "Hover a field to edit it.",
   },
   personDetailPage: {
     notFound: "Person not found",
@@ -88,12 +87,11 @@ export const crmUiEnDetailMessages = {
       delete: "Delete",
       deleteTitle: "Delete this person?",
       deleteDescription:
-        "This will permanently remove the person and their CRM links from this workspace.",
+        "This will permanently remove the person and their links from this workspace.",
     },
     mergeDialog: {
       title: "Merge person",
-      description:
-        "Move bookings, invoices, notes, and CRM history from a duplicate into this person.",
+      description: "Move everything from a duplicate into this person.",
       keepLabel: "Keep",
       mergeLabel: "Duplicate to merge",
       placeholder: "Search people...",
@@ -165,10 +163,10 @@ export const crmUiEnDetailMessages = {
       fields: {
         brand: "Type",
         holderName: "Holder name",
-        last4: "Last 4",
+        last4: "Last 4 digits",
         expMonth: "Exp. month",
         expYear: "Exp. year",
-        processorToken: "Processor token",
+        processorToken: "Payment reference",
         default: "Default",
       },
       brandLabels: {
@@ -232,13 +230,13 @@ export const crmUiEnDetailMessages = {
       noCommunications: "No communications.",
       noTravelProfile: "No travel profile data.",
     },
-    hint: "Fields update on the left panel. Hover to reveal the edit icon.",
+    hint: "Hover a field to edit it.",
   },
   personDocument: {
     row: {
       addButton: "Add document",
       makePrimary: "Make primary",
-      decrypting: "Decrypting…",
+      decrypting: "Revealing…",
       noNumberOnFile: "(no number on file)",
       revealFailed: "Failed to reveal.",
       revealAria: "Reveal number",
@@ -252,10 +250,8 @@ export const crmUiEnDetailMessages = {
     dialog: {
       title: "Edit document",
       addTitle: "Add document",
-      description:
-        "Update document details. Numbers are encrypted at rest and audit-logged on reveal.",
-      addDescription:
-        "Add document details. Numbers are encrypted at rest and audit-logged on reveal.",
+      description: "Update document details. Passport and ID numbers are kept secure.",
+      addDescription: "Update document details. Passport and ID numbers are kept secure.",
       revealFailed: "Failed to reveal document.",
       fields: {
         type: "Type",
@@ -269,7 +265,7 @@ export const crmUiEnDetailMessages = {
       },
       placeholders: {
         number: "Document number",
-        issuingCountry: "ISO code (e.g. RO)",
+        issuingCountry: "Country (e.g. Romania)",
       },
       loading: "Loading document…",
       saveFailed: "Failed to save document.",

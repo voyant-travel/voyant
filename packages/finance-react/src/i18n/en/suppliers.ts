@@ -116,7 +116,7 @@ export const supplierInvoiceDetail = {
     target: "Target",
     reference: "Reference",
     amountLabel: "Amount ({currency})",
-    none: "No allocations — this invoice's cost is unattributed.",
+    none: "No allocations yet — this invoice's cost isn't assigned to any product or departure.",
     remainder: "Unattributed remainder: {amount}",
     overAllocated: "Over-allocated by {amount}",
     save: "Save allocations",

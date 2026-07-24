@@ -58,7 +58,7 @@ export const invoiceDialog = {
     markAsPaid: "Mark as paid",
     markAsPaidMethod: "Payment method",
     markAsPaidDate: "Payment date",
-    syncToSmartbill: "Sync to SmartBill",
+    syncToSmartbill: "Send to e-invoicing",
     attachments: "Attachments",
   },
   typeLabels: {
@@ -73,8 +73,8 @@ export const invoiceDialog = {
   scheduleEmpty: "No unpaid schedules available.",
   scheduleLoadError: "Could not load payment schedules. Try again before creating from schedule.",
   scheduleLockedHint: "Amounts, currency and due date are taken from the schedule.",
-  attachmentsHint: "Attach supporting documents. Skipped when SmartBill sync is on.",
-  invoiceNumberAutoHint: "SmartBill assigns the number from the next sequence on issue.",
+  attachmentsHint: "Attach supporting documents. Skipped when e-invoicing sync is on.",
+  invoiceNumberAutoHint: "E-invoicing assigns the number from the next sequence on issue.",
   placeholders: {
     invoiceNumber: "INV-2025-1234",
     bookingId: "Search by booking number, customer, or product",
@@ -96,7 +96,7 @@ export const invoiceDialog = {
   lineItems: {
     sectionTitle: "Line items",
     addRow: "Add line item",
-    empty: "No line items. Add rows to override the booking-derived totals.",
+    empty: "No line items. Add rows to replace the totals carried over from the booking.",
     description: "Description",
     quantity: "Qty",
     unitPrice: "Unit price",
@@ -146,8 +146,8 @@ export const invoicesPage = {
     balanceDue: "Balance Due",
     dueDate: "Due Date",
   },
-  empty: "No records found.",
-  loadFailed: "Failed to load records.",
+  empty: "No invoices found.",
+  loadFailed: "Failed to load invoices.",
   pagination: {
     showing: "Showing {count} of {total}",
     page: "Page {page} / {pageCount}",
