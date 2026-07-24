@@ -92,11 +92,17 @@ export function InvoiceInfoCards({
   onOpenBooking,
   onOpenPerson,
   onOpenOrganization,
+  bookingLabel,
+  personLabel,
+  organizationLabel,
 }: {
   invoice: InvoiceDetail
   onOpenBooking: () => void
   onOpenPerson?: (personId: string) => void
   onOpenOrganization?: (organizationId: string) => void
+  bookingLabel?: string
+  personLabel?: string
+  organizationLabel?: string
 }) {
   const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
@@ -175,7 +181,7 @@ export function InvoiceInfoCards({
               {messages.finance.detailSections.bookingLabel}:
             </span>{" "}
             <button type="button" className="text-primary underline" onClick={onOpenBooking}>
-              {messages.finance.detailSections.viewBooking}
+              {bookingLabel ?? messages.finance.detailSections.viewBooking}
             </button>
           </div>
           {invoice.personId ? (
@@ -188,7 +194,7 @@ export function InvoiceInfoCards({
                 className="text-primary underline"
                 onClick={() => onOpenPerson?.(invoice.personId as string)}
               >
-                {messages.finance.detailSections.viewPerson}
+                {personLabel ?? messages.finance.detailSections.viewPerson}
               </button>
             </div>
           ) : null}
@@ -202,7 +208,7 @@ export function InvoiceInfoCards({
                 className="text-primary underline"
                 onClick={() => onOpenOrganization?.(invoice.organizationId as string)}
               >
-                {messages.finance.detailSections.viewOrganization}
+                {organizationLabel ?? messages.finance.detailSections.viewOrganization}
               </button>
             </div>
           ) : null}

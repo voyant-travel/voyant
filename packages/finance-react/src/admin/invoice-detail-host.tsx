@@ -60,6 +60,11 @@ import {
 import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
 import { LineItemDialog } from "./line-item-dialog.js"
 import { PaymentDialog } from "./payment-dialog.js"
+import {
+  useInvoiceBookingLabel,
+  useInvoiceOrganizationLabel,
+  useInvoicePersonLabel,
+} from "./use-invoice-links.js"
 
 function getInvoiceStatusLabel(messages: OperatorAdminMessages, status: string): string {
   switch (status) {
@@ -123,6 +128,13 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
   const { convertToInvoice, remove: deleteInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: deleteLineItem } = useInvoiceLineItemMutation(id)
   const addNoteMutation = useInvoiceNoteMutation(id)
+
+  // Contextual labels for the "Dates & Links" card — resolve the linked ids to
+  // their display names so operators see what they're clicking into. Called
+  // unconditionally (rules-of-hooks); each is enabled only when its id exists.
+  const bookingLabel = useInvoiceBookingLabel(invoiceData?.data?.bookingId)
+  const personLabel = useInvoicePersonLabel(invoiceData?.data?.personId)
+  const organizationLabel = useInvoiceOrganizationLabel(invoiceData?.data?.organizationId)
 
   const invoicesHref = resolveHref("invoice.list", {})
   const invoiceForBreadcrumb = invoiceData?.data
@@ -357,6 +369,9 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
 
       <InvoiceInfoCards
         invoice={invoice}
+        bookingLabel={bookingLabel}
+        personLabel={personLabel}
+        organizationLabel={organizationLabel}
         onOpenBooking={() => navigateTo("booking.detail", { bookingId: invoice.bookingId })}
         onOpenPerson={(personId) => navigateTo("person.detail", { personId })}
         onOpenOrganization={(organizationId) =>
