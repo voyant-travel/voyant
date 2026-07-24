@@ -1,5 +1,13 @@
 # @voyant-travel/framework
 
+## 0.62.8
+
+### Patch Changes
+
+- e9950cf: Advance the managed runtime release train so platform images can include the
+  canonical operator webhook administration route without mutating the existing
+  0.62.7 image.
+
 ## 0.62.7
 
 ### Patch Changes
