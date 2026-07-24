@@ -2,6 +2,7 @@ import { commerceCardPaymentRuntimePort } from "@voyant-travel/commerce/runtime-
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront/runtime-port"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
+import { tripsSourcingJobRuntimePort } from "./sourcing-job-runtime-port.js"
 
 const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
 const catalogCheckoutApiRuntimePortReference = { id: "commerce.checkout-api-options" } as const
@@ -25,11 +26,13 @@ export const tripsVoyantModule = defineModule({
       providePort(storefrontPaymentLinkRuntimePort),
       providePort(tripsRoutesRuntimePort),
       providePort(tripsDatabaseRuntimePort),
+      providePort(tripsSourcingJobRuntimePort),
     ],
   },
   runtimePorts: [
     requirePort(tripsRoutesRuntimePort),
     requirePort(tripsDatabaseRuntimePort),
+    requirePort(tripsSourcingJobRuntimePort),
     { ...paymentAdapterRuntimePortReference, optional: true },
     catalogRuntimeServicesPortReference,
     catalogCheckoutApiRuntimePortReference,
@@ -69,6 +72,24 @@ export const tripsVoyantModule = defineModule({
     {
       id: "@voyant-travel/trips#migrations",
       source: "./migrations",
+    },
+  ],
+  jobs: [
+    {
+      id: "trips.source-requirement-candidates",
+      schedule: { every: "1m", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { every: "1m", overlap: "skip" },
+          economical: { every: "5m", overlap: "skip" },
+        },
+      },
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/trips/sourcing-job",
+        export: "runTripRequirementSourcingJob",
+      },
     },
   ],
   config: [
@@ -151,6 +172,17 @@ export const tripsVoyantModule = defineModule({
       risk: "medium",
     },
     {
+      id: "@voyant-travel/trips#tool.get-requirement-sourcing-operation",
+      name: "get_trip_requirement_sourcing_operation",
+      runtime: {
+        entry: "@voyant-travel/trips/tools",
+        export: "getTripRequirementSourcingOperationTool",
+      },
+      requiredScopes: ["trips:read"],
+      context: ["trips"],
+      risk: "low",
+    },
+    {
       id: "@voyant-travel/trips#tool.add-requirement",
       name: "add_trip_requirement",
       runtime: { entry: "@voyant-travel/trips/tools", export: "addTripRequirementTool" },
@@ -168,25 +200,6 @@ export const tripsVoyantModule = defineModule({
       requiredScopes: ["trips:write"],
       context: ["trips"],
       risk: "medium",
-    },
-    {
-      id: "@voyant-travel/trips#tool.reshop-requirement",
-      name: "reshop_trip_requirement",
-      runtime: {
-        entry: "@voyant-travel/trips/tools",
-        export: "reshopTripRequirementTool",
-      },
-      requiredScopes: ["trips:write"],
-      context: ["trips"],
-      risk: "high",
-    },
-    {
-      id: "@voyant-travel/trips#tool.reshop-trip",
-      name: "reshop_trip",
-      runtime: { entry: "@voyant-travel/trips/tools", export: "reshopTripTool" },
-      requiredScopes: ["trips:write"],
-      context: ["trips"],
-      risk: "high",
     },
   ],
   actions: [
@@ -256,14 +269,20 @@ export const tripsVoyantModule = defineModule({
     },
     {
       id: "@voyant-travel/trips#action.source-requirement-candidates",
-      version: "v1",
+      version: "v2",
       kind: "execute",
       targetType: "trip-requirement",
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
+      commandTargetField: "requirementId",
+      targetLifecycle: "existing",
+      availability: { status: "available" },
+      existingTarget: {
+        durability: "handler-command-result-v1",
       },
       effectBoundary: "multistage",
+      durability: {
+        strategy: "saga",
+        testReference: "packages/trips/tests/integration/durable-sourcing.test.ts",
+      },
       requiredScopes: ["trips:write"],
       risk: "medium",
       ledger: "required",
@@ -271,6 +290,17 @@ export const tripsVoyantModule = defineModule({
       reversible: true,
       allowedActorTypes: ["staff"],
       from: { tools: ["@voyant-travel/trips#tool.source-requirement-candidates"] },
+    },
+    {
+      id: "@voyant-travel/trips#action.get-requirement-sourcing-operation",
+      version: "v2",
+      kind: "read",
+      targetType: "trip-requirement-sourcing-operation",
+      requiredScopes: ["trips:read"],
+      risk: "low",
+      ledger: "optional",
+      allowedActorTypes: ["staff"],
+      from: { tools: ["@voyant-travel/trips#tool.get-requirement-sourcing-operation"] },
     },
     {
       id: "@voyant-travel/trips#action.add-requirement",
@@ -299,32 +329,6 @@ export const tripsVoyantModule = defineModule({
       reversible: true,
       allowedActorTypes: ["staff"],
       from: { tools: ["@voyant-travel/trips#tool.select-candidate"] },
-    },
-    {
-      id: "@voyant-travel/trips#action.reshop-requirement",
-      version: "v1",
-      kind: "execute",
-      targetType: "trip-requirement",
-      requiredScopes: ["trips:write"],
-      risk: "high",
-      ledger: "required",
-      approval: "required",
-      reversible: true,
-      allowedActorTypes: ["staff"],
-      from: { tools: ["@voyant-travel/trips#tool.reshop-requirement"] },
-    },
-    {
-      id: "@voyant-travel/trips#action.reshop-trip",
-      version: "v1",
-      kind: "execute",
-      targetType: "trip",
-      requiredScopes: ["trips:write"],
-      risk: "high",
-      ledger: "required",
-      approval: "required",
-      reversible: true,
-      allowedActorTypes: ["staff"],
-      from: { tools: ["@voyant-travel/trips#tool.reshop-trip"] },
     },
   ],
   subscribers: [

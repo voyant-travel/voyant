@@ -18,6 +18,10 @@ import type { Context } from "hono"
 import type { TripsRoutesOptions } from "./routes.js"
 import { tripsRoutesRuntimePort } from "./runtime-port.js"
 import { tripsService } from "./service.js"
+import {
+  executeDurableTripRequirementSourcingCommand,
+  getTripRequirementSourcingOperation,
+} from "./service-durable-sourcing.js"
 import type { TripsToolServices } from "./tools.js"
 
 export * from "./tools.js"
@@ -113,22 +117,21 @@ export const voyantToolContextContribution = defineToolContextContribution({
         return tripsService.reserveTrip(c.var.db, input, deps)
       },
       addRequirement: (input) => tripsService.addRequirement(c.var.db, input),
-      sourceRequirementCandidates: async (input) => {
-        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
-        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
-        return tripsService.sourceRequirementCandidates(c.var.db, input, deps)
+      acceptRequirementCandidateSourcing: async (input, admitted) => {
+        const result = await executeDurableTripRequirementSourcingCommand({
+          db,
+          context: actionLedgerContext(c),
+          admitted,
+          input,
+        })
+        return result.value
       },
+      getRequirementSourcingOperation: (input) =>
+        getTripRequirementSourcingOperation(db, {
+          ...input,
+          organizationId: actionLedgerContext(c).organizationId ?? null,
+        }),
       selectCandidate: (input) => tripsService.selectCandidate(c.var.db, input),
-      reshopRequirement: async (input) => {
-        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
-        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
-        return tripsService.reshopRequirement(c.var.db, input, deps)
-      },
-      reshopTrip: async (input) => {
-        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
-        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
-        return tripsService.reshopTrip(c.var.db, input, deps)
-      },
     }
     return { trips }
   },

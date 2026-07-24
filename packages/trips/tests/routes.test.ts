@@ -67,7 +67,6 @@ describe("trips routes", () => {
     const app = createTripsRoutes({ surface: "public" })
     // Bodies are valid so the migrated routes reach the admin-only surface
     // guard (403) rather than tripping the OpenAPI body validator (400) first.
-    const scope = { locale: "en-GB", audience: "staff", market: "GB" }
     const adminOnly = [
       {
         method: "POST",
@@ -75,10 +74,11 @@ describe("trips routes", () => {
         body: { vertical: "accommodation", criteriaVersion: "v1" },
       },
       { method: "GET", path: "/trip_123/requirements" },
-      { method: "POST", path: "/requirements/trrq_1/candidates", body: { scope } },
+      {
+        method: "GET",
+        path: "/requirements/trrq_1/sourcing-operations/act_1",
+      },
       { method: "POST", path: "/requirements/trrq_1/select", body: { candidateId: "trcd_1" } },
-      { method: "POST", path: "/requirements/trrq_1/reshop", body: { scope } },
-      { method: "POST", path: "/trip_123/reshop", body: { scope } },
     ]
     for (const { method, path, body } of adminOnly) {
       const res = await app.request(path, {
@@ -90,26 +90,77 @@ describe("trips routes", () => {
     }
   })
 
-  it("reports 501 for sourcing/reshop until the availability fan-out is wired", async () => {
+  it("does not expose the removed inline sourcing and re-shop routes", async () => {
     const app = createTripsRoutes()
     const scope = { locale: "en-GB", audience: "staff", market: "GB" }
+    for (const path of [
+      "/requirements/trrq_1/candidates",
+      "/requirements/trrq_1/reshop",
+      "/trip_123/reshop",
+    ]) {
+      const response = await app.request(path, {
+        method: "POST",
+        body: JSON.stringify({ scope }),
+        headers: { "content-type": "application/json" },
+      })
+      expect(response.status, path).toBe(404)
+    }
+  })
 
-    const source = await app.request("/requirements/trrq_1/candidates", {
-      method: "POST",
-      body: JSON.stringify({ scope }),
-      headers: { "content-type": "application/json" },
-    })
-    expect(source.status).toBe(501)
-    await expect(source.json()).resolves.toEqual({
-      error: "Trips availability-sourcing dependencies are not configured",
+  it("returns tenant-bound sourcing status without caching or leaking mismatches", async () => {
+    const read = vi
+      .spyOn(tripsService, "getTripRequirementSourcingOperation")
+      .mockResolvedValueOnce({
+        operationId: "act_1",
+        requirementId: "trrq_1",
+        status: "completed",
+        result: {
+          status: "accepted",
+          operationId: "act_1",
+          requirementId: "trrq_1",
+          statusTool: "get_trip_requirement_sourcing_operation",
+        },
+        outcome: {
+          status: "completed",
+          candidateCount: 2,
+          requirementStatus: "candidates_ready",
+        },
+        error: null,
+        attempts: 1,
+        maxAttempts: 8,
+        nextAttemptAt: new Date("2026-07-24T10:00:00.000Z"),
+        completedAt: new Date("2026-07-24T10:00:01.000Z"),
+        createdAt: new Date("2026-07-24T09:59:59.000Z"),
+        updatedAt: new Date("2026-07-24T10:00:01.000Z"),
+      })
+      .mockResolvedValueOnce(null)
+    const app = appWithDb(createTripsRoutes(), "tenant_1")
+    const path = "/requirements/trrq_1/sourcing-operations/act_1"
+
+    const response = await app.request(path)
+    expect(response.status).toBe(200)
+    expect(response.headers.get("cache-control")).toBe("private, no-store")
+    expect(read).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        operationId: "act_1",
+        requirementId: "trrq_1",
+        organizationId: "tenant_1",
+      }),
+    )
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        operationId: "act_1",
+        status: "completed",
+        outcome: { status: "completed", candidateCount: 2 },
+      },
     })
 
-    const reshop = await app.request("/trip_123/reshop", {
-      method: "POST",
-      body: JSON.stringify({ scope }),
-      headers: { "content-type": "application/json" },
+    const hidden = await app.request(path)
+    expect(hidden.status).toBe(404)
+    await expect(hidden.json()).resolves.toEqual({
+      error: "Trip requirement sourcing operation was not found",
     })
-    expect(reshop.status).toBe(501)
   })
 
   it("resolves lazy route options only when an injected dependency is needed", async () => {
@@ -239,10 +290,11 @@ describe("trips routes", () => {
   })
 })
 
-function appWithDb(routes: ReturnType<typeof createTripsRoutes>) {
+function appWithDb(routes: ReturnType<typeof createTripsRoutes>, organizationId?: string) {
   const app = new Hono()
   app.use("*", async (c, next) => {
     c.set("db" as never, {} as never)
+    if (organizationId) c.set("organizationId" as never, organizationId as never)
     await next()
   })
   app.route("/", routes)

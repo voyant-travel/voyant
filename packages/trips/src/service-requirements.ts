@@ -252,63 +252,6 @@ async function nextComponentSequence(db: AnyDrizzleDb, envelopeId: string): Prom
 }
 
 /**
- * Run the availability fan-out for a requirement and persist the ranked
- * candidates. Existing `ranked` candidates are discarded first (a re-source
- * replaces the set). Sets the requirement to `candidates_ready` or
- * `no_availability`.
- */
-export async function sourceRequirementCandidates(
-  db: AnyDrizzleDb,
-  input: SourceRequirementCandidatesInput,
-  deps: SourceRequirementCandidatesDeps,
-): Promise<{ requirement: TripRequirement; candidates: TripCandidate[] }> {
-  const requirement = await loadRequirement(db, input.requirementId)
-  const now = new Date()
-
-  await db
-    .update(tripRequirements)
-    .set({ status: "sourcing", updatedAt: now })
-    .where(eq(tripRequirements.id, requirement.id))
-
-  await db
-    .update(tripCandidates)
-    .set({ status: "discarded", updatedAt: now })
-    .where(
-      and(eq(tripCandidates.requirementId, requirement.id), eq(tripCandidates.status, "ranked")),
-    )
-
-  const request: AvailabilitySearchRequest = {
-    vertical: requirement.vertical,
-    criteria: requirement.criteria,
-    criteriaVersion: requirement.criteriaVersion,
-    scope: input.scope,
-    deadlineMs: input.deadlineMs,
-    limit: input.limit,
-  }
-  const result = await deps.search(request)
-
-  const rows = result.candidates.map((candidate, index) =>
-    availabilityCandidateToRow({
-      requirementId: requirement.id,
-      envelopeId: requirement.envelopeId,
-      candidate,
-      rank: index,
-    }),
-  )
-  const candidates = rows.length
-    ? ((await db.insert(tripCandidates).values(rows).returning()) as TripCandidate[])
-    : []
-
-  const status = candidates.length > 0 ? "candidates_ready" : "no_availability"
-  await db
-    .update(tripRequirements)
-    .set({ status, lastSourcedAt: now, updatedAt: now })
-    .where(eq(tripRequirements.id, requirement.id))
-
-  return { requirement: { ...requirement, status, lastSourcedAt: now }, candidates }
-}
-
-/**
  * Resolve a requirement by selecting one of its candidates: enforces
  * selected-uniqueness, pins a draft component, and records the resolution.
  */
@@ -394,55 +337,6 @@ async function loadEnvelope(db: AnyDrizzleDb, envelopeId: string): Promise<TripE
     .limit(1)) as TripEnvelope[]
   if (!envelope) throw new TripsInvariantError(`Trip envelope ${envelopeId} was not found`)
   return envelope
-}
-
-/**
- * Re-shop one requirement: clear any prior selection (retiring its pinned
- * component) and re-source candidates.
- */
-export async function reshopRequirement(
-  db: AnyDrizzleDb,
-  input: SourceRequirementCandidatesInput,
-  deps: SourceRequirementCandidatesDeps,
-): Promise<{ requirement: TripRequirement; candidates: TripCandidate[] }> {
-  const requirement = await loadRequirement(db, input.requirementId)
-  const now = new Date()
-
-  if (requirement.resolvedComponentId) {
-    const envelope = await loadEnvelope(db, requirement.envelopeId)
-    assertTripEnvelopeCanMutateComponents(envelope)
-
-    await db
-      .update(tripComponents)
-      .set({ status: "removed", updatedAt: now })
-      .where(eq(tripComponents.id, requirement.resolvedComponentId))
-  }
-  await db
-    .update(tripRequirements)
-    .set({ status: "open", selectedCandidateId: null, resolvedComponentId: null, updatedAt: now })
-    .where(eq(tripRequirements.id, requirement.id))
-
-  return sourceRequirementCandidates(db, input, deps)
-}
-
-/** Re-shop every requirement on an envelope. */
-export async function reshopTrip(
-  db: AnyDrizzleDb,
-  input: { envelopeId: string; scope: AvailabilitySearchRequest["scope"]; deadlineMs?: number },
-  deps: SourceRequirementCandidatesDeps,
-): Promise<Array<{ requirement: TripRequirement; candidates: TripCandidate[] }>> {
-  const requirements = await listEnvelopeRequirements(db, input.envelopeId)
-  const results: Array<{ requirement: TripRequirement; candidates: TripCandidate[] }> = []
-  for (const requirement of requirements) {
-    results.push(
-      await reshopRequirement(
-        db,
-        { requirementId: requirement.id, scope: input.scope, deadlineMs: input.deadlineMs },
-        deps,
-      ),
-    )
-  }
-  return results
 }
 
 /**

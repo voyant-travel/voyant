@@ -1909,6 +1909,7 @@
       "@voyant-travel/trips/runtime-port": ["../trips/dist/runtime-port.d.ts"],
       "@voyant-travel/trips/schema": ["../trips/dist/schema.d.ts"],
       "@voyant-travel/trips/service": ["../trips/dist/service.d.ts"],
+      "@voyant-travel/trips/sourcing-job": ["../trips/dist/sourcing-job.d.ts"],
       "@voyant-travel/trips/tools": ["../trips/dist/mcp-runtime.d.ts"],
       "@voyant-travel/trips/validation": ["../trips/dist/validation.d.ts"],
       "@voyant-travel/trips/voyant": ["../trips/dist/voyant.d.ts"],

@@ -15,6 +15,7 @@
     "./route-runtime": "./src/route-runtime.ts",
     "./cruise-extension": "./src/cruise-extension.ts",
     "./payment-subscribers": "./src/payment-subscriber-runtime.ts",
+    "./sourcing-job": "./src/sourcing-job.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
@@ -146,6 +147,11 @@
         "types": "./dist/payment-subscriber-runtime.d.ts",
         "import": "./dist/payment-subscriber-runtime.js",
         "default": "./dist/payment-subscriber-runtime.js"
+      },
+      "./sourcing-job": {
+        "types": "./dist/sourcing-job.d.ts",
+        "import": "./dist/sourcing-job.js",
+        "default": "./dist/sourcing-job.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

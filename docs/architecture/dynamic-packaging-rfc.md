@@ -43,7 +43,7 @@ What to add:
 
 - A **Trip Requirement** — an unresolved customer-facing need ("3-night stay in Cairo, 2 adults") held on an envelope.
 - **Trip Candidates** — `AvailabilityCandidate`s attached to a requirement, ranked and TTL'd. These are **resumable trip state**, re-validated before commit — not a catalog cache.
-- Services: `addRequirement` / `sourceRequirementCandidates` / `selectCandidate` (resolves a requirement into a pinned component) / `reshopRequirement` / `reshopTrip`.
+- Services: `addRequirement` / `selectCandidate` (resolves a requirement into a pinned component). Candidate sourcing is admitted by the durable `source_trip_requirement_candidates` Tool and settled by the fixed Trips worker; synchronous sourcing/re-shop services are intentionally absent.
 - Invariants: TTL reaper, selected-uniqueness per requirement, required-requirement reserve gate.
 
 This now plugs straight into the **already-shipped** quote-acceptance saga rather than needing its own commit backend.
@@ -168,7 +168,7 @@ export function mergedFlightOfferToCandidate(o: MergedFlightOffer): Availability
 ## 5. Phased plan
 
 - **P1 — `searchAvailability` primitive (Gap 1) — SHIPPED (#2081 via PR #2084).** `supportsAvailabilitySearch` + `AvailabilitySearchRequest`/`AvailabilityCandidate`/`AvailabilitySearchResult` on the source-adapter contract, vertical-agnostic `fanOutAvailabilitySearch` (per-source timeout, vertical-gating, ranked merge, per-candidate origin + per-source cursor), owned-search-handler registry, and the flights `MergedFlightOffer → AvailabilityCandidate` bridge. Follow-up: the Voyant Connect `searchAvailability` adapter lives in the `connect-sdk` repo (unblocked once `catalog-contracts` publishes).
-- **P2 — Requirement/Candidate in Trips (Gap 2) — SHIPPED (#2082 via PRs #2087, #2088).** `trip_requirements` + `trip_candidates` schema, `addRequirement` / `sourceRequirementCandidates` / `selectCandidate` (pins a draft component) / `reshopRequirement` / `reshopTrip` / `expireStaleTripCandidates`, the three invariants (TTL reaper, selected-uniqueness, required-requirement reserve gate), and admin HTTP routes with an injected fan-out (`sourceCandidatesDeps`). Resolves into the existing quote-acceptance saga.
+- **P2 — Requirement/Candidate in Trips (Gap 2) — SHIPPED (#2082 via PRs #2087, #2088).** `trip_requirements` + `trip_candidates` schema, `addRequirement` / `selectCandidate` (pins a draft component) / `expireStaleTripCandidates`, the three invariants (TTL reaper, selected-uniqueness, required-requirement reserve gate), and durable Tool-admitted candidate sourcing through a fixed Trips worker. Inline HTTP/service fan-out and re-shop mutations were removed when the durable operation replaced them. Resolves into the existing quote-acceptance saga.
 - **P3 — package-level markup/pricing.** The only net-new pricing piece; the accept/reserve/checkout/freeze spine already exists in Quotes. Follow-up.
 - **P4 — intent-driven auto-assembly + AI.** Max AI tools as callers shipped in `voyant-cloud` (`agent-core` `trips.ts`, platform PR #637) — they drive the P2 endpoints. Rules-based `assembleTrip(intent)` is the remaining follow-up.
 - **P5 — booking hardening** (durable saga, sourced-adapter `releaseHold`, cross-supplier drift correlation). Follow-up; owned `releaseHold` already exists.

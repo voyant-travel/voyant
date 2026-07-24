@@ -15,6 +15,7 @@ import type { VoyantPort } from "@voyant-travel/core/project"
 import { type FlightsRuntime, flightsRuntimePort } from "@voyant-travel/flights"
 import { type PaymentAdapter, paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { TripsRoutesOptionsProvider } from "./routes.js"
 import { createTripsRoutesRuntime } from "./runtime.js"
 import {
@@ -22,6 +23,7 @@ import {
   tripsDatabaseRuntimePort,
   tripsRoutesRuntimePort,
 } from "./runtime-port.js"
+import { tripsSourcingJobRuntimePort } from "./sourcing-job-runtime-port.js"
 import {
   createCommerceCardPaymentRuntime,
   createStandardPaymentLinkRouteOptions,
@@ -56,10 +58,11 @@ export function createTripsRuntimePortContribution(
     host.hasRuntimePort?.(flightsRuntimePort) === false
       ? undefined
       : host.getRuntimePort<FlightsRuntime>(flightsRuntimePort)
+  const catalog = host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort)
   const tripsRoutes = Promise.resolve()
     .then(() =>
       Promise.all([
-        host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort),
+        catalog,
         host.getRuntimePort<CatalogCheckoutApiRuntime>(catalogCheckoutApiRuntimePort),
         flights,
         Promise.resolve(cardPayment),
@@ -81,6 +84,19 @@ export function createTripsRuntimePortContribution(
     [storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions(paymentAdapter),
     [tripsRoutesRuntimePort.id]: tripsRoutes,
     [tripsDatabaseRuntimePort.id]: tripsDatabase,
+    [tripsSourcingJobRuntimePort.id]: {
+      resolveDb: (bindings: unknown) =>
+        host.primitives.database.resolve<PostgresJsDatabase>(bindings),
+      async resolveSourceRegistry(bindings: unknown) {
+        const services = await catalog
+        return services.ensureSourceRegistry(host.primitives.env(bindings))
+      },
+      async resolveOwnedSearchHandlers() {
+        const services = await catalog
+        return services.getOwnedAvailabilitySearchHandlers()
+      },
+      warn: (message: string) => console.warn(message),
+    },
   }
   if (paymentAdapter) {
     contribution[commerceCardPaymentRuntimePort.id] = cardPayment

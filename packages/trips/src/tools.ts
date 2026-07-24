@@ -27,10 +27,10 @@ import type {
 import {
   priceTripResultSchema,
   reserveTripResultSchema,
-  reshopTripResultSchema,
   reviseTripResultSchema,
   selectTripCandidateResultSchema,
-  sourceTripCandidatesResultSchema,
+  sourceTripCandidatesAcceptedResultSchema,
+  tripRequirementSourcingOperationResultSchema,
   tripRequirementToolSchema,
 } from "./tool-output-schemas.js"
 import {
@@ -38,15 +38,16 @@ import {
   createTripComponentBodySchema,
   type createTripComponentSchema,
   createTripEnvelopeSchema,
+  getRequirementSourcingOperationSchema,
   priceTripSchema,
   reserveTripSchema,
-  reshopTripSchema,
   selectCandidateSchema,
   sourceRequirementCandidatesSchema,
 } from "./validation.js"
 
 const OWNER = "@voyant-travel/trips"
 const VERSION = "v1"
+const SOURCE_REQUIREMENT_CANDIDATES_VERSION = "v2"
 const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
 const REQUIREMENT_WRITE_RISK = {
   destructive: false,
@@ -76,13 +77,6 @@ const CANDIDATE_SELECTION_RISK = {
   confirmationRequired: true,
   sideEffects: ["data-write"],
 } as const
-const RESHOP_RISK = {
-  destructive: true,
-  reversible: true,
-  dryRunSupported: false,
-  confirmationRequired: true,
-  sideEffects: ["data-write"],
-} as const
 export const CREATE_TRIP_HANDLER_POLICY = {
   capabilityId: `${OWNER}#tool.create-trip`,
   capabilityVersion: VERSION,
@@ -106,6 +100,29 @@ export const CREATE_TRIP_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.source-requirement-candidates`,
+  capabilityVersion: SOURCE_REQUIREMENT_CANDIDATES_VERSION,
+  canonicalName: "source_trip_requirement_candidates",
+  actionPolicy: {
+    id: `${OWNER}#action.source-requirement-candidates`,
+    capabilityId: `${OWNER}#action.source-requirement-candidates`,
+    version: SOURCE_REQUIREMENT_CANDIDATES_VERSION,
+    kind: "execute",
+    targetType: "trip-requirement",
+    commandTargetField: "requirementId",
+    targetLifecycle: "existing",
+    existingTarget: {
+      durability: "handler-command-result-v1",
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 /** The trips service surface a deployment binds into the tool context. */
 export interface TripsToolServices {
   createTrip(
@@ -117,12 +134,14 @@ export interface TripsToolServices {
   priceTrip(input: z.infer<typeof priceTripSchema>): Promise<ServicePriceTripResult>
   reserveTrip(input: z.infer<typeof reserveTripSchema>): Promise<ServiceReserveTripResult>
   addRequirement(input: z.infer<typeof addRequirementSchema>): Promise<unknown>
-  sourceRequirementCandidates(
+  acceptRequirementCandidateSourcing(
     input: z.infer<typeof sourceRequirementCandidatesSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
+  getRequirementSourcingOperation(
+    input: z.infer<typeof getRequirementSourcingOperationSchema>,
+  ): Promise<unknown | null>
   selectCandidate(input: z.infer<typeof selectCandidateSchema>): Promise<unknown>
-  reshopRequirement(input: z.infer<typeof sourceRequirementCandidatesSchema>): Promise<unknown>
-  reshopTrip(input: z.infer<typeof reshopTripSchema>): Promise<unknown>
 }
 
 /** Tool context with the trips service injected. */
@@ -278,22 +297,48 @@ export const addTripRequirementTool = defineTool({
 
 export const sourceTripRequirementCandidatesTool = defineTool({
   capabilityId: `${OWNER}#tool.source-requirement-candidates`,
-  capabilityVersion: VERSION,
+  capabilityVersion: SOURCE_REQUIREMENT_CANDIDATES_VERSION,
   name: "source_trip_requirement_candidates",
   description:
-    "Run the selected provider-neutral catalog availability fan-out for one unresolved trip requirement and persist fresh ranked candidates.",
+    "Accept durable provider-neutral candidate sourcing for one unresolved trip requirement. " +
+    "The fixed Trips worker replaces ranked candidates only after a successful fan-out.",
   inputSchema: sourceRequirementCandidatesSchema,
-  outputSchema: sourceTripCandidatesResultSchema,
+  outputSchema: sourceTripCandidatesAcceptedResultSchema,
   requiredScopes: ["trips:write"],
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: CANDIDATE_WRITE_RISK,
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler(input, ctx: TripsToolContext) {
     assertToolAudience(ctx, input.scope.audience)
-    return parseJsonResult(
-      sourceTripCandidatesResultSchema,
-      await trips(ctx).sourceRequirementCandidates(input),
+    const admitted = admitHandlerActionPolicy(ctx, SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY)
+    return sourceTripCandidatesAcceptedResultSchema.parse(
+      await trips(ctx).acceptRequirementCandidateSourcing(input, admitted),
     )
+  },
+})
+
+export const getTripRequirementSourcingOperationTool = defineTool({
+  capabilityId: `${OWNER}#tool.get-requirement-sourcing-operation`,
+  capabilityVersion: SOURCE_REQUIREMENT_CANDIDATES_VERSION,
+  name: "get_trip_requirement_sourcing_operation",
+  description:
+    "Read one durable trip-requirement sourcing operation by operation and requirement id, " +
+    "including retry, completion, or terminal failure without hiding stale candidates.",
+  inputSchema: getRequirementSourcingOperationSchema,
+  outputSchema: tripRequirementSourcingOperationResultSchema,
+  requiredScopes: ["trips:read"],
+  audience: STAFF_AUDIENCE,
+  tier: "read",
+  riskPolicy: { destructive: false, reversible: true, dryRunSupported: false },
+  annotations: { readOnlyHint: true, idempotentHint: true },
+  async handler(input, ctx: TripsToolContext) {
+    const result = await trips(ctx).getRequirementSourcingOperation(input)
+    if (!result) {
+      throw new ToolError("Trip requirement sourcing operation was not found.", "NOT_FOUND", input)
+    }
+    return parseJsonResult(tripRequirementSourcingOperationResultSchema, result)
   },
 })
 
@@ -314,45 +359,6 @@ export const selectTripCandidateTool = defineTool({
   },
 })
 
-export const reshopTripRequirementTool = defineTool({
-  capabilityId: `${OWNER}#tool.reshop-requirement`,
-  capabilityVersion: VERSION,
-  name: "reshop_trip_requirement",
-  description:
-    "Retire a requirement's prior pinned component and source a fresh provider-neutral ranked candidate set.",
-  inputSchema: sourceRequirementCandidatesSchema,
-  outputSchema: sourceTripCandidatesResultSchema,
-  requiredScopes: ["trips:write"],
-  audience: STAFF_AUDIENCE,
-  tier: "destructive",
-  riskPolicy: RESHOP_RISK,
-  async handler(input, ctx: TripsToolContext) {
-    assertToolAudience(ctx, input.scope.audience)
-    return parseJsonResult(
-      sourceTripCandidatesResultSchema,
-      await trips(ctx).reshopRequirement(input),
-    )
-  },
-})
-
-export const reshopTripTool = defineTool({
-  capabilityId: `${OWNER}#tool.reshop-trip`,
-  capabilityVersion: VERSION,
-  name: "reshop_trip",
-  description:
-    "Retire prior selections and run fresh provider-neutral candidate sourcing for every requirement on a trip envelope.",
-  inputSchema: reshopTripSchema,
-  outputSchema: reshopTripResultSchema,
-  requiredScopes: ["trips:write"],
-  audience: STAFF_AUDIENCE,
-  tier: "destructive",
-  riskPolicy: RESHOP_RISK,
-  async handler(input, ctx: TripsToolContext) {
-    assertToolAudience(ctx, input.scope.audience)
-    return parseJsonResult(reshopTripResultSchema, await trips(ctx).reshopTrip(input))
-  },
-})
-
 /** All trips agent tools, ready to register on a `ToolRegistry`. */
 export const tripsTools = [
   createTripTool,
@@ -361,9 +367,8 @@ export const tripsTools = [
   reserveTripTool,
   addTripRequirementTool,
   sourceTripRequirementCandidatesTool,
+  getTripRequirementSourcingOperationTool,
   selectTripCandidateTool,
-  reshopTripRequirementTool,
-  reshopTripTool,
 ] as const
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {

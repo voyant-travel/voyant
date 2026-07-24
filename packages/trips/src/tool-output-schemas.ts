@@ -133,9 +133,39 @@ export const tripCandidateToolSchema = z.object({
   updatedAt: isoTimestamp,
 })
 
-export const sourceTripCandidatesResultSchema = z.object({
-  requirement: tripRequirementToolSchema,
-  candidates: z.array(tripCandidateToolSchema),
+/** Immutable admission result for the durable requirement-sourcing worker. */
+export const sourceTripCandidatesAcceptedResultSchema = z.object({
+  status: z.literal("accepted"),
+  operationId: z.string().min(1),
+  requirementId: z.string().min(1),
+  statusTool: z.literal("get_trip_requirement_sourcing_operation"),
+})
+
+export const tripRequirementSourcingOperationResultSchema = z.object({
+  operationId: z.string().min(1),
+  requirementId: z.string().min(1),
+  status: z.enum(["pending", "processing", "retry", "completed", "dead_letter"]),
+  result: sourceTripCandidatesAcceptedResultSchema,
+  outcome: z
+    .discriminatedUnion("status", [
+      z.object({
+        status: z.literal("completed"),
+        candidateCount: z.number().int().nonnegative(),
+        requirementStatus: z.enum(["candidates_ready", "no_availability"]),
+      }),
+      z.object({
+        status: z.literal("dead_letter"),
+        error: z.string(),
+      }),
+    ])
+    .nullable(),
+  error: z.string().nullable(),
+  attempts: z.number().int().nonnegative(),
+  maxAttempts: z.number().int().positive(),
+  nextAttemptAt: isoTimestamp,
+  completedAt: isoTimestamp.nullable(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
 })
 
 export const selectTripCandidateResultSchema = z.object({
@@ -143,8 +173,6 @@ export const selectTripCandidateResultSchema = z.object({
   candidate: tripCandidateToolSchema,
   component: tripComponentToolSchema,
 })
-
-export const reshopTripResultSchema = z.array(sourceTripCandidatesResultSchema)
 
 export const createTripResultSchema = z.object({
   envelope: tripEnvelopeToolSchema,

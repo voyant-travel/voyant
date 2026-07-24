@@ -20,6 +20,7 @@ import type {
 import type { FieldPolicy, FieldPolicyRegistry } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
 import type { EntityOverlayChangedPayload } from "./events/taxonomy.js"
+import type { OwnedAvailabilitySearchHandlerRegistry } from "./search/owned-search-handler.js"
 import type { DocumentBuilder } from "./services/indexer-service.js"
 
 export interface CatalogProjectionExtension {
@@ -52,6 +53,7 @@ export interface CatalogAccommodationsRuntimeExtension extends CatalogPolicyRunt
     registry: OwnedBookingHandlerRegistry,
     host: CatalogOwnedBookingHandlerHost,
   ): void
+  registerOwnedAvailabilitySearchHandler(registry: OwnedAvailabilitySearchHandlerRegistry): void
 }
 
 export interface CatalogChartersRuntimeExtension extends CatalogPolicyRuntimeExtension {}
@@ -216,6 +218,7 @@ export interface CatalogRuntimeServices {
   getSourceRegistryFromContext(context: unknown): SourceAdapterRegistry
   getOwnedHandlers(env: Readonly<Record<string, unknown>>): OwnedBookingHandlerRegistry
   getOwnedHandlersFromContext(context: unknown): OwnedBookingHandlerRegistry
+  getOwnedAvailabilitySearchHandlers(): OwnedAvailabilitySearchHandlerRegistry
   buildEmbeddingProvider(env: Readonly<Record<string, unknown>>): EmbeddingProvider | undefined
   buildIndexer(
     env: Readonly<Record<string, unknown>>,
@@ -263,6 +266,7 @@ export const catalogRuntimeServicesPort = definePort<CatalogRuntimeServices>({
       "getSourceRegistryFromContext",
       "getOwnedHandlers",
       "getOwnedHandlersFromContext",
+      "getOwnedAvailabilitySearchHandlers",
       "buildEmbeddingProvider",
       "buildIndexer",
       "loadSlices",

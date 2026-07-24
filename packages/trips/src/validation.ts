@@ -357,7 +357,7 @@ export type ReserveTripInput = z.infer<typeof reserveTripSchema>
 
 // ── Dynamic packaging: requirements + candidates (RFC #2082) ──
 
-/** Search scope shared by the sourcing/reshop endpoints (reuses the price scope). */
+/** Search scope supplied to the durable sourcing command (reuses the price scope). */
 export const availabilitySearchScopeSchema = priceTripSchema.shape.scope
 
 export const addRequirementSchema = z.object({
@@ -383,20 +383,21 @@ export const sourceRequirementCandidatesSchema = z.object({
 
 export type SourceRequirementCandidatesBody = z.infer<typeof sourceRequirementCandidatesSchema>
 
+export const getRequirementSourcingOperationSchema = z.object({
+  operationId: z.string().min(1),
+  requirementId: z.string().min(1),
+})
+
+export type GetRequirementSourcingOperationInput = z.infer<
+  typeof getRequirementSourcingOperationSchema
+>
+
 export const selectCandidateSchema = z.object({
   requirementId: z.string().min(1),
   candidateId: z.string().min(1),
 })
 
 export type SelectCandidateBody = z.infer<typeof selectCandidateSchema>
-
-export const reshopTripSchema = z.object({
-  envelopeId: z.string().min(1),
-  scope: availabilitySearchScopeSchema,
-  deadlineMs: z.number().int().positive().optional(),
-})
-
-export type ReshopTripBody = z.infer<typeof reshopTripSchema>
 
 export const startTripCheckoutSchema = z.object({
   envelopeId: z.string().min(1),

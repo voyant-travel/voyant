@@ -12,10 +12,10 @@
  * types (§17: `Date`/timestamp columns serialize to strings over the wire).
  * Travel Composer results are deeply composed — the top-level envelope /
  * component / requirement / snapshot row shapes are modeled faithfully, while
- * deeply-nested composed/opaque sub-objects (pricing/reshop/candidate payloads,
+ * deeply-nested composed/opaque sub-objects (pricing/candidate payloads,
  * frozen snapshot blobs) are documented pass-throughs typed as `z.unknown()`.
  *
- * The 24 legs are split across per-resource `OpenAPIHono` sub-chains
+ * The 22 legs are split across per-resource `OpenAPIHono` sub-chains
  * (envelopes / snapshots / components / requirements / lifecycle / health),
  * each composed onto the parent `OpenAPIHono` via `.route("/", subApp)`.
  * Mounting an `OpenAPIHono` child with `.route("/")` DOES propagate the child's
@@ -26,7 +26,7 @@
  * bounded — one flat 24-leg `.openapi()` chain has O(n²) inference cost and
  * OOMed CI's typecheck at its 8 GB heap. See voyant#2114 / voyant#2208.
  *
- * agent-quality: file-size exception — intentional: 24 Travel Composer legs
+ * agent-quality: file-size exception — intentional: 22 Travel Composer legs
  * (envelope/snapshot/component/requirement CRUD + the price/reserve/checkout/
  * cancel lifecycle) authored as `createRoute` objects co-located with their
  * handlers, grouped into per-resource `OpenAPIHono` sub-chains composed onto a
@@ -38,16 +38,15 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { Context } from "hono"
-
 import {
   type CancelTripComponentsDeps,
   type PriceTripDeps,
   type ReserveTripDeps,
-  type SourceRequirementCandidatesDeps,
   type StartCheckoutDeps,
   TripsInvariantError,
   tripsService,
 } from "./service.js"
+import { tripRequirementSourcingOperationResultSchema } from "./tool-output-schemas.js"
 import {
   addRequirementSchema,
   cancelTripComponentsSchema,
@@ -59,9 +58,7 @@ import {
   priceTripSchema,
   reorderTripComponentsSchema,
   reserveTripSchema,
-  reshopTripSchema,
   selectCandidateSchema,
-  sourceRequirementCandidatesSchema,
   startTripCheckoutSchema,
   tripComponentKindSchema,
   tripComponentStatusSchema,
@@ -75,6 +72,7 @@ type Env = {
   Bindings: Record<string, unknown>
   Variables: {
     db: AnyDrizzleDb
+    organizationId?: string | null
   }
 }
 
@@ -84,8 +82,6 @@ export interface TripsRoutesOptions {
   reserveTripDeps?: TripsRouteDeps<ReserveTripDeps>
   startCheckoutDeps?: TripsRouteDeps<StartCheckoutDeps>
   cancelTripComponentsDeps?: TripsRouteDeps<CancelTripComponentsDeps>
-  /** Availability fan-out wiring for requirement sourcing / re-shop (RFC #2082). */
-  sourceCandidatesDeps?: TripsRouteDeps<SourceRequirementCandidatesDeps>
 }
 
 export type TripsRouteDeps<T> = T | ((c: Context<Env>) => T | Promise<T | undefined> | undefined)
@@ -101,9 +97,7 @@ const previewCancellationBodySchema = previewTripCancellationSchema.omit({ envel
 const cancelTripComponentsBodySchema = cancelTripComponentsSchema.omit({ envelopeId: true })
 const addRequirementBodySchema = addRequirementSchema.omit({ envelopeId: true })
 const reorderComponentsBodySchema = reorderTripComponentsSchema.omit({ envelopeId: true })
-const sourceCandidatesBodySchema = sourceRequirementCandidatesSchema.omit({ requirementId: true })
 const selectCandidateBodySchema = selectCandidateSchema.omit({ requirementId: true })
-const reshopTripBodySchema = reshopTripSchema.omit({ envelopeId: true })
 
 // ── Shared response fragments ────────────────────────────────────────────
 
@@ -259,7 +253,7 @@ const envelopeDataSchema = z.object({ data: tripEnvelopeRowSchema })
 const componentDataSchema = z.object({ data: tripComponentRowSchema })
 
 /**
- * Lifecycle result envelopes (price/reserve/checkout/cancellation/reshop). The
+ * Lifecycle result envelopes (price/reserve/checkout/cancellation). The
  * envelope + components rows are modeled faithfully; the per-operation
  * composed result fields (pricing/reservation/checkout/cancellation payloads)
  * pass through as `z.unknown()` — bounded effort per voyant#2208.
@@ -361,6 +355,10 @@ async function resolveConfiguredRouteDeps<T>(
 const envelopeIdParamSchema = z.object({ envelopeId: z.string() })
 const componentIdParamSchema = z.object({ componentId: z.string() })
 const requirementIdParamSchema = z.object({ requirementId: z.string() })
+const sourcingOperationParamSchema = z.object({
+  requirementId: z.string(),
+  operationId: z.string(),
+})
 const snapshotIdParamSchema = z.object({ snapshotId: z.string() })
 
 // ── Route definitions ─────────────────────────────────────────────────────
@@ -780,48 +778,26 @@ const listRequirementsRoute = createRoute({
   },
 })
 
-const sourceCandidatesRoute = createRoute({
-  method: "post",
-  path: "/requirements/{requirementId}/candidates",
-  request: {
-    params: requirementIdParamSchema,
-    body: {
-      required: true,
-      content: { "application/json": { schema: sourceCandidatesBodySchema } },
-    },
-  },
+const getRequirementSourcingOperationRoute = createRoute({
+  method: "get",
+  path: "/requirements/{requirementId}/sourcing-operations/{operationId}",
+  request: { params: sourcingOperationParamSchema },
   responses: {
     200: {
-      description: "The requirement with its freshly-sourced ranked candidates",
+      description:
+        "Durable sourcing operation status, immutable accepted result, terminal outcome, and error",
       content: {
         "application/json": {
-          schema: z.object({
-            data: z.object({
-              requirement: tripRequirementRowSchema,
-              candidates: z.array(tripCandidateRowSchema),
-            }),
-          }),
+          schema: z.object({ data: tripRequirementSourcingOperationResultSchema }),
         },
       },
-    },
-    400: {
-      description: "invalid_request — body failed validation",
-      content: { "application/json": { schema: errorResponseSchema } },
     },
     403: {
       description: "Admin-only operation invoked on the public surface",
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
-      description: "Trip requirement not found",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    409: {
-      description: "Requirement cannot be sourced in its current state",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    501: {
-      description: "Availability-sourcing dependencies are not configured",
+      description: "Sourcing operation not found for this organization and requirement",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -866,102 +842,6 @@ const selectCandidateRoute = createRoute({
     },
     409: {
       description: "Candidate is not selectable (expired / superseded / wrong state)",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
-const reshopRequirementRoute = createRoute({
-  method: "post",
-  path: "/requirements/{requirementId}/reshop",
-  request: {
-    params: requirementIdParamSchema,
-    body: {
-      required: true,
-      content: { "application/json": { schema: sourceCandidatesBodySchema } },
-    },
-  },
-  responses: {
-    200: {
-      description: "The requirement with re-shopped ranked candidates",
-      content: {
-        "application/json": {
-          schema: z.object({
-            data: z.object({
-              requirement: tripRequirementRowSchema,
-              candidates: z.array(tripCandidateRowSchema),
-            }),
-          }),
-        },
-      },
-    },
-    400: {
-      description: "invalid_request — body failed validation",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    403: {
-      description: "Admin-only operation invoked on the public surface",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    404: {
-      description: "Trip requirement not found",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    409: {
-      description: "Requirement cannot be re-shopped in its current state",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    501: {
-      description: "Availability-sourcing dependencies are not configured",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
-const reshopTripRoute = createRoute({
-  method: "post",
-  path: "/{envelopeId}/reshop",
-  request: {
-    params: envelopeIdParamSchema,
-    body: {
-      required: true,
-      content: { "application/json": { schema: reshopTripBodySchema } },
-    },
-  },
-  responses: {
-    200: {
-      description: "Per-requirement re-shop results for the envelope",
-      content: {
-        "application/json": {
-          schema: z.object({
-            data: z.array(
-              z.object({
-                requirement: tripRequirementRowSchema,
-                candidates: z.array(tripCandidateRowSchema),
-              }),
-            ),
-          }),
-        },
-      },
-    },
-    400: {
-      description: "invalid_request — body failed validation",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    403: {
-      description: "Admin-only operation invoked on the public surface",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    404: {
-      description: "Trip envelope not found",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    409: {
-      description: "Envelope cannot be re-shopped in its current state",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    501: {
-      description: "Availability-sourcing dependencies are not configured",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -1181,28 +1061,6 @@ function createEnvelopeRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHo
         return c.json({ error: message }, status)
       }
     })
-    .openapi(reshopTripRoute, async (c) => {
-      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
-      const deps = await resolveConfiguredRouteDeps(
-        c,
-        readOptions,
-        (options) => options.sourceCandidatesDeps,
-      )
-      if (!deps) {
-        return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
-      }
-      try {
-        const result = await tripsService.reshopTrip(
-          c.get("db"),
-          { ...c.req.valid("json"), envelopeId: c.req.valid("param").envelopeId },
-          deps,
-        )
-        return c.json({ data: result }, 200)
-      } catch (error) {
-        const { message, status } = routeError(error)
-        return c.json({ error: message }, status)
-      }
-    })
 }
 
 function createSnapshotRoutes(readOptions: ResolveTripsRoutesOptions): OpenAPIHono<Env> {
@@ -1341,27 +1199,19 @@ function createRequirementRoutes(readOptions: ResolveTripsRoutesOptions): OpenAP
         return c.json({ error: message }, status)
       }
     })
-    .openapi(sourceCandidatesRoute, async (c) => {
+    .openapi(getRequirementSourcingOperationRoute, async (c) => {
       if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
-      const deps = await resolveConfiguredRouteDeps(
-        c,
-        readOptions,
-        (options) => options.sourceCandidatesDeps,
-      )
-      if (!deps) {
-        return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
+      const params = c.req.valid("param")
+      const result = await tripsService.getTripRequirementSourcingOperation(c.get("db"), {
+        operationId: params.operationId,
+        requirementId: params.requirementId,
+        organizationId: c.get("organizationId") ?? null,
+      })
+      if (!result) {
+        return c.json({ error: "Trip requirement sourcing operation was not found" }, 404)
       }
-      try {
-        const result = await tripsService.sourceRequirementCandidates(
-          c.get("db"),
-          { ...c.req.valid("json"), requirementId: c.req.valid("param").requirementId },
-          deps,
-        )
-        return c.json({ data: result }, 200)
-      } catch (error) {
-        const { message, status } = routeError(error)
-        return c.json({ error: message }, status)
-      }
+      c.header("cache-control", "private, no-store")
+      return c.json({ data: result }, 200)
     })
     .openapi(selectCandidateRoute, async (c) => {
       if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
@@ -1370,28 +1220,6 @@ function createRequirementRoutes(readOptions: ResolveTripsRoutesOptions): OpenAP
           ...c.req.valid("json"),
           requirementId: c.req.valid("param").requirementId,
         })
-        return c.json({ data: result }, 200)
-      } catch (error) {
-        const { message, status } = routeError(error)
-        return c.json({ error: message }, status)
-      }
-    })
-    .openapi(reshopRequirementRoute, async (c) => {
-      if (await isPublicRouteSurface(readOptions)) return publicForbidden(c)
-      const deps = await resolveConfiguredRouteDeps(
-        c,
-        readOptions,
-        (options) => options.sourceCandidatesDeps,
-      )
-      if (!deps) {
-        return c.json({ error: "Trips availability-sourcing dependencies are not configured" }, 501)
-      }
-      try {
-        const result = await tripsService.reshopRequirement(
-          c.get("db"),
-          { ...c.req.valid("json"), requirementId: c.req.valid("param").requirementId },
-          deps,
-        )
         return c.json({ data: result }, 200)
       } catch (error) {
         const { message, status } = routeError(error)

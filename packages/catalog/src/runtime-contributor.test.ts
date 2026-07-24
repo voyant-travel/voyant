@@ -99,6 +99,7 @@ describe("createCatalogRuntimePortContribution", () => {
         propertyFieldPolicy: [],
         createDocumentBuilder: vi.fn(() => async () => null),
         createPropertyDocumentBuilder: vi.fn(() => async () => null),
+        registerOwnedAvailabilitySearchHandler: vi.fn(),
       },
       [catalogChartersRuntimeExtensionPort.id]: { fieldPolicy: [] },
       [catalogCommerceRuntimeExtensionPort.id]: {

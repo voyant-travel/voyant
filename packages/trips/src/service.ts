@@ -1,7 +1,13 @@
+import { getTripRequirementSourcingOperation } from "./service-durable-sourcing.js"
 import type { TripsStatus } from "./validation.js"
 
 export { cancelComponents, previewCancellation } from "./service-cancellation.js"
 export { completeTripCheckout, startCheckout } from "./service-checkout.js"
+export {
+  getTripRequirementSourcingOperation,
+  type TripRequirementSourcingOperationView,
+  type TripRequirementSourcingOutcome,
+} from "./service-durable-sourcing.js"
 export {
   aggregateComponentPricing,
   assertTripComponentCanBeReserved,
@@ -28,13 +34,10 @@ export {
   isTripCandidateExpired,
   listEnvelopeRequirements,
   pinnedComponentValuesFromCandidate,
-  reshopRequirement,
-  reshopTrip,
   type SelectCandidateInput,
   type SourceRequirementCandidatesDeps,
   type SourceRequirementCandidatesInput,
   selectCandidate,
-  sourceRequirementCandidates,
 } from "./service-requirements.js"
 export { reserveTrip } from "./service-reservation.js"
 export {
@@ -102,10 +105,7 @@ import {
   addRequirement,
   expireStaleTripCandidates,
   listEnvelopeRequirements,
-  reshopRequirement,
-  reshopTrip,
   selectCandidate,
-  sourceRequirementCandidates,
 } from "./service-requirements.js"
 import { reserveTrip } from "./service-reservation.js"
 import { freezeTripSnapshot, getTripSnapshotById, listTripSnapshots } from "./service-snapshots.js"
@@ -148,9 +148,7 @@ export const tripsService = {
   cancelComponents,
   addRequirement,
   listEnvelopeRequirements,
-  sourceRequirementCandidates,
+  getTripRequirementSourcingOperation,
   selectCandidate,
-  reshopRequirement,
-  reshopTrip,
   expireStaleTripCandidates,
 }

@@ -128,6 +128,7 @@ function runtimePortStub(id: string): unknown {
     getSourceRegistryFromContext: unavailable,
     getOwnedHandlers: unavailable,
     getOwnedHandlersFromContext: unavailable,
+    getOwnedAvailabilitySearchHandlers: unavailable,
     buildEmbeddingProvider: () => undefined,
     buildIndexer: () => undefined,
     loadSlices: unavailableAsync,

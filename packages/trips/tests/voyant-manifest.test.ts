@@ -15,6 +15,7 @@ import {
   type TripsDatabaseRuntime,
   tripsDatabaseRuntimePort,
   tripsRoutesRuntimePort,
+  tripsSourcingJobRuntimePort,
 } from "../src/index.js"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "../src/payment-subscriber-runtime.js"
 import { createTripsRuntimePortContribution } from "../src/runtime-contributor.js"
@@ -32,11 +33,13 @@ describe("trips deployment manifest", () => {
           { id: "storefront.payment-link.runtime" },
           { id: "trips.routes-runtime" },
           { id: "trips.database-runtime" },
+          { id: "trips.sourcing-job-runtime" },
         ],
       },
       runtimePorts: [
         { id: "trips.routes-runtime" },
         { id: "trips.database-runtime" },
+        { id: "trips.sourcing-job-runtime" },
         { id: "payments.adapter.runtime", optional: true },
         { id: "catalog.runtime-services" },
         { id: "commerce.checkout-api-options" },
@@ -60,6 +63,17 @@ describe("trips deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/trips#schema" }],
       migrations: [{ id: "@voyant-travel/trips#migrations" }],
+      jobs: [
+        {
+          id: "trips.source-requirement-candidates",
+          wakeup: true,
+          scheduling: { required: true },
+          runtime: {
+            entry: "@voyant-travel/trips/sourcing-job",
+            export: "runTripRequirementSourcingJob",
+          },
+        },
+      ],
       config: [
         {
           id: "@voyant-travel/trips#config.payment-callback-base-url",
@@ -227,14 +241,30 @@ describe("trips deployment manifest", () => {
         }),
         expect.objectContaining({
           id: "@voyant-travel/trips#action.source-requirement-candidates",
-          availability: {
-            status: "unavailable",
-            reasonCode: "unsafe-nontransactional-effect",
+          version: "v2",
+          commandTargetField: "requirementId",
+          targetLifecycle: "existing",
+          availability: { status: "available" },
+          existingTarget: {
+            durability: "handler-command-result-v1",
+          },
+          durability: {
+            strategy: "saga",
+            testReference: "packages/trips/tests/integration/durable-sourcing.test.ts",
           },
           effectBoundary: "multistage",
           risk: "medium",
           ledger: "required",
           approval: "never",
+          allowedActorTypes: ["staff"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/trips#action.get-requirement-sourcing-operation",
+          version: "v2",
+          kind: "read",
+          targetType: "trip-requirement-sourcing-operation",
+          risk: "low",
+          ledger: "optional",
           allowedActorTypes: ["staff"],
         }),
         expect.objectContaining({
@@ -244,14 +274,18 @@ describe("trips deployment manifest", () => {
           approval: "required",
           allowedActorTypes: ["staff"],
         }),
-        expect.objectContaining({
-          id: "@voyant-travel/trips#action.reshop-trip",
-          risk: "high",
-          ledger: "required",
-          approval: "required",
-          allowedActorTypes: ["staff"],
-        }),
       ]),
+    )
+    expect(tripsVoyantModule.actions.some((action) => action.id.includes("#action.reshop-"))).toBe(
+      false,
+    )
+    expect(tripsVoyantModule.tools.some((tool) => tool.id.includes("#tool.reshop-"))).toBe(false)
+    expect(tripsVoyantModule.tools).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/trips#tool.get-requirement-sourcing-operation",
+        requiredScopes: ["trips:read"],
+        risk: "low",
+      }),
     )
   })
 
@@ -289,6 +323,21 @@ describe("trips deployment manifest", () => {
     await expect(
       assertPortConforms(tripsDatabaseRuntimePort, { withDb: true } as never),
     ).rejects.toThrow(/withDb/)
+    await expect(
+      assertPortConforms(tripsSourcingJobRuntimePort, {
+        resolveDb: vi.fn(),
+        resolveSourceRegistry: vi.fn(),
+        resolveOwnedSearchHandlers: vi.fn(),
+        warn: vi.fn(),
+      }),
+    ).resolves.toBeUndefined()
+    await expect(
+      assertPortConforms(tripsSourcingJobRuntimePort, {
+        resolveDb: vi.fn(),
+        resolveSourceRegistry: vi.fn(),
+        warn: vi.fn(),
+      } as never),
+    ).rejects.toThrow(/provider is incomplete/)
 
     const module = await createTripsVoyantRuntime({
       unitId: tripsVoyantModule.id,
