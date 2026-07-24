@@ -8,12 +8,7 @@ import type { TripCheckoutDeps } from "./checkout/types.js"
 import type { FlightComponentAdapterApi } from "./flight-component.js"
 import { previewFlightCancellation } from "./flight-component.js"
 import type { TripsRoutesOptions, TripsRoutesOptionsProvider } from "./routes.js"
-import type {
-  CancelTripComponentsDeps,
-  PriceTripDeps,
-  ReserveTripDeps,
-  StartCheckoutDeps,
-} from "./service.js"
+import type { CancelTripComponentsDeps, ReserveTripDeps, StartCheckoutDeps } from "./service.js"
 import type { ComponentCheckoutResult } from "./service-types.js"
 
 export interface TripsRouteRuntimeHost {
@@ -31,10 +26,6 @@ export interface TripsRouteRuntime {
 
 /** Trips-owned lifecycle composition with only request-scoped host adapters injected. */
 export function createTripsRouteRuntime(host: TripsRouteRuntimeHost): TripsRouteRuntime {
-  const createPriceDeps = (c: Context): PriceTripDeps => ({
-    quoteCatalogComponent: (input) => host.createCatalogAdapter(c).quote(input),
-  })
-
   const createReserveDeps = (c: Context): ReserveTripDeps => ({
     quoteCatalogComponentBeforeReserve: (input) => host.createCatalogAdapter(c).quote(input),
     validateNonCatalogComponentBeforeReserve: (input) =>
@@ -108,7 +99,6 @@ export function createTripsRouteRuntime(host: TripsRouteRuntimeHost): TripsRoute
   })
 
   const createRoutesOptions = (): TripsRoutesOptions => ({
-    priceTripDeps: (c) => createPriceDeps(c),
     reserveTripDeps: (c) => createReserveDeps(c),
     startCheckoutDeps: (c) => createStartCheckoutDeps(c),
     cancelTripComponentsDeps: (c) => createCancelDeps(c),
