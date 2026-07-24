@@ -369,7 +369,7 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
       />
 
       <Tabs defaultValue="line-items">
-        <TabsList className="max-w-full justify-start overflow-x-auto">
+        <TabsList className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
           <TabsTrigger value="line-items">
             {messages.finance.detailSections.lineItemsTitle}
           </TabsTrigger>

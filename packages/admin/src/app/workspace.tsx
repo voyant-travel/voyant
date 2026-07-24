@@ -216,7 +216,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
     <OperatorAdminBootstrapGate
       user={user}
       isUserLoading={isUserLoading}
-      loadingFallback={<AdminWorkspacePendingFallback label={messages?.loading} />}
+      loadingFallback={<AdminWorkspacePendingFallback />}
     >
       {({ user: loadedUser }) => (
         <LocaleProvider
