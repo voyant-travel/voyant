@@ -10,8 +10,7 @@ describe("getProposalShareState", () => {
     expect(getProposalShareState({ status: "draft", tripSnapshotId: null }, messages)).toEqual({
       actionLabel: "Send for review",
       isReviewOnly: true,
-      notice:
-        "Review-only: the client can suggest changes or decline, but can't accept yet.",
+      notice: "Review-only: the client can suggest changes or decline, but can't accept yet.",
     })
   })
 

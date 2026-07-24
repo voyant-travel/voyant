@@ -34,8 +34,8 @@
 
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
-import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const OPERATOR_DIR = join(HERE, "..")
@@ -127,11 +127,9 @@ async function resetAdminPassword() {
   const dbName = dbUrl ? new URL(dbUrl).pathname.replace(/^\//, "") || "voyant" : "voyant"
   const dbUser = dbUrl ? decodeURIComponent(new URL(dbUrl).username) || "voyant" : "voyant"
   const sql = `UPDATE account SET password='${hash}', updated_at=now() FROM "user" u WHERE account.user_id=u.id AND account.provider_id='credential' AND u.email='${ADMIN_EMAIL}';`
-  execFileSync(
-    "docker",
-    ["exec", "voyant-ui-pg", "psql", "-U", dbUser, dbName, "-c", sql],
-    { stdio: "pipe" },
-  )
+  execFileSync("docker", ["exec", "voyant-ui-pg", "psql", "-U", dbUser, dbName, "-c", sql], {
+    stdio: "pipe",
+  })
 }
 
 async function authenticate() {
@@ -293,9 +291,9 @@ async function main() {
     const option = (await list(`/products/options?productId=${product.id}`)).find(
       (o) => o.isDefault,
     )
-    const slot = (await list(`/operations/availability/slots?productId=${product.id}&limit=20`)).find(
-      (s) => s.status === "open",
-    )
+    const slot = (
+      await list(`/operations/availability/slots?productId=${product.id}&limit=20`)
+    ).find((s) => s.status === "open")
     // Idempotency by a fixed booking number.
     const BOOKING_NUMBER = "BK-DEMO-TRANSF-0001"
     booking = await ensure(
