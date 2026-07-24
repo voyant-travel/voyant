@@ -1,10 +1,15 @@
 import {
   type ActionLedgerRequestContextValues,
   buildActionLedgerApprovedExecutionFields,
-  buildIdempotencyFingerprint,
+  buildCreatedTargetIdempotencyScope,
+  mapActionLedgerRequestContext,
 } from "@voyant-travel/action-ledger"
 import { isStaffRbacEnforced } from "@voyant-travel/hono"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { Context } from "hono"
 import { contributeBookingsExtrasToolContext } from "./extras/mcp-runtime.js"
 import { redactBookingContact, shouldRevealBookingPii } from "./pii-redaction.js"
@@ -15,7 +20,11 @@ import {
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
 import type { Env } from "./routes-shared.js"
-import { bookingsService } from "./service.js"
+import {
+  bookingsService,
+  buildBookingReservationCommandFingerprint,
+  buildLegacyBookingReservationCommandFingerprint,
+} from "./service.js"
 import { authorizeBookingStatusMutation } from "./status-authorization.js"
 
 export * from "./tools.js"
@@ -48,42 +57,76 @@ export const voyantToolContextContribution = defineToolContextContribution({
           getBookingAggregates: (
             query: Parameters<typeof bookingsService.getBookingAggregates>[1],
           ) => bookingsService.getBookingAggregates(db, query),
-          async reserveBooking(input: {
-            reservation: Parameters<typeof bookingsService.reserveBooking>[1]
-            idempotencyKey: string
-          }) {
+          async reserveBooking(
+            input: {
+              reservation: Parameters<typeof bookingsService.reserveBooking>[1]
+            },
+            admitted: ToolHandlerActionPolicyContext,
+          ) {
             const requestContext = bookingToolActionLedgerContext(c)
-            const principalId =
-              c.get("userId") ??
-              c.get("agentId") ??
-              c.get("workflowPrincipalId") ??
-              c.get("apiTokenId") ??
-              c.get("apiKeyId")
-            if (!principalId) {
+            const principal = mapActionLedgerRequestContext(requestContext)
+            if (principal.principalId === "unknown_request") {
               throw new ToolError(
                 "Booking reservation requires a concrete authenticated principal.",
                 "AUTHORIZATION_DENIED",
               )
             }
-            const idempotencyFingerprint = await buildIdempotencyFingerprint({
-              actionName: "booking.reserve",
-              actionVersion: "v1",
-              targetType: "booking_reservation_command",
-              targetId: input.reservation.bookingNumber,
-              commandInput: input.reservation,
+            const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+            if (!idempotencyKey) {
+              throw new ToolError(
+                "Booking reservation requires an admitted idempotency key.",
+                "INVALID_INPUT",
+              )
+            }
+            const actionName = admitted.actionPolicy.id
+            const actionVersion = admitted.actionPolicy.version
+            const idempotencyFingerprint = await buildBookingReservationCommandFingerprint(
+              input.reservation,
+              {
+                actionName,
+                actionVersion,
+                capabilityId: admitted.actionPolicy.capabilityId,
+                capabilityVersion: admitted.actionPolicy.version,
+              },
+            )
+            const idempotencyScope = await buildCreatedTargetIdempotencyScope({
+              actionName,
+              actionVersion,
+              principalType: principal.principalType,
+              principalId: principal.principalId,
+              organizationId: principal.organizationId,
             })
+            const legacyPrincipalId =
+              c.get("userId") ??
+              c.get("agentId") ??
+              c.get("workflowPrincipalId") ??
+              c.get("apiTokenId") ??
+              c.get("apiKeyId")
+            if (!legacyPrincipalId) {
+              throw new ToolError(
+                "Booking reservation requires a legacy-compatible principal.",
+                "AUTHORIZATION_DENIED",
+              )
+            }
             const result = await bookingsService.reserveBooking(
               db,
               input.reservation,
-              principalId,
+              principal.principalId,
               {
                 eventBus: c.get("eventBus"),
                 actionLedgerContext: requestContext,
                 actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
-                actionLedgerIdempotencyScope: `bookings.reserve_booking:${principalId}`,
-                actionLedgerIdempotencyKey: input.idempotencyKey,
+                actionLedgerIdempotencyScope: idempotencyScope,
+                actionLedgerIdempotencyKey: idempotencyKey,
                 actionLedgerIdempotencyFingerprint: idempotencyFingerprint,
-                actionLedgerRouteOrToolName: "bookings.reserve_booking",
+                actionLedgerLegacyIdempotencyScope: `bookings.reserve_booking:${legacyPrincipalId}`,
+                actionLedgerLegacyIdempotencyFingerprint:
+                  await buildLegacyBookingReservationCommandFingerprint(input.reservation),
+                actionLedgerRouteOrToolName: admitted.capabilityId,
+                actionLedgerActionName: actionName,
+                actionLedgerActionVersion: actionVersion,
+                actionLedgerCapabilityId: admitted.actionPolicy.capabilityId,
+                actionLedgerCapabilityVersion: admitted.actionPolicy.version,
               },
             )
             if (result.status !== "ok" || !("booking" in result)) {

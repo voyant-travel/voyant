@@ -1,10 +1,16 @@
-import { buildIdempotencyFingerprint } from "@voyant-travel/action-ledger"
-import type { ToolContext } from "@voyant-travel/tools"
+import {
+  buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
+} from "@voyant-travel/action-ledger"
+import type { ToolContext, ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
-import { bookingsService } from "../../src/service.js"
-import type { BookingsToolServices } from "../../src/tools.js"
+import {
+  bookingsService,
+  buildLegacyBookingReservationCommandFingerprint,
+} from "../../src/service.js"
+import { type BookingsToolServices, RESERVE_BOOKING_HANDLER_POLICY } from "../../src/tools.js"
 
 const db = {} as never
 const eventBus = { emit: vi.fn() }
@@ -45,6 +51,20 @@ const reservation = {
     },
   ],
 }
+const admitted = {
+  capabilityId: RESERVE_BOOKING_HANDLER_POLICY.capabilityId,
+  capabilityVersion: RESERVE_BOOKING_HANDLER_POLICY.capabilityVersion,
+  canonicalName: RESERVE_BOOKING_HANDLER_POLICY.canonicalName,
+  actionPolicy: {
+    ...RESERVE_BOOKING_HANDLER_POLICY.actionPolicy,
+    enforcement: "handler",
+    invocation: {
+      requiredFields: ["confirmed"],
+      optionalFields: ["targetId", "idempotencyKey", "idempotencyFingerprint"],
+    },
+  },
+  invocation: { confirmed: true, idempotencyKey: "reserve-b-1002" },
+} as const satisfies ToolHandlerActionPolicyContext
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -60,7 +80,7 @@ async function bookingTools() {
 }
 
 describe("reserve_booking MCP runtime", () => {
-  it("passes authoritative idempotency metadata and returns an immutable reference", async () => {
+  it("passes the exact created-command policy fingerprint and returns an immutable reference", async () => {
     const booking = {
       id: "bk_1",
       bookingNumber: reservation.bookingNumber,
@@ -77,10 +97,12 @@ describe("reserve_booking MCP runtime", () => {
       .mockResolvedValue({ status: "ok", booking, replayed: false } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+        },
+        admitted,
+      ),
     ).resolves.toEqual({
       status: "reserved",
       booking: {
@@ -90,13 +112,30 @@ describe("reserve_booking MCP runtime", () => {
       replayed: false,
     })
 
-    const fingerprint = await buildIdempotencyFingerprint({
+    const fingerprint = await buildCreatedTargetCommandFingerprint({
       actionName: "booking.reserve",
       actionVersion: "v1",
-      targetType: "booking_reservation_command",
-      targetId: reservation.bookingNumber,
+      commandTarget: {
+        type: "booking_reservation_command",
+        id: reservation.bookingNumber,
+      },
+      canonicalTargetType: "booking",
+      resultReferenceType: "booking",
       commandInput: reservation,
+      capabilityId: "bookings:reserve",
+      capabilityVersion: "v1",
+      evaluatedRisk: "high",
+      approvalPolicy: "none",
+      approvalReasonCode: null,
     })
+    const scope = await buildCreatedTargetIdempotencyScope({
+      actionName: "booking.reserve",
+      actionVersion: "v1",
+      principalType: "agent",
+      principalId: "agent_1",
+      organizationId: null,
+    })
+    const legacyFingerprint = await buildLegacyBookingReservationCommandFingerprint(reservation)
     expect(reserve).toHaveBeenCalledWith(db, reservation, "agent_1", {
       eventBus,
       actionLedgerContext: expect.objectContaining({
@@ -105,11 +144,30 @@ describe("reserve_booking MCP runtime", () => {
         actor: "staff",
       }),
       actionLedgerAuthorizationSource: "selected_graph_mcp_handler",
-      actionLedgerIdempotencyScope: "bookings.reserve_booking:agent_1",
+      actionLedgerIdempotencyScope: scope,
       actionLedgerIdempotencyKey: "reserve-b-1002",
       actionLedgerIdempotencyFingerprint: fingerprint,
-      actionLedgerRouteOrToolName: "bookings.reserve_booking",
+      actionLedgerLegacyIdempotencyScope: "bookings.reserve_booking:agent_1",
+      actionLedgerLegacyIdempotencyFingerprint: legacyFingerprint,
+      actionLedgerRouteOrToolName: "@voyant-travel/bookings#tool.reserve-booking",
+      actionLedgerActionName: "booking.reserve",
+      actionLedgerActionVersion: "v1",
+      actionLedgerCapabilityId: "bookings:reserve",
+      actionLedgerCapabilityVersion: "v1",
     })
+  })
+
+  it("sources the command key only from the admitted invocation controls", async () => {
+    const reserve = vi.spyOn(bookingsService, "reserveBooking")
+    const missingKey = {
+      ...admitted,
+      invocation: { confirmed: true },
+    } as ToolHandlerActionPolicyContext
+
+    await expect(
+      (await bookingTools()).reserveBooking({ reservation }, missingKey),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" })
+    expect(reserve).not.toHaveBeenCalled()
   })
 
   it("maps an idempotency conflict to an invalid-input Tool error", async () => {
@@ -119,10 +177,12 @@ describe("reserve_booking MCP runtime", () => {
     } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+        },
+        admitted,
+      ),
     ).rejects.toMatchObject({
       code: "INVALID_INPUT",
       meta: { existingActionId: "act_existing" },
@@ -135,10 +195,12 @@ describe("reserve_booking MCP runtime", () => {
     } as never)
 
     await expect(
-      (await bookingTools()).reserveBooking({
-        reservation,
-        idempotencyKey: "reserve-b-1002",
-      }),
+      (await bookingTools()).reserveBooking(
+        {
+          reservation,
+        },
+        admitted,
+      ),
     ).rejects.toMatchObject({ code: "PROVIDER_ERROR" })
   })
 })
