@@ -25,6 +25,7 @@ export { createContractsAdminRoutes, createContractsPublicRoutes } from "./route
 export type {
   Contract,
   ContractAttachment,
+  ContractLifecycleCommandResult,
   ContractNumberSeries,
   ContractSignature,
   ContractStageHistoryEntry,
@@ -33,6 +34,7 @@ export type {
   ContractTemplateVersion,
   NewContract,
   NewContractAttachment,
+  NewContractLifecycleCommandResult,
   NewContractNumberSeries,
   NewContractSignature,
   NewContractTemplate,
@@ -40,6 +42,7 @@ export type {
 } from "./schema.js"
 export {
   contractAttachments,
+  contractLifecycleCommandResults,
   contractNumberSeries,
   contractSignatures,
   contractStatusValues,

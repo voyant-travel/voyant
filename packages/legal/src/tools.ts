@@ -9,6 +9,7 @@ import {
 } from "@voyant-travel/tools"
 import { z } from "zod"
 import { LEGAL_CONTRACT_DRAFT_HANDLER_EXPECTATION } from "./created-target-policy.js"
+import { LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS } from "./existing-target-policy.js"
 
 const OWNER = "@voyant-travel/legal"
 const VERSION = "v1"
@@ -377,6 +378,21 @@ export interface LegalToolServices {
   executeContract(contractId: string): Promise<LegalContractDetail>
 }
 
+export interface LegalLifecycleCommandToolServices {
+  issueContractCommand(
+    input: z.infer<typeof transitionContractInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<LegalContractDetail>
+  sendContractCommand(
+    input: z.infer<typeof sendContractInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<LegalContractDetail>
+  executeContractCommand(
+    input: z.infer<typeof transitionContractInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<LegalContractDetail>
+}
+
 export interface LegalContractDocumentToolServices {
   previewBookingContract(
     input: z.infer<typeof previewBookingContractDocumentInputSchema>,
@@ -390,7 +406,7 @@ export interface LegalContractDocumentToolServices {
 }
 
 export type LegalToolContext = ToolContext & {
-  legal?: LegalToolServices
+  legal?: LegalToolServices & Partial<LegalLifecycleCommandToolServices>
   legalContractDocument?: LegalContractDocumentToolServices
 }
 
@@ -402,6 +418,21 @@ function legal(ctx: LegalToolContext): LegalToolServices {
     )
   }
   return requireService(ctx.legal, "legal")
+}
+
+function legalLifecycleCommands(ctx: LegalToolContext): LegalLifecycleCommandToolServices {
+  const service = legal(ctx) as LegalToolServices & Partial<LegalLifecycleCommandToolServices>
+  if (
+    !service.issueContractCommand ||
+    !service.sendContractCommand ||
+    !service.executeContractCommand
+  ) {
+    throw new ToolError(
+      "The selected Legal runtime does not provide durable lifecycle command services.",
+      "MISSING_SERVICE",
+    )
+  }
+  return service as LegalToolServices & LegalLifecycleCommandToolServices
 }
 
 function legalContractDocument(ctx: LegalToolContext): LegalContractDocumentToolServices {
@@ -650,7 +681,13 @@ export const issueLegalContractTool = defineTool({
     "Issue one draft contract through the legal lifecycle service. Requires explicit confirmation and selected approval.",
   inputSchema: transitionContractInputSchema,
   outputSchema: legalContractDetailSchema,
-  handler: ({ contractId }, ctx: LegalToolContext) => legal(ctx).issueContract(contractId),
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  handler: (input, ctx: LegalToolContext) =>
+    legalLifecycleCommands(ctx).issueContractCommand(
+      input,
+      admitHandlerActionPolicy(ctx, LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS.issue),
+    ),
 })
 export const sendLegalContractTool = defineTool({
   ...lifecycleWriteMetadata,
@@ -664,7 +701,13 @@ export const sendLegalContractTool = defineTool({
     ...lifecycleWriteMetadata.riskPolicy,
     sideEffects: ["data-write", "email"],
   },
-  handler: (input, ctx: LegalToolContext) => legal(ctx).sendContract(input),
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  handler: (input, ctx: LegalToolContext) =>
+    legalLifecycleCommands(ctx).sendContractCommand(
+      input,
+      admitHandlerActionPolicy(ctx, LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS.send),
+    ),
 })
 export const executeLegalContractTool = defineTool({
   ...lifecycleWriteMetadata,
@@ -674,7 +717,13 @@ export const executeLegalContractTool = defineTool({
     "Execute a contract only after an authoritative signature has already moved it to signed. This Tool cannot create or spoof signatures.",
   inputSchema: transitionContractInputSchema,
   outputSchema: legalContractDetailSchema,
-  handler: ({ contractId }, ctx: LegalToolContext) => legal(ctx).executeContract(contractId),
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  handler: (input, ctx: LegalToolContext) =>
+    legalLifecycleCommands(ctx).executeContractCommand(
+      input,
+      admitHandlerActionPolicy(ctx, LEGAL_CONTRACT_LIFECYCLE_HANDLER_EXPECTATIONS.execute),
+    ),
 })
 
 const contractDocumentReadMetadata = {
