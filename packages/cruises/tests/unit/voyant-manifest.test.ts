@@ -195,11 +195,19 @@ describe("cruises deployment manifest", () => {
         ({ id }) => id === "@voyant-travel/cruises#action.create-cruise",
       ),
     ).toMatchObject({
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
+      availability: { status: "available" },
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "cruise_create_command",
+        resultReferenceType: "cruise",
+        durability: "handler-command-claim-v1",
+      },
+      durability: {
+        strategy: "outbox",
+        testReference: "tests/integration/created-target-tools.test.ts",
       },
       effectBoundary: "multistage",
+      reversible: false,
     })
     for (const action of cruisesVoyantModule.actions?.filter(
       ({ kind, risk }) => kind === "execute" && risk === "medium",

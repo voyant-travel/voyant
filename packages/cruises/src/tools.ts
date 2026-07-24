@@ -10,7 +10,10 @@ import {
 } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
-import { CRUISE_SHIP_HANDLER_ACTION_POLICY } from "./created-target-policy.js"
+import {
+  CRUISE_HANDLER_ACTION_POLICY,
+  CRUISE_SHIP_HANDLER_ACTION_POLICY,
+} from "./created-target-policy.js"
 import { createBookingPayloadSchema, quotePayloadSchema } from "./routes-booking-payloads.js"
 import {
   cruiseRowSchema,
@@ -164,6 +167,20 @@ const bookingInputSchema = z
   .object({ key: z.string().min(1) })
   .and(createBookingPayloadSchema.omit({ sailingId: true }))
 const idInput = z.object({ id: z.string().min(1) })
+const createCruiseToolInputSchema = insertCruiseSchema.extend({
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .optional()
+    .describe("Stable key used to replay this exact create command."),
+})
+const createdCruiseOutputSchema = z.object({
+  status: z.literal("created"),
+  cruise: z.object({ id: z.string() }),
+  replayed: z.boolean(),
+})
 const createShipToolInputSchema = insertShipSchema.extend({
   idempotencyKey: z
     .string()
@@ -282,13 +299,21 @@ export const quoteCruiseSailingTool = defineTool({
 })
 export const createCruiseTool = defineTool({
   ...write,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-cruise`,
   name: "create_cruise",
-  description: "Create a locally managed cruise product.",
-  inputSchema: insertCruiseSchema,
-  outputSchema: cruiseRowSchema,
+  description:
+    "Create a locally managed cruise product. Exact retries return the original immutable reference.",
+  inputSchema: createCruiseToolInputSchema,
+  outputSchema: createdCruiseOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: CruisesToolContext) {
-    return parse(cruiseRowSchema, await service(ctx).execute("createCruise", input))
+    const admitted = admitHandlerActionPolicy(ctx, CRUISE_HANDLER_ACTION_POLICY)
+    return parse(
+      createdCruiseOutputSchema,
+      await service(ctx).execute("createCruise", input, admitted),
+    )
   },
 })
 export const updateCruiseTool = defineTool({

@@ -60,7 +60,11 @@ exposed.
 
 Read and quote Tools require `cruises:read` and are available to staff and
 customer actors. Local lifecycle writes require `cruises:write`, are staff
-only, and are ledgered. `create_cruise_booking` additionally requires
+only, and are ledgered. `create_cruise` is a handler-owned created-target
+command: its canonical row, required local search projection, deterministic
+`cruise.created` outbox envelope, command ledger, and immutable result reference
+commit in one transaction. Exact idempotency replays return that reference;
+reuse with different input conflicts. `create_cruise_booking` additionally requires
 `bookings:write`; because the external path commits upstream before local
 persistence, it is critical-risk, confirmation-gated, approval-required,
 ledger-required, and declared irreversible. Archive/delete and party booking

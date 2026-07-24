@@ -9,6 +9,14 @@ export function paginate(query: { limit: number; offset: number }) {
 
 export interface CruiseMutationRuntime {
   eventBus?: EventBus
+  /** Require the local search projection to commit with the canonical write. */
+  projection?: "best-effort" | "required"
+}
+
+/** Project a cruise and propagate failure so a surrounding transaction can roll back. */
+export async function reprojectCruise(db: PostgresJsDatabase, cruiseId: string): Promise<void> {
+  const { cruisesSearchService } = await import("./service-search.js")
+  await cruisesSearchService.projectLocalCruise(db, cruiseId)
 }
 
 /**
@@ -22,8 +30,7 @@ export async function reprojectIfPossible(
 ): Promise<void> {
   if (!cruiseId) return
   try {
-    const { cruisesSearchService } = await import("./service-search.js")
-    await cruisesSearchService.projectLocalCruise(db, cruiseId)
+    await reprojectCruise(db, cruiseId)
   } catch (err) {
     // Don't crash the caller. Operators can run the search-index rebuild route to repair drift.
     // eslint-disable-next-line no-console -- owner: cruises; existing suppression is intentional pending typed cleanup.

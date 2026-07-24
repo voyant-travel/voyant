@@ -33,7 +33,7 @@ describe("cruise tools", () => {
     )
   })
 
-  it("guards supplier-committing booking separately from reversible lifecycle writes", () => {
+  it("guards created targets and supplier-committing booking as irreversible writes", () => {
     expect(createCruiseBookingTool.requiredScopes).toEqual(["cruises:write", "bookings:write"])
     expect(createCruiseBookingTool.audience).toEqual({ source: "grant", allowed: ["staff"] })
     expect(createCruiseBookingTool.riskPolicy).toMatchObject({
@@ -45,7 +45,9 @@ describe("cruise tools", () => {
     for (const tool of cruisesTools.filter(
       ({ requiredScopes }) => requiredScopes[0] === "cruises:write" && requiredScopes.length === 1,
     )) {
-      expect(tool.riskPolicy.reversible).toBe(tool.name !== "create_cruise_ship")
+      expect(tool.riskPolicy.reversible).toBe(
+        tool.name !== "create_cruise" && tool.name !== "create_cruise_ship",
+      )
       expect(tool.audience?.allowed).toEqual(["staff"])
     }
   })
