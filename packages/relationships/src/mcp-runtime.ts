@@ -10,12 +10,9 @@ import type { Context } from "hono"
 
 import { emitOrganizationChanged, emitPersonChanged } from "./events.js"
 import { executeOrganizationCreateCommand } from "./organization-created-command.js"
+import { executePersonCreateCommand } from "./person-created-command.js"
 import { relationshipsService } from "./service/index.js"
-import {
-  personListQuerySchema,
-  updateOrganizationSchema,
-  updatePersonSchema,
-} from "./validation.js"
+import { updateOrganizationSchema, updatePersonSchema } from "./validation.js"
 
 export * from "./tools.js"
 
@@ -49,31 +46,33 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listPeople: (query: Parameters<typeof relationshipsService.listPeople>[1]) =>
           relationshipsService.listPeople(db, query),
         getPersonById: (id: string) => relationshipsService.getPersonById(db, id),
-        async createPerson(input: {
-          allowDuplicateName: boolean
-          firstName: string
-          lastName: string
-          email?: string | null
-          phone?: string | null
-          organizationId?: string | null
-          [key: string]: unknown
-        }) {
-          const { allowDuplicateName, ...data } = input
-          if (!allowDuplicateName) {
-            const result = await relationshipsService.listPeople(
-              db,
-              personListQuerySchema.parse({ search: data.lastName, limit: 25 }),
-            )
-            const existing = result.data.find((row) => isCompatibleSameName(row, data))
-            if (existing) return { person: existing, alreadyExists: true }
-          }
-          const person = await relationshipsService.createPerson(
+        async createPerson(
+          input: {
+            idempotencyKey?: string
+            firstName: string
+            lastName: string
+            email?: string | null
+            phone?: string | null
+            organizationId?: string | null
+            [key: string]: unknown
+          },
+          admitted: ToolHandlerActionPolicyContext,
+        ) {
+          const { idempotencyKey, ...data } = input
+          const result = await executePersonCreateCommand({
             db,
-            data as Parameters<typeof relationshipsService.createPerson>[1],
-          )
-          if (!person) throw new ToolError("CRM person creation returned no row.", "PROVIDER_ERROR")
-          await emitPersonChanged(eventBus, { id: person.id, action: "created" }, "service")
-          return { person, alreadyExists: false }
+            context: requestContext,
+            commandInput: {
+              person: data as Parameters<typeof relationshipsService.createPerson>[1],
+            },
+            admitted,
+            legacyIdempotencyKey: idempotencyKey,
+          })
+          return {
+            status: "created" as const,
+            person: result.value,
+            replayed: result.replayed,
+          }
         },
         async updatePerson(input: { id: string; [key: string]: unknown }) {
           const { id, ...patch } = input
@@ -256,54 +255,4 @@ function relationshipsActionLedgerContext(
     workflowStepId: c.get("workflowStepId") ?? null,
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
-}
-
-function isCompatibleSameName(
-  row: Record<string, unknown>,
-  candidate: {
-    firstName: string
-    lastName: string
-    email?: string | null
-    phone?: string | null
-    organizationId?: string | null
-  },
-): boolean {
-  if (nameKey(row.firstName) !== nameKey(candidate.firstName)) return false
-  if (nameKey(row.lastName) !== nameKey(candidate.lastName)) return false
-  const candidateEmail = emailKey(candidate.email)
-  const rowEmail = emailKey(row.email)
-  if (candidateEmail && rowEmail && candidateEmail !== rowEmail) return false
-  const candidatePhone = phoneKey(candidate.phone)
-  const rowPhone = phoneKey(row.phone)
-  if (candidatePhone && rowPhone && candidatePhone !== rowPhone) return false
-  const rowOrganizationId = stringValue(row.organizationId)
-  if (
-    candidate.organizationId &&
-    rowOrganizationId &&
-    candidate.organizationId !== rowOrganizationId
-  ) {
-    return false
-  }
-  return true
-}
-
-function nameKey(value: unknown): string {
-  return stringValue(value)
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-}
-
-function emailKey(value: unknown): string {
-  return stringValue(value).toLowerCase()
-}
-
-function phoneKey(value: unknown): string {
-  const digits = stringValue(value).replace(/\D/g, "")
-  return digits.length > 9 ? digits.slice(-9) : digits
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === "string" ? value.trim() : ""
 }

@@ -337,6 +337,8 @@ jobs:
                 tests/integration/generic-custom-field-values.test.ts
               pnpm --filter @voyant-travel/relationships exec vitest run \
                 tests/integration/organization-created-command.test.ts
+              pnpm --filter @voyant-travel/relationships exec vitest run \
+                tests/integration/person-created-command.test.ts
               pnpm --filter @voyant-travel/framework-migrations exec vitest run \
                 src/deployment-runner.test.ts
               pnpm --filter @voyant-travel/catalog exec vitest run \
