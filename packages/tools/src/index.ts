@@ -42,7 +42,11 @@ export {
   admitHandlerActionPolicy,
   type HandlerActionPolicyExpectation,
 } from "./handler-action-policy.js"
-export { createToolRegistry, type ToolRegistry } from "./registry.js"
+export {
+  createToolRegistry,
+  type PreparedToolAction,
+  type ToolRegistry,
+} from "./registry.js"
 export {
   READ_ONLY_RISK,
   RISK_TIERS,

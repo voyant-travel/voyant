@@ -40,6 +40,18 @@ type BookingExtensionToolSpec = readonly [
   allowedActorTypes?: readonly ("staff" | "customer")[],
 ]
 
+const BOOKING_EXTENSION_ID_TARGET_ACTIONS = new Set([
+  "update-booking-answer",
+  "update-booking-extra",
+  "update-booking-question-extra-trigger",
+  "update-booking-question-option",
+  "update-booking-question-option-trigger",
+  "update-booking-question-unit-trigger",
+  "update-option-booking-question",
+  "update-product-booking-question",
+  "update-product-contact-requirement",
+])
+
 function declareBookingExtensionTools(
   owner: string,
   context: string,
@@ -68,6 +80,7 @@ function declareBookingExtensionActions(owner: string, specs: readonly BookingEx
             ? ("sensitive-read" as const)
             : ("read" as const),
         targetType,
+        ...(BOOKING_EXTENSION_ID_TARGET_ACTIONS.has(slug) ? { commandTargetField: "id" } : {}),
         requiredScopes: [...requiredScopes],
         risk,
         ledger: write || risk === "high" ? ("required" as const) : ("optional" as const),

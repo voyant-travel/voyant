@@ -120,11 +120,13 @@ authorization, so a completed command remains replayable after its approval expi
 caller-supplied `approvalId` or `causationActionId` fails closed. Conditional policy remains
 unsupported until a domain evaluator contract exists.
 
-Existing-target actions may declare `commandTargetField` when their Tool input already carries
-the domain parent id. The generic gate requires that parsed field to exactly match
-`_voyant.targetId` before writing a ledger preflight, validating approval, or dispatching the
-handler. This prevents policy and audit records from naming a different target than the domain
-mutation.
+Existing-target actions declare `commandTargetField` when their Tool input already carries the
+domain target id. The registry resolves that field from already parsed input and the generic gate
+rechecks it before writing a ledger preflight, validating approval, or dispatching the handler.
+Complex targets use a Tool-owned resolver, while read collections use an authenticated
+organization/operator anchor. Migrated actions never accept a client target. During the bounded
+package rollout, actions that have not declared either package contract retain the previous
+invocation shape; the compatibility path is removed before Max cuts over.
 
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their
