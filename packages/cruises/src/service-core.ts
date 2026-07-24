@@ -28,6 +28,7 @@ import { cruisePrices } from "./schema-pricing.js"
 import {
   type CruiseMutationRuntime,
   paginate,
+  reprojectCruise,
   reprojectIfPossible,
   setUpdated,
 } from "./service-shared.js"
@@ -277,7 +278,11 @@ export const cruiseCoreService = {
       .values(data as NewCruise)
       .returning()
     if (!row) throw new Error("Failed to create cruise")
-    await reprojectIfPossible(db, row.id)
+    if (runtime.projection === "required") {
+      await reprojectCruise(db, row.id)
+    } else {
+      await reprojectIfPossible(db, row.id)
+    }
     await emitCruiseLifecycleEvent(runtime.eventBus, CRUISE_CREATED_EVENT, { id: row.id })
     return row
   },

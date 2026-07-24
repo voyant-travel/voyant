@@ -9,13 +9,17 @@ import {
   mapActionLedgerRequestContext,
 } from "@voyant-travel/action-ledger"
 import type { EventBus } from "@voyant-travel/core"
+import { insertOutboxEvents } from "@voyant-travel/db/outbox"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import type { CruiseAdapter, ExternalSailing, ExternalShip, SourceRef } from "./adapters/index.js"
 import { resolveCruiseAdapter } from "./adapters/registry.js"
-import { CRUISE_SHIP_CREATED_TARGET_POLICY } from "./created-target-policy.js"
+import {
+  CRUISE_CREATED_TARGET_POLICY,
+  CRUISE_SHIP_CREATED_TARGET_POLICY,
+} from "./created-target-policy.js"
 import { makeExternalSourceKey, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import {
   passengerCompositionMatches,
@@ -28,6 +32,7 @@ import { cruisesBookingService } from "./service-bookings.js"
 import { composeQuote, pricingService } from "./service-pricing.js"
 import { cruisesSearchService } from "./service-search.js"
 import type { CruisesToolServices } from "./tools.js"
+import type { InsertCruise } from "./validation-core.js"
 
 export * from "./tools.js"
 
@@ -57,8 +62,23 @@ export const voyantToolContextContribution = defineToolContextContribution({
           return getShip(db, String(args.key), publicOnly)
         case "quoteSailing":
           return quoteSailing(db, args, publicOnly)
-        case "createCruise":
-          return cruisesService.createCruise(db, args as never, { eventBus })
+        case "createCruise": {
+          if (!admitted) {
+            throw new ToolError(
+              "Created cruise action policy is required.",
+              "ACTION_POLICY_REQUIRED",
+            )
+          }
+          const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = args
+          const result = await executeCruiseCreate(
+            db,
+            requestContext,
+            typeof legacyIdempotencyKey === "string" ? legacyIdempotencyKey : undefined,
+            commandInput as InsertCruise,
+            admitted,
+          )
+          return { status: "created" as const, cruise: result.value, replayed: result.replayed }
+        }
         case "updateCruise": {
           const { id, ...data } = args
           return cruisesService.updateCruise(db, String(id), data as never, { eventBus })
@@ -107,6 +127,95 @@ type CruiseShipCreatedCommandExecutor = (
   input: ExecuteCreatedTargetCommandInput & { resultReferenceType: string },
   handlers: ExecuteCreatedTargetCommandHandlers<{ id: string }, string>,
 ) => Promise<ExecuteCreatedTargetCommandResult<{ id: string }, string>>
+
+type CruiseCreatedCommandExecutor = CruiseShipCreatedCommandExecutor
+
+export async function executeCruiseCreate(
+  db: PostgresJsDatabase,
+  context: ActionLedgerRequestContextValues,
+  legacyIdempotencyKey: string | undefined,
+  commandInput: InsertCruise,
+  admitted: import("@voyant-travel/tools").ToolHandlerActionPolicyContext,
+  testHooks?: {
+    /** Test-only failure/concurrency seam inside the handler-owned transaction. */
+    afterRequiredProjection?: (tx: PostgresJsDatabase, cruiseId: string) => Promise<void>
+  },
+  executor: CruiseCreatedCommandExecutor = executeCreatedTargetCommand,
+) {
+  const principal = mapActionLedgerRequestContext(context)
+  if (principal.principalId === "unknown_request") {
+    throw new TypeError("Cruise created-target commands require a concrete principal")
+  }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
+  const policy = CRUISE_CREATED_TARGET_POLICY
+  const selectedActionName = admitted.actionPolicy.capabilityId
+  const selectedActionVersion = admitted.actionPolicy.version
+  const fingerprint = await buildCreatedTargetCommandFingerprint({
+    actionName: selectedActionName,
+    actionVersion: selectedActionVersion,
+    commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+    canonicalTargetType: policy.canonicalTargetType,
+    resultReferenceType: policy.resultReferenceType,
+    commandInput,
+    capabilityId: selectedActionName,
+    capabilityVersion: selectedActionVersion,
+    evaluatedRisk: policy.evaluatedRisk,
+    approvalPolicy: policy.approvalPolicy,
+    approvalReasonCode: policy.approvalReasonCode,
+  })
+  const scope = await buildCreatedTargetIdempotencyScope({
+    actionName: selectedActionName,
+    actionVersion: selectedActionVersion,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  return executor(
+    db,
+    {
+      context,
+      actionName: selectedActionName,
+      actionVersion: selectedActionVersion,
+      actionKind: "create",
+      evaluatedRisk: policy.evaluatedRisk,
+      commandTarget: { type: policy.commandTargetType, id: idempotencyKey },
+      canonicalTargetType: policy.canonicalTargetType,
+      resultReferenceType: policy.resultReferenceType,
+      capabilityId: selectedActionName,
+      capabilityVersion: selectedActionVersion,
+      approvalPolicy: policy.approvalPolicy,
+      approvalReasonCode: policy.approvalReasonCode,
+      commandInput,
+      routeOrToolName: admitted.capabilityId,
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotency: { scope, key: idempotencyKey, fingerprint },
+    },
+    {
+      async create(tx) {
+        const transaction = tx as PostgresJsDatabase
+        const row = await cruisesService.createCruise(transaction, commandInput, {
+          projection: "required",
+        })
+        await testHooks?.afterRequiredProjection?.(transaction, row.id)
+        await insertOutboxEvents(tx, [
+          {
+            name: "cruise.created",
+            data: { id: row.id },
+            metadata: {
+              eventId: cruiseCreatedEventId(row.id),
+              category: "domain",
+              source: "service",
+            },
+          },
+        ])
+        return { value: { id: row.id }, targetId: row.id }
+      },
+      async replay(_tx, result) {
+        return { id: result.reference.id }
+      },
+    },
+  )
+}
 
 export async function executeCruiseShipCreate(
   db: PostgresJsDatabase,
@@ -175,6 +284,10 @@ export async function executeCruiseShipCreate(
       },
     },
   )
+}
+
+export function cruiseCreatedEventId(cruiseId: string): string {
+  return `evt_cruises_cruise_created_${cruiseId}`
 }
 
 function admittedCreatedCommandIdempotencyKey(

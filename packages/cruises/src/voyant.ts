@@ -240,18 +240,25 @@ export const cruisesVoyantModule = defineModule({
       targetType: "cruise",
       ...(id === "create-cruise"
         ? {
-            availability: {
-              status: "unavailable" as const,
-              reasonCode: "unsafe-nontransactional-effect",
+            availability: { status: "available" as const },
+            targetLifecycle: "created" as const,
+            createdTarget: {
+              commandTargetType: "cruise_create_command",
+              resultReferenceType: "cruise",
+              durability: "handler-command-claim-v1" as const,
             },
             effectBoundary: "multistage" as const,
+            durability: {
+              strategy: "outbox" as const,
+              testReference: "tests/integration/created-target-tools.test.ts",
+            },
           }
         : {}),
       requiredScopes: ["cruises:write"],
       risk: "medium" as const,
       ledger: "required" as const,
       approval: "never" as const,
-      reversible: true,
+      reversible: id !== "create-cruise",
       allowedActorTypes: ["staff" as const],
       from: { tools: [`@voyant-travel/cruises#tool.${id}`] },
     })),

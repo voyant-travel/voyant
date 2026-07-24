@@ -8,15 +8,17 @@ The following MCP Tools now use the framework's transactional
 - `create_promotion`
 - `create_charter_product`
 - `create_charter_yacht`
+- `create_cruise`
 - `create_cruise_ship`
 
 ## Caller migration
 
 Every call must supply a non-empty `_voyant.idempotencyKey` invocation control.
-Keep that key stable for an exact logical command. The legacy top-level
-`idempotencyKey` remains optional for compatibility; when supplied, it must
-equal `_voyant.idempotencyKey`. Reusing the admitted key with different domain
-input is rejected.
+Keep that key stable across retries of one exact logical command. Reusing it
+with different domain input is rejected. The legacy top-level `idempotencyKey`
+field is optional compatibility input; when supplied, it must equal
+`_voyant.idempotencyKey`. New callers should treat the `_voyant` value as the
+source of truth.
 
 The response no longer contains a mutable database row. Read the generated id
 from the typed reference and call the corresponding get Tool when current state
@@ -50,6 +52,27 @@ const result = await createPromotion({
 const promotion = await getPromotion({ id: result.promotion.id })
 ```
 
+`create_cruise` previously returned the mutable cruise database row. Read the
+new immutable reference envelope instead:
+
+```ts
+const result = await createCruise({
+  slug: "danube-highlights",
+  name: "Danube Highlights",
+  cruiseType: "river",
+  nights: 7,
+  _voyant: { idempotencyKey: commandId },
+})
+
+const cruiseId = result.cruise.id
+// result.status === "created"
+// result.replayed distinguishes a fresh commit from an exact replay.
+```
+
+Fields such as `name`, `status`, and timestamps are no longer present in the
+`create_cruise` response. Use `get_cruise` when current mutable state is
+required.
+
 Fresh and replayed responses have the same domain shape; `replayed` reports
 which path completed the call. Creation, the opaque command claim, and the
 canonical generated-target result commit in one database transaction.
@@ -64,5 +87,10 @@ packages. External MCP clients are the migration audience.
 The five pre-existing local primitives do not publish through `EventBus`.
 Promotion creation atomically appends its deterministic `promotion.changed`
 event to the database outbox alongside the offer, materialized product links,
-command claim, and canonical result. Cruise/charter booking commands with
-external effects remain outside this migration.
+command claim, and canonical result.
+`create_cruise` transactionally captures its canonical-cruise-scoped
+`cruise.created` outbox event with the cruise, required search projection,
+command ledger, and immutable result. Distinct principals therefore retain
+distinct lifecycle events even when their caller-selected command keys and
+payloads match. Cruise and charter booking commands with external effects
+remain intentionally outside this migration.

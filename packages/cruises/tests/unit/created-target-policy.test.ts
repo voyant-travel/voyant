@@ -2,12 +2,19 @@ import type { HandlerActionPolicyExpectation, ToolContext } from "@voyant-travel
 import { describe, expect, it } from "vitest"
 
 import {
+  buildCruiseCreatedTargetFingerprint,
   buildCruiseShipCreatedTargetFingerprint,
+  CRUISE_CREATED_TARGET_POLICY,
+  CRUISE_HANDLER_ACTION_POLICY,
   CRUISE_SHIP_CREATED_TARGET_POLICY,
   CRUISE_SHIP_HANDLER_ACTION_POLICY,
 } from "../../src/created-target-policy.js"
 import { executeCruiseShipCreate } from "../../src/mcp-runtime.js"
-import { type CruisesToolServices, createCruiseShipTool } from "../../src/tools.js"
+import {
+  type CruisesToolServices,
+  createCruiseShipTool,
+  createCruiseTool,
+} from "../../src/tools.js"
 import { cruisesVoyantModule } from "../../src/voyant.js"
 
 describe("cruise ship created-target command", () => {
@@ -163,6 +170,55 @@ describe("cruise ship created-target command", () => {
     ).rejects.toThrow("concrete principal")
     expect(executorCalls).toBe(0)
     expect(mutations).toBe(0)
+  })
+})
+
+describe("cruise created-target command", () => {
+  it("declares an available immutable handler-owned command with tested outbox durability", () => {
+    const policy = CRUISE_CREATED_TARGET_POLICY
+    expect(createCruiseTool.actionPolicyEnforcement).toBe("handler")
+    expect(createCruiseTool.riskPolicy.reversible).toBe(false)
+    expect(cruisesVoyantModule.actions?.find(({ id }) => id === policy.actionName)).toMatchObject({
+      availability: { status: "available" },
+      targetType: policy.canonicalTargetType,
+      targetLifecycle: "created",
+      effectBoundary: "multistage",
+      durability: {
+        strategy: "outbox",
+        testReference: "tests/integration/created-target-tools.test.ts",
+      },
+      reversible: false,
+      createdTarget: {
+        commandTargetType: policy.commandTargetType,
+        resultReferenceType: policy.resultReferenceType,
+        durability: "handler-command-claim-v1",
+      },
+    })
+    expect(
+      createCruiseTool.inputSchema.safeParse({
+        slug: "cruise",
+        name: "Cruise",
+        cruiseType: "ocean",
+        nights: 7,
+      }).success,
+    ).toBe(true)
+    expect(
+      createCruiseTool.outputSchema.safeParse({
+        status: "created",
+        cruise: { id: "cruise_1" },
+        replayed: false,
+      }).success,
+    ).toBe(true)
+    expect(
+      createCruiseTool.outputSchema.safeParse({ id: "cruise_1", name: "mutable" }).success,
+    ).toBe(false)
+    expect(CRUISE_HANDLER_ACTION_POLICY.actionPolicy.capabilityId).toBe(policy.capabilityId)
+  })
+
+  it("fingerprints exact input and rejects drift", async () => {
+    const first = await buildCruiseCreatedTargetFingerprint("key", { name: "A" })
+    expect(await buildCruiseCreatedTargetFingerprint("key", { name: "A" })).toBe(first)
+    expect(await buildCruiseCreatedTargetFingerprint("key", { name: "B" })).not.toBe(first)
   })
 })
 
