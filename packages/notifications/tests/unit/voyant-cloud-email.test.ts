@@ -27,6 +27,7 @@ describe("createVoyantCloudEmailProvider", () => {
     })
 
     expect(provider.defaultFromAddress).toBe("noreply@example.com")
+    expect(provider.durableDelivery).toMatchObject({ supported: false })
 
     const result = await provider.send({
       to: "traveler@example.com",

@@ -15,6 +15,13 @@
       "when": 1784116800000,
       "tag": "0001_delivery_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784898000000,
+      "tag": "0002_durable_send_operations",
+      "breakpoints": true
     }
   ]
 }

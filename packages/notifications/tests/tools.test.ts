@@ -1,7 +1,16 @@
-import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
+import {
+  createToolRegistry,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type NotificationsToolServices, notificationsTools } from "../src/tools.js"
+import {
+  type NotificationsToolServices,
+  notificationsTools,
+  SEND_NOTIFICATION_HANDLER_POLICY,
+  sendNotificationTool,
+} from "../src/tools.js"
 
 const occurredAt = new Date("2026-07-15T10:00:00.000Z")
 
@@ -47,7 +56,39 @@ function ctx(
     audience: "staff",
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
+    handlerActionPolicy: sendActionPolicy(),
     notifications: services as NotificationsToolServices | undefined,
+  }
+}
+
+function sendActionPolicy(): ToolHandlerActionPolicyContext {
+  return {
+    capabilityId: SEND_NOTIFICATION_HANDLER_POLICY.capabilityId,
+    capabilityVersion: SEND_NOTIFICATION_HANDLER_POLICY.capabilityVersion,
+    canonicalName: SEND_NOTIFICATION_HANDLER_POLICY.canonicalName,
+    actionPolicy: {
+      ...SEND_NOTIFICATION_HANDLER_POLICY.actionPolicy,
+      enforcement: "handler",
+      invocation: {
+        controlField: "_voyant",
+        requiredFields: [
+          "confirmed",
+          "targetId",
+          "idempotencyKey",
+          "approvalId",
+          "idempotencyFingerprint",
+        ],
+        optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+        fingerprintAlgorithm: "action-ledger-command-v1",
+      },
+    },
+    invocation: {
+      confirmed: true,
+      targetId: "booking-confirmed",
+      idempotencyKey: "send_1",
+      approvalId: "approval_1",
+      idempotencyFingerprint: "sha256:test",
+    },
   }
 }
 
@@ -63,8 +104,10 @@ describe("notifications tools", () => {
     ])
     const send = list.find((t) => t.name === "send_notification")
     expect(send?.tier).toBe("destructive")
+    expect(send?.capabilityVersion).toBe("v2")
     expect(send?.requiredScopes).toEqual(["notifications:send"])
     expect(send?.riskPolicy).toMatchObject({ destructive: true, confirmationRequired: true })
+    expect(sendNotificationTool.actionPolicyEnforcement).toBe("handler")
     // The send tool must NOT accept arbitrary content — only a vetted template slug.
     const props = (send?.inputSchema as { properties?: Record<string, unknown> }).properties ?? {}
     expect(props).toHaveProperty("templateSlug")
@@ -82,7 +125,11 @@ describe("notifications tools", () => {
     let sent: unknown
     const result = await registry.dispatch(
       "send_notification",
-      { templateSlug: "booking-confirmed", to: "guest@example.com", bookingId: "bk_1" },
+      {
+        templateSlug: "booking-confirmed",
+        to: "guest@example.com",
+        bookingId: "bk_1",
+      },
       ctx({
         async listDeliveries() {
           return { data: [], total: 0, limit: 50, offset: 0 }
@@ -90,14 +137,18 @@ describe("notifications tools", () => {
         async getDeliveryById() {
           return null
         },
-        async sendTemplated(input) {
+        async sendTemplated(input, admitted) {
           sent = input
+          expect(admitted.actionPolicy).toMatchObject(SEND_NOTIFICATION_HANDLER_POLICY.actionPolicy)
           return delivery({ id: "ndl_9" })
         },
       }),
     )
     expect(result).toMatchObject({ id: "ndl_9", status: "sent" })
-    expect(sent).toMatchObject({ templateSlug: "booking-confirmed", to: "guest@example.com" })
+    expect(sent).toMatchObject({
+      templateSlug: "booking-confirmed",
+      to: "guest@example.com",
+    })
   })
 
   it("dispatches delivery reads through the injected service", async () => {

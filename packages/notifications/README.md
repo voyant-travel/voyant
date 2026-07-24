@@ -57,6 +57,41 @@ The bring-your-own path is first-class: any project can implement
 `NotificationProvider` against another transport (raw Resend, Twilio, SES, …)
 and register it in place of the cloud adapters.
 
+### Durable agent sends
+
+The durable `send_notification` path admits an approved, idempotent command,
+records an exact rendered request and a `notification.send-requested` outbox
+event atomically, then lets a package-owned scheduled job perform provider
+delivery. Exact replays return the immutable delivery snapshot captured at
+command acceptance.
+
+This changes the Tool contract from synchronous delivery to asynchronous
+acceptance: the immutable Tool result has `status: "pending"`. Poll
+`get_notification_delivery` with its `id` to observe the mutable `sent` or
+`failed` state. Approval and audit target the existing active notification
+template by slug; the exact command fingerprint separately binds the recipient
+address and every other input without putting that address in the
+action-ledger target.
+
+Providers used by this Tool must declare
+`durableDelivery.protocol = "notification-provider-idempotency-v1"` and
+implement both idempotent `send` and `reconcile`. The stable key passed to those
+methods is derived from the unique admitted command claim, so exact replays and
+retries share one provider delivery while separately admitted commands remain
+distinct even when their payloads match. Providers without that explicit
+capability remain usable by request-scoped application flows, but agent sends
+fail closed before an action claim or delivery row is committed. The bundled
+local and Voyant Cloud providers currently declare durable delivery unsupported
+because they cannot prove cross-process reconciliation. For that reason the
+graph action remains unavailable by default; it can be unquarantined only when
+a selected production provider implements this capability (or graph composition
+can express provider-conditional availability).
+
+After acceptance, a temporarily missing provider registration consumes the
+normal leased retry budget. A provider that is present but explicitly declares
+the durable protocol unsupported is a permanent configuration failure and is
+dead-lettered immediately.
+
 Email sends resolve the sender from the request `from`, the template
 `fromAddress`, or the provider's `defaultFromAddress` before dispatch. Custom
 email providers that use a provider-side default sender should expose it through

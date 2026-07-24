@@ -63,6 +63,37 @@ export interface NotificationResult {
   provider: string
 }
 
+export interface DurableNotificationDeliveryContext {
+  /**
+   * Stable across worker retries and process restarts. Providers must scope
+   * this key to their account/tenant and reject payload drift.
+   */
+  idempotencyKey: string
+}
+
+export type DurableNotificationDeliveryCapability =
+  | {
+      supported: false
+      reason: string
+    }
+  | {
+      supported: true
+      protocol: "notification-provider-idempotency-v1"
+      /**
+       * Deliver once for this key. Repeating the same key and payload must
+       * return the original provider result; key reuse with drift must reject.
+       */
+      send(
+        payload: NotificationPayload,
+        context: DurableNotificationDeliveryContext,
+      ): Promise<NotificationResult>
+      /**
+       * Resolve an already accepted send after an ambiguous worker crash.
+       * Returns null only when the provider can prove the key was not accepted.
+       */
+      reconcile(context: DurableNotificationDeliveryContext): Promise<NotificationResult | null>
+    }
+
 /**
  * A pluggable notification provider. Implementations target one or more
  * channels and handle the actual delivery (HTTP call, SMTP, etc.).
@@ -86,6 +117,13 @@ export interface NotificationProvider {
    * sender before dispatch.
    */
   readonly defaultFromAddress?: string | null
+  /**
+   * Explicit durable-send capability. Providers that omit it, or declare
+   * `supported: false`, remain valid for request-scoped application sends but
+   * are rejected by the agent send command before any durable intent is
+   * admitted.
+   */
+  readonly durableDelivery?: DurableNotificationDeliveryCapability
   /** Deliver the notification. Throws on failure. */
   send(payload: NotificationPayload): Promise<NotificationResult>
 }

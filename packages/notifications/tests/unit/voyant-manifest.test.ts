@@ -44,6 +44,21 @@ describe("notifications deployment manifest", () => {
       migrations: [{ id: "@voyant-travel/notifications#migrations" }],
       jobs: [
         {
+          id: "notifications.deliver-durable-sends",
+          schedule: { cron: "* * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "* * * * *", overlap: "skip" },
+              economical: { cron: "*/5 * * * *", overlap: "skip" },
+            },
+          },
+          runtime: {
+            entry: "@voyant-travel/notifications/reminder-job",
+            export: "runDueNotificationSendsJob",
+          },
+        },
+        {
           id: "notifications.send-due-reminders",
           schedule: { cron: "0 * * * *", overlap: "skip" },
           scheduling: {
@@ -86,17 +101,29 @@ describe("notifications deployment manifest", () => {
     expect(notificationsVoyantModule.actions).toContainEqual(
       expect.objectContaining({
         id: "@voyant-travel/notifications#action.send-notification",
+        version: "v2",
         resource: "notifications",
         action: "send",
+        targetType: "notification-template",
+        commandTargetField: "templateSlug",
+        targetLifecycle: "existing",
+        existingTarget: {
+          durability: "handler-command-result-v1",
+        },
         availability: {
           status: "unavailable",
-          reasonCode: "unsafe-nontransactional-effect",
+          reasonCode: "provider-idempotency-unavailable",
         },
         effectBoundary: "multistage",
+        durability: {
+          strategy: "saga",
+          testReference: "tests/integration/durable-send.test.ts",
+        },
         requiredScopes: ["notifications:send"],
         risk: "high",
         ledger: "required",
         approval: "required",
+        policy: "notifications-agent-send",
         reversible: false,
         from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
       }),

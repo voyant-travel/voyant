@@ -21,6 +21,7 @@ describe("createVoyantCloudSmsProvider", () => {
       from: "+40000000000",
       renderTemplate: () => ({ text: "123456 is your code." }),
     })
+    expect(provider.durableDelivery).toMatchObject({ supported: false })
 
     const result = await provider.send({
       to: "+40123456789",

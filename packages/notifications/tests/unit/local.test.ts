@@ -29,6 +29,7 @@ describe("createLocalProvider", () => {
     const provider = createLocalProvider({ sink: () => {} })
     expect(provider.channels).toEqual(["email", "sms"])
     expect(provider.defaultFromAddress).toBe("local@example.test")
+    expect(provider.durableDelivery).toMatchObject({ supported: false })
   })
 
   it("accepts a custom name and channel list", async () => {
