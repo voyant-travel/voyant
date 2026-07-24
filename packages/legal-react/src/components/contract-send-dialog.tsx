@@ -9,6 +9,9 @@ import {
   Input,
   Label,
   Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@voyant-travel/ui/components"
 import { Loader2, Mail, Paperclip } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -113,14 +116,6 @@ export function ContractSendDialog({
           <DialogTitle>{messages.title}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid gap-4">
-          {!defaultRecipientEmail ? (
-            <div
-              role="alert"
-              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-            >
-              {messages.missingRecipient}
-            </div>
-          ) : null}
           {isAlreadySent ? (
             <div
               role="status"
@@ -184,10 +179,22 @@ export function ContractSendDialog({
           >
             {messages.actions.cancel}
           </Button>
-          <Button type="button" size="sm" onClick={handleSend} disabled={!canSend}>
-            {send.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {messages.actions.send}
-          </Button>
+          {defaultRecipientEmail ? (
+            <Button type="button" size="sm" onClick={handleSend} disabled={!canSend}>
+              {send.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {messages.actions.send}
+            </Button>
+          ) : (
+            <Tooltip>
+              {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable -- owner: legal-react; disabled Send needs a focusable wrapper to surface its reason. */}
+              <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+                <Button type="button" size="sm" disabled className="pointer-events-none">
+                  {messages.actions.send}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{messages.missingRecipient}</TooltipContent>
+            </Tooltip>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

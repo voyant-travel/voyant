@@ -33,6 +33,7 @@ import {
   TabsTrigger,
   Textarea,
 } from "@voyant-travel/ui/components"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyant-travel/ui/components/tooltip"
 import { ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { InvoiceActionLedgerCard } from "../components/invoice-action-ledger-card.js"
@@ -306,60 +307,73 @@ export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogTrigger
-              disabled={!canDeleteInvoice || deleteInvoice.isPending}
-              render={<Button type="button" variant="destructive" />}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {messages.finance.detailPage.delete}
-            </AlertDialogTrigger>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{messages.finance.detailPage.delete}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {messages.finance.detailPage.deleteConfirm}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleteInvoice.isPending}>
-                  {messages.finance.detailPage.cancel}
-                </AlertDialogCancel>
-                <AlertDialogAction
+          {canDeleteInvoice ? (
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger
+                disabled={deleteInvoice.isPending}
+                render={<Button type="button" variant="destructive" />}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {messages.finance.detailPage.delete}
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{messages.finance.detailPage.delete}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {messages.finance.detailPage.deleteConfirm}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleteInvoice.isPending}>
+                    {messages.finance.detailPage.cancel}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={deleteInvoice.isPending}
+                    onClick={() => {
+                      setActionError(null)
+                      deleteInvoice.mutate(id, {
+                        onSuccess: () => {
+                          setDeleteDialogOpen(false)
+                          navigateTo("invoice.list", {})
+                        },
+                        onError: (error) => {
+                          setActionError(
+                            getMutationErrorMessage(
+                              messages.finance.detailPage.deleteOnlyDraftAlert,
+                            )(error),
+                          )
+                        },
+                      })
+                    }}
+                  >
+                    {deleteInvoice.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    {messages.finance.detailPage.delete}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <Tooltip>
+              {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable -- owner: finance-react; disabled Delete needs a focusable wrapper to surface its reason. */}
+              <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+                <Button
+                  type="button"
                   variant="destructive"
-                  disabled={deleteInvoice.isPending}
-                  onClick={() => {
-                    setActionError(null)
-                    deleteInvoice.mutate(id, {
-                      onSuccess: () => {
-                        setDeleteDialogOpen(false)
-                        navigateTo("invoice.list", {})
-                      },
-                      onError: (error) => {
-                        setActionError(
-                          getMutationErrorMessage(messages.finance.detailPage.deleteOnlyDraftAlert)(
-                            error,
-                          ),
-                        )
-                      },
-                    })
-                  }}
+                  disabled
+                  className="pointer-events-none"
                 >
-                  {deleteInvoice.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : null}
+                  <Trash2 className="mr-2 h-4 w-4" />
                   {messages.finance.detailPage.delete}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{messages.finance.detailPage.deleteOnlyDraftAlert}</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
-      {!canDeleteInvoice ? (
-        <div className="rounded-md border px-3 py-2 text-muted-foreground text-sm">
-          {messages.finance.detailPage.deleteOnlyDraftAlert}
-        </div>
-      ) : null}
       {actionError ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {actionError}
