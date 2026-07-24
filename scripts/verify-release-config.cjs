@@ -3,6 +3,7 @@ const path = require("node:path")
 
 const { read } = require("@changesets/config")
 const { getPackages } = require("@manypkg/get-packages")
+const semver = require("semver")
 const { parse: parseYaml } = require("yaml")
 
 const { getPublishablePackages } = require("./release-utils.cjs")
@@ -87,15 +88,17 @@ const REQUIRED_WORKSPACE_RANGE = "workspace:^"
 const BOM_EXACT_PIN = "workspace:*"
 const BOM_EXACT_PIN_PACKAGES = new Set(["@voyant-travel/operator-standard"])
 
-function collectWorkspaceRangeProblems(packages) {
+function collectWorkspaceRangeProblems(packages, projectedVersions = new Map()) {
   const problems = []
-  const workspacePackageNames = new Set(
-    packages.packages.map((pkg) => pkg.packageJson.name).filter(Boolean),
+  const workspacePackageVersions = new Map(
+    packages.packages
+      .map((pkg) => [pkg.packageJson.name, pkg.packageJson.version])
+      .filter(([name, version]) => name && version),
   )
 
   for (const pkg of packages.packages) {
     const packageJsonPath = path.join(pkg.dir, "package.json")
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+    const packageJson = pkg.packageJson
     const isBom = BOM_EXACT_PIN_PACKAGES.has(packageJson.name)
 
     for (const field of DEPENDENCY_FIELDS) {
@@ -107,7 +110,23 @@ function collectWorkspaceRangeProblems(packages) {
       const expected = isBom && field === "dependencies" ? BOM_EXACT_PIN : REQUIRED_WORKSPACE_RANGE
 
       for (const [name, version] of Object.entries(dependencies)) {
-        if (workspacePackageNames.has(name) && version !== expected) {
+        if (!workspacePackageVersions.has(name) || version === expected) continue
+
+        const projectedConsumerVersion = projectedVersions.get(packageJson.name)
+        const projectedProviderVersion = projectedVersions.get(name)
+        const currentProviderVersion = workspacePackageVersions.get(name)
+        const isCompatiblePublishedPeerRange =
+          field === "peerDependencies" &&
+          /^\^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version) &&
+          semver.satisfies(currentProviderVersion, version)
+        const isExactStagedPeerRange =
+          field === "peerDependencies" &&
+          projectedConsumerVersion &&
+          projectedProviderVersion &&
+          !semver.satisfies(currentProviderVersion, version) &&
+          version === `^${projectedProviderVersion}`
+
+        if (!isCompatiblePublishedPeerRange && !isExactStagedPeerRange) {
           problems.push(
             `${packageJsonPath}: ${field}.${name} uses ${version}; expected ${expected}`,
           )
@@ -123,6 +142,11 @@ async function main() {
   const cwd = process.cwd()
   const packages = await getPackages(cwd)
   const config = await read(cwd, packages)
+  const { default: getReleasePlan } = await import("@changesets/get-release-plan")
+  const releasePlan = await getReleasePlan(cwd)
+  const projectedVersions = new Map(
+    releasePlan.releases.map(({ name, newVersion }) => [name, newVersion]),
+  )
   const publishableNames = new Set(
     getPublishablePackages(packages, config).map((pkg) => pkg.packageJson.name),
   )
@@ -155,7 +179,7 @@ async function main() {
     }
   }
 
-  problems.push(...collectWorkspaceRangeProblems(packages))
+  problems.push(...collectWorkspaceRangeProblems(packages, projectedVersions))
   problems.push(...collectReleaseWorkflowProblems(cwd))
 
   if (problems.length > 0) {
@@ -171,7 +195,11 @@ async function main() {
   )
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+module.exports = { collectReleaseWorkflowProblems, collectWorkspaceRangeProblems }

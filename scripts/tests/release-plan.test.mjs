@@ -4,6 +4,7 @@ import test from "node:test"
 
 const require = createRequire(import.meta.url)
 const { getReleaseMode } = require("../release-plan.cjs")
+const { collectWorkspaceRangeProblems } = require("../verify-release-config.cjs")
 
 test("release PR creation takes priority over pending publication", () => {
   assert.equal(getReleaseMode(true, true), "version")
@@ -16,3 +17,99 @@ test("pending packages publish after all changesets are applied", () => {
 test("an up-to-date repository needs no release action", () => {
   assert.equal(getReleaseMode(false, false), "none")
 })
+
+test("accepts an exact future internal peer range covered by the release plan", () => {
+  assert.deepEqual(
+    collectWorkspaceRangeProblems(
+      createPackages({
+        "@fixture/consumer": {
+          version: "1.0.0",
+          peerDependencies: { "@fixture/provider": "^0.64.0" },
+        },
+        "@fixture/provider": { version: "0.63.4" },
+      }),
+      new Map([
+        ["@fixture/consumer", "1.1.0"],
+        ["@fixture/provider", "0.64.0"],
+      ]),
+    ),
+    [],
+  )
+})
+
+test("accepts a compatible published caret peer without creating a workspace edge", () => {
+  assert.deepEqual(
+    collectWorkspaceRangeProblems(
+      createPackages({
+        "@fixture/consumer": {
+          version: "1.1.0",
+          peerDependencies: { "@fixture/provider": "^0.64.0" },
+        },
+        "@fixture/provider": { version: "0.64.1" },
+      }),
+    ),
+    [],
+  )
+})
+
+test("rejects a future internal peer range when either package is absent from the release plan", () => {
+  const packages = createPackages({
+    "@fixture/consumer": {
+      version: "1.0.0",
+      peerDependencies: { "@fixture/provider": "^0.64.0" },
+    },
+    "@fixture/provider": { version: "0.63.4" },
+  })
+
+  assert.equal(
+    collectWorkspaceRangeProblems(packages, new Map([["@fixture/provider", "0.64.0"]])).length,
+    1,
+  )
+  assert.equal(
+    collectWorkspaceRangeProblems(packages, new Map([["@fixture/consumer", "1.1.0"]])).length,
+    1,
+  )
+})
+
+test("rejects non-exact staged ranges and staged runtime dependencies", () => {
+  const projectedVersions = new Map([
+    ["@fixture/consumer", "1.1.0"],
+    ["@fixture/provider", "0.64.0"],
+  ])
+
+  assert.equal(
+    collectWorkspaceRangeProblems(
+      createPackages({
+        "@fixture/consumer": {
+          version: "1.0.0",
+          peerDependencies: { "@fixture/provider": ">=0.64.0" },
+        },
+        "@fixture/provider": { version: "0.63.4" },
+      }),
+      projectedVersions,
+    ).length,
+    1,
+  )
+  assert.equal(
+    collectWorkspaceRangeProblems(
+      createPackages({
+        "@fixture/consumer": {
+          version: "1.0.0",
+          dependencies: { "@fixture/provider": "^0.64.0" },
+        },
+        "@fixture/provider": { version: "0.63.4" },
+      }),
+      projectedVersions,
+    ).length,
+    1,
+  )
+})
+
+function createPackages(manifests) {
+  return {
+    packages: Object.entries(manifests).map(([name, packageJson]) => ({
+      dir: `/fixtures/${name}`,
+      packageJson: { name, ...packageJson },
+    })),
+  }
+}
