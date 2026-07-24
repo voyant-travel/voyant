@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: action-ledger; claim, replay validation, and canonical completion form one transactional state machine.
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { dbSupportsTransactions } from "@voyant-travel/db/transaction-capability"
+import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { and, eq, sql } from "drizzle-orm"
 
 import type {
@@ -86,6 +87,8 @@ export class ActionLedgerCreatedCommandTransactionRequiredError extends Error {
 
 export class ActionLedgerCreatedCommandProtocolError extends Error {
   readonly reason:
+    | "admitted_policy_mismatch"
+    | "invalid_parent_anchor"
     | "approval_policy_unsupported"
     | "forged_approval_linkage"
     | "invalid_approval_controls"
@@ -123,6 +126,12 @@ export interface BuildCreatedTargetCommandFingerprintInput {
   commandTarget: { type: string; id: string }
   canonicalTargetType: string
   resultReferenceType: string
+  parentAnchor?: {
+    targetIdField: string
+    targetType?: string
+    targetTypeField?: string
+    relatedTargetIdField?: string
+  }
   commandInput?: unknown
   capabilityId: string
   capabilityVersion: string
@@ -155,6 +164,7 @@ export interface ExecuteCreatedTargetCommandInput extends CreatedCommandCommonIn
   commandTarget: { type: string; id: string }
   canonicalTargetType: string
   resultReferenceType: string
+  parentAnchor?: BuildCreatedTargetCommandFingerprintInput["parentAnchor"]
   capabilityId: string
   capabilityVersion: string
   approvalPolicy: ActionLedgerCapabilityApprovalPolicy
@@ -222,6 +232,115 @@ export type ExecuteCreatedTargetCommandResult<TValue, TReferenceType extends str
       value: TValue
       result: CreatedTargetCommandResultMetadata<TReferenceType>
     }
+
+export interface ExecuteAdmittedCreatedTargetCommandInput<TReferenceType extends string> {
+  db: AnyDrizzleDb
+  context: ActionLedgerRequestContextValues
+  admitted: ToolHandlerActionPolicyContext
+  /** Optional compatibility copy; the admitted `_voyant` invocation remains authoritative. */
+  idempotencyKey?: string
+  commandTargetType: string
+  canonicalTargetType: string
+  resultReferenceType: TReferenceType
+  commandInput: unknown
+  evaluatedRisk: ActionLedgerCapabilityRisk
+}
+
+/**
+ * Execute a handler-admitted created-target command using the selected graph
+ * action as ledger identity and the selected Tool capability as its route.
+ */
+export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType extends string>(
+  input: ExecuteAdmittedCreatedTargetCommandInput<TReferenceType>,
+  handlers: ExecuteCreatedTargetCommandHandlers<TValue, TReferenceType>,
+): Promise<ExecuteCreatedTargetCommandResult<TValue, TReferenceType>> {
+  const principal = mapActionLedgerRequestContext(input.context)
+  const selected = input.admitted.actionPolicy
+  const createdTarget = selected.createdTarget
+  const idempotencyKey = input.admitted.invocation.idempotencyKey?.trim()
+  if (
+    selected.kind !== "execute" ||
+    selected.ledger !== "required" ||
+    selected.enforcement !== "handler" ||
+    selected.targetLifecycle !== "created" ||
+    !createdTarget ||
+    createdTarget.durability !== "handler-command-claim-v1" ||
+    createdTarget.commandTargetType !== input.commandTargetType ||
+    selected.targetType !== input.canonicalTargetType ||
+    createdTarget.resultReferenceType !== input.resultReferenceType ||
+    selected.risk !== input.evaluatedRisk ||
+    selected.approval !== "never" ||
+    !idempotencyKey ||
+    (input.idempotencyKey !== undefined && input.idempotencyKey !== idempotencyKey)
+  ) {
+    throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
+  }
+  assertCreatedTargetParentAnchor(createdTarget.parentAnchor, input.commandInput)
+  const command = {
+    actionName: selected.capabilityId,
+    actionVersion: selected.version,
+    commandTarget: { type: createdTarget.commandTargetType, id: idempotencyKey },
+    canonicalTargetType: selected.targetType,
+    resultReferenceType: input.resultReferenceType,
+    parentAnchor: createdTarget.parentAnchor,
+    commandInput: input.commandInput,
+    capabilityId: selected.capabilityId,
+    capabilityVersion: selected.version,
+    evaluatedRisk: selected.risk,
+    approvalPolicy: "none" as const,
+    approvalReasonCode: null,
+  }
+  const fingerprint = await buildCreatedTargetCommandFingerprint(command)
+  const scope = await buildCreatedTargetIdempotencyScope({
+    actionName: command.actionName,
+    actionVersion: command.actionVersion,
+    principalType: principal.principalType,
+    principalId: principal.principalId,
+    organizationId: principal.organizationId,
+  })
+  return executeCreatedTargetCommand(
+    input.db,
+    {
+      context: input.context,
+      ...command,
+      routeOrToolName: input.admitted.capabilityId,
+      authorizationSource: "selected_graph_mcp_handler",
+      idempotency: { scope, key: idempotencyKey, fingerprint },
+    },
+    handlers,
+  )
+}
+
+function assertCreatedTargetParentAnchor(
+  parentAnchor: NonNullable<
+    ToolHandlerActionPolicyContext["actionPolicy"]["createdTarget"]
+  >["parentAnchor"],
+  commandInput: unknown,
+): void {
+  if (!parentAnchor) return
+  if (!isPlainRecord(commandInput)) {
+    throw new ActionLedgerCreatedCommandProtocolError("invalid_parent_anchor")
+  }
+  requiredAnchorValue(commandInput, parentAnchor.targetIdField)
+  if (parentAnchor.targetTypeField) {
+    requiredAnchorValue(commandInput, parentAnchor.targetTypeField)
+  }
+  if (parentAnchor.relatedTargetIdField) {
+    requiredAnchorValue(commandInput, parentAnchor.relatedTargetIdField)
+  }
+}
+
+function requiredAnchorValue(commandInput: Record<string, unknown>, field: string): string {
+  const value = commandInput[field]
+  if (typeof value !== "string" || !value.trim()) {
+    throw new ActionLedgerCreatedCommandProtocolError("invalid_parent_anchor")
+  }
+  return value
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
 
 interface CreatedCommandState<TReferenceType extends string> {
   claim: ActionLedgerEntry
@@ -336,6 +455,7 @@ export async function buildCreatedTargetCommandFingerprint(
     createdTarget: {
       canonicalTargetType: requiredValue(input.canonicalTargetType, "canonical target type"),
       resultReferenceType: validReferenceType(input.resultReferenceType),
+      ...(input.parentAnchor ? { parentAnchor: input.parentAnchor } : {}),
     },
   })
 }
@@ -392,6 +512,7 @@ async function prepareCommand<TReferenceType extends string>(
     commandTarget: { type: commandTargetType, id: commandTargetId },
     canonicalTargetType,
     resultReferenceType,
+    parentAnchor: input.parentAnchor,
     commandInput: input.commandInput,
     capabilityId: input.capabilityId,
     capabilityVersion: input.capabilityVersion,

@@ -902,6 +902,41 @@ describe("deployment graph v1", () => {
     expect(
       validateGraphUnitManifest(
         manifest({
+          createdTarget: {
+            ...action.createdTarget,
+            parentAnchor: {
+              targetType: "customer",
+              targetTypeField: "entityType",
+              targetIdField: "customerId",
+            },
+          },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].createdTarget.parentAnchor",
+        message: expect.stringContaining("exactly one"),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          createdTarget: {
+            ...action.createdTarget,
+            parentAnchor: { targetType: "customer", targetIdField: "" },
+          },
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].createdTarget.parentAnchor.targetIdField",
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
           createdTarget: undefined,
         }),
       ),

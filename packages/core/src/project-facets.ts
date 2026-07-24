@@ -391,6 +391,17 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
     commandTargetType: string
     resultReferenceType: string
     durability: "handler-command-claim-v1"
+    /**
+     * Stable existing owner used to anchor creation of a generated child.
+     * Exactly one of targetType or targetTypeField identifies the parent type.
+     */
+    parentAnchor?: {
+      targetIdField: string
+      targetType?: string
+      targetTypeField?: string
+      /** Additional input whose referenced row must belong to the parent. */
+      relatedTargetIdField?: string
+    }
   }
   resource?: string
   action?: string

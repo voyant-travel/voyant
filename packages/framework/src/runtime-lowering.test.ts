@@ -106,6 +106,7 @@ describe("graph runtime lowering", () => {
             commandTargetType: "loyalty-account-create-command",
             resultReferenceType: "loyalty-account",
             durability: "handler-command-claim-v1",
+            parentAnchor: { targetType: "customer", targetIdField: "customerId" },
           },
           risk: "medium",
           ledger: "required",
@@ -124,6 +125,7 @@ describe("graph runtime lowering", () => {
           commandTargetType: "loyalty-account-create-command",
           resultReferenceType: "loyalty-account",
           durability: "handler-command-claim-v1",
+          parentAnchor: { targetType: "customer", targetIdField: "customerId" },
         },
       }),
     ])

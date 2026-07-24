@@ -66,6 +66,20 @@ describe("distribution deployment manifests", () => {
       migrations: [{ id: "@voyant-travel/distribution#migrations" }],
       links: [{ id: "@voyant-travel/distribution#linkable.supplier" }],
     })
+    expect(distributionVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/distribution#action.create-external-reference",
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "external-reference-create-command",
+          resultReferenceType: "external_reference",
+          durability: "handler-command-claim-v1",
+          parentAnchor: { targetTypeField: "entityType", targetIdField: "entityId" },
+        },
+        reversible: false,
+        allowedActorTypes: ["staff"],
+      }),
+    )
   })
 
   it("owns the booking and channel-push extensions", () => {

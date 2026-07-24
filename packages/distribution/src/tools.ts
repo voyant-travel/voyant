@@ -10,6 +10,7 @@ import {
 import {
   admitHandlerActionPolicy,
   defineTool,
+  type HandlerActionPolicyExpectation,
   READ_ONLY_RISK,
   requireService,
   type ToolContext,
@@ -54,6 +55,10 @@ const externalRefValueSchema = selectExternalRefSchema
 const updateSupplierToolSchema = updateSupplierSchema.extend({ id: z.string().min(1) })
 const updateChannelToolSchema = updateChannelSchema.extend({ id: z.string().min(1) })
 const updateExternalRefToolSchema = updateExternalRefSchema.extend({ id: z.string().min(1) })
+export const createExternalReferenceInputSchema = insertExternalRefSchema.extend({
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
+})
+const createdExternalReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
 
 type SupplierListQuery = z.infer<typeof supplierListQuerySchema>
 type SupplierAggregatesQuery = z.infer<typeof supplierAggregatesQuerySchema>
@@ -79,7 +84,7 @@ const createdChannelOutputSchema = z.object({
 type CreateChannelInput = z.infer<typeof createChannelToolInputSchema>
 type UpdateChannelInput = z.infer<typeof updateChannelToolSchema>
 type ExternalRefListQuery = z.infer<typeof externalRefListQuerySchema>
-type CreateExternalRefInput = z.infer<typeof insertExternalRefSchema>
+type CreateExternalRefInput = z.infer<typeof createExternalReferenceInputSchema>
 type UpdateExternalRefInput = z.infer<typeof updateExternalRefToolSchema>
 
 export interface DistributionToolServices {
@@ -100,9 +105,37 @@ export interface DistributionToolServices {
   updateChannel(input: UpdateChannelInput): Promise<unknown>
   listExternalRefs(query: ExternalRefListQuery): Promise<unknown>
   getExternalRefById(id: string): Promise<unknown>
-  createExternalRef(input: CreateExternalRefInput): Promise<unknown>
+  createExternalRef(
+    input: CreateExternalRefInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateExternalRef(input: UpdateExternalRefInput): Promise<unknown>
 }
+
+export const CREATE_EXTERNAL_REFERENCE_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.create-external-reference`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_external_reference",
+  actionPolicy: {
+    id: `${OWNER}#action.create-external-reference`,
+    capabilityId: `${OWNER}#action.create-external-reference`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "external-reference",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "external-reference-create-command",
+      resultReferenceType: "external_reference",
+      durability: "handler-command-claim-v1",
+      parentAnchor: { targetTypeField: "entityType", targetIdField: "entityId" },
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 export type DistributionToolContext = ToolContext & { distribution?: DistributionToolServices }
 
@@ -310,15 +343,17 @@ export const getExternalReferenceTool = defineTool({
 
 export const createExternalReferenceTool = defineTool({
   ...writeMetadata(["external-refs:write"]),
+  riskPolicy: { ...REVERSIBLE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-external-reference`,
   name: "create_external_reference",
   description: "Create an external-system identifier mapping for a domain record.",
-  inputSchema: insertExternalRefSchema,
-  outputSchema: externalRefValueSchema.nullable(),
+  inputSchema: createExternalReferenceInputSchema,
+  outputSchema: createdExternalReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: DistributionToolContext) {
-    return parseJsonResult(
-      externalRefValueSchema.nullable(),
-      await distribution(ctx).createExternalRef(input),
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_EXTERNAL_REFERENCE_HANDLER_POLICY)
+    return createdExternalReferenceSchema.parse(
+      await distribution(ctx).createExternalRef(input, admitted),
     )
   },
 })

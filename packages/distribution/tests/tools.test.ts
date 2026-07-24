@@ -1,7 +1,11 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { type DistributionToolServices, distributionTools } from "../src/tools.js"
+import {
+  createExternalReferenceTool,
+  type DistributionToolServices,
+  distributionTools,
+} from "../src/tools.js"
 
 function ctx(services?: Partial<DistributionToolServices>): ToolContext & {
   distribution?: DistributionToolServices
@@ -44,20 +48,22 @@ describe("distribution tools", () => {
     expect(
       tools.filter(({ name }) => name.startsWith("create_") || name.startsWith("update_")),
     ).toHaveLength(6)
+    expect(tools.every(({ riskPolicy }) => !riskPolicy.destructive)).toBe(true)
     expect(
       tools
-        .filter(({ name }) => ["create_supplier", "create_distribution_channel"].includes(name))
+        .filter(({ name }) =>
+          ["create_supplier", "create_distribution_channel", "create_external_reference"].includes(
+            name,
+          ),
+        )
         .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
     expect(
       tools
         .filter(({ name }) =>
-          [
-            "update_supplier",
-            "update_distribution_channel",
-            "create_external_reference",
-            "update_external_reference",
-          ].includes(name),
+          ["update_supplier", "update_distribution_channel", "update_external_reference"].includes(
+            name,
+          ),
         )
         .every(({ riskPolicy }) => riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
@@ -108,5 +114,15 @@ describe("distribution tools", () => {
     await expect(registry().dispatch("list_suppliers", {}, ctx())).rejects.toMatchObject({
       code: "MISSING_SERVICE",
     })
+  })
+
+  it("rejects missing generated-child policy before calling the service", async () => {
+    const createExternalRef = vi.fn()
+    const context = ctx({ createExternalRef })
+
+    await expect(createExternalReferenceTool.handler({} as never, context)).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+    })
+    expect(createExternalRef).not.toHaveBeenCalled()
   })
 })

@@ -34,4 +34,21 @@ describe("identity deployment manifest", () => {
       },
     })
   })
+
+  it("binds generated identity children to their polymorphic parent anchor", () => {
+    for (const actionId of ["create-contact-point", "create-address", "create-named-contact"]) {
+      expect(identityVoyantModule.actions).toContainEqual(
+        expect.objectContaining({
+          id: `@voyant-travel/identity#action.${actionId}`,
+          targetLifecycle: "created",
+          createdTarget: expect.objectContaining({
+            durability: "handler-command-claim-v1",
+            parentAnchor: { targetTypeField: "entityType", targetIdField: "entityId" },
+          }),
+          reversible: false,
+          allowedActorTypes: ["staff"],
+        }),
+      )
+    }
+  })
 })

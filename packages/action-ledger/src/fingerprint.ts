@@ -51,6 +51,12 @@ export interface BuildActionApprovalCommandFingerprintInput {
   createdTarget?: {
     canonicalTargetType: string
     resultReferenceType: string
+    parentAnchor?: {
+      targetIdField: string
+      targetType?: string
+      targetTypeField?: string
+      relatedTargetIdField?: string
+    }
   } | null
 }
 

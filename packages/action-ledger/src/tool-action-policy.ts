@@ -196,7 +196,11 @@ function resolveSelectedAction(
       execution.actionPolicy.createdTarget?.commandTargetType ||
     selected.createdTarget?.resultReferenceType !==
       execution.actionPolicy.createdTarget?.resultReferenceType ||
-    selected.createdTarget?.durability !== execution.actionPolicy.createdTarget?.durability
+    selected.createdTarget?.durability !== execution.actionPolicy.createdTarget?.durability ||
+    !sameParentAnchor(
+      selected.createdTarget?.parentAnchor,
+      execution.actionPolicy.createdTarget?.parentAnchor,
+    )
   ) {
     throw new ToolError(
       "The Tool action policy does not resolve exactly to the selected deployment graph.",
@@ -205,6 +209,33 @@ function resolveSelectedAction(
     )
   }
   return selected
+}
+
+function sameParentAnchor(
+  selected:
+    | {
+        targetIdField: string
+        targetType?: string
+        targetTypeField?: string
+        relatedTargetIdField?: string
+      }
+    | undefined,
+  execution:
+    | {
+        targetIdField: string
+        targetType?: string
+        targetTypeField?: string
+        relatedTargetIdField?: string
+      }
+    | undefined,
+): boolean {
+  if (!selected || !execution) return selected === execution
+  return (
+    selected.targetIdField === execution.targetIdField &&
+    selected.targetType === execution.targetType &&
+    selected.targetTypeField === execution.targetTypeField &&
+    selected.relatedTargetIdField === execution.relatedTargetIdField
+  )
 }
 
 function assertCommandTargetMatches(

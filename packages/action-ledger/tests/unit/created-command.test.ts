@@ -9,7 +9,9 @@ import {
   ActionLedgerCreatedCommandReplayIncompleteError,
   ActionLedgerCreatedCommandTransactionRequiredError,
   buildCreatedTargetCommandFingerprint,
+  buildCreatedTargetIdempotencyScope,
   type ExecuteCreatedTargetCommandInput,
+  executeAdmittedCreatedTargetCommand,
   executeCreatedTargetCommand,
 } from "../../src/created-command.js"
 import type {
@@ -32,9 +34,233 @@ const POLICY_DRIFTS: Array<[string, Partial<ExecuteCreatedTargetCommandInput>]> 
   ["reason", { approvalReasonCode: "different_reason" }],
   ["canonical target", { canonicalTargetType: "relationship-organization" }],
   ["reference type", { resultReferenceType: "wrong-ref" }],
+  [
+    "parent anchor",
+    { parentAnchor: { targetType: "organization", targetIdField: "organizationId" } },
+  ],
 ]
 
 describe("created-target command protocol", () => {
+  it("uses admitted graph identity, Tool route identity, and replays the canonical child reference", async () => {
+    const harness = makeCreatedCommandDb()
+    const actionName = "inventory:product-extra:create"
+    const actionVersion = "v1"
+    const scope = await buildCreatedTargetIdempotencyScope({
+      actionName,
+      actionVersion,
+      principalType: "user",
+      principalId: "usr_1",
+      organizationId: "org_1",
+    })
+    ;(harness.db as AnyDrizzleDb & { __claimScope?: string }).__claimScope =
+      `${scope}:created-command-claim`
+    const create = vi.fn(async () => ({
+      value: { id: "extra_1", replayed: false },
+      targetId: "extra_1",
+    }))
+    const admitted = makeAdmittedCreatedTargetContext({ actionName, actionVersion })
+    const execute = () =>
+      executeAdmittedCreatedTargetCommand(
+        {
+          db: harness.db,
+          context: {
+            userId: "usr_1",
+            organizationId: "org_1",
+            actor: "staff",
+            callerType: "session",
+          },
+          admitted,
+          idempotencyKey: undefined,
+          commandTargetType: "product-extra-create-command",
+          canonicalTargetType: "product_extra",
+          resultReferenceType: "product_extra",
+          commandInput: { productId: "product_1", name: "Transfer" },
+          evaluatedRisk: "high",
+        },
+        {
+          create,
+          async replay(_tx, completed) {
+            return { id: completed.reference.id, replayed: true }
+          },
+        },
+      )
+
+    await expect(execute()).resolves.toMatchObject({
+      replayed: false,
+      value: { id: "extra_1", replayed: false },
+    })
+    await expect(execute()).resolves.toMatchObject({
+      replayed: true,
+      value: { id: "extra_1", replayed: true },
+    })
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(harness.entries[0]).toMatchObject({
+      actionName,
+      capabilityId: actionName,
+      capabilityVersion: actionVersion,
+      routeOrToolName: admitted.capabilityId,
+      organizationId: "org_1",
+    })
+
+    await expect(
+      executeAdmittedCreatedTargetCommand(
+        {
+          db: harness.db,
+          context: {
+            userId: "usr_1",
+            organizationId: "org_1",
+            actor: "staff",
+            callerType: "session",
+          },
+          admitted: {
+            ...admitted,
+            actionPolicy: { ...admitted.actionPolicy, approval: "required" as const },
+          },
+          idempotencyKey: "key_1",
+          commandTargetType: "product-extra-create-command",
+          canonicalTargetType: "product_extra",
+          resultReferenceType: "product_extra",
+          commandInput: { productId: "product_1", name: "Transfer" },
+          evaluatedRisk: "high",
+        },
+        {
+          create,
+          async replay(_tx, completed) {
+            return { id: completed.reference.id, replayed: true }
+          },
+        },
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "admitted_policy_mismatch",
+    })
+    expect(create).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ["non-handler enforcement", { enforcement: "generic" as const }, { idempotencyKey: "key_1" }],
+    ["optional ledger", { ledger: "optional" as const }, { idempotencyKey: "key_1" }],
+    ["non-execute kind", { kind: "read" as const }, { idempotencyKey: "key_1" }],
+    ["different admitted key", {}, { idempotencyKey: "key_other" }],
+  ])("rejects %s before opening a transaction", async (_label, policyPatch, invocation) => {
+    const harness = makeCreatedCommandDb()
+    const create = vi.fn()
+    const admitted = makeAdmittedCreatedTargetContext()
+
+    await expect(
+      executeAdmittedCreatedTargetCommand(
+        {
+          db: harness.db,
+          context: {
+            userId: "usr_1",
+            organizationId: "org_1",
+            actor: "staff",
+            callerType: "session",
+          },
+          admitted: {
+            ...admitted,
+            actionPolicy: { ...admitted.actionPolicy, ...policyPatch },
+            invocation,
+          },
+          idempotencyKey: "key_1",
+          commandTargetType: "product-extra-create-command",
+          canonicalTargetType: "product_extra",
+          resultReferenceType: "product_extra",
+          commandInput: { productId: "product_1", name: "Transfer" },
+          evaluatedRisk: "high",
+        },
+        { create, replay: vi.fn() },
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "admitted_policy_mismatch",
+    })
+    expect(harness.events).toEqual([])
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["missing parent", { name: "Transfer" }],
+    ["blank parent", { productId: "  ", name: "Transfer" }],
+  ])("rejects a %s anchor before opening a transaction", async (_label, commandInput) => {
+    const harness = makeCreatedCommandDb()
+    const create = vi.fn()
+
+    await expect(
+      executeAdmittedCreatedTargetCommand(
+        {
+          db: harness.db,
+          context: {
+            userId: "usr_1",
+            organizationId: "org_1",
+            actor: "staff",
+            callerType: "session",
+          },
+          admitted: makeAdmittedCreatedTargetContext(),
+          idempotencyKey: "key_1",
+          commandTargetType: "product-extra-create-command",
+          canonicalTargetType: "product_extra",
+          resultReferenceType: "product_extra",
+          commandInput,
+          evaluatedRisk: "high",
+        },
+        { create, replay: vi.fn() },
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "invalid_parent_anchor",
+    })
+    expect(harness.events).toEqual([])
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it("requires both polymorphic and related anchors before opening a transaction", async () => {
+    const harness = makeCreatedCommandDb()
+    const create = vi.fn()
+    const admitted = makeAdmittedCreatedTargetContext()
+    const createdTarget = admitted.actionPolicy.createdTarget
+
+    await expect(
+      executeAdmittedCreatedTargetCommand(
+        {
+          db: harness.db,
+          context: {
+            userId: "usr_1",
+            organizationId: "org_1",
+            actor: "staff",
+            callerType: "session",
+          },
+          admitted: {
+            ...admitted,
+            actionPolicy: {
+              ...admitted.actionPolicy,
+              createdTarget: {
+                ...createdTarget,
+                parentAnchor: {
+                  targetTypeField: "entityType",
+                  targetIdField: "entityId",
+                  relatedTargetIdField: "optionId",
+                },
+              },
+            },
+          },
+          idempotencyKey: "key_1",
+          commandTargetType: "product-extra-create-command",
+          canonicalTargetType: "product_extra",
+          resultReferenceType: "product_extra",
+          commandInput: { entityType: "product", entityId: "product_1" },
+          evaluatedRisk: "high",
+        },
+        { create, replay: vi.fn() },
+      ),
+    ).rejects.toMatchObject({
+      name: ActionLedgerCreatedCommandProtocolError.name,
+      reason: "invalid_parent_anchor",
+    })
+    expect(harness.events).toEqual([])
+    expect(create).not.toHaveBeenCalled()
+  })
+
   it("owns claim, domain mutation, and canonical completion in one transaction", async () => {
     const harness = makeCreatedCommandDb()
     const input = await makeInput()
@@ -77,6 +303,32 @@ describe("created-target command protocol", () => {
       "detail:alge_2",
       "commit",
     ])
+  })
+
+  it("rolls back the claim when the child mutation fails", async () => {
+    const harness = makeCreatedCommandDb()
+    const input = await makeInput()
+
+    await expect(
+      executeCreatedTargetCommand(harness.db, input, {
+        async create() {
+          harness.events.push("domain-create-failed")
+          throw new Error("child insert failed")
+        },
+        async replay(_tx, result) {
+          return { id: result.reference.id }
+        },
+      }),
+    ).rejects.toThrow("child insert failed")
+    expect(harness.events).toEqual([
+      "begin",
+      "advisory-lock",
+      "entry:alge_1:requested",
+      "detail:alge_1",
+      "domain-create-failed",
+      "rollback",
+    ])
+    expect(harness.events).not.toContain("commit")
   })
 
   it("replays the typed result without invoking domain creation twice", async () => {
@@ -415,6 +667,44 @@ describe("created-target command protocol", () => {
     expect(harness.events).toEqual([])
   })
 })
+
+function makeAdmittedCreatedTargetContext(
+  input: { actionName?: string; actionVersion?: string } = {},
+) {
+  const actionName = input.actionName ?? "inventory:product-extra:create"
+  const actionVersion = input.actionVersion ?? "v1"
+  return {
+    capabilityId: "@voyant-travel/inventory#extras.tool.create-product-extra",
+    capabilityVersion: "v1",
+    canonicalName: "create_product_extra",
+    actionPolicy: {
+      id: actionName,
+      capabilityId: actionName,
+      version: actionVersion,
+      kind: "execute" as const,
+      targetType: "product_extra",
+      targetLifecycle: "created" as const,
+      createdTarget: {
+        commandTargetType: "product-extra-create-command",
+        resultReferenceType: "product_extra",
+        durability: "handler-command-claim-v1" as const,
+        parentAnchor: { targetType: "product", targetIdField: "productId" },
+      },
+      risk: "high" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: false,
+      enforcement: "handler" as const,
+      invocation: {
+        controlField: "_voyant" as const,
+        requiredFields: ["idempotencyKey"] as const,
+        optionalFields: [] as const,
+        fingerprintAlgorithm: "action-ledger-command-v1" as const,
+      },
+    },
+    invocation: { idempotencyKey: "key_1" },
+  }
+}
 
 async function executePersonCommand(db: AnyDrizzleDb, input: ExecuteCreatedTargetCommandInput) {
   const harness = db as AnyDrizzleDb & { __claimScope?: string }

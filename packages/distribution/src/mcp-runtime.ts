@@ -7,6 +7,8 @@ import {
   executeCreatedTargetCommand,
   mapActionLedgerRequestContext,
 } from "@voyant-travel/action-ledger"
+import { executeAdmittedCreatedTargetCommand } from "@voyant-travel/action-ledger/created-command"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   defineToolContextContribution,
   ToolError,
@@ -104,8 +106,10 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listExternalRefs: (query: Parameters<typeof externalRefsService.listExternalRefs>[1]) =>
           externalRefsService.listExternalRefs(db, query),
         getExternalRefById: (id: string) => externalRefsService.getExternalRefById(db, id),
-        createExternalRef: (input: Parameters<typeof externalRefsService.createExternalRef>[1]) =>
-          externalRefsService.createExternalRef(db, input),
+        createExternalRef: (
+          input: Parameters<import("./tools.js").DistributionToolServices["createExternalRef"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) => executeExternalReferenceCreate(c, db as unknown as AnyDrizzleDb, input, admitted),
         updateExternalRef: ({
           id,
           ...input
@@ -115,6 +119,49 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+async function executeExternalReferenceCreate(
+  c: Context<{ Variables: ActionLedgerRequestContextValues }>,
+  db: AnyDrizzleDb,
+  input: Parameters<import("./tools.js").DistributionToolServices["createExternalRef"]>[0],
+  admitted: ToolHandlerActionPolicyContext,
+) {
+  const { idempotencyKey, ...data } = input
+  if (!data.entityType.trim() || !data.entityId.trim()) {
+    throw new ToolError(
+      "External reference creation requires an explicit entityType and entityId parent anchor.",
+      "INVALID_INPUT",
+    )
+  }
+  return (
+    await executeAdmittedCreatedTargetCommand(
+      {
+        db,
+        context: distributionActionLedgerContext(c),
+        admitted,
+        idempotencyKey,
+        commandTargetType: "external-reference-create-command",
+        canonicalTargetType: "external-reference",
+        resultReferenceType: "external_reference",
+        commandInput: data,
+        evaluatedRisk: "medium",
+      },
+      {
+        async create(tx) {
+          const row = await externalRefsService.createExternalRef(
+            tx as unknown as PostgresJsDatabase,
+            data,
+          )
+          if (!row) throw new Error("External reference insert did not return a row")
+          return { value: { id: row.id, replayed: false }, targetId: row.id }
+        },
+        async replay(_tx, completed) {
+          return { id: completed.reference.id, replayed: true }
+        },
+      },
+    )
+  ).value
+}
 
 type DistributionPolicy =
   (typeof DISTRIBUTION_CREATED_TARGET_POLICIES)[keyof typeof DISTRIBUTION_CREATED_TARGET_POLICIES]

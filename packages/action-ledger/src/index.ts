@@ -42,9 +42,11 @@ export {
   type CreatedTargetCommandResultMetadata,
   type CreatedTargetCommandResultReference,
   createCreatedTargetCommandResultReference,
+  type ExecuteAdmittedCreatedTargetCommandInput,
   type ExecuteCreatedTargetCommandHandlers,
   type ExecuteCreatedTargetCommandInput,
   type ExecuteCreatedTargetCommandResult,
+  executeAdmittedCreatedTargetCommand,
   executeCreatedTargetCommand,
 } from "./created-command.js"
 export {

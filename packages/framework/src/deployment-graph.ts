@@ -2092,6 +2092,61 @@ function validatePromotedFacets(
             'Created-target actions must use durability "handler-command-claim-v1".',
           )
         }
+        if (entry.createdTarget.parentAnchor !== undefined) {
+          const anchorFacet = `${facet}.createdTarget.parentAnchor`
+          if (!isRecord(entry.createdTarget.parentAnchor)) {
+            invalidFacet(
+              anchorFacet,
+              source,
+              diagnostics,
+              "Created-target parentAnchor must be an object.",
+            )
+          } else {
+            const anchor = entry.createdTarget.parentAnchor
+            requireNonEmptyString(
+              anchor.targetIdField,
+              `${anchorFacet}.targetIdField`,
+              source,
+              diagnostics,
+            )
+            const hasStaticType =
+              typeof anchor.targetType === "string" && anchor.targetType.trim().length > 0
+            const hasDynamicType =
+              typeof anchor.targetTypeField === "string" && anchor.targetTypeField.trim().length > 0
+            if (anchor.targetType !== undefined) {
+              requireNonEmptyString(
+                anchor.targetType,
+                `${anchorFacet}.targetType`,
+                source,
+                diagnostics,
+              )
+            }
+            if (anchor.targetTypeField !== undefined) {
+              requireNonEmptyString(
+                anchor.targetTypeField,
+                `${anchorFacet}.targetTypeField`,
+                source,
+                diagnostics,
+              )
+            }
+            if (hasStaticType === hasDynamicType) {
+              invalidFacet(
+                anchorFacet,
+                source,
+                diagnostics,
+                "Created-target parentAnchor must declare exactly one of targetType or targetTypeField.",
+              )
+            }
+            if (anchor.relatedTargetIdField !== undefined) {
+              requireNonEmptyString(
+                anchor.relatedTargetIdField,
+                `${anchorFacet}.relatedTargetIdField`,
+                source,
+                diagnostics,
+              )
+            }
+          }
+        }
       }
     } else if (entry.createdTarget !== undefined) {
       invalidFacet(

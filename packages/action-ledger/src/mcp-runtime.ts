@@ -166,6 +166,7 @@ export function createActionLedgerToolServices(input: {
             commandTarget: { type: createdTarget.commandTargetType, id: request.targetId },
             canonicalTargetType: selected.targetType,
             resultReferenceType: createdTarget.resultReferenceType,
+            parentAnchor: createdTarget.parentAnchor,
             commandInput: request.commandInput ?? null,
             approvalPolicy: "required",
             capabilityId,

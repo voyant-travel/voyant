@@ -89,6 +89,30 @@ describe("inventory deployment manifests", () => {
         resources: [expect.objectContaining({ resource: "extras" })],
       },
     })
+    expect(inventoryExtrasVoyantModule.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#extras.action.create-product-extra",
+          targetLifecycle: "created",
+          createdTarget: expect.objectContaining({
+            parentAnchor: { targetType: "product", targetIdField: "productId" },
+          }),
+          reversible: false,
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#extras.action.create-option-extra-config",
+          targetLifecycle: "created",
+          createdTarget: expect.objectContaining({
+            parentAnchor: {
+              targetType: "product_extra",
+              targetIdField: "productExtraId",
+              relatedTargetIdField: "optionId",
+            },
+          }),
+          reversible: false,
+        }),
+      ]),
+    )
   })
 
   it("declares product navigation and route scopes", () => {

@@ -1,6 +1,7 @@
 import {
   buildCreatedTargetCommandFingerprint,
   buildCreatedTargetIdempotencyScope,
+  executeAdmittedCreatedTargetCommand,
   executeCreatedTargetCommand,
 } from "@voyant-travel/action-ledger/created-command"
 import {
@@ -19,6 +20,7 @@ import {
   ToolError,
   type ToolHandlerActionPolicyContext,
 } from "@voyant-travel/tools"
+import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import type { z } from "zod"
@@ -26,7 +28,10 @@ import { AuthoringValidationError } from "./authoring/errors.js"
 import { composeProductInTransaction } from "./authoring/service.js"
 import { validateProductGraph } from "./authoring/validate.js"
 import { emitProductContentChanged } from "./events.js"
+import { productExtras } from "./extras/schema.js"
 import { inventoryExtrasService } from "./extras/service.js"
+import type { InventoryExtrasToolServices } from "./extras-tools.js"
+import { productOptions, products } from "./schema.js"
 import { productsService } from "./service.js"
 import { getProductContent } from "./service-content.js"
 import type {
@@ -151,8 +156,43 @@ export const voyantToolContextContribution = defineToolContextContribution({
         ) => inventoryExtrasService.listProductExtras(db, input),
         getProductExtraById: (id: string) => inventoryExtrasService.getProductExtraById(db, id),
         createProductExtra: (
-          input: Parameters<typeof inventoryExtrasService.createProductExtra>[1],
-        ) => inventoryExtrasService.createProductExtra(db, input),
+          input: Parameters<InventoryExtrasToolServices["createProductExtra"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) => {
+          const { idempotencyKey, ...data } = input
+          return executeInventoryGeneratedChild({
+            c,
+            db: db as unknown as AnyDrizzleDb,
+            admitted,
+            idempotencyKey,
+            commandTargetType: "product-extra-create-command",
+            canonicalTargetType: "product_extra",
+            resultReferenceType: "product_extra",
+            commandInput: data,
+            async create(tx) {
+              const [parent] = await (tx as unknown as PostgresJsDatabase)
+                .select({ id: products.id })
+                .from(products)
+                .where(eq(products.id, data.productId))
+                .limit(1)
+              if (!parent) {
+                throw new ToolError(
+                  "Product extra parent product was not found.",
+                  "INVALID_INPUT",
+                  {
+                    productId: data.productId,
+                  },
+                )
+              }
+              const row = await inventoryExtrasService.createProductExtra(
+                tx as unknown as PostgresJsDatabase,
+                data,
+              )
+              if (!row) throw new Error("Product extra insert did not return a row")
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          })
+        },
         updateProductExtra: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateProductExtra(
             db,
@@ -165,8 +205,48 @@ export const voyantToolContextContribution = defineToolContextContribution({
         getOptionExtraConfigById: (id: string) =>
           inventoryExtrasService.getOptionExtraConfigById(db, id),
         createOptionExtraConfig: (
-          input: Parameters<typeof inventoryExtrasService.createOptionExtraConfig>[1],
-        ) => inventoryExtrasService.createOptionExtraConfig(db, input),
+          input: Parameters<InventoryExtrasToolServices["createOptionExtraConfig"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) => {
+          const { idempotencyKey, ...data } = input
+          return executeInventoryGeneratedChild({
+            c,
+            db: db as unknown as AnyDrizzleDb,
+            admitted,
+            idempotencyKey,
+            commandTargetType: "option-extra-config-create-command",
+            canonicalTargetType: "option_extra_config",
+            resultReferenceType: "option_extra_config",
+            commandInput: data,
+            async create(tx) {
+              const [anchor] = await (tx as unknown as PostgresJsDatabase)
+                .select({ productId: productExtras.productId })
+                .from(productExtras)
+                .innerJoin(
+                  productOptions,
+                  and(
+                    eq(productOptions.id, data.optionId),
+                    eq(productOptions.productId, productExtras.productId),
+                  ),
+                )
+                .where(eq(productExtras.id, data.productExtraId))
+                .limit(1)
+              if (!anchor) {
+                throw new ToolError(
+                  "Option must belong to the product owning the anchored product extra.",
+                  "INVALID_INPUT",
+                  { productExtraId: data.productExtraId, optionId: data.optionId },
+                )
+              }
+              const row = await inventoryExtrasService.createOptionExtraConfig(
+                tx as unknown as PostgresJsDatabase,
+                data,
+              )
+              if (!row) throw new Error("Option extra config insert did not return a row")
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          })
+        },
         updateOptionExtraConfig: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateOptionExtraConfig(
             db,
@@ -177,6 +257,42 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+async function executeInventoryGeneratedChild<TReferenceType extends string>(input: {
+  c: LedgerHttpContext
+  db: AnyDrizzleDb
+  admitted: ToolHandlerActionPolicyContext
+  idempotencyKey?: string
+  commandTargetType: string
+  canonicalTargetType: string
+  resultReferenceType: TReferenceType
+  commandInput: unknown
+  create: Parameters<
+    typeof executeAdmittedCreatedTargetCommand<{ id: string; replayed: boolean }, TReferenceType>
+  >[1]["create"]
+}) {
+  return (
+    await executeAdmittedCreatedTargetCommand(
+      {
+        db: input.db,
+        context: actionLedgerContext(input.c),
+        admitted: input.admitted,
+        idempotencyKey: input.idempotencyKey,
+        commandTargetType: input.commandTargetType,
+        canonicalTargetType: input.canonicalTargetType,
+        resultReferenceType: input.resultReferenceType,
+        commandInput: input.commandInput,
+        evaluatedRisk: "high",
+      },
+      {
+        create: input.create,
+        async replay(_tx, completed) {
+          return { id: completed.reference.id, replayed: true }
+        },
+      },
+    )
+  ).value
+}
 
 export async function executeProductCreateCommand(input: {
   c: LedgerHttpContext

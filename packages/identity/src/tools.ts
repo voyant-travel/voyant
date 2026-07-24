@@ -14,7 +14,15 @@ import {
   updateContactPointSchema,
   updateNamedContactSchema,
 } from "@voyant-travel/identity-contracts"
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -45,13 +53,24 @@ const namedContactValueSchema = selectNamedContactSchema
 const updateContactPointToolSchema = updateContactPointSchema.extend({ id: z.string().min(1) })
 const updateAddressToolSchema = updateAddressSchema.extend({ id: z.string().min(1) })
 const updateNamedContactToolSchema = updateNamedContactSchema.extend({ id: z.string().min(1) })
+const idempotencyKeySchema = z.string().trim().min(1).max(255).optional()
+export const createIdentityContactPointInputSchema = insertContactPointSchema.extend({
+  idempotencyKey: idempotencyKeySchema,
+})
+export const createIdentityAddressInputSchema = insertAddressSchema.extend({
+  idempotencyKey: idempotencyKeySchema,
+})
+export const createIdentityNamedContactInputSchema = insertNamedContactSchema.extend({
+  idempotencyKey: idempotencyKeySchema,
+})
+const createdIdentityChildReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
 
 type ContactPointListQuery = z.infer<typeof contactPointListQuerySchema>
 type AddressListQuery = z.infer<typeof addressListQuerySchema>
 type NamedContactListQuery = z.infer<typeof namedContactListQuerySchema>
-type CreateContactPointInput = z.infer<typeof insertContactPointSchema>
-type CreateAddressInput = z.infer<typeof insertAddressSchema>
-type CreateNamedContactInput = z.infer<typeof insertNamedContactSchema>
+type CreateContactPointInput = z.infer<typeof createIdentityContactPointInputSchema>
+type CreateAddressInput = z.infer<typeof createIdentityAddressInputSchema>
+type CreateNamedContactInput = z.infer<typeof createIdentityNamedContactInputSchema>
 type UpdateContactPointInput = z.infer<typeof updateContactPointToolSchema>
 type UpdateAddressInput = z.infer<typeof updateAddressToolSchema>
 type UpdateNamedContactInput = z.infer<typeof updateNamedContactToolSchema>
@@ -59,15 +78,24 @@ type UpdateNamedContactInput = z.infer<typeof updateNamedContactToolSchema>
 export interface IdentityToolServices {
   listContactPoints(query: ContactPointListQuery): Promise<unknown>
   getContactPointById(id: string): Promise<unknown>
-  createContactPoint(input: CreateContactPointInput): Promise<unknown>
+  createContactPoint(
+    input: CreateContactPointInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateContactPoint(input: UpdateContactPointInput): Promise<unknown>
   listAddresses(query: AddressListQuery): Promise<unknown>
   getAddressById(id: string): Promise<unknown>
-  createAddress(input: CreateAddressInput): Promise<unknown>
+  createAddress(
+    input: CreateAddressInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateAddress(input: UpdateAddressInput): Promise<unknown>
   listNamedContacts(query: NamedContactListQuery): Promise<unknown>
   getNamedContactById(id: string): Promise<unknown>
-  createNamedContact(input: CreateNamedContactInput): Promise<unknown>
+  createNamedContact(
+    input: CreateNamedContactInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateNamedContact(input: UpdateNamedContactInput): Promise<unknown>
 }
 
@@ -95,6 +123,56 @@ const sensitiveWriteMetadata = {
   tier: "sensitive" as const,
   riskPolicy: SENSITIVE_WRITE_RISK,
 }
+
+function createdIdentityChildPolicy(
+  slug: "contact-point" | "address" | "named-contact",
+  canonicalName:
+    | "create_identity_contact_point"
+    | "create_identity_address"
+    | "create_identity_named_contact",
+  targetType: "identity_contact_point" | "identity_address" | "identity_named_contact",
+): HandlerActionPolicyExpectation {
+  return {
+    capabilityId: `${OWNER}#tool.create-${slug}`,
+    capabilityVersion: VERSION,
+    canonicalName,
+    actionPolicy: {
+      id: `${OWNER}#action.create-${slug}`,
+      capabilityId: `${OWNER}#action.create-${slug}`,
+      version: VERSION,
+      kind: "execute",
+      targetType,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: `${slug}-create-command`,
+        resultReferenceType: targetType,
+        durability: "handler-command-claim-v1",
+        parentAnchor: { targetTypeField: "entityType", targetIdField: "entityId" },
+      },
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+    },
+  }
+}
+
+export const CREATE_IDENTITY_CONTACT_POINT_HANDLER_POLICY = createdIdentityChildPolicy(
+  "contact-point",
+  "create_identity_contact_point",
+  "identity_contact_point",
+)
+export const CREATE_IDENTITY_ADDRESS_HANDLER_POLICY = createdIdentityChildPolicy(
+  "address",
+  "create_identity_address",
+  "identity_address",
+)
+export const CREATE_IDENTITY_NAMED_CONTACT_HANDLER_POLICY = createdIdentityChildPolicy(
+  "named-contact",
+  "create_identity_named_contact",
+  "identity_named_contact",
+)
 
 export const listIdentityContactPointsTool = defineTool({
   ...sensitiveReadMetadata,
@@ -128,15 +206,17 @@ export const getIdentityContactPointTool = defineTool({
 
 export const createIdentityContactPointTool = defineTool({
   ...sensitiveWriteMetadata,
+  riskPolicy: { ...SENSITIVE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-contact-point`,
   name: "create_identity_contact_point",
   description: "Create a reusable email, phone, messaging, or other contact point.",
-  inputSchema: insertContactPointSchema,
-  outputSchema: contactPointValueSchema.nullable(),
+  inputSchema: createIdentityContactPointInputSchema,
+  outputSchema: createdIdentityChildReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: IdentityToolContext) {
-    return parseJsonResult(
-      contactPointValueSchema.nullable(),
-      await identity(ctx).createContactPoint(input),
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_IDENTITY_CONTACT_POINT_HANDLER_POLICY)
+    return createdIdentityChildReferenceSchema.parse(
+      await identity(ctx).createContactPoint(input, admitted),
     )
   },
 })
@@ -186,13 +266,18 @@ export const getIdentityAddressTool = defineTool({
 
 export const createIdentityAddressTool = defineTool({
   ...sensitiveWriteMetadata,
+  riskPolicy: { ...SENSITIVE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-address`,
   name: "create_identity_address",
   description: "Create a reusable postal, billing, legal, meeting, or service address.",
-  inputSchema: insertAddressSchema,
-  outputSchema: addressValueSchema.nullable(),
+  inputSchema: createIdentityAddressInputSchema,
+  outputSchema: createdIdentityChildReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: IdentityToolContext) {
-    return parseJsonResult(addressValueSchema.nullable(), await identity(ctx).createAddress(input))
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_IDENTITY_ADDRESS_HANDLER_POLICY)
+    return createdIdentityChildReferenceSchema.parse(
+      await identity(ctx).createAddress(input, admitted),
+    )
   },
 })
 
@@ -241,15 +326,17 @@ export const getIdentityNamedContactTool = defineTool({
 
 export const createIdentityNamedContactTool = defineTool({
   ...sensitiveWriteMetadata,
+  riskPolicy: { ...SENSITIVE_WRITE_RISK, reversible: false },
   capabilityId: `${OWNER}#tool.create-named-contact`,
   name: "create_identity_named_contact",
   description: "Create a named operational, sales, emergency, accounting, or legal contact.",
-  inputSchema: insertNamedContactSchema,
-  outputSchema: namedContactValueSchema.nullable(),
+  inputSchema: createIdentityNamedContactInputSchema,
+  outputSchema: createdIdentityChildReferenceSchema,
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: IdentityToolContext) {
-    return parseJsonResult(
-      namedContactValueSchema.nullable(),
-      await identity(ctx).createNamedContact(input),
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_IDENTITY_NAMED_CONTACT_HANDLER_POLICY)
+    return createdIdentityChildReferenceSchema.parse(
+      await identity(ctx).createNamedContact(input, admitted),
     )
   },
 })
