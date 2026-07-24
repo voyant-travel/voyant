@@ -127,6 +127,9 @@ runtime reference are omitted from lowering, so it cannot appear in MCP discover
 Lowering fails closed if an unavailable action's Tool is reintroduced. Actions explicitly marked
 `available` must name an existing/created target lifecycle; external or multi-stage effects must
 also name a transactional, outbox, or saga durability strategy and the test that proves it.
+For actions carrying any availability, effect-boundary, or durability metadata, omitted
+availability is validated with the same callable meaning used by runtime lowering. Removing only
+an `unavailable` marker therefore cannot bypass lifecycle or tested-durability checks.
 First-party actions that still cross an external or multi-stage boundary through event
 publication, provider calls, document generation, delivery, ticketing, or booking orchestration
 are declared unavailable with the `unsafe-nontransactional-effect` reason and the corresponding

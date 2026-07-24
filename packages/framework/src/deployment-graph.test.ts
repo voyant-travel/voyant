@@ -1038,7 +1038,7 @@ describe("deployment graph v1", () => {
     )
   })
 
-  it("validates explicit Tool action availability and durability completeness", () => {
+  it("validates safety-reviewed Tool action availability and durability completeness", () => {
     const baseAction = {
       id: "@acme/voyant-actions#action.run",
       version: "v1",
@@ -1088,6 +1088,25 @@ describe("deployment graph v1", () => {
         message: expect.stringContaining("tested durability"),
       }),
     )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          effectBoundary: "external",
+        }),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          facet: "actions[0].targetLifecycle",
+          message: expect.stringContaining("stable target anchor"),
+        }),
+        expect.objectContaining({
+          facet: "actions[0].durability",
+          message: expect.stringContaining("tested durability"),
+        }),
+      ]),
+    )
+    expect(validateGraphUnitManifest(manifest({}))).toEqual([])
     expect(
       validateGraphUnitManifest(
         manifest({
