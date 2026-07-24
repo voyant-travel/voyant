@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import getReleasePlan from "@changesets/get-release-plan"
+
 import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
@@ -54,18 +56,22 @@ async function main(): Promise<void> {
   const frameworkPackage = JSON.parse(
     await readFile(join(repoRoot, "packages/framework/package.json"), "utf8"),
   ) as { version: string }
+  const releasePlan = await getReleasePlan(repoRoot)
+  const frameworkVersion =
+    releasePlan.releases.find(({ name }) => name === "@voyant-travel/framework")?.newVersion ??
+    frameworkPackage.version
   const authoredOperatorProject = operatorProject as OperatorAuthoredProject
   const resolvedOperator = await resolveOperatorDeploymentGraph({
     project: authoredOperatorProject,
     projectRoot: operatorRoot,
     repoRoot,
-    frameworkVersion: frameworkPackage.version,
+    frameworkVersion,
   })
   const repeatedOperator = await resolveOperatorDeploymentGraph({
     project: authoredOperatorProject,
     projectRoot: operatorRoot,
     repoRoot,
-    frameworkVersion: frameworkPackage.version,
+    frameworkVersion,
   })
   const first = resolvedOperator.graph
   const second = repeatedOperator.graph

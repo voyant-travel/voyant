@@ -155,7 +155,9 @@ export function createResolvedGraphRuntime(
   const entrySpecifiers = [
     ...new Set(
       [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
-        unit.references.map((reference) => reference.importEntry),
+        [...unit.references, ...unit.provisionalReferences].map(
+          (reference) => reference.importEntry,
+        ),
       ),
     ),
   ]
@@ -396,10 +398,19 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     input.graph,
     input.runtimeEntryOverrides,
   )
-  const entries = [
+  const publicEntries = [
     ...new Set(
       [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
         unit.references.map((definition) => definition.importEntry),
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right))
+  const importerEntries = [
+    ...new Set(
+      [...modules, ...extensions, ...plugins, ...adapters, ...providers].flatMap((unit) =>
+        [...unit.references, ...unit.provisionalReferences].map(
+          (definition) => definition.importEntry,
+        ),
       ),
     ),
   ].sort((left, right) => left.localeCompare(right))
@@ -489,7 +500,7 @@ import type {
 } from "@voyant-travel/framework"
 
 export const GENERATED_GRAPH_RUNTIME_HASH = ${quote(input.graph.contentHash)} as const
-export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = ${formatConstArray(entries)}
+export const GENERATED_GRAPH_RUNTIME_ENTRY_SPECIFIERS = ${formatConstArray(publicEntries)}
 export const GENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS = ${formatConstArray(
     contributors.map((contributor) => contributor.entry),
   )}
@@ -526,7 +537,7 @@ export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
     0,
   )} as const
 
-const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(entries)}
+const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(importerEntries)}
 
 const GENERATED_GRAPH_RUNTIME_CONTRIBUTORS: readonly VoyantGraphRuntimeContributor[] = [
 ${contributorFactories}

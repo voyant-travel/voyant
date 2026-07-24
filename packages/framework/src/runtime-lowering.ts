@@ -3,7 +3,6 @@ import {
   isExternalWebhookPayloadSchema,
   VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
   type VoyantGraphActionBindings,
-  type VoyantGraphActionDeclaration,
   type VoyantGraphConfigDeclaration,
   type VoyantGraphEventCatalog,
   type VoyantGraphJob,
@@ -18,12 +17,23 @@ import {
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
-
+import {
+  assertConditionalActionRuntimeActivated,
+  createFrameworkOwnedRuntime,
+  registerConditionalActionRuntimeState,
+  type VoyantGraphConditionalActionProvisionalUnit,
+} from "./conditional-action-availability.js"
 import type {
+  ResolvedVoyantGraphActionDeclaration,
   VoyantGraphInboundWebhookPlanEntry,
   VoyantGraphOutboundWebhookPlanEntry,
   VoyantGraphWebhookPlan,
 } from "./deployment-graph.js"
+import {
+  assertPlainRuntimeMetadataGraph,
+  cloneAndDeepFreezeRuntimeSnapshot,
+  deepFreezeRuntimeSnapshot,
+} from "./runtime-integrity.js"
 
 export type VoyantGraphRuntimeReferenceFacet =
   | "runtime"
@@ -35,6 +45,7 @@ export type VoyantGraphRuntimeReferenceFacet =
   | "admin.routes.runtime"
   | "admin.contributions.runtime"
   | "reporting.datasets.runtime"
+  | "runtimePorts.conformance"
   | "tools.runtime"
   | "jobs.runtime"
   | "subscribers.runtime"
@@ -143,6 +154,16 @@ export interface VoyantGraphRuntimeProviderDefinition {
   referenceId: string
 }
 
+export interface VoyantGraphRuntimePortConformanceDefinition {
+  portId: string
+  referenceId: string
+}
+
+export interface VoyantGraphRuntimePortConformanceLoader
+  extends VoyantGraphRuntimePortConformanceDefinition {
+  load<T = unknown>(): Promise<T>
+}
+
 export interface VoyantGraphRuntimeSelectedIds {
   routes: readonly string[]
   tools: readonly string[]
@@ -151,7 +172,7 @@ export interface VoyantGraphRuntimeSelectedIds {
 }
 
 export interface VoyantGraphRuntimeActionDefinition
-  extends Omit<VoyantGraphActionDeclaration, "requiredScopes" | "from"> {
+  extends Omit<ResolvedVoyantGraphActionDeclaration, "requiredScopes" | "from"> {
   unitId: string
   requiredScopes: readonly string[]
   from: Required<VoyantGraphActionBindings>
@@ -172,11 +193,16 @@ export interface VoyantGraphRuntimeUnitDefinition {
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts?: readonly string[]
   runtimePorts?: readonly string[]
+  runtimePortConformance?: readonly VoyantGraphRuntimePortConformanceDefinition[]
   customFieldTargets?: readonly import("@voyant-travel/core/project").VoyantGraphCustomFieldTarget[]
   manyRuntimePorts?: readonly string[]
   requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
+  /** Framework-private candidates omitted from the provisional runtime view. */
+  provisionalTools?: readonly VoyantGraphRuntimeToolDefinition[]
+  /** Framework-private Tool references omitted from the provisional runtime view. */
+  provisionalReferences?: readonly VoyantGraphRuntimeReferenceDefinition[]
   jobs?: readonly VoyantGraphRuntimeJobDefinition[]
   actions?: readonly VoyantGraphRuntimeActionDefinition[]
   setupSteps?: readonly { id: string; skippable: boolean }[]
@@ -234,6 +260,7 @@ export interface VoyantGraphRuntimeUnitLoader
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  runtimePortConformance?: readonly VoyantGraphRuntimePortConformanceLoader[]
   manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
@@ -281,6 +308,11 @@ export interface VoyantGraphRuntime {
   loadReference: <T = unknown>(referenceId: string) => Promise<T>
 }
 
+/** Framework-created post-preflight runtime view. Runtime checks enforce this brand. */
+export interface VoyantGraphActivatedRuntime extends VoyantGraphRuntime {
+  readonly __voyantGraphActivatedRuntime?: never
+}
+
 export interface CreateVoyantGraphRuntimeInput {
   graphHash: string
   accessCatalog?: AccessCatalog
@@ -301,12 +333,13 @@ export interface CreateVoyantGraphRuntimeInput {
  * loaders. Target adapters decide how to invoke the loaded package exports.
  */
 export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): VoyantGraphRuntime {
-  const definitions = normalizeRuntimeDefinition(input)
+  assertPlainRuntimeMetadataGraph(input)
+  const definitions = cloneAndDeepFreezeRuntimeSnapshot(normalizeRuntimeDefinition(input))
   const usedEntries = validateRuntimeDefinition(definitions)
   const importEntries = new Map<string, () => Promise<unknown>>()
 
   for (const entry of usedEntries) {
-    const importEntry = input.entries[entry]
+    const importEntry = definitions.entries[entry]
     if (!importEntry) {
       throw new Error(
         `createVoyantGraphRuntime: no lazy importer was generated for runtime entry "${entry}".`,
@@ -348,43 +381,57 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
   const referenceById = new Map(references.map((reference) => [reference.id, reference]))
   const webhooks = createRuntimeWebhookPlan(definitions.webhookPlan)
 
-  return {
-    graphHash: input.graphHash,
-    providerSelections: { ...(input.providerSelections ?? {}) },
-    customFieldTargets,
-    modules,
-    extensions,
-    plugins,
-    adapters,
-    providerUnits,
-    references,
-    config,
-    secrets,
-    resources,
-    providers,
-    requiredPorts,
-    accessCatalog: definitions.accessCatalog,
-    eventCatalog: definitions.eventCatalog,
-    reportingCatalog: definitions.reportingCatalog,
-    accessScopes,
-    tools,
-    jobs,
-    actions,
-    setupSteps,
-    selectedIds,
-    webhooks,
-    loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
-      const reference = referenceById.get(referenceId)
-      if (!reference) {
-        throw new VoyantGraphRuntimeLoadError(
-          "VOYANT_GRAPH_RUNTIME_REFERENCE_UNKNOWN",
-          { referenceId },
-          "the reference is not present in the admitted generated graph",
-        )
-      }
-      return reference.load<T>()
-    },
-  }
+  const runtime: VoyantGraphRuntime = createFrameworkOwnedRuntime(() =>
+    deepFreezeRuntimeSnapshot({
+      graphHash: definitions.graphHash,
+      providerSelections: { ...(definitions.providerSelections ?? {}) },
+      customFieldTargets,
+      modules,
+      extensions,
+      plugins,
+      adapters,
+      providerUnits,
+      references,
+      config,
+      secrets,
+      resources,
+      providers,
+      requiredPorts,
+      accessCatalog: definitions.accessCatalog,
+      eventCatalog: definitions.eventCatalog,
+      reportingCatalog: definitions.reportingCatalog,
+      accessScopes,
+      tools,
+      jobs,
+      actions,
+      setupSteps,
+      selectedIds,
+      webhooks,
+      loadReference: async <T = unknown>(referenceId: string): Promise<T> => {
+        const reference = referenceById.get(referenceId)
+        if (!reference) {
+          throw new VoyantGraphRuntimeLoadError(
+            "VOYANT_GRAPH_RUNTIME_REFERENCE_UNKNOWN",
+            { referenceId },
+            "the reference is not present in the admitted generated graph",
+          )
+        }
+        return reference.load<T>()
+      },
+    }),
+  )
+  registerConditionalActionRuntimeState(
+    runtime,
+    definitions.modules
+      .concat(
+        definitions.extensions,
+        definitions.plugins,
+        definitions.adapters,
+        definitions.providerUnits,
+      )
+      .map((unit) => createProvisionalConditionalActionUnit(unit, importEntries)),
+  )
+  return runtime
 }
 
 interface NormalizedVoyantGraphRuntimeUnitDefinition
@@ -403,6 +450,8 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
     | "secrets"
     | "selectedIds"
     | "tools"
+    | "provisionalTools"
+    | "provisionalReferences"
     | "jobs"
   > {
   projectConfig: VoyantGraphJsonObject
@@ -413,10 +462,13 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  runtimePortConformance: readonly VoyantGraphRuntimePortConformanceDefinition[]
   manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
+  provisionalTools: readonly VoyantGraphRuntimeToolDefinition[]
+  provisionalReferences: readonly VoyantGraphRuntimeReferenceDefinition[]
   jobs: readonly VoyantGraphRuntimeJobDefinition[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
@@ -546,6 +598,7 @@ function normalizeRuntimeUnitDefinition(
     providers: [...(unit.providers ?? [])],
     requiredPorts: sortedUnique(unit.requiredPorts ?? []),
     runtimePorts,
+    runtimePortConformance: [...(unit.runtimePortConformance ?? [])],
     customFieldTargets: [...(unit.customFieldTargets ?? [])],
     manyRuntimePorts: sortedUnique(unit.manyRuntimePorts ?? []),
     requiredRuntimePorts:
@@ -554,6 +607,8 @@ function normalizeRuntimeUnitDefinition(
         : sortedUnique(unit.requiredRuntimePorts),
     accessScopes: sortedUnique(unit.accessScopes ?? []),
     tools: [...(unit.tools ?? [])],
+    provisionalTools: [...(unit.provisionalTools ?? [])],
+    provisionalReferences: [...(unit.provisionalReferences ?? [])],
     jobs: [...(unit.jobs ?? [])],
     actions: [...(unit.actions ?? [])],
     setupSteps: [...(unit.setupSteps ?? [])],
@@ -591,6 +646,19 @@ function createRuntimeUnitLoader(
       definition.declaration.id,
       definition.referenceId,
       "providers.runtime",
+      referenceById,
+    )
+    return {
+      ...definition,
+      load: <T = unknown>() => reference.load<T>(),
+    }
+  })
+  const runtimePortConformance = unit.runtimePortConformance.map((definition) => {
+    const reference = requireDeclarationReference(
+      unit.id,
+      definition.portId,
+      definition.referenceId,
+      "runtimePorts.conformance",
       referenceById,
     )
     return {
@@ -651,6 +719,7 @@ function createRuntimeUnitLoader(
     providers,
     requiredPorts: unit.requiredPorts,
     runtimePorts: unit.runtimePorts,
+    runtimePortConformance,
     customFieldTargets: unit.customFieldTargets,
     manyRuntimePorts: unit.manyRuntimePorts,
     requiredRuntimePorts: unit.requiredRuntimePorts,
@@ -667,6 +736,30 @@ function createRuntimeUnitLoader(
         : Promise.all(uniqueRuntimeRouteLoaders(routes).map((route) => route.load())),
     ),
   }
+}
+
+function createProvisionalConditionalActionUnit(
+  unit: NormalizedVoyantGraphRuntimeUnitDefinition,
+  entries: ReadonlyMap<string, () => Promise<unknown>>,
+): VoyantGraphConditionalActionProvisionalUnit {
+  const references = unit.provisionalReferences.map((definition) =>
+    createRuntimeReferenceLoader(definition, entries),
+  )
+  const referenceById = new Map(references.map((reference) => [reference.id, reference]))
+  const tools = unit.provisionalTools.map((definition) => {
+    const reference = requireDeclarationReference(
+      definition.unitId,
+      definition.id,
+      definition.referenceId,
+      "tools.runtime",
+      referenceById,
+    )
+    return {
+      ...definition,
+      load: <T = unknown>() => loadDeclaredTool<T>(definition, reference),
+    }
+  })
+  return deepFreezeRuntimeSnapshot({ unitId: unit.id, references, tools })
 }
 
 function createRuntimeValueDeclarationLoader<
@@ -869,7 +962,7 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
           `createVoyantGraphRuntime: ${expectedKind} loader "${unit.id}" declares kind "${unit.kind}".`,
         )
       }
-      for (const reference of unit.references) {
+      for (const reference of [...unit.references, ...unit.provisionalReferences]) {
         if (reference.unitId !== unit.id) {
           throw new Error(
             `createVoyantGraphRuntime: reference "${reference.id}" belongs to unit "${reference.unitId}", not "${unit.id}".`,
@@ -920,7 +1013,7 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
           )
         }
       }
-      for (const tool of unit.tools) {
+      for (const tool of [...unit.tools, ...unit.provisionalTools]) {
         if (tool.unitId !== unit.id) {
           throw new Error(
             `createVoyantGraphRuntime: tool "${tool.id}" belongs to unit "${tool.unitId}", not "${unit.id}".`,
@@ -1137,6 +1230,7 @@ export async function registerVoyantGraphTools(
   runtime: VoyantGraphRuntime,
   registry: ToolRegistry,
 ): Promise<void> {
+  assertConditionalActionRuntimeActivated(runtime)
   for (const tool of runtime.tools) {
     registry.register(await tool.load<RegisteredTool>())
   }

@@ -355,6 +355,19 @@ export interface VoyantGraphActionBindings {
   webhooks?: readonly string[]
 }
 
+/**
+ * A closed deployment-graph condition that can restore a quarantined action.
+ *
+ * The referenced ports must be one-valued typed runtime ports consumed by the
+ * action owner and provided by explicitly selected graph provider factories.
+ */
+export interface VoyantGraphActionAvailabilityCondition {
+  selectedProviderPorts: {
+    mode: "all" | "any"
+    ports: readonly string[]
+  }
+}
+
 export type VoyantGraphActionAvailability =
   | { status: "available" }
   | {
@@ -363,6 +376,11 @@ export type VoyantGraphActionAvailability =
       reasonCode: string
       /** Optional safe replacement capability that callers may migrate to. */
       replacementCapabilityId?: string
+      /**
+       * Opt-in activation condition. Older framework versions ignore this
+       * field and retain the fail-closed unavailable posture.
+       */
+      enableWhen?: VoyantGraphActionAvailabilityCondition
     }
 
 export interface VoyantGraphActionDurability {

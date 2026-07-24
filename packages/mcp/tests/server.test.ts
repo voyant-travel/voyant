@@ -1,4 +1,11 @@
 import { readFile } from "node:fs/promises"
+import type { VoyantGraphActionDeclaration } from "@voyant-travel/core/project"
+import {
+  createVoyantGraphRuntime,
+  resolveVoyantGraphRuntimeProviders,
+  type VoyantGraphRuntime,
+  type VoyantGraphRuntimeToolDefinition,
+} from "@voyant-travel/framework"
 import { requireAuth } from "@voyant-travel/hono/middleware/auth"
 import {
   createToolRegistry,
@@ -187,6 +194,215 @@ function buildContext(audience: ToolContext["audience"] = "staff"): ToolContext 
   }
 }
 
+interface TestGraphTool extends VoyantGraphRuntimeToolDefinition {
+  load<T = unknown>(): Promise<T>
+}
+
+interface TestGraphReference {
+  id: string
+  importEntry: string
+  loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
+}
+
+function frameworkRuntime(input: {
+  accessCatalog: VoyantGraphRuntime["accessCatalog"]
+  tools: readonly TestGraphTool[]
+  actions?: readonly VoyantGraphActionDeclaration[]
+  references: readonly TestGraphReference[]
+}): VoyantGraphRuntime {
+  const toolById = new Map(input.tools.map((tool) => [tool.id, tool]))
+  const exportByReferenceId = new Map(
+    input.tools.map((tool, index) => [tool.referenceId, `testTool${index}`]),
+  )
+  const referencesById = new Map(input.references.map((reference) => [reference.id, reference]))
+  const entries = Object.fromEntries(
+    [...new Set(input.references.map(({ importEntry }) => importEntry))].map((importEntry) => [
+      importEntry,
+      async () => {
+        const reference = input.references.find(
+          (candidate) => candidate.importEntry === importEntry,
+        )
+        const namespace = reference ? await reference.loadModule() : {}
+        for (const tool of input.tools) {
+          const owner = referencesById.get(tool.referenceId)
+          if (owner?.importEntry !== importEntry) continue
+          namespace[exportByReferenceId.get(tool.referenceId)!] = await tool.load()
+        }
+        return namespace
+      },
+    ]),
+  )
+  const unitIds = [...new Set(input.tools.map(({ unitId }) => unitId))]
+  const accessScopes = input.accessCatalog.resources.flatMap((resource) =>
+    resource.actions.map((action) => `${resource.resource}:${action.action}`),
+  )
+  return createVoyantGraphRuntime({
+    graphHash: "sha256:mcp-test",
+    accessCatalog: input.accessCatalog,
+    entries,
+    modules: unitIds.map((unitId, order) => {
+      const tools = input.tools.filter((tool) => tool.unitId === unitId)
+      const referenceIds = new Set(tools.map(({ referenceId }) => referenceId))
+      const actions = (input.actions ?? [])
+        .filter((action) =>
+          (action.from?.tools ?? []).some((toolId) => toolById.get(toolId)?.unitId === unitId),
+        )
+        .map((action) => ({
+          ...action,
+          unitId,
+          requiredScopes: action.requiredScopes ?? [],
+          from: {
+            routes: action.from?.routes ?? [],
+            tools: action.from?.tools ?? [],
+            events: action.from?.events ?? [],
+            webhooks: action.from?.webhooks ?? [],
+          },
+        }))
+      return {
+        id: unitId,
+        kind: "module" as const,
+        packageName: unitId,
+        order,
+        accessScopes: order === 0 ? accessScopes : [],
+        references: input.references
+          .filter(({ id }) => referenceIds.has(id))
+          .map((reference) => ({
+            id: reference.id,
+            unitId,
+            facet: "tools.runtime" as const,
+            entityId: tools.find(({ referenceId }) => referenceId === reference.id)!.id,
+            runtime: {
+              entry: reference.importEntry,
+              export: exportByReferenceId.get(reference.id)!,
+            },
+            importEntry: reference.importEntry,
+          })),
+        tools,
+        actions,
+        selectedIds: {
+          routes: [],
+          tools: tools.map(({ id }) => id),
+          events: [],
+          webhooks: [],
+        },
+        routes: [],
+      }
+    }),
+    plugins: [],
+  })
+}
+
+function conditionalFrameworkRuntime() {
+  const unitId = "@voyant-travel/test"
+  const portId = "catalog.durable-echo"
+  const toolId = "@voyant-travel/test#tool.echo"
+  const loadTool = vi.fn(async () => ({ echoTool }))
+  const provider = { echo: vi.fn() }
+  const testProvider = vi.fn()
+  const runtime = createVoyantGraphRuntime({
+    graphHash: "sha256:mcp-conditional-test",
+    providerSelections: { catalog: "durable" },
+    accessCatalog,
+    entries: {
+      "@voyant-travel/catalog/provider": async () => ({
+        createProvider: () => provider,
+      }),
+      "@voyant-travel/catalog/port": async () => ({
+        durableEchoPort: { id: portId, test: testProvider },
+      }),
+      "@voyant-travel/catalog/tools": loadTool,
+    },
+    modules: [
+      {
+        id: unitId,
+        kind: "module",
+        packageName: unitId,
+        order: 0,
+        references: [
+          {
+            id: "catalog-provider",
+            unitId,
+            facet: "providers.runtime",
+            entityId: "@voyant-travel/test#provider.durable",
+            runtime: { entry: "./provider", export: "createProvider" },
+            importEntry: "@voyant-travel/catalog/provider",
+          },
+          {
+            id: "catalog-port-conformance",
+            unitId,
+            facet: "runtimePorts.conformance",
+            entityId: portId,
+            runtime: { entry: "./port", export: "durableEchoPort" },
+            importEntry: "@voyant-travel/catalog/port",
+          },
+        ],
+        providers: [
+          {
+            unitId,
+            declaration: {
+              id: "@voyant-travel/test#provider.durable",
+              port: portId,
+              selection: { role: "catalog", value: "durable" },
+              runtime: { entry: "./provider", export: "createProvider" },
+            },
+            referenceId: "catalog-provider",
+          },
+        ],
+        provisionalReferences: [
+          {
+            id: "catalog-echo-runtime",
+            unitId,
+            facet: "tools.runtime",
+            entityId: toolId,
+            runtime: { entry: "./tools", export: "echoTool" },
+            importEntry: "@voyant-travel/catalog/tools",
+          },
+        ],
+        provisionalTools: [
+          {
+            id: toolId,
+            unitId,
+            name: "echo",
+            referenceId: "catalog-echo-runtime",
+            requiredScopes: ["catalog:read"],
+            risk: "low",
+          },
+        ],
+        requiredPorts: [portId],
+        runtimePorts: [portId],
+        runtimePortConformance: [{ portId, referenceId: "catalog-port-conformance" }],
+        accessScopes: accessCatalog.resources.flatMap((resource) =>
+          resource.actions.map((action) => `${resource.resource}:${action.action}`),
+        ),
+        actions: [
+          {
+            id: "@voyant-travel/test#action.echo",
+            unitId,
+            version: "v1",
+            kind: "read",
+            targetType: "echo",
+            availability: {
+              status: "unavailable",
+              reasonCode: "provider-not-durable",
+              enableWhen: {
+                selectedProviderPorts: { mode: "all", ports: [portId] },
+              },
+            },
+            risk: "low",
+            ledger: "optional",
+            requiredScopes: ["catalog:read"],
+            from: { routes: [], tools: [toolId], events: [], webhooks: [] },
+          },
+        ],
+        selectedIds: { routes: [], tools: [], events: [], webhooks: [] },
+        routes: [],
+      },
+    ],
+    plugins: [],
+  })
+  return { loadTool, portId, provider, runtime, testProvider }
+}
+
 /** Mount the MCP app behind a middleware that seeds the caller's granted scopes. */
 function appWithScopes(scopes: string[], audience: ToolContext["audience"] = "staff"): Hono {
   const registry = createToolRegistry()
@@ -222,9 +438,8 @@ async function selectedRuntimeRoutes() {
     },
   }
   const module = await createMcpVoyantRuntime({
-    graph: {
+    graph: frameworkRuntime({
       accessCatalog,
-      providerSelections: {},
       tools: [runtimeTool],
       references: [
         {
@@ -235,7 +450,7 @@ async function selectedRuntimeRoutes() {
           },
         },
       ],
-    },
+    }),
     runtimePorts: {},
   } as never)
   const routes = await module.lazyAdminRoutes?.()
@@ -389,12 +604,12 @@ describe("createMcpApiRoutes", () => {
       },
     ]
     const graphApp = await createGraphMcpApiRoutes({
-      runtime: {
+      runtime: frameworkRuntime({
         accessCatalog,
         tools: [runtimeTool],
         actions,
         references,
-      },
+      }),
       buildContext: () => buildContext(),
       providedContext: ["toolActionPolicy"],
     })
@@ -415,14 +630,14 @@ describe("createMcpApiRoutes", () => {
 
     await expect(
       createGraphMcpApiRoutes({
-        runtime: { accessCatalog, tools: [runtimeTool], actions, references },
+        runtime: frameworkRuntime({ accessCatalog, tools: [runtimeTool], actions, references }),
         buildContext: () => buildContext(),
       }),
     ).rejects.toThrow(/toolActionPolicy/)
 
     await expect(
       createGraphMcpApiRoutes({
-        runtime: {
+        runtime: frameworkRuntime({
           accessCatalog,
           tools: [{ ...runtimeTool, name: "drifted_echo" }],
           actions: [
@@ -437,44 +652,133 @@ describe("createMcpApiRoutes", () => {
             },
           ],
           references,
-        },
+        }),
         buildContext: () => buildContext(),
       }),
-    ).rejects.toThrow(/name "echo" does not match graph binding "drifted_echo"/)
+    ).rejects.toThrow(/must declare name "drifted_echo"/)
 
     await expect(
       createGraphMcpApiRoutes({
-        runtime: {
+        runtime: frameworkRuntime({
           accessCatalog,
           tools: [{ ...runtimeTool, risk: "high" }],
           actions: [],
           references,
-        },
+        }),
         buildContext: () => buildContext(),
       }),
     ).rejects.toThrow(/no selected graph action policy/)
 
     const unavailableToolLoad = vi.fn(runtimeTool.load)
+    expect(() =>
+      frameworkRuntime({
+        accessCatalog,
+        tools: [{ ...runtimeTool, load: unavailableToolLoad }],
+        actions: [
+          {
+            ...actions[0],
+            availability: {
+              status: "unavailable" as const,
+              reasonCode: "unsafe-nontransactional-effect",
+            },
+          },
+        ],
+        references,
+      }),
+    ).toThrow(/unavailable action .* exposes Tool/)
+    expect(unavailableToolLoad).not.toHaveBeenCalled()
+
+    const provisionalToolLoad = vi.fn(runtimeTool.load)
+    const provisionalRuntime = {
+      accessCatalog,
+      tools: [{ ...runtimeTool, load: provisionalToolLoad }],
+      actions: [
+        {
+          ...actions[0],
+          availability: {
+            status: "unavailable" as const,
+            reasonCode: "provider-not-durable",
+            enableWhen: {
+              selectedProviderPorts: {
+                mode: "all" as const,
+                ports: ["notifications.durable-send"],
+              },
+            },
+          },
+        },
+      ],
+      references,
+    }
+    await expect(
+      createGraphMcpApiRoutes({
+        runtime: provisionalRuntime as never,
+        buildContext: () => buildContext(),
+        providedContext: ["toolActionPolicy"],
+      }),
+    ).rejects.toThrow(/NOT_FRAMEWORK_OWNED/)
+    expect(provisionalToolLoad).not.toHaveBeenCalled()
+
+    const activatedToolLoad = vi.fn(runtimeTool.load)
     await expect(
       createGraphMcpApiRoutes({
         runtime: {
-          accessCatalog,
-          tools: [{ ...runtimeTool, load: unavailableToolLoad }],
+          ...provisionalRuntime,
+          tools: [{ ...runtimeTool, load: activatedToolLoad }],
           actions: [
             {
               ...actions[0],
-              availability: {
-                status: "unavailable" as const,
-                reasonCode: "unsafe-nontransactional-effect",
-              },
+              availability: { status: "available" as const },
             },
           ],
-          references,
-        },
+        } as never,
+        buildContext: () => buildContext(),
+        providedContext: ["toolActionPolicy"],
+      }),
+    ).rejects.toThrow(/NOT_FRAMEWORK_OWNED/)
+    expect(activatedToolLoad).not.toHaveBeenCalled()
+  })
+
+  it("exposes a conditional Tool only from the provider-preflighted framework view", async () => {
+    const { loadTool, portId, provider, runtime, testProvider } = conditionalFrameworkRuntime()
+
+    expect(Reflect.set(runtime.actions[0]!.availability!, "status", "available")).toBe(false)
+    expect(
+      Reflect.deleteProperty(
+        runtime.actions[0]!.availability!.enableWhen!.selectedProviderPorts,
+        "ports",
+      ),
+    ).toBe(false)
+    expect(Reflect.set(runtime.references[0]!, "load", vi.fn())).toBe(false)
+    await expect(
+      createGraphMcpApiRoutes({
+        runtime,
         buildContext: () => buildContext(),
       }),
-    ).rejects.toThrow(/bound by an unavailable graph action/)
-    expect(unavailableToolLoad).not.toHaveBeenCalled()
+    ).rejects.toThrow(/NOT_ACTIVATED/)
+    expect(loadTool).not.toHaveBeenCalled()
+
+    const providers = await resolveVoyantGraphRuntimeProviders(runtime, { ports: [portId] })
+    const activated = await providers.activateRuntime()
+    expect(testProvider).toHaveBeenCalledWith(provider)
+    expect(Reflect.set(activated.actions[0]!.availability!, "status", "unavailable")).toBe(false)
+    expect(Reflect.set(activated.tools[0]!, "load", vi.fn())).toBe(false)
+
+    const routes = await createGraphMcpApiRoutes({
+      runtime: activated,
+      buildContext: () => buildContext(),
+      providedContext: ["toolActionPolicy"],
+    })
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      await next()
+    })
+    app.route("/", routes)
+    const manifest = (await (await app.request("/manifest")).json()) as {
+      tools: Array<{ name: string }>
+    }
+    expect(manifest.tools.map(({ name }) => name)).toEqual(["echo"])
+    expect(loadTool).toHaveBeenCalledOnce()
   })
 
   it("propagates created-target handler policy without advertising caller-owned target identity", async () => {
@@ -500,7 +804,7 @@ describe("createMcpApiRoutes", () => {
     })
     const toolId = "@voyant-travel/notifications#tool.create-notification"
     const graphApp = await createGraphMcpApiRoutes({
-      runtime: {
+      runtime: frameworkRuntime({
         accessCatalog,
         tools: [
           {
@@ -542,7 +846,7 @@ describe("createMcpApiRoutes", () => {
             },
           },
         ],
-      },
+      }),
       buildContext: () => buildContext(),
     })
     const outer = new Hono()
@@ -646,7 +950,7 @@ describe("createMcpApiRoutes", () => {
     const toolId = "@voyant-travel/catalog#tool.conflicting-control"
 
     const routes = await createGraphMcpApiRoutes({
-      runtime: {
+      runtime: frameworkRuntime({
         accessCatalog,
         tools: [
           {
@@ -681,7 +985,7 @@ describe("createMcpApiRoutes", () => {
             },
           },
         ],
-      },
+      }),
       buildContext: () => buildContext(),
     })
     const outer = new Hono()

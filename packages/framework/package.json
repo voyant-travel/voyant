@@ -18,6 +18,7 @@
     "./project-artifacts": "./src/project-artifacts.ts",
     "./project": "./src/project.ts",
     "./project-runtime": "./src/project-runtime.ts",
+    "./runtime-attestation": "./src/runtime-attestation.ts",
     "./node-host": "./src/node-host.ts",
     "./node-runtime": "./src/node-runtime.ts",
     "./worker-job-host": "./src/worker-job-host.ts",
@@ -58,7 +59,6 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/framework-migrations": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "@voyant-travel/mcp": "workspace:^",
     "@voyant-travel/operator-standard": "workspace:^",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/runtime-core": "workspace:^",
@@ -144,6 +144,10 @@
         "types": "./dist/project-runtime.d.ts",
         "import": "./dist/project-runtime.js",
         "default": "./dist/project-runtime.js"
+      },
+      "./runtime-attestation": {
+        "types": "./dist/runtime-attestation.d.ts",
+        "import": "./dist/runtime-attestation.js"
       },
       "./node-host": {
         "types": "./dist/node-host.d.ts",

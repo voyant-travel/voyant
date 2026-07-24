@@ -1,6 +1,11 @@
 import type { VoyantGraphJsonObject } from "@voyant-travel/core/project"
-
+import {
+  activateConditionalActionRuntime,
+  conditionalActionProviderPortIds,
+  preflightSelectedConditionalActionProvider,
+} from "./conditional-action-availability.js"
 import type {
+  VoyantGraphActivatedRuntime,
   VoyantGraphRuntime,
   VoyantGraphRuntimeProviderLoader,
   VoyantGraphRuntimeResourceDefinition,
@@ -78,6 +83,8 @@ export interface ResolvedVoyantGraphRuntimeProviders {
   /** Redacted selection metadata. Provider instances and runtime values are not enumerable. */
   selectedProviders: readonly SelectedVoyantGraphRuntimeProvider[]
   getProvider: <T = unknown>(port: string) => Promise<T>
+  /** Preflight every selected conditional provider and return the framework-owned activated view. */
+  activateRuntime: () => Promise<VoyantGraphActivatedRuntime>
 }
 
 /** Validate explicit selections, then instantiate each selected provider only on first use. */
@@ -138,22 +145,32 @@ export async function resolveVoyantGraphRuntimeProviders(
     }
   })
 
+  const getProvider = async <T = unknown>(port: string): Promise<T> => {
+    const provider = byPort.get(port)?.[0]
+    if (!provider) {
+      throw new VoyantGraphRuntimeProviderError([
+        { code: "VOYANT_GRAPH_RUNTIME_PROVIDER_UNKNOWN", port, declarationIds: [] },
+      ])
+    }
+    let load = loads.get(provider.declaration.id)
+    if (!load) {
+      load = instantiateProvider(provider, runtime, values, resourceValues)
+      loads.set(provider.declaration.id, load)
+    }
+    const instance = await load
+    await preflightSelectedConditionalActionProvider(runtime, port, instance)
+    return instance as T
+  }
+
   return {
     graphHash: runtime.graphHash,
     selectedProviders,
-    getProvider: async <T = unknown>(port: string): Promise<T> => {
-      const provider = byPort.get(port)?.[0]
-      if (!provider) {
-        throw new VoyantGraphRuntimeProviderError([
-          { code: "VOYANT_GRAPH_RUNTIME_PROVIDER_UNKNOWN", port, declarationIds: [] },
-        ])
+    getProvider,
+    activateRuntime: async () => {
+      for (const portId of conditionalActionProviderPortIds(runtime)) {
+        await getProvider(portId)
       }
-      let load = loads.get(provider.declaration.id)
-      if (!load) {
-        load = instantiateProvider(provider, runtime, values, resourceValues)
-        loads.set(provider.declaration.id, load)
-      }
-      return load as Promise<T>
+      return activateConditionalActionRuntime(runtime)
     },
   }
 }

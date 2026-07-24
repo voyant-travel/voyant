@@ -6,7 +6,11 @@ import path from "node:path"
 import { afterEach, test } from "node:test"
 import { promisify } from "node:util"
 
-import { createPackedInstallManifest, verifyPackedPackageInstall } from "../lib/packed-install.mjs"
+import {
+  collectStagedPeerInstallExclusions,
+  createPackedInstallManifest,
+  verifyPackedPackageInstall,
+} from "../lib/packed-install.mjs"
 
 const execFileAsync = promisify(execFile)
 const temporaryDirectories = []
@@ -61,6 +65,67 @@ test("does not install an optional provider peer", async () => {
   await verifyPackedPackageInstall([{ name: "@fixture/consumer", tarballPath: consumerTarball }])
 })
 
+test("defers only peer mismatches covered by the release plan", () => {
+  const exclusions = collectStagedPeerInstallExclusions(
+    [
+      {
+        manifest: {
+          name: "@fixture/provider",
+          version: "0.9.0",
+        },
+      },
+      {
+        manifest: {
+          name: "@fixture/consumer",
+          version: "1.0.0",
+          peerDependencies: { "@fixture/provider": "^1.0.0" },
+        },
+      },
+      {
+        manifest: {
+          name: "@fixture/current-consumer",
+          version: "1.0.0",
+          peerDependencies: { "@fixture/provider": ">=0.9.0" },
+        },
+      },
+    ],
+    new Map([
+      ["@fixture/provider", "1.0.0"],
+      ["@fixture/consumer", "1.1.0"],
+    ]),
+  )
+
+  assert.deepEqual([...exclusions], ["@fixture/consumer"])
+})
+
+test("rejects a peer mismatch not covered by the release plan", () => {
+  assert.throws(
+    () =>
+      collectStagedPeerInstallExclusions(
+        [
+          {
+            manifest: {
+              name: "@fixture/provider",
+              version: "0.9.0",
+            },
+          },
+          {
+            manifest: {
+              name: "@fixture/consumer",
+              version: "1.0.0",
+              peerDependencies: { "@fixture/provider": "^1.0.0" },
+            },
+          },
+        ],
+        new Map([
+          ["@fixture/provider", "0.10.0"],
+          ["@fixture/consumer", "1.1.0"],
+        ]),
+      ),
+    /not covered by the release plan/,
+  )
+})
+
 function createTemporaryDirectory(prefix) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), prefix))
   temporaryDirectories.push(directory)
@@ -79,6 +144,9 @@ async function packFixture(root, directoryName, manifest) {
     ["pack", "--json", "--ignore-scripts", "--pack-destination", packDir],
     { cwd: packageDir, encoding: "utf8" },
   )
-  const [packInfo] = JSON.parse(stdout)
+  const packOutput = JSON.parse(stdout)
+  const packInfo = Array.isArray(packOutput)
+    ? packOutput[0]
+    : (packOutput.filename ?? Object.values(packOutput)[0])
   return path.join(packDir, packInfo.filename)
 }

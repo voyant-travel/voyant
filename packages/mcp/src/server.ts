@@ -21,6 +21,10 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
+  assertVoyantGraphMcpRuntime,
+  type VoyantGraphRuntime,
+} from "@voyant-travel/framework/runtime-attestation"
+import {
   admitHandlerActionPolicy,
   createToolRegistry,
   TOOL_ACTION_INVOCATION_FIELD,
@@ -61,7 +65,7 @@ export interface McpApiRoutesOptions {
 }
 
 export interface GraphMcpApiRoutesOptions {
-  runtime: GraphMcpRuntime
+  runtime: unknown
   buildContext(c: Context): ToolContext
   buildResources?(c: Context): Readonly<Record<string, unknown>>
   /** Resources visible only to context contributors owned by the selected unit. */
@@ -71,65 +75,7 @@ export interface GraphMcpApiRoutesOptions {
   serverInfo?: McpServerInfo
 }
 
-export interface GraphMcpRuntime {
-  accessCatalog: AccessCatalog
-  tools: readonly {
-    /** Stable package Tool id from the selected graph. */
-    id?: string
-    /** Package/module owning the selected Tool. */
-    unitId?: string
-    /** Capability version; legacy graph runtimes default to v1. */
-    capabilityVersion?: string
-    name?: string
-    requiredScopes?: readonly string[]
-    risk?: "low" | "medium" | "high" | "critical"
-    referenceId: string
-    context?: readonly string[]
-    load<T = unknown>(): Promise<T>
-  }[]
-  actions?: readonly {
-    id: string
-    capabilityId?: string
-    version: string
-    kind: "execute" | "read" | "sensitive-read"
-    targetType: string
-    commandTargetField?: string
-    targetLifecycle?: "existing" | "created"
-    availability?:
-      | { status: "available" }
-      | {
-          status: "unavailable"
-          reasonCode: string
-          replacementCapabilityId?: string
-        }
-    existingTarget?: {
-      durability: "handler-command-result-v1"
-    }
-    createdTarget?: {
-      commandTargetType: string
-      resultReferenceType: string
-      durability: "handler-command-claim-v1"
-      parentAnchor?: {
-        targetIdField: string
-        targetType?: string
-        targetTypeField?: string
-        relatedTargetIdField?: string
-      }
-    }
-    risk: "low" | "medium" | "high" | "critical"
-    ledger: "required" | "optional"
-    approval?: "never" | "conditional" | "required"
-    policy?: string
-    reversible?: boolean
-    allowedActorTypes?: readonly string[]
-    from?: { tools?: readonly string[] }
-  }[]
-  references: readonly {
-    id: string
-    importEntry: string
-    loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
-  }[]
-}
+export type GraphMcpRuntime = VoyantGraphRuntime
 
 const DEFAULT_SERVER_INFO: McpServerInfo = { name: "voyant-mcp", version: "0.1.0" }
 const mcpAdminApiId = "@voyant-travel/mcp#api.admin"
@@ -234,6 +180,18 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
 export async function createGraphMcpApiRoutes(
   options: GraphMcpApiRoutesOptions,
 ): Promise<OpenAPIHono> {
+  assertVoyantGraphMcpRuntime(options.runtime)
+  if (
+    options.runtime.actions.some(
+      (action) =>
+        action.availability?.status === "unavailable" &&
+        action.availability.enableWhen !== undefined,
+    )
+  ) {
+    throw new Error(
+      "Conditional graph actions require the framework-owned activated runtime view before MCP registration.",
+    )
+  }
   const registry = createToolRegistry()
   const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
@@ -261,10 +219,11 @@ export async function createGraphMcpApiRoutes(
         `Selected MCP Tool "${tool.name ?? tool.id ?? "unknown"}" has no selected graph action policy.`,
       )
     }
+    const capabilityVersion = (tool as { capabilityVersion?: unknown }).capabilityVersion
     registry.register(definition, {
       ...(tool.id ? { capabilityId: tool.id } : {}),
       ...(tool.unitId ? { owner: tool.unitId } : {}),
-      ...(tool.capabilityVersion ? { capabilityVersion: tool.capabilityVersion } : {}),
+      ...(typeof capabilityVersion === "string" ? { capabilityVersion } : {}),
       ...(tool.name ? { name: tool.name } : {}),
       ...(tool.requiredScopes ? { requiredScopes: tool.requiredScopes } : {}),
       ...(tool.risk ? { deploymentRisk: tool.risk } : {}),

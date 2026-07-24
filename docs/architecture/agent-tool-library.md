@@ -144,6 +144,35 @@ also name a transactional, outbox, or saga durability strategy and the test that
 For actions carrying any availability, effect-boundary, or durability metadata, omitted
 availability is validated with the same callable meaning used by runtime lowering. Removing only
 an `unavailable` marker therefore cannot bypass lifecycle or tested-durability checks.
+An unavailable action may opt into `enableWhen.selectedProviderPorts` with explicit `all` or
+`any` semantics. This is the only supported conditional activation path. The authored
+`status: unavailable` remains deliberately fail-closed for older framework versions. The current
+resolver keeps it unavailable even when every required (or at least one alternative) one-valued
+port is consumed by the action owner, closed by a graph provider declaration, and matched by the
+deployment's explicit provider role/value selection. Its Tool metadata, selected id, and runtime
+reference remain outside the enumerable graph runtime. Missing or unselected providers leave the
+action hidden; malformed, unknown, or ambiguously selected ports invalidate the graph before
+runtime generation. Host callbacks, environment inspection, package capability tokens, and
+provider-owned free-form flags cannot activate an action. The selected provider factory is
+instantiated during startup, and each activation runtime-port declaration carries an importable
+reference to its owning typed `VoyantPort`. The framework loads that exact port and runs its
+conformance kit against the exact selected provider instance before a module-private authority
+creates a sanitized activated runtime view. Only that view promotes the action to ordinary
+available metadata and exposes its Tool. Composition additionally rejects a host-substituted
+provider instance. Framework lowering records every authentic raw and activated runtime in a
+module-private identity registry; MCP verifies that identity through the narrow framework
+attestation boundary before inspecting actions or loading Tools. It accepts no assertion callback,
+structural available-action substitute, or conditional action shape. Provider
+import, factory, or port-conformance failure therefore leaves the provisional graph unchanged and
+cannot list the conditional Tool.
+The legitimate `createVoyantGraphRuntime` mint path takes a detached, recursively frozen metadata
+snapshot. Raw and activated runtime views therefore cannot be rewritten after minting: actions,
+availability requirements, provider selections and declarations, Tool and reference loaders,
+selected ids, catalogs, and nested binding arrays remain immutable while the selected provider
+instance itself remains usable and is checked by exact identity.
+`@voyant-travel/mcp` declares the matching framework line as a required peer, so the graph adapter
+can import that narrow attestation subpath without introducing a direct runtime dependency cycle
+through the standard operator distribution.
 First-party actions that still cross an external or multi-stage boundary through event
 publication, provider calls, document generation, delivery, ticketing, or booking orchestration
 are declared unavailable with the `unsafe-nontransactional-effect` reason and the corresponding

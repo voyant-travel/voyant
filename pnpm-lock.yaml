@@ -2472,9 +2472,6 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyant-travel/mcp':
-        specifier: workspace:^
-        version: link:../mcp
       '@voyant-travel/operator-standard':
         specifier: workspace:^
         version: link:../operator-standard
@@ -3113,6 +3110,9 @@ importers:
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
+      '@voyant-travel/framework':
+        specifier: ^0.64.0
+        version: link:../framework
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono

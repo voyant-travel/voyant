@@ -86,11 +86,15 @@ export interface VoyantGraphPortDeclaration {
   optional?: boolean
   /** Additive static contributor aggregation. Valid only in a unit's runtimePorts. */
   cardinality?: "many"
+  /** Lazy export of the owning typed VoyantPort used for startup conformance. */
+  conformance?: VoyantGraphRuntimeReference
 }
 
 export interface VoyantPort<TProvider> {
   readonly id: string
   readonly test: (provider: TProvider) => void | Promise<void>
+  /** Import-cheap reference back to this typed port for generic startup preflight. */
+  readonly conformance?: VoyantGraphRuntimeReference
 }
 
 export function definePort<TProvider>(input: VoyantPort<TProvider>): VoyantPort<TProvider> {
@@ -100,7 +104,11 @@ export function definePort<TProvider>(input: VoyantPort<TProvider>): VoyantPort<
   if (typeof input.test !== "function") {
     throw new Error(`Port "${input.id}" must provide a conformance test kit.`)
   }
-  return Object.freeze({ id: input.id, test: input.test })
+  return Object.freeze({
+    id: input.id,
+    test: input.test,
+    ...(input.conformance ? { conformance: input.conformance } : {}),
+  })
 }
 
 export function providePort<TProvider>(port: VoyantPort<TProvider>): VoyantGraphPortDeclaration {
@@ -115,6 +123,7 @@ export function requirePort<TProvider>(
     id: port.id,
     ...(options.optional ? { optional: true } : {}),
     ...(options.cardinality ? { cardinality: options.cardinality } : {}),
+    ...(port.conformance ? { conformance: port.conformance } : {}),
   }
 }
 

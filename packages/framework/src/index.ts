@@ -17,6 +17,7 @@
  * for deployment-local units.
  */
 
+export { assertVoyantGraphMcpRuntime } from "./conditional-action-availability.js"
 export {
   type CreateVoyantAppConfig,
   createVoyantApp,
@@ -118,6 +119,7 @@ export {
   createVoyantGraphRuntime,
   registerVoyantGraphTools,
   VOYANT_GRAPH_RUNTIME_LOAD_ERROR_CODES,
+  type VoyantGraphActivatedRuntime,
   type VoyantGraphRuntime,
   type VoyantGraphRuntimeActionDefinition,
   type VoyantGraphRuntimeConfigDefinition,
