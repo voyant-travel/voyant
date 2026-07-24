@@ -85,7 +85,7 @@ async function executeExternalReferenceCreate(
         commandTargetType: "external-reference-create-command",
         canonicalTargetType: "external-reference",
         resultReferenceType: "external_reference",
-        commandInput: input,
+        commandInput: data,
         evaluatedRisk: "medium",
       },
       {

@@ -54,7 +54,7 @@ const updateOptionExtraConfigToolSchema = updateOptionExtraConfigSchema.extend({
 
 type ProductExtraListInput = z.infer<typeof productExtraListQuerySchema>
 type OptionExtraConfigListInput = z.infer<typeof optionExtraConfigListQuerySchema>
-const idempotencyKeySchema = z.string().trim().min(1).max(255)
+const idempotencyKeySchema = z.string().trim().min(1).max(255).optional()
 export const createProductExtraInputSchema = insertProductExtraSchema.extend({
   idempotencyKey: idempotencyKeySchema,
 })

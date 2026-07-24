@@ -36,7 +36,6 @@ describe("booking-extra created-target runtime", () => {
         {
           bookingId: "booking_1",
           name: "Transfer",
-          idempotencyKey: "booking-extra-1",
         },
         {} as ToolHandlerActionPolicyContext,
       ),
@@ -65,7 +64,6 @@ describe("booking-extra created-target runtime", () => {
         {
           bookingId: "missing",
           name: "Transfer",
-          idempotencyKey: "booking-extra-1",
         },
         {} as ToolHandlerActionPolicyContext,
       ),

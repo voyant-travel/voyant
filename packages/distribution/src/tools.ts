@@ -55,7 +55,7 @@ const updateSupplierToolSchema = updateSupplierSchema.extend({ id: z.string().mi
 const updateChannelToolSchema = updateChannelSchema.extend({ id: z.string().min(1) })
 const updateExternalRefToolSchema = updateExternalRefSchema.extend({ id: z.string().min(1) })
 export const createExternalReferenceInputSchema = insertExternalRefSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createdExternalReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
 

@@ -53,7 +53,7 @@ const namedContactValueSchema = selectNamedContactSchema
 const updateContactPointToolSchema = updateContactPointSchema.extend({ id: z.string().min(1) })
 const updateAddressToolSchema = updateAddressSchema.extend({ id: z.string().min(1) })
 const updateNamedContactToolSchema = updateNamedContactSchema.extend({ id: z.string().min(1) })
-const idempotencyKeySchema = z.string().trim().min(1).max(255)
+const idempotencyKeySchema = z.string().trim().min(1).max(255).optional()
 export const createIdentityContactPointInputSchema = insertContactPointSchema.extend({
   idempotencyKey: idempotencyKeySchema,
 })

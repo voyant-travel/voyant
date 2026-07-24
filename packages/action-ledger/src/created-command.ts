@@ -237,7 +237,8 @@ export interface ExecuteAdmittedCreatedTargetCommandInput<TReferenceType extends
   db: AnyDrizzleDb
   context: ActionLedgerRequestContextValues
   admitted: ToolHandlerActionPolicyContext
-  idempotencyKey: string
+  /** Optional compatibility copy; the admitted `_voyant` invocation remains authoritative. */
+  idempotencyKey?: string
   commandTargetType: string
   canonicalTargetType: string
   resultReferenceType: TReferenceType
@@ -256,6 +257,7 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
   const principal = mapActionLedgerRequestContext(input.context)
   const selected = input.admitted.actionPolicy
   const createdTarget = selected.createdTarget
+  const idempotencyKey = input.admitted.invocation.idempotencyKey?.trim()
   if (
     selected.kind !== "execute" ||
     selected.ledger !== "required" ||
@@ -268,7 +270,8 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
     createdTarget.resultReferenceType !== input.resultReferenceType ||
     selected.risk !== input.evaluatedRisk ||
     selected.approval !== "never" ||
-    input.admitted.invocation.idempotencyKey !== input.idempotencyKey
+    !idempotencyKey ||
+    (input.idempotencyKey !== undefined && input.idempotencyKey !== idempotencyKey)
   ) {
     throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
   }
@@ -276,7 +279,7 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
   const command = {
     actionName: selected.capabilityId,
     actionVersion: selected.version,
-    commandTarget: { type: createdTarget.commandTargetType, id: input.idempotencyKey },
+    commandTarget: { type: createdTarget.commandTargetType, id: idempotencyKey },
     canonicalTargetType: selected.targetType,
     resultReferenceType: input.resultReferenceType,
     parentAnchor: createdTarget.parentAnchor,
@@ -302,7 +305,7 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
       ...command,
       routeOrToolName: input.admitted.capabilityId,
       authorizationSource: "selected_graph_mcp_handler",
-      idempotency: { scope, key: input.idempotencyKey, fingerprint },
+      idempotency: { scope, key: idempotencyKey, fingerprint },
     },
     handlers,
   )

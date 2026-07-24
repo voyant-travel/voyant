@@ -40,7 +40,6 @@ describe("inventory generated-child runtime", () => {
         {
           productExtraId: "extra_1",
           optionId: "option_1",
-          idempotencyKey: "config-1",
         },
         {} as ToolHandlerActionPolicyContext,
       ),
@@ -65,7 +64,6 @@ describe("inventory generated-child runtime", () => {
         {
           productExtraId: "extra_1",
           optionId: "option_other_product",
-          idempotencyKey: "config-1",
         },
         {} as ToolHandlerActionPolicyContext,
       ),

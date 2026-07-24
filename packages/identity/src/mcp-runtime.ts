@@ -91,7 +91,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
   },
 })
 
-async function executeIdentityChildCreate<TInput extends { idempotencyKey: string }>(input: {
+async function executeIdentityChildCreate<TInput extends { idempotencyKey?: string }>(input: {
   c: Context
   db: AnyDrizzleDb
   input: TInput
@@ -124,7 +124,7 @@ async function executeIdentityChildCreate<TInput extends { idempotencyKey: strin
         commandTargetType: input.commandTargetType,
         canonicalTargetType: input.canonicalTargetType,
         resultReferenceType: input.resultReferenceType,
-        commandInput: input.input,
+        commandInput: data,
         evaluatedRisk: "high",
       },
       {

@@ -124,18 +124,18 @@ export const voyantToolContextContribution = defineToolContextContribution({
         createProductExtra: (
           input: Parameters<InventoryExtrasToolServices["createProductExtra"]>[0],
           admitted: ToolHandlerActionPolicyContext,
-        ) =>
-          executeInventoryGeneratedChild({
+        ) => {
+          const { idempotencyKey, ...data } = input
+          return executeInventoryGeneratedChild({
             c,
             db: db as unknown as AnyDrizzleDb,
             admitted,
-            idempotencyKey: input.idempotencyKey,
+            idempotencyKey,
             commandTargetType: "product-extra-create-command",
             canonicalTargetType: "product_extra",
             resultReferenceType: "product_extra",
-            commandInput: input,
+            commandInput: data,
             async create(tx) {
-              const { idempotencyKey: _idempotencyKey, ...data } = input
               const [parent] = await (tx as unknown as PostgresJsDatabase)
                 .select({ id: products.id })
                 .from(products)
@@ -157,7 +157,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
               if (!row) throw new Error("Product extra insert did not return a row")
               return { value: { id: row.id, replayed: false }, targetId: row.id }
             },
-          }),
+          })
+        },
         updateProductExtra: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateProductExtra(
             db,
@@ -172,18 +173,18 @@ export const voyantToolContextContribution = defineToolContextContribution({
         createOptionExtraConfig: (
           input: Parameters<InventoryExtrasToolServices["createOptionExtraConfig"]>[0],
           admitted: ToolHandlerActionPolicyContext,
-        ) =>
-          executeInventoryGeneratedChild({
+        ) => {
+          const { idempotencyKey, ...data } = input
+          return executeInventoryGeneratedChild({
             c,
             db: db as unknown as AnyDrizzleDb,
             admitted,
-            idempotencyKey: input.idempotencyKey,
+            idempotencyKey,
             commandTargetType: "option-extra-config-create-command",
             canonicalTargetType: "option_extra_config",
             resultReferenceType: "option_extra_config",
-            commandInput: input,
+            commandInput: data,
             async create(tx) {
-              const { idempotencyKey: _idempotencyKey, ...data } = input
               const [anchor] = await (tx as unknown as PostgresJsDatabase)
                 .select({ productId: productExtras.productId })
                 .from(productExtras)
@@ -210,7 +211,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
               if (!row) throw new Error("Option extra config insert did not return a row")
               return { value: { id: row.id, replayed: false }, targetId: row.id }
             },
-          }),
+          })
+        },
         updateOptionExtraConfig: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
           inventoryExtrasService.updateOptionExtraConfig(
             db,
@@ -226,7 +228,7 @@ async function executeInventoryGeneratedChild<TReferenceType extends string>(inp
   c: LedgerHttpContext
   db: AnyDrizzleDb
   admitted: ToolHandlerActionPolicyContext
-  idempotencyKey: string
+  idempotencyKey?: string
   commandTargetType: string
   canonicalTargetType: string
   resultReferenceType: TReferenceType

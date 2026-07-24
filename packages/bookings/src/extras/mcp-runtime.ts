@@ -91,8 +91,8 @@ async function executeBookingExtraCreate(
   input: Record<string, unknown>,
   admitted: ToolHandlerActionPolicyContext,
 ) {
-  const idempotencyKey = String(input.idempotencyKey)
-  const { idempotencyKey: _idempotencyKey, ...data } = input
+  const { idempotencyKey: rawIdempotencyKey, ...data } = input
+  const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey : undefined
   return (
     await executeAdmittedCreatedTargetCommand(
       {
@@ -103,7 +103,7 @@ async function executeBookingExtraCreate(
         commandTargetType: "booking-extra-create-command",
         canonicalTargetType: "booking-extra",
         resultReferenceType: "booking_extra",
-        commandInput: input,
+        commandInput: data,
         evaluatedRisk: "medium",
       },
       {

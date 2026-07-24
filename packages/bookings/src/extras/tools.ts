@@ -62,7 +62,7 @@ const bookingExtraSchema = bookingExtraCoreSchema.extend({
 })
 const updateBookingExtraToolSchema = updateBookingExtraSchema.extend({ id: z.string().min(1) })
 export const createBookingExtraInputSchema = insertBookingExtraSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createdBookingExtraReferenceSchema = z.object({ id: z.string(), replayed: z.boolean() })
 
