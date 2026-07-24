@@ -120,6 +120,12 @@ authorization, so a completed command remains replayable after its approval expi
 caller-supplied `approvalId` or `causationActionId` fails closed. Conditional policy remains
 unsupported until a domain evaluator contract exists.
 
+Existing-target actions may declare `commandTargetField` when their Tool input already carries
+the domain parent id. The generic gate requires that parsed field to exactly match
+`_voyant.targetId` before writing a ledger preflight, validating approval, or dispatching the
+handler. This prevents policy and audit records from naming a different target than the domain
+mutation.
+
 Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
 fingerprint domain target state and pass approved causation into atomic domain services. Their
 Tool definitions explicitly advertise handler-owned enforcement so MCP does not double-gate them.

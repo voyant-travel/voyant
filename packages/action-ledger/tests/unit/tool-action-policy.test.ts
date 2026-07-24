@@ -236,6 +236,79 @@ describe("generic MCP action-policy gate", () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
+  it("rejects a policy target that does not match the declared command target field", async () => {
+    const selected = action({ commandTargetField: "bookingId" })
+    const appendEntry = vi.spyOn(actionLedgerService, "appendEntry")
+    const gate = createToolActionPolicyGate({
+      db: {} as never,
+      selectedActions: [selected],
+      requestContext,
+    })
+    const dispatch = vi.fn(async () => ({ ok: true }))
+    const invoke = (commandInput: unknown) =>
+      gate.execute(
+        execution(
+          selected,
+          {
+            confirmed: true,
+            targetId: "booking_B",
+            idempotencyKey: "command_1",
+          },
+          commandInput,
+        ),
+        dispatch,
+      )
+
+    await expect(invoke({ bookingId: "booking_A" })).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      meta: {
+        actionId: selected.id,
+        field: "bookingId",
+        targetId: "booking_B",
+        commandTarget: "booking_A",
+      },
+    })
+    await expect(invoke({ value: 1 })).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      meta: { field: "bookingId", commandTarget: null },
+    })
+    expect(appendEntry).not.toHaveBeenCalled()
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+
+  it("uses the declared command target for ledger admission", async () => {
+    const selected = action({ commandTargetField: "bookingId" })
+    const appended: unknown[] = []
+    vi.spyOn(actionLedgerService, "appendEntry").mockImplementation(async (_db, input) => {
+      appended.push(input)
+      return { entry: { id: `entry_${appended.length}`, ...input }, replayed: false } as never
+    })
+    const gate = createToolActionPolicyGate({
+      db: {} as never,
+      selectedActions: [selected],
+      requestContext,
+    })
+
+    await expect(
+      gate.execute(
+        execution(
+          selected,
+          {
+            confirmed: true,
+            targetId: "booking_A",
+            idempotencyKey: "command_1",
+          },
+          { bookingId: "booking_A" },
+        ),
+        async () => ({ ok: true }),
+      ),
+    ).resolves.toEqual({ ok: true })
+    expect(appended).toEqual([
+      expect.objectContaining({ status: "requested", targetId: "booking_A" }),
+      expect.objectContaining({ status: "succeeded", targetId: "booking_A" }),
+    ])
+  })
+
   it("fails closed before dispatch for a handler-generated target", async () => {
     const selected = action({
       targetLifecycle: "created",
@@ -297,6 +370,7 @@ function execution(
     version: selected.version,
     kind: selected.kind,
     targetType: selected.targetType,
+    ...(selected.commandTargetField ? { commandTargetField: selected.commandTargetField } : {}),
     risk: selected.risk,
     ledger: selected.ledger,
     approval: selected.approval ?? "never",

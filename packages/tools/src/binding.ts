@@ -46,6 +46,7 @@ export interface ToolActionPolicyBinding {
   version: string
   kind: "execute" | "read" | "sensitive-read"
   targetType: string
+  commandTargetField?: string
   targetLifecycle?: "existing" | "created"
   createdTarget?: {
     commandTargetType: string

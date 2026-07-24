@@ -93,6 +93,7 @@ export interface GraphMcpRuntime {
     version: string
     kind: "execute" | "read" | "sensitive-read"
     targetType: string
+    commandTargetField?: string
     targetLifecycle?: "existing" | "created"
     availability?:
       | { status: "available" }
@@ -330,6 +331,7 @@ function indexActionsByTool(
       version: action.version,
       kind: action.kind,
       targetType: action.targetType,
+      ...(action.commandTargetField ? { commandTargetField: action.commandTargetField } : {}),
       ...(action.targetLifecycle ? { targetLifecycle: action.targetLifecycle } : {}),
       ...(action.createdTarget ? { createdTarget: action.createdTarget } : {}),
       risk: action.risk,
