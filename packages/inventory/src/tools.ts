@@ -195,7 +195,7 @@ export interface InventoryAuthoringToolServices {
   composeProduct(
     input: {
       spec: z.output<typeof productGraphSpecSchema>
-      idempotencyKey: string
+      idempotencyKey?: string
     },
     admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
