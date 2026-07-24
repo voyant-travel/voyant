@@ -125,7 +125,9 @@ handler's replay/resume path instead of being rejected and is therefore guarante
 durable intent. Only frozen admitted command fields and the exact frozen domain payload cross the
 transaction boundary; raw request context is not retained or injected into replay. Command payloads
 must be acyclic JSON values made from primitives, arrays, and plain records; exotic objects,
-accessors, sparse arrays, and non-finite numbers fail closed before fingerprinting.
+accessors, sparse arrays, and non-finite numbers fail closed before fingerprinting. The sanitized
+frozen value is the single authoritative snapshot for target extraction, fingerprinting, claim
+construction, intent preparation, execution, and replay.
 Created-target actions declare a stable pre-create command target, an immutable result-reference
 type, and the `handler-command-claim-v1` durability strategy. The framework rejects a generic Tool
 binding for that lifecycle because it cannot make an arbitrary package transaction atomic with a

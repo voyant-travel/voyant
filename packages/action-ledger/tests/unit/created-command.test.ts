@@ -230,6 +230,118 @@ describe("existing-target durable command protocol", () => {
     })
   })
 
+  it("normalizes negative zero so fingerprint-equivalent retries cannot reach handlers differently", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const negativeZeroInput = { tripId: "trip_1", currency: "EUR", adjustment: -0 }
+    const zeroInput = { tripId: "trip_1", currency: "EUR", adjustment: 0 }
+    const fingerprintInput = {
+      actionName: admitted.actionPolicy.capabilityId,
+      actionVersion: admitted.actionPolicy.version,
+      targetType: "trip",
+      targetId: "trip_1",
+      approvalPolicy: "none" as const,
+      capabilityId: admitted.actionPolicy.capabilityId,
+      capabilityVersion: admitted.actionPolicy.version,
+      evaluatedRisk: "high" as const,
+      reasonCode: null,
+    }
+    const [negativeZeroFingerprint, zeroFingerprint] = await Promise.all([
+      buildActionApprovalCommandFingerprint({
+        ...fingerprintInput,
+        commandInput: negativeZeroInput,
+      }),
+      buildActionApprovalCommandFingerprint({ ...fingerprintInput, commandInput: zeroInput }),
+    ])
+    expect(negativeZeroFingerprint).toBe(zeroFingerprint)
+    const observedAdjustments: number[] = []
+    const handlers = {
+      prepare: vi.fn(async () => {}),
+      execute: vi.fn(async (_command, payload) => {
+        observedAdjustments.push(payload.adjustment)
+        return { path: "execute" }
+      }),
+      replay: vi.fn(async (_command, payload) => {
+        observedAdjustments.push(payload.adjustment)
+        return { path: "replay" }
+      }),
+    }
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), commandInput: negativeZeroInput },
+        handlers,
+      ),
+    ).resolves.toMatchObject({ replayed: false })
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        { ...existingCommandInput(harness.db, admitted), commandInput: zeroInput },
+        handlers,
+      ),
+    ).resolves.toMatchObject({ replayed: true })
+
+    expect(observedAdjustments).toEqual([0, 0])
+    expect(observedAdjustments.some((value) => Object.is(value, -0))).toBe(false)
+    expect(handlers.execute).toHaveBeenCalledTimes(1)
+    expect(handlers.replay).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses one sanitized payload snapshot for target, fingerprint, claim, and handlers", async () => {
+    const harness = makeCreatedCommandDb()
+    const admitted = makeAdmittedExistingTargetContext()
+    await configureExistingClaimLookup(harness.db, admitted)
+    const descriptorReads = { tripId: 0, currency: 0 }
+    const unstableInput = new Proxy(
+      { tripId: "ignored", currency: "ignored" },
+      {
+        getOwnPropertyDescriptor(_target, property) {
+          if (property === "tripId") {
+            descriptorReads.tripId += 1
+            return {
+              configurable: true,
+              enumerable: true,
+              writable: true,
+              value: descriptorReads.tripId === 1 ? "trip_1" : "trip_changed",
+            }
+          }
+          if (property === "currency") {
+            descriptorReads.currency += 1
+            return {
+              configurable: true,
+              enumerable: true,
+              writable: true,
+              value: descriptorReads.currency === 1 ? "EUR" : "USD",
+            }
+          }
+          return undefined
+        },
+      },
+    )
+    const prepare = vi.fn(async (_tx, command, payload) => {
+      expect(command.target.id).toBe("trip_1")
+      expect(payload).toEqual({ currency: "EUR", tripId: "trip_1" })
+    })
+    const execute = vi.fn(async (command, payload) => ({
+      targetId: command.target.id,
+      currency: payload.currency,
+    }))
+
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, admitted),
+          commandInput: unstableInput,
+        },
+        { prepare, execute, replay: vi.fn() },
+      ),
+    ).resolves.toMatchObject({
+      replayed: false,
+      value: { targetId: "trip_1", currency: "EUR" },
+    })
+    expect(descriptorReads).toEqual({ tripId: 1, currency: 1 })
+  })
+
   it.each([
     ["Date (which canonicalizes like an empty record)", new Date("2026-07-24T00:00:00.000Z")],
     ["Map (which canonicalizes like an empty record)", new Map([["currency", "EUR"]])],

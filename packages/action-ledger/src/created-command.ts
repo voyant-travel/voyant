@@ -429,7 +429,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
   ) {
     throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
   }
-  const targetId = existingTargetId(input.commandInput, commandTargetField)
+  const targetId = existingTargetId(payload, commandTargetField)
   if (input.targetId !== undefined && input.targetId !== targetId) {
     throw new ActionLedgerCreatedCommandProtocolError("admitted_policy_mismatch")
   }
@@ -441,7 +441,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
     actionVersion: selected.version,
     targetType: selected.targetType,
     targetId,
-    commandInput: input.commandInput,
+    commandInput: payload,
     approvalPolicy,
     capabilityId: actionName,
     capabilityVersion: selected.version,
@@ -484,7 +484,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
     approvalPolicy,
     approvalPolicyName: selected.policy ?? null,
     approvalReasonCode,
-    commandInput: input.commandInput,
+    commandInput: payload,
     idempotency: { scope, key: idempotencyKey, fingerprint },
     ...(approvalControls ? { approvalControls } : {}),
     routeOrToolName: input.admitted.capabilityId,
@@ -560,12 +560,10 @@ function freezeCommandPayload<TCommandPayload>(
 }
 
 function cloneJsonCommandPayload(value: unknown, ancestors: WeakSet<object>): unknown {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean" ||
-    (typeof value === "number" && Number.isFinite(value))
-  ) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Object.is(value, -0) ? 0 : value
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
     return value
   }
   if (typeof value !== "object") {

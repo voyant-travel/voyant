@@ -13,4 +13,5 @@ commands, including atomic package-owned operation intent preparation, exact
 admission, stable replay context, organization-bound approval continuity, and
 framework/runtime contract validation. Existing-target command payloads are
 restricted to immutable, acyclic JSON values so their runtime identity cannot
-diverge from canonical fingerprinting.
+diverge from canonical fingerprinting; that sanitized frozen value is the
+authoritative target, fingerprint, claim, and handler snapshot.
