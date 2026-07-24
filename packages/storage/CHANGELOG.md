@@ -1,5 +1,12 @@
 # @voyant-travel/storage
 
+## 0.113.5
+
+### Patch Changes
+
+- Updated dependencies [b07a0a3]
+  - @voyant-travel/core@0.134.0
+
 ## 0.113.4
 
 ### Patch Changes
