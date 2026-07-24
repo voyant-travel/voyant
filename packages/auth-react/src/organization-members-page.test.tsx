@@ -18,6 +18,14 @@ import {
   type VoyantFetcher,
 } from "./index.js"
 
+vi.mock("@voyant-travel/ui/components", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@voyant-travel/ui/components")>()
+  return {
+    ...actual,
+    confirmDialog: async () => true,
+  }
+})
+
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 testGlobal.IS_REACT_ACT_ENVIRONMENT = true
 
