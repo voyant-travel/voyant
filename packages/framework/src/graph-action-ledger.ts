@@ -38,6 +38,7 @@ export function lowerVoyantGraphActionsToActionLedgerRegistry<TContext = unknown
   validateSelectedGraphActions(runtime)
 
   const definitions = runtime.actions
+    .filter((action) => action.availability?.status !== "unavailable")
     .map((action) => lowerAction(action, options.riskEvaluators))
     .sort(
       (left, right) => left.id.localeCompare(right.id) || left.version.localeCompare(right.version),
@@ -89,6 +90,14 @@ function validateSelectedGraphActions(runtime: VoyantGraphRuntime): void {
       [keyof VoyantGraphRuntimeSelectedIds, readonly string[]]
     >) {
       for (const id of ids) {
+        if (binding === "tools" && action.availability?.status === "unavailable") {
+          if (selectedIds.tools.has(id)) {
+            throw new Error(
+              `lowerVoyantGraphActionsToActionLedgerRegistry: unavailable action "${action.id}" exposes selected-graph Tool id "${id}".`,
+            )
+          }
+          continue
+        }
         if (!selectedIds[binding].has(id)) {
           throw new Error(
             `lowerVoyantGraphActionsToActionLedgerRegistry: action "${action.id}" binds unknown selected-graph ${binding} id "${id}".`,

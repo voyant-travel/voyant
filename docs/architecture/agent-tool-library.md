@@ -118,6 +118,12 @@ that lifecycle because it cannot make an arbitrary package transaction atomic wi
 wrapper. The declaration is a contract, not an after-dispatch hint: the handler must claim before
 mutation, resolve exact replays, conflict on altered commands, and append the generated canonical
 target in the same transaction (or use a durable outbox/state machine for external effects).
+Execute Tool actions may also declare an explicit graph `availability`. An action marked
+`unavailable` remains in the resolved graph with a stable `reasonCode`, but its Tool and
+runtime reference are omitted from lowering, so it cannot appear in MCP discovery or dispatch.
+Lowering fails closed if an unavailable action's Tool is reintroduced. Actions explicitly marked
+`available` must name an existing/created target lifecycle; external or multi-stage effects must
+also name a transactional, outbox, or saga durability strategy and the test that proves it.
 MCP passes stripped invocation controls and the selected action policy in a fresh
 `ToolContext.handlerActionPolicy` only for handler-owned dispatch. Approval-required created
 commands bind their approval request and execution to the same typed created-target fingerprint;

@@ -183,6 +183,31 @@ describe("trips deployment manifest", () => {
       reversible: false,
       from: { tools: ["@voyant-travel/trips#tool.reserve-trip"] },
     })
+    expect(tripsVoyantModule.actions).toContainEqual({
+      id: "@voyant-travel/trips#action.price-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      targetLifecycle: "existing",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+      requiredScopes: ["trips:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: true,
+      from: { tools: ["@voyant-travel/trips#tool.price-trip"] },
+    })
+    expect(tripsVoyantModule.tools).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/trips#tool.price-trip",
+        requiredScopes: ["trips:write"],
+        risk: "high",
+      }),
+    )
     expect(tripsVoyantModule.actions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

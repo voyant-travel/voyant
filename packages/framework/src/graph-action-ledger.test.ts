@@ -12,7 +12,11 @@ const selectedIds: VoyantGraphRuntimeSelectedIds = {
 }
 
 function actionRuntime(
-  overrides: { accessScopes?: readonly string[]; selectedIds?: VoyantGraphRuntimeSelectedIds } = {},
+  overrides: {
+    accessScopes?: readonly string[]
+    selectedIds?: VoyantGraphRuntimeSelectedIds
+    unavailable?: boolean
+  } = {},
 ) {
   const accessScopes = overrides.accessScopes ?? ["loyalty:write"]
   return createVoyantGraphRuntime({
@@ -49,6 +53,14 @@ function actionRuntime(
             version: "v1",
             kind: "execute",
             targetType: "loyalty_account",
+            ...(overrides.unavailable
+              ? {
+                  availability: {
+                    status: "unavailable" as const,
+                    reasonCode: "unsafe-nontransactional-effect",
+                  },
+                }
+              : {}),
             resource: "loyalty_balance",
             action: "adjust_points",
             requiredScopes: ["loyalty:write"],
@@ -105,6 +117,15 @@ describe("graph action-ledger lowering", () => {
     expect(() =>
       lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ accessScopes: [] })),
     ).toThrow(/requires undeclared access scope "loyalty:write"/)
+  })
+
+  it("does not lower unavailable actions into the action-ledger capability registry", () => {
+    const runtime = actionRuntime({
+      unavailable: true,
+      selectedIds: { ...selectedIds, tools: [] },
+    })
+
+    expect(lowerVoyantGraphActionsToActionLedgerRegistry(runtime).definitions).toEqual([])
   })
 
   it.each([
