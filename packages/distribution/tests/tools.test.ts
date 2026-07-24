@@ -52,22 +52,18 @@ describe("distribution tools", () => {
     expect(
       tools
         .filter(({ name }) =>
-          [
-            "create_supplier",
-            "create_distribution_channel",
-            "create_external_reference",
-          ].includes(name),
+          ["create_supplier", "create_distribution_channel", "create_external_reference"].includes(
+            name,
+          ),
         )
         .every(({ riskPolicy }) => !riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
     expect(
       tools
         .filter(({ name }) =>
-          [
-            "update_supplier",
-            "update_distribution_channel",
-            "update_external_reference",
-          ].includes(name),
+          ["update_supplier", "update_distribution_channel", "update_external_reference"].includes(
+            name,
+          ),
         )
         .every(({ riskPolicy }) => riskPolicy.reversible && !riskPolicy.destructive),
     ).toBe(true)
