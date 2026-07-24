@@ -247,11 +247,11 @@ export interface ExecuteAdmittedCreatedTargetCommandInput<TReferenceType extends
   evaluatedRisk: ActionLedgerCapabilityRisk
 }
 
-export interface ExecuteAdmittedExistingTargetCommandInput {
+export interface ExecuteAdmittedExistingTargetCommandInput<TCommandPayload = unknown> {
   db: AnyDrizzleDb
   context: ActionLedgerRequestContextValues
   admitted: ToolHandlerActionPolicyContext
-  commandInput: unknown
+  commandInput: TCommandPayload
   evaluatedRisk: ActionLedgerCapabilityRisk
   /** Optional compatibility copy; the admitted `_voyant` invocation remains authoritative. */
   idempotencyKey?: string
@@ -288,18 +288,41 @@ export interface AdmittedExistingTargetCommand {
   }
 }
 
-export interface ExecuteAdmittedExistingTargetCommandHandlers<TValue> {
+export type ExistingTargetCommandPayload<T> = T extends (...args: never[]) => unknown
+  ? never
+  : T extends readonly (infer TItem)[]
+    ? readonly ExistingTargetCommandPayload<TItem>[]
+    : T extends object
+      ? { readonly [TKey in keyof T]: ExistingTargetCommandPayload<T[TKey]> }
+      : T
+
+export interface ExecuteAdmittedExistingTargetCommandHandlers<TValue, TCommandPayload> {
   /**
-   * Starts the package-owned durable operation after the immutable ledger
-   * claim commits. Persist the operation/result before crossing an external
-   * boundary.
+   * Persists the package-owned durable operation intent inside the same
+   * transaction as the immutable action-ledger claim. It must not perform the
+   * external effect. Throwing rolls back both claim and intent.
    */
-  execute(command: AdmittedExistingTargetCommand): Promise<TValue>
+  prepare(
+    tx: AnyDrizzleDb,
+    command: AdmittedExistingTargetCommand,
+    payload: ExistingTargetCommandPayload<TCommandPayload>,
+  ): Promise<void>
+  /**
+   * Starts the already-persisted package-owned durable operation after the
+   * immutable ledger claim and intent commit.
+   */
+  execute(
+    command: AdmittedExistingTargetCommand,
+    payload: ExistingTargetCommandPayload<TCommandPayload>,
+  ): Promise<TValue>
   /**
    * Resolves or resumes the package-owned durable operation for an exact
    * command replay. This path never receives request-scoped transport context.
    */
-  replay(command: AdmittedExistingTargetCommand): Promise<TValue>
+  replay(
+    command: AdmittedExistingTargetCommand,
+    payload: ExistingTargetCommandPayload<TCommandPayload>,
+  ): Promise<TValue>
 }
 
 export type ExecuteAdmittedExistingTargetCommandResult<TValue> =
@@ -378,10 +401,11 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
  * Only the immutable admitted command crosses the transaction boundary. The
  * raw request context is deliberately not forwarded to either handler.
  */
-export async function executeAdmittedExistingTargetCommand<TValue>(
-  input: ExecuteAdmittedExistingTargetCommandInput,
-  handlers: ExecuteAdmittedExistingTargetCommandHandlers<TValue>,
+export async function executeAdmittedExistingTargetCommand<TValue, TCommandPayload>(
+  input: ExecuteAdmittedExistingTargetCommandInput<TCommandPayload>,
+  handlers: ExecuteAdmittedExistingTargetCommandHandlers<TValue, TCommandPayload>,
 ): Promise<ExecuteAdmittedExistingTargetCommandResult<TValue>> {
+  const payload = freezeCommandPayload(input.commandInput)
   const principal = mapActionLedgerRequestContext(input.context)
   if (principal.principalId === "unknown_request") {
     throw new TypeError("Existing-target command execution requires a concrete request principal")
@@ -510,12 +534,31 @@ export async function executeAdmittedExistingTargetCommand<TValue>(
       : prepared.expectedClaim
     if (approval) await assertApprovalUnused(tx, exactClaim)
     const inserted = await insertEntry(tx, exactClaim)
-    return { replayed: false as const, command: existingTargetCommand(inserted.entry, scope) }
+    const command = existingTargetCommand(inserted.entry, scope)
+    await handlers.prepare(tx, command, payload)
+    const current = await findClaim(tx, existingClaimScope(scope), idempotencyKey)
+    if (!current || current.id !== inserted.entry.id) {
+      throw new ActionLedgerCreatedCommandProtocolError("claim_changed_during_mutation")
+    }
+    assertExactEntry(current, exactClaim)
+    return { replayed: false as const, command }
   })
   const value = admission.replayed
-    ? await handlers.replay(admission.command)
-    : await handlers.execute(admission.command)
+    ? await handlers.replay(admission.command, payload)
+    : await handlers.execute(admission.command, payload)
   return { ...admission, value }
+}
+
+function freezeCommandPayload<TCommandPayload>(
+  value: TCommandPayload,
+): ExistingTargetCommandPayload<TCommandPayload> {
+  return deepFreeze(structuredClone(value)) as ExistingTargetCommandPayload<TCommandPayload>
+}
+
+function deepFreeze<T>(value: T): T {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value
+  for (const child of Object.values(value)) deepFreeze(child)
+  return Object.freeze(value)
 }
 
 function existingTargetId(commandInput: unknown, field: string): string {
@@ -876,6 +919,7 @@ async function approvedLiveExpectedClaim<TReferenceType extends string>(
     routeOrToolName: prepared.expectedClaim.routeOrToolName,
     principalType: approval.principalType,
     principalId: approval.principalId,
+    organizationId: prepared.expectedClaim.organizationId,
     requireApprovalProvenance: true,
     capabilityId: prepared.expectedClaim.capabilityId,
     capabilityVersion: prepared.expectedClaim.capabilityVersion,
@@ -943,6 +987,9 @@ async function approvedReplayExpectedClaim<TReferenceType extends string>(
     approval.requestedByPrincipalId !== expectedApproval.principalId
   ) {
     return approvalFailure(expectedApproval.approvalId, "principal_mismatch")
+  }
+  if (requestedAction.organizationId !== prepared.expectedClaim.organizationId) {
+    return approvalFailure(expectedApproval.approvalId, "organization_mismatch")
   }
   if (
     approval.assignedToPrincipalId &&

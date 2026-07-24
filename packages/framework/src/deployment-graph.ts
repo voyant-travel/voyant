@@ -2075,6 +2075,14 @@ function validatePromotedFacets(
           'The existing-target durable result protocol is supported only for kind "execute" with ledger "required".',
         )
       }
+      if (entry.approval === "conditional") {
+        invalidFacet(
+          `${facet}.approval`,
+          source,
+          diagnostics,
+          "Existing-target durable commands do not support conditional approval.",
+        )
+      }
       if (!isRecord(entry.existingTarget)) {
         invalidFacet(
           `${facet}.existingTarget`,

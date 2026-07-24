@@ -52,6 +52,7 @@ export {
   type ExecuteCreatedTargetCommandHandlers,
   type ExecuteCreatedTargetCommandInput,
   type ExecuteCreatedTargetCommandResult,
+  type ExistingTargetCommandPayload,
   executeAdmittedCreatedTargetCommand,
   executeAdmittedExistingTargetCommand,
   executeCreatedTargetCommand,

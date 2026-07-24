@@ -116,13 +116,14 @@ the same transaction, and returns the immutable booking reference on exact repla
 Graph actions distinguish existing targets from handler-generated targets explicitly.
 Existing-target actions use the generic `_voyant.targetId` preflight unless they opt into
 `existingTarget.durability: "handler-command-result-v1"`. That opt-in requires a stable
-`commandTargetField`, required-ledger execute policy, and handler-owned enforcement. The action
-ledger transaction commits an immutable claim before domain dispatch, binds the selected action,
-target, principal, payload fingerprint, idempotency key, approval, and causation, then routes an
-exact retry to the handler's replay path instead of rejecting it. The domain handler must persist
-its operation/result before crossing an external boundary and resolve or resume that durable
-result on replay. Only immutable admitted command fields cross the transaction boundary; raw
-request context is not retained or injected into replay.
+`commandTargetField`, required-ledger execute policy, non-conditional approval, and handler-owned
+enforcement. The action-ledger transaction binds the selected action, target, organization,
+principal, payload fingerprint, idempotency key, approval, and causation, then requires the domain
+handler to persist its durable operation intent in that same transaction. Only after both claim
+and intent commit may the handler cross an external boundary. An exact retry is routed to the
+handler's replay/resume path instead of being rejected and is therefore guaranteed to find the
+durable intent. Only frozen admitted command fields and the exact frozen domain payload cross the
+transaction boundary; raw request context is not retained or injected into replay.
 Created-target actions declare a stable pre-create command target, an immutable result-reference
 type, and the `handler-command-claim-v1` durability strategy. The framework rejects a generic Tool
 binding for that lifecycle because it cannot make an arbitrary package transaction atomic with a

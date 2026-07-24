@@ -231,6 +231,7 @@ export type ValidateApprovedActionFailureReason =
   | "missing_fingerprint"
   | "fingerprint_mismatch"
   | "principal_mismatch"
+  | "organization_mismatch"
   | "assignee_mismatch"
   | "capability_mismatch"
   | "risk_mismatch"
@@ -249,6 +250,7 @@ export interface ValidateApprovedActionInput {
   routeOrToolName?: string | null
   principalType?: ActionLedgerEntry["principalType"] | null
   principalId?: string | null
+  organizationId?: string | null
   requireApprovalProvenance?: boolean
   capabilityId?: string | null
   capabilityVersion?: string | null

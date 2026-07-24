@@ -7,5 +7,6 @@
 ---
 
 Add an explicit handler-owned durable result protocol for existing-target Tool
-commands, including exact admission, stable replay context, approval continuity,
-and framework/runtime contract validation.
+commands, including atomic package-owned operation intent preparation, exact
+admission, stable replay context, organization-bound approval continuity, and
+framework/runtime contract validation.

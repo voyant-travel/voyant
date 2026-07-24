@@ -399,6 +399,11 @@ describe("createToolRegistry", () => {
         actionPolicy: { ...action, commandTargetField: undefined },
       }),
     ).toThrow(/has no commandTargetField/)
+    expect(() =>
+      createToolRegistry().register(definition, {
+        actionPolicy: { ...action, approval: "conditional" },
+      }),
+    ).toThrow(/conditional approval is unsupported/)
   })
 
   it("preserves generic targetId requirements when target lifecycle is omitted", () => {

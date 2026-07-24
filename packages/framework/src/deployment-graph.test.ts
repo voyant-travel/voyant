@@ -1072,6 +1072,12 @@ describe("deployment graph v1", () => {
         message: expect.stringContaining('kind "execute" with ledger "required"'),
       }),
     )
+    expect(validateGraphUnitManifest(manifest({ approval: "conditional" }))).toContainEqual(
+      expect.objectContaining({
+        facet: "actions[0].approval",
+        message: expect.stringContaining("do not support conditional approval"),
+      }),
+    )
   })
 
   it("validates an action command target field binding", () => {

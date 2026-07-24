@@ -197,6 +197,11 @@ function deriveActionPolicy(
         `Tool "${tool.name}" action "${action.id}" may use the existing-target durable result protocol only for a required-ledger execute action`,
       )
     }
+    if (action.approval === "conditional") {
+      throw new Error(
+        `Tool "${tool.name}" action "${action.id}" uses the existing-target durable result protocol but conditional approval is unsupported`,
+      )
+    }
     if (action.existingTarget.durability !== "handler-command-result-v1") {
       throw new Error(
         `Tool "${tool.name}" action "${action.id}" uses an unsupported existing-target durable result protocol`,
