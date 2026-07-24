@@ -1,5 +1,12 @@
 # @voyant-travel/framework
 
+## 0.63.4
+
+### Patch Changes
+
+- 0aead49: Generate starter archives with the current framework, runtime, and standard Operator package releases so new projects avoid stale dependency graphs.
+  - @voyant-travel/operator-standard@0.12.5
+
 ## 0.63.3
 
 ### Patch Changes
