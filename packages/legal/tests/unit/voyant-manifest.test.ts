@@ -80,6 +80,15 @@ describe("legal deployment manifest", () => {
     expect(legalVoyantModule.actions?.flatMap((action) => action.from?.tools ?? [])).toEqual(
       expect.arrayContaining(legalVoyantModule.tools?.map((tool) => tool.id) ?? []),
     )
+    expect(
+      legalContractDocumentVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/legal#action.generate-booking-contract-document",
+      ),
+    ).toMatchObject({
+      targetType: "booking",
+      commandTargetField: "bookingId",
+      targetLifecycle: "existing",
+    })
     expect(legalVoyantModule.meta?.agentTools).toBeUndefined()
   })
 

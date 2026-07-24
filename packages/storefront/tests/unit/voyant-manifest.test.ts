@@ -273,6 +273,9 @@ describe("storefront deployment manifest", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "@voyant-travel/storefront#action.create-invoice-payment-link",
+          targetType: "invoice",
+          commandTargetField: "invoiceId",
+          targetLifecycle: "existing",
           allowedActorTypes: ["staff"],
           approval: "required",
         }),

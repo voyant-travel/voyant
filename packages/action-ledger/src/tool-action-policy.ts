@@ -67,6 +67,7 @@ export function createToolActionPolicyGate(
       }
 
       const targetId = requiredInvocationString(execution, "targetId")
+      assertCommandTargetMatches(selected, execution, targetId)
       const principal = concretePrincipal(input.requestContext)
 
       if (selected.kind !== "execute") {
@@ -185,6 +186,7 @@ function resolveSelectedAction(
     (selected.capabilityId ?? selected.id) !== execution.actionPolicy.capabilityId ||
     selected.kind !== execution.actionPolicy.kind ||
     selected.targetType !== execution.actionPolicy.targetType ||
+    selected.commandTargetField !== execution.actionPolicy.commandTargetField ||
     selected.risk !== execution.actionPolicy.risk ||
     selected.ledger !== execution.actionPolicy.ledger ||
     (selected.approval ?? "never") !== execution.actionPolicy.approval ||
@@ -234,6 +236,32 @@ function sameParentAnchor(
     selected.targetTypeField === execution.targetTypeField &&
     selected.relatedTargetIdField === execution.relatedTargetIdField
   )
+}
+
+function assertCommandTargetMatches(
+  selected: VoyantGraphActionDeclaration,
+  execution: ToolActionPolicyExecutionInput,
+  targetId: string,
+): void {
+  const field = selected.commandTargetField
+  if (!field) return
+  const commandInput = execution.commandInput
+  const commandTarget =
+    typeof commandInput === "object" && commandInput !== null && !Array.isArray(commandInput)
+      ? (commandInput as Record<string, unknown>)[field]
+      : undefined
+  if (typeof commandTarget !== "string" || !commandTarget.trim() || commandTarget !== targetId) {
+    throw new ToolError(
+      `Tool action targetId must exactly match command input field "${field}".`,
+      "ACTION_POLICY_REQUIRED",
+      {
+        actionId: selected.id,
+        field,
+        targetId,
+        commandTarget: typeof commandTarget === "string" ? commandTarget : null,
+      },
+    )
+  }
 }
 
 function assertConfirmation(execution: ToolActionPolicyExecutionInput): void {

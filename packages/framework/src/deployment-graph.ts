@@ -1929,6 +1929,14 @@ function validatePromotedFacets(
     if (entry.action !== undefined) {
       requireNonEmptyString(entry.action, `${facet}.action`, source, diagnostics)
     }
+    if (entry.commandTargetField !== undefined) {
+      requireNonEmptyString(
+        entry.commandTargetField,
+        `${facet}.commandTargetField`,
+        source,
+        diagnostics,
+      )
+    }
     if (
       entry.targetLifecycle !== undefined &&
       entry.targetLifecycle !== "existing" &&
