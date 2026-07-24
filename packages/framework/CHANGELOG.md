@@ -1,5 +1,60 @@
 # @voyant-travel/framework
 
+## 0.64.0
+
+### Minor Changes
+
+- 3651ff7: Add fail-closed provider-conditional action availability. An unavailable action
+  may name one-valued typed provider ports with explicit `all` or `any` semantics;
+  the resolved graph keeps it provisional even for exactly selected provider declarations.
+  Malformed, unknown, or ambiguous conditions fail graph validation, while
+  missing or unselected providers keep the action out of Tool imports, MCP,
+  action-ledger policy, and enumerable runtime lowering. The framework retains
+  activation-only Tool loaders privately, instantiates the exact selected provider
+  factory, runs the action owner's imported typed-port conformance kit, and only
+  then creates a non-forgeable activated runtime view for composition, direct Tool
+  registration, action-ledger lowering, and MCP discovery. MCP now accepts only a
+  runtime whose object identity was minted by framework lowering, so a fabricated
+  structural graph cannot expose a conditional Tool by claiming it is available.
+  Framework lowering first takes a detached, deeply immutable metadata snapshot;
+  raw and activated runtimes therefore cannot have actions, provider conditions,
+  Tool/reference loaders, or provider selections rewritten after minting.
+  The MCP graph adapter declares framework 0.64 as a required peer rather than a
+  direct runtime dependency. This keeps the package contract explicit without
+  introducing a direct framework → operator distribution → MCP → framework
+  runtime dependency cycle.
+
+### Patch Changes
+
+- c03ff60: Restore `source_trip_requirement_candidates` as an available handler-owned
+  existing-target command backed by a Trips-owned durable sourcing operation and
+  fixed wakeable worker.
+
+  The Tool now returns an immutable `{ status: "accepted", operationId,
+requirementId, statusTool }` result instead of waiting for provider fan-out and
+  returning mutable requirement/candidate rows. The read-only
+  `get_trip_requirement_sourcing_operation` Tool and matching tenant-bound HTTP
+  route expose pending, retry, completion, and dead-letter outcomes. See
+  `docs/migrations/durable-trips-requirement-sourcing.md` for rollout and caller
+  guidance.
+
+  The old synchronous `sourceRequirementCandidates`, `reshopRequirement`, and
+  `reshopTrip` services, Tools, and HTTP routes are removed. They discarded live
+  candidates before an unfenced provider call and cannot safely coexist with the
+  durable worker.
+
+  Owned availability-search handlers now participate in the same deterministic
+  fan-out as sourced adapters, including owned-only deployments.
+
+- Updated dependencies [3651ff7]
+  - @voyant-travel/core@0.135.0
+  - @voyant-travel/action-ledger@0.113.1
+  - @voyant-travel/cruises@0.198.0
+  - @voyant-travel/db@0.118.4
+  - @voyant-travel/hono@0.134.4
+  - @voyant-travel/operator-standard@0.12.7
+  - @voyant-travel/storage@0.113.6
+
 ## 0.63.4
 
 ### Patch Changes

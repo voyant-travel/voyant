@@ -1,5 +1,12 @@
 # @voyant-travel/payments
 
+## 0.6.4
+
+### Patch Changes
+
+- Updated dependencies [3651ff7]
+  - @voyant-travel/core@0.135.0
+
 ## 0.6.3
 
 ### Patch Changes
