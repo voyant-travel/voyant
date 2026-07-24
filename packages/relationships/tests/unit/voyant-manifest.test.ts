@@ -91,11 +91,21 @@ describe("relationships deployment manifest", () => {
         ({ id }) => id === "@voyant-travel/relationships#action.create-person",
       ),
     ).toMatchObject({
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
-      },
+      availability: { status: "available" },
       effectBoundary: "multistage",
+      targetType: "person",
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "person_create_command",
+        resultReferenceType: "person",
+        durability: "handler-command-claim-v1",
+      },
+      durability: {
+        strategy: "outbox",
+        testReference: "packages/relationships/tests/integration/person-created-command.test.ts",
+      },
+      reversible: false,
+      allowedActorTypes: ["staff"],
     })
     expect(
       relationshipsVoyantModule.actions?.find(

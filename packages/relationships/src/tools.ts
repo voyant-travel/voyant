@@ -18,7 +18,10 @@ import {
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
-import { RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY } from "./created-target-policy.js"
+import {
+  RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY,
+  RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY,
+} from "./created-target-policy.js"
 import {
   addressSchema,
   contactMethodSchema,
@@ -110,8 +113,17 @@ export const createPersonToolInputSchema = insertPersonSchema
   .extend({
     allowDuplicateName: z
       .boolean()
-      .default(false)
-      .describe("Only set after confirming a same-name person is genuinely distinct."),
+      .optional()
+      .describe(
+        "Removed compatibility field. Omit it; use list_people before create_person when resolving an existing person.",
+      ),
+    idempotencyKey: z
+      .string()
+      .trim()
+      .min(1)
+      .max(255)
+      .optional()
+      .describe("Compatibility copy of the admitted created-command idempotency key."),
   })
 
 export const updatePersonToolInputSchema = updatePersonSchema
@@ -151,8 +163,9 @@ export const updateOrganizationToolInputSchema = updateOrganizationSchema
   })
 
 const createPersonOutputSchema = z.object({
-  person: personToolSchema,
-  alreadyExists: z.boolean(),
+  status: z.literal("created"),
+  person: z.object({ id: z.string().min(1) }),
+  replayed: z.boolean(),
 })
 const createOrganizationOutputSchema = z.object({
   status: z.literal("created"),
@@ -213,7 +226,7 @@ type EditAddressInput = z.infer<typeof editAddressInputSchema>
 export interface RelationshipsToolServices {
   listPeople(query: PersonListQuery): Promise<unknown>
   getPersonById(id: string): Promise<unknown>
-  createPerson(input: CreatePersonInput): Promise<unknown>
+  createPerson(input: CreatePersonInput, admitted: ToolHandlerActionPolicyContext): Promise<unknown>
   updatePerson(input: UpdatePersonInput): Promise<unknown>
   listOrganizations(query: OrganizationListQuery): Promise<unknown>
   getOrganizationById(id: string): Promise<unknown>
@@ -314,19 +327,28 @@ export const createPersonTool = defineTool<
   RelationshipsToolContext
 >({
   ...sensitiveWriteMetadata,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-person`,
   name: "create_person",
   aliases: ["crm_person_create"],
   description:
-    "Create a CRM person with at least one real email or phone. Reuses a compatible exact-name " +
-    "record unless allowDuplicateName is explicitly set.",
+    "Create a new CRM person with at least one real email or phone. Exact retries return the original immutable person reference; use read tools to resolve an existing person.",
   inputSchema: createPersonToolInputSchema,
   outputSchema: createPersonOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
+    if (input.allowDuplicateName !== undefined) {
+      throw new ToolError(
+        "`allowDuplicateName` is no longer supported because `create_person` always creates a new person. Use `list_people` first to resolve an existing person, then omit `allowDuplicateName`.",
+        "INVALID_INPUT",
+      )
+    }
     if (!input.email?.trim() && !input.phone?.trim()) {
       throw new ToolError("A CRM person requires an email or phone.", "INVALID_INPUT")
     }
-    return parseJsonResult(createPersonOutputSchema, await crm(ctx).createPerson(input))
+    const admitted = admitHandlerActionPolicy(ctx, RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY)
+    return parseJsonResult(createPersonOutputSchema, await crm(ctx).createPerson(input, admitted))
   },
 })
 

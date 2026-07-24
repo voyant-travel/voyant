@@ -3,9 +3,33 @@ import { describe, expect, it } from "vitest"
 import {
   RELATIONSHIPS_ORGANIZATION_CREATED_TARGET_POLICY,
   RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY,
+  RELATIONSHIPS_PERSON_CREATED_TARGET_POLICY,
+  RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY,
 } from "../../src/created-target-policy.js"
 
 describe("Relationships created-target policy", () => {
+  it("binds person creation to one handler-owned immutable reference contract", () => {
+    expect(RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY).toMatchObject({
+      capabilityId: RELATIONSHIPS_PERSON_CREATED_TARGET_POLICY.toolCapabilityId,
+      canonicalName: "create_person",
+      actionPolicy: {
+        id: RELATIONSHIPS_PERSON_CREATED_TARGET_POLICY.actionName,
+        targetType: "person",
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "person_create_command",
+          resultReferenceType: "person",
+          durability: "handler-command-claim-v1",
+        },
+        risk: "high",
+        ledger: "required",
+        approval: "never",
+        reversible: false,
+        allowedActorTypes: ["staff"],
+      },
+    })
+  })
+
   it("binds organization creation to one handler-owned immutable reference contract", () => {
     expect(RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY).toMatchObject({
       capabilityId: RELATIONSHIPS_ORGANIZATION_CREATED_TARGET_POLICY.toolCapabilityId,

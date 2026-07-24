@@ -1,6 +1,9 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
-import { RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY } from "../src/created-target-policy.js"
+import {
+  RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY,
+  RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY,
+} from "../src/created-target-policy.js"
 import {
   addRelationshipAddressTool,
   addRelationshipContactMethodTool,
@@ -240,7 +243,7 @@ describe("relationships (crm) tools", () => {
     expect(result.data[0]).not.toHaveProperty("accessibilityEncrypted")
   })
 
-  it("requires a real contact and dispatches duplicate-aware person creation", async () => {
+  it("requires a real contact and dispatches handler-owned person creation", async () => {
     await expect(
       registry().dispatch("create_person", { firstName: "Ana", lastName: "Popescu" }, ctx()),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" })
@@ -249,22 +252,66 @@ describe("relationships (crm) tools", () => {
     const result = await registry().dispatch(
       "crm_person_create",
       { firstName: "Ana", lastName: "Popescu", email: "ana@example.com" },
-      ctx({
-        async createPerson(input) {
-          forwarded = input
-          return { person: person(), alreadyExists: true }
+      ctx(
+        {
+          async createPerson(input, admitted) {
+            forwarded = input
+            expect(admitted.invocation.idempotencyKey).toBe("person-create-1")
+            return { status: "created", person: { id: "pers_1" }, replayed: false }
+          },
         },
-      }),
+        {
+          handlerActionPolicy: {
+            ...RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY,
+            actionPolicy: {
+              ...RELATIONSHIPS_PERSON_HANDLER_ACTION_POLICY.actionPolicy,
+              enforcement: "handler",
+              invocation: {
+                controlField: "_voyant",
+                requiredFields: ["idempotencyKey"],
+                optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+                fingerprintAlgorithm: "action-ledger-command-v1",
+              },
+            },
+            invocation: { idempotencyKey: "person-create-1" },
+          },
+        },
+      ),
     )
     expect(forwarded).toMatchObject({
       firstName: "Ana",
       lastName: "Popescu",
       email: "ana@example.com",
-      allowDuplicateName: false,
       status: "active",
       tags: [],
     })
-    expect(result).toMatchObject({ alreadyExists: true, person: { id: "pers_1" } })
+    expect(forwarded).not.toHaveProperty("allowDuplicateName")
+    expect(result).toEqual({
+      status: "created",
+      person: { id: "pers_1" },
+      replayed: false,
+    })
+  })
+
+  it.each([
+    false,
+    true,
+  ])("rejects removed allowDuplicateName=%s instead of silently changing its meaning", async (allowDuplicateName) => {
+    await expect(
+      registry().dispatch(
+        "create_person",
+        {
+          firstName: "Ana",
+          lastName: "Popescu",
+          email: "ana@example.com",
+          allowDuplicateName,
+        },
+        ctx(),
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      message: expect.stringContaining("Use `list_people` first"),
+    })
   })
 
   it("supports organization creation with a billing address and lifecycle updates", async () => {
