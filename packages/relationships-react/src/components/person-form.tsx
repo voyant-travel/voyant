@@ -2,6 +2,7 @@
 "use client"
 
 import { useAddressMutation } from "@voyant-travel/identity-react"
+import { SheetBody, SheetFooter } from "@voyant-travel/ui/components"
 import { Button } from "@voyant-travel/ui/components/button"
 import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
@@ -38,6 +39,14 @@ export interface PersonFormProps {
   initialOrganizationId?: string
   onSuccess?: (person: PersonRecord) => void
   onCancel?: () => void
+  /**
+   * Layout for the form. `"inline"` (default) renders fields and actions in a
+   * simple stacked column — used when the form is embedded in a page or an
+   * externally-managed scroll region. `"sheet"` makes the form fill a
+   * side-Sheet: fields scroll inside a `SheetBody` and the actions pin to a
+   * sticky `SheetFooter`.
+   */
+  layout?: "inline" | "sheet"
 }
 
 interface FormState {
@@ -140,7 +149,14 @@ function formatAddress(state: FormState): string | null {
  * exposed on `/api/v1/admin/relationships/people` — client-side errors surface as toast-
  * friendly `VoyantApiError`s inside the mutation.
  */
-export function PersonForm({ mode, initialOrganizationId, onSuccess, onCancel }: PersonFormProps) {
+export function PersonForm({
+  mode,
+  initialOrganizationId,
+  onSuccess,
+  onCancel,
+  layout = "inline",
+}: PersonFormProps) {
+  const isSheet = layout === "sheet"
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
   // After the operator hits "Create" on a fresh sheet, we flip into an
@@ -218,8 +234,9 @@ export function PersonForm({ mode, initialOrganizationId, onSuccess, onCancel }:
     }
   }
 
-  return (
-    <form data-slot="person-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+  const bodyClassName = "flex flex-col gap-6"
+  const body = (
+    <>
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-medium text-foreground">
           {messages.personForm.sections.identity}
@@ -359,26 +376,48 @@ export function PersonForm({ mode, initialOrganizationId, onSuccess, onCancel }:
           {error}
         </p>
       ) : null}
+    </>
+  )
 
-      <div className="flex items-center justify-end gap-2">
-        {onCancel || createdPerson ? (
-          <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
-            {createdPerson ? messages.common.done : messages.common.cancel}
-          </Button>
-        ) : null}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              {messages.common.saving}
-            </>
-          ) : creating ? (
-            messages.personForm.actions.create
-          ) : (
-            messages.common.saveChanges
-          )}
+  const footer = (
+    <>
+      {onCancel || createdPerson ? (
+        <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
+          {createdPerson ? messages.common.done : messages.common.cancel}
         </Button>
-      </div>
+      ) : null}
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+            {messages.common.saving}
+          </>
+        ) : creating ? (
+          messages.personForm.actions.create
+        ) : (
+          messages.common.saveChanges
+        )}
+      </Button>
+    </>
+  )
+
+  if (isSheet) {
+    return (
+      <form
+        data-slot="person-form"
+        onSubmit={handleSubmit}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <SheetBody className={bodyClassName}>{body}</SheetBody>
+        <SheetFooter>{footer}</SheetFooter>
+      </form>
+    )
+  }
+
+  return (
+    <form data-slot="person-form" onSubmit={handleSubmit} className={bodyClassName}>
+      {body}
+      <div className="flex items-center justify-end gap-2">{footer}</div>
     </form>
   )
 }

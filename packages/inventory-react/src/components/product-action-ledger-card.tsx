@@ -125,10 +125,12 @@ function ProductActionLedgerEntryItem({
           </Badge>
         </div>
         <p className="mt-1 text-muted-foreground text-xs">
-          {entry.principalType}:{entry.principalId} - {timestamp}
+          {formatActionLedgerPrincipal(entry.principalType)} · {timestamp}
         </p>
         {entry.mutationSummary ? (
-          <p className="mt-1 truncate text-muted-foreground text-xs">{entry.mutationSummary}</p>
+          <p className="mt-1 truncate text-muted-foreground text-xs">
+            {humanizeActionLedgerSummary(entry.mutationSummary)}
+          </p>
         ) : null}
       </div>
     </li>
@@ -176,6 +178,24 @@ function formatActionLedgerName(actionName: string) {
   const withoutDomain = actionName.replace(/^product\./, "")
   const label = withoutDomain.replace(/[._-]/g, " ")
   return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Humanize the principal type (e.g. "api_token" -> "Api token") and hide the raw principal id. */
+function formatActionLedgerPrincipal(principalType: string) {
+  const label = principalType.replace(/[._-]/g, " ")
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Turn camelCase field identifiers inside a mutation summary into plain words (e.g. "productTypeId" -> "product type"). */
+function humanizeActionLedgerSummary(summary: string) {
+  return summary.replace(/\b[a-z]+(?:[A-Z][a-zA-Z0-9]*)+\b/g, (token) =>
+    token
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/\bId\b/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase(),
+  )
 }
 
 export const actionLedgerStatusVariant: Record<

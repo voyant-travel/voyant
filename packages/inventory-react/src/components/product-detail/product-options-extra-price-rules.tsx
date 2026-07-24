@@ -76,9 +76,7 @@ export function ExtraPriceRulesPanel({
   return (
     <div className="mt-4 border-t pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {extraMessages.sectionTitle}
-        </div>
+        <div className="text-sm font-medium">{extraMessages.sectionTitle}</div>
         <Button
           variant="outline"
           size="sm"

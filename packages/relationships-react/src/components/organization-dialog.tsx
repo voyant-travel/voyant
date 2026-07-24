@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@voyant-travel/ui/components/dialog"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@voyant-travel/ui/components"
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import type { OrganizationRecord } from "../index.js"
 import { OrganizationForm } from "./organization-form.js"
@@ -18,6 +18,11 @@ export interface OrganizationDialogProps {
   onSuccess?: (organization: OrganizationRecord) => void
 }
 
+/**
+ * Sheet wrapper for `<OrganizationForm />`. Determines create vs edit mode
+ * from the presence of `organization`. The form fills the sheet: fields
+ * scroll in a `SheetBody` and the actions pin to a sticky `SheetFooter`.
+ */
 export function OrganizationDialog({
   open,
   onOpenChange,
@@ -28,21 +33,22 @@ export function OrganizationDialog({
   const messages = useCrmUiMessagesOrDefault()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-slot="organization-dialog" className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent data-slot="organization-dialog" side="right" size="lg">
+        <SheetHeader>
+          <SheetTitle>
             {isEdit
               ? messages.organizationDialog.titles.edit
               : messages.organizationDialog.titles.create}
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             {isEdit
               ? messages.organizationDialog.descriptions.edit
               : messages.organizationDialog.descriptions.create}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
         <OrganizationForm
+          layout="sheet"
           mode={organization ? { kind: "edit", organization } : { kind: "create" }}
           onSuccess={(saved) => {
             onSuccess?.(saved)
@@ -50,7 +56,7 @@ export function OrganizationDialog({
           }}
           onCancel={() => onOpenChange(false)}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
