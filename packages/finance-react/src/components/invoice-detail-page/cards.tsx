@@ -108,7 +108,7 @@ export function InvoiceLinksCard({
           <DetailRow label={detail.fields.dueDate}>{formatDate(invoice.dueDate)}</DetailRow>
           <DetailRow label={detail.fields.booking}>
             <DetailLink
-              label={invoice.bookingId}
+              label={detail.actions.viewBooking}
               actionLabel={detail.actions.viewBooking}
               onClick={() => onBookingOpen?.(invoice.bookingId, invoice)}
               disabled={!onBookingOpen}
@@ -117,7 +117,7 @@ export function InvoiceLinksCard({
           {invoice.personId ? (
             <DetailRow label={detail.fields.person}>
               <DetailLink
-                label={invoice.personId}
+                label={detail.actions.viewPerson}
                 actionLabel={detail.actions.viewPerson}
                 onClick={() => onPersonOpen?.(invoice.personId as string, invoice)}
                 disabled={!onPersonOpen}
@@ -127,7 +127,7 @@ export function InvoiceLinksCard({
           {invoice.organizationId ? (
             <DetailRow label={detail.fields.organization}>
               <DetailLink
-                label={invoice.organizationId}
+                label={detail.actions.viewOrganization}
                 actionLabel={detail.actions.viewOrganization}
                 onClick={() => onOrganizationOpen?.(invoice.organizationId as string, invoice)}
                 disabled={!onOrganizationOpen}
