@@ -262,7 +262,7 @@ export function SupplierInvoiceFormDialog({
             {isEdit ? t.editTitle : messages.supplierInvoicesPage.recordInvoice}
           </SheetTitle>
         </SheetHeader>
-        <SheetBody className="grid grid-cols-2 gap-3">
+        <SheetBody className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {extractFromFile ? (
             <label className="col-span-2 cursor-pointer">
               <span className="inline-flex h-9 items-center gap-2 rounded-md border border-dashed px-3 text-sm font-medium hover:bg-muted">

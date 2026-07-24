@@ -105,7 +105,7 @@ export function LineDialog({
         <DialogHeader>
           <DialogTitle>{line ? t.editTitle : t.addTitle}</DialogTitle>
         </DialogHeader>
-        <DialogBody className="grid grid-cols-2 gap-3">
+        <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="col-span-2 flex flex-col gap-2">
             <Label>{t.description}</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -247,7 +247,7 @@ export function AllocationDialog({
         <DialogHeader>
           <DialogTitle>{t.add}</DialogTitle>
         </DialogHeader>
-        <DialogBody className="grid grid-cols-2 gap-3">
+        <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Label>{t.target}</Label>
             <Select
@@ -398,7 +398,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>{t.recordTitle}</DialogTitle>
         </DialogHeader>
-        <DialogBody className="grid grid-cols-2 gap-3">
+        <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Label>{formatMessage(t.amountLabel, { currency })}</Label>
             <Input

@@ -569,7 +569,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 <p className="text-sm text-muted-foreground">{t.setupSectionDescription}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.scopeLabel}</Label>
                   <Select
@@ -622,7 +622,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 ) : null}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.contractNumberLabel}</Label>
                   <Input
@@ -648,7 +648,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.templateLabel}</Label>
                   <SearchableSelect
@@ -735,7 +735,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 <p className="text-sm text-muted-foreground">{t.linkedSectionDescription}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.personLabel}</Label>
                   <SearchableSelect
@@ -777,7 +777,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.supplierLabel}</Label>
                   <SearchableSelect

@@ -153,7 +153,7 @@ export function LineItemDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.finance.lineItemDialog.quantityLabel}</Label>
                 <Input {...form.register("quantity")} type="number" min="1" />
@@ -168,7 +168,7 @@ export function LineItemDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.finance.lineItemDialog.taxRateLabel}</Label>
                 <Input

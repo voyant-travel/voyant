@@ -183,7 +183,7 @@ export function NumberSeriesDialog({
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.nameLabel}</Label>
                 <Input {...form.register("name")} placeholder={t.namePlaceholder} />
@@ -209,7 +209,7 @@ export function NumberSeriesDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.separatorLabel}</Label>
                 <Input
@@ -234,7 +234,7 @@ export function NumberSeriesDialog({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{t.resetStrategyLabel}</Label>
                 <Select

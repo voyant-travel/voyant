@@ -189,7 +189,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
           className="flex flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.bookingNumber}</Label>
                 <Input
@@ -225,7 +225,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.sellCurrency}</Label>
                 <CurrencyCombobox
@@ -255,7 +255,7 @@ function BookingEditDialog({ open, onOpenChange, booking, onSuccess }: BookingEd
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDialog.fields.sellAmountCents}</Label>
                 <CurrencyInput

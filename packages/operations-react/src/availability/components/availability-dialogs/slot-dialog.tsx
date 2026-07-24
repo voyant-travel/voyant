@@ -280,7 +280,7 @@ export function AvailabilitySlotDialog(props: {
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.ruleLabel}</Label>
                 <Select
@@ -323,7 +323,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.dateLabel}</Label>
                 <DatePicker
@@ -369,7 +369,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.statusLabel}</Label>
                 <Select
@@ -419,7 +419,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label>{slotMessages.initialPaxLabel}</Label>
                 <Input {...form.register("initialPax")} type="number" min={0} />
@@ -442,7 +442,7 @@ export function AvailabilitySlotDialog(props: {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SwitchField
                 title={slotMessages.pastCutoffTitle}
                 description={slotMessages.pastCutoffDescription}

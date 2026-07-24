@@ -174,7 +174,7 @@ export function BookingGuaranteeDialog({
           className="flex flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.type}</Label>
                 <Select
@@ -222,7 +222,7 @@ export function BookingGuaranteeDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.currency}</Label>
                 <CurrencyCombobox
@@ -250,7 +250,7 @@ export function BookingGuaranteeDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.provider}</Label>
                 <Input

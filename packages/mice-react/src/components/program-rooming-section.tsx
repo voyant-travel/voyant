@@ -204,7 +204,7 @@ function CreateRoomingAssignmentDialog({
           <SheetTitle>New rooming assignment</SheetTitle>
         </SheetHeader>
         <SheetBody className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rooming-room-block">Room block</Label>
               <Input
@@ -224,7 +224,7 @@ function CreateRoomingAssignmentDialog({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rooming-check-in">Check-in</Label>
               <DatePicker
@@ -244,7 +244,7 @@ function CreateRoomingAssignmentDialog({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rooming-bed-config">Bed configuration</Label>
               <Input

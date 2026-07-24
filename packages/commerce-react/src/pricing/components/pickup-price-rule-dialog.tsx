@@ -164,7 +164,7 @@ export function PickupPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: P
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.optionId}</Label>
                 <ProductOptionCombobox
@@ -222,7 +222,7 @@ export function PickupPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: P
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
@@ -233,7 +233,7 @@ export function PickupPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: P
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.sortOrder}</Label>
                 <Input {...form.register("sortOrder")} type="number" />

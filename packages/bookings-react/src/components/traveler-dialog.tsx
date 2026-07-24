@@ -324,7 +324,7 @@ export function TravelerDialog({
           className="flex flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.firstName}</Label>
                 <Input
@@ -351,7 +351,7 @@ export function TravelerDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.email}</Label>
                 <Input
@@ -429,7 +429,7 @@ export function TravelerDialog({
                 </p>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{messages.travelerDialog.fields.documentType}</Label>
                   <Select
@@ -515,7 +515,7 @@ export function TravelerDialog({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{messages.travelerDialog.fields.dietaryRequirements}</Label>
                   <Textarea

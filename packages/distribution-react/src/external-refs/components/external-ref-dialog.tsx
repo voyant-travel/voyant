@@ -182,7 +182,7 @@ export function ExternalRefDialog({
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.sourceSystem}</Label>
                 <Input
@@ -206,7 +206,7 @@ export function ExternalRefDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.namespace}</Label>
                 <Input {...form.register("namespace")} placeholder={m.placeholders.namespace} />
@@ -229,7 +229,7 @@ export function ExternalRefDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{m.labels.status}</Label>
                 <Select

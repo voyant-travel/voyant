@@ -182,7 +182,7 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitPriceRuleDialog.fields.option}</Label>
                 <ProductOptionCombobox
@@ -212,7 +212,7 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitPriceRuleDialog.fields.pricingCategory}</Label>
                 <PricingCategoryCombobox
@@ -247,7 +247,7 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitPriceRuleDialog.fields.sellAmount}</Label>
                 <Input {...form.register("sellAmount")} type="number" step="0.01" min="0" />
@@ -258,7 +258,7 @@ export function OptionUnitPriceRuleDialog({ open, onOpenChange, rule, onSuccess 
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionUnitPriceRuleDialog.fields.minQuantity}</Label>
                 <Input {...form.register("minQuantity")} type="number" min="0" />

@@ -447,7 +447,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label id="product-detail-booking-mode-label" htmlFor="product-detail-booking-mode">
               {productMessages.bookingModeLabel}
@@ -511,7 +511,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label id="product-detail-product-type-label" htmlFor="product-detail-product-type">
               {productMessages.productTypeLabel}
@@ -561,7 +561,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         </div>
 
         {isEditing && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label id="product-detail-status-label" htmlFor="product-detail-status">
                 {productMessages.statusLabel}

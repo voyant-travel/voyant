@@ -158,7 +158,7 @@ export function PriceScheduleDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.name}</Label>
                 <Input
@@ -196,7 +196,7 @@ export function PriceScheduleDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.validFrom}</Label>
                 <DatePicker
@@ -217,7 +217,7 @@ export function PriceScheduleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.priceScheduleDialog.fields.timezone}</Label>
                 <Input

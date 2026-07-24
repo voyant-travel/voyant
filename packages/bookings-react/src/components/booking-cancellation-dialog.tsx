@@ -149,7 +149,7 @@ export function BookingCancellationDialog({
         </DialogHeader>
         <DialogBody className="grid gap-4">
           {/* Booking summary */}
-          <div className="grid grid-cols-2 gap-4 rounded-md border bg-muted/30 p-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-md border bg-muted/30 p-3 text-sm">
             <div>
               <div className="text-xs text-muted-foreground">
                 {messages.bookingCancellationDialog.summary.booking}
@@ -217,7 +217,7 @@ export function BookingCancellationDialog({
                   {messages.bookingCancellationDialog.policy.calculating}
                 </div>
               ) : evaluation && total != null ? (
-                <div className="grid grid-cols-3 gap-3 border-t pt-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 border-t pt-3 text-sm">
                   <div>
                     <div className="text-xs text-muted-foreground">
                       {messages.bookingCancellationDialog.policy.refund}

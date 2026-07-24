@@ -178,7 +178,7 @@ export function ProgramFormDialog({
               placeholder="Annual sales kickoff — Lisbon"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="program-type">Type</Label>
               <Select value={type} onValueChange={(value) => setType(value as ProgramType)}>
@@ -219,7 +219,7 @@ export function ProgramFormDialog({
               placeholder="Lisbon, Portugal"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="program-start">Start date</Label>
               <DatePicker
@@ -239,7 +239,7 @@ export function ProgramFormDialog({
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="program-est-pax">Est. pax</Label>
               <Input

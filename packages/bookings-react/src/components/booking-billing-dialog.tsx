@@ -530,7 +530,7 @@ export function BookingBillingDialog({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.email}</Label>
                 <Input type="email" {...form.register("contactEmail")} />
@@ -549,7 +549,7 @@ export function BookingBillingDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.addressLine1}</Label>
                 <Input {...form.register("contactAddressLine1")} />
@@ -560,7 +560,7 @@ export function BookingBillingDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.city}</Label>
                 <Input {...form.register("contactCity")} />

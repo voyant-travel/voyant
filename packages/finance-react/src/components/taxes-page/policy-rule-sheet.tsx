@@ -161,7 +161,7 @@ export function PolicyRuleSheet({
         </SheetHeader>
         <SheetBody>
           <form className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{taxMessages.policyRuleNameLabel}</Label>
                 <Input
@@ -182,7 +182,7 @@ export function PolicyRuleSheet({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{taxMessages.policySideLabel}</Label>
                 <Select

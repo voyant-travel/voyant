@@ -180,7 +180,7 @@ export function OptionPriceRuleDialog({
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionPriceRuleDialog.fields.product}</Label>
                 <ProductCombobox
@@ -221,7 +221,7 @@ export function OptionPriceRuleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionPriceRuleDialog.fields.name}</Label>
                 <Input {...form.register("name")} />
@@ -235,7 +235,7 @@ export function OptionPriceRuleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionPriceRuleDialog.fields.catalog}</Label>
                 <PriceCatalogCombobox
@@ -275,7 +275,7 @@ export function OptionPriceRuleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionPriceRuleDialog.fields.pricingMode}</Label>
                 <Select
@@ -315,7 +315,7 @@ export function OptionPriceRuleDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.optionPriceRuleDialog.fields.minPerBooking}</Label>
                 <Input {...form.register("minPerBooking")} type="number" min="0" />
@@ -331,7 +331,7 @@ export function OptionPriceRuleDialog({
               <Textarea {...form.register("description")} rows={2} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
                 <Switch
                   checked={form.watch("allPricingCategories")}

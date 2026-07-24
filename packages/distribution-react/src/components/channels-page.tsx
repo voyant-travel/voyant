@@ -313,7 +313,7 @@ function ChannelSheet({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label id="channel-kind-label" htmlFor="channel-kind">
                   {page.kindLabel}
@@ -383,7 +383,7 @@ function ChannelSheet({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="channel-contact-name">{page.primaryContactLabel}</Label>
                 <Input

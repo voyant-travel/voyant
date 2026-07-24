@@ -146,7 +146,7 @@ export function CreateActivityDialog({
               placeholder={messages.createActivityDialog.placeholders.subject}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <span className="text-xs font-medium text-muted-foreground">
                 {messages.createActivityDialog.fields.type}
@@ -201,7 +201,7 @@ export function CreateActivityDialog({
               rows={3}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <span className="text-xs font-medium text-muted-foreground">
                 {messages.createActivityDialog.fields.linkTo}

@@ -191,7 +191,7 @@ export function AddressDialog({
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <SheetBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.addressDialog.fields.label}</Label>
                 <Select
@@ -223,7 +223,7 @@ export function AddressDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.addressDialog.fields.line1}</Label>
                 <Input {...form.register("line1")} />
@@ -234,7 +234,7 @@ export function AddressDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{messages.addressDialog.fields.city}</Label>
                 <Input {...form.register("city")} />
@@ -249,7 +249,7 @@ export function AddressDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
                 <Label>{messages.addressDialog.fields.country}</Label>
                 <CountryCombobox
@@ -267,7 +267,7 @@ export function AddressDialog({
               <div />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.addressDialog.fields.latitude}</Label>
                 <Input {...form.register("latitude")} type="number" step="any" />

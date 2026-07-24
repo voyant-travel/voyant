@@ -119,7 +119,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
         </SheetHeader>
 
         <SheetBody className="grid gap-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-name">{dialogMessages.fields.name}</Label>
               <Input
@@ -152,7 +152,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Discount block */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="grid gap-1.5">
               <Label>{dialogMessages.fields.type}</Label>
               <Select
@@ -302,7 +302,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Validity window */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-valid-from">{dialogMessages.fields.validFrom}</Label>
               <DateTimePicker
@@ -320,7 +320,7 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
           </div>
 
           {/* Code + stacking + minPax + active */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="promotion-code">{dialogMessages.fields.code}</Label>
               <Input

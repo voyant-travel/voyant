@@ -131,7 +131,7 @@ export function AvailabilityRuleDialog(props: {
               <p className="text-xs text-destructive">{form.formState.errors.productId.message}</p>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{ruleMessages.timezoneLabel}</Label>
                 <Input
@@ -154,7 +154,7 @@ export function AvailabilityRuleDialog(props: {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>{ruleMessages.maxPickupCapacityLabel}</Label>
                 <Input {...form.register("maxPickupCapacity")} type="number" min={0} />

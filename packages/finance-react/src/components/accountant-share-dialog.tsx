@@ -74,7 +74,7 @@ export function AccountantShareDialog({ open, onOpenChange }: AccountantShareDia
         <DialogBody className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">{t.description}</p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
               <Label>{t.from}</Label>
               <DatePicker

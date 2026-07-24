@@ -267,7 +267,7 @@ function NotificationTemplateDialogInner({
           </SheetHeader>
           <SheetBody className="p-0">
             <div className="grid gap-4 py-4 pr-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.nameLabel}</Label>
                   <Input {...form.register("name")} placeholder={t.namePlaceholder} />
@@ -284,7 +284,7 @@ function NotificationTemplateDialogInner({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.channelLabel}</Label>
                   <select
@@ -336,7 +336,7 @@ function NotificationTemplateDialogInner({
                     t={t}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                       <Label>{t.fromAddressLabel}</Label>
                       <Input
