@@ -45,7 +45,7 @@ describe("cruise tools", () => {
     for (const tool of cruisesTools.filter(
       ({ requiredScopes }) => requiredScopes[0] === "cruises:write" && requiredScopes.length === 1,
     )) {
-      expect(tool.riskPolicy.reversible).toBe(true)
+      expect(tool.riskPolicy.reversible).toBe(tool.name !== "create_cruise_ship")
       expect(tool.audience?.allowed).toEqual(["staff"])
     }
   })

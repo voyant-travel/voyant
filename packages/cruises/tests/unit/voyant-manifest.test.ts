@@ -191,9 +191,9 @@ describe("cruises deployment manifest", () => {
       expect(action).toMatchObject({
         ledger: "required",
         approval: "never",
-        reversible: true,
         allowedActorTypes: ["staff"],
       })
+      expect(action.reversible).toBe(action.targetLifecycle !== "created")
     }
   })
 

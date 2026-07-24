@@ -1397,6 +1397,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -1520,6 +1523,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
@@ -1657,6 +1663,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
