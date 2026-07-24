@@ -40,6 +40,7 @@
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=accommodations_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
   "dependencies": {
+    "@voyant-travel/action-ledger": "workspace:^",
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/accommodations-contracts": "workspace:^",
     "@voyant-travel/allotments": "workspace:^",

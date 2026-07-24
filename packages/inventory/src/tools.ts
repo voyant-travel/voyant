@@ -9,7 +9,15 @@
  */
 
 import { productContentSchema } from "@voyant-travel/products-contracts/content-shape"
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  admitHandlerActionPolicy,
+  defineTool,
+  type HandlerActionPolicyExpectation,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -43,6 +51,52 @@ const PRODUCT_LIFECYCLE_RISK = {
   confirmationRequired: true,
   sideEffects: ["data-write"],
 } as const
+export const CREATE_PRODUCT_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.create-product`,
+  capabilityVersion: VERSION,
+  canonicalName: "create_product",
+  actionPolicy: {
+    id: `${OWNER}#action.create-product`,
+    capabilityId: `${OWNER}#action.create-product`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "product",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "product-create-command",
+      resultReferenceType: "product",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+export const COMPOSE_PRODUCT_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#authoring.tool.compose-product`,
+  capabilityVersion: VERSION,
+  canonicalName: "compose_product",
+  actionPolicy: {
+    id: `${OWNER}#authoring.action.compose-product`,
+    capabilityId: `${OWNER}#authoring.action.compose-product`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "product",
+    targetLifecycle: "created",
+    createdTarget: {
+      commandTargetType: "product-compose-command",
+      resultReferenceType: "product",
+      durability: "handler-command-claim-v1",
+    },
+    risk: "high",
+    ledger: "required",
+    approval: "never",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 type ProductListQuery = z.infer<typeof productListQuerySchema>
 
@@ -66,6 +120,7 @@ const productToolSchema = z
   })
   .passthrough()
 const productListToolSchema = listResponseSchema(productToolSchema)
+const createProductResultSchema = z.object({ productId: z.string() })
 type ProductListToolResult = z.output<typeof productListToolSchema>
 
 const productContentToolSchema = z.object({
@@ -97,11 +152,13 @@ const getProductContentArgs = z.object({
   forceFresh: z.boolean().default(false),
 })
 
-const createProductToolSchema = z.object(
-  (({ status: _status, visibility: _visibility, activated: _activated, ...shape }) => shape)(
-    insertProductSchema.shape,
-  ),
-)
+export const createProductToolSchema = z
+  .object(
+    (({ status: _status, visibility: _visibility, activated: _activated, ...shape }) => shape)(
+      insertProductSchema.shape,
+    ),
+  )
+  .extend({ idempotencyKey: z.string().trim().min(1).max(255).optional() })
 const updateProductToolSchema = z.object({
   id: z.string().min(1),
   ...updateProductSchema.shape,
@@ -123,7 +180,10 @@ export interface InventoryToolServices {
   listProducts(query: z.infer<typeof productListQuerySchema>): Promise<ProductListResult>
   getProductById(id: string): Promise<unknown | null>
   getProductAggregates(query: { from?: string; to?: string }): Promise<unknown>
-  createProduct(input: z.output<typeof insertProductSchema>): Promise<unknown>
+  createProduct(
+    input: z.output<typeof createProductToolSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateProduct(id: string, input: z.output<typeof updateProductSchema>): Promise<unknown | null>
 }
 
@@ -132,10 +192,13 @@ export interface InventoryContentToolServices {
 }
 
 export interface InventoryAuthoringToolServices {
-  composeProduct(input: {
-    spec: z.output<typeof productGraphSpecSchema>
-    idempotencyKey?: string
-  }): Promise<unknown>
+  composeProduct(
+    input: {
+      spec: z.output<typeof productGraphSpecSchema>
+      idempotencyKey?: string
+    },
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
 }
 
 /** Tool context with the inventory service injected. */
@@ -179,13 +242,6 @@ export const composeProductToolOutputSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("created"),
     productId: z.string(),
-    options: z.array(
-      z.object({
-        ref: z.string(),
-        id: z.string(),
-        units: z.array(z.object({ ref: z.string(), id: z.string() })),
-      }),
-    ),
     reused: z.boolean(),
   }),
   z.object({ status: z.literal("invalid"), issues: z.array(authoringIssueSchema) }),
@@ -279,19 +335,16 @@ export const createProductTool = defineTool({
   description:
     "Create a private draft product through Inventory's real authoring service. Publication is a separate confirmed lifecycle operation.",
   inputSchema: createProductToolSchema,
-  outputSchema: productToolSchema,
+  outputSchema: createProductResultSchema,
   requiredScopes: ["products:write"],
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: PRODUCT_WRITE_RISK,
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler(input, ctx: InventoryToolContext) {
-    const draft = insertProductSchema.parse({
-      ...input,
-      status: "draft",
-      visibility: "private",
-      activated: false,
-    })
-    return parseJsonResult(productToolSchema, await inventory(ctx).createProduct(draft))
+    const admitted = admitHandlerActionPolicy(ctx, CREATE_PRODUCT_HANDLER_POLICY)
+    return createProductResultSchema.parse(await inventory(ctx).createProduct(input, admitted))
   },
 })
 
@@ -369,8 +422,12 @@ export const composeProductTool = defineTool({
     sideEffects: ["data-write"],
   },
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: InventoryToolContext) {
-    return composeProductToolOutputSchema.parse(await inventoryAuthoring(ctx).composeProduct(input))
+    const admitted = admitHandlerActionPolicy(ctx, COMPOSE_PRODUCT_HANDLER_POLICY)
+    return composeProductToolOutputSchema.parse(
+      await inventoryAuthoring(ctx).composeProduct(input, admitted),
+    )
   },
 })
 

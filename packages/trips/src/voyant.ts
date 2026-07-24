@@ -197,8 +197,15 @@ export const tripsVoyantModule = defineModule({
       targetType: "trip",
       requiredScopes: ["trips:write"],
       risk: "medium",
-      ledger: "optional",
-      reversible: true,
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "trip-create-command",
+        resultReferenceType: "trip",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/trips#tool.create-trip"] },
     },
     {

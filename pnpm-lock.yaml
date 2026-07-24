@@ -317,6 +317,9 @@ importers:
 
   packages/accommodations:
     dependencies:
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
@@ -3245,6 +3248,9 @@ importers:
 
   packages/mice:
     dependencies:
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
@@ -5227,6 +5233,9 @@ importers:
 
   packages/trips:
     dependencies:
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)

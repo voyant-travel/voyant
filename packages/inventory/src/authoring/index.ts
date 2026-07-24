@@ -28,6 +28,7 @@ export {
   type AuthoringRunOptions,
   type ComposeProductOutcome,
   composeProduct,
+  composeProductInTransaction,
 } from "./service.js"
 export { type ProductGraphSpec, productGraphSpecSchema } from "./spec.js"
 export { validateProductGraph } from "./validate.js"
