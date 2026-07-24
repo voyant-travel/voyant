@@ -7,15 +7,18 @@ import {
   updateContactPointSchema,
 } from "@voyant-travel/identity/validation"
 import {
+  admitHandlerActionPolicy,
   defineTool,
   READ_ONLY_RISK,
   requireService,
   type ToolContext,
   ToolError,
+  type ToolHandlerActionPolicyContext,
 } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
+import { RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY } from "./created-target-policy.js"
 import {
   addressSchema,
   contactMethodSchema,
@@ -53,6 +56,13 @@ const ROUTINE_WRITE_RISK = {
 const SENSITIVE_WRITE_RISK = {
   ...ROUTINE_WRITE_RISK,
   confirmationRequired: false,
+} as const
+const CREATED_WRITE_RISK = {
+  destructive: false,
+  reversible: false,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
 } as const
 
 const idArgsSchema = z.object({ id: z.string().min(1).describe("The CRM record id.") })
@@ -122,6 +132,13 @@ const billingAddressSchema = insertAddressForEntitySchema.omit({ metadata: true 
 export const createOrganizationToolInputSchema = insertOrganizationSchema
   .omit({ ownerId: true, source: true, sourceRef: true, customFields: true })
   .extend({
+    idempotencyKey: z
+      .string()
+      .trim()
+      .min(1)
+      .max(255)
+      .optional()
+      .describe("Compatibility copy of the admitted created-command idempotency key."),
     vatNumber: z.string().optional().describe("Compatibility alias for taxId."),
     billingAddress: billingAddressSchema,
   })
@@ -138,8 +155,9 @@ const createPersonOutputSchema = z.object({
   alreadyExists: z.boolean(),
 })
 const createOrganizationOutputSchema = z.object({
-  organization: organizationSchema,
-  billingAddress: addressSchema.nullable(),
+  status: z.literal("created"),
+  organization: z.object({ id: z.string().min(1) }),
+  replayed: z.boolean(),
 })
 
 const noteSchema = z.union([personNoteSchema, organizationNoteSchema])
@@ -199,7 +217,10 @@ export interface RelationshipsToolServices {
   updatePerson(input: UpdatePersonInput): Promise<unknown>
   listOrganizations(query: OrganizationListQuery): Promise<unknown>
   getOrganizationById(id: string): Promise<unknown>
-  createOrganization(input: CreateOrganizationInput): Promise<unknown>
+  createOrganization(
+    input: CreateOrganizationInput,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateOrganization(input: UpdateOrganizationInput): Promise<unknown>
   listNotes(input: EntityArgs): Promise<unknown>
   addNote(input: AddNoteInput): Promise<unknown>
@@ -376,15 +397,22 @@ export const createOrganizationTool = defineTool<
   RelationshipsToolContext
 >({
   ...routineWriteMetadata,
+  riskPolicy: CREATED_WRITE_RISK,
   capabilityId: `${OWNER}#tool.create-organization`,
   name: "create_organization",
   aliases: ["crm_organization_create"],
   description:
-    "Create a CRM organization and, when supplied, its billing address in the same transaction.",
+    "Create a CRM organization and optional billing address atomically. Exact retries return the original immutable organization reference.",
   inputSchema: createOrganizationToolInputSchema,
   outputSchema: createOrganizationOutputSchema,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
-    return parseJsonResult(createOrganizationOutputSchema, await crm(ctx).createOrganization(input))
+    const admitted = admitHandlerActionPolicy(ctx, RELATIONSHIPS_ORGANIZATION_HANDLER_ACTION_POLICY)
+    return parseJsonResult(
+      createOrganizationOutputSchema,
+      await crm(ctx).createOrganization(input, admitted),
+    )
   },
 })
 

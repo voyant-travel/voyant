@@ -1,9 +1,15 @@
+import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { EventBus } from "@voyant-travel/core"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import { emitOrganizationChanged, emitPersonChanged } from "./events.js"
+import { executeOrganizationCreateCommand } from "./organization-created-command.js"
 import { relationshipsService } from "./service/index.js"
 import {
   personListQuerySchema,
@@ -14,9 +20,7 @@ import {
 export * from "./tools.js"
 
 type RelationshipsMcpEnv = {
-  Variables: {
-    userId?: string
-    apiTokenId?: string
+  Variables: ActionLedgerRequestContextValues & {
     apiKeyId?: string
     eventBus?: EventBus
   }
@@ -28,6 +32,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const c = request as Context<RelationshipsMcpEnv>
     const db = context.db as PostgresJsDatabase
     const eventBus = c.get("eventBus")
+    const requestContext = relationshipsActionLedgerContext(c)
     const authorId = () => {
       const id = c.get("userId") ?? c.get("apiTokenId") ?? c.get("apiKeyId")
       if (!id) {
@@ -85,41 +90,38 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listOrganizations: (query: Parameters<typeof relationshipsService.listOrganizations>[1]) =>
           relationshipsService.listOrganizations(db, query),
         getOrganizationById: (id: string) => relationshipsService.getOrganizationById(db, id),
-        async createOrganization(input: {
-          taxId?: string | null
-          vatNumber?: string
-          billingAddress?: Record<string, unknown>
-          [key: string]: unknown
-        }) {
-          const { vatNumber, billingAddress, ...rawOrganization } = input
+        async createOrganization(
+          input: {
+            taxId?: string | null
+            vatNumber?: string
+            billingAddress?: Record<string, unknown>
+            idempotencyKey?: string
+            [key: string]: unknown
+          },
+          admitted: ToolHandlerActionPolicyContext,
+        ) {
+          const { idempotencyKey, vatNumber, billingAddress, ...rawOrganization } = input
           const organizationData = {
             ...rawOrganization,
             taxId: rawOrganization.taxId ?? vatNumber,
           } as Parameters<typeof relationshipsService.createOrganization>[1]
-          const result = await db.transaction(async (tx) => {
-            const organization = await relationshipsService.createOrganization(tx, organizationData)
-            if (!organization) {
-              throw new ToolError("CRM organization creation returned no row.", "PROVIDER_ERROR")
-            }
-            const address = billingAddress
-              ? await relationshipsService.createAddress(
-                  tx,
-                  "organization",
-                  organization.id,
-                  billingAddress as Parameters<typeof relationshipsService.createAddress>[3],
-                )
-              : null
-            if (billingAddress && !address) {
-              throw new ToolError("CRM billing address creation returned no row.", "PROVIDER_ERROR")
-            }
-            return { organization, billingAddress: address }
+          const result = await executeOrganizationCreateCommand({
+            db,
+            context: requestContext,
+            commandInput: {
+              organization: organizationData,
+              billingAddress: billingAddress
+                ? (billingAddress as Parameters<typeof relationshipsService.createAddress>[3])
+                : null,
+            },
+            admitted,
+            legacyIdempotencyKey: idempotencyKey,
           })
-          await emitOrganizationChanged(
-            eventBus,
-            { id: result.organization.id, action: "created" },
-            "service",
-          )
-          return result
+          return {
+            status: "created" as const,
+            organization: result.value,
+            replayed: result.replayed,
+          }
         },
         async updateOrganization(input: {
           id: string
@@ -235,6 +237,26 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+function relationshipsActionLedgerContext(
+  c: Context<RelationshipsMcpEnv>,
+): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
 
 function isCompatibleSameName(
   row: Record<string, unknown>,
