@@ -158,7 +158,7 @@ export const createProductToolSchema = z
       insertProductSchema.shape,
     ),
   )
-  .extend({ idempotencyKey: z.string().trim().min(1).max(255) })
+  .extend({ idempotencyKey: z.string().trim().min(1).max(255).optional() })
 const updateProductToolSchema = z.object({
   id: z.string().min(1),
   ...updateProductSchema.shape,
@@ -227,6 +227,7 @@ export const composeProductToolInputSchema = z.object({
     .trim()
     .min(1)
     .max(255)
+    .optional()
     .describe("Stable retry key for atomic product-graph authoring."),
 })
 

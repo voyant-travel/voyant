@@ -12,7 +12,11 @@ import {
   catalogContentRuntimePort,
 } from "@voyant-travel/catalog/runtime-port"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -120,7 +124,11 @@ export const voyantToolContextContribution = defineToolContextContribution({
           requestInput: Parameters<AccommodationsToolServices["createRoomBlock"]>[0],
           admitted: Parameters<AccommodationsToolServices["createRoomBlock"]>[1],
         ) {
-          const { idempotencyKey, ...input } = requestInput
+          const { idempotencyKey: legacyIdempotencyKey, ...input } = requestInput
+          const idempotencyKey = admittedCreatedCommandIdempotencyKey(
+            admitted,
+            legacyIdempotencyKey,
+          )
           const requestContext = actionLedgerContext(request as Context)
           const principal = mapActionLedgerRequestContext(requestContext)
           const command = {
@@ -185,6 +193,26 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
+}
 
 function actionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {
   const vars = c.var as Record<string, unknown>

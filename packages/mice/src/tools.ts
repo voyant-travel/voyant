@@ -95,7 +95,7 @@ const programListValueSchema = z.object({
 })
 const updateProgramToolSchema = updateProgramSchema.and(idArgsSchema)
 export const createProgramToolSchema = createProgramSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createProgramResultSchema = z.object({ programId: z.string() })
 

@@ -70,6 +70,7 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
 
   const admitted = (
     policy: typeof CREATE_PRODUCT_HANDLER_POLICY | typeof COMPOSE_PRODUCT_HANDLER_POLICY,
+    idempotencyKey: string,
   ) =>
     ({
       capabilityId: policy.capabilityId,
@@ -85,7 +86,7 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
           fingerprintAlgorithm: "action-ledger-command-v1",
         },
       },
-      invocation: {},
+      invocation: { idempotencyKey },
     }) as never
 
   it("atomically creates, replays, conflicts, serializes, and enqueues the outbox", async () => {
@@ -105,14 +106,14 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
         req: { header: () => undefined } as never,
       },
       db,
-      idempotencyKey: input.idempotencyKey,
+      idempotencyKey: undefined,
       input: insertProductSchema.parse({
         ...input,
         status: "draft",
         visibility: "private",
         activated: false,
       }),
-      admitted: admitted(CREATE_PRODUCT_HANDLER_POLICY),
+      admitted: admitted(CREATE_PRODUCT_HANDLER_POLICY, input.idempotencyKey),
     }
     const firstPromise = executeProductCreateCommand({
       ...command,
@@ -140,7 +141,7 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
     await expect(
       service.createProduct(
         { ...input, name: "Drifted product" },
-        admitted(CREATE_PRODUCT_HANDLER_POLICY),
+        admitted(CREATE_PRODUCT_HANDLER_POLICY, input.idempotencyKey),
       ),
     ).rejects.toMatchObject({ name: "ActionLedgerIdempotencyConflictError" })
 
@@ -175,7 +176,7 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
         },
         db,
         idempotencyKey: "invalid-1",
-        admitted: admitted(CREATE_PRODUCT_HANDLER_POLICY),
+        admitted: admitted(CREATE_PRODUCT_HANDLER_POLICY, "invalid-1"),
         input: insertProductSchema.parse({
           name: "Fails after insert",
           sellCurrency: "EUR",
@@ -213,7 +214,7 @@ describe.skipIf(!DB_AVAILABLE)("Inventory created-target Tool wiring", () => {
           options: [{ ref: "standard", name: "Standard" }],
         },
       },
-      admitted(COMPOSE_PRODUCT_HANDLER_POLICY),
+      admitted(COMPOSE_PRODUCT_HANDLER_POLICY, "compose-1"),
     )
     expect((await db.select().from(eventOutboxTable)).map(({ name }) => name).sort()).toEqual([
       "product.content.changed",

@@ -90,7 +90,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
       listProducts: (query) => productsService.listProducts(db, query),
       getProductById: (id) => productsService.getProductById(db, id),
       getProductAggregates: (query) => productsService.getProductAggregates(db, query),
-      async createProduct({ idempotencyKey, ...input }, admitted) {
+      async createProduct({ idempotencyKey: legacyIdempotencyKey, ...input }, admitted) {
         const draft = insertProductSchema.parse({
           ...input,
           status: "draft",
@@ -100,7 +100,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
         const result = await executeProductCreateCommand({
           c,
           db: db as unknown as AnyDrizzleDb,
-          idempotencyKey,
+          idempotencyKey: legacyIdempotencyKey,
           input: draft,
           admitted,
         })
@@ -181,18 +181,19 @@ export const voyantToolContextContribution = defineToolContextContribution({
 export async function executeProductCreateCommand(input: {
   c: LedgerHttpContext
   db: AnyDrizzleDb
-  idempotencyKey: string
+  idempotencyKey?: string
   input: z.output<typeof insertProductSchema>
   admitted: ToolHandlerActionPolicyContext
   /** Test-only failure seam after the domain insert and before outbox/result append. */
   testHooks?: { afterDomainCreate?: (tx: AnyDrizzleDb, productId: string) => Promise<void> }
 }) {
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(input.admitted, input.idempotencyKey)
   const context = actionLedgerContext(input.c)
   const principal = mapActionLedgerRequestContext(context)
   const command = {
     actionName: input.admitted.actionPolicy.capabilityId,
     actionVersion: input.admitted.actionPolicy.version,
-    commandTarget: { type: "product-create-command", id: input.idempotencyKey },
+    commandTarget: { type: "product-create-command", id: idempotencyKey },
     canonicalTargetType: "product",
     resultReferenceType: "product" as const,
     commandInput: input.input,
@@ -219,7 +220,7 @@ export async function executeProductCreateCommand(input: {
       authorizationSource: "selected_graph_mcp_handler",
       idempotency: {
         scope,
-        key: input.idempotencyKey,
+        key: idempotencyKey,
         fingerprint,
       },
     },
@@ -251,16 +252,17 @@ export async function executeProductCreateCommand(input: {
 async function executeProductComposeCommand(input: {
   c: LedgerHttpContext
   db: AnyDrizzleDb
-  idempotencyKey: string
+  idempotencyKey?: string
   spec: Parameters<typeof composeProductInTransaction>[1]
   admitted: ToolHandlerActionPolicyContext
 }) {
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(input.admitted, input.idempotencyKey)
   const context = actionLedgerContext(input.c)
   const principal = mapActionLedgerRequestContext(context)
   const command = {
     actionName: input.admitted.actionPolicy.capabilityId,
     actionVersion: input.admitted.actionPolicy.version,
-    commandTarget: { type: "product-compose-command", id: input.idempotencyKey },
+    commandTarget: { type: "product-compose-command", id: idempotencyKey },
     canonicalTargetType: "product",
     resultReferenceType: "product" as const,
     commandInput: input.spec,
@@ -287,7 +289,7 @@ async function executeProductComposeCommand(input: {
       authorizationSource: "selected_graph_mcp_handler",
       idempotency: {
         scope,
-        key: input.idempotencyKey,
+        key: idempotencyKey,
         fingerprint,
       },
     },
@@ -320,6 +322,26 @@ async function executeProductComposeCommand(input: {
       },
     },
   )
+}
+
+function admittedCreatedCommandIdempotencyKey(
+  admitted: ToolHandlerActionPolicyContext,
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
+    throw new ToolError(
+      "Created-target command idempotency must come from the admitted Tool invocation.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+    )
+  }
+  return idempotencyKey
 }
 
 function actionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {

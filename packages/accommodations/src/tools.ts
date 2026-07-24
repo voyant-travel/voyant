@@ -209,7 +209,7 @@ type SetNightsInput = z.infer<typeof setRoomBlockNightsInputSchema>
 type PickupInput = z.infer<typeof pickupRoomBlockInputSchema>
 type ReversalInput = z.infer<typeof reversePickupInputSchema>
 export const createRoomBlockToolInputSchema = createRoomBlockSchema.extend({
-  idempotencyKey: z.string().trim().min(1).max(255),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 const createRoomBlockResultSchema = z.object({ roomBlockId: z.string() })
 
