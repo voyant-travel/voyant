@@ -47,13 +47,12 @@ export const voyantToolContextContribution = defineToolContextContribution({
         return json(await pricingService.getCancellationPolicyById(db, id))
       },
       async createCancellationPolicy(input, admitted) {
-        const { idempotencyKey, ...commandInput } = input
-        assertAdmittedIdempotencyKey(admitted, idempotencyKey)
+        const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
         const result = await executeCommerceCreate(
           db,
           requestContext,
           COMMERCE_CREATED_TARGET_POLICIES.cancellationPolicy,
-          idempotencyKey,
+          legacyIdempotencyKey,
           commandInput,
           admitted,
           async (tx) => {
@@ -78,13 +77,12 @@ export const voyantToolContextContribution = defineToolContextContribution({
         return json(await pricingService.getPriceCatalogById(db, id))
       },
       async createPriceCatalog(input, admitted) {
-        const { idempotencyKey, ...commandInput } = input
-        assertAdmittedIdempotencyKey(admitted, idempotencyKey)
+        const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
         const result = await executeCommerceCreate(
           db,
           requestContext,
           COMMERCE_CREATED_TARGET_POLICIES.priceCatalog,
-          idempotencyKey,
+          legacyIdempotencyKey,
           commandInput,
           admitted,
           async (tx) => {
@@ -134,7 +132,7 @@ export async function executeCommerceCreate(
   db: PostgresJsDatabase,
   context: ActionLedgerRequestContextValues,
   policy: CommerceCreatedTargetPolicy,
-  idempotencyKey: string,
+  legacyIdempotencyKey: string | undefined,
   commandInput: unknown,
   admitted: ToolHandlerActionPolicyContext,
   create: (tx: PostgresJsDatabase) => Promise<{ id: string }>,
@@ -144,6 +142,7 @@ export async function executeCommerceCreate(
   if (principal.principalId === "unknown_request") {
     throw new TypeError("Commerce created-target commands require a concrete principal")
   }
+  const idempotencyKey = admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
   const selectedActionName = admitted.actionPolicy.capabilityId
   const selectedActionVersion = admitted.actionPolicy.version
   const fingerprint = await buildCommerceCreatedTargetFingerprint(
@@ -196,17 +195,26 @@ export async function executeCommerceCreate(
   )
 }
 
-function assertAdmittedIdempotencyKey(
+function admittedCreatedCommandIdempotencyKey(
   admitted: ToolHandlerActionPolicyContext,
-  inputKey: string,
-): void {
-  if (admitted.invocation.idempotencyKey !== inputKey) {
+  legacyIdempotencyKey: string | undefined,
+): string {
+  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
+  if (!idempotencyKey) {
     throw new ToolError(
-      "Created-target command idempotency key does not match the selected invocation.",
+      "Created-target command idempotency must come from the admitted Tool invocation.",
       "ACTION_POLICY_REQUIRED",
       { capabilityId: admitted.capabilityId },
     )
   }
+  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
+    throw new ToolError(
+      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
+      "INVALID_INPUT",
+      { capabilityId: admitted.capabilityId },
+    )
+  }
+  return idempotencyKey
 }
 
 function commerceActionLedgerContext(

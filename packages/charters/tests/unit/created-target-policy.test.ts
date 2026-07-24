@@ -45,16 +45,16 @@ describe("charters created-target commands", () => {
         false,
       )
     }
-    expect(() =>
-      createCharterProductTool.inputSchema.parse({ slug: "product", name: "Product" }),
-    ).toThrow()
-    expect(() =>
-      createCharterYachtTool.inputSchema.parse({
+    expect(
+      createCharterProductTool.inputSchema.safeParse({ slug: "product", name: "Product" }).success,
+    ).toBe(true)
+    expect(
+      createCharterYachtTool.inputSchema.safeParse({
         slug: "yacht",
         name: "Yacht",
         yachtClass: "luxury_motor",
-      }),
-    ).toThrow()
+      }).success,
+    ).toBe(true)
   })
 
   it("fingerprints drift and passes the exact executor transaction and Tool capability", async () => {
@@ -104,7 +104,7 @@ describe("charters created-target commands", () => {
       {} as never,
       { userId: "usr_1", callerType: "session", organizationId: "org_1" },
       policy,
-      "key",
+      undefined,
       { slug: "product", name: "Product" },
       admitted,
       create,

@@ -49,10 +49,12 @@ describe("commerce created-target commands", () => {
         false,
       )
     }
-    expect(() => createCancellationPolicyTool.inputSchema.parse({ name: "Policy" })).toThrow()
-    expect(() =>
-      createPriceCatalogTool.inputSchema.parse({ code: "PUBLIC", name: "Public" }),
-    ).toThrow()
+    expect(createCancellationPolicyTool.inputSchema.safeParse({ name: "Policy" }).success).toBe(
+      true,
+    )
+    expect(
+      createPriceCatalogTool.inputSchema.safeParse({ code: "PUBLIC", name: "Public" }).success,
+    ).toBe(true)
   })
 
   it("fingerprints exact same-key commands and detects drift", async () => {
@@ -116,7 +118,7 @@ describe("commerce created-target commands", () => {
       {} as never,
       { userId: "usr_1", callerType: "session", organizationId: "org_1" },
       policy,
-      "same-key",
+      undefined,
       { code: "PUBLIC", name: "Public" },
       admitted,
       create,

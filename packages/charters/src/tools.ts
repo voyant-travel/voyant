@@ -405,6 +405,7 @@ const createdCommandInput = {
     .trim()
     .min(1)
     .max(255)
+    .optional()
     .describe("Stable key used to replay this exact create command."),
 }
 const createProductToolInputSchema = insertProductSchema.extend(createdCommandInput)

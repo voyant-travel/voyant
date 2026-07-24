@@ -170,6 +170,7 @@ const createShipToolInputSchema = insertShipSchema.extend({
     .trim()
     .min(1)
     .max(255)
+    .optional()
     .describe("Stable key used to replay this exact create command."),
 })
 const createdShipOutputSchema = z.object({

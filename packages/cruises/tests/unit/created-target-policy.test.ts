@@ -25,13 +25,13 @@ describe("cruise ship created-target command", () => {
         durability: "handler-command-claim-v1",
       },
     })
-    expect(() =>
-      createCruiseShipTool.inputSchema.parse({
+    expect(
+      createCruiseShipTool.inputSchema.safeParse({
         slug: "ship",
         name: "Ship",
         shipType: "ocean",
-      }),
-    ).toThrow()
+      }).success,
+    ).toBe(true)
     expect(
       createCruiseShipTool.outputSchema.safeParse({
         status: "created",
@@ -88,7 +88,7 @@ describe("cruise ship created-target command", () => {
     const command = [
       {} as never,
       { userId: "usr_1", callerType: "session", organizationId: "org_1" },
-      "key",
+      undefined,
       { slug: "ship", name: "Ship", shipType: "ocean" },
       admitted,
       create,
