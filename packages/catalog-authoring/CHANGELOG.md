@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-authoring
 
+## 0.107.26
+
+### Patch Changes
+
+- @voyant-travel/inventory@0.19.0
+
 ## 0.107.25
 
 ### Patch Changes

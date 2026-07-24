@@ -1,5 +1,13 @@
 # @voyant-travel/cruises-react
 
+## 0.197.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.200.0
+- @voyant-travel/catalog-react@0.196.0
+- @voyant-travel/cruises@0.197.0
+
 ## 0.196.0
 
 ### Patch Changes
