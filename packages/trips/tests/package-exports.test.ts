@@ -27,4 +27,13 @@ describe("@voyant-travel/trips package exports", () => {
       default: "./dist/payment-subscriber-runtime.js",
     })
   })
+
+  it("publishes the fixed durable sourcing job subpath", () => {
+    expect(packageJson.exports["./sourcing-job"]).toBe("./src/sourcing-job.ts")
+    expect(packageJson.publishConfig.exports["./sourcing-job"]).toEqual({
+      types: "./dist/sourcing-job.d.ts",
+      import: "./dist/sourcing-job.js",
+      default: "./dist/sourcing-job.js",
+    })
+  })
 })

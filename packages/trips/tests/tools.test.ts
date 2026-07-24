@@ -6,6 +6,7 @@ import {
   CREATE_TRIP_HANDLER_POLICY,
   createTripTool,
   priceTripTool,
+  SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY,
   type TripsToolServices,
   tripsTools,
 } from "../src/tools.js"
@@ -39,52 +40,6 @@ function makeRegistry() {
   return registry
 }
 
-function sourcedCandidates() {
-  const now = new Date("2026-07-15T10:00:00.000Z")
-  return {
-    requirement: {
-      id: "trrq_1",
-      envelopeId: "trip_123",
-      sequence: 0,
-      status: "candidates_ready",
-      title: "Three-night stay",
-      description: null,
-      vertical: "accommodations",
-      criteria: { nights: 3 },
-      criteriaVersion: "v1",
-      required: true,
-      selectedCandidateId: null,
-      resolvedComponentId: null,
-      lastSourcedAt: now,
-      metadata: {},
-      createdAt: now,
-      updatedAt: now,
-    },
-    candidates: [
-      {
-        id: "trcd_1",
-        requirementId: "trrq_1",
-        envelopeId: "trip_123",
-        rank: 0,
-        status: "ranked",
-        candidateRef: "provider-result-1",
-        entityModule: "accommodations",
-        entityId: "hotel_1",
-        sourceKind: "sourced",
-        sourceConnectionId: "conn_1",
-        sourceModule: null,
-        selection: { room: "double" },
-        priceCurrency: "EUR",
-        priceAmount: "450.00",
-        expiresAt: new Date("2026-07-15T10:30:00.000Z"),
-        providerData: { confidentialNetRate: "250.00" },
-        createdAt: now,
-        updatedAt: now,
-      },
-    ],
-  }
-}
-
 describe("trips tools", () => {
   it("registers trip composition and candidate workflow tools with exact posture", () => {
     const registry = makeRegistry()
@@ -92,10 +47,9 @@ describe("trips tools", () => {
     expect(manifest.map((t) => t.name).sort()).toEqual([
       "add_trip_requirement",
       "create_trip",
+      "get_trip_requirement_sourcing_operation",
       "price_trip",
       "reserve_trip",
-      "reshop_trip",
-      "reshop_trip_requirement",
       "revise_trip",
       "select_trip_candidate",
       "source_trip_requirement_candidates",
@@ -114,12 +68,13 @@ describe("trips tools", () => {
       confirmationRequired: true,
       sideEffects: ["data-write"],
     })
-    const reshop = manifest.find((t) => t.name === "reshop_trip")
-    expect(reshop).toMatchObject({ tier: "destructive", audience: { allowed: ["staff"] } })
-    expect(reshop?.riskPolicy).toMatchObject({
-      destructive: true,
-      reversible: true,
-      confirmationRequired: true,
+    expect(manifest.some((tool) => tool.name.startsWith("reshop_"))).toBe(false)
+    expect(
+      manifest.find((tool) => tool.name === "get_trip_requirement_sourcing_operation"),
+    ).toMatchObject({
+      tier: "read",
+      requiredScopes: ["trips:read"],
+      annotations: { readOnlyHint: true, idempotentHint: true },
     })
   })
 
@@ -296,27 +251,99 @@ describe("trips tools", () => {
     expect(priceTripTool.tier).toBe("write")
   })
 
-  it("sources requirement candidates through the injected provider-neutral service", async () => {
+  it("accepts durable requirement sourcing through the handler-owned service", async () => {
     let forwarded: unknown
-    const result = await makeRegistry().dispatch<{
-      candidates: Array<Record<string, unknown>>
-    }>(
+    const result = await makeRegistry().dispatch(
       "source_trip_requirement_candidates",
       {
         requirementId: "trrq_1",
         scope: { locale: "en-GB", audience: "staff", market: "RO" },
         limit: 10,
       },
+      ctxWith(
+        {
+          async acceptRequirementCandidateSourcing(input) {
+            forwarded = input
+            return {
+              status: "accepted",
+              operationId: "act_1",
+              requirementId: input.requirementId,
+              statusTool: "get_trip_requirement_sourcing_operation",
+            }
+          },
+        },
+        {
+          handlerActionPolicy: {
+            capabilityId: SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY.capabilityId,
+            capabilityVersion: SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY.capabilityVersion,
+            canonicalName: SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY.canonicalName,
+            actionPolicy: {
+              ...SOURCE_REQUIREMENT_CANDIDATES_HANDLER_POLICY.actionPolicy,
+              enforcement: "handler",
+              invocation: {
+                controlField: "_voyant",
+                requiredFields: ["idempotencyKey"],
+                optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+                fingerprintAlgorithm: "action-ledger-command-v1",
+              },
+            },
+            invocation: { idempotencyKey: "source-1" },
+          } as ToolContext["handlerActionPolicy"],
+        },
+      ),
+    )
+    expect(forwarded).toMatchObject({ requirementId: "trrq_1", limit: 10 })
+    expect(result).toEqual({
+      status: "accepted",
+      operationId: "act_1",
+      requirementId: "trrq_1",
+      statusTool: "get_trip_requirement_sourcing_operation",
+    })
+  })
+
+  it("reads an immutable sourcing result and explicit terminal outcome", async () => {
+    const result = await makeRegistry().dispatch(
+      "get_trip_requirement_sourcing_operation",
+      { operationId: "act_1", requirementId: "trrq_1" },
       ctxWith({
-        async sourceRequirementCandidates(input) {
-          forwarded = input
-          return sourcedCandidates()
+        async getRequirementSourcingOperation() {
+          const now = new Date("2026-07-24T10:00:00.000Z")
+          return {
+            operationId: "act_1",
+            requirementId: "trrq_1",
+            status: "dead_letter",
+            result: {
+              status: "accepted",
+              operationId: "act_1",
+              requirementId: "trrq_1",
+              statusTool: "get_trip_requirement_sourcing_operation",
+            },
+            outcome: { status: "dead_letter", error: "providers unavailable" },
+            error: "providers unavailable",
+            attempts: 8,
+            maxAttempts: 8,
+            nextAttemptAt: now,
+            completedAt: now,
+            createdAt: now,
+            updatedAt: now,
+          }
         },
       }),
     )
-    expect(forwarded).toMatchObject({ requirementId: "trrq_1", limit: 10 })
-    expect(result.candidates[0]).not.toHaveProperty("providerData")
-    expect(result.candidates[0]).toMatchObject({ entityModule: "accommodations" })
+    expect(result).toMatchObject({
+      operationId: "act_1",
+      requirementId: "trrq_1",
+      status: "dead_letter",
+      result: {
+        status: "accepted",
+        operationId: "act_1",
+        requirementId: "trrq_1",
+      },
+      outcome: { status: "dead_letter", error: "providers unavailable" },
+      error: "providers unavailable",
+    })
+    expect(result).not.toHaveProperty("requestSnapshot")
+    expect(result).not.toHaveProperty("leaseVersion")
   })
 
   it("rejects candidate sourcing across a non-staff grant audience", async () => {
@@ -329,8 +356,13 @@ describe("trips tools", () => {
         },
         ctxWith(
           {
-            async sourceRequirementCandidates() {
-              return sourcedCandidates()
+            async acceptRequirementCandidateSourcing() {
+              return {
+                status: "accepted",
+                operationId: "act_1",
+                requirementId: "trrq_1",
+                statusTool: "get_trip_requirement_sourcing_operation",
+              }
             },
           },
           { actor: "customer", audience: "customer" },

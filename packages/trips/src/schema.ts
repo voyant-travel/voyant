@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 
 export const tripEnvelopeStatusEnum = pgEnum("trip_envelope_status", [
@@ -80,6 +81,11 @@ export const tripCandidateStatusEnum = pgEnum("trip_candidate_status", [
   "expired", // TTL elapsed; reaper-swept, not bookable without re-shop
   "discarded", // superseded by a re-shop round
 ])
+
+export const tripRequirementSourcingOperationStatusEnum = pgEnum(
+  "trip_requirement_sourcing_operation_status",
+  ["pending", "processing", "retry", "completed", "dead_letter"],
+)
 
 export type TripEnvelopePricingSnapshot = {
   currency: string
@@ -470,6 +476,60 @@ export const tripCandidates = pgTable(
   ],
 )
 
+/**
+ * Trips-owned durable work for agent-initiated requirement sourcing.
+ *
+ * The action ledger owns immutable command admission. This row owns the
+ * immutable provider request, exact accepted Tool result, retry lease, and
+ * terminal operational state. Candidate replacement remains in Trips.
+ */
+export const tripRequirementSourcingOperations = pgTable(
+  "trip_requirement_sourcing_operations",
+  {
+    // The admitted claim id is already globally unique and gives the operation
+    // a stable identity without introducing another generated-id namespace.
+    id: text("id").primaryKey(),
+    commandScope: text("command_scope").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    organizationId: text("organization_id"),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    requirementId: typeIdRef("requirement_id")
+      .notNull()
+      .references(() => tripRequirements.id, { onDelete: "restrict" }),
+    previousRequirementStatus: tripRequirementStatusEnum("previous_requirement_status").notNull(),
+    requestSnapshot: jsonb("request_snapshot").$type<Record<string, unknown>>().notNull(),
+    resultSnapshot: jsonb("result_snapshot").$type<Record<string, unknown>>().notNull(),
+    outcomeSnapshot: jsonb("outcome_snapshot").$type<Record<string, unknown>>(),
+    status: tripRequirementSourcingOperationStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(8),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    leaseVersion: integer("lease_version").notNull().default(0),
+    lastError: text("last_error"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_trip_requirement_sourcing_operations_command").on(
+      table.commandScope,
+      table.idempotencyKey,
+    ),
+    index("idx_trip_requirement_sourcing_operations_due").on(
+      table.status,
+      table.nextAttemptAt,
+      table.leaseExpiresAt,
+    ),
+    index("idx_trip_requirement_sourcing_operations_requirement").on(
+      table.requirementId,
+      table.status,
+    ),
+  ],
+)
+
 export const tripEnvelopeRelations = relations(tripEnvelopes, ({ many }) => ({
   components: many(tripComponents),
   events: many(tripComponentEvents),
@@ -534,6 +594,16 @@ export const tripCandidateRelations = relations(tripCandidates, ({ one }) => ({
   }),
 }))
 
+export const tripRequirementSourcingOperationRelations = relations(
+  tripRequirementSourcingOperations,
+  ({ one }) => ({
+    requirement: one(tripRequirements, {
+      fields: [tripRequirementSourcingOperations.requirementId],
+      references: [tripRequirements.id],
+    }),
+  }),
+)
+
 export type TripEnvelope = typeof tripEnvelopes.$inferSelect
 export type NewTripEnvelope = typeof tripEnvelopes.$inferInsert
 export type TripComponent = typeof tripComponents.$inferSelect
@@ -548,3 +618,6 @@ export type TripRequirement = typeof tripRequirements.$inferSelect
 export type NewTripRequirement = typeof tripRequirements.$inferInsert
 export type TripCandidate = typeof tripCandidates.$inferSelect
 export type NewTripCandidate = typeof tripCandidates.$inferInsert
+export type TripRequirementSourcingOperation = typeof tripRequirementSourcingOperations.$inferSelect
+export type NewTripRequirementSourcingOperation =
+  typeof tripRequirementSourcingOperations.$inferInsert

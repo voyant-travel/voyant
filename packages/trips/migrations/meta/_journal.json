@@ -15,6 +15,13 @@
       "when": 1782070412534,
       "tag": "0001_trips_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784880000000,
+      "tag": "0002_durable_requirement_sourcing",
+      "breakpoints": true
     }
   ]
 }

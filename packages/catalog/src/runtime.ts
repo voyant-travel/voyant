@@ -37,6 +37,7 @@ import {
   installCatalogRuntimeServices,
 } from "./runtime-contracts.js"
 import type { CatalogRuntimePortContribution } from "./runtime-contributor.js"
+import { createOwnedAvailabilitySearchHandlerRegistry } from "./search/owned-search-handler.js"
 
 /** Build the complete Catalog runtime from generic host resources. */
 export function createCatalogRuntime(
@@ -74,6 +75,8 @@ export function createCatalogRuntime(
     | ReturnType<typeof createOperatorCatalogProjectionRuntime>
     | Promise<ReturnType<typeof createOperatorCatalogProjectionRuntime>>
   >()
+  const ownedAvailabilitySearchHandlers = createOwnedAvailabilitySearchHandlerRegistry()
+  extensions.accommodations.registerOwnedAvailabilitySearchHandler(ownedAvailabilitySearchHandlers)
   const services: CatalogRuntimeServices = {
     defaultSlices: DEFAULT_SLICES,
     ensureSourceRegistry: (env) => ensureBookingEngineRegistry(env as never),
@@ -82,6 +85,7 @@ export function createCatalogRuntime(
     getOwnedHandlers: (env) => getOwnedBookingHandlerRegistry(env as never),
     getOwnedHandlersFromContext: (context) =>
       getOwnedBookingHandlerRegistryFromContext(context as never),
+    getOwnedAvailabilitySearchHandlers: () => ownedAvailabilitySearchHandlers,
     buildEmbeddingProvider: (env) => buildEmbeddingProvider(env as never),
     buildIndexer: (_env, embeddings) => resolveIndexer(embeddings),
     loadSlices: loadCatalogSlices,

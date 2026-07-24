@@ -1,6 +1,7 @@
 import type { CatalogAccommodationsRuntimeExtension } from "@voyant-travel/catalog/runtime-contracts"
 
 import { registerAccommodationBookingHandler } from "./booking-engine/runtime.js"
+import { createAccommodationOwnedSearchHandler } from "./booking-engine/search-handler.js"
 import { accommodationCatalogPolicy } from "./catalog-policy.js"
 import {
   accommodationPropertyCatalogPolicy,
@@ -20,4 +21,7 @@ export const catalogAccommodationsRuntimeExtension = {
   listAccommodationOffersReferencingProperty,
   createPropertyDocumentBuilder: createAccommodationPropertyDocumentBuilder,
   registerOwnedBookingHandler: registerAccommodationBookingHandler,
+  registerOwnedAvailabilitySearchHandler(registry) {
+    registry.register(createAccommodationOwnedSearchHandler({}))
+  },
 } satisfies CatalogAccommodationsRuntimeExtension

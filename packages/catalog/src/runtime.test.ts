@@ -99,7 +99,16 @@ function createAdapter(): IndexerAdapter {
 }
 
 function resolveRuntimeIndexers(indexer: IndexerAdapter | IndexerProvider) {
-  const runtime = createCatalogRuntime({} as never, {} as never, {} as never, { indexer })
+  const runtime = createCatalogRuntime(
+    {} as never,
+    {
+      accommodations: {
+        registerOwnedAvailabilitySearchHandler: vi.fn(),
+      },
+    } as never,
+    {} as never,
+    { indexer },
+  )
   const context = { env: {}, var: { actor: "staff" } }
   const search = (runtime.search as CatalogSearchRuntimeOptions).resolveRuntime(context as never)
   const offers = state.offerIndexer?.(context)
@@ -155,9 +164,16 @@ describe("createCatalogRuntime indexer authority", () => {
     incompatible.capabilities.vectorDimensions = 768
     const compatible = createAdapter()
     const create = vi.fn().mockReturnValueOnce(incompatible).mockReturnValueOnce(compatible)
-    const runtime = createCatalogRuntime({} as never, {} as never, {} as never, {
-      indexer: { create },
-    })
+    const runtime = createCatalogRuntime(
+      {} as never,
+      {
+        accommodations: {
+          registerOwnedAvailabilitySearchHandler: vi.fn(),
+        },
+      } as never,
+      {} as never,
+      { indexer: { create } },
+    )
     const search = runtime.search as CatalogSearchRuntimeOptions
     const context = { env: {}, var: { actor: "staff" } }
 
