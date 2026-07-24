@@ -4,6 +4,7 @@ Per-minor consolidated migration notes for Voyant. Each page collects every brea
 
 Unreleased caller migrations:
 
+- [Created-target Tool commands](./created-target-tool-commands.md)
 - [Created local Commerce, Charters, and Cruises targets](./created-target-commerce-charters-cruises.md)
 
 The full history (including patch-level changes and dependency updates) lives in the per-package `CHANGELOG.md` files; these pages exist because changeset entries land in *every* package's CHANGELOG that depends on the changed one, so the actual breaking signal is otherwise buried under dozens of `Updated dependencies [...]` lines per package.

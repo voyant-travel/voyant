@@ -342,8 +342,14 @@ export const legalVoyantModule = defineModule({
       risk: "high",
       ledger: "required",
       approval: "never",
-      reversible: true,
+      reversible: false,
       allowedActorTypes: ["staff"],
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "legal_contract_draft_create_command",
+        resultReferenceType: "legal-contract",
+        durability: "handler-command-claim-v1",
+      },
       from: { tools: ["@voyant-travel/legal#tool.create-contract-draft"] },
     },
     {
