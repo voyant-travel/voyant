@@ -227,14 +227,25 @@ export async function createGraphMcpApiRoutes(
   const registry = createToolRegistry()
   const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
-  const actionsByTool = indexActionsByTool(options.runtime.actions ?? [])
+  const actions = options.runtime.actions ?? []
+  const actionsByTool = indexActionsByTool(actions)
+  const unavailableToolIds = new Set(
+    actions
+      .filter((action) => action.availability?.status === "unavailable")
+      .flatMap((action) => action.from?.tools ?? []),
+  )
 
   for (const tool of options.runtime.tools) {
-    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
-    const actionPolicy = tool.id ? actionsByTool.get(tool.id) : undefined
     if (!tool.id) {
       throw new Error(`Selected MCP Tool "${tool.name ?? "unknown"}" has no stable capability id.`)
     }
+    if (unavailableToolIds.has(tool.id)) {
+      throw new Error(
+        `Selected MCP Tool "${tool.name ?? tool.id}" is bound by an unavailable graph action.`,
+      )
+    }
+    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
+    const actionPolicy = actionsByTool.get(tool.id)
     if (!actionPolicy && tool.risk !== "low") {
       throw new Error(
         `Selected MCP Tool "${tool.name ?? tool.id ?? "unknown"}" has no selected graph action policy.`,

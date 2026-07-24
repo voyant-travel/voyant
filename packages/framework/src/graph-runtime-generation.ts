@@ -58,20 +58,23 @@ export function lowerGraphRuntimeUnits(
   graph: ResolvedVoyantDeploymentGraph,
   runtimeEntryOverrides: Readonly<Record<string, string>> | undefined,
 ): GeneratedRuntimeUnitDefinition[] {
+  const unavailableToolIds = unavailableActionToolIds(units)
+  const availableToolIds = new Set(
+    units.flatMap((unit) =>
+      (unit.actions ?? [])
+        .filter((action) => action.availability?.status !== "unavailable")
+        .flatMap((action) => action.from?.tools ?? []),
+    ),
+  )
+  const conflictingToolId = [...unavailableToolIds].find((id) => availableToolIds.has(id))
+  if (conflictingToolId) {
+    throw new Error(
+      `VOYANT_GRAPH_UNAVAILABLE_TOOL_SHARED: action Tool "${conflictingToolId}" is bound by both available and unavailable actions.`,
+    )
+  }
+
   return units
     .map((unit) => {
-      const unavailableToolIds = unavailableActionToolIds(unit)
-      const availableToolIds = new Set(
-        (unit.actions ?? [])
-          .filter((action) => action.availability?.status !== "unavailable")
-          .flatMap((action) => action.from?.tools ?? []),
-      )
-      const conflictingToolId = [...unavailableToolIds].find((id) => availableToolIds.has(id))
-      if (conflictingToolId) {
-        throw new Error(
-          `VOYANT_GRAPH_UNAVAILABLE_TOOL_SHARED: action Tool "${conflictingToolId}" is bound by both available and unavailable actions.`,
-        )
-      }
       const references = collectRuntimeReferences(
         unit,
         graph,
@@ -298,11 +301,13 @@ function collectRuntimeReferences(
   )
 }
 
-function unavailableActionToolIds(unit: ResolvedVoyantGraphUnit): Set<string> {
+function unavailableActionToolIds(units: readonly ResolvedVoyantGraphUnit[]): Set<string> {
   return new Set(
-    (unit.actions ?? [])
-      .filter((action) => action.availability?.status === "unavailable")
-      .flatMap((action) => action.from?.tools ?? []),
+    units.flatMap((unit) =>
+      (unit.actions ?? [])
+        .filter((action) => action.availability?.status === "unavailable")
+        .flatMap((action) => action.from?.tools ?? []),
+    ),
   )
 }
 

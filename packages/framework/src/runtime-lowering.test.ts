@@ -192,6 +192,51 @@ describe("graph runtime lowering", () => {
     ).toThrow(/unavailable action .* exposes Tool/)
   })
 
+  it("excludes unavailable Tool bindings declared by another selected graph unit", async () => {
+    const toolId = "@acme/voyant-fulfillment#tool.unsafe-sync"
+    const toolOwner = defineModule({
+      id: "@acme/voyant-fulfillment",
+      tools: [
+        {
+          id: toolId,
+          name: "unsafe_sync",
+          runtime: { entry: "./tools", export: "unsafeSyncTool" },
+        },
+      ],
+    })
+    const actionOwner = defineModule({
+      id: "@acme/voyant-loyalty",
+      actions: [
+        {
+          id: "@acme/voyant-loyalty#action.unsafe-fulfillment-sync",
+          version: "v1",
+          kind: "execute",
+          targetType: "loyalty-account",
+          availability: {
+            status: "unavailable",
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "external",
+          risk: "high",
+          ledger: "required",
+          from: { tools: [toolId] },
+        },
+      ],
+    })
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [toolOwner, actionOwner] }),
+    })
+
+    const definitions = lowerGraphRuntimeUnits(graph.modules, graph, undefined)
+    const toolOwnerDefinition = definitions.find(({ id }) => id === toolOwner.id)
+
+    expect(toolOwnerDefinition?.tools).toEqual([])
+    expect(toolOwnerDefinition?.selectedIds.tools).toEqual([])
+    expect(toolOwnerDefinition?.references).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ facet: "tools.runtime" })]),
+    )
+  })
+
   it("preserves selected setup steps on unit loaders and the aggregate runtime", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
     const setupSteps = [
