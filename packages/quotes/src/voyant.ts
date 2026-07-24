@@ -382,6 +382,11 @@ export const quotesProposalVoyantPlugin = defineExtension({
       version: "v1",
       kind: "execute",
       targetType: "quote",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "quotes",
       action: "write",
       requiredScopes: ["quotes:write", "notifications:send"],

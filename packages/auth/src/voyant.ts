@@ -327,6 +327,11 @@ export const authTeamVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "team-invitation",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       resource: "team",
       action: "write",
       requiredScopes: ["team:write"],

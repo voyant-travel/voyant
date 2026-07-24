@@ -176,6 +176,11 @@ describe("trips deployment manifest", () => {
       version: "v1",
       kind: "execute",
       targetType: "trip",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["trips:write"],
       risk: "critical",
       ledger: "required",
@@ -222,6 +227,11 @@ describe("trips deployment manifest", () => {
         }),
         expect.objectContaining({
           id: "@voyant-travel/trips#action.source-requirement-candidates",
+          availability: {
+            status: "unavailable",
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "multistage",
           risk: "medium",
           ledger: "required",
           approval: "never",

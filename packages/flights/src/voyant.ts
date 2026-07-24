@@ -151,6 +151,11 @@ export const flightsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "flight-order",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "external",
       requiredScopes: ["flights:write"],
       risk: "critical",
       ledger: "required",
@@ -163,6 +168,11 @@ export const flightsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "flight-order",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "external",
       requiredScopes: ["flights:write"],
       risk: "critical",
       ledger: "required",

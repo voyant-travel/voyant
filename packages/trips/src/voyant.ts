@@ -242,6 +242,11 @@ export const tripsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "trip",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["trips:write"],
       risk: "critical",
       ledger: "required",
@@ -254,6 +259,11 @@ export const tripsVoyantModule = defineModule({
       version: "v1",
       kind: "execute",
       targetType: "trip-requirement",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["trips:write"],
       risk: "medium",
       ledger: "required",

@@ -201,6 +201,17 @@ describe("commerce deployment manifest", () => {
 
     expect(readApiIds(publicMarketsRoutes)).toEqual(["@voyant-travel/commerce#api.markets.public"])
     expect(readApiIds(publicPricingRoutes)).toEqual(["@voyant-travel/commerce#api.pricing.public"])
+    expect(
+      commerceVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/commerce#action.create-promotion",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
   })
 
   it("owns the catalog checkout and booking maintenance bridges", () => {

@@ -230,6 +230,11 @@ describe("quotes deployment manifests", () => {
       actions: [
         {
           id: "@voyant-travel/quotes#proposal-extension.action.snapshot-and-send-quote",
+          availability: {
+            status: "unavailable",
+            reasonCode: "unsafe-nontransactional-effect",
+          },
+          effectBoundary: "multistage",
           ledger: "required",
           approval: "required",
           reversible: false,

@@ -531,6 +531,11 @@ describe("finance deployment manifest", () => {
         actions: [
           expect.objectContaining({
             id: "@voyant-travel/finance#bookings-create-extension.action.create-booking",
+            availability: {
+              status: "unavailable",
+              reasonCode: "unsafe-nontransactional-effect",
+            },
+            effectBoundary: "multistage",
             ledger: "required",
           }),
         ],

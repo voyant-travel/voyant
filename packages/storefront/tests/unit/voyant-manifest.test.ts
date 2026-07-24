@@ -269,6 +269,17 @@ describe("storefront deployment manifest", () => {
         expect.objectContaining({ allowedActorTypes: ["customer"], approval: "never" }),
       ]),
     )
+    expect(
+      storefrontVerificationVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/storefront#action.start-my-verification",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
     expect(storefrontPaymentLinkVoyantModule.actions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

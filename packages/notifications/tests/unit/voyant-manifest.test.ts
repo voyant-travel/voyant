@@ -88,6 +88,11 @@ describe("notifications deployment manifest", () => {
         id: "@voyant-travel/notifications#action.send-notification",
         resource: "notifications",
         action: "send",
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
+        effectBoundary: "multistage",
         requiredScopes: ["notifications:send"],
         risk: "high",
         ledger: "required",

@@ -178,12 +178,28 @@ describe("cruises deployment manifest", () => {
       action.from?.tools?.includes("@voyant-travel/cruises#tool.create-cruise-booking"),
     )
     expect(booking).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
       requiredScopes: ["cruises:write", "bookings:write"],
       risk: "critical",
       ledger: "required",
       approval: "required",
       reversible: false,
       allowedActorTypes: ["staff"],
+    })
+    expect(
+      cruisesVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/cruises#action.create-cruise",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
     })
     for (const action of cruisesVoyantModule.actions?.filter(
       ({ kind, risk }) => kind === "execute" && risk === "medium",

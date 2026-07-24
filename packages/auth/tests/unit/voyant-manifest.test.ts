@@ -136,6 +136,17 @@ describe("auth identity/access deployment manifests", () => {
           from?.tools?.length === 1,
       ),
     ).toBe(true)
+    expect(
+      authTeamVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/auth#team.action.invite-member",
+      ),
+    ).toMatchObject({
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+    })
     expect(authTeamVoyantModule.access?.resources[0]).toMatchObject({
       wildcard: "explicit-resource",
       actions: [
