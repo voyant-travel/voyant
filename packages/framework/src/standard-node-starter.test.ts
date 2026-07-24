@@ -67,9 +67,9 @@ describe("standard Node starter contract", () => {
         "runtimeDependencyCoordinates": {
           "@tanstack/react-query": "5.101.2",
           "@tanstack/react-router": "1.170.17",
-          "@voyant-travel/framework": "0.45.0",
-          "@voyant-travel/operator-standard": "0.5.0",
-          "@voyant-travel/runtime": "0.11.0",
+          "@voyant-travel/framework": "0.63.2",
+          "@voyant-travel/operator-standard": "0.12.3",
+          "@voyant-travel/runtime": "0.17.9",
           "pg": "8.22.0",
           "react": "19.2.7",
           "react-dom": "19.2.7",

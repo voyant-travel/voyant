@@ -49,7 +49,9 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
   const dependency = (name) =>
     localLinks && name.startsWith("@voyant-travel/")
       ? `link:${workspacePackageDirectory(name)}`
-      : standardNodeStarter.runtimeDependencyCoordinates[name]
+      : name.startsWith("@voyant-travel/")
+        ? workspacePackageVersion(name)
+        : standardNodeStarter.runtimeDependencyCoordinates[name]
   const localCliPackage = resolve(repoRoot, "..", "cli", "packages", "cli")
   const cliDependency =
     localLinks && existsSync(join(localCliPackage, "package.json"))
@@ -111,6 +113,11 @@ function workspacePackageDirectory(name) {
     }
   }
   throw new Error(`Missing workspace package directory for ${name}`)
+}
+
+function workspacePackageVersion(name) {
+  const packageDirectory = workspacePackageDirectory(name)
+  return readJson(join(packageDirectory, "package.json")).version
 }
 
 function readJson(path) {

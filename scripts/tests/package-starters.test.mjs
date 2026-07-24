@@ -62,6 +62,31 @@ test("operator release archive contains only the minimal authored project", () =
   }
 })
 
+test("operator release archive pins the current core package releases", () => {
+  const fixture = packageAndExtract()
+  try {
+    const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
+    for (const packageName of [
+      "@voyant-travel/framework",
+      "@voyant-travel/runtime",
+      "@voyant-travel/operator-standard",
+    ]) {
+      const packageDirectory = packageName.replace("@voyant-travel/", "")
+      const manifest = JSON.parse(
+        readFileSync(join(repoRoot, "packages", packageDirectory, "package.json"), "utf8"),
+      )
+
+      assert.equal(
+        packageJson.dependencies[packageName],
+        manifest.version,
+        `${packageName} starter coordinate must match its current published version`,
+      )
+    }
+  } finally {
+    rmSync(fixture.tempDir, { recursive: true, force: true })
+  }
+})
+
 function packageAndExtract(extraArgs = []) {
   const tempDir = mkdtempSync(join(tmpdir(), "voyant-package-starters-test-"))
   const outDir = join(tempDir, "out")

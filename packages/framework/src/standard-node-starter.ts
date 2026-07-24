@@ -35,9 +35,9 @@ type StandardNodeStarterContract = {
     "pg",
   ]
   readonly runtimeDependencyCoordinates: {
-    readonly "@voyant-travel/framework": "0.45.0"
-    readonly "@voyant-travel/runtime": "0.11.0"
-    readonly "@voyant-travel/operator-standard": "0.5.0"
+    readonly "@voyant-travel/framework": "0.63.2"
+    readonly "@voyant-travel/runtime": "0.17.9"
+    readonly "@voyant-travel/operator-standard": "0.12.3"
     readonly "@tanstack/react-query": "5.101.2"
     readonly "@tanstack/react-router": "1.170.17"
     readonly react: "19.2.7"
