@@ -262,7 +262,7 @@ export const bookingsUiRoOperations = {
       company: "Companie",
     },
     crmPicker: {
-      label: "Sursa CRM",
+      label: "Sursa contact",
       personSearchPlaceholder: "Cauta persoane...",
       personEmpty: "Nicio persoana gasita.",
       organizationSearchPlaceholder: "Cauta organizatii...",
@@ -270,8 +270,8 @@ export const bookingsUiRoOperations = {
     },
     actions: {
       cancel: "Anuleaza",
-      selectFromCrm: "Selecteaza din CRM",
-      hideCrmPicker: "Ascunde selectorul CRM",
+      selectFromCrm: "Selecteaza din contacte",
+      hideCrmPicker: "Ascunde selectorul de contacte",
       save: "Salveaza modificarile",
     },
   },

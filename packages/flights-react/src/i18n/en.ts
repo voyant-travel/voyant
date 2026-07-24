@@ -112,7 +112,7 @@ export const flightsUiEn = {
     searchPlaceholder: "Search contacts...",
     searching: "Searching...",
     empty: "No contacts.",
-    addNewContact: "Add new contact in CRM",
+    addNewContact: "Add new contact",
     emptyName: "-",
   },
   billingPickers: {

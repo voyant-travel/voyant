@@ -178,7 +178,7 @@ export const bookingsUiRoBase = {
       dateOfBirth: "Data nasterii",
       dietaryRequirements: "Cerinte alimentare",
       accessibilityNeeds: "Cerinte de accesibilitate",
-      linkedPerson: "Contact CRM asociat",
+      linkedPerson: "Contact asociat",
     },
     travelerCategoryLabels: {
       adult: "Adult",

@@ -171,7 +171,7 @@ export const crmUiRoBaseMessages = {
       edit: "Editeaza organizatia",
     },
     descriptions: {
-      create: "Adauga o companie noua in CRM-ul tau.",
+      create: "Adauga o companie noua.",
       edit: "Actualizeaza detaliile companiei.",
     },
   },
@@ -181,7 +181,7 @@ export const crmUiRoBaseMessages = {
       edit: "Editeaza persoana",
     },
     descriptions: {
-      create: "Adauga o persoana noua in CRM-ul tau.",
+      create: "Adauga o persoana noua.",
       edit: "Actualizeaza datele de contact.",
     },
   },

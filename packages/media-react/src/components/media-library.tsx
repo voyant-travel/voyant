@@ -2,12 +2,7 @@
 
 import { Button } from "@voyant-travel/ui/components/button"
 import { Card, CardContent } from "@voyant-travel/ui/components/card"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@voyant-travel/ui/components/empty"
+import { Empty, EmptyHeader, EmptyTitle } from "@voyant-travel/ui/components/empty"
 import {
   Sheet,
   SheetContent,
@@ -163,7 +158,6 @@ export function MediaLibrary({
             <Empty>
               <EmptyHeader>
                 <EmptyTitle>{library.empty}</EmptyTitle>
-                <EmptyDescription>{library.upload.hint}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (

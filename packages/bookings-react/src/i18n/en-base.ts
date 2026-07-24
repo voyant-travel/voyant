@@ -179,7 +179,7 @@ export const bookingsUiEnBase = {
       dateOfBirth: "Date of birth",
       dietaryRequirements: "Dietary requirements",
       accessibilityNeeds: "Accessibility needs",
-      linkedPerson: "Linked CRM contact",
+      linkedPerson: "Linked contact",
     },
     travelerCategoryLabels: {
       adult: "Adult",

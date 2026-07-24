@@ -112,7 +112,7 @@ export const flightsUiRo = {
     searchPlaceholder: "Cauta contacte...",
     searching: "Se cauta...",
     empty: "Niciun contact.",
-    addNewContact: "Adauga contact nou in CRM",
+    addNewContact: "Adauga contact nou",
     emptyName: "-",
   },
   billingPickers: {

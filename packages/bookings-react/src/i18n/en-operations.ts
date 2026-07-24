@@ -263,7 +263,7 @@ export const bookingsUiEnOperations = {
       company: "Company",
     },
     crmPicker: {
-      label: "CRM source",
+      label: "Contact source",
       personSearchPlaceholder: "Search people...",
       personEmpty: "No people found.",
       organizationSearchPlaceholder: "Search organizations...",
@@ -271,8 +271,8 @@ export const bookingsUiEnOperations = {
     },
     actions: {
       cancel: "Cancel",
-      selectFromCrm: "Select from CRM",
-      hideCrmPicker: "Hide CRM picker",
+      selectFromCrm: "Select from contacts",
+      hideCrmPicker: "Hide contact picker",
       save: "Save changes",
     },
   },
