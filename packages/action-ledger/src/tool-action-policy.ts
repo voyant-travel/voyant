@@ -54,6 +54,13 @@ export function createToolActionPolicyGate(
           { actionId: selected.id, kind: selected.kind },
         )
       }
+      if (selected.targetLifecycle === "created") {
+        throw new ToolError(
+          "Created-target actions require a handler-owned durable command claim; generic dispatch fails closed.",
+          "ACTION_POLICY_REQUIRED",
+          { actionId: selected.id, durability: selected.createdTarget?.durability ?? null },
+        )
+      }
 
       if (selected.ledger === "optional" && selected.approval !== "required") {
         return dispatch()
@@ -180,7 +187,14 @@ function resolveSelectedAction(
     selected.targetType !== execution.actionPolicy.targetType ||
     selected.risk !== execution.actionPolicy.risk ||
     selected.ledger !== execution.actionPolicy.ledger ||
-    (selected.approval ?? "never") !== execution.actionPolicy.approval
+    (selected.approval ?? "never") !== execution.actionPolicy.approval ||
+    (selected.targetLifecycle ?? "existing") !==
+      (execution.actionPolicy.targetLifecycle ?? "existing") ||
+    selected.createdTarget?.commandTargetType !==
+      execution.actionPolicy.createdTarget?.commandTargetType ||
+    selected.createdTarget?.resultReferenceType !==
+      execution.actionPolicy.createdTarget?.resultReferenceType ||
+    selected.createdTarget?.durability !== execution.actionPolicy.createdTarget?.durability
   ) {
     throw new ToolError(
       "The Tool action policy does not resolve exactly to the selected deployment graph.",

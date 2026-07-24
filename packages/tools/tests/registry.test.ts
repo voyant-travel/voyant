@@ -168,6 +168,153 @@ describe("createToolRegistry", () => {
     )
   })
 
+  it("requires handler-owned durable command metadata for actions that create their target", () => {
+    const createTool = defineTool({
+      name: "create_record",
+      description: "Create a record with a handler-owned durable command claim.",
+      inputSchema: z.object({ name: z.string() }),
+      outputSchema: z.object({ id: z.string() }),
+      requiredScopes: ["records:write"],
+      tier: "write",
+      riskPolicy: {
+        destructive: false,
+        reversible: true,
+        dryRunSupported: false,
+        sideEffects: ["data-write"],
+      },
+      async handler() {
+        return { id: "record-1" }
+      },
+    })
+    const createdAction = {
+      id: "action.create-record",
+      capabilityId: "@voyant-travel/test#action.create-record",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "record",
+      targetLifecycle: "created" as const,
+      risk: "medium" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+    }
+
+    expect(() =>
+      createToolRegistry().register(
+        { ...createTool, actionPolicyEnforcement: "handler" },
+        { actionPolicy: createdAction },
+      ),
+    ).toThrow(/missing createdTarget command metadata/)
+
+    expect(() =>
+      createToolRegistry().register(createTool, {
+        actionPolicy: {
+          ...createdAction,
+          createdTarget: {
+            commandTargetType: "create-record-command",
+            resultReferenceType: "record",
+            durability: "handler-command-claim-v1",
+          },
+        },
+      }),
+    ).toThrow(/requires actionPolicyEnforcement "handler"/)
+
+    expect(() =>
+      createToolRegistry().register(
+        { ...createTool, actionPolicyEnforcement: "handler" },
+        {
+          actionPolicy: {
+            ...createdAction,
+            targetLifecycle: "existing",
+            createdTarget: {
+              commandTargetType: "create-record-command",
+              resultReferenceType: "record",
+              durability: "handler-command-claim-v1",
+            },
+          },
+        },
+      ),
+    ).toThrow(/declares createdTarget without targetLifecycle "created"/)
+  })
+
+  it("emits created-target policy metadata without requiring a caller targetId", () => {
+    const registry = createToolRegistry()
+    registry.register(
+      defineTool({
+        name: "create_record",
+        description: "Create a record with a handler-owned durable command claim.",
+        inputSchema: z.object({ name: z.string() }),
+        outputSchema: z.object({ id: z.string() }),
+        requiredScopes: ["records:write"],
+        tier: "write",
+        riskPolicy: {
+          destructive: false,
+          reversible: true,
+          dryRunSupported: false,
+          sideEffects: ["data-write"],
+        },
+        actionPolicyEnforcement: "handler",
+        async handler() {
+          return { id: "record-1" }
+        },
+      }),
+      {
+        actionPolicy: {
+          id: "action.create-record",
+          capabilityId: "@voyant-travel/test#action.create-record",
+          version: "v1",
+          kind: "execute",
+          targetType: "record",
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "create-record-command",
+            resultReferenceType: "record",
+            durability: "handler-command-claim-v1",
+          },
+          risk: "medium",
+          ledger: "required",
+          approval: "required",
+        },
+      },
+    )
+
+    expect(registry.list()[0]?.actionPolicy).toMatchObject({
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "create-record-command",
+        resultReferenceType: "record",
+        durability: "handler-command-claim-v1",
+      },
+      enforcement: "handler",
+      invocation: {
+        requiredFields: [],
+      },
+    })
+    expect(registry.list()[0]?.actionPolicy?.invocation.requiredFields).not.toContain("targetId")
+  })
+
+  it("preserves generic targetId requirements when target lifecycle is omitted", () => {
+    const registry = createToolRegistry()
+    registry.register(echoTool, {
+      actionPolicy: {
+        id: "action.read-record",
+        capabilityId: "@voyant-travel/test#action.read-record",
+        version: "v1",
+        kind: "read",
+        targetType: "record",
+        risk: "low",
+        ledger: "required",
+        approval: "never",
+      },
+    })
+
+    expect(registry.list()[0]?.actionPolicy).toMatchObject({
+      enforcement: "generic",
+      invocation: {
+        requiredFields: ["targetId"],
+      },
+    })
+  })
+
   it("rejects canonical and alias collisions", () => {
     const registry = createToolRegistry()
     registry.register(echoTool)

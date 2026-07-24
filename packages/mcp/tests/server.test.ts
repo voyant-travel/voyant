@@ -455,6 +455,225 @@ describe("createMcpApiRoutes", () => {
     ).rejects.toThrow(/no selected graph action policy/)
   })
 
+  it("propagates created-target handler policy without advertising caller-owned target identity", async () => {
+    let handlerCalls = 0
+    const createNotificationTool = defineTool({
+      name: "create_notification",
+      description: "Create a notification",
+      inputSchema: z.object({ message: z.string() }),
+      outputSchema: z.object({ notificationId: z.string() }),
+      requiredScopes: ["notifications:send"],
+      tier: "write",
+      riskPolicy: {
+        destructive: false,
+        reversible: true,
+        dryRunSupported: false,
+        sideEffects: ["data-write"],
+      },
+      actionPolicyEnforcement: "handler",
+      async handler() {
+        handlerCalls += 1
+        return { notificationId: "notification_1" }
+      },
+    })
+    const toolId = "@voyant-travel/notifications#tool.create-notification"
+    const graphApp = await createGraphMcpApiRoutes({
+      runtime: {
+        accessCatalog,
+        tools: [
+          {
+            id: toolId,
+            unitId: "@voyant-travel/notifications",
+            name: "create_notification",
+            requiredScopes: ["notifications:send"],
+            risk: "medium",
+            referenceId: "notifications-create-runtime",
+            async load<T>() {
+              return createNotificationTool as T
+            },
+          },
+        ],
+        actions: [
+          {
+            id: "@voyant-travel/notifications#action.create-notification",
+            version: "v1",
+            kind: "execute",
+            targetType: "notification",
+            targetLifecycle: "created",
+            createdTarget: {
+              commandTargetType: "notification-command",
+              resultReferenceType: "notification",
+              durability: "handler-command-claim-v1",
+            },
+            risk: "medium",
+            ledger: "required",
+            approval: "never",
+            from: { tools: [toolId] },
+          },
+        ],
+        references: [
+          {
+            id: "notifications-create-runtime",
+            importEntry: "@voyant-travel/notifications/tools",
+            async loadModule<T extends Record<string, unknown>>() {
+              return {} as T
+            },
+          },
+        ],
+      },
+      buildContext: () => buildContext(),
+    })
+    const outer = new Hono()
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["notifications:send"])
+      await next()
+    })
+    outer.route("/", graphApp)
+
+    const listed = await readRpc(await outer.request("/", rpc("tools/list", {})))
+    const listedTool = (
+      listed.result as {
+        tools: Array<{
+          name: string
+          inputSchema: {
+            properties?: {
+              _voyant?: { properties?: Record<string, unknown>; required?: string[] }
+            }
+          }
+          _meta: Record<string, unknown>
+        }>
+      }
+    ).tools.find(({ name }) => name === "create_notification")
+    const invocationSchema = listedTool?.inputSchema.properties?._voyant
+    expect(invocationSchema?.properties).toHaveProperty("reasonCode")
+    expect(invocationSchema?.properties).not.toHaveProperty("confirmed")
+    expect(invocationSchema?.properties).not.toHaveProperty("targetId")
+    expect(invocationSchema?.required ?? []).not.toContain("targetId")
+    expect(listedTool?._meta).toMatchObject({
+      "voyant.travel/tool": {
+        actionPolicy: {
+          targetLifecycle: "created",
+          createdTarget: {
+            commandTargetType: "notification-command",
+            resultReferenceType: "notification",
+            durability: "handler-command-claim-v1",
+          },
+          enforcement: "handler",
+          invocation: { requiredFields: [] },
+        },
+      },
+    })
+
+    const manifest = (await (await outer.request("/manifest")).json()) as {
+      tools: Array<{
+        name: string
+        actionPolicy?: {
+          targetLifecycle?: string
+          createdTarget?: Record<string, unknown>
+          invocation: { requiredFields: string[] }
+        }
+      }>
+    }
+    expect(manifest.tools.find(({ name }) => name === "create_notification")?.actionPolicy).toEqual(
+      expect.objectContaining({
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "notification-command",
+          resultReferenceType: "notification",
+          durability: "handler-command-claim-v1",
+        },
+        invocation: expect.objectContaining({ requiredFields: [] }),
+      }),
+    )
+
+    const called = await readRpc(
+      await outer.request(
+        "/",
+        rpc("tools/call", {
+          name: "create_notification",
+          arguments: { message: "hello", _voyant: { reasonCode: "operator-request" } },
+        }),
+      ),
+    )
+    expect((called.result as { structuredContent?: unknown }).structuredContent).toEqual({
+      notificationId: "notification_1",
+    })
+    expect(handlerCalls).toBe(1)
+  })
+
+  it("rejects a domain input field reserved for action invocation metadata", async () => {
+    const conflictingTool = defineTool({
+      name: "conflicting_control",
+      description: "Invalid Tool that collides with framework action controls",
+      inputSchema: z.object({ _voyant: z.string() }),
+      outputSchema: z.object({ ok: z.boolean() }),
+      requiredScopes: ["catalog:read"],
+      tier: "read",
+      riskPolicy: READ_ONLY_RISK,
+      actionPolicyEnforcement: "handler",
+      async handler() {
+        return { ok: true }
+      },
+    })
+    const toolId = "@voyant-travel/catalog#tool.conflicting-control"
+
+    const routes = await createGraphMcpApiRoutes({
+      runtime: {
+        accessCatalog,
+        tools: [
+          {
+            id: toolId,
+            unitId: "@voyant-travel/catalog",
+            name: "conflicting_control",
+            requiredScopes: ["catalog:read"],
+            risk: "low",
+            referenceId: "conflicting-control-runtime",
+            async load<T>() {
+              return conflictingTool as T
+            },
+          },
+        ],
+        actions: [
+          {
+            id: "@voyant-travel/catalog#action.conflicting-control",
+            version: "v1",
+            kind: "read",
+            targetType: "catalog",
+            risk: "low",
+            ledger: "optional",
+            from: { tools: [toolId] },
+          },
+        ],
+        references: [
+          {
+            id: "conflicting-control-runtime",
+            importEntry: "@voyant-travel/catalog/tools",
+            async loadModule<T extends Record<string, unknown>>() {
+              return {} as T
+            },
+          },
+        ],
+      },
+      buildContext: () => buildContext(),
+    })
+    const outer = new Hono()
+    let caught: Error | undefined
+    outer.onError((error, c) => {
+      caught = error
+      return c.text("invalid Tool schema", 500)
+    })
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      await next()
+    })
+    outer.route("/", routes)
+
+    const response = await outer.request("/", rpc("tools/list", {}))
+
+    expect(response.status).toBe(500)
+    expect(caught?.message).toMatch(/input conflicts with reserved action metadata field "_voyant"/)
+  })
+
   it("hides a tool from grant audiences outside its declared audience policy", async () => {
     const app = appWithScopes(["catalog:read"], "customer")
     const listed = await readRpc(await app.request("/", rpc("tools/list", {})))

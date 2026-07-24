@@ -99,6 +99,12 @@ describe("bookings tools", () => {
         version: "v1",
         kind: "execute",
         targetType: "booking",
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "booking_reservation_command",
+          resultReferenceType: "booking",
+          durability: "handler-command-claim-v1",
+        },
         risk: "high",
         ledger: "required",
         approval: "never",
@@ -110,6 +116,12 @@ describe("bookings tools", () => {
     expect(registry.list()[0]?.actionPolicy).toMatchObject({
       id: "booking.reserve",
       capabilityId: "bookings:reserve",
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "booking_reservation_command",
+        resultReferenceType: "booking",
+        durability: "handler-command-claim-v1",
+      },
       enforcement: "handler",
       invocation: {
         requiredFields: ["confirmed"],

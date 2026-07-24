@@ -10,6 +10,8 @@ interface BookingActionDeclaration extends ActionLedgerCapabilityDefinition {
     kind: VoyantGraphActionDeclaration["kind"]
     from: VoyantGraphActionBindings
     policy?: string
+    targetLifecycle?: VoyantGraphActionDeclaration["targetLifecycle"]
+    createdTarget?: VoyantGraphActionDeclaration["createdTarget"]
   }
 }
 
@@ -45,6 +47,12 @@ export const BOOKING_ACTION_DECLARATIONS = {
       id: "booking.reserve",
       kind: "execute",
       from: { tools: ["@voyant-travel/bookings#tool.reserve-booking"] },
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "booking_reservation_command",
+        resultReferenceType: "booking",
+        durability: "handler-command-claim-v1",
+      },
     },
   },
   piiRead: {

@@ -63,6 +63,10 @@ agent.
   actor, confirmation, target, idempotency key, exact command fingerprint, and any approved
   principal-bound request before the domain handler runs. Required-ledger writes record a
   preflight before dispatch and a terminal success/failure entry afterward.
+  Created-target actions are never sent through this generic wrapper: graph discovery identifies
+  their stable pre-create command target and canonical result-reference contract, registration
+  requires handler-owned durable claim/replay, and `_voyant.targetId` is not exposed as a required
+  invocation field. This prevents a caller-supplied placeholder from becoming the audit identity.
 - **Audience (D3):** the authenticated grant remains the source of audience. A Tool may
   narrow its allowed grant audiences; disallowed Tools are neither listed nor callable.
 - **Headless boundary:** the registry returns typed pure data; this adapter wraps it in

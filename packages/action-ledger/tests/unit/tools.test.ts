@@ -188,6 +188,49 @@ describe("action-ledger Tool services", () => {
     )
   })
 
+  it("binds created-target approval to the pre-create command identity", async () => {
+    vi.spyOn(actionLedgerService, "requestApproval").mockResolvedValue({
+      requestedAction: makeEntry({
+        actionName: "bookings:status:cancel",
+        actionKind: "execute",
+        status: "awaiting_approval",
+        capabilityId: "bookings:status:cancel",
+        capabilityVersion: "v1",
+      }),
+      approval: makeApproval(),
+      replayed: false,
+    })
+    const createdAction: VoyantGraphActionDeclaration = {
+      ...selectedAction,
+      targetType: "booking",
+      targetLifecycle: "created",
+      createdTarget: {
+        commandTargetType: "booking-create-command",
+        resultReferenceType: "booking-ref",
+        durability: "handler-command-claim-v1",
+      },
+    }
+
+    await createServices([createdAction]).requestApproval({
+      actionId: createdAction.id,
+      actionVersion: "v1",
+      targetId: "client-command-17",
+      commandInput: { bookingNumber: "B-17" },
+      idempotencyKey: "create-book-17",
+    })
+
+    expect(actionLedgerService.requestApproval).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        requestedAction: expect.objectContaining({
+          targetType: "booking-create-command",
+          targetId: "client-command-17",
+          idempotencyFingerprint: expect.stringMatching(/^sha256:/),
+        }),
+      }),
+    )
+  })
+
   it("fails closed for absent and conditional approval request policies", async () => {
     await expect(
       createServices([]).requestApproval({

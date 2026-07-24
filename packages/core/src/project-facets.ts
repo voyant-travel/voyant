@@ -360,6 +360,12 @@ export interface VoyantGraphActionDeclaration extends VoyantGraphFacetEntity {
   version: string
   kind: "execute" | "read" | "sensitive-read"
   targetType: string
+  targetLifecycle?: "existing" | "created"
+  createdTarget?: {
+    commandTargetType: string
+    resultReferenceType: string
+    durability: "handler-command-claim-v1"
+  }
   resource?: string
   action?: string
   requiredScopes?: readonly string[]

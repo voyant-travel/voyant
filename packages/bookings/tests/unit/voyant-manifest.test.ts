@@ -107,6 +107,12 @@ describe("bookings deployment manifest", () => {
       expect.objectContaining({
         id: "booking.reserve",
         capabilityId: "bookings:reserve",
+        targetLifecycle: "created",
+        createdTarget: {
+          commandTargetType: "booking_reservation_command",
+          resultReferenceType: "booking",
+          durability: "handler-command-claim-v1",
+        },
         requiredScopes: ["bookings:write"],
         risk: "high",
         ledger: "required",

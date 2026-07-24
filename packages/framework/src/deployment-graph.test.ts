@@ -878,6 +878,107 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("validates created-target action command contracts", () => {
+    const action = {
+      id: "@acme/voyant-actions#action.create-task",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "task",
+      risk: "medium" as const,
+      ledger: "required" as const,
+      targetLifecycle: "created" as const,
+      createdTarget: {
+        commandTargetType: "task-create-command",
+        resultReferenceType: "task",
+        durability: "handler-command-claim-v1" as const,
+      },
+    }
+    const manifest = (candidate: Record<string, unknown>) => ({
+      ...defineModule({ id: "@acme/voyant-actions" }),
+      actions: [{ ...action, ...candidate }],
+    })
+
+    expect(validateGraphUnitManifest(manifest({}))).toEqual([])
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          createdTarget: undefined,
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].createdTarget",
+        message: expect.stringContaining("must declare a createdTarget command contract"),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          targetLifecycle: "existing",
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].createdTarget",
+        message: expect.stringContaining('targetLifecycle "created"'),
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          targetLifecycle: undefined,
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].createdTarget",
+      }),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          createdTarget: {
+            commandTargetType: "",
+            resultReferenceType: "",
+            durability: "best-effort",
+          },
+        }),
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "actions[0].createdTarget.commandTargetType",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "actions[0].createdTarget.resultReferenceType",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "actions[0].createdTarget.durability",
+        }),
+      ]),
+    )
+    expect(
+      validateGraphUnitManifest(
+        manifest({
+          kind: "read",
+          ledger: "optional",
+        }),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "actions[0].targetLifecycle",
+        message: expect.stringContaining('kind "execute" with ledger "required"'),
+      }),
+    )
+  })
+
   it("rejects action bindings that reference the wrong selected facet kind", async () => {
     const module = defineModule({
       id: "@acme/voyant-actions",
