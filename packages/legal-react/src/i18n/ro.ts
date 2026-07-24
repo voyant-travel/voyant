@@ -477,7 +477,7 @@ export const legalUiRo = {
       sortOrder: "Ordine",
       label: "Eticheta",
       daysBeforeDeparture: "Zile inainte de plecare",
-      refundPercent: "Procent rambursare (puncte de baza)",
+      refundPercent: "Procent rambursare",
       refundType: "Tip rambursare",
       currency: "Moneda",
       flatAmountCents: "Suma fixa",
@@ -485,7 +485,7 @@ export const legalUiRo = {
     placeholders: {
       label: "ex. 30+ zile inainte de plecare",
       daysBeforeDeparture: "ex. 30",
-      refundPercent: "ex. 10000 = 100%",
+      refundPercent: "ex. 100",
       flatAmountCents: "ex. 50,00",
     },
     actions: {
@@ -506,7 +506,7 @@ export const legalUiRo = {
     },
     validation: {
       refundPercentMin: "Procentul de rambursare trebuie sa fie cel putin 0",
-      refundPercentMax: "Procentul de rambursare trebuie sa fie cel mult 10000",
+      refundPercentMax: "Procentul de rambursare trebuie sa fie cel mult 100",
     },
   },
   signatureDialog: {

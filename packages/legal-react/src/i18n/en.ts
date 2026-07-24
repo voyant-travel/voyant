@@ -483,7 +483,7 @@ export const legalUiEn = {
     placeholders: {
       label: "e.g. 30+ days before departure",
       daysBeforeDeparture: "e.g. 30",
-      refundPercent: "e.g. 10000 = 100%",
+      refundPercent: "e.g. 100",
       flatAmountCents: "e.g. 50.00",
     },
     actions: {
@@ -504,7 +504,7 @@ export const legalUiEn = {
     },
     validation: {
       refundPercentMin: "Refund percent must be at least 0",
-      refundPercentMax: "Refund percent must be at most 10000",
+      refundPercentMax: "Refund percent must be at most 100",
     },
   },
   signatureDialog: {
