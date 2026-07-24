@@ -22,6 +22,7 @@ import { z } from "zod/v4"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { type PriceScheduleRecord, usePriceScheduleMutation } from "../index.js"
 import { PriceCatalogCombobox } from "./price-catalog-combobox.js"
+import { RecurrenceRulePicker } from "./recurrence-rule-picker.js"
 
 function createScheduleFormSchema(messages: ReturnType<typeof usePricingUiMessagesOrDefault>) {
   return z.object({
@@ -179,15 +180,15 @@ export function PriceScheduleDialog({
 
             <div className="flex flex-col gap-2">
               <Label>{messages.priceScheduleDialog.fields.recurrenceRule}</Label>
-              <Textarea
-                {...form.register("recurrenceRule")}
-                placeholder={messages.priceScheduleDialog.placeholders.recurrenceRule}
-                rows={2}
-                className="font-mono text-xs"
+              <RecurrenceRulePicker
+                value={form.watch("recurrenceRule")}
+                onChange={(rule) =>
+                  form.setValue("recurrenceRule", rule, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
               />
-              <p className="text-xs text-muted-foreground">
-                {messages.priceScheduleDialog.helpText.recurrenceRuleExample}
-              </p>
               {form.formState.errors.recurrenceRule ? (
                 <p className="text-xs text-destructive">
                   {form.formState.errors.recurrenceRule.message}

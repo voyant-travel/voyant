@@ -26,6 +26,7 @@ import { z } from "zod/v4"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { type ExtraPriceRuleRecord, useExtraPriceRuleMutation } from "../index.js"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { ProductExtraCombobox } from "./product-extra-combobox.js"
 import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const ADDON_PRICING_MODES = [
@@ -181,9 +182,14 @@ export function ExtraPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: Pr
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.extra.fields.productExtraId}</Label>
-                <Input
-                  {...form.register("productExtraId")}
-                  placeholder={messages.locationPriceRuleDialog.extra.placeholders.productExtraId}
+                <ProductExtraCombobox
+                  value={form.watch("productExtraId")}
+                  onChange={(value) =>
+                    form.setValue("productExtraId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
               </div>
             </div>

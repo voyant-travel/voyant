@@ -60,6 +60,7 @@ export const invoiceNumberSeriesDialog = {
     externalConfigKey: "External Config Key",
     active: "Active",
   },
+  advancedLabel: "Advanced",
   placeholders: {
     code: "invoice-main",
     name: "Default invoice series",

@@ -1,5 +1,6 @@
 "use client"
 
+import { ProductFacilityCombobox } from "@voyant-travel/inventory-react/ui"
 import {
   Button,
   Input,
@@ -188,9 +189,14 @@ export function DropoffPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: 
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.facilityId}</Label>
-                <Input
-                  {...form.register("facilityId")}
-                  placeholder={messages.locationPriceRuleDialog.placeholders.facilityId}
+                <ProductFacilityCombobox
+                  value={form.watch("facilityId")}
+                  onChange={(value) =>
+                    form.setValue("facilityId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
               </div>
             </div>

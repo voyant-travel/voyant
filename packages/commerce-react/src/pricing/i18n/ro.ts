@@ -107,6 +107,14 @@ export const pricingUiRo = {
       placeholder: "Selecteaza regula de pret pe unitate...",
       empty: "Nu au fost gasite reguli de pret pe unitate.",
     },
+    pickupPoint: {
+      placeholder: "Cauta puncte de preluare...",
+      empty: "Nu au fost gasite puncte de preluare.",
+    },
+    productExtra: {
+      placeholder: "Cauta extra-uri...",
+      empty: "Nu au fost gasite extra-uri.",
+    },
   },
   pricingCategoriesPage: {
     title: "Categorii de tarifare",
@@ -276,6 +284,22 @@ export const pricingUiRo = {
     actions: {
       create: "Creeaza calendarul",
     },
+  },
+  recurrence: {
+    frequencyLabel: "Frecventa",
+    frequencyOptions: {
+      yearly: "Anual",
+      monthly: "Lunar",
+      weekly: "Saptamanal",
+      custom: "Personalizat",
+    },
+    monthsLabel: "Luni",
+    weekdaysLabel: "Zile",
+    monthDayLabel: "Ziua din luna",
+    monthDayPlaceholder: "ex. 15",
+    advancedLabel: "Avansat",
+    rawRuleLabel: "Regula recurenta bruta (RRULE)",
+    rawRulePlaceholder: "FREQ=YEARLY;BYMONTH=6,7,8",
   },
   cancellationPolicyRuleDialog: {
     titles: {

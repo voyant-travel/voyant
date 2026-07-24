@@ -26,6 +26,7 @@ import { z } from "zod/v4"
 import { usePricingUiMessagesOrDefault } from "../i18n/provider.js"
 import { type PickupPriceRuleRecord, usePickupPriceRuleMutation } from "../index.js"
 import { OptionPriceRuleCombobox } from "./option-price-rule-combobox.js"
+import { PickupPointCombobox } from "./pickup-point-combobox.js"
 import { ProductOptionCombobox } from "./product-option-combobox.js"
 
 const ADDON_PRICING_MODES = [
@@ -179,10 +180,20 @@ export function PickupPriceRuleDialog({ open, onOpenChange, rule, onSuccess }: P
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.locationPriceRuleDialog.fields.pickupPointId}</Label>
-                <Input
-                  {...form.register("pickupPointId")}
-                  placeholder={messages.locationPriceRuleDialog.placeholders.pickupPointId}
+                <PickupPointCombobox
+                  value={form.watch("pickupPointId")}
+                  onChange={(value) =>
+                    form.setValue("pickupPointId", value ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
+                {form.formState.errors.pickupPointId ? (
+                  <p className="text-xs text-destructive">
+                    {form.formState.errors.pickupPointId.message}
+                  </p>
+                ) : null}
               </div>
             </div>
 

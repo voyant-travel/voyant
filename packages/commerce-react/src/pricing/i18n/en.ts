@@ -107,6 +107,14 @@ export const pricingUiEn = {
       placeholder: "Select option unit price rule...",
       empty: "No option unit price rules found.",
     },
+    pickupPoint: {
+      placeholder: "Search pickup points...",
+      empty: "No pickup points found.",
+    },
+    productExtra: {
+      placeholder: "Search extras...",
+      empty: "No extras found.",
+    },
   },
   pricingCategoriesPage: {
     title: "Pricing Categories",
@@ -274,6 +282,22 @@ export const pricingUiEn = {
     actions: {
       create: "Create Schedule",
     },
+  },
+  recurrence: {
+    frequencyLabel: "Frequency",
+    frequencyOptions: {
+      yearly: "Yearly",
+      monthly: "Monthly",
+      weekly: "Weekly",
+      custom: "Custom",
+    },
+    monthsLabel: "Months",
+    weekdaysLabel: "Days",
+    monthDayLabel: "Day of month",
+    monthDayPlaceholder: "e.g. 15",
+    advancedLabel: "Advanced",
+    rawRuleLabel: "Raw recurrence rule (RRULE)",
+    rawRulePlaceholder: "FREQ=YEARLY;BYMONTH=6,7,8",
   },
   cancellationPolicyRuleDialog: {
     titles: {

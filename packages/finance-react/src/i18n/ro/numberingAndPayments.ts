@@ -60,6 +60,7 @@ export const invoiceNumberSeriesDialog = {
     externalConfigKey: "Cheie configurare externa",
     active: "Activa",
   },
+  advancedLabel: "Avansat",
   placeholders: {
     code: "factura-principala",
     name: "Seria implicita pentru facturi",

@@ -54,6 +54,7 @@ export type InvoiceNumberSeriesDialogMessages = {
     externalConfigKey: string
     active: string
   }
+  advancedLabel: string
   placeholders: {
     code: string
     name: string
