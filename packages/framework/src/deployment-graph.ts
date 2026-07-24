@@ -2019,10 +2019,19 @@ function validatePromotedFacets(
         )
       }
     }
-    const explicitlyAvailable = availability?.status === "available"
+    // Legacy actions may omit the whole safety contract. Once an action opts
+    // into any safety metadata, omitted availability has the same callable
+    // meaning as runtime lowering: available. This prevents removing only an
+    // `unavailable` block from bypassing lifecycle and durability validation.
+    const effectivelyAvailable = availability?.status !== "unavailable"
+    const safetyContractSelected =
+      availability !== undefined ||
+      entry.effectBoundary !== undefined ||
+      entry.durability !== undefined
     const toolBound = isRecord(entry.from) && Array.isArray(entry.from.tools)
     if (
-      explicitlyAvailable &&
+      effectivelyAvailable &&
+      safetyContractSelected &&
       entry.kind === "execute" &&
       toolBound &&
       entry.targetLifecycle === undefined
@@ -2035,7 +2044,8 @@ function validatePromotedFacets(
       )
     }
     if (
-      explicitlyAvailable &&
+      effectivelyAvailable &&
+      safetyContractSelected &&
       entry.kind === "execute" &&
       (entry.effectBoundary === "external" || entry.effectBoundary === "multistage") &&
       entry.durability === undefined
