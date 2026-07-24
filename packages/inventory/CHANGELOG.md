@@ -1,5 +1,41 @@
 # @voyant-travel/inventory
 
+## 0.17.0
+
+### Minor Changes
+
+- 0190317: Make product, product-composition, MICE-program, trip, and room-block creation
+  Tools use handler-owned atomic created-target command claims with exact replay
+  and drift conflicts.
+- bf548af: Make generated-child Tool creation retry-safe by binding each command to an
+  explicit stable parent anchor, admitting the selected graph action in the
+  handler, and atomically persisting the command claim, child row, and canonical
+  child reference.
+
+### Patch Changes
+
+- Updated dependencies [78423d3]
+- Updated dependencies [bba4fec]
+- Updated dependencies [c1f9cdf]
+- Updated dependencies [58020ec]
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/commerce@0.41.0
+  - @voyant-travel/relationships@0.129.0
+  - @voyant-travel/action-ledger@0.112.0
+  - @voyant-travel/catalog@0.194.0
+  - @voyant-travel/finance@0.196.0
+  - @voyant-travel/bookings@0.196.0
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/operator-settings@0.14.16
+  - @voyant-travel/operations@0.8.38
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+  - @voyant-travel/storage@0.113.4
+
 ## 0.16.2
 
 ### Patch Changes

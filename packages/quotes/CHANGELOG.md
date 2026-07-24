@@ -1,5 +1,39 @@
 # @voyant-travel/crm
 
+## 0.132.0
+
+### Minor Changes
+
+- 58020ec: Keep first-party Tools with unproven non-transactional external or multi-stage effects out of
+  runtime discovery. The affected graph actions remain available as diagnostic metadata with an
+  explicit unsafe-effect reason until each package gains tested transactional, outbox, or saga
+  durability. This also covers supplier-side flight cancellation and contract execution whose
+  post-commit lifecycle event is not yet durably published.
+
+### Patch Changes
+
+- bba4fec: Anchor generated-child actions to stable existing parents so action policy checks
+  do not require IDs that only exist after dispatch. Split relationship child
+  creation Tools by person and organization so each selected action has one
+  unambiguous parent target type. Bind each generic action's policy target to its
+  domain parent-id input before ledger, approval, or handler execution.
+- Updated dependencies [0190317]
+- Updated dependencies [bba4fec]
+- Updated dependencies [c1f9cdf]
+- Updated dependencies [58020ec]
+- Updated dependencies [bf548af]
+- Updated dependencies [a6460e2]
+- Updated dependencies [8a4f3cd]
+- Updated dependencies
+  - @voyant-travel/trips@0.188.0
+  - @voyant-travel/relationships@0.129.0
+  - @voyant-travel/action-ledger@0.112.0
+  - @voyant-travel/core@0.133.0
+  - @voyant-travel/tools@0.4.0
+  - @voyant-travel/operator-settings@0.14.16
+  - @voyant-travel/db@0.118.2
+  - @voyant-travel/hono@0.134.2
+
 ## 0.131.40
 
 ### Patch Changes

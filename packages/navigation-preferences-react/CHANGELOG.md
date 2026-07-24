@@ -1,5 +1,12 @@
 # @voyant-travel/navigation-preferences-react
 
+## 0.16.0
+
+### Patch Changes
+
+- @voyant-travel/auth-react@0.143.0
+- @voyant-travel/navigation-preferences@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes
