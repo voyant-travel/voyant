@@ -19,7 +19,7 @@ const COLUMNS = [
  */
 export function SuppliersListSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-28" />
         <Skeleton className="h-4 w-80" />

@@ -404,7 +404,7 @@ function EmptyState({
 
 function SupplierDetailSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       <div className="h-9 w-72 animate-pulse rounded bg-muted" />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="h-64 animate-pulse rounded-md bg-muted" />

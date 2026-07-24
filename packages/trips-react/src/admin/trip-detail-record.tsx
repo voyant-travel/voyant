@@ -85,7 +85,7 @@ export function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void })
   const scheduleSummary = tripScheduleLabel(activeComponents)
 
   return (
-    <main className="flex flex-col gap-6 p-6">
+    <main className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-3">
           <Button variant="ghost" size="sm" onClick={() => navigateTo("trip.list", {})}>

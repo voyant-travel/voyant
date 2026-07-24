@@ -212,7 +212,7 @@ export function ContractDetailPage({
   const targetValue = getContractTargetValue(contract)
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {onBackToContracts ? (
           <Button variant="ghost" size="icon" onClick={onBackToContracts}>

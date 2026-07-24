@@ -23,7 +23,7 @@ const COLUMN_WIDTHS = ["w-48", "w-16", "w-24", "w-8", "w-24"] as const
  */
 export function ProductsListSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* Header: title + description + "New product" button */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">

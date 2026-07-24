@@ -205,7 +205,7 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <AdminWidgetSlotRenderer slot="dashboard.header" props={widgetProps} />
       {isBrandNewTenant ? (
         <>

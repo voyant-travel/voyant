@@ -107,7 +107,7 @@ export function TemplateDetailPage({
     ])
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {onBackToTemplates ? (
           <Button variant="ghost" size="icon" onClick={onBackToTemplates}>

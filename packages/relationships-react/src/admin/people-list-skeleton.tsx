@@ -17,7 +17,7 @@ const PEOPLE_HEADER_WIDTHS = ["w-16", "w-14", "w-14", "w-16"] as const
  */
 export function PeopleListSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-20" />
         <Skeleton className="h-4 w-72" />

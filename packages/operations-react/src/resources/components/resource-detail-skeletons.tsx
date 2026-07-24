@@ -45,7 +45,7 @@ function BaseResourceDetailSkeleton({
   stackedCards?: number
 }) {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Skeleton className="size-9 rounded-md" />
         <div className="flex flex-1 flex-col gap-2">

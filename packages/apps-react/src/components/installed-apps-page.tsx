@@ -98,7 +98,7 @@ export function InstalledAppsPage({
   const total = query.data?.total ?? 0
 
   return (
-    <div data-slot="installed-apps-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="installed-apps-page" className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
           <h2 className="text-lg font-semibold tracking-tight">{messages.list.title}</h2>

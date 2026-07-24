@@ -499,7 +499,7 @@ function ProductDetailPageState({
   const messages = useProductsUiMessagesOrDefault()
 
   return (
-    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4 p-6", className)}>
+    <div data-slot="product-detail-page-state" className={cn("flex flex-col gap-4", className)}>
       {onBack ? (
         <Button type="button" variant="ghost" className="w-fit" onClick={onBack}>
           <ArrowLeft className="mr-2 size-4" aria-hidden="true" />

@@ -317,7 +317,7 @@ export function ReportBuilderAdmin({
   )
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8" data-mode={mode}>
+    <div className="flex flex-col gap-6" data-mode={mode}>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">{doc.name}</h1>

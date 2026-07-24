@@ -61,7 +61,7 @@ export default function ReportsIndexPage() {
   const templates = catalogQuery.data?.templates ?? []
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">Reports</h1>

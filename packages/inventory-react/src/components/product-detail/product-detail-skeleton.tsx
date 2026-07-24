@@ -10,7 +10,7 @@ import { Skeleton } from "@voyant-travel/ui/components/skeleton"
  */
 export function ProductDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <ProductDetailHeaderSkeleton />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">

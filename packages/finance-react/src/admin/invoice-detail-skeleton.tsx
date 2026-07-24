@@ -12,7 +12,7 @@ import { Skeleton } from "@voyant-travel/ui/components/skeleton"
  */
 export function InvoiceDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <Header />
 
       {/* InvoiceInfoCards: three summary cards */}

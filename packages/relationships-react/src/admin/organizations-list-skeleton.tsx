@@ -15,7 +15,7 @@ const ORGANIZATION_HEADER_WIDTHS = ["w-16", "w-20", "w-16", "w-16", "w-16"] as c
  */
 export function OrganizationsListSkeleton() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <div className="space-y-2">
         <Skeleton className="h-7 w-36" />
         <Skeleton className="h-4 w-80" />
