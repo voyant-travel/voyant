@@ -9,7 +9,7 @@
 "@voyant-travel/inventory": major
 "@voyant-travel/finance": major
 "@voyant-travel/finance-react": major
-"@voyant-travel/operator-standard": patch
+"@voyant-travel/operator-standard": major
 ---
 
 Remove callable Tool name aliases from the standard Operator graph. MCP and
@@ -22,3 +22,7 @@ Stop publicly exporting the deprecated Relationships Tools
 `add_relationship_note`, `add_relationship_contact_method`, and
 `add_relationship_address`. Use the person- or organization-specific add Tools
 selected by the graph instead.
+
+See the consolidated [caller migration
+page](../docs/migrations/removed-tool-aliases.md) for the complete old →
+canonical name mapping.
