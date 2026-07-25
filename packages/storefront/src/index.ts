@@ -291,5 +291,6 @@ export {
   storefrontIntakeRuntimePort,
   storefrontOffersRuntimePort,
   storefrontPaymentLinkRuntimePort,
+  storefrontPaymentReconciliationJobRuntimePort,
   storefrontVerificationRuntimePort,
 } from "./runtime-port.js"
