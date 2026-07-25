@@ -27,6 +27,11 @@ export interface StripeConnectSecurityHeadersScope {
 export interface SecurityHeadersOptions {
   contentSecurityPolicy?: string | false
   hsts?: boolean
+  /**
+   * Extend a CSP already set by the downstream response instead of replacing
+   * it. This preserves SSR-generated script hashes/nonces.
+   */
+  preserveResponseContentSecurityPolicy?: boolean
   /** Opt in only the admin routes that render Stripe Connect components. */
   stripeConnect?: StripeConnectSecurityHeadersScope
 }
@@ -66,7 +71,12 @@ export function withStripeConnectCsp(contentSecurityPolicy: string): string {
     }
 
     const existing = new Set(directives[index]?.split(/\s+/).slice(1))
-    const additions = sources.filter((source) => !existing.has(source))
+    const additions = sources.filter((source) => {
+      if (existing.has(source)) return false
+      // A hash alongside unsafe-inline causes browsers to ignore unsafe-inline.
+      // The existing allowance already permits Stripe's empty style element.
+      return !(name === "style-src" && existing.has("'unsafe-inline'"))
+    })
     if (additions.length > 0) directives[index] += ` ${additions.join(" ")}`
   }
 
@@ -92,8 +102,15 @@ export function securityHeaders<TBindings extends object = VoyantBindings>(
     c.header("Referrer-Policy", "strict-origin-when-cross-origin")
     c.header("X-Frame-Options", "DENY")
     c.header("Cross-Origin-Opener-Policy", stripeConnectRequest ? "unsafe-none" : "same-origin")
-    if (csp) {
-      c.header("Content-Security-Policy", stripeConnectRequest ? withStripeConnectCsp(csp) : csp)
+    const responseCsp = options.preserveResponseContentSecurityPolicy
+      ? c.res.headers.get("Content-Security-Policy")
+      : null
+    const effectiveCsp = responseCsp ?? csp
+    if (effectiveCsp) {
+      c.header(
+        "Content-Security-Policy",
+        stripeConnectRequest ? withStripeConnectCsp(effectiveCsp) : effectiveCsp,
+      )
     }
     if (hsts && new URL(c.req.url).protocol === "https:") {
       c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

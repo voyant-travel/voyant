@@ -56,7 +56,11 @@ describe("serveAdminHost", () => {
         new URL(request.url).pathname.startsWith("/api")
           ? Response.json({ ok: true })
           : new Response("<html><body>ADMIN</body></html>", {
-              headers: { "content-type": "text/html; charset=UTF-8" },
+              headers: {
+                "content-type": "text/html; charset=UTF-8",
+                "content-security-policy":
+                  "default-src 'self'; script-src 'self' 'sha256-ssr-bootstrap'; style-src 'self' 'unsafe-inline'",
+              },
             }),
     })
 
@@ -71,7 +75,10 @@ describe("serveAdminHost", () => {
       "frame-src https://connect-js.stripe.com https://js.stripe.com",
     )
     expect(documentResponse.headers.get("content-security-policy")).toContain(
-      "style-src 'self' 'unsafe-inline' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='",
+      "script-src 'self' 'sha256-ssr-bootstrap' https://connect-js.stripe.com https://js.stripe.com",
+    )
+    expect(documentResponse.headers.get("content-security-policy")).toContain(
+      "style-src 'self' 'unsafe-inline'",
     )
 
     for (const response of [apiResponse, assetResponse]) {

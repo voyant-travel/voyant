@@ -40,6 +40,7 @@ export function serveAdminHost<Env extends object = Record<string, unknown>>(
   web.use(
     "*",
     securityHeaders({
+      preserveResponseContentSecurityPolicy: true,
       stripeConnect: { pathPrefixes: ["/"], documentResponsesOnly: true },
     }),
   )

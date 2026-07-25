@@ -50,7 +50,10 @@ describe("securityHeaders middleware", () => {
       "script-src 'self' https://connect-js.stripe.com https://js.stripe.com",
     )
     expect(stripeResponse.headers.get("content-security-policy")).toContain(
-      "style-src 'self' 'unsafe-inline' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='",
+      "style-src 'self' 'unsafe-inline'",
+    )
+    expect(stripeResponse.headers.get("content-security-policy")).not.toContain(
+      "'unsafe-inline' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='",
     )
 
     for (const response of [strictResponse, lookalikeResponse]) {
@@ -77,6 +80,7 @@ describe("securityHeaders middleware", () => {
     expect(csp.match(/https:\/\/connect-js\.stripe\.com/g)).toHaveLength(2)
     expect(csp).toContain("frame-src https://connect-js.stripe.com https://js.stripe.com")
     expect(csp).toContain("img-src 'self' https://*.stripe.com")
+    expect(csp).toContain("style-src 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='")
   })
 
   it("can restrict Stripe relaxation to document responses for SPA hosts", async () => {
@@ -99,5 +103,33 @@ describe("securityHeaders middleware", () => {
     expect(documentResponse.headers.get("content-security-policy")).toContain("stripe.com")
     expect(apiResponse.headers.get("cross-origin-opener-policy")).toBe("same-origin")
     expect(apiResponse.headers.get("content-security-policy")).not.toContain("stripe.com")
+  })
+
+  it("preserves downstream SSR hashes while extending the Stripe document policy", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      securityHeaders({
+        preserveResponseContentSecurityPolicy: true,
+        stripeConnect: { pathPrefixes: ["/"], documentResponsesOnly: true },
+      }),
+    )
+    app.get("/", (c) => {
+      c.header(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'sha256-ssr-bootstrap'; style-src 'self' 'unsafe-inline'",
+      )
+      return c.html("<main>SSR</main>")
+    })
+
+    const response = await app.request("https://admin.example/")
+    const csp = response.headers.get("content-security-policy") ?? ""
+
+    expect(csp).toContain("script-src 'self' 'sha256-ssr-bootstrap'")
+    expect(csp).toContain("https://connect-js.stripe.com")
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'")
+    expect(csp).not.toContain(
+      "'unsafe-inline' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='",
+    )
   })
 })
