@@ -4,6 +4,7 @@ import { z } from "zod"
 import {
   createToolRegistry,
   defineTool,
+  isToolDeploymentRiskCompatible,
   READ_ONLY_RISK,
   type ToolContext,
   ToolError,
@@ -34,6 +35,40 @@ const echoTool = defineTool({
   async handler({ text }) {
     return { text: `echo: ${text}` }
   },
+})
+
+describe("Tool deployment risk compatibility", () => {
+  it("shares the complete graph-risk to Tool-tier matrix", () => {
+    expect(
+      ["low", "medium", "high", "critical"].flatMap((risk) =>
+        ["read", "write", "sensitive", "destructive"].map((tier) => [
+          risk,
+          tier,
+          isToolDeploymentRiskCompatible(
+            risk as "low" | "medium" | "high" | "critical",
+            tier as "read" | "write" | "sensitive" | "destructive",
+          ),
+        ]),
+      ),
+    ).toEqual([
+      ["low", "read", true],
+      ["low", "write", false],
+      ["low", "sensitive", false],
+      ["low", "destructive", false],
+      ["medium", "read", false],
+      ["medium", "write", true],
+      ["medium", "sensitive", false],
+      ["medium", "destructive", false],
+      ["high", "read", false],
+      ["high", "write", true],
+      ["high", "sensitive", true],
+      ["high", "destructive", true],
+      ["critical", "read", false],
+      ["critical", "write", true],
+      ["critical", "sensitive", true],
+      ["critical", "destructive", true],
+    ])
+  })
 })
 
 describe("createToolRegistry", () => {

@@ -153,7 +153,7 @@ const BOOKING_REQUIREMENTS_TOOL_SPECS = [
         `create${exportStem}Tool`,
         targetType,
         ["bookings:write"],
-        "medium",
+        "high",
       ],
       [
         `update-${singularSlug}`,
@@ -161,7 +161,7 @@ const BOOKING_REQUIREMENTS_TOOL_SPECS = [
         `update${exportStem}Tool`,
         targetType,
         ["bookings:write"],
-        "medium",
+        "high",
       ],
     ] as const
   }),
@@ -187,7 +187,7 @@ const BOOKING_REQUIREMENTS_TOOL_SPECS = [
     "createBookingAnswerTool",
     "booking-answer",
     ["bookings:write"],
-    "medium",
+    "high",
   ],
   [
     "update-booking-answer",
@@ -195,7 +195,7 @@ const BOOKING_REQUIREMENTS_TOOL_SPECS = [
     "updateBookingAnswerTool",
     "booking-answer",
     ["bookings:write"],
-    "medium",
+    "high",
   ],
 ] as const satisfies readonly BookingExtensionToolSpec[]
 
@@ -223,7 +223,7 @@ const BOOKING_EXTRAS_TOOL_SPECS = [
     "createBookingExtraTool",
     "booking-extra",
     ["bookings:write"],
-    "medium",
+    "high",
   ],
   [
     "update-booking-extra",

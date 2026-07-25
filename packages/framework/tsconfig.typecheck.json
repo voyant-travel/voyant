@@ -960,6 +960,7 @@
         "../distribution/dist/channel-push/subscriber-runtime.d.ts"
       ],
       "@voyant-travel/distribution/linkables": ["../distribution/dist/linkables.d.ts"],
+      "@voyant-travel/distribution/mcp-runtime": ["../distribution/dist/mcp-runtime.d.ts"],
       "@voyant-travel/distribution/payment-policy-runtime": [
         "../distribution/dist/payment-policy-runtime.d.ts"
       ],
@@ -1084,6 +1085,7 @@
       "@voyant-travel/flights/contract/adapter": ["../flights/dist/contract/adapter.d.ts"],
       "@voyant-travel/flights/contract/schemas": ["../flights/dist/contract/schemas.d.ts"],
       "@voyant-travel/flights/contract/types": ["../flights/dist/contract/types.d.ts"],
+      "@voyant-travel/flights/mcp-runtime": ["../flights/dist/mcp-runtime.d.ts"],
       "@voyant-travel/flights/orchestration/fan-out": [
         "../flights/dist/orchestration/fan-out.d.ts"
       ],
@@ -1369,6 +1371,7 @@
       "@voyant-travel/mice-react/ui": ["../mice-react/dist/ui.d.ts"],
       "@voyant-travel/mice/booking-extension": ["../mice/dist/booking-extension.d.ts"],
       "@voyant-travel/mice/linkables": ["../mice/dist/linkables.d.ts"],
+      "@voyant-travel/mice/mcp-runtime": ["../mice/dist/mcp-runtime.d.ts"],
       "@voyant-travel/mice/routes": ["../mice/dist/routes.d.ts"],
       "@voyant-travel/mice/runtime-contributor": ["../mice/dist/runtime-contributor.d.ts"],
       "@voyant-travel/mice/schema": ["../mice/dist/schema.d.ts"],

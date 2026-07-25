@@ -12,6 +12,7 @@ import {
 import type { ToolContext } from "./context.js"
 import type { ToolDefinition } from "./define-tool.js"
 import { ToolError } from "./errors.js"
+import { isToolDeploymentRiskCompatible } from "./risk.js"
 
 // biome-ignore lint/suspicious/noExplicitAny: the registry is a heterogeneous container over each tool's distinct input/output/context types.
 type AnyToolDefinition = ToolDefinition<any, any, any>
@@ -513,13 +514,7 @@ function assertCompatibleRisk(
   tier: AnyToolDefinition["tier"],
   name: string,
 ): void {
-  const compatibleTiers: Record<NonNullable<ToolBindingMetadata["deploymentRisk"]>, string[]> = {
-    low: ["read"],
-    medium: ["write"],
-    high: ["write", "sensitive", "destructive"],
-    critical: ["write", "sensitive", "destructive"],
-  }
-  if (!compatibleTiers[deploymentRisk].includes(tier)) {
+  if (!isToolDeploymentRiskCompatible(deploymentRisk, tier)) {
     throw new Error(
       `Tool "${name}" tier "${tier}" is incompatible with graph risk "${deploymentRisk}"`,
     )

@@ -48,10 +48,12 @@ export {
   type ToolRegistry,
 } from "./registry.js"
 export {
+  isToolDeploymentRiskCompatible,
   READ_ONLY_RISK,
   RISK_TIERS,
   type RiskPolicy,
   type RiskTier,
   TOOL_SIDE_EFFECTS,
+  type ToolDeploymentRiskTier,
   type ToolSideEffect,
 } from "./risk.js"
