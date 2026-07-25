@@ -91,9 +91,25 @@ export function inspectFirstPartyManifestConvergence({
   }
 
   inspectToolParity(graph, workspacePackages, sources, toolRuntimeDefinitions, failures)
+  inspectCreatedTargetExecutorAuthority(sources, failures)
   inspectExecutableAccessAuthority(graph, failures)
   inspectWebhookParity(graph, failures)
   return failures.sort()
+}
+
+function inspectCreatedTargetExecutorAuthority(sources, failures) {
+  for (const [sourcePath, source] of sources) {
+    if (!/\bexecuteCreatedTargetCommand\b/.test(source)) continue
+    if (
+      sourcePath === "packages/action-ledger/src/created-command-internal.ts" ||
+      sourcePath.startsWith("packages/action-ledger/tests/")
+    ) {
+      continue
+    }
+    failures.push(
+      `${sourcePath}: raw created-target executor bypasses selected Tool admission authority`,
+    )
+  }
 }
 
 function inspectUnit(unit, kind, failures) {

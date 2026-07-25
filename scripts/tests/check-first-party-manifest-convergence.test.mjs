@@ -215,6 +215,19 @@ describe("first-party manifest convergence", () => {
     assert.deepEqual(inspectFirstPartyManifestConvergence(input), [])
   })
 
+  it("rejects raw created-target execution outside the action-ledger implementation", () => {
+    const input = fixture()
+    input.sources.set(
+      "packages/loyalty/src/bypass.ts",
+      "import { executeCreatedTargetCommand } from '@voyant-travel/action-ledger/created-command'",
+    )
+
+    assert.match(
+      inspectFirstPartyManifestConvergence(input).join("\n"),
+      /raw created-target executor bypasses selected Tool admission authority/,
+    )
+  })
+
   it("rejects provider declarations with no deployment selection", () => {
     const input = fixture()
     input.graph.modules[0].providers = [
