@@ -3,6 +3,11 @@ import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers
 import type { ExecutionContext } from "hono"
 import { Hono } from "hono"
 
+const ADMIN_SSR_FALLBACK_CSP =
+  "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; " +
+  "img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; " +
+  "script-src 'self' 'unsafe-inline'; connect-src 'self'"
+
 /** Options for {@link serveAdminHost}. */
 export interface ServeAdminHostOptions<Env extends object> {
   /**
@@ -40,6 +45,9 @@ export function serveAdminHost<Env extends object = Record<string, unknown>>(
   web.use(
     "*",
     securityHeaders({
+      // TanStack Start currently emits inline hydration bootstrap scripts
+      // without response CSP hashes/nonces. A downstream CSP still wins.
+      contentSecurityPolicy: ADMIN_SSR_FALLBACK_CSP,
       preserveResponseContentSecurityPolicy: true,
       stripeConnect: { pathPrefixes: ["/"], documentResponsesOnly: true },
     }),

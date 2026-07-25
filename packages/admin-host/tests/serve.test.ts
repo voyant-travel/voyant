@@ -39,13 +39,20 @@ describe("serveAdminHost", () => {
     const clientAssetsDir = createAssetsDir()
     const web = serveAdminHost({
       clientAssetsDir,
-      app: () => new Response("APP", { status: 200 }),
+      app: () =>
+        new Response("<script>window.__HYDRATED__ = true</script>", {
+          status: 200,
+          headers: { "content-type": "text/html; charset=UTF-8" },
+        }),
     })
 
     const response = await web.request("/anything-else", {}, {}, ctx)
 
     expect(response.status).toBe(200)
-    expect(await response.text()).toBe("APP")
+    expect(await response.text()).toContain("window.__HYDRATED__")
+    expect(response.headers.get("content-security-policy")).toContain(
+      "script-src 'self' 'unsafe-inline' https://connect-js.stripe.com https://js.stripe.com",
+    )
   })
 
   it("relaxes headers only for real admin document responses", async () => {
