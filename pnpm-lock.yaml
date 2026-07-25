@@ -1406,9 +1406,6 @@ importers:
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../bookings
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
@@ -1672,9 +1669,6 @@ importers:
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../bookings
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
