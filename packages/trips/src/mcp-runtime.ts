@@ -4,12 +4,7 @@ import {
   mapActionLedgerRequestContext,
 } from "@voyant-travel/action-ledger/request-context"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import {
-  defineToolContextContribution,
-  requireService,
-  ToolError,
-  type ToolHandlerActionPolicyContext,
-} from "@voyant-travel/tools"
+import { defineToolContextContribution, requireService } from "@voyant-travel/tools"
 import type { Context } from "hono"
 import {
   type DurableTripActionRuntime,
@@ -36,15 +31,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const c = request as Context
     const db = c.var.db as AnyDrizzleDb
     const trips: TripsToolServices = {
-      async createTrip({ idempotencyKey: legacyIdempotencyKey, components, ...input }, admitted) {
-        admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
+      async createTrip({ components, ...input }, admitted) {
         const requestContext = actionLedgerContext(c)
         const result = await executeAdmittedCreatedTargetCommand(
           {
             db,
             context: requestContext,
             admitted,
-            idempotencyKey: legacyIdempotencyKey,
             commandTargetType: "trip-create-command",
             canonicalTargetType: "trip",
             resultReferenceType: "trip",
@@ -135,26 +128,6 @@ function requireDurableActionRuntime(
     resources[durableTripActionRuntimePort.id] as DurableTripActionRuntime | undefined,
     durableTripActionRuntimePort.id,
   )
-}
-
-function admittedCreatedCommandIdempotencyKey(
-  admitted: ToolHandlerActionPolicyContext,
-  legacyIdempotencyKey: string | undefined,
-): string {
-  const idempotencyKey = admitted.invocation.idempotencyKey?.trim()
-  if (!idempotencyKey) {
-    throw new ToolError(
-      "Created-target command idempotency must come from the admitted Tool invocation.",
-      "ACTION_POLICY_REQUIRED",
-    )
-  }
-  if (legacyIdempotencyKey !== undefined && legacyIdempotencyKey !== idempotencyKey) {
-    throw new ToolError(
-      "The legacy top-level idempotency key does not match the admitted Tool invocation.",
-      "INVALID_INPUT",
-    )
-  }
-  return idempotencyKey
 }
 
 function actionLedgerContext(c: LedgerHttpContext): ActionLedgerRequestContextValues {

@@ -40,7 +40,6 @@ import { listResponseSchema } from "@voyant-travel/types"
 import type { Context } from "hono"
 import {
   type CancelTripComponentsDeps,
-  type ReserveTripDeps,
   type StartCheckoutDeps,
   TripsInvariantError,
   tripsService,
@@ -75,8 +74,6 @@ type Env = {
 
 export interface TripsRoutesOptions {
   surface?: "admin" | "public"
-  /** @internal Transitional public-proposal dependency; not exposed as a Trips mutation route. */
-  reserveTripDeps?: TripsRouteDeps<ReserveTripDeps>
   startCheckoutDeps?: TripsRouteDeps<StartCheckoutDeps>
   cancelTripComponentsDeps?: TripsRouteDeps<CancelTripComponentsDeps>
 }

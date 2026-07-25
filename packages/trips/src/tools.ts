@@ -209,7 +209,6 @@ function assertToolAudience(ctx: TripsToolContext, audience: Visibility): void {
 
 const createTripArgs = createTripEnvelopeSchema.extend({
   components: z.array(createTripComponentBodySchema).default([]),
-  idempotencyKey: z.string().trim().min(1).max(255).optional(),
 })
 export type CreateTripArgs = z.infer<typeof createTripArgs>
 

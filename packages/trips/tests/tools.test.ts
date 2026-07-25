@@ -87,7 +87,6 @@ describe("trips tools", () => {
       "create_trip",
       {
         title: "AI trip",
-        idempotencyKey: "trip-create-1",
         components: [
           {
             kind: "manual_placeholder",
@@ -153,12 +152,12 @@ describe("trips tools", () => {
               enforcement: "handler",
               invocation: {
                 controlField: "_voyant",
-                requiredFields: [],
+                requiredFields: ["idempotencyKey"],
                 optionalFields: [],
                 fingerprintAlgorithm: "action-ledger-command-v1",
               },
             },
-            invocation: {},
+            invocation: { idempotencyKey: "trip-create-1" },
           } as ToolContext["handlerActionPolicy"],
         },
       ),
