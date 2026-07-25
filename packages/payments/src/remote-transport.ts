@@ -130,6 +130,18 @@ export function createControlPlaneRemotePaymentTransport(
         case "status":
           return unwrapOutcome<TResult>(await post("/status", rpcCall.payload))
 
+        case "authorize":
+          return unwrapOutcome<TResult>(await post("/authorize", rpcCall.payload))
+
+        case "capture":
+          return unwrapOutcome<TResult>(await post("/capture", rpcCall.payload))
+
+        case "void":
+          return unwrapOutcome<TResult>(await post("/void", rpcCall.payload))
+
+        case "refund":
+          return unwrapOutcome<TResult>(await post("/refund", rpcCall.payload))
+
         case "verifyCallback": {
           // Fail CLOSED: any transport/parse failure rejects the callback.
           const request = rpcCall.payload as PaymentCallbackRequest

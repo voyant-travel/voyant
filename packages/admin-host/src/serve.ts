@@ -1,4 +1,5 @@
 import { serveStatic } from "@hono/node-server/serve-static"
+import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers"
 import type { ExecutionContext } from "hono"
 import { Hono } from "hono"
 
@@ -34,6 +35,14 @@ export function serveAdminHost<Env extends object = Record<string, unknown>>(
   options: ServeAdminHostOptions<Env>,
 ): Hono<{ Bindings: Env }> {
   const web = new Hono<{ Bindings: Env }>()
+  // Client-side navigation means every HTML document can render Payments.
+  // Keep assets and API fall-through responses on the strict defaults.
+  web.use(
+    "*",
+    securityHeaders({
+      stripeConnect: { pathPrefixes: ["/"], documentResponsesOnly: true },
+    }),
+  )
   web.use("*", serveStatic({ root: options.clientAssetsDir }))
   web.all("*", (c) => options.app(c.req.raw, c.env, c.executionCtx))
   return web

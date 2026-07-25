@@ -73,6 +73,58 @@ describe("control-plane remote payment transport", () => {
     })
   })
 
+  it.each([
+    "authorize",
+    "capture",
+    "void",
+    "refund",
+  ] as const)("forwards %s through the deployment-authenticated control-plane boundary", async (method) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({
+        data: {
+          ok: true,
+          result: {
+            status: "accepted",
+            processorIdentity: {
+              providerId: "netopia",
+              connectionId: "payment_connection_123",
+            },
+          },
+        },
+      }),
+    )
+    const transport = createControlPlaneRemotePaymentTransport({
+      endpoint: "https://control.example/admin-runtime/payments/",
+      deploymentToken: "deployment-token",
+      deploymentId: "deployment_123",
+      fetchImpl,
+    })
+    const payload = {
+      paymentSessionId: "psess_123",
+      processorPaymentId: "processor_payment_123",
+      processorIdentity: {
+        providerId: "netopia",
+        connectionId: "payment_connection_123",
+      },
+      money: { amountMinor: 2_500, currency: "RON" },
+      idempotencyKey: `operation_${method}_123`,
+    }
+
+    await transport.call({ method, connectionRef: "ignored", context: { env: {} }, payload })
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `https://control.example/admin-runtime/payments/${method}`,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          authorization: "Bearer deployment-token",
+          "x-voyant-deployment-id": "deployment_123",
+        }),
+        body: JSON.stringify(payload),
+      }),
+    )
+  })
+
   it("forwards callback connection id to the control plane verifier", async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
       jsonResponse({
