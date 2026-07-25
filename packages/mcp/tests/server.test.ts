@@ -273,7 +273,8 @@ function frameworkRuntime(input: {
   })
 }
 
-function conditionalFrameworkRuntime() {
+function conditionalFrameworkRuntime(options: { providerSelected?: boolean } = {}) {
+  const providerSelected = options.providerSelected ?? true
   const unitId = "@voyant-travel/test"
   const portId = "catalog.durable-echo"
   const toolId = "@voyant-travel/test#tool.echo"
@@ -282,7 +283,7 @@ function conditionalFrameworkRuntime() {
   const testProvider = vi.fn()
   const runtime = createVoyantGraphRuntime({
     graphHash: "sha256:mcp-conditional-test",
-    providerSelections: { catalog: "durable" },
+    providerSelections: providerSelected ? { catalog: "durable" } : {},
     accessCatalog,
     entries: {
       "@voyant-travel/catalog/provider": async () => ({
@@ -329,26 +330,30 @@ function conditionalFrameworkRuntime() {
             referenceId: "catalog-provider",
           },
         ],
-        provisionalReferences: [
-          {
-            id: "catalog-echo-runtime",
-            unitId,
-            facet: "tools.runtime",
-            entityId: toolId,
-            runtime: { entry: "./tools", export: "echoTool" },
-            importEntry: "@voyant-travel/catalog/tools",
-          },
-        ],
-        provisionalTools: [
-          {
-            id: toolId,
-            unitId,
-            name: "echo",
-            referenceId: "catalog-echo-runtime",
-            requiredScopes: ["catalog:read"],
-            risk: "low",
-          },
-        ],
+        provisionalReferences: providerSelected
+          ? [
+              {
+                id: "catalog-echo-runtime",
+                unitId,
+                facet: "tools.runtime",
+                entityId: toolId,
+                runtime: { entry: "./tools", export: "echoTool" },
+                importEntry: "@voyant-travel/catalog/tools",
+              },
+            ]
+          : [],
+        provisionalTools: providerSelected
+          ? [
+              {
+                id: toolId,
+                unitId,
+                name: "echo",
+                referenceId: "catalog-echo-runtime",
+                requiredScopes: ["catalog:read"],
+                risk: "low",
+              },
+            ]
+          : [],
         requiredPorts: [portId],
         runtimePorts: [portId],
         runtimePortConformance: [{ portId, referenceId: "catalog-port-conformance" }],
@@ -759,6 +764,23 @@ describe("createMcpApiRoutes", () => {
     }
     expect(manifest.tools.map(({ name }) => name)).toEqual(["echo"])
     expect(loadTool).toHaveBeenCalledOnce()
+  })
+
+  it("keeps a conditional Tool hidden when its optional provider is absent", async () => {
+    const { loadTool, runtime } = conditionalFrameworkRuntime({ providerSelected: false })
+
+    const routes = await createGraphMcpApiRoutes({
+      runtime,
+      buildContext: () => buildContext(),
+      providedContext: ["toolActionPolicy"],
+    })
+    const app = new Hono()
+    app.route("/", routes)
+    const manifest = (await (await app.request("/manifest")).json()) as {
+      tools: Array<{ name: string }>
+    }
+    expect(manifest.tools).toEqual([])
+    expect(loadTool).not.toHaveBeenCalled()
   })
 
   it("propagates created-target handler policy without advertising caller-owned target identity", async () => {

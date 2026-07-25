@@ -289,11 +289,7 @@ function assertCommandTargetMatches(
     typeof commandInput === "object" && commandInput !== null && !Array.isArray(commandInput)
       ? (commandInput as Record<string, unknown>)[field]
       : undefined
-  if (
-    typeof commandTarget !== "string" ||
-    !commandTarget.trim() ||
-    commandTarget !== targetId
-  ) {
+  if (typeof commandTarget !== "string" || !commandTarget.trim() || commandTarget !== targetId) {
     throw new ToolError(
       `Tool action targetId must exactly match command input field "${field}".`,
       "ACTION_POLICY_REQUIRED",

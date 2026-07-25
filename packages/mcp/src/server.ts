@@ -181,17 +181,6 @@ export async function createGraphMcpApiRoutes(
   options: GraphMcpApiRoutesOptions,
 ): Promise<OpenAPIHono> {
   assertVoyantGraphMcpRuntime(options.runtime)
-  if (
-    options.runtime.actions.some(
-      (action) =>
-        action.availability?.status === "unavailable" &&
-        action.availability.enableWhen !== undefined,
-    )
-  ) {
-    throw new Error(
-      "Conditional graph actions require the framework-owned activated runtime view before MCP registration.",
-    )
-  }
   const registry = createToolRegistry()
   const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
