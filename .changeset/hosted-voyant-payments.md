@@ -3,7 +3,7 @@
 "@voyant-travel/operator-settings": minor
 "@voyant-travel/operator-settings-react": minor
 "@voyant-travel/storefront": minor
-"@voyant-travel/hono": minor
+"@voyant-travel/hono": patch
 "@voyant-travel/admin-host": patch
 "@voyant-travel/i18n": patch
 "@voyant-travel/trips": patch
