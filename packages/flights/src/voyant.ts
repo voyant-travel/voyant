@@ -171,7 +171,7 @@ export const flightsVoyantModule = defineModule({
       effectBoundary: "external",
       durability: {
         strategy: "saga",
-        testReference: "packages/flights/src/durable-action-command.test.ts",
+        testReference: "packages/flights/tests/integration/durable-action-command.test.ts",
       },
       requiredScopes: ["flights:write"],
       risk: "critical",
@@ -201,7 +201,7 @@ export const flightsVoyantModule = defineModule({
       effectBoundary: "external",
       durability: {
         strategy: "saga",
-        testReference: "packages/flights/src/durable-action-command.test.ts",
+        testReference: "packages/flights/tests/integration/durable-action-command.test.ts",
       },
       requiredScopes: ["flights:write"],
       risk: "critical",

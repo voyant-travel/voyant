@@ -114,8 +114,12 @@ isolated non-ticketing conformance probe. The host must also schedule
 `drainDurableFlightActionOperations`; its leased reconciliation pass recovers
 pending or abandoned supplier operations without relying on the original
 caller to retain and replay an approval envelope. Operational status can be
-read tenant-safely with `getDurableFlightActionOperation`. Without that
-selected port, both mutation Tools remain unavailable.
+read by operation id with `getDurableFlightActionOperation`. Voyant isolates
+tenants at the deployment boundary (one database, one runtime per
+organization — see ADR-0001), so the package does not filter this lookup by
+organization; the stored `organizationId` is supplier metadata, not an
+access-control predicate. Without that selected port, both mutation Tools
+remain unavailable.
 
 ### Reference data — operator's own Postgres tables
 

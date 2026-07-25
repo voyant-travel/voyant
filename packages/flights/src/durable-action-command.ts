@@ -99,19 +99,20 @@ export async function executeDurableFlightAction(input: ExecuteDurableFlightActi
   return result.value
 }
 
+/**
+ * Voyant isolates tenants at the deployment boundary (one database, one
+ * runtime per organization — see ADR-0001), so this lookup is scoped only by
+ * operation id. It does not filter by organization: that would be in-process
+ * tenant partitioning, which the framework does not do.
+ */
 export async function getDurableFlightActionOperation(
   db: AnyDrizzleDb,
-  input: { operationId: string; organizationId: string },
+  input: { operationId: string },
 ): Promise<DurableFlightActionOperationView | null> {
   const [operation] = await db
     .select()
     .from(flightActionOperations)
-    .where(
-      and(
-        eq(flightActionOperations.id, input.operationId),
-        eq(flightActionOperations.organizationId, input.organizationId),
-      ),
-    )
+    .where(eq(flightActionOperations.id, input.operationId))
     .limit(1)
   return operation ? operationView(operation) : null
 }
@@ -179,7 +180,6 @@ async function prepareOperation(
     .from(flightActionOperations)
     .where(
       and(
-        eq(flightActionOperations.organizationId, organizationId),
         eq(flightActionOperations.targetType, command.target.type),
         eq(flightActionOperations.targetId, command.target.id),
         inArray(flightActionOperations.status, ["pending", "processing"]),

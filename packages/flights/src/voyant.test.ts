@@ -159,7 +159,7 @@ describe("flights deployment manifest", () => {
         effectBoundary: "external",
         durability: {
           strategy: "saga",
-          testReference: "packages/flights/src/durable-action-command.test.ts",
+          testReference: "packages/flights/tests/integration/durable-action-command.test.ts",
         },
       })
     }

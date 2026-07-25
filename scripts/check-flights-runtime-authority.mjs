@@ -46,9 +46,7 @@ if (!packageJson.voyant?.requiresSchemas?.includes("@voyant-travel/finance")) {
 }
 if (
   !manifest.includes("requirePort(flightsRuntimePort)") ||
-  !manifest.includes(
-    "requirePort(durableFlightActionRuntimePort, { optional: true })",
-  ) ||
+  !manifest.includes("requirePort(durableFlightActionRuntimePort, { optional: true })") ||
   !manifest.includes('requires: { capabilities: ["finance.payment-sessions"] }') ||
   !manifest.includes('export: "createFlightsVoyantRuntime"')
 ) {
