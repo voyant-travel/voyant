@@ -18,11 +18,14 @@ import {
   getMediaAsset,
   listMediaAssets,
   MediaError,
+  recordAssetUsage,
+  removeAssetUsage,
   updateMediaAsset,
 } from "./service.js"
 import {
   createMediaAssetSchema,
   listMediaAssetsQuerySchema,
+  recordAssetUsageSchema,
   updateMediaAssetSchema,
 } from "./validation.js"
 
@@ -37,7 +40,15 @@ export interface MediaSiteBridgeOptions {
 
 const assetIdBodySchema = z.object({ assetId: z.string().trim().min(1) })
 const updateBodySchema = assetIdBodySchema.extend({ input: updateMediaAssetSchema })
-const actionSchema = z.enum(["delete", "get", "list", "update", "upload"])
+const actionSchema = z.enum([
+  "delete",
+  "get",
+  "list",
+  "record-usage",
+  "remove-usage",
+  "update",
+  "upload",
+])
 
 export function createMediaSiteBridgeRoutes(options: MediaSiteBridgeOptions) {
   const routes = new Hono<Env>()
@@ -97,6 +108,23 @@ export function createMediaSiteBridgeRoutes(options: MediaSiteBridgeOptions) {
           }
           throw error
         }
+      }
+      case "record-usage": {
+        const body = recordAssetUsageSchema.safeParse(await readJson(c))
+        if (!body.success) return invalid(c, body.error.issues)
+        return c.json({ data: await recordAssetUsage(c.get("db"), body.data) }, 201)
+      }
+      case "remove-usage": {
+        const body = recordAssetUsageSchema.safeParse(await readJson(c))
+        if (!body.success) return invalid(c, body.error.issues)
+        return c.json(
+          {
+            data: {
+              removed: await removeAssetUsage(c.get("db"), body.data),
+            },
+          },
+          200,
+        )
       }
       case "upload":
         return upload(c, options.resolveStorage(c))

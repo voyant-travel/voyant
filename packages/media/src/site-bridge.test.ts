@@ -86,7 +86,12 @@ describe("media site bridge", () => {
     )
     expect(upload.status).toBe(201)
     const uploaded = (await upload.json()) as {
-      data: { url: string; altText: string; altTranslations: unknown[] }
+      data: {
+        id: string
+        url: string
+        altText: string
+        altTranslations: unknown[]
+      }
     }
     expect(uploaded.data.url).toMatch(/^https:\/\/cdn\.example\.test\//)
     expect(uploaded.data.altText).toBe("Plaja la apus")
@@ -104,6 +109,34 @@ describe("media site bridge", () => {
     await expect(list.json()).resolves.toMatchObject({
       total: 1,
       data: [{ altText: "Plaja la apus" }],
+    })
+
+    const usage = {
+      assetId: uploaded.data.id,
+      entityType: "payload.media",
+      entityId: "local-media-1",
+    }
+    const recorded = await app(true).request(
+      "http://test/v1/admin/media-library/site-bridge?action=record-usage",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(usage),
+      },
+    )
+    expect(recorded.status).toBe(201)
+
+    const removed = await app(true).request(
+      "http://test/v1/admin/media-library/site-bridge?action=remove-usage",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(usage),
+      },
+    )
+    expect(removed.status).toBe(200)
+    await expect(removed.json()).resolves.toEqual({
+      data: { removed: true },
     })
   })
 })
