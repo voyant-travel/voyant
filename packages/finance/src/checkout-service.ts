@@ -34,6 +34,7 @@ import {
   invoiceNumberSeries,
   invoices,
   type PaymentSession,
+  paymentSessions,
 } from "./schema.js"
 import { financeService } from "./service.js"
 
@@ -415,6 +416,19 @@ export async function initiateCheckoutCollection(
       throw new Error("No outstanding payment schedule available for collection")
     }
 
+    // Card settlement completion requires an outstanding booking invoice even
+    // when the session is schedule-targeted. Materialize a proforma for the
+    // collected amount so managed adapter status refresh can project paid.
+    invoice = await createCollectionInvoice(
+      db,
+      context,
+      {
+        ...plan,
+        documentType: plan.documentType ?? "proforma",
+      },
+      input.notes ?? null,
+    )
+
     paymentSession = await financeService.createPaymentSessionFromBookingSchedule(
       db,
       plan.selectedSchedule.id,
@@ -427,6 +441,13 @@ export async function initiateCheckoutCollection(
     if (!paymentSession) {
       throw new Error("Failed to create payment session from booking schedule")
     }
+
+    const [linkedSession] = await db
+      .update(paymentSessions)
+      .set({ invoiceId: invoice.id, updatedAt: new Date() })
+      .where(eq(paymentSessions.id, paymentSession.id))
+      .returning()
+    paymentSession = linkedSession ?? paymentSession
 
     if (
       runtime.notificationDispatcher?.sendPaymentSessionNotification &&
