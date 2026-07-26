@@ -33,6 +33,18 @@ interface ActivatedRuntimeState {
   attestations: ReadonlyMap<string, unknown>
 }
 
+/**
+ * Realm-shared attestation keys. Vite SSR `noExternal` for `@voyant-travel/*`
+ * can bundle a second copy of this module into the host while MCP still loads
+ * from `node_modules`. Module-local WeakMaps/WeakSets then diverge and MCP
+ * fail-closes with NOT_FRAMEWORK_OWNED / NOT_ACTIVATED. `Symbol.for` +
+ * `globalThis` keep one registry per JS realm across those copies.
+ */
+const FRAMEWORK_OWNED_RUNTIMES_KEY = Symbol.for("@voyant-travel/framework:graph-runtime-owned")
+const ACTIVATED_RUNTIME_STATES_KEY = Symbol.for(
+  "@voyant-travel/framework:graph-runtime-activated-states",
+)
+
 const provisionalUnits = new WeakMap<
   VoyantGraphRuntime,
   ReadonlyMap<string, VoyantGraphConditionalActionProvisionalUnit>
@@ -42,13 +54,47 @@ const conditionalPortPreflights = new WeakMap<
   Map<string, ConditionalPortPreflight>
 >()
 const conditionalPortAttestations = new WeakMap<VoyantGraphRuntime, Map<string, unknown>>()
-const activatedRuntimeStates = new WeakMap<VoyantGraphRuntime, ActivatedRuntimeState>()
 const activatedRuntimeViews = new WeakMap<VoyantGraphRuntime, VoyantGraphActivatedRuntime>()
-const frameworkOwnedRuntimes = new WeakSet<VoyantGraphRuntime>()
+
+function realmWeakSet(key: symbol): WeakSet<object> {
+  const bag = globalThis as Record<symbol, WeakSet<object> | undefined>
+  const existing = bag[key]
+  if (existing) return existing
+  const created = new WeakSet<object>()
+  Object.defineProperty(globalThis, key, {
+    value: created,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return created
+}
+
+function realmWeakMap<K extends object, V>(key: symbol): WeakMap<K, V> {
+  const bag = globalThis as Record<symbol, WeakMap<K, V> | undefined>
+  const existing = bag[key]
+  if (existing) return existing
+  const created = new WeakMap<K, V>()
+  Object.defineProperty(globalThis, key, {
+    value: created,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return created
+}
+
+function frameworkOwnedRuntimes(): WeakSet<object> {
+  return realmWeakSet(FRAMEWORK_OWNED_RUNTIMES_KEY)
+}
+
+function activatedRuntimeStates(): WeakMap<VoyantGraphRuntime, ActivatedRuntimeState> {
+  return realmWeakMap(ACTIVATED_RUNTIME_STATES_KEY)
+}
 
 /** Record a runtime minted by a framework-owned construction boundary. */
 function registerFrameworkOwnedRuntime(runtime: VoyantGraphRuntime): void {
-  frameworkOwnedRuntimes.add(runtime)
+  frameworkOwnedRuntimes().add(runtime)
 }
 
 /**
@@ -76,7 +122,7 @@ export function assertVoyantGraphMcpRuntime(
   if (
     typeof runtime !== "object" ||
     runtime === null ||
-    !frameworkOwnedRuntimes.has(runtime as VoyantGraphRuntime)
+    !frameworkOwnedRuntimes().has(runtime as VoyantGraphRuntime)
   ) {
     throw new Error(
       "VOYANT_GRAPH_RUNTIME_NOT_FRAMEWORK_OWNED: MCP registration requires a runtime created by the framework.",
@@ -222,7 +268,7 @@ export function activateConditionalActionRuntime(
     }),
   )
   const exactAttestations = new Map(attestations)
-  activatedRuntimeStates.set(activated, { base: runtime, attestations: exactAttestations })
+  activatedRuntimeStates().set(activated, { base: runtime, attestations: exactAttestations })
   activatedRuntimeViews.set(runtime, activated)
   return activated
 }
@@ -236,7 +282,7 @@ export function assertConditionalActionRuntimeActivated(
   ports?: VoyantGraphRuntimePorts,
   requireBoundPorts = false,
 ): asserts runtime is VoyantGraphActivatedRuntime {
-  const activated = activatedRuntimeStates.get(runtime)
+  const activated = activatedRuntimeStates().get(runtime)
   if (!activated) {
     if (conditionalPortRequirements(runtime).length === 0) return
     throw new Error(
@@ -364,7 +410,7 @@ function assertTypedPortConformance(
 }
 
 function baseRuntime(runtime: VoyantGraphRuntime): VoyantGraphRuntime {
-  return activatedRuntimeStates.get(runtime)?.base ?? runtime
+  return activatedRuntimeStates().get(runtime)?.base ?? runtime
 }
 
 function sortedUnique(values: readonly string[]): string[] {
