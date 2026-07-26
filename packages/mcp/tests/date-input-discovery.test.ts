@@ -91,21 +91,55 @@ function buildContext(): ToolContext {
   }
 }
 
+const scheduleStrictDateTool = defineTool({
+  name: "schedule_strict_date",
+  description: "Schedule with plain z.date() fields (no coerce).",
+  inputSchema: z.object({
+    code: z.string().min(1),
+    startsAt: z.date(),
+  }),
+  outputSchema: z.object({
+    code: z.string(),
+    startsAt: z.string(),
+  }),
+  requiredScopes: ["records:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "write",
+  riskPolicy: {
+    destructive: false,
+    reversible: true,
+    dryRunSupported: false,
+    sideEffects: ["data-write"],
+  },
+  async handler(input) {
+    expect(input.startsAt).toBeInstanceOf(Date)
+    return {
+      code: input.code,
+      startsAt: input.startsAt.toISOString(),
+    }
+  },
+})
+
+function mcpAppFor(...tools: Array<typeof scheduleOfferTool | typeof scheduleStrictDateTool>) {
+  const registry = createToolRegistry()
+  for (const tool of tools) registry.register(tool)
+  const mcp = createMcpApiRoutes({
+    accessCatalog,
+    registry,
+    buildContext,
+  })
+  const app = new Hono()
+  app.use("*", async (c, next) => {
+    c.set("scopes", ["records:write"])
+    await next()
+  })
+  app.route("/", mcp)
+  return app
+}
+
 describe("MCP Date input discovery", () => {
-  it("lists and calls Tools whose input schemas include Date fields", async () => {
-    const registry = createToolRegistry()
-    registry.register(scheduleOfferTool)
-    const mcp = createMcpApiRoutes({
-      accessCatalog,
-      registry,
-      buildContext,
-    })
-    const app = new Hono()
-    app.use("*", async (c, next) => {
-      c.set("scopes", ["records:write"])
-      await next()
-    })
-    app.route("/", mcp)
+  it("lists and calls Tools whose input schemas include coerced Date fields", async () => {
+    const app = mcpAppFor(scheduleOfferTool)
 
     const listed = await readRpc(await app.request("/", rpc("tools/list", {})))
     expect(listed.error).toBeUndefined()
@@ -143,6 +177,40 @@ describe("MCP Date input discovery", () => {
         code: "spring",
         validFrom: "2026-07-01T00:00:00.000Z",
         validUntil: "2026-07-31T23:59:59.000Z",
+      },
+    })
+  })
+
+  it("revives ISO datetime strings for plain z.date() Tool inputs before registry validation", async () => {
+    const app = mcpAppFor(scheduleStrictDateTool)
+
+    const listed = await readRpc(await app.request("/", rpc("tools/list", {})))
+    expect(listed.error).toBeUndefined()
+    expect(
+      (
+        listed.result as {
+          tools?: Array<{ name: string }>
+        }
+      ).tools?.some(({ name }) => name === "schedule_strict_date"),
+    ).toBe(true)
+
+    const called = await readRpc(
+      await app.request(
+        "/",
+        rpc("tools/call", {
+          name: "schedule_strict_date",
+          arguments: {
+            code: "summer",
+            startsAt: "2026-08-01T12:00:00.000Z",
+          },
+        }),
+      ),
+    )
+    expect(called.error).toBeUndefined()
+    expect(called.result).toMatchObject({
+      structuredContent: {
+        code: "summer",
+        startsAt: "2026-08-01T12:00:00.000Z",
       },
     })
   })

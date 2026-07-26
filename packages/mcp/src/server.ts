@@ -467,8 +467,8 @@ type ZodCompositionDef = {
  *
  * Date nodes are projected to JSON-Schema-safe datetime strings so `tools/list`
  * does not fail closed when a domain Tool reuses `z.date()` / `z.coerce.date()`.
- * Wire clients already send ISO strings; registry validation keeps the original
- * domain schema (including coerce) at dispatch.
+ * Wire clients send ISO strings; before registry dispatch those strings are
+ * revived to `Date` wherever the domain schema expects a date node.
  */
 function toMcpInputSchema(schema: z.ZodType, entry: ToolManifestEntry): z.ZodObject {
   const shape =
@@ -615,6 +615,73 @@ function toMcpOutputContract(schema: z.ZodType): McpOutputContract {
   }
 }
 
+/**
+ * MCP discovery advertises dates as ISO strings. Revive those strings back to
+ * `Date` before the registry validates the domain schema, including plain
+ * `z.date()` fields that reject strings.
+ */
+function reviveDateInputs(schema: z.ZodType, value: unknown): unknown {
+  if (value === undefined || value === null) return value
+  const def = (schema as { _zod?: { def?: ZodDiscoveryDef & { element?: unknown } } })._zod?.def
+  switch (def?.type) {
+    case "date": {
+      if (typeof value !== "string") return value
+      const parsed = new Date(value)
+      return Number.isNaN(parsed.getTime()) ? value : parsed
+    }
+    case "optional":
+    case "nullable":
+    case "default":
+    case "catch":
+    case "nonoptional":
+    case "readonly":
+      return reviveDateInputs(def.innerType as z.ZodType, value)
+    case "object": {
+      if (!isRecord(value)) return value
+      const shape = typeof def.shape === "function" ? def.shape() : (def.shape ?? {})
+      const next: Record<string, unknown> = { ...value }
+      for (const [key, field] of Object.entries(shape)) {
+        if (Object.hasOwn(next, key)) {
+          next[key] = reviveDateInputs(field as z.ZodType, next[key])
+        }
+      }
+      return next
+    }
+    case "array": {
+      if (!Array.isArray(value) || !def.element) return value
+      return value.map((item) => reviveDateInputs(def.element as z.ZodType, item))
+    }
+    case "union": {
+      if (typeof value === "string") {
+        for (const option of def.options ?? []) {
+          const optionDef = (option as { _zod?: { def?: ZodDiscoveryDef } })._zod?.def
+          if (optionDef?.type === "date") {
+            return reviveDateInputs(option as z.ZodType, value)
+          }
+        }
+      }
+      if (isRecord(value)) {
+        for (const option of def.options ?? []) {
+          const optionDef = (option as { _zod?: { def?: ZodDiscoveryDef } })._zod?.def
+          if (optionDef?.type === "object" || optionDef?.type === "intersection") {
+            return reviveDateInputs(option as z.ZodType, value)
+          }
+        }
+      }
+      return value
+    }
+    case "intersection":
+      return reviveDateInputs(
+        def.right as z.ZodType,
+        reviveDateInputs(def.left as z.ZodType, value),
+      )
+    case "pipe":
+      return reviveDateInputs((def.in ?? def.out) as z.ZodType, value)
+    default:
+      return value
+  }
+}
+
 /** Dispatch through the registry (validates in + out) and wrap pure data in an MCP envelope. */
 async function dispatchToResult(
   registry: ToolRegistry,
@@ -636,9 +703,14 @@ async function dispatchToResult(
         { capabilityId: entry.capabilityId },
       )
     }
+    const domainInputSchema = registry.get(name)?.inputSchema
+    const revivedCommandInput =
+      domainInputSchema === undefined
+        ? commandInput
+        : reviveDateInputs(domainInputSchema, commandInput)
     const baseDispatchContext = withoutHandlerActionPolicy(ctx)
     const dispatch = (dispatchContext: ToolContext = baseDispatchContext) =>
-      registry.dispatch(name, commandInput, dispatchContext)
+      registry.dispatch(name, revivedCommandInput, dispatchContext)
     if (
       entry.actionPolicy?.enforcement === "handler" &&
       entry.actionPolicy.invocation.requiredFields.includes("confirmed") &&
@@ -656,7 +728,7 @@ async function dispatchToResult(
             registry,
             invocationName: name,
             entry,
-            commandInput,
+            commandInput: revivedCommandInput,
             invocation,
             context: ctx,
           })
