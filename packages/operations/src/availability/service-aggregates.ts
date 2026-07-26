@@ -43,7 +43,8 @@ export async function getAvailabilityAggregates(
   // Bind ISO strings — raw Date params stringify via Date#toString() and fail
   // against timestamptz (same pattern as bookings/inventory/finance aggregates).
   // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-  if (fromDate) rangeConditions.push(sql`${availabilitySlots.startsAt} >= ${fromDate.toISOString()}`)
+  if (fromDate)
+    rangeConditions.push(sql`${availabilitySlots.startsAt} >= ${fromDate.toISOString()}`)
   // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
   if (toDate) rangeConditions.push(sql`${availabilitySlots.startsAt} < ${toDate.toISOString()}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined

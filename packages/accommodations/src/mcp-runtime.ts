@@ -22,8 +22,8 @@ import {
   createRoomBlock,
   getRoomBlock,
   pickupRoomBlock,
-  reverseRoomBlockPickup,
   RoomBlockRoomTypeNotFoundError,
+  reverseRoomBlockPickup,
   setRoomBlockNights,
   summarizeRoomBlock,
 } from "./service-room-blocks.js"
