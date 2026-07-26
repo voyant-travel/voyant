@@ -1,5 +1,5 @@
 import { catalogOperationsRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core/project"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { catalogOperationsRuntimeExtension } from "./catalog-runtime-extension.js"
