@@ -464,24 +464,97 @@ type ZodCompositionDef = {
  * pipes/effects, and wrappers into one loose object for transport discovery and
  * argument preservation. The registry still validates the untouched domain
  * schema before dispatch, including cross-field refinements and transforms.
+ *
+ * Date nodes are projected to JSON-Schema-safe datetime strings so `tools/list`
+ * does not fail closed when a domain Tool reuses `z.date()` / `z.coerce.date()`.
+ * Wire clients already send ISO strings; registry validation keeps the original
+ * domain schema (including coerce) at dispatch.
  */
 function toMcpInputSchema(schema: z.ZodType, entry: ToolManifestEntry): z.ZodObject {
   const shape =
     schema instanceof z.ZodObject
       ? schema.shape
       : Object.assign({}, ...collectInputObjectShapes(schema))
+  const projectedShape = projectShapeForMcpDiscovery(shape)
   if (!entry.actionPolicy) {
-    return schema instanceof z.ZodObject ? schema : z.looseObject(shape)
+    return z.looseObject(projectedShape)
   }
-  if (TOOL_ACTION_INVOCATION_FIELD in shape) {
+  if (TOOL_ACTION_INVOCATION_FIELD in projectedShape) {
     throw new Error(
       `Tool "${entry.name}" input conflicts with reserved action metadata field "${TOOL_ACTION_INVOCATION_FIELD}".`,
     )
   }
   return z.looseObject({
-    ...shape,
+    ...projectedShape,
     [TOOL_ACTION_INVOCATION_FIELD]: actionInvocationSchemaFor(entry).optional(),
   })
+}
+
+const mcpDateTimeSchema = z.iso.datetime({ offset: true })
+
+function projectShapeForMcpDiscovery(shape: z.ZodRawShape): z.ZodRawShape {
+  return Object.fromEntries(
+    Object.entries(shape).map(([key, value]) => [
+      key,
+      projectSchemaForMcpDiscovery(value as z.ZodType),
+    ]),
+  )
+}
+
+function projectSchemaForMcpDiscovery(schema: z.ZodType): z.ZodType {
+  try {
+    z.toJSONSchema(schema)
+    return schema
+  } catch {
+    return projectUnrepresentableSchema(schema)
+  }
+}
+
+type ZodDiscoveryDef = ZodCompositionDef & {
+  coerce?: boolean
+  options?: unknown[]
+  shape?: z.ZodRawShape | (() => z.ZodRawShape)
+  defaultValue?: unknown
+}
+
+function projectUnrepresentableSchema(schema: z.ZodType): z.ZodType {
+  const def = (schema as { _zod?: { def?: ZodDiscoveryDef } })._zod?.def
+  switch (def?.type) {
+    case "date":
+      return mcpDateTimeSchema
+    case "optional":
+      return projectSchemaForMcpDiscovery(def.innerType as z.ZodType).optional()
+    case "nullable":
+      return projectSchemaForMcpDiscovery(def.innerType as z.ZodType).nullable()
+    case "default": {
+      const inner = projectSchemaForMcpDiscovery(def.innerType as z.ZodType)
+      return def.defaultValue === undefined ? inner : inner.default(def.defaultValue as never)
+    }
+    case "catch":
+    case "nonoptional":
+    case "readonly":
+      return projectSchemaForMcpDiscovery(def.innerType as z.ZodType)
+    case "object": {
+      const shape = typeof def.shape === "function" ? def.shape() : (def.shape ?? {})
+      return z.looseObject(projectShapeForMcpDiscovery(shape))
+    }
+    case "union": {
+      const options = (def.options ?? []).map((option) =>
+        projectSchemaForMcpDiscovery(option as z.ZodType),
+      )
+      if (options.length === 0) return z.unknown()
+      if (options.length === 1) return options[0]!
+      return z.union(options as [z.ZodType, z.ZodType, ...z.ZodType[]])
+    }
+    case "intersection":
+      return projectSchemaForMcpDiscovery(def.left as z.ZodType).and(
+        projectSchemaForMcpDiscovery(def.right as z.ZodType),
+      )
+    case "pipe":
+      return projectSchemaForMcpDiscovery((def.in ?? def.out) as z.ZodType)
+    default:
+      return z.unknown()
+  }
 }
 
 function actionInvocationSchemaFor(entry: ToolManifestEntry): z.ZodObject {
