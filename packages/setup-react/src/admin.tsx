@@ -138,14 +138,14 @@ export function SetupDashboardWidget() {
       </div>
     )
   }
-  if (query.isError || !query.data?.canManage || !query.data.state) {
+  if (query.isError || !query.data?.state) {
     return null
   }
 
   const state = query.data.state
   if (state.dismissedAt) return null
 
-  const canManage = query.data.canManage && !query.isFetching
+  const canManage = Boolean(query.data.canManage) && !query.isFetching
   const states = new Map(state.steps.map((step) => [step.stepId, step]))
   const completed = steps.filter((step) => states.get(step.id)?.completedAt).length
   const terminal = steps.filter((step) => {
