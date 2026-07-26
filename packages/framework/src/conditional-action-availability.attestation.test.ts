@@ -3,8 +3,15 @@ import { describe, expect, it } from "vitest"
 import { assertVoyantGraphMcpRuntime } from "./conditional-action-availability.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
-/** Must stay aligned with the realm registry keys in conditional-action-availability.ts. */
-const FRAMEWORK_OWNED_RUNTIMES_KEY = Symbol.for("@voyant-travel/framework:graph-runtime-owned")
+/** Must stay aligned with the realm facade key in conditional-action-availability.ts. */
+const GRAPH_RUNTIME_ATTESTATION_KEY = Symbol.for(
+  "@voyant-travel/framework:graph-runtime-attestation",
+)
+
+interface GraphRuntimeAttestationApi {
+  readonly markOwned: (runtime: object) => void
+  readonly isOwned: (runtime: object) => boolean
+}
 
 function emptyRuntime() {
   return createVoyantGraphRuntime({
@@ -19,14 +26,27 @@ function emptyRuntime() {
   })
 }
 
+function realmAttestationApi(): GraphRuntimeAttestationApi {
+  const api = (globalThis as Record<symbol, GraphRuntimeAttestationApi | undefined>)[
+    GRAPH_RUNTIME_ATTESTATION_KEY
+  ]
+  if (!api) throw new Error("expected realm attestation facade")
+  return api
+}
+
 describe("framework runtime realm attestation", () => {
-  it("records ownership in a Symbol.for registry on globalThis", () => {
+  it("installs a frozen facade on globalThis without exposing WeakSet/WeakMap stores", () => {
     const runtime = emptyRuntime()
-    const registry = (globalThis as Record<symbol, WeakSet<object> | undefined>)[
-      FRAMEWORK_OWNED_RUNTIMES_KEY
-    ]
-    expect(registry).toBeInstanceOf(WeakSet)
-    expect(registry?.has(runtime)).toBe(true)
+    const api = realmAttestationApi()
+
+    expect(Object.isFrozen(api)).toBe(true)
+    expect(api.isOwned(runtime)).toBe(true)
+    expect(api).not.toBeInstanceOf(WeakSet)
+    expect(api).not.toBeInstanceOf(WeakMap)
+    for (const value of Object.values(api)) {
+      expect(value).not.toBeInstanceOf(WeakSet)
+      expect(value).not.toBeInstanceOf(WeakMap)
+    }
   })
 
   it("accepts a framework-owned runtime that has no conditional actions", () => {
@@ -40,18 +60,14 @@ describe("framework runtime realm attestation", () => {
     )
   })
 
-  it("lets a second realm-local assert agree when it only shares the Symbol.for registry", () => {
+  it("lets a second realm-local assert agree when it only shares the frozen facade", () => {
     const runtime = emptyRuntime()
-    const registry = (globalThis as Record<symbol, WeakSet<object> | undefined>)[
-      FRAMEWORK_OWNED_RUNTIMES_KEY
-    ]
-    expect(registry).toBeInstanceOf(WeakSet)
-    if (!registry) throw new Error("expected realm ownership registry")
+    const api = realmAttestationApi()
 
     // Mimic a Vite-bundled duplicate of this module: it does not share the
-    // original module binding, only the realm-wide Symbol.for registry.
+    // original module binding, only the realm-wide Symbol.for facade.
     const assertFromBundledCopy = (value: unknown) => {
-      if (typeof value !== "object" || value === null || !registry.has(value)) {
+      if (typeof value !== "object" || value === null || !api.isOwned(value)) {
         throw new Error(
           "VOYANT_GRAPH_RUNTIME_NOT_FRAMEWORK_OWNED: MCP registration requires a runtime created by the framework.",
         )
