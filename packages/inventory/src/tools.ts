@@ -23,9 +23,9 @@ import { z } from "zod"
 
 import { productGraphSpecSchema } from "./authoring/spec.js"
 import {
-  listProductDaysTool,
+  listProductDaysTool as listProductDaysDefinition,
   type UpdateProductDayInput,
-  updateProductDayTool,
+  updateProductDayTool as updateProductDayDefinition,
 } from "./day-tools.js"
 import {
   createOptionExtraConfigTool as createOptionExtraConfigDefinition,
@@ -38,8 +38,6 @@ import {
   updateProductExtraTool as updateProductExtraDefinition,
 } from "./extras-tools.js"
 import { insertProductSchema, productListQuerySchema, updateProductSchema } from "./validation.js"
-
-export { listProductDaysTool, updateProductDayTool } from "./day-tools.js"
 
 const OWNER = "@voyant-travel/inventory"
 const VERSION = "v1"
@@ -444,6 +442,9 @@ export const composeProductTool = defineTool({
     )
   },
 })
+
+export const listProductDaysTool = defineTool(listProductDaysDefinition)
+export const updateProductDayTool = defineTool(updateProductDayDefinition)
 
 export const listProductExtrasTool = defineTool(listProductExtrasDefinition)
 export const getProductExtraTool = defineTool(getProductExtraDefinition)
