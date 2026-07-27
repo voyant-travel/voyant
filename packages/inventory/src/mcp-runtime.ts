@@ -354,14 +354,26 @@ export const voyantToolContextContribution = defineToolContextContribution({
               }
               return { value: { id: row.id, replayed: false }, targetId: row.id }
             },
+          }).then(async (value) => {
+            // Same signal the HTTP route emits: channel push, catalog indexing
+            // and realtime invalidation all subscribe to it, so a Tool-authored
+            // option would otherwise stay invisible downstream until the next
+            // reconciliation.
+            await emitProductContentChanged(eventBus, { id: productId, axis: "option" })
+            return value
           })
         },
-        updateProductOption: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
-          optionProductsService.updateOption(
+        async updateProductOption({ id, ...input }: { id: string; [key: string]: unknown }) {
+          const row = await optionProductsService.updateOption(
             db,
             id,
             input as Parameters<typeof optionProductsService.updateOption>[2],
-          ),
+          )
+          if (row) {
+            await emitProductContentChanged(eventBus, { id: row.productId, axis: "option" })
+          }
+          return row
+        },
         listOptionUnits: (input: Parameters<typeof optionProductsService.listUnits>[1]) =>
           optionProductsService.listUnits(db, input),
         getOptionUnitById: (id: string) => optionProductsService.getUnitById(db, id),
@@ -392,14 +404,31 @@ export const voyantToolContextContribution = defineToolContextContribution({
               }
               return { value: { id: row.id, replayed: false }, targetId: row.id }
             },
+          }).then(async (value) => {
+            const option = await optionProductsService.getOptionById(db, optionId)
+            if (option) {
+              await emitProductContentChanged(eventBus, {
+                id: option.productId,
+                axis: "option",
+              })
+            }
+            return value
           })
         },
-        updateOptionUnit: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
-          optionProductsService.updateUnit(
+        async updateOptionUnit({ id, ...input }: { id: string; [key: string]: unknown }) {
+          // The unit row carries only optionId, so resolve the owning product
+          // the way the HTTP route does before announcing the change.
+          const before = await optionProductsService.getUnitForProductMutation(db, id)
+          const row = await optionProductsService.updateUnit(
             db,
             id,
             input as Parameters<typeof optionProductsService.updateUnit>[2],
-          ),
+          )
+          if (row && before) {
+            await emitProductContentChanged(eventBus, { id: before.productId, axis: "option" })
+          }
+          return row
+        },
       },
     }
   },
@@ -429,7 +458,13 @@ async function executeInventoryGeneratedChild<TReferenceType extends string>(inp
         canonicalTargetType: input.canonicalTargetType,
         resultReferenceType: input.resultReferenceType,
         commandInput: input.commandInput,
-        evaluatedRisk: "high",
+        // Take the risk from the admitted policy rather than restating it.
+        // `executeAdmittedCreatedTargetCommand` rejects any disagreement with
+        // `admitted_policy_mismatch` BEFORE creating anything, so a hard-coded
+        // value silently breaks every caller whose action declares a different
+        // one — which is exactly what happened when the option and unit Tools
+        // were added declaring `risk: "medium"` against a hard-coded "high".
+        evaluatedRisk: input.admitted.actionPolicy.risk,
       },
       {
         create: input.create,

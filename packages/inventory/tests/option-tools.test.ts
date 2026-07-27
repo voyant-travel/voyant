@@ -169,3 +169,27 @@ describe("inventory option tools", () => {
     ).toBe(true)
   })
 })
+
+/**
+ * `executeAdmittedCreatedTargetCommand` rejects with `admitted_policy_mismatch`
+ * when the executor's `evaluatedRisk` disagrees with the admitted policy's
+ * `risk` — before creating anything. The shared inventory executor used to
+ * hard-code "high", so these Tools declaring "medium" failed every real call
+ * while the stubbed-service tests above still passed.
+ *
+ * The manifest is the contract both sides read, so pin the pairing here.
+ */
+describe("created-target risk agrees with the declared action", () => {
+  it.each([
+    ["create_product_option", CREATE_PRODUCT_OPTION_HANDLER_POLICY],
+    ["create_option_unit", CREATE_OPTION_UNIT_HANDLER_POLICY],
+  ])("%s declares a risk the executor can honour", (name, policy) => {
+    const manifest = makeRegistry()
+      .list()
+      .find((entry) => entry.name === name)
+
+    expect(manifest?.actionPolicy?.risk).toBe(policy.actionPolicy.risk)
+    expect(manifest?.actionPolicy?.approval).toBe("never")
+    expect(manifest?.actionPolicy?.ledger).toBe("required")
+  })
+})
