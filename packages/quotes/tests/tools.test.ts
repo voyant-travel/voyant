@@ -121,8 +121,12 @@ describe("quotes Tools", () => {
     const list = registry().list()
     expect(list.map((tool) => tool.name).sort()).toEqual([
       "accept_quote_version",
+      "add_quote_product",
+      "create_quote",
       "decline_quote_version",
       "get_quote",
+      "list_quote_pipelines",
+      "list_quote_stages",
       "list_quotes",
       "send_quote_version",
       "snapshot_and_send_quote",
@@ -144,6 +148,8 @@ describe("quotes Tools", () => {
       "send_quote_version",
       "accept_quote_version",
       "decline_quote_version",
+      "create_quote",
+      "add_quote_product",
     ]) {
       expect(list.find((tool) => tool.name === name)).toMatchObject({
         tier: "write",
@@ -270,6 +276,115 @@ describe("quotes Tools", () => {
     ])
   })
 
+  it("authors a quote end to end: pipeline, stage, quote, priced line", async () => {
+    // The lifecycle Tools could send and accept a quote that nothing could
+    // build. This is the path an operator actually takes when a customer asks
+    // for a price: find where quotes are filed, open one, put a line on it.
+    const toolRegistry = registry()
+    const services: Partial<QuotesToolServices> = {
+      async listPipelines() {
+        return {
+          data: [
+            {
+              id: "pipe_1",
+              entityType: "quote",
+              name: "Sales",
+              isDefault: true,
+              sortOrder: 0,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          total: 1,
+          limit: 50,
+          offset: 0,
+        }
+      },
+      async listStages() {
+        return {
+          data: [
+            {
+              id: "stge_1",
+              pipelineId: "pipe_1",
+              name: "New enquiry",
+              sortOrder: 0,
+              probability: 10,
+              isClosed: false,
+              isWon: false,
+              isLost: false,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          total: 1,
+          limit: 50,
+          offset: 0,
+        }
+      },
+      async createQuote(input) {
+        return { ...quote, ...input, id: "quot_new" }
+      },
+      async addQuoteProduct(quoteId, line) {
+        return {
+          id: "qprd_1",
+          quoteId,
+          productId: null,
+          supplierServiceId: null,
+          description: null,
+          unitPriceAmountCents: null,
+          costAmountCents: null,
+          currency: null,
+          discountAmountCents: null,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          ...line,
+        }
+      },
+    }
+
+    const pipelines = (await toolRegistry.dispatch("list_quote_pipelines", {}, ctx(services))) as {
+      data: { id: string; isDefault: boolean }[]
+    }
+    const pipelineId = pipelines.data.find((p) => p.isDefault)?.id
+    expect(pipelineId).toBe("pipe_1")
+
+    const stages = (await toolRegistry.dispatch(
+      "list_quote_stages",
+      { pipelineId },
+      ctx(services),
+    )) as { data: { id: string }[] }
+    const stageId = stages.data[0]?.id
+
+    const created = (await toolRegistry.dispatch(
+      "create_quote",
+      { title: "Coastal Day Cruise — Ana Ionescu", pipelineId, stageId, paxCount: 4 },
+      ctx(services),
+    )) as { id: string; title: string; paxCount: number }
+    expect(created).toMatchObject({ id: "quot_new", paxCount: 4 })
+
+    const line = (await toolRegistry.dispatch(
+      "add_quote_product",
+      {
+        quoteId: created.id,
+        nameSnapshot: "Coastal Day Cruise",
+        quantity: 4,
+        unitPriceAmountCents: 40_000,
+        currency: "EUR",
+      },
+      ctx(services),
+    )) as { quoteId: string; nameSnapshot: string; quantity: number }
+    // quoteId addresses the quote; it must not leak into the line payload as a
+    // column, and the customer-facing name is captured on the line.
+    expect(line).toMatchObject({
+      quoteId: "quot_new",
+      nameSnapshot: "Coastal Day Cruise",
+      quantity: 4,
+      unitPriceAmountCents: 40_000,
+    })
+    // Dates serialize, matching every other Tool in this package.
+    expect(typeof (line as unknown as { createdAt: unknown }).createdAt).toBe("string")
+  })
+
   it("fails closed for non-staff grants and missing services", async () => {
     const toolRegistry = registry()
     await expect(toolRegistry.dispatch("list_quotes", {}, ctx(undefined))).rejects.toMatchObject({
@@ -277,6 +392,21 @@ describe("quotes Tools", () => {
     })
     await expect(
       toolRegistry.dispatch("get_quote", { id: quote.id }, ctx(undefined, "customer")),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+    // Authoring is staff-only too, or a customer grant could open quotes.
+    await expect(
+      toolRegistry.dispatch(
+        "create_quote",
+        { title: "x", pipelineId: "pipe_1", stageId: "stge_1" },
+        ctx(undefined, "customer"),
+      ),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+    await expect(
+      toolRegistry.dispatch(
+        "add_quote_product",
+        { quoteId: quote.id, nameSnapshot: "x" },
+        ctx(undefined, "customer"),
+      ),
     ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
   })
 })
