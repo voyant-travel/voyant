@@ -25,3 +25,24 @@ Discovered projections land in every slice the deployment materializes, which
 always includes the `market: "default"` / `locale: "en-GB"` staff and customer
 slices the admin browse queries. Withdrawal pruning is opt-in (`pruneMissing`)
 so a partial pass can never empty the browse index.
+
+`syncSources` gains two related fixes, both reached through the new entry:
+
+- It no longer discovers through an unscoped `default:<kind>` registration when
+  the same kind also has connection-scoped adapters. Adapters forward that
+  synthetic key upstream as a real connection id, and it lands in provenance as
+  `source_connection_id` on projections missing one — which then fails to
+  resolve on the live-book path. Reported as `summary.skippedConnections`.
+- New `continueOnError` option isolates a per-connection `discover()` rejection
+  (recorded in `summary.failures`) instead of aborting the fan-out, so one
+  unhealthy supplier cannot starve every other catalog. Off by default, so the
+  cruise refresh and CLI callers keep surfacing the first failure.
+
+`SyncAdapterSummary` gains `connectionId` and an optional `error`;
+`SyncSourcesSummary` gains `skippedConnections` and `failures`.
+
+The scheduled job re-enumerates connections via a new
+`refreshBookingEngineConnectSources` rather than reusing the memoized
+per-isolate warm — otherwise a resident Node deployment would keep syncing the
+connection set it saw first, and the connection-add wakeup would do nothing
+until restart.

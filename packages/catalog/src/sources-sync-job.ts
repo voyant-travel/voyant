@@ -25,6 +25,7 @@ import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/proje
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import {
+  type SourceAdapterRegistry,
   type SyncProgressEvent,
   type SyncSourcesSummary,
   syncSources,
@@ -51,6 +52,13 @@ export interface CatalogDiscoverySyncOptions {
    * an empty page) must never empty the browse index.
    */
   pruneMissing?: boolean
+  /**
+   * Isolate per-connection `discover()` failures instead of aborting the pass,
+   * so one unhealthy supplier cannot starve every other connection. Defaults to
+   * `true` — a fan-out across independent suppliers has no reason to be
+   * all-or-nothing. Inspect `summary.failures` for what was skipped.
+   */
+  continueOnError?: boolean
   onProgress?: (event: SyncProgressEvent) => void
 }
 
@@ -60,6 +68,13 @@ export interface CatalogDiscoverySyncDependencies {
   db: AnyDrizzleDb
   /** Composed catalog services; the same object the projection runtime is built from. */
   services: CatalogRuntimeServices
+  /**
+   * Pre-resolved source registry. Callers that need connections added since the
+   * process warmed (any scheduled or wakeup-driven pass) must pass a freshly
+   * enumerated registry — `services.ensureSourceRegistry` reuses the memoized
+   * per-isolate warm and would return the stale set.
+   */
+  registry?: SourceAdapterRegistry
 }
 
 /**
@@ -74,7 +89,7 @@ export async function runCatalogDiscoverySync(
   dependencies: CatalogDiscoverySyncDependencies,
   options: CatalogDiscoverySyncOptions = {},
 ): Promise<SyncSourcesSummary> {
-  const { env, db, services } = dependencies
+  const { env, db, services, registry } = dependencies
   const embeddings = services.buildEmbeddingProvider(env)
   const adapter = services.buildIndexer(env, embeddings)
   if (!adapter) {
@@ -89,11 +104,12 @@ export async function runCatalogDiscoverySync(
   await indexerService.ensureCollections()
 
   return syncSources({
-    registry: await services.ensureSourceRegistry(env),
+    registry: registry ?? (await services.ensureSourceRegistry(env)),
     indexerService,
     fieldPolicyRegistries,
     db,
     pruneMissing: options.pruneMissing ?? false,
+    continueOnError: options.continueOnError ?? true,
     wrapBuilder: (builder) => services.withEmbedding(builder, embeddings),
     ...(options.verticals ? { verticals: options.verticals } : {}),
     ...(options.onProgress ? { onProgress: options.onProgress } : {}),
@@ -120,16 +136,25 @@ export async function runCatalogSourcesSync(
   const env = runtime.resolveEnv()
   if (!services.buildIndexer(env, services.buildEmbeddingProvider(env))) {
     console.warn("[catalog-sources-sync] no catalog indexer configured; skipping discovery sync.")
-    return { adapters: [], totalProjections: 0 }
+    return { adapters: [], totalProjections: 0, skippedConnections: [], failures: [] }
   }
+  // Re-enumerate rather than reuse the memoized request-path warm: picking up
+  // connections added since the process started is the point of this job.
+  const registry = await runtime.refreshSourceRegistry()
   const onProgress = options.onProgress ?? runtime.reportProgress?.bind(runtime)
-  return runtime.withDb((db) =>
+  const summary = await runtime.withDb((db) =>
     runCatalogDiscoverySync(
-      { env, db, services },
+      { env, db, services, registry },
       {
         ...options,
         ...(onProgress ? { onProgress } : {}),
       },
     ),
   )
+  for (const failure of summary.failures) {
+    console.error(
+      `[catalog-sources-sync] connection ${failure.connectionId} (${failure.adapter}) failed: ${failure.error}`,
+    )
+  }
+  return summary
 }

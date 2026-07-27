@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { SourceAdapter } from "./adapter/contract.js"
 import { createSourceAdapterRegistry, type SourceAdapterRegistry } from "./booking-engine/index.js"
+
 import type { FieldPolicy, FieldPolicyRegistry } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
 import type { CatalogRuntimeServices } from "./runtime-contracts.js"
@@ -80,7 +81,11 @@ function passthroughRegistry(): FieldPolicyRegistry {
   return { policies: [], byPath: new Map(), resolve: (path: string) => policy(path) }
 }
 
-function connectStyleAdapter(kind: string, entityIds: string[]): SourceAdapter {
+function connectStyleAdapter(
+  kind: string,
+  entityIds: string[],
+  options: { failWith?: string; seenContexts?: string[] } = {},
+): SourceAdapter {
   let served = false
   return {
     kind,
@@ -95,7 +100,9 @@ function connectStyleAdapter(kind: string, entityIds: string[]): SourceAdapter {
     pause: async () => undefined,
     disconnect: async () => undefined,
     getState: async () => "active",
-    discover: async () => {
+    discover: async (ctx) => {
+      options.seenContexts?.push(ctx.connection_id)
+      if (options.failWith) throw new Error(options.failWith)
       if (served) return { projections: [], next_cursor: undefined }
       served = true
       return {
@@ -219,6 +226,84 @@ describe("runCatalogDiscoverySync", () => {
     expect(summary.adapters[0]?.withdrawnProjections).toBe(0)
   })
 
+  it("skips the unscoped fallback once the same kind has connection-scoped adapters", async () => {
+    // Mirrors a warmed Connect deployment: registerVoyantConnectFallback stores
+    // the un-scoped pair under `default:<kind>`, then the warm registers the
+    // real connections. Discovering through the synthetic id would forward it
+    // upstream as a connection id and stamp it into provenance.
+    const seenContexts: string[] = []
+    const registry = createSourceAdapterRegistry()
+    registry.register(connectStyleAdapter("voyant-connect", ["fallback"], { seenContexts }))
+    registry.register("conn_a", connectStyleAdapter("voyant-connect", ["prd_1"], { seenContexts }))
+
+    const summary = await runCatalogDiscoverySync({
+      env: {},
+      db: drizzleStub(),
+      services: stubServices({ registry }),
+    })
+
+    expect(seenContexts).toEqual(["conn_a"])
+    expect(summary.adapters.map((entry) => entry.connectionId)).toEqual(["conn_a"])
+    expect(summary.skippedConnections).toEqual([
+      {
+        connectionId: "default:voyant-connect",
+        adapter: "voyant-connect",
+        reason: "unscoped-fallback-superseded-by-connection-scoped-adapter",
+      },
+    ])
+  })
+
+  it("keeps an unscoped adapter that is the only registration for its kind", async () => {
+    const seenContexts: string[] = []
+    const registry = createSourceAdapterRegistry()
+    registry.register(connectStyleAdapter("demo-source", ["prd_1"], { seenContexts }))
+
+    const summary = await runCatalogDiscoverySync({
+      env: {},
+      db: drizzleStub(),
+      services: stubServices({ registry }),
+    })
+
+    expect(seenContexts).toEqual(["default:demo-source"])
+    expect(summary.totalProjections).toBe(1)
+    expect(summary.skippedConnections).toEqual([])
+  })
+
+  it("isolates one failing connection so the rest still sync", async () => {
+    const registry = createSourceAdapterRegistry()
+    registry.register(
+      "conn_broken",
+      connectStyleAdapter("supplier-a", [], { failWith: "upstream 503" }),
+    )
+    registry.register("conn_ok", connectStyleAdapter("supplier-b", ["prd_1", "prd_2"]))
+
+    const summary = await runCatalogDiscoverySync({
+      env: {},
+      db: drizzleStub(),
+      services: stubServices({ registry }),
+    })
+
+    expect(summary.totalProjections).toBe(2)
+    expect(summary.failures).toEqual([
+      { connectionId: "conn_broken", adapter: "supplier-a", error: "upstream 503" },
+    ])
+    expect(summary.adapters.find((a) => a.connectionId === "conn_broken")?.error).toBe(
+      "upstream 503",
+    )
+  })
+
+  it("propagates the failure when the caller opts out of isolation", async () => {
+    const registry = createSourceAdapterRegistry()
+    registry.register("conn_broken", connectStyleAdapter("supplier-a", [], { failWith: "boom" }))
+
+    await expect(
+      runCatalogDiscoverySync(
+        { env: {}, db: drizzleStub(), services: stubServices({ registry }) },
+        { continueOnError: false },
+      ),
+    ).rejects.toThrow("boom")
+  })
+
   it("fails loudly when the deployment has no catalog indexer", async () => {
     const services = stubServices({ buildIndexer: () => undefined })
 
@@ -229,11 +314,16 @@ describe("runCatalogDiscoverySync", () => {
 })
 
 describe("runCatalogSourcesSync", () => {
-  function jobRuntime(services: CatalogRuntimeServices, db: AnyDrizzleDb) {
+  function jobRuntime(
+    services: CatalogRuntimeServices,
+    db: AnyDrizzleDb,
+    refreshed?: SourceAdapterRegistry,
+  ) {
     return {
       withDb: (operation) => operation(db),
       resolveServices: () => services,
       resolveEnv: () => ({ TENANT_ID: "acme" }),
+      refreshSourceRegistry: async () => refreshed ?? createSourceAdapterRegistry(),
       reportProgress: vi.fn(),
     } satisfies CatalogSourcesSyncJobRuntime
   }
@@ -245,14 +335,35 @@ describe("runCatalogSourcesSync", () => {
     const buildIndexer = vi.fn(
       (_env: Readonly<Record<string, unknown>>, _embeddings?: EmbeddingProvider) => adapter,
     )
-    const services = stubServices({ registry, buildIndexer })
+    const services = stubServices({ buildIndexer })
     const db = drizzleStub()
 
-    const summary = await runCatalogSourcesSync(jobRuntime(services, db))
+    const summary = await runCatalogSourcesSync(jobRuntime(services, db, registry))
 
     expect(summary.totalProjections).toBe(1)
     expect(buildIndexer.mock.calls[0]?.[0]).toEqual({ TENANT_ID: "acme" })
     expect(db.inserted).toHaveLength(1)
+  })
+
+  it("re-enumerates connections rather than reusing the memoized isolate warm", async () => {
+    // The stale registry is what `ensureSourceRegistry` would hand back after a
+    // process has already warmed once; the refreshed one carries a connection
+    // added since. The job must sync the latter.
+    const stale = createSourceAdapterRegistry()
+    stale.register("conn_old", connectStyleAdapter("voyant-connect", ["old_1"]))
+    const refreshed = createSourceAdapterRegistry()
+    refreshed.register("conn_old", connectStyleAdapter("voyant-connect", ["old_1"]))
+    refreshed.register("conn_new", connectStyleAdapter("voyant-connect", ["new_1"]))
+    const ensureSourceRegistry = vi.fn(async () => stale)
+    const services = stubServices({ registry: stale, ensureSourceRegistry })
+
+    const summary = await runCatalogSourcesSync(jobRuntime(services, drizzleStub(), refreshed))
+
+    expect(summary.adapters.map((entry) => entry.connectionId).sort()).toEqual([
+      "conn_new",
+      "conn_old",
+    ])
+    expect(ensureSourceRegistry).not.toHaveBeenCalled()
   })
 
   it("skips instead of failing the schedule when no indexer is configured", async () => {
@@ -260,14 +371,23 @@ describe("runCatalogSourcesSync", () => {
     const withDb = vi.fn()
     const services = stubServices({ buildIndexer: () => undefined })
 
+    const refreshSourceRegistry = vi.fn(async () => createSourceAdapterRegistry())
     const summary = await runCatalogSourcesSync({
       withDb,
       resolveServices: () => services,
       resolveEnv: () => ({}),
+      refreshSourceRegistry,
     })
 
-    expect(summary).toEqual({ adapters: [], totalProjections: 0 })
+    expect(summary).toEqual({
+      adapters: [],
+      totalProjections: 0,
+      skippedConnections: [],
+      failures: [],
+    })
     expect(withDb).not.toHaveBeenCalled()
+    // No point paying for connection enumeration when nothing can be indexed.
+    expect(refreshSourceRegistry).not.toHaveBeenCalled()
     warn.mockRestore()
   })
 })

@@ -35,6 +35,7 @@ import {
   type CatalogReindexClaim,
   catalogReindexJobRuntimePort,
 } from "./reindex-job-runtime-port.js"
+import { refreshBookingEngineConnectSources } from "./runtime/booking-engine-runtime.js"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogAccommodationsRuntimeExtension,
@@ -176,6 +177,13 @@ export function createCatalogRuntimePortContribution(
       },
       resolveEnv() {
         return host.primitives.env(undefined)
+      },
+      async refreshSourceRegistry() {
+        return refreshBookingEngineConnectSources(
+          host.primitives.env(undefined) as Parameters<
+            typeof refreshBookingEngineConnectSources
+          >[0],
+        )
       },
       reportProgress(event) {
         console.info("[catalog-sources-sync]", event)
