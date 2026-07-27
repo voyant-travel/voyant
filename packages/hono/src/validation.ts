@@ -58,12 +58,34 @@ export class ApiHttpError extends Error {
  * boundary. Subclasses inherit the brand through `super()`.
  */
 export function isApiHttpError(error: unknown): error is ApiHttpError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    (error as Record<PropertyKey, unknown>)[API_HTTP_ERROR_BRAND] === true
-  )
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as Record<PropertyKey, unknown>
+    if (candidate[API_HTTP_ERROR_BRAND] === true) return true
+    // A copy published before the brand existed throws an unbranded instance,
+    // and a partly-upgraded graph is the normal case: the boundary resolves the
+    // newest `@voyant-travel/hono` while ~30 module packages still pin exact
+    // older versions until each is re-released. Recognise those by class name —
+    // there are exactly four, all declared in this file.
+    //
+    // Deliberately NOT `typeof status === "number"` alone: any thrown object can
+    // carry a `status`, and reflecting those would leak internal messages to the
+    // client (see the error-boundary test that keeps a generic `{ status: 400 }`
+    // error a 500).
+    return (
+      typeof candidate.name === "string" &&
+      LEGACY_API_HTTP_ERROR_NAMES.has(candidate.name) &&
+      typeof candidate.status === "number"
+    )
+  }
+  return false
 }
+
+const LEGACY_API_HTTP_ERROR_NAMES = new Set([
+  "ApiHttpError",
+  "RequestValidationError",
+  "UnauthorizedApiError",
+  "ForbiddenApiError",
+])
 
 /**
  * `ZodError` and `HTTPException` reach the boundary from whichever copy the

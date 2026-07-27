@@ -68,6 +68,45 @@ describe("handleApiError", () => {
     expect(body.code).toBe("invalid_request")
   })
 
+  // The brand only helps once BOTH copies carry it. In a partly-upgraded graph
+  // the boundary is new while the throwing module still pins a pre-brand
+  // `@voyant-travel/hono`, which is the shape production actually runs.
+  it("reflects an unbranded error from a pre-brand copy", async () => {
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.get("/bad", () => {
+      // What `new RequestValidationError(...)` produced before the brand.
+      throw Object.assign(new Error("dateLocal is required"), {
+        name: "RequestValidationError",
+        status: 400,
+        code: "invalid_request",
+      })
+    })
+
+    const response = await app.request("/bad")
+    const body = (await response.json()) as { error: string; code?: string }
+
+    expect(response.status).toBe(400)
+    expect(body.error).toBe("dateLocal is required")
+    expect(body.code).toBe("invalid_request")
+  })
+
+  // The name check must not widen into "anything with a status", which would
+  // reflect internal messages. This is the guard for that.
+  it("still hides a generic error that merely carries a status", async () => {
+    const app = new Hono()
+    app.onError(handleApiError)
+    app.get("/bad", () => {
+      throw Object.assign(new Error("database hostname leaked"), { status: 400, code: "nope" })
+    })
+
+    const response = await app.request("/bad")
+    const body = (await response.json()) as { error: string }
+
+    expect(response.status).toBe(500)
+    expect(body.error).toBe("Internal Server Error")
+  })
+
   it("reflects a ZodError thrown by a duplicate zod copy", async () => {
     // A cross-copy ZodError is a real ZodError instance — it just fails
     // `instanceof` here — so match it on the `issues` array it always carries.
