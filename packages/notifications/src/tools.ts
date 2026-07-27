@@ -10,7 +10,11 @@ import {
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
-import { notificationDeliverySchema, notificationTemplateSchema } from "./response-schemas.js"
+import {
+  notificationDeliverySchema,
+  notificationTemplateDetailSchema,
+  notificationTemplateSummarySchema,
+} from "./response-schemas.js"
 import {
   notificationChannelSchema,
   notificationDeliveryListQuerySchema,
@@ -97,15 +101,15 @@ export const listTemplatesTool = defineTool<
 >({
   name: "list_notification_templates",
   description:
-    "List the notification templates this operator has, with their channel and status. Use it to find which message a guest receives for a given event. Read-only.",
+    "List compact notification template metadata without the message bodies. Use it to find which message a guest receives for a given event, then read that one with get_notification_template. Read-only.",
   inputSchema: notificationTemplateListQuerySchema,
-  outputSchema: listResponseSchema(notificationTemplateSchema),
+  outputSchema: listResponseSchema(notificationTemplateSummarySchema),
   requiredScopes: ["notifications:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
     return parseJsonResult(
-      listResponseSchema(notificationTemplateSchema),
+      listResponseSchema(notificationTemplateSummarySchema),
       await notifications(ctx).listTemplates(query),
     )
   },
@@ -131,16 +135,16 @@ export const getTemplateTool = defineTool<
 >({
   name: "get_notification_template",
   description:
-    "Read the actual subject and body copy of one notification template, by id or slug, so you can tell someone exactly what a guest will receive. Read-only.",
+    "Read one notification template including its subject and body copy, by id or slug, so you can tell someone exactly what a guest will receive. Read-only.",
   inputSchema: getTemplateArgs,
-  outputSchema: notificationTemplateSchema.nullable(),
+  outputSchema: notificationTemplateDetailSchema.nullable(),
   requiredScopes: ["notifications:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler({ id, slug }, ctx) {
     const service = notifications(ctx)
     return parseJsonResult(
-      notificationTemplateSchema.nullable(),
+      notificationTemplateDetailSchema.nullable(),
       id ? await service.getTemplateById(id) : await service.getTemplateBySlug(slug as string),
     )
   },

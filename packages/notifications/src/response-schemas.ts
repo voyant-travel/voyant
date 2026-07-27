@@ -41,20 +41,29 @@ export const notificationDeliverySchema = z.object({
   updatedAt: isoTimestamp,
 })
 
-/** Notification-template wire shape shared by HTTP and Tool surfaces. */
-export const notificationTemplateSchema = z.object({
+/**
+ * Notification-template metadata without the message bodies. A list can return
+ * up to 200 rows, and template bodies are unbounded HTML — returning them per
+ * row would let a lookup meant to find a slug exhaust the response budget
+ * before the caller ever reaches {@link notificationTemplateDetailSchema}.
+ */
+export const notificationTemplateSummarySchema = z.object({
   id: z.string(),
   slug: z.string(),
   name: z.string(),
   channel: notificationChannelSchema,
   provider: z.string().nullable(),
   status: notificationTemplateStatusSchema,
+  fromAddress: z.string().nullable(),
+  isSystem: z.boolean(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+/** One notification template including the copy a recipient actually sees. */
+export const notificationTemplateDetailSchema = notificationTemplateSummarySchema.extend({
   subjectTemplate: z.string().nullable(),
   htmlTemplate: z.string().nullable(),
   textTemplate: z.string().nullable(),
-  fromAddress: z.string().nullable(),
-  isSystem: z.boolean(),
   metadata: jsonMetadata.nullable(),
-  createdAt: isoTimestamp,
-  updatedAt: isoTimestamp,
 })

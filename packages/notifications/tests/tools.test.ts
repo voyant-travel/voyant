@@ -232,10 +232,10 @@ describe("notifications tools", () => {
     ).rejects.toBeTruthy()
   })
 
-  it("lists templates through the injected service", async () => {
+  it("lists templates without their bodies", async () => {
     const registry = createToolRegistry()
     registry.registerAll(notificationsTools)
-    const result = await registry.dispatch(
+    const result = (await registry.dispatch(
       "list_notification_templates",
       { channel: "email" },
       ctx({
@@ -243,8 +243,14 @@ describe("notifications tools", () => {
           return { data: [template()], total: 1, limit: 50, offset: 0 }
         },
       }),
-    )
-    expect(result).toMatchObject({ total: 1 })
+    )) as { total: number; data: Record<string, unknown>[] }
+    expect(result.total).toBe(1)
+    expect(result.data[0]).toMatchObject({ slug: "booking-confirmed", channel: "email" })
+    // A page holds up to 200 rows of unbounded HTML. Bodies belong to
+    // get_notification_template, or a slug lookup blows the response budget.
+    expect(result.data[0]).not.toHaveProperty("htmlTemplate")
+    expect(result.data[0]).not.toHaveProperty("textTemplate")
+    expect(result.data[0]).not.toHaveProperty("subjectTemplate")
   })
 
   it("throws MISSING_SERVICE when unwired", async () => {
