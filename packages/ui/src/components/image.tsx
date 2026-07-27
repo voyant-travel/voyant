@@ -20,6 +20,9 @@ function Image({
   src,
   alt,
   onError,
+  width,
+  height,
+  style,
   ...props
 }: React.ComponentProps<"img"> & {
   fallbackClassName?: string
@@ -34,8 +37,14 @@ function Image({
     return (
       <div
         data-slot="image-fallback"
-        role="img"
-        aria-label={alt || undefined}
+        // `alt=""` marks a decorative image, which a native <img> keeps out of
+        // the accessibility tree. Mirror that instead of announcing an unnamed
+        // graphic.
+        {...(alt === "" ? { "aria-hidden": true } : { role: "img", "aria-label": alt })}
+        // Callers may size the image with width/height attributes or an inline
+        // style rather than classes; carry those onto the placeholder so a
+        // failure does not collapse the surrounding layout.
+        style={{ width, height, ...style }}
         className={cn(
           "flex items-center justify-center bg-muted text-muted-foreground",
           className,
@@ -52,6 +61,9 @@ function Image({
       data-slot="image"
       src={src}
       alt={alt}
+      width={width}
+      height={height}
+      style={style}
       className={className}
       onError={(event) => {
         setFailedSrc(src)

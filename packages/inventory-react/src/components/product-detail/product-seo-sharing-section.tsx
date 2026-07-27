@@ -379,7 +379,7 @@ function Preview({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
       <p className="mb-2 text-xs font-medium text-muted-foreground">{title}</p>
-      <div className="overflow-hidden rounded-md border bg-background p-3 [&:has(img)]:p-0">
+      <div className="overflow-hidden rounded-md border bg-background p-3 [&:has(img)]:p-0 [&:has([data-slot=image-fallback])]:p-0">
         {children}
       </div>
     </div>

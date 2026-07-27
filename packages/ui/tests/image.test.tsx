@@ -49,6 +49,42 @@ describe("Image", () => {
     expect(image.getAttribute("src")).toBe("https://cdn.example.com/replacement.png")
   })
 
+  it("keeps a decorative image out of the accessibility tree when it fails", () => {
+    render(<Image src="https://cdn.example.com/missing.png" alt="" />)
+
+    fireEvent.error(document.querySelector("img") as HTMLImageElement)
+
+    expect(screen.queryByRole("img")).toBeNull()
+    const fallback = document.querySelector("[data-slot='image-fallback']")
+    expect(fallback?.getAttribute("aria-hidden")).toBe("true")
+  })
+
+  it("carries width/height/style sizing onto the placeholder", () => {
+    render(
+      <Image
+        src="https://cdn.example.com/missing.png"
+        alt="Cover"
+        width={64}
+        height={48}
+        style={{ borderRadius: "4px" }}
+      />,
+    )
+
+    fireEvent.error(screen.getByAltText("Cover"))
+
+    const fallback = screen.getByRole("img", { name: "Cover" }) as HTMLElement
+    expect(fallback.style.width).toBe("64px")
+    expect(fallback.style.height).toBe("48px")
+    expect(fallback.style.borderRadius).toBe("4px")
+  })
+
+  it("lets an explicit style width override the width attribute", () => {
+    render(<Image alt="Cover" width={64} style={{ width: "100%" }} />)
+
+    const fallback = screen.getByRole("img", { name: "Cover" }) as HTMLElement
+    expect(fallback.style.width).toBe("100%")
+  })
+
   it("keeps layout classes on the placeholder and forwards onError", () => {
     const onError = vi.fn()
     render(
