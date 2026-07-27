@@ -169,6 +169,16 @@ export interface CatalogRuntimeEnv {
    * Embedding backend the catalog authenticates through the Voyant Cloud AI
    * gateway. Both are adapters over the same `/ai/v1/{provider}` proxy shape;
    * defaults to `gemini` for compatibility. Managed runtimes set `openai`.
+   *
+   * Switching provider switches the embedding MODEL (and its vector
+   * dimensionality), so — like any model change — it is a deliberate
+   * `bulkReindex` operation, not a hot swap. The Postgres indexer is safe to
+   * flip in place: its `search_embedding` column is an unsized `vector` and
+   * rows are keyed by `embedding_model_id`, so old/new dimensions coexist and
+   * search reads only the active model. The Typesense indexer pins `num_dim`
+   * at collection creation and `ensureCollection` does not migrate it, so a
+   * Typesense-backed deployment must recreate/migrate the vector field before
+   * enabling a provider whose model dimension differs.
    */
   CATALOG_EMBEDDING_PROVIDER?: "openai" | "gemini"
 }
