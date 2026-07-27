@@ -22,6 +22,9 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const notifications: NotificationsToolServices = {
       listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
       getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
+      listTemplates: (query) => notificationsService.listTemplates(c.var.db, query),
+      getTemplateById: (id) => notificationsService.getTemplateById(c.var.db, id),
+      getTemplateBySlug: (slug) => notificationsService.getTemplateBySlug(c.var.db, slug),
       async sendTemplated(input, admitted) {
         const selectedRuntime = requireService(durableRuntime, durableNotificationProviderPort.id)
         const result = await executeDurableNotificationSendCommand({

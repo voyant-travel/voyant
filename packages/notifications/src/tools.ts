@@ -10,8 +10,12 @@ import {
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
-import { notificationDeliverySchema } from "./response-schemas.js"
-import { notificationChannelSchema, notificationDeliveryListQuerySchema } from "./validation.js"
+import { notificationDeliverySchema, notificationTemplateSchema } from "./response-schemas.js"
+import {
+  notificationChannelSchema,
+  notificationDeliveryListQuerySchema,
+  notificationTemplateListQuerySchema,
+} from "./validation.js"
 
 export interface SendTemplatedNotificationInput {
   templateSlug: string
@@ -27,6 +31,9 @@ export interface SendTemplatedNotificationInput {
 export interface NotificationsToolServices {
   listDeliveries(query: z.infer<typeof notificationDeliveryListQuerySchema>): Promise<unknown>
   getDeliveryById(id: string): Promise<unknown>
+  listTemplates(query: z.infer<typeof notificationTemplateListQuerySchema>): Promise<unknown>
+  getTemplateById(id: string): Promise<unknown>
+  getTemplateBySlug(slug: string): Promise<unknown>
   sendTemplated(
     input: SendTemplatedNotificationInput,
     admitted: ToolHandlerActionPolicyContext,
@@ -79,6 +86,62 @@ export const getDeliveryTool = defineTool<
     return parseJsonResult(
       notificationDeliverySchema.nullable(),
       await notifications(ctx).getDeliveryById(id),
+    )
+  },
+})
+
+export const listTemplatesTool = defineTool<
+  z.infer<typeof notificationTemplateListQuerySchema>,
+  unknown,
+  NotificationsToolContext
+>({
+  name: "list_notification_templates",
+  description:
+    "List the notification templates this operator has, with their channel and status. Use it to find which message a guest receives for a given event. Read-only.",
+  inputSchema: notificationTemplateListQuerySchema,
+  outputSchema: listResponseSchema(notificationTemplateSchema),
+  requiredScopes: ["notifications:read"],
+  tier: "read",
+  riskPolicy: READ_ONLY_RISK,
+  async handler(query, ctx) {
+    return parseJsonResult(
+      listResponseSchema(notificationTemplateSchema),
+      await notifications(ctx).listTemplates(query),
+    )
+  },
+})
+
+const getTemplateArgs = z
+  .object({
+    id: z.string().min(1).optional().describe("The notification template id."),
+    slug: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("The notification template slug, e.g. booking-confirmation."),
+  })
+  .refine((value) => Boolean(value.id) !== Boolean(value.slug), {
+    message: "Provide exactly one of id or slug.",
+  })
+
+export const getTemplateTool = defineTool<
+  z.infer<typeof getTemplateArgs>,
+  unknown,
+  NotificationsToolContext
+>({
+  name: "get_notification_template",
+  description:
+    "Read the actual subject and body copy of one notification template, by id or slug, so you can tell someone exactly what a guest will receive. Read-only.",
+  inputSchema: getTemplateArgs,
+  outputSchema: notificationTemplateSchema.nullable(),
+  requiredScopes: ["notifications:read"],
+  tier: "read",
+  riskPolicy: READ_ONLY_RISK,
+  async handler({ id, slug }, ctx) {
+    const service = notifications(ctx)
+    return parseJsonResult(
+      notificationTemplateSchema.nullable(),
+      id ? await service.getTemplateById(id) : await service.getTemplateBySlug(slug as string),
     )
   },
 })
@@ -153,6 +216,8 @@ export const sendNotificationTool = defineTool<
 export const notificationsTools = [
   listDeliveriesTool,
   getDeliveryTool,
+  listTemplatesTool,
+  getTemplateTool,
   sendNotificationTool,
 ] as const
 

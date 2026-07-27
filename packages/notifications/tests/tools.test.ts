@@ -46,6 +46,26 @@ function delivery(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function template(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "ntp_1",
+    slug: "booking-confirmed",
+    name: "Booking confirmed",
+    channel: "email",
+    provider: "resend",
+    status: "active",
+    subjectTemplate: "Your booking is confirmed",
+    htmlTemplate: "<p>Hi {{ traveler.firstName }}, see you soon.</p>",
+    textTemplate: "Hi {{ traveler.firstName }}, see you soon.",
+    fromAddress: "bookings@example.com",
+    isSystem: false,
+    metadata: { category: "transactional" },
+    createdAt: occurredAt,
+    updatedAt: occurredAt,
+    ...overrides,
+  }
+}
+
 function ctx(
   services?: Partial<NotificationsToolServices>,
 ): ToolContext & { notifications?: NotificationsToolServices } {
@@ -98,7 +118,9 @@ describe("notifications tools", () => {
     const list = registry.list()
     expect(list.map((tool) => tool.name).sort()).toEqual([
       "get_notification_delivery",
+      "get_notification_template",
       "list_notification_deliveries",
+      "list_notification_templates",
       "send_notification",
     ])
     const send = list.find(({ name }) => name === "send_notification")
@@ -162,6 +184,67 @@ describe("notifications tools", () => {
       }),
     )
     expect(result).toMatchObject({ id: "ndl_1" })
+  })
+
+  it("reads template copy by slug so an operator can be told what a guest receives", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(notificationsTools)
+    const getTemplateBySlug = vi.fn(async (slug: string) => template({ slug }))
+    const result = await registry.dispatch(
+      "get_notification_template",
+      { slug: "booking-confirmed" },
+      ctx({
+        getTemplateById: async () => null,
+        getTemplateBySlug,
+      }),
+    )
+    expect(getTemplateBySlug).toHaveBeenCalledWith("booking-confirmed")
+    expect(result).toMatchObject({
+      slug: "booking-confirmed",
+      subjectTemplate: "Your booking is confirmed",
+      textTemplate: "Hi {{ traveler.firstName }}, see you soon.",
+    })
+  })
+
+  it("reads a template by id when given one", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(notificationsTools)
+    const getTemplateById = vi.fn(async (id: string) => template({ id }))
+    const result = await registry.dispatch(
+      "get_notification_template",
+      { id: "ntp_7" },
+      ctx({ getTemplateById, getTemplateBySlug: async () => null }),
+    )
+    expect(getTemplateById).toHaveBeenCalledWith("ntp_7")
+    expect(result).toMatchObject({ id: "ntp_7" })
+  })
+
+  it("rejects a template read that names neither id nor slug", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(notificationsTools)
+    await expect(registry.dispatch("get_notification_template", {}, ctx({}))).rejects.toBeTruthy()
+    await expect(
+      registry.dispatch(
+        "get_notification_template",
+        { id: "ntp_7", slug: "booking-confirmed" },
+        ctx({}),
+      ),
+    ).rejects.toBeTruthy()
+  })
+
+  it("lists templates through the injected service", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(notificationsTools)
+    const result = await registry.dispatch(
+      "list_notification_templates",
+      { channel: "email" },
+      ctx({
+        async listTemplates() {
+          return { data: [template()], total: 1, limit: 50, offset: 0 }
+        },
+      }),
+    )
+    expect(result).toMatchObject({ total: 1 })
   })
 
   it("throws MISSING_SERVICE when unwired", async () => {

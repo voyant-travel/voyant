@@ -4,6 +4,7 @@ import {
   notificationChannelSchema,
   notificationDeliveryStatusSchema,
   notificationTargetTypeSchema,
+  notificationTemplateStatusSchema,
 } from "./validation.js"
 
 const isoTimestamp = z.string()
@@ -36,6 +37,24 @@ export const notificationDeliverySchema = z.object({
   scheduledFor: isoTimestamp.nullable(),
   sentAt: isoTimestamp.nullable(),
   failedAt: isoTimestamp.nullable(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+/** Notification-template wire shape shared by HTTP and Tool surfaces. */
+export const notificationTemplateSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  channel: notificationChannelSchema,
+  provider: z.string().nullable(),
+  status: notificationTemplateStatusSchema,
+  subjectTemplate: z.string().nullable(),
+  htmlTemplate: z.string().nullable(),
+  textTemplate: z.string().nullable(),
+  fromAddress: z.string().nullable(),
+  isSystem: z.boolean(),
+  metadata: jsonMetadata.nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })
