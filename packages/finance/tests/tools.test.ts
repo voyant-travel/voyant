@@ -344,6 +344,20 @@ describe("finance tools", () => {
 
     expect(shape.personId?.description).toMatch(/required unless .*organizationId/i)
     expect(shape.organizationId?.description).toMatch(/required unless .*personId/i)
+
+    // Each branch must name the lookup that can actually return that id.
+    // Pointing the organization branch at `list_people` leaves a caller unable
+    // to obtain the id and repeating the workflow that failed.
+    expect(shape.personId?.description).toMatch(/list_people/)
+    expect(shape.personId?.description).not.toMatch(/list_organizations/)
+    expect(shape.organizationId?.description).toMatch(/list_organizations/)
+    expect(shape.organizationId?.description).not.toMatch(/list_people/)
+
+    // "at least one", never "exactly one": createBookingMutation stores both,
+    // for a traveller billed through their company, and no rule forbids it.
+    for (const description of [shape.personId?.description, shape.organizationId?.description]) {
+      expect(description).not.toMatch(/exactly one/i)
+    }
     // The proven-effective precedent in this schema; if it ever stops carrying
     // a description the mechanism this test relies on has changed.
     expect(shape.bookingNumber?.description).toBeTruthy()
