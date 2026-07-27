@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import {
   createToolRegistry,
   type ToolContext,
@@ -6,6 +7,11 @@ import {
 import { describe, expect, it } from "vitest"
 
 import {
+  QUOTES_CREATED_TARGET_POLICIES,
+  quotesHandlerActionPolicyExpectation,
+} from "../src/created-target-policy.js"
+import {
+  createQuoteTool,
   type QuoteDeliveryToolServices,
   type QuotesToolServices,
   quotesTools,
@@ -17,6 +23,7 @@ function ctx(
   services?: Partial<QuotesToolServices>,
   actor: ToolContext["actor"] = "staff",
   delivery?: QuoteDeliveryToolServices,
+  handlerActionPolicy: ToolHandlerActionPolicyContext = snapshotSendActionPolicy(),
 ): ToolContext & { quotes?: QuotesToolServices; quoteDelivery?: QuoteDeliveryToolServices } {
   return {
     db: {},
@@ -24,9 +31,37 @@ function ctx(
     audience: actor,
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: actor, market: "default", actor },
-    handlerActionPolicy: snapshotSendActionPolicy(),
+    handlerActionPolicy,
     quotes: services as QuotesToolServices | undefined,
     quoteDelivery: delivery,
+  }
+}
+
+/** The admitted context the create handler must have produced. */
+function assertAdmitted(admitted: ToolHandlerActionPolicyContext) {
+  assert.equal(admitted.canonicalName, "create_quote")
+  assert.equal(admitted.actionPolicy.targetLifecycle, "created")
+  assert.equal(admitted.actionPolicy.createdTarget?.durability, "handler-command-claim-v1")
+}
+
+/** Admitted policy for the created-target quote command. */
+function createQuoteActionPolicy(key = "quote-create-1"): ToolHandlerActionPolicyContext {
+  const expectation = quotesHandlerActionPolicyExpectation(QUOTES_CREATED_TARGET_POLICIES.quote)
+  return {
+    capabilityId: expectation.capabilityId,
+    capabilityVersion: expectation.capabilityVersion,
+    canonicalName: expectation.canonicalName,
+    actionPolicy: {
+      ...expectation.actionPolicy,
+      enforcement: "handler",
+      invocation: {
+        controlField: "_voyant",
+        requiredFields: ["idempotencyKey"],
+        optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+        fingerprintAlgorithm: "action-ledger-command-v1",
+      },
+    },
+    invocation: { idempotencyKey: key },
   }
 }
 
@@ -59,6 +94,11 @@ function registry() {
     if (tool === snapshotAndSendQuoteTool) {
       registry.register(tool, {
         actionPolicy: SNAPSHOT_AND_SEND_QUOTE_HANDLER_POLICY.actionPolicy,
+      })
+    } else if (tool === createQuoteTool) {
+      registry.register(tool, {
+        actionPolicy: quotesHandlerActionPolicyExpectation(QUOTES_CREATED_TARGET_POLICIES.quote)
+          .actionPolicy,
       })
     } else {
       registry.register(tool)
@@ -321,8 +361,11 @@ describe("quotes Tools", () => {
           offset: 0,
         }
       },
-      async createQuote(input) {
-        return { ...quote, ...input, id: "quot_new" }
+      async createQuote(input, admitted) {
+        // The handler must admit the created-target policy before the service
+        // is reached, or a retry could open a second quote.
+        assertAdmitted(admitted)
+        return { ...quote, ...input, id: "quot_new", status: "open" }
       },
       async addQuoteProduct(quoteId, line) {
         return {
@@ -358,7 +401,7 @@ describe("quotes Tools", () => {
     const created = (await toolRegistry.dispatch(
       "create_quote",
       { title: "Coastal Day Cruise — Ana Ionescu", pipelineId, stageId, paxCount: 4 },
-      ctx(services),
+      ctx(services, "staff", undefined, createQuoteActionPolicy()),
     )) as { id: string; title: string; paxCount: number }
     expect(created).toMatchObject({ id: "quot_new", paxCount: 4 })
 
@@ -398,7 +441,7 @@ describe("quotes Tools", () => {
       toolRegistry.dispatch(
         "create_quote",
         { title: "x", pipelineId: "pipe_1", stageId: "stge_1" },
-        ctx(undefined, "customer"),
+        ctx(undefined, "customer", undefined, createQuoteActionPolicy()),
       ),
     ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
     await expect(

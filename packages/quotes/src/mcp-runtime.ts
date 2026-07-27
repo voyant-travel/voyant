@@ -5,6 +5,8 @@ import {
   type ToolHandlerActionPolicyContext,
 } from "@voyant-travel/tools"
 import type { Context } from "hono"
+import { executeQuotesCreate } from "./created-target-command.js"
+import { QUOTES_CREATED_TARGET_POLICIES } from "./created-target-policy.js"
 import {
   type QuotesNotificationsRuntime,
   type QuotesProposalRuntime,
@@ -30,12 +32,38 @@ export const voyantToolContextContribution = defineToolContextContribution({
           quotesService.listPipelines(db, query),
         listStages: (query: Parameters<typeof quotesService.listStages>[1]) =>
           quotesService.listStages(db, query),
-        createQuote: (input: Parameters<typeof quotesService.createQuote>[1]) =>
-          quotesService.createQuote(db, input),
-        addQuoteProduct: (
+        async createQuote(
+          input: Parameters<typeof quotesService.createQuote>[1],
+          admitted: ToolHandlerActionPolicyContext,
+        ) {
+          // Same three things the HTTP create route does: attribute the actor,
+          // create, then announce it. A Tool that skipped any of them would
+          // leave the quote unowned in the admin panel or stale in every
+          // client the realtime module invalidates.
+          const actorId = actorIdOf(c)
+          const result = await executeQuotesCreate(
+            db,
+            actionLedgerContext(c),
+            QUOTES_CREATED_TARGET_POLICIES.quote,
+            input,
+            admitted,
+            async (tx) => {
+              const row = await quotesService.createQuote(tx, input, actorId)
+              if (!row) throw new Error("createQuote returned no row")
+              return row
+            },
+          )
+          if (!result.replayed) {
+            await c.get("eventBus")?.emit("quote.created", { id: result.value.id })
+          }
+          return result.value
+        },
+        async addQuoteProduct(
           quoteId: string,
           input: Parameters<typeof quotesService.createQuoteProduct>[2],
-        ) => quotesService.createQuoteProduct(db, quoteId, input),
+        ) {
+          return quotesService.createQuoteProduct(db, quoteId, input, actorIdOf(c))
+        },
         snapshotQuoteVersion: (quoteId: string) =>
           quotesService.createVersionSnapshotFromQuote(db, quoteId),
         sendQuoteVersion: (
@@ -100,4 +128,9 @@ function actionLedgerContext(c: Context): ActionLedgerRequestContextValues {
     workflowStepId: (vars.workflowStepId as string | undefined) ?? null,
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
+}
+
+/** Staff identity behind the request, so Tool-authored rows carry ownership. */
+function actorIdOf(c: Context): string | null {
+  return (c.get("userId") as string | undefined) ?? null
 }

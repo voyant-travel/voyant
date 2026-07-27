@@ -10,7 +10,10 @@ import {
 } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
-
+import {
+  QUOTES_CREATED_TARGET_POLICIES,
+  quotesHandlerActionPolicyExpectation,
+} from "./created-target-policy.js"
 import {
   acceptQuoteVersionResultSchema,
   pipelineSchema,
@@ -44,7 +47,10 @@ export interface QuotesToolServices {
   getQuoteById(id: string): Promise<unknown>
   listPipelines(query: z.infer<typeof pipelineListQuerySchema>): Promise<unknown>
   listStages(query: z.infer<typeof stageListQuerySchema>): Promise<unknown>
-  createQuote(input: z.infer<typeof insertQuoteSchema>): Promise<unknown>
+  createQuote(
+    input: z.infer<typeof createQuoteToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   addQuoteProduct(
     quoteId: string,
     input: z.infer<typeof insertQuoteProductSchema>,
@@ -192,23 +198,44 @@ export const listQuoteStagesTool = defineTool({
   },
 })
 
+/**
+ * A quote opens in the `open` state, always.
+ *
+ * `insertQuoteSchema` is the HTTP-facing shape and carries the whole lifecycle:
+ * `status`, `acceptedVersionId`, `lostReason`. Passing it through would let a
+ * caller create a quote already marked `won` with an `acceptedVersionId`,
+ * skipping `accept_quote_version` and its checks that a version was actually
+ * sent, that no other version is accepted, and that competing versions get
+ * closed. Acceptance and closure are transitions, not creation inputs.
+ */
+export const createQuoteToolInputSchema = insertQuoteSchema
+  .omit({ status: true, acceptedVersionId: true, lostReason: true })
+  .strict()
+
 export const createQuoteTool = defineTool({
   owner: OWNER,
   capabilityId: `${OWNER}#tool.create-quote`,
   capabilityVersion: VERSION,
   name: "create_quote",
   description:
-    "Open a new quote for a customer in a pipeline stage. Creates the quote record only — " +
-    "add what is being sold with add_quote_product, then snapshot_quote_version to freeze a " +
-    "proposal and send_quote_version to deliver it.",
-  inputSchema: insertQuoteSchema,
+    "Open a new quote for a customer in a pipeline stage. The quote starts open — " +
+    "winning or losing it happens through accept_quote_version and decline_quote_version. " +
+    "Add what is being sold with add_quote_product, then snapshot_quote_version to freeze a " +
+    "proposal and send_quote_version to deliver it. An exact retry returns the original quote.",
+  inputSchema: createQuoteToolInputSchema,
   outputSchema: quoteSchema,
   requiredScopes: WRITE_SCOPES,
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: quoteWriteRisk,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: QuotesToolContext) {
-    return parseJsonResult(quoteSchema, await quotes(ctx).createQuote(input))
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      quotesHandlerActionPolicyExpectation(QUOTES_CREATED_TARGET_POLICIES.quote),
+    )
+    return parseJsonResult(quoteSchema, await quotes(ctx).createQuote(input, admitted))
   },
 })
 
