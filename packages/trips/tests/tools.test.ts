@@ -5,6 +5,8 @@ import type { TripComponent } from "../src/schema.js"
 import {
   CREATE_TRIP_HANDLER_POLICY,
   createTripTool,
+  getTripTool,
+  listTripsTool,
   PRICE_TRIP_HANDLER_POLICY,
   priceTripTool,
   RESERVE_TRIP_HANDLER_POLICY,
@@ -107,8 +109,10 @@ describe("trips tools", () => {
     expect(manifest.map((t) => t.name).sort()).toEqual([
       "add_trip_requirement",
       "create_trip",
+      "get_trip",
       "get_trip_action_operation",
       "get_trip_requirement_sourcing_operation",
+      "list_trips",
       "price_trip",
       "reserve_trip",
       "revise_trip",
@@ -438,5 +442,101 @@ describe("trips tools", () => {
         ),
       ),
     ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
+  })
+})
+
+describe("trips read tools", () => {
+  const AGGREGATE = {
+    envelope: {
+      id: "trip_01kyh3rr1kf688cvc3r2d9k584",
+      status: "draft",
+      title: "Coastal Day Cruise — Marchetti",
+      description: null,
+      travelerParty: {},
+      constraints: {},
+      aggregateCurrency: "EUR",
+      aggregateSubtotalAmountCents: 80000,
+      aggregateTaxAmountCents: 0,
+      aggregateTotalAmountCents: 80000,
+      aggregatePricingSnapshot: null,
+      currentPriceExpiresAt: null,
+      bookingGroupId: null,
+      orderId: null,
+      paymentSessionId: null,
+      reserveIdempotencyKey: null,
+      reserveStartedAt: null,
+      reservedAt: null,
+      checkoutIdempotencyKey: null,
+      checkoutStartedAt: null,
+      createdBy: null,
+      updatedBy: null,
+      createdAt: "2026-07-27T10:00:00.000Z",
+      updatedAt: "2026-07-27T10:00:00.000Z",
+    },
+    components: [],
+  }
+
+  it("lists trips through the injected service", async () => {
+    let seen: unknown
+    const result = await makeRegistry().dispatch<{
+      total: number
+      data: { envelope: { id: string } }[]
+    }>(
+      "list_trips",
+      { status: "draft" },
+      ctxWith({
+        listTrips: async (input) => {
+          seen = input
+          return { data: [AGGREGATE], total: 1, limit: 50, offset: 0 }
+        },
+      }),
+    )
+    expect(result.total).toBe(1)
+    expect(result.data[0]?.envelope.id).toBe("trip_01kyh3rr1kf688cvc3r2d9k584")
+    // Paging and ordering defaults reach the service without the model
+    // having to supply them.
+    expect(seen).toMatchObject({
+      status: "draft",
+      limit: 50,
+      offset: 0,
+      sortBy: "updatedAt",
+      sortDir: "desc",
+    })
+  })
+
+  it("reads one trip by envelope id", async () => {
+    const result = await makeRegistry().dispatch<{
+      envelope: { title: string | null }
+    } | null>(
+      "get_trip",
+      { envelopeId: "trip_01kyh3rr1kf688cvc3r2d9k584" },
+      ctxWith({ getTrip: async () => AGGREGATE }),
+    )
+    expect(result?.envelope.title).toBe("Coastal Day Cruise — Marchetti")
+  })
+
+  it("returns null for a trip that does not exist", async () => {
+    const result = await makeRegistry().dispatch(
+      "get_trip",
+      { envelopeId: "trip_missing" },
+      ctxWith({ getTrip: async () => null }),
+    )
+    expect(result).toBeNull()
+  })
+
+  // The gap this closes: every trip write tool takes an envelope id, and until
+  // now nothing could produce one outside the conversation that created it.
+  it("exposes both readers on the registry so a trip can be found", () => {
+    const names = tripsTools.map((t) => t.name)
+    expect(names).toContain("list_trips")
+    expect(names).toContain("get_trip")
+  })
+
+  it("declares the readers as read-tier and non-destructive", () => {
+    for (const tool of [listTripsTool, getTripTool]) {
+      expect(tool.tier).toBe("read")
+      expect(tool.riskPolicy.destructive).toBe(false)
+      expect(tool.requiredScopes).toEqual(["trips:read"])
+    }
   })
 })

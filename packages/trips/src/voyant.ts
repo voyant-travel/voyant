@@ -230,6 +230,22 @@ export const tripsVoyantModule = defineModule({
   },
   tools: [
     {
+      id: "@voyant-travel/trips#tool.list-trips",
+      name: "list_trips",
+      runtime: { entry: "@voyant-travel/trips/tools", export: "listTripsTool" },
+      requiredScopes: ["trips:read"],
+      context: ["trips"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/trips#tool.get-trip",
+      name: "get_trip",
+      runtime: { entry: "@voyant-travel/trips/tools", export: "getTripTool" },
+      requiredScopes: ["trips:read"],
+      context: ["trips"],
+      risk: "low",
+    },
+    {
       id: "@voyant-travel/trips#tool.create-trip",
       name: "create_trip",
       runtime: { entry: "@voyant-travel/trips/tools", export: "createTripTool" },
