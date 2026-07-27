@@ -319,4 +319,33 @@ describe("finance tools", () => {
       code: "MISSING_SERVICE",
     })
   })
+
+  it("advertises the billing-party requirement in the create_booking contract", () => {
+    // ProTravel hit this in production: Max resolved the client, then called
+    // create_booking without personId and looped on
+    // "Select a billing person or organization". personId and organizationId
+    // are both structurally optional (either satisfies the rule), and the
+    // requirement lived only in a superRefine, which does not serialize into
+    // the JSON Schema a Tool caller reads. The contract has to state it.
+    const tool = financeBookingsCreateTools.find((entry) => entry.name === "create_booking")
+    if (!tool) throw new Error("create_booking is missing")
+
+    expect(tool.description).toMatch(/personId/)
+    expect(tool.description).toMatch(/organizationId/)
+
+    // Assert on the same carrier `bookingNumber` already relies on to reach a
+    // caller, so this pins the description actually shipping, not a doc comment.
+    const shape = (
+      tool.inputSchema as {
+        shape?: Record<string, { shape?: Record<string, { description?: string }> }>
+      }
+    ).shape?.booking?.shape
+    if (!shape) throw new Error("create_booking input schema has no booking shape")
+
+    expect(shape.personId?.description).toMatch(/required unless .*organizationId/i)
+    expect(shape.organizationId?.description).toMatch(/required unless .*personId/i)
+    // The proven-effective precedent in this schema; if it ever stops carrying
+    // a description the mechanism this test relies on has changed.
+    expect(shape.bookingNumber?.description).toBeTruthy()
+  })
 })
