@@ -29,7 +29,9 @@ import { emitProductContentChanged } from "./events.js"
 import { productExtras } from "./extras/schema.js"
 import { inventoryExtrasService } from "./extras/service.js"
 import type { InventoryExtrasToolServices } from "./extras-tools.js"
+import type { InventoryOptionToolServices } from "./option-tools.js"
 import { productOptions, products, productTranslations } from "./schema.js"
+import { optionProductsService } from "./service-options.js"
 import { productsService } from "./service.js"
 import { getProductContent } from "./service-content.js"
 import type {
@@ -55,7 +57,13 @@ function asPostgresDb(tx: AnyDrizzleDb): PostgresJsDatabase {
 }
 
 export const voyantToolContextContribution = defineToolContextContribution({
-  context: ["inventory", "inventoryContent", "inventoryExtras", "inventoryAuthoring"],
+  context: [
+    "inventory",
+    "inventoryContent",
+    "inventoryExtras",
+    "inventoryOptions",
+    "inventoryAuthoring",
+  ],
   contribute: ({ request, context, resources }) => {
     const c = request as Context<InventoryMcpEnv>
     const db = context.db as Parameters<typeof productsService.listProducts>[0]
@@ -311,6 +319,86 @@ export const voyantToolContextContribution = defineToolContextContribution({
             db,
             id,
             input as Parameters<typeof inventoryExtrasService.updateOptionExtraConfig>[2],
+          ),
+      },
+      inventoryOptions: {
+        listProductOptions: (input: Parameters<typeof optionProductsService.listOptions>[1]) =>
+          optionProductsService.listOptions(db, input),
+        getProductOptionById: (id: string) => optionProductsService.getOptionById(db, id),
+        createProductOption: (
+          input: Parameters<InventoryOptionToolServices["createProductOption"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) => {
+          const { idempotencyKey, productId, ...data } = input
+          return executeInventoryGeneratedChild({
+            c,
+            db: asLedgerDb(db),
+            admitted,
+            idempotencyKey,
+            commandTargetType: "product-option-create-command",
+            canonicalTargetType: "product_option",
+            resultReferenceType: "product_option",
+            commandInput: { ...data, productId },
+            async create(tx) {
+              // `createOption` returns null when the parent is missing; surface
+              // that as invalid input rather than a null row the caller can't act on.
+              const row = await optionProductsService.createOption(
+                asPostgresDb(tx),
+                productId,
+                data as Parameters<typeof optionProductsService.createOption>[2],
+              )
+              if (!row) {
+                throw new ToolError("Product option parent product was not found.", "INVALID_INPUT", {
+                  productId,
+                })
+              }
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          })
+        },
+        updateProductOption: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
+          optionProductsService.updateOption(
+            db,
+            id,
+            input as Parameters<typeof optionProductsService.updateOption>[2],
+          ),
+        listOptionUnits: (input: Parameters<typeof optionProductsService.listUnits>[1]) =>
+          optionProductsService.listUnits(db, input),
+        getOptionUnitById: (id: string) => optionProductsService.getUnitById(db, id),
+        createOptionUnit: (
+          input: Parameters<InventoryOptionToolServices["createOptionUnit"]>[0],
+          admitted: ToolHandlerActionPolicyContext,
+        ) => {
+          const { idempotencyKey, optionId, ...data } = input
+          return executeInventoryGeneratedChild({
+            c,
+            db: asLedgerDb(db),
+            admitted,
+            idempotencyKey,
+            commandTargetType: "option-unit-create-command",
+            canonicalTargetType: "option_unit",
+            resultReferenceType: "option_unit",
+            commandInput: { ...data, optionId },
+            async create(tx) {
+              const row = await optionProductsService.createUnit(
+                asPostgresDb(tx),
+                optionId,
+                data as Parameters<typeof optionProductsService.createUnit>[2],
+              )
+              if (!row) {
+                throw new ToolError("Option unit parent option was not found.", "INVALID_INPUT", {
+                  optionId,
+                })
+              }
+              return { value: { id: row.id, replayed: false }, targetId: row.id }
+            },
+          })
+        },
+        updateOptionUnit: ({ id, ...input }: { id: string; [key: string]: unknown }) =>
+          optionProductsService.updateUnit(
+            db,
+            id,
+            input as Parameters<typeof optionProductsService.updateUnit>[2],
           ),
       },
     }

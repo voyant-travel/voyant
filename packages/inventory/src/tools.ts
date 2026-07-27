@@ -444,6 +444,20 @@ export const composeProductTool = defineTool({
   },
 })
 
+// Product options and their bookable units. Own file, re-exported here so the
+// manifest's single `@voyant-travel/inventory/tools` runtime entry resolves them.
+export {
+  createOptionUnitTool,
+  inventoryOptionTools,
+  createProductOptionTool,
+  getOptionUnitTool,
+  getProductOptionTool,
+  listOptionUnitsTool,
+  listProductOptionsTool,
+  updateOptionUnitTool,
+  updateProductOptionTool,
+} from "./option-tools.js"
+
 export const listProductDaysTool = defineTool(listProductDaysDefinition)
 export const updateProductDayTool = defineTool(updateProductDayDefinition)
 
