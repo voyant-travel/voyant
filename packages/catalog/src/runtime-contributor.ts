@@ -54,6 +54,10 @@ import {
   catalogOperationsRuntimeExtensionPort,
   catalogRuntimeServicesPort,
 } from "./runtime-contracts.js"
+import {
+  type CatalogSourcesSyncJobRuntime,
+  catalogSourcesSyncJobRuntimePort,
+} from "./sources-sync-job-runtime-port.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 // Importing Cruises here would create a Catalog <-> Cruises package cycle.
@@ -162,6 +166,21 @@ export function createCatalogRuntimePortContribution(
         console.error("[catalog-draft-reaper] operation failed", { error, ...details })
       },
     },
+    [catalogSourcesSyncJobRuntimePort.id]: {
+      async withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>) {
+        return operation(host.primitives.database.resolve(undefined))
+      },
+      async resolveServices() {
+        const runtime = await contribution
+        return runtime.services
+      },
+      resolveEnv() {
+        return host.primitives.env(undefined)
+      },
+      reportProgress(event) {
+        console.info("[catalog-sources-sync]", event)
+      },
+    } satisfies CatalogSourcesSyncJobRuntime,
     [catalogReindexJobRuntimePort.id]: {
       async createRuntime(bindings: unknown) {
         if (!bindings || typeof bindings !== "object") {
