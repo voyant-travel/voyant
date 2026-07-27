@@ -177,6 +177,11 @@
         "import": "./dist/dashboard/dashboard-query-options.js",
         "default": "./dist/dashboard/dashboard-query-options.js"
       },
+      "./dashboard/layout": {
+        "types": "./dist/dashboard/dashboard-layout.d.ts",
+        "import": "./dist/dashboard/dashboard-layout.js",
+        "default": "./dist/dashboard/dashboard-layout.js"
+      },
       "./dashboard/skeleton": {
         "types": "./dist/dashboard/dashboard-skeleton.d.ts",
         "import": "./dist/dashboard/dashboard-skeleton.js",
