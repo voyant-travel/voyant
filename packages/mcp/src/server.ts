@@ -503,7 +503,12 @@ function projectShapeForMcpDiscovery(shape: z.ZodRawShape): z.ZodRawShape {
 
 function projectSchemaForMcpDiscovery(schema: z.ZodType): z.ZodType {
   try {
-    z.toJSONSchema(schema)
+    // This projects TOOL INPUTS, so ask zod for the input direction. The
+    // default (`io: "output"`) cannot resolve a transform's output type and
+    // throws, which sent every schema coercing a query param — `active`,
+    // `activated`, `isPrimary` — down the lossy projection path below even
+    // though its input shape is perfectly representable.
+    z.toJSONSchema(schema, { io: "input" })
     return schema
   } catch {
     return projectUnrepresentableSchema(schema)
