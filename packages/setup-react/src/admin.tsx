@@ -13,6 +13,11 @@ import {
   storeAdminSetupPrefill,
   useAdminExtensions,
 } from "@voyant-travel/admin"
+import {
+  DASHBOARD_HEADER_STRIP_HEIGHT,
+  readDashboardHeaderSlotHint,
+  writeDashboardHeaderSlotHint,
+} from "@voyant-travel/admin/dashboard/layout"
 import { useLocale } from "@voyant-travel/admin/providers/locale"
 import { useVoyantReactContext } from "@voyant-travel/react"
 import type { SetupStateSnapshot } from "@voyant-travel/setup"
@@ -30,7 +35,7 @@ import {
   Skeleton,
 } from "@voyant-travel/ui/components"
 import { Check, CircleDashed, ExternalLink, Loader2, Minus, X } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 
 import {
   dismissSetupClient,
@@ -56,13 +61,15 @@ export const setupQueryKey = (stepIds: readonly string[]) =>
 const setupSnapshotQueryKey = ["organization-setup-snapshot"] as const
 
 /**
- * Height of the dashboard strip. The placeholder, the resolved strip, and the
- * error strip all use it so the slot occupies the same box from first paint —
- * the setup state resolves well after the dashboard aggregates (which are
- * prefetched by the route loader), and anything variable-height here shifts
- * the entire dashboard down.
+ * Height of the dashboard strip, shared with the dashboard's pending boundary
+ * so the placeholder, the resolved strip, and the skeleton's reservation are
+ * one box from first paint. The setup state resolves well after the dashboard
+ * aggregates (which the route loader prefetches), so anything variable-height
+ * here shifts the entire dashboard.
  */
-const STRIP_HEIGHT = "h-14"
+const STRIP_HEIGHT = DASHBOARD_HEADER_STRIP_HEIGHT
+
+const EMPTY_SUBSCRIPTION = () => () => {}
 
 /**
  * Route-loader half of the setup flow. Beyond persisting state it SEEDS the
@@ -169,6 +176,13 @@ export function SetupDashboardWidget() {
     queryFn: () => loadSelectedSetupState(runtime, stepIds),
     refetchOnMount: "always",
   })
+  // Matches the pending boundary's reservation, so the placeholder and the
+  // skeleton agree about whether this slot occupies space.
+  const reserveWhilePending = useSyncExternalStore(
+    EMPTY_SUBSCRIPTION,
+    readDashboardHeaderSlotHint,
+    () => true,
+  )
 
   useEffect(() => {
     if (query.isFetching || !query.data?.canManage || !query.data.state) return
@@ -196,24 +210,30 @@ export function SetupDashboardWidget() {
       .catch(() => setPredicateError(true))
   }, [query.data, query.isFetching, query.refetch, queryClient, runtime, steps])
 
-  if (query.isPending) {
-    return <SetupStripPlaceholder label={messages.loading} />
-  }
-  if (query.isError || !query.data?.state) {
-    return null
-  }
-
-  const state = query.data.state
-  if (state.dismissedAt) return null
-
-  const states = new Map(state.steps.map((step) => [step.stepId, step]))
+  const state = query.data?.state ?? null
+  const states = new Map((state?.steps ?? []).map((step) => [step.stepId, step]))
   const completed = steps.filter((step) => states.get(step.id)?.completedAt).length
   const skipped = steps.filter(
     (step) => !states.get(step.id)?.completedAt && states.get(step.id)?.skippedAt,
   ).length
   const terminal = completed + skipped
+  const allTerminal = steps.length > 0 && terminal === steps.length
+  const occupiesSpace = Boolean(state) && !state?.dismissedAt && !allTerminal
 
-  if (steps.length > 0 && terminal === steps.length) return null
+  // Record whether this slot takes up space so the dashboard's pending
+  // boundary can reserve it only for workspaces that will actually see a
+  // strip. Established workspaces (dismissed, or every step terminal) then
+  // reserve nothing and lose no height on the skeleton-to-page swap.
+  useEffect(() => {
+    if (query.isPending) return
+    writeDashboardHeaderSlotHint(occupiesSpace)
+  }, [query.isPending, occupiesSpace])
+
+  if (query.isPending) {
+    return reserveWhilePending ? <SetupStripPlaceholder label={messages.loading} /> : null
+  }
+  if (query.isError || !state) return null
+  if (state.dismissedAt || allTerminal) return null
 
   return (
     <SetupStrip
@@ -471,14 +491,15 @@ function SetupStepRow({
       </span>
       <div className="min-w-0 flex-1 space-y-1">
         <p
-          className={`text-sm font-medium ${complete || skipped ? "text-muted-foreground" : "text-foreground"}`}
+          className={`text-sm font-medium ${complete ? "text-muted-foreground" : "text-foreground"}`}
         >
           {copy.title}
         </p>
-        {complete || skipped ? null : (
-          <p className="text-sm text-muted-foreground">{copy.description}</p>
-        )}
-        {complete || skipped ? null : (
+        {/* Only a completed step collapses. A skipped step keeps its
+            description and action: skipping is "not now", there is no unskip
+            control, and the shell copy promises you can leave and return. */}
+        {complete ? null : <p className="text-sm text-muted-foreground">{copy.description}</p>}
+        {complete ? null : (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {Action ? (
               <Action label={copy.action} prefill={resolvedPrefill} />
@@ -492,7 +513,7 @@ function SetupStepRow({
                 <ExternalLink className="size-4" />
               </a>
             ) : null}
-            {canManage && step.skippable ? (
+            {canManage && !skipped && step.skippable ? (
               <Button
                 type="button"
                 variant="ghost"

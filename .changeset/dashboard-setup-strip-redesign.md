@@ -29,6 +29,19 @@ with the step list in a sheet, and the dashboard around it was reworked:
   route-loader pending boundary swap no longer reflows the page.
 - `DashboardEmptyState` accepts `className` so an empty card occupies the same
   box as the chart or list it replaces.
+- The pending boundary reserves the `dashboard.header` strip only when the
+  resolved page will fill it. Reserving unconditionally would trade one shift
+  for another: a workspace with no contributing extension, with setup
+  dismissed, or with every step terminal would lose that box on the swap.
+  Widgets record whether they occupy space (`@voyant-travel/admin/dashboard/layout`),
+  and the extension registry rules out deployments that contribute no widget.
+- Skipping a setup step no longer hides its description and action. There is no
+  unskip control, so a skipped step stayed unreachable even though the shell
+  copy promises you can leave and return; only completed steps collapse now.
+- Range-dependent copy follows the selector. The revenue KPI is summed from the
+  ranged aggregate response, so it names the range instead of claiming
+  "all-time", and the monthly-bookings empty state no longer hardcodes six
+  months.
 
 Fixes several `CardHeader` usages that passed `sm:flex-row sm:items-start
 sm:justify-between` without `flex`; `CardHeader` is `display:grid`, so those

@@ -23,6 +23,7 @@
     "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
     "./dashboard": "./src/dashboard/dashboard-page.tsx",
     "./dashboard/query-options": "./src/dashboard/dashboard-query-options.ts",
+    "./dashboard/layout": "./src/dashboard/dashboard-layout.ts",
     "./dashboard/skeleton": "./src/dashboard/dashboard-skeleton.tsx",
     "./extensions": "./src/extensions.ts",
     "./navigation/destinations": "./src/navigation/destinations.tsx",

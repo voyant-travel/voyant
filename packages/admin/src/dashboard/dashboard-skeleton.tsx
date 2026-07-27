@@ -1,11 +1,17 @@
+"use client"
+
 import { Card, CardContent, CardHeader } from "@voyant-travel/ui/components/card"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
-import type { ReactNode } from "react"
+import { type ReactNode, useSyncExternalStore } from "react"
 
+import { resolveAdminWidgets } from "../extensions.js"
+import { useAdminExtensions } from "../providers/admin-extensions.js"
 import {
   DASHBOARD_CHART_SHORT,
   DASHBOARD_CHART_TALL,
+  DASHBOARD_HEADER_STRIP_HEIGHT,
   DASHBOARD_LIST_MIN,
+  readDashboardHeaderSlotHint,
 } from "./dashboard-layout.js"
 
 /**
@@ -177,18 +183,41 @@ function DashboardCardSkeleton({
   )
 }
 
+const EMPTY_SUBSCRIPTION = () => () => {}
+
+/**
+ * Reserves the `dashboard.header` strip only when the resolved page will fill
+ * it. Reserving unconditionally would trade one shift for another: every
+ * workspace whose widget renders nothing — no contributing extension, setup
+ * dismissed, or every step terminal — would lose the box on the swap.
+ *
+ * Two independent signals gate it. The extension registry is known
+ * synchronously, so a deployment with no `dashboard.header` widget never
+ * reserves. Whether a widget that *does* exist currently renders is only known
+ * after its data resolves, so widgets persist that verdict and it is read back
+ * here. `useSyncExternalStore` keeps the server snapshot ("reserve") separate
+ * from the client one, which avoids a hydration mismatch.
+ */
+function DashboardHeaderSlotReservation() {
+  const extensions = useAdminExtensions()
+  const hasWidget = resolveAdminWidgets({ slot: "dashboard.header", extensions }).length > 0
+  const reserve = useSyncExternalStore(EMPTY_SUBSCRIPTION, readDashboardHeaderSlotHint, () => true)
+
+  if (!hasWidget || !reserve) return null
+  return <Skeleton className={`${DASHBOARD_HEADER_STRIP_HEIGHT} w-full rounded-md`} />
+}
+
 /**
  * The dashboard route's pending boundary. It is swapped for `DashboardPage` in
  * a single paint, so it deliberately mirrors that page's structure box for box
- * — same setup-strip slot, same page header, same 7-column grids, same body
- * heights (see `dashboard-layout.ts`). Structural drift here shows up as a
- * layout shift on every cold dashboard load.
+ * — same header slot, same page header, same 7-column grids, same body heights
+ * (see `dashboard-layout.ts`). Structural drift here shows up as a layout
+ * shift on every cold dashboard load.
  */
 export function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      {/* Setup strip slot — matches the widget's fixed-height strip. */}
-      <Skeleton className="h-14 w-full rounded-md" />
+      <DashboardHeaderSlotReservation />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">

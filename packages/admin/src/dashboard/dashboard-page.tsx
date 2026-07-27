@@ -193,7 +193,18 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
   const hasBookingStatusData = localizedStatusBreakdown.length > 0
   const hasOutstandingInvoices = outstandingInvoiceCount > 0 || outstandingTopN.length > 0
 
-  const resolvedEmptyStates = buildDashboardEmptyStates(messages, emptyStates)
+  const resolvedEmptyStates = buildDashboardEmptyStates(messages, {
+    ...emptyStates,
+    // The monthly-bookings empty copy names a window, so it has to follow the
+    // selector rather than stay pinned to six months. An explicit caller
+    // override still wins.
+    monthlyBookings: {
+      title: formatMessage(messages.dashboard.monthlyBookingsRangeEmptyTitle, {
+        range: rangeLabels[rangeMonths],
+      }),
+      ...emptyStates.monthlyBookings,
+    },
+  })
 
   const dashboardMetrics = {
     totalRevenueCents,
@@ -240,7 +251,11 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
         <KpiCard
           title={messages.dashboard.totalRevenueTitle}
           value={formatCurrency(totalRevenueCents, defaultCurrency)}
-          description={messages.dashboard.totalRevenueDescription}
+          // The total is summed from the ranged aggregate response, so the
+          // copy has to name the range rather than claim "all-time".
+          description={formatMessage(messages.dashboard.totalRevenueRangeDescription, {
+            range: rangeLabels[rangeMonths],
+          })}
           icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
           trend={revenueTrend}
           trendLabel={messages.dashboard.trendVsLastMonth}
