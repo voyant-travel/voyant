@@ -37,6 +37,16 @@ import {
   updateOptionExtraConfigTool as updateOptionExtraConfigDefinition,
   updateProductExtraTool as updateProductExtraDefinition,
 } from "./extras-tools.js"
+import {
+  createOptionUnitTool as createOptionUnitDefinition,
+  createProductOptionTool as createProductOptionDefinition,
+  getOptionUnitTool as getOptionUnitDefinition,
+  getProductOptionTool as getProductOptionDefinition,
+  listOptionUnitsTool as listOptionUnitsDefinition,
+  listProductOptionsTool as listProductOptionsDefinition,
+  updateOptionUnitTool as updateOptionUnitDefinition,
+  updateProductOptionTool as updateProductOptionDefinition,
+} from "./option-tools.js"
 import { insertProductSchema, productListQuerySchema, updateProductSchema } from "./validation.js"
 
 const OWNER = "@voyant-travel/inventory"
@@ -444,19 +454,18 @@ export const composeProductTool = defineTool({
   },
 })
 
-// Product options and their bookable units. Own file, re-exported here so the
-// manifest's single `@voyant-travel/inventory/tools` runtime entry resolves them.
-export {
-  createOptionUnitTool,
-  inventoryOptionTools,
-  createProductOptionTool,
-  getOptionUnitTool,
-  getProductOptionTool,
-  listOptionUnitsTool,
-  listProductOptionsTool,
-  updateOptionUnitTool,
-  updateProductOptionTool,
-} from "./option-tools.js"
+// Product options and their bookable units live in their own file; re-declare
+// them through `defineTool` here so the manifest's single
+// `@voyant-travel/inventory/tools` entry points at a defineTool export, as the
+// graph convergence check requires (same shape as the extras Tools above).
+export const listProductOptionsTool = defineTool(listProductOptionsDefinition)
+export const getProductOptionTool = defineTool(getProductOptionDefinition)
+export const createProductOptionTool = defineTool(createProductOptionDefinition)
+export const updateProductOptionTool = defineTool(updateProductOptionDefinition)
+export const listOptionUnitsTool = defineTool(listOptionUnitsDefinition)
+export const getOptionUnitTool = defineTool(getOptionUnitDefinition)
+export const createOptionUnitTool = defineTool(createOptionUnitDefinition)
+export const updateOptionUnitTool = defineTool(updateOptionUnitDefinition)
 
 export const listProductDaysTool = defineTool(listProductDaysDefinition)
 export const updateProductDayTool = defineTool(updateProductDayDefinition)

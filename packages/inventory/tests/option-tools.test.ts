@@ -11,9 +11,7 @@ import {
 } from "../src/option-tools.js"
 
 function admitted(
-  expected:
-    | typeof CREATE_PRODUCT_OPTION_HANDLER_POLICY
-    | typeof CREATE_OPTION_UNIT_HANDLER_POLICY,
+  expected: typeof CREATE_PRODUCT_OPTION_HANDLER_POLICY | typeof CREATE_OPTION_UNIT_HANDLER_POLICY,
 ): ToolContext["handlerActionPolicy"] {
   return {
     capabilityId: expected.capabilityId,

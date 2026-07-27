@@ -31,9 +31,9 @@ import { inventoryExtrasService } from "./extras/service.js"
 import type { InventoryExtrasToolServices } from "./extras-tools.js"
 import type { InventoryOptionToolServices } from "./option-tools.js"
 import { productOptions, products, productTranslations } from "./schema.js"
-import { optionProductsService } from "./service-options.js"
 import { productsService } from "./service.js"
 import { getProductContent } from "./service-content.js"
+import { optionProductsService } from "./service-options.js"
 import type {
   InventoryAuthoringToolServices,
   InventoryContentToolServices,
@@ -348,9 +348,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 data as Parameters<typeof optionProductsService.createOption>[2],
               )
               if (!row) {
-                throw new ToolError("Product option parent product was not found.", "INVALID_INPUT", {
-                  productId,
-                })
+                throw new ToolError(
+                  "Product option parent product was not found.",
+                  "INVALID_INPUT",
+                  {
+                    productId,
+                  },
+                )
               }
               return { value: { id: row.id, replayed: false }, targetId: row.id }
             },

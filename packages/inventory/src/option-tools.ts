@@ -35,7 +35,11 @@ import {
   updateProductOptionSchema,
 } from "./validation.js"
 
-const OWNER = "@voyant-travel/inventory#options"
+// Options and units are part of the core inventory module surface, so `owner`
+// must be the module that registers them — the graph checks the two agree.
+// Capability ids keep the `#options` segment purely to namespace them.
+const OWNER = "@voyant-travel/inventory"
+const CAPABILITY_PREFIX = "@voyant-travel/inventory#options"
 const VERSION = "v1"
 const READ_SCOPES = ["products:read"] as const
 const WRITE_SCOPES = ["products:write"] as const
@@ -180,12 +184,12 @@ const writeMetadata = {
 }
 
 export const CREATE_PRODUCT_OPTION_HANDLER_POLICY = {
-  capabilityId: `${OWNER}.tool.create-product-option`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.create-product-option`,
   capabilityVersion: VERSION,
   canonicalName: "create_product_option",
   actionPolicy: {
-    id: `${OWNER}.action.create-product-option`,
-    capabilityId: `${OWNER}.action.create-product-option`,
+    id: `${CAPABILITY_PREFIX}.action.create-product-option`,
+    capabilityId: `${CAPABILITY_PREFIX}.action.create-product-option`,
     version: VERSION,
     kind: "execute",
     targetType: "product_option",
@@ -205,12 +209,12 @@ export const CREATE_PRODUCT_OPTION_HANDLER_POLICY = {
 } as const satisfies HandlerActionPolicyExpectation
 
 export const CREATE_OPTION_UNIT_HANDLER_POLICY = {
-  capabilityId: `${OWNER}.tool.create-option-unit`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.create-option-unit`,
   capabilityVersion: VERSION,
   canonicalName: "create_option_unit",
   actionPolicy: {
-    id: `${OWNER}.action.create-option-unit`,
-    capabilityId: `${OWNER}.action.create-option-unit`,
+    id: `${CAPABILITY_PREFIX}.action.create-option-unit`,
+    capabilityId: `${CAPABILITY_PREFIX}.action.create-option-unit`,
     version: VERSION,
     kind: "execute",
     targetType: "option_unit",
@@ -231,7 +235,7 @@ export const CREATE_OPTION_UNIT_HANDLER_POLICY = {
 
 export const listProductOptionsTool = defineTool({
   ...readMetadata,
-  capabilityId: `${OWNER}.tool.list-product-options`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.list-product-options`,
   name: "list_product_options",
   description:
     "List the options (fare classes, departure variants, room plans) a product is sold under. Filter by productId to see one product's options.",
@@ -247,7 +251,7 @@ export const listProductOptionsTool = defineTool({
 
 export const getProductOptionTool = defineTool({
   ...readMetadata,
-  capabilityId: `${OWNER}.tool.get-product-option`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.get-product-option`,
   name: "get_product_option",
   description: "Read one product option and its availability window and status.",
   inputSchema: optionIdArgsSchema,
@@ -263,7 +267,7 @@ export const getProductOptionTool = defineTool({
 export const createProductOptionTool = defineTool({
   ...writeMetadata,
   riskPolicy: { ...WRITE_RISK, reversible: false },
-  capabilityId: `${OWNER}.tool.create-product-option`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.create-product-option`,
   name: "create_product_option",
   description:
     "Add an option to an existing product — the level a price and its bookable units hang off. A product needs at least one option before it can be sold.",
@@ -273,13 +277,15 @@ export const createProductOptionTool = defineTool({
   annotations: { idempotentHint: true },
   async handler(input, ctx: InventoryOptionToolContext) {
     const admitted = admitHandlerActionPolicy(ctx, CREATE_PRODUCT_OPTION_HANDLER_POLICY)
-    return createdChildReferenceSchema.parse(await options(ctx).createProductOption(input, admitted))
+    return createdChildReferenceSchema.parse(
+      await options(ctx).createProductOption(input, admitted),
+    )
   },
 })
 
 export const updateProductOptionTool = defineTool({
   ...writeMetadata,
-  capabilityId: `${OWNER}.tool.update-product-option`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.update-product-option`,
   name: "update_product_option",
   description:
     "Update an option's name, code, description, status, default flag, ordering, or availability window.",
@@ -296,7 +302,7 @@ export const updateProductOptionTool = defineTool({
 
 export const listOptionUnitsTool = defineTool({
   ...readMetadata,
-  capabilityId: `${OWNER}.tool.list-option-units`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.list-option-units`,
   name: "list_option_units",
   description:
     "List the bookable units under product options — the per-person, per-room, or per-vehicle lines a traveller actually books. Filter by optionId.",
@@ -312,7 +318,7 @@ export const listOptionUnitsTool = defineTool({
 
 export const getOptionUnitTool = defineTool({
   ...readMetadata,
-  capabilityId: `${OWNER}.tool.get-option-unit`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.get-option-unit`,
   name: "get_option_unit",
   description: "Read one bookable unit with its quantity, age, and occupancy bounds.",
   inputSchema: unitIdArgsSchema,
@@ -328,7 +334,7 @@ export const getOptionUnitTool = defineTool({
 export const createOptionUnitTool = defineTool({
   ...writeMetadata,
   riskPolicy: { ...WRITE_RISK, reversible: false },
-  capabilityId: `${OWNER}.tool.create-option-unit`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.create-option-unit`,
   name: "create_option_unit",
   description:
     "Add a bookable unit to an existing product option — an adult or child fare, a room plan, a vehicle seat. Without at least one unit an option has nothing a traveller can book.",
@@ -344,7 +350,7 @@ export const createOptionUnitTool = defineTool({
 
 export const updateOptionUnitTool = defineTool({
   ...writeMetadata,
-  capabilityId: `${OWNER}.tool.update-option-unit`,
+  capabilityId: `${CAPABILITY_PREFIX}.tool.update-option-unit`,
   name: "update_option_unit",
   description:
     "Update a bookable unit's name, code, quantity bounds, age bounds, occupancy, or visibility. Clearing occupancy on a room or vehicle unit is rejected.",
