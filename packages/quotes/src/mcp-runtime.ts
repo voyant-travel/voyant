@@ -52,6 +52,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
               if (!row) throw new Error("createQuote returned no row")
               return row
             },
+            (tx, id) => quotesService.getQuoteById(tx, id),
           )
           if (!result.replayed) {
             await c.get("eventBus")?.emit("quote.created", { id: result.value.id })
