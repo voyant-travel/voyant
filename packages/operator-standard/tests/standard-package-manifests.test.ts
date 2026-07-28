@@ -3,6 +3,7 @@ import { catalogVoyantModule } from "@voyant-travel/catalog/voyant"
 import { commerceVoyantModule } from "@voyant-travel/commerce/voyant"
 import cruisesVoyantModule from "@voyant-travel/cruises/voyant"
 import { dbVoyantModule } from "@voyant-travel/db/voyant"
+import { distributionChannelPushVoyantPlugin } from "@voyant-travel/distribution/voyant"
 import { financeVoyantModule } from "@voyant-travel/finance/voyant"
 import { legalVoyantModule } from "@voyant-travel/legal/voyant"
 import navigationPreferencesVoyantModule from "@voyant-travel/navigation-preferences/voyant"
@@ -107,6 +108,7 @@ describe("standard package manifests", () => {
           storefrontVoyantModule,
           tripsVoyantModule,
         ],
+        extensions: [distributionChannelPushVoyantPlugin],
         jobScheduling: { profile: "scale-to-zero" },
       }),
       target: "node",
@@ -123,6 +125,14 @@ describe("standard package manifests", () => {
     })
     expect(schedules.get("notifications.deliver-durable-sends")).toEqual({
       cron: "*/15 * * * *",
+      overlap: "skip",
+    })
+    expect(schedules.get("channel.availability.push")).toEqual({
+      every: "15m",
+      overlap: "skip",
+    })
+    expect(schedules.get("distribution.channel-push-reconcile-booking-links")).toEqual({
+      cron: "0 */6 * * *",
       overlap: "skip",
     })
     expect(schedules.get("cruises.external-catalog-refresh")).toEqual({
