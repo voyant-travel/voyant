@@ -124,6 +124,14 @@ describe("finance deployment manifest", () => {
         expect.objectContaining({ name: "void_invoice", risk: "critical" }),
         expect.objectContaining({ name: "issue_invoice_refund", risk: "critical" }),
         expect.objectContaining({ name: "issue_invoice_from_booking", risk: "high" }),
+        expect.objectContaining({
+          name: "preview_unsynced_proforma_from_booking",
+          risk: "low",
+        }),
+        expect.objectContaining({
+          name: "issue_unsynced_proforma_from_booking",
+          risk: "high",
+        }),
       ]),
     )
     expect(financeVoyantModule.actions).toContainEqual(
@@ -143,6 +151,17 @@ describe("finance deployment manifest", () => {
         requiredScopes: ["finance:write", "bookings:read"],
         ledger: "required",
         approval: "required",
+      }),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.issue-unsynced-proforma-from-booking",
+        requiredScopes: ["finance:write", "bookings:read"],
+        ledger: "required",
+        approval: "required",
+        from: {
+          tools: ["@voyant-travel/finance#tool.issue-unsynced-proforma-from-booking"],
+        },
       }),
     )
     expect(financeVoyantModule.actions).toContainEqual(
