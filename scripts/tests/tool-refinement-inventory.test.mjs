@@ -50,7 +50,10 @@ test("descends into arrays and nested objects", () => {
 
 test("descends into record values and keys", () => {
   const schema = z.object({
-    visibility: z.record(z.string().refine(() => true), z.boolean()),
+    visibility: z.record(
+      z.string().refine(() => true),
+      z.boolean(),
+    ),
   })
   assert.deepEqual(findRefinementPaths(schema).paths, ["visibility{key}"])
 })
@@ -152,14 +155,15 @@ test("ratchets: documenting one forces the ceiling down", () => {
 })
 
 test("fails when the ceiling is missing entirely", () => {
-  const result = inspectRefinementInventory(
-    [{ id: "p:t:a" }],
-    { entries: [{ id: "p:t:a", documented: true, note: NOTE }] },
-  )
+  const result = inspectRefinementInventory([{ id: "p:t:a" }], {
+    entries: [{ id: "p:t:a", documented: true, note: NOTE }],
+  })
   assert.ok(result.diagnostics.some((d) => /must set `maxUndocumented`/.test(d)))
 })
 
 test("entryId composes package, tool and path", () => {
-  assert.equal(entryId("@voyant-travel/trips", "create_trip", "components[]"),
-    "@voyant-travel/trips:create_trip:components[]")
+  assert.equal(
+    entryId("@voyant-travel/trips", "create_trip", "components[]"),
+    "@voyant-travel/trips:create_trip:components[]",
+  )
 })

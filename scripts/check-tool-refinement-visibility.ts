@@ -134,7 +134,7 @@ function unwrap(node: unknown): unknown {
 }
 
 function descriptionOf(node: unknown): string {
-  const meta = (node as { _zod?: { def?: { description?: string } }; description?: string })
+  const meta = node as { _zod?: { def?: { description?: string } }; description?: string }
   return meta?._zod?.def?.description ?? meta?.description ?? ""
 }
 
