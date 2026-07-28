@@ -280,7 +280,7 @@ export function canConfigurePaymentProvider(
  * active default but another (for example Sandbox vs Live) still needs setup.
  */
 export function firstUnconfiguredPaymentProviderMode(
-  provider: Pick<ProviderDescriptor, "id" | "modes">,
+  provider: { id: ProviderDescriptor["id"]; modes: readonly ProviderMode[] },
   connections: readonly Pick<ConnectionSummary, "providerId" | "mode">[] | undefined,
 ): ProviderMode | null {
   return (
