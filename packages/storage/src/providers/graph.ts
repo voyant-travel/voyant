@@ -107,6 +107,14 @@ export function createGatewayGraphStorageProvider(
     "STORAGE_GATEWAY_ENDPOINT",
   )
   const token = requiredString(context.getSecret(SECRET.gatewayToken), "STORAGE_GATEWAY_TOKEN")
+  // Optional: the CDN base the gateway serves media under. Configuring it keeps
+  // delivery on the CDN while the origin stays derived on every read; leaving it
+  // unset falls back to the deployment's own byte-serving media route. Neither
+  // path persists an absolute origin (voyant#3845).
+  const mediaPublicBaseUrl = optionalString(
+    context.getConfig(CONFIG.mediaPublicBaseUrl),
+    "MEDIA_PUBLIC_BASE_URL",
+  )
   return fixedStores({
     documents: createGatewayStorageProvider({
       endpoint,
@@ -114,7 +122,13 @@ export function createGatewayGraphStorageProvider(
       name: "gateway:documents",
       tier: "documents",
     }),
-    media: createGatewayStorageProvider({ endpoint, token, name: "gateway:media", tier: "media" }),
+    media: createGatewayStorageProvider({
+      endpoint,
+      token,
+      name: "gateway:media",
+      tier: "media",
+      ...(mediaPublicBaseUrl ? { publicBaseUrl: mediaPublicBaseUrl } : {}),
+    }),
   })
 }
 

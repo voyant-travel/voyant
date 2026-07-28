@@ -13,6 +13,16 @@ export async function assertStorageProviderConformance(
   const key = options.key ?? `voyant-conformance/${globalThis.crypto.randomUUID()}`
   const expected = new Uint8Array([0, 1, 2, 127, 255])
 
+  if (provider.publicUrl) {
+    // Derivation must be pure: same key in, same URL out, with no dependency on
+    // whether the object has been uploaded yet (voyant#3845).
+    const before = provider.publicUrl(key)
+    assert(before === provider.publicUrl(key), "publicUrl is not stable for the same key")
+    if (before !== null) {
+      assert(before.trim().length > 0, "publicUrl returned an empty URL instead of null")
+    }
+  }
+
   const uploaded = await provider.upload(expected, {
     key,
     contentType: "application/octet-stream",
