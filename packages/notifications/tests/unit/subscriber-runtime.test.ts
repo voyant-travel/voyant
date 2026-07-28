@@ -13,13 +13,18 @@ import {
   notificationsReminderSubscriberRuntimeDescriptors,
 } from "../../src/subscriber-runtime.js"
 
-const db = {
+function postgresTestDouble(value: unknown): PostgresJsDatabase {
+  return value as PostgresJsDatabase
+}
+
+const db = postgresTestDouble({
   update: vi.fn(() => ({
     set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
   })),
-} as unknown as PostgresJsDatabase
+})
 const dispatcher = {} as NotificationService
 const attachmentResolver = vi.fn()
+const configuredPublicCustomerPortalBaseUrl = "https://portal.example.test"
 
 function createHarness(runtimeOptions: Partial<NotificationsSubscriberRuntime> = {}) {
   const bindings = { deployment: "test" }
@@ -63,7 +68,9 @@ describe("Notifications subscriber runtime descriptors", () => {
 
   it("dispatches booking-confirmed rules with the runtime attachment resolver", async () => {
     const dispatchReminderRules = vi.fn().mockResolvedValue(undefined)
-    const harness = createHarness()
+    const harness = createHarness({
+      publicCustomerPortalBaseUrl: configuredPublicCustomerPortalBaseUrl,
+    })
     createBookingConfirmedReminderSubscriberRuntime({ dispatchReminderRules }).register(harness)
 
     const payload = { bookingId: "book_1", bookingNumber: "BK-1", actorId: null }
@@ -73,7 +80,10 @@ describe("Notifications subscriber runtime descriptors", () => {
       db,
       dispatcher,
       { targetType: "booking_confirmed", bookingId: "book_1", eventData: payload },
-      { documentAttachmentResolver: attachmentResolver },
+      {
+        documentAttachmentResolver: attachmentResolver,
+        publicCustomerPortalBaseUrl: configuredPublicCustomerPortalBaseUrl,
+      },
     )
   })
 
@@ -106,7 +116,7 @@ describe("Notifications subscriber runtime descriptors", () => {
         bookingId: "book_1",
         paymentSessionId: "pay_1",
       }),
-      { documentAttachmentResolver: attachmentResolver },
+      { documentAttachmentResolver: attachmentResolver, publicCustomerPortalBaseUrl: undefined },
     )
   })
 
@@ -136,7 +146,7 @@ describe("Notifications subscriber runtime descriptors", () => {
         targetType: "booking_cancelled_non_payment",
         bookingId: "book_2",
       }),
-      { documentAttachmentResolver: attachmentResolver },
+      { documentAttachmentResolver: attachmentResolver, publicCustomerPortalBaseUrl: undefined },
     )
   })
 
@@ -159,7 +169,7 @@ describe("Notifications subscriber runtime descriptors", () => {
         targetType: "booking_cancelled_non_payment",
         bookingId: "book_1",
       }),
-      { documentAttachmentResolver: attachmentResolver },
+      { documentAttachmentResolver: attachmentResolver, publicCustomerPortalBaseUrl: undefined },
     )
   })
 

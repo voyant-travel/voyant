@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationReminderRules, notificationReminderRuns } from "./schema.js"
 import { enqueueNotification } from "./service-durable-send.js"
+import { buildNotificationPortalContext } from "./service-portal-context.js"
 import {
   type BookingEventReminderRuntimeOptions,
   getBookingEventDocumentContext,
@@ -183,6 +184,7 @@ async function sendBookingEventReminder(
                 }
               : null,
           documents: documentContext.documents,
+          portal: buildNotificationPortalContext(runtime.publicCustomerPortalBaseUrl, booking.id),
           items,
         },
         attachments: documentContext.attachments.length > 0 ? documentContext.attachments : null,

@@ -272,5 +272,6 @@ function createNotificationsSubscriberRuntime(
       provider.resolveDb(runtimeBindings as Record<string, unknown>) as PostgresJsDatabase,
     dispatcher: createNotificationService(runtime.providers),
     documentAttachmentResolver: runtime.documentAttachmentResolver,
+    publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
   }
 }
