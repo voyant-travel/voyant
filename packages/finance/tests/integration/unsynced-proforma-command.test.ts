@@ -249,6 +249,7 @@ describe.skipIf(!DB_AVAILABLE)("unsynced proforma command", () => {
       scope: "excluded",
       currency: "EUR",
       amountCents: 15_200,
+      rateBasisPoints: 1_900,
       includedInPrice: false,
     })
     const approved = await buildUnsyncedProformaApprovalSnapshot(db, booking.id)
@@ -257,11 +258,21 @@ describe.skipIf(!DB_AVAILABLE)("unsynced proforma command", () => {
       taxCents: 15_200,
       totalCents: 95_200,
       payer: { type: "person", id: null },
-      lines: [{ taxes: [{ name: "VAT", amountCents: 15_200 }] }],
+      lines: [
+        {
+          taxes: [
+            {
+              name: "VAT",
+              amountCents: 15_200,
+              rateBasisPoints: 1_900,
+            },
+          ],
+        },
+      ],
     })
     await db
       .update(bookingItemTaxLines)
-      .set({ amountCents: 16_000 })
+      .set({ rateBasisPoints: 2_100 })
       .where(eq(bookingItemTaxLines.bookingItemId, item.id))
 
     const outcome = await issueInvoiceFromBookingCommand(

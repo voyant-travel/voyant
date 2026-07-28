@@ -151,19 +151,18 @@ describe("finance deployment manifest", () => {
         requiredScopes: ["finance:write", "bookings:read"],
         ledger: "required",
         approval: "required",
-      }),
-    )
-    expect(financeVoyantModule.actions).toContainEqual(
-      expect.objectContaining({
-        id: "@voyant-travel/finance#action.issue-unsynced-proforma-from-booking",
-        requiredScopes: ["finance:write", "bookings:read"],
-        ledger: "required",
-        approval: "required",
         from: {
-          tools: ["@voyant-travel/finance#tool.issue-unsynced-proforma-from-booking"],
+          tools: [
+            "@voyant-travel/finance#tool.issue-invoice-from-booking",
+            "@voyant-travel/finance#tool.issue-unsynced-proforma-from-booking",
+          ],
         },
       }),
     )
+    const capabilityKeys = financeVoyantModule.actions.map(
+      (action) => `${action.capabilityId}@${action.version}`,
+    )
+    expect(new Set(capabilityKeys).size).toBe(capabilityKeys.length)
     expect(financeVoyantModule.actions).toContainEqual(
       expect.objectContaining({
         id: "@voyant-travel/finance#action.void-invoice",

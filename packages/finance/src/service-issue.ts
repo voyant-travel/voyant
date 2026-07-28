@@ -72,10 +72,16 @@ export interface UnsyncedProformaApprovalSnapshot {
     unitPriceCents: number
     totalCents: number
     taxes: Array<{
+      code: string | null
       name: string
+      jurisdiction: string | null
       scope: string
+      currency: string
       amountCents: number
+      rateBasisPoints: number | null
       includedInPrice: boolean
+      remittanceParty: string | null
+      sortOrder: number
     }>
   }>
 }
@@ -89,28 +95,33 @@ export async function buildUnsyncedProformaApprovalSnapshot(
   db: PostgresJsDatabase,
   bookingId: string,
   runtime: InvoiceIssueRuntime = {},
+  options: { lockProjection?: boolean } = {},
 ): Promise<UnsyncedProformaApprovalSnapshot | null> {
   const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
   if (!booking) return null
 
-  const items = await db
+  const itemsQuery = db
     .select()
     .from(bookingItems)
     .where(eq(bookingItems.bookingId, booking.id))
     .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
+  const items = options.lockProjection ? await itemsQuery.for("update") : await itemsQuery
   const itemIds = items.map((item) => item.id)
+  const taxQuery = db
+    .select()
+    .from(bookingItemTaxLines)
+    .where(inArray(bookingItemTaxLines.bookingItemId, itemIds))
+    .orderBy(
+      asc(bookingItemTaxLines.bookingItemId),
+      asc(bookingItemTaxLines.sortOrder),
+      asc(bookingItemTaxLines.createdAt),
+    )
   const taxes =
     itemIds.length === 0
       ? []
-      : await db
-          .select()
-          .from(bookingItemTaxLines)
-          .where(inArray(bookingItemTaxLines.bookingItemId, itemIds))
-          .orderBy(
-            asc(bookingItemTaxLines.bookingItemId),
-            asc(bookingItemTaxLines.sortOrder),
-            asc(bookingItemTaxLines.createdAt),
-          )
+      : options.lockProjection
+        ? await taxQuery.for("update")
+        : await taxQuery
   const taxesByItem = new Map<string, typeof taxes>()
   for (const tax of taxes) {
     const current = taxesByItem.get(tax.bookingItemId) ?? []
@@ -205,10 +216,16 @@ export async function buildUnsyncedProformaApprovalSnapshot(
       unitPriceCents: line.unitPriceCents,
       totalCents: line.totalCents,
       taxes: (line.bookingItemId ? (taxesByItem.get(line.bookingItemId) ?? []) : []).map((tax) => ({
+        code: tax.code,
         name: tax.name,
+        jurisdiction: tax.jurisdiction,
         scope: tax.scope,
+        currency: tax.currency,
         amountCents: tax.amountCents,
+        rateBasisPoints: tax.rateBasisPoints,
         includedInPrice: tax.includedInPrice,
+        remittanceParty: tax.remittanceParty,
+        sortOrder: tax.sortOrder,
       })),
     })),
   }
@@ -375,7 +392,13 @@ export async function issueInvoiceFromBookingCommand(
     }
   }
   if (options.expectedSnapshotFingerprint) {
-    const currentSnapshot = await buildUnsyncedProformaApprovalSnapshot(db, booking.id, runtime)
+    // Lock every mutable row used by both fingerprint validation and invoice
+    // composition. The booking lock fences new booking items through their FK;
+    // item locks likewise fence new tax rows, while the tax locks prevent
+    // updates/deletes until this transaction has issued or refused the invoice.
+    const currentSnapshot = await buildUnsyncedProformaApprovalSnapshot(db, booking.id, runtime, {
+      lockProjection: true,
+    })
     if (currentSnapshot?.snapshotFingerprint !== options.expectedSnapshotFingerprint) {
       return {
         status: "approval_snapshot_changed",

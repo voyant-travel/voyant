@@ -370,10 +370,16 @@ export const unsyncedProformaApprovalSnapshotSchema = z.object({
       totalCents: z.number().int(),
       taxes: z.array(
         z.object({
+          code: z.string().nullable(),
           name: z.string(),
+          jurisdiction: z.string().nullable(),
           scope: z.string(),
+          currency: z.string(),
           amountCents: z.number().int(),
+          rateBasisPoints: z.number().int().nullable(),
           includedInPrice: z.boolean(),
+          remittanceParty: z.string().nullable(),
+          sortOrder: z.number().int(),
         }),
       ),
     }),
