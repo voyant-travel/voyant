@@ -310,6 +310,77 @@ describe("requireAuth API keys", () => {
     })
   })
 
+  it("accepts Max acting-user attribution only with the trusted internal key", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.get("/secure", (c) =>
+      c.json({
+        callerType: c.get("callerType"),
+        userId: c.get("userId"),
+        principalSubtype: c.get("principalSubtype"),
+      }),
+    )
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: {
+          Authorization: "Bearer managed-max-key",
+          "x-voyant-acting-user-id": "user_01KQ9J3M7KE6FNHQPYJJ7VYBF1",
+        },
+      }),
+      { ...TEST_ENV, INTERNAL_API_KEY: "managed-max-key" },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      callerType: "internal",
+      userId: "user_01KQ9J3M7KE6FNHQPYJJ7VYBF1",
+      principalSubtype: "max",
+    })
+  })
+
+  it("ignores acting-user attribution on an ordinary API key", async () => {
+    const token = "voy_test_api_key"
+    const row = makeApiKeyRow({
+      key: await sha256Base64Url(token),
+      referenceId: "organization_123",
+    })
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => makeApiKeyDb(row)),
+    )
+    app.get("/secure", (c) =>
+      c.json({
+        callerType: c.get("callerType"),
+        userId: c.get("userId") ?? null,
+        principalSubtype: c.get("principalSubtype") ?? null,
+      }),
+    )
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-voyant-acting-user-id": "user_spoofed",
+        },
+      }),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      callerType: "api_key",
+      userId: null,
+      principalSubtype: null,
+    })
+  })
+
   it("defaults a custom resolver audience to its authenticated actor", async () => {
     const app = new Hono()
     app.use(
