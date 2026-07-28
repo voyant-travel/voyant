@@ -4,7 +4,7 @@ export const bookingsUiEnCreateList = {
   manualBookingCreate: {
     sections: {
       bookingItem: "Booking item",
-      billing: "Billing and contact snapshot",
+      billing: "Billing and contact",
       payment: "Payment schedule",
     },
     fields: {
@@ -26,24 +26,33 @@ export const bookingsUiEnCreateList = {
     },
     hints: {
       departureOptional: "Leave empty for an open-dated booking.",
-      contactSnapshot:
-        "These values are copied onto the booking and remain unchanged if the CRM record is edited later.",
       payment: "The scheduled total must match the booking sell amount.",
-      durableCreate:
-        "You will review and confirm before the durable Finance command creates the booking.",
     },
     validation: {
       product: "Select a product.",
+      departure: "Select a departure.",
+      units: "Select at least one option.",
       person: "Select the individual being billed.",
       organization: "Select the organization being billed.",
-      contact: "Add a contact name for the booking snapshot.",
+      contact: "Add a contact name for the booking.",
       email: "Enter a valid contact email.",
       travelers: "Add at least one traveler.",
       travelerNames: "Each traveler needs a first and last name.",
       leadTraveler: "Choose exactly one lead traveler.",
       amount: "Enter a valid sell amount.",
+      overrideReason: "Add a reason for the manual total.",
       payment: "Complete the payment schedule and make its total match the sell amount.",
+      paidPaymentDate: "Payment date is required when Already paid is checked.",
+      sharedRoomGroup: "Select a shared room to join.",
       create: "The booking could not be created.",
+    },
+    promotion: {
+      heading: "Promotion code",
+      code: "Code",
+      placeholder: "Enter a promotion code",
+      checking: "Checking promotion...",
+      valid: "Promotion applied. Quote total: {amount}.",
+      invalid: "This promotion code cannot be applied.",
     },
     permissions: {
       checking: "Checking permissions…",

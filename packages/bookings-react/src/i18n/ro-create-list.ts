@@ -26,24 +26,33 @@ export const bookingsUiRoCreateList = {
     },
     hints: {
       departureOptional: "Lasa necompletat pentru o rezervare cu data deschisa.",
-      contactSnapshot:
-        "Aceste valori sunt copiate in rezervare si nu se schimba daca inregistrarea CRM este editata ulterior.",
       payment: "Totalul programat trebuie sa fie egal cu valoarea rezervarii.",
-      durableCreate:
-        "Vei verifica si confirma inainte ca operatiunea durabila Finance sa creeze rezervarea.",
     },
     validation: {
       product: "Alege un produs.",
+      departure: "Alege o plecare.",
+      units: "Selecteaza cel putin o optiune.",
       person: "Alege persoana facturata.",
       organization: "Alege organizatia facturata.",
-      contact: "Adauga un nume de contact pentru copia din rezervare.",
+      contact: "Adauga un nume de contact pentru rezervare.",
       email: "Introdu un e-mail de contact valid.",
       travelers: "Adauga cel putin un calator.",
       travelerNames: "Fiecare calator are nevoie de prenume si nume.",
       leadTraveler: "Alege exact un calator principal.",
       amount: "Introdu o valoare de vanzare valida.",
+      overrideReason: "Adauga un motiv pentru totalul manual.",
       payment: "Completeaza calendarul de plata, cu un total egal valorii rezervarii.",
+      paidPaymentDate: "Data platii este obligatorie cand plata este marcata ca deja achitata.",
+      sharedRoomGroup: "Selecteaza partajul la care vrei sa te alaturi.",
       create: "Rezervarea nu a putut fi creata.",
+    },
+    promotion: {
+      heading: "Cod promotional",
+      code: "Cod",
+      placeholder: "Introdu un cod promotional",
+      checking: "Se verifica promotia...",
+      valid: "Promotie aplicata. Total oferta: {amount}.",
+      invalid: "Acest cod promotional nu poate fi aplicat.",
     },
     permissions: {
       checking: "Se verifica permisiunile…",

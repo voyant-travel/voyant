@@ -24,12 +24,12 @@ export type BookingsUiCreateListMessages = {
     }
     hints: {
       departureOptional: string
-      contactSnapshot: string
       payment: string
-      durableCreate: string
     }
     validation: {
       product: string
+      departure: string
+      units: string
       person: string
       organization: string
       contact: string
@@ -38,8 +38,19 @@ export type BookingsUiCreateListMessages = {
       travelerNames: string
       leadTraveler: string
       amount: string
+      overrideReason: string
       payment: string
+      paidPaymentDate: string
+      sharedRoomGroup: string
       create: string
+    }
+    promotion: {
+      heading: string
+      code: string
+      placeholder: string
+      checking: string
+      valid: string
+      invalid: string
     }
     permissions: {
       checking: string

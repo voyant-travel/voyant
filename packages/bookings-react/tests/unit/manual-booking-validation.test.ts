@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  buildManualBookingQuoteDraft,
   formatManualBookingAmount,
+  resolveManualBookingPricing,
   validateManualBookingDraft,
 } from "../../src/components/manual-booking-create-form.js"
 import { bookingsUiEn } from "../../src/i18n/en.js"
 
 const valid = {
   productId: "prod_1",
+  slotId: "slot_1",
+  hasSelectedUnits: true,
   billing: {
     billTo: "person" as const,
     mode: "existing" as const,
@@ -36,8 +40,12 @@ const valid = {
       },
     ],
   },
-  sellAmount: "125.00",
-  paymentEnabled: true,
+  pricing: {
+    catalogAmountCents: 12_500,
+    confirmedAmountCents: 12_500,
+    priceOverrideReason: null,
+    currency: "EUR",
+  },
   paymentRows: [{ dueDate: "2027-01-10", amountCents: 12_500 }],
   messages: bookingsUiEn.manualBookingCreate,
 }
@@ -52,6 +60,15 @@ describe("manual booking validation", () => {
 
   it("accepts a complete individual booking", () => {
     expect(validateManualBookingDraft(valid)).toBeNull()
+  })
+
+  it("requires departure and selected option units", () => {
+    expect(validateManualBookingDraft({ ...valid, slotId: null })).toBe(
+      bookingsUiEn.manualBookingCreate.validation.departure,
+    )
+    expect(validateManualBookingDraft({ ...valid, hasSelectedUnits: false })).toBe(
+      bookingsUiEn.manualBookingCreate.validation.units,
+    )
   })
 
   it("requires the selected organization in organization billing mode", () => {
@@ -83,8 +100,11 @@ describe("manual booking validation", () => {
         },
       }),
     ).toBe(bookingsUiEn.manualBookingCreate.validation.leadTraveler)
-    expect(validateManualBookingDraft({ ...valid, sellAmount: "-1" })).toBe(
+    expect(validateManualBookingDraft({ ...valid, pricing: null })).toBe(
       bookingsUiEn.manualBookingCreate.validation.amount,
+    )
+    expect(validateManualBookingDraft({ ...valid, manualOverrideRequiresReason: true })).toBe(
+      bookingsUiEn.manualBookingCreate.validation.overrideReason,
     )
     expect(
       validateManualBookingDraft({
@@ -92,5 +112,98 @@ describe("manual booking validation", () => {
         paymentRows: [{ dueDate: "2027-01-10", amountCents: 100 }],
       }),
     ).toBe(bookingsUiEn.manualBookingCreate.validation.payment)
+  })
+
+  it("uses quote totals without forcing a manual override", () => {
+    expect(
+      resolveManualBookingPricing({
+        pricing: {
+          catalogAmountCents: 15_000,
+          confirmedAmountCents: 15_000,
+          priceOverrideReason: "",
+          isManualOverride: false,
+          requiresReason: false,
+          currency: "EUR",
+          lines: [],
+        },
+        quoteTotalAmountCents: 12_500,
+        productAmountCents: 15_000,
+        currency: "EUR",
+      }),
+    ).toEqual({
+      catalogAmountCents: 12_500,
+      confirmedAmountCents: 12_500,
+      priceOverrideReason: null,
+      currency: "EUR",
+    })
+
+    expect(
+      resolveManualBookingPricing({
+        pricing: {
+          catalogAmountCents: 15_000,
+          confirmedAmountCents: 11_000,
+          priceOverrideReason: "Operator adjustment",
+          isManualOverride: true,
+          requiresReason: false,
+          currency: "EUR",
+          lines: [],
+        },
+        quoteTotalAmountCents: 12_500,
+        productAmountCents: 15_000,
+        currency: "EUR",
+      }),
+    ).toMatchObject({
+      catalogAmountCents: 12_500,
+      confirmedAmountCents: 11_000,
+      priceOverrideReason: "Operator adjustment",
+    })
+  })
+
+  it("includes unit selections, extras, and promotion code in the quote draft", () => {
+    const draft = buildManualBookingQuoteDraft({
+      productId: "prod_1",
+      optionId: "opt_1",
+      slotId: "slot_1",
+      quantities: { unit_1: 2 },
+      units: [
+        {
+          optionId: "opt_1",
+          optionUnitId: "unit_1",
+          unitName: "Double room",
+          unitType: "room",
+          occupancyMax: 2,
+          initial: 2,
+          reserved: 0,
+          remaining: 2,
+        },
+      ],
+      travelers: valid.travelers,
+      contact: null,
+      extraLines: [
+        {
+          productExtraId: "extra_1",
+          name: "Transfer",
+          quantity: 2,
+          sellCurrency: "EUR",
+        },
+      ],
+      promotionCode: "SUMMER",
+      paymentSchedule: {
+        mode: "full",
+        installments: [],
+      },
+    })
+
+    expect(draft?.configure.optionSelections).toEqual([
+      {
+        optionId: "opt_1",
+        optionName: "Double room",
+        optionUnitId: "unit_1",
+        optionUnitName: "Double room",
+        quantity: 2,
+      },
+    ])
+    expect(draft?.addons).toEqual([{ extraId: "extra_1", quantity: 2 }])
+    expect(draft?.promotionCode).toBe("SUMMER")
   })
 })
