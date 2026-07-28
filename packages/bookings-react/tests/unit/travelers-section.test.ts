@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  applyTravelerPricingCategory,
   createBlankTraveler,
   insertPersonTraveler,
   matchPricingCategoryForTraveler,
@@ -25,6 +26,31 @@ describe("traveler person insertion", () => {
       firstName: "Ana",
       lastName: "Popescu",
       role: "lead",
+    })
+  })
+
+  it("keeps a category selected before choosing the traveler", () => {
+    const blankLead = {
+      ...createBlankTraveler("lead"),
+      pricingCategoryId: "pcat_senior",
+      pricingCategorySource: "manual" as const,
+      pricingUnitId: "optu_tour",
+      pricingUnitSource: "manual" as const,
+    }
+    const personTraveler = {
+      ...createBlankTraveler("adult"),
+      personId: "person_1",
+      firstName: "Ana",
+      lastName: "Popescu",
+    }
+
+    expect(insertPersonTraveler([blankLead], personTraveler)[0]).toMatchObject({
+      personId: "person_1",
+      role: "lead",
+      pricingCategoryId: "pcat_senior",
+      pricingCategorySource: "manual",
+      pricingUnitId: "optu_tour",
+      pricingUnitSource: "manual",
     })
   })
 })
@@ -58,5 +84,26 @@ describe("traveler pricing category matching", () => {
     )
 
     expect(result).toBe("pcat_child")
+  })
+
+  it("keeps an explicit senior category on its compatible pricing unit", () => {
+    const traveler = createBlankTraveler("lead")
+    const result = applyTravelerPricingCategory(traveler, {
+      categoryId: "pcat_senior",
+      name: "Senior 65+",
+      code: "SENIOR",
+      categoryType: "senior",
+      minAge: 65,
+      maxAge: null,
+      unitIds: ["optu_tour"],
+    })
+
+    expect(result).toMatchObject({
+      pricingCategoryId: "pcat_senior",
+      pricingCategorySource: "manual",
+      pricingUnitId: "optu_tour",
+      pricingUnitSource: "manual",
+      role: "lead",
+    })
   })
 })
