@@ -1,8 +1,8 @@
 import type { Actor, VoyantAuthContext } from "@voyant-travel/core"
-import { apikeyTable, type SelectApikey } from "@voyant-travel/db/schema/iam"
+import { apikeyTable, cloudAuthUserLinks, type SelectApikey } from "@voyant-travel/db/schema/iam"
 import { API_KEY_AUDIENCES, permissionsToStrings } from "@voyant-travel/types/api-keys"
 import type { KVStore } from "@voyant-travel/utils/cache"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, isNull, or, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
 import { constantTimeEqual, sha256Base64Url, sha256Hex } from "../auth/crypto.js"
@@ -254,15 +254,42 @@ export function requireAuth<TBindings extends VoyantBindings>(
     // Strategy 1: Internal API Key
     const internalKeys = parseInternalApiKeys(c.env.INTERNAL_API_KEY)
     if (token && internalKeys.length > 0 && (await matchesInternalApiKey(token, internalKeys))) {
-      const actingUserId = trustedActingUserId(c.req.header(ACTING_USER_HEADER))
-      applyAuthContext(c, {
-        ...(actingUserId ? { userId: actingUserId, principalSubtype: "max" } : {}),
-        callerType: "internal",
-        isInternalRequest: true,
-        actor: "staff",
-        scopes: parseInternalApiKeyScopes(c.env.INTERNAL_API_KEY_SCOPES),
-      })
-      return next()
+      const assertedActingUserId = trustedActingUserId(c.req.header(ACTING_USER_HEADER))
+      const lease = assertedActingUserId ? acquireRequestDb(c, dbFactory) : undefined
+      try {
+        let actingUserId: string | undefined
+        if (assertedActingUserId && lease) {
+          const [link] = await lease.db
+            .select({ userId: cloudAuthUserLinks.userId })
+            .from(cloudAuthUserLinks)
+            .where(
+              and(
+                eq(cloudAuthUserLinks.providerId, "voyant-cloud"),
+                isNull(cloudAuthUserLinks.revokedAt),
+                or(
+                  eq(cloudAuthUserLinks.providerAccountId, assertedActingUserId),
+                  eq(cloudAuthUserLinks.userId, assertedActingUserId),
+                ),
+              ),
+            )
+            .limit(1)
+          actingUserId = link?.userId
+          if (!actingUserId) {
+            return c.json({ error: "Invalid acting user" }, 401)
+          }
+        }
+
+        applyAuthContext(c, {
+          ...(actingUserId ? { userId: actingUserId, principalSubtype: "max" } : {}),
+          callerType: "internal",
+          isInternalRequest: true,
+          actor: "staff",
+          scopes: parseInternalApiKeyScopes(c.env.INTERNAL_API_KEY_SCOPES),
+        })
+        return await next()
+      } finally {
+        await lease?.release()
+      }
     }
 
     // Strategy 2: Core-owned API key support (voy_ prefixed)

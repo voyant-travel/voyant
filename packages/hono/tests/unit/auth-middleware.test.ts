@@ -314,7 +314,7 @@ describe("requireAuth API keys", () => {
     const app = new Hono()
     app.use(
       "*",
-      requireAuth(() => ({}) as never),
+      requireAuth(() => makeCloudActorDb("local_auth_user_123")),
     )
     app.get("/secure", (c) =>
       c.json({
@@ -338,9 +338,32 @@ describe("requireAuth API keys", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
       callerType: "internal",
-      userId: "user_01KQ9J3M7KE6FNHQPYJJ7VYBF1",
+      userId: "local_auth_user_123",
       principalSubtype: "max",
     })
+  })
+
+  it("rejects a trusted acting-user assertion with no active local mirror link", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => makeCloudActorDb(null)),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: {
+          Authorization: "Bearer managed-max-key",
+          "x-voyant-acting-user-id": "user_unknown",
+        },
+      }),
+      { ...TEST_ENV, INTERNAL_API_KEY: "managed-max-key" },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "Invalid acting user" })
   })
 
   it("ignores acting-user attribution on an ordinary API key", async () => {
@@ -608,6 +631,18 @@ function makeApiKeyDb(row: Record<string, unknown>) {
     update: () => ({
       set: () => ({
         where: async () => {},
+      }),
+    }),
+  } as never
+}
+
+function makeCloudActorDb(userId: string | null) {
+  return {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: async () => (userId ? [{ userId }] : []),
+        }),
       }),
     }),
   } as never
