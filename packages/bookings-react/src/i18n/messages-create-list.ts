@@ -1,4 +1,71 @@
 export type BookingsUiCreateListMessages = {
+  manualBookingCreate: {
+    sections: {
+      bookingItem: string
+      billing: string
+      payment: string
+    }
+    fields: {
+      departure: string
+      sellAmount: string
+      currency: string
+      initialStatus: string
+      contactFirstName: string
+      contactLastName: string
+      contactEmail: string
+      contactPhone: string
+      addPayment: string
+      notes: string
+    }
+    placeholders: {
+      departure: string
+      departureEmpty: string
+      notes: string
+    }
+    hints: {
+      departureOptional: string
+      contactSnapshot: string
+      payment: string
+      durableCreate: string
+    }
+    validation: {
+      product: string
+      person: string
+      organization: string
+      contact: string
+      email: string
+      travelers: string
+      travelerNames: string
+      leadTraveler: string
+      amount: string
+      payment: string
+      create: string
+    }
+    permissions: {
+      checking: string
+      denied: string
+      error: string
+    }
+    actions: {
+      create: string
+      confirmCreate: string
+    }
+    confirm: {
+      title: string
+      description: string
+    }
+    summary: {
+      title: string
+      product: string
+      departure: string
+      billing: string
+      travelers: string
+      total: string
+      missing: string
+      openDated: string
+    }
+    priceOverrideReason: string
+  }
   bookingDialog: {
     editTitle: string
     fields: {
