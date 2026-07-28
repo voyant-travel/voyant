@@ -67,6 +67,7 @@ export const dbVoyantModule = defineModule({
         profiles: {
           eager: { every: "1m", overlap: "skip" },
           economical: { every: "10m", overlap: "skip" },
+          "scale-to-zero": { every: "15m", overlap: "skip" },
         },
       },
       wakeup: true,

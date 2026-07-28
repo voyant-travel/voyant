@@ -156,6 +156,7 @@ const contractDocumentJobs = [
       profiles: {
         eager: { every: "1m", overlap: "skip" as const },
         economical: { every: "5m", overlap: "skip" as const },
+        "scale-to-zero": { every: "15m", overlap: "skip" as const },
       },
     },
     wakeup: true,
