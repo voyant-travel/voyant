@@ -254,7 +254,15 @@ export function requireAuth<TBindings extends VoyantBindings>(
     // Strategy 1: Internal API Key
     const internalKeys = parseInternalApiKeys(c.env.INTERNAL_API_KEY)
     if (token && internalKeys.length > 0 && (await matchesInternalApiKey(token, internalKeys))) {
-      const assertedActingUserId = trustedActingUserId(c.req.header(ACTING_USER_HEADER))
+      const actingUserHeader = c.req.header(ACTING_USER_HEADER)
+      const assertedActingUserId = trustedActingUserId(actingUserHeader)
+      if (actingUserHeader !== undefined && !assertedActingUserId) {
+        return c.json({ error: "Invalid acting user" }, 401)
+      }
+      const cloudDeploymentId = c.env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+      if (assertedActingUserId && !cloudDeploymentId) {
+        return c.json({ error: "Invalid acting user" }, 401)
+      }
       const lease = assertedActingUserId ? acquireRequestDb(c, dbFactory) : undefined
       try {
         let actingUserId: string | undefined
@@ -265,6 +273,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
             .where(
               and(
                 eq(cloudAuthUserLinks.providerId, "voyant-cloud"),
+                eq(cloudAuthUserLinks.deploymentId, cloudDeploymentId as string),
                 isNull(cloudAuthUserLinks.revokedAt),
                 or(
                   eq(cloudAuthUserLinks.providerAccountId, assertedActingUserId),

@@ -331,7 +331,11 @@ describe("requireAuth API keys", () => {
           "x-voyant-acting-user-id": "user_01KQ9J3M7KE6FNHQPYJJ7VYBF1",
         },
       }),
-      { ...TEST_ENV, INTERNAL_API_KEY: "managed-max-key" },
+      {
+        ...TEST_ENV,
+        INTERNAL_API_KEY: "managed-max-key",
+        VOYANT_CLOUD_DEPLOYMENT_ID: "deployment_current",
+      },
       mockExecutionCtx(),
     )
 
@@ -356,6 +360,64 @@ describe("requireAuth API keys", () => {
         headers: {
           Authorization: "Bearer managed-max-key",
           "x-voyant-acting-user-id": "user_unknown",
+        },
+      }),
+      {
+        ...TEST_ENV,
+        INTERNAL_API_KEY: "managed-max-key",
+        VOYANT_CLOUD_DEPLOYMENT_ID: "deployment_current",
+      },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "Invalid acting user" })
+  })
+
+  it.each([
+    "",
+    "user!invalid",
+    `user_${"x".repeat(200)}`,
+  ])("rejects a malformed trusted acting-user assertion (%j)", async (assertion) => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => makeCloudActorDb("local_auth_user_123")),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: {
+          Authorization: "Bearer managed-max-key",
+          "x-voyant-acting-user-id": assertion,
+        },
+      }),
+      {
+        ...TEST_ENV,
+        INTERNAL_API_KEY: "managed-max-key",
+        VOYANT_CLOUD_DEPLOYMENT_ID: "deployment_current",
+      },
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: "Invalid acting user" })
+  })
+
+  it("rejects acting-user attribution when the active deployment is unavailable", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => makeCloudActorDb("local_auth_user_123")),
+    )
+    app.get("/secure", (c) => c.json({ ok: true }))
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure", {
+        headers: {
+          Authorization: "Bearer managed-max-key",
+          "x-voyant-acting-user-id": "user_01KQ9J3M7KE6FNHQPYJJ7VYBF1",
         },
       }),
       { ...TEST_ENV, INTERNAL_API_KEY: "managed-max-key" },
