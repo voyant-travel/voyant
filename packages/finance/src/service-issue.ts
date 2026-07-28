@@ -115,6 +115,7 @@ export async function buildUnsyncedProformaApprovalSnapshot(
       asc(bookingItemTaxLines.bookingItemId),
       asc(bookingItemTaxLines.sortOrder),
       asc(bookingItemTaxLines.createdAt),
+      asc(bookingItemTaxLines.id),
     )
   const taxes =
     itemIds.length === 0
@@ -746,6 +747,7 @@ async function loadLineTaxMetadata(
       asc(bookingItemTaxLines.bookingItemId),
       asc(bookingItemTaxLines.sortOrder),
       asc(bookingItemTaxLines.createdAt),
+      asc(bookingItemTaxLines.id),
     )
 
   const taxLinesByBookingItemId = new Map<string, typeof taxLines>()

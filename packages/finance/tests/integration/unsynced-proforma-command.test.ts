@@ -18,6 +18,7 @@ import {
   invoiceNumberSeries,
   invoices,
 } from "../../src/schema.js"
+import { financeBookingItemBillingService } from "../../src/service-booking-item-billing.js"
 import {
   buildUnsyncedProformaApprovalSnapshot,
   issueInvoiceFromBookingCommand,
@@ -292,5 +293,72 @@ describe.skipIf(!DB_AVAILABLE)("unsynced proforma command", () => {
     )
     expect(outcome).toMatchObject({ status: "approval_snapshot_changed" })
     expect(await db.select().from(invoices)).toHaveLength(0)
+  })
+
+  it("serializes tax inserts behind exact snapshot validation and issuance", async () => {
+    const { booking, item } = await seedBooking()
+    const approved = await buildUnsyncedProformaApprovalSnapshot(db, booking.id)
+    expect(approved).not.toBeNull()
+
+    let signalProjectionLocked: (() => void) | undefined
+    const projectionLocked = new Promise<void>((resolve) => {
+      signalProjectionLocked = resolve
+    })
+    let releaseProjection: (() => void) | undefined
+    const projectionReleased = new Promise<void>((resolve) => {
+      releaseProjection = resolve
+    })
+    let paused = false
+
+    const issuePromise = issueInvoiceFromBookingCommand(
+      db,
+      {
+        bookingId: booking.id,
+        issueDate: "2026-07-29",
+        dueDate: "2026-08-05",
+        invoiceType: "proforma",
+        skipExternalSync: true,
+      },
+      {
+        descriptionResolver: async ({ line }) => {
+          if (!paused) {
+            paused = true
+            signalProjectionLocked?.()
+            await projectionReleased
+          }
+          return line.description
+        },
+      },
+      {
+        expectedBookingUpdatedAt: booking.updatedAt.toISOString(),
+        expectedSnapshotFingerprint: approved!.snapshotFingerprint,
+      },
+    )
+
+    await projectionLocked
+    let taxInsertSettled = false
+    const taxInsertPromise = financeBookingItemBillingService
+      .createBookingItemTaxLine(db, item.id, {
+        name: "Late VAT",
+        scope: "excluded",
+        currency: "EUR",
+        amountCents: 15_200,
+        rateBasisPoints: 1_900,
+        includedInPrice: false,
+      })
+      .then((row) => {
+        taxInsertSettled = true
+        return row
+      })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(taxInsertSettled).toBe(false)
+
+    releaseProjection?.()
+    await expect(issuePromise).resolves.toMatchObject({ status: "issued" })
+    await expect(taxInsertPromise).resolves.toMatchObject({ name: "Late VAT" })
+
+    const [persistedInvoice] = await db.select().from(invoices)
+    expect(persistedInvoice?.totalCents).toBe(80_000)
   })
 })
