@@ -107,11 +107,12 @@ export function createGatewayGraphStorageProvider(
     "STORAGE_GATEWAY_ENDPOINT",
   )
   const token = requiredString(context.getSecret(SECRET.gatewayToken), "STORAGE_GATEWAY_TOKEN")
-  // Optional: the CDN base the gateway serves media under. Configuring it keeps
-  // delivery on the CDN while the origin stays derived on every read; leaving it
-  // unset falls back to the deployment's own byte-serving media route. Neither
-  // path persists an absolute origin (voyant#3845).
-  const mediaPublicBaseUrl = optionalString(
+  // Required: the CDN base the gateway serves media under. The gateway mints
+  // delivery URLs server-side, so this is the only way the provider can derive
+  // one per read (voyant#3845). It fails closed rather than degrading to the
+  // deployment's own `/v1/admin/media/*` route: that route is staff-guarded, so
+  // handing it to a storefront guest would render nothing at all.
+  const mediaPublicBaseUrl = requiredString(
     context.getConfig(CONFIG.mediaPublicBaseUrl),
     "MEDIA_PUBLIC_BASE_URL",
   )
@@ -127,7 +128,7 @@ export function createGatewayGraphStorageProvider(
       token,
       name: "gateway:media",
       tier: "media",
-      ...(mediaPublicBaseUrl ? { publicBaseUrl: mediaPublicBaseUrl } : {}),
+      publicBaseUrl: mediaPublicBaseUrl,
     }),
   })
 }

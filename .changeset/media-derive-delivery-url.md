@@ -19,6 +19,13 @@ rather than stored. `url` is `null` when the store exposes no public origin, and
 consumers already fall back to the deployment's own byte-serving route
 (`GET /v1/admin/media/{storageKey}`).
 
-The gateway provider accepts an optional `publicBaseUrl` (wired from
-`MEDIA_PUBLIC_BASE_URL`) so managed deployments keep CDN delivery with the origin
-held in one configurable place. A migration drops the `media_asset.url` column.
+The gateway provider now derives from a `publicBaseUrl` wired from
+`MEDIA_PUBLIC_BASE_URL`, so the origin lives in one configurable place. **A
+deployment selecting the `gateway` storage provider must set
+`MEDIA_PUBLIC_BASE_URL`** — the gateway mints delivery URLs server-side, so
+there is nothing else to derive from, and falling back to the deployment's own
+`/v1/admin/media/*` route is not viable because that route is staff-guarded and
+storefront guests would render nothing. It fails closed at provider construction
+with an actionable message rather than degrading silently.
+
+A migration drops the `media_asset.url` column.

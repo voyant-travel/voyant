@@ -31,10 +31,11 @@ export interface GatewayStorageProviderOptions {
    * `${publicBaseUrl}/${key}` resolves for a caller-facing key.
    *
    * Supplying it lets {@link StorageProvider.publicUrl} derive delivery URLs on
-   * every read from a single configured value; when it is absent `publicUrl`
-   * returns `null` and callers fall back to serving bytes through the
-   * deployment's own media route. Either way no absolute origin is persisted
-   * (voyant#3845).
+   * every read from a single configured value, so no absolute origin is ever
+   * persisted (voyant#3845). When absent `publicUrl` returns `null`, meaning
+   * "this store has no public origin" — correct for a private tier such as
+   * documents, but a media store feeding a storefront must set it, which is why
+   * the graph provider requires it there.
    */
   publicBaseUrl?: string
 }
