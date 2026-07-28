@@ -532,11 +532,43 @@ describe("trips read tools", () => {
     expect(names).toContain("get_trip")
   })
 
-  it("declares the readers as read-tier and non-destructive", () => {
+  // A trip envelope's travelerParty carries traveler names, dates of birth,
+  // emails and phones plus the billing party's contact details, so these are
+  // PII-bearing reads, not ordinary ones.
+  it("declares the readers as sensitive and non-destructive", () => {
     for (const tool of [listTripsTool, getTripTool]) {
-      expect(tool.tier).toBe("read")
+      expect(tool.tier).toBe("sensitive")
       expect(tool.riskPolicy.destructive).toBe(false)
       expect(tool.requiredScopes).toEqual(["trips:read"])
     }
+  })
+
+  // The service applies the flight filter on `=== true`, so accepting `false`
+  // would silently return every trip.
+  it("accepts hasFlight only as a presence flag", async () => {
+    const registry = makeRegistry()
+    const ctx = ctxWith({
+      listTrips: async () => ({ data: [], total: 0, limit: 50, offset: 0 }),
+    })
+    await expect(registry.dispatch("list_trips", { hasFlight: true }, ctx)).resolves.toBeDefined()
+    await expect(registry.dispatch("list_trips", { hasFlight: false }, ctx)).rejects.toThrow()
+  })
+
+  // `parseDateMs` drops an unparseable bound, so a loose string would return
+  // trips outside the requested period with no sign the filter was ignored.
+  it("rejects a creation-date filter the service could not parse", async () => {
+    const registry = makeRegistry()
+    const ctx = ctxWith({
+      listTrips: async () => ({ data: [], total: 0, limit: 50, offset: 0 }),
+    })
+    await expect(
+      registry.dispatch("list_trips", { createdFrom: "yesterday" }, ctx),
+    ).rejects.toThrow()
+    await expect(
+      registry.dispatch("list_trips", { createdFrom: "2026-07-27" }, ctx),
+    ).resolves.toBeDefined()
+    await expect(
+      registry.dispatch("list_trips", { createdTo: "2026-07-27T10:00:00Z" }, ctx),
+    ).resolves.toBeDefined()
   })
 })

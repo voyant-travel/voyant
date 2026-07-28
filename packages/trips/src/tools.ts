@@ -492,17 +492,37 @@ export const selectTripCandidateTool = defineTool({
  * in particular would publish an untyped parameter and treat any non-empty
  * string as true, which is the wrong contract for a model composing arguments.
  */
+/**
+ * A creation-date bound. The service parses these with `new Date(...)` and
+ * silently drops the filter when the value will not parse, so anything looser
+ * would let `createdFrom: "yesterday"` return trips outside the requested
+ * period with no indication the constraint was ignored.
+ */
+const listTripsDateFilter = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
+
 const listTripsArgs = z.object({
   status: tripEnvelopeStatusSchema.optional(),
   search: z.string().trim().min(1).max(255).optional(),
   productId: z.string().trim().min(1).max(255).optional(),
   accommodationId: z.string().trim().min(1).max(255).optional(),
   cruiseId: z.string().trim().min(1).max(255).optional(),
-  hasFlight: z.boolean().optional(),
+  // Presence-only. The service applies this filter on `=== true`, so a `false`
+  // would be accepted and then ignored, returning every trip. Advertise what
+  // the service actually implements rather than a filter it does not.
+  hasFlight: z
+    .literal(true)
+    .optional()
+    .describe("Set true to return only trips that contain a flight. Omit for no flight filter."),
   totalMinCents: z.number().int().nonnegative().optional(),
   totalMaxCents: z.number().int().nonnegative().optional(),
-  createdFrom: z.string().trim().min(1).max(35).optional(),
-  createdTo: z.string().trim().min(1).max(35).optional(),
+  createdFrom: listTripsDateFilter
+    .optional()
+    .describe("Inclusive lower bound on creation date: YYYY-MM-DD or an ISO datetime."),
+  createdTo: listTripsDateFilter
+    .optional()
+    .describe(
+      "Inclusive upper bound on creation date: YYYY-MM-DD (matches the whole day) or an ISO datetime.",
+    ),
   sortBy: tripsListSortFieldSchema.default("updatedAt"),
   sortDir: tripsListSortDirSchema.default("desc"),
   limit: z.number().int().min(1).max(100).default(50),
@@ -522,7 +542,12 @@ export const listTripsTool = defineTool({
   outputSchema: listTripsResultSchema,
   requiredScopes: ["trips:read"],
   audience: STAFF_AUDIENCE,
-  tier: "read",
+  // A trip envelope's `travelerParty` carries traveler names, dates of birth,
+  // emails and phones, plus the billing party's contact details — see
+  // `flightPassengersFromTravelerParty`. Per `packages/tools/src/risk.ts` that
+  // makes these readers `sensitive`, alongside the CRM contact-method and
+  // address readers, not ordinary reads like the person directory.
+  tier: "sensitive",
   riskPolicy: {
     destructive: false,
     reversible: true,
@@ -546,7 +571,8 @@ export const getTripTool = defineTool({
   outputSchema: tripAggregateToolSchema.nullable(),
   requiredScopes: ["trips:read"],
   audience: STAFF_AUDIENCE,
-  tier: "read",
+  /** Sensitive for the same reason as `list_trips`. */
+  tier: "sensitive",
   riskPolicy: {
     destructive: false,
     reversible: true,

@@ -235,7 +235,8 @@ export const tripsVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/trips/tools", export: "listTripsTool" },
       requiredScopes: ["trips:read"],
       context: ["trips"],
-      risk: "low",
+      // Returns traveler PII; matches the CRM contact-method readers.
+      risk: "high",
     },
     {
       id: "@voyant-travel/trips#tool.get-trip",
@@ -243,7 +244,8 @@ export const tripsVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/trips/tools", export: "getTripTool" },
       requiredScopes: ["trips:read"],
       context: ["trips"],
-      risk: "low",
+      // Returns traveler PII; matches the CRM contact-method readers.
+      risk: "high",
     },
     {
       id: "@voyant-travel/trips#tool.create-trip",
