@@ -2,10 +2,13 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import {
+  CREATE_DEPARTURE_HANDLER_POLICY,
+  createDepartureTool,
   getOperatorDashboardSummaryTool,
   type OperationsToolServices,
   operationsTools,
   resolveOperatorDashboardWindow,
+  updateDepartureTool,
 } from "../src/tools.js"
 
 function contextWith(overrides: Partial<OperationsToolServices>): ToolContext & {
@@ -26,6 +29,8 @@ function contextWith(overrides: Partial<OperationsToolServices>): ToolContext & 
       actor: "staff",
     },
     operations: {
+      createDeparture: unavailable,
+      updateDeparture: unavailable,
       getAvailabilityOverview: unavailable,
       getAvailabilityAggregates: unavailable,
       listAvailabilityRules: unavailable,
@@ -46,6 +51,119 @@ function registry() {
 }
 
 describe("Operations tools", () => {
+  it("creates a lossless departure through the admitted idempotent command surface", async () => {
+    const writeRegistry = createToolRegistry()
+    writeRegistry.register(createDepartureTool, {
+      actionPolicy: CREATE_DEPARTURE_HANDLER_POLICY.actionPolicy,
+    })
+    const createdAt = new Date("2026-07-28T12:00:00.000Z")
+    const result = await writeRegistry.dispatch(
+      "create_departure",
+      {
+        productId: "prod_1",
+        dateLocal: "2026-10-12",
+        startsAt: "2026-10-12T06:30:00.000Z",
+        endsAt: "2026-10-14T15:00:00.000Z",
+        timezone: "Europe/Bucharest",
+        status: "open",
+        unlimited: false,
+        initialPax: 20,
+        remainingPax: 17,
+        nights: 2,
+        days: 3,
+        notes: "Meet at the station",
+        idempotencyKey: "bucharest-2026-10-12-v1",
+      },
+      {
+        ...contextWith({
+          async createDeparture(input) {
+            expect(input.idempotencyKey).toBe("bucharest-2026-10-12-v1")
+            return {
+              replayed: false,
+              departure: {
+                id: "avsl_1",
+                productId: input.productId,
+                itineraryId: null,
+                optionId: null,
+                facilityId: null,
+                availabilityRuleId: null,
+                startTimeId: null,
+                dateLocal: input.dateLocal,
+                startsAt: new Date(input.startsAt),
+                endsAt: new Date(input.endsAt as string),
+                timezone: input.timezone,
+                status: input.status,
+                unlimited: input.unlimited,
+                initialPax: input.initialPax,
+                remainingPax: input.remainingPax,
+                initialPickups: null,
+                remainingPickups: null,
+                remainingResources: null,
+                pastCutoff: false,
+                tooEarly: false,
+                nights: input.nights,
+                days: input.days,
+                notes: input.notes,
+                createdAt,
+                updatedAt: createdAt,
+                endDateLocal: "2026-10-14",
+              },
+            }
+          },
+        }),
+        handlerActionPolicy: {
+          capabilityId: CREATE_DEPARTURE_HANDLER_POLICY.capabilityId,
+          capabilityVersion: CREATE_DEPARTURE_HANDLER_POLICY.capabilityVersion,
+          canonicalName: CREATE_DEPARTURE_HANDLER_POLICY.canonicalName,
+          actionPolicy: {
+            ...CREATE_DEPARTURE_HANDLER_POLICY.actionPolicy,
+            enforcement: "handler",
+            invocation: {
+              controlField: "_voyant",
+              requiredFields: [],
+              optionalFields: [],
+              fingerprintAlgorithm: "action-ledger-command-v1",
+            },
+          },
+          invocation: { idempotencyKey: "bucharest-2026-10-12-v1" },
+        } as never,
+      },
+    )
+    expect(result).toMatchObject({
+      replayed: false,
+      departure: {
+        startsAt: "2026-10-12T06:30:00.000Z",
+        endsAt: "2026-10-14T15:00:00.000Z",
+        timezone: "Europe/Bucharest",
+        initialPax: 20,
+        remainingPax: 17,
+        nights: 2,
+        days: 3,
+        status: "open",
+        notes: "Meet at the station",
+      },
+    })
+  })
+
+  it("rejects derived remaining-capacity updates instead of silently dropping them", async () => {
+    const writeRegistry = createToolRegistry()
+    writeRegistry.register(updateDepartureTool)
+    let called = false
+    await expect(
+      writeRegistry.dispatch(
+        "update_departure",
+        { id: "avsl_1", remainingPax: 12 },
+        contextWith({
+          async updateDeparture() {
+            called = true
+            return null
+          },
+        }),
+      ),
+    ).rejects.toThrow()
+    expect(called).toBe(false)
+  })
+
   it("registers stable staff-only read capabilities with serializable outputs", () => {
     const manifest = registry().list()
     expect(manifest.map((tool) => tool.name).sort()).toEqual([

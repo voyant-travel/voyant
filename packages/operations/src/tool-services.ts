@@ -1,4 +1,4 @@
-import type { ToolContext } from "@voyant-travel/tools"
+import type { ToolContext, ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import type { z } from "zod"
 
 import type {
@@ -13,7 +13,10 @@ import type {
 
 /** Availability services contributed by an Operations runtime. */
 export interface OperationsToolServices {
-  createDeparture(input: z.infer<typeof availabilitySlotCoreSchema>): Promise<unknown>
+  createDeparture(
+    input: z.infer<typeof availabilitySlotCoreSchema> & { idempotencyKey?: string },
+    admitted: ToolHandlerActionPolicyContext,
+  ): Promise<unknown>
   updateDeparture(
     id: string,
     patch: Partial<z.infer<typeof availabilitySlotCoreSchema>>,
