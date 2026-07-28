@@ -333,6 +333,33 @@ export const tripsVoyantModule = defineModule({
     },
   ],
   actions: [
+    // A trip envelope carries traveler names, dates of birth, emails and phones,
+    // so reading one is a sensitive read: ledgered, never approval-gated. Same
+    // posture as the CRM contact-method and address readers.
+    {
+      id: "@voyant-travel/trips#action.list-trips",
+      version: "v1",
+      kind: "sensitive-read",
+      targetType: "trip",
+      requiredScopes: ["trips:read"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      from: { tools: ["@voyant-travel/trips#tool.list-trips"] },
+    },
+    {
+      id: "@voyant-travel/trips#action.get-trip",
+      version: "v1",
+      kind: "sensitive-read",
+      targetType: "trip",
+      requiredScopes: ["trips:read"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      from: { tools: ["@voyant-travel/trips#tool.get-trip"] },
+    },
     {
       id: "@voyant-travel/trips#action.create-trip",
       version: "v1",
