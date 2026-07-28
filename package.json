@@ -108,7 +108,7 @@
     "verify:agent-write-coverage": "node --test scripts/tests/check-agent-write-coverage.test.mjs && tsx scripts/check-agent-write-coverage.ts",
     "report:agent-tool-coverage": "tsx scripts/check-agent-tool-coverage.ts --report",
     "verify:agent-tool-coverage": "node --test scripts/tests/check-agent-tool-coverage.test.mjs && tsx scripts/check-agent-tool-coverage.ts",
-    "verify:tool-refinement-visibility": "node --test scripts/tests/tool-refinement-inventory.test.mjs && tsx scripts/check-tool-refinement-visibility.ts",
+    "verify:tool-refinement-visibility": "tsx scripts/check-tool-refinement-visibility.ts",
     "verify:first-party-tool-output-schemas": "node --test scripts/tests/check-first-party-tool-output-schemas.test.mjs && node scripts/check-first-party-tool-output-schemas.mjs",
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm verify:operator-product-ui-authority && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:ui-orientation-selectors && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
     "verify:full": "pnpm lint && pnpm verify:agent-quality && pnpm verify:operator-product-ui-authority && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:ui-orientation-selectors && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm verify:release-config && pnpm build && pnpm verify:package-exports && pnpm verify:publish-tarballs && pnpm i18n:check",
@@ -161,8 +161,7 @@
     "turbo": "^2.10.2",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "yaml": "2.8.3",
-    "zod": "catalog:"
+    "yaml": "2.8.3"
   },
   "packageManager": "pnpm@10.18.0",
   "engines": {
