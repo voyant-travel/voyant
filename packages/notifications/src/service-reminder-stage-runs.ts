@@ -274,7 +274,6 @@ async function emitStageChannelRun(
           metadata: { reminderRuleId: rule.id, reminderRunId: processingRun.id, stageId: stage.id },
           reminderRunId: processingRun.id,
           scheduledFor: scheduledAt.toISOString(),
-          publicCustomerPortalBaseUrl: options.publicCustomerPortalBaseUrl,
         },
       })
     } else {
