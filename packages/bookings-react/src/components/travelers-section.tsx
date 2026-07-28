@@ -90,6 +90,33 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
   }
 }
 
+function isBlankTraveler(traveler: TravelerEntry): boolean {
+  return (
+    traveler.personId === null &&
+    !traveler.firstName.trim() &&
+    !traveler.lastName.trim() &&
+    !traveler.email.trim() &&
+    !traveler.phone.trim()
+  )
+}
+
+export function insertPersonTraveler(
+  travelers: TravelerEntry[],
+  traveler: TravelerEntry,
+): TravelerEntry[] {
+  const blankIndex = travelers.findIndex(isBlankTraveler)
+  if (blankIndex === -1) return [...travelers, traveler]
+  return travelers.map((existing, index) =>
+    index === blankIndex
+      ? {
+          ...traveler,
+          clientTravelerKey: existing.clientTravelerKey ?? traveler.clientTravelerKey,
+          role: existing.role,
+        }
+      : existing,
+  )
+}
+
 // Re-export `computeAgeYears` from the canonical assignment module so
 // existing consumers of `travelers-section`'s public surface keep
 // working. The implementation lives in `@voyant-travel/bookings/pricing-assignment`.
@@ -444,34 +471,32 @@ export function TravelersSection({
 
   const addBillingPerson = () => {
     if (!billingPerson.data) return
-    const role: TravelerRole = value.travelers.length === 0 ? "lead" : "adult"
+    const blankTraveler = value.travelers.find(isBlankTraveler)
+    const role: TravelerRole =
+      blankTraveler?.role ?? (value.travelers.length === 0 ? "lead" : "adult")
     const traveler = createTravelerFromPerson(billingPerson.data, role)
     onChange({
-      travelers: [
-        ...value.travelers,
-        {
-          ...traveler,
-          ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
-          pricingUnitSource: "auto",
-          inventoryUnitSource: "auto",
-        },
-      ],
+      travelers: insertPersonTraveler(value.travelers, {
+        ...traveler,
+        ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
+        pricingUnitSource: "auto",
+        inventoryUnitSource: "auto",
+      }),
     })
   }
 
   const addRelatedPersonTraveler = (person: PersonRecord) => {
-    const role: TravelerRole = value.travelers.length === 0 ? "lead" : "adult"
+    const blankTraveler = value.travelers.find(isBlankTraveler)
+    const role: TravelerRole =
+      blankTraveler?.role ?? (value.travelers.length === 0 ? "lead" : "adult")
     const traveler = createTravelerFromPerson(person, role)
     onChange({
-      travelers: [
-        ...value.travelers,
-        {
-          ...traveler,
-          ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
-          pricingUnitSource: "auto",
-          inventoryUnitSource: "auto",
-        },
-      ],
+      travelers: insertPersonTraveler(value.travelers, {
+        ...traveler,
+        ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
+        pricingUnitSource: "auto",
+        inventoryUnitSource: "auto",
+      }),
     })
   }
 

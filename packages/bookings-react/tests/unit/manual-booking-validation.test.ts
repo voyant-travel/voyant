@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { validateManualBookingDraft } from "../../src/components/manual-booking-create-form.js"
+import {
+  formatManualBookingAmount,
+  validateManualBookingDraft,
+} from "../../src/components/manual-booking-create-form.js"
 import { bookingsUiEn } from "../../src/i18n/en.js"
 
 const valid = {
@@ -40,6 +43,13 @@ const valid = {
 }
 
 describe("manual booking validation", () => {
+  it("formats minor-unit amounts as major currency units", () => {
+    const formatter = vi.fn((value: number) => String(value))
+
+    expect(formatManualBookingAmount(125_000, "EUR", formatter)).toBe("1250")
+    expect(formatter).toHaveBeenCalledWith(1250, "EUR", { currencyDisplay: "code" })
+  })
+
   it("accepts a complete individual booking", () => {
     expect(validateManualBookingDraft(valid)).toBeNull()
   })

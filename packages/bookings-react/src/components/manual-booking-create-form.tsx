@@ -60,6 +60,18 @@ export interface ManualBookingAttempt {
   idempotencyKey: string
 }
 
+export function formatManualBookingAmount(
+  amountCents: number,
+  currency: string,
+  formatCurrency: (
+    value: number,
+    currency: string,
+    options?: Omit<Intl.NumberFormatOptions, "currency" | "style">,
+  ) => string,
+): string {
+  return formatCurrency(amountCents / 100, currency, { currencyDisplay: "code" })
+}
+
 export function validateManualBookingDraft(input: {
   productId: string
   billing: PersonPickerValue
@@ -252,7 +264,7 @@ export function ManualBookingCreateForm({
         .replace("{product}", productRecord?.name ?? product.productId)
         .replace(
           "{amount}",
-          formatCurrency(amountCents, currency || "EUR", { currencyDisplay: "code" }),
+          formatManualBookingAmount(amountCents, currency || "EUR", formatCurrency),
         )
         .replace("{travelers}", String(travelers.travelers.length)),
       confirmLabel: copy.actions.confirmCreate,
@@ -532,7 +544,7 @@ export function ManualBookingCreateForm({
           label={copy.summary.total}
           value={
             currency && Number.isFinite(amountCents)
-              ? formatCurrency(amountCents, currency, { currencyDisplay: "code" })
+              ? formatManualBookingAmount(amountCents, currency, formatCurrency)
               : copy.summary.missing
           }
         />
