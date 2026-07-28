@@ -8,7 +8,12 @@ import {
   AVAILABILITY_SLOT_CHANGED_EVENT,
   type AvailabilitySlotChangedEvent,
 } from "../../../src/availability/events.js"
-import { createSlot, deleteSlot, updateSlot } from "../../../src/availability/service-core.js"
+import {
+  createSlot,
+  deleteSlot,
+  getSlotById,
+  updateSlot,
+} from "../../../src/availability/service-core.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -111,5 +116,33 @@ describe.skipIf(!DB_AVAILABLE)("availability slot events", () => {
     await updateSlot(db, slotId, { remainingPax: 3 }, { eventBus: bus })
     expect(events).toHaveLength(1)
     expect(events[0]?.data.source).toBe("manual")
+  })
+
+  it("rejects a product ownership move without emitting a misleading new-product event", async () => {
+    const slotId = newId("availability_slots")
+    const otherProductId = newId("products")
+    await db.insert(products).values({
+      id: otherProductId,
+      name: "Other Slot Event Product",
+      sellCurrency: "USD",
+      bookingMode: "date",
+    })
+    await db.insert(availabilitySlots).values({
+      id: slotId,
+      productId,
+      dateLocal: "2026-06-01",
+      startsAt: new Date("2026-06-01T08:00:00Z"),
+      timezone: "UTC",
+      status: "open",
+      unlimited: false,
+      remainingPax: 5,
+    })
+
+    const { bus, events } = recordingBus()
+    await expect(
+      updateSlot(db, slotId, { productId: otherProductId }, { eventBus: bus }),
+    ).rejects.toThrow("product ownership is immutable")
+    expect(events).toHaveLength(0)
+    expect(await getSlotById(db, slotId)).toMatchObject({ productId })
   })
 })

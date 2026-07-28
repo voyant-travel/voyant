@@ -4,4 +4,4 @@
 "@voyant-travel/inventory-react": patch
 ---
 
-Add exhaustive atomic product unit-configuration previews and confirmed applies, make departure creation durably idempotent with immediate projection signals, and label departure times with their configured timezone.
+Add exhaustive atomic product unit-configuration previews and confirmed applies, make departure creation durably idempotent with immediate projection signals, serialize partial departure timing updates, keep departure product ownership immutable, and label departure times with their configured timezone.

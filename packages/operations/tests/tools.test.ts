@@ -164,6 +164,25 @@ describe("Operations tools", () => {
     expect(called).toBe(false)
   })
 
+  it("rejects departure product ownership moves before calling the service", async () => {
+    const writeRegistry = createToolRegistry()
+    writeRegistry.register(updateDepartureTool)
+    let called = false
+    await expect(
+      writeRegistry.dispatch(
+        "update_departure",
+        { id: "avsl_1", productId: "prod_other" },
+        contextWith({
+          async updateDeparture() {
+            called = true
+            return null
+          },
+        }),
+      ),
+    ).rejects.toThrow()
+    expect(called).toBe(false)
+  })
+
   it("registers stable staff-only read capabilities with serializable outputs", () => {
     const manifest = registry().list()
     expect(manifest.map((tool) => tool.name).sort()).toEqual([

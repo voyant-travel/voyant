@@ -245,6 +245,7 @@ const createDepartureArgs = availabilitySlotCoreSchema
 
 const updateDepartureArgs = availabilitySlotCoreSchema
   .omit({
+    productId: true,
     remainingPax: true,
     remainingPickups: true,
     remainingResources: true,
