@@ -112,7 +112,10 @@ describe("default payment provider registry", () => {
 
   describe("managed", () => {
     it("returns the canonical id for a legacy persisted Voyant Payments connection", async () => {
-      const registry = createDefaultPaymentProviderRegistry({ db: legacyVoyantPayDb, env: managedEnv })
+      const registry = createDefaultPaymentProviderRegistry({
+        db: legacyVoyantPayDb,
+        env: managedEnv,
+      })
       await expect(registry.getConnection()).resolves.toMatchObject({
         activeProviderId: "voyant-pay",
       })

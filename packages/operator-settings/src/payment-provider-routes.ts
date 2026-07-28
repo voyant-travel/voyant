@@ -163,9 +163,7 @@ const activateRequestSchema = z.object({
 const activationResultSchema = z.object({
   ok: z.boolean(),
   status: connectionStatusSchema,
-  activated: z
-    .object({ providerId: z.string(), connectionId: z.string() })
-    .optional(),
+  activated: z.object({ providerId: z.string(), connectionId: z.string() }).optional(),
   error: z.string().optional(),
 })
 

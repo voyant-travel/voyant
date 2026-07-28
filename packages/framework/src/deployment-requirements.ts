@@ -301,12 +301,7 @@ function envForProvider(
     if (provider === "voyant-pay") {
       return [
         secret("VOYANT_PAYMENTS_API_KEY", "Voyant Pay API key."),
-        variable(
-          "VOYANT_PAYMENTS_API_URL",
-          "Optional Voyant Pay API base URL.",
-          false,
-          "http-url",
-        ),
+        variable("VOYANT_PAYMENTS_API_URL", "Optional Voyant Pay API base URL.", false, "http-url"),
       ]
     }
     if (provider === "netopia") {

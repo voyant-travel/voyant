@@ -1,5 +1,6 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import type { ModuleContainer } from "@voyant-travel/core"
+import { handleApiError } from "@voyant-travel/hono"
 import {
   type PaymentActivationInput,
   type PaymentActivationResult,
@@ -36,6 +37,7 @@ function buildApp(container?: ModuleContainer) {
     await next()
   })
   mountPaymentProviderRoutes(app)
+  app.onError((error, c) => handleApiError(error, c))
   return app
 }
 
@@ -47,7 +49,11 @@ function containerWithRegistry(registry: PaymentProviderRegistry): ModuleContain
   } as unknown as ModuleContainer
 }
 
-function activate(app: ReturnType<typeof buildApp>, body: unknown, env: Record<string, unknown> = {}) {
+function activate(
+  app: ReturnType<typeof buildApp>,
+  body: unknown,
+  env: Record<string, unknown> = {},
+) {
   return app.request(
     "/v1/admin/settings/payments/activate",
     {

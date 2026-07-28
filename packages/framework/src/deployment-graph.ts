@@ -616,9 +616,7 @@ function canonicalDeploymentProviders(
   return Object.fromEntries(
     Object.entries(providers).map(([role, provider]) => [
       role,
-      typeof provider === "string"
-        ? canonicalDeploymentProvider(role, provider)
-        : provider,
+      typeof provider === "string" ? canonicalDeploymentProvider(role, provider) : provider,
     ]),
   )
 }

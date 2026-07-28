@@ -699,7 +699,9 @@ export function PaymentsSettingsPage({ embeddedOnboardingClient }: PaymentsSetti
                             <CreditCard aria-hidden="true" />
                             <CardTitle>{summary.displayName ?? summary.providerId}</CardTitle>
                             {summary.active ? <Badge>{t.activeBadge}</Badge> : null}
-                            <Badge variant={summary.readiness === "ready" ? "secondary" : "outline"}>
+                            <Badge
+                              variant={summary.readiness === "ready" ? "secondary" : "outline"}
+                            >
                               {summary.readiness === "ready" ? t.readyBadge : t.notReadyBadge}
                             </Badge>
                             <Badge variant={summary.state === "error" ? "destructive" : "outline"}>

@@ -227,14 +227,12 @@ describe("payments settings contract", () => {
     const ready = { connectionId: "c1", readiness: "ready" as const, readOnly: false }
 
     // Already active → shows the default marker, no button.
-    expect(
-      paymentActivationControlState({ summary: { ...ready, active: true } }),
-    ).toBe("active")
+    expect(paymentActivationControlState({ summary: { ...ready, active: true } })).toBe("active")
 
     // Ready + inactive, nothing pending → an actionable button.
-    expect(
-      paymentActivationControlState({ summary: { ...ready, active: false } }),
-    ).toBe("activatable")
+    expect(paymentActivationControlState({ summary: { ...ready, active: false } })).toBe(
+      "activatable",
+    )
 
     // This connection's request is in flight → pending state (spinner).
     expect(

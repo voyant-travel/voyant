@@ -17,12 +17,12 @@ import {
   type PaymentActivationInput,
   type PaymentActivationResult,
   type PaymentConnectInput,
-  paymentConnectionReadiness,
   type PaymentConnectionStatus,
   type PaymentConnectionSummary,
   type PaymentConnectResult,
   type PaymentProviderDescriptor,
   type PaymentProviderRegistry,
+  paymentConnectionReadiness,
   validatePaymentCredentials,
 } from "@voyant-travel/payments"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
