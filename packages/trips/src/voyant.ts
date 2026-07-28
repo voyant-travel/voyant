@@ -168,7 +168,7 @@ export const tripsVoyantModule = defineModule({
         profiles: {
           eager: { every: "1m", overlap: "skip" },
           economical: { every: "5m", overlap: "skip" },
-          "scale-to-zero": { every: "15m", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
       wakeup: true,
@@ -185,7 +185,7 @@ export const tripsVoyantModule = defineModule({
         profiles: {
           eager: { every: "1m", overlap: "skip" },
           economical: { every: "5m", overlap: "skip" },
-          "scale-to-zero": { every: "15m", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
       wakeup: true,

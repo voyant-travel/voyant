@@ -97,7 +97,7 @@ export const distributionChannelPushVoyantExtensionDefinition = {
         required: true,
         profiles: {
           economical: { every: "5m", overlap: "skip" },
-          "scale-to-zero": { every: "15m", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
       wakeup: true,
@@ -113,7 +113,7 @@ export const distributionChannelPushVoyantExtensionDefinition = {
         required: true,
         profiles: {
           economical: { every: "5m", overlap: "skip" },
-          "scale-to-zero": { every: "15m", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
       wakeup: true,
@@ -129,7 +129,7 @@ export const distributionChannelPushVoyantExtensionDefinition = {
         required: true,
         profiles: {
           economical: { every: "5m", overlap: "skip" },
-          "scale-to-zero": { every: "15m", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
         },
       },
       wakeup: true,

@@ -120,7 +120,7 @@ describe("standard package manifests", () => {
     ).toEqual([])
     const schedules = new Map(graph.provisioning.jobs.map((job) => [job.id, job.schedule]))
     expect(schedules.get("infrastructure.event-outbox-drain")).toEqual({
-      every: "15m",
+      cron: "*/15 * * * *",
       overlap: "skip",
     })
     expect(schedules.get("notifications.deliver-durable-sends")).toEqual({
@@ -128,7 +128,7 @@ describe("standard package manifests", () => {
       overlap: "skip",
     })
     expect(schedules.get("channel.availability.push")).toEqual({
-      every: "15m",
+      cron: "*/15 * * * *",
       overlap: "skip",
     })
     expect(schedules.get("distribution.channel-push-reconcile-booking-links")).toEqual({
@@ -144,6 +144,11 @@ describe("standard package manifests", () => {
         .filter((job) => job.scheduling?.profiles["scale-to-zero"])
         .every((job) => job.scheduling?.selected === "scale-to-zero"),
     ).toBe(true)
+    expect(
+      graph.provisioning.jobs.filter(
+        (job) => job.scheduling?.selected === "scale-to-zero" && job.schedule.every === "15m",
+      ),
+    ).toEqual([])
   })
 
   it("selects the composed dashboard with a staff preset that satisfies every source scope", () => {
