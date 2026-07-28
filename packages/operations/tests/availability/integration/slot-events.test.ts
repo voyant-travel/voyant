@@ -145,4 +145,65 @@ describe.skipIf(!DB_AVAILABLE)("availability slot events", () => {
     expect(events).toHaveLength(0)
     expect(await getSlotById(db, slotId)).toMatchObject({ productId })
   })
+
+  it("accepts an unchanged full snapshot without losing remaining or cutoff compatibility fields", async () => {
+    const slotId = newId("availability_slots")
+    await db.insert(availabilitySlots).values({
+      id: slotId,
+      productId,
+      dateLocal: "2026-06-01",
+      startsAt: new Date("2026-06-01T08:00:00Z"),
+      timezone: "UTC",
+      status: "open",
+      unlimited: false,
+      initialPax: 8,
+      remainingPax: 5,
+      initialPickups: 4,
+      remainingPickups: 3,
+      remainingResources: 2,
+      pastCutoff: false,
+      tooEarly: false,
+      nights: 1,
+      days: 2,
+      notes: "Original note",
+    })
+    const current = await getSlotById(db, slotId)
+    if (!current) throw new Error("compatibility test slot disappeared")
+
+    const updated = await updateSlot(db, slotId, {
+      productId: current.productId,
+      itineraryId: current.itineraryId,
+      optionId: current.optionId,
+      facilityId: current.facilityId,
+      availabilityRuleId: current.availabilityRuleId,
+      startTimeId: current.startTimeId,
+      dateLocal: current.dateLocal,
+      startsAt: current.startsAt.toISOString(),
+      endsAt: current.endsAt?.toISOString() ?? null,
+      timezone: current.timezone,
+      status: current.status,
+      unlimited: current.unlimited,
+      initialPax: current.initialPax,
+      remainingPax: current.remainingPax,
+      initialPickups: current.initialPickups,
+      remainingPickups: current.remainingPickups,
+      remainingResources: current.remainingResources,
+      pastCutoff: current.pastCutoff,
+      tooEarly: current.tooEarly,
+      nights: current.nights,
+      days: current.days,
+      notes: "Updated through a full snapshot",
+    })
+
+    expect(updated).toMatchObject({
+      id: slotId,
+      productId,
+      remainingPax: 5,
+      remainingPickups: 3,
+      remainingResources: 2,
+      pastCutoff: false,
+      tooEarly: false,
+      notes: "Updated through a full snapshot",
+    })
+  })
 })

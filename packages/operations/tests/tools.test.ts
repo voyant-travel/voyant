@@ -145,26 +145,79 @@ describe("Operations tools", () => {
     })
   })
 
-  it("rejects derived remaining-capacity updates instead of silently dropping them", async () => {
+  it("accepts a full read-modify-write snapshot and forwards compatibility fields", async () => {
     const writeRegistry = createToolRegistry()
     writeRegistry.register(updateDepartureTool)
-    let called = false
-    await expect(
-      writeRegistry.dispatch(
-        "update_departure",
-        { id: "avsl_1", remainingPax: 12 },
-        contextWith({
-          async updateDeparture() {
-            called = true
-            return null
-          },
-        }),
-      ),
-    ).rejects.toThrow()
-    expect(called).toBe(false)
+    const snapshot = {
+      id: "avsl_1",
+      productId: "prod_1",
+      itineraryId: null,
+      optionId: null,
+      facilityId: null,
+      availabilityRuleId: null,
+      startTimeId: null,
+      dateLocal: "2026-10-12",
+      startsAt: "2026-10-12T06:30:00.000Z",
+      endsAt: "2026-10-14T15:00:00.000Z",
+      timezone: "Europe/Bucharest",
+      status: "open" as const,
+      unlimited: false,
+      initialPax: 20,
+      remainingPax: 17,
+      initialPickups: 4,
+      remainingPickups: 3,
+      remainingResources: 2,
+      pastCutoff: false,
+      tooEarly: false,
+      nights: 2,
+      days: 3,
+      notes: "Meet at the station",
+      createdAt: "2026-07-28T12:00:00.000Z",
+      updatedAt: "2026-07-28T12:00:00.000Z",
+      endDateLocal: "2026-10-14",
+    }
+    let forwarded: unknown
+    const result = await writeRegistry.dispatch(
+      "update_departure",
+      { ...snapshot, notes: "Meet at the station - platform 2" },
+      contextWith({
+        async updateDeparture(_id, patch) {
+          forwarded = patch
+          return {
+            ...snapshot,
+            ...patch,
+            startsAt: new Date(snapshot.startsAt),
+            endsAt: new Date(snapshot.endsAt),
+            createdAt: new Date(snapshot.createdAt),
+            updatedAt: new Date(snapshot.updatedAt),
+          }
+        },
+      }),
+    )
+
+    expect(forwarded).toMatchObject({
+      productId: "prod_1",
+      remainingPax: 17,
+      remainingPickups: 3,
+      remainingResources: 2,
+      pastCutoff: false,
+      tooEarly: false,
+      notes: "Meet at the station - platform 2",
+    })
+    expect(forwarded).not.toHaveProperty("createdAt")
+    expect(forwarded).not.toHaveProperty("updatedAt")
+    expect(forwarded).not.toHaveProperty("endDateLocal")
+    expect(result).toMatchObject({
+      departure: {
+        id: "avsl_1",
+        productId: "prod_1",
+        remainingPax: 17,
+        notes: "Meet at the station - platform 2",
+      },
+    })
   })
 
-  it("rejects departure product ownership moves before calling the service", async () => {
+  it("accepts the compatibility productId field but surfaces a rejected ownership move", async () => {
     const writeRegistry = createToolRegistry()
     writeRegistry.register(updateDepartureTool)
     let called = false
@@ -175,12 +228,12 @@ describe("Operations tools", () => {
         contextWith({
           async updateDeparture() {
             called = true
-            return null
+            throw new Error("Availability slot product ownership is immutable")
           },
         }),
       ),
-    ).rejects.toThrow()
-    expect(called).toBe(false)
+    ).rejects.toThrow("product ownership is immutable")
+    expect(called).toBe(true)
   })
 
   it("registers stable staff-only read capabilities with serializable outputs", () => {

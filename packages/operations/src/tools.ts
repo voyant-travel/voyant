@@ -243,20 +243,13 @@ const createDepartureArgs = availabilitySlotCoreSchema
   })
   .strict()
 
-const updateDepartureArgs = availabilitySlotCoreSchema
-  .omit({
-    productId: true,
-    remainingPax: true,
-    remainingPickups: true,
-    remainingResources: true,
-    pastCutoff: true,
-    tooEarly: true,
-  })
-  .partial()
-  .extend({
-    id: z.string().min(1).describe("The departure id (`avsl_*`) to update."),
-  })
-  .strict()
+// Preserve the original update Tool contract: callers commonly round-trip a
+// get_departure snapshot, so known compatibility fields remain accepted and
+// output-only metadata is stripped by Zod's default object behavior. The
+// service owns remainingPax and product ownership enforcement.
+const updateDepartureArgs = availabilitySlotCoreSchema.partial().extend({
+  id: z.string().min(1).describe("The departure id (`avsl_*`) to update."),
+})
 
 export const createDepartureTool = defineTool<
   z.infer<typeof createDepartureArgs>,
