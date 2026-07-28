@@ -23,6 +23,7 @@ export const OPEN_PAYMENT_SCHEDULE_STATUSES = new Set(["pending", "due"])
 
 export interface BookingEventReminderRuntimeOptions {
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
+  publicCustomerPortalBaseUrl?: string | null
 }
 
 export function paymentScheduleStatusSkipReason(status: string) {

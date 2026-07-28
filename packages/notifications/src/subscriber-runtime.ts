@@ -24,6 +24,7 @@ export interface NotificationsSubscriberRuntime {
   resolveDb(bindings: unknown): PostgresJsDatabase
   dispatcher: NotificationService
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
+  publicCustomerPortalBaseUrl?: string | null
 }
 
 export interface NotificationsSubscriberDependencies {
@@ -93,7 +94,10 @@ export function createBookingConfirmedReminderSubscriberRuntime(
             runtime.resolveDb(bindings),
             runtime.dispatcher,
             { targetType: "booking_confirmed", bookingId: data.bookingId, eventData: data },
-            { documentAttachmentResolver: runtime.documentAttachmentResolver },
+            {
+              documentAttachmentResolver: runtime.documentAttachmentResolver,
+              publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+            },
           )
         } catch (error) {
           logger.error(
@@ -133,7 +137,10 @@ export function createPaymentCompletedReminderSubscriberRuntime(
               paymentSessionId: data.paymentSessionId,
               eventData: data,
             },
-            { documentAttachmentResolver: runtime.documentAttachmentResolver },
+            {
+              documentAttachmentResolver: runtime.documentAttachmentResolver,
+              publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+            },
           )
         } catch (error) {
           logger.error(
@@ -169,7 +176,10 @@ export function createBookingCancelledReminderSubscriberRuntime(
               bookingId: data.bookingId,
               eventData: data,
             },
-            { documentAttachmentResolver: runtime.documentAttachmentResolver },
+            {
+              documentAttachmentResolver: runtime.documentAttachmentResolver,
+              publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+            },
           )
         } catch (error) {
           logger.error(
@@ -204,7 +214,10 @@ export function createBookingExpiredReminderSubscriberRuntime(
               bookingId: data.bookingId,
               eventData: data,
             },
-            { documentAttachmentResolver: runtime.documentAttachmentResolver },
+            {
+              documentAttachmentResolver: runtime.documentAttachmentResolver,
+              publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+            },
           )
         } catch (error) {
           logger.error(
