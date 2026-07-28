@@ -8,6 +8,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 }))
 
 import { availabilityService } from "../../src/availability/service.js"
+import { AvailabilitySlotRevisionConflictError } from "../../src/availability/service-core.js"
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
 import { CREATE_DEPARTURE_HANDLER_POLICY } from "../../src/tools.js"
 
@@ -92,5 +93,56 @@ describe("departure created-target runtime", () => {
       expect.objectContaining({ slotId: "avsl_1", productId: "prod_1" }),
       { category: "domain", source: "service" },
     )
+  })
+
+  it("returns a structured revision conflict with the current authoritative departure", async () => {
+    const current = {
+      id: "avsl_1",
+      productId: "prod_1",
+      status: "cancelled",
+      initialPax: 10,
+      startsAt: new Date("2026-10-12T06:30:00.000Z"),
+      updatedAt: new Date("2026-07-28T13:00:00.000Z"),
+      endDateLocal: null,
+    }
+    vi.spyOn(availabilityService, "updateSlot").mockRejectedValue(
+      new AvailabilitySlotRevisionConflictError("2026-07-28T12:00:00.000Z", current as never),
+    )
+    const contribution = await voyantToolContextContribution.contribute({
+      request: {
+        var: {
+          actor: "staff",
+          callerType: "agent",
+          agentId: "agent_1",
+          organizationId: "org_1",
+        },
+        get(key: string) {
+          return this.var[key as keyof typeof this.var]
+        },
+        req: { header: () => null },
+      } as never,
+      context: { db: {} } as never,
+      resources: {},
+    })
+    if (!contribution.operations) throw new Error("missing Operations runtime")
+
+    await expect(
+      contribution.operations.updateDeparture("avsl_1", {
+        updatedAt: "2026-07-28T12:00:00.000Z",
+        notes: "Stale edit",
+      }),
+    ).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+      meta: {
+        reason: "revision_conflict",
+        expectedUpdatedAt: "2026-07-28T12:00:00.000Z",
+        current: {
+          id: "avsl_1",
+          status: "cancelled",
+          initialPax: 10,
+          updatedAt: "2026-07-28T13:00:00.000Z",
+        },
+      },
+    })
   })
 })

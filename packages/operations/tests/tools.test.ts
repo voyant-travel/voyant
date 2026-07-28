@@ -205,7 +205,7 @@ describe("Operations tools", () => {
       notes: "Meet at the station - platform 2",
     })
     expect(forwarded).not.toHaveProperty("createdAt")
-    expect(forwarded).not.toHaveProperty("updatedAt")
+    expect(forwarded).toHaveProperty("updatedAt", "2026-07-28T12:00:00.000Z")
     expect(forwarded).not.toHaveProperty("endDateLocal")
     expect(result).toMatchObject({
       departure: {

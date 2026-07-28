@@ -10,6 +10,7 @@ import {
   type AvailabilitySlotChangedEvent,
 } from "../../../src/availability/events.js"
 import {
+  AvailabilitySlotRevisionConflictError,
   createSlot,
   deleteSlot,
   getSlotById,
@@ -273,6 +274,77 @@ describe.skipIf(!DB_AVAILABLE)("availability slot events", () => {
       pastCutoff: true,
       tooEarly: false,
       notes: "Notes-only operator edit",
+    })
+  })
+
+  it("rejects a stale full snapshot before it can reopen or restore capacity", async () => {
+    const slotId = newId("availability_slots")
+    await db.insert(availabilitySlots).values({
+      id: slotId,
+      productId,
+      dateLocal: "2026-06-01",
+      startsAt: new Date("2026-06-01T08:00:00Z"),
+      timezone: "UTC",
+      status: "open",
+      unlimited: false,
+      initialPax: 20,
+      remainingPax: 20,
+      notes: "Original note",
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    })
+    const stale = await getSlotById(db, slotId)
+    if (!stale) throw new Error("revision-conflict test slot disappeared")
+
+    // Patch-only callers remain compatible: without a revision precondition,
+    // this authoritative cancellation and capacity reduction succeeds.
+    const concurrent = await updateSlot(db, slotId, {
+      status: "cancelled",
+      initialPax: 10,
+    })
+    expect(concurrent).toMatchObject({ status: "cancelled", initialPax: 10 })
+    expect(concurrent?.updatedAt.getTime()).toBeGreaterThan(stale.updatedAt.getTime())
+
+    let conflict: unknown
+    try {
+      await updateSlot(db, slotId, {
+        updatedAt: stale.updatedAt.toISOString(),
+        productId: stale.productId,
+        itineraryId: stale.itineraryId,
+        optionId: stale.optionId,
+        facilityId: stale.facilityId,
+        availabilityRuleId: stale.availabilityRuleId,
+        startTimeId: stale.startTimeId,
+        dateLocal: stale.dateLocal,
+        startsAt: stale.startsAt.toISOString(),
+        endsAt: stale.endsAt?.toISOString() ?? null,
+        timezone: stale.timezone,
+        status: stale.status,
+        unlimited: stale.unlimited,
+        initialPax: stale.initialPax,
+        remainingPax: stale.remainingPax,
+        initialPickups: stale.initialPickups,
+        remainingPickups: stale.remainingPickups,
+        remainingResources: stale.remainingResources,
+        pastCutoff: stale.pastCutoff,
+        tooEarly: stale.tooEarly,
+        nights: stale.nights,
+        days: stale.days,
+        notes: "Stale notes-only edit",
+      })
+    } catch (error) {
+      conflict = error
+    }
+
+    expect(conflict).toBeInstanceOf(AvailabilitySlotRevisionConflictError)
+    expect(conflict).toMatchObject({
+      expectedUpdatedAt: stale.updatedAt.toISOString(),
+      current: { status: "cancelled", initialPax: 10 },
+    })
+    expect(await getSlotById(db, slotId)).toMatchObject({
+      status: "cancelled",
+      initialPax: 10,
+      remainingPax: 10,
+      notes: "Original note",
     })
   })
 })

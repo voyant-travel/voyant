@@ -6,8 +6,8 @@ import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
 import { availabilityService } from "./availability/service.js"
+import { AvailabilitySlotRevisionConflictError } from "./availability/service-core.js"
 
 export * from "./tools.js"
 
@@ -73,10 +73,27 @@ export const voyantToolContextContribution = defineToolContextContribution({
           }
           return { departure: result.value, replayed: result.replayed }
         },
-        updateDeparture: (
+        async updateDeparture(
           id: string,
           patch: Parameters<typeof availabilityService.updateSlot>[2],
-        ) => availabilityService.updateSlot(db, id, patch, { eventBus }),
+        ) {
+          try {
+            return await availabilityService.updateSlot(db, id, patch, { eventBus })
+          } catch (error) {
+            if (error instanceof AvailabilitySlotRevisionConflictError) {
+              throw new ToolError(
+                "Departure changed after it was read; review the current departure before retrying.",
+                "INVALID_INPUT",
+                {
+                  reason: "revision_conflict",
+                  expectedUpdatedAt: error.expectedUpdatedAt,
+                  current: jsonSafeValue(error.current),
+                },
+              )
+            }
+            throw error
+          }
+        },
         getAvailabilityOverview: (
           query: Parameters<typeof availabilityService.getAvailabilityOverview>[1],
         ) => availabilityService.getAvailabilityOverview(db, query),
@@ -99,6 +116,17 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
   },
 })
+
+function jsonSafeValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(jsonSafeValue)
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, jsonSafeValue(nested)]),
+    )
+  }
+  return value
+}
 
 function admittedCreatedCommandIdempotencyKey(
   admitted: ToolHandlerActionPolicyContext,

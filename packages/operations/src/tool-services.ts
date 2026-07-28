@@ -19,7 +19,7 @@ export interface OperationsToolServices {
   ): Promise<unknown>
   updateDeparture(
     id: string,
-    patch: Partial<z.infer<typeof availabilitySlotCoreSchema>>,
+    patch: Partial<z.infer<typeof availabilitySlotCoreSchema>> & { updatedAt?: string },
   ): Promise<unknown>
   getAvailabilityOverview(query: z.infer<typeof availabilityOverviewQuerySchema>): Promise<unknown>
   getAvailabilityAggregates(

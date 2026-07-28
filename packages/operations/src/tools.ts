@@ -245,10 +245,18 @@ const createDepartureArgs = availabilitySlotCoreSchema
 
 // Preserve the original update Tool contract: callers commonly round-trip a
 // get_departure snapshot, so known compatibility fields remain accepted and
-// output-only metadata is stripped by Zod's default object behavior. The
-// service owns remainingPax and product ownership enforcement.
+// unrelated output metadata is stripped by Zod's default object behavior.
+// updatedAt is retained as an optional revision; the service owns remainingPax
+// and product ownership enforcement.
 const updateDepartureArgs = availabilitySlotCoreSchema.partial().extend({
   id: z.string().min(1).describe("The departure id (`avsl_*`) to update."),
+  updatedAt: z
+    .string()
+    .datetime()
+    .optional()
+    .describe(
+      "Optional revision from get_departure/list_departures. Stale full snapshots are rejected with the current departure.",
+    ),
 })
 
 export const createDepartureTool = defineTool<
