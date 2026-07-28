@@ -476,12 +476,23 @@ function pickBestDayTranslation(
   base: Pick<typeof productDays.$inferSelect, "title" | "description" | "location">,
   defaultLanguageTag: string | null | undefined,
 ) {
-  const translations: DayTrnCandidate[] = rows.map((r) => ({
-    locale: r.languageTag,
-    title: r.title,
-    description: r.description,
-    location: r.location,
-  }))
+  const normalizedDefaultLanguageTag = defaultLanguageTag?.trim().toLowerCase()
+  const translations: DayTrnCandidate[] = rows
+    // BCP-47 tags are case-insensitive. Drop every spelling of the declared
+    // default locale so an exact-scored stale translation cannot outrank the
+    // authoritative base candidate solely because its casing matches the
+    // request more closely.
+    .filter(
+      (r) =>
+        !normalizedDefaultLanguageTag ||
+        r.languageTag.trim().toLowerCase() !== normalizedDefaultLanguageTag,
+    )
+    .map((r) => ({
+      locale: r.languageTag,
+      title: r.title,
+      description: r.description,
+      location: r.location,
+    }))
 
   if (defaultLanguageTag) {
     // Base day columns are the source of truth for the product's declared

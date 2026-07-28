@@ -147,7 +147,7 @@ describe("buildOwnedProductContent", () => {
               name: "Tur de baza",
               status: "active",
               description: "Descriere produs",
-              defaultLanguageTag: "ro-RO",
+              defaultLanguageTag: "ro-ro",
               inclusionsHtml: null,
               exclusionsHtml: null,
               termsHtml: null,
@@ -194,6 +194,8 @@ describe("buildOwnedProductContent", () => {
           [
             {
               dayId: "day_1",
+              // Same BCP-47 locale with request-matching case. This stale row
+              // must not outrank the authoritative base day.
               languageTag: "ro-RO",
               title: "Titlu romanesc vechi",
               description: "Descriere romaneasca veche",
