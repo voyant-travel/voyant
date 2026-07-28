@@ -448,7 +448,18 @@ export async function updateSlot(
       remainingPax: undefined,
     })
 
-    const { productId: _ignoredProductId, remainingPax: _ignoredRemainingPax, ...rest } = data
+    // Full read-modify-write snapshots remain valid public inputs, but these
+    // fields are service-owned projections of bookings, resources, and the
+    // booking window. Never let an operator's stale snapshot write them back.
+    const {
+      productId: _ignoredProductId,
+      remainingPax: _ignoredRemainingPax,
+      remainingPickups: _ignoredRemainingPickups,
+      remainingResources: _ignoredRemainingResources,
+      pastCutoff: _ignoredPastCutoff,
+      tooEarly: _ignoredTooEarly,
+      ...rest
+    } = data
     const patch: Record<string, unknown> = {
       ...rest,
       startsAt: data.startsAt === undefined ? undefined : new Date(data.startsAt),

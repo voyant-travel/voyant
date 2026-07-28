@@ -2,6 +2,7 @@ import { availabilitySlots } from "@voyant-travel/availability/schema"
 import { createEventBus } from "@voyant-travel/core"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
+import { eq } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { products } from "../../../../inventory/src/schema.js"
 import {
@@ -204,6 +205,74 @@ describe.skipIf(!DB_AVAILABLE)("availability slot events", () => {
       pastCutoff: false,
       tooEarly: false,
       notes: "Updated through a full snapshot",
+    })
+  })
+
+  it("does not restore stale service-owned counters and flags during a notes-only full-snapshot update", async () => {
+    const slotId = newId("availability_slots")
+    await db.insert(availabilitySlots).values({
+      id: slotId,
+      productId,
+      dateLocal: "2026-06-01",
+      startsAt: new Date("2026-06-01T08:00:00Z"),
+      timezone: "UTC",
+      status: "open",
+      unlimited: false,
+      initialPax: 8,
+      remainingPax: 5,
+      initialPickups: 4,
+      remainingPickups: 3,
+      remainingResources: 2,
+      pastCutoff: false,
+      tooEarly: true,
+      notes: "Original note",
+    })
+    const stale = await getSlotById(db, slotId)
+    if (!stale) throw new Error("stale-snapshot test slot disappeared")
+
+    await db
+      .update(availabilitySlots)
+      .set({
+        remainingPax: 4,
+        remainingPickups: 1,
+        remainingResources: 0,
+        pastCutoff: true,
+        tooEarly: false,
+      })
+      .where(eq(availabilitySlots.id, slotId))
+
+    const updated = await updateSlot(db, slotId, {
+      productId: stale.productId,
+      itineraryId: stale.itineraryId,
+      optionId: stale.optionId,
+      facilityId: stale.facilityId,
+      availabilityRuleId: stale.availabilityRuleId,
+      startTimeId: stale.startTimeId,
+      dateLocal: stale.dateLocal,
+      startsAt: stale.startsAt.toISOString(),
+      endsAt: stale.endsAt?.toISOString() ?? null,
+      timezone: stale.timezone,
+      status: stale.status,
+      unlimited: stale.unlimited,
+      initialPax: stale.initialPax,
+      remainingPax: stale.remainingPax,
+      initialPickups: stale.initialPickups,
+      remainingPickups: stale.remainingPickups,
+      remainingResources: stale.remainingResources,
+      pastCutoff: stale.pastCutoff,
+      tooEarly: stale.tooEarly,
+      nights: stale.nights,
+      days: stale.days,
+      notes: "Notes-only operator edit",
+    })
+
+    expect(updated).toMatchObject({
+      remainingPax: 4,
+      remainingPickups: 1,
+      remainingResources: 0,
+      pastCutoff: true,
+      tooEarly: false,
+      notes: "Notes-only operator edit",
     })
   })
 })
