@@ -2738,6 +2738,82 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     ])
   })
 
+  it("prices unassigned category-specific base items independently", async () => {
+    const { productId, optionId, roomUnitId } = await seedAccommodationProduct()
+    const { optionPriceRuleId } = await seedPersistedPricing({
+      productId,
+      optionId,
+      unitId: roomUnitId,
+      unitAmountCents: 1,
+    })
+    const categoryId = `prct_bc_${productSeq}_adult_unassigned_rooms`
+    await db.execute(sql`
+      INSERT INTO pricing_categories (
+        id, product_id, option_id, unit_id, code, name, category_type, active
+      ) VALUES (
+        ${categoryId}, ${productId}, ${optionId}, ${roomUnitId},
+        'adult_unassigned_rooms', 'Adult', 'adult', true
+      )
+    `)
+    await db.execute(sql`
+      DELETE FROM option_unit_price_rules WHERE option_price_rule_id = ${optionPriceRuleId}
+    `)
+    await db.execute(sql`
+      INSERT INTO option_unit_price_rules (
+        id, option_price_rule_id, option_id, unit_id, pricing_category_id,
+        pricing_mode, sell_amount_cents, active
+      ) VALUES (
+        ${`oupr_bc_${productSeq}_adult_unassigned_rooms`}, ${optionPriceRuleId},
+        ${optionId}, ${roomUnitId}, ${categoryId}, 'per_unit', 12000, true
+      )
+    `)
+    const travelers = ["one", "two"].map((suffix, index) => ({
+      clientTravelerKey: `trav:${suffix}`,
+      firstName: `Traveler ${index + 1}`,
+      lastName: "Adult",
+      travelerCategory: "adult" as const,
+      isPrimary: index === 0,
+    }))
+
+    const outcome = await createBooking(db, {
+      productId,
+      optionId,
+      bookingNumber: nextBookingNumber(),
+      personId: "pers_booking_create",
+      contactFirstName: "Alice",
+      contactLastName: "Adult",
+      contactEmail: "alice@example.com",
+      pax: 2,
+      travelers,
+      itemLines: [
+        { clientLineKey: "room:one", optionUnitId: roomUnitId, quantity: 1 },
+        { clientLineKey: "room:two", optionUnitId: roomUnitId, quantity: 1 },
+      ],
+      documentGeneration: { invoiceDocument: true },
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.booking.sellAmountCents).toBe(48_000)
+    expect(outcome.result.invoice).toMatchObject({
+      subtotalCents: 48_000,
+      totalCents: 48_000,
+    })
+    await expect(
+      db
+        .select({
+          unit: bookingItems.unitSellAmountCents,
+          total: bookingItems.totalSellAmountCents,
+        })
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+        .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id)),
+    ).resolves.toEqual([
+      { unit: 24_000, total: 24_000 },
+      { unit: 24_000, total: 24_000 },
+    ])
+  })
+
   it("audits manual overrides only after comparing against persisted catalog pricing", async () => {
     const first = await seedProduct()
     const firstPricing = await seedPersistedPricing({
