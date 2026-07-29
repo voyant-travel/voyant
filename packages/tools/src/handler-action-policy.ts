@@ -34,25 +34,7 @@ export function admitHandlerActionPolicy(
   expected: HandlerActionPolicyExpectation,
 ): ToolHandlerActionPolicyContext {
   const admitted = context.handlerActionPolicy
-  assertAuthenticHandlerActionPolicyContext(admitted)
-  if (admitted?.actionPolicy.enforcement !== "handler") {
-    throw new ToolError(
-      "Handler-owned action policy context is required for this Tool.",
-      "ACTION_POLICY_REQUIRED",
-      { capabilityId: expected.capabilityId },
-    )
-  }
-
-  const mismatch = firstHandlerActionPolicyIdentityMismatch(admitted, expected)
-  if (mismatch) {
-    throw new ToolError(
-      "Handler-owned action policy context does not match this Tool contract.",
-      "ACTION_POLICY_REQUIRED",
-      { capabilityId: expected.capabilityId, mismatch },
-    )
-  }
-
-  assertAdmissionTransport(admitted, expected)
+  assertAdmittedActionPolicy(admitted, expected)
 
   const allowedActorTypes = admitted.actionPolicy.allowedActorTypes
   if (allowedActorTypes?.length && !allowedActorTypes.includes(context.actor)) {
@@ -66,6 +48,38 @@ export function admitHandlerActionPolicy(
     )
   }
   return admitted
+}
+
+/**
+ * Assert an admission against exactly one static policy expectation.
+ *
+ * Route-served command entrypoints use this: they have an admission but no
+ * `ToolContext`, and each entrypoint must pin one expectation rather than
+ * selecting it from caller-supplied admission metadata.
+ */
+export function assertAdmittedActionPolicy(
+  admitted: ToolHandlerActionPolicyContext | undefined,
+  expected: HandlerActionPolicyExpectation,
+): asserts admitted is ToolHandlerActionPolicyContext {
+  assertAuthenticHandlerActionPolicyContext(admitted)
+  if (admitted.actionPolicy.enforcement !== "handler") {
+    throw new ToolError(
+      "Handler-owned action policy context is required for this action.",
+      "ACTION_POLICY_REQUIRED",
+      { capabilityId: expected.capabilityId },
+    )
+  }
+
+  const mismatch = firstHandlerActionPolicyIdentityMismatch(admitted, expected)
+  if (mismatch) {
+    throw new ToolError(
+      "Handler-owned action policy context does not match this action contract.",
+      "ACTION_POLICY_REQUIRED",
+      { capabilityId: expected.capabilityId, mismatch },
+    )
+  }
+
+  assertAdmissionTransport(admitted, expected)
 }
 
 /**

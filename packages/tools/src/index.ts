@@ -44,6 +44,7 @@ export {
 export {
   admitHandlerActionPolicy,
   assertAdmissionTransport,
+  assertAdmittedActionPolicy,
   assertAuthenticHandlerActionPolicyContext,
   type HandlerActionPolicyExpectation,
 } from "./handler-action-policy.js"

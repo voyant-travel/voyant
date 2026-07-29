@@ -3,10 +3,18 @@ import {
   executeAdmittedCreatedTargetCommand,
 } from "@voyant-travel/action-ledger"
 import { insertOutboxEvents } from "@voyant-travel/db/outbox"
-import { ToolError, type ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
+import {
+  assertAdmittedActionPolicy,
+  ToolError,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { FINANCE_BOOKING_CREATE_POLICY } from "./booking-create-policy.js"
+import {
+  FINANCE_BOOKING_CREATE_HANDLER_POLICY,
+  FINANCE_BOOKING_CREATE_POLICY,
+  FINANCE_BOOKING_CREATE_SELF_SERVICE_HANDLER_POLICY,
+} from "./booking-create-policy.js"
 import type { FinanceServiceRuntime } from "./service.js"
 import {
   type BookingCreateInput,
@@ -14,7 +22,7 @@ import {
   createBookingMutation,
 } from "./service-booking-create.js"
 
-export async function executeFinanceBookingCreateCommand(input: {
+export interface FinanceBookingCreateCommandInput {
   db: PostgresJsDatabase
   context: ActionLedgerRequestContextValues
   commandInput: BookingCreateInput
@@ -23,12 +31,59 @@ export async function executeFinanceBookingCreateCommand(input: {
   testHooks?: {
     afterDomainCreate?: (tx: PostgresJsDatabase, bookingId: string) => Promise<void>
   }
-}) {
+}
+
+export interface FinanceSelfServiceBookingCreateCommandInput
+  extends FinanceBookingCreateCommandInput {
+  /**
+   * Audit principal for a verified guest, who has no user account. Required —
+   * a self-service create must never ledger as an anonymous request.
+   */
+  fallbackPrincipalId: string
+}
+
+/**
+ * Staff creation through the `create_booking` Tool.
+ *
+ * Pins the staff policy expectation and nothing else, so a self-service
+ * admission cannot drive it even though both compose the same command.
+ */
+export async function executeFinanceStaffBookingCreateCommand(
+  input: FinanceBookingCreateCommandInput,
+) {
+  assertAdmittedActionPolicy(input.admitted, FINANCE_BOOKING_CREATE_HANDLER_POLICY)
+  return executeBookingCreateCommand(input)
+}
+
+/**
+ * Verified-guest or authenticated-customer creation through the public route.
+ *
+ * Pins the self-service policy expectation, which is bound to the route
+ * transport and to the customer actor — the mirror image of the staff
+ * entrypoint above, and the reason neither can be confused for the other.
+ */
+export async function executeFinanceSelfServiceBookingCreateCommand(
+  input: FinanceSelfServiceBookingCreateCommandInput,
+) {
+  assertAdmittedActionPolicy(input.admitted, FINANCE_BOOKING_CREATE_SELF_SERVICE_HANDLER_POLICY)
+  return executeBookingCreateCommand(input, input.fallbackPrincipalId)
+}
+
+/**
+ * The shared mutation core. Deliberately not exported: an exported executor
+ * that selected its expectation from caller-supplied admission metadata would
+ * be exactly the confused deputy the two entrypoints above prevent.
+ */
+async function executeBookingCreateCommand(
+  input: FinanceBookingCreateCommandInput,
+  fallbackPrincipalId?: string,
+) {
   return executeAdmittedCreatedTargetCommand(
     {
       db: input.db,
       context: input.context,
       admitted: input.admitted,
+      ...(fallbackPrincipalId ? { fallbackPrincipalId } : {}),
       commandTargetType: FINANCE_BOOKING_CREATE_POLICY.commandTargetType,
       canonicalTargetType: FINANCE_BOOKING_CREATE_POLICY.canonicalTargetType,
       resultReferenceType: FINANCE_BOOKING_CREATE_POLICY.resultReferenceType,

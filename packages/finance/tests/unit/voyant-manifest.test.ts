@@ -1,3 +1,7 @@
+// agent-quality: file-size exception -- owner: finance; one assertion per
+// declared extension in a single package manifest, so the file tracks the
+// manifest's own size; splitting it would separate contracts that must be read
+// together.
 import { createContainer } from "@voyant-travel/core"
 import { prepareExternalWebhookEvent } from "@voyant-travel/webhook-delivery"
 import { describe, expect, it } from "vitest"
@@ -559,6 +563,24 @@ describe("finance deployment manifest", () => {
               durability: "handler-command-claim-v1",
             },
             ledger: "required",
+            allowedActorTypes: ["staff"],
+            from: {
+              tools: ["@voyant-travel/finance#bookings-create-extension.tool.create-booking"],
+            },
+          }),
+          // Self-service creation is a separate action over the same command:
+          // customer-only, route-bound, and never exposed as a Tool.
+          expect.objectContaining({
+            id: "@voyant-travel/finance#bookings-create-extension.action.create-booking-self-service",
+            targetLifecycle: "created",
+            createdTarget: {
+              commandTargetType: "finance_booking_create_command",
+              resultReferenceType: "booking",
+              durability: "handler-command-claim-v1",
+            },
+            ledger: "required",
+            allowedActorTypes: ["customer"],
+            from: { routes: ["@voyant-travel/finance#api.public"] },
           }),
         ],
       },

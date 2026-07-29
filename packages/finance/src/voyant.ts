@@ -631,6 +631,42 @@ export const financeBookingsCreateVoyantPlugin = defineExtension({
         tools: ["@voyant-travel/finance#bookings-create-extension.tool.create-booking"],
       },
     },
+    {
+      id: "@voyant-travel/finance#bookings-create-extension.action.create-booking-self-service",
+      capabilityId:
+        "@voyant-travel/finance#bookings-create-extension.action.create-booking-self-service",
+      version: "v1",
+      kind: "execute",
+      targetType: "booking",
+      availability: { status: "available" },
+      effectBoundary: "multistage",
+      durability: {
+        strategy: "outbox",
+        testReference: "tests/integration/booking-create.test.ts",
+      },
+      targetLifecycle: "created",
+      // The same durable command the staff action composes. Only the admission
+      // identity, actor, and transport differ.
+      createdTarget: {
+        commandTargetType: "finance_booking_create_command",
+        resultReferenceType: "booking",
+        durability: "handler-command-claim-v1",
+      },
+      resource: "bookings",
+      action: "write",
+      requiredScopes: [],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["customer"],
+      // Served by the public Finance API bundle. The route's own capability id
+      // (FINANCE_BOOKING_CREATE_SELF_SERVICE_ROUTE) is the Tool-registry
+      // identity; this binding names the API bundle that exposes it.
+      from: {
+        routes: ["@voyant-travel/finance#api.public"],
+      },
+    },
   ],
   meta: {
     ownership: "package",
