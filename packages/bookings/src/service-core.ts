@@ -3010,8 +3010,8 @@ const bookingsServiceInternal = {
           confirmedAt:
             existing.confirmed_at ??
             (data.status === "confirmed" ||
-              data.status === "in_progress" ||
-              data.status === "completed"
+            data.status === "in_progress" ||
+            data.status === "completed"
               ? (toTimestamp(data.confirmedAt) ?? new Date())
               : data.confirmedAt !== undefined
                 ? toTimestamp(data.confirmedAt)

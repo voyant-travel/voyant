@@ -63,7 +63,7 @@ export function buildCheckoutFinalizeDeps(
         return
       }
 
-      if (result.status === "monthly_booking_limit_reached") {
+      if (result.status === "monthly_booking_limit_reached" && "message" in result) {
         throw new Error(`checkout-finalize: ${result.message}`)
       }
 
