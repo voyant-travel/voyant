@@ -2,22 +2,21 @@ import { sha256 } from "@voyant-travel/action-ledger"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { z } from "zod"
+import type { z } from "zod"
 import { legalContractDetail } from "./contract-dto.js"
+import {
+  type BookingContractReviewSnapshot,
+  bookingContractReviewSnapshotSchema,
+  type ManagedBookingContractReviewWorkflow,
+  parseManagedBookingContractReviewWorkflow,
+} from "./contracts/managed-booking-workflow.js"
 import { contracts, contractTemplates, contractTemplateVersions } from "./contracts/schema.js"
 import type { bookingContractReviewSchema } from "./tools.js"
 
 type BookingContractReview = z.infer<typeof bookingContractReviewSchema>
-type BookingContractReviewSnapshot = Pick<
-  BookingContractReview,
-  "booking" | "products" | "commercialTerms" | "template"
->
 
-export type ManagedBookingContractReviewWorkflow = {
-  revision: number
-  previousRevisionId?: string | null
-  reviewSnapshot: BookingContractReviewSnapshot
-} & Record<string, unknown>
+export type { ManagedBookingContractReviewWorkflow }
+export { parseManagedBookingContractReviewWorkflow }
 
 export async function bookingContractContentFingerprint(contract: {
   id: string
@@ -300,52 +299,6 @@ export async function getBookingContractReview(
     ],
   }
 }
-
-export function parseManagedBookingContractReviewWorkflow(
-  metadata: unknown,
-): ManagedBookingContractReviewWorkflow | null {
-  const workflow = record(record(metadata).bookingContractWorkflow)
-  const parsed = bookingContractReviewWorkflowSchema.safeParse(workflow)
-  return parsed.success ? parsed.data : null
-}
-
-const bookingContractReviewSnapshotSchema = z.object({
-  booking: z.object({
-    id: z.string(),
-    reference: z.string(),
-    customerName: z.string().nullable(),
-    customerEmail: z.string().nullable(),
-    language: z.string(),
-    currency: z.string(),
-    totalAmountCents: z.number().int().nullable(),
-    startDate: z.string().nullable(),
-    endDate: z.string().nullable(),
-  }),
-  products: z.array(
-    z.object({
-      title: z.string(),
-      quantity: z.number().int().positive(),
-      amountCents: z.number().int().nullable(),
-      currency: z.string(),
-    }),
-  ),
-  commercialTerms: z.record(z.string(), z.json()),
-  template: z.object({
-    id: z.string(),
-    name: z.string(),
-    versionId: z.string(),
-    version: z.number().int().positive(),
-    language: z.string(),
-  }),
-})
-
-const bookingContractReviewWorkflowSchema = z
-  .object({
-    revision: z.number().int().positive(),
-    previousRevisionId: z.string().nullable().optional(),
-    reviewSnapshot: bookingContractReviewSnapshotSchema,
-  })
-  .passthrough()
 
 /**
  * Trusted delivery/signature adapters use this narrow durable seam for the two

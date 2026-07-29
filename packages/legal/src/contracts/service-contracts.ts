@@ -13,6 +13,7 @@ import {
   createContractStageHistoryEntry,
   emitContractLifecycleEvent,
 } from "./lifecycle.js"
+import { parseManagedBookingContractReviewWorkflow } from "./managed-booking-workflow.js"
 import {
   contractAttachments,
   contractSignatures,
@@ -56,12 +57,7 @@ function assertGenericAttachmentKind(kind: string | null | undefined) {
 }
 
 function isManagedBookingContract(metadata: unknown): boolean {
-  return Boolean(
-    metadata &&
-      typeof metadata === "object" &&
-      !Array.isArray(metadata) &&
-      (metadata as Record<string, unknown>).bookingContractWorkflow,
-  )
+  return parseManagedBookingContractReviewWorkflow(metadata) !== null
 }
 
 function scrubGenericContractMetadata<T extends { metadata?: unknown }>(data: T): T {
@@ -233,7 +229,7 @@ export const contractRecordsService = {
       !Array.isArray(existing.metadata)
         ? (existing.metadata as Record<string, unknown>)
         : {}
-    if (metadata.bookingContractWorkflow) {
+    if (isManagedBookingContract(metadata)) {
       throw new RequestValidationError(
         "Booking contract revisions are immutable; create a new revision instead of patching.",
       )
@@ -281,7 +277,7 @@ export const contractRecordsService = {
         !Array.isArray(existing.metadata)
           ? (existing.metadata as Record<string, unknown>)
           : {}
-      if (metadata.bookingContractWorkflow) {
+      if (isManagedBookingContract(metadata)) {
         return { status: "immutable_revision" as const }
       }
       await tx.delete(contracts).where(eq(contracts.id, id))

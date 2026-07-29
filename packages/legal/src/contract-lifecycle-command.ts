@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: legal; lifecycle command admission, exact result replay, outbox write, and transition helpers stay co-located so the durable command contract remains reviewable in one place.
 import {
   type ActionLedgerRequestContextValues,
   type AdmittedExistingTargetCommand,
@@ -8,10 +9,7 @@ import { insertOutboxEvents } from "@voyant-travel/db/outbox"
 import { ToolError, type ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import {
-  bookingContractContentFingerprint,
-  parseManagedBookingContractReviewWorkflow,
-} from "./booking-contract-review.js"
+import { bookingContractContentFingerprint } from "./booking-contract-review.js"
 import { legalContractDetail } from "./contract-dto.js"
 import {
   appendContractStageHistory,
@@ -20,6 +18,7 @@ import {
   type ContractLifecycleEvent,
   createContractStageHistoryEntry,
 } from "./contracts/lifecycle.js"
+import { parseManagedBookingContractReviewWorkflow } from "./contracts/managed-booking-workflow.js"
 import {
   type Contract,
   contractLifecycleCommandResults,
@@ -149,7 +148,7 @@ export async function executeLegalContractLifecycleCommand(
           principalType: command.authorization.principalType,
           principalId: command.authorization.principalId,
           organizationId: command.authorization.organizationId,
-          commandPayload: payload as unknown as Record<string, unknown>,
+          commandPayload: { ...payload },
           result,
           eventId,
         })
@@ -259,7 +258,7 @@ async function issueContract(
     contract.metadata && typeof contract.metadata === "object" && !Array.isArray(contract.metadata)
       ? (contract.metadata as Record<string, unknown>)
       : {}
-  const immutableReviewedRevision = !!metadata.bookingContractWorkflow
+  const immutableReviewedRevision = parseManagedBookingContractReviewWorkflow(metadata) !== null
   if (!immutableReviewedRevision && !contractNumber && contract.seriesId) {
     const allocated = await allocateContractNumber(db, contract.seriesId)
     if (allocated) contractNumber = allocated.number
@@ -446,14 +445,8 @@ async function voidContract(
     contract.metadata && typeof contract.metadata === "object" && !Array.isArray(contract.metadata)
       ? (contract.metadata as Record<string, unknown>)
       : {}
-  const workflow =
-    metadata.bookingContractWorkflow &&
-    typeof metadata.bookingContractWorkflow === "object" &&
-    !Array.isArray(metadata.bookingContractWorkflow)
-      ? (metadata.bookingContractWorkflow as Record<string, unknown>)
-      : {}
-  const expectedRevision = typeof workflow.revision === "number" ? workflow.revision : 1
-  if (payload.revision !== expectedRevision) {
+  const managedWorkflow = parseManagedBookingContractReviewWorkflow(metadata)
+  if (managedWorkflow && payload.revision !== managedWorkflow.revision) {
     throw new ToolError(
       "The approved contract revision is no longer the selected revision.",
       "INVALID_INPUT",
@@ -474,14 +467,16 @@ async function voidContract(
       status: "void",
       stageHistory,
       voidedAt: now,
-      metadata: {
-        ...metadata,
-        bookingContractWorkflow: {
-          ...workflow,
-          voidReason: payload.reason,
-          voidedRevision: payload.revision,
-        },
-      },
+      metadata: managedWorkflow
+        ? {
+            ...metadata,
+            bookingContractWorkflow: {
+              ...managedWorkflow,
+              voidReason: payload.reason,
+              voidedRevision: payload.revision,
+            },
+          }
+        : metadata,
       updatedAt: now,
     })
     .where(eq(contracts.id, contract.id))
