@@ -409,6 +409,7 @@ export {
   financeInvoiceSettlementPollerRuntimePort,
   financeNotificationsRuntimePort,
   financeOperatorSettingsRuntimePort,
+  financeSelfServiceBookingSourceRuntimePort,
 } from "./runtime-port.js"
 export type {
   BookingGuarantee,
@@ -506,6 +507,13 @@ export {
   travelCreditStatusEnum,
   travelCredits,
 } from "./schema.js"
+export type {
+  SelfServiceBookingCaller,
+  SelfServiceBookingSourceRejection,
+  SelfServiceBookingSourceResolution,
+  SelfServiceBookingSourceResolved,
+  SelfServiceBookingSourceRuntime,
+} from "./self-service-booking-source.js"
 export type {
   BindInvoiceRenditionInput,
   BookingPaymentSchedulePaidEvent,
