@@ -483,7 +483,7 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
       ...(input.fallbackPrincipalId ? { fallbackPrincipalId: input.fallbackPrincipalId } : {}),
       ...command,
       routeOrToolName,
-      authorizationSource: "selected_graph_mcp_handler",
+      authorizationSource: createdTargetAuthorizationSource(input.admitted),
       idempotency: { scope, key: idempotencyKey, fingerprint },
     },
     handlers,
@@ -972,6 +972,17 @@ export interface BuildCreatedTargetIdempotencyScopeInput {
 }
 
 export type BuildExistingTargetIdempotencyScopeInput = BuildCreatedTargetIdempotencyScopeInput
+
+/**
+ * Name the boundary that admitted the command, so the ledger records how a
+ * booking was actually authorized rather than assuming MCP. Tool dispatch keeps
+ * its established value; only a route-minted admission reads differently.
+ */
+function createdTargetAuthorizationSource(admitted: ToolHandlerActionPolicyContext): string {
+  return admitted.transport === "route"
+    ? "selected_graph_route_handler"
+    : "selected_graph_mcp_handler"
+}
 
 /** Collision-safe scope binding a caller-selected key to exactly one target and payload. */
 export async function buildExistingTargetIdempotencyScope(
