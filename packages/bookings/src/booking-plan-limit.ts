@@ -71,7 +71,7 @@ function timestampText(value: string | Date): string {
  * next accepted booking once the configured allowance is exhausted.
  *
  * Callers must invoke this inside the same transaction that accepts the
- * booking. The transaction-scoped advisory lock makes concurrent confirmations
+ * booking. The transaction-scoped advisory lock makes concurrent acceptances
  * observe one another, while `excludeBookingId` makes status repair/replay
  * paths count a booking at most once.
  */
@@ -96,8 +96,8 @@ export async function assertMonthlyBookingLimitAvailable(
       (
         SELECT count(*)::int
         FROM bookings
-        WHERE confirmed_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
-          AND confirmed_at < (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + interval '1 month') AT TIME ZONE 'UTC'
+        WHERE accepted_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+          AND accepted_at < (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + interval '1 month') AT TIME ZONE 'UTC'
           AND (${options.excludeBookingId ?? null}::text IS NULL OR id <> ${options.excludeBookingId ?? null})
       ) AS current,
       (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')::text AS period_start,

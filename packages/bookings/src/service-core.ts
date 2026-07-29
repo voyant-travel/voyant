@@ -618,6 +618,27 @@ function toTimestamp(value?: string | null) {
   return value ? new Date(value) : null
 }
 
+function isAcceptedBookingStatus(status: BookingStatus) {
+  return status === "confirmed" || status === "in_progress" || status === "completed"
+}
+
+function confirmedAtForStatus(status: BookingStatus, value: Date | null, now = new Date()) {
+  if (status !== "confirmed") return null
+  return value ?? now
+}
+
+function confirmedAtForBookingUpdate(
+  currentStatus: BookingStatus,
+  data: UpdateBookingInput,
+  now = new Date(),
+) {
+  const nextStatus = data.status ?? currentStatus
+  if (nextStatus !== "confirmed") return null
+  if (data.confirmedAt !== undefined)
+    return confirmedAtForStatus(nextStatus, toTimestamp(data.confirmedAt), now)
+  return currentStatus === "confirmed" ? undefined : now
+}
+
 function toDateValue(value: Date | string) {
   return value instanceof Date ? value : new Date(value)
 }
@@ -2480,11 +2501,7 @@ const bookingsServiceInternal = {
     }
 
     const initialStatus = data.initialStatus ?? "draft"
-    if (
-      initialStatus === "confirmed" ||
-      initialStatus === "in_progress" ||
-      initialStatus === "completed"
-    ) {
+    if (isAcceptedBookingStatus(initialStatus)) {
       await assertMonthlyBookingLimitAvailable(db, options.monthlyBookingLimit)
     }
     const bookingPax = Object.hasOwn(data, "pax") ? (data.pax ?? null) : product.pax
@@ -2520,17 +2537,13 @@ const bookingsServiceInternal = {
       .values({
         bookingNumber: data.bookingNumber,
         status: initialStatus,
+        acceptedAt: isAcceptedBookingStatus(initialStatus) ? now : null,
         // Mirror the lifecycle timestamps that overrideBookingStatus
         // stamps when the status transition happens after-the-fact, so
         // a booking that lands in `confirmed` straight from create is
         // indistinguishable downstream from one that was flipped via
         // the verb endpoint.
-        confirmedAt:
-          initialStatus === "confirmed" ||
-          initialStatus === "in_progress" ||
-          initialStatus === "completed"
-            ? now
-            : null,
+        confirmedAt: confirmedAtForStatus(initialStatus, null, now),
         personId: data.personId ?? null,
         organizationId: data.organizationId ?? null,
         // Billing-contact snapshot — captured at create time so the
@@ -2914,27 +2927,21 @@ const bookingsServiceInternal = {
 
     return db.transaction(async (tx) => {
       const rows = await tx.execute(
-        sql`SELECT status, confirmed_at, custom_fields
+        sql`SELECT status, accepted_at, custom_fields
             FROM ${bookings}
             WHERE ${bookings.id} = ${id}
             FOR UPDATE`,
       )
       const existing = toRows<{
         status: BookingStatus
-        confirmed_at: Date | null
+        accepted_at: Date | null
         custom_fields: NamespacedCustomFieldValues
       }>(rows)[0]
 
       if (!existing) return null
 
       const nextStatus = data.status ?? existing.status
-      if (
-        existing.confirmed_at === null &&
-        (nextStatus === "confirmed" ||
-          nextStatus === "in_progress" ||
-          nextStatus === "completed" ||
-          data.confirmedAt != null)
-      ) {
+      if (existing.accepted_at === null && isAcceptedBookingStatus(nextStatus)) {
         await assertMonthlyBookingLimitAvailable(
           tx as PostgresJsDatabase,
           runtime.monthlyBookingLimit,
@@ -2977,6 +2984,8 @@ const bookingsServiceInternal = {
         }
       }
 
+      const now = new Date()
+
       const [row] = await tx
         .update(bookings)
         .set({
@@ -3007,20 +3016,14 @@ const bookingsServiceInternal = {
             data.contactPostalCode === undefined ? undefined : (data.contactPostalCode ?? null),
           holdExpiresAt:
             data.holdExpiresAt === undefined ? undefined : toTimestamp(data.holdExpiresAt),
-          confirmedAt:
-            existing.confirmed_at ??
-            (data.status === "confirmed" ||
-            data.status === "in_progress" ||
-            data.status === "completed"
-              ? (toTimestamp(data.confirmedAt) ?? new Date())
-              : data.confirmedAt !== undefined
-                ? toTimestamp(data.confirmedAt)
-                : undefined),
+          acceptedAt:
+            existing.accepted_at ?? (isAcceptedBookingStatus(nextStatus) ? now : undefined),
+          confirmedAt: confirmedAtForBookingUpdate(existing.status, data, now),
           expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
           cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
           completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
           redeemedAt: data.redeemedAt === undefined ? undefined : toTimestamp(data.redeemedAt),
-          updatedAt: new Date(),
+          updatedAt: now,
         })
         .where(eq(bookings.id, id))
         .returning()
@@ -3052,7 +3055,7 @@ const bookingsServiceInternal = {
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
-          sql`SELECT id, booking_number, status, hold_expires_at
+          sql`SELECT id, booking_number, status, hold_expires_at, accepted_at
               FROM ${bookings}
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
@@ -3062,6 +3065,7 @@ const bookingsServiceInternal = {
           booking_number: string
           status: BookingStatus
           hold_expires_at: Date | null
+          accepted_at: Date | null
         }>(rows)[0]
 
         if (!booking) {
@@ -3088,14 +3092,15 @@ const bookingsServiceInternal = {
           { excludeBookingId: id },
         )
 
-        const patch = transitionBooking(booking.status, "confirmed")
+        const now = new Date()
+        const patch = transitionBooking(booking.status, "confirmed", { now })
 
         await tx
           .update(bookingAllocations)
           .set({
             status: "confirmed",
-            confirmedAt: new Date(),
-            updatedAt: new Date(),
+            confirmedAt: now,
+            updatedAt: now,
           })
           .where(and(eq(bookingAllocations.bookingId, id), eq(bookingAllocations.status, "held")))
 
@@ -3110,8 +3115,9 @@ const bookingsServiceInternal = {
           .update(bookings)
           .set({
             ...patch,
+            acceptedAt: booking.accepted_at ?? now,
             holdExpiresAt: null,
-            updatedAt: new Date(),
+            updatedAt: now,
           })
           .where(eq(bookings.id, id))
           .returning()
@@ -3184,7 +3190,7 @@ const bookingsServiceInternal = {
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
-          sql`SELECT id, booking_number, status
+          sql`SELECT id, booking_number, status, accepted_at
               FROM ${bookings}
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
@@ -3193,6 +3199,7 @@ const bookingsServiceInternal = {
           id: string
           booking_number: string
           status: BookingStatus
+          accepted_at: Date | null
         }>(rows)[0]
 
         if (!booking) {
@@ -3272,6 +3279,7 @@ const bookingsServiceInternal = {
           .update(bookings)
           .set({
             status: "confirmed",
+            acceptedAt: booking.accepted_at ?? now,
             confirmedAt: now,
             paidAt: now,
             expiredAt: null,
@@ -3933,7 +3941,7 @@ const bookingsServiceInternal = {
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
-          sql`SELECT id, booking_number, status, confirmed_at
+          sql`SELECT id, booking_number, status, accepted_at
               FROM ${bookings}
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
@@ -3942,19 +3950,14 @@ const bookingsServiceInternal = {
           id: string
           booking_number: string
           status: BookingStatus
-          confirmed_at: Date | null
+          accepted_at: Date | null
         }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
         }
 
-        if (
-          booking.confirmed_at === null &&
-          (data.status === "confirmed" ||
-            data.status === "in_progress" ||
-            data.status === "completed")
-        ) {
+        if (booking.accepted_at === null && isAcceptedBookingStatus(data.status)) {
           await assertMonthlyBookingLimitAvailable(
             tx as PostgresJsDatabase,
             runtime.monthlyBookingLimit,
@@ -3967,12 +3970,9 @@ const bookingsServiceInternal = {
         const terminalAllocationStatus = terminalBookingAllocationStatusForOverride(data.status)
         const updates: Record<string, unknown> = {
           status: data.status,
-          confirmedAt:
-            data.status === "confirmed" ||
-            data.status === "in_progress" ||
-            data.status === "completed"
-              ? (booking.confirmed_at ?? now)
-              : booking.confirmed_at,
+          acceptedAt:
+            booking.accepted_at ?? (isAcceptedBookingStatus(data.status) ? now : undefined),
+          confirmedAt: confirmedAtForStatus(data.status, null, now),
           updatedAt: now,
         }
         if (data.status === "expired") updates.expiredAt = now

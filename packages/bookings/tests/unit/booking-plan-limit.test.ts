@@ -31,7 +31,7 @@ describe("monthly booking plan limit", () => {
     expect(execute).not.toHaveBeenCalled()
   })
 
-  it("serializes quota consumers before reading current-month confirmations", async () => {
+  it("serializes quota consumers before reading current-month acceptances", async () => {
     const execute = vi
       .fn()
       .mockResolvedValueOnce([])
@@ -54,7 +54,7 @@ describe("monthly booking plan limit", () => {
     const usage = dialect.sqlToQuery(execute.mock.calls[1]?.[0])
     expect(lock.sql).toContain("pg_advisory_xact_lock")
     expect(usage.sql).toContain(
-      "confirmed_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')",
+      "accepted_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')",
     )
     expect(usage.sql).toContain("id <>")
     expect(usage.params).toContain("book_replay")
