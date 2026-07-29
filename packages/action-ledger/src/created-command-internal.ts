@@ -316,6 +316,14 @@ export interface ExecuteAdmittedCreatedTargetCommandInput<TReferenceType extends
   resultReferenceType: TReferenceType
   commandInput: unknown
   evaluatedRisk: ActionLedgerCapabilityRisk
+  /**
+   * Concrete principal id for a request that authenticates something other than
+   * a user account — a verified storefront guest, for example. It is only
+   * consulted when the context carries no `userId`, so it can never displace an
+   * authenticated account, and it keeps the synthetic identity out of `userId`
+   * (and therefore out of `createdByUserId`).
+   */
+  fallbackPrincipalId?: string
 }
 
 export interface ExecuteAdmittedExistingTargetCommandInput<TCommandPayload = unknown> {
@@ -416,7 +424,11 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
   handlers: ExecuteCreatedTargetCommandHandlers<TValue, TReferenceType>,
 ): Promise<ExecuteCreatedTargetCommandResult<TValue, TReferenceType>> {
   assertAuthenticHandlerActionPolicyContext(input.admitted)
-  const principal = mapActionLedgerRequestContext(input.context)
+  // The same fallback the inner command uses, so the idempotency scope below is
+  // keyed on the concrete principal rather than on `unknown_request`.
+  const principal = mapActionLedgerRequestContext(input.context, {
+    ...(input.fallbackPrincipalId ? { fallbackPrincipalId: input.fallbackPrincipalId } : {}),
+  })
   const selected = input.admitted.actionPolicy
   const createdTarget = selected.createdTarget
   const idempotencyKey = input.admitted.invocation.idempotencyKey?.trim()
@@ -468,6 +480,7 @@ export async function executeAdmittedCreatedTargetCommand<TValue, TReferenceType
     input.db,
     {
       context: input.context,
+      ...(input.fallbackPrincipalId ? { fallbackPrincipalId: input.fallbackPrincipalId } : {}),
       ...command,
       routeOrToolName,
       authorizationSource: "selected_graph_mcp_handler",
