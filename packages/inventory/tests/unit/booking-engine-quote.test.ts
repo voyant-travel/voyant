@@ -196,7 +196,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
     const lines = breakdown?.lines as Array<{ label: string; quantity: number; unitAmount: number }>
     expect(lines[0]).toEqual(
       expect.objectContaining({
-        label: "Junior suite upgrade",
+        label: "Suite",
         quantity: 2,
         unitAmount: 32000,
       }),

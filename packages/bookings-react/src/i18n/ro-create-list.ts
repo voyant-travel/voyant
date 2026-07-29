@@ -28,6 +28,8 @@ export const bookingsUiRoCreateList = {
       departureOptional: "Lasa necompletat pentru o rezervare cu data deschisa.",
       payment: "Totalul programat trebuie sa fie egal cu valoarea rezervarii.",
       contactLoading: "Se incarca datele de contact...",
+      contactUnavailable:
+        "Nu am putut incarca acest contact. Incearca din nou sau selecteaza ori creeaza alt contact.",
       contactIncomplete:
         "Acest contact are nevoie de prenume si nume, plus un e-mail sau un numar de telefon. Editeaza contactul de mai sus sau selecteaza ori creeaza alt contact.",
     },
@@ -72,6 +74,7 @@ export const bookingsUiRoCreateList = {
     actions: {
       create: "Creeaza rezervarea",
       confirmCreate: "Confirma si creeaza",
+      retryContact: "Incearca din nou",
     },
     confirm: {
       title: "Creezi aceasta rezervare?",

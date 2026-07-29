@@ -83,11 +83,25 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
   const selectedInventoryByOption = new Map<string, PricingAssignmentUnit[]>()
   const inventoryCapacityByUnitId = new Map<string, number>()
   for (const [key, inventoryUnits] of inventoryUnitsByOption) {
-    const selected = inventoryUnits.filter((unit) => (quantities[unit.optionUnitId] ?? 0) > 0)
+    const directlySelected = inventoryUnits.filter(
+      (unit) => (quantities[unit.optionUnitId] ?? 0) > 0,
+    )
+    // Legacy accommodation drafts can carry their quantity on the option's
+    // person-pricing unit. Keep normalizing those drafts onto the primary room
+    // while direct room selections retain their exact unit mix.
+    const selected =
+      directlySelected.length > 0
+        ? directlySelected
+        : (totalByOption.get(key) ?? 0) > 0 && inventoryUnits[0]
+          ? [inventoryUnits[0]]
+          : []
     if (selected.length === 0) continue
     selectedInventoryByOption.set(key, selected)
     for (const unit of selected) {
-      const quantity = quantities[unit.optionUnitId] ?? 0
+      const quantity =
+        directlySelected.length > 0
+          ? (quantities[unit.optionUnitId] ?? 0)
+          : (totalByOption.get(key) ?? 0)
       inventoryCapacityByUnitId.set(
         unit.optionUnitId,
         quantity * Math.max(1, unit.occupancyMax ?? 1),

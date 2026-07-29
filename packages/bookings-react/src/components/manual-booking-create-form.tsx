@@ -1545,6 +1545,9 @@ export function ManualBookingCreateForm({
         !billingPerson.lastName.trim() ||
         (!billingPerson.email?.trim() && !billingPerson.phone?.trim())),
   )
+  const billingPersonContactUnavailable = Boolean(
+    billing.personId && !billingPersonQuery.isLoading && !billingPerson,
+  )
 
   return (
     <form
@@ -1691,6 +1694,22 @@ export function ManualBookingCreateForm({
               {(billing.billTo ?? "person") === "person" ? (
                 billing.personId && billingPersonQuery.isLoading ? (
                   <p className="text-sm text-muted-foreground">{copy.hints.contactLoading}</p>
+                ) : billingPersonContactUnavailable ? (
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+                    role="alert"
+                  >
+                    <p>{copy.hints.contactUnavailable}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => void billingPersonQuery.refetch()}
+                    >
+                      {copy.actions.retryContact}
+                    </Button>
+                  </div>
                 ) : billingPersonContactIncomplete ? (
                   <p
                     className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"

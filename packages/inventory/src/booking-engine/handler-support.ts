@@ -236,7 +236,13 @@ export async function priceOptionSelections(input: {
       // Prefer the specific room/unit name ("Standard - Single"); fall back to
       // the option name, then the product name.
       label:
-        selection.optionUnitName ?? optionsById.get(selection.optionId)?.name ?? input.product.name,
+        (selection.optionUnitId
+          ? findProductOptionUnit(input.productOptions, selection.optionId, selection.optionUnitId)
+              ?.name
+          : null) ??
+        selection.optionUnitName ??
+        optionsById.get(selection.optionId)?.name ??
+        input.product.name,
       quantity: pricingQuantity,
       unitAmount,
       totalAmount,

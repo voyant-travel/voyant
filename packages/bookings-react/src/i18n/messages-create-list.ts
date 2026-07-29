@@ -26,6 +26,7 @@ export type BookingsUiCreateListMessages = {
       departureOptional: string
       payment: string
       contactLoading: string
+      contactUnavailable: string
       contactIncomplete: string
     }
     validation: {
@@ -67,6 +68,7 @@ export type BookingsUiCreateListMessages = {
     actions: {
       create: string
       confirmCreate: string
+      retryContact: string
     }
     confirm: {
       title: string

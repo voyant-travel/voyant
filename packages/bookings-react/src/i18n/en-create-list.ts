@@ -28,6 +28,8 @@ export const bookingsUiEnCreateList = {
       departureOptional: "Leave empty for an open-dated booking.",
       payment: "The scheduled total must match the booking sell amount.",
       contactLoading: "Loading contact details...",
+      contactUnavailable:
+        "We couldn't load this contact. Try again, or select or create another contact.",
       contactIncomplete:
         "This contact needs a first and last name plus an email address or phone number. Edit the contact above, or select or create another contact.",
     },
@@ -71,6 +73,7 @@ export const bookingsUiEnCreateList = {
     actions: {
       create: "Create booking",
       confirmCreate: "Confirm and create",
+      retryContact: "Try again",
     },
     confirm: {
       title: "Create this booking?",
