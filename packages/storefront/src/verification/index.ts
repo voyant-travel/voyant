@@ -12,6 +12,14 @@ import {
 import { storefrontVerificationModule } from "./schema.js"
 
 export type {
+  ConsumeVerifiedChallengeInput,
+  ConsumeVerifiedChallengeResult,
+} from "./consume.js"
+export {
+  consumeVerifiedChallenge,
+  STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
+} from "./consume.js"
+export type {
   StorefrontVerificationPublicRoutes,
   StorefrontVerificationRoutesOptions,
 } from "./routes-public.js"
