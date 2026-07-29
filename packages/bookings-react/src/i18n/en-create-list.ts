@@ -27,6 +27,9 @@ export const bookingsUiEnCreateList = {
     hints: {
       departureOptional: "Leave empty for an open-dated booking.",
       payment: "The scheduled total must match the booking sell amount.",
+      contactLoading: "Loading contact details...",
+      contactIncomplete:
+        "This contact needs a first and last name plus an email address or phone number. Edit the contact above, or select or create another contact.",
     },
     validation: {
       product: "Select a product.",
@@ -35,6 +38,8 @@ export const bookingsUiEnCreateList = {
       person: "Select the individual being billed.",
       organization: "Select the organization being billed.",
       contact: "Add a contact name for the booking.",
+      contactName: "Add the billing person's first and last name.",
+      contactMethod: "Add an email address or phone number for the billing person.",
       email: "Enter a valid contact email.",
       travelers: "Add at least one traveler.",
       travelerNames: "Each traveler needs a first and last name.",
@@ -249,6 +254,9 @@ export const bookingsUiEnCreateList = {
       breakdownOverrideReason: "Override reason",
       breakdownOverrideReasonPlaceholder: "Why is this total different?",
       breakdownOverrideReasonRequired: "Add a reason for the manual total.",
+      breakdownPerTraveler: "per traveler",
+      breakdownPerRoom: "per room",
+      breakdownPerBooking: "per booking",
       breakdownSubtotal: "Subtotal",
       breakdownTax: "Tax",
       breakdownTaxIncluded: "incl.",
