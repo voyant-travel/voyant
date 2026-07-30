@@ -22,6 +22,7 @@
 
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { Hono } from "hono"
+import { z } from "zod"
 import { describe, expect, it } from "vitest"
 
 import { accessCatalog } from "../.voyant/access/selected-access-catalog.generated"
@@ -40,6 +41,19 @@ import {
  * roughly the old ~880-byte median), which is exactly the regression to catch.
  */
 const PAYLOAD_CEILING_BYTES = 3_000
+
+/**
+ * Ceiling for the AGGREGATE size of every selected tool's advertised schema.
+ *
+ * Measured at 260,968 bytes across 264 tools (name + description + input schema;
+ * the `_meta` envelope the transport also emits pushes the real figure higher).
+ * Progressive disclosure
+ * keeps this out of `tools/list`, so it is no longer a per-connection cost — but
+ * `describe_tool` pays it one tool at a time and a broad `search_tools` pays a
+ * slice of it, and nothing else bounds it now that the tail is invisible.
+ * Lower it as the read projection (voyant#3932) collapses the CRUD surface.
+ */
+const AGGREGATE_CEILING_BYTES = 275_000
 
 /** Rough proxy for tokens. JSON schema tokenizes denser than prose, so this is a floor. */
 const BYTES_PER_TOKEN = 4
@@ -154,5 +168,68 @@ describe("selected-graph MCP tool surface cost", () => {
     expect(manifest.tools.length).toBeGreaterThan(200)
     const unnamed = manifest.tools.filter(({ name }) => !name || name.length === 0)
     expect(unnamed).toEqual([])
+  })
+
+  it("still bounds the AGGREGATE schema size of the long tail", async () => {
+    // Progressive disclosure made the long tail invisible to `tools/list`, which
+    // is the point — but it also means unbounded per-tool schema growth would
+    // show up nowhere. `describe_tool` still pays that cost one tool at a time,
+    // and `search_tools` pays it in aggregate whenever a query matches broadly.
+    //
+    // So keep the pre-#3927 aggregate bound as a SECOND, independent guard. The
+    // served-payload ratchet above catches "we went back to eager loading"; this
+    // one catches "the tail quietly bloated while nobody could see it".
+    const runtime = createGeneratedGraphRuntime()
+    let totalBytes = 0
+    let toolCount = 0
+    const heaviest: Array<{ name: string; bytes: number }> = []
+
+    for (const tool of runtime.tools) {
+      const definition = await tool.load<{
+        name: string
+        description: string
+        inputSchema: { _zod?: unknown }
+      }>()
+      let inputSchema: unknown
+      try {
+        inputSchema = z.toJSONSchema(definition.inputSchema as never, {
+          io: "input",
+          unrepresentable: "any",
+        })
+      } catch {
+        inputSchema = { type: "object", additionalProperties: true }
+      }
+      const bytes = Buffer.byteLength(
+        JSON.stringify({
+          name: tool.name ?? definition.name,
+          description: definition.description,
+          inputSchema,
+        }),
+        "utf8",
+      )
+      totalBytes += bytes
+      toolCount += 1
+      heaviest.push({ name: tool.name ?? definition.name, bytes })
+    }
+
+    const top = heaviest
+      .sort((a, b) => b.bytes - a.bytes)
+      .slice(0, 5)
+      .map(({ name, bytes }) => `    ${String(bytes).padStart(7)}  ${name}`)
+      .join("\n")
+
+    expect(
+      totalBytes,
+      [
+        `Aggregate tool schema size: ${totalBytes.toLocaleString()} bytes across ${toolCount} tools`,
+        `  ~${Math.round(totalBytes / BYTES_PER_TOKEN).toLocaleString()} tokens if ever served together`,
+        "  heaviest:",
+        top,
+        "",
+        "  This is NOT the per-connection cost — progressive disclosure keeps the",
+        "  tail out of tools/list. It bounds what describe_tool and a broad",
+        "  search_tools can pull in, and stops the tail bloating unseen.",
+      ].join("\n"),
+    ).toBeLessThanOrEqual(AGGREGATE_CEILING_BYTES)
   })
 })

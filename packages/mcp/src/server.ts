@@ -22,6 +22,7 @@ import { StreamableHTTPTransport } from "@hono/mcp"
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { assertVoyantGraphMcpRuntime } from "@voyant-travel/framework/runtime-attestation"
+import type { Reporter } from "@voyant-travel/hono/observability"
 import {
   createToolRegistry,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
@@ -108,12 +109,27 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new OpenAPIHono()
 
-  const observerFor = (ctx: ToolContext): McpObserver =>
-    createMcpObserver({
-      ...(options.reporter ? { reporter: options.reporter } : {}),
-      ...(options.appName ? { appName: options.appName } : {}),
+  /**
+   * Resolve the telemetry sink, preferring an explicitly configured reporter and
+   * otherwise falling back to the one `createVoyantApp` puts on the request
+   * context.
+   *
+   * The fallback is what makes this instrumentation actually emit. Nothing
+   * threads a reporter into `createMcpVoyantRuntime` — the transport is composed
+   * generically from the selected graph — so without reading the context the
+   * observer defaults to a no-op and the whole surface ships dark.
+   */
+  const observerFor = (c: Context, ctx: ToolContext): McpObserver => {
+    const contextReporter = (c.var as { reporter?: Reporter }).reporter
+    const contextAppName = (c.var as { appName?: string }).appName
+    const reporter = options.reporter ?? contextReporter
+    const appName = options.appName ?? contextAppName
+    return createMcpObserver({
+      ...(reporter ? { reporter } : {}),
+      ...(appName ? { appName } : {}),
       ...(ctx.waitUntil ? { waitUntil: ctx.waitUntil } : {}),
     })
+  }
 
   app.openapi(getManifestRoute, async (c) => {
     const permissions = callerPermissions(c)
@@ -121,7 +137,7 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     const tools = registry
       .list()
       .filter((tool) => isAuthorized(tool, permissions, accessCatalog, ctx.audience))
-    observerFor(ctx).toolsList({
+    observerFor(c, ctx).toolsList({
       payloadBytes: jsonByteLength(tools),
       toolCount: tools.length,
       caller: callerFromContext(ctx),
@@ -132,7 +148,7 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
   app.openapi(callMcpRoute, async (c) => {
     const permissions = callerPermissions(c)
     const ctx = await buildAuthenticatedContext(c, buildContext)
-    const observer = observerFor(ctx)
+    const observer = observerFor(c, ctx)
     const server = new McpServer(serverInfo)
     const requireActionPolicy = options.requireActionPolicies ?? false
 
