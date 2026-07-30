@@ -166,7 +166,16 @@ and it is the only way to learn which coupling is inherent and which is drift.
   test, ~96 packages survive on source-free managed delivery. Realistic pruning is a
   handful — currently only `identity-contracts` has no consumer and no forward-looking
   vertical. The deliverable is enforcement, not consolidation.
-- **~5,600 lines of bespoke checkers become ~2 engines plus generated assertions.**
+- **~5,600 lines of bespoke checkers become ~2 engines plus ~8 residual checks.** Measured:
+  22 scripts (2,933 lines, 53% of the total) all assert one rule — a module's runtime ports
+  are owned by its own `runtime-contributor.ts` and absent from
+  `packages/runtime/src/deployment-resources.ts`. Their split is by migration wave
+  (`booking-finance`, `catalog-commerce`, `storefront-legal-inventory`, `final`, `domain`),
+  not by rule. A further 17 are **regression pins** — asserting that a deleted file, retired
+  route, or removed export stays absent — which generalise into one engine over a
+  declarative retired-surface list. That leaves ~8 genuinely distinct checks, each 32–137
+  lines. Note that 38 of 47 assert via `.includes()` substring matching on source text, so
+  the replacements are rewrites against the resolved graph, not ports.
 - **Coupling becomes visible.** Every cross-module reach-in is either declared or in the
   ratchet, with a number that only decreases.
 - **Package creation becomes mechanical** rather than argued.
@@ -209,6 +218,20 @@ class they exist to prevent.
 
 1. Tier declarations plus the boundary checker with a fully-open ratchet. CI green day one;
    no code moves. This is the keystone — everything after it cannot regress.
+
+   **v1 scope is deliberately narrower than decision 1.** Export maps cannot serve as the
+   public surface: `packages/bookings` publishes 38 export subpaths (some packages publish
+   61–62), and the root barrel re-exports the Drizzle tables, so a surface rule bound to
+   the export map is vacuous. Authoring narrow per-symbol surfaces for 118 packages is a
+   large task with no evidence yet that it is needed.
+
+   Enforce **tier + allowed dependencies + table privacy (decision 6)** first, and defer
+   the per-symbol public surface of decision 1 until a defect class demands it. Table
+   privacy is mechanically checkable — tables are `pgTable(...)` results, 464 repo-wide —
+   and it already has a sanctioned escape hatch: the `*Ref = pgTable(...)` pattern
+   (`availabilitySlotsRef`, `exchangeRatesRef`, `priceCatalogsRef`), 30 instances across
+   `bookings`, `finance`, `operations`, and `storefront`. Violations migrate to a local
+   `*Ref` or to the owning module's service. No per-package authoring required.
 2. Migrate Connect onto Tier 0 (#3898 W3).
 3. Retire the subsetting narrative in `packages/hono/src` and the architecture docs.
 4. Convert authority checkers into graph assertions, deleting as they are subsumed and
