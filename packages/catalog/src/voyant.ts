@@ -5,8 +5,12 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
-import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
-import { financeSelfServiceBookingSourceRuntimePort } from "@voyant-travel/finance/self-service-booking-source"
+import {
+  financeOperatorSettingsRuntimePort,
+  // Re-exported by the port barrel so the manifest stays import-cheap; the
+  // contract module it is defined in pulls in the create-command types.
+  financeSelfServiceBookingSourceRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import {
   catalogBookingRuntimePort,
   catalogOffersRuntimePort,
