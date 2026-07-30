@@ -38,6 +38,72 @@ describe("self-service booking source provider", () => {
     expect(await resolve(patch)).toEqual({ status: "rejected", reason })
   })
 
+  it("refuses a draft whose current price no longer matches the quote", async () => {
+    // The attack the re-price closes: quote 1 adult / 1 night at 100, then
+    // rewrite the draft to a bigger party keeping the cheap quote id. Every
+    // other binding still passes, so only re-pricing catches it.
+    const result = await resolve({
+      handler: {
+        entityModule: "products",
+        async computeQuote() {
+          return {
+            available: true,
+            pricing: { base_amount: 600, taxes: 0, fees: 0, surcharges: 0, currency: "EUR" },
+          }
+        },
+        async deriveSelfServiceCommand() {
+          return { status: "ok", command: { productId: "prod_1" } }
+        },
+      },
+    })
+
+    expect(result).toEqual({ status: "rejected", reason: "price_changed" })
+  })
+
+  it("refuses a draft the vertical can no longer price", async () => {
+    const result = await resolve({
+      handler: {
+        entityModule: "products",
+        async computeQuote() {
+          return { available: false, invalidReason: "sold_out" }
+        },
+        async deriveSelfServiceCommand() {
+          return { status: "ok", command: { productId: "prod_1" } }
+        },
+      },
+    })
+
+    expect(result).toEqual({ status: "rejected", reason: "price_changed" })
+  })
+
+  it("drops the contact channel a guest never verified", async () => {
+    const resolveBillingPerson = vi.fn(async () => "per_new")
+
+    // SMS-verified caller who put someone else's email in the draft. Without
+    // narrowing, upsertPersonFromContact matches that email first and attaches
+    // the booking to the victim's CRM person.
+    await resolve({
+      caller: { verifiedPhone: "+40712345678" },
+      payload: {
+        billing: {
+          contact: {
+            firstName: "Ada",
+            lastName: "L",
+            email: "victim@example.com",
+            phone: "+40712345678",
+          },
+        },
+        travelers: [{ firstName: "Ada" }],
+      },
+      resolveBillingPerson,
+    })
+
+    expect(resolveBillingPerson).toHaveBeenCalledWith(
+      expect.objectContaining({ email: null, phone: "+40712345678" }),
+      expect.anything(),
+    )
+  })
+
   it("refuses a challenge verified for a different contact", async () => {
     const result = await resolve({ caller: { verifiedEmail: "someone-else@example.com" } })
 
@@ -49,7 +115,10 @@ describe("self-service booking source provider", () => {
       handler: {
         entityModule: "products",
         async computeQuote() {
-          return { available: true }
+          return {
+            available: true,
+            pricing: { base_amount: 100, taxes: 0, fees: 0, surcharges: 0, currency: "EUR" },
+          }
         },
       },
     })
@@ -84,28 +153,36 @@ describe("self-service booking source provider", () => {
     )
   })
 
-  it("consumes the draft and quote together", async () => {
+  it("claims the draft and quote together, conditionally", async () => {
     const updates: string[] = []
     const provider = createSelfServiceBookingSourceProvider({
       resolveOwnedHandlers: () => createOwnedBookingHandlerRegistry(),
     })
-    const tx = {
-      update: (table: Parameters<typeof getTableName>[0]) => ({
-        set: () => ({
-          where: async () => {
-            updates.push(getTableName(table))
-          },
-        }),
-      }),
-    }
 
-    await provider.consumeBookingSource(tx as never, {
+    await provider.consumeBookingSource(consumingTx(updates, true) as never, {
       draftId: "bdrf_1",
       quoteId: "cquo_1",
       bookingId: "book_1",
     })
 
     expect(updates).toHaveLength(2)
+  })
+
+  it("refuses to consume a draft another request already claimed", async () => {
+    const provider = createSelfServiceBookingSourceProvider({
+      resolveOwnedHandlers: () => createOwnedBookingHandlerRegistry(),
+    })
+
+    // The conditional UPDATE affects no row. Throwing rolls the create back,
+    // which is what stops two concurrent requests producing two bookings from
+    // one draft and one hold.
+    await expect(
+      provider.consumeBookingSource(consumingTx([], false) as never, {
+        draftId: "bdrf_1",
+        quoteId: "cquo_1",
+        bookingId: "book_1",
+      }),
+    ).rejects.toThrow(/already consumed/)
   })
 })
 
@@ -126,7 +203,11 @@ async function resolve(
     (patch.handler ?? {
       entityModule: "products",
       async computeQuote() {
-        return { available: true }
+        // Matches the quote fixture (base 100 EUR) so re-pricing agrees.
+        return {
+          available: true,
+          pricing: { base_amount: 100, taxes: 0, fees: 0, surcharges: 0, currency: "EUR" },
+        }
       },
       async deriveSelfServiceCommand() {
         return { status: "ok", command: { productId: "prod_1" } }
@@ -175,6 +256,10 @@ async function resolve(
           entity_id: "prod_1",
           expires_at: FUTURE,
           consumed_booking_id: null,
+          locale: "en-GB",
+          audience: "customer",
+          market: "default",
+          currency: "EUR",
           pricing_base_amount: "100",
           pricing_currency: "EUR",
           ...patch.quote,
@@ -188,8 +273,11 @@ async function resolve(
   })
 }
 
-/** Returns the row matching whichever table the query selects from. */
-function selectDb(rows: Record<string, unknown>) {
+/**
+ * Returns the row matching whichever table the query selects from, and lets
+ * conditional consumption UPDATEs report an affected row.
+ */
+function selectDb(rows: Record<string, unknown>, consumable = true) {
   return {
     select: () => ({
       from: (table: Parameters<typeof getTableName>[0]) => ({
@@ -201,5 +289,29 @@ function selectDb(rows: Record<string, unknown>) {
         }),
       }),
     }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          returning: async () => (consumable ? [{ id: "row_1" }] : []),
+        }),
+      }),
+    }),
   } as never
+}
+
+/** Transaction double whose conditional UPDATE reports whether it won. */
+function consumingTx(updates: string[], won: boolean) {
+  return {
+    update: (table: Parameters<typeof getTableName>[0]) => ({
+      set: () => ({
+        where: () => ({
+          returning: async () => {
+            if (!won) return []
+            updates.push(getTableName(table))
+            return [{ id: "row_1" }]
+          },
+        }),
+      }),
+    }),
+  }
 }

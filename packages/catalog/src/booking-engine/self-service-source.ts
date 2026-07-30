@@ -11,7 +11,7 @@
  * relationship ids, tax lines, or status.
  */
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { PricingBasis } from "../snapshot/schema.js"
 import { bookingDraftsTable } from "./drafts-schema.js"
@@ -46,6 +46,17 @@ export interface SelfServiceBookingSourceProviderDeps {
    * billing party); a verified guest is rejected as `incomplete_draft`.
    */
   resolveBillingPerson?: ResolveSelfServiceBillingPerson
+}
+
+/**
+ * A draft or quote was spent between resolution and the create transaction.
+ * Thrown rather than returned so the create rolls back.
+ */
+export class SelfServiceSourceConsumedError extends Error {
+  constructor(readonly source: "draft" | "quote") {
+    super(`The booking ${source} was already consumed by another request.`)
+    this.name = "SelfServiceSourceConsumedError"
+  }
 }
 
 type Rejection = { status: "rejected"; reason: string }
@@ -89,18 +100,60 @@ export function createSelfServiceBookingSourceProvider(deps: SelfServiceBookingS
       const handler = ownedHandlers?.resolve(draft.entity_module)
       if (!handler?.deriveSelfServiceCommand) return reject("unsupported_vertical")
 
+      // Re-price the CURRENT draft and require it to still equal the quote.
+      //
+      // `catalog_quotes` records what a quote cost but not what it was priced
+      // FOR — no pax, dates, options, or slot. The only other binding is
+      // `draft.current_quote_id`, which the caller writes themselves on the
+      // public draft PUT. Without this check a caller can quote one adult for
+      // one night, then rewrite the draft to six travellers for thirty nights
+      // keeping the cheap quote id, and every other check still passes.
+      const repriced = await handler.computeQuote(
+        { db: input.db, adapterContext: {} as never },
+        {
+          entityModule: draft.entity_module,
+          entityId: draft.entity_id,
+          draft: draft.draft_payload,
+          // The quote's own scope, so the comparison is like for like — a
+          // different market or currency would otherwise read as a price
+          // change, or worse, let a cheaper market's total stand in.
+          scope: {
+            locale: quote.locale,
+            audience: quote.audience,
+            market: quote.market,
+            ...(quote.currency ? { currency: quote.currency } : {}),
+          },
+        },
+      )
+      if (!repriced.available) return reject("price_changed")
+      const quotedTotal = quotedTotalCents(quote)
+      const currentTotal = repricedTotalCents(repriced)
+      if (quotedTotal == null || currentTotal == null || quotedTotal !== currentTotal) {
+        return reject("price_changed")
+      }
+
       const payload = (draft.draft_payload ?? {}) as {
         billing?: { contact?: Record<string, string | null | undefined> }
         travelers?: unknown[]
       }
       const contact = billingContact(payload.billing?.contact)
 
-      // The challenge proved control of one contact point. Requiring the
-      // draft's billing contact to match it is what stops a challenge
-      // verified for one address from booking against another.
-      if (!callerMatchesContact(input.caller, contact)) return reject("contact_mismatch")
+      // The challenge proved control of ONE contact point, so only that one is
+      // trusted. The unverified field is dropped rather than merely unchecked:
+      // `upsertPersonFromContact` matches on email then phone, so an
+      // SMS-verified caller who put a victim's email in the draft would
+      // otherwise have the booking resolved onto the victim's CRM person and
+      // their confirmations sent to an address they never proved control of.
+      const trustedContact = trustedBillingContact(input.caller, contact)
+      if (!trustedContact) return reject("contact_mismatch")
 
-      const billing = await resolveBilling(deps, input.caller, contact, payload, input.draftId)
+      const billing = await resolveBilling(
+        deps,
+        input.caller,
+        trustedContact,
+        payload,
+        input.draftId,
+      )
       if (!billing) return reject("incomplete_draft")
 
       const derived = await handler.deriveSelfServiceCommand(
@@ -133,11 +186,27 @@ export function createSelfServiceBookingSourceProvider(deps: SelfServiceBookingS
       tx: AnyDrizzleDb,
       input: { draftId: string; quoteId: string; bookingId: string },
     ) {
-      await markDraftConsumed(tx, input.draftId, input.bookingId)
-      await tx
+      // Both claims are conditional on still being unspent, and both throw on
+      // failure so the create transaction rolls back. Resolution happened
+      // before the transaction opened, so without these predicates two
+      // concurrent creates would each pass resolution and both commit —
+      // two bookings from one draft, one quote, and one hold.
+      if (!(await markDraftConsumed(tx, input.draftId, input.bookingId))) {
+        throw new SelfServiceSourceConsumedError("draft")
+      }
+      const quoteRows = (await tx
         .update(catalogQuotesTable)
-        .set({ consumed_booking_id: input.bookingId })
-        .where(eq(catalogQuotesTable.id, input.quoteId))
+        .set({ consumed_booking_id: input.bookingId, consumed_at: new Date() })
+        .where(
+          and(
+            eq(catalogQuotesTable.id, input.quoteId),
+            isNull(catalogQuotesTable.consumed_booking_id),
+          ),
+        )
+        .returning()) as Array<{ id: string }>
+      if (quoteRows.length === 0) {
+        throw new SelfServiceSourceConsumedError("quote")
+      }
     },
   }
 }
@@ -174,17 +243,29 @@ async function resolveBilling(
   return personId ? { ...base, personId } : null
 }
 
-function callerMatchesContact(
+/**
+ * Narrow the draft's billing contact to what the caller actually proved.
+ *
+ * Returns null when nothing was proven. An authenticated customer is
+ * identified by their account, so their draft contact is taken as given; a
+ * guest keeps only the channel their challenge verified, and the other channel
+ * is discarded so it can never steer CRM resolution or delivery.
+ */
+function trustedBillingContact(
   caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string },
   contact: ReturnType<typeof billingContact>,
-): boolean {
-  // An authenticated customer is identified by their account, not a challenge.
-  if (caller.personId) return true
+): ReturnType<typeof billingContact> | null {
+  if (caller.personId) return contact
+
   const email = contact.email?.trim().toLowerCase()
   const phone = contact.phone?.trim()
-  if (caller.verifiedEmail && email) return caller.verifiedEmail.trim().toLowerCase() === email
-  if (caller.verifiedPhone && phone) return caller.verifiedPhone.trim() === phone
-  return false
+  if (caller.verifiedEmail && email && caller.verifiedEmail.trim().toLowerCase() === email) {
+    return { ...contact, phone: null }
+  }
+  if (caller.verifiedPhone && phone && caller.verifiedPhone.trim() === phone) {
+    return { ...contact, email: null }
+  }
+  return null
 }
 
 function billingContact(contact: Record<string, string | null | undefined> | undefined) {
@@ -240,4 +321,29 @@ function numericOrZero(value: unknown): number {
   if (value == null) return 0
   const parsed = typeof value === "string" ? Number.parseFloat(value) : Number(value)
   return Number.isFinite(parsed) ? parsed : 0
+}
+
+/**
+ * Total a quote was written for, in minor units.
+ *
+ * `catalog_quotes` stores decimal major-unit numerics, so the comparison is
+ * done in cents to avoid float drift making an equal price look changed.
+ */
+function quotedTotalCents(quote: SelectCatalogQuote): number | null {
+  const pricing = readPricingFromQuote(quote)
+  if (!pricing) return null
+  return pricingTotalCents(pricing)
+}
+
+function repricedTotalCents(result: { pricing?: PricingBasis }): number | null {
+  return result.pricing ? pricingTotalCents(result.pricing) : null
+}
+
+function pricingTotalCents(pricing: PricingBasis): number | null {
+  const total =
+    Number(pricing.base_amount ?? 0) +
+    Number(pricing.taxes ?? 0) +
+    Number(pricing.fees ?? 0) +
+    Number(pricing.surcharges ?? 0)
+  return Number.isFinite(total) ? Math.round(total * 100) : null
 }

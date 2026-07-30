@@ -1,4 +1,7 @@
-import { issueCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
+import {
+  issueCheckoutCapability,
+  issueGuestBookingAccess,
+} from "@voyant-travel/bookings/checkout-capability"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -43,6 +46,17 @@ describe("POST /checkout/start capability", () => {
     // Authentic token, wrong subject — forbidden rather than unauthenticated.
     expect(response.status).toBe(403)
     expect(startCatalogCheckout).not.toHaveBeenCalled()
+  })
+
+  it("accepts the guest-booking capability, which also grants payment:start", async () => {
+    // A guest who reached checkout through the booking-overview path holds
+    // only this capability; rejecting it would lock them out of paying.
+    const guest = await issueGuestBookingAccess(BOOKING_ID, CAPABILITY_ENV)
+
+    const response = await call({ "X-Voyant-Guest-Booking-Access": guest.token })
+
+    expect(response.status).toBe(200)
+    expect(startCatalogCheckout).toHaveBeenCalledTimes(1)
   })
 
   it("accepts the capability issued for this booking", async () => {

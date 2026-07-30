@@ -19,10 +19,17 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { requireCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
+import {
+  requireCheckoutCapability,
+  requireGuestBookingAccess,
+} from "@voyant-travel/bookings/checkout-capability"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
+import {
+  openApiValidationHook,
+  stampOpenApiRegistryApiId,
+  UnauthorizedApiError,
+} from "@voyant-travel/hono"
 import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -46,6 +53,23 @@ type CheckoutEnv = {
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
+
+/**
+ * Accept either booking-scoped capability that grants `payment:start`.
+ *
+ * Mirrors the Finance collection routes: the checkout-session capability is
+ * tried first, and a guest presenting the `guest-booking` capability falls
+ * through to it rather than being rejected.
+ */
+async function requireBookingPaymentCapability(c: Context, bookingId: string) {
+  const env = checkoutEnv(c)
+  try {
+    await requireCheckoutCapability(c, bookingId, "payment:start", env)
+  } catch (error) {
+    if (!(error instanceof UnauthorizedApiError)) throw error
+    await requireGuestBookingAccess(c, bookingId, "payment:start", env)
+  }
+}
 
 /** Capability verification reads its secret from process env plus bindings. */
 function checkoutEnv(c: Context): Record<string, string | undefined> {
@@ -152,9 +176,13 @@ export function createCatalogCheckoutRoutes(
         const body = c.req.valid("json")
         // A bare booking id is not authorization. Starting a payment against
         // someone else's booking would otherwise be a matter of guessing an
-        // id, so the caller must present the capability the create issued —
-        // the same `payment:start` the Finance collection routes require.
-        await requireCheckoutCapability(c, body.bookingId, "payment:start", checkoutEnv(c))
+        // id, so the caller must present a capability scoped to this booking.
+        //
+        // Either capability is accepted, matching the Finance collection
+        // routes: `guest-booking` also grants `payment:start`, and a guest who
+        // reached checkout through the booking-overview path holds only that
+        // one. Accepting solely the checkout-session scope would lock them out.
+        await requireBookingPaymentCapability(c, body.bookingId)
         try {
           const result = await startCatalogCheckout(
             {

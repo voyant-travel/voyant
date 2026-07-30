@@ -90,10 +90,15 @@ export interface BookingsSelfServiceCreateRuntime {
     caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
     /** Stable request key; the durable command claims against it. */
     idempotencyKey: string
-    /** Ledger principal for a guest, who has no user account. */
-    fallbackPrincipalId: string
-    /** Session correlation for a guest — the challenge that authorized this. */
-    sessionId?: string
+    /**
+     * The challenge that authorized a guest create. Absent for an
+     * authenticated customer, who is identified by their account instead — the
+     * provider derives the ledger principal from whichever is present, so this
+     * must never be accepted from an already-authenticated caller.
+     */
+    guestChallengeId?: string
+    /** The authenticated customer's user id, for ledger attribution. */
+    userId?: string
     /**
      * Runs inside the create transaction, so anything spent here commits or
      * rolls back with the booking.
@@ -103,7 +108,13 @@ export interface BookingsSelfServiceCreateRuntime {
 }
 
 export type BookingsSelfServiceCreateResult =
-  | { status: "ok"; bookingId: string; bookingNumber: string }
+  | {
+      status: "ok"
+      bookingId: string
+      bookingNumber: string
+      /** The booking's real persisted status; null when it could not be read. */
+      bookingStatus?: string | null
+    }
   | { status: "rejected"; reason: string }
 
 export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodationRuntime>(

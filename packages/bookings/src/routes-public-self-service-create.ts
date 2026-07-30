@@ -18,6 +18,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import { checkoutCapabilityCookie, issueCheckoutCapability } from "./checkout-capability.js"
+import { getRuntimeEnv } from "./routes-shared.js"
 import type { BookingsSelfServiceCreateRuntime } from "./runtime-port.js"
 
 /** Spends the verified challenge inside the create transaction. */
@@ -39,6 +40,8 @@ export interface SelfServiceCreateRouteOptions {
   resolveGuestVerification?(c: Context): SelfServiceGuestVerification | undefined
   /** The authenticated customer's CRM person id, when the caller has an account. */
   resolveAuthenticatedPersonId?(c: Context): string | undefined
+  /** The authenticated customer's user id, for ledger attribution. */
+  resolveAuthenticatedUserId?(c: Context): string | undefined
 }
 
 type Env = {
@@ -72,6 +75,8 @@ const createBookingResponseSchema = z.object({
 const REJECTION_STATUS: Record<string, 404 | 409 | 422> = {
   draft_not_found: 404,
   quote_not_found: 404,
+  entity_not_found: 404,
+  entity_not_bookable: 409,
   draft_consumed: 409,
   quote_consumed: 409,
   quote_expired: 409,
@@ -140,10 +145,18 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
     const create = options.resolveSelfServiceCreate?.(c)
     if (!create) return c.json({ error: "self_service_booking_unavailable" }, 501)
 
-    // Either an account or a verified challenge — never neither.
+    // Either an account or a verified challenge — never neither, never both.
     const personId = options.resolveAuthenticatedPersonId?.(c)
     const verification = options.resolveGuestVerification?.(c)
     let verified: { channel: "email" | "sms"; destination: string } | null = null
+
+    if (personId && body.verificationChallengeId) {
+      // The challenge id reaches the ledger principal and the durable
+      // idempotency scope. Accepting it from a caller who is already
+      // authenticated would let them choose both.
+      return c.json({ error: "verification_challenge_not_applicable" }, 400)
+    }
+
     if (!personId) {
       if (!body.verificationChallengeId || !verification) {
         return c.json({ error: "verification_required" }, 401)
@@ -166,12 +179,12 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
         ...(verified?.channel === "sms" ? { verifiedPhone: verified.destination } : {}),
       },
       idempotencyKey: c.req.header("Idempotency-Key") ?? "",
-      // Challenge-derived, non-user principal: the synthetic identity stays out
-      // of `userId` so it can never reach `createdByUserId`.
-      fallbackPrincipalId: challengeId
-        ? `storefront-verification:${challengeId}`
-        : `customer:${personId}`,
-      ...(challengeId ? { sessionId: challengeId } : {}),
+      // Only set for a guest; refused above when the caller is authenticated,
+      // so it can never be a caller-chosen ledger principal or claim scope.
+      ...(challengeId ? { guestChallengeId: challengeId } : {}),
+      ...(options.resolveAuthenticatedUserId?.(c)
+        ? { userId: options.resolveAuthenticatedUserId(c) }
+        : {}),
       ...(challengeId && verification
         ? {
             async consumeSources(tx: PostgresJsDatabase, bookingId: string) {
@@ -194,7 +207,10 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
       return c.json({ error: result.reason }, REJECTION_STATUS[result.reason] ?? 422)
     }
 
-    const capability = await issueCheckoutCapability(result.bookingId, c.env)
+    // `getRuntimeEnv` merges process.env; reading `c.env` alone resolves an
+    // empty secret on the Node-first operator and throws AFTER the booking has
+    // durably committed and the draft, quote, and challenge are spent.
+    const capability = await issueCheckoutCapability(result.bookingId, getRuntimeEnv(c))
     c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt))
 
     return c.json(
@@ -202,7 +218,7 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
         data: {
           bookingId: result.bookingId,
           bookingNumber: result.bookingNumber,
-          status: "on_hold",
+          status: result.bookingStatus ?? "created",
           checkoutCapability: {
             token: capability.token,
             expiresAt: capability.expiresAt.toISOString(),
