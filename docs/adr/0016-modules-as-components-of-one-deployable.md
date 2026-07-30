@@ -119,6 +119,60 @@ Everything else is a directory inside a package, with the tier rule still enforc
 directories. Domain separation alone is not a justification. New packages state which
 clause they satisfy in the PR description.
 
+### 2b. Tier is a separate manifest field, not a capability token
+
+Investigated and settled — capability tokens **cannot** carry tier semantics:
+
+1. **Wrong logical shape.** `validateCapabilityClosure`
+   (`packages/framework/src/deployment-graph.ts:4199`) computes
+   `providers = new Set(units.flatMap((unit) => unit.provides.capabilities))` and checks
+   that each unit's `requires` is a subset. That is *existential* set membership —
+   "something in the graph provides this." A tier rule is *pairwise and directional*: if
+   `tier(A) < tier(B)` then A must not import B. A token like `tier.1` would only assert
+   that something in the graph is Tier 1, which is always true and constrains nothing.
+2. **Wrong polarity.** The capability model has exactly one diagnostic,
+   `VOYANT_GRAPH_MISSING_CAPABILITY` — it fails when something is *absent*. A boundary rule
+   must fail when a forbidden edge is *present*. None of the 44 `VOYANT_GRAPH_*` codes
+   expresses prohibition.
+3. **Wrong input domain.** Capabilities are declared per graph *unit* and evaluated over
+   *selected units at composition time*. `VoyantGraphPackageMetadata` carries `requires?`
+   but has no `provides` at all. Tier is a property of a *package*, and the rule must be
+   evaluated against the static import graph of source files — which the resolver never
+   reads.
+4. **Attribution is destroyed downstream.** The resolved artifact flattens to
+   `capabilities: { provided: string[], required: string[] }`, a union with no record of
+   which unit provided what, so the pairwise edges cannot be recovered post hoc.
+
+Token format adds friction on top: `CAPABILITY_TOKEN_PATTERN` requires a dotted namespace
+and `STANDARD_CAPABILITY_PREFIXES` is a closed set of 16 domain names, so `tier.2` would be
+classified as a third-party namespace and trip the "prefix with a namespace you control"
+hint.
+
+**The correct precedent is `requiresSchemas`, and it already exists.** It is declared per
+package in `package.json` under `voyant` (`pj.voyant?.requiresSchemas`), validated as an
+array of canonical package names (`packages/framework/src/project-resolver.ts:1251`), and
+consumed as a directed acyclic graph with a cycle guard —
+`packages/framework-migrations/src/discover.ts:143`: *"Deps-first topological order over the
+present packages (edges = requiresSchemas that resolve to another present package)."*
+**31 packages already declare it**; 40 of 110 carry a `voyant` key.
+
+Tier and allowed dependencies are exactly that shape. Add `voyant.tier` and
+`voyant.allowedDependencies` alongside `requiresSchemas`, reusing its `isPackageName`
+validation. Leave capabilities alone for what they do — runtime composition satisfaction.
+
+**No schema version bump is required.** The package-metadata parser validates known fields
+and returns an explicit allow-listed object; there is no unknown-key rejection anywhere in
+the resolver, so the additions are backward compatible and `voyant.package.v1` stays v1.
+The flip side is that a mistyped field name would be **silently ignored**, so the new fields
+need their own presence and spelling check, and should become required once rollout is
+complete.
+
+**Derive tier by convention, declare only exceptions.** Default Tier 1; `-contracts` → Tier
+0; `-react` → Tier 2; an explicit short list for composition (`framework`, `hono`,
+`operator-standard`, `runtime`) and for non-`-react` presentation (`ui`, the `admin-*`
+surfaces). Suffix rules alone cover 47 of 118 packages, and Tier 1 is the default for most
+of the rest, so the hand-authored list is small rather than a 118-package migration.
+
 ### 3. One boundary checker, plus graph-derived conformance
 
 Two families replace the 47 hand-written scripts:
