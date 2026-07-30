@@ -31,12 +31,19 @@ export type ResolveSelfServiceBillingPerson = (
 ) => Promise<string | null>
 
 export interface SelfServiceBookingSourceProviderDeps {
-  ownedHandlers: OwnedBookingHandlerRegistry
+  /** Resolved per request, matching how other catalog jobs reach the registry. */
+  resolveOwnedHandlers():
+    | OwnedBookingHandlerRegistry
+    | Promise<OwnedBookingHandlerRegistry | undefined>
+    | undefined
   /**
    * Optional CRM resolver. Only called once the whole party would pass the
    * create command's own validation — resolving persists a person before the
    * durable claim exists, so a party that would be rejected downstream must
    * never reach it, or every failed attempt orphans a CRM row.
+   *
+   * Without it an authenticated customer can still book (they already are the
+   * billing party); a verified guest is rejected as `incomplete_draft`.
    */
   resolveBillingPerson?: ResolveSelfServiceBillingPerson
 }
@@ -78,7 +85,8 @@ export function createSelfServiceBookingSourceProvider(deps: SelfServiceBookingS
       }
       if (draft.hold_expires_at && draft.hold_expires_at <= now) return reject("hold_expired")
 
-      const handler = deps.ownedHandlers.resolve(draft.entity_module)
+      const ownedHandlers = await deps.resolveOwnedHandlers()
+      const handler = ownedHandlers?.resolve(draft.entity_module)
       if (!handler?.deriveSelfServiceCommand) return reject("unsupported_vertical")
 
       const payload = (draft.draft_payload ?? {}) as {

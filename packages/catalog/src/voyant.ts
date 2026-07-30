@@ -5,6 +5,7 @@ import {
   requirePort,
 } from "@voyant-travel/core/project"
 import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { financeSelfServiceBookingSourceRuntimePort } from "@voyant-travel/finance/self-service-booking-source"
 import {
   catalogBookingRuntimePort,
   catalogOffersRuntimePort,
@@ -401,7 +402,15 @@ export const catalogBookingEngineVoyantModule = defineModule({
   packageName: "@voyant-travel/catalog",
   localId: "catalog.booking-engine",
   requires: { capabilities: ["catalog.data-owner"] },
-  provides: { ports: [providePort(catalogBookingRuntimePort)] },
+  provides: {
+    ports: [
+      providePort(catalogBookingRuntimePort),
+      // Catalog owns the draft, quote, and hold a public caller books from, so
+      // it provides the source-resolution port Finance's self-service create
+      // action is gated on.
+      providePort(financeSelfServiceBookingSourceRuntimePort),
+    ],
+  },
   runtimePorts: [requirePort(catalogBookingRuntimePort)],
   api: [
     {

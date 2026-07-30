@@ -4,6 +4,7 @@ import {
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/api-runtime-ports"
+import { createSelfServiceBookingSourceProvider } from "@voyant-travel/catalog/booking-engine"
 import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/booking-engine/operator-routes"
 import {
   type CatalogIndexer,
@@ -28,6 +29,7 @@ import {
   type FinanceOperatorSettingsRuntime,
   financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import { financeSelfServiceBookingSourceRuntimePort } from "@voyant-travel/finance/self-service-booking-source"
 import { sql } from "drizzle-orm"
 import { catalogDraftReaperJobRuntimePort } from "./draft-reaper-job-runtime-port.js"
 import {
@@ -149,6 +151,16 @@ export function createCatalogRuntimePortContribution(
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
     [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
+    // Gates Finance's self-service create action. Without a billing-person
+    // resolver an authenticated customer can still book (they already are the
+    // billing party); a verified guest is rejected until one is wired.
+    [financeSelfServiceBookingSourceRuntimePort.id]: createSelfServiceBookingSourceProvider({
+      async resolveOwnedHandlers() {
+        const runtime = await contribution
+        const services = await runtime.services
+        return services.getOwnedHandlers(host.primitives.env(undefined))
+      },
+    }),
     [catalogDraftReaperJobRuntimePort.id]: {
       async withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>) {
         return operation(host.primitives.database.resolve(undefined))

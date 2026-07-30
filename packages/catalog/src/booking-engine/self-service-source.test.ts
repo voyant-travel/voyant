@@ -87,7 +87,7 @@ describe("self-service booking source provider", () => {
   it("consumes the draft and quote together", async () => {
     const updates: string[] = []
     const provider = createSelfServiceBookingSourceProvider({
-      ownedHandlers: createOwnedBookingHandlerRegistry(),
+      resolveOwnedHandlers: () => createOwnedBookingHandlerRegistry(),
     })
     const tx = {
       update: (table: Parameters<typeof getTableName>[0]) => ({
@@ -135,7 +135,7 @@ async function resolve(
   )
 
   const provider = createSelfServiceBookingSourceProvider({
-    ownedHandlers,
+    resolveOwnedHandlers: () => ownedHandlers,
     ...(patch.resolveBillingPerson
       ? { resolveBillingPerson: patch.resolveBillingPerson as never }
       : {}),
