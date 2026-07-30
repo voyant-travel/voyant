@@ -46,6 +46,7 @@ import {
   jsonByteLength,
   type McpObserver,
 } from "./observability.js"
+import { createMcpRateLimiter } from "./rate-limit.js"
 import { registerMcpTool } from "./register.js"
 import type { GraphMcpApiRoutesOptions, McpApiRoutesOptions, McpServerInfo } from "./types.js"
 
@@ -101,6 +102,12 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
   const { accessCatalog, registry, buildContext } = options
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new OpenAPIHono()
+
+  // Throttle the JSON-RPC endpoint per caller before it can reach dispatch, with
+  // a tighter bucket for write/destructive/ledgered calls than for reads.
+  if (options.rateLimit !== false) {
+    app.use(callMcpRoute.path, createMcpRateLimiter(registry, options.rateLimit ?? {}))
+  }
 
   const observerFor = (ctx: ToolContext): McpObserver =>
     createMcpObserver({
@@ -340,6 +347,7 @@ export async function createGraphMcpApiRoutes(
     ...(options.serverInfo ? { serverInfo: options.serverInfo } : {}),
     ...(options.reporter ? { reporter: options.reporter } : {}),
     ...(options.appName ? { appName: options.appName } : {}),
+    ...(options.rateLimit !== undefined ? { rateLimit: options.rateLimit } : {}),
     buildContext: (c) => buildContributedContext(c, options, contributions.values()),
   })
 }

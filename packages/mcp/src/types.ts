@@ -9,6 +9,8 @@ import type { ToolContext, ToolRegistry } from "@voyant-travel/tools"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import type { Context } from "hono"
 
+import type { McpRateLimitOptions } from "./rate-limit.js"
+
 export interface McpServerInfo {
   name: string
   version: string
@@ -29,6 +31,12 @@ export interface McpApiRoutesOptions {
   reporter?: Reporter
   /** Logical app name stamped on emitted telemetry events. Defaults to `"voyant"`. */
   appName?: string
+  /**
+   * Per-key rate limiting for the JSON-RPC endpoint. Enabled with safe defaults
+   * (see {@link McpRateLimitOptions}); pass `false` to disable, or an object to
+   * tune the window, limits, key derivation, or backing store.
+   */
+  rateLimit?: McpRateLimitOptions | false
 }
 
 export interface GraphMcpApiRoutesOptions {
@@ -44,6 +52,8 @@ export interface GraphMcpApiRoutesOptions {
   reporter?: Reporter
   /** Logical app name stamped on emitted telemetry events. Defaults to `"voyant"`. */
   appName?: string
+  /** Per-key rate limiting for the JSON-RPC endpoint. See {@link McpApiRoutesOptions.rateLimit}. */
+  rateLimit?: McpRateLimitOptions | false
 }
 
 export type GraphMcpRuntime = VoyantGraphRuntime
