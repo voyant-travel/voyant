@@ -40,6 +40,17 @@ export interface FinanceSelfServiceBookingCreateCommandInput
    * a self-service create must never ledger as an anonymous request.
    */
   fallbackPrincipalId: string
+  /**
+   * Runs inside the command transaction, immediately after the booking graph
+   * is created and before the claim commits. This is where the draft, quote,
+   * hold, and verification challenge are spent, so all of it either commits
+   * with the booking or rolls back with it.
+   *
+   * Deliberately inside rather than around: an exact idempotent retry
+   * short-circuits at the claim and never reaches this, so a legitimate retry
+   * replays the original booking instead of failing as already-consumed.
+   */
+  consumeSources?: (tx: PostgresJsDatabase, bookingId: string) => Promise<void>
 }
 
 /**
@@ -66,7 +77,7 @@ export async function executeFinanceSelfServiceBookingCreateCommand(
   input: FinanceSelfServiceBookingCreateCommandInput,
 ) {
   assertAdmittedActionPolicy(input.admitted, FINANCE_BOOKING_CREATE_SELF_SERVICE_HANDLER_POLICY)
-  return executeBookingCreateCommand(input, input.fallbackPrincipalId)
+  return executeBookingCreateCommand(input, input.fallbackPrincipalId, input.consumeSources)
 }
 
 /**
@@ -77,6 +88,7 @@ export async function executeFinanceSelfServiceBookingCreateCommand(
 async function executeBookingCreateCommand(
   input: FinanceBookingCreateCommandInput,
   fallbackPrincipalId?: string,
+  consumeSources?: (tx: PostgresJsDatabase, bookingId: string) => Promise<void>,
 ) {
   return executeAdmittedCreatedTargetCommand(
     {
@@ -102,6 +114,9 @@ async function executeBookingCreateCommand(
         if (outcome.status !== "ok") throw bookingCreateCommandError(outcome)
         const result = outcome.result
         await input.testHooks?.afterDomainCreate?.(transaction, result.booking.id)
+        // Spend the draft, quote, hold, and challenge in the same transaction
+        // as the booking graph. Throwing here rolls the whole create back.
+        await consumeSources?.(transaction, result.booking.id)
         await insertBookingCreatedOutbox(transaction, input.commandInput, result, input.context)
         return {
           value: { bookingId: result.booking.id },
