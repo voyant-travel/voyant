@@ -1,296 +1,304 @@
-# ADR-0016: Modules are components of one deployable; boundaries are enforced, not packaged
+# ADR-0016: Modules are components of one deployable; enforce the boundary that already exists
 
-- **Status:** Proposed (2026-07-30)
+- **Status:** Proposed (2026-07-30). Substantially revised after adversarial review — see
+  [Corrections](#corrections-from-review).
 - **Relates to:** [#3898](https://github.com/voyant-travel/voyant/issues/3898),
+  [#3902](https://github.com/voyant-travel/voyant/issues/3902),
   [ADR-0002](./0002-contract-packages.md) (contract packages — upheld),
-  [ADR-0007](./0007-module-subsetting-and-capability-ports.md) (superseded — this ADR
-  records the consequence),
-  [ADR-0008](./0008-convention-driven-deployment-surface.md),
-  [ADR-0012](./0012-application-authoring-and-product-defaults.md),
+  [ADR-0007](./0007-module-subsetting-and-capability-ports.md) (superseded — this ADR records
+  the consequence),
   [unified-deployment-graph](../architecture/unified-deployment-graph.md),
   [module-provider-plugin-taxonomy](../architecture/module-provider-plugin-taxonomy.md),
   [packaged-admin-rfc](../architecture/packaged-admin-rfc.md),
   [managed-profile-runtime](../architecture/managed-profile-runtime.md)
-- **Supersedes the open question left by:** ADR-0007's supersession, which removed the
-  subsetting implementation without recording what the package boundary is *for*.
 
 ## Context
 
-The package-per-module layout was adopted on the premise that **deployments would
-select modules**. That premise no longer holds anywhere in the tree:
+The package-per-module layout was adopted on the premise that **deployments would select
+modules**. That premise no longer holds:
 
-- One starter remains; `starters/federated-operator` is absent from `pnpm-workspace.yaml`.
-- `createVoyantApp({ exclude })` has zero call sites. The only surviving occurrences are
-  prose in `packages/hono/src/composition.ts:111,131` and `packages/hono/src/openapi.ts:70`.
-- ADR-0007 is superseded; its runtime-manifest implementation, framework manifest
-  projections, and synthetic unit generators were deleted.
-- `packages/framework/src/operator-distribution.ts` is one line re-exporting
-  `@voyant-travel/operator-standard`.
-- `unified-deployment-graph.md` already states the outcome: *"lowered to one resident
-  Node application."*
+- One starter remains; `starters/federated-operator` is absent from `pnpm-workspace.yaml` and
+  contains only `dist/` and `node_modules/`.
+- `exclude` is not a member of `CreateVoyantAppConfig` at all
+  (`packages/framework/src/create-app.ts:19-27`) — the option was deleted, not merely unused.
+  Residual prose survives at `packages/hono/src/composition.ts:111,131`.
+- ADR-0007 is superseded; its runtime-manifest implementation and synthetic unit generators
+  were deleted.
+- `packages/framework/src/operator-distribution.ts` is a one-line re-export.
+- `unified-deployment-graph.md` states the outcome: *"lowered to one resident Node application."*
 
-Meanwhile the package boundary provides **no isolation**. Modules import each other's
-services and raw Drizzle tables directly:
+Enforcement was attempted imperatively and per-module: **47 scripts matching `*authority*`,
+5,578 lines**, chained into a 62-link `&&` chain in `verify:architecture`, written against
+hardcoded package arrays. **38 of 47 assert via `.includes()` substring matching on source
+text; none reads the resolved graph.** That approach does not generalise — a new module means a
+new script.
 
-```ts
-// in a sibling package's src/, not bookings'
-import { bookingItems, bookings, bookingTravelers } from "@voyant-travel/bookings"
-```
+There are **110 real packages** (118 directories, 8 of which contain only `node_modules`).
 
-`bookings` has ~37 in-repo importing packages; `finance/src` references 22 distinct
-siblings. Some of this coupling is inherent — a booking genuinely *is* a join across
-catalog, availability, finance, traveler identity, and legal documents. Some is drift,
-because nothing forbids reaching past a module's public surface. **Today the two are
-indistinguishable**, which is the core problem.
+### What the codebase already does right
 
-Enforcement was attempted, imperatively and per-module: 47 scripts matching `*authority*`
-totalling 5,578 lines, chained into `verify:architecture`, written against hardcoded
-package arrays (`scripts/check-client-package-boundaries.mjs` opens with a literal list
-of 13 paths). No generic dependency-boundary tooling is installed. None of these scripts
-would have caught the table import above, and none generalise to the next one.
+The original draft of this ADR proposed inventing a boundary. That was wrong: **the boundary
+already exists, is consistently followed, and currently has zero violations.** It operates at
+**entry-point granularity**, not package granularity.
 
-### What changed the analysis
+- Contracts packages hold the pure schemas and types.
+- Runtime packages re-export them through dependency-light subpaths —
+  `flights/contract/types` → `flights-contracts`, `legal/contracts/validation` →
+  `legal-contracts`, `bookings/validation` → `bookings-contracts`.
+- Browser-bound packages (`-react`) **value-import only those light subpaths**, and use root
+  barrels only for `import type`.
 
-An earlier reading justified the Tier 1 and Tier 2 packages by pointing at `pms` (~76
-packages) and `acme-travel` (38). Both are now excluded:
+Measured across `packages/*-react`: **31 value imports, every one resolving to a genuinely
+dependency-light entry point**, verified by walking each entry point's runtime module graph
+with erased `import type` edges excluded. **Zero browser-unsafe value imports.** No `-react`
+package contains `pgTable`, Hono, or Drizzle.
 
-- **`pms` is cancelled.**
-- **`acme-travel` is a private local testbed** — its README opens *"Acme Travel is a
-  local Voyant testbed"* — not an independent deployment.
+The concept is already named in the tree. `packages/db/src/helpers.ts`:
 
-Recomputed, the packages with a genuine **third-party** consumer are ~22:
+> `booleanQueryParam` now lives in `@voyant-travel/schema-kit` (pure, below the data layer).
+> Re-exported here to keep the `@voyant-travel/db/helpers` import path stable.
 
-| Consumer | Pulls |
-|---|---|
-| `plugin-netopia` | `core`, `finance`, `hono`, `notifications`, `payments`, `utils` |
-| `plugin-smartbill` | `core`, `finance`, `finance-react`, `hono`, `storage`, `ui`, `utils` |
-| `module-ro-fiscal` | `bookings`, `core`, `data-sdk`, `finance`, `hono`, `workflows` |
-| `connect-sdk` | `catalog`, `cruises`, `flights-contracts` |
-| `hisky-connector` | `flights` |
-| `algolia-adapter` | `catalog-contracts` |
-| `smartbill-app` | `admin-extension-sdk`, `apps`, `ui` |
-| `voyant-cloud` (portal, site) | `i18n`, `storefront`, `storefront-react`, `ui`, `types` |
-
-The remaining ~96 packages have no third-party consumer. They are justified by a
-different mechanism entirely: **source-free managed delivery**. `packaged-admin-rfc.md`
-records that *"there is no source-installed layer anymore"*, `managed-profile-runtime.md`
-describes a *"source-free Node implementation"*, and
-`voyant-cloud/apps/voyant-operator-runtime` installs ~100 published packages at **exact
-pinned versions** rather than building from source.
-
-This matters for honesty about the rationale: the packaging of domain and presentation
-packages rests almost entirely on the managed delivery model, not on third-party reuse.
-If managed delivery ever became source-installed, that justification would need to be
-rewritten rather than assumed.
+This ADR therefore **codifies and enforces an existing convention** rather than imposing a new
+model. That is a smaller, cheaper, and more honest change.
 
 ## Decision
 
-### 1. Four tiers, one dependency direction
+### 1. Layers, with a Foundation that everything may use
 
-The packages already fall into tiers; nothing names or enforces them. Name them, and
-declare each package's tier in its `voyant.package.v1` manifest.
+Packages fall into five layers. Crucially — and unlike the first draft — **Foundation is
+depended upon by every other layer**, so the ordering is not a simple descending chain.
 
-| Tier | Contents | May depend on |
+| Layer | Contents | May depend on |
 |---|---|---|
-| **0 · Contracts** | Zod schemas, inferred types, vocabularies, schema-version constants. No Drizzle, Hono, or DB. | Tier 0 |
-| **1 · Domain runtime** | Tables, services, routes, workflows, booking engines | Tier 0; Tier 1 **public surfaces only** |
-| **2 · Presentation** | `-react`, `ui`, admin registries, extension SDK | Tier 0, Tier 2, admin client |
-| **3 · Composition** | `framework`, `hono`, `operator-standard`, the starter | everything |
+| **Foundation** | `hono`, `core`, `db`, `utils`, `types`, `i18n`, `react`, `schema-kit`, `templating`, `runtime-core` | Foundation |
+| **Contracts** | `*-contracts` — pure schemas, types, vocabularies | Foundation, Contracts |
+| **Domain runtime** | tables, services, routes, workflows | Foundation, Contracts, Domain runtime |
+| **Presentation** | `*-react`, `ui`, admin surfaces, extension SDK | Foundation, Contracts, Presentation |
+| **Composition** | `framework`, `operator-standard`, `runtime`, the starter | everything |
 
-**The rule is `3 → 2 → 1 → 0`, never backwards.** Tier 2 never imports Tier 1 server
-runtime. A Tier 0 package never imports its runtime sibling — this is ADR-0002's arrow,
-stated once and enforced rather than restated per package.
+A Foundation layer is not optional. **36 packages declare a dependency on
+`@voyant-travel/hono`** — a package that owns routes cannot avoid the HTTP kernel. The first
+draft placed `hono` in Composition, which made its own headline invariant structurally
+unsatisfiable by every domain package in the repo.
 
-This single rule covers both known defect classes: the cross-package Drizzle-table import
-above, and Connect's `import type { SourceAdapter } from "@voyant-travel/catalog"` where
-`SourceAdapter` is specified by ADR-0002 to live in `catalog-contracts`.
+This layer map is **coarse classification for reporting and for the ADR-0002 arrow**. It is
+deliberately *not* the load-bearing runtime invariant — that is decision 2.
 
-### 2. Package-ness is decided by consumer, not by domain
+### 2. The load-bearing invariant: browser safety, computed at entry-point granularity
 
-A directory becomes a published npm package **iff** one of these holds:
+> **A browser-bound package may not, through value imports, transitively reach Drizzle, Hono,
+> or `@voyant-travel/db` runtime. Type-only imports are unrestricted — they are erased and
+> contribute nothing to a bundle.**
 
-1. Something outside the operator graph imports it — plugin, connector, adapter, edge
-   worker, admin extension.
-2. It is the dependency-light Tier 0 surface for such a consumer (ADR-0002).
-3. It is delivered to a **source-free managed deployment** that installs published
-   artifacts rather than building from source.
+Properties that make this the right rule:
 
-Everything else is a directory inside a package, with the tier rule still enforced across
-directories. Domain separation alone is not a justification. New packages state which
-clause they satisfy in the PR description.
+- **It is computed, not declared.** An entry point's weight is derived by walking its runtime
+  module graph. No per-package authoring, no 110-manifest migration.
+- **It is at the correct granularity.** `@voyant-travel/operations/validation` is light while
+  `@voyant-travel/operations` is not; a package-level rule cannot express that, and the
+  codebase already relies on the distinction.
+- **It ships strict on day one at zero violations** — a regression guard, not a migration.
+- **It targets real harm.** Bundle weight and browser incompatibility are concrete; abstract
+  layer ordering is not.
 
-### 2b. Tier is a separate manifest field, not a capability token
+The layer map of decision 1 additionally yields the ADR-0002 arrow as a static rule: a
+`*-contracts` package must not depend on its runtime sibling.
 
-Investigated and settled — capability tokens **cannot** carry tier semantics:
+### 3. Package-ness: the gate binds on new packages only
+
+A **new** `packages/*` entry requires a **named consumer outside the operator graph** — a
+plugin, connector, adapter, edge worker, admin extension, or sibling repo — stated in the PR
+description.
+
+Existing packages are grandfathered by **source-free managed delivery**
+(`packaged-admin-rfc.md`: *"there is no source-installed layer anymore"*;
+`voyant-operator-runtime` installs 87 published packages at 86 exact pins).
+
+The first draft offered that delivery clause as a general test. It is not one: it covers 84 of
+110 packages, and any new module satisfies it the moment it is wired into the graph. **A rule
+that cannot reject anything is not a rule.** Issue #3898 W4 proposed the narrower gate; this
+ADR restores it.
+
+### 4. Use off-the-shelf tooling where it fits
+
+Adopt **`dependency-cruiser`** for the import rules in decisions 1 and 2. It provides
+TypeScript-resolver-accurate module resolution (so it follows `export *` and `exports` maps
+correctly), a `dependencyTypes: ["type-only"]` discriminator — which decision 2 requires — and a
+generated `known-violations` baseline.
+
+The first draft cited *"no generic dependency-boundary tooling is installed"* as evidence that
+bespoke tooling was needed. That is evidence for the opposite conclusion. Bespoke work is
+reserved for rules no general tool expresses.
+
+Note also that the repo has **no ratchet precedent**: `scripts/check-v1-package-cleanup.ts:51-83`
+is a hardcoded 30-row allowlist inside the script, and `--fail-on-temporary` is an
+all-or-nothing flag rather than a decreasing counter. Every listed package has since been
+removed, so it is currently a no-op. Building a ratchet is new work, not a reuse.
+
+### 5. Declarations live in a sidecar, not `package.json`
+
+Any classification that must be declared goes in a sidecar (`voyant.boundary.json`, excluded
+from `files`) rather than in `package.json#voyant`.
+
+`.husky/pre-commit` requires a changeset for any changed published package, so editing ~110
+manifests is **~110 patch bumps** — the notification flood that caused global lockstep to be
+abandoned, and the same hazard #3902 item 5 identifies for adding `description` fields. A
+sidecar has zero release cost and lets a misclassification be corrected without a semver event.
+It also avoids a full cold rebuild via Turbo's `$TURBO_DEFAULT$` inputs.
+
+### 6. Two runtime shapes, not three
+
+**Operator** — one resident Node app, whole graph, no subsetting. **Edge apps** (storefront,
+federated, portal, site) — Workers consuming light entry points and the storefront SDK. Remove
+the residue of the third, phantom shape from `packages/hono/src` and the architecture docs.
+
+### 7. Substitution lives at adapters and providers, permanently
+
+Ports exist where a vendor exists: payments, connectors/fulfillment, indexer/search, storage,
+notifications, cache, database. **No ports for business modules.** A standing rule, not a
+deferral.
+
+### 8. Table privacy is DEFERRED, and the `*Ref` pattern must be fixed first
+
+The first draft made table privacy the v1 deliverable, on the grounds that tables are
+mechanically identifiable and the `*Ref = pgTable(...)` pattern is a sanctioned escape hatch.
+Both premises fail inspection.
+
+**Not statically decidable as specified:**
+- 9 tables are declared via `pgSchema("customer_auth").table(...)`
+  (`packages/db/src/schema/iam/customer_auth.ts`), which a `pgTable(` rule silently exempts.
+- Tables are re-exported under different names —
+  `packages/operations/src/places/index.ts:64-76` exports `facilities as places`. A
+  name-matching checker finds no `pgTable("places")` anywhere.
+- `packages/operations/src/schema.ts:1` is `export * from "@voyant-travel/availability/schema"`
+  — a star export *across a package boundary*, so a checker must resolve a third package's
+  `exports` map mid-chain to determine ownership.
+- Of 464 `pgTable` textual matches, 17 are JSDoc lines and 31 are `*Ref` mirrors.
+
+This requires a full TypeScript program with export-star flattening and *type*-based
+identification, not a grep.
+
+**And the prescribed remediation is unsafe.** The 31 `*Ref` mirrors are undocumented — zero
+mentions in `docs/`, `AGENTS.md`, or any of the 125 `scripts/check-*` — and have already
+silently diverged from their sources:
+
+- `priceCatalogsRef` (`bookings/src/pricing-ref.ts:4`) is missing 4 columns versus
+  `commerce/src/pricing/schema-catalogs.ts:16`, and types `catalogType` as `text()` where the
+  owner uses an enum with a default.
+- `availabilitySlotsRef` (`bookings/src/availability-ref.ts:15`) is missing `itineraryId`, two
+  FKs, and nine indexes versus `availability/src/schema-core.ts:102`.
+- **Two mirrors of the same table disagree with each other**: `productExtrasRef` in
+  `storefront/` is missing 6 columns that the `bookings/` mirror has.
+- `bookings/src/availability-ref.ts:9` cites `scripts/check-retail-spine-closure.mjs` as its
+  enforcement; that script only reads `package.json` dependency lists and has no knowledge of
+  the pattern.
+
+Directing ~137 cross-package table import sites into a hand-maintained mirror pattern that
+already disagrees with itself would institutionalise silent schema drift. **Prerequisite:**
+either generate `*Ref` declarations from the owning table with a drift check, or abandon the
+pattern and make the service call the only sanctioned route. Table privacy is revisited after
+that lands.
+
+## Capability tokens cannot carry layer semantics
+
+Settled by inspection; three independent reasons.
 
 1. **Wrong logical shape.** `validateCapabilityClosure`
    (`packages/framework/src/deployment-graph.ts:4199`) computes
-   `providers = new Set(units.flatMap((unit) => unit.provides.capabilities))` and checks
-   that each unit's `requires` is a subset. That is *existential* set membership —
-   "something in the graph provides this." A tier rule is *pairwise and directional*: if
-   `tier(A) < tier(B)` then A must not import B. A token like `tier.1` would only assert
-   that something in the graph is Tier 1, which is always true and constrains nothing.
-2. **Wrong polarity.** The capability model has exactly one diagnostic,
-   `VOYANT_GRAPH_MISSING_CAPABILITY` — it fails when something is *absent*. A boundary rule
-   must fail when a forbidden edge is *present*. None of the 44 `VOYANT_GRAPH_*` codes
-   expresses prohibition.
-3. **Wrong input domain.** Capabilities are declared per graph *unit* and evaluated over
-   *selected units at composition time*. `VoyantGraphPackageMetadata` carries `requires?`
-   but has no `provides` at all. Tier is a property of a *package*, and the rule must be
-   evaluated against the static import graph of source files — which the resolver never
-   reads.
-4. **Attribution is destroyed downstream.** The resolved artifact flattens to
-   `capabilities: { provided: string[], required: string[] }`, a union with no record of
-   which unit provided what, so the pairwise edges cannot be recovered post hoc.
+   `providers = new Set(units.flatMap((unit) => unit.provides.capabilities))` and checks subset
+   membership. That is *existential* — "something provides this." A layer rule is *pairwise and
+   directional*. A `tier.1` token would assert only that something in the graph is Tier 1,
+   which is always true.
+2. **Wrong input domain.** Capabilities are declared per graph *unit* and evaluated over
+   *selected units at composition time*. `VoyantGraphPackageMetadata` carries `requires?` but no
+   `provides` at all. The rule must be evaluated against the static import graph, which the
+   resolver never reads.
+3. **Attribution is destroyed downstream.** The resolved artifact flattens to
+   `capabilities: { provided: string[], required: string[] }` — a union with no record of which
+   unit provided what.
 
-Token format adds friction on top: `CAPABILITY_TOKEN_PATTERN` requires a dotted namespace
-and `STANDARD_CAPABILITY_PREFIXES` is a closed set of 16 domain names, so `tier.2` would be
-classified as a third-party namespace and trip the "prefix with a namespace you control"
-hint.
+The correct precedent is `requiresSchemas`: declared per package, validated as canonical
+package names (`packages/framework/src/project-resolver.ts:1251`), and consumed as a
+cycle-guarded DAG (`packages/framework-migrations/src/discover.ts:143`). **32 packages declare
+it.** Per decision 5, however, new boundary declarations go in a sidecar rather than alongside
+it.
 
-**The correct precedent is `requiresSchemas`, and it already exists.** It is declared per
-package in `package.json` under `voyant` (`pj.voyant?.requiresSchemas`), validated as an
-array of canonical package names (`packages/framework/src/project-resolver.ts:1251`), and
-consumed as a directed acyclic graph with a cycle guard —
-`packages/framework-migrations/src/discover.ts:143`: *"Deps-first topological order over the
-present packages (edges = requiresSchemas that resolve to another present package)."*
-**31 packages already declare it**; 40 of 110 carry a `voyant` key.
-
-Tier and allowed dependencies are exactly that shape. Add `voyant.tier` and
-`voyant.allowedDependencies` alongside `requiresSchemas`, reusing its `isPackageName`
-validation. Leave capabilities alone for what they do — runtime composition satisfaction.
-
-**No schema version bump is required.** The package-metadata parser validates known fields
-and returns an explicit allow-listed object; there is no unknown-key rejection anywhere in
-the resolver, so the additions are backward compatible and `voyant.package.v1` stays v1.
-The flip side is that a mistyped field name would be **silently ignored**, so the new fields
-need their own presence and spelling check, and should become required once rollout is
-complete.
-
-**Derive tier by convention, declare only exceptions.** Default Tier 1; `-contracts` → Tier
-0; `-react` → Tier 2; an explicit short list for composition (`framework`, `hono`,
-`operator-standard`, `runtime`) and for non-`-react` presentation (`ui`, the `admin-*`
-surfaces). Suffix rules alone cover 47 of 118 packages, and Tier 1 is the default for most
-of the rest, so the hand-authored list is small rather than a 118-package migration.
-
-### 3. One boundary checker, plus graph-derived conformance
-
-Two families replace the 47 hand-written scripts:
-
-- **Boundary checker** — one engine reading tier, allowed dependencies, and public
-  surface from each `voyant.package.v1`, with a ratcheting violations file so CI is green
-  on day one and the count can only decrease. We already run this pattern in
-  `verify:v1-package-cleanup:strict --fail-on-temporary`.
-- **Graph conformance** — the checks that are *not* static import rules (runtime-binding
-  provenance, subscriber registration, OpenAPI coverage) asserted over
-  `voyant.resolved-graph.v1` instead of hardcoded package arrays.
-
-The reason there are 47 scripts is not 47 distinct rules; it is that each was written
-imperatively against a literal package list, so every new module required a new script.
-Derived from the graph, they collapse into a small set of generic assertions.
-
-### 4. Two runtime shapes, not three
-
-- **Operator** — one resident Node app, whole graph, no subsetting.
-- **Edge apps** (storefront, federated, portal, site) — Workers consuming Tier 0 + Tier 2
-  + the storefront SDK. This is the only real subsetting boundary and the only one that
-  should exist.
-
-The third, phantom shape — "operator with modules subtracted" — has no implementation, no
-consumer, and a superseded ADR. Remove its residue from `packages/hono/src` and from the
-architecture docs.
-
-### 5. Substitution lives at adapters and providers, permanently
-
-Ports exist where a vendor exists: payments, connectors/fulfillment, indexer/search,
-storage, notifications, cache, database. **No ports for business modules.** This is a
-standing rule, not a deferral.
-
-### 6. One Postgres schema; module-owned tables are private
-
-Not isolated schemas — the in-memory-join tax is not worth paying for a domain whose
-entanglement is largely genuine. The narrower, enforceable rule: **a module's tables are
-private to it.** Cross-module access goes through its service or a link definition. This
-is what converts invisible coupling into either a declared dependency or a ratchet entry,
-and it is the only way to learn which coupling is inherent and which is drift.
+> A fourth argument in the first draft — that no `VOYANT_GRAPH_*` code expresses prohibition —
+> was **wrong** and is withdrawn. `VOYANT_GRAPH_PACKAGE_SOURCE_UNADMITTED`
+> (`deployment-graph.ts:4474`), `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED`, and
+> `VOYANT_GRAPH_MANIFEST_OWNERSHIP_MISMATCH` are all prohibition-polarity.
 
 ## Consequences
 
-- **Package count barely moves, and that is the intended outcome.** With the three-clause
-  test, ~96 packages survive on source-free managed delivery. Realistic pruning is a
-  handful — currently only `identity-contracts` has no consumer and no forward-looking
-  vertical. The deliverable is enforcement, not consolidation.
-- **~5,600 lines of bespoke checkers become ~2 engines plus ~8 residual checks.** Measured:
-  22 scripts (2,933 lines, 53% of the total) all assert one rule — a module's runtime ports
-  are owned by its own `runtime-contributor.ts` and absent from
-  `packages/runtime/src/deployment-resources.ts`. Their split is by migration wave
-  (`booking-finance`, `catalog-commerce`, `storefront-legal-inventory`, `final`, `domain`),
-  not by rule. A further 17 are **regression pins** — asserting that a deleted file, retired
-  route, or removed export stays absent — which generalise into one engine over a
-  declarative retired-surface list. That leaves ~8 genuinely distinct checks, each 32–137
-  lines. Note that 38 of 47 assert via `.includes()` substring matching on source text, so
-  the replacements are rewrites against the resolved graph, not ports.
-- **Coupling becomes visible.** Every cross-module reach-in is either declared or in the
-  ratchet, with a number that only decreases.
-- **Package creation becomes mechanical** rather than argued.
-- **ADR-0002 is upheld and finally enforced.** The `*-contracts` split is correct; the
-  arrow it specifies has never been checked, which is why `connect-cruises`,
-  `connect-adapter`, and `plugin-voyant-connect` take runtime dependencies where a
-  contracts package publishes the same type. `connect-flights` is the reference
-  implementation.
-- **The managed-delivery dependency is now explicit.** If source-free delivery changes,
-  clause 3 and roughly 96 packages need re-justification.
-- Short-term cost: tier declarations across 118 manifests, and a migration of Connect onto
-  Tier 0.
+- **The v1 deliverable is a regression guard at zero violations**, not a migration. It ships
+  immediately and strictly.
+- **No manifest migration and no release wave** — weight is computed and declarations are
+  sidecar-only.
+- **Package count is not the deliverable.** Realistic pruning is small, and the four packages
+  with genuinely zero in-repo dependents are `charters-react`, `observability-sentry`,
+  `plugin-sanity-cms`, and `storefront-sdk` — not `identity-contracts`, which is consumed via
+  `export *` at `packages/identity/src/validation.ts:1`.
+- **Checker consolidation proceeds, but its size is unknown.** The first draft's "22 scripts
+  assert one identical rule" does not survive reading them: only 19 mention both
+  `runtime-contributor` and `deployment-resources`, and
+  `scripts/check-catalog-runtime-authority.mjs` asserts roughly fifteen distinct things
+  including verbatim source-text pins and `pnpm-lock.yaml` content. 36 of 47 contain
+  absence pins interleaved with other checks, so the categories overlap rather than partition.
+  **The consolidation estimate must be re-derived by reading all 47**, and the residual is
+  larger than "~8 checks."
+- **ADR-0002 is upheld and finally enforced.** `finance-contracts` declaring `drizzle-orm`
+  (`packages/finance-contracts/package.json`) is a conformance defect to fix, not a
+  counterexample.
+- The managed-delivery dependency is explicit: if source-free delivery changes, the
+  grandfathering rationale for ~84 packages needs rewriting.
 
 ## Alternatives considered
 
-**Full module isolation with substitution ports.** Rejected, restating ADR-0007's
-reasoning, which still holds: *"decoupling every consumer (`legal`, storefront
-customer-portal, the bookings billing/traveler resolvers) onto a port — and keeping a
-parallel DTO contract in sync — is a large refactor whose only payoff is CRM-replacement,
-which is not a v1 goal."* Isolation buys substitution; there are no substituters for
-business modules. The real substitution axis is adapters and providers, where the boundary
-already works (decision 5).
+**Full module isolation with substitution ports.** Rejected, restating ADR-0007: *"decoupling
+every consumer onto a port — and keeping a parallel DTO contract in sync — is a large refactor
+whose only payoff is CRM-replacement, which is not a v1 goal."* Isolation buys substitution;
+there are no substituters for business modules.
 
-**Collapse to a single package.** Rejected. The publishing boundary is load-bearing for
+**Package-granular ordered tiers** (the first draft). Rejected: structurally unsatisfiable
+without a Foundation layer, and at the wrong granularity — the real invariant lives at entry
+points.
+
+**Collapse to a single package.** Rejected; the publishing boundary is load-bearing for
 source-free managed delivery and for version-pinned third parties.
 
-**Status quo — keep adding authority checkers.** Rejected. The count grows linearly with
-modules, the checks encode single historical migrations, and they do not catch the defect
-class they exist to prevent.
-
-## Non-goals
-
-- No change to the shared Postgres schema, to `packages/framework` composition behaviour,
-  or to the resolved deployment graph format.
-- No deletion of `*-contracts` packages for tidiness. Unadopted is not the same as
-  unnecessary — see #3898 W3.
-- No revival of module subsetting or capability ports in any form.
+**Status quo.** Rejected; the checker count grows linearly with modules and does not catch the
+defect class it exists to prevent.
 
 ## Sequencing
 
-1. Tier declarations plus the boundary checker with a fully-open ratchet. CI green day one;
-   no code moves. This is the keystone — everything after it cannot regress.
+1. **`dependency-cruiser` with a generated baseline**, encoding decision 2 (browser safety) and
+   the ADR-0002 arrow. Strict, no ratchet needed for decision 2 — it is already clean.
+2. **Fix `finance-contracts`'s `drizzle-orm` dependency.**
+3. **Retire the subsetting narrative** in `packages/hono/src` and the architecture docs.
+4. **Re-derive the checker consolidation** by reading all 47, then collapse them under the
+   naming convention agreed in #3902 item 1.
+5. **`*Ref` remediation** — generate-and-drift-check, or abandon the pattern.
+6. **Table privacy**, only after step 5.
 
-   **v1 scope is deliberately narrower than decision 1.** Export maps cannot serve as the
-   public surface: `packages/bookings` publishes 38 export subpaths (some packages publish
-   61–62), and the root barrel re-exports the Drizzle tables, so a surface rule bound to
-   the export map is vacuous. Authoring narrow per-symbol surfaces for 118 packages is a
-   large task with no evidence yet that it is needed.
+Connect's ADR-0002 migration (#3898 W3) is tracked separately: `connect-cruises`,
+`connect-adapter`, and `plugin-voyant-connect` live in `../connect-sdk`, carry no
+`voyant.package.v1` manifest, and none of the checkers added here will see them.
 
-   Enforce **tier + allowed dependencies + table privacy (decision 6)** first, and defer
-   the per-symbol public surface of decision 1 until a defect class demands it. Table
-   privacy is mechanically checkable — tables are `pgTable(...)` results, 464 repo-wide —
-   and it already has a sanctioned escape hatch: the `*Ref = pgTable(...)` pattern
-   (`availabilitySlotsRef`, `exchangeRatesRef`, `priceCatalogsRef`), 30 instances across
-   `bookings`, `finance`, `operations`, and `storefront`. Violations migrate to a local
-   `*Ref` or to the owning module's service. No per-package authoring required.
-2. Migrate Connect onto Tier 0 (#3898 W3).
-3. Retire the subsetting narrative in `packages/hono/src` and the architecture docs.
-4. Convert authority checkers into graph assertions, deleting as they are subsumed and
-   recording removed line counts.
-5. Ratchet down table reach-ins opportunistically; resolve `identity-contracts`.
+## Corrections from review
 
-Steps 1–3 change how the codebase behaves. Steps 4–5 are debt paydown that can run for a
-year without blocking anything.
+Recorded because the first draft was confidently wrong in ways worth remembering.
+
+| Claim | Correction |
+|---|---|
+| Four ordered tiers, `hono` in Composition | Structurally unsatisfiable — 36 packages depend on `hono`. Foundation layer added. |
+| Default Tier 1 + ratchet | Produced ~162 day-one violations, ~75% artefacts of the bad default. |
+| Package-ness by three clauses | Cannot reject any package. Restored to clause-1-only for new packages. |
+| Tier declared in `package.json` | ~110 patch bumps. Moved to a sidecar. |
+| Table privacy is v1-checkable | Defeated by `pgSchema().table()`, re-export aliasing, and cross-package `export *`. Deferred. |
+| `*Ref` is a sanctioned escape hatch | Undocumented and already drifted; two mirrors of one table disagree. Must be fixed first. |
+| 22 checkers assert one identical rule | Only 19 overlap; several assert ~15 distinct things. Estimate withdrawn. |
+| `verify:v1-package-cleanup` is a ratchet precedent | It is a hardcoded allowlist and currently a no-op. |
+| No `VOYANT_GRAPH_*` code expresses prohibition | False; several do. Argument withdrawn. |
+| `identity-contracts` is the one prune candidate | It has two consumers. |
+| 118 packages | 110; 8 directories contain only `node_modules`. |
+| Export subpaths are sprawl | They are the mechanism by which dependency weight is controlled. |
