@@ -217,6 +217,11 @@ export {
   type SelectCatalogQuote,
 } from "./schema.js"
 export {
+  createSelfServiceBookingSourceProvider,
+  type ResolveSelfServiceBillingPerson,
+  type SelfServiceBookingSourceProviderDeps,
+} from "./self-service-source.js"
+export {
   type SyncAdapterSummary,
   type SyncProgressEvent,
   type SyncSourcesOptions,
