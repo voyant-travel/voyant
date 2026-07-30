@@ -2,28 +2,23 @@
  * The guide layer (voyant#3931): server `instructions` plus a small set of guide
  * Tools that give a connecting agent the product judgment the raw schemas cannot.
  *
- * A client that connects to `/v1/admin/mcp` receives typed tool schemas and no
- * operating context: what this deployment is, which sequence of calls does a real
- * job, or the traps (a room quantity is a count of rooms, an accepted Quote
+ * A client connecting to `/v1/admin/mcp` receives typed tool schemas and no
+ * operating context: what this deployment is, which call sequence does a real
+ * job, or the traps (a room quantity is a count of rooms; an accepted Quote
  * Version is not a confirmed booking). The decided design (voyant#3921 resolved
- * decision 2) puts that context in two places every MCP client supports today:
- * the `instructions` string returned on `initialize`, and read-only guide Tools —
- * NOT MCP prompts or resources, whose client support is uneven.
+ * decision 2) puts that context in the two places every MCP client supports
+ * today — the `instructions` string returned on `initialize` and read-only guide
+ * Tools, NOT MCP prompts or resources, whose client support is uneven.
  *
- * Every domain claim here is sourced from the architecture docs and the shipped
- * code, never invented:
- * - `UBIQUITOUS_LANGUAGE.md` — canonical vocabulary and the commitment chain.
- * - `docs/architecture/booking-journey-architecture.md` — the single booking
- *   journey and its quote/hold/commit split.
- * - `docs/architecture/catalog-supply-models.md` — dynamic vs scheduled supply.
- * - `docs/architecture/accepted-quote-version-reservation-golden-flow.md` — the
- *   accept → reserve → book sequence and its ownership boundaries.
- * - `packages/inventory` product status/visibility and the `publish_product` Tool
- *   — product authoring vs publication.
+ * Every domain claim is sourced, never invented: `UBIQUITOUS_LANGUAGE.md`
+ * (vocabulary + commitment chain), `docs/architecture/booking-journey-architecture.md`
+ * (quote/hold/commit split), `catalog-supply-models.md` (dynamic vs scheduled),
+ * `accepted-quote-version-reservation-golden-flow.md` (accept → reserve → book),
+ * and `packages/inventory` product status/visibility + `publish_product`
+ * (authoring vs publication).
  *
  * The guide is scope-aware: a read-only caller is told plainly that the write
- * journeys below are not reachable with its key, so the text never describes a
- * workflow the caller cannot perform.
+ * journeys are unreachable, so the text never describes an unavailable workflow.
  */
 
 import { z } from "@hono/zod-openapi"
