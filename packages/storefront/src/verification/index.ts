@@ -4,9 +4,10 @@ import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 import { storefrontVerificationRuntimePort } from "../runtime-port.js"
 import {
-  buildStorefrontVerificationSenders,
+  buildStorefrontVerificationSenderBundle,
   createStorefrontVerificationPublicRoutes,
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
+  type StorefrontVerificationChannelCoverage,
   type StorefrontVerificationRoutesOptions,
 } from "./routes-public.js"
 import { storefrontVerificationModule } from "./schema.js"
@@ -21,12 +22,16 @@ export {
   STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
 } from "./consume.js"
 export type {
+  StorefrontVerificationChannelCoverage,
   StorefrontVerificationPublicRoutes,
   StorefrontVerificationRoutesOptions,
+  StorefrontVerificationSenderBundle,
 } from "./routes-public.js"
 export {
+  buildStorefrontVerificationSenderBundle,
   buildStorefrontVerificationSenders,
   createStorefrontVerificationPublicRoutes,
+  resolveStorefrontVerificationChannelCoverage,
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 export type {
@@ -80,16 +85,41 @@ export {
   storefrontVerificationStatusSchema,
 } from "./validation.js"
 
+/**
+ * Report undeliverable channels at bootstrap rather than at the first shopper.
+ *
+ * Both start routes mount unconditionally, so a deployment with no SMS-capable
+ * provider looks healthy until a guest who gave a phone number is answered with
+ * a 501 and cannot book at all (voyant#3948). Surfacing the gap when the module
+ * boots gives an operator a signal at the point they can still act on it.
+ */
+function warnUndeliverableChannels({
+  supported,
+  unsupported,
+}: StorefrontVerificationChannelCoverage) {
+  if (unsupported.length === 0) return
+
+  const covered = supported.length > 0 ? supported.join(", ") : "none"
+  console.warn(
+    `[storefront/verification] No notification provider delivers ${unsupported
+      .map((channel) => `"${channel}"`)
+      .join(" or ")}; those start routes will answer 501 sender_not_configured. ` +
+      `Deliverable channels: ${covered}. Configure a verification notification provider covering the missing channel, or stop offering it in the storefront.`,
+  )
+}
+
 export function createStorefrontVerificationApiModule(
   options?: StorefrontVerificationRoutesOptions,
 ): ApiModule {
   const module: Module = {
     ...storefrontVerificationModule,
     bootstrap: ({ bindings, container }) => {
-      container.register(
-        STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
-        buildStorefrontVerificationSenders(bindings as Record<string, unknown>, options),
+      const { senders, coverage } = buildStorefrontVerificationSenderBundle(
+        bindings as Record<string, unknown>,
+        options,
       )
+      warnUndeliverableChannels(coverage)
+      container.register(STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY, senders)
     },
   }
 
