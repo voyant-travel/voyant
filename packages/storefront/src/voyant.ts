@@ -159,7 +159,9 @@ export const storefrontCustomerPortalVoyantModule = defineModule({
       mount: "customer-portal",
       resource: "storefront",
       openapi: { document: "customer-portal" },
-      anonymous: ["/contact-exists"],
+      // No anonymous routes: the customer portal answers only for an
+      // authenticated customer. `contact-exists` used to sit here and told any
+      // caller whether an address had an account.
       runtime: {
         entry: "@voyant-travel/storefront/customer-portal",
         export: "createCustomerPortalApiModule",
