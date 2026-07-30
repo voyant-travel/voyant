@@ -99,6 +99,13 @@ describe("verification channel coverage (voyant#3948)", () => {
     expect(message).toContain("Deliverable channels: email")
   })
 
+  it("stays quiet at bootstrap when no channel resolves, so empty bindings do not cry wolf", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    await bootstrap({ resolveProviders: () => [] })
+
+    expect(warn).not.toHaveBeenCalled()
+  })
+
   it("stays quiet at bootstrap when every channel is deliverable", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     await bootstrap({

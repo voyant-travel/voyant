@@ -86,25 +86,32 @@ export {
 } from "./validation.js"
 
 /**
- * Report undeliverable channels at bootstrap rather than at the first shopper.
+ * Report a *partial* channel gap at bootstrap rather than at the first shopper.
  *
  * Both start routes mount unconditionally, so a deployment with no SMS-capable
  * provider looks healthy until a guest who gave a phone number is answered with
  * a 501 and cannot book at all (voyant#3948). Surfacing the gap when the module
  * boots gives an operator a signal at the point they can still act on it.
+ *
+ * Deliberately silent when *no* channel resolves. Bootstrap runs with whatever
+ * bindings triggered it — the first request passes the real env, but
+ * `app.ready()` defaults to `{}`, which every test and node sibling process
+ * uses. An empty provider set is therefore indistinguishable from "bootstrapped
+ * without bindings", and warning on it would fire on boots that are not
+ * misconfigured at all. A deployment that truly configures no provider still
+ * fails loudly on the first start request, naming the same gap.
  */
 function warnUndeliverableChannels({
   supported,
   unsupported,
 }: StorefrontVerificationChannelCoverage) {
-  if (unsupported.length === 0) return
+  if (unsupported.length === 0 || supported.length === 0) return
 
-  const covered = supported.length > 0 ? supported.join(", ") : "none"
   console.warn(
     `[storefront/verification] No notification provider delivers ${unsupported
       .map((channel) => `"${channel}"`)
       .join(" or ")}; those start routes will answer 501 sender_not_configured. ` +
-      `Deliverable channels: ${covered}. Configure a verification notification provider covering the missing channel, or stop offering it in the storefront.`,
+      `Deliverable channels: ${supported.join(", ")}. Configure a verification notification provider covering the missing channel, or stop offering it in the storefront.`,
   )
 }
 
