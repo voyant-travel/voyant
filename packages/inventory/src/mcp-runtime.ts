@@ -717,18 +717,35 @@ async function primaryProductSlug(
 /**
  * Reverse of {@link primaryProductSlug}: resolve the owning product id from a
  * catalog slug so `get_product` can accept the human-readable slug in place of
- * the opaque product typeid. The slug is the unique catalog handle a translation
- * carries; the earliest-updated match wins if several translations share it.
+ * the opaque product typeid.
+ *
+ * **The slug is NOT unique.** `productTranslations.slug` is a nullable `text`
+ * column with no unique constraint; the only unique index on the table is
+ * `(productId, languageTag)`. Several translations of the *same* product legitimately
+ * share a slug across languages, but nothing prevents two *different* products
+ * from sharing one either.
+ *
+ * So this fails closed. Picking the earliest match would silently return the
+ * wrong product — an agent asking for "santorini-7-night" would get a different
+ * trip and have no way to detect it. An ambiguous slug is reported as invalid
+ * input with the matching ids, so the caller can retry with a product id.
  */
 async function resolveProductIdBySlug(
   db: PostgresJsDatabase,
   slug: string,
 ): Promise<string | null> {
-  const [row] = await db
-    .select({ productId: productTranslations.productId })
+  const rows = await db
+    .selectDistinct({ productId: productTranslations.productId })
     .from(productTranslations)
     .where(eq(productTranslations.slug, slug))
-    .orderBy(asc(productTranslations.updatedAt))
-    .limit(1)
-  return row?.productId ?? null
+    .limit(2)
+  if (rows.length === 0) return null
+  if (rows.length > 1) {
+    throw new ToolError(
+      `The slug "${slug}" matches more than one product. Retry with an explicit product id.`,
+      "INVALID_INPUT",
+      { slug, candidates: rows.map(({ productId }) => productId) },
+    )
+  }
+  return rows[0]?.productId ?? null
 }
