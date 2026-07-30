@@ -162,7 +162,11 @@ function parameterNames(operation: Record<string, unknown>): Set<string> {
   if (!Array.isArray(parameters)) return names
   for (const parameter of parameters) {
     if (!parameter || typeof parameter !== "object") continue
-    const { name, in: location, required } = parameter as {
+    const {
+      name,
+      in: location,
+      required,
+    } = parameter as {
       name?: unknown
       in?: unknown
       required?: unknown

@@ -116,7 +116,10 @@ const createBookingRoute = createRoute({
     // the idempotency middleware, which runs first, so its clearer 400 is what
     // a caller actually sees when the header is missing.
     headers: z.object({
-      "Idempotency-Key": z.string().max(255).describe("Stable key identifying this create attempt."),
+      "Idempotency-Key": z
+        .string()
+        .max(255)
+        .describe("Stable key identifying this create attempt."),
     }),
     body: {
       required: true,

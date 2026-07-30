@@ -1,11 +1,12 @@
 import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
-
-import { createOwnedBookingHandlerRegistry, type OwnedBookingHandler } from "./owned-handler.js"
 import { issueBookingDraftCapability } from "./draft-capability.js"
+import { createOwnedBookingHandlerRegistry, type OwnedBookingHandler } from "./owned-handler.js"
 import { createSelfServiceBookingSourceProvider } from "./self-service-source.js"
 
-const CAPABILITY_ENV = { VOYANT_BOOKING_DRAFT_CAPABILITY_SECRET: "draft-capability-test-secret-32c" }
+const CAPABILITY_ENV = {
+  VOYANT_BOOKING_DRAFT_CAPABILITY_SECRET: "draft-capability-test-secret-32c",
+}
 
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000)
 const PAST = new Date(Date.now() - 60 * 1000)

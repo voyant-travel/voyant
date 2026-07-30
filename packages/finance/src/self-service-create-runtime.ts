@@ -73,9 +73,7 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
         draftId: input.draftId,
         quoteId: input.quoteId,
         caller: input.caller,
-        ...(input.draftCapabilityToken
-          ? { draftCapabilityToken: input.draftCapabilityToken }
-          : {}),
+        ...(input.draftCapabilityToken ? { draftCapabilityToken: input.draftCapabilityToken } : {}),
       })
       if (resolved.status !== "ok") {
         return { status: "rejected" as const, reason: resolved.reason }

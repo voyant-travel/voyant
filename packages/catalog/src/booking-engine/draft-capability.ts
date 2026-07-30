@@ -26,11 +26,7 @@ export const BOOKING_DRAFT_CAPABILITY_COOKIE = "voyant_booking_draft"
 export const BOOKING_DRAFT_CAPABILITY_HEADER = "X-Voyant-Booking-Draft"
 export const BOOKING_DRAFT_CAPABILITY_SCOPE = "booking-draft"
 
-export const bookingDraftCapabilityActions = [
-  "draft:read",
-  "draft:write",
-  "draft:book",
-] as const
+export const bookingDraftCapabilityActions = ["draft:read", "draft:write", "draft:book"] as const
 
 export type BookingDraftCapabilityAction = (typeof bookingDraftCapabilityActions)[number]
 
