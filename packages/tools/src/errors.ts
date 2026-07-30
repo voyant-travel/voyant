@@ -135,7 +135,10 @@ export class ToolError extends Error {
   ) {
     super(message, options)
     this.name = "ToolError"
-    const defaults = TOOL_ERROR_DEFAULTS[code]
+    // A ToolError may carry a domain-specific code outside the documented set
+    // (handlers throw their own codes). Fall back to the terminal PROVIDER_ERROR
+    // remediation rather than crash computing `retryable`/`nextSteps`.
+    const defaults = TOOL_ERROR_DEFAULTS[code] ?? TOOL_ERROR_DEFAULTS.PROVIDER_ERROR
     this.retryable = details?.retryable ?? defaults.retryable
     this.nextSteps =
       details?.nextSteps && details.nextSteps.length > 0 ? details.nextSteps : defaults.nextSteps
