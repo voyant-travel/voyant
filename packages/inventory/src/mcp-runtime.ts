@@ -1,3 +1,7 @@
+// agent-quality: file-size exception -- owner: inventory; #3929 the selected Tool
+// service wiring, created-command execution, slug resolution, and content runtime
+// binding stay co-located until a dedicated runtime split preserves the public
+// contribution entry and its tests.
 import {
   buildCreatedTargetCommandFingerprint,
   executeAdmittedCreatedTargetCommand,
@@ -113,13 +117,18 @@ export const voyantToolContextContribution = defineToolContextContribution({
           : null
       },
     }
+    const loadProductById = async (id: string) => {
+      const row = await productsService.getProductById(db, id)
+      if (!row) return null
+      const slug = await primaryProductSlug(db, id)
+      return { ...row, slug }
+    }
     const inventory: InventoryToolServices = {
       listProducts: (query) => productsService.listProducts(db, query),
-      async getProductById(id) {
-        const row = await productsService.getProductById(db, id)
-        if (!row) return null
-        const slug = await primaryProductSlug(db, id)
-        return { ...row, slug }
+      getProductById: loadProductById,
+      async getProductBySlug(slug) {
+        const productId = await resolveProductIdBySlug(db, slug)
+        return productId ? loadProductById(productId) : null
       },
       getProductAggregates: (query) => productsService.getProductAggregates(db, query),
       async createProduct({ idempotencyKey: legacyIdempotencyKey, ...input }, admitted) {
@@ -703,4 +712,23 @@ async function primaryProductSlug(
     if (slug) return slug
   }
   return null
+}
+
+/**
+ * Reverse of {@link primaryProductSlug}: resolve the owning product id from a
+ * catalog slug so `get_product` can accept the human-readable slug in place of
+ * the opaque product typeid. The slug is the unique catalog handle a translation
+ * carries; the earliest-updated match wins if several translations share it.
+ */
+async function resolveProductIdBySlug(
+  db: PostgresJsDatabase,
+  slug: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ productId: productTranslations.productId })
+    .from(productTranslations)
+    .where(eq(productTranslations.slug, slug))
+    .orderBy(asc(productTranslations.updatedAt))
+    .limit(1)
+  return row?.productId ?? null
 }
