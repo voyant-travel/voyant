@@ -19,6 +19,7 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { requireCheckoutCapability } from "@voyant-travel/bookings/checkout-capability"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
@@ -45,6 +46,14 @@ type CheckoutEnv = {
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
+
+/** Capability verification reads its secret from process env plus bindings. */
+function checkoutEnv(c: Context): Record<string, string | undefined> {
+  const processEnv =
+    (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } })
+      .process?.env ?? {}
+  return { ...processEnv, ...((c.env as Record<string, string | undefined>) ?? {}) }
+}
 
 const bankTransferInstructionsSchema = z.object({
   beneficiary: z.string(),
@@ -141,6 +150,11 @@ export function createCatalogCheckoutRoutes(
       async (c) => {
         const resolved = typeof options === "function" ? options(c) : options
         const body = c.req.valid("json")
+        // A bare booking id is not authorization. Starting a payment against
+        // someone else's booking would otherwise be a matter of guessing an
+        // id, so the caller must present the capability the create issued —
+        // the same `payment:start` the Finance collection routes require.
+        await requireCheckoutCapability(c, body.bookingId, "payment:start", checkoutEnv(c))
         try {
           const result = await startCatalogCheckout(
             {
