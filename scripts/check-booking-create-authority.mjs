@@ -56,7 +56,7 @@ assertReferencesWithin(
   "executeFinanceSelfServiceBookingCreateCommand",
   new Set([
     "packages/finance/src/booking-create-command.ts",
-    "packages/finance/src/routes-public-booking-create.ts",
+    "packages/finance/src/self-service-create-runtime.ts",
   ]),
 )
 // The shared core must stay private to its own module.
@@ -65,7 +65,7 @@ assertReferencesWithin(
   new Set(["packages/finance/src/booking-create-command.ts"]),
 )
 // The route module is composed into the public API bundle, never exported.
-assertPackageExportAbsent("packages/finance/package.json", "./routes-public-booking-create")
+assertPackageExportAbsent("packages/finance/package.json", "./self-service-create-runtime")
 
 // The confused-deputy boundary, mechanically: the staff Tool never names the
 // self-service policy, and the route runtime never names the staff policy.

@@ -68,6 +68,44 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
 export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsApiModuleOptions>(
   "bookings.requirements.runtime",
 )
+/**
+ * Durable creation of one booking from a public draft and quote.
+ *
+ * Bookings owns the `/v1/public/bookings` resource, but Finance owns the
+ * durable create command that composes a booking together with its payment
+ * schedules, tax lines, and documents — and Finance depends on Bookings, not
+ * the reverse. So the route lives here and the command arrives through this
+ * port, the same way `bookings.finance.runtime` already inverts that edge.
+ *
+ * Consumed optionally: a deployment without a provider serves no public
+ * creation route, which is the fail-closed posture the selected graph's
+ * create action already declares.
+ */
+export interface BookingsSelfServiceCreateRuntime {
+  createFromDraft(input: {
+    db: PostgresJsDatabase
+    draftId: string
+    quoteId: string
+    /** Proven identity: an account, or a contact a challenge verified. */
+    caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
+    /** Stable request key; the durable command claims against it. */
+    idempotencyKey: string
+    /** Ledger principal for a guest, who has no user account. */
+    fallbackPrincipalId: string
+    /** Session correlation for a guest — the challenge that authorized this. */
+    sessionId?: string
+    /**
+     * Runs inside the create transaction, so anything spent here commits or
+     * rolls back with the booking.
+     */
+    consumeSources?(tx: PostgresJsDatabase, bookingId: string): Promise<void>
+  }): Promise<BookingsSelfServiceCreateResult>
+}
+
+export type BookingsSelfServiceCreateResult =
+  | { status: "ok"; bookingId: string; bookingNumber: string }
+  | { status: "rejected"; reason: string }
+
 export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodationRuntime>(
   "bookings.accommodation.runtime",
   ["enrichOverviewItems"],
@@ -83,4 +121,8 @@ export const bookingsInventoryRuntimePort = objectPort<BookingsInventoryRuntime>
 export const bookingsRelationshipsRuntimePort = objectPort<BookingsRelationshipsRuntime>(
   "bookings.relationships.runtime",
   ["loadPersonTravelSnapshot", "upsertPersonFromContact", "getPersonById", "getOrganizationById"],
+)
+export const bookingsSelfServiceCreateRuntimePort = objectPort<BookingsSelfServiceCreateRuntime>(
+  "bookings.self-service-create.runtime",
+  ["createFromDraft"],
 )

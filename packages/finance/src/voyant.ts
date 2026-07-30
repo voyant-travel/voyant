@@ -1,6 +1,9 @@
 // agent-quality: file-size exception -- owner: finance; the package-owned deployment declarations remain centralized in one manifest.
 import { actionLedgerFinanceDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
-import { bookingsFinanceRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import {
+  bookingsFinanceRuntimePort,
+  bookingsSelfServiceCreateRuntimePort,
+} from "@voyant-travel/bookings/runtime-port"
 import {
   defineExtension,
   defineModule,
@@ -68,6 +71,9 @@ export const financeVoyantModule = defineModule({
       providePort(bookingsFinanceRuntimePort),
       providePort(financeHostRuntimePort),
       providePort(financeAppApiRuntimePort),
+      // The public booking-create route lives in Bookings; Finance supplies
+      // the durable command it dispatches.
+      providePort(bookingsSelfServiceCreateRuntimePort),
     ],
   },
   api: [
@@ -674,11 +680,11 @@ export const financeBookingsCreateVoyantPlugin = defineExtension({
       approval: "never",
       reversible: false,
       allowedActorTypes: ["customer"],
-      // Served by the public Finance API bundle. The route's own capability id
-      // (FINANCE_BOOKING_CREATE_SELF_SERVICE_ROUTE) is the Tool-registry
-      // identity; this binding names the API bundle that exposes it.
+      // Served by the public Bookings API bundle: the resource is a booking,
+      // and Finance supplies the command through
+      // bookings.self-service-create.runtime rather than owning the route.
       from: {
-        routes: ["@voyant-travel/finance#api.public"],
+        routes: ["@voyant-travel/bookings#api.public"],
       },
     },
   ],

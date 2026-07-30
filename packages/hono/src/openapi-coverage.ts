@@ -58,7 +58,13 @@ export function diffOpenApiCoverage(input: {
   const undocumented = [...runtime.keys()]
     .filter((key) => !committed.has(key) && !ignore.has(key))
     .sort()
-  const stale = [...committed.keys()].filter((key) => !runtime.has(key) && !ignore.has(key)).sort()
+  // Scoped to the caller's own mount: one committed document can aggregate
+  // several API bundles, and an operation belonging to another bundle is not
+  // this module's to serve.
+  const stale = [...committed.keys()]
+    .filter((key) => key.endsWith(` ${input.prefix}`) || key.includes(` ${input.prefix}/`))
+    .filter((key) => !runtime.has(key) && !ignore.has(key))
+    .sort()
 
   const requestDrift: OpenApiCoverageDiff["requestDrift"] = []
   for (const [key, liveOperation] of runtime) {
@@ -89,12 +95,23 @@ function collectOperations(
       if (!COVERAGE_METHODS.has(method)) continue
       if (!operation || typeof operation !== "object") continue
       operations.set(
-        `${method.toUpperCase()} ${prefix}${path}`,
+        `${method.toUpperCase()} ${joinPath(prefix, path)}`,
         operation as Record<string, unknown>,
       )
     }
   }
   return operations
+}
+
+/**
+ * Join a mount prefix to a route path.
+ *
+ * A route mounted at the bundle root has path `"/"`, which would otherwise
+ * compose to a trailing-slash operation that never matches the document.
+ */
+function joinPath(prefix: string, path: string): string {
+  const joined = `${prefix}${path}`
+  return joined.length > 1 && joined.endsWith("/") ? joined.slice(0, -1) : joined
 }
 
 /** Request body property names plus `required:<name>` markers. */

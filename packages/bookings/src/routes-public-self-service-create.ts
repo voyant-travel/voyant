@@ -1,37 +1,24 @@
 /**
  * `POST /v1/public/bookings` — public self-service booking creation.
  *
- * The customer-facing adapter to the same durable command the staff Tool
- * drives. It is deliberately thin: it proves who is asking, asks the source
- * provider to verify and derive, allocates the booking number, and hands the
- * whole thing to Finance's self-service entrypoint.
+ * The resource is a booking, so the route lives with the rest of the public
+ * booking surface rather than under the package that happens to compose the
+ * command. Finance owns that command and supplies it through
+ * `bookings.self-service-create.runtime`, which inverts the package dependency
+ * the same way `bookings.finance.runtime` already does.
  *
  * A caller supplies three identifiers and nothing else. Booking numbers,
- * relationship ids, prices, tax lines, and status are all derived server-side —
+ * prices, tax lines, relationship ids, and status are all derived server-side:
  * a public caller can write the draft, so anything read from it is untrusted
- * input, not intent.
+ * input rather than intent.
  */
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import {
-  checkoutCapabilityCookie,
-  issueCheckoutCapability,
-} from "@voyant-travel/bookings/checkout-capability"
 import { idempotencyKey, openApiValidationHook } from "@voyant-travel/hono"
-import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { executeFinanceSelfServiceBookingCreateCommand } from "./booking-create-command.js"
-import {
-  FINANCE_BOOKING_CREATE_SELF_SERVICE_ACTION,
-  FINANCE_BOOKING_CREATE_SELF_SERVICE_ROUTE,
-} from "./booking-create-policy.js"
-import { allocateBookingNumber } from "./booking-number.js"
-import { getFinanceRouteRuntime } from "./routes-runtime.js"
-import type { Env } from "./routes-shared.js"
-import type {
-  SelfServiceBookingSourceRejection,
-  SelfServiceBookingSourceRuntime,
-} from "./self-service-booking-source.js"
+
+import { checkoutCapabilityCookie, issueCheckoutCapability } from "./checkout-capability.js"
+import type { BookingsSelfServiceCreateRuntime } from "./runtime-port.js"
 
 /** Spends the verified challenge inside the create transaction. */
 export interface SelfServiceGuestVerification {
@@ -46,18 +33,17 @@ export interface SelfServiceGuestVerification {
   ): Promise<{ channel: "email" | "sms"; destination: string } | null>
 }
 
-export interface PublicBookingCreateRouteOptions {
-  /**
-   * Mints the route admission. Supplied by the deployment, which registered
-   * the action on its selected graph — the route never fabricates one.
-   */
-  resolveRouteActionAdmission?(
-    c: Context,
-  ): ((actor: string, key: string) => ToolHandlerActionPolicyContext) | undefined
-  resolveBookingSource?(c: Context): SelfServiceBookingSourceRuntime | undefined
+export interface SelfServiceCreateRouteOptions {
+  /** Finance's durable create command, when the deployment selected a provider. */
+  resolveSelfServiceCreate?(c: Context): BookingsSelfServiceCreateRuntime | undefined
   resolveGuestVerification?(c: Context): SelfServiceGuestVerification | undefined
   /** The authenticated customer's CRM person id, when the caller has an account. */
   resolveAuthenticatedPersonId?(c: Context): string | undefined
+}
+
+type Env = {
+  Bindings: Record<string, string | undefined>
+  Variables: { db: PostgresJsDatabase }
 }
 
 const errorResponseSchema = z.object({ error: z.string() })
@@ -83,7 +69,7 @@ const createBookingResponseSchema = z.object({
 })
 
 /** Rejections map to a status the caller can act on without string matching. */
-const REJECTION_STATUS: Record<SelfServiceBookingSourceRejection, 404 | 409 | 422> = {
+const REJECTION_STATUS: Record<string, 404 | 409 | 422> = {
   draft_not_found: 404,
   quote_not_found: 404,
   draft_consumed: 409,
@@ -100,7 +86,7 @@ const REJECTION_STATUS: Record<SelfServiceBookingSourceRejection, 404 | 409 | 42
 
 const createBookingRoute = createRoute({
   method: "post",
-  path: "/bookings",
+  path: "/",
   request: {
     body: {
       required: true,
@@ -133,29 +119,26 @@ const createBookingRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     501: {
-      description: "This deployment has no self-service booking source provider",
+      description: "This deployment has no self-service booking create provider",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
 })
 
-export function createPublicBookingCreateRoutes(options: PublicBookingCreateRouteOptions = {}) {
+export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOptions = {}) {
   const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 
   // A create without a stable key cannot be retried safely, so it is required
   // rather than optional. This is the HTTP-level replay guard; the durable
   // command keeps its own claim underneath.
-  routes.use("/bookings", idempotencyKey({ required: true }))
+  routes.use("/", idempotencyKey({ required: true }))
 
   return routes.openapi(createBookingRoute, async (c) => {
     const body = c.req.valid("json")
-    const db = c.get("db") as PostgresJsDatabase
+    const db = c.get("db")
 
-    const source = options.resolveBookingSource?.(c)
-    const admit = options.resolveRouteActionAdmission?.(c)
-    if (!source || !admit) {
-      return c.json({ error: "self_service_booking_unavailable" }, 501)
-    }
+    const create = options.resolveSelfServiceCreate?.(c)
+    if (!create) return c.json({ error: "self_service_booking_unavailable" }, 501)
 
     // Either an account or a verified challenge — never neither.
     const personId = options.resolveAuthenticatedPersonId?.(c)
@@ -172,7 +155,8 @@ export function createPublicBookingCreateRoutes(options: PublicBookingCreateRout
       if (!verified) return c.json({ error: "verification_required" }, 401)
     }
 
-    const resolved = await source.resolveBookingSource({
+    const challengeId = body.verificationChallengeId
+    const result = await create.createFromDraft({
       db,
       draftId: body.draftId,
       quoteId: body.quoteId,
@@ -181,62 +165,43 @@ export function createPublicBookingCreateRoutes(options: PublicBookingCreateRout
         ...(verified?.channel === "email" ? { verifiedEmail: verified.destination } : {}),
         ...(verified?.channel === "sms" ? { verifiedPhone: verified.destination } : {}),
       },
-    })
-    if (resolved.status !== "ok") {
-      return c.json({ error: resolved.reason }, REJECTION_STATUS[resolved.reason])
-    }
-
-    // Allocated here, never accepted from the caller.
-    const bookingNumber = await allocateBookingNumber(db)
-    const requestKey = c.req.header("Idempotency-Key") ?? ""
-    const admitted = admit("customer", requestKey)
-
-    const challengeId = body.verificationChallengeId
-    const result = await executeFinanceSelfServiceBookingCreateCommand({
-      db,
-      context: {
-        actor: "customer",
-        callerType: "session",
-        principalSubtype: "verified_guest",
-        ...(challengeId ? { sessionId: challengeId } : {}),
-      },
-      // Challenge-derived, non-user principal: the synthetic identity stays
-      // out of `userId` so it can never reach `createdByUserId`.
+      idempotencyKey: c.req.header("Idempotency-Key") ?? "",
+      // Challenge-derived, non-user principal: the synthetic identity stays out
+      // of `userId` so it can never reach `createdByUserId`.
       fallbackPrincipalId: challengeId
         ? `storefront-verification:${challengeId}`
         : `customer:${personId}`,
-      commandInput: { ...resolved.command, bookingNumber } as never,
-      admitted,
-      runtime: getFinanceRouteRuntime(c),
-      async consumeSources(tx, bookingId) {
-        await source.consumeBookingSource(tx, {
-          draftId: body.draftId,
-          quoteId: body.quoteId,
-          bookingId,
-        })
-        if (challengeId && verification) {
-          const spent = await verification.consume(tx, {
-            challengeId,
-            subjectRef: body.draftId,
-            consumedRef: bookingId,
-          })
-          // Rolls the whole create back rather than letting one challenge
-          // authorize a second booking.
-          if (spent.status !== "consumed") {
-            throw new Error("verification challenge could not be consumed")
+      ...(challengeId ? { sessionId: challengeId } : {}),
+      ...(challengeId && verification
+        ? {
+            async consumeSources(tx: PostgresJsDatabase, bookingId: string) {
+              const spent = await verification.consume(tx, {
+                challengeId,
+                subjectRef: body.draftId,
+                consumedRef: bookingId,
+              })
+              // Rolls the whole create back rather than letting one challenge
+              // authorize a second booking.
+              if (spent.status !== "consumed") {
+                throw new Error("verification challenge could not be consumed")
+              }
+            },
           }
-        }
-      },
+        : {}),
     })
 
-    const capability = await issueCheckoutCapability(result.value.bookingId, c.env)
+    if (result.status !== "ok") {
+      return c.json({ error: result.reason }, REJECTION_STATUS[result.reason] ?? 422)
+    }
+
+    const capability = await issueCheckoutCapability(result.bookingId, c.env)
     c.header("Set-Cookie", checkoutCapabilityCookie(capability.token, capability.expiresAt))
 
     return c.json(
       {
         data: {
-          bookingId: result.value.bookingId,
-          bookingNumber,
+          bookingId: result.bookingId,
+          bookingNumber: result.bookingNumber,
           status: "on_hold",
           checkoutCapability: {
             token: capability.token,
@@ -249,8 +214,3 @@ export function createPublicBookingCreateRoutes(options: PublicBookingCreateRout
     )
   })
 }
-
-export const FINANCE_SELF_SERVICE_CREATE_IDS = {
-  action: FINANCE_BOOKING_CREATE_SELF_SERVICE_ACTION,
-  route: FINANCE_BOOKING_CREATE_SELF_SERVICE_ROUTE,
-} as const

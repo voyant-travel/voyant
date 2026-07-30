@@ -20,6 +20,7 @@ import {
   bookingsFinanceRuntimePort,
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
+  bookingsSelfServiceCreateRuntimePort,
 } from "./runtime-port.js"
 import { bookingsStaleHoldsJobRuntimePort } from "./stale-holds-job-runtime-port.js"
 import { bookingsVoyantAdmin } from "./voyant-admin.js"
@@ -333,6 +334,10 @@ export const bookingsVoyantModule = defineModule({
     requirePort(bookingsFinanceRuntimePort),
     requirePort(bookingsStaleHoldsJobRuntimePort),
     requirePort(bookingsRelationshipsRuntimePort),
+    // Finance composes the durable booking-create command; Bookings owns the
+    // public resource. Optional, so a deployment without it simply serves no
+    // public creation route.
+    requirePort(bookingsSelfServiceCreateRuntimePort, { optional: true }),
   ],
   customFieldTargets: [
     {

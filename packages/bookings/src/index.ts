@@ -1,3 +1,4 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
@@ -11,6 +12,10 @@ import {
 } from "./route-runtime.js"
 import { bookingRoutes } from "./routes.js"
 import { publicBookingRoutes } from "./routes-public.js"
+import {
+  createSelfServiceBookingRoutes,
+  type SelfServiceCreateRouteOptions,
+} from "./routes-public-self-service-create.js"
 import { createBookingsRuntime } from "./runtime.js"
 import {
   bookingsAccommodationRuntimePort,
@@ -130,7 +135,9 @@ export const bookingsModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface BookingsApiModuleOptions extends BookingRouteRuntimeOptions {}
+export interface BookingsApiModuleOptions
+  extends BookingRouteRuntimeOptions,
+    SelfServiceCreateRouteOptions {}
 
 export function createBookingsApiModule(options: BookingsApiModuleOptions = {}): ApiModule {
   const module: Module = {
@@ -160,7 +167,9 @@ export function createBookingsApiModule(options: BookingsApiModuleOptions = {}):
   return {
     module,
     adminRoutes: bookingRoutes,
-    publicRoutes: publicBookingRoutes,
+    publicRoutes: new OpenAPIHono()
+      .route("/", publicBookingRoutes)
+      .route("/", createSelfServiceBookingRoutes(options)),
     anonymous: true,
     optionalCustomerAuth: true,
   }
@@ -231,7 +240,16 @@ export {
 export type { BookingActionLedgerListResponse, BookingRoutes } from "./routes.js"
 export type { PublicBookingRoutes } from "./routes-public.js"
 export { publicBookingRoutes } from "./routes-public.js"
-export type { BookingsRuntimeProvider } from "./runtime-port.js"
+export {
+  createSelfServiceBookingRoutes,
+  type SelfServiceCreateRouteOptions,
+  type SelfServiceGuestVerification,
+} from "./routes-public-self-service-create.js"
+export type {
+  BookingsRuntimeProvider,
+  BookingsSelfServiceCreateResult,
+  BookingsSelfServiceCreateRuntime,
+} from "./runtime-port.js"
 export {
   bookingRequirementsRuntimePort,
   bookingsAccommodationRuntimePort,
@@ -239,6 +257,7 @@ export {
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
   bookingsRuntimePort,
+  bookingsSelfServiceCreateRuntimePort,
 } from "./runtime-port.js"
 export type {
   BookingTravelerBedPreference,

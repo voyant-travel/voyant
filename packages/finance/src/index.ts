@@ -27,10 +27,6 @@ import { financeRoutes } from "./routes.js"
 import { financeActionLedgerRoutes } from "./routes-action-ledger.js"
 import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
-import {
-  createPublicBookingCreateRoutes,
-  type PublicBookingCreateRouteOptions,
-} from "./routes-public-booking-create.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
 import { createFinanceRuntime } from "./runtime.js"
@@ -136,14 +132,13 @@ export {
   publicFinanceRoutes,
 } from "./routes-public.js"
 export {
-  createPublicBookingCreateRoutes,
-  type PublicBookingCreateRouteOptions,
-  type SelfServiceGuestVerification,
-} from "./routes-public-booking-create.js"
-export {
   type SupplierInvoiceRoutes,
   supplierInvoiceRoutes,
 } from "./routes-supplier-invoices.js"
+export {
+  createSelfServiceCreateRuntime,
+  type SelfServiceCreateRuntimeDeps,
+} from "./self-service-create-runtime.js"
 export { type PublicFinanceRuntimeOptions, publicFinanceService } from "./service-public.js"
 
 export const financeModule: Module = {
@@ -155,7 +150,6 @@ export const financeModule: Module = {
 export interface FinanceApiModuleOptions
   extends FinanceRuntimeOptions,
     PublicFinanceRouteOptions,
-    PublicBookingCreateRouteOptions,
     CheckoutRoutesOptions,
     BookingTaxRouteOptions {}
 
@@ -193,7 +187,6 @@ export function createFinanceApiModule(options: FinanceApiModuleOptions = {}): A
   const publicRoutes = stampOpenApiRegistryApiId(
     new OpenAPIHono()
       .route("/", createPublicFinanceRoutes(options))
-      .route("/", createPublicBookingCreateRoutes(options))
       .route("/", createFinanceCheckoutRoutes(options)),
     "@voyant-travel/finance#api.public",
   )
