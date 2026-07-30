@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 
@@ -10,7 +10,14 @@ const DATA = path.join(repoRoot, "scripts", "checks", "regression", "retired-pat
 
 function runChecker() {
   try {
-    return { ok: true, output: execFileSync(process.execPath, [CHECKER], { cwd: repoRoot, encoding: "utf8", stdio: "pipe" }) }
+    return {
+      ok: true,
+      output: execFileSync(process.execPath, [CHECKER], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: "pipe",
+      }),
+    }
   } catch (error) {
     return { ok: false, output: `${error.stdout ?? ""}${error.stderr ?? ""}` }
   }
@@ -42,7 +49,9 @@ test("recreating a retired path fails the check", () => {
  * declarative list never learns about it. This catches that.
  */
 test("the declared list still covers what the authority scripts pin", () => {
-  const declared = new Set(JSON.parse(readFileSync(DATA, "utf8")).retiredPaths.map((entry) => entry.path))
+  const declared = new Set(
+    JSON.parse(readFileSync(DATA, "utf8")).retiredPaths.map((entry) => entry.path),
+  )
   const roots = /^(packages|starters|apps|scripts|docs|examples|\.github|\.changeset)\//
   const scriptsDir = path.join(repoRoot, "scripts")
 
