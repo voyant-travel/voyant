@@ -199,7 +199,12 @@ describe("catalog deployment manifest", () => {
           },
         },
       ],
-      runtimePorts: [{ id: "catalog.booking-runtime" }],
+      runtimePorts: [
+        { id: "catalog.booking-runtime" },
+        // Optional: resolves the billing party for a verified guest. Without
+        // it only authenticated customers can self-serve.
+        { id: "bookings.relationships.runtime", optional: true },
+      ],
     })
     expect(catalogBookingEngineVoyantModule.tools).toEqual(
       expect.arrayContaining([expect.objectContaining({ context: ["catalogBooking"] })]),

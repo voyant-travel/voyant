@@ -1,3 +1,4 @@
+import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import {
   defineExtension,
   defineModule,
@@ -411,7 +412,12 @@ export const catalogBookingEngineVoyantModule = defineModule({
       providePort(financeSelfServiceBookingSourceRuntimePort),
     ],
   },
-  runtimePorts: [requirePort(catalogBookingRuntimePort)],
+  runtimePorts: [
+    requirePort(catalogBookingRuntimePort),
+    // Resolves the billing party for a verified guest, who has no account.
+    // Optional: without it only authenticated customers can self-serve.
+    requirePort(bookingsRelationshipsRuntimePort, { optional: true }),
+  ],
   api: [
     {
       id: "@voyant-travel/catalog#booking-engine.api.admin",

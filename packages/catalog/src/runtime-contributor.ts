@@ -1,3 +1,7 @@
+import {
+  type BookingsRelationshipsRuntime,
+  bookingsRelationshipsRuntimePort,
+} from "@voyant-travel/bookings/runtime-port"
 import type { CatalogSearchRuntimeOptions } from "@voyant-travel/catalog/api-runtime-ports"
 import {
   catalogBookingRuntimePort,
@@ -86,6 +90,7 @@ export function createCatalogRuntimePortContribution(
   host: CatalogRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const hasIndexerPort = host.hasRuntimePort?.(catalogIndexerProviderPort) === true
+  const hasRelationshipsPort = host.hasRuntimePort?.(bookingsRelationshipsRuntimePort) === true
   const dependencies = Promise.resolve().then(() =>
     Promise.all([
       host.getRuntimePort<CatalogAccommodationsRuntimeExtension>(
@@ -151,15 +156,33 @@ export function createCatalogRuntimePortContribution(
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
     [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
-    // Gates Finance's self-service create action. Without a billing-person
-    // resolver an authenticated customer can still book (they already are the
-    // billing party); a verified guest is rejected until one is wired.
+    // Gates Finance's self-service create action.
     [financeSelfServiceBookingSourceRuntimePort.id]: createSelfServiceBookingSourceProvider({
       async resolveOwnedHandlers() {
         const runtime = await contribution
         const services = await runtime.services
         return services.getOwnedHandlers(host.primitives.env(undefined))
       },
+      // A verified guest has no account, so the booking's billing party is
+      // resolved from the contact they proved control of. `upsertPersonFromContact`
+      // matches on email then phone, so a retry reuses the same person rather
+      // than creating another. Absent the port, only authenticated customers
+      // can book — they already are the billing party.
+      ...(hasRelationshipsPort
+        ? {
+            async resolveBillingPerson(contact, provenance) {
+              const relationships = await host.getRuntimePort<BookingsRelationshipsRuntime>(
+                bookingsRelationshipsRuntimePort,
+              )
+              const person = await relationships.upsertPersonFromContact(
+                host.primitives.database.resolve(undefined) as never,
+                { ...contact, preferredLanguage: null },
+                { source: provenance.source, sourceRef: provenance.sourceRef },
+              )
+              return person?.id ?? null
+            },
+          }
+        : {}),
     }),
     [catalogDraftReaperJobRuntimePort.id]: {
       async withDb<T>(operation: (db: AnyDrizzleDb) => Promise<T>) {
