@@ -39,6 +39,7 @@ import {
   buildContributedContext,
   indexActionsByTool,
 } from "./graph-composition.js"
+import { buildServerInstructions, registerGuideTools } from "./guide.js"
 import {
   callerFromContext,
   classifyToolCallResult,
@@ -127,16 +128,34 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     const permissions = callerPermissions(c)
     const ctx = await buildAuthenticatedContext(c, buildContext)
     const observer = observerFor(ctx)
-    const server = new McpServer(serverInfo)
 
     // The invocation names the caller could actually reach, so an unknown-tool
     // event is a name that was never registered *or* was filtered by scope —
     // both of which reveal what the model expected but could not call.
     const authorizedTools = new Map<string, ToolManifestEntry>()
+    // Pre-scan the authorized surface before constructing the server: the guide
+    // layer's `instructions` and its scope-aware text are decided by whether the
+    // caller can reach any write Tool, so both must be known at construction time.
+    const authorized: Array<{
+      entry: ToolManifestEntry
+      def: NonNullable<ReturnType<typeof registry.get>>
+    }> = []
+    let writeEnabled = false
     for (const entry of registry.list()) {
       if (!isAuthorized(entry, permissions, accessCatalog, ctx.audience)) continue
       const def = registry.get(entry.name)
       if (!def) continue
+      if (entry.annotations.readOnlyHint !== true) writeEnabled = true
+      authorized.push({ entry, def })
+    }
+
+    const guideScope = { writeEnabled }
+    const server = new McpServer(serverInfo, {
+      instructions: buildServerInstructions(guideScope),
+    })
+    const guideToolNames = new Set(registerGuideTools(server, guideScope))
+
+    for (const { entry, def } of authorized) {
       authorizedTools.set(entry.name, entry)
       registerMcpTool(
         server,
@@ -170,7 +189,15 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     await server.connect(transport)
     const startedAt = Date.now()
     const response = (await transport.handleRequest(c)) ?? c.body(null, 204)
-    await instrumentRpc(c, response, Date.now() - startedAt, authorizedTools, ctx, observer)
+    await instrumentRpc(
+      c,
+      response,
+      Date.now() - startedAt,
+      authorizedTools,
+      guideToolNames,
+      ctx,
+      observer,
+    )
     return response
   })
 
@@ -187,6 +214,7 @@ async function instrumentRpc(
   response: Response,
   durationMs: number,
   authorizedTools: Map<string, ToolManifestEntry>,
+  guideToolNames: ReadonlySet<string>,
   ctx: ToolContext,
   observer: McpObserver,
 ): Promise<void> {
@@ -210,7 +238,11 @@ async function instrumentRpc(
     const name = asRecord(request?.params)?.name
     if (typeof name !== "string") return
     const entry = authorizedTools.get(name)
-    const { outcome, code } = classifyToolCallResult(payload, entry !== undefined)
+    // Guide Tools are registered directly on the server, not through the registry,
+    // so they carry no manifest entry — mark them known reads for telemetry rather
+    // than misclassifying a legitimate guide call as an unknown-tool miss.
+    const known = entry !== undefined || guideToolNames.has(name)
+    const { outcome, code } = classifyToolCallResult(payload, known)
     observer.toolCall({
       tool: name,
       outcome,
