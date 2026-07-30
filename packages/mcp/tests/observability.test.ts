@@ -112,7 +112,7 @@ const saveNoteTool = defineTool({
     sideEffects: ["data-write"],
   },
   async handler({ note }) {
-    throw new ToolError(`refusing to persist ${note}`, "RECORD_LOCKED")
+    throw new ToolError(`refusing to persist ${note}`, "NOT_FOUND")
   },
 })
 
@@ -243,7 +243,7 @@ describe("MCP dispatch instrumentation", () => {
     const h = harness()
     await call(h.app, "save_note", { note: "keep" })
     const event = h.telemetry().find((e) => e.event === "tool_call")
-    expect(event).toMatchObject({ tool: "save_note", outcome: "tool_error", code: "RECORD_LOCKED" })
+    expect(event).toMatchObject({ tool: "save_note", outcome: "tool_error", code: "NOT_FOUND" })
   })
 
   it("emits the tools/list payload size", async () => {

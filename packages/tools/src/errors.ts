@@ -135,7 +135,13 @@ export class ToolError extends Error {
   ) {
     super(message, options)
     this.name = "ToolError"
-    const defaults = TOOL_ERROR_DEFAULTS[code]
+    // Constructing an error must never throw. TypeScript keeps `code` inside
+    // ToolErrorCode, but this runs on the failure path where a value can arrive
+    // from an untyped boundary or a stale build; an unknown code then made
+    // `defaults` undefined and turned the domain failure into a TypeError, which
+    // dispatch reported as a generic PROVIDER_ERROR — losing the very code the
+    // caller needed. Fall back to the terminal default instead.
+    const defaults = TOOL_ERROR_DEFAULTS[code] ?? TOOL_ERROR_DEFAULTS.PROVIDER_ERROR
     this.retryable = details?.retryable ?? defaults.retryable
     this.nextSteps =
       details?.nextSteps && details.nextSteps.length > 0 ? details.nextSteps : defaults.nextSteps

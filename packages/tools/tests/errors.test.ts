@@ -49,4 +49,15 @@ describe("ToolError actionable fields", () => {
     expect(error.didYouMean).toBe("trip_1")
     expect(error.nextSteps).toEqual(["Use trip_1."])
   })
+
+  it("does not throw when constructed with an unrecognised code", () => {
+    // The failure path must not itself fail. An unknown code previously made the
+    // per-code defaults lookup undefined, so the constructor threw a TypeError
+    // and callers saw a generic PROVIDER_ERROR instead of the domain code.
+    const error = new ToolError("boom", "NOT_A_REAL_CODE" as ToolErrorCode)
+    expect(error).toBeInstanceOf(ToolError)
+    expect(error.code).toBe("NOT_A_REAL_CODE")
+    expect(error.retryable).toBe(false)
+    expect(error.nextSteps.length).toBeGreaterThan(0)
+  })
 })
