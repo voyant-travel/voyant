@@ -34,6 +34,9 @@ describe("bookings deployment manifest", () => {
         // public resource. Optional, so a deployment without it serves no
         // public creation route.
         { id: "bookings.self-service-create.runtime", optional: true },
+        // Authorizes a guest create; without it only authenticated customers
+        // can use the public create route.
+        { id: "bookings.guest-verification.runtime", optional: true },
       ],
       api: [
         {

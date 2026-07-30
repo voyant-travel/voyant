@@ -25,7 +25,12 @@ import type { BookingsSelfServiceCreateRuntime } from "./runtime-port.js"
 export interface SelfServiceGuestVerification {
   consume(
     tx: PostgresJsDatabase,
-    input: { challengeId: string; subjectRef: string; consumedRef: string },
+    input: {
+      challengeId: string
+      subjectRef: string
+      destination: string
+      consumedRef: string
+    },
   ): Promise<{ status: "consumed"; destination: string } | { status: "rejected" }>
   /** Reads the destination a challenge was verified for, before the command runs. */
   peekVerifiedDestination(
@@ -191,6 +196,7 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
               const spent = await verification.consume(tx, {
                 challengeId,
                 subjectRef: body.draftId,
+                destination: verified?.destination ?? "",
                 consumedRef: bookingId,
               })
               // Rolls the whole create back rather than letting one challenge

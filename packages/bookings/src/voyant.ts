@@ -18,6 +18,7 @@ import { bookingsReportingDeclaration } from "./reporting-definitions.js"
 import {
   bookingsAccommodationRuntimePort,
   bookingsFinanceRuntimePort,
+  bookingsGuestVerificationRuntimePort,
   bookingsInventoryRuntimePort,
   bookingsRelationshipsRuntimePort,
   bookingsSelfServiceCreateRuntimePort,
@@ -338,6 +339,9 @@ export const bookingsVoyantModule = defineModule({
     // public resource. Optional, so a deployment without it simply serves no
     // public creation route.
     requirePort(bookingsSelfServiceCreateRuntimePort, { optional: true }),
+    // Authorizes a guest create. Without it only authenticated customers can
+    // use the public create route.
+    requirePort(bookingsGuestVerificationRuntimePort, { optional: true }),
   ],
   customFieldTargets: [
     {

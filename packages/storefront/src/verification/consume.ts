@@ -79,3 +79,51 @@ export async function consumeVerifiedChallenge(
 
   return row ? { status: "consumed", destination: row.destination } : { status: "rejected" }
 }
+
+/**
+ * Read the destination a challenge was verified for, without spending it.
+ *
+ * Applies the same binding predicate as consumption — purpose, subject, and
+ * verification window — so a caller cannot learn the destination of a
+ * challenge that could not authorize this booking anyway. Returns null when
+ * the challenge is unusable, so the route reports "verification required"
+ * rather than distinguishing why.
+ */
+export async function peekVerifiedChallengeDestination(
+  db: AnyDrizzleDb,
+  input: {
+    challengeId: string
+    purpose: string
+    subjectRef: string
+    now?: Date
+    consumptionWindowSeconds?: number
+  },
+): Promise<{ channel: "email" | "sms"; destination: string } | null> {
+  const now = input.now ?? new Date()
+  const windowSeconds = Math.max(
+    60,
+    input.consumptionWindowSeconds ?? DEFAULT_CONSUMPTION_WINDOW_SECONDS,
+  )
+  const verifiedAfter = new Date(now.getTime() - windowSeconds * 1000)
+
+  const rows = await db
+    .select({
+      channel: storefrontVerificationChallenges.channel,
+      destination: storefrontVerificationChallenges.destination,
+    })
+    .from(storefrontVerificationChallenges)
+    .where(
+      and(
+        eq(storefrontVerificationChallenges.id, input.challengeId),
+        eq(storefrontVerificationChallenges.status, "verified"),
+        isNull(storefrontVerificationChallenges.consumedAt),
+        eq(storefrontVerificationChallenges.purpose, input.purpose),
+        eq(storefrontVerificationChallenges.subjectRef, input.subjectRef),
+        gt(storefrontVerificationChallenges.verifiedAt, verifiedAfter),
+      ),
+    )
+    .limit(1)
+
+  const row = rows[0]
+  return row ? { channel: row.channel, destination: row.destination } : null
+}

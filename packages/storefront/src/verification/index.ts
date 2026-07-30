@@ -17,6 +17,7 @@ export type {
 } from "./consume.js"
 export {
   consumeVerifiedChallenge,
+  peekVerifiedChallengeDestination,
   STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
 } from "./consume.js"
 export type {

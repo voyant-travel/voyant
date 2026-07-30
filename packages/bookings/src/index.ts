@@ -3,6 +3,7 @@ import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { ApiModule } from "@voyant-travel/hono/module"
+import type { Context } from "hono"
 import { resolveBookingFinancialLifecycle } from "./financial-lifecycle.js"
 import { bookingsLinkable } from "./linkables.js"
 import {
@@ -18,9 +19,13 @@ import {
 } from "./routes-public-self-service-create.js"
 import { createBookingsRuntime } from "./runtime.js"
 import {
+  type BookingsGuestVerificationRuntime,
+  type BookingsSelfServiceCreateRuntime,
   bookingsAccommodationRuntimePort,
   bookingsFinanceRuntimePort,
+  bookingsGuestVerificationRuntimePort,
   bookingsRelationshipsRuntimePort,
+  bookingsSelfServiceCreateRuntimePort,
 } from "./runtime-port.js"
 
 export {
@@ -178,39 +183,78 @@ export function createBookingsApiModule(options: BookingsApiModuleOptions = {}):
 export const bookingsApiModule: ApiModule = createBookingsApiModule()
 
 /** Package-owned adapter from graph ports to the complete Bookings runtime. */
-export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const [accommodation, customFields, finance, relationships] = await Promise.all([
-    getPort(bookingsAccommodationRuntimePort),
-    getPort(customFieldsRuntimePort),
-    getPort(bookingsFinanceRuntimePort),
-    getPort(bookingsRelationshipsRuntimePort),
-  ])
-  const provider = createBookingsRuntime({
-    accommodation,
-    customFields,
-    finance,
-    relationships,
-  })
-  const configured = createBookingsApiModule(provider.options)
-  const bootstrap = configured.module.bootstrap
-  const selected: ApiModule = {
-    module: {
-      ...configured.module,
-      bootstrap: async (context: BootstrapContext) => {
-        await bootstrap?.(context)
+export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort, hasPort }) => {
+    const [accommodation, customFields, finance, relationships] = await Promise.all([
+      getPort(bookingsAccommodationRuntimePort),
+      getPort(customFieldsRuntimePort),
+      getPort(bookingsFinanceRuntimePort),
+      getPort(bookingsRelationshipsRuntimePort),
+    ])
+    const provider = createBookingsRuntime({
+      accommodation,
+      customFields,
+      finance,
+      relationships,
+    })
+
+    // Public self-service creation is served only when a deployment selected a
+    // provider for the durable command; otherwise the route reports 501. The
+    // guest-verification provider is separate: without it only authenticated
+    // customers can create.
+    const selfServiceCreate = hasPort(bookingsSelfServiceCreateRuntimePort)
+      ? ((await getPort(bookingsSelfServiceCreateRuntimePort)) as BookingsSelfServiceCreateRuntime)
+      : undefined
+    const guestVerification = hasPort(bookingsGuestVerificationRuntimePort)
+      ? ((await getPort(bookingsGuestVerificationRuntimePort)) as BookingsGuestVerificationRuntime)
+      : undefined
+
+    const configured = createBookingsApiModule({
+      ...provider.options,
+      ...(selfServiceCreate ? { resolveSelfServiceCreate: () => selfServiceCreate } : {}),
+      ...(guestVerification ? { resolveGuestVerification: () => guestVerification } : {}),
+      resolveAuthenticatedPersonId: (c) => readCustomerPrincipal(c).personId,
+      resolveAuthenticatedUserId: (c) => readCustomerPrincipal(c).userId,
+    })
+
+    const bootstrap = configured.module.bootstrap
+    const selected: ApiModule = {
+      module: {
+        ...configured.module,
+        bootstrap: async (context: BootstrapContext) => {
+          await bootstrap?.(context)
+        },
       },
-    },
+    }
+    if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+      selected.adminRoutes = configured.adminRoutes
+    }
+    if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+      selected.publicRoutes = configured.publicRoutes
+      selected.anonymous = configured.anonymous
+      selected.optionalCustomerAuth = configured.optionalCustomerAuth
+    }
+    return selected
+  },
+)
+
+/**
+ * Read the authenticated customer from request context.
+ *
+ * The public bookings bundle runs with `optionalCustomerAuth`, so an anonymous
+ * caller has no customer realm set — which is exactly when the create route
+ * requires a verified challenge instead. Mirrors
+ * `requireCustomerIdentityContext` without throwing.
+ */
+function readCustomerPrincipal(c: Context): { personId?: string; userId?: string } {
+  if (c.get("realm") !== "customer" || c.get("actor") !== "customer") return {}
+  const userId = c.get("userId")
+  const personId = c.get("relationshipPersonId")
+  return {
+    ...(typeof personId === "string" && personId ? { personId } : {}),
+    ...(typeof userId === "string" && userId ? { userId } : {}),
   }
-  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
-    selected.adminRoutes = configured.adminRoutes
-  }
-  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
-    selected.publicRoutes = configured.publicRoutes
-    selected.anonymous = configured.anonymous
-    selected.optionalCustomerAuth = configured.optionalCustomerAuth
-  }
-  return selected
-})
+}
 
 export {
   BOOKING_FINANCIAL_LIFECYCLE_KEY,
@@ -246,6 +290,7 @@ export {
   type SelfServiceGuestVerification,
 } from "./routes-public-self-service-create.js"
 export type {
+  BookingsGuestVerificationRuntime,
   BookingsRuntimeProvider,
   BookingsSelfServiceCreateResult,
   BookingsSelfServiceCreateRuntime,

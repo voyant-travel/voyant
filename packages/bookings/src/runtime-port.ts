@@ -117,6 +117,33 @@ export type BookingsSelfServiceCreateResult =
     }
   | { status: "rejected"; reason: string }
 
+/**
+ * Reads and spends the storefront verification challenge that authorizes a
+ * guest booking create.
+ *
+ * Bookings owns the public create route but not the challenge; Storefront owns
+ * the challenge but depends on Bookings, so it arrives through this port.
+ * Consumed optionally: without it only authenticated customers can create.
+ */
+export interface BookingsGuestVerificationRuntime {
+  /** The destination a challenge was verified for, read before the command. */
+  peekVerifiedDestination(
+    db: PostgresJsDatabase,
+    input: { challengeId: string; subjectRef: string },
+  ): Promise<{ channel: "email" | "sms"; destination: string } | null>
+  /** Spend it inside the create transaction, single-use. */
+  consume(
+    tx: PostgresJsDatabase,
+    input: {
+      challengeId: string
+      subjectRef: string
+      /** The destination the peek established; re-checked when spending. */
+      destination: string
+      consumedRef: string
+    },
+  ): Promise<{ status: "consumed"; destination: string } | { status: "rejected" }>
+}
+
 export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodationRuntime>(
   "bookings.accommodation.runtime",
   ["enrichOverviewItems"],
@@ -136,4 +163,8 @@ export const bookingsRelationshipsRuntimePort = objectPort<BookingsRelationships
 export const bookingsSelfServiceCreateRuntimePort = objectPort<BookingsSelfServiceCreateRuntime>(
   "bookings.self-service-create.runtime",
   ["createFromDraft"],
+)
+export const bookingsGuestVerificationRuntimePort = objectPort<BookingsGuestVerificationRuntime>(
+  "bookings.guest-verification.runtime",
+  ["peekVerifiedDestination", "consume"],
 )
