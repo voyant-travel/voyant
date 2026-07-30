@@ -65,9 +65,10 @@ export function buildServerInstructions(scope: GuideScope): string {
     "Every capability is one MCP Tool. Enumerate them with `tools/list`, or fetch the",
     "authorization-filtered contract from `GET /v1/admin/mcp/manifest`. Tool names use",
     "the domain vocabulary: verbs `get`/`list`/`search`/`create`/`update` over nouns",
-    "like `product`, `option_unit`, `availability_slot`, `quote`, `quote_version`,",
-    "`booking`, `traveler`, `invoice`. So to find how to read products, scan for",
-    "`get_product`/`list_products`; for departures, `list_availability_slots`.",
+    "like `product`, `option_unit`, `departure`, `quote`, `quote_version`, `booking`,",
+    "`invoice`. So to read products, scan for `get_product`/`list_products`; for dated",
+    "departures, `list_departures`. Travelers are reached through their booking record,",
+    "not a standalone traveler CRUD tool.",
     "",
     "START WITH THE GUIDE TOOLS",
     `Call \`voyant_guide\` (topics: ${GUIDE_TOPICS.join(", ")}) for the booking`,
@@ -207,13 +208,15 @@ function discoverySection(): string {
     "before calling.\n" +
     "2. Tool names are `verb_noun` in domain vocabulary. Verbs: `get`, `list`, " +
     "`search`, `create`, `update`, and lifecycle verbs like `publish`/`archive`. " +
-    "Nouns are the domain terms — `product`, `option`, `option_unit`, " +
-    "`availability_slot`, `quote`, `quote_version`, `booking`, `traveler`, `invoice`.\n\n" +
+    "Nouns are the domain terms — `product`, `option`, `option_unit`, `departure`, " +
+    "`quote`, `quote_version`, `booking`, `invoice`. The domain term Slot (a concrete " +
+    "dated inventory unit) surfaces in the tool surface as `departure`.\n\n" +
     "Example lookups, using our vocabulary:\n" +
     "- Read the catalog → `list_products`, `get_product`.\n" +
-    "- Find dated departures for a Product → `list_availability_slots`.\n" +
+    "- Find dated departures for a Product → `list_departures`, `get_departure`.\n" +
     "- Work a sales pursuit → `get_quote`, and the Quote Version Tools.\n" +
-    "- Inspect a commitment → `get_booking`, and its Traveler/Item reads.\n\n" +
+    "- Inspect a commitment → `get_booking` (its Travelers and Items are part of the " +
+    "booking record, not separate traveler read Tools).\n\n" +
     "Only Tools your key is authorized for are listed or callable; a call to a Tool " +
     "outside your scopes fails as if it did not exist. Each Tool validates its own " +
     "input and returns typed pure data, so read its `inputSchema` before calling.\n\n" +
