@@ -163,6 +163,9 @@ export function createCatalogRuntimePortContribution(
         const services = await runtime.services
         return services.getOwnedHandlers(host.primitives.env(undefined))
       },
+      // Verifies the draft capability. Absent secrets mean the capability
+      // cannot be checked, and booking is refused rather than allowed.
+      resolveEnv: () => host.primitives.env(undefined) as Record<string, string | undefined>,
       // A verified guest has no account, so the booking's billing party is
       // resolved from the contact they proved control of. `upsertPersonFromContact`
       // matches on email then phone, so a retry reuses the same person rather

@@ -56,6 +56,8 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
       quoteId: string
       caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
       idempotencyKey: string
+      /** Proves the caller holds the draft; verified by the source provider. */
+      draftCapabilityToken?: string
       /**
        * The challenge that authorized a guest create. Absent for an
        * authenticated customer, who is identified by their account instead.
@@ -71,6 +73,9 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
         draftId: input.draftId,
         quoteId: input.quoteId,
         caller: input.caller,
+        ...(input.draftCapabilityToken
+          ? { draftCapabilityToken: input.draftCapabilityToken }
+          : {}),
       })
       if (resolved.status !== "ok") {
         return { status: "rejected" as const, reason: resolved.reason }

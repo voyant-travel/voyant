@@ -2,7 +2,10 @@ import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 
 import { createOwnedBookingHandlerRegistry, type OwnedBookingHandler } from "./owned-handler.js"
+import { issueBookingDraftCapability } from "./draft-capability.js"
 import { createSelfServiceBookingSourceProvider } from "./self-service-source.js"
+
+const CAPABILITY_ENV = { VOYANT_BOOKING_DRAFT_CAPABILITY_SECRET: "draft-capability-test-secret-32c" }
 
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000)
 const PAST = new Date(Date.now() - 60 * 1000)
@@ -36,6 +39,34 @@ describe("self-service booking source provider", () => {
     ],
   ])("refuses when %s", async (_label, patch, reason) => {
     expect(await resolve(patch)).toEqual({ status: "rejected", reason })
+  })
+
+  it("refuses a caller who does not hold the draft", async () => {
+    // The draft id alone is not authorization: it is caller-supplied on the
+    // public draft PUT, and the draft holds another party's traveller and
+    // contact details.
+    expect(await resolve({ draftCapabilityToken: "" })).toEqual({
+      status: "rejected",
+      reason: "draft_forbidden",
+    })
+  })
+
+  it("refuses a capability minted for a different draft", async () => {
+    const other = await issueBookingDraftCapability("bdrf_other", CAPABILITY_ENV)
+
+    expect(await resolve({ draftCapabilityToken: other.token })).toEqual({
+      status: "rejected",
+      reason: "draft_forbidden",
+    })
+  })
+
+  it("refuses a booking with no live hold when the vertical manages inventory", async () => {
+    // Hold conversion only runs for slot-backed products, so a slotless one
+    // with no hold would oversell rather than fail.
+    expect(await resolve({ draft: { hold_expires_at: null } })).toEqual({
+      status: "rejected",
+      reason: "hold_required",
+    })
   })
 
   it("refuses a draft whose current price no longer matches the quote", async () => {
@@ -194,6 +225,8 @@ async function resolve(
     payload?: Record<string, unknown>
     handler?: Partial<OwnedBookingHandler>
     resolveBillingPerson?: (...args: never[]) => Promise<string | null>
+    /** Empty string means "present no capability". */
+    draftCapabilityToken?: string
   } = {},
 ) {
   const ownedHandlers = createOwnedBookingHandlerRegistry()
@@ -209,6 +242,10 @@ async function resolve(
           pricing: { base_amount: 100, taxes: 0, fees: 0, surcharges: 0, currency: "EUR" },
         }
       },
+      // The products handler implements holds, so the fixture does too.
+      async placeHold() {
+        return { holdToken: "hold_1", expiresAt: FUTURE }
+      },
       async deriveSelfServiceCommand() {
         return { status: "ok", command: { productId: "prod_1" } }
       },
@@ -217,6 +254,7 @@ async function resolve(
 
   const provider = createSelfServiceBookingSourceProvider({
     resolveOwnedHandlers: () => ownedHandlers,
+    resolveEnv: () => CAPABILITY_ENV,
     ...(patch.resolveBillingPerson
       ? { resolveBillingPerson: patch.resolveBillingPerson as never }
       : {}),
@@ -265,11 +303,17 @@ async function resolve(
           ...patch.quote,
         }
 
+  const capability =
+    patch.draftCapabilityToken !== undefined
+      ? patch.draftCapabilityToken
+      : (await issueBookingDraftCapability("bdrf_1", CAPABILITY_ENV)).token
+
   return provider.resolveBookingSource({
     db: selectDb({ booking_drafts: draft, catalog_quotes: quote }),
     draftId: "bdrf_1",
     quoteId: "cquo_1",
     caller: (patch.caller ?? { personId: "per_1" }) as never,
+    ...(capability ? { draftCapabilityToken: capability } : {}),
   })
 }
 

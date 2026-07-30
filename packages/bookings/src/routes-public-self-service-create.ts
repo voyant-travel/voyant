@@ -76,16 +76,30 @@ const createBookingResponseSchema = z.object({
   }),
 })
 
+/** Reads the draft capability from the header or its HttpOnly cookie. */
+function readDraftCapabilityToken(c: Context): string | undefined {
+  const header = c.req.header("X-Voyant-Booking-Draft")
+  if (header) return header
+  const cookie = c.req.header("Cookie") ?? ""
+  const match = /(?:^|;\s*)voyant_booking_draft=([^;]+)/.exec(cookie)
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined
+}
+
 /** Rejections map to a status the caller can act on without string matching. */
-const REJECTION_STATUS: Record<string, 404 | 409 | 422> = {
+const REJECTION_STATUS: Record<string, 403 | 404 | 409 | 422> = {
   draft_not_found: 404,
   quote_not_found: 404,
+  // The caller does not hold this draft. Deliberately indistinguishable from
+  // a missing draft would be nicer, but 403 is the honest status and draft
+  // ids are not enumerable.
+  draft_forbidden: 403,
   entity_not_found: 404,
   entity_not_bookable: 409,
   draft_consumed: 409,
   quote_consumed: 409,
   quote_expired: 409,
   hold_expired: 409,
+  hold_required: 409,
   price_changed: 409,
   entity_mismatch: 422,
   not_public: 422,
@@ -98,6 +112,12 @@ const createBookingRoute = createRoute({
   method: "post",
   path: "/",
   request: {
+    // Declared so the published contract states it. Presence is enforced by
+    // the idempotency middleware, which runs first, so its clearer 400 is what
+    // a caller actually sees when the header is missing.
+    headers: z.object({
+      "Idempotency-Key": z.string().max(255).describe("Stable key identifying this create attempt."),
+    }),
     body: {
       required: true,
       content: { "application/json": { schema: createBookingRequestSchema } },
@@ -114,6 +134,10 @@ const createBookingRoute = createRoute({
     },
     401: {
       description: "Neither an authenticated customer nor a verified challenge",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    403: {
+      description: "The caller does not hold the capability for this draft",
       content: { "application/json": { schema: errorResponseSchema } },
     },
     404: {
@@ -138,10 +162,19 @@ const createBookingRoute = createRoute({
 export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOptions = {}) {
   const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 
-  // A create without a stable key cannot be retried safely, so it is required
-  // rather than optional. This is the HTTP-level replay guard; the durable
-  // command keeps its own claim underneath.
-  routes.use("/", idempotencyKey({ required: true }))
+  // A create without a stable key cannot be retried safely, so the key is
+  // required. Response bodies are deliberately NOT cached: this one carries a
+  // checkout capability, an HMAC bearer credential that would otherwise sit in
+  // `infra_idempotency_keys` for 24 hours, and the middleware's replay path
+  // reconstructs the body without its `Set-Cookie`, silently stripping the
+  // caller's session on every retry.
+  //
+  // Nothing is lost by opting out. The durable command claim underneath is
+  // what prevents a duplicate booking: a retry falls through to the handler,
+  // replays the original booking at the claim, and is issued a fresh
+  // capability and cookie. Same-key-different-body conflicts are caught by the
+  // command's own fingerprint rather than by the HTTP cache.
+  routes.use("/", idempotencyKey({ required: true, replayResponses: false }))
 
   return routes.openapi(createBookingRoute, async (c) => {
     const body = c.req.valid("json")
@@ -184,6 +217,9 @@ export function createSelfServiceBookingRoutes(options: SelfServiceCreateRouteOp
         ...(verified?.channel === "sms" ? { verifiedPhone: verified.destination } : {}),
       },
       idempotencyKey: c.req.header("Idempotency-Key") ?? "",
+      // Issued when the draft was created. Presented as a header by
+      // non-browser callers, or as the HttpOnly cookie for browsers.
+      ...(readDraftCapabilityToken(c) ? { draftCapabilityToken: readDraftCapabilityToken(c) } : {}),
       // Only set for a guest; refused above when the caller is authenticated,
       // so it can never be a caller-chosen ledger principal or claim scope.
       ...(challengeId ? { guestChallengeId: challengeId } : {}),

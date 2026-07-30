@@ -90,6 +90,8 @@ export interface BookingsSelfServiceCreateRuntime {
     caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
     /** Stable request key; the durable command claims against it. */
     idempotencyKey: string
+    /** Proves the caller holds the draft they are booking. */
+    draftCapabilityToken?: string
     /**
      * The challenge that authorized a guest create. Absent for an
      * authenticated customer, who is identified by their account instead — the

@@ -15,6 +15,7 @@ import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { PricingBasis } from "../snapshot/schema.js"
 import { bookingDraftsTable } from "./drafts-schema.js"
+import { verifyBookingDraftCapabilityToken } from "./draft-capability.js"
 import { markDraftConsumed } from "./drafts-service.js"
 import type { OwnedBookingHandlerRegistry, SelfServiceBillingParty } from "./owned-handler.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
@@ -46,6 +47,11 @@ export interface SelfServiceBookingSourceProviderDeps {
    * billing party); a verified guest is rejected as `incomplete_draft`.
    */
   resolveBillingPerson?: ResolveSelfServiceBillingPerson
+  /**
+   * Runtime env for verifying the draft capability. Without it the capability
+   * cannot be checked, so booking is refused rather than allowed.
+   */
+  resolveEnv?(): Record<string, string | undefined>
 }
 
 /**
@@ -74,7 +80,20 @@ export function createSelfServiceBookingSourceProvider(deps: SelfServiceBookingS
         verifiedEmail?: string
         verifiedPhone?: string
       }
+      /** Proves the caller is the one who built this draft. */
+      draftCapabilityToken?: string
     }) {
+      // Holding the draft is what authorizes booking it. Checked before the
+      // draft is even read, so a caller without it learns nothing about
+      // whether the id exists.
+      const capabilityOk = await verifyBookingDraftCapabilityToken(
+        input.draftCapabilityToken,
+        input.draftId,
+        "draft:book",
+        deps.resolveEnv?.() ?? {},
+      )
+      if (!capabilityOk) return reject("draft_forbidden")
+
       const draft = await loadDraft(input.db, input.draftId)
       if (!draft) return reject("draft_not_found")
       if (draft.consumed_booking_id) return reject("draft_consumed")
@@ -99,6 +118,13 @@ export function createSelfServiceBookingSourceProvider(deps: SelfServiceBookingS
       const ownedHandlers = await deps.resolveOwnedHandlers()
       const handler = ownedHandlers?.resolve(draft.entity_module)
       if (!handler?.deriveSelfServiceCommand) return reject("unsupported_vertical")
+
+      // A vertical that implements holds manages finite inventory, so a
+      // self-service booking against it must carry a live one. Otherwise the
+      // absence of `hold_expires_at` silently skipped every hold check and the
+      // booking was created against nothing — and hold conversion only runs
+      // for slot-backed products, so a slotless one would simply oversell.
+      if (handler.placeHold && !draft.hold_expires_at) return reject("hold_required")
 
       // Re-price the CURRENT draft and require it to still equal the quote.
       //

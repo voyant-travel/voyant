@@ -46,6 +46,8 @@ export type SelfServiceBookingSourceRejection =
   | "contact_mismatch"
   | "incomplete_draft"
   | "unsupported_vertical"
+  | "draft_forbidden"
+  | "hold_required"
 
 export interface SelfServiceBookingSourceResolved {
   status: "ok"
@@ -75,6 +77,8 @@ export interface SelfServiceBookingSourceRuntime {
     draftId: string
     quoteId: string
     caller: SelfServiceBookingCaller
+    /** Proves the caller holds the draft they are booking. */
+    draftCapabilityToken?: string
   }): Promise<SelfServiceBookingSourceResolution>
   /**
    * Convert the hold, consume the draft and quote, and associate the catalog

@@ -38,5 +38,6 @@ describe("finance storefront OpenAPI coverage", () => {
     expect(diff.undocumented).toEqual([])
     expect(diff.stale).toEqual([])
     expect(diff.requestDrift).toEqual([])
+    expect(diff.parameterDrift).toEqual([])
   })
 })

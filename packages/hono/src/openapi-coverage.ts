@@ -25,6 +25,12 @@ export interface OpenApiCoverageDiff {
     onlyInRuntime: string[]
     onlyInDocument: string[]
   }>
+  /** Operations whose documented parameters drifted from the live route. */
+  parameterDrift: Array<{
+    operation: OperationKey
+    onlyInRuntime: string[]
+    onlyInDocument: string[]
+  }>
 }
 
 /**
@@ -35,11 +41,16 @@ export interface OpenApiCoverageDiff {
  * renamed request field can all land without the document noticing. This
  * compares the two and names the difference.
  *
- * Request bodies are compared by property and required-field names rather than
- * by full schema. Generated and hand-authored schemas describe the same
- * contract in different but equivalent shapes (`nullable` versus `anyOf`, for
- * instance), so a structural diff would report noise; a field-name diff catches
- * the drift that actually breaks a client.
+ * Compares operation presence, request-body field names, and parameters
+ * (name + location + required). Bodies and parameters are compared by name
+ * rather than by full schema: generated and hand-authored schemas describe the
+ * same contract in different but equivalent shapes (`nullable` versus `anyOf`),
+ * so a structural diff would report noise, while a name diff catches the drift
+ * that actually breaks a client.
+ *
+ * What this does NOT verify, so callers do not over-trust a green result:
+ * response shapes, security schemes, and anything behind a `$ref` — a
+ * referenced schema contributes no field names, so two `$ref`s compare equal.
  */
 export function diffOpenApiCoverage(input: {
   /** Document generated from the composed router, with relative paths. */
@@ -79,7 +90,20 @@ export function diffOpenApiCoverage(input: {
     }
   }
 
-  return { undocumented, stale, requestDrift }
+  const parameterDrift: OpenApiCoverageDiff["parameterDrift"] = []
+  for (const [key, liveOperation] of runtime) {
+    const documented = committed.get(key)
+    if (!documented || ignore.has(key)) continue
+    const live = parameterNames(liveOperation)
+    const spec = parameterNames(documented)
+    const onlyInRuntime = [...live].filter((name) => !spec.has(name)).sort()
+    const onlyInDocument = [...spec].filter((name) => !live.has(name)).sort()
+    if (onlyInRuntime.length > 0 || onlyInDocument.length > 0) {
+      parameterDrift.push({ operation: key, onlyInRuntime, onlyInDocument })
+    }
+  }
+
+  return { undocumented, stale, requestDrift, parameterDrift }
 }
 
 const COVERAGE_METHODS = new Set(["get", "put", "post", "delete", "patch", "head", "options"])
@@ -127,6 +151,25 @@ function requestFieldNames(operation: Record<string, unknown>): Set<string> {
   const required = (schema as { required?: unknown }).required
   if (Array.isArray(required)) {
     for (const name of required) if (typeof name === "string") names.add(`required:${name}`)
+  }
+  return names
+}
+
+/** Parameter identities as `<in>:<name>` plus `required:` markers. */
+function parameterNames(operation: Record<string, unknown>): Set<string> {
+  const names = new Set<string>()
+  const parameters = operation.parameters
+  if (!Array.isArray(parameters)) return names
+  for (const parameter of parameters) {
+    if (!parameter || typeof parameter !== "object") continue
+    const { name, in: location, required } = parameter as {
+      name?: unknown
+      in?: unknown
+      required?: unknown
+    }
+    if (typeof name !== "string" || typeof location !== "string") continue
+    names.add(`${location}:${name}`)
+    if (required === true) names.add(`required:${location}:${name}`)
   }
   return names
 }
