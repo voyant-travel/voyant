@@ -164,15 +164,20 @@ describe("MCP guide layer", () => {
     expect(writeInstructions).not.toMatch(/READ-ONLY/i)
   })
 
-  it("lists the guide Tools alongside the domain surface", async () => {
+  it("puts the guide Tools in the resident tier, not the lazy long tail", async () => {
     const listed = await readRpc(await app(["catalog:read"]).request("/", rpc("tools/list", {})))
     const names =
       (listed.result as { tools?: Array<{ name: string }> } | undefined)?.tools?.map(
         ({ name }) => name,
       ) ?? []
+
+    // Progressive disclosure (#3927) leaves no eager DOMAIN surface, so the guide
+    // is the only thing telling a connecting agent what this deployment is for.
+    // It must therefore be resident — a guide reachable only by first guessing a
+    // search query would be useless at exactly the moment it is needed.
     expect(names).toContain("voyant_guide")
     expect(names).toContain("voyant_glossary")
-    expect(names).toContain("get_product")
+    expect(names).not.toContain("get_product")
   })
 
   it("makes the guide Tools reachable and returns doc-sourced content", async () => {

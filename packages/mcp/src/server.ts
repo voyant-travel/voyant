@@ -212,15 +212,7 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     await server.connect(transport)
     const startedAt = Date.now()
     const response = (await transport.handleRequest(c)) ?? c.body(null, 204)
-    await instrumentRpc(
-      c,
-      response,
-      Date.now() - startedAt,
-      surface,
-      guideToolNames,
-      ctx,
-      observer,
-    )
+    await instrumentRpc(c, response, Date.now() - startedAt, surface, guideToolNames, ctx, observer)
     return response
   })
 
@@ -317,8 +309,7 @@ async function instrumentRpc(
     // misclassifying a legitimate guide call as an unknown-tool miss, which is one
     // of the highest-signal events we record.
     const entry = surface.get(name)?.entry
-    const known =
-      entry !== undefined || META_TOOL_NAMES.includes(name) || guideToolNames.has(name)
+    const known = entry !== undefined || META_TOOL_NAMES.includes(name) || guideToolNames.has(name)
     const { outcome, code } = classifyToolCallResult(payload, known)
     observer.toolCall({
       tool: name,
