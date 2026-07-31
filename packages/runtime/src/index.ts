@@ -507,8 +507,32 @@ function resolveOptionalNodeDatabase(
 function createBundledDocumentRenderer() {
   const backendVersion = "voyant.basic-html-pdf.inter-tight-latin-ext.v1"
   const hostRequire = createRequire(import.meta.url)
-  const runtimeRequire = createRequire(hostRequire.resolve("@voyant-travel/runtime"))
-  const utilsRequire = createRequire(runtimeRequire.resolve("@voyant-travel/utils/pdf-renderer"))
+  /**
+   * Anchor asset lookups on the package that DECLARES the dependency when that
+   * package is resolvable, and fall back to the host otherwise.
+   *
+   * Under pnpm's isolated layout the hop matters: `@pdf-lib/fontkit` is a
+   * dependency of `@voyant-travel/utils`, so it is only reachable from there.
+   * But a BUILT server has no `@voyant-travel/runtime` to hop through — Vite
+   * inlines the workspace packages from source, so the deployed tree contains
+   * the bundle and the operator's own production dependencies, not the
+   * workspace shells. Hopping unconditionally is what made the production
+   * image unbootable even after the `tsx` link error was cleared
+   * (voyant#3994); the operator declares `@fontsource-variable/inter-tight`
+   * directly and `pnpm deploy --prod --legacy` flattens the rest, so the host
+   * require resolves both in that layout.
+   */
+  const anchoredRequire = (anchor: () => string): NodeRequire => {
+    try {
+      return createRequire(anchor())
+    } catch {
+      return hostRequire
+    }
+  }
+  const runtimeRequire = anchoredRequire(() => hostRequire.resolve("@voyant-travel/runtime"))
+  const utilsRequire = anchoredRequire(() =>
+    runtimeRequire.resolve("@voyant-travel/utils/pdf-renderer"),
+  )
   const fontkitModule = utilsRequire("@pdf-lib/fontkit") as { default?: unknown }
   const fontkit = (fontkitModule.default ?? fontkitModule) as NonNullable<
     Parameters<typeof renderPdfDocument>[0]["fontkit"]
