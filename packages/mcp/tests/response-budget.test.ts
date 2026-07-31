@@ -318,7 +318,9 @@ describe("list tool over the transport", () => {
     const detailedTokens = toTokens(detailedText)
     const conciseTokens = toTokens(conciseText)
     const perRow = (n: number) => Math.round(n / rowsWanted)
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: intentional — this test's purpose is to
+    // report the measured concise-vs-detailed delta, so the number lands in CI output
+    // rather than only in an assertion nobody reads.
     console.log(
       `[voyant#3928] list_things content tokens over ${rowsWanted} booking-shaped rows — ` +
         `detailed ${detailedTokens} (${perRow(detailedTokens)}/row), ` +
