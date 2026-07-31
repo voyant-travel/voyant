@@ -1,0 +1,20 @@
+node:internal/modules/cjs/loader:1466
+  const err = new Error(`Cannot find module '${request}'`);
+              ^
+
+Error: Cannot find module '/app/node_modules/@voyant-travel/runtime/src/index.ts'
+    at createEsmNotFoundErr (node:internal/modules/cjs/loader:1466:15)
+    at finalizeEsmResolution (node:internal/modules/cjs/loader:1455:15)
+    at resolveExports (node:internal/modules/cjs/loader:664:14)
+    at Function._findPath (node:internal/modules/cjs/loader:731:31)
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1415:27)
+    at Function.resolve (node:internal/modules/helpers:157:19)
+    at createBundledDocumentRenderer (file:///app/dist/server/server.js:52388:70)
+    at Object.resolveResource (file:///app/dist/server/server.js:52211:99)
+    at file:///app/dist/server/server.js:51849:123
+    at Array.map (<anonymous>) {
+  code: 'MODULE_NOT_FOUND',
+  path: '/app/node_modules/@voyant-travel/runtime'
+}
+
+Node.js v22.23.2
