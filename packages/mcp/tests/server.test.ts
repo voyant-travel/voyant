@@ -196,6 +196,9 @@ const updateRecordTool = defineTool({
 })
 
 const getSensitiveRecordTool = defineTool({
+  capabilityId: "@voyant-travel/test#tool.get-sensitive-record",
+  owner: "@voyant-travel/test",
+  capabilityVersion: "v1",
   name: "get_sensitive_record",
   description: "Read a sensitive record.",
   inputSchema: z.object({ id: z.string().min(1) }),
@@ -1173,23 +1176,33 @@ describe("createMcpApiRoutes", () => {
   })
 
   it("discovers and invokes a sensitive Tool only with its explicit grant", async () => {
-    // Without the sensitive grant the tool is neither discoverable nor describable.
+    // The sensitive read is projected into its domain's `test_query` tool
+    // (voyant#3932). Without the sensitive grant the read is not an authorized
+    // resource, so its group carries no read at all and never surfaces — the flat
+    // read name is also gone outright.
     const withoutGrant = appWithScopes(["catalog:read"])
+    expect(await searchToolNames(withoutGrant)).not.toContain("test_query")
     expect(await searchToolNames(withoutGrant)).not.toContain("get_sensitive_record")
     expect(await describeIsUnavailable(withoutGrant, "get_sensitive_record")).toBe(true)
+    expect(await describeIsUnavailable(withoutGrant, "test_query")).toBe(true)
 
     const app = appWithScopes(["secrets:read"])
-    expect(await searchToolNames(app, { query: "sensitive" })).toContain("get_sensitive_record")
-    expect((await describeTool(app, "get_sensitive_record")).structuredContent).toMatchObject({
-      _meta: { "voyant.travel/tool": { tier: "sensitive" } },
-    })
+    // The group is discoverable by the sensitive resource's keyword...
+    expect(await searchToolNames(app, { query: "sensitive" })).toContain("test_query")
+    // ...and the flat read name is not resurrected anywhere.
+    expect(await searchToolNames(app, { query: "sensitive" })).not.toContain("get_sensitive_record")
+    const descriptor = (await describeTool(app, "test_query")).structuredContent as
+      | { _meta?: { "voyant.travel/tool"?: { resources?: Array<{ resource: string }> } } }
+      | undefined
+    const resources = descriptor?._meta?.["voyant.travel/tool"]?.resources ?? []
+    expect(resources.map((entry) => entry.resource)).toContain("sensitive_record")
 
     const called = await readRpc(
       await app.request(
         "/",
         rpc("tools/call", {
-          name: "get_sensitive_record",
-          arguments: { id: "secret_1" },
+          name: "test_query",
+          arguments: { resource: "sensitive_record", id: "secret_1" },
         }),
       ),
     )
@@ -1309,13 +1322,14 @@ describe("createMcpApiRoutes", () => {
       return outer
     }
 
+    // The read is projected into `legal_query`; the caller selects the resource.
     const allowed = app(["legal:read", "bookings-pii:read"])
     const called = await readRpc(
       await allowed.request(
         "/",
         rpc("tools/call", {
-          name: "get_booking_contract_review",
-          arguments: { contractId: "contract_1" },
+          name: "legal_query",
+          arguments: { resource: "booking_contract_review", contractId: "contract_1" },
         }),
       ),
     )
@@ -1323,19 +1337,23 @@ describe("createMcpApiRoutes", () => {
       structuredContent: { scopes: ["legal:read", "bookings-pii:read"] },
     })
 
+    // A grant missing one required scope leaves the read out of its group, so the
+    // group carries no authorized read and the query tool never appears — and the
+    // removed flat read name is uncallable either way.
     const denied = app(["legal:read"])
     const listed = await readRpc(await denied.request("/", rpc("tools/list", {})))
-    expect(
+    const listedNames =
       (listed.result as { tools?: Array<{ name: string }> } | undefined)?.tools?.map(
         ({ name }) => name,
-      ) ?? [],
-    ).not.toContain("get_booking_contract_review")
+      ) ?? []
+    expect(listedNames).not.toContain("legal_query")
+    expect(listedNames).not.toContain("get_booking_contract_review")
     const deniedCall = await readRpc(
       await denied.request(
         "/",
         rpc("tools/call", {
-          name: "get_booking_contract_review",
-          arguments: { contractId: "contract_1" },
+          name: "legal_query",
+          arguments: { resource: "booking_contract_review", contractId: "contract_1" },
         }),
       ),
     )
