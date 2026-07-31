@@ -206,6 +206,15 @@ function formatReport(scores: readonly DiscoveryScore[]): string {
  */
 const DISCOVERY_TOKEN_CEILING = 45_000
 
+/**
+ * This hook composes the whole selected graph and runs every journey, which
+ * exceeds vitest's 10s default hook timeout when the operator suite runs its
+ * files in parallel — it passes in isolation and fails in a full run, the worst
+ * kind of flake. The config raises `testTimeout` but not `hookTimeout`, so set it
+ * explicitly here rather than relying on scheduling luck.
+ */
+const HOOK_TIMEOUT_MS = 60_000
+
 describe("agent journey eval — real selected-graph surface", () => {
   let scores: DiscoveryScore[] = []
 
@@ -214,7 +223,7 @@ describe("agent journey eval — real selected-graph surface", () => {
     scores = []
     for (const journey of JOURNEYS) scores.push(await runDiscovery(app, journey))
     process.stdout.write(`\n${formatReport(scores)}\n\n`)
-  })
+  }, HOOK_TIMEOUT_MS)
 
   it("discovers and describes every real tool the seeded journeys drive", () => {
     // This is the anti-fabrication guard: each name must resolve on the REAL

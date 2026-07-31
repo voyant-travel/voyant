@@ -54,8 +54,8 @@ import {
   jsonByteLength,
   type McpObserver,
 } from "./observability.js"
-import { buildReadProjection, type ReadProjection, registerQueryTool } from "./read-projection.js"
 import { createMcpRateLimiter } from "./rate-limit.js"
+import { buildReadProjection, type ReadProjection, registerQueryTool } from "./read-projection.js"
 import { registerMcpTool } from "./register.js"
 import { DEFAULT_RESPONSE_BUDGET_BYTES } from "./response-budget.js"
 import type { GraphMcpApiRoutesOptions, McpApiRoutesOptions, McpServerInfo } from "./types.js"

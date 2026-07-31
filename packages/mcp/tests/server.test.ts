@@ -172,6 +172,30 @@ const echoTool = defineTool({
   },
 })
 
+/**
+ * A SECOND read in the same domain as {@link echoTool} but behind a different
+ * scope, so `test_query` has two resources. Without it every query group in this
+ * suite is degenerate (one resource), and "an unauthorized resource is pruned
+ * from a group that still exists" cannot be observed at all.
+ */
+const listEchoesTool = defineTool({
+  capabilityId: "@voyant-travel/test#tool.list-echoes",
+  owner: "@voyant-travel/test",
+  capabilityVersion: "v1",
+  name: "list_echoes",
+  description: "List prior echoes.",
+  inputSchema: z.object({ limit: z.number().int().optional() }),
+  outputSchema: z.object({ data: z.array(z.string()), total: z.number() }),
+  requiredScopes: ["products:read"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "read",
+  riskPolicy: READ_ONLY_RISK,
+  annotations: { idempotentHint: true },
+  async handler() {
+    return { data: ["echo: a"], total: 1 }
+  },
+})
+
 const updateRecordTool = defineTool({
   name: "update_record",
   description: "Update a record through a composed input contract.",
@@ -440,6 +464,7 @@ function conditionalFrameworkRuntime(options: { providerSelected?: boolean } = {
 function appWithScopes(scopes: string[], audience: ToolContext["audience"] = "staff"): Hono {
   const registry = createToolRegistry()
   registry.register(echoTool)
+  registry.register(listEchoesTool)
   registry.register(updateRecordTool)
   registry.register(getSensitiveRecordTool)
   const mcp = createMcpApiRoutes({
@@ -1173,6 +1198,53 @@ describe("createMcpApiRoutes", () => {
       ),
     )
     expect(missing.result).toMatchObject({ structuredContent: { result: null } })
+  })
+
+  it("prunes an unauthorized resource from a query group that still exists", async () => {
+    // The other pruning tests cover the DEGENERATE case: a group whose only read
+    // is unauthorized disappears entirely. That does not demonstrate the property
+    // the projection actually claims — that a group survives with a SUBSET of its
+    // resources when the caller holds some of their scopes but not others.
+    //
+    // `test_query` groups `list_echoes` (products:read) and `get_sensitive_record`
+    // (secrets:read), so holding one scope must expose one resource and hide the
+    // other — in discovery AND at dispatch.
+    const partial = appWithScopes(["products:read"])
+
+    expect(await searchToolNames(partial, { query: "echoes" })).toContain("test_query")
+
+    const described = (await describeTool(partial, "test_query")).structuredContent as {
+      _meta?: { "voyant.travel/tool"?: { resources?: Array<{ resource: string }> } }
+    }
+    const exposed = (described._meta?.["voyant.travel/tool"]?.resources ?? []).map(
+      ({ resource }) => resource,
+    )
+    expect(exposed).toContain("echoes")
+    expect(exposed).not.toContain("sensitive_record")
+
+    // Discovery pruning is not enough on its own — an unauthorized resource must
+    // also be uncallable, or the group becomes a scope-bypass.
+    const denied = await readRpc(
+      await partial.request(
+        "/",
+        rpc("tools/call", {
+          name: "test_query",
+          arguments: { resource: "sensitive_record" },
+        }),
+      ),
+    )
+    expect(JSON.stringify(denied.result)).not.toContain("classified")
+
+    // With both grants, both resources are present.
+    const full = appWithScopes(["products:read", "secrets:read"])
+    const bothDescribed = (await describeTool(full, "test_query")).structuredContent as {
+      _meta?: { "voyant.travel/tool"?: { resources?: Array<{ resource: string }> } }
+    }
+    const bothExposed = (bothDescribed._meta?.["voyant.travel/tool"]?.resources ?? []).map(
+      ({ resource }) => resource,
+    )
+    expect(bothExposed).toContain("echoes")
+    expect(bothExposed).toContain("sensitive_record")
   })
 
   it("discovers and invokes a sensitive Tool only with its explicit grant", async () => {
