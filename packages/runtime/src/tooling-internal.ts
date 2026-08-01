@@ -63,6 +63,13 @@ interface ProjectViteConfigOptions {
   developmentReadiness?: DevelopmentReadiness
   generatedRoutes: GeneratedRoutes
   bootstrap: ProjectBootstrap
+  /**
+   * Inline `@voyant-travel/*` from source. True for the development server,
+   * where it is what makes a package edit hot-reload; false for a build, where
+   * it would ship workspace code without the dependencies that code needs.
+   * See `bundleWorkspaceSource` in `@voyant-travel/vite-config`.
+   */
+  bundleWorkspaceSource?: boolean
 }
 
 interface DevelopmentReadiness {
@@ -248,6 +255,9 @@ async function prepareProjectViteConfig(
     ...(developmentReadiness ? { developmentReadiness } : {}),
     generatedRoutes,
     bootstrap,
+    // `developmentReadiness` is only supplied by the development server, so it
+    // is also the signal for whether workspace source may be inlined.
+    bundleWorkspaceSource: developmentReadiness !== undefined,
   })
 }
 
@@ -255,6 +265,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
   const config = voyantStartViteConfig({
     appRootUrl: options.appRootUrl,
     nodeSsr: true,
+    bundleWorkspaceSource: options.bundleWorkspaceSource ?? true,
     plugins: [
       createDevelopmentReadinessPlugin(options.developmentReadiness),
       options.generatedRoutes.plugin,

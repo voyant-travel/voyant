@@ -1,30 +1,36 @@
 ---
-"@voyant-travel/runtime": patch
+"@voyant-travel/vite-config": minor
+"@voyant-travel/runtime": minor
 ---
 
-Let a built operator server start without development tooling present.
+Build and install workspace packages for production instead of inlining their source.
 
-The operator Docker image built cleanly but had never booted — it failed at ESM
-link time with `Cannot find package 'tsx' imported from dist/server/server.js`,
-about a second in and before reading any environment variable.
+The operator Docker image built cleanly and had never booted (voyant#3994). The
+root cause was that `ssr.noExternal: [/^@voyant-travel\//]` inlined workspace
+packages from source into the server bundle. That absorbs their **code** but not
+their **dependencies**, and `pnpm deploy --prod` prunes to what the application
+itself declares — so every external dependency reached only through an inlined
+package became undeclared and unresolvable. 36 were, including
+`@pdf-lib/fontkit`, `@aws-sdk/client-s3`, `@neondatabase/serverless`, `exceljs`
+and `liquidjs`. The image would have failed progressively, one feature at a
+time; booting was simply the first path exercised.
 
-Two causes, both from the same mismatch: the operator's Vite config inlines
-`@voyant-travel/*` from source, while the deployed tree carries only the bundle
-plus the operator's own production dependencies.
+`voyantStartViteConfig` gains `bundleWorkspaceSource` (default `true`). The
+development server keeps inlining from source, because that is what makes a
+`packages/*/src` edit a member of the Vite module graph and therefore
+hot-reloadable. A build now passes `false`, so `@voyant-travel/*` stay external,
+`pnpm deploy` installs them as real packages, and their own dependency trees
+come with them. Both directions are pinned by tests — only one of them is
+visible in a production failure.
 
-`project-artifacts.ts` imported `tsx/esm/api` statically. Its loaders read
-`*.generated.ts` from `.voyant/`, which is correct for the CLI, but a built
-server never reaches them — `voyant build` emits `.voyant/app/project-runtime.ts`,
-which pulls the same artifact through an eager `import.meta.glob` and passes it
-as `generatedProjectRuntime`. So the bundle linked a transpiler it would never
-call, and `pnpm deploy --prod` strips `tsx` because the operator declares it as
-a devDependency. The import is now lazy and memoized.
+This required two supporting changes, both in the application's Dockerfile:
 
-`createBundledDocumentRenderer` hopped `createRequire` through
-`@voyant-travel/runtime` to reach `@pdf-lib/fontkit` and the Inter Tight font.
-That hop is required under pnpm's isolated layout, where fontkit is only
-reachable from the package declaring it, but a built server has no workspace
-shell to hop through. It now falls back to the host require, which resolves
-both in the deployed layout.
-
-Refs voyant#3994.
+- the workspace dists are built before the app build (~7 minutes, ~80MB, once
+  per release), with `NODE_OPTIONS=--max-old-space-size=8192` because `tsc`
+  needs more than the default 2GB for the larger packages
+- `scripts/apply-publish-config.mjs` runs after `pnpm deploy`, because
+  `pnpm deploy` copies workspace manifests verbatim and does **not** apply
+  `publishConfig` — a pack/publish-time transform. Our manifests point
+  `exports` at `./src/*.ts` while `files: ["dist"]` means `src/` is never
+  shipped, so without it every deployed package references files that do not
+  exist. The script performs the same substitution npm consumers already get.

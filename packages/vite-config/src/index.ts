@@ -262,6 +262,27 @@ export interface VoyantStartViteConfigOptions {
    * packaging it keeps it a version bump, not a copy (voyant#3044).
    */
   nodeSsr?: boolean
+  /**
+   * Resolve `@voyant-travel/*` from `./src` and bundle them into the server
+   * build. Defaults to `true`, which is what a development server wants: the
+   * packages become real members of the Vite module graph rather than
+   * `node_modules` symlinks, so editing one hot-reloads.
+   *
+   * A production build must pass `false`. Inlining absorbs a workspace
+   * package's CODE but not its DEPENDENCIES, and `pnpm deploy --prod` prunes to
+   * what the application itself declares — so every external dependency reached
+   * only through an inlined package becomes undeclared and unresolvable at
+   * runtime. That is what stopped the operator image from booting
+   * (voyant#3994); 36 such dependencies were undeclared, so it would have
+   * failed progressively, one feature at a time.
+   *
+   * With `false` the server imports `@voyant-travel/*` normally, `pnpm deploy`
+   * installs them as real packages, and their own dependency trees come with
+   * them. This requires the workspace dists to be built first, and requires the
+   * deployed manifests to point at `dist` — see
+   * `scripts/apply-publish-config.mjs`.
+   */
+  bundleWorkspaceSource?: boolean
 }
 
 /**
@@ -270,7 +291,14 @@ export interface VoyantStartViteConfigOptions {
  * `vite.config.ts` shrinks to plugin instantiation + this call.
  */
 export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): UserConfig {
-  const { appRootUrl, plugins, allowedHosts = true, extraManualChunks, nodeSsr } = options
+  const {
+    appRootUrl,
+    plugins,
+    allowedHosts = true,
+    extraManualChunks,
+    nodeSsr,
+    bundleWorkspaceSource = true,
+  } = options
   const resolvableSsrDependencies = resolvableAppRootDependencies(
     appRootUrl,
     VOYANT_SSR_OPTIMIZE_DEPS,
@@ -306,10 +334,22 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
         ? {
             target: "node" as const,
             external: ["pg"],
-            noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
-            resolve: {
-              conditions: ["development", "module", "node", "import", "default"],
-            },
+            ...(bundleWorkspaceSource
+              ? {
+                  noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
+                  resolve: {
+                    conditions: ["development", "module", "node", "import", "default"],
+                  },
+                }
+              : {
+                  // Production: leave workspace packages external so the
+                  // deployed install supplies them along with their own
+                  // dependencies, and drop `development` so their `exports`
+                  // resolve to built output rather than to `./src`.
+                  resolve: {
+                    conditions: ["module", "node", "import", "default"],
+                  },
+                }),
           }
         : {}),
     },
