@@ -16,6 +16,11 @@ import {
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
+// This module is split into its own browser chunk. Configure that chunk's Zod
+// instance before any response validation so strict CSP never reaches Zod's
+// optional `new Function` optimization.
+z.config({ jitless: true })
+
 export const paginatedEnvelope = listResponseSchema
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })

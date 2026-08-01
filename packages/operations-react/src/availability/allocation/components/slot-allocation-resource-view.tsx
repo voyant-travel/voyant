@@ -103,9 +103,9 @@ export function ResourceColumnsView({
             return (
               <section key={group.key} aria-label={groupLabel} className="flex flex-col gap-2">
                 <header className="flex items-baseline gap-2 border-b pb-1">
-                  <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                  <h2 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                     {groupLabel}
-                  </h3>
+                  </h2>
                 </header>
                 <ResourceGroupTable
                   kind={kind}
