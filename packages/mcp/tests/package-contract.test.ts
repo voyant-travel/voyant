@@ -19,7 +19,7 @@ describe("@voyant-travel/mcp package contract", () => {
     ) as McpPackageJson
     const frameworkRange = packageJson.peerDependencies?.["@voyant-travel/framework"]
 
-    expect(frameworkRange).toBe("workspace:^")
+    expect(frameworkRange).toBe("workspace:>=0.65.0 <2.0.0")
     expect(packageJson.voyant?.compatibleWith?.framework).toBe(">=0.65.0 <2.0.0")
     expect(packageJson.dependencies?.["@voyant-travel/framework"]).toBeUndefined()
     expect(packageJson.peerDependenciesMeta?.["@voyant-travel/framework"]).toBeUndefined()
