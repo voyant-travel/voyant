@@ -414,10 +414,13 @@ export const publicationServiceOperations = {
       )
       ORDER BY product.id
     `)
-    const resultRows = Array.isArray(result)
-      ? (result as Array<{ id: string }>)
-      : ((result as { rows?: Array<{ id: string }> }).rows ?? [])
-    const productIds = resultRows.map(({ id }) => id)
+    const resultRows: unknown[] = Array.isArray(result)
+      ? result
+      : ((result as { rows?: unknown[] }).rows ?? [])
+    const productIds = resultRows.flatMap((row) => {
+      if (typeof row !== "object" || row === null || !("id" in row)) return []
+      return typeof row.id === "string" ? [row.id] : []
+    })
     await publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
       productIds,
       requestedBy: "lifecycle:channel.deleted",
