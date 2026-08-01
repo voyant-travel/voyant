@@ -95,11 +95,7 @@ test("rejects active bespoke quote residues from proposal migration", (t) => {
     "packages/i18n/src/admin/crm-operator.ts",
     "export const messages = { quoteOpen: 'Open', quoteWon: 'Won', quoteLost: 'Lost', quoteArchived: 'Archived' }\n",
   )
-  write(
-    root,
-    "starters/operator/scripts/seed-demo.mjs",
-    'console.log("\\nquote:")\n',
-  )
+  write(root, "starters/operator/scripts/seed-demo.mjs", 'console.log("\\nquote:")\n')
   write(
     root,
     "packages/admin-host/src/admin-presentation.ts",
