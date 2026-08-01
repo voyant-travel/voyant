@@ -501,6 +501,13 @@ export const authStorefrontVoyantModule = defineModule({
       },
     },
   ],
+  links: [
+    {
+      id: "@voyant-travel/auth#linkable.storefront",
+      kind: "linkable",
+      source: "@voyant-travel/auth/linkables",
+    },
+  ],
   access: {
     resources: [
       {

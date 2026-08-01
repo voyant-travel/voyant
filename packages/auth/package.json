@@ -92,6 +92,10 @@
       "types": "./src/storefront-admin-contracts.ts",
       "default": "./src/storefront-admin-contracts.ts"
     },
+    "./linkables": {
+      "types": "./src/linkables.ts",
+      "default": "./src/linkables.ts"
+    },
     "./storefront-graph-runtime": {
       "types": "./src/storefront-graph-runtime.ts",
       "default": "./src/storefront-graph-runtime.ts"
@@ -225,6 +229,11 @@
         "types": "./dist/storefront-admin-contracts.d.ts",
         "import": "./dist/storefront-admin-contracts.js",
         "default": "./dist/storefront-admin-contracts.js"
+      },
+      "./linkables": {
+        "types": "./dist/linkables.d.ts",
+        "import": "./dist/linkables.js",
+        "default": "./dist/linkables.js"
       },
       "./storefront-graph-runtime": {
         "types": "./dist/storefront-graph-runtime.d.ts",
