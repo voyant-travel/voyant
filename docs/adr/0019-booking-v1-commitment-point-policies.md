@@ -105,7 +105,7 @@ The reusable v1 lifecycle outcome vocabulary is:
 | `committed` | `none` | Created exactly once at the policy commitment point. |
 | `payment_required` | `establish_payment_guarantee` | No Booking. |
 | `supplier_pending` | `await_supplier_operation` or `persist_and_dispatch_supplier_operation` | No Booking under supplier-first; possible only under explicit operator-backed policy. |
-| `supplier_in_doubt` | `reconcile_supplier_operation` | No Booking under supplier-first. |
+| `supplier_in_doubt` | `reconcile_supplier_operation` | No Booking under supplier-first; may include a Booking id only under explicit operator-backed risk acceptance. |
 | `revision_mismatch` | `refresh_session_state` | No Booking. |
 | `quote_failure` | `request_fresh_quote` | No Booking. |
 | `hold_failure` | `request_new_hold` | No Booking. |
@@ -125,6 +125,8 @@ It exports:
 
 - typed policy, input, outcome, next-action, and effect-observation schemas
 - `bookingLifecycleConformanceScenariosV1`, the required v1 scenario catalog
+- `runBookingLifecycleConformanceV1(...)`, a reusable runner that returns
+  per-scenario pass/fail results
 - `assertBookingLifecycleConformanceV1(...)`, a test-runner-neutral harness for
   implementations
 

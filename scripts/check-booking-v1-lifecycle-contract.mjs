@@ -36,6 +36,16 @@ requireText(
   adr,
   "Finance state never becomes Booking status",
 )
+requireText(
+  "docs/adr/0019-booking-v1-commitment-point-policies.md",
+  adr,
+  "runBookingLifecycleConformanceV1",
+)
+requireText(
+  "docs/adr/0019-booking-v1-commitment-point-policies.md",
+  adr,
+  "assertBookingLifecycleConformanceV1",
+)
 
 const language = read("UBIQUITOUS_LANGUAGE.md")
 for (const term of [

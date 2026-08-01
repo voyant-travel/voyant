@@ -107,7 +107,6 @@ export type BookingCommitmentPolicyV1 = z.infer<typeof bookingCommitmentPolicyV1
 
 export const bookingLifecycleCommitInputV1 = z
   .object({
-    scenarioId: z.string().min(1),
     idempotencyKey: z.string().min(8),
     policy: bookingCommitmentPolicyV1,
     session: z.object({
@@ -180,6 +179,37 @@ export const bookingLifecycleCommitInputV1 = z
           "pay_later_authorized payment policy must use post_commit_authorized or established payment state",
       })
     }
+    if (input.supplier.intentPersistedBeforeDispatch && !input.supplier.operationId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["supplier", "operationId"],
+        message: "persisted supplier intent requires an operationId",
+      })
+    }
+    if (
+      (input.supplier.state === "pending" ||
+        input.supplier.state === "in_doubt" ||
+        input.supplier.state === "secured") &&
+      !input.supplier.intentPersistedBeforeDispatch
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["supplier", "intentPersistedBeforeDispatch"],
+        message: "pending, in_doubt, and secured supplier states require persisted intent",
+      })
+    }
+    if (
+      (input.supplier.state === "pending" ||
+        input.supplier.state === "in_doubt" ||
+        input.supplier.state === "secured") &&
+      !input.supplier.operationId
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["supplier", "operationId"],
+        message: "pending, in_doubt, and secured supplier states require an operationId",
+      })
+    }
   })
 export type BookingLifecycleCommitInputV1 = z.infer<typeof bookingLifecycleCommitInputV1>
 
@@ -228,6 +258,8 @@ export const bookingLifecycleCommitOutcomeV1 = z.discriminatedUnion("kind", [
     kind: z.literal("supplier_in_doubt"),
     nextAction: z.literal("reconcile_supplier_operation"),
     supplierOperationId: z.string().min(1),
+    bookingId: z.string().min(1).optional(),
+    operatorBackedRiskAccepted: z.boolean(),
   }),
   z.object({
     kind: z.literal("revision_mismatch"),
@@ -370,10 +402,7 @@ export async function assertBookingLifecycleConformanceV1(
           .join(", ")}`,
         ...failures.map(
           (failure) =>
-            `- ${failure.scenarioId}: ${formatConformanceError(
-              failure.scenarioId,
-              failure.error,
-            )}`,
+            `- ${failure.scenarioId}: ${formatConformanceError(failure.scenarioId, failure.error)}`,
         ),
       ].join("\n"),
     )
@@ -408,6 +437,9 @@ function assertScenarioObservation(
       throw new Error(
         `${scenario.id}: supplier dispatch requires persisted supplier operation intent`,
       )
+    }
+    if (!scenario.input.supplier.operationId) {
+      throw new Error(`${scenario.id}: supplier dispatch requires input supplier operationId`)
     }
     if (!scenario.input.supplier.intentPersistedBeforeDispatch) {
       throw new Error(
@@ -455,6 +487,34 @@ function assertScenarioObservation(
     throw new Error(
       `${scenario.id}: only operator-backed policy may create a Booking before supplier security`,
     )
+  }
+
+  if (observation.effects.bookingCreatedBeforeSupplierSecured) {
+    if (!observation.effects.bookingCreated) {
+      throw new Error(`${scenario.id}: bookingCreatedBeforeSupplierSecured requires bookingCreated`)
+    }
+    if (
+      !scenario.input.policy.allowBookingBeforeSupplierSecured ||
+      !scenario.input.policy.operatorBackedRiskAccepted
+    ) {
+      throw new Error(
+        `${scenario.id}: early Booking requires explicit operator-backed policy risk acceptance`,
+      )
+    }
+    if (!outcomeOperatorBackedRiskAccepted(observation.outcome)) {
+      throw new Error(
+        `${scenario.id}: early Booking requires outcome operator-backed risk acceptance`,
+      )
+    }
+    if (!outcomeBookingId(observation.outcome)) {
+      throw new Error(`${scenario.id}: early Booking outcome requires bookingId`)
+    }
+  }
+
+  if (observation.effects.bookingCreated) {
+    if (!observation.effects.sessionConsumed || !observation.effects.quoteConsumed) {
+      throw new Error(`${scenario.id}: created Booking must consume Session and Quote`)
+    }
   }
 
   if (observation.outcome.kind === "committed") {
@@ -508,4 +568,24 @@ function assertScenarioObservation(
       throw new Error(`${scenario.id}: owned atomic Commit must run in one transaction`)
     }
   }
+}
+
+function outcomeBookingId(outcome: BookingLifecycleCommitOutcomeV1): string | undefined {
+  if (outcome.kind === "committed") return outcome.booking.id
+  if (outcome.kind === "supplier_pending" || outcome.kind === "supplier_in_doubt") {
+    return outcome.bookingId
+  }
+  if (outcome.kind === "idempotent_replay") return outcome.bookingId
+  return undefined
+}
+
+function outcomeOperatorBackedRiskAccepted(outcome: BookingLifecycleCommitOutcomeV1): boolean {
+  if (
+    outcome.kind === "committed" ||
+    outcome.kind === "supplier_pending" ||
+    outcome.kind === "supplier_in_doubt"
+  ) {
+    return outcome.operatorBackedRiskAccepted === true
+  }
+  return false
 }

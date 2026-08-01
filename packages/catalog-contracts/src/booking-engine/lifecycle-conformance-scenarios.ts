@@ -78,6 +78,7 @@ export const BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS = [
   "sourced-supplier-in-doubt",
   "sourced-supplier-secured",
   "operator-backed-risk-accepted",
+  "operator-backed-supplier-in-doubt-after-booking",
   "accepted-proposal-version-fresh-quote",
   "proposal-material-change-renewed-acceptance",
   "idempotent-replay",
@@ -90,7 +91,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Commit validates the exact Session revision, fresh Quote, live Hold, and required guarantee, then creates Booking, converts Hold to Allocation, and consumes Session/Quote in one transaction.",
     input: {
-      scenarioId: "owned-atomic-commit",
       idempotencyKey: "idem_owned_commit",
       policy: ownedPolicy,
       session: baseSession,
@@ -119,7 +119,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "A not_required payment policy does not establish a payment guarantee before Commit, while owned inventory still commits atomically.",
     input: {
-      scenarioId: "owned-atomic-commit-payment-not-required",
       idempotencyKey: "idem_owned_no_payment",
       policy: ownedPaymentNotRequiredPolicy,
       session: baseSession,
@@ -148,7 +147,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "A pay_later_authorized policy may commit with post-commit collection authorization and without a pre-commit guarantee.",
     input: {
-      scenarioId: "owned-atomic-commit-pay-later-authorized",
       idempotencyKey: "idem_owned_pay_later",
       policy: ownedPayLaterPolicy,
       session: baseSession,
@@ -177,7 +175,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Commit returns payment_required and creates no Booking when a required guarantee is missing.",
     input: {
-      scenarioId: "payment-guarantee-required",
       idempotencyKey: "idem_payment_required",
       policy: ownedPolicy,
       session: baseSession,
@@ -197,7 +194,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     title: "Commit rejects stale Session revisions",
     decision: "Commit must validate the caller's exact Booking Session revision.",
     input: {
-      scenarioId: "session-revision-mismatch",
       idempotencyKey: "idem_session_revision",
       policy: ownedPolicy,
       session: { ...baseSession, expectedRevision: 2 },
@@ -217,7 +213,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     title: "Commit rejects Quotes bound to another revision",
     decision: "Quote is immutable and bound to one exact Booking Session revision.",
     input: {
-      scenarioId: "quote-revision-mismatch",
       idempotencyKey: "idem_quote_revision",
       policy: ownedPolicy,
       session: baseSession,
@@ -237,7 +232,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     title: "Commit rejects expired Quotes",
     decision: "Expired pricing cannot authorize a durable Booking.",
     input: {
-      scenarioId: "quote-expired",
       idempotencyKey: "idem_quote_expired",
       policy: ownedPolicy,
       session: baseSession,
@@ -257,7 +251,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     title: "Commit rejects non-live Holds",
     decision: "A required Hold must be live and must belong to the exact Booking Session.",
     input: {
-      scenarioId: "hold-expired",
       idempotencyKey: "idem_hold_expired",
       policy: ownedPolicy,
       session: baseSession,
@@ -278,7 +271,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Supplier-first Commit persists Commit/Supplier Operation intent before dispatch and creates no Booking while supplier security is pending.",
     input: {
-      scenarioId: "sourced-supplier-first-pending",
       idempotencyKey: "idem_supplier_pending",
       policy: sourcedSupplierFirstPolicy,
       session: baseSession,
@@ -307,7 +299,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Supplier ambiguity is represented as supplier_in_doubt with a reconciliation action, not a draft or payment-like Booking status.",
     input: {
-      scenarioId: "sourced-supplier-in-doubt",
       idempotencyKey: "idem_supplier_doubt",
       policy: sourcedSupplierFirstPolicy,
       session: baseSession,
@@ -335,7 +326,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     title: "Supplier security authorizes sourced Booking creation",
     decision: "Default sourced inventory creates Booking only after the supplier is secured.",
     input: {
-      scenarioId: "sourced-supplier-secured",
       idempotencyKey: "idem_supplier_secured",
       policy: sourcedSupplierFirstPolicy,
       session: baseSession,
@@ -366,7 +356,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Early sourced Booking creation is allowed only under an explicit operator-backed policy where the operator assumes fulfillment risk.",
     input: {
-      scenarioId: "operator-backed-risk-accepted",
       idempotencyKey: "idem_operator_backed",
       policy: operatorBackedPolicy,
       session: baseSession,
@@ -385,6 +374,39 @@ export const bookingLifecycleConformanceScenariosV1 = [
       effects: {
         bookingCreated: true,
         bookingCreatedBeforeSupplierSecured: true,
+        sessionConsumed: true,
+        quoteConsumed: true,
+        supplierOperationPersisted: true,
+        supplierDispatched: true,
+      },
+    },
+  },
+  {
+    id: "operator-backed-supplier-in-doubt-after-booking",
+    title: "Operator-backed supplier ambiguity after early Booking keeps explicit risk",
+    decision:
+      "When an operator-backed Commit creates a Booking before supplier security and the supplier result becomes ambiguous, the outcome keeps the Booking id and explicit fulfillment-risk acceptance for reconciliation.",
+    input: {
+      idempotencyKey: "idem_operator_backed_doubt",
+      policy: operatorBackedPolicy,
+      session: baseSession,
+      quote: baseQuote,
+      hold: { required: false, state: "not_required" as const },
+      paymentGuarantee: "post_commit_authorized" as const,
+      supplier: {
+        state: "in_doubt" as const,
+        operationId: "sop_operator_backed_doubt",
+        intentPersistedBeforeDispatch: true,
+      },
+    },
+    expected: {
+      outcomeKind: "supplier_in_doubt" as const,
+      nextAction: "reconcile_supplier_operation" as const,
+      effects: {
+        bookingCreated: true,
+        bookingCreatedBeforeSupplierSecured: true,
+        sessionConsumed: true,
+        quoteConsumed: true,
         supplierOperationPersisted: true,
         supplierDispatched: true,
       },
@@ -396,7 +418,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Proposal Version acceptance records customer intent; Booking creation still requires fresh Booking Session pricing and availability.",
     input: {
-      scenarioId: "accepted-proposal-version-fresh-quote",
       idempotencyKey: "idem_proposal_fresh_quote",
       policy: ownedPolicy,
       session: baseSession,
@@ -424,7 +445,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Accepted Proposal Version handoff cannot commit materially changed terms without a renewed acceptance.",
     input: {
-      scenarioId: "proposal-material-change-renewed-acceptance",
       idempotencyKey: "idem_proposal_renew_acceptance",
       policy: ownedPolicy,
       session: baseSession,
@@ -452,7 +472,6 @@ export const bookingLifecycleConformanceScenariosV1 = [
     decision:
       "Repeating Commit with the same idempotency key returns the canonical prior outcome and creates no second Booking or supplier operation.",
     input: {
-      scenarioId: "idempotent-replay",
       idempotencyKey: "idem_replay_commit",
       policy: ownedPolicy,
       session: { ...baseSession, state: "consumed" as const },
@@ -471,6 +490,8 @@ export const bookingLifecycleConformanceScenariosV1 = [
         holdConverted: false,
         sessionConsumed: false,
         quoteConsumed: false,
+        supplierOperationPersisted: false,
+        supplierDispatched: false,
         transactionBoundary: "none" as const,
       },
     },
