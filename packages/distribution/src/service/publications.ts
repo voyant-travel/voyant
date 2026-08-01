@@ -99,14 +99,17 @@ async function enqueueSupplierPublicationReindex(
 async function emitPublicationChanged(
   eventBus: EventBus | undefined,
   db: PostgresJsDatabase,
-  input: { channelId: string; productId: string; operation: "created" | "updated" | "deleted" },
+  input: {
+    channelId: string
+    productId: string
+    publicationId: string | null
+    operation: "created" | "updated" | "deleted"
+  },
 ) {
   await emitProductPublicationChanged(eventBus, db, {
     channelId: input.channelId,
     productId: input.productId,
-    mappingId: null,
-    previousActive: null,
-    nextActive: input.operation === "deleted" ? null : true,
+    publicationId: input.publicationId,
     operation: input.operation,
   })
 }
@@ -197,6 +200,7 @@ export const publicationServiceOperations = {
     await emitPublicationChanged(options.eventBus, db, {
       channelId: data.channelId,
       productId: data.productId,
+      publicationId: row?.id ?? null,
       operation: existing ? "updated" : "created",
     })
     return row!
@@ -224,7 +228,11 @@ export const publicationServiceOperations = {
       .where(eq(channelProductPublications.id, id))
       .returning()
     await enqueueProductPublicationReindex(db, { ...existing, requestedBy: actorId })
-    await emitPublicationChanged(options.eventBus, db, { ...existing, operation: "updated" })
+    await emitPublicationChanged(options.eventBus, db, {
+      ...existing,
+      publicationId: row?.id ?? null,
+      operation: "updated",
+    })
     return row ?? null
   },
 
@@ -247,7 +255,11 @@ export const publicationServiceOperations = {
       productId: row.productId,
       requestedBy: options.actorId ?? null,
     })
-    await emitPublicationChanged(options.eventBus, db, { ...row, operation: "deleted" })
+    await emitPublicationChanged(options.eventBus, db, {
+      ...row,
+      publicationId: row.id,
+      operation: "deleted",
+    })
     return { id: row.id }
   },
 

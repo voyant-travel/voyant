@@ -208,6 +208,29 @@ describe("distribution deployment manifests", () => {
       properties: {
         productId: { type: "string" },
         channelId: { type: "string" },
+        publicationId: { type: ["string", "null"] },
+        operation: {
+          type: "string",
+          enum: ["created", "updated", "deleted"],
+        },
+        channelKind: { type: ["string", "null"] },
+        channelStatus: { type: ["string", "null"] },
+      },
+      required: [
+        "productId",
+        "channelId",
+        "publicationId",
+        "operation",
+        "channelKind",
+        "channelStatus",
+      ],
+      additionalProperties: false,
+    })
+    expect(schemas["channel.product_mapping.changed"]).toEqual({
+      type: "object",
+      properties: {
+        productId: { type: "string" },
+        channelId: { type: "string" },
         mappingId: { type: ["string", "null"] },
         previousActive: { type: ["boolean", "null"] },
         nextActive: { type: ["boolean", "null"] },
