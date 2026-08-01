@@ -1,27 +1,146 @@
 {
   "cutline": {
-    "accommodations": ["0000_accommodations_baseline"],
-    "action-ledger": ["0000_action_ledger_baseline"],
-    "availability": ["0000_availability_baseline"],
-    "bookings": ["0000_bookings_baseline"],
-    "catalog": ["0000_catalog_initial", "0001_sourced_entries", "0002_catalog_baseline"],
+    "accommodations": [
+      "0000_accommodations_baseline",
+      "0001_accommodations_baseline",
+      "0002_accommodations_baseline",
+      "20260713000200_standard_links"
+    ],
+    "action-ledger": [
+      "0000_action_ledger_baseline",
+      "20260715211108_remove_action_ledger_relay_outbox"
+    ],
+    "apps": [
+      "20260717000100_app_registry_foundation",
+      "20260717111938_breezy_karma",
+      "20260717123000_app_webhook_delivery_health",
+      "20260717143000_app_oauth_authorization",
+      "20260717150000_app_session_tokens",
+      "20260718205748_managed_installation_binding"
+    ],
+    "availability": ["0000_availability_baseline", "20260715044209_booking_hold_conversion"],
+    "bookings": [
+      "0000_bookings_baseline",
+      "0001_service_voucher_vocabulary",
+      "20260716000300_namespace_custom_field_values",
+      "20260729120000_booking_first_acceptance",
+      "20260729120100_persist_notification_suppression"
+    ],
+    "catalog": [
+      "0000_catalog_initial",
+      "0001_sourced_entries",
+      "0002_catalog_baseline",
+      "0003_product_reindex_state",
+      "20260722070000_editorial_overlay_nodes"
+    ],
     "catalog-authoring": ["0000_catalog_authoring_baseline"],
     "charters": ["0000_charters_baseline"],
-    "commerce": ["0000_commerce_baseline"],
+    "commerce": [
+      "0000_commerce_baseline",
+      "0001_promotion_reindex_state",
+      "0002_checkout_finalizations"
+    ],
     "cruises": ["0000_cruises_baseline"],
-    "db": ["0000_db_baseline"],
-    "distribution": ["0000_distribution_baseline"],
-    "finance": ["0000_finance_baseline"],
-    "flights": ["0000_flights_baseline"],
+    "custom-fields": [
+      "0000_custom_fields_authority",
+      "20260716000100_custom_field_namespace_ownership"
+    ],
+    "db": [
+      "0000_db_baseline",
+      "0001_db_baseline",
+      "0002_db_baseline",
+      "0003_webhook_delivery_payload",
+      "20260718085553_moaning_roughhouse",
+      "20260718085829_glossy_mimic",
+      "20260718091159_equal_agent_brand",
+      "20260719043803_customer_buyer_accounts",
+      "20260719120000_customer_business_onboarding",
+      "20260719134545_storefront_access_model",
+      "0010_mcp_oauth_provider"
+    ],
+    "distribution": [
+      "0000_distribution_baseline",
+      "0001_distribution_baseline",
+      "0002_channel_push_job_leases"
+    ],
+    "finance": [
+      "0000_finance_baseline",
+      "0001_travel_credits",
+      "20260718105842_app_finance_artifact_sync",
+      "20260718110120_app_finance_sync_observations",
+      "20260718115806_app_finance_lifecycle_settlement",
+      "20260722053500_payment_session_provider_connection"
+    ],
+    "flights": ["0000_flights_baseline", "20260725130704_durable_flight_actions"],
     "identity": ["0000_identity_baseline"],
-    "inventory": ["0000_inventory_baseline"],
-    "legal": ["0000_legal_baseline"],
-    "notifications": ["0000_notifications_baseline"],
-    "operations": ["0000_operations_baseline"],
-    "operator-settings": ["0000_operator_settings_baseline"],
-    "quotes": ["0000_quotes_baseline"],
-    "relationships": ["0000_relationships_baseline"],
-    "storefront": ["0000_storefront_baseline"],
-    "trips": ["0000_trips_baseline"]
+    "inventory": [
+      "0000_inventory_baseline",
+      "0001_inventory_baseline",
+      "0002_inventory_baseline",
+      "20260713000100_standard_links",
+      "0004_service_voucher_vocabulary",
+      "20260720104007_product_media_asset_ref",
+      "20260722072000_product_open_graph_media"
+    ],
+    "legal": [
+      "0000_legal_baseline",
+      "20260713000400_standard_links",
+      "20260724070548_contract_lifecycle_command_results",
+      "20260724160000_durable_contract_document_operations"
+    ],
+    "media": [
+      "20260719193013_media_baseline",
+      "20260725062035_media_alt_text_localization",
+      "20260728085836_media_asset_drop_persisted_url"
+    ],
+    "mice": [
+      "0000_mice_baseline",
+      "0001_mice_baseline",
+      "0002_mice_baseline",
+      "0003_mice_baseline",
+      "20260713000300_standard_links"
+    ],
+    "navigation-preferences": ["20260715051134_navigation_preferences_baseline"],
+    "notifications": [
+      "0000_notifications_baseline",
+      "0001_delivery_idempotency",
+      "0002_durable_send_operations",
+      "0003_strict_durable_notification_admission"
+    ],
+    "operations": [
+      "0000_operations_baseline",
+      "0001_operations_baseline",
+      "0002_operations_baseline",
+      "0003_resource_pool_members_unique_pair"
+    ],
+    "operator-settings": [
+      "0000_operator_settings_baseline",
+      "0001_proforma_invoicing_mode",
+      "0002_fx_reference_source",
+      "0003_invoicing_mode_default_proforma_first",
+      "0005_operator_settings_baseline",
+      "0004_drop_fx_reference_source",
+      "0006_operator_settings_baseline",
+      "0007_invoice_fx_settings"
+    ],
+    "proposals": ["0000_proposals_baseline"],
+    "relationships": [
+      "0000_relationships_baseline",
+      "20260713000500_person_directory_view",
+      "0003_add_booking_custom_field_target",
+      "20260716000302_namespace_custom_field_values"
+    ],
+    "reporting": ["20260718090000_reporting_baseline", "20260719170000_drop_report_versioning"],
+    "setup": ["20260715062411_setup_baseline", "20260726120000_setup_dismissed_at"],
+    "storefront": [
+      "0000_storefront_baseline",
+      "20260730120000_bind_and_consume_verification_challenges"
+    ],
+    "trips": [
+      "0000_trips_baseline",
+      "0001_trips_baseline",
+      "0002_durable_requirement_sourcing",
+      "0003_durable_trip_actions"
+    ]
   }
 }

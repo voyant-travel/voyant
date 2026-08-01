@@ -324,7 +324,7 @@ A Trip whose selected components have been held or booked upstream and converted
 into Voyant's Booking Session / Booking / Order structures as appropriate.
 
 A Reserved Trip may resolve to one Booking with many items, multiple Bookings
-under a booking group, or component Orders/Bookings under a Quote Version
+under a booking group, or component Orders/Bookings under a Proposal Version
 snapshot. The composer must keep that grouping decision behind its service
 interface so the accepted proposal can preserve the Trip snapshot without
 erasing component lifecycle boundaries.
@@ -425,16 +425,16 @@ Current caveats:
 
 ### 5.4. Commercial ladder
 
-ADR-0004 makes the travel-native bespoke sales ladder:
+ADR-0018 makes the travel-native bespoke sales ladder:
 
-**Quote -> accepted Quote Version -> reserve workflow -> Order / Booking -> Fulfillment**
+**Proposal -> accepted Proposal Version -> reserve workflow -> Order / Booking -> Fulfillment**
 
 The composer sits before and around that ladder:
 
 - Trip Envelope in `draft` status is pre-commitment.
-- Priced Trip can be frozen into a Quote Version, which is the sendable,
+- Priced Trip can be frozen into a Proposal Version, which is the sendable,
   acceptable proposal snapshot.
-- Accepting a Quote Version starts reserve; it does not mean every live or
+- Accepting a Proposal Version starts reserve; it does not mean every live or
   manual component is supplier-confirmed.
 - Reserved Trip creates holds and/or Booking Session / Booking / Order state.
 - Checkout turns the held/reserved commitment into collection.
@@ -664,7 +664,7 @@ Booking Session state until the customer asks to reserve or buy.
 
 Avoid making the Trip Envelope depend on exactly one Booking. Multi-line
 composition may need one Booking with many items, several Bookings under a
-group, or several component Orders/Bookings under an accepted Quote Version.
+group, or several component Orders/Bookings under an accepted Proposal Version.
 The schema should preserve line-level commit references and an optional
 aggregate reference.
 
@@ -711,7 +711,7 @@ High-level buy flow:
 1. **Where to store conversation state.** The composer should store structured
    summaries and decisions, not raw prompt dependence. Raw transcript retention
    may be app-owned or configurable.
-2. **Staff handoff shape.** Could use Quote, Quote Activity, or a dedicated
+2. **Staff handoff shape.** Could use Proposal, Proposal Activity, or a dedicated
    support task depending on operator workflow.
 3. **Public vs admin AI tools.** Customer agents need strict customer-audience
    access. Staff agents may federate across audience pools and see operational
@@ -736,7 +736,7 @@ High-level buy flow:
    reserve flows are safe.
 8. **Aggregate commit shape.** Decide whether MVP reserve produces one Booking
    with many Booking Items, several Bookings in a booking group, or several
-   component Orders/Bookings under an accepted Quote Version. Current default:
+   component Orders/Bookings under an accepted Proposal Version. Current default:
    several component bookings/orders under one Trip / Package Envelope for FIT
    composition; one booking with child items/Extras for operated products and
    dependent upsells. The composer interface can hide this, but checkout,
@@ -781,7 +781,7 @@ that component's supplier lifecycle.
   while the adapter wiring is proven; the hardening slice should move the
   generic parts into framework-owned catalog/checkout services.
 - Preserve template ownership of Netopia config, bank details, contract template
-  choice, CRM Quote creation, and storefront URLs.
+  choice, CRM Proposal creation, and storefront URLs.
 - Expose a service-level `startCheckout({ bookingId, paymentIntent, ... })`
   that the composer can call after reserve.
 
@@ -816,7 +816,7 @@ that component's supplier lifecycle.
 - Place holds/bookings in dependency order, with compensation on partial
   failure.
 - Preserve line-level references and optional aggregate references
-  (`bookingId`, `bookingGroupId`, or accepted Quote Version).
+  (`bookingId`, `bookingGroupId`, or accepted Proposal Version).
 - Cover owned-hold release, quote expiry, one-line success, one-line failure,
   and sourced-hold unsupported behavior in tests.
 
@@ -854,6 +854,6 @@ Customer intent
   -> Booking / Order / Payment Session
 ```
 
-The same composer should also support non-AI callers. If a staff quote builder
+The same composer should also support non-AI callers. If a staff proposal builder
 or conventional storefront wizard can use the same module, the seam is in the
 right place.

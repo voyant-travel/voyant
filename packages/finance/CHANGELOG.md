@@ -1941,7 +1941,7 @@ not configured`.
 
   - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
   - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
-  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
+  - `@voyant-travel/proposals`: `list_quotes` + `get_quote` (`quotes:read`).
   - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
     `get_organization` (`crm:read`).
 
@@ -1951,7 +1951,7 @@ not configured`.
 
 - fc71db1: Add write/action + notification agent tools:
 
-  - `@voyant-travel/quotes`: `accept_quote_version` (write, `quotes:write`,
+  - `@voyant-travel/proposals`: `accept_quote_version` (write, `quotes:write`,
     confirmation-required).
   - `@voyant-travel/finance`: `void_invoice` (destructive, `finance:void`,
     confirmation-required) — the void is a self-contained status transition.

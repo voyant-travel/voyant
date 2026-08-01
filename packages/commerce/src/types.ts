@@ -91,7 +91,7 @@ export interface CommercialDecisionInput {
   promotionCodes?: string[]
   requestedAt?: string
   idempotencyKey?: string
-  evaluationMode?: "preview" | "quote" | "checkout"
+  evaluationMode?: "preview" | "proposal" | "checkout"
   locale?: string
   trace?: {
     correlationId?: string
@@ -283,10 +283,10 @@ export type CommercialDecisionErrorCode =
 
 export interface CommercialSnapshotTarget {
   kind:
-    | "quote-version"
+    | "proposal-version"
     | "booking-draft"
     | "trip-component"
-    | "catalog-quote"
+    | "catalog-proposal"
     | "booking"
     | "custom"
   id: string

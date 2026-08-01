@@ -76,10 +76,10 @@ describe("standard Operator distribution", () => {
 
   it("removes quote-owned Realtime invalidations with the Quotes module", () => {
     const selected = selectStandardOperatorDistribution({
-      exclude: ["@voyant-travel/quotes"],
+      exclude: ["@voyant-travel/proposals"],
     })
 
-    expect(selected.modules).not.toContain("@voyant-travel/quotes")
+    expect(selected.modules).not.toContain("@voyant-travel/proposals")
     expect(selected.extensions).not.toContain(
       "@voyant-travel/realtime/quotes-invalidation-extension",
     )

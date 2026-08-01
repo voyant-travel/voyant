@@ -59,8 +59,8 @@ import * as operationsGroundOperationsSchema from "../packages/operations/src/gr
 import * as operationsGroundOperatorsSchema from "../packages/operations/src/ground/schema-operators.ts"
 import * as operationsPlacesSchema from "../packages/operations/src/places/schema.ts"
 import * as operationsResourcesSchema from "../packages/operations/src/resources/schema.ts"
-import * as quotesBookingExtensionSchema from "../packages/quotes/src/booking-extension.ts"
-import * as quotesSalesSchema from "../packages/quotes/src/schema-sales.ts"
+import * as quotesBookingExtensionSchema from "../packages/proposals/src/booking-extension.ts"
+import * as quotesSalesSchema from "../packages/proposals/src/schema-sales.ts"
 import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"
 import * as relationshipsActivitiesSchema from "../packages/relationships/src/schema-activities.ts"
 import * as relationshipsSignalsSchema from "../packages/relationships/src/schema-signals.ts"
@@ -119,7 +119,7 @@ const sections: SectionDefinition[] = [
     ],
   },
   {
-    title: "Quotes",
+    title: "Proposals",
     modules: [quotesSalesSchema, quotesBookingExtensionSchema],
   },
   {

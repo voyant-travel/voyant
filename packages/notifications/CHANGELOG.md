@@ -9,7 +9,7 @@
   - @voyant-travel/finance@0.226.0
   - @voyant-travel/legal@0.226.0
   - @voyant-travel/storefront@0.228.0
-  - @voyant-travel/quotes@0.136.1
+  - @voyant-travel/proposals@0.136.1
 
 ## 0.144.0
 
@@ -22,7 +22,7 @@
   - @voyant-travel/tools@0.10.0
   - @voyant-travel/core@0.137.0
   - @voyant-travel/storefront@0.227.0
-  - @voyant-travel/quotes@0.136.0
+  - @voyant-travel/proposals@0.136.0
   - @voyant-travel/legal@0.225.0
   - @voyant-travel/action-ledger@0.115.9
   - @voyant-travel/bookings@0.225.0
@@ -39,7 +39,7 @@
   - @voyant-travel/bookings@0.224.0
   - @voyant-travel/finance@0.224.0
   - @voyant-travel/legal@0.224.0
-  - @voyant-travel/quotes@0.135.17
+  - @voyant-travel/proposals@0.135.17
   - @voyant-travel/storefront@0.226.0
 
 ## 0.142.13
@@ -78,7 +78,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/action-ledger@0.115.7
   - @voyant-travel/finance@0.223.0
   - @voyant-travel/legal@0.223.0
-  - @voyant-travel/quotes@0.135.16
+  - @voyant-travel/proposals@0.135.16
 
 ## 0.142.11
 
@@ -88,7 +88,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.222.0
 - @voyant-travel/legal@0.222.0
 - @voyant-travel/storefront@0.224.0
-- @voyant-travel/quotes@0.135.15
+- @voyant-travel/proposals@0.135.15
 
 ## 0.142.10
 
@@ -101,7 +101,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/action-ledger@0.115.6
   - @voyant-travel/bookings@0.221.1
   - @voyant-travel/legal@0.221.1
-  - @voyant-travel/quotes@0.135.14
+  - @voyant-travel/proposals@0.135.14
   - @voyant-travel/storefront@0.223.1
 
 ## 0.142.9
@@ -128,7 +128,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/storefront@0.223.0
   - @voyant-travel/tools@0.8.0
   - @voyant-travel/legal@0.221.0
-  - @voyant-travel/quotes@0.135.13
+  - @voyant-travel/proposals@0.135.13
 
 ## 0.142.8
 
@@ -146,7 +146,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.135.0
   - @voyant-travel/legal@0.220.0
   - @voyant-travel/storefront@0.222.0
-  - @voyant-travel/quotes@0.135.12
+  - @voyant-travel/proposals@0.135.12
   - @voyant-travel/types@0.109.10
 
 ## 0.142.7
@@ -159,7 +159,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/storefront@0.221.0
   - @voyant-travel/bookings@0.219.0
   - @voyant-travel/finance@0.219.0
-  - @voyant-travel/quotes@0.135.11
+  - @voyant-travel/proposals@0.135.11
 
 ## 0.142.6
 
@@ -170,7 +170,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.218.0
   - @voyant-travel/legal@0.218.0
   - @voyant-travel/storefront@0.220.0
-  - @voyant-travel/quotes@0.135.10
+  - @voyant-travel/proposals@0.135.10
 
 ## 0.142.5
 
@@ -180,7 +180,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/storefront@0.219.0
 - @voyant-travel/bookings@0.217.0
 - @voyant-travel/finance@0.217.0
-- @voyant-travel/quotes@0.135.9
+- @voyant-travel/proposals@0.135.9
 
 ## 0.142.4
 
@@ -211,7 +211,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.216.0
   - @voyant-travel/legal@0.216.0
   - @voyant-travel/storefront@0.218.0
-  - @voyant-travel/quotes@0.135.8
+  - @voyant-travel/proposals@0.135.8
 
 ## 0.142.1
 
@@ -219,7 +219,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - @voyant-travel/finance@0.215.0
 - @voyant-travel/storefront@0.217.0
-- @voyant-travel/quotes@0.135.7
+- @voyant-travel/proposals@0.135.7
 - @voyant-travel/bookings@0.215.0
 - @voyant-travel/legal@0.215.0
 
@@ -231,7 +231,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.214.0
 - @voyant-travel/legal@0.214.0
 - @voyant-travel/storefront@0.216.0
-- @voyant-travel/quotes@0.135.5
+- @voyant-travel/proposals@0.135.5
 
 ## 0.141.4
 
@@ -241,7 +241,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/storefront@0.215.0
 - @voyant-travel/bookings@0.213.0
 - @voyant-travel/finance@0.213.0
-- @voyant-travel/quotes@0.135.3
+- @voyant-travel/proposals@0.135.3
 
 ## 0.141.3
 
@@ -251,7 +251,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.212.0
 - @voyant-travel/legal@0.212.0
 - @voyant-travel/storefront@0.214.0
-- @voyant-travel/quotes@0.135.2
+- @voyant-travel/proposals@0.135.2
 
 ## 0.141.2
 
@@ -261,14 +261,14 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.211.0
 - @voyant-travel/legal@0.211.0
 - @voyant-travel/storefront@0.213.0
-- @voyant-travel/quotes@0.135.1
+- @voyant-travel/proposals@0.135.1
 
 ## 0.141.1
 
 ### Patch Changes
 
 - Updated dependencies [d5492ed]
-  - @voyant-travel/quotes@0.135.0
+  - @voyant-travel/proposals@0.135.0
   - @voyant-travel/bookings@0.210.0
   - @voyant-travel/finance@0.210.0
   - @voyant-travel/legal@0.210.0
@@ -288,7 +288,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.209.0
 - @voyant-travel/finance@0.209.0
 - @voyant-travel/legal@0.209.0
-- @voyant-travel/quotes@0.134.8
+- @voyant-travel/proposals@0.134.8
 
 ## 0.140.0
 
@@ -298,7 +298,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.208.0
 - @voyant-travel/legal@0.208.0
 - @voyant-travel/storefront@0.210.0
-- @voyant-travel/quotes@0.134.7
+- @voyant-travel/proposals@0.134.7
 
 ## 0.139.5
 
@@ -309,7 +309,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.207.0
   - @voyant-travel/legal@0.207.0
   - @voyant-travel/storefront@0.209.0
-  - @voyant-travel/quotes@0.134.5
+  - @voyant-travel/proposals@0.134.5
 
 ## 0.139.4
 
@@ -319,7 +319,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/storefront@0.208.0
   - @voyant-travel/hono@0.134.6
   - @voyant-travel/finance@0.206.0
-  - @voyant-travel/quotes@0.134.4
+  - @voyant-travel/proposals@0.134.4
   - @voyant-travel/bookings@0.206.0
   - @voyant-travel/legal@0.206.0
 
@@ -331,7 +331,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.205.0
   - @voyant-travel/finance@0.205.0
   - @voyant-travel/storefront@0.207.0
-  - @voyant-travel/quotes@0.134.3
+  - @voyant-travel/proposals@0.134.3
   - @voyant-travel/bookings@0.205.0
 
 ## 0.139.2
@@ -342,7 +342,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.204.0
 - @voyant-travel/legal@0.204.0
 - @voyant-travel/storefront@0.206.0
-- @voyant-travel/quotes@0.134.2
+- @voyant-travel/proposals@0.134.2
 
 ## 0.139.1
 
@@ -355,7 +355,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/tools@0.7.0
   - @voyant-travel/storefront@0.205.0
   - @voyant-travel/legal@0.203.0
-  - @voyant-travel/quotes@0.134.1
+  - @voyant-travel/proposals@0.134.1
 
 ## 0.139.0
 
@@ -379,7 +379,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - Updated dependencies [3201e48]
-  - @voyant-travel/quotes@0.134.0
+  - @voyant-travel/proposals@0.134.0
   - @voyant-travel/bookings@0.202.0
   - @voyant-travel/finance@0.202.0
   - @voyant-travel/legal@0.202.0
@@ -395,7 +395,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.201.1
   - @voyant-travel/finance@0.201.1
   - @voyant-travel/legal@0.201.1
-  - @voyant-travel/quotes@0.133.1
+  - @voyant-travel/proposals@0.133.1
   - @voyant-travel/storefront@0.203.1
 
 ## 0.138.0
@@ -421,7 +421,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - Updated dependencies [5e03ae7]
-  - @voyant-travel/quotes@0.133.0
+  - @voyant-travel/proposals@0.133.0
   - @voyant-travel/finance@0.201.0
   - @voyant-travel/legal@0.201.0
   - @voyant-travel/storefront@0.203.0
@@ -459,7 +459,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/db@0.118.5
   - @voyant-travel/finance@0.200.0
   - @voyant-travel/hono@0.134.5
-  - @voyant-travel/quotes@0.132.4
+  - @voyant-travel/proposals@0.132.4
 
 ## 0.136.2
 
@@ -473,7 +473,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.199.0
   - @voyant-travel/hono@0.134.4
   - @voyant-travel/legal@0.199.0
-  - @voyant-travel/quotes@0.132.3
+  - @voyant-travel/proposals@0.132.3
   - @voyant-travel/storefront@0.201.0
 
 ## 0.136.1
@@ -509,7 +509,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - @voyant-travel/legal@0.198.0
-- @voyant-travel/quotes@0.132.2
+- @voyant-travel/proposals@0.132.2
 - @voyant-travel/storefront@0.200.0
 - @voyant-travel/bookings@0.198.0
 - @voyant-travel/finance@0.198.0
@@ -526,7 +526,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.197.0
   - @voyant-travel/tools@0.5.0
   - @voyant-travel/legal@0.197.0
-  - @voyant-travel/quotes@0.132.1
+  - @voyant-travel/proposals@0.132.1
   - @voyant-travel/db@0.118.3
   - @voyant-travel/hono@0.134.3
   - @voyant-travel/storefront@0.199.0
@@ -552,7 +552,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [8a4f3cd]
 - Updated dependencies
   - @voyant-travel/legal@0.196.0
-  - @voyant-travel/quotes@0.132.0
+  - @voyant-travel/proposals@0.132.0
   - @voyant-travel/storefront@0.198.0
   - @voyant-travel/action-ledger@0.112.0
   - @voyant-travel/finance@0.196.0
@@ -571,7 +571,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.195.0
   - @voyant-travel/legal@0.195.0
   - @voyant-travel/storefront@0.197.0
-  - @voyant-travel/quotes@0.131.40
+  - @voyant-travel/proposals@0.131.40
 
 ## 0.134.1
 
@@ -583,7 +583,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.194.0
   - @voyant-travel/legal@0.194.0
   - @voyant-travel/storefront@0.196.0
-  - @voyant-travel/quotes@0.131.39
+  - @voyant-travel/proposals@0.131.39
 
 ## 0.134.0
 
@@ -593,7 +593,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/storefront@0.195.0
 - @voyant-travel/bookings@0.193.0
 - @voyant-travel/finance@0.193.0
-- @voyant-travel/quotes@0.131.38
+- @voyant-travel/proposals@0.131.38
 
 ## 0.133.3
 
@@ -607,7 +607,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.192.1
   - @voyant-travel/hono@0.134.1
   - @voyant-travel/legal@0.192.1
-  - @voyant-travel/quotes@0.131.37
+  - @voyant-travel/proposals@0.131.37
   - @voyant-travel/storefront@0.194.1
 
 ## 0.133.2
@@ -619,7 +619,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/storefront@0.194.0
   - @voyant-travel/bookings@0.192.0
   - @voyant-travel/legal@0.192.0
-  - @voyant-travel/quotes@0.131.36
+  - @voyant-travel/proposals@0.131.36
 
 ## 0.133.1
 
@@ -630,7 +630,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.191.0
   - @voyant-travel/storefront@0.193.0
   - @voyant-travel/bookings@0.191.0
-  - @voyant-travel/quotes@0.131.35
+  - @voyant-travel/proposals@0.131.35
 
 ## 0.133.0
 
@@ -658,7 +658,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.190.0
   - @voyant-travel/storefront@0.192.0
   - @voyant-travel/action-ledger@0.111.13
-  - @voyant-travel/quotes@0.131.34
+  - @voyant-travel/proposals@0.131.34
   - @voyant-travel/types@0.109.9
 
 ## 0.132.14
@@ -669,7 +669,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.189.0
 - @voyant-travel/legal@0.189.0
 - @voyant-travel/storefront@0.191.0
-- @voyant-travel/quotes@0.131.33
+- @voyant-travel/proposals@0.131.33
 
 ## 0.132.13
 
@@ -681,7 +681,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.188.0
   - @voyant-travel/finance@0.188.0
   - @voyant-travel/legal@0.188.0
-  - @voyant-travel/quotes@0.131.32
+  - @voyant-travel/proposals@0.131.32
   - @voyant-travel/storefront@0.190.0
   - @voyant-travel/workflows@0.122.18
 
@@ -693,7 +693,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.187.0
 - @voyant-travel/legal@0.187.0
 - @voyant-travel/storefront@0.189.0
-- @voyant-travel/quotes@0.131.31
+- @voyant-travel/proposals@0.131.31
 
 ## 0.132.11
 
@@ -703,7 +703,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.186.0
 - @voyant-travel/legal@0.186.0
 - @voyant-travel/storefront@0.188.0
-- @voyant-travel/quotes@0.131.29
+- @voyant-travel/proposals@0.131.29
 
 ## 0.132.10
 
@@ -713,7 +713,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.185.0
   - @voyant-travel/legal@0.185.0
   - @voyant-travel/storefront@0.187.0
-  - @voyant-travel/quotes@0.131.28
+  - @voyant-travel/proposals@0.131.28
   - @voyant-travel/bookings@0.185.0
 
 ## 0.132.9
@@ -724,7 +724,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.184.0
 - @voyant-travel/legal@0.184.0
 - @voyant-travel/storefront@0.186.0
-- @voyant-travel/quotes@0.131.27
+- @voyant-travel/proposals@0.131.27
 
 ## 0.132.8
 
@@ -735,7 +735,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.183.0
   - @voyant-travel/bookings@0.183.0
   - @voyant-travel/legal@0.183.0
-  - @voyant-travel/quotes@0.131.26
+  - @voyant-travel/proposals@0.131.26
 
 ## 0.132.7
 
@@ -757,7 +757,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.182.1
   - @voyant-travel/finance@0.182.3
   - @voyant-travel/legal@0.182.3
-  - @voyant-travel/quotes@0.131.25
+  - @voyant-travel/proposals@0.131.25
   - @voyant-travel/storefront@0.184.1
   - @voyant-travel/workflows@0.122.15
 
@@ -769,7 +769,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.182.0
 - @voyant-travel/finance@0.182.0
 - @voyant-travel/legal@0.182.0
-- @voyant-travel/quotes@0.131.23
+- @voyant-travel/proposals@0.131.23
 
 ## 0.132.4
 
@@ -780,7 +780,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.181.0
   - @voyant-travel/bookings@0.181.0
   - @voyant-travel/legal@0.181.0
-  - @voyant-travel/quotes@0.131.21
+  - @voyant-travel/proposals@0.131.21
   - @voyant-travel/storefront@0.183.0
 
 ## 0.132.3
@@ -789,7 +789,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - @voyant-travel/finance@0.180.1
 - @voyant-travel/legal@0.180.1
-- @voyant-travel/quotes@0.131.20
+- @voyant-travel/proposals@0.131.20
 - @voyant-travel/db@0.117.1
 - @voyant-travel/bookings@0.180.1
 - @voyant-travel/storefront@0.182.1
@@ -805,7 +805,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.180.0
   - @voyant-travel/finance@0.180.0
   - @voyant-travel/workflows@0.122.13
-  - @voyant-travel/quotes@0.131.19
+  - @voyant-travel/proposals@0.131.19
 
 ## 0.132.1
 
@@ -815,7 +815,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.179.0
 - @voyant-travel/finance@0.179.0
 - @voyant-travel/legal@0.179.0
-- @voyant-travel/quotes@0.131.18
+- @voyant-travel/proposals@0.131.18
 
 ## 0.132.0
 
@@ -826,7 +826,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/legal@0.178.0
 - @voyant-travel/storefront@0.180.0
 - @voyant-travel/workflows@0.122.12
-- @voyant-travel/quotes@0.131.17
+- @voyant-travel/proposals@0.131.17
 
 ## 0.131.10
 
@@ -839,7 +839,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.177.0
   - @voyant-travel/hono@0.131.2
   - @voyant-travel/legal@0.177.0
-  - @voyant-travel/quotes@0.131.16
+  - @voyant-travel/proposals@0.131.16
   - @voyant-travel/storefront@0.179.0
   - @voyant-travel/types@0.109.8
   - @voyant-travel/workflows@0.122.11
@@ -856,7 +856,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.176.0
   - @voyant-travel/hono@0.131.1
   - @voyant-travel/legal@0.176.0
-  - @voyant-travel/quotes@0.131.15
+  - @voyant-travel/proposals@0.131.15
   - @voyant-travel/types@0.109.7
   - @voyant-travel/workflows@0.122.10
 
@@ -873,7 +873,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.175.0
   - @voyant-travel/legal@0.175.0
   - @voyant-travel/action-ledger@0.111.7
-  - @voyant-travel/quotes@0.131.14
+  - @voyant-travel/proposals@0.131.14
   - @voyant-travel/types@0.109.6
   - @voyant-travel/workflows@0.122.9
 
@@ -889,7 +889,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/db@0.114.15
   - @voyant-travel/hono@0.130.1
   - @voyant-travel/legal@0.174.0
-  - @voyant-travel/quotes@0.131.13
+  - @voyant-travel/proposals@0.131.13
   - @voyant-travel/storefront@0.176.0
   - @voyant-travel/workflows@0.122.8
 
@@ -901,7 +901,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.173.0
 - @voyant-travel/legal@0.173.0
 - @voyant-travel/storefront@0.175.0
-- @voyant-travel/quotes@0.131.12
+- @voyant-travel/proposals@0.131.12
 
 ## 0.131.5
 
@@ -916,7 +916,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.172.0
   - @voyant-travel/action-ledger@0.111.5
   - @voyant-travel/db@0.114.14
-  - @voyant-travel/quotes@0.131.11
+  - @voyant-travel/proposals@0.131.11
   - @voyant-travel/workflows@0.122.7
 
 ## 0.131.4
@@ -929,7 +929,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.171.1
   - @voyant-travel/finance@0.171.1
   - @voyant-travel/legal@0.171.1
-  - @voyant-travel/quotes@0.131.10
+  - @voyant-travel/proposals@0.131.10
   - @voyant-travel/storefront@0.173.1
   - @voyant-travel/workflows@0.122.6
 
@@ -942,7 +942,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.171.0
   - @voyant-travel/storefront@0.173.0
   - @voyant-travel/bookings@0.171.0
-  - @voyant-travel/quotes@0.131.9
+  - @voyant-travel/proposals@0.131.9
 
 ## 0.131.2
 
@@ -956,7 +956,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/db@0.114.13
   - @voyant-travel/finance@0.170.0
   - @voyant-travel/hono@0.128.6
-  - @voyant-travel/quotes@0.131.8
+  - @voyant-travel/proposals@0.131.8
   - @voyant-travel/storefront@0.172.0
   - @voyant-travel/workflows@0.122.5
 
@@ -972,7 +972,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.169.2
   - @voyant-travel/hono@0.128.4
   - @voyant-travel/legal@0.169.1
-  - @voyant-travel/quotes@0.131.7
+  - @voyant-travel/proposals@0.131.7
   - @voyant-travel/storefront@0.171.1
   - @voyant-travel/workflows@0.122.4
 
@@ -985,7 +985,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.169.0
   - @voyant-travel/legal@0.169.0
   - @voyant-travel/storefront@0.171.0
-  - @voyant-travel/quotes@0.131.6
+  - @voyant-travel/proposals@0.131.6
 
 ## 0.130.8
 
@@ -995,7 +995,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.168.0
   - @voyant-travel/legal@0.168.0
   - @voyant-travel/storefront@0.170.0
-  - @voyant-travel/quotes@0.131.5
+  - @voyant-travel/proposals@0.131.5
   - @voyant-travel/bookings@0.168.0
 
 ## 0.130.7
@@ -1006,7 +1006,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.167.0
   - @voyant-travel/legal@0.167.0
   - @voyant-travel/storefront@0.169.0
-  - @voyant-travel/quotes@0.131.4
+  - @voyant-travel/proposals@0.131.4
   - @voyant-travel/bookings@0.167.0
 
 ## 0.130.6
@@ -1019,7 +1019,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.166.0
   - @voyant-travel/legal@0.166.0
   - @voyant-travel/storefront@0.168.0
-  - @voyant-travel/quotes@0.131.3
+  - @voyant-travel/proposals@0.131.3
   - @voyant-travel/bookings@0.166.0
   - @voyant-travel/workflows@0.122.3
 
@@ -1031,7 +1031,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.165.0
   - @voyant-travel/legal@0.165.0
   - @voyant-travel/storefront@0.167.0
-  - @voyant-travel/quotes@0.131.2
+  - @voyant-travel/proposals@0.131.2
   - @voyant-travel/bookings@0.165.0
 
 ## 0.130.4
@@ -1042,7 +1042,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/finance@0.164.0
 - @voyant-travel/legal@0.164.0
 - @voyant-travel/storefront@0.166.0
-- @voyant-travel/quotes@0.131.1
+- @voyant-travel/proposals@0.131.1
 
 ## 0.130.3
 
@@ -1056,7 +1056,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.163.0
   - @voyant-travel/core@0.125.0
   - @voyant-travel/finance@0.163.0
-  - @voyant-travel/quotes@0.131.0
+  - @voyant-travel/proposals@0.131.0
   - @voyant-travel/legal@0.163.0
   - @voyant-travel/storefront@0.165.0
   - @voyant-travel/action-ledger@0.111.1
@@ -1082,7 +1082,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.162.1
   - @voyant-travel/finance@0.162.1
   - @voyant-travel/legal@0.162.1
-  - @voyant-travel/quotes@0.130.1
+  - @voyant-travel/proposals@0.130.1
 
 ## 0.130.0
 
@@ -1102,7 +1102,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.162.0
   - @voyant-travel/hono@0.128.0
   - @voyant-travel/legal@0.162.0
-  - @voyant-travel/quotes@0.130.0
+  - @voyant-travel/proposals@0.130.0
   - @voyant-travel/storefront@0.164.0
   - @voyant-travel/workflows@0.122.0
   - @voyant-travel/db@0.114.8
@@ -1120,7 +1120,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.161.0
   - @voyant-travel/legal@0.161.0
   - @voyant-travel/storefront@0.163.0
-  - @voyant-travel/quotes@0.129.1
+  - @voyant-travel/proposals@0.129.1
 
 ## 0.128.1
 
@@ -1146,7 +1146,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/tools@0.3.0
   - @voyant-travel/bookings@0.160.0
   - @voyant-travel/finance@0.160.0
-  - @voyant-travel/quotes@0.129.0
+  - @voyant-travel/proposals@0.129.0
   - @voyant-travel/legal@0.160.0
   - @voyant-travel/storefront@0.162.0
   - @voyant-travel/db@0.114.7
@@ -1607,7 +1607,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - fc71db1: Add write/action + notification agent tools:
 
-  - `@voyant-travel/quotes`: `accept_quote_version` (write, `quotes:write`,
+  - `@voyant-travel/proposals`: `accept_quote_version` (write, `quotes:write`,
     confirmation-required).
   - `@voyant-travel/finance`: `void_invoice` (destructive, `finance:void`,
     confirmation-required) — the void is a self-contained status transition.

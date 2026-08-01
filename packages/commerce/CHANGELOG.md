@@ -1141,7 +1141,7 @@
   - @voyant-travel/db@0.114.5
   - @voyant-travel/distribution@0.148.0
   - @voyant-travel/finance@0.158.0
-  - @voyant-travel/quotes-contracts@0.108.3
+  - @voyant-travel/proposals-contracts@0.108.3
   - @voyant-travel/types@0.109.2
   - @voyant-travel/workflow-runs@0.120.3
   - @voyant-travel/workflows@0.120.3
@@ -1175,7 +1175,7 @@
   - @voyant-travel/finance@0.156.1
   - @voyant-travel/hono@0.126.3
   - @voyant-travel/products-contracts@0.107.1
-  - @voyant-travel/quotes-contracts@0.108.2
+  - @voyant-travel/proposals-contracts@0.108.2
   - @voyant-travel/workflow-runs@0.120.2
   - @voyant-travel/workflows@0.120.2
 
@@ -1351,7 +1351,7 @@
 - Updated dependencies [d26a820]
 - Updated dependencies [d771be3]
 - Updated dependencies [bd7a830]
-  - @voyant-travel/quotes@0.127.0
+  - @voyant-travel/proposals@0.127.0
   - @voyant-travel/catalog@0.150.0
   - @voyant-travel/workflow-runs@0.116.0
   - @voyant-travel/distribution@0.142.0
@@ -1381,7 +1381,7 @@
   - @voyant-travel/db@0.112.1
   - @voyant-travel/hono@0.124.1
   - @voyant-travel/legal@0.151.4
-  - @voyant-travel/quotes@0.126.4
+  - @voyant-travel/proposals@0.126.4
   - @voyant-travel/workflow-runs@0.115.2
   - @voyant-travel/workflows@0.115.2
 
@@ -1397,7 +1397,7 @@
   - @voyant-travel/distribution@0.141.4
   - @voyant-travel/finance@0.151.3
   - @voyant-travel/legal@0.151.3
-  - @voyant-travel/quotes@0.126.3
+  - @voyant-travel/proposals@0.126.3
   - @voyant-travel/types@0.107.3
   - @voyant-travel/workflow-runs@0.115.1
   - @voyant-travel/workflows@0.115.1
@@ -1416,7 +1416,7 @@
   - @voyant-travel/finance@0.151.2
   - @voyant-travel/hono@0.123.2
   - @voyant-travel/legal@0.151.2
-  - @voyant-travel/quotes@0.126.2
+  - @voyant-travel/proposals@0.126.2
   - @voyant-travel/workflow-runs@0.115.0
 
 ## 0.33.2
@@ -1444,7 +1444,7 @@
   - @voyant-travel/catalog@0.149.1
   - @voyant-travel/distribution@0.141.1
   - @voyant-travel/finance@0.151.1
-  - @voyant-travel/quotes@0.126.1
+  - @voyant-travel/proposals@0.126.1
   - @voyant-travel/hono@0.123.0
   - @voyant-travel/workflows@0.113.0
   - @voyant-travel/db@0.111.1
@@ -1497,7 +1497,7 @@
   - @voyant-travel/finance@0.151.0
   - @voyant-travel/bookings@0.151.0
   - @voyant-travel/distribution@0.141.0
-  - @voyant-travel/quotes@0.126.0
+  - @voyant-travel/proposals@0.126.0
   - @voyant-travel/workflow-runs@0.112.0
   - @voyant-travel/db@0.111.0
   - @voyant-travel/hono@0.122.4
@@ -1517,7 +1517,7 @@
   - @voyant-travel/catalog@0.148.0
   - @voyant-travel/db@0.110.2
   - @voyant-travel/hono@0.122.3
-  - @voyant-travel/quotes@0.125.9
+  - @voyant-travel/proposals@0.125.9
 
 ## 0.31.1
 
@@ -1534,7 +1534,7 @@
   - @voyant-travel/distribution@0.139.1
   - @voyant-travel/finance@0.149.1
   - @voyant-travel/legal@0.149.1
-  - @voyant-travel/quotes@0.125.8
+  - @voyant-travel/proposals@0.125.8
   - @voyant-travel/workflow-runs@0.111.19
   - @voyant-travel/hono@0.122.2
   - @voyant-travel/workflows@0.111.19
@@ -1548,7 +1548,7 @@
 - @voyant-travel/distribution@0.139.0
 - @voyant-travel/finance@0.149.0
 - @voyant-travel/legal@0.149.0
-- @voyant-travel/quotes@0.125.7
+- @voyant-travel/proposals@0.125.7
 
 ## 0.30.0
 
@@ -1559,7 +1559,7 @@
 - @voyant-travel/distribution@0.138.0
 - @voyant-travel/finance@0.148.0
 - @voyant-travel/legal@0.148.0
-- @voyant-travel/quotes@0.125.6
+- @voyant-travel/proposals@0.125.6
 
 ## 0.29.0
 
@@ -1570,7 +1570,7 @@
 - @voyant-travel/distribution@0.137.0
 - @voyant-travel/finance@0.147.0
 - @voyant-travel/legal@0.147.0
-- @voyant-travel/quotes@0.125.5
+- @voyant-travel/proposals@0.125.5
 
 ## 0.28.0
 
@@ -1581,7 +1581,7 @@
 - @voyant-travel/distribution@0.136.0
 - @voyant-travel/finance@0.146.0
 - @voyant-travel/legal@0.146.0
-- @voyant-travel/quotes@0.125.4
+- @voyant-travel/proposals@0.125.4
 
 ## 0.27.0
 
@@ -1592,7 +1592,7 @@
   - @voyant-travel/distribution@0.135.0
   - @voyant-travel/products-contracts@0.106.1
   - @voyant-travel/bookings@0.145.0
-  - @voyant-travel/quotes@0.125.3
+  - @voyant-travel/proposals@0.125.3
   - @voyant-travel/finance@0.145.0
   - @voyant-travel/legal@0.145.0
 
@@ -1606,7 +1606,7 @@
   - @voyant-travel/finance@0.144.0
   - @voyant-travel/legal@0.144.0
   - @voyant-travel/catalog@0.142.0
-  - @voyant-travel/quotes@0.125.2
+  - @voyant-travel/proposals@0.125.2
 
 ## 0.25.0
 
@@ -1621,7 +1621,7 @@
   - @voyant-travel/legal@0.143.0
   - @voyant-travel/catalog@0.141.0
   - @voyant-travel/distribution@0.133.0
-  - @voyant-travel/quotes@0.125.1
+  - @voyant-travel/proposals@0.125.1
   - @voyant-travel/types@0.107.1
   - @voyant-travel/workflow-runs@0.111.18
   - @voyant-travel/workflows@0.111.18
@@ -1637,7 +1637,7 @@
 - Updated dependencies [ee09a7f]
 - Updated dependencies [97d1c14]
   - @voyant-travel/distribution@0.132.0
-  - @voyant-travel/quotes@0.125.0
+  - @voyant-travel/proposals@0.125.0
   - @voyant-travel/bookings@0.142.0
   - @voyant-travel/catalog@0.140.0
   - @voyant-travel/finance@0.142.0
@@ -1653,7 +1653,7 @@
   - @voyant-travel/bookings@0.141.0
   - @voyant-travel/finance@0.141.0
   - @voyant-travel/legal@0.141.0
-  - @voyant-travel/quotes@0.124.2
+  - @voyant-travel/proposals@0.124.2
 
 ## 0.22.1
 
@@ -1679,7 +1679,7 @@
   - @voyant-travel/legal@0.140.0
   - @voyant-travel/workflow-runs@0.111.16
   - @voyant-travel/workflows@0.111.16
-  - @voyant-travel/quotes@0.124.1
+  - @voyant-travel/proposals@0.124.1
 
 ## 0.21.2
 
@@ -1723,7 +1723,7 @@
   - @voyant-travel/catalog@0.137.0
   - @voyant-travel/bookings@0.139.0
   - @voyant-travel/finance@0.139.0
-  - @voyant-travel/quotes@0.124.0
+  - @voyant-travel/proposals@0.124.0
   - @voyant-travel/distribution@0.129.0
   - @voyant-travel/legal@0.139.0
   - @voyant-travel/workflow-runs@0.111.15
@@ -1742,7 +1742,7 @@
   - @voyant-travel/distribution@0.128.4
   - @voyant-travel/finance@0.138.8
   - @voyant-travel/legal@0.138.2
-  - @voyant-travel/quotes@0.123.14
+  - @voyant-travel/proposals@0.123.14
   - @voyant-travel/workflow-runs@0.111.14
   - @voyant-travel/workflows@0.111.14
 
@@ -1759,7 +1759,7 @@
   - @voyant-travel/catalog@0.136.2
   - @voyant-travel/distribution@0.128.3
   - @voyant-travel/legal@0.138.1
-  - @voyant-travel/quotes@0.123.13
+  - @voyant-travel/proposals@0.123.13
   - @voyant-travel/workflow-runs@0.111.13
   - @voyant-travel/workflows@0.111.13
 
@@ -1816,7 +1816,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/bookings@0.138.0
   - @voyant-travel/catalog@0.136.0
   - @voyant-travel/finance@0.138.0
-  - @voyant-travel/quotes@0.123.12
+  - @voyant-travel/proposals@0.123.12
 
 ## 0.19.6
 
@@ -1870,7 +1870,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/bookings@0.137.1
   - @voyant-travel/catalog@0.135.1
   - @voyant-travel/distribution@0.127.1
-  - @voyant-travel/quotes@0.123.6
+  - @voyant-travel/proposals@0.123.6
   - @voyant-travel/workflow-runs@0.111.10
   - @voyant-travel/workflows@0.111.10
 
@@ -1901,7 +1901,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/distribution@0.127.0
   - @voyant-travel/finance@0.137.0
   - @voyant-travel/legal@0.137.0
-  - @voyant-travel/quotes@0.123.5
+  - @voyant-travel/proposals@0.123.5
   - @voyant-travel/workflow-runs@0.111.9
   - @voyant-travel/workflows@0.111.9
 
@@ -1916,7 +1916,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/finance@0.136.2
   - @voyant-travel/hono@0.116.2
   - @voyant-travel/legal@0.136.2
-  - @voyant-travel/quotes@0.123.4
+  - @voyant-travel/proposals@0.123.4
 
 ## 0.18.0
 
@@ -1931,7 +1931,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/distribution@0.126.0
   - @voyant-travel/finance@0.136.0
   - @voyant-travel/legal@0.136.0
-  - @voyant-travel/quotes@0.123.3
+  - @voyant-travel/proposals@0.123.3
 
 ## 0.17.0
 
@@ -1944,7 +1944,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - @voyant-travel/distribution@0.125.0
 - @voyant-travel/finance@0.135.0
 - @voyant-travel/legal@0.135.0
-- @voyant-travel/quotes@0.123.2
+- @voyant-travel/proposals@0.123.2
 
 ## 0.16.1
 
@@ -1958,7 +1958,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/distribution@0.124.1
   - @voyant-travel/finance@0.134.1
   - @voyant-travel/legal@0.134.1
-  - @voyant-travel/quotes@0.123.1
+  - @voyant-travel/proposals@0.123.1
   - @voyant-travel/workflow-runs@0.111.6
   - @voyant-travel/workflows@0.111.6
 
@@ -1989,7 +1989,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/distribution@0.124.0
   - @voyant-travel/finance@0.134.0
   - @voyant-travel/legal@0.134.0
-  - @voyant-travel/quotes@0.123.0
+  - @voyant-travel/proposals@0.123.0
   - @voyant-travel/catalog@0.132.0
   - @voyant-travel/workflow-runs@0.111.5
   - @voyant-travel/workflows@0.111.5
@@ -2006,7 +2006,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/catalog@0.131.0
   - @voyant-travel/distribution@0.123.0
   - @voyant-travel/finance@0.133.0
-  - @voyant-travel/quotes@0.122.11
+  - @voyant-travel/proposals@0.122.11
   - @voyant-travel/workflow-runs@0.111.4
   - @voyant-travel/products-contracts@0.105.10
   - @voyant-travel/workflows@0.111.4
@@ -2020,7 +2020,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/products-contracts@0.105.9
   - @voyant-travel/distribution@0.122.0
   - @voyant-travel/bookings@0.132.0
-  - @voyant-travel/quotes@0.122.10
+  - @voyant-travel/proposals@0.122.10
   - @voyant-travel/finance@0.132.0
   - @voyant-travel/legal@0.132.0
 
@@ -2036,7 +2036,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/distribution@0.121.1
   - @voyant-travel/finance@0.131.2
   - @voyant-travel/legal@0.131.1
-  - @voyant-travel/quotes@0.122.9
+  - @voyant-travel/proposals@0.122.9
   - @voyant-travel/workflow-runs@0.111.3
   - @voyant-travel/db@0.108.5
   - @voyant-travel/workflows@0.111.3
@@ -2050,7 +2050,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - @voyant-travel/distribution@0.121.0
 - @voyant-travel/finance@0.131.0
 - @voyant-travel/legal@0.131.0
-- @voyant-travel/quotes@0.122.8
+- @voyant-travel/proposals@0.122.8
 
 ## 0.12.0
 
@@ -2061,7 +2061,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - @voyant-travel/distribution@0.120.0
 - @voyant-travel/finance@0.130.0
 - @voyant-travel/legal@0.130.0
-- @voyant-travel/quotes@0.122.7
+- @voyant-travel/proposals@0.122.7
 
 ## 0.11.1
 
@@ -2079,7 +2079,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - Updated dependencies [7779772]
   - @voyant-travel/catalog@0.127.0
   - @voyant-travel/distribution@0.119.0
-  - @voyant-travel/quotes@0.122.5
+  - @voyant-travel/proposals@0.122.5
   - @voyant-travel/bookings@0.129.0
   - @voyant-travel/finance@0.129.0
   - @voyant-travel/legal@0.129.0
@@ -2093,7 +2093,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - @voyant-travel/distribution@0.118.0
 - @voyant-travel/finance@0.128.0
 - @voyant-travel/legal@0.128.0
-- @voyant-travel/quotes@0.122.4
+- @voyant-travel/proposals@0.122.4
 
 ## 0.9.0
 
@@ -2105,7 +2105,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/finance@0.127.0
   - @voyant-travel/legal@0.127.0
   - @voyant-travel/catalog@0.125.0
-  - @voyant-travel/quotes@0.122.3
+  - @voyant-travel/proposals@0.122.3
 
 ## 0.8.1
 
@@ -2117,7 +2117,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 
 - Updated dependencies [1841ce2]
   - @voyant-travel/db@0.108.4
-  - @voyant-travel/quotes@0.122.2
+  - @voyant-travel/proposals@0.122.2
   - @voyant-travel/distribution@0.116.1
   - @voyant-travel/catalog@0.124.1
   - @voyant-travel/finance@0.126.1
@@ -2135,14 +2135,14 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/catalog@0.124.0
   - @voyant-travel/distribution@0.116.0
   - @voyant-travel/finance@0.126.0
-  - @voyant-travel/quotes@0.122.1
+  - @voyant-travel/proposals@0.122.1
 
 ## 0.7.0
 
 ### Patch Changes
 
 - Updated dependencies [a74471e]
-  - @voyant-travel/quotes@0.122.0
+  - @voyant-travel/proposals@0.122.0
   - @voyant-travel/db@0.108.3
   - @voyant-travel/products-contracts@0.105.6
   - @voyant-travel/bookings@0.125.0
@@ -2166,7 +2166,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - @voyant-travel/finance@0.124.0
 - @voyant-travel/legal@0.124.0
 - @voyant-travel/workflows@0.110.0
-- @voyant-travel/quotes@0.121.1
+- @voyant-travel/proposals@0.121.1
 
 ## 0.5.0
 
@@ -2184,7 +2184,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/core@0.110.0
   - @voyant-travel/hono@0.112.0
   - @voyant-travel/finance@0.123.0
-  - @voyant-travel/quotes@0.121.0
+  - @voyant-travel/proposals@0.121.0
   - @voyant-travel/distribution@0.113.0
   - @voyant-travel/legal@0.123.0
   - @voyant-travel/catalog@0.121.0
@@ -2204,7 +2204,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 - Updated dependencies [51dd276]
   - @voyant-travel/finance@0.122.0
   - @voyant-travel/legal@0.122.0
-  - @voyant-travel/quotes@0.120.1
+  - @voyant-travel/proposals@0.120.1
   - @voyant-travel/bookings@0.122.0
   - @voyant-travel/catalog@0.120.0
   - @voyant-travel/distribution@0.112.0
@@ -2227,7 +2227,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
   - @voyant-travel/finance@0.121.0
   - @voyant-travel/hono@0.111.0
   - @voyant-travel/legal@0.121.0
-  - @voyant-travel/quotes@0.120.0
+  - @voyant-travel/proposals@0.120.0
   - @voyant-travel/bookings@0.121.0
   - @voyant-travel/distribution@0.111.0
   - @voyant-travel/workflow-runs@0.109.2

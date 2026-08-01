@@ -20,7 +20,7 @@
  * entry point; naming the runtime libraries lets the graph decide, which is the
  * property we actually care about.
  */
-const SERVER_RUNTIME = String.raw`node_modules/(drizzle-orm|hono)/`
+const SERVER_RUNTIME = "node_modules/(drizzle-orm|hono)/"
 
 module.exports = {
   forbidden: [
@@ -34,7 +34,7 @@ module.exports = {
         "domain package is fine. Importing a value is not: take it from a dependency-light " +
         "entry point instead (e.g. `@voyant-travel/operations/validation`, not " +
         "`@voyant-travel/operations`).",
-      from: { path: String.raw`^packages/([^/]+-react|ui)/src` },
+      from: { path: "^packages/([^/]+-react|ui)/src" },
       to: { path: SERVER_RUNTIME, reachable: true },
     },
     {
@@ -45,7 +45,7 @@ module.exports = {
         "which then passes for the wrong reason. Keeping this rule on is what stops the " +
         "boundary checks going quietly vacuous when an exports map or resolver option " +
         "changes.",
-      from: { path: String.raw`^packages/([^/]+-react|ui|[^/]+-contracts)/src` },
+      from: { path: "^packages/([^/]+-react|ui|[^/]+-contracts)/src" },
       to: { couldNotResolve: true },
     },
     {
@@ -55,8 +55,8 @@ module.exports = {
         "ADR-0002: the dependency arrow points runtime -> contracts, never back. A " +
         "*-contracts package must stay dependency-light so external consumers can use the " +
         "schemas without the runtime.",
-      from: { path: String.raw`^packages/([^/]+)-contracts/src` },
-      to: { path: String.raw`^packages/$1/src` },
+      from: { path: "^packages/([^/]+)-contracts/src" },
+      to: { path: "^packages/$1/src" },
     },
     {
       name: "contracts-no-server-runtime",
@@ -64,14 +64,14 @@ module.exports = {
       comment:
         "ADR-0002: a contracts package must not pull Drizzle, Hono, or the framework DB " +
         "into its own runtime. Type-only imports are excluded.",
-      from: { path: String.raw`^packages/[^/]+-contracts/src` },
+      from: { path: "^packages/[^/]+-contracts/src" },
       to: { path: SERVER_RUNTIME, reachable: true },
     },
   ],
   options: {
     // Record the edge into third-party packages, but do not crawl their internals.
     // @voyant-travel/* resolve to workspace source and must be followed.
-    doNotFollow: { path: String.raw`node_modules/(?!@voyant-travel)` },
+    doNotFollow: { path: "node_modules/(?!@voyant-travel)" },
 
     // THE load-bearing option. false => only dependencies that survive compilation,
     // i.e. `import type` edges are excluded. That is exactly the ADR's rule:

@@ -19,7 +19,7 @@
 - Updated dependencies [0c30250]
   - @voyant-travel/tools@0.10.0
   - @voyant-travel/core@0.137.0
-  - @voyant-travel/quotes@0.136.0
+  - @voyant-travel/proposals@0.136.0
   - @voyant-travel/accommodations@0.185.0
   - @voyant-travel/distribution@0.215.0
   - @voyant-travel/action-ledger@0.115.9
@@ -92,7 +92,7 @@
   - @voyant-travel/distribution@0.211.0
   - @voyant-travel/operations@0.11.4
   - @voyant-travel/relationships@0.132.17
-  - @voyant-travel/quotes@0.135.13
+  - @voyant-travel/proposals@0.135.13
 
 ## 0.76.0
 
@@ -110,7 +110,7 @@
   - @voyant-travel/distribution@0.210.0
   - @voyant-travel/relationships@0.132.16
   - @voyant-travel/operations@0.11.3
-  - @voyant-travel/quotes@0.135.12
+  - @voyant-travel/proposals@0.135.12
 
 ## 0.75.0
 
@@ -120,7 +120,7 @@
   - @voyant-travel/tools@0.7.2
   - @voyant-travel/bookings@0.219.0
   - @voyant-travel/distribution@0.209.0
-  - @voyant-travel/quotes@0.135.11
+  - @voyant-travel/proposals@0.135.11
   - @voyant-travel/accommodations@0.179.0
   - @voyant-travel/relationships@0.132.15
   - @voyant-travel/operations@0.11.2
@@ -135,7 +135,7 @@
   - @voyant-travel/distribution@0.208.0
   - @voyant-travel/relationships@0.132.14
   - @voyant-travel/operations@0.11.1
-  - @voyant-travel/quotes@0.135.10
+  - @voyant-travel/proposals@0.135.10
 
 ## 0.73.0
 
@@ -146,7 +146,7 @@
   - @voyant-travel/accommodations@0.177.0
   - @voyant-travel/bookings@0.217.0
   - @voyant-travel/distribution@0.207.0
-  - @voyant-travel/quotes@0.135.9
+  - @voyant-travel/proposals@0.135.9
   - @voyant-travel/relationships@0.132.13
 
 ## 0.72.0
@@ -159,13 +159,13 @@
   - @voyant-travel/distribution@0.206.0
   - @voyant-travel/relationships@0.132.12
   - @voyant-travel/operations@0.10.7
-  - @voyant-travel/quotes@0.135.8
+  - @voyant-travel/proposals@0.135.8
 
 ## 0.71.0
 
 ### Patch Changes
 
-- @voyant-travel/quotes@0.135.7
+- @voyant-travel/proposals@0.135.7
 - @voyant-travel/bookings@0.215.0
 - @voyant-travel/distribution@0.205.0
 - @voyant-travel/accommodations@0.175.0
@@ -181,7 +181,7 @@
 - @voyant-travel/accommodations@0.174.0
 - @voyant-travel/relationships@0.132.10
 - @voyant-travel/operations@0.10.5
-- @voyant-travel/quotes@0.135.5
+- @voyant-travel/proposals@0.135.5
 
 ## 0.69.0
 
@@ -189,7 +189,7 @@
 
 - @voyant-travel/bookings@0.213.0
 - @voyant-travel/distribution@0.203.0
-- @voyant-travel/quotes@0.135.3
+- @voyant-travel/proposals@0.135.3
 - @voyant-travel/accommodations@0.173.0
 - @voyant-travel/relationships@0.132.9
 - @voyant-travel/operations@0.10.4
@@ -202,7 +202,7 @@
 - @voyant-travel/distribution@0.202.0
 - @voyant-travel/operations@0.10.3
 - @voyant-travel/bookings@0.212.0
-- @voyant-travel/quotes@0.135.2
+- @voyant-travel/proposals@0.135.2
 - @voyant-travel/relationships@0.132.8
 
 ## 0.67.0
@@ -213,7 +213,7 @@
 - @voyant-travel/distribution@0.201.0
 - @voyant-travel/operations@0.10.2
 - @voyant-travel/bookings@0.211.0
-- @voyant-travel/quotes@0.135.1
+- @voyant-travel/proposals@0.135.1
 - @voyant-travel/relationships@0.132.7
 
 ## 0.66.0
@@ -221,7 +221,7 @@
 ### Patch Changes
 
 - Updated dependencies [d5492ed]
-  - @voyant-travel/quotes@0.135.0
+  - @voyant-travel/proposals@0.135.0
   - @voyant-travel/accommodations@0.170.0
   - @voyant-travel/bookings@0.210.0
   - @voyant-travel/distribution@0.200.0
@@ -238,7 +238,7 @@
   - @voyant-travel/bookings@0.209.0
   - @voyant-travel/distribution@0.199.0
   - @voyant-travel/relationships@0.132.5
-  - @voyant-travel/quotes@0.134.8
+  - @voyant-travel/proposals@0.134.8
 
 ## 0.64.0
 
@@ -250,7 +250,7 @@
   - @voyant-travel/distribution@0.198.0
   - @voyant-travel/accommodations@0.168.0
   - @voyant-travel/relationships@0.132.4
-  - @voyant-travel/quotes@0.134.7
+  - @voyant-travel/proposals@0.134.7
 
 ## 0.63.1
 
@@ -277,7 +277,7 @@
   - @voyant-travel/distribution@0.197.0
   - @voyant-travel/relationships@0.132.2
   - @voyant-travel/operations@0.9.2
-  - @voyant-travel/quotes@0.134.5
+  - @voyant-travel/proposals@0.134.5
 
 ## 0.62.0
 
@@ -285,7 +285,7 @@
 
 - Updated dependencies [5daf427]
   - @voyant-travel/hono@0.134.6
-  - @voyant-travel/quotes@0.134.4
+  - @voyant-travel/proposals@0.134.4
   - @voyant-travel/bookings@0.206.0
   - @voyant-travel/distribution@0.196.0
   - @voyant-travel/accommodations@0.166.0
@@ -300,7 +300,7 @@
   - @voyant-travel/operations@0.9.0
   - @voyant-travel/relationships@0.132.0
   - @voyant-travel/accommodations@0.165.0
-  - @voyant-travel/quotes@0.134.3
+  - @voyant-travel/proposals@0.134.3
   - @voyant-travel/distribution@0.195.0
   - @voyant-travel/bookings@0.205.0
 
@@ -313,7 +313,7 @@
 - @voyant-travel/accommodations@0.164.0
 - @voyant-travel/relationships@0.131.7
 - @voyant-travel/operations@0.8.47
-- @voyant-travel/quotes@0.134.2
+- @voyant-travel/proposals@0.134.2
 
 ## 0.59.0
 
@@ -326,7 +326,7 @@
   - @voyant-travel/accommodations@0.163.0
   - @voyant-travel/distribution@0.193.0
   - @voyant-travel/operations@0.8.46
-  - @voyant-travel/quotes@0.134.1
+  - @voyant-travel/proposals@0.134.1
   - @voyant-travel/relationships@0.131.6
 
 ## 0.58.0
@@ -334,7 +334,7 @@
 ### Patch Changes
 
 - Updated dependencies [3201e48]
-  - @voyant-travel/quotes@0.134.0
+  - @voyant-travel/proposals@0.134.0
   - @voyant-travel/accommodations@0.162.0
   - @voyant-travel/bookings@0.202.0
   - @voyant-travel/distribution@0.192.0
@@ -360,7 +360,7 @@
   - @voyant-travel/accommodations@0.161.1
   - @voyant-travel/bookings@0.201.1
   - @voyant-travel/distribution@0.191.1
-  - @voyant-travel/quotes@0.133.1
+  - @voyant-travel/proposals@0.133.1
   - @voyant-travel/relationships@0.131.4
   - @voyant-travel/operations@0.8.44
 
@@ -369,7 +369,7 @@
 ### Patch Changes
 
 - Updated dependencies [5e03ae7]
-  - @voyant-travel/quotes@0.133.0
+  - @voyant-travel/proposals@0.133.0
   - @voyant-travel/accommodations@0.161.0
   - @voyant-travel/distribution@0.191.0
   - @voyant-travel/bookings@0.201.0
@@ -389,7 +389,7 @@
   - @voyant-travel/bookings@0.200.0
   - @voyant-travel/db@0.118.5
   - @voyant-travel/hono@0.134.5
-  - @voyant-travel/quotes@0.132.4
+  - @voyant-travel/proposals@0.132.4
   - @voyant-travel/relationships@0.131.2
 
 ## 0.55.0
@@ -406,7 +406,7 @@
   - @voyant-travel/distribution@0.189.0
   - @voyant-travel/hono@0.134.4
   - @voyant-travel/operations@0.8.41
-  - @voyant-travel/quotes@0.132.3
+  - @voyant-travel/proposals@0.132.3
   - @voyant-travel/relationships@0.131.1
 
 ## 0.54.0
@@ -415,7 +415,7 @@
 
 - Updated dependencies [c7459a2]
   - @voyant-travel/relationships@0.131.0
-  - @voyant-travel/quotes@0.132.2
+  - @voyant-travel/proposals@0.132.2
   - @voyant-travel/accommodations@0.158.0
   - @voyant-travel/bookings@0.198.0
   - @voyant-travel/distribution@0.188.0
@@ -434,7 +434,7 @@
   - @voyant-travel/relationships@0.130.0
   - @voyant-travel/accommodations@0.157.0
   - @voyant-travel/distribution@0.187.0
-  - @voyant-travel/quotes@0.132.1
+  - @voyant-travel/proposals@0.132.1
   - @voyant-travel/db@0.118.3
   - @voyant-travel/hono@0.134.3
   - @voyant-travel/operations@0.8.39
@@ -461,7 +461,7 @@
   - @voyant-travel/distribution@0.186.0
   - @voyant-travel/accommodations@0.156.0
   - @voyant-travel/relationships@0.129.0
-  - @voyant-travel/quotes@0.132.0
+  - @voyant-travel/proposals@0.132.0
   - @voyant-travel/action-ledger@0.112.0
   - @voyant-travel/bookings@0.196.0
   - @voyant-travel/core@0.133.0
@@ -480,7 +480,7 @@
   - @voyant-travel/distribution@0.185.0
   - @voyant-travel/relationships@0.128.36
   - @voyant-travel/operations@0.8.37
-  - @voyant-travel/quotes@0.131.40
+  - @voyant-travel/proposals@0.131.40
 
 ## 0.50.0
 
@@ -492,7 +492,7 @@
   - @voyant-travel/distribution@0.184.0
   - @voyant-travel/operations@0.8.36
   - @voyant-travel/bookings@0.194.0
-  - @voyant-travel/quotes@0.131.39
+  - @voyant-travel/proposals@0.131.39
   - @voyant-travel/relationships@0.128.35
 
 ## 0.49.0
@@ -504,7 +504,7 @@
   - @voyant-travel/bookings@0.193.0
   - @voyant-travel/distribution@0.183.0
   - @voyant-travel/operations@0.8.35
-  - @voyant-travel/quotes@0.131.38
+  - @voyant-travel/proposals@0.131.38
   - @voyant-travel/relationships@0.128.34
 
 ## 0.48.1
@@ -519,7 +519,7 @@
   - @voyant-travel/distribution@0.182.1
   - @voyant-travel/hono@0.134.1
   - @voyant-travel/operations@0.8.34
-  - @voyant-travel/quotes@0.131.37
+  - @voyant-travel/proposals@0.131.37
   - @voyant-travel/relationships@0.128.33
 
 ## 0.48.0
@@ -529,7 +529,7 @@
 - @voyant-travel/bookings@0.192.0
 - @voyant-travel/distribution@0.182.0
 - @voyant-travel/accommodations@0.152.0
-- @voyant-travel/quotes@0.131.36
+- @voyant-travel/proposals@0.131.36
 - @voyant-travel/relationships@0.128.32
 - @voyant-travel/operations@0.8.33
 
@@ -541,7 +541,7 @@
 - @voyant-travel/distribution@0.181.0
 - @voyant-travel/bookings@0.191.0
 - @voyant-travel/operations@0.8.32
-- @voyant-travel/quotes@0.131.35
+- @voyant-travel/proposals@0.131.35
 - @voyant-travel/relationships@0.128.31
 
 ## 0.46.0
@@ -562,7 +562,7 @@
   - @voyant-travel/accommodations@0.150.0
   - @voyant-travel/relationships@0.128.30
   - @voyant-travel/operations@0.8.31
-  - @voyant-travel/quotes@0.131.34
+  - @voyant-travel/proposals@0.131.34
 
 ## 0.45.0
 
@@ -572,7 +572,7 @@
 - @voyant-travel/distribution@0.179.0
 - @voyant-travel/operations@0.8.30
 - @voyant-travel/bookings@0.189.0
-- @voyant-travel/quotes@0.131.33
+- @voyant-travel/proposals@0.131.33
 - @voyant-travel/relationships@0.128.29
 
 ## 0.44.0
@@ -585,7 +585,7 @@
   - @voyant-travel/bookings@0.188.0
   - @voyant-travel/distribution@0.178.0
   - @voyant-travel/operations@0.8.29
-  - @voyant-travel/quotes@0.131.32
+  - @voyant-travel/proposals@0.131.32
   - @voyant-travel/relationships@0.128.28
 
 ## 0.43.0
@@ -597,7 +597,7 @@
 - @voyant-travel/accommodations@0.147.0
 - @voyant-travel/relationships@0.128.27
 - @voyant-travel/operations@0.8.28
-- @voyant-travel/quotes@0.131.31
+- @voyant-travel/proposals@0.131.31
 
 ## 0.42.0
 
@@ -608,7 +608,7 @@
 - @voyant-travel/accommodations@0.146.0
 - @voyant-travel/relationships@0.128.26
 - @voyant-travel/operations@0.8.27
-- @voyant-travel/quotes@0.131.29
+- @voyant-travel/proposals@0.131.29
 
 ## 0.41.0
 
@@ -616,7 +616,7 @@
 
 - @voyant-travel/accommodations@0.145.0
 - @voyant-travel/distribution@0.175.0
-- @voyant-travel/quotes@0.131.28
+- @voyant-travel/proposals@0.131.28
 - @voyant-travel/bookings@0.185.0
 - @voyant-travel/operations@0.8.26
 - @voyant-travel/relationships@0.128.25
@@ -630,7 +630,7 @@
 - @voyant-travel/accommodations@0.144.0
 - @voyant-travel/relationships@0.128.24
 - @voyant-travel/operations@0.8.25
-- @voyant-travel/quotes@0.131.27
+- @voyant-travel/proposals@0.131.27
 
 ## 0.39.0
 
@@ -639,7 +639,7 @@
 - @voyant-travel/bookings@0.183.0
 - @voyant-travel/distribution@0.173.0
 - @voyant-travel/accommodations@0.143.0
-- @voyant-travel/quotes@0.131.26
+- @voyant-travel/proposals@0.131.26
 - @voyant-travel/relationships@0.128.23
 - @voyant-travel/operations@0.8.24
 
@@ -653,7 +653,7 @@
   - @voyant-travel/bookings@0.182.1
   - @voyant-travel/distribution@0.172.1
   - @voyant-travel/operations@0.8.23
-  - @voyant-travel/quotes@0.131.25
+  - @voyant-travel/proposals@0.131.25
   - @voyant-travel/relationships@0.128.22
 
 ## 0.38.0
@@ -665,7 +665,7 @@
 - @voyant-travel/accommodations@0.142.0
 - @voyant-travel/relationships@0.128.21
 - @voyant-travel/operations@0.8.22
-- @voyant-travel/quotes@0.131.23
+- @voyant-travel/proposals@0.131.23
 
 ## 0.37.0
 
@@ -673,7 +673,7 @@
 
 - Updated dependencies [464815c]
   - @voyant-travel/bookings@0.181.0
-  - @voyant-travel/quotes@0.131.21
+  - @voyant-travel/proposals@0.131.21
   - @voyant-travel/accommodations@0.141.0
   - @voyant-travel/distribution@0.171.0
   - @voyant-travel/relationships@0.128.20
@@ -685,7 +685,7 @@
 
 - @voyant-travel/bookings@0.180.0
 - @voyant-travel/distribution@0.170.0
-- @voyant-travel/quotes@0.131.19
+- @voyant-travel/proposals@0.131.19
 - @voyant-travel/accommodations@0.140.0
 - @voyant-travel/relationships@0.128.19
 - @voyant-travel/operations@0.8.20
@@ -699,7 +699,7 @@
 - @voyant-travel/accommodations@0.139.0
 - @voyant-travel/relationships@0.128.18
 - @voyant-travel/operations@0.8.19
-- @voyant-travel/quotes@0.131.18
+- @voyant-travel/proposals@0.131.18
 
 ## 0.34.0
 
@@ -710,7 +710,7 @@
 - @voyant-travel/accommodations@0.138.0
 - @voyant-travel/relationships@0.128.17
 - @voyant-travel/operations@0.8.18
-- @voyant-travel/quotes@0.131.17
+- @voyant-travel/proposals@0.131.17
 
 ## 0.33.0
 
@@ -723,7 +723,7 @@
   - @voyant-travel/distribution@0.167.0
   - @voyant-travel/hono@0.131.2
   - @voyant-travel/operations@0.8.17
-  - @voyant-travel/quotes@0.131.16
+  - @voyant-travel/proposals@0.131.16
   - @voyant-travel/relationships@0.128.16
 
 ## 0.32.0
@@ -737,7 +737,7 @@
   - @voyant-travel/distribution@0.166.0
   - @voyant-travel/hono@0.131.1
   - @voyant-travel/operations@0.8.16
-  - @voyant-travel/quotes@0.131.15
+  - @voyant-travel/proposals@0.131.15
   - @voyant-travel/relationships@0.128.15
 
 ## 0.31.0
@@ -753,7 +753,7 @@
   - @voyant-travel/distribution@0.165.0
   - @voyant-travel/relationships@0.128.14
   - @voyant-travel/operations@0.8.15
-  - @voyant-travel/quotes@0.131.14
+  - @voyant-travel/proposals@0.131.14
 
 ## 0.30.0
 
@@ -767,7 +767,7 @@
   - @voyant-travel/distribution@0.164.0
   - @voyant-travel/hono@0.130.1
   - @voyant-travel/operations@0.8.14
-  - @voyant-travel/quotes@0.131.13
+  - @voyant-travel/proposals@0.131.13
   - @voyant-travel/relationships@0.128.13
 
 ## 0.29.0
@@ -779,7 +779,7 @@
 - @voyant-travel/accommodations@0.133.0
 - @voyant-travel/relationships@0.128.12
 - @voyant-travel/operations@0.8.13
-- @voyant-travel/quotes@0.131.12
+- @voyant-travel/proposals@0.131.12
 
 ## 0.28.0
 
@@ -794,7 +794,7 @@
   - @voyant-travel/relationships@0.128.11
   - @voyant-travel/db@0.114.14
   - @voyant-travel/operations@0.8.12
-  - @voyant-travel/quotes@0.131.11
+  - @voyant-travel/proposals@0.131.11
 
 ## 0.27.1
 
@@ -806,7 +806,7 @@
   - @voyant-travel/bookings@0.171.1
   - @voyant-travel/distribution@0.161.1
   - @voyant-travel/operations@0.8.11
-  - @voyant-travel/quotes@0.131.10
+  - @voyant-travel/proposals@0.131.10
   - @voyant-travel/relationships@0.128.10
 
 ## 0.27.0
@@ -817,7 +817,7 @@
 - @voyant-travel/distribution@0.161.0
 - @voyant-travel/bookings@0.171.0
 - @voyant-travel/operations@0.8.10
-- @voyant-travel/quotes@0.131.9
+- @voyant-travel/proposals@0.131.9
 - @voyant-travel/relationships@0.128.9
 
 ## 0.26.0
@@ -832,7 +832,7 @@
   - @voyant-travel/distribution@0.160.0
   - @voyant-travel/hono@0.128.6
   - @voyant-travel/operations@0.8.9
-  - @voyant-travel/quotes@0.131.8
+  - @voyant-travel/proposals@0.131.8
   - @voyant-travel/relationships@0.128.8
 
 ## 0.25.1
@@ -847,7 +847,7 @@
   - @voyant-travel/distribution@0.159.1
   - @voyant-travel/hono@0.128.4
   - @voyant-travel/operations@0.8.8
-  - @voyant-travel/quotes@0.131.7
+  - @voyant-travel/proposals@0.131.7
   - @voyant-travel/relationships@0.128.7
 
 ## 0.25.0
@@ -860,7 +860,7 @@
   - @voyant-travel/bookings@0.169.0
   - @voyant-travel/accommodations@0.129.0
   - @voyant-travel/relationships@0.128.6
-  - @voyant-travel/quotes@0.131.6
+  - @voyant-travel/proposals@0.131.6
 
 ## 0.24.0
 
@@ -868,7 +868,7 @@
 
 - @voyant-travel/accommodations@0.128.0
 - @voyant-travel/distribution@0.158.0
-- @voyant-travel/quotes@0.131.5
+- @voyant-travel/proposals@0.131.5
 - @voyant-travel/bookings@0.168.0
 - @voyant-travel/operations@0.8.6
 - @voyant-travel/relationships@0.128.5
@@ -879,7 +879,7 @@
 
 - @voyant-travel/accommodations@0.127.0
 - @voyant-travel/distribution@0.157.0
-- @voyant-travel/quotes@0.131.4
+- @voyant-travel/proposals@0.131.4
 - @voyant-travel/bookings@0.167.0
 - @voyant-travel/operations@0.8.5
 - @voyant-travel/relationships@0.128.4
@@ -890,7 +890,7 @@
 
 - @voyant-travel/distribution@0.156.0
 - @voyant-travel/accommodations@0.126.0
-- @voyant-travel/quotes@0.131.3
+- @voyant-travel/proposals@0.131.3
 - @voyant-travel/bookings@0.166.0
 - @voyant-travel/operations@0.8.4
 - @voyant-travel/relationships@0.128.3
@@ -901,7 +901,7 @@
 
 - @voyant-travel/accommodations@0.125.0
 - @voyant-travel/distribution@0.155.0
-- @voyant-travel/quotes@0.131.2
+- @voyant-travel/proposals@0.131.2
 - @voyant-travel/bookings@0.165.0
 - @voyant-travel/operations@0.8.3
 - @voyant-travel/relationships@0.128.2
@@ -914,7 +914,7 @@
 - @voyant-travel/distribution@0.154.0
 - @voyant-travel/operations@0.8.2
 - @voyant-travel/bookings@0.164.0
-- @voyant-travel/quotes@0.131.1
+- @voyant-travel/proposals@0.131.1
 - @voyant-travel/relationships@0.128.1
 
 ## 0.19.0
@@ -929,7 +929,7 @@
   - @voyant-travel/bookings@0.163.0
   - @voyant-travel/core@0.125.0
   - @voyant-travel/relationships@0.128.0
-  - @voyant-travel/quotes@0.131.0
+  - @voyant-travel/proposals@0.131.0
   - @voyant-travel/accommodations@0.123.0
   - @voyant-travel/distribution@0.153.0
   - @voyant-travel/db@0.114.9
@@ -954,7 +954,7 @@
   - @voyant-travel/distribution@0.152.0
   - @voyant-travel/hono@0.128.0
   - @voyant-travel/operations@0.8.0
-  - @voyant-travel/quotes@0.130.0
+  - @voyant-travel/proposals@0.130.0
   - @voyant-travel/relationships@0.127.0
   - @voyant-travel/db@0.114.8
 
@@ -969,7 +969,7 @@
   - @voyant-travel/accommodations@0.121.0
   - @voyant-travel/relationships@0.126.1
   - @voyant-travel/operations@0.7.1
-  - @voyant-travel/quotes@0.129.1
+  - @voyant-travel/proposals@0.129.1
 
 ## 0.16.0
 
@@ -998,7 +998,7 @@
   - @voyant-travel/tools@0.3.0
   - @voyant-travel/bookings@0.160.0
   - @voyant-travel/operations@0.7.0
-  - @voyant-travel/quotes@0.129.0
+  - @voyant-travel/proposals@0.129.0
   - @voyant-travel/distribution@0.150.0
   - @voyant-travel/relationships@0.126.0
   - @voyant-travel/db@0.114.7
@@ -1019,7 +1019,7 @@
   - @voyant-travel/accommodations@0.119.0
   - @voyant-travel/db@0.114.6
   - @voyant-travel/distribution@0.149.0
-  - @voyant-travel/quotes@0.128.8
+  - @voyant-travel/proposals@0.128.8
   - @voyant-travel/relationships@0.125.4
 
 ## 0.14.0
@@ -1041,7 +1041,7 @@
   - @voyant-travel/db@0.114.5
   - @voyant-travel/distribution@0.148.0
   - @voyant-travel/operations@0.6.13
-  - @voyant-travel/quotes@0.128.7
+  - @voyant-travel/proposals@0.128.7
   - @voyant-travel/relationships@0.125.3
 
 ## 0.13.0
@@ -1052,7 +1052,7 @@
 - @voyant-travel/distribution@0.147.0
 - @voyant-travel/accommodations@0.117.0
 - @voyant-travel/operations@0.6.12
-- @voyant-travel/quotes@0.128.6
+- @voyant-travel/proposals@0.128.6
 - @voyant-travel/relationships@0.125.2
 
 ## 0.12.1
@@ -1070,7 +1070,7 @@
   - @voyant-travel/distribution@0.146.1
   - @voyant-travel/hono@0.126.3
   - @voyant-travel/operations@0.6.11
-  - @voyant-travel/quotes@0.128.5
+  - @voyant-travel/proposals@0.128.5
   - @voyant-travel/relationships@0.125.1
 
 ## 0.12.0
@@ -1082,7 +1082,7 @@
   - @voyant-travel/relationships@0.125.0
   - @voyant-travel/distribution@0.146.0
   - @voyant-travel/accommodations@0.116.0
-  - @voyant-travel/quotes@0.128.4
+  - @voyant-travel/proposals@0.128.4
   - @voyant-travel/db@0.114.3
   - @voyant-travel/operations@0.6.10
 
@@ -1099,7 +1099,7 @@
   - @voyant-travel/distribution@0.145.1
   - @voyant-travel/accommodations@0.115.1
   - @voyant-travel/operations@0.6.9
-  - @voyant-travel/quotes@0.128.3
+  - @voyant-travel/proposals@0.128.3
   - @voyant-travel/relationships@0.124.4
 
 ## 0.11.0
@@ -1114,7 +1114,7 @@
   - @voyant-travel/distribution@0.145.0
   - @voyant-travel/hono@0.126.1
   - @voyant-travel/operations@0.6.8
-  - @voyant-travel/quotes@0.128.2
+  - @voyant-travel/proposals@0.128.2
   - @voyant-travel/relationships@0.124.3
 
 ## 0.10.0
@@ -1130,7 +1130,7 @@
   - @voyant-travel/bookings@0.154.0
   - @voyant-travel/distribution@0.144.0
   - @voyant-travel/operations@0.6.7
-  - @voyant-travel/quotes@0.128.1
+  - @voyant-travel/proposals@0.128.1
   - @voyant-travel/relationships@0.124.2
 
 ## 0.9.0
@@ -1202,7 +1202,7 @@
   - @voyant-travel/bookings@0.153.0
   - @voyant-travel/distribution@0.143.0
   - @voyant-travel/relationships@0.124.1
-  - @voyant-travel/quotes@0.128.0
+  - @voyant-travel/proposals@0.128.0
   - @voyant-travel/db@0.113.0
   - @voyant-travel/accommodations@0.113.0
   - @voyant-travel/core@0.119.0
