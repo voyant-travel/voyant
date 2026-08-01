@@ -380,12 +380,46 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
   const storefrontService = createStorefrontService(options)
 
   function getRequestContext(c: Context<Env>): StorefrontRequestContext {
+    const storefrontChannel = c.get("storefrontChannel")
     return {
       db: c.get("db" as never) as StorefrontRequestContext["db"],
       eventBus: c.get("eventBus" as never) as StorefrontRequestContext["eventBus"],
       env: c.env,
       context: c,
+      storefrontId: storefrontChannel?.storefrontId ?? null,
+      channelId: storefrontChannel?.channelId ?? null,
+      channelStatus: storefrontChannel?.channelStatus ?? null,
     } satisfies StorefrontRequestContext
+  }
+
+  async function isProductPublished(productId: string, context: StorefrontRequestContext) {
+    if (!options?.publication) return true
+    return options.publication.isProductPublished({ productId, context })
+  }
+
+  function unavailableSummary(
+    productId: string,
+    query: z.infer<typeof productAvailabilitySummaryQueryRouteSchema>,
+  ) {
+    return {
+      productId,
+      availabilityState: "unavailable" as const,
+      counts: {
+        total: 0,
+        open: 0,
+        closed: 0,
+        soldOut: 0,
+        cancelled: 0,
+        onRequest: 0,
+        pastCutoff: 0,
+        tooEarly: 0,
+        available: 0,
+      },
+      departures: [],
+      total: 0,
+      limit: query.limit,
+      offset: query.offset,
+    }
   }
 
   async function runIntakeGuard(
@@ -501,18 +535,27 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       return c.json({ data: await storefrontService.resolveSettings(getRequestContext(c)) }, 200)
     })
     .openapi(departureByIdRoute, async (c) => {
+      const context = getRequestContext(c)
       const departure = await storefrontService.getDeparture(
         c.get("db" as never),
         c.req.valid("param").departureId,
       )
 
       if (!departure) return c.json({ error: "Storefront departure not found" }, 404)
+      if (!(await isProductPublished(departure.productId, context))) {
+        return c.json({ error: "Storefront departure not found" }, 404)
+      }
       setPublicCacheHeaders(c)
       return c.json({ data: departure }, 200)
     })
     .openapi(listProductDeparturesRoute, async (c) => {
       const { productId } = c.req.valid("param")
       const query = c.req.valid("query")
+      const context = getRequestContext(c)
+      if (!(await isProductPublished(productId, context))) {
+        setPublicCacheHeaders(c)
+        return c.json({ data: [], total: 0, limit: query.limit, offset: query.offset }, 200)
+      }
       const result = await readThroughDepartures(
         c,
         departuresDocKey(productId, query as Record<string, unknown>),
@@ -523,10 +566,16 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     })
     .openapi(productAvailabilityRoute, async (c) => {
       const { productId } = c.req.valid("param")
+      const query = c.req.valid("query")
+      const context = getRequestContext(c)
+      if (!(await isProductPublished(productId, context))) {
+        setPublicCacheHeaders(c)
+        return c.json({ data: unavailableSummary(productId, query) }, 200)
+      }
       const availability = await storefrontService.getProductAvailabilitySummary(
         c.get("db" as never),
         productId,
-        c.req.valid("query"),
+        query,
       )
 
       setPublicCacheHeaders(c)
@@ -534,6 +583,10 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     })
     .openapi(departureItineraryRoute, async (c) => {
       const { productId, departureId } = c.req.valid("param")
+      const context = getRequestContext(c)
+      if (!(await isProductPublished(productId, context))) {
+        return c.json({ error: "Storefront itinerary not found" }, 404)
+      }
       const query = parseQuery(c, storefrontDepartureItineraryQuerySchema)
       const itinerary = await storefrontService.getDepartureItinerary(c.get("db" as never), {
         departureId,
@@ -548,6 +601,14 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     .openapi(productExtensionsRoute, async (c) => {
       const { productId } = c.req.valid("param")
       const query = c.req.valid("query")
+      const context = getRequestContext(c)
+      if (!(await isProductPublished(productId, context))) {
+        setPublicCacheHeaders(c)
+        return c.json(
+          { data: { extensions: [], items: [], details: {}, currencyCode: "EUR" } },
+          200,
+        )
+      }
       const extensions = await storefrontService.getProductExtensions(
         c.get("db" as never),
         productId,
@@ -564,13 +625,17 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
       return c.json({ data: serializeProductExtensions(extensions) }, 200)
     })
     .post("/departures/:departureId/price", async (c) => {
+      const context = getRequestContext(c)
       const preview = await storefrontService.previewDeparturePrice(
         c.get("db" as never),
         c.req.param("departureId"),
         await parseJsonBody(c, storefrontDeparturePricePreviewInputSchema),
-        getRequestContext(c),
+        context,
       )
 
+      if (preview && !(await isProductPublished(preview.productId, context))) {
+        return c.json({ error: "Storefront departure not found" }, 404)
+      }
       return preview
         ? c.json({ data: preview })
         : c.json({ error: "Storefront departure not found" }, 404)
