@@ -405,7 +405,7 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
   }
 
   async function isProductPublished(productId: string, context: StorefrontRequestContext) {
-    if (!options?.publication) return true
+    if (!options?.publication) return false
     return options.publication.isProductPublished({ productId, context })
   }
 

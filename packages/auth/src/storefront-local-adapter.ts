@@ -379,11 +379,6 @@ export function createLocalStorefrontAdapter(options: {
         .from(storefronts)
         // agent-quality: raw-sql reviewed -- Postgres text[] containment authorizes the exact declared origin without loading every row.
         .where(sql`${storefronts.allowedOrigins} @> ARRAY[${origin}]::text[]`)
-      if (exactMatches.length > 1) {
-        throw new StorefrontInputError("Storefront origin resolves to multiple storefronts.")
-      }
-      if (exactMatches.length === 1 && exactMatches[0]) return toStorefrontDto(exactMatches[0])
-
       const wildcardCandidates = await context.db
         .select()
         .from(storefronts)
@@ -394,10 +389,14 @@ export function createLocalStorefrontAdapter(options: {
       const wildcardMatches = wildcardCandidates.filter((row) =>
         isStorefrontOriginAllowed(origin, row.allowedOrigins),
       )
-      if (wildcardMatches.length > 1) {
+      const matchesByStorefrontId = new Map(
+        [...exactMatches, ...wildcardMatches].map((row) => [row.id, row]),
+      )
+      const matches = [...matchesByStorefrontId.values()]
+      if (matches.length > 1) {
         throw new StorefrontInputError("Storefront origin resolves to multiple storefronts.")
       }
-      return wildcardMatches[0] ? toStorefrontDto(wildcardMatches[0]) : null
+      return matches[0] ? toStorefrontDto(matches[0]) : null
     },
 
     async updateAccountPolicy(context, storefrontId, policy) {

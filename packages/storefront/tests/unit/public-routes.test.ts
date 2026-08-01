@@ -41,6 +41,27 @@ describe("createStorefrontPublicRoutes", () => {
     })
   })
 
+  it("fails closed when the publication provider is unavailable", async () => {
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set(
+        "storefrontChannel" as never,
+        {
+          storefrontId: "sf_bound",
+          channelId: "chan_bound",
+          channelStatus: "active",
+        } as never,
+      )
+      await next()
+    })
+    app.route("/", createStorefrontPublicRoutes())
+
+    const res = await app.request("/products/prod_1/departures")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ data: [], total: 0, limit: 100, offset: 0 })
+  })
+
   it("rejects malformed composite price-preview selections with public-route errors", async () => {
     const app = new Hono()
     app.onError(handleApiError)
