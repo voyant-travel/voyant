@@ -9,11 +9,11 @@ import {
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/api-runtime-ports"
 import {
-  createDrizzleBookingSessionRepository,
   createProductionBookingSessionModule,
   createSelfServiceBookingSourceProvider,
 } from "@voyant-travel/catalog/booking-engine"
 import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/booking-engine/operator-routes"
+import { createDrizzleBookingSessionRepository } from "@voyant-travel/catalog/booking-engine/sessions-drizzle"
 import {
   type CatalogIndexer,
   catalogIndexerProviderPort,
@@ -226,7 +226,7 @@ export function createCatalogRuntimePortContribution(
           resolveOwnedHandlers: () => services.getOwnedHandlers(host.primitives.env(undefined)),
         })
       },
-      retentionMs: resolveBookingSessionRetentionMs(host.primitives.env(undefined)),
+      resolveRetentionMs: () => resolveBookingSessionRetentionMs(host.primitives.env(undefined)),
       reportFailure(error, details) {
         console.error("[catalog-booking-session-maintenance] operation failed", {
           error,

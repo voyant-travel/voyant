@@ -15,7 +15,7 @@ describe("Booking Session maintenance job", () => {
         resolveModule: () => module,
         reportFailure: vi.fn(),
         now: () => now,
-        retentionMs: 7 * 24 * 60 * 60 * 1000,
+        resolveRetentionMs: () => 7 * 24 * 60 * 60 * 1000,
         batchSize: 50,
       }),
     ).resolves.toEqual({ expired: 3, purged: 2 })

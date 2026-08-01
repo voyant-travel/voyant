@@ -6,7 +6,7 @@ export interface CatalogBookingSessionMaintenanceJobRuntime {
   resolveModule(): BookingSessionModule | Promise<BookingSessionModule>
   reportFailure(error: unknown, context: { operation: "expire" | "purge" }): void
   now?(): Date
-  retentionMs?: number
+  resolveRetentionMs?(): number | Promise<number>
   batchSize?: number
 }
 

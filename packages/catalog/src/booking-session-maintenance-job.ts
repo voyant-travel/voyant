@@ -41,7 +41,7 @@ export async function runCatalogBookingSessionMaintenance(
   const now = runtime.now?.() ?? new Date()
   const retentionMs = Math.max(
     0,
-    runtime.retentionMs ?? DEFAULT_BOOKING_SESSION_TERMINAL_RETENTION_MS,
+    (await runtime.resolveRetentionMs?.()) ?? DEFAULT_BOOKING_SESSION_TERMINAL_RETENTION_MS,
   )
 
   let expired = 0

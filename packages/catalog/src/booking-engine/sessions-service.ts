@@ -138,6 +138,7 @@ export interface BookingSessionRepository {
     before: Date
     limit: number
   }): Promise<BookingSessionInternalRecord[]>
+  purgeSessionArtifacts(sessionId: string): Promise<void>
   listActiveQuotes(sessionId: string): Promise<BookingQuoteInternalRecord[]>
   getQuote(quoteId: string): Promise<BookingQuoteInternalRecord | null>
   saveQuote(record: BookingQuoteInternalRecord): Promise<void>
@@ -381,12 +382,12 @@ export function createBookingSessionModule(
       const capabilityScopes =
         access.actorKind === "anonymous" ? normalizeCapabilityScopes(input.capabilityScopes) : []
       const capabilityHash = capability ? await hashCapability(capability) : undefined
-      const createIdempotencyKey = scopedCreateIdempotencyKey(
+      const createIdempotencyKey = await scopedCreateIdempotencyKey(
         input.idempotencyKey,
         access,
         capabilityHash,
       )
-      const createRequestFingerprint = stableFingerprint({
+      const createRequestFingerprint = await stableFingerprint({
         actorKind: access.actorKind,
         principalId: access.actorKind === "anonymous" ? undefined : access.principalId,
         organizationId: access.actorKind === "anonymous" ? undefined : access.organizationId,
@@ -661,7 +662,7 @@ export function createBookingSessionModule(
           sessionRevision: session.revision,
           state: "active",
           pricing,
-          priceFingerprint: stableFingerprint(pricing),
+          priceFingerprint: await stableFingerprint(pricing),
           quotedAt: at,
           expiresAt: new Date(at.getTime() + quoteTtlMs),
         }
@@ -825,7 +826,7 @@ export function createBookingSessionModule(
 
       const priorCommit = await repository.getCommitByIdempotency(sessionId, input.idempotencyKey)
       if (priorCommit) {
-        const requestFingerprint = commitRequestFingerprint(input)
+        const requestFingerprint = await commitRequestFingerprint(input)
         if (priorCommit.requestFingerprint !== requestFingerprint) return idempotencyConflict()
         return replayCommit(priorCommit)
       }
@@ -930,7 +931,7 @@ export function createBookingSessionModule(
           await releaseLiveHolds(repository, options.ports, session, access, at, tx)
           return { status: "outcome" as const, outcome: quoteUnavailable(freshQuote) }
         }
-        if (stableFingerprint(freshQuote.pricing) !== quote.priceFingerprint) {
+        if ((await stableFingerprint(freshQuote.pricing)) !== quote.priceFingerprint) {
           quote.state = "superseded"
           await repository.saveQuote(quote)
           await releaseLiveHolds(repository, options.ports, session, access, at, tx)
@@ -952,7 +953,7 @@ export function createBookingSessionModule(
 
       const { session, quote, hold, at } = preflight
 
-      const requestFingerprint = commitRequestFingerprint(input)
+      const requestFingerprint = await commitRequestFingerprint(input)
       let committed: { bookingId: string; allocationIds: string[] }
       try {
         committed = await options.ports.commitOwnedBooking({
@@ -1032,7 +1033,8 @@ export function createBookingSessionModule(
               })
               if (
                 currentQuoteResult.status === "unavailable" ||
-                stableFingerprint(currentQuoteResult.pricing) !== currentQuote.priceFingerprint
+                (await stableFingerprint(currentQuoteResult.pricing)) !==
+                  currentQuote.priceFingerprint
               ) {
                 currentQuote.state = "superseded"
                 await repository.saveQuote(currentQuote)
@@ -1076,6 +1078,18 @@ export function createBookingSessionModule(
           error instanceof Error &&
           error.message === "owned inventory hold is not live at commit"
         ) {
+          const currentSession = await repository.getSession(session.id)
+          if (currentSession?.state === "consumed") {
+            const replay = await replayConcurrentCommit(repository, sessionId, input)
+            if (replay) return replay
+            return {
+              kind: "rejected",
+              error: {
+                kind: "commit_already_consumed",
+                nextAction: "return_idempotent_result",
+              },
+            }
+          }
           const outcome: FailedCommitOutcome = {
             kind: "hold_failure",
             nextAction: "request_new_hold",
@@ -1186,6 +1200,11 @@ export function createBookingSessionModule(
             return
           }
           const at = now()
+          const tombstoneFingerprint = await stableFingerprint({
+            purgedSessionId: session.id,
+          })
+          session.createIdempotencyKey = tombstoneFingerprint
+          session.createRequestFingerprint = tombstoneFingerprint
           session.statePayload = {}
           session.capabilityHash = undefined
           session.capabilityScopes = []
@@ -1195,6 +1214,7 @@ export function createBookingSessionModule(
           session.revision += 1
           session.updatedAt = at
           await repository.saveSession(session)
+          await repository.purgeSessionArtifacts(session.id)
           await appendSessionAudit(repository, session, "purge", access, at)
           purged += 1
         })
@@ -1346,7 +1366,7 @@ async function claimOperation(
     sessionId,
     operation,
     idempotencyKey: idempotencyKeyFromInput(input),
-    requestFingerprint: stableFingerprint(input),
+    requestFingerprint: await stableFingerprint(input),
     now,
   })
 }
@@ -1357,7 +1377,7 @@ function idempotencyKeyFromInput(input: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-function commitRequestFingerprint(input: CommitBookingSessionV1): string {
+async function commitRequestFingerprint(input: CommitBookingSessionV1): Promise<string> {
   return stableFingerprint({
     expectedRevision: input.expectedRevision,
     quoteId: input.quoteId,
@@ -1388,7 +1408,7 @@ async function replayConcurrentCommit(
 ): Promise<BookingSessionOutcomeV1 | null> {
   const commit = await repository.getCommitByIdempotency(sessionId, input.idempotencyKey)
   if (!commit) return null
-  return commit.requestFingerprint === commitRequestFingerprint(input)
+  return commit.requestFingerprint === (await commitRequestFingerprint(input))
     ? replayCommit(commit)
     : idempotencyConflict()
 }
@@ -1461,7 +1481,7 @@ function capacityKeyForTarget(target: BookingSessionTargetV1): string {
   if (target.kind === "product" && target.productId) return `product:${target.productId}`
   if (target.kind === "catalog_item" && target.catalogItemId)
     return `catalog_item:${target.catalogItemId}`
-  return stableFingerprint(target)
+  throw new Error("Booking Session target does not identify capacity")
 }
 
 function serializeSession(session: BookingSessionInternalRecord): BookingSessionRecordV1 {
@@ -1597,15 +1617,14 @@ async function appendSessionAudit(
 }
 
 async function hashCapability(capability: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(capability))
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
+  return sha256Hex(capability)
 }
 
-function scopedCreateIdempotencyKey(
+async function scopedCreateIdempotencyKey(
   idempotencyKey: string,
   access: BookingSessionAccessContext,
   capabilityHash: string | undefined,
-): string {
+): Promise<string> {
   return stableFingerprint({
     key: idempotencyKey,
     actorKind: access.actorKind,
@@ -1615,8 +1634,13 @@ function scopedCreateIdempotencyKey(
   })
 }
 
-function stableFingerprint(value: unknown): string {
-  return JSON.stringify(sortForStableJson(value))
+async function stableFingerprint(value: unknown): Promise<string> {
+  return sha256Hex(JSON.stringify(sortForStableJson(value)))
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
 function constantTimeEqual(a: string, b: string): boolean {

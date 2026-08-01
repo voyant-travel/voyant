@@ -820,13 +820,35 @@ describe("Booking Session v1 owned tracer", () => {
       ANONYMOUS_ACCESS,
     )
     if (created.kind !== "session_created") throw new Error("session not created")
+    const createdRecord = harness.repository.sessions.get(created.session.id)
+    expect(createdRecord?.createIdempotencyKey).toMatch(/^[a-f0-9]{64}$/)
+    expect(createdRecord?.createRequestFingerprint).toMatch(/^[a-f0-9]{64}$/)
+
+    const customerAccess = {
+      actorKind: "customer" as const,
+      principalId: "customer_purge_1",
+      capability: TEST_CAPABILITY,
+    }
+    await expect(
+      harness.module.adoptSession(
+        created.session.id,
+        {
+          idempotencyKey: "adopt_pii_before_purge",
+          expectedRevision: 1,
+        },
+        customerAccess,
+      ),
+    ).resolves.toMatchObject({ kind: "session_adopted" })
+    expect(JSON.stringify([...harness.repository.operations.values()])).toContain(
+      "ada@example.test",
+    )
     harness.advance(1_001)
 
     await expect(
-      harness.module.resumeSession(created.session.id, ANONYMOUS_ACCESS),
+      harness.module.resumeSession(created.session.id, customerAccess),
     ).resolves.toMatchObject({
       kind: "session_resumed",
-      session: { state: "expired", revision: 2 },
+      session: { state: "expired", revision: 3 },
     })
     await expect(
       harness.module.purgeTerminalSessions(
@@ -844,11 +866,21 @@ describe("Booking Session v1 owned tracer", () => {
       capabilityScopes: [],
       ownerPrincipalId: undefined,
       ownerOrganizationId: undefined,
-      revision: 3,
+      revision: 4,
       purgedAt: expect.any(Date),
     })
-    expect(harness.repository.sessions.get(created.session.id)?.statePayload).toEqual({})
+    const purgedRecord = harness.repository.sessions.get(created.session.id)
+    expect(purgedRecord?.statePayload).toEqual({})
+    expect(purgedRecord?.createIdempotencyKey).toMatch(/^[a-f0-9]{64}$/)
+    expect(purgedRecord?.createIdempotencyKey).not.toBe(createdRecord?.createIdempotencyKey)
+    expect(purgedRecord?.createRequestFingerprint).toBe(purgedRecord?.createIdempotencyKey)
+    expect(
+      [...harness.repository.operations.values()].filter(
+        (operation) => operation.sessionId === created.session.id,
+      ),
+    ).toEqual([])
     expect([...harness.repository.auditEvents.values()].map((event) => event.action)).toEqual([
+      "adopt",
       "expire",
       "read",
       "purge",

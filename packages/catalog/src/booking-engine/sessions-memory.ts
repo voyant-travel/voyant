@@ -72,6 +72,11 @@ export function createInMemoryBookingSessionRepository(): InMemoryBookingSession
         .slice(0, input.limit)
         .map(cloneSession)
     },
+    async purgeSessionArtifacts(sessionId) {
+      for (const [id, operation] of repository.operations) {
+        if (operation.sessionId === sessionId) repository.operations.delete(id)
+      }
+    },
     async listActiveQuotes(sessionId) {
       return [...repository.quotes.values()]
         .filter((quote) => quote.sessionId === sessionId && quote.state === "active")

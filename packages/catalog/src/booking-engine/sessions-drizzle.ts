@@ -83,6 +83,8 @@ export function createDrizzleBookingSessionRepository(
       await resolveDb()
         .update(bookingSessionsTable)
         .set({
+          createIdempotencyKey: record.createIdempotencyKey,
+          createRequestFingerprint: record.createRequestFingerprint,
           capabilityHash: record.capabilityHash ?? null,
           capabilityScopes: record.capabilityScopes,
           actorKind: record.actorKind,
@@ -141,6 +143,11 @@ export function createDrizzleBookingSessionRepository(
         )
         .limit(input.limit)
       return rows.map(mapSession)
+    },
+    async purgeSessionArtifacts(sessionId) {
+      await resolveDb()
+        .delete(bookingSessionOperationsTable)
+        .where(eq(bookingSessionOperationsTable.sessionId, sessionId))
     },
     async listActiveQuotes(sessionId) {
       const rows = await resolveDb()
