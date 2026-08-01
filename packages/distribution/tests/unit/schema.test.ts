@@ -12,5 +12,8 @@ describe("distribution schema exports", () => {
     expect(schema.supplierNotes).toBeDefined()
     expect(schema.supplierAvailability).toBeDefined()
     expect(schema.supplierContracts).toBeDefined()
+    expect(schema.channelProductPublications).toBeDefined()
+    expect(schema.channelSupplierPublications).toBeDefined()
+    expect(schema.channelPublicationReindexIntents).toBeDefined()
   })
 })
