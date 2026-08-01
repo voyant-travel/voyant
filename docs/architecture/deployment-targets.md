@@ -74,12 +74,12 @@ workload class well. On Node none of it is necessary.
   the deployed application declares the product BOM's runtime package closure
   as direct production dependencies. Deployed workspace manifests use their
   built `publishConfig` targets. Generated imports use relocatable package
-  specifiers for direct dependencies and project-relative paths for transitive
-  selections anchored through the product BOM, preserving strict pnpm nesting
-  without capturing absolute build-machine paths. The image exposes `node
-  run-generated-migrations.mjs` as an explicit pre-rollout command and boots
-  `dist/server/server.js`, which validates graph artifacts and required graph
-  resource env before serving traffic. Startup does not own migrations.
+  specifiers for declared production dependencies and project-relative paths
+  for transitive selections anchored through the product BOM, preserving strict
+  pnpm nesting without capturing absolute build-machine paths. The image exposes
+  `node run-generated-migrations.mjs` as an explicit pre-rollout command and
+  boots `dist/server/server.js`, which validates graph artifacts and required
+  graph resource env before serving traffic. Startup does not own migrations.
 - **Graph contract:** `pnpm --filter operator dev`, `pnpm --filter operator
   db:migrate`, and standalone Node boot all load the generated deployment graph
   artifacts and fail before serving traffic or touching the database when

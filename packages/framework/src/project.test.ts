@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: framework; project resolution, package admission, generated runtime, and migration fixtures share one project harness.
 import { createHash } from "node:crypto"
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -72,9 +72,9 @@ describe("framework project resolver", () => {
       ),
       "export const createLoyaltyRuntimeContribution = () => ({})\n",
     )
-    writePackage(root, {
+    writePackageAt(path.join(root, "node_modules", "@acme", "loyalty"), {
       name: "@acme/loyalty",
-      version: "9.9.9",
+      version: "1.2.3",
       manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
     })
 
@@ -924,6 +924,17 @@ function packageMetadata(options: { requiresSchemas?: string[] } = {}): Record<s
 
 function writePackage(root: string, options: WritePackageOptions): void {
   writePackageAt(path.join(root, "node_modules", ...options.name.split("/")), options)
+  const packageJsonPath = path.join(root, "package.json")
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<string, unknown>
+  const dependencies =
+    typeof packageJson.dependencies === "object" && packageJson.dependencies !== null
+      ? packageJson.dependencies
+      : {}
+  packageJson.dependencies = {
+    ...dependencies,
+    [options.name]: options.version ?? "1.2.3",
+  }
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
 }
 
 function writePackageAt(directory: string, options: WritePackageOptions): void {

@@ -143,6 +143,8 @@ interface MaterializedProject {
 interface PackageJson {
   name?: unknown
   version?: unknown
+  dependencies?: unknown
+  optionalDependencies?: unknown
   exports?: unknown
   publishConfig?: unknown
   voyant?: unknown
@@ -877,6 +879,17 @@ async function buildLocalRuntimeEntryOverrides(
 ): Promise<Record<string, string>> {
   const overrides: Record<string, string> = {}
   const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
+  const projectPackageJson = await readPackageJson(projectRoot)
+  const productionDependencies = new Set([
+    ...Object.keys(
+      isRecord(projectPackageJson.dependencies) ? projectPackageJson.dependencies : {},
+    ),
+    ...Object.keys(
+      isRecord(projectPackageJson.optionalDependencies)
+        ? projectPackageJson.optionalDependencies
+        : {},
+    ),
+  ])
   const references = [
     ...runtimePackageReferences(allResolvedGraphUnits(graph)),
     ...[...packages.values()].flatMap(({ record }) =>
@@ -916,6 +929,7 @@ async function buildLocalRuntimeEntryOverrides(
       ? await readPackageJson(directPackageDirectory)
       : undefined
     const directlyInstalled =
+      productionDependencies.has(packageName) &&
       directPackageDirectory !== undefined &&
       (path.resolve(directPackageDirectory) === path.resolve(inspected.directory) ||
         (typeof packageJson?.version === "string" &&
