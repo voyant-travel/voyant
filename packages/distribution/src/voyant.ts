@@ -1,8 +1,8 @@
 // agent-quality: file-size exception -- distribution manifest centralizes ports, events, subscribers, jobs, and deployment-owned links.
 import {
   catalogDistributionRuntimeExtensionPort,
-  catalogPublicationRuntimePort,
   catalogProjectionRuntimePort,
+  catalogPublicationRuntimePort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/ports"
 import {

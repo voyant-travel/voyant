@@ -203,9 +203,7 @@ async function listBackfillProductIdsPage(
     .where(
       and(
         eq(channelPublicationBackfillProducts.intentId, input.intentId),
-        input.afterId
-          ? gt(channelPublicationBackfillProducts.productId, input.afterId)
-          : undefined,
+        input.afterId ? gt(channelPublicationBackfillProducts.productId, input.afterId) : undefined,
       ),
     )
     .orderBy(asc(channelPublicationBackfillProducts.productId))
@@ -223,9 +221,7 @@ async function listBackfillChannelIdsPage(
     .where(
       and(
         eq(channelPublicationBackfillChannels.intentId, input.intentId),
-        input.afterId
-          ? gt(channelPublicationBackfillChannels.channelId, input.afterId)
-          : undefined,
+        input.afterId ? gt(channelPublicationBackfillChannels.channelId, input.afterId) : undefined,
       ),
     )
     .orderBy(asc(channelPublicationBackfillChannels.channelId))
@@ -245,7 +241,8 @@ async function publishPriorVisibleProduct(
         channelId,
         productId: input.productId,
         decision: "include" as const,
-        reason: "Backfilled from prior active public catalog visibility during publication cutover.",
+        reason:
+          "Backfilled from prior active public catalog visibility during publication cutover.",
         createdBy: "system:worker:prior-visible-catalog-backfill",
         updatedBy: "system:worker:prior-visible-catalog-backfill",
         metadata: { source: "prior_active_public_catalog" },

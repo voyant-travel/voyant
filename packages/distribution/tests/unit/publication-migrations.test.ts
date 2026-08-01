@@ -65,9 +65,10 @@ describe("publication cutover migrations", () => {
     expect(
       snapshot.tables["public.channel_publication_reindex_intents"]?.columns.channel_id?.notNull,
     ).toBe(true)
-    expect(
-      snapshot.enums["public.channel_publication_reindex_intent_kind"]?.values,
-    ).toEqual(["product", "supplier"])
+    expect(snapshot.enums["public.channel_publication_reindex_intent_kind"]?.values).toEqual([
+      "product",
+      "supplier",
+    ])
     expect(
       snapshot.tables["public.channel_publication_reindex_intents"]?.indexes,
     ).not.toHaveProperty("uniq_channel_pub_reindex_catalog_pending")

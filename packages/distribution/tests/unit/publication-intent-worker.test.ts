@@ -123,10 +123,7 @@ describe("publication reindex intent worker", () => {
   it("bounds catalog backfill writes when active channels exceed the channel page", async () => {
     const db = fakeDb({
       executeResults: [{ rows: [catalogIntent] }, { rows: [] }],
-      productPages: [
-        [{ id: "prod_1" }],
-        [{ id: "chan_1" }, { id: "chan_2" }, { id: "chan_3" }],
-      ],
+      productPages: [[{ id: "prod_1" }], [{ id: "chan_1" }, { id: "chan_2" }, { id: "chan_3" }]],
     })
     const projection = {
       reindexEntity: vi.fn(async () => {}),
@@ -280,10 +277,7 @@ describe("publication reindex intent worker", () => {
   })
 })
 
-function fakeDb(input: {
-  executeResults: unknown[]
-  productPages?: Array<Array<{ id: string }>>
-}) {
+function fakeDb(input: { executeResults: unknown[]; productPages?: Array<Array<{ id: string }>> }) {
   const executeResults = [...input.executeResults]
   const productPages = [...(input.productPages ?? [])]
   const limitValues: number[] = []

@@ -15,7 +15,9 @@ function eventHandler(descriptor: { register(context: never): void }) {
   descriptor.register({
     bindings: {},
     container: {
-      resolve: () => ({ withDeps: (_bindings: unknown, run: (deps: unknown) => unknown) => run({ db: {} }) }),
+      resolve: () => ({
+        withDeps: (_bindings: unknown, run: (deps: unknown) => unknown) => run({ db: {} }),
+      }),
     },
     eventBus: {
       subscribe: (_eventType: string, subscriber: typeof handler) => {

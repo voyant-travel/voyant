@@ -110,9 +110,9 @@ describe("storefront deployment manifest", () => {
       hasPort: () => true,
       getPort: async <TProvider>(port: { id: string }) => {
         requestedPorts.push(port.id)
-        return (port.id === catalogPublicationRuntimePort.id
-          ? { isProductPublished }
-          : {}) as TProvider
+        return (
+          port.id === catalogPublicationRuntimePort.id ? { isProductPublished } : {}
+        ) as TProvider
       },
       getPorts: async <TProvider>() => [] as TProvider[],
     })
