@@ -1,0 +1,21 @@
+APP_URL=http://localhost:18080/api
+DASH_BASE_URL=http://localhost:18080
+PAYMENT_CALLBACK_BASE_URL=http://localhost:18080
+EMAIL_FROM=Voyant <voyant@notifications.example.com>
+DATABASE_URL=postgresql://voyant:<redacted>@172.17.0.2:5432/voyant?sslmode=disable
+DATABASE_URL_DIRECT=postgresql://voyant:<redacted>@172.17.0.2:5432/voyant?sslmode=disable
+BETTER_AUTH_ADMIN_SECRET=<redacted>
+BETTER_AUTH_CUSTOMER_SECRET=<redacted>
+SESSION_CLAIMS_ADMIN_SECRET=<redacted>
+SESSION_CLAIMS_CUSTOMER_SECRET=<redacted>
+VOYANT_CHECKOUT_CAPABILITY_SECRET=<redacted>
+INTERNAL_API_KEY=<redacted>
+VOYANT_ADMIN_AUTH_MODE=local
+VOYANT_CUSTOMER_AUTH_MODE=better-auth
+API_BASE_URL=http://localhost:18080/api
+CORS_ALLOWLIST=http://localhost:18080
+KMS_PROVIDER=local
+KMS_LOCAL_KEY=<redacted>
+NETOPIA_MODE=sandbox
+NETOPIA_API_KEY=<redacted>
+NETOPIA_POS_SIGNATURE=
