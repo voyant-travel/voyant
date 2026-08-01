@@ -269,11 +269,11 @@ export function validateVehicleSeatDesignation({
   parentId: string | null
   seats: AllocationResource[]
 }): VehicleSeatDesignationIssue {
-  const normalized = label.trim().toLocaleLowerCase()
+  const normalized = label.trim().toLowerCase()
   if (!normalized) return "required"
   const duplicate = seats.some(
     (seat) =>
-      seat.parentId === parentId && seatDesignation(seat)?.toLocaleLowerCase() === normalized,
+      seat.parentId === parentId && seatDesignation(seat)?.toLowerCase() === normalized,
   )
   return duplicate ? "duplicate" : null
 }
