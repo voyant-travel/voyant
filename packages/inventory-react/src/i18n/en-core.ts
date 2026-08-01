@@ -252,7 +252,7 @@ export const productsUiCoreEn = {
       paxInvalid: "Pax must be a whole number greater than zero.",
       reservationTimeoutInvalid: "Reservation timeout must be a whole number of minutes.",
       subtypeInvalid: "Subtype must be a lowercase kebab-case code, such as boat-tour.",
-      durationInvalid: "Duration must be zero or a positive whole number of minutes.",
+      durationInvalid: "Duration must be a positive whole number of minutes.",
       saveFailed: "Failed to save product.",
     },
     actions: {

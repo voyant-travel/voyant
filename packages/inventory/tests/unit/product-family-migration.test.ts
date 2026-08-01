@@ -9,10 +9,10 @@ const migration = readFileSync(
 )
 
 describe("product family and duration migration", () => {
-  it("adds nullable classification fields and a nonnegative duration guard", () => {
+  it("adds nullable classification fields and a positive duration guard", () => {
     expect(migration).toContain(`ADD COLUMN "product_subtype_code" text`)
     expect(migration).toContain(`ADD COLUMN "duration_minutes" integer`)
-    expect(migration).toContain(`CHECK ("products"."duration_minutes" >= 0)`)
+    expect(migration).toContain(`CHECK ("products"."duration_minutes" > 0)`)
   })
 
   it("seeds every standard family idempotently by stable code", () => {

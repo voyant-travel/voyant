@@ -112,7 +112,7 @@ export interface ResolvedDuration {
 }
 
 export interface ResolveDurationInput {
-  /** Explicit authored duration in minutes (nonnegative), if any. */
+  /** Explicit authored duration in minutes (positive), if any. */
   durationMinutes: number | null | undefined
   /** Legacy itinerary-derived day count (max day number), if any. */
   itineraryDurationDays: number | null | undefined
@@ -125,10 +125,10 @@ export interface ResolveDurationInput {
  */
 export function resolveProductDuration(input: ResolveDurationInput): ResolvedDuration {
   const explicit = input.durationMinutes
-  if (explicit != null && Number.isFinite(explicit) && explicit >= 0) {
+  if (explicit != null && Number.isFinite(explicit) && explicit > 0) {
     return {
       minutes: explicit,
-      days: explicit === 0 ? 0 : Math.max(1, Math.ceil(explicit / MINUTES_PER_DAY)),
+      days: Math.max(1, Math.ceil(explicit / MINUTES_PER_DAY)),
       provenance: "explicit",
     }
   }

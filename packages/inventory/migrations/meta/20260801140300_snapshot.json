@@ -2153,9 +2153,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "chk_products_duration_minutes_nonneg": {
-          "name": "chk_products_duration_minutes_nonneg",
-          "value": "\"products\".\"duration_minutes\" >= 0"
+        "chk_products_duration_minutes_positive": {
+          "name": "chk_products_duration_minutes_positive",
+          "value": "\"products\".\"duration_minutes\" > 0"
         }
       },
       "isRLSEnabled": false

@@ -145,7 +145,7 @@ function toPayload(state: FormState): CreateProductInput {
     facilityId: state.facilityId === "__none__" ? null : state.facilityId,
     productTypeId: state.productTypeId === "__none__" ? null : state.productTypeId,
     productSubtypeCode: state.productSubtypeCode.trim() || null,
-    durationMinutes: toIntegerOrNull(state.durationMinutes),
+    durationMinutes: toPositiveIntegerOrNull(state.durationMinutes),
     contractTemplateId: state.contractTemplateId === "__none__" ? null : state.contractTemplateId,
     taxClassId: state.taxClassId === "__none__" ? null : state.taxClassId,
     sellCurrency: state.sellCurrency.trim().toUpperCase(),
@@ -238,7 +238,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       return
     }
 
-    if (state.durationMinutes.trim() && toIntegerOrNull(state.durationMinutes) == null) {
+    if (state.durationMinutes.trim() && toPositiveIntegerOrNull(state.durationMinutes) == null) {
       setError(productMessages.validation.durationInvalid)
       return
     }
@@ -424,7 +424,7 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
             <Input
               id="product-duration-minutes"
               type="number"
-              min="0"
+              min="1"
               step="1"
               value={state.durationMinutes}
               onChange={(event) => field("durationMinutes")(event.target.value)}

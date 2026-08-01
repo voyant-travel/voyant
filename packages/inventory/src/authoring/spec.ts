@@ -208,8 +208,8 @@ export const productRowSpecSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .max(64)
     .nullish(),
-  /** Explicit product duration in minutes (nonnegative). */
-  durationMinutes: z.number().int().min(0).nullish(),
+  /** Explicit product duration in minutes (positive). */
+  durationMinutes: z.number().int().positive().nullish(),
   contractTemplateId: z.string().nullish(),
   taxClassId: z.string().nullish(),
   customerPaymentPolicy: z.unknown().nullish(),

@@ -35,10 +35,13 @@ describe("resolveProductDuration", () => {
     expect(resolved).toEqual({ minutes: null, days: null, provenance: "unresolved" })
   })
 
-  it("treats a negative explicit duration as absent and falls through", () => {
+  it("treats a non-positive explicit duration as absent and falls through", () => {
     const resolved = resolveProductDuration({ durationMinutes: -5, itineraryDurationDays: 3 })
     expect(resolved.provenance).toBe("itinerary-derived")
     expect(resolved.days).toBe(3)
+    expect(
+      resolveProductDuration({ durationMinutes: 0, itineraryDurationDays: null }).provenance,
+    ).toBe("unresolved")
   })
 })
 

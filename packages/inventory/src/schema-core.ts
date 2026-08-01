@@ -79,12 +79,12 @@ export const products = pgTable(
      */
     productSubtypeCode: text("product_subtype_code"),
     /**
-     * Explicit product **duration in minutes** (nonnegative). This is the
+     * Explicit product **duration in minutes** (positive). This is the
      * authored source of truth for duration; the resolver
      * (`resolveProductDuration`) prefers it over the legacy itinerary-day
      * derivation. Null when the operator has not authored an explicit
      * duration — the resolver then falls back to the itinerary or reports the
-     * duration as unresolved (with a review warning). Enforced nonnegative by
+     * duration as unresolved (with a review warning). Enforced positive by
      * a CHECK constraint in the migration and by the contract schema.
      */
     durationMinutes: integer("duration_minutes"),
@@ -142,9 +142,9 @@ export const products = pgTable(
     // Subtype is a facet in the catalog plane (e.g. Boat Tour view) — index it
     // so `productSubtypeCode` filters don't scan.
     index("idx_products_subtype_code").on(table.productSubtypeCode),
-    // Explicit duration is nonnegative when present; enforced at the DB so no
-    // path (agent authoring, imports, backfills) can slip a negative through.
-    check("chk_products_duration_minutes_nonneg", sql`${table.durationMinutes} >= 0`),
+    // Explicit duration is positive when present; enforced at the DB so no
+    // path (agent authoring, imports, backfills) can persist a nonsensical value.
+    check("chk_products_duration_minutes_positive", sql`${table.durationMinutes} > 0`),
   ],
 )
 

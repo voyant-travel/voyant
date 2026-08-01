@@ -251,7 +251,7 @@ export const productsUiCoreRo = {
       paxInvalid: "Pax trebuie sa fie un numar intreg mai mare decat zero.",
       reservationTimeoutInvalid: "Timeout-ul rezervarii trebuie sa fie un numar intreg de minute.",
       subtypeInvalid: "Subtipul trebuie sa fie un cod kebab-case cu litere mici, precum boat-tour.",
-      durationInvalid: "Durata trebuie sa fie zero sau un numar intreg pozitiv de minute.",
+      durationInvalid: "Durata trebuie sa fie un numar intreg pozitiv de minute.",
       saveFailed: "Produsul nu a putut fi salvat.",
     },
     actions: {

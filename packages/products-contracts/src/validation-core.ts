@@ -69,11 +69,11 @@ const productCoreSchema = z.object({
    */
   productSubtypeCode: productSubtypeCodeSchema.optional().nullable(),
   /**
-   * Explicit product duration in minutes (nonnegative). Authored source of
+   * Explicit product duration in minutes (positive). Authored source of
    * truth for duration; the resolver prefers it over the legacy itinerary-day
    * derivation. Null when not authored.
    */
-  durationMinutes: z.number().int().min(0).optional().nullable(),
+  durationMinutes: z.number().int().positive().optional().nullable(),
   customerPaymentPolicy: productCustomerPaymentPolicySchema.optional().nullable(),
   tags: z.array(z.string()).default([]),
 })

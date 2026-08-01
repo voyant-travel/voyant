@@ -135,7 +135,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       .refine((value) => !value || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value), {
         message: productMessages.validationSubtypeCode,
       }),
-    durationMinutes: z.number().int().min(0).nullable(),
+    durationMinutes: z.number().int().positive().nullable(),
     taxClassId: z.string().optional().nullable(),
     sellCurrency: z
       .string()
@@ -548,7 +548,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               <Input
                 id="product-detail-duration"
                 type="number"
-                min={0}
+                min={1}
                 step={1}
                 value={form.watch("durationMinutes") ?? ""}
                 onChange={(event) =>
