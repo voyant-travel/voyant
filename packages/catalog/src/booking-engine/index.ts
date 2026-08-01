@@ -217,6 +217,45 @@ export {
   type SelectCatalogQuote,
 } from "./schema.js"
 export {
+  type BookingSessionRoutesOptions,
+  createBookingSessionApiModule,
+  createBookingSessionRoutes,
+} from "./sessions-routes.js"
+export {
+  bookingSessionCommitsTable,
+  bookingSessionHoldsTable,
+  bookingSessionQuotesTable,
+  bookingSessionsTable,
+  type InsertBookingSession,
+  type InsertBookingSessionCommit,
+  type InsertBookingSessionHold,
+  type InsertBookingSessionQuote,
+  type SelectBookingSession,
+  type SelectBookingSessionCommit,
+  type SelectBookingSessionHold,
+  type SelectBookingSessionQuote,
+} from "./sessions-schema.js"
+export {
+  type BookingCommitInternalRecord,
+  type BookingHoldInternalRecord,
+  type BookingQuoteInternalRecord,
+  type BookingSessionInternalRecord,
+  type BookingSessionModule,
+  type BookingSessionModuleOptions,
+  type BookingSessionModulePorts,
+  type BookingSessionRepository,
+  type CommitOwnedBookingInput,
+  type ComposeBookingQuoteInput,
+  createBookingSessionModule,
+} from "./sessions-service.js"
+export { createDrizzleBookingSessionRepository } from "./sessions-drizzle.js"
+export {
+  type InMemoryBookingSessionRepository,
+  type InMemoryOwnedInventoryPorts,
+  createInMemoryBookingSessionRepository,
+  createInMemoryOwnedInventoryPorts,
+} from "./sessions-memory.js"
+export {
   createSelfServiceBookingSourceProvider,
   type ResolveSelfServiceBillingPerson,
   type SelfServiceBookingSourceProviderDeps,

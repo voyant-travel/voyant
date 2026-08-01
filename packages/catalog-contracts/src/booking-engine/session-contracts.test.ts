@@ -1,0 +1,71 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  bookingSessionOutcomeV1,
+  commitBookingSessionV1,
+  createBookingSessionV1,
+  placeBookingHoldV1,
+  quoteBookingSessionV1,
+  updateBookingSessionV1,
+} from "./session-contracts.js"
+
+describe("Booking Session v1 contracts", () => {
+  it("accepts semantic Product and Catalog Item targets", () => {
+    expect(
+      createBookingSessionV1.safeParse({
+        target: { kind: "product", productId: "prod_1" },
+        ttlMs: 60_000,
+      }).success,
+    ).toBe(true)
+    expect(
+      createBookingSessionV1.safeParse({
+        target: { kind: "catalog_item", catalogItemId: "cse_1" },
+        actorKind: "staff",
+      }).success,
+    ).toBe(true)
+  })
+
+  it("requires revision preconditions for mutating choreography", () => {
+    expect(updateBookingSessionV1.safeParse({ state: {} }).success).toBe(false)
+    expect(quoteBookingSessionV1.safeParse({ expectedRevision: 1 }).success).toBe(true)
+    expect(placeBookingHoldV1.safeParse({ quoteId: "bsqu_1", expectedRevision: 1 }).success).toBe(
+      true,
+    )
+    expect(
+      commitBookingSessionV1.safeParse({
+        expectedRevision: 1,
+        quoteId: "bsqu_1",
+        holdId: "bshd_1",
+        idempotencyKey: "stable_commit_key",
+      }).success,
+    ).toBe(true)
+  })
+
+  it("does not accept client-authoritative Booking status, source, or price fields on Commit", () => {
+    const parsed = commitBookingSessionV1.parse({
+      expectedRevision: 1,
+      quoteId: "bsqu_1",
+      holdId: "bshd_1",
+      idempotencyKey: "stable_commit_key",
+      status: "draft",
+      sourceKind: "owned",
+      price: { total: 1 },
+    })
+
+    expect("status" in parsed).toBe(false)
+    expect("sourceKind" in parsed).toBe(false)
+    expect("price" in parsed).toBe(false)
+  })
+
+  it("returns typed lifecycle outcomes instead of prose-only errors", () => {
+    const result = bookingSessionOutcomeV1.safeParse({
+      kind: "rejected",
+      error: {
+        kind: "quote_superseded",
+        nextAction: "request_fresh_quote",
+      },
+    })
+
+    expect(result.success).toBe(true)
+  })
+})
