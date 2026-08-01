@@ -475,12 +475,12 @@ export function createBookingSessionModule(
         if (access.actorKind !== "customer" || !access.principalId?.trim()) {
           return { kind: "rejected", error: { kind: "not_authorized" } }
         }
-        const storefrontRejected = authorizeStorefrontOrigin(session, access)
-        if (storefrontRejected) return storefrontRejected
         if (session.actorKind !== "anonymous") {
           if (!isOwnedBy(session, access)) {
             return { kind: "rejected", error: { kind: "not_authorized" } }
           }
+          const storefrontRejected = authorizeStorefrontOrigin(session, access)
+          if (storefrontRejected) return storefrontRejected
           const claim = await claimOperation(repository, sessionId, "adopt", input, now())
           if (claim.status === "replay") return claim.outcome
           if (claim.status === "conflict") return idempotencyConflict()
@@ -491,6 +491,8 @@ export function createBookingSessionModule(
         }
         const capabilityRejected = await authorizeAnonymousCapability(session, access, "adopt")
         if (capabilityRejected) return capabilityRejected
+        const storefrontRejected = authorizeStorefrontOrigin(session, access)
+        if (storefrontRejected) return storefrontRejected
         const at = now()
         if (session.expiresAt <= at || session.state !== "active") {
           if (session.state === "active") {
@@ -1573,15 +1575,15 @@ async function authorizeSessionAccess(
       ? null
       : { kind: "rejected", error: { kind: "not_authorized" } }
   }
-  const storefrontRejected = authorizeStorefrontOrigin(session, access)
-  if (storefrontRejected) return storefrontRejected
   if (session.actorKind === "anonymous") {
-    return authorizeAnonymousCapability(session, access, action)
+    const capabilityRejected = await authorizeAnonymousCapability(session, access, action)
+    if (capabilityRejected) return capabilityRejected
+    return authorizeStorefrontOrigin(session, access)
   }
   if (!isOwnedBy(session, access)) {
     return { kind: "rejected", error: { kind: "not_authorized" } }
   }
-  return null
+  return authorizeStorefrontOrigin(session, access)
 }
 
 function authorizeStorefrontOrigin(

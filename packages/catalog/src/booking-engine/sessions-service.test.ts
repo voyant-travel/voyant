@@ -187,6 +187,39 @@ describe("Booking Session v1 owned tracer", () => {
     ).resolves.toMatchObject({ kind: "rejected", error: { kind: "not_authorized" } })
   })
 
+  it("authenticates the anonymous capability before checking storefront provenance", async () => {
+    const harness = createHarness()
+    const created = await harness.module.createSession(
+      {
+        idempotencyKey: nextCreateKey("capability_before_storefront"),
+        target: { kind: "product", productId: "prod_owned_1" },
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+
+    await expect(
+      harness.module.resumeSession(created.session.id, {
+        actorKind: "anonymous",
+        capability: `bcap_${"b".repeat(43)}`,
+        storefront: { storefrontId: "sf_other", channelId: "chan_other" },
+      }),
+    ).resolves.toMatchObject({ kind: "rejected", error: { kind: "capability_required" } })
+
+    await expect(
+      harness.module.adoptSession(
+        created.session.id,
+        { expectedRevision: 1, idempotencyKey: "adopt_wrong_capability_and_storefront" },
+        {
+          actorKind: "customer",
+          principalId: "customer_1",
+          capability: `bcap_${"b".repeat(43)}`,
+          storefront: { storefrontId: "sf_other", channelId: "chan_other" },
+        },
+      ),
+    ).resolves.toMatchObject({ kind: "rejected", error: { kind: "capability_required" } })
+  })
+
   it("fails closed for legacy public rows without provenance while preserving partner access", async () => {
     const harness = createHarness()
     const anonymous = await harness.module.createSession(
