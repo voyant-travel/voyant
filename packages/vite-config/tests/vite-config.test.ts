@@ -243,7 +243,10 @@ describe("voyantStartViteConfig", () => {
     })
 
     expect(config.ssr?.external).toBe(true)
-    expect(config.ssr?.noExternal).toBeUndefined()
+    expect(config.ssr?.noExternal).toEqual([
+      "@tanstack/start-client-core",
+      "@tanstack/start-server-core",
+    ])
   })
 
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {

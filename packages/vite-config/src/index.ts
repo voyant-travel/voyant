@@ -345,8 +345,11 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
                   // Vite follows linked workspace dependencies by default.
                   // Externalize production runtime package imports explicitly;
                   // the deployed install supplies those packages and resolves
-                  // their normal Node export conditions at runtime.
+                  // their normal Node export conditions at runtime. TanStack
+                  // Start's core packages contain virtual #tanstack-* imports
+                  // that its Vite plugin must replace during the server build.
                   external: true,
+                  noExternal: ["@tanstack/start-client-core", "@tanstack/start-server-core"],
                 }),
           }
         : {}),

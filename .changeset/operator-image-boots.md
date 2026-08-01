@@ -42,6 +42,8 @@ This also makes the complete production artifact explicit:
   built `publishConfig` targets. This preserves strict pnpm nesting without
   capturing absolute build-machine paths; generated link definitions are
   compiled into the server alongside the graph runtime
+- TanStack Start's core virtual-module hosts remain bundled so its Vite plugin
+  can replace the `#tanstack-*` imports required by the production server
 - the operator manifest declares the product BOM runtime closure as production
   dependencies, and the image includes an explicit graph-native migration
   command for use before rollout
