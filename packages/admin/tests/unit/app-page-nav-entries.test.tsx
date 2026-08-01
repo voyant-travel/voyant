@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest"
 
 import { resolveAdminNavigation } from "../../src/extensions.js"
 import { useAppPageNavEntries } from "../../src/ui-extensions/app-pages.js"
-import { createAppPageNavigationContributions } from "../../src/ui-extensions/ui-extensions-extension.js"
 import type {
   AppPageDescriptor,
   UiExtensionsClient,
 } from "../../src/ui-extensions/ui-extensions-extension.js"
+import { createAppPageNavigationContributions } from "../../src/ui-extensions/ui-extensions-extension.js"
 
 function page(overrides: Partial<AppPageDescriptor> = {}): AppPageDescriptor {
   return {
@@ -135,10 +135,7 @@ describe("useAppPageNavEntries", () => {
       },
     ])
 
-    expect(contributions[0]?.items[0]?.items?.map((item) => item.title)).toEqual([
-      "Zeta",
-      "Alpha",
-    ])
+    expect(contributions[0]?.items[0]?.items?.map((item) => item.title)).toEqual(["Zeta", "Alpha"])
   })
 
   it("keeps legacy pages flat, appended, and in descriptor input order", () => {
