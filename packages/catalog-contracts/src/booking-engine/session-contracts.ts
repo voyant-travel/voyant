@@ -62,14 +62,21 @@ export const quoteBookingSessionV1 = z.object({
 })
 export type QuoteBookingSessionV1 = z.input<typeof quoteBookingSessionV1>
 
-export const bookingQuoteStateV1 = z.enum(["active", "superseded", "consumed", "expired"])
-export type BookingQuoteStateV1 = z.infer<typeof bookingQuoteStateV1>
+export const bookingSessionQuoteLifecycleStateV1 = z.enum([
+  "active",
+  "superseded",
+  "consumed",
+  "expired",
+])
+export type BookingSessionQuoteLifecycleStateV1 = z.infer<
+  typeof bookingSessionQuoteLifecycleStateV1
+>
 
 export const bookingQuoteRecordV1 = z.object({
   id: z.string().min(1),
   sessionId: z.string().min(1),
   sessionRevision: z.number().int().positive(),
-  state: bookingQuoteStateV1,
+  state: bookingSessionQuoteLifecycleStateV1,
   pricing: pricingBreakdownV1,
   quotedAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
