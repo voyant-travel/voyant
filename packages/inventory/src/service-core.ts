@@ -3,6 +3,7 @@ import { availabilitySlots } from "@voyant-travel/operations"
 import { and, asc, desc, eq, getTableColumns, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { resolveProductClassification } from "./classification.js"
 import {
   productCategoryProducts,
   productItineraries,
@@ -10,6 +11,7 @@ import {
   products,
   productTypes,
 } from "./schema.js"
+import { resolveItineraryDurationDays } from "./service-catalog-plane.js"
 import type {
   insertProductSchema,
   productListQuerySchema,
@@ -204,6 +206,20 @@ export const coreProductsService = {
       conditions.push(eq(products.productTypeId, query.productTypeId))
     }
 
+    if (query.familyCode) {
+      // Facet on the resolved family stable code — join through product_types.
+      // agent-quality: raw-sql reviewed -- owner: inventory; parameter-bound.
+      conditions.push(
+        sql`exists (select 1 from ${productTypes}
+          where ${productTypes.id} = ${products.productTypeId}
+          and ${productTypes.code} = ${query.familyCode})`,
+      )
+    }
+
+    if (query.productSubtypeCode) {
+      conditions.push(eq(products.productSubtypeCode, query.productSubtypeCode))
+    }
+
     if (query.contractTemplateId) {
       conditions.push(eq(products.contractTemplateId, query.contractTemplateId))
     }
@@ -301,6 +317,18 @@ export const coreProductsService = {
           // Readable product-type name for the list view; `productTypeId`
           // still rides on the row via the spread above.
           productTypeName: productTypes.name,
+          // Family stable code, resolved from product_types.
+          familyCode: productTypes.code,
+          // Legacy itinerary-derived duration (max day number of the default
+          // itinerary) — the resolver's fallback when no explicit duration is
+          // authored. Correlated subquery to keep the list a single round-trip.
+          itineraryDurationDays: sql<number | null>`(
+            select max(pd.day_number)
+            from product_days pd
+            join product_itineraries pi on pi.id = pd.itinerary_id
+            where pi.product_id = ${products.id}
+              and pi.is_default = true
+          )`,
           // Earliest upcoming open departure (null when none is scheduled).
           nextDeparture: sql<Date | null>`(
             select min(${availabilitySlots.startsAt})
@@ -320,7 +348,18 @@ export const coreProductsService = {
     ])
 
     return {
-      data: rows,
+      // Attach the resolved classification (family / subtype / duration /
+      // review) using the shared resolver — identical semantics to the
+      // catalog-plane projection and the legacy Catalog search document.
+      data: rows.map((row) => ({
+        ...row,
+        classification: resolveProductClassification({
+          family: row.familyCode ? { code: row.familyCode, name: row.productTypeName ?? "" } : null,
+          subtypeCode: row.productSubtypeCode,
+          durationMinutes: row.durationMinutes,
+          itineraryDurationDays: row.itineraryDurationDays,
+        }),
+      })),
       total: countResult[0]?.count ?? 0,
       limit: query.limit,
       offset: query.offset,
@@ -353,9 +392,19 @@ export const coreProductsService = {
       .where(eq(products.id, id))
       .limit(1)
     if (!row) return null
+    const itineraryDurationDays = await resolveItineraryDurationDays(db, id)
+    const classification = resolveProductClassification({
+      family: row.productType?.code
+        ? { code: row.productType.code, name: row.productType.name }
+        : null,
+      subtypeCode: row.product.productSubtypeCode,
+      durationMinutes: row.product.durationMinutes,
+      itineraryDurationDays,
+    })
     return {
       ...row.product,
       productType: row.productType?.id ? row.productType : null,
+      classification,
     }
   },
 

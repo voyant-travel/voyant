@@ -151,6 +151,10 @@ export function makeProductFilters(
     },
     { field: "supplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "bookingMode", label: messages.filters.bookingMode },
+    // Merchandising family + subtype facets, keyed on the stable codes. The
+    // Tour view locks `familyCode`; the Boat Tour facet locks `subtypeCode`.
+    { field: "familyCode", label: messages.filters.family },
+    { field: "subtypeCode", label: messages.filters.subtype },
     { field: "productTypeId", label: messages.filters.type },
     { field: "capacityMode", label: messages.filters.capacity },
     { field: "visibility", label: messages.filters.visibility },

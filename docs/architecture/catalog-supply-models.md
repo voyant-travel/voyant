@@ -53,6 +53,25 @@ vertical needs a supply model the derivation can't express** (e.g. an `itinerary
 sold dynamically). See [ADR-0010](../adr/0010-supply-model-derived-from-booking-mode.md)
 for the decision and the touch points a future promotion would change.
 
+### 2.1. Product family and subtype are a third, independent axis
+
+Merchandising classification is a third axis, orthogonal to both `supplyModel`
+and `category`: the **Product family** (`tour` \| `activity` \| `attraction` \|
+`event` \| `transportation`, stored on `product_types` and referenced by
+`products.productTypeId`) and the optional **Product subtype**
+(`products.productSubtypeCode`, e.g. `boat-tour`, `day-tour`). Neither is
+derived from `supplyModel` or `bookingMode`, and classification is never keyed
+to duration — a 60-minute Boat Tour stays in the Tour family; duration only
+ever changes `resolveProductDuration`'s output (`durationMinutes` explicit
+first, legacy itinerary-day fallback second, otherwise `unresolved` with a
+review warning), never the family.
+
+Catalog views facet on the stable family/subtype codes, not on free-text
+labels: a Tour view locks `familyCode = tour`; a Boat Tour view additionally
+locks `subtypeCode = boat-tour`. This is independent of which surface (§3)
+the product renders in — a `scheduled` Tour and a `dynamic` Tour both facet
+the same way.
+
 ## 3. Two catalog surfaces (split on the mechanic)
 
 `category` is a facet *inside* each surface; the surface itself is chosen by `supplyModel`.

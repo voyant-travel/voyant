@@ -46,10 +46,12 @@ import { facilities, properties } from "@voyant-travel/operations"
 import { asc, eq, sql } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
+import { resolveProductClassification } from "./classification.js"
 import { type Product, products } from "./schema-core.js"
 import { productDays, productItineraries, productMedia } from "./schema-itinerary.js"
 import { productLocations, productTranslations } from "./schema-settings.js"
 import type { productBookingModeEnum } from "./schema-shared.js"
+import { productTypes } from "./schema-taxonomy.js"
 
 type ProductBookingMode = (typeof productBookingModeEnum.enumValues)[number]
 
@@ -112,6 +114,8 @@ export function productRowToProjection(
     ["visibility", row.visibility],
     ["activated", row.activated],
     ["productTypeId", row.productTypeId],
+    ["subtypeCode", row.productSubtypeCode],
+    ["durationMinutes", row.durationMinutes],
     ["facilityId", row.facilityId],
     ["supplierId", row.supplierId],
     ["pax", row.pax],
@@ -594,6 +598,80 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
         out.set("termsHtml", translation.termsHtml)
       }
       return out
+    },
+  }
+}
+
+/**
+ * Resolve the legacy itinerary-derived duration in days for a product: the max
+ * day number of its default itinerary (falling back to the first). Null when the
+ * product has no itinerary days. This is the fallback the duration resolver uses
+ * when no explicit `durationMinutes` is authored.
+ */
+export async function resolveItineraryDurationDays(
+  db: AnyDrizzleDb,
+  productId: string,
+): Promise<number | null> {
+  const itineraryRows = await db
+    .select({ id: productItineraries.id, isDefault: productItineraries.isDefault })
+    .from(productItineraries)
+    .where(eq(productItineraries.productId, productId))
+    .orderBy(asc(productItineraries.sortOrder))
+  const defaultItinerary = itineraryRows.find((it) => it.isDefault) ?? itineraryRows[0]
+  if (!defaultItinerary) return null
+  return estimateItineraryDurationDays(db, defaultItinerary.id)
+}
+
+/**
+ * Product classification projection extension — the catalog-plane half of the
+ * shared `resolveProductClassification`. Joins `product_types` for the family
+ * stable code/name, resolves the duration (explicit-first, itinerary-derived
+ * fallback), and denormalizes the family / subtype / duration / review fields
+ * onto the search document so catalog views facet on stable codes without a
+ * query-time join. Uses the SAME resolver as the list/detail read paths and the
+ * legacy Catalog search document, so all three emit identical semantics.
+ */
+export function createProductClassificationProjectionExtension(): ProductProjectionExtension {
+  return {
+    name: "products:classification",
+    async project(db, productId, _slice) {
+      const [row] = await db
+        .select({
+          productTypeId: products.productTypeId,
+          productSubtypeCode: products.productSubtypeCode,
+          durationMinutes: products.durationMinutes,
+        })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1)
+      if (!row) return new Map()
+
+      const [familyRow] = row.productTypeId
+        ? await db
+            .select({ code: productTypes.code, name: productTypes.name })
+            .from(productTypes)
+            .where(eq(productTypes.id, row.productTypeId))
+            .limit(1)
+        : []
+
+      const itineraryDurationDays = await resolveItineraryDurationDays(db, productId)
+
+      const classification = resolveProductClassification({
+        family: familyRow ?? null,
+        subtypeCode: row.productSubtypeCode,
+        durationMinutes: row.durationMinutes,
+        itineraryDurationDays,
+      })
+
+      return new Map<string, unknown>([
+        ["familyCode", classification.familyCode],
+        ["familyName", classification.familyName],
+        ["subtypeCode", classification.subtypeCode],
+        ["durationMinutes", classification.durationMinutes],
+        ["durationDays", classification.durationDays],
+        ["durationProvenance", classification.durationProvenance],
+        ["classificationReviewRequired", classification.reviewRequired],
+      ])
     },
   }
 }
