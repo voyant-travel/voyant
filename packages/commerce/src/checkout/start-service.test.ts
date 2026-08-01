@@ -98,6 +98,60 @@ describe("startCatalogCheckout", () => {
     expect(result).toEqual({ kind: "hold_placed", bookingId: "bk_1" })
   })
 
+  it("denies bound-storefront checkout when a booking product is unpublished", async () => {
+    const publication = { isProductPublished: vi.fn().mockResolvedValue(false) }
+    const { db } = queuedDb([
+      [{ id: "bk_1", status: "on_hold", holdExpiresAt: null }],
+      [{ productId: "prod_unpublished" }],
+    ])
+
+    const err = await startCatalogCheckout(
+      {
+        db,
+        env: {},
+        storefrontChannel: {
+          storefrontId: "sf_1",
+          channelId: "chan_1",
+          channelStatus: "active",
+        },
+        options: stubOptions({ publication }),
+      },
+      { bookingId: "bk_1", paymentIntent: "hold" },
+    ).catch((error: unknown) => error)
+
+    expect(err).toBeInstanceOf(CatalogCheckoutStartError)
+    expect(err).toMatchObject({ code: "product_not_published", status: 409 })
+    expect(publication.isProductPublished).toHaveBeenCalledWith({
+      db,
+      bookingId: "bk_1",
+      productId: "prod_unpublished",
+      storefrontId: "sf_1",
+      channelId: "chan_1",
+    })
+  })
+
+  it("denies bound-storefront checkout for inactive channels before publication lookup", async () => {
+    const publication = { isProductPublished: vi.fn().mockResolvedValue(true) }
+
+    const err = await startCatalogCheckout(
+      {
+        db: stubDb([{ id: "bk_1", status: "on_hold", holdExpiresAt: null }]),
+        env: {},
+        storefrontChannel: {
+          storefrontId: "sf_1",
+          channelId: "chan_inactive",
+          channelStatus: "inactive",
+        },
+        options: stubOptions({ publication }),
+      },
+      { bookingId: "bk_1", paymentIntent: "hold" },
+    ).catch((error: unknown) => error)
+
+    expect(err).toBeInstanceOf(CatalogCheckoutStartError)
+    expect(err).toMatchObject({ code: "product_not_published", status: 409 })
+    expect(publication.isProductPublished).not.toHaveBeenCalled()
+  })
+
   it("creates an inquiry through the injected Proposals runtime", async () => {
     vi.spyOn(bookingsService, "cancelBooking").mockResolvedValue({} as never)
     const checkoutInquiry = {
