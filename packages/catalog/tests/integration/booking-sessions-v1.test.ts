@@ -1,10 +1,13 @@
-import { bookingAllocations, bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { createDbClient } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-
+import {
+  bookingAllocationsRef,
+  bookingItemsRef,
+  bookingsRef,
+} from "../../src/booking-engine/bookings-ref.js"
 import { createDrizzleBookingSessionRepository } from "../../src/booking-engine/sessions-drizzle.js"
 import {
   bookingSessionCommitsTable,
@@ -138,9 +141,9 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
     } else {
       expect(outcomes.filter(isAlreadyConsumed)).toHaveLength(1)
     }
-    await expect(db.select().from(bookings)).resolves.toHaveLength(1)
-    await expect(db.select().from(bookingItems)).resolves.toHaveLength(1)
-    await expect(db.select().from(bookingAllocations)).resolves.toHaveLength(1)
+    await expect(db.select().from(bookingsRef)).resolves.toHaveLength(1)
+    await expect(db.select().from(bookingItemsRef)).resolves.toHaveLength(1)
+    await expect(db.select().from(bookingAllocationsRef)).resolves.toHaveLength(1)
     await expect(db.select().from(bookingSessionCommitsTable)).resolves.toHaveLength(1)
   })
 
@@ -168,9 +171,9 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
       ),
     ).rejects.toThrow("fault_after_booking_item_allocation")
 
-    await expect(db.select().from(bookings)).resolves.toHaveLength(0)
-    await expect(db.select().from(bookingItems)).resolves.toHaveLength(0)
-    await expect(db.select().from(bookingAllocations)).resolves.toHaveLength(0)
+    await expect(db.select().from(bookingsRef)).resolves.toHaveLength(0)
+    await expect(db.select().from(bookingItemsRef)).resolves.toHaveLength(0)
+    await expect(db.select().from(bookingAllocationsRef)).resolves.toHaveLength(0)
     await expect(db.select().from(bookingSessionCommitsTable)).resolves.toHaveLength(0)
     await expect(db.select().from(bookingSessionsTable)).resolves.toEqual([
       expect.objectContaining({ id: prepared.session.id, state: "active" }),
@@ -235,20 +238,20 @@ async function insertBookingGraph(db: PostgresJsDatabase) {
   const bookingId = newId("bookings")
   const bookingItemId = newId("booking_items")
   const allocationId = newId("booking_allocations")
-  await db.insert(bookings).values({
+  await db.insert(bookingsRef).values({
     id: bookingId,
     bookingNumber: `PG-${bookingId}`,
     status: "confirmed",
     sellCurrency: "EUR",
   })
-  await db.insert(bookingItems).values({
+  await db.insert(bookingItemsRef).values({
     id: bookingItemId,
     bookingId,
     title: "PostgreSQL Booking Session proof",
     status: "confirmed",
     sellCurrency: "EUR",
   })
-  await db.insert(bookingAllocations).values({
+  await db.insert(bookingAllocationsRef).values({
     id: allocationId,
     bookingId,
     bookingItemId,

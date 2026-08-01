@@ -1,5 +1,4 @@
 import type { BookingsRelationshipsRuntime } from "@voyant-travel/bookings/runtime-port"
-import { bookingAllocations, bookings } from "@voyant-travel/bookings/schema"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   createSelfServiceCreateRuntime,
@@ -11,6 +10,7 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { PricingBasis } from "../snapshot/schema.js"
+import { bookingAllocationsRef, bookingsRef } from "./bookings-ref.js"
 import { pricingBreakdownV1 } from "./contracts.js"
 import type { OwnedBookingHandlerRegistry, SelfServiceBillingParty } from "./owned-handler.js"
 import { engineParametersFromDraft } from "./routes.js"
@@ -159,9 +159,9 @@ async function commitOwnedBookingInTransaction(
       },
       async consumeBookingSource(tx: AnyDrizzleDb, sourceInput) {
         const rows = await tx
-          .select({ id: bookingAllocations.id })
-          .from(bookingAllocations)
-          .where(eq(bookingAllocations.bookingId, sourceInput.bookingId))
+          .select({ id: bookingAllocationsRef.id })
+          .from(bookingAllocationsRef)
+          .where(eq(bookingAllocationsRef.bookingId, sourceInput.bookingId))
         await input.consumeSources(
           tx,
           sourceInput.bookingId,
@@ -177,9 +177,9 @@ async function commitOwnedBookingInTransaction(
     runtime: deps.financeRuntime,
     async readBookingSummary(db, bookingId) {
       const [row] = await db
-        .select({ bookingNumber: bookings.bookingNumber, status: bookings.status })
-        .from(bookings)
-        .where(eq(bookings.id, bookingId))
+        .select({ bookingNumber: bookingsRef.bookingNumber, status: bookingsRef.status })
+        .from(bookingsRef)
+        .where(eq(bookingsRef.id, bookingId))
         .limit(1)
       return row ? { bookingNumber: row.bookingNumber, status: row.status } : null
     },
@@ -197,9 +197,9 @@ async function commitOwnedBookingInTransaction(
   })
   if (result.status !== "ok") throw new Error(`booking_session_commit_${result.reason}`)
   const allocations = await tx
-    .select({ id: bookingAllocations.id })
-    .from(bookingAllocations)
-    .where(eq(bookingAllocations.bookingId, result.bookingId))
+    .select({ id: bookingAllocationsRef.id })
+    .from(bookingAllocationsRef)
+    .where(eq(bookingAllocationsRef.bookingId, result.bookingId))
   return { bookingId: result.bookingId, allocationIds: allocations.map((row) => row.id) }
 }
 
