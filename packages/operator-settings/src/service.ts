@@ -387,9 +387,18 @@ export async function updateInvoiceFxSettings(
   }
 }
 
+export interface PublicOperatorBrandingUrls {
+  logoLightUrl?: string | null
+  logoDarkUrl?: string | null
+  iconLightUrl?: string | null
+  iconDarkUrl?: string | null
+  faviconUrl?: string | null
+}
+
 export function toPublicOperatorProfile(
   row: OperatorProfileRow,
   defaults?: OperatorPaymentDefaultsRow | null,
+  brandingUrls: PublicOperatorBrandingUrls = {},
 ): PublicOperatorProfile {
   return {
     name: row.name ?? "",
@@ -399,18 +408,23 @@ export function toPublicOperatorProfile(
     email: row.email ?? "",
     website: row.website ?? "",
     logoLightAssetKey: row.logoLightAssetKey ?? null,
+    logoLightUrl: brandingUrls.logoLightUrl ?? null,
     logoLightMimeType: row.logoLightMimeType ?? null,
     logoDarkAssetKey: row.logoDarkAssetKey ?? null,
+    logoDarkUrl: brandingUrls.logoDarkUrl ?? null,
     logoDarkMimeType: row.logoDarkMimeType ?? null,
     iconLightAssetKey: row.iconLightAssetKey ?? null,
+    iconLightUrl: brandingUrls.iconLightUrl ?? null,
     iconLightMimeType: row.iconLightMimeType ?? null,
     iconDarkAssetKey: row.iconDarkAssetKey ?? null,
+    iconDarkUrl: brandingUrls.iconDarkUrl ?? null,
     iconDarkMimeType: row.iconDarkMimeType ?? null,
     brandColor: row.brandColor ?? DEFAULT_OPERATOR_BRAND_COLOR,
     cornerRadius: row.cornerRadius ?? DEFAULT_OPERATOR_CORNER_RADIUS,
     headingFont: row.headingFont ?? DEFAULT_OPERATOR_FONT,
     bodyFont: row.bodyFont ?? DEFAULT_OPERATOR_FONT,
     faviconAssetKey: row.faviconAssetKey ?? null,
+    faviconUrl: brandingUrls.faviconUrl ?? null,
     faviconMimeType: row.faviconMimeType ?? null,
     supportEmail: row.supportEmail ?? null,
     termsUrl: row.termsUrl ?? null,
@@ -433,18 +447,23 @@ export interface PublicOperatorProfile {
   email: string
   website: string
   logoLightAssetKey: string | null
+  logoLightUrl: string | null
   logoLightMimeType: string | null
   logoDarkAssetKey: string | null
+  logoDarkUrl: string | null
   logoDarkMimeType: string | null
   iconLightAssetKey: string | null
+  iconLightUrl: string | null
   iconLightMimeType: string | null
   iconDarkAssetKey: string | null
+  iconDarkUrl: string | null
   iconDarkMimeType: string | null
   brandColor: string
   cornerRadius: string
   headingFont: string
   bodyFont: string
   faviconAssetKey: string | null
+  faviconUrl: string | null
   faviconMimeType: string | null
   supportEmail: string | null
   termsUrl: string | null
@@ -519,6 +538,7 @@ export async function upsertOperatorSettings(
 
 export function toPublicOperatorSettings(
   row: Awaited<ReturnType<typeof getOperatorSettings>>,
+  brandingUrls: PublicOperatorBrandingUrls = {},
 ): PublicOperatorProfile {
   return {
     name: row?.name ?? "",
@@ -528,18 +548,23 @@ export function toPublicOperatorSettings(
     email: row?.email ?? "",
     website: row?.website ?? "",
     logoLightAssetKey: row?.logoLightAssetKey ?? null,
+    logoLightUrl: brandingUrls.logoLightUrl ?? null,
     logoLightMimeType: row?.logoLightMimeType ?? null,
     logoDarkAssetKey: row?.logoDarkAssetKey ?? null,
+    logoDarkUrl: brandingUrls.logoDarkUrl ?? null,
     logoDarkMimeType: row?.logoDarkMimeType ?? null,
     iconLightAssetKey: row?.iconLightAssetKey ?? null,
+    iconLightUrl: brandingUrls.iconLightUrl ?? null,
     iconLightMimeType: row?.iconLightMimeType ?? null,
     iconDarkAssetKey: row?.iconDarkAssetKey ?? null,
+    iconDarkUrl: brandingUrls.iconDarkUrl ?? null,
     iconDarkMimeType: row?.iconDarkMimeType ?? null,
     brandColor: row?.brandColor ?? DEFAULT_OPERATOR_BRAND_COLOR,
     cornerRadius: row?.cornerRadius ?? DEFAULT_OPERATOR_CORNER_RADIUS,
     headingFont: row?.headingFont ?? DEFAULT_OPERATOR_FONT,
     bodyFont: row?.bodyFont ?? DEFAULT_OPERATOR_FONT,
     faviconAssetKey: row?.faviconAssetKey ?? null,
+    faviconUrl: brandingUrls.faviconUrl ?? null,
     faviconMimeType: row?.faviconMimeType ?? null,
     supportEmail: row?.supportEmail ?? null,
     termsUrl: row?.termsUrl ?? null,

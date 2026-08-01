@@ -51,27 +51,38 @@ function profileRow(overrides: Record<string, unknown> = {}) {
 
 describe("toPublicOperatorProfile", () => {
   it("maps profile + payment defaults into the public DTO", () => {
-    const dto = toPublicOperatorProfile(profileRow(), {
-      id: "opdp_test",
-      customerPaymentPolicy: {
-        deposit: { kind: "none" },
-        minDaysBeforeDepartureForDeposit: 0,
-        balanceDueDaysBeforeDeparture: 0,
-        balanceDueMinDaysFromNow: 0,
+    const dto = toPublicOperatorProfile(
+      profileRow(),
+      {
+        id: "opdp_test",
+        customerPaymentPolicy: {
+          deposit: { kind: "none" },
+          minDaysBeforeDepartureForDeposit: 0,
+          balanceDueDaysBeforeDeparture: 0,
+          balanceDueMinDaysFromNow: 0,
+        },
+        bookingCheckoutUrlTemplate: "https://pay.acme.test/{booking}",
+        invoicePayUrlTemplate: null,
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+      } as Parameters<typeof toPublicOperatorProfile>[1],
+      {
+        logoLightUrl: "https://cdn.acme.test/logo-light.svg",
+        iconLightUrl: "/v1/public/operator-branding/icon-light",
+        faviconUrl: "https://cdn.acme.test/favicon.png",
       },
-      bookingCheckoutUrlTemplate: "https://pay.acme.test/{booking}",
-      invoicePayUrlTemplate: null,
-      createdAt: new Date(0),
-      updatedAt: new Date(0),
-    } as Parameters<typeof toPublicOperatorProfile>[1])
+    )
 
     expect(dto.name).toBe("Acme Tours")
     expect(dto.email).toBe("hello@acme.test")
     expect(dto.logoLightAssetKey).toBe("uploads/logo-light.svg")
+    expect(dto.logoLightUrl).toBe("https://cdn.acme.test/logo-light.svg")
     expect(dto.iconLightAssetKey).toBe("uploads/icon-light.png")
+    expect(dto.iconLightUrl).toBe("/v1/public/operator-branding/icon-light")
     expect(dto.brandColor).toBe("#123456")
     expect(dto.headingFont).toBe("playfair-display")
     expect(dto.faviconAssetKey).toBe("uploads/favicon.png")
+    expect(dto.faviconUrl).toBe("https://cdn.acme.test/favicon.png")
     expect(dto.supportedLocales).toEqual(["en", "ro"])
     expect(dto.defaultLocale).toBe("ro")
     expect(dto.bookingCheckoutUrlTemplate).toBe("https://pay.acme.test/{booking}")
@@ -91,6 +102,7 @@ describe("toPublicOperatorProfile", () => {
     expect(dto.name).toBe("")
     expect(dto.email).toBe("")
     expect(dto.website).toBe("")
+    expect(dto.logoLightUrl).toBeNull()
     expect(dto.license).toBe("")
     expect(dto.customerPaymentPolicy).toBeNull()
     expect(dto.bookingCheckoutUrlTemplate).toBeNull()

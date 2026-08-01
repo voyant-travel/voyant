@@ -487,7 +487,8 @@
                       "enum": ["en", "ro"]
                     },
                     "minItems": 1,
-                    "maxItems": 2
+                    "maxItems": 2,
+                    "description": "Unique locales supported by the operator"
                   },
                   "defaultLocale": {
                     "type": "string",
@@ -1336,7 +1337,8 @@
                       "enum": ["en", "ro"]
                     },
                     "minItems": 1,
-                    "maxItems": 2
+                    "maxItems": 2,
+                    "description": "Unique locales supported by the operator"
                   },
                   "defaultLocale": {
                     "type": "string",

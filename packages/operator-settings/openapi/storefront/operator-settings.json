@@ -162,10 +162,16 @@
                         "logoLightAssetKey": {
                           "type": ["string", "null"]
                         },
+                        "logoLightUrl": {
+                          "type": ["string", "null"]
+                        },
                         "logoLightMimeType": {
                           "type": ["string", "null"]
                         },
                         "logoDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkUrl": {
                           "type": ["string", "null"]
                         },
                         "logoDarkMimeType": {
@@ -174,10 +180,16 @@
                         "iconLightAssetKey": {
                           "type": ["string", "null"]
                         },
+                        "iconLightUrl": {
+                          "type": ["string", "null"]
+                        },
                         "iconLightMimeType": {
                           "type": ["string", "null"]
                         },
                         "iconDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkUrl": {
                           "type": ["string", "null"]
                         },
                         "iconDarkMimeType": {
@@ -196,6 +208,9 @@
                           "type": "string"
                         },
                         "faviconAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "faviconUrl": {
                           "type": ["string", "null"]
                         },
                         "faviconMimeType": {
@@ -241,18 +256,23 @@
                         "email",
                         "website",
                         "logoLightAssetKey",
+                        "logoLightUrl",
                         "logoLightMimeType",
                         "logoDarkAssetKey",
+                        "logoDarkUrl",
                         "logoDarkMimeType",
                         "iconLightAssetKey",
+                        "iconLightUrl",
                         "iconLightMimeType",
                         "iconDarkAssetKey",
+                        "iconDarkUrl",
                         "iconDarkMimeType",
                         "brandColor",
                         "cornerRadius",
                         "headingFont",
                         "bodyFont",
                         "faviconAssetKey",
+                        "faviconUrl",
                         "faviconMimeType",
                         "supportEmail",
                         "termsUrl",
@@ -314,10 +334,16 @@
                         "logoLightAssetKey": {
                           "type": ["string", "null"]
                         },
+                        "logoLightUrl": {
+                          "type": ["string", "null"]
+                        },
                         "logoLightMimeType": {
                           "type": ["string", "null"]
                         },
                         "logoDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkUrl": {
                           "type": ["string", "null"]
                         },
                         "logoDarkMimeType": {
@@ -326,10 +352,16 @@
                         "iconLightAssetKey": {
                           "type": ["string", "null"]
                         },
+                        "iconLightUrl": {
+                          "type": ["string", "null"]
+                        },
                         "iconLightMimeType": {
                           "type": ["string", "null"]
                         },
                         "iconDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkUrl": {
                           "type": ["string", "null"]
                         },
                         "iconDarkMimeType": {
@@ -348,6 +380,9 @@
                           "type": "string"
                         },
                         "faviconAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "faviconUrl": {
                           "type": ["string", "null"]
                         },
                         "faviconMimeType": {
@@ -393,18 +428,23 @@
                         "email",
                         "website",
                         "logoLightAssetKey",
+                        "logoLightUrl",
                         "logoLightMimeType",
                         "logoDarkAssetKey",
+                        "logoDarkUrl",
                         "logoDarkMimeType",
                         "iconLightAssetKey",
+                        "iconLightUrl",
                         "iconLightMimeType",
                         "iconDarkAssetKey",
+                        "iconDarkUrl",
                         "iconDarkMimeType",
                         "brandColor",
                         "cornerRadius",
                         "headingFont",
                         "bodyFont",
                         "faviconAssetKey",
+                        "faviconUrl",
                         "faviconMimeType",
                         "supportEmail",
                         "termsUrl",
@@ -429,6 +469,33 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "storefront"
+      }
+    },
+    "/v1/public/operator-branding/{slot}": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.branding-assets",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["logo-light", "logo-dark", "icon-light", "icon-dark", "favicon"]
+            },
+            "required": true,
+            "name": "slot",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The configured public operator branding asset"
+          },
+          "404": {
+            "description": "The branding slot or stored object does not exist"
+          },
+          "503": {
+            "description": "Media storage is not configured"
+          }
+        }
       }
     }
   },

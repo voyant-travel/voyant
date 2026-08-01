@@ -34,6 +34,7 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/payments": "workspace:^",
+    "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
