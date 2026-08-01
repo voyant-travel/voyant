@@ -82,6 +82,7 @@ const updateOperatorProfileObjectSchema = z.object({
     .min(1)
     .max(OPERATOR_LOCALE_IDS.length)
     .refine((locales) => new Set(locales).size === locales.length, "Locales must be unique")
+    .describe("Unique locales supported by the operator")
     .optional(),
   defaultLocale: z.enum(OPERATOR_LOCALE_IDS).optional(),
   license: z.string().nullable().optional(),
