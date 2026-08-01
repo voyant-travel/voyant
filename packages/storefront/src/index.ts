@@ -205,7 +205,19 @@ export const storefrontAnonymousPublicPaths = [
   "/offers",
   "/settings",
 ] as const
-export const storefrontOptionalCustomerAuthPaths = ["/bookings"] as const
+// These guest-facing route families still need the customer-auth resolver to
+// derive trusted Storefront -> Channel context from the BFF key/origin. A
+// missing session remains anonymous; a successfully resolved storefront is
+// carried into publication and checkout guards.
+export const storefrontOptionalCustomerAuthPaths = [
+  "/bookings",
+  "/departures",
+  "/leads",
+  "/newsletter",
+  "/offers",
+  "/products",
+  "/settings",
+] as const
 
 export type StorefrontApiModuleOptions = Parameters<typeof createStorefrontPublicRoutes>[0]
 
