@@ -7,7 +7,7 @@ import {
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
-import type { Context } from "hono"
+import type { Context, Next } from "hono"
 
 import { departuresDocKey, readThroughDepartures } from "./departures-read-model.js"
 
@@ -463,11 +463,17 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
   // remaining plain catalog/booking legs preserves route-match order — and
   // `/offers/redeem` (a POST) never collides with `/offers/{slug}` (a GET).
   const app = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-  app.use("*", async (c, next) => {
+  const requireActiveChannel = async (c: Context<Env>, next: Next) => {
     const denied = requireActiveStorefrontChannel(c)
     if (denied) return denied
     return next()
-  })
+  }
+  app.use("/settings", requireActiveChannel)
+  app.use("/departures/*", requireActiveChannel)
+  app.use("/products/*", requireActiveChannel)
+  app.use("/offers/*", requireActiveChannel)
+  app.use("/leads", requireActiveChannel)
+  app.use("/newsletter/*", requireActiveChannel)
 
   return app
     .openapi(listProductOffersRoute, async (c) => {

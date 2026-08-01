@@ -23,6 +23,23 @@ import {
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
 
+function testAuthContext(actor: Actor) {
+  return {
+    userId: "u1",
+    actor,
+    realm: actor === "staff" ? ("admin" as const) : ("customer" as const),
+    ...(actor === "customer"
+      ? {
+          storefrontChannel: {
+            storefrontId: "sf_test",
+            channelId: "chan_test",
+            channelStatus: "active",
+          },
+        }
+      : {}),
+  }
+}
+
 async function build() {
   const composition = await buildGraphComposition()
   return mountApp({
@@ -38,7 +55,7 @@ async function build() {
         const actor: Actor = new URL(request.url).pathname.startsWith("/v1/public/")
           ? "customer"
           : "staff"
-        return { userId: "u1", actor, realm: actor === "staff" ? "admin" : "customer" }
+        return testAuthContext(actor)
       },
     },
   })
@@ -53,11 +70,7 @@ async function buildWithSessionActor(actor: Actor) {
     extensions: composition.extensions,
     ...mountRoutePosture(composition),
     auth: {
-      resolve: () => ({
-        userId: "u1",
-        actor,
-        realm: actor === "staff" ? "admin" : "customer",
-      }),
+      resolve: () => testAuthContext(actor),
     },
   })
 }
@@ -74,11 +87,7 @@ async function buildWithLiveFrontDoor(
     ...mountRoutePosture(composition),
     db,
     auth: {
-      resolve: () => ({
-        userId: "u1",
-        actor,
-        realm: actor === "staff" ? "admin" : "customer",
-      }),
+      resolve: () => testAuthContext(actor),
     },
   })
 }
