@@ -3,11 +3,11 @@ import {
   type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
-  createDrizzleBookingSessionRepository,
   createProductionBookingSessionModule,
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
 } from "@voyant-travel/catalog/booking-engine"
+import { createDrizzleBookingSessionRepository } from "@voyant-travel/catalog/booking-engine/sessions-drizzle"
 import {
   applyCatalogTaxToQuoteResult,
   resolveCatalogHoldTtlMs,

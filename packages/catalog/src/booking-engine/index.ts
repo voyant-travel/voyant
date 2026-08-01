@@ -221,7 +221,6 @@ export {
   type ResolveSelfServiceBillingPerson,
   type SelfServiceBookingSourceProviderDeps,
 } from "./self-service-source.js"
-export { createDrizzleBookingSessionRepository } from "./sessions-drizzle.js"
 export {
   createInMemoryBookingSessionRepository,
   createInMemoryOwnedInventoryPorts,
