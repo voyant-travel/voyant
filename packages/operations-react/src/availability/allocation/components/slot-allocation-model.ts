@@ -272,8 +272,7 @@ export function validateVehicleSeatDesignation({
   const normalized = label.trim().toLowerCase()
   if (!normalized) return "required"
   const duplicate = seats.some(
-    (seat) =>
-      seat.parentId === parentId && seatDesignation(seat)?.toLowerCase() === normalized,
+    (seat) => seat.parentId === parentId && seatDesignation(seat)?.toLowerCase() === normalized,
   )
   return duplicate ? "duplicate" : null
 }
