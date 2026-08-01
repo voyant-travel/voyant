@@ -248,10 +248,13 @@ describe("voyantStartViteConfig", () => {
 
       expect(config.ssr?.external).toEqual(["pg"])
       expect(config.ssr?.noExternal).toEqual([
+        "@voyant-travel/runtime",
+        "@voyant-travel/admin-host",
         "@tanstack/react-start",
         "@tanstack/start-client-core",
         "@tanstack/start-server-core",
       ])
+      expect(config.resolve?.noExternal).toEqual(config.ssr?.noExternal)
       expect(config.plugins).toEqual([
         expect.objectContaining({
           name: "voyant:externalize-production-runtime",
@@ -293,6 +296,22 @@ describe("voyantStartViteConfig", () => {
         ),
         external: true,
       })
+      expect(
+        await resolveId.call(
+          serverContext as never,
+          "@voyant-travel/runtime",
+          undefined,
+          {} as never,
+        ),
+      ).toBeNull()
+      expect(
+        await resolveId.call(
+          serverContext as never,
+          "@voyant-travel/admin-host/ssr",
+          undefined,
+          {} as never,
+        ),
+      ).toBeNull()
       expect(
         await resolveId.call(
           serverContext as never,

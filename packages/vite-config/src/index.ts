@@ -82,6 +82,22 @@ const VOYANT_DEDUPE_DEPENDENCIES: readonly string[] = [
   "@tanstack/react-router",
 ]
 
+/**
+ * First-party framework hosts that must remain in the production server graph.
+ * They import TanStack Start's server core, whose `#tanstack-*` entry aliases
+ * only exist while the TanStack Vite plugin is resolving the application.
+ */
+const VOYANT_PRODUCTION_BUNDLED_PACKAGES: readonly string[] = [
+  "@voyant-travel/runtime",
+  "@voyant-travel/admin-host",
+]
+
+const TANSTACK_START_BUNDLED_PACKAGES: readonly string[] = [
+  "@tanstack/react-start",
+  "@tanstack/start-client-core",
+  "@tanstack/start-server-core",
+]
+
 const DEPENDENCY_FIELDS = [
   "dependencies",
   "devDependencies",
@@ -323,6 +339,11 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       alias: [{ find: "@", replacement: fileURLToPath(new URL("./src", appRootUrl)) }],
       dedupe: resolvableAppRootDependencies(appRootUrl, VOYANT_DEDUPE_DEPENDENCIES),
       tsconfigPaths: true,
+      ...(!bundleWorkspaceSource && {
+        // Vite's environment API reads noExternal from resolve. Keep this in
+        // addition to ssr.noExternal below for the Vite 6 compatibility range.
+        noExternal: [...VOYANT_PRODUCTION_BUNDLED_PACKAGES, ...TANSTACK_START_BUNDLED_PACKAGES],
+      }),
     },
     optimizeDeps: {
       exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE],
@@ -348,12 +369,12 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
                   // The production externalizer marks only first-party package
                   // imports external. Keep ordinary dependencies in Vite's
                   // default SSR pipeline so framework plugins can still bundle
-                  // packages that contain virtual imports.
+                  // the framework hosts and packages that contain virtual
+                  // imports.
                   external: ["pg"],
                   noExternal: [
-                    "@tanstack/react-start",
-                    "@tanstack/start-client-core",
-                    "@tanstack/start-server-core",
+                    ...VOYANT_PRODUCTION_BUNDLED_PACKAGES,
+                    ...TANSTACK_START_BUNDLED_PACKAGES,
                   ],
                 }),
           }
@@ -387,7 +408,9 @@ function createProductionRuntimeExternalPlugin(appRootUrl: string): Plugin {
         }
       }
       if (!/^@(?:voyant-travel|pxmstudio)\/[^/]+(?:\/.*)?$/.test(source)) return null
-      if (!productionDependencies.has(packageNameForSubpath(source))) return null
+      const packageName = packageNameForSubpath(source)
+      if (VOYANT_PRODUCTION_BUNDLED_PACKAGES.includes(packageName)) return null
+      if (!productionDependencies.has(packageName)) return null
       return { id: source, external: true }
     },
   }
