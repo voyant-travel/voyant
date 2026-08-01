@@ -70,7 +70,7 @@ export interface CatalogCommerceRuntimeExtension {
 
 export interface CatalogDistributionRuntimeExtension {
   loadActiveChannelIds(db: AnyDrizzleDb): Promise<readonly string[]>
-  hasActiveSalesChannelMapping(
+  hasEffectiveProductPublication(
     db: AnyDrizzleDb,
     productId: string,
     channelId?: string,
