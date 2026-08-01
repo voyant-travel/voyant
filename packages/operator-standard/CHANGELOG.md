@@ -46,7 +46,7 @@
   - @voyant-travel/storefront-react@0.228.0
   - @voyant-travel/admin-host@0.77.0
   - @voyant-travel/cruises-react@0.225.0
-  - @voyant-travel/proposals-react@0.224.0
+  - @voyant-travel/quotes-react@0.224.0
   - @voyant-travel/charters@0.224.0
   - @voyant-travel/cruises@0.225.0
   - @voyant-travel/flights@0.226.0
@@ -54,7 +54,7 @@
   - @voyant-travel/notifications-react@0.144.1
   - @voyant-travel/operations@0.11.10
   - @voyant-travel/operator-settings@0.16.12
-  - @voyant-travel/proposals@0.136.1
+  - @voyant-travel/quotes@0.136.1
 
 ## 0.18.0
 
@@ -91,7 +91,7 @@
   - @voyant-travel/core@0.137.0
   - @voyant-travel/auth@0.149.0
   - @voyant-travel/storefront@0.227.0
-  - @voyant-travel/proposals@0.136.0
+  - @voyant-travel/quotes@0.136.0
   - @voyant-travel/admin@0.133.0
   - @voyant-travel/apps@0.13.0
   - @voyant-travel/accommodations@0.185.0
@@ -140,7 +140,7 @@
   - @voyant-travel/webhook-delivery@0.5.10
   - @voyant-travel/auth-react@0.149.0
   - @voyant-travel/storefront-react@0.227.0
-  - @voyant-travel/proposals-react@0.223.0
+  - @voyant-travel/quotes-react@0.223.0
   - @voyant-travel/admin-app@0.118.0
   - @voyant-travel/admin-host@0.76.0
   - @voyant-travel/apps-react@0.9.0
@@ -219,7 +219,7 @@
   - @voyant-travel/notifications@0.143.0
   - @voyant-travel/operations@0.11.8
   - @voyant-travel/operator-settings@0.16.10
-  - @voyant-travel/proposals@0.135.17
+  - @voyant-travel/quotes@0.135.17
   - @voyant-travel/realtime@0.7.5
   - @voyant-travel/relationships@0.132.21
   - @voyant-travel/reporting@0.3.12
@@ -250,7 +250,7 @@
   - @voyant-travel/media-react@0.8.0
   - @voyant-travel/mice-react@0.92.0
   - @voyant-travel/operations-react@0.105.0
-  - @voyant-travel/proposals-react@0.222.0
+  - @voyant-travel/quotes-react@0.222.0
   - @voyant-travel/relationships-react@0.224.0
   - @voyant-travel/reporting-react@0.8.0
   - @voyant-travel/setup-react@0.14.0
@@ -304,7 +304,7 @@
   - @voyant-travel/notifications@0.142.12
   - @voyant-travel/operations@0.11.7
   - @voyant-travel/operator-settings@0.16.9
-  - @voyant-travel/proposals@0.135.16
+  - @voyant-travel/quotes@0.135.16
   - @voyant-travel/relationships@0.132.20
   - @voyant-travel/setup@0.7.4
   - @voyant-travel/trips@0.216.0
@@ -328,7 +328,7 @@
   - @voyant-travel/relationships-react@0.223.0
   - @voyant-travel/admin-host@0.73.0
   - @voyant-travel/cruises-react@0.222.0
-  - @voyant-travel/proposals-react@0.221.0
+  - @voyant-travel/quotes-react@0.221.0
   - @voyant-travel/auth-react@0.147.1
   - @voyant-travel/notifications-react@0.142.12
   - @voyant-travel/navigation-preferences-react@0.21.1
@@ -367,7 +367,7 @@
   - @voyant-travel/mcp@0.11.0
   - @voyant-travel/admin-app@0.114.0
   - @voyant-travel/navigation-preferences-react@0.21.0
-  - @voyant-travel/proposals-react@0.220.0
+  - @voyant-travel/quotes-react@0.220.0
   - @voyant-travel/storefront-react@0.224.0
   - @voyant-travel/admin-host@0.72.0
   - @voyant-travel/operator-settings-react@0.77.0
@@ -407,7 +407,7 @@
   - @voyant-travel/relationships@0.132.19
   - @voyant-travel/operations@0.11.6
   - @voyant-travel/operator-settings@0.16.8
-  - @voyant-travel/proposals@0.135.15
+  - @voyant-travel/quotes@0.135.15
   - @voyant-travel/notifications-react@0.142.11
 
 ## 0.16.4
@@ -442,7 +442,7 @@
   - @voyant-travel/notifications@0.142.10
   - @voyant-travel/operations@0.11.5
   - @voyant-travel/operator-settings@0.16.7
-  - @voyant-travel/proposals@0.135.14
+  - @voyant-travel/quotes@0.135.14
   - @voyant-travel/realtime@0.7.4
   - @voyant-travel/relationships@0.132.18
   - @voyant-travel/reporting@0.3.11
@@ -531,7 +531,7 @@
   - @voyant-travel/mcp@0.10.0
   - @voyant-travel/media@0.6.2
   - @voyant-travel/navigation-preferences@0.20.1
-  - @voyant-travel/proposals@0.135.13
+  - @voyant-travel/quotes@0.135.13
   - @voyant-travel/realtime@0.7.3
   - @voyant-travel/reporting@0.3.10
   - @voyant-travel/setup@0.7.2
@@ -546,7 +546,7 @@
   - @voyant-travel/catalog-react@0.219.0
   - @voyant-travel/mice-react@0.89.0
   - @voyant-travel/relationships-react@0.221.0
-  - @voyant-travel/proposals-react@0.219.0
+  - @voyant-travel/quotes-react@0.219.0
   - @voyant-travel/auth-react@0.146.1
   - @voyant-travel/notifications-react@0.142.9
   - @voyant-travel/navigation-preferences-react@0.20.1
@@ -618,7 +618,7 @@
   - @voyant-travel/navigation-preferences@0.20.0
   - @voyant-travel/operations@0.11.3
   - @voyant-travel/public-document-delivery@0.4.18
-  - @voyant-travel/proposals@0.135.12
+  - @voyant-travel/quotes@0.135.12
   - @voyant-travel/reporting@0.3.9
   - @voyant-travel/setup@0.7.1
   - @voyant-travel/types@0.109.10
@@ -628,7 +628,7 @@
   - @voyant-travel/realtime@0.7.2
   - @voyant-travel/admin-app@0.112.0
   - @voyant-travel/navigation-preferences-react@0.20.0
-  - @voyant-travel/proposals-react@0.218.0
+  - @voyant-travel/quotes-react@0.218.0
   - @voyant-travel/storefront-react@0.222.0
   - @voyant-travel/action-ledger-react@0.109.0
   - @voyant-travel/admin@0.131.1
@@ -694,7 +694,7 @@
   - @voyant-travel/relationships-react@0.219.0
   - @voyant-travel/admin-host@0.69.0
   - @voyant-travel/mice-react@0.87.0
-  - @voyant-travel/proposals-react@0.217.0
+  - @voyant-travel/quotes-react@0.217.0
   - @voyant-travel/bookings@0.219.0
   - @voyant-travel/catalog@0.217.0
   - @voyant-travel/charters@0.217.0
@@ -704,7 +704,7 @@
   - @voyant-travel/flights@0.219.0
   - @voyant-travel/identity@0.219.0
   - @voyant-travel/notifications-react@0.142.7
-  - @voyant-travel/proposals@0.135.11
+  - @voyant-travel/quotes@0.135.11
   - @voyant-travel/accommodations@0.179.0
   - @voyant-travel/commerce@0.44.19
   - @voyant-travel/inventory@0.23.4
@@ -800,12 +800,12 @@
   - @voyant-travel/storefront-react@0.220.0
   - @voyant-travel/admin-host@0.68.0
   - @voyant-travel/cruises-react@0.217.0
-  - @voyant-travel/proposals-react@0.216.0
+  - @voyant-travel/quotes-react@0.216.0
   - @voyant-travel/charters@0.216.0
   - @voyant-travel/identity@0.218.0
   - @voyant-travel/notifications-react@0.142.6
   - @voyant-travel/operations@0.11.1
-  - @voyant-travel/proposals@0.135.10
+  - @voyant-travel/quotes@0.135.10
 
 ## 0.15.41
 
@@ -840,7 +840,7 @@
   - @voyant-travel/flights-react@0.217.0
   - @voyant-travel/relationships-react@0.217.0
   - @voyant-travel/mice-react@0.85.0
-  - @voyant-travel/proposals-react@0.215.0
+  - @voyant-travel/quotes-react@0.215.0
   - @voyant-travel/bookings@0.217.0
   - @voyant-travel/catalog@0.215.0
   - @voyant-travel/charters@0.215.0
@@ -850,7 +850,7 @@
   - @voyant-travel/flights@0.217.0
   - @voyant-travel/identity@0.217.0
   - @voyant-travel/notifications-react@0.142.5
-  - @voyant-travel/proposals@0.135.9
+  - @voyant-travel/quotes@0.135.9
   - @voyant-travel/commerce@0.44.16
   - @voyant-travel/relationships@0.132.13
   - @voyant-travel/operator-settings@0.16.2
@@ -956,7 +956,7 @@
   - @voyant-travel/admin-host@0.66.0
   - @voyant-travel/cruises-react@0.215.0
   - @voyant-travel/storefront-react@0.218.0
-  - @voyant-travel/proposals-react@0.214.0
+  - @voyant-travel/quotes-react@0.214.0
   - @voyant-travel/charters@0.214.0
   - @voyant-travel/cruises@0.215.0
   - @voyant-travel/flights@0.216.0
@@ -964,7 +964,7 @@
   - @voyant-travel/notifications-react@0.142.2
   - @voyant-travel/operations@0.10.7
   - @voyant-travel/operator-settings@0.16.1
-  - @voyant-travel/proposals@0.135.8
+  - @voyant-travel/quotes@0.135.8
 
 ## 0.15.33
 
@@ -994,7 +994,7 @@
   - @voyant-travel/storefront@0.217.0
   - @voyant-travel/trips@0.208.0
   - @voyant-travel/inventory@0.22.2
-  - @voyant-travel/proposals@0.135.7
+  - @voyant-travel/quotes@0.135.7
   - @voyant-travel/notifications@0.142.1
   - @voyant-travel/storefront-react@0.217.0
   - @voyant-travel/bookings-react@0.215.0
@@ -1014,7 +1014,7 @@
   - @voyant-travel/relationships-react@0.215.0
   - @voyant-travel/admin-host@0.65.0
   - @voyant-travel/mice-react@0.83.0
-  - @voyant-travel/proposals-react@0.213.0
+  - @voyant-travel/quotes-react@0.213.0
   - @voyant-travel/bookings@0.215.0
   - @voyant-travel/catalog@0.213.0
   - @voyant-travel/charters@0.213.0
@@ -1036,7 +1036,7 @@
 
 - Updated dependencies [1c0eecc]
   - @voyant-travel/trips@0.207.0
-  - @voyant-travel/proposals@0.135.6
+  - @voyant-travel/quotes@0.135.6
   - @voyant-travel/trips-react@0.207.0
 
 ## 0.15.30
@@ -1068,7 +1068,7 @@
   - @voyant-travel/notifications-react@0.142.0
   - @voyant-travel/operations-react@0.95.0
   - @voyant-travel/operator-settings-react@0.69.0
-  - @voyant-travel/proposals-react@0.212.0
+  - @voyant-travel/quotes-react@0.212.0
   - @voyant-travel/relationships-react@0.214.0
   - @voyant-travel/reporting-react@0.7.0
   - @voyant-travel/setup-react@0.13.0
@@ -1099,7 +1099,7 @@
   - @voyant-travel/relationships@0.132.10
   - @voyant-travel/operations@0.10.5
   - @voyant-travel/operator-settings@0.15.9
-  - @voyant-travel/proposals@0.135.5
+  - @voyant-travel/quotes@0.135.5
 
 ## 0.15.29
 
@@ -1114,7 +1114,7 @@
 ### Patch Changes
 
 - Updated dependencies [cf9e63b]
-  - @voyant-travel/proposals@0.135.4
+  - @voyant-travel/quotes@0.135.4
 
 ## 0.15.27
 
@@ -1147,7 +1147,7 @@
   - @voyant-travel/admin-host@0.63.0
   - @voyant-travel/cruises-react@0.212.0
   - @voyant-travel/mice-react@0.81.0
-  - @voyant-travel/proposals-react@0.211.0
+  - @voyant-travel/quotes-react@0.211.0
   - @voyant-travel/bookings@0.213.0
   - @voyant-travel/catalog@0.211.0
   - @voyant-travel/charters@0.211.0
@@ -1157,7 +1157,7 @@
   - @voyant-travel/flights@0.213.0
   - @voyant-travel/identity@0.213.0
   - @voyant-travel/notifications-react@0.141.4
-  - @voyant-travel/proposals@0.135.3
+  - @voyant-travel/quotes@0.135.3
   - @voyant-travel/accommodations@0.173.0
   - @voyant-travel/commerce@0.44.11
   - @voyant-travel/mice@0.69.0
@@ -1206,14 +1206,14 @@
   - @voyant-travel/cruises-react@0.211.0
   - @voyant-travel/storefront-react@0.214.0
   - @voyant-travel/mice-react@0.80.0
-  - @voyant-travel/proposals-react@0.210.0
+  - @voyant-travel/quotes-react@0.210.0
   - @voyant-travel/bookings@0.212.0
   - @voyant-travel/finance@0.212.0
   - @voyant-travel/identity@0.212.0
   - @voyant-travel/legal@0.212.0
   - @voyant-travel/storefront@0.214.0
   - @voyant-travel/mice@0.68.0
-  - @voyant-travel/proposals@0.135.2
+  - @voyant-travel/quotes@0.135.2
   - @voyant-travel/notifications@0.141.3
   - @voyant-travel/relationships@0.132.8
   - @voyant-travel/operator-settings@0.15.7
@@ -1268,14 +1268,14 @@
   - @voyant-travel/cruises-react@0.210.0
   - @voyant-travel/storefront-react@0.213.0
   - @voyant-travel/mice-react@0.79.0
-  - @voyant-travel/proposals-react@0.209.0
+  - @voyant-travel/quotes-react@0.209.0
   - @voyant-travel/bookings@0.211.0
   - @voyant-travel/finance@0.211.0
   - @voyant-travel/identity@0.211.0
   - @voyant-travel/legal@0.211.0
   - @voyant-travel/storefront@0.213.0
   - @voyant-travel/mice@0.67.0
-  - @voyant-travel/proposals@0.135.1
+  - @voyant-travel/quotes@0.135.1
   - @voyant-travel/notifications@0.141.2
   - @voyant-travel/relationships@0.132.7
   - @voyant-travel/operator-settings@0.15.6
@@ -1286,10 +1286,10 @@
 ### Patch Changes
 
 - Updated dependencies [d5492ed]
-  - @voyant-travel/proposals@0.135.0
+  - @voyant-travel/quotes@0.135.0
   - @voyant-travel/mice@0.66.0
   - @voyant-travel/notifications@0.141.1
-  - @voyant-travel/proposals-react@0.208.0
+  - @voyant-travel/quotes-react@0.208.0
   - @voyant-travel/accommodations@0.170.0
   - @voyant-travel/mice-react@0.78.0
   - @voyant-travel/bookings-react@0.210.0
@@ -1374,7 +1374,7 @@
   - @voyant-travel/cruises-react@0.208.0
   - @voyant-travel/storefront-react@0.211.0
   - @voyant-travel/mice-react@0.77.0
-  - @voyant-travel/proposals-react@0.207.0
+  - @voyant-travel/quotes-react@0.207.0
   - @voyant-travel/bookings@0.209.0
   - @voyant-travel/catalog@0.207.0
   - @voyant-travel/charters@0.207.0
@@ -1389,7 +1389,7 @@
   - @voyant-travel/commerce@0.44.7
   - @voyant-travel/relationships@0.132.5
   - @voyant-travel/operator-settings@0.15.4
-  - @voyant-travel/proposals@0.134.8
+  - @voyant-travel/quotes@0.134.8
   - @voyant-travel/notifications-react@0.140.1
 
 ## 0.15.17
@@ -1424,7 +1424,7 @@
   - @voyant-travel/notifications-react@0.140.0
   - @voyant-travel/operations-react@0.89.0
   - @voyant-travel/operator-settings-react@0.63.0
-  - @voyant-travel/proposals-react@0.206.0
+  - @voyant-travel/quotes-react@0.206.0
   - @voyant-travel/relationships-react@0.208.0
   - @voyant-travel/reporting-react@0.6.0
   - @voyant-travel/storefront-react@0.210.0
@@ -1452,7 +1452,7 @@
   - @voyant-travel/mice@0.64.0
   - @voyant-travel/relationships@0.132.4
   - @voyant-travel/operator-settings@0.15.3
-  - @voyant-travel/proposals@0.134.7
+  - @voyant-travel/quotes@0.134.7
 
 ## 0.15.16
 
@@ -1620,7 +1620,7 @@
   - @voyant-travel/finance@0.207.1
   - @voyant-travel/identity@0.207.1
   - @voyant-travel/legal@0.207.1
-  - @voyant-travel/proposals@0.134.6
+  - @voyant-travel/quotes@0.134.6
   - @voyant-travel/relationships@0.132.3
   - @voyant-travel/storefront@0.209.1
   - @voyant-travel/trips@0.199.1
@@ -1708,7 +1708,7 @@
   - @voyant-travel/storefront-react@0.209.0
   - @voyant-travel/admin-host@0.57.0
   - @voyant-travel/cruises-react@0.206.0
-  - @voyant-travel/proposals-react@0.205.0
+  - @voyant-travel/quotes-react@0.205.0
   - @voyant-travel/charters@0.205.0
   - @voyant-travel/cruises@0.206.0
   - @voyant-travel/flights@0.207.0
@@ -1716,7 +1716,7 @@
   - @voyant-travel/notifications-react@0.139.5
   - @voyant-travel/operations@0.9.2
   - @voyant-travel/operator-settings@0.15.1
-  - @voyant-travel/proposals@0.134.5
+  - @voyant-travel/quotes@0.134.5
 
 ## 0.14.1
 
@@ -1732,7 +1732,7 @@
   - @voyant-travel/trips@0.198.0
   - @voyant-travel/finance@0.206.0
   - @voyant-travel/inventory@0.21.1
-  - @voyant-travel/proposals@0.134.4
+  - @voyant-travel/quotes@0.134.4
   - @voyant-travel/notifications@0.139.4
   - @voyant-travel/storefront-react@0.208.0
   - @voyant-travel/bookings-react@0.206.0
@@ -1751,7 +1751,7 @@
   - @voyant-travel/flights-react@0.206.0
   - @voyant-travel/relationships-react@0.206.0
   - @voyant-travel/mice-react@0.74.0
-  - @voyant-travel/proposals-react@0.204.0
+  - @voyant-travel/quotes-react@0.204.0
   - @voyant-travel/bookings@0.206.0
   - @voyant-travel/catalog@0.204.0
   - @voyant-travel/charters@0.204.0
@@ -1809,7 +1809,7 @@
   - @voyant-travel/storefront@0.207.0
   - @voyant-travel/notifications@0.139.3
   - @voyant-travel/bookings-react@0.205.0
-  - @voyant-travel/proposals@0.134.3
+  - @voyant-travel/quotes@0.134.3
   - @voyant-travel/relationships-react@0.205.0
   - @voyant-travel/inventory-react@0.87.0
   - @voyant-travel/trips@0.197.0
@@ -1827,7 +1827,7 @@
   - @voyant-travel/action-ledger-react@0.94.0
   - @voyant-travel/distribution-react@0.195.0
   - @voyant-travel/identity-react@0.205.0
-  - @voyant-travel/proposals-react@0.203.0
+  - @voyant-travel/quotes-react@0.203.0
   - @voyant-travel/catalog-react@0.203.0
   - @voyant-travel/commerce-react@0.87.0
   - @voyant-travel/admin-host@0.55.0
@@ -1863,7 +1863,7 @@
   - @voyant-travel/flights-react@0.204.0
   - @voyant-travel/relationships-react@0.204.0
   - @voyant-travel/mice-react@0.72.0
-  - @voyant-travel/proposals-react@0.202.0
+  - @voyant-travel/quotes-react@0.202.0
   - @voyant-travel/bookings@0.204.0
   - @voyant-travel/catalog@0.202.0
   - @voyant-travel/charters@0.202.0
@@ -1883,7 +1883,7 @@
   - @voyant-travel/relationships@0.131.7
   - @voyant-travel/operations@0.8.47
   - @voyant-travel/operator-settings@0.14.25
-  - @voyant-travel/proposals@0.134.2
+  - @voyant-travel/quotes@0.134.2
   - @voyant-travel/notifications-react@0.139.2
 
 ## 0.13.4
@@ -1923,7 +1923,7 @@
   - @voyant-travel/action-ledger-react@0.92.0
   - @voyant-travel/identity@0.203.0
   - @voyant-travel/mice@0.59.0
-  - @voyant-travel/proposals@0.134.1
+  - @voyant-travel/quotes@0.134.1
   - @voyant-travel/relationships@0.131.6
   - @voyant-travel/distribution-react@0.193.0
   - @voyant-travel/identity-react@0.203.0
@@ -1937,7 +1937,7 @@
   - @voyant-travel/mice-react@0.71.0
   - @voyant-travel/relationships-react@0.203.0
   - @voyant-travel/admin-host@0.53.0
-  - @voyant-travel/proposals-react@0.201.0
+  - @voyant-travel/quotes-react@0.201.0
   - @voyant-travel/auth-react@0.143.6
   - @voyant-travel/notifications-react@0.139.1
   - @voyant-travel/navigation-preferences-react@0.16.6
@@ -1963,8 +1963,8 @@
 
 - Updated dependencies [3201e48]
 - Updated dependencies [3201e48]
-  - @voyant-travel/proposals@0.134.0
-  - @voyant-travel/proposals-react@0.200.0
+  - @voyant-travel/quotes@0.134.0
+  - @voyant-travel/quotes-react@0.200.0
   - @voyant-travel/notifications@0.139.0
   - @voyant-travel/trips@0.194.0
   - @voyant-travel/mice@0.58.0
@@ -2027,7 +2027,7 @@
   - @voyant-travel/inventory@0.19.5
   - @voyant-travel/legal@0.201.1
   - @voyant-travel/mice@0.57.1
-  - @voyant-travel/proposals@0.133.1
+  - @voyant-travel/quotes@0.133.1
   - @voyant-travel/relationships@0.131.4
   - @voyant-travel/setup@0.5.4
   - @voyant-travel/storefront@0.203.1
@@ -2057,11 +2057,11 @@
 
 - Updated dependencies [5e03ae7]
   - @voyant-travel/notifications@0.138.0
-  - @voyant-travel/proposals@0.133.0
+  - @voyant-travel/quotes@0.133.0
   - @voyant-travel/finance@0.201.0
   - @voyant-travel/notifications-react@0.138.0
   - @voyant-travel/mice@0.57.0
-  - @voyant-travel/proposals-react@0.199.0
+  - @voyant-travel/quotes-react@0.199.0
   - @voyant-travel/accommodations@0.161.0
   - @voyant-travel/bookings-react@0.201.0
   - @voyant-travel/catalog@0.199.0
@@ -2169,7 +2169,7 @@
   - @voyant-travel/navigation-preferences@0.16.4
   - @voyant-travel/payments@0.6.5
   - @voyant-travel/public-document-delivery@0.4.16
-  - @voyant-travel/proposals@0.132.4
+  - @voyant-travel/quotes@0.132.4
   - @voyant-travel/relationships@0.131.2
   - @voyant-travel/reporting@0.3.8
   - @voyant-travel/reporting-contracts@0.3.6
@@ -2178,7 +2178,7 @@
   - @voyant-travel/finance-contracts@0.107.3
   - @voyant-travel/inventory-react@0.82.0
   - @voyant-travel/mice-react@0.68.0
-  - @voyant-travel/proposals-react@0.198.0
+  - @voyant-travel/quotes-react@0.198.0
   - @voyant-travel/relationships-react@0.200.0
   - @voyant-travel/runtime-core@0.6.7
   - @voyant-travel/ui@0.109.6
@@ -2230,7 +2230,7 @@
   - @voyant-travel/operator-settings@0.14.19
   - @voyant-travel/payments@0.6.4
   - @voyant-travel/public-document-delivery@0.4.15
-  - @voyant-travel/proposals@0.132.3
+  - @voyant-travel/quotes@0.132.3
   - @voyant-travel/realtime@0.6.14
   - @voyant-travel/relationships@0.131.1
   - @voyant-travel/reporting@0.3.7
@@ -2258,7 +2258,7 @@
   - @voyant-travel/cruises-react@0.198.0
   - @voyant-travel/storefront-react@0.201.0
   - @voyant-travel/mice-react@0.67.0
-  - @voyant-travel/proposals-react@0.197.0
+  - @voyant-travel/quotes-react@0.197.0
   - @voyant-travel/auth-react@0.143.3
   - @voyant-travel/notifications-react@0.136.2
   - @voyant-travel/navigation-preferences-react@0.16.3
@@ -2306,7 +2306,7 @@
   - @voyant-travel/bookings-react@0.198.1
   - @voyant-travel/finance-react@0.198.1
   - @voyant-travel/relationships-react@0.198.1
-  - @voyant-travel/proposals-react@0.196.1
+  - @voyant-travel/quotes-react@0.196.1
   - @voyant-travel/legal-react@0.198.1
   - @voyant-travel/storefront-react@0.200.1
   - @voyant-travel/auth-react@0.143.2
@@ -2365,7 +2365,7 @@
   - @voyant-travel/inventory@0.19.0
   - @voyant-travel/legal@0.198.0
   - @voyant-travel/mice@0.54.0
-  - @voyant-travel/proposals@0.132.2
+  - @voyant-travel/quotes@0.132.2
   - @voyant-travel/relationships-react@0.198.0
   - @voyant-travel/storefront@0.200.0
   - @voyant-travel/bookings-react@0.198.0
@@ -2380,7 +2380,7 @@
   - @voyant-travel/distribution-react@0.188.0
   - @voyant-travel/flights-react@0.198.0
   - @voyant-travel/identity-react@0.198.0
-  - @voyant-travel/proposals-react@0.196.0
+  - @voyant-travel/quotes-react@0.196.0
   - @voyant-travel/trips-react@0.190.0
   - @voyant-travel/storefront-react@0.200.0
   - @voyant-travel/finance-react@0.198.0
@@ -2431,7 +2431,7 @@
   - @voyant-travel/inventory@0.18.0
   - @voyant-travel/mice@0.53.0
   - @voyant-travel/notifications@0.135.1
-  - @voyant-travel/proposals@0.132.1
+  - @voyant-travel/quotes@0.132.1
   - @voyant-travel/trips@0.189.0
   - @voyant-travel/apps@0.12.9
   - @voyant-travel/auth@0.143.1
@@ -2472,7 +2472,7 @@
   - @voyant-travel/operations-react@0.78.0
   - @voyant-travel/trips-react@0.189.0
   - @voyant-travel/flights-react@0.197.0
-  - @voyant-travel/proposals-react@0.195.0
+  - @voyant-travel/quotes-react@0.195.0
   - @voyant-travel/admin-host@0.47.0
   - @voyant-travel/operator-settings-react@0.52.0
   - @voyant-travel/auth-react@0.143.1
@@ -2503,7 +2503,7 @@
   - @voyant-travel/charters@0.194.0
   - @voyant-travel/cruises@0.195.0
   - @voyant-travel/relationships@0.129.0
-  - @voyant-travel/proposals@0.132.0
+  - @voyant-travel/quotes@0.132.0
   - @voyant-travel/storefront@0.198.0
   - @voyant-travel/action-ledger@0.112.0
   - @voyant-travel/auth@0.143.0
@@ -2529,7 +2529,7 @@
   - @voyant-travel/operator-settings@0.14.16
   - @voyant-travel/cruises-react@0.195.0
   - @voyant-travel/relationships-react@0.196.0
-  - @voyant-travel/proposals-react@0.194.0
+  - @voyant-travel/quotes-react@0.194.0
   - @voyant-travel/action-ledger-react@0.84.0
   - @voyant-travel/auth-react@0.143.0
   - @voyant-travel/operations@0.8.38
@@ -2625,13 +2625,13 @@
   - @voyant-travel/storefront-react@0.197.0
   - @voyant-travel/admin-host@0.45.0
   - @voyant-travel/cruises-react@0.194.0
-  - @voyant-travel/proposals-react@0.193.0
+  - @voyant-travel/quotes-react@0.193.0
   - @voyant-travel/flights@0.195.0
   - @voyant-travel/identity@0.195.0
   - @voyant-travel/notifications-react@0.134.2
   - @voyant-travel/operations@0.8.37
   - @voyant-travel/operator-settings@0.14.15
-  - @voyant-travel/proposals@0.131.40
+  - @voyant-travel/quotes@0.131.40
 
 ## 0.11.10
 
@@ -2686,14 +2686,14 @@
   - @voyant-travel/cruises-react@0.193.0
   - @voyant-travel/storefront-react@0.196.0
   - @voyant-travel/mice-react@0.62.0
-  - @voyant-travel/proposals-react@0.192.0
+  - @voyant-travel/quotes-react@0.192.0
   - @voyant-travel/bookings@0.194.0
   - @voyant-travel/finance@0.194.0
   - @voyant-travel/identity@0.194.0
   - @voyant-travel/legal@0.194.0
   - @voyant-travel/storefront@0.196.0
   - @voyant-travel/mice@0.50.0
-  - @voyant-travel/proposals@0.131.39
+  - @voyant-travel/quotes@0.131.39
   - @voyant-travel/notifications@0.134.1
   - @voyant-travel/relationships@0.128.35
   - @voyant-travel/operator-settings@0.14.14
@@ -2746,7 +2746,7 @@
   - @voyant-travel/notifications-react@0.134.0
   - @voyant-travel/operations-react@0.74.0
   - @voyant-travel/operator-settings-react@0.47.0
-  - @voyant-travel/proposals-react@0.191.0
+  - @voyant-travel/quotes-react@0.191.0
   - @voyant-travel/relationships-react@0.193.0
   - @voyant-travel/reporting-react@0.5.0
   - @voyant-travel/setup-react@0.8.0
@@ -2766,7 +2766,7 @@
   - @voyant-travel/navigation-preferences@0.15.0
   - @voyant-travel/commerce@0.40.4
   - @voyant-travel/operations@0.8.35
-  - @voyant-travel/proposals@0.131.38
+  - @voyant-travel/quotes@0.131.38
   - @voyant-travel/mice@0.49.0
   - @voyant-travel/relationships@0.128.34
   - @voyant-travel/operator-settings@0.14.13
@@ -2816,7 +2816,7 @@
   - @voyant-travel/operator-settings@0.14.12
   - @voyant-travel/payments@0.6.1
   - @voyant-travel/public-document-delivery@0.4.12
-  - @voyant-travel/proposals@0.131.37
+  - @voyant-travel/quotes@0.131.37
   - @voyant-travel/realtime@0.6.11
   - @voyant-travel/relationships@0.128.33
   - @voyant-travel/reporting@0.3.4
@@ -2870,7 +2870,7 @@
   - @voyant-travel/relationships-react@0.192.0
   - @voyant-travel/admin-host@0.42.0
   - @voyant-travel/mice-react@0.60.0
-  - @voyant-travel/proposals-react@0.190.0
+  - @voyant-travel/quotes-react@0.190.0
   - @voyant-travel/bookings@0.192.0
   - @voyant-travel/catalog@0.190.0
   - @voyant-travel/charters@0.190.0
@@ -2883,7 +2883,7 @@
   - @voyant-travel/accommodations@0.152.0
   - @voyant-travel/commerce@0.40.2
   - @voyant-travel/inventory@0.15.2
-  - @voyant-travel/proposals@0.131.36
+  - @voyant-travel/quotes@0.131.36
   - @voyant-travel/mice@0.48.0
   - @voyant-travel/relationships@0.128.32
   - @voyant-travel/operations@0.8.33
@@ -2926,14 +2926,14 @@
   - @voyant-travel/cruises-react@0.190.0
   - @voyant-travel/storefront-react@0.193.0
   - @voyant-travel/mice-react@0.59.0
-  - @voyant-travel/proposals-react@0.189.0
+  - @voyant-travel/quotes-react@0.189.0
   - @voyant-travel/bookings@0.191.0
   - @voyant-travel/charters@0.189.0
   - @voyant-travel/identity@0.191.0
   - @voyant-travel/notifications-react@0.133.1
   - @voyant-travel/operations@0.8.32
   - @voyant-travel/mice@0.47.0
-  - @voyant-travel/proposals@0.131.35
+  - @voyant-travel/quotes@0.131.35
   - @voyant-travel/relationships@0.128.31
 
 ## 0.11.1
@@ -2998,7 +2998,7 @@
   - @voyant-travel/media@0.4.4
   - @voyant-travel/navigation-preferences@0.14.4
   - @voyant-travel/public-document-delivery@0.4.11
-  - @voyant-travel/proposals@0.131.34
+  - @voyant-travel/quotes@0.131.34
   - @voyant-travel/reporting@0.3.3
   - @voyant-travel/setup@0.4.12
   - @voyant-travel/types@0.109.9
@@ -3024,7 +3024,7 @@
   - @voyant-travel/operator-settings-react@0.44.0
   - @voyant-travel/relationships-react@0.190.0
   - @voyant-travel/admin-host@0.40.0
-  - @voyant-travel/proposals-react@0.188.0
+  - @voyant-travel/quotes-react@0.188.0
   - @voyant-travel/auth-react@0.141.4
   - @voyant-travel/navigation-preferences-react@0.14.4
 
@@ -3069,14 +3069,14 @@
   - @voyant-travel/relationships-react@0.189.0
   - @voyant-travel/admin-host@0.39.0
   - @voyant-travel/mice-react@0.57.0
-  - @voyant-travel/proposals-react@0.187.0
+  - @voyant-travel/quotes-react@0.187.0
   - @voyant-travel/bookings@0.189.0
   - @voyant-travel/finance@0.189.0
   - @voyant-travel/identity@0.189.0
   - @voyant-travel/legal@0.189.0
   - @voyant-travel/storefront@0.191.0
   - @voyant-travel/mice@0.45.0
-  - @voyant-travel/proposals@0.131.33
+  - @voyant-travel/quotes@0.131.33
   - @voyant-travel/notifications@0.132.14
   - @voyant-travel/relationships@0.128.29
   - @voyant-travel/operator-settings@0.14.8
@@ -3142,7 +3142,7 @@
   - @voyant-travel/notifications@0.132.13
   - @voyant-travel/operations@0.8.29
   - @voyant-travel/operator-settings@0.14.7
-  - @voyant-travel/proposals@0.131.32
+  - @voyant-travel/quotes@0.131.32
   - @voyant-travel/realtime@0.6.9
   - @voyant-travel/relationships@0.128.28
   - @voyant-travel/reporting@0.3.2
@@ -3154,7 +3154,7 @@
   - @voyant-travel/inventory-react@0.70.0
   - @voyant-travel/legal-react@0.188.0
   - @voyant-travel/mice-react@0.56.0
-  - @voyant-travel/proposals-react@0.186.0
+  - @voyant-travel/quotes-react@0.186.0
   - @voyant-travel/relationships-react@0.188.0
   - @voyant-travel/runtime-core@0.6.6
   - @voyant-travel/ui@0.109.4
@@ -3281,7 +3281,7 @@
   - @voyant-travel/flights-react@0.187.0
   - @voyant-travel/relationships-react@0.187.0
   - @voyant-travel/mice-react@0.55.0
-  - @voyant-travel/proposals-react@0.185.0
+  - @voyant-travel/quotes-react@0.185.0
   - @voyant-travel/bookings@0.187.0
   - @voyant-travel/catalog@0.185.0
   - @voyant-travel/charters@0.185.0
@@ -3301,7 +3301,7 @@
   - @voyant-travel/relationships@0.128.27
   - @voyant-travel/operations@0.8.28
   - @voyant-travel/operator-settings@0.14.6
-  - @voyant-travel/proposals@0.131.31
+  - @voyant-travel/quotes@0.131.31
   - @voyant-travel/notifications-react@0.132.12
 
 ## 0.10.12
@@ -3345,7 +3345,7 @@
 
 - Updated dependencies [b27847f]
   - @voyant-travel/trips@0.178.0
-  - @voyant-travel/proposals@0.131.30
+  - @voyant-travel/quotes@0.131.30
   - @voyant-travel/trips-react@0.178.0
 
 ## 0.10.7
@@ -3387,7 +3387,7 @@
   - @voyant-travel/flights-react@0.186.0
   - @voyant-travel/relationships-react@0.186.0
   - @voyant-travel/mice-react@0.54.0
-  - @voyant-travel/proposals-react@0.184.0
+  - @voyant-travel/quotes-react@0.184.0
   - @voyant-travel/bookings@0.186.0
   - @voyant-travel/catalog@0.184.0
   - @voyant-travel/charters@0.184.0
@@ -3407,7 +3407,7 @@
   - @voyant-travel/relationships@0.128.26
   - @voyant-travel/operations@0.8.27
   - @voyant-travel/operator-settings@0.14.5
-  - @voyant-travel/proposals@0.131.29
+  - @voyant-travel/quotes@0.131.29
   - @voyant-travel/notifications-react@0.132.11
 
 ## 0.10.4
@@ -3434,7 +3434,7 @@
   - @voyant-travel/operator-settings-react@0.39.0
   - @voyant-travel/storefront@0.187.0
   - @voyant-travel/trips-react@0.176.0
-  - @voyant-travel/proposals@0.131.28
+  - @voyant-travel/quotes@0.131.28
   - @voyant-travel/action-ledger-react@0.73.0
   - @voyant-travel/distribution-react@0.175.0
   - @voyant-travel/identity-react@0.185.0
@@ -3448,7 +3448,7 @@
   - @voyant-travel/cruises-react@0.184.0
   - @voyant-travel/storefront-react@0.187.0
   - @voyant-travel/mice-react@0.53.0
-  - @voyant-travel/proposals-react@0.183.0
+  - @voyant-travel/quotes-react@0.183.0
   - @voyant-travel/bookings@0.185.0
   - @voyant-travel/charters@0.183.0
   - @voyant-travel/identity@0.185.0
@@ -3482,7 +3482,7 @@
   - @voyant-travel/flights-react@0.184.0
   - @voyant-travel/relationships-react@0.184.0
   - @voyant-travel/mice-react@0.52.0
-  - @voyant-travel/proposals-react@0.182.0
+  - @voyant-travel/quotes-react@0.182.0
   - @voyant-travel/bookings@0.184.0
   - @voyant-travel/catalog@0.182.0
   - @voyant-travel/charters@0.182.0
@@ -3501,7 +3501,7 @@
   - @voyant-travel/relationships@0.128.24
   - @voyant-travel/operations@0.8.25
   - @voyant-travel/operator-settings@0.14.3
-  - @voyant-travel/proposals@0.131.27
+  - @voyant-travel/quotes@0.131.27
   - @voyant-travel/notifications-react@0.132.9
 
 ## 0.10.2
@@ -3534,7 +3534,7 @@
   - @voyant-travel/relationships-react@0.183.0
   - @voyant-travel/admin-host@0.33.0
   - @voyant-travel/mice-react@0.51.0
-  - @voyant-travel/proposals-react@0.181.0
+  - @voyant-travel/quotes-react@0.181.0
   - @voyant-travel/bookings@0.183.0
   - @voyant-travel/catalog@0.181.0
   - @voyant-travel/charters@0.181.0
@@ -3547,7 +3547,7 @@
   - @voyant-travel/accommodations@0.143.0
   - @voyant-travel/commerce@0.39.19
   - @voyant-travel/inventory@0.14.19
-  - @voyant-travel/proposals@0.131.26
+  - @voyant-travel/quotes@0.131.26
   - @voyant-travel/mice@0.39.0
   - @voyant-travel/relationships@0.128.23
   - @voyant-travel/operations@0.8.24
@@ -3580,7 +3580,7 @@
   - @voyant-travel/navigation-preferences-react@0.14.2
   - @voyant-travel/notifications-react@0.132.7
   - @voyant-travel/operations-react@0.63.1
-  - @voyant-travel/proposals-react@0.180.1
+  - @voyant-travel/quotes-react@0.180.1
   - @voyant-travel/relationships-react@0.182.1
   - @voyant-travel/storefront-react@0.184.2
   - @voyant-travel/trips-react@0.173.3
@@ -3648,7 +3648,7 @@
 - @voyant-travel/notifications@0.132.6
 - @voyant-travel/operations@0.8.23
 - @voyant-travel/operator-settings@0.14.1
-- @voyant-travel/proposals@0.131.25
+- @voyant-travel/quotes@0.131.25
 - @voyant-travel/realtime@0.6.8
 - @voyant-travel/relationships@0.128.22
 - @voyant-travel/reporting@0.3.1
@@ -3683,7 +3683,7 @@
   - @voyant-travel/trips@0.173.1
   - @voyant-travel/inventory@0.14.17
   - @voyant-travel/legal@0.182.2
-  - @voyant-travel/proposals@0.131.24
+  - @voyant-travel/quotes@0.131.24
   - @voyant-travel/finance-react@0.182.2
   - @voyant-travel/legal-react@0.182.2
   - @voyant-travel/trips-react@0.173.1
@@ -3711,7 +3711,7 @@
   - @voyant-travel/storefront@0.184.0
   - @voyant-travel/admin-app@0.74.0
   - @voyant-travel/navigation-preferences-react@0.14.0
-  - @voyant-travel/proposals-react@0.180.0
+  - @voyant-travel/quotes-react@0.180.0
   - @voyant-travel/storefront-react@0.184.0
   - @voyant-travel/admin-host@0.32.0
   - @voyant-travel/operator-settings-react@0.36.0
@@ -3749,7 +3749,7 @@
   - @voyant-travel/relationships@0.128.21
   - @voyant-travel/operations@0.8.22
   - @voyant-travel/operator-settings@0.13.1
-  - @voyant-travel/proposals@0.131.23
+  - @voyant-travel/quotes@0.131.23
   - @voyant-travel/notifications-react@0.132.5
 
 ## 0.9.11
@@ -3760,7 +3760,7 @@
   - @voyant-travel/operator-settings@0.13.0
   - @voyant-travel/inventory@0.14.14
   - @voyant-travel/legal@0.181.1
-  - @voyant-travel/proposals@0.131.22
+  - @voyant-travel/quotes@0.131.22
   - @voyant-travel/trips@0.172.1
   - @voyant-travel/legal-react@0.181.1
   - @voyant-travel/trips-react@0.172.1
@@ -3789,7 +3789,7 @@
   - @voyant-travel/bookings@0.181.0
   - @voyant-travel/inventory@0.14.13
   - @voyant-travel/legal@0.181.0
-  - @voyant-travel/proposals@0.131.21
+  - @voyant-travel/quotes@0.131.21
   - @voyant-travel/trips@0.172.0
   - @voyant-travel/accommodations@0.141.0
   - @voyant-travel/bookings-react@0.181.0
@@ -3817,7 +3817,7 @@
   - @voyant-travel/cruises-react@0.180.0
   - @voyant-travel/storefront-react@0.183.0
   - @voyant-travel/mice-react@0.49.0
-  - @voyant-travel/proposals-react@0.179.0
+  - @voyant-travel/quotes-react@0.179.0
   - @voyant-travel/charters@0.179.0
   - @voyant-travel/identity@0.181.0
   - @voyant-travel/notifications-react@0.132.4
@@ -3837,7 +3837,7 @@
   - @voyant-travel/trips@0.171.1
   - @voyant-travel/inventory@0.14.12
   - @voyant-travel/legal@0.180.1
-  - @voyant-travel/proposals@0.131.20
+  - @voyant-travel/quotes@0.131.20
   - @voyant-travel/action-ledger-react@0.68.1
   - @voyant-travel/admin@0.128.2
   - @voyant-travel/apps-react@0.4.2
@@ -3858,7 +3858,7 @@
   - @voyant-travel/navigation-preferences-react@0.13.2
   - @voyant-travel/notifications-react@0.132.3
   - @voyant-travel/operations-react@0.61.1
-  - @voyant-travel/proposals-react@0.178.1
+  - @voyant-travel/quotes-react@0.178.1
   - @voyant-travel/relationships-react@0.180.1
   - @voyant-travel/storefront-react@0.182.1
   - @voyant-travel/trips-react@0.171.1
@@ -3912,7 +3912,7 @@
   - @voyant-travel/navigation-preferences-react@0.13.1
   - @voyant-travel/notifications-react@0.132.2
   - @voyant-travel/operations-react@0.61.0
-  - @voyant-travel/proposals-react@0.178.0
+  - @voyant-travel/quotes-react@0.178.0
   - @voyant-travel/relationships-react@0.180.0
   - @voyant-travel/trips-react@0.171.0
   - @voyant-travel/admin-app@0.72.0
@@ -3931,7 +3931,7 @@
   - @voyant-travel/workflow-runs@0.122.13
   - @voyant-travel/workflows@0.122.13
   - @voyant-travel/workflows-orchestrator@0.122.13
-  - @voyant-travel/proposals@0.131.19
+  - @voyant-travel/quotes@0.131.19
   - @voyant-travel/accommodations@0.140.0
   - @voyant-travel/commerce@0.39.15
   - @voyant-travel/inventory@0.14.11
@@ -3950,7 +3950,7 @@
   - @voyant-travel/storefront@0.181.0
   - @voyant-travel/admin-app@0.71.0
   - @voyant-travel/navigation-preferences-react@0.13.0
-  - @voyant-travel/proposals-react@0.177.0
+  - @voyant-travel/quotes-react@0.177.0
   - @voyant-travel/storefront-react@0.181.0
   - @voyant-travel/admin-host@0.29.0
   - @voyant-travel/operator-settings-react@0.32.0
@@ -3988,7 +3988,7 @@
   - @voyant-travel/relationships@0.128.18
   - @voyant-travel/operations@0.8.19
   - @voyant-travel/operator-settings@0.10.10
-  - @voyant-travel/proposals@0.131.18
+  - @voyant-travel/quotes@0.131.18
   - @voyant-travel/notifications-react@0.132.1
 
 ## 0.9.5
@@ -4019,7 +4019,7 @@
   - @voyant-travel/notifications-react@0.132.0
   - @voyant-travel/operations-react@0.59.0
   - @voyant-travel/operator-settings-react@0.31.0
-  - @voyant-travel/proposals-react@0.176.0
+  - @voyant-travel/quotes-react@0.176.0
   - @voyant-travel/relationships-react@0.178.0
   - @voyant-travel/reporting-react@0.3.0
   - @voyant-travel/setup-react@0.7.0
@@ -4052,7 +4052,7 @@
   - @voyant-travel/relationships@0.128.17
   - @voyant-travel/operations@0.8.18
   - @voyant-travel/operator-settings@0.10.9
-  - @voyant-travel/proposals@0.131.17
+  - @voyant-travel/quotes@0.131.17
 
 ## 0.9.4
 
@@ -4084,7 +4084,7 @@
   - @voyant-travel/operations@0.8.17
   - @voyant-travel/operator-settings@0.10.8
   - @voyant-travel/public-document-delivery@0.4.8
-  - @voyant-travel/proposals@0.131.16
+  - @voyant-travel/quotes@0.131.16
   - @voyant-travel/relationships@0.128.16
   - @voyant-travel/reporting@0.2.3
   - @voyant-travel/setup@0.4.9
@@ -4095,7 +4095,7 @@
   - @voyant-travel/auth-react@0.138.0
   - @voyant-travel/admin-app@0.69.0
   - @voyant-travel/navigation-preferences-react@0.11.0
-  - @voyant-travel/proposals-react@0.175.0
+  - @voyant-travel/quotes-react@0.175.0
   - @voyant-travel/storefront-react@0.179.0
   - @voyant-travel/admin-host@0.27.0
   - @voyant-travel/operator-settings-react@0.30.0
@@ -4141,7 +4141,7 @@
   - @voyant-travel/storefront-react@0.178.0
   - @voyant-travel/admin-app@0.68.0
   - @voyant-travel/navigation-preferences-react@0.10.0
-  - @voyant-travel/proposals-react@0.174.0
+  - @voyant-travel/quotes-react@0.174.0
   - @voyant-travel/accommodations@0.136.0
   - @voyant-travel/action-ledger@0.111.8
   - @voyant-travel/apps@0.10.3
@@ -4165,7 +4165,7 @@
   - @voyant-travel/operations@0.8.16
   - @voyant-travel/operator-settings@0.10.7
   - @voyant-travel/public-document-delivery@0.4.7
-  - @voyant-travel/proposals@0.131.15
+  - @voyant-travel/quotes@0.131.15
   - @voyant-travel/relationships@0.128.15
   - @voyant-travel/reporting@0.2.2
   - @voyant-travel/setup@0.4.8
@@ -4235,7 +4235,7 @@
   - @voyant-travel/operations@0.8.15
   - @voyant-travel/operator-settings@0.10.6
   - @voyant-travel/public-document-delivery@0.4.6
-  - @voyant-travel/proposals@0.131.14
+  - @voyant-travel/quotes@0.131.14
   - @voyant-travel/realtime@0.6.7
   - @voyant-travel/reporting@0.2.1
   - @voyant-travel/reporting-contracts@0.2.1
@@ -4247,7 +4247,7 @@
   - @voyant-travel/inventory-react@0.57.0
   - @voyant-travel/admin-app@0.67.0
   - @voyant-travel/navigation-preferences-react@0.9.0
-  - @voyant-travel/proposals-react@0.173.0
+  - @voyant-travel/quotes-react@0.173.0
   - @voyant-travel/action-ledger-react@0.63.0
   - @voyant-travel/distribution-react@0.165.0
   - @voyant-travel/finance-react@0.175.0
@@ -4313,7 +4313,7 @@
   - @voyant-travel/operations@0.8.14
   - @voyant-travel/operator-settings@0.10.5
   - @voyant-travel/public-document-delivery@0.4.5
-  - @voyant-travel/proposals@0.131.13
+  - @voyant-travel/quotes@0.131.13
   - @voyant-travel/realtime@0.6.6
   - @voyant-travel/relationships@0.128.13
   - @voyant-travel/setup@0.4.6
@@ -4340,7 +4340,7 @@
   - @voyant-travel/relationships-react@0.174.0
   - @voyant-travel/admin-host@0.24.0
   - @voyant-travel/cruises-react@0.173.0
-  - @voyant-travel/proposals-react@0.172.0
+  - @voyant-travel/quotes-react@0.172.0
   - @voyant-travel/auth-react@0.135.1
   - @voyant-travel/notifications-react@0.131.7
   - @voyant-travel/navigation-preferences-react@0.8.1
@@ -4364,7 +4364,7 @@
   - @voyant-travel/auth-react@0.135.0
   - @voyant-travel/admin-app@0.65.0
   - @voyant-travel/navigation-preferences-react@0.8.0
-  - @voyant-travel/proposals-react@0.171.0
+  - @voyant-travel/quotes-react@0.171.0
   - @voyant-travel/storefront-react@0.175.0
   - @voyant-travel/admin-host@0.23.0
   - @voyant-travel/operator-settings-react@0.26.0
@@ -4403,7 +4403,7 @@
   - @voyant-travel/relationships@0.128.12
   - @voyant-travel/operations@0.8.13
   - @voyant-travel/operator-settings@0.10.4
-  - @voyant-travel/proposals@0.131.12
+  - @voyant-travel/quotes@0.131.12
   - @voyant-travel/notifications-react@0.131.6
 
 ## 0.8.1
@@ -4458,7 +4458,7 @@
   - @voyant-travel/operations@0.8.12
   - @voyant-travel/operator-settings@0.10.3
   - @voyant-travel/public-document-delivery@0.4.4
-  - @voyant-travel/proposals@0.131.11
+  - @voyant-travel/quotes@0.131.11
   - @voyant-travel/realtime@0.6.5
   - @voyant-travel/setup@0.4.5
   - @voyant-travel/storage@0.111.4
@@ -4472,7 +4472,7 @@
   - @voyant-travel/commerce-react@0.54.0
   - @voyant-travel/legal-react@0.172.0
   - @voyant-travel/mice-react@0.40.0
-  - @voyant-travel/proposals-react@0.170.0
+  - @voyant-travel/quotes-react@0.170.0
   - @voyant-travel/relationships-react@0.172.0
   - @voyant-travel/runtime-core@0.6.4
   - @voyant-travel/ui@0.109.3
@@ -4538,7 +4538,7 @@
   - @voyant-travel/notifications@0.131.4
   - @voyant-travel/operations@0.8.11
   - @voyant-travel/operator-settings@0.10.2
-  - @voyant-travel/proposals@0.131.10
+  - @voyant-travel/quotes@0.131.10
   - @voyant-travel/realtime@0.6.4
   - @voyant-travel/relationships@0.128.10
   - @voyant-travel/setup@0.4.4
@@ -4600,14 +4600,14 @@
   - @voyant-travel/cruises-react@0.170.0
   - @voyant-travel/storefront-react@0.173.0
   - @voyant-travel/mice-react@0.39.0
-  - @voyant-travel/proposals-react@0.169.0
+  - @voyant-travel/quotes-react@0.169.0
   - @voyant-travel/bookings@0.171.0
   - @voyant-travel/charters@0.169.0
   - @voyant-travel/identity@0.171.0
   - @voyant-travel/notifications-react@0.131.3
   - @voyant-travel/operations@0.8.10
   - @voyant-travel/mice@0.27.0
-  - @voyant-travel/proposals@0.131.9
+  - @voyant-travel/quotes@0.131.9
   - @voyant-travel/relationships@0.128.9
 
 ## 0.7.8
@@ -4648,7 +4648,7 @@
   - @voyant-travel/notifications@0.131.2
   - @voyant-travel/operations@0.8.9
   - @voyant-travel/public-document-delivery@0.4.3
-  - @voyant-travel/proposals@0.131.8
+  - @voyant-travel/quotes@0.131.8
   - @voyant-travel/realtime@0.6.3
   - @voyant-travel/relationships@0.128.8
   - @voyant-travel/setup@0.4.3
@@ -4672,7 +4672,7 @@
   - @voyant-travel/relationships-react@0.170.0
   - @voyant-travel/admin-host@0.20.0
   - @voyant-travel/mice-react@0.38.0
-  - @voyant-travel/proposals-react@0.168.0
+  - @voyant-travel/quotes-react@0.168.0
   - @voyant-travel/auth-react@0.133.3
   - @voyant-travel/notifications-react@0.131.2
   - @voyant-travel/navigation-preferences-react@0.6.2
@@ -4728,7 +4728,7 @@
   - @voyant-travel/operations@0.8.8
   - @voyant-travel/operator-settings@0.9.2
   - @voyant-travel/public-document-delivery@0.4.2
-  - @voyant-travel/proposals@0.131.7
+  - @voyant-travel/quotes@0.131.7
   - @voyant-travel/realtime@0.6.2
   - @voyant-travel/relationships@0.128.7
   - @voyant-travel/setup@0.4.2
@@ -4820,7 +4820,7 @@
   - @voyant-travel/notifications-react@0.131.0
   - @voyant-travel/operations-react@0.50.0
   - @voyant-travel/operator-settings-react@0.22.0
-  - @voyant-travel/proposals-react@0.167.0
+  - @voyant-travel/quotes-react@0.167.0
   - @voyant-travel/relationships-react@0.169.0
   - @voyant-travel/setup-react@0.6.0
   - @voyant-travel/storefront-react@0.171.0
@@ -4844,7 +4844,7 @@
   - @voyant-travel/operator-settings@0.9.1
   - @voyant-travel/mice@0.25.0
   - @voyant-travel/relationships@0.128.6
-  - @voyant-travel/proposals@0.131.6
+  - @voyant-travel/quotes@0.131.6
 
 ## 0.7.1
 
@@ -4911,7 +4911,7 @@
   - @voyant-travel/trips@0.159.0
   - @voyant-travel/trips-react@0.159.0
   - @voyant-travel/admin-app@0.60.0
-  - @voyant-travel/proposals@0.131.5
+  - @voyant-travel/quotes@0.131.5
   - @voyant-travel/action-ledger-react@0.56.0
   - @voyant-travel/distribution-react@0.158.0
   - @voyant-travel/identity-react@0.168.0
@@ -4924,7 +4924,7 @@
   - @voyant-travel/cruises-react@0.167.0
   - @voyant-travel/storefront-react@0.170.0
   - @voyant-travel/mice-react@0.36.0
-  - @voyant-travel/proposals-react@0.166.0
+  - @voyant-travel/quotes-react@0.166.0
   - @voyant-travel/bookings@0.168.0
   - @voyant-travel/charters@0.166.0
   - @voyant-travel/identity@0.168.0
@@ -4966,7 +4966,7 @@
   - @voyant-travel/notifications@0.130.7
   - @voyant-travel/operator-settings-react@0.20.0
   - @voyant-travel/trips-react@0.158.0
-  - @voyant-travel/proposals@0.131.4
+  - @voyant-travel/quotes@0.131.4
   - @voyant-travel/admin-app@0.59.0
   - @voyant-travel/catalog-react@0.165.0
   - @voyant-travel/legal-react@0.167.0
@@ -4979,7 +4979,7 @@
   - @voyant-travel/storefront-react@0.169.0
   - @voyant-travel/relationships-react@0.167.0
   - @voyant-travel/mice-react@0.35.0
-  - @voyant-travel/proposals-react@0.165.0
+  - @voyant-travel/quotes-react@0.165.0
   - @voyant-travel/bookings@0.167.0
   - @voyant-travel/charters@0.165.0
   - @voyant-travel/identity@0.167.0
@@ -5021,7 +5021,7 @@
   - @voyant-travel/inventory-react@0.48.0
   - @voyant-travel/notifications@0.130.6
   - @voyant-travel/operator-settings-react@0.19.0
-  - @voyant-travel/proposals@0.131.3
+  - @voyant-travel/quotes@0.131.3
   - @voyant-travel/admin-host@0.16.0
   - @voyant-travel/action-ledger-react@0.54.0
   - @voyant-travel/auth-react@0.132.5
@@ -5036,7 +5036,7 @@
   - @voyant-travel/navigation-preferences-react@0.5.3
   - @voyant-travel/notifications-react@0.130.6
   - @voyant-travel/operations-react@0.47.0
-  - @voyant-travel/proposals-react@0.164.0
+  - @voyant-travel/quotes-react@0.164.0
   - @voyant-travel/relationships-react@0.166.0
   - @voyant-travel/storefront-react@0.168.0
   - @voyant-travel/admin-react@0.126.2
@@ -5076,7 +5076,7 @@
   - @voyant-travel/storefront@0.167.0
   - @voyant-travel/trips@0.156.0
   - @voyant-travel/trips-react@0.156.0
-  - @voyant-travel/proposals@0.131.2
+  - @voyant-travel/quotes@0.131.2
   - @voyant-travel/action-ledger-react@0.53.0
   - @voyant-travel/distribution-react@0.155.0
   - @voyant-travel/identity-react@0.165.0
@@ -5090,7 +5090,7 @@
   - @voyant-travel/cruises-react@0.164.0
   - @voyant-travel/storefront-react@0.167.0
   - @voyant-travel/mice-react@0.33.0
-  - @voyant-travel/proposals-react@0.163.0
+  - @voyant-travel/quotes-react@0.163.0
   - @voyant-travel/bookings@0.165.0
   - @voyant-travel/charters@0.163.0
   - @voyant-travel/identity@0.165.0
@@ -5182,14 +5182,14 @@
   - @voyant-travel/cruises-react@0.163.0
   - @voyant-travel/storefront-react@0.166.0
   - @voyant-travel/mice-react@0.32.0
-  - @voyant-travel/proposals-react@0.162.0
+  - @voyant-travel/quotes-react@0.162.0
   - @voyant-travel/bookings@0.164.0
   - @voyant-travel/finance@0.164.0
   - @voyant-travel/identity@0.164.0
   - @voyant-travel/legal@0.164.0
   - @voyant-travel/storefront@0.166.0
   - @voyant-travel/mice@0.20.0
-  - @voyant-travel/proposals@0.131.1
+  - @voyant-travel/quotes@0.131.1
   - @voyant-travel/notifications@0.130.4
   - @voyant-travel/relationships@0.128.1
   - @voyant-travel/operator-settings@0.5.2
@@ -5219,7 +5219,7 @@
   - @voyant-travel/relationships-react@0.163.0
   - @voyant-travel/custom-fields@0.2.0
   - @voyant-travel/custom-fields-react@0.2.0
-  - @voyant-travel/proposals@0.131.0
+  - @voyant-travel/quotes@0.131.0
   - @voyant-travel/framework-migrations@0.10.0
   - @voyant-travel/accommodations@0.123.0
   - @voyant-travel/bookings-react@0.163.0
@@ -5258,7 +5258,7 @@
   - @voyant-travel/identity-react@0.163.0
   - @voyant-travel/legal-react@0.163.0
   - @voyant-travel/mice-react@0.31.0
-  - @voyant-travel/proposals-react@0.161.0
+  - @voyant-travel/quotes-react@0.161.0
   - @voyant-travel/trips-react@0.154.0
   - @voyant-travel/finance-react@0.163.0
   - @voyant-travel/operations-react@0.44.0
@@ -5307,7 +5307,7 @@
   - @voyant-travel/navigation-preferences-react@0.5.1
   - @voyant-travel/notifications-react@0.130.2
   - @voyant-travel/operations-react@0.43.1
-  - @voyant-travel/proposals-react@0.160.1
+  - @voyant-travel/quotes-react@0.160.1
   - @voyant-travel/relationships-react@0.162.1
   - @voyant-travel/admin-react@0.126.1
   - @voyant-travel/auth@0.132.2
@@ -5339,7 +5339,7 @@
   - @voyant-travel/inventory@0.12.1
   - @voyant-travel/legal@0.162.1
   - @voyant-travel/notifications@0.130.1
-  - @voyant-travel/proposals@0.130.1
+  - @voyant-travel/quotes@0.130.1
   - @voyant-travel/relationships@0.127.1
   - @voyant-travel/bookings-react@0.162.1
   - @voyant-travel/finance-react@0.162.1
@@ -5371,7 +5371,7 @@
   - @voyant-travel/operations@0.8.0
   - @voyant-travel/operator-settings@0.5.0
   - @voyant-travel/public-document-delivery@0.4.0
-  - @voyant-travel/proposals@0.130.0
+  - @voyant-travel/quotes@0.130.0
   - @voyant-travel/realtime@0.6.0
   - @voyant-travel/relationships@0.127.0
   - @voyant-travel/setup@0.4.0
@@ -5399,7 +5399,7 @@
   - @voyant-travel/navigation-preferences-react@0.5.0
   - @voyant-travel/notifications-react@0.130.0
   - @voyant-travel/operations-react@0.43.0
-  - @voyant-travel/proposals-react@0.160.0
+  - @voyant-travel/quotes-react@0.160.0
   - @voyant-travel/relationships-react@0.162.0
   - @voyant-travel/setup-react@0.5.0
   - @voyant-travel/admin-app@0.54.0
@@ -5438,7 +5438,7 @@
   - @voyant-travel/notifications-react@0.129.0
   - @voyant-travel/operations-react@0.42.0
   - @voyant-travel/operator-settings-react@0.14.0
-  - @voyant-travel/proposals-react@0.159.0
+  - @voyant-travel/quotes-react@0.159.0
   - @voyant-travel/relationships-react@0.161.0
   - @voyant-travel/setup-react@0.4.0
   - @voyant-travel/storefront-react@0.163.0
@@ -5466,7 +5466,7 @@
   - @voyant-travel/mice@0.17.0
   - @voyant-travel/relationships@0.126.1
   - @voyant-travel/operations@0.7.1
-  - @voyant-travel/proposals@0.129.1
+  - @voyant-travel/quotes@0.129.1
 
 ## 0.6.1
 
@@ -5523,7 +5523,7 @@
   - @voyant-travel/catalog@0.158.0
   - @voyant-travel/commerce@0.36.0
   - @voyant-travel/operations@0.7.0
-  - @voyant-travel/proposals@0.129.0
+  - @voyant-travel/quotes@0.129.0
   - @voyant-travel/inventory@0.11.0
   - @voyant-travel/distribution@0.150.0
   - @voyant-travel/flights@0.160.0
@@ -5557,7 +5557,7 @@
   - @voyant-travel/auth-react@0.131.0
   - @voyant-travel/commerce-react@0.42.0
   - @voyant-travel/operations-react@0.41.0
-  - @voyant-travel/proposals-react@0.158.0
+  - @voyant-travel/quotes-react@0.158.0
   - @voyant-travel/distribution-react@0.150.0
   - @voyant-travel/identity-react@0.160.0
   - @voyant-travel/legal-react@0.160.0
@@ -5639,7 +5639,7 @@
   - @voyant-travel/mice-react@0.27.0
   - @voyant-travel/notifications-react@0.128.0
   - @voyant-travel/operations-react@0.40.0
-  - @voyant-travel/proposals-react@0.157.0
+  - @voyant-travel/quotes-react@0.157.0
   - @voyant-travel/trips-react@0.150.0
   - @voyant-travel/catalog-react@0.157.0
   - @voyant-travel/identity-react@0.159.0
@@ -5661,7 +5661,7 @@
   - @voyant-travel/notifications@0.128.0
   - @voyant-travel/operator-settings@0.3.14
   - @voyant-travel/public-document-delivery@0.3.6
-  - @voyant-travel/proposals@0.128.8
+  - @voyant-travel/quotes@0.128.8
   - @voyant-travel/realtime@0.5.1
   - @voyant-travel/relationships@0.125.4
   - @voyant-travel/storage@0.110.1
@@ -5696,7 +5696,7 @@
   - @voyant-travel/distribution-react@0.148.0
   - @voyant-travel/finance-react@0.158.0
   - @voyant-travel/realtime@0.5.0
-  - @voyant-travel/proposals-react@0.156.0
+  - @voyant-travel/quotes-react@0.156.0
   - @voyant-travel/storage@0.110.0
   - @voyant-travel/accommodations@0.118.0
   - @voyant-travel/action-ledger@0.108.5
@@ -5729,8 +5729,8 @@
   - @voyant-travel/operations-react@0.39.0
   - @voyant-travel/operator-settings@0.3.13
   - @voyant-travel/public-document-delivery@0.3.5
-  - @voyant-travel/proposals@0.128.7
-  - @voyant-travel/proposals-contracts@0.108.3
+  - @voyant-travel/quotes@0.128.7
+  - @voyant-travel/quotes-contracts@0.108.3
   - @voyant-travel/relationships@0.125.3
   - @voyant-travel/relationships-react@0.158.0
   - @voyant-travel/storefront@0.160.0
@@ -5784,7 +5784,7 @@
   - @voyant-travel/relationships-react@0.157.0
   - @voyant-travel/admin-host@0.7.0
   - @voyant-travel/mice-react@0.25.0
-  - @voyant-travel/proposals-react@0.155.0
+  - @voyant-travel/quotes-react@0.155.0
   - @voyant-travel/bookings@0.157.0
   - @voyant-travel/charters@0.155.0
   - @voyant-travel/cruises@0.156.0
@@ -5797,7 +5797,7 @@
   - @voyant-travel/commerce@0.35.7
   - @voyant-travel/inventory@0.10.2
   - @voyant-travel/operations@0.6.12
-  - @voyant-travel/proposals@0.128.6
+  - @voyant-travel/quotes@0.128.6
   - @voyant-travel/mice@0.13.0
   - @voyant-travel/notifications@0.126.5
   - @voyant-travel/relationships@0.125.2
@@ -5861,8 +5861,8 @@
   - @voyant-travel/operator-settings@0.3.11
   - @voyant-travel/operator-settings-react@0.9.1
   - @voyant-travel/public-document-delivery@0.3.4
-  - @voyant-travel/proposals@0.128.5
-  - @voyant-travel/proposals-react@0.154.1
+  - @voyant-travel/quotes@0.128.5
+  - @voyant-travel/quotes-react@0.154.1
   - @voyant-travel/realtime@0.4.5
   - @voyant-travel/realtime-react@0.2.2
   - @voyant-travel/relationships@0.125.1
@@ -5922,9 +5922,9 @@
   - @voyant-travel/commerce-react@0.38.0
   - @voyant-travel/mice-react@0.24.0
   - @voyant-travel/notifications-react@0.126.3
-  - @voyant-travel/proposals-react@0.154.0
+  - @voyant-travel/quotes-react@0.154.0
   - @voyant-travel/relationships-react@0.156.0
-  - @voyant-travel/proposals@0.128.4
+  - @voyant-travel/quotes@0.128.4
   - @voyant-travel/db@0.114.3
   - @voyant-travel/admin-host@0.6.0
   - @voyant-travel/admin-react@0.123.2
@@ -6016,7 +6016,7 @@
   - @voyant-travel/operations@0.6.9
   - @voyant-travel/operator-settings@0.3.9
   - @voyant-travel/public-document-delivery@0.3.3
-  - @voyant-travel/proposals@0.128.3
+  - @voyant-travel/quotes@0.128.3
   - @voyant-travel/realtime@0.4.3
   - @voyant-travel/relationships@0.124.4
   - @voyant-travel/storefront@0.157.1
@@ -6073,14 +6073,14 @@
   - @voyant-travel/operations@0.6.8
   - @voyant-travel/operator-settings@0.3.8
   - @voyant-travel/public-document-delivery@0.3.2
-  - @voyant-travel/proposals@0.128.2
+  - @voyant-travel/quotes@0.128.2
   - @voyant-travel/realtime@0.4.2
   - @voyant-travel/relationships@0.124.3
   - @voyant-travel/storage@0.109.2
   - @voyant-travel/trips@0.146.0
   - @voyant-travel/storefront-react@0.157.0
   - @voyant-travel/admin-app@0.47.0
-  - @voyant-travel/proposals-react@0.153.0
+  - @voyant-travel/quotes-react@0.153.0
   - @voyant-travel/bookings-react@0.155.0
   - @voyant-travel/cruises-react@0.154.0
   - @voyant-travel/inventory-react@0.37.0
@@ -6135,7 +6135,7 @@
   - @voyant-travel/notifications@0.126.0
   - @voyant-travel/operations@0.6.7
   - @voyant-travel/operator-settings@0.3.7
-  - @voyant-travel/proposals@0.128.1
+  - @voyant-travel/quotes@0.128.1
   - @voyant-travel/realtime@0.4.1
   - @voyant-travel/relationships@0.124.2
   - @voyant-travel/storefront@0.156.0
@@ -6153,7 +6153,7 @@
   - @voyant-travel/inventory-react@0.36.0
   - @voyant-travel/mice-react@0.22.0
   - @voyant-travel/operations-react@0.35.0
-  - @voyant-travel/proposals-react@0.152.0
+  - @voyant-travel/quotes-react@0.152.0
   - @voyant-travel/relationships-react@0.154.0
   - @voyant-travel/runtime-core@0.6.1
   - @voyant-travel/availability@0.2.7
@@ -6309,7 +6309,7 @@
   - @voyant-travel/bookings-react@0.153.0
   - @voyant-travel/admin-host@0.3.0
   - @voyant-travel/auth-react@0.126.0
-  - @voyant-travel/proposals@0.128.0
+  - @voyant-travel/quotes@0.128.0
   - @voyant-travel/db@0.113.0
   - @voyant-travel/realtime-react@0.2.0
   - @voyant-travel/accommodations@0.113.0
@@ -6329,7 +6329,7 @@
   - @voyant-travel/relationships-react@0.153.0
   - @voyant-travel/trips-react@0.144.0
   - @voyant-travel/vite-config@0.3.0
-  - @voyant-travel/proposals-react@0.151.0
+  - @voyant-travel/quotes-react@0.151.0
   - @voyant-travel/storefront-react@0.155.0
   - @voyant-travel/catalog-react@0.151.0
   - @voyant-travel/cruises-react@0.152.0

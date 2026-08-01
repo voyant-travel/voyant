@@ -1361,7 +1361,7 @@
 
   - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
   - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
-  - `@voyant-travel/proposals`: `list_quotes` + `get_quote` (`quotes:read`).
+  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
   - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
     `get_organization` (`crm:read`).
 

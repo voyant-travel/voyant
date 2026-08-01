@@ -12,7 +12,7 @@
 
 - Updated dependencies [0c30250]
 - Updated dependencies [5fa76aa]
-  - @voyant-travel/proposals@0.136.0
+  - @voyant-travel/quotes@0.136.0
   - @voyant-travel/admin@0.133.0
   - @voyant-travel/auth-react@0.149.0
   - @voyant-travel/relationships-react@0.225.0
@@ -43,7 +43,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.135.13
+- @voyant-travel/quotes@0.135.13
 - @voyant-travel/relationships-react@0.221.0
 - @voyant-travel/auth-react@0.146.1
 
@@ -55,7 +55,7 @@
 - Updated dependencies [7496159]
   - @voyant-travel/auth-react@0.146.0
   - @voyant-travel/i18n@0.119.0
-  - @voyant-travel/proposals@0.135.12
+  - @voyant-travel/quotes@0.135.12
   - @voyant-travel/types@0.109.10
   - @voyant-travel/admin@0.131.1
   - @voyant-travel/relationships-react@0.220.0
@@ -65,21 +65,21 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.219.0
-- @voyant-travel/proposals@0.135.11
+- @voyant-travel/quotes@0.135.11
 
 ## 0.216.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.218.0
-- @voyant-travel/proposals@0.135.10
+- @voyant-travel/quotes@0.135.10
 
 ## 0.215.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.217.0
-- @voyant-travel/proposals@0.135.9
+- @voyant-travel/quotes@0.135.9
 
 ## 0.214.0
 
@@ -88,7 +88,7 @@
 - Updated dependencies [903c754]
   - @voyant-travel/i18n@0.118.3
   - @voyant-travel/relationships-react@0.216.0
-  - @voyant-travel/proposals@0.135.8
+  - @voyant-travel/quotes@0.135.8
 
 ## 0.213.0
 
@@ -96,7 +96,7 @@
 
 - Updated dependencies [6c76de3]
   - @voyant-travel/i18n@0.118.2
-  - @voyant-travel/proposals@0.135.7
+  - @voyant-travel/quotes@0.135.7
   - @voyant-travel/relationships-react@0.215.0
 
 ## 0.212.0
@@ -108,35 +108,35 @@
   - @voyant-travel/admin@0.131.0
   - @voyant-travel/auth-react@0.145.0
   - @voyant-travel/relationships-react@0.214.0
-  - @voyant-travel/proposals@0.135.5
+  - @voyant-travel/quotes@0.135.5
 
 ## 0.211.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.213.0
-- @voyant-travel/proposals@0.135.3
+- @voyant-travel/quotes@0.135.3
 
 ## 0.210.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.212.0
-- @voyant-travel/proposals@0.135.2
+- @voyant-travel/quotes@0.135.2
 
 ## 0.209.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.211.0
-- @voyant-travel/proposals@0.135.1
+- @voyant-travel/quotes@0.135.1
 
 ## 0.208.0
 
 ### Patch Changes
 
 - Updated dependencies [d5492ed]
-  - @voyant-travel/proposals@0.135.0
+  - @voyant-travel/quotes@0.135.0
   - @voyant-travel/relationships-react@0.210.0
 
 ## 0.207.0
@@ -144,7 +144,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.209.0
-- @voyant-travel/proposals@0.134.8
+- @voyant-travel/quotes@0.134.8
 
 ## 0.206.0
 
@@ -155,14 +155,14 @@
   - @voyant-travel/i18n@0.118.0
   - @voyant-travel/auth-react@0.144.0
   - @voyant-travel/relationships-react@0.208.0
-  - @voyant-travel/proposals@0.134.7
+  - @voyant-travel/quotes@0.134.7
 
 ## 0.205.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.207.0
-- @voyant-travel/proposals@0.134.5
+- @voyant-travel/quotes@0.134.5
 
 ## 0.204.0
 
@@ -170,14 +170,14 @@
 
 - Updated dependencies [5daf427]
   - @voyant-travel/i18n@0.117.3
-  - @voyant-travel/proposals@0.134.4
+  - @voyant-travel/quotes@0.134.4
   - @voyant-travel/relationships-react@0.206.0
 
 ## 0.203.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.134.3
+- @voyant-travel/quotes@0.134.3
 - @voyant-travel/relationships-react@0.205.0
 
 ## 0.202.0
@@ -185,13 +185,13 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.204.0
-- @voyant-travel/proposals@0.134.2
+- @voyant-travel/quotes@0.134.2
 
 ## 0.201.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.134.1
+- @voyant-travel/quotes@0.134.1
 - @voyant-travel/relationships-react@0.203.0
 - @voyant-travel/auth-react@0.143.6
 
@@ -199,25 +199,25 @@
 
 ### Minor Changes
 
-- 3201e48: Replace the quarantined proposal snapshot-and-send flow with one handler-admitted
+- 3201e48: Replace the quarantined quote snapshot-and-send flow with one handler-admitted
   durable command bound to the exact selected Notifications provider. Snapshot,
   sent state, provider identity, durable delivery enqueue, action claim, and
   replay result now commit atomically; provider execution remains worker-only.
   The durable-send worker now resolves that same selected graph runtime instead
   of rebuilding providers from host configuration.
 
-  Remove public proposal acceptance's direct Trip reserve, cancellation, and
-  checkout authority. Public acceptance now records only the Proposals lifecycle
+  Remove public quote acceptance's direct Trip reserve, cancellation, and
+  checkout authority. Public acceptance now records only the Quotes lifecycle
   decision, while reservation and checkout remain separate approved domain
   actions.
 
-  Remove the historical proposal lifecycle Tool aliases; only canonical names and
+  Remove the historical quote lifecycle Tool aliases; only canonical names and
   stable capability IDs remain.
 
 ### Patch Changes
 
 - Updated dependencies [3201e48]
-  - @voyant-travel/proposals@0.134.0
+  - @voyant-travel/quotes@0.134.0
   - @voyant-travel/relationships-react@0.202.0
 
 ## 0.199.0
@@ -225,7 +225,7 @@
 ### Patch Changes
 
 - Updated dependencies [5e03ae7]
-  - @voyant-travel/proposals@0.133.0
+  - @voyant-travel/quotes@0.133.0
   - @voyant-travel/relationships-react@0.201.0
 
 ## 0.198.0
@@ -234,7 +234,7 @@
 
 - Updated dependencies [952d817]
   - @voyant-travel/utils@0.110.0
-  - @voyant-travel/proposals@0.132.4
+  - @voyant-travel/quotes@0.132.4
   - @voyant-travel/relationships-react@0.200.0
   - @voyant-travel/ui@0.109.6
   - @voyant-travel/auth-react@0.143.4
@@ -243,7 +243,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.132.3
+- @voyant-travel/quotes@0.132.3
 - @voyant-travel/relationships-react@0.199.0
 - @voyant-travel/auth-react@0.143.3
 
@@ -272,7 +272,7 @@
   payload, sync/reconcile internals, raw database column names and code
   fragments), strips internal/roadmap notes that leaked into user copy, cuts
   verbose and redundant helper text, and aligns terminology to the canonical
-  Ubiquitous Language (Traveler over pax/guest, Supplier, Proposal/Proposal Version,
+  Ubiquitous Language (Traveler over pax/guest, Supplier, Quote/Quote Version,
   "record" instead of "entity") with consistent sentence case. English catalog
   copy only; ICU placeholders and en/ro key parity preserved.
 - e2cb9f5: Bring the Romanian (ro) admin translations in line with the plain-language
@@ -323,14 +323,14 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.132.2
+- @voyant-travel/quotes@0.132.2
 - @voyant-travel/relationships-react@0.198.0
 
 ## 0.195.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.132.1
+- @voyant-travel/quotes@0.132.1
 - @voyant-travel/relationships-react@0.197.0
 - @voyant-travel/auth-react@0.143.1
 
@@ -340,7 +340,7 @@
 
 - Updated dependencies [bba4fec]
 - Updated dependencies [58020ec]
-  - @voyant-travel/proposals@0.132.0
+  - @voyant-travel/quotes@0.132.0
   - @voyant-travel/relationships-react@0.196.0
   - @voyant-travel/auth-react@0.143.0
 
@@ -349,14 +349,14 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.195.0
-- @voyant-travel/proposals@0.131.40
+- @voyant-travel/quotes@0.131.40
 
 ## 0.192.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.194.0
-- @voyant-travel/proposals@0.131.39
+- @voyant-travel/quotes@0.131.39
 
 ## 0.191.0
 
@@ -367,27 +367,27 @@
   - @voyant-travel/i18n@0.117.0
   - @voyant-travel/auth-react@0.142.0
   - @voyant-travel/relationships-react@0.193.0
-  - @voyant-travel/proposals@0.131.38
+  - @voyant-travel/quotes@0.131.38
 
 ## 0.190.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.192.0
-- @voyant-travel/proposals@0.131.36
+- @voyant-travel/quotes@0.131.36
 
 ## 0.189.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.191.0
-- @voyant-travel/proposals@0.131.35
+- @voyant-travel/quotes@0.131.35
 
 ## 0.188.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.34
+- @voyant-travel/quotes@0.131.34
 - @voyant-travel/types@0.109.9
 - @voyant-travel/relationships-react@0.190.0
 - @voyant-travel/auth-react@0.141.4
@@ -397,7 +397,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.189.0
-- @voyant-travel/proposals@0.131.33
+- @voyant-travel/quotes@0.131.33
 
 ## 0.186.0
 
@@ -405,7 +405,7 @@
 
 - Updated dependencies [9db4363]
   - @voyant-travel/utils@0.109.0
-  - @voyant-travel/proposals@0.131.32
+  - @voyant-travel/quotes@0.131.32
   - @voyant-travel/relationships-react@0.188.0
   - @voyant-travel/ui@0.109.4
   - @voyant-travel/auth-react@0.141.3
@@ -415,20 +415,20 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.187.0
-- @voyant-travel/proposals@0.131.31
+- @voyant-travel/quotes@0.131.31
 
 ## 0.184.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.186.0
-- @voyant-travel/proposals@0.131.29
+- @voyant-travel/quotes@0.131.29
 
 ## 0.183.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.28
+- @voyant-travel/quotes@0.131.28
 - @voyant-travel/relationships-react@0.185.0
 
 ## 0.182.0
@@ -436,14 +436,14 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.184.0
-- @voyant-travel/proposals@0.131.27
+- @voyant-travel/quotes@0.131.27
 
 ## 0.181.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.183.0
-- @voyant-travel/proposals@0.131.26
+- @voyant-travel/quotes@0.131.26
 
 ## 0.180.1
 
@@ -461,7 +461,7 @@
 
 - @voyant-travel/auth-react@0.141.0
 - @voyant-travel/relationships-react@0.182.0
-- @voyant-travel/proposals@0.131.23
+- @voyant-travel/quotes@0.131.23
 
 ## 0.179.0
 
@@ -469,7 +469,7 @@
 
 - Updated dependencies [464815c]
   - @voyant-travel/i18n@0.115.1
-  - @voyant-travel/proposals@0.131.21
+  - @voyant-travel/quotes@0.131.21
   - @voyant-travel/relationships-react@0.181.0
 
 ## 0.178.1
@@ -478,7 +478,7 @@
 
 - Updated dependencies [c2ca4a3]
   - @voyant-travel/i18n@0.115.0
-  - @voyant-travel/proposals@0.131.20
+  - @voyant-travel/quotes@0.131.20
   - @voyant-travel/admin@0.128.2
   - @voyant-travel/auth-react@0.140.2
   - @voyant-travel/relationships-react@0.180.1
@@ -492,7 +492,7 @@
   - @voyant-travel/admin@0.128.1
   - @voyant-travel/auth-react@0.140.1
   - @voyant-travel/relationships-react@0.180.0
-  - @voyant-travel/proposals@0.131.19
+  - @voyant-travel/quotes@0.131.19
 
 ## 0.177.0
 
@@ -501,7 +501,7 @@
 - Updated dependencies [4f34425]
   - @voyant-travel/auth-react@0.140.0
   - @voyant-travel/relationships-react@0.179.0
-  - @voyant-travel/proposals@0.131.18
+  - @voyant-travel/quotes@0.131.18
 
 ## 0.176.0
 
@@ -512,13 +512,13 @@
   - @voyant-travel/i18n@0.113.0
   - @voyant-travel/auth-react@0.139.0
   - @voyant-travel/relationships-react@0.178.0
-  - @voyant-travel/proposals@0.131.17
+  - @voyant-travel/quotes@0.131.17
 
 ## 0.175.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.16
+- @voyant-travel/quotes@0.131.16
 - @voyant-travel/types@0.109.8
 - @voyant-travel/auth-react@0.138.0
 - @voyant-travel/relationships-react@0.177.0
@@ -529,7 +529,7 @@
 
 - Updated dependencies [abc32b6]
   - @voyant-travel/auth-react@0.137.0
-  - @voyant-travel/proposals@0.131.15
+  - @voyant-travel/quotes@0.131.15
   - @voyant-travel/types@0.109.7
   - @voyant-travel/relationships-react@0.176.0
 
@@ -538,7 +538,7 @@
 ### Patch Changes
 
 - @voyant-travel/auth-react@0.136.0
-- @voyant-travel/proposals@0.131.14
+- @voyant-travel/quotes@0.131.14
 - @voyant-travel/types@0.109.6
 - @voyant-travel/relationships-react@0.175.0
 
@@ -546,7 +546,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.13
+- @voyant-travel/quotes@0.131.13
 - @voyant-travel/relationships-react@0.174.0
 - @voyant-travel/auth-react@0.135.1
 
@@ -556,7 +556,7 @@
 
 - @voyant-travel/auth-react@0.135.0
 - @voyant-travel/relationships-react@0.173.0
-- @voyant-travel/proposals@0.131.12
+- @voyant-travel/quotes@0.131.12
 
 ## 0.170.0
 
@@ -565,7 +565,7 @@
 - Updated dependencies [f6f22e7]
   - @voyant-travel/utils@0.108.0
   - @voyant-travel/auth-react@0.134.0
-  - @voyant-travel/proposals@0.131.11
+  - @voyant-travel/quotes@0.131.11
   - @voyant-travel/relationships-react@0.172.0
   - @voyant-travel/ui@0.109.3
 
@@ -574,7 +574,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.171.0
-- @voyant-travel/proposals@0.131.9
+- @voyant-travel/quotes@0.131.9
 
 ## 0.168.0
 
@@ -582,7 +582,7 @@
 
 - Updated dependencies [117fa05]
   - @voyant-travel/i18n@0.112.1
-  - @voyant-travel/proposals@0.131.8
+  - @voyant-travel/quotes@0.131.8
   - @voyant-travel/relationships-react@0.170.0
   - @voyant-travel/auth-react@0.133.3
 
@@ -595,20 +595,20 @@
   - @voyant-travel/admin@0.127.0
   - @voyant-travel/auth-react@0.133.0
   - @voyant-travel/relationships-react@0.169.0
-  - @voyant-travel/proposals@0.131.6
+  - @voyant-travel/quotes@0.131.6
 
 ## 0.166.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.5
+- @voyant-travel/quotes@0.131.5
 - @voyant-travel/relationships-react@0.168.0
 
 ## 0.165.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.4
+- @voyant-travel/quotes@0.131.4
 - @voyant-travel/relationships-react@0.167.0
 
 ## 0.164.0
@@ -619,7 +619,7 @@
 - Updated dependencies [3062a73]
   - @voyant-travel/admin@0.126.2
   - @voyant-travel/i18n@0.112.0
-  - @voyant-travel/proposals@0.131.3
+  - @voyant-travel/quotes@0.131.3
   - @voyant-travel/auth-react@0.132.5
   - @voyant-travel/relationships-react@0.166.0
 
@@ -627,7 +627,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.131.2
+- @voyant-travel/quotes@0.131.2
 - @voyant-travel/relationships-react@0.165.0
 
 ## 0.162.0
@@ -635,7 +635,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.164.0
-- @voyant-travel/proposals@0.131.1
+- @voyant-travel/quotes@0.131.1
 
 ## 0.161.0
 
@@ -647,7 +647,7 @@
 - Updated dependencies [52352c4]
 - Updated dependencies [52352c4]
   - @voyant-travel/relationships-react@0.163.0
-  - @voyant-travel/proposals@0.131.0
+  - @voyant-travel/quotes@0.131.0
   - @voyant-travel/auth-react@0.132.3
 
 ## 0.160.1
@@ -673,7 +673,7 @@
 ### Patch Changes
 
 - Updated dependencies [8f0fa26]
-  - @voyant-travel/proposals@0.130.0
+  - @voyant-travel/quotes@0.130.0
   - @voyant-travel/relationships-react@0.162.0
   - @voyant-travel/auth-react@0.132.1
 
@@ -685,7 +685,7 @@
   - @voyant-travel/admin@0.126.0
   - @voyant-travel/auth-react@0.132.0
   - @voyant-travel/relationships-react@0.161.0
-  - @voyant-travel/proposals@0.129.1
+  - @voyant-travel/quotes@0.129.1
 
 ## 0.158.0
 
@@ -694,7 +694,7 @@
 - Updated dependencies [372f4f4]
 - Updated dependencies [f819273]
 - Updated dependencies [6604f9e]
-  - @voyant-travel/proposals@0.129.0
+  - @voyant-travel/quotes@0.129.0
   - @voyant-travel/auth-react@0.131.0
   - @voyant-travel/relationships-react@0.160.0
 
@@ -713,7 +713,7 @@
   - @voyant-travel/admin@0.125.0
   - @voyant-travel/auth-react@0.130.0
   - @voyant-travel/relationships-react@0.159.0
-  - @voyant-travel/proposals@0.128.8
+  - @voyant-travel/quotes@0.128.8
 
 ## 0.156.0
 
@@ -733,7 +733,7 @@
 - Updated dependencies [73ab096]
   - @voyant-travel/admin@0.124.0
   - @voyant-travel/auth-react@0.129.0
-  - @voyant-travel/proposals@0.128.7
+  - @voyant-travel/quotes@0.128.7
   - @voyant-travel/relationships-react@0.158.0
   - @voyant-travel/types@0.109.2
 
@@ -742,7 +742,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.157.0
-- @voyant-travel/proposals@0.128.6
+- @voyant-travel/quotes@0.128.6
 
 ## 0.154.1
 
@@ -757,7 +757,7 @@
   - @voyant-travel/admin@0.123.3
   - @voyant-travel/auth-react@0.128.3
   - @voyant-travel/i18n@0.111.1
-  - @voyant-travel/proposals@0.128.5
+  - @voyant-travel/quotes@0.128.5
   - @voyant-travel/react@0.104.2
   - @voyant-travel/relationships-react@0.156.1
   - @voyant-travel/ui@0.109.1
@@ -771,14 +771,14 @@
   - @voyant-travel/admin@0.123.2
   - @voyant-travel/auth-react@0.128.2
   - @voyant-travel/relationships-react@0.156.0
-  - @voyant-travel/proposals@0.128.4
+  - @voyant-travel/quotes@0.128.4
 
 ## 0.153.0
 
 ### Patch Changes
 
 - @voyant-travel/auth-react@0.128.0
-- @voyant-travel/proposals@0.128.2
+- @voyant-travel/quotes@0.128.2
 - @voyant-travel/relationships-react@0.155.0
 
 ## 0.152.0
@@ -790,7 +790,7 @@
   - @voyant-travel/types@0.109.0
   - @voyant-travel/utils@0.107.0
   - @voyant-travel/ui@0.109.0
-  - @voyant-travel/proposals@0.128.1
+  - @voyant-travel/quotes@0.128.1
   - @voyant-travel/admin@0.123.0
   - @voyant-travel/auth-react@0.127.0
   - @voyant-travel/relationships-react@0.154.0
@@ -800,7 +800,7 @@
 ### Minor Changes
 
 - c65b05c: Generate standard Operator route registrations under `.voyant`, move public
-  Finance and Proposals route behavior into package-owned contributions, and move
+  Finance and Quotes route behavior into package-owned contributions, and move
   standard route composition into the product distribution so application source
   contains only deployment adapters and local customization.
 
@@ -823,7 +823,7 @@
 - Updated dependencies [490d132]
 - Updated dependencies [490d132]
   - @voyant-travel/auth-react@0.126.0
-  - @voyant-travel/proposals@0.128.0
+  - @voyant-travel/quotes@0.128.0
   - @voyant-travel/admin@0.122.0
   - @voyant-travel/relationships-react@0.153.0
   - @voyant-travel/types@0.108.1
@@ -832,7 +832,7 @@
 
 ### Minor Changes
 
-- 0c19298: Declare the package-owned Proposals admin factory as a selected-graph runtime while
+- 0c19298: Declare the package-owned Quotes admin factory as a selected-graph runtime while
   preserving its existing routes, destinations, localized navigation, icon, copy
   provider, and selection behavior.
 
@@ -841,7 +841,7 @@
 - Updated dependencies [0c19298]
 - Updated dependencies [d771be3]
 - Updated dependencies [d771be3]
-  - @voyant-travel/proposals@0.127.0
+  - @voyant-travel/quotes@0.127.0
   - @voyant-travel/types@0.108.0
   - @voyant-travel/auth-react@0.125.0
   - @voyant-travel/admin@0.121.0
@@ -856,7 +856,7 @@
 - Updated dependencies [e3dc5a9]
 - Updated dependencies [a370024]
 - Updated dependencies [e3dc5a9]
-  - @voyant-travel/proposals@0.126.0
+  - @voyant-travel/quotes@0.126.0
   - @voyant-travel/types@0.107.2
   - @voyant-travel/relationships-react@0.151.0
   - @voyant-travel/auth-react@0.124.1
@@ -865,7 +865,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.125.9
+- @voyant-travel/quotes@0.125.9
 - @voyant-travel/relationships-react@0.150.0
 
 ## 0.147.0
@@ -876,7 +876,7 @@
   - @voyant-travel/admin@0.120.0
   - @voyant-travel/auth-react@0.124.0
   - @voyant-travel/relationships-react@0.149.0
-  - @voyant-travel/proposals@0.125.7
+  - @voyant-travel/quotes@0.125.7
 
 ## 0.146.0
 
@@ -886,7 +886,7 @@
   - @voyant-travel/admin@0.119.0
   - @voyant-travel/auth-react@0.123.0
   - @voyant-travel/relationships-react@0.148.0
-  - @voyant-travel/proposals@0.125.6
+  - @voyant-travel/quotes@0.125.6
 
 ## 0.145.0
 
@@ -895,7 +895,7 @@
 - @voyant-travel/admin@0.118.0
 - @voyant-travel/auth-react@0.122.0
 - @voyant-travel/relationships-react@0.147.0
-- @voyant-travel/proposals@0.125.5
+- @voyant-travel/quotes@0.125.5
 
 ## 0.144.0
 
@@ -905,13 +905,13 @@
   - @voyant-travel/admin@0.117.0
   - @voyant-travel/auth-react@0.121.0
   - @voyant-travel/relationships-react@0.146.0
-  - @voyant-travel/proposals@0.125.4
+  - @voyant-travel/quotes@0.125.4
 
 ## 0.143.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.125.3
+- @voyant-travel/quotes@0.125.3
 - @voyant-travel/relationships-react@0.145.0
 
 ## 0.142.0
@@ -919,7 +919,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.144.0
-- @voyant-travel/proposals@0.125.2
+- @voyant-travel/quotes@0.125.2
 
 ## 0.141.0
 
@@ -929,7 +929,7 @@
   - @voyant-travel/utils@0.106.0
   - @voyant-travel/relationships-react@0.143.0
   - @voyant-travel/ui@0.108.11
-  - @voyant-travel/proposals@0.125.1
+  - @voyant-travel/quotes@0.125.1
   - @voyant-travel/types@0.107.1
   - @voyant-travel/auth-react@0.120.2
 
@@ -938,7 +938,7 @@
 ### Patch Changes
 
 - Updated dependencies [97d1c14]
-  - @voyant-travel/proposals@0.125.0
+  - @voyant-travel/quotes@0.125.0
   - @voyant-travel/relationships-react@0.142.0
 
 ## 0.139.0
@@ -946,7 +946,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.141.0
-- @voyant-travel/proposals@0.124.2
+- @voyant-travel/quotes@0.124.2
 
 ## 0.138.0
 
@@ -957,7 +957,7 @@
   - @voyant-travel/i18n@0.110.0
   - @voyant-travel/auth-react@0.120.0
   - @voyant-travel/relationships-react@0.140.0
-  - @voyant-travel/proposals@0.124.1
+  - @voyant-travel/quotes@0.124.1
 
 ## 0.137.0
 
@@ -968,7 +968,7 @@
 - Updated dependencies [fc71db1]
 - Updated dependencies [2613dfb]
   - @voyant-travel/types@0.107.0
-  - @voyant-travel/proposals@0.124.0
+  - @voyant-travel/quotes@0.124.0
   - @voyant-travel/relationships-react@0.139.0
   - @voyant-travel/admin@0.115.4
   - @voyant-travel/auth-react@0.119.0
@@ -979,19 +979,19 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.138.0
-- @voyant-travel/proposals@0.123.12
+- @voyant-travel/quotes@0.123.12
 
 ## 0.135.3
 
 ### Patch Changes
 
-- 3bc91f1: Preserve sent proposal versions when saving a manual won proposal without proposal content changes.
+- 3bc91f1: Preserve sent proposal versions when saving a manual won quote without proposal content changes.
 
 ## 0.135.2
 
 ### Patch Changes
 
-- 0f21c78: Label product-only proposal links as review-only in the admin proposal detail page.
+- 0f21c78: Label product-only quote proposal links as review-only in the admin quote detail page.
 
 ## 0.135.1
 
@@ -1001,13 +1001,13 @@
 
   Uploads now post to `/v1/admin/uploads` and video tickets to `/v1/admin/uploads/video`; stored media is served from `/v1/admin/media/*`. The Hono app no longer mounts the bare `/v1/*` catch-all actor guard, and worker-runtime hosts can use `rewriteAppPath` to preserve compatibility for persisted legacy media URLs.
 
-  - @voyant-travel/proposals@0.123.6
+  - @voyant-travel/quotes@0.123.6
 
 ## 0.135.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.123.5
+- @voyant-travel/quotes@0.123.5
 - @voyant-travel/relationships-react@0.137.0
 
 ## 0.134.1
@@ -1026,14 +1026,14 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.136.0
-- @voyant-travel/proposals@0.123.3
+- @voyant-travel/quotes@0.123.3
 
 ## 0.133.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.135.0
-- @voyant-travel/proposals@0.123.2
+- @voyant-travel/quotes@0.123.2
 
 ## 0.132.0
 
@@ -1055,7 +1055,7 @@
 
 - Updated dependencies [51f7dea]
   - @voyant-travel/types@0.106.0
-  - @voyant-travel/proposals@0.123.0
+  - @voyant-travel/quotes@0.123.0
   - @voyant-travel/relationships-react@0.134.0
   - @voyant-travel/admin@0.115.1
   - @voyant-travel/auth-react@0.118.0
@@ -1070,7 +1070,7 @@
   - @voyant-travel/i18n@0.108.0
   - @voyant-travel/auth-react@0.117.0
   - @voyant-travel/utils@0.105.3
-  - @voyant-travel/proposals@0.122.11
+  - @voyant-travel/quotes@0.122.11
   - @voyant-travel/relationships-react@0.133.0
   - @voyant-travel/ui@0.108.1
 
@@ -1078,7 +1078,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.122.10
+- @voyant-travel/quotes@0.122.10
 - @voyant-travel/relationships-react@0.132.0
 
 ## 0.129.0
@@ -1088,7 +1088,7 @@
 - Updated dependencies [310565b]
   - @voyant-travel/i18n@0.107.3
   - @voyant-travel/relationships-react@0.131.0
-  - @voyant-travel/proposals@0.122.8
+  - @voyant-travel/quotes@0.122.8
 
 ## 0.128.0
 
@@ -1097,13 +1097,13 @@
 - Updated dependencies [dbea53e]
   - @voyant-travel/i18n@0.107.2
   - @voyant-travel/relationships-react@0.130.0
-  - @voyant-travel/proposals@0.122.7
+  - @voyant-travel/quotes@0.122.7
 
 ## 0.127.0
 
 ### Patch Changes
 
-- @voyant-travel/proposals@0.122.5
+- @voyant-travel/quotes@0.122.5
 - @voyant-travel/relationships-react@0.129.0
 
 ## 0.126.0
@@ -1111,7 +1111,7 @@
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.128.0
-- @voyant-travel/proposals@0.122.4
+- @voyant-travel/quotes@0.122.4
 
 ## 0.125.0
 
@@ -1119,26 +1119,26 @@
 
 - @voyant-travel/relationships-react@0.127.0
 - @voyant-travel/auth-react@0.116.1
-- @voyant-travel/proposals@0.122.3
+- @voyant-travel/quotes@0.122.3
 
 ## 0.124.0
 
 ### Patch Changes
 
 - @voyant-travel/relationships-react@0.126.0
-- @voyant-travel/proposals@0.122.1
+- @voyant-travel/quotes@0.122.1
 
 ## 0.123.0
 
 ### Minor Changes
 
-- a74471e: Proposals admin surface. A pipeline board (`/proposals`) plus a full proposal workspace (`/proposals/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the proposal's versions nested inline. The proposal value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `proposals.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.proposals` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a proposal description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
+- a74471e: Quotes admin surface. A pipeline board (`/quotes`) plus a full quote workspace (`/quotes/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the quote's versions nested inline. The quote value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `quotes.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.quotes` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a quote description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
 
 ### Patch Changes
 
 - Updated dependencies [a74471e]
 - Updated dependencies [a74471e]
-  - @voyant-travel/proposals@0.122.0
+  - @voyant-travel/quotes@0.122.0
   - @voyant-travel/i18n@0.107.0
   - @voyant-travel/ui@0.108.0
   - @voyant-travel/admin@0.114.0
@@ -1151,21 +1151,21 @@
 
 - Updated dependencies [4f92198]
   - @voyant-travel/ui@0.107.0
-  - @voyant-travel/proposals@0.121.1
+  - @voyant-travel/quotes@0.121.1
 
 ## 0.121.0
 
 ### Patch Changes
 
 - Updated dependencies [d29dd47]
-  - @voyant-travel/proposals@0.121.0
+  - @voyant-travel/quotes@0.121.0
 
 ## 0.120.0
 
 ### Patch Changes
 
 - Updated dependencies [a860e15]
-  - @voyant-travel/proposals@0.120.0
+  - @voyant-travel/quotes@0.120.0
 
 ## 0.119.3
 
@@ -1391,9 +1391,9 @@ routeId, runtime)` returns router-facing route options (lazy component,
 
 ### Minor Changes
 
-- d1ad572: Add Proposal Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
-- d1ad572: Rename CRM React hooks, UI components, and registry entries from Opportunity to Proposal, with Proposal Version surfaces split out for proposal/version workflows.
-- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Proposal Version proposal snapshots.
+- d1ad572: Add Quote Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
+- d1ad572: Rename CRM React hooks, UI components, and registry entries from Opportunity to Quote, with Quote Version surfaces split out for proposal/version workflows.
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
 
 ### Patch Changes
 

@@ -1234,7 +1234,7 @@
 
   - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
   - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
-  - `@voyant-travel/proposals`: `list_quotes` + `get_quote` (`quotes:read`).
+  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
   - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
     `get_organization` (`crm:read`).
 
@@ -1601,7 +1601,7 @@ key)` to `duplicate_custom_field_key`. Both use `onConflictDoNothing` and throw
 
 - c8189fc: Split the legacy `@voyant-travel/crm-contracts` package into
   `@voyant-travel/relationships-contracts` and
-  `@voyant-travel/proposals-contracts`. Runtime packages and public validation
+  `@voyant-travel/quotes-contracts`. Runtime packages and public validation
   imports now depend on the domain-specific contract packages.
 - Updated dependencies [6bff46f]
 - Updated dependencies [c8189fc]

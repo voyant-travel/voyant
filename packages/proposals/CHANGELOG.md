@@ -16,7 +16,7 @@
   deployment-graph data (voyant#3976 item 10.1).
 
   The standard operator route generator previously hardcoded the presentation
-  IDs and route tables for auth, storefront, finance, proposals, and MCP consent, so
+  IDs and route tables for auth, storefront, finance, quotes, and MCP consent, so
   a package could not get admin routes emitted without editing
   `@voyant-travel/operator-standard`. Each presentation now declares its own
   route contribution on its `presentations` graph entry via `contribution` and
@@ -180,9 +180,9 @@
 
 ### Patch Changes
 
-- cf9e63b: Seed a default "Sales" proposal pipeline and its six stages. `proposals.pipeline_id`
-  and `proposals.stage_id` are both NOT NULL and nothing created a pipeline, so
-  `create_proposal` could not succeed on a fresh operator. Guarded on the table being
+- cf9e63b: Seed a default "Sales" quote pipeline and its six stages. `quotes.pipeline_id`
+  and `quotes.stage_id` are both NOT NULL and nothing created a pipeline, so
+  `create_quote` could not succeed on a fresh operator. Guarded on the table being
   empty, so an operator with their own pipeline is untouched.
 
 ## 0.135.3
@@ -214,7 +214,7 @@
 
 ### Minor Changes
 
-- d5492ed: Add `list_proposal_pipelines`, `list_proposal_stages`, `create_proposal` and `add_proposal_product`. The package advertised the whole lifecycle of a proposal that already exists — snapshot, send, accept, decline — but nothing to open one or put a line on it, so an agent could send and accept a proposal it had no way to build. `create_proposal` needs a pipeline and stage, and neither was discoverable either, so the two reads ship alongside it. Both writes are staff-only, `proposals:write`, and confirmation-gated; the existing `snapshot_proposal_version` still owns freezing lines into an immutable proposal.
+- d5492ed: Add `list_quote_pipelines`, `list_quote_stages`, `create_quote` and `add_quote_product`. The package advertised the whole lifecycle of a quote that already exists — snapshot, send, accept, decline — but nothing to open one or put a line on it, so an agent could send and accept a quote it had no way to build. `create_quote` needs a pipeline and stage, and neither was discoverable either, so the two reads ship alongside it. Both writes are staff-only, `quotes:write`, and confirmation-gated; the existing `snapshot_quote_version` still owns freezing lines into an immutable proposal.
 
 ### Patch Changes
 
@@ -243,11 +243,11 @@
 ### Patch Changes
 
 - accb1cf: Declare `availability`, `effectBoundary: "local"`, and (where missing)
-  `targetLifecycle: "existing"` on the four proposal-version lifecycle actions
-  (`snapshot-proposal-version`, `send-proposal-version`, `accept-proposal-version`,
-  `decline-proposal-version`) and remove them from the legacy execute+tools
-  allowlist. Each is a single local Postgres transaction guarded by the proposal
-  or proposal-version's current status against an already-existing target
+  `targetLifecycle: "existing"` on the four quote-version lifecycle actions
+  (`snapshot-quote-version`, `send-quote-version`, `accept-quote-version`,
+  `decline-quote-version`) and remove them from the legacy execute+tools
+  allowlist. Each is a single local Postgres transaction guarded by the quote
+  or quote-version's current status against an already-existing target
   (`commandTargetField` was already declared for all four); `accept` already
   replays the same result when retried after success, and the others reject a
   mismatched-state retry with a domain conflict error rather than silently
@@ -307,19 +307,19 @@
 
 ### Minor Changes
 
-- 3201e48: Replace the quarantined proposal snapshot-and-send flow with one handler-admitted
+- 3201e48: Replace the quarantined quote snapshot-and-send flow with one handler-admitted
   durable command bound to the exact selected Notifications provider. Snapshot,
   sent state, provider identity, durable delivery enqueue, action claim, and
   replay result now commit atomically; provider execution remains worker-only.
   The durable-send worker now resolves that same selected graph runtime instead
   of rebuilding providers from host configuration.
 
-  Remove public proposal acceptance's direct Trip reserve, cancellation, and
-  checkout authority. Public acceptance now records only the Proposals lifecycle
+  Remove public quote acceptance's direct Trip reserve, cancellation, and
+  checkout authority. Public acceptance now records only the Quotes lifecycle
   decision, while reservation and checkout remain separate approved domain
   actions.
 
-  Remove the historical proposal lifecycle Tool aliases; only canonical names and
+  Remove the historical quote lifecycle Tool aliases; only canonical names and
   stable capability IDs remain.
 
 ### Patch Changes
@@ -940,13 +940,13 @@
   persistence boundaries. Require every underlying read scope and return structural source
   projections, KPIs, and bounded alerts.
 
-  Complete the Proposals proposal lifecycle Tool surface with snapshot, send, accept, and decline
+  Complete the Quotes proposal lifecycle Tool surface with snapshot, send, accept, and decline
   capabilities, structural JSON-safe outputs, compatibility aliases, staff-only grants,
   confirmation, and graph-ledger/approval policy.
 
 ### Patch Changes
 
-- f819273: Add the package-owned, exact-idempotent proposal snapshot and vetted-template notification workflow, its guarded Tool/action, and the narrow Proposals-to-Notifications runtime port.
+- f819273: Add the package-owned, exact-idempotent quote snapshot and vetted-template notification workflow, its guarded Tool/action, and the narrow Quotes-to-Notifications runtime port.
 - 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
 - Updated dependencies [cabf662]
 - Updated dependencies [b8cef4c]
@@ -998,7 +998,7 @@
   - @voyant-travel/core@0.122.2
   - @voyant-travel/db@0.114.5
   - @voyant-travel/operator-settings@0.3.13
-  - @voyant-travel/proposals-contracts@0.108.3
+  - @voyant-travel/quotes-contracts@0.108.3
   - @voyant-travel/relationships@0.125.3
   - @voyant-travel/trips@0.149.0
   - @voyant-travel/types@0.109.2
@@ -1024,7 +1024,7 @@
   - @voyant-travel/types@0.109.1
   - @voyant-travel/hono@0.126.3
   - @voyant-travel/operator-settings@0.3.11
-  - @voyant-travel/proposals-contracts@0.108.2
+  - @voyant-travel/quotes-contracts@0.108.2
   - @voyant-travel/relationships@0.125.1
   - @voyant-travel/tools@0.2.1
   - @voyant-travel/trips@0.147.1
@@ -1082,13 +1082,13 @@
 
 ### Minor Changes
 
-- 490d132: Move standard Node runtime construction for Flights, Notifications, and Proposals proposal wiring into their domain packages.
-- 490d132: Publish package-owned OpenAPI registries and selected-graph documents for accommodation content, Flights, and public proposal APIs.
-- 047c3f9: Move Proposals, proposal, proposal-version snapshot, and MICE graph runtime assembly behind package-owned typed ports and factories.
+- 490d132: Move standard Node runtime construction for Flights, Notifications, and Quotes proposal wiring into their domain packages.
+- 490d132: Publish package-owned OpenAPI registries and selected-graph documents for accommodation content, Flights, and public quote proposal APIs.
+- 047c3f9: Move Quotes, proposal, quote-version snapshot, and MICE graph runtime assembly behind package-owned typed ports and factories.
 
 ### Patch Changes
 
-- 490d132: Add package-owned runtime contributor APIs for deployment-supplied Bookings, Finance, and Proposals adapters.
+- 490d132: Add package-owned runtime contributor APIs for deployment-supplied Bookings, Finance, and Quotes adapters.
 - 490d132: Move capability-derived Node runtime binding assembly into package-owned contributors.
 - 490d132: Derive travel runtime port bindings from deployment host capabilities.
 - 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
@@ -1140,7 +1140,7 @@
 
 ### Minor Changes
 
-- 0c19298: Declare the package-owned Proposals admin factory as a selected-graph runtime while
+- 0c19298: Declare the package-owned Quotes admin factory as a selected-graph runtime while
   preserving its existing routes, destinations, localized navigation, icon, copy
   provider, and selection behavior.
 
@@ -1208,13 +1208,13 @@
 ### Minor Changes
 
 - a370024: Publish package-owned deployment manifests for booking requirements and the
-  bookings, distribution, MICE, and proposals extension surfaces.
+  bookings, distribution, MICE, and quotes extension surfaces.
 - e3dc5a9: Declare package-owned admin route and copy facets for vertical modules with existing public admin extensions.
 - e3dc5a9: Declare package-owned Node deployment facets for product events, subscribers, workflows, access resources, tools, actions, and retain-data lifecycle behavior.
 
 ### Patch Changes
 
-- a370024: Rehome finance, proposal, legal, and storefront bridge graph declarations into their owning packages with executable runtime descriptors.
+- a370024: Rehome finance, quote, legal, and storefront bridge graph declarations into their owning packages with executable runtime descriptors.
 - Updated dependencies [a370024]
 - Updated dependencies [e3dc5a9]
 - Updated dependencies [e3dc5a9]
@@ -1309,7 +1309,7 @@
 
 ### Minor Changes
 
-- 97d1c14: Support package-owned proposal-version snapshot routes in source-free managed runtime wiring.
+- 97d1c14: Support package-owned quote-version snapshot routes in source-free managed runtime wiring.
 
 ### Patch Changes
 
@@ -1336,17 +1336,17 @@
 
   - `@voyant-travel/bookings`: `list_bookings` + `get_booking` (non-PII, `bookings:read`).
   - `@voyant-travel/finance`: `list_invoices` + `get_invoice` (`finance:read`).
-  - `@voyant-travel/proposals`: `list_proposals` + `get_proposal` (`proposals:read`).
+  - `@voyant-travel/quotes`: `list_quotes` + `get_quote` (`quotes:read`).
   - `@voyant-travel/relationships`: `list_people` / `get_person` / `list_organizations` /
     `get_organization` (`crm:read`).
 
   The operator registers them on the in-deployment MCP server, so `/v1/admin/mcp` now
-  serves trips, products, bookings, finance, proposals, and CRM tools, each gated per-tool
+  serves trips, products, bookings, finance, quotes, and CRM tools, each gated per-tool
   by scope + audience.
 
 - fc71db1: Add write/action + notification agent tools:
 
-  - `@voyant-travel/proposals`: `accept_proposal_version` (write, `proposals:write`,
+  - `@voyant-travel/quotes`: `accept_quote_version` (write, `quotes:write`,
     confirmation-required).
   - `@voyant-travel/finance`: `void_invoice` (destructive, `finance:void`,
     confirmation-required) — the void is a self-contained status transition.
@@ -1399,21 +1399,21 @@
 
 ### Patch Changes
 
-- 790a18d: Keep proposal version PATCH payloads sparse so omitted status does not trigger lifecycle-only status guards.
+- 790a18d: Keep quote version PATCH payloads sparse so omitted status does not trigger lifecycle-only status guards.
 - Updated dependencies [790a18d]
-  - @voyant-travel/proposals-contracts@0.108.1
+  - @voyant-travel/quotes-contracts@0.108.1
 
 ## 0.123.10
 
 ### Patch Changes
 
-- 7d70797: Validate proposal participant person IDs before creating participant records.
+- 7d70797: Validate quote participant person IDs before creating participant records.
 
 ## 0.123.9
 
 ### Patch Changes
 
-- 5cc83f5: Return actionable 404/409 responses for invalid proposal-version parents and blocked pipeline deletes.
+- 5cc83f5: Return actionable 404/409 responses for invalid quote-version parents and blocked pipeline deletes.
 
 ## 0.123.8
 
@@ -1425,7 +1425,7 @@
 
 ### Patch Changes
 
-- 6d8f054: Normalize proposal snapshot currencies so proposal-product line items cannot carry a blank or mismatched currency into sent public proposals.
+- 6d8f054: Normalize quote proposal snapshot currencies so quote-product line items cannot carry a blank or mismatched currency into sent public proposals.
 
 ## 0.123.6
 
@@ -1547,7 +1547,7 @@
 - c5416cb: Make public proposal acceptance reservation-safe for sourced catalog components.
 
   - `reserveTrip` now atomically claims the envelope (`priced` → `reserve_in_progress`) before any provider dispatch, so concurrent reserves are serialized and only one caller can create upstream supplier holds. A lost claim returns a `reservation_in_progress` conflict without dispatching, and the claim is released back to `priced` if preflight rejects or throws.
-  - Public proposal accept is split into prepare (under the proposal-accept lock) → reserve (outside any transaction) → finalize (under the lock). Sourced catalog components are no longer rejected, and a reservation is released via `cancelComponents` if final CRM acceptance loses a race (guarding idempotent replays).
+  - Public proposal accept is split into prepare (under the quote-accept lock) → reserve (outside any transaction) → finalize (under the lock). Sourced catalog components are no longer rejected, and a reservation is released via `cancelComponents` if final CRM acceptance loses a race (guarding idempotent replays).
 
 - Updated dependencies [c5416cb]
   - @voyant-travel/trips@0.120.1
@@ -1574,9 +1574,9 @@
 
 ### Patch Changes
 
-- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, proposals, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
+- 1841ce2: D.2 slice 1 (batch 2) — 14 more packages own + ship their migration history (db, relationships, quotes, identity, distribution, inventory, commerce, catalog, finance, notifications, legal, storefront, charters, cruises). Each baseline reproduces the framework bundle's tables column-for-column, and all package sources now apply together (fresh-D.2 union) without collision.
 
-  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + proposals). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
+  Shared enums: the codebase inlines copies of some enums to avoid cross-package schema imports (e.g. `service_type` in distribution + inventory, `entity_type` in relationships + quotes). Per-package generation would emit duplicate `CREATE TYPE`, colliding on a fresh D.2 database. All package migrations now wrap `CREATE TYPE … AS ENUM(…)` in an idempotent `DO`-block guard (subset-safe; whichever source applies first creates the type, the rest no-op). The db package additionally owns the shared Postgres extensions (pg_trgm / unaccent) that downstream trigram indexes need on a fresh D.2 database (the retired bundle injected them; per-package sources did not). The batch-1 packages (operator-settings, action-ledger, workflow-runs, trips) get the same guard for uniformity. No runtime change. See `docs/architecture/migration-collector-d2.md`.
 
 - Updated dependencies [1841ce2]
   - @voyant-travel/db@0.108.4
@@ -1592,12 +1592,12 @@
 
 ### Minor Changes
 
-- a74471e: Proposals admin surface. A pipeline board (`/proposals`) plus a full proposal workspace (`/proposals/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the proposal's versions nested inline. The proposal value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `proposals.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.proposals` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a proposal description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
+- a74471e: Quotes admin surface. A pipeline board (`/quotes`) plus a full quote workspace (`/quotes/$id`): editable deal fields, client (person and/or organization — B2C/B2B), travelers with an explicit PAX count, line items, tags, owner, the activity timeline, and the quote's versions nested inline. The quote value is derived from its line items and recomputed server-side on every change. Saving snapshots the current line items into a new proposal version that supersedes the prior one (one current version at a time); versions show a sequential number, Active/Expired status, and an editable valid-until on the active version. Adds `quotes.paxCount` plus `createdBy`/`updatedBy` audit fields (stamped from the acting user), an owner picker sourced from team members (falling back to the current user), and the `nav.quotes` operator label. The detail is a staged editor (edit freely; Save commits everything + snapshots a proposal version), with a quote description and images shown on the client proposal, and a "Send to client" action that surfaces the shareable proposal link (re-copying resolves the deployment's public proposal URL, not the admin origin). Products-based versions can be sent for review without a Trip snapshot; since acceptance reserves a frozen Trip, the public proposal exposes an `acceptable` flag and hides Accept (keeping Decline) for product-only proposals so clients never hit a guaranteed 409. All new copy is in en + ro.
 
 ### Patch Changes
 
 - Updated dependencies [a74471e]
-  - @voyant-travel/proposals-contracts@0.108.0
+  - @voyant-travel/quotes-contracts@0.108.0
   - @voyant-travel/db@0.108.3
   - @voyant-travel/trips@0.116.0
   - @voyant-travel/hono@0.112.2
@@ -1613,7 +1613,7 @@
 
 ### Minor Changes
 
-- d29dd47: Custom-fields unification (phase 3a — `custom_fields` column on proposal + activity). `activities` (relationships) and `proposals` gain a `custom_fields jsonb default '{}'` column (framework bundle migration `0003`), completing entity coverage for all four EAV entity types (person, organization, proposal, activity) ahead of repointing the value API to the column. Additive — no behavior change yet. Oracle-verified.
+- d29dd47: Custom-fields unification (phase 3a — `custom_fields` column on quote + activity). `activities` (relationships) and `quotes` gain a `custom_fields jsonb default '{}'` column (framework bundle migration `0003`), completing entity coverage for all four EAV entity types (person, organization, quote, activity) ahead of repointing the value API to the column. Additive — no behavior change yet. Oracle-verified.
 
 ### Patch Changes
 
@@ -1638,11 +1638,11 @@
 
 ### Minor Changes
 
-- a860e15: The proposals module now owns the proposal-version proposal + Trip-snapshot routes.
-  New exports (from `@voyant-travel/proposals` and `@voyant-travel/proposals/proposal-routes`):
-  `createProposalPresentationAdminRoutes`, `createProposalPresentationPublicRoutes`,
-  `createProposalVersionSnapshotRoutes`, `tripSnapshotToProposalVersionApply`,
-  `buildProposalVersionProposalUrl`, and `ProposalPresentationRoutesOptions`. The deployment
+- a860e15: The quotes module now owns the quote-version proposal + Trip-snapshot routes.
+  New exports (from `@voyant-travel/quotes` and `@voyant-travel/quotes/proposal-routes`):
+  `createQuoteProposalAdminRoutes`, `createQuoteProposalPublicRoutes`,
+  `createQuoteVersionSnapshotRoutes`, `tripSnapshotToQuoteVersionApply`,
+  `buildQuoteVersionProposalUrl`, and `QuoteProposalRoutesOptions`. The deployment
   injects db, public proposal base URL, and the trip reserve/checkout deps; the
   route implementations (send, public accept/decline, snapshot freeze) no longer
   live in the deployment. Adds `@voyant-travel/trips` as a dependency.
@@ -1660,12 +1660,12 @@
 
 - c8189fc: Split the legacy `@voyant-travel/crm-contracts` package into
   `@voyant-travel/relationships-contracts` and
-  `@voyant-travel/proposals-contracts`. Runtime packages and public validation
+  `@voyant-travel/quotes-contracts`. Runtime packages and public validation
   imports now depend on the domain-specific contract packages.
 - Updated dependencies [6bff46f]
 - Updated dependencies [c8189fc]
   - @voyant-travel/hono@0.110.0
-  - @voyant-travel/proposals-contracts@0.107.0
+  - @voyant-travel/quotes-contracts@0.107.0
 
 ## 0.119.2
 
@@ -1813,11 +1813,11 @@
 
 ### Minor Changes
 
-- d1ad572: Rename CRM sales artifacts from Opportunities to Proposals, split Proposal Versions into their own schema/API surface, and update the corresponding TypeID prefixes.
-- d1ad572: Add Proposal Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
-- d1ad572: Rename cross-package Proposal reference fields so `proposalId` points at the CRM deal and `proposalVersionId` points at the versioned proposal snapshot.
-- d1ad572: Add Proposal Version accept lifecycle contracts and CRM state transition for accepted proposal versions.
-- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Proposal Version proposal snapshots.
+- d1ad572: Rename CRM sales artifacts from Opportunities to Quotes, split Quote Versions into their own schema/API surface, and update the corresponding TypeID prefixes.
+- d1ad572: Add Quote Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
+- d1ad572: Rename cross-package Quote reference fields so `quoteId` points at the CRM deal and `quoteVersionId` points at the versioned proposal snapshot.
+- d1ad572: Add Quote Version accept lifecycle contracts and CRM state transition for accepted proposal versions.
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
 
 ### Patch Changes
 
@@ -4645,7 +4645,7 @@
   directly from identity tables on every read. Also align CRM child-list indexes
   with the actual parent-and-sort query shapes used for notes, communications,
   pipelines, stages, activity links/participants, opportunity participants and
-  products, and proposal lines.
+  products, and quote lines.
 - b218885: Add global sort indexes for CRM pipeline and stage admin lists that order by
   sort position and creation time without a parent filter.
 - b218885: add crm root admin list composite indexes
