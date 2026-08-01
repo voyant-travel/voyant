@@ -15,10 +15,9 @@ like the lean-auth path are reused). Every request then pays multi-second graph
 evaluation.
 
 Measured, in production: warm handler **1–2 ms** on Node (Cloud Run, resident
-process) vs **4–6 s/request** on Workers for Platforms. Full evidence chain:
-voyant-travel/platform#935 (RFC + probe ladder, voyant#2915/#2925/#2926/#2941/
-#2944/#2945) and the pilot on pro-travel (protravel-ro/protravel#391, Node
-residency confirmed). Decision: voyant#2966.
+process) vs **4–6 s/request** on Workers for Platforms. The public evidence
+chain is voyant-travel/platform#935 (RFC + probe ladder,
+voyant#2915/#2925/#2926/#2941/#2944/#2945). Decision: voyant#2966.
 
 The months of workerd-accommodation work (SSR lazy-loading, vendor-chunk
 surgery, code-splitting constraints, `pg` stubs, `require` shims, per-isolate
@@ -87,8 +86,11 @@ workload class well. On Node none of it is necessary.
   `node run-generated-migrations.mjs` as an explicit pre-rollout command and
   boots `dist/server/server.js`, which validates graph artifacts and required
   graph resource env before serving traffic. Startup does not own migrations.
-  The production artifact is published as `ghcr.io/voyant-travel/operator`;
-  production control planes pin its immutable digest. See
+  The public OSS artifact is published only as
+  `ghcr.io/voyant-travel/operator`; production control planes pin its immutable
+  digest. Self-hosters deploy that digest directly. A private downstream product
+  may use it as a digest-pinned base and publish its resulting derivative under
+  separate private provenance and release authority. See
   [Operator Image Distribution Contract](./operator-image-distribution.md) for
   tag promotion, OCI identity, provenance, digest acceptance, and provider
   binding compatibility rules.
@@ -111,10 +113,12 @@ workload class well. On Node none of it is necessary.
   An application keeps only the generic server bootstrap and explicit project
   customization inputs.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
-  "node"`) is the production default — one resident pool per process. neon-http/WS
-  remain the fallback adapters. See
-  [performance-enterprise-scale-assessment.md](./performance-enterprise-scale-assessment.md)
-  §2.6.
+  "node"`) is required for Voyant application/API runtimes that perform
+  authoritative Booking v1 writes. Booking Session, Quote, Hold, Commit,
+  Booking, Booking Item, Allocation, Finance command, action-ledger, and outbox
+  writes depend on transaction-capable PostgreSQL on one resident Node process
+  pool. neon-http/WS and other request-scoped serverless database adapters are
+  not production targets for Voyant server Booking surfaces.
   The canonical graph `DATABASE_URL` requirement accepts `DATABASE_URL_DIRECT`
   as a compatible alias, so either value satisfies pre-boot validation. The
   graph also verifies Postgres/Redis connection URLs and selected object-storage
@@ -130,7 +134,7 @@ workload class well. On Node none of it is necessary.
   a liveness signal; packaged-starter acceptance gates the complete server
   graph.
 
-## Workers host separate edge applications
+## Workers host separate consumer applications
 
 These surfaces can still be deployed as independent Worker applications:
 
@@ -140,9 +144,12 @@ These surfaces can still be deployed as independent Worker applications:
   and Voyant ships no federated Worker starter (see
   [federated-operating-mode.md](./federated-operating-mode.md)).
 
-They do not consume or statically compose the unified application deployment
-graph. A `cloudflare-worker` target must not be offered by its CLI target
-adapters.
+They do not host Voyant server Booking surfaces and do not consume or
+statically compose the unified application deployment graph. Consumer contracts,
+SDKs, storefronts, and small UI shells may run on edge platforms as API
+consumers, but Booking v1 authoritative writes remain on the Node/Docker/
+Cloud Run application API backed by pooled PostgreSQL. A `cloudflare-worker`
+target must not be offered by CLI target adapters for the unified server graph.
 
 ### Package-owned jobs in a small Worker application
 
