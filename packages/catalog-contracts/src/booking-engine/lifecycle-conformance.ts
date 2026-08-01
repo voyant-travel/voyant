@@ -1,0 +1,397 @@
+import { z } from "zod"
+
+export {
+  BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS,
+  bookingLifecycleConformanceScenariosV1,
+} from "./lifecycle-conformance-scenarios.js"
+
+import { bookingLifecycleConformanceScenariosV1 } from "./lifecycle-conformance-scenarios.js"
+
+export const bookingCommitmentPolicyKindV1 = z.enum([
+  "owned_atomic_commit",
+  "sourced_supplier_first",
+  "operator_backed_supplier_first",
+])
+export type BookingCommitmentPolicyKindV1 = z.infer<typeof bookingCommitmentPolicyKindV1>
+
+export const bookingInventoryAuthorityV1 = z.enum(["owned", "sourced"])
+export type BookingInventoryAuthorityV1 = z.infer<typeof bookingInventoryAuthorityV1>
+
+export const paymentGuaranteePolicyV1 = z.enum([
+  "not_required",
+  "required_before_commit",
+  "pay_later_authorized",
+])
+export type PaymentGuaranteePolicyV1 = z.infer<typeof paymentGuaranteePolicyV1>
+
+export const paymentGuaranteeStateV1 = z.enum([
+  "not_required",
+  "missing",
+  "established",
+  "post_commit_authorized",
+])
+export type PaymentGuaranteeStateV1 = z.infer<typeof paymentGuaranteeStateV1>
+
+export const supplierSecurityStateV1 = z.enum([
+  "not_applicable",
+  "not_started",
+  "intent_persisted",
+  "pending",
+  "secured",
+  "in_doubt",
+  "failed",
+])
+export type SupplierSecurityStateV1 = z.infer<typeof supplierSecurityStateV1>
+
+export const bookingCommitmentPolicyV1 = z
+  .object({
+    id: z.string().min(1),
+    kind: bookingCommitmentPolicyKindV1,
+    inventoryAuthority: bookingInventoryAuthorityV1,
+    paymentGuarantee: paymentGuaranteePolicyV1,
+    allowBookingBeforeSupplierSecured: z.boolean(),
+    operatorBackedRiskAccepted: z.boolean().default(false),
+  })
+  .superRefine((policy, ctx) => {
+    if (policy.kind === "owned_atomic_commit") {
+      if (policy.inventoryAuthority !== "owned") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["inventoryAuthority"],
+          message: "owned_atomic_commit policies apply only to owned inventory",
+        })
+      }
+      if (policy.allowBookingBeforeSupplierSecured) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["allowBookingBeforeSupplierSecured"],
+          message: "owned inventory has no supplier-first early-booking exception",
+        })
+      }
+    }
+    if (policy.kind === "sourced_supplier_first") {
+      if (policy.inventoryAuthority !== "sourced") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["inventoryAuthority"],
+          message: "sourced_supplier_first policies apply only to sourced inventory",
+        })
+      }
+      if (policy.allowBookingBeforeSupplierSecured) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["allowBookingBeforeSupplierSecured"],
+          message: "supplier-first policy must not create a Booking before supplier security",
+        })
+      }
+    }
+    if (policy.kind === "operator_backed_supplier_first") {
+      if (policy.inventoryAuthority !== "sourced") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["inventoryAuthority"],
+          message: "operator-backed policy applies only to sourced inventory",
+        })
+      }
+      if (!policy.allowBookingBeforeSupplierSecured || !policy.operatorBackedRiskAccepted) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["operatorBackedRiskAccepted"],
+          message:
+            "operator-backed early Booking requires explicit operator fulfillment-risk acceptance",
+        })
+      }
+    }
+  })
+export type BookingCommitmentPolicyV1 = z.infer<typeof bookingCommitmentPolicyV1>
+
+export const bookingLifecycleCommitInputV1 = z.object({
+  scenarioId: z.string().min(1),
+  idempotencyKey: z.string().min(8),
+  policy: bookingCommitmentPolicyV1,
+  session: z.object({
+    id: z.string().min(1),
+    revision: z.number().int().positive(),
+    expectedRevision: z.number().int().positive(),
+    state: z.enum(["active", "consumed", "abandoned"]),
+  }),
+  quote: z.object({
+    id: z.string().min(1),
+    sessionId: z.string().min(1),
+    sessionRevision: z.number().int().positive(),
+    state: z.enum(["fresh", "expired", "superseded", "mismatched"]),
+  }),
+  hold: z.object({
+    required: z.boolean(),
+    id: z.string().min(1).optional(),
+    sessionId: z.string().min(1).optional(),
+    state: z.enum(["not_required", "live", "missing", "expired", "released", "converted"]),
+  }),
+  paymentGuarantee: paymentGuaranteeStateV1,
+  supplier: z.object({
+    state: supplierSecurityStateV1,
+    operationId: z.string().min(1).optional(),
+    intentPersistedBeforeDispatch: z.boolean().default(false),
+  }),
+  proposalAcceptance: z
+    .object({
+      proposalVersionId: z.string().min(1),
+      acceptedVersionRevision: z.number().int().positive(),
+      currentVersionRevision: z.number().int().positive(),
+      materialTermsChanged: z.boolean(),
+      freshQuoteRequired: z.literal(true),
+    })
+    .optional(),
+  replayOfCommitId: z.string().min(1).optional(),
+})
+export type BookingLifecycleCommitInputV1 = z.infer<typeof bookingLifecycleCommitInputV1>
+
+export const bookingLifecycleNextActionV1 = z.enum([
+  "none",
+  "establish_payment_guarantee",
+  "refresh_session_state",
+  "request_fresh_quote",
+  "request_new_hold",
+  "persist_and_dispatch_supplier_operation",
+  "await_supplier_operation",
+  "reconcile_supplier_operation",
+  "renew_proposal_version_acceptance",
+  "return_idempotent_result",
+])
+export type BookingLifecycleNextActionV1 = z.infer<typeof bookingLifecycleNextActionV1>
+
+const bookingStatusAfterCommitV1 = z.enum(["confirmed"])
+
+export const bookingLifecycleCommitOutcomeV1 = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("committed"),
+    nextAction: z.literal("none"),
+    booking: z.object({ id: z.string().min(1), status: bookingStatusAfterCommitV1 }),
+    allocationIds: z.array(z.string().min(1)),
+    consumedSessionId: z.string().min(1),
+    consumedQuoteId: z.string().min(1),
+    convertedHoldId: z.string().min(1).optional(),
+    supplierOperationId: z.string().min(1).optional(),
+    operatorBackedRiskAccepted: z.boolean().optional(),
+  }),
+  z.object({
+    kind: z.literal("payment_required"),
+    nextAction: z.literal("establish_payment_guarantee"),
+    paymentTarget: z.enum(["booking_session", "quote", "supplier_operation"]),
+    allowedGuarantees: z.array(z.enum(["deposit", "pre_auth", "card_on_file", "agency_letter"])),
+  }),
+  z.object({
+    kind: z.literal("supplier_pending"),
+    nextAction: z.enum(["persist_and_dispatch_supplier_operation", "await_supplier_operation"]),
+    supplierOperationId: z.string().min(1),
+    bookingId: z.string().min(1).optional(),
+    operatorBackedRiskAccepted: z.boolean().default(false),
+  }),
+  z.object({
+    kind: z.literal("supplier_in_doubt"),
+    nextAction: z.literal("reconcile_supplier_operation"),
+    supplierOperationId: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("revision_mismatch"),
+    nextAction: z.literal("refresh_session_state"),
+    expectedRevision: z.number().int().positive(),
+    actualRevision: z.number().int().positive(),
+  }),
+  z.object({
+    kind: z.literal("quote_failure"),
+    nextAction: z.literal("request_fresh_quote"),
+    reason: z.enum(["expired", "superseded", "mismatched_session", "mismatched_revision"]),
+  }),
+  z.object({
+    kind: z.literal("hold_failure"),
+    nextAction: z.literal("request_new_hold"),
+    reason: z.enum(["missing", "expired", "released", "mismatched_session"]),
+  }),
+  z.object({
+    kind: z.literal("proposal_acceptance_required"),
+    nextAction: z.literal("renew_proposal_version_acceptance"),
+    proposalVersionId: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("idempotent_replay"),
+    nextAction: z.literal("return_idempotent_result"),
+    originalCommitId: z.string().min(1),
+    equivalentToOutcome: z.enum(["committed", "supplier_pending", "supplier_in_doubt"]),
+    bookingId: z.string().min(1).optional(),
+    supplierOperationId: z.string().min(1).optional(),
+  }),
+])
+export type BookingLifecycleCommitOutcomeV1 = z.infer<typeof bookingLifecycleCommitOutcomeV1>
+
+export const bookingLifecycleCommitOutcomeKindV1 = z.enum([
+  "committed",
+  "payment_required",
+  "supplier_pending",
+  "supplier_in_doubt",
+  "revision_mismatch",
+  "quote_failure",
+  "hold_failure",
+  "proposal_acceptance_required",
+  "idempotent_replay",
+])
+export type BookingLifecycleCommitOutcomeKindV1 = z.infer<
+  typeof bookingLifecycleCommitOutcomeKindV1
+>
+
+export const bookingLifecycleEffectObservationV1 = z.object({
+  bookingCreated: z.boolean().default(false),
+  allocationCreated: z.boolean().default(false),
+  holdConverted: z.boolean().default(false),
+  sessionConsumed: z.boolean().default(false),
+  quoteConsumed: z.boolean().default(false),
+  supplierOperationPersisted: z.boolean().default(false),
+  supplierDispatched: z.boolean().default(false),
+  paymentGuaranteeEstablished: z.boolean().default(false),
+  bookingCreatedBeforeSupplierSecured: z.boolean().default(false),
+  financeStatePromotedToBookingStatus: z.boolean().default(false),
+  transactionBoundary: z.enum(["none", "single", "multiple"]).default("none"),
+})
+export type BookingLifecycleEffectObservationV1 = z.infer<
+  typeof bookingLifecycleEffectObservationV1
+>
+
+export const bookingLifecycleObservationV1 = z.object({
+  outcome: bookingLifecycleCommitOutcomeV1,
+  effects: bookingLifecycleEffectObservationV1,
+})
+export type BookingLifecycleObservationV1 = z.infer<typeof bookingLifecycleObservationV1>
+
+export const bookingLifecycleExpectedObservationV1 = z.object({
+  outcomeKind: bookingLifecycleCommitOutcomeKindV1,
+  nextAction: bookingLifecycleNextActionV1,
+  effects: bookingLifecycleEffectObservationV1.partial(),
+})
+export type BookingLifecycleExpectedObservationV1 = z.infer<
+  typeof bookingLifecycleExpectedObservationV1
+>
+
+export const bookingLifecycleConformanceScenarioV1 = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  decision: z.string().min(1),
+  input: bookingLifecycleCommitInputV1,
+  expected: bookingLifecycleExpectedObservationV1,
+})
+export type BookingLifecycleConformanceScenarioV1 = z.infer<
+  typeof bookingLifecycleConformanceScenarioV1
+>
+
+export interface BookingLifecycleConformanceHarnessV1 {
+  commit(
+    input: BookingLifecycleCommitInputV1,
+    scenario: BookingLifecycleConformanceScenarioV1,
+  ): BookingLifecycleObservationV1 | Promise<BookingLifecycleObservationV1>
+}
+
+export interface BookingLifecycleConformanceResultV1 {
+  scenarioId: string
+  passed: boolean
+  error?: unknown
+}
+
+export async function assertBookingLifecycleConformanceV1(
+  harness: BookingLifecycleConformanceHarnessV1,
+  scenarios: readonly BookingLifecycleConformanceScenarioV1[] = bookingLifecycleConformanceScenariosV1,
+): Promise<BookingLifecycleConformanceResultV1[]> {
+  const results: BookingLifecycleConformanceResultV1[] = []
+
+  for (const scenario of scenarios) {
+    try {
+      const parsedScenario = bookingLifecycleConformanceScenarioV1.parse(scenario)
+      const observation = bookingLifecycleObservationV1.parse(
+        await harness.commit(parsedScenario.input, parsedScenario),
+      )
+      assertScenarioObservation(parsedScenario, observation)
+      results.push({ scenarioId: parsedScenario.id, passed: true })
+    } catch (error) {
+      results.push({ scenarioId: scenario.id, passed: false, error })
+    }
+  }
+
+  return results
+}
+
+function assertScenarioObservation(
+  scenario: BookingLifecycleConformanceScenarioV1,
+  observation: BookingLifecycleObservationV1,
+): void {
+  if (observation.outcome.kind !== scenario.expected.outcomeKind) {
+    throw new Error(
+      `${scenario.id}: expected outcome ${scenario.expected.outcomeKind}, got ${observation.outcome.kind}`,
+    )
+  }
+  if (observation.outcome.nextAction !== scenario.expected.nextAction) {
+    throw new Error(
+      `${scenario.id}: expected next action ${scenario.expected.nextAction}, got ${observation.outcome.nextAction}`,
+    )
+  }
+
+  for (const [name, expected] of Object.entries(scenario.expected.effects)) {
+    const actual = observation.effects[name as keyof BookingLifecycleEffectObservationV1]
+    if (actual !== expected) {
+      throw new Error(`${scenario.id}: expected effect ${name}=${expected}, got ${actual}`)
+    }
+  }
+
+  if (observation.effects.financeStatePromotedToBookingStatus) {
+    throw new Error(`${scenario.id}: Finance state must not become Booking status`)
+  }
+
+  if (
+    (observation.outcome.kind === "payment_required" ||
+      observation.outcome.kind === "revision_mismatch" ||
+      observation.outcome.kind === "quote_failure" ||
+      observation.outcome.kind === "hold_failure" ||
+      observation.outcome.kind === "proposal_acceptance_required") &&
+    observation.effects.bookingCreated
+  ) {
+    throw new Error(`${scenario.id}: ${observation.outcome.kind} must not create a Booking`)
+  }
+
+  if (
+    scenario.input.policy.kind === "sourced_supplier_first" &&
+    scenario.input.supplier.state !== "secured" &&
+    observation.effects.bookingCreated
+  ) {
+    throw new Error(
+      `${scenario.id}: supplier-first policy created a Booking before supplier security`,
+    )
+  }
+
+  if (
+    observation.effects.bookingCreatedBeforeSupplierSecured &&
+    scenario.input.policy.kind !== "operator_backed_supplier_first"
+  ) {
+    throw new Error(
+      `${scenario.id}: only operator-backed policy may create a Booking before supplier security`,
+    )
+  }
+
+  if (
+    scenario.input.policy.kind === "owned_atomic_commit" &&
+    observation.outcome.kind === "committed"
+  ) {
+    const requiredEffects: Array<keyof BookingLifecycleEffectObservationV1> = [
+      "bookingCreated",
+      "allocationCreated",
+      "holdConverted",
+      "sessionConsumed",
+      "quoteConsumed",
+      "paymentGuaranteeEstablished",
+    ]
+    for (const effect of requiredEffects) {
+      if (!observation.effects[effect]) {
+        throw new Error(`${scenario.id}: owned atomic Commit did not observe ${effect}`)
+      }
+    }
+    if (observation.effects.transactionBoundary !== "single") {
+      throw new Error(`${scenario.id}: owned atomic Commit must run in one transaction`)
+    }
+  }
+}
