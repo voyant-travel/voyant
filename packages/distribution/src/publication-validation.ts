@@ -73,6 +73,9 @@ export const channelProductPublicationListQuerySchema = paginationSchema
   .strict()
 
 export const insertChannelSupplierPublicationSchema = channelSupplierPublicationCoreSchema
+export const previewChannelSupplierPublicationSchema = channelSupplierPublicationCoreSchema
+  .omit({ createdBy: true, updatedBy: true })
+  .strict()
 export const updateChannelSupplierPublicationSchema = channelSupplierPublicationCoreSchema
   .omit({ channelId: true, supplierId: true, createdBy: true })
   .partial()

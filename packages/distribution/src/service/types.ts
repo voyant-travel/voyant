@@ -45,6 +45,7 @@ import type {
   insertChannelSettlementRunSchema,
   insertChannelSupplierPublicationSchema,
   insertChannelWebhookEventSchema,
+  previewChannelSupplierPublicationSchema,
   updateChannelBookingLinkSchema,
   updateChannelCommissionRuleSchema,
   updateChannelContractSchema,
@@ -129,6 +130,9 @@ export type UpdateChannelProductPublicationInput = z.infer<
 >
 export type CreateChannelSupplierPublicationInput = z.infer<
   typeof insertChannelSupplierPublicationSchema
+>
+export type PreviewChannelSupplierPublicationInput = z.infer<
+  typeof previewChannelSupplierPublicationSchema
 >
 export type UpdateChannelSupplierPublicationInput = z.infer<
   typeof updateChannelSupplierPublicationSchema
