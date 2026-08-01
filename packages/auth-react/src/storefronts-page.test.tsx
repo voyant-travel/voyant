@@ -69,7 +69,9 @@ describe("storefront admin surface", () => {
     const extension = createSelectedStorefrontAdminExtension()
     const fetcher = vi.fn(async (url: string, _init?: RequestInit) => {
       if (url.endsWith("/capabilities")) {
-        return Response.json({ data: { businessAccounts: true, manageProviders: true } })
+        return Response.json({
+          data: { businessAccounts: true, manageProviders: true, channelBinding: true },
+        })
       }
       return Response.json({ data: [STOREFRONT] })
     })
@@ -90,7 +92,11 @@ describe("storefront admin surface", () => {
   })
 
   it("disables business controls when the runtime capability is unavailable", async () => {
-    const queryClient = seededQueryClient({ businessAccounts: false, manageProviders: true })
+    const queryClient = seededQueryClient({
+      businessAccounts: false,
+      manageProviders: true,
+      channelBinding: true,
+    })
     const container = document.createElement("div")
     const root = createRoot(container)
 
@@ -113,7 +119,11 @@ describe("storefront admin surface", () => {
   })
 
   it("reveals a freshly issued key exactly once", async () => {
-    const queryClient = seededQueryClient({ businessAccounts: true, manageProviders: true })
+    const queryClient = seededQueryClient({
+      businessAccounts: true,
+      manageProviders: true,
+      channelBinding: true,
+    })
     const api = pageApi()
     const container = document.createElement("div")
     const root = createRoot(container)
@@ -141,7 +151,11 @@ describe("storefront admin surface", () => {
 
 function pageApi(): StorefrontsAdminApi {
   return {
-    getCapabilities: vi.fn(async () => ({ businessAccounts: true, manageProviders: true })),
+    getCapabilities: vi.fn(async () => ({
+      businessAccounts: true,
+      manageProviders: true,
+      channelBinding: true,
+    })),
     listStorefronts: vi.fn(async () => [STOREFRONT]),
     getStorefront: vi.fn(async () => STOREFRONT),
     createStorefront: vi.fn(async () => STOREFRONT),
@@ -164,7 +178,11 @@ function pageApi(): StorefrontsAdminApi {
   }
 }
 
-function seededQueryClient(capabilities: { businessAccounts: boolean; manageProviders: boolean }) {
+function seededQueryClient(capabilities: {
+  businessAccounts: boolean
+  manageProviders: boolean
+  channelBinding: boolean
+}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
