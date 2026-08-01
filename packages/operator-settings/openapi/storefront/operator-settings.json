@@ -159,6 +159,66 @@
                         "website": {
                           "type": "string"
                         },
+                        "logoLightAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoLightMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "iconLightAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconLightMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "brandColor": {
+                          "type": "string"
+                        },
+                        "cornerRadius": {
+                          "type": "string"
+                        },
+                        "headingFont": {
+                          "type": "string"
+                        },
+                        "bodyFont": {
+                          "type": "string"
+                        },
+                        "faviconAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "faviconMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "supportEmail": {
+                          "type": ["string", "null"]
+                        },
+                        "termsUrl": {
+                          "type": ["string", "null"]
+                        },
+                        "privacyUrl": {
+                          "type": ["string", "null"]
+                        },
+                        "supportedLocales": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "defaultLocale": {
+                          "type": "string"
+                        },
                         "license": {
                           "type": "string"
                         },
@@ -180,6 +240,25 @@
                         "phone",
                         "email",
                         "website",
+                        "logoLightAssetKey",
+                        "logoLightMimeType",
+                        "logoDarkAssetKey",
+                        "logoDarkMimeType",
+                        "iconLightAssetKey",
+                        "iconLightMimeType",
+                        "iconDarkAssetKey",
+                        "iconDarkMimeType",
+                        "brandColor",
+                        "cornerRadius",
+                        "headingFont",
+                        "bodyFont",
+                        "faviconAssetKey",
+                        "faviconMimeType",
+                        "supportEmail",
+                        "termsUrl",
+                        "privacyUrl",
+                        "supportedLocales",
+                        "defaultLocale",
                         "license",
                         "licenseAuthority",
                         "bookingCheckoutUrlTemplate",
@@ -232,6 +311,66 @@
                         "website": {
                           "type": "string"
                         },
+                        "logoLightAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoLightMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "logoDarkMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "iconLightAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconLightMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "iconDarkMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "brandColor": {
+                          "type": "string"
+                        },
+                        "cornerRadius": {
+                          "type": "string"
+                        },
+                        "headingFont": {
+                          "type": "string"
+                        },
+                        "bodyFont": {
+                          "type": "string"
+                        },
+                        "faviconAssetKey": {
+                          "type": ["string", "null"]
+                        },
+                        "faviconMimeType": {
+                          "type": ["string", "null"]
+                        },
+                        "supportEmail": {
+                          "type": ["string", "null"]
+                        },
+                        "termsUrl": {
+                          "type": ["string", "null"]
+                        },
+                        "privacyUrl": {
+                          "type": ["string", "null"]
+                        },
+                        "supportedLocales": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "defaultLocale": {
+                          "type": "string"
+                        },
                         "license": {
                           "type": "string"
                         },
@@ -253,6 +392,25 @@
                         "phone",
                         "email",
                         "website",
+                        "logoLightAssetKey",
+                        "logoLightMimeType",
+                        "logoDarkAssetKey",
+                        "logoDarkMimeType",
+                        "iconLightAssetKey",
+                        "iconLightMimeType",
+                        "iconDarkAssetKey",
+                        "iconDarkMimeType",
+                        "brandColor",
+                        "cornerRadius",
+                        "headingFont",
+                        "bodyFont",
+                        "faviconAssetKey",
+                        "faviconMimeType",
+                        "supportEmail",
+                        "termsUrl",
+                        "privacyUrl",
+                        "supportedLocales",
+                        "defaultLocale",
                         "license",
                         "licenseAuthority",
                         "bookingCheckoutUrlTemplate",
