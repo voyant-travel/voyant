@@ -220,7 +220,11 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
         ids: body.ids,
         remove: async (db, id) => {
           const row = await distributionService.deleteChannel(db, id)
-          if (row) await eventBus?.emit("channel.deleted", { id: row.id })
+          if (row)
+            await eventBus?.emit("channel.deleted", {
+              id: row.id,
+              affectedProductIds: row.affectedProductIds,
+            })
           return row
         },
       }),
@@ -242,7 +246,11 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
   })
   .openapi(deleteChannelRoute, async (c) => {
     const row = await distributionService.deleteChannel(c.get("db"), c.req.valid("param").id)
-    if (row) await c.get("eventBus")?.emit("channel.deleted", { id: row.id })
+    if (row)
+      await c.get("eventBus")?.emit("channel.deleted", {
+        id: row.id,
+        affectedProductIds: row.affectedProductIds,
+      })
     return row
       ? c.json({ success: true } as const, 200)
       : c.json({ error: "Channel not found" }, 404)

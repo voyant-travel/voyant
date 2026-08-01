@@ -425,7 +425,7 @@
           "name": "channel_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "contract_id": {
           "name": "contract_id",
@@ -4921,6 +4921,66 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "uniq_channel_pub_reindex_global_product_pending": {
+          "name": "uniq_channel_pub_reindex_global_product_pending",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"channel_publication_reindex_intents\".\"status\" = 'pending' AND \"channel_publication_reindex_intents\".\"channel_id\" IS NULL AND \"channel_publication_reindex_intents\".\"product_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uniq_channel_pub_reindex_global_supplier_pending": {
+          "name": "uniq_channel_pub_reindex_global_supplier_pending",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "supplier_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"channel_publication_reindex_intents\".\"status\" = 'pending' AND \"channel_publication_reindex_intents\".\"channel_id\" IS NULL AND \"channel_publication_reindex_intents\".\"supplier_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uniq_channel_pub_reindex_catalog_pending": {
+          "name": "uniq_channel_pub_reindex_catalog_pending",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"channel_publication_reindex_intents\".\"status\" = 'pending' AND \"channel_publication_reindex_intents\".\"kind\" = 'catalog'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6439,7 +6499,8 @@
       "schema": "public",
       "values": [
         "product",
-        "supplier"
+        "supplier",
+        "catalog"
       ]
     },
     "public.channel_publication_reindex_intent_status": {

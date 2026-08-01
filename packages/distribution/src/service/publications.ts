@@ -69,12 +69,12 @@ async function requireProduct(db: PostgresJsDatabase, productId: string) {
 
 async function enqueueProductPublicationReindex(
   db: PostgresJsDatabase,
-  input: { channelId: string; productId: string; requestedBy?: string | null },
+  input: { channelId?: string | null; productId: string; requestedBy?: string | null },
 ) {
   await db
     .insert(channelPublicationReindexIntents)
     .values({
-      channelId: input.channelId,
+      channelId: input.channelId ?? null,
       kind: "product",
       productId: input.productId,
       requestedBy: input.requestedBy ?? null,
@@ -84,12 +84,12 @@ async function enqueueProductPublicationReindex(
 
 async function enqueueSupplierPublicationReindex(
   db: PostgresJsDatabase,
-  input: { channelId: string; supplierId: string; requestedBy?: string | null },
+  input: { channelId?: string | null; supplierId: string; requestedBy?: string | null },
 ) {
   await db
     .insert(channelPublicationReindexIntents)
     .values({
-      channelId: input.channelId,
+      channelId: input.channelId ?? null,
       kind: "supplier",
       supplierId: input.supplierId,
       requestedBy: input.requestedBy ?? null,
@@ -129,6 +129,17 @@ async function enqueueProductPublicationReindexForChannels(
       requestedBy: input.requestedBy ?? null,
     })
   }
+}
+
+async function enqueueGlobalProductReindex(
+  db: PostgresJsDatabase,
+  input: { productId: string; requestedBy?: string | null },
+) {
+  await enqueueProductPublicationReindex(db, {
+    channelId: null,
+    productId: input.productId,
+    requestedBy: input.requestedBy ?? null,
+  })
 }
 
 async function enqueueSupplierPublicationReindexForChannels(
@@ -383,30 +394,100 @@ export const publicationServiceOperations = {
     return row?.count ?? 0
   },
 
+  async captureChannelDeletionReindex(
+    db: PostgresJsDatabase,
+    input: { channelId: string },
+  ) {
+    // Capture before the channel cascade removes its publication rules and
+    // intents. Global product intents survive that cascade and make removal
+    // from every channel-scoped projection durable after commit.
+    const result = await db.execute(sql<{ id: string }>`
+      SELECT DISTINCT product.id
+      FROM products product
+      WHERE EXISTS (
+        SELECT 1
+        FROM channel_product_publications publication
+        WHERE publication.channel_id = ${input.channelId}
+          AND publication.product_id = product.id
+      ) OR EXISTS (
+        SELECT 1
+        FROM channel_supplier_publications publication
+        WHERE publication.channel_id = ${input.channelId}
+          AND publication.supplier_id = product.supplier_id
+      )
+      ORDER BY product.id
+    `)
+    const productIds = (
+      Array.isArray(result) ? result : ((result as { rows?: Array<{ id: string }> }).rows ?? [])
+    ).map(({ id }) => id)
+    await publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
+      productIds,
+      requestedBy: "lifecycle:channel.deleted",
+    })
+    return productIds
+  },
+
+  async captureSupplierDeletionReindex(
+    db: PostgresJsDatabase,
+    input: { supplierId: string },
+  ) {
+    const rows = await db
+      .select({ id: publicationProductsRef.id })
+      .from(publicationProductsRef)
+      .where(eq(publicationProductsRef.supplierId, input.supplierId))
+    const productIds = rows.map(({ id }) => id)
+
+    // Supplier rules must not outlive their subject. Clear the legacy
+    // canonical assignment mirror in the same transaction so orphaned IDs can
+    // never keep a deleted supplier rule effective.
+    await db
+      .delete(channelSupplierPublications)
+      .where(eq(channelSupplierPublications.supplierId, input.supplierId))
+    await db
+      .update(publicationProductsRef)
+      .set({ supplierId: null })
+      .where(eq(publicationProductsRef.supplierId, input.supplierId))
+    await publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
+      productIds,
+      requestedBy: "lifecycle:supplier.deleted",
+    })
+    return productIds
+  },
+
   async enqueueProductLifecycleReindex(
     db: PostgresJsDatabase,
     input: { productId: string; requestedBy?: string | null },
   ) {
-    const channelIds = await listActiveChannelIds(db)
-    await enqueueProductPublicationReindexForChannels(db, {
+    await enqueueGlobalProductReindex(db, {
       productId: input.productId,
-      channelIds,
       requestedBy: input.requestedBy ?? null,
     })
-    return { enqueued: channelIds.length }
+    return { enqueued: 1 }
+  },
+
+  async enqueueCapturedProductLifecycleReindex(
+    db: PostgresJsDatabase,
+    input: { productIds: readonly string[]; requestedBy?: string | null },
+  ) {
+    for (const productId of new Set(input.productIds)) {
+      await enqueueGlobalProductReindex(db, {
+        productId,
+        requestedBy: input.requestedBy ?? null,
+      })
+    }
+    return { enqueued: new Set(input.productIds).size }
   },
 
   async enqueueSupplierLifecycleReindex(
     db: PostgresJsDatabase,
     input: { supplierId: string; requestedBy?: string | null },
   ) {
-    const channelIds = await listActiveChannelIds(db)
-    await enqueueSupplierPublicationReindexForChannels(db, {
+    await enqueueSupplierPublicationReindex(db, {
+      channelId: null,
       supplierId: input.supplierId,
-      channelIds,
       requestedBy: input.requestedBy ?? null,
     })
-    return { enqueued: channelIds.length }
+    return { enqueued: 1 }
   },
 
   async enqueueChannelLifecycleReindex(
@@ -415,13 +496,10 @@ export const publicationServiceOperations = {
   ) {
     await requireChannel(db, input.channelId)
     const productIds = await listVisibleProductIds(db)
-    for (const productId of productIds) {
-      await enqueueProductPublicationReindex(db, {
-        channelId: input.channelId,
-        productId,
-        requestedBy: input.requestedBy ?? null,
-      })
-    }
+    await publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
+      productIds,
+      requestedBy: input.requestedBy ?? null,
+    })
     return { enqueued: productIds.length }
   },
 

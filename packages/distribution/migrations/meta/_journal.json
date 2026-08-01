@@ -40,12 +40,19 @@
     {
       "idx": 5,
       "version": "7",
+      "when": 1785604200000,
+      "tag": "20260801171000_publication_catalog_intent_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
       "when": 1785604800000,
       "tag": "20260801172000_publication_intent_leases",
       "breakpoints": true
     },
     {
-      "idx": 6,
+      "idx": 7,
       "version": "7",
       "when": 1785605700000,
       "tag": "20260801173500_backfill_prior_visible_catalog_publications",

@@ -7,6 +7,7 @@ import {
   distributionPublicationIntentWorkerRuntimePort,
 } from "./publication-intent-runtime-port.js"
 import { publicationProductsRef } from "./publication-product-ref.js"
+import { channelProductPublications, channels } from "./schema.js"
 
 export {
   type DistributionPublicationIntentWorkerDeps,
@@ -22,8 +23,8 @@ const DEFAULT_RETRY_DELAY_MS = 60_000
 
 type ClaimedIntent = {
   id: string
-  channelId: string
-  kind: "product" | "supplier"
+  channelId: string | null
+  kind: "product" | "supplier" | "catalog"
   productId: string | null
   supplierId: string | null
   cursor: string | null
@@ -63,6 +64,7 @@ async function claimIntent(
         AND next_attempt_at <= now()
         AND (
           status <> 'processing'
+          OR lease_owner = ${leaseOwner}
           OR lease_until IS NULL
           OR lease_until < now()
         )
@@ -109,14 +111,19 @@ async function completeIntent(db: PostgresJsDatabase, intent: ClaimedIntent) {
   `)
 }
 
-async function checkpointIntent(db: PostgresJsDatabase, intent: ClaimedIntent, cursor: string) {
-  // agent-quality: raw SQL keeps lease checkpoint compare-and-clear atomic.
+async function checkpointIntent(
+  db: PostgresJsDatabase,
+  intent: ClaimedIntent,
+  cursor: string,
+  leaseMs: number,
+) {
+  // Keep ownership while cursoring. A concurrent enqueue may legitimately create
+  // a fresh pending row for the same subject; transitioning this row back to
+  // pending would race that insert and violate the partial unique index.
   await db.execute(sql`
     UPDATE channel_publication_reindex_intents
-    SET status = 'pending',
-        cursor = ${cursor},
-        lease_owner = NULL,
-        lease_until = NULL,
+    SET cursor = ${cursor},
+        lease_until = now() + (${leaseMs} * interval '1 millisecond'),
         next_attempt_at = now(),
         updated_at = now()
     WHERE id = ${intent.id}
@@ -128,12 +135,13 @@ async function checkpointIntent(db: PostgresJsDatabase, intent: ClaimedIntent, c
 async function failIntent(
   db: PostgresJsDatabase,
   intent: ClaimedIntent,
-  input: { error: string; maxAttempts: number; retryDelayMs: number },
+  input: { error: string; retryDelayMs: number },
 ) {
-  // agent-quality: raw SQL keeps retry/final-failure transition atomic.
+  // Failed rows are retryable by claimIntent until maxAttempts. Keeping the row
+  // out of `pending` avoids racing a concurrently enqueued pending successor.
   await db.execute(sql`
     UPDATE channel_publication_reindex_intents
-    SET status = CASE WHEN attempts + 1 >= ${input.maxAttempts} THEN 'failed' ELSE 'pending' END,
+    SET status = 'failed',
         attempts = attempts + 1,
         lease_owner = NULL,
         lease_until = NULL,
@@ -167,12 +175,59 @@ async function listSupplierProductIds(
   return result.map(({ id }) => id)
 }
 
+async function listVisibleProductIdsPage(
+  db: PostgresJsDatabase,
+  input: { afterId?: string | null; limit: number },
+) {
+  const result = await db
+    .select({ id: publicationProductsRef.id })
+    .from(publicationProductsRef)
+    .where(
+      and(
+        eq(publicationProductsRef.status, "active"),
+        eq(publicationProductsRef.visibility, "public"),
+        input.afterId ? gt(publicationProductsRef.id, input.afterId) : undefined,
+      ),
+    )
+    .orderBy(asc(publicationProductsRef.id))
+    .limit(input.limit)
+  return result.map(({ id }) => id)
+}
+
+async function publishPriorVisibleProducts(db: PostgresJsDatabase, productIds: readonly string[]) {
+  if (productIds.length === 0) return
+  const channelRows = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(eq(channels.status, "active"))
+
+  for (const channel of channelRows) {
+    await db
+      .insert(channelProductPublications)
+      .values(
+        productIds.map((productId) => ({
+          channelId: channel.id,
+          productId,
+          decision: "include" as const,
+          reason: "Backfilled from prior active public catalog visibility during publication cutover.",
+          createdBy: "system:worker:prior-visible-catalog-backfill",
+          updatedBy: "system:worker:prior-visible-catalog-backfill",
+          metadata: { source: "prior_active_public_catalog" },
+        })),
+      )
+      .onConflictDoNothing()
+  }
+}
+
 async function processIntent(
   db: PostgresJsDatabase,
   projection: CatalogProjectionRuntime,
   intent: ClaimedIntent,
   options: Required<
-    Pick<PublicationIntentWorkerOptions, "productBatchSize" | "maxAttempts" | "retryDelayMs">
+    Pick<
+      PublicationIntentWorkerOptions,
+      "productBatchSize" | "retryDelayMs" | "leaseMs"
+    >
   >,
 ) {
   try {
@@ -183,15 +238,28 @@ async function processIntent(
       return
     }
 
-    if (!intent.supplierId) throw new Error("supplier intent is missing supplierId")
-    const productIds = await listSupplierProductIds(db, {
-      supplierId: intent.supplierId,
-      afterId: intent.cursor,
-      limit: options.productBatchSize,
-    })
+    const productIds =
+      intent.kind === "catalog"
+        ? await listVisibleProductIdsPage(db, {
+            afterId: intent.cursor,
+            limit: options.productBatchSize,
+          })
+        : intent.supplierId
+          ? await listSupplierProductIds(db, {
+              supplierId: intent.supplierId,
+              afterId: intent.cursor,
+              limit: options.productBatchSize,
+            })
+          : (() => {
+              throw new Error("supplier intent is missing supplierId")
+            })()
     if (productIds.length === 0) {
       await completeIntent(db, intent)
       return
+    }
+
+    if (intent.kind === "catalog") {
+      await publishPriorVisibleProducts(db, productIds)
     }
 
     for (const productId of productIds) {
@@ -204,11 +272,10 @@ async function processIntent(
       return
     }
 
-    await checkpointIntent(db, intent, lastProductId)
+    await checkpointIntent(db, intent, lastProductId, options.leaseMs)
   } catch (error) {
     await failIntent(db, intent, {
       error: errorMessage(error),
-      maxAttempts: options.maxAttempts,
       retryDelayMs: options.retryDelayMs,
     })
     throw error

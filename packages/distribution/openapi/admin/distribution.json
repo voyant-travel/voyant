@@ -2103,7 +2103,7 @@
                             "type": "string"
                           },
                           "channelId": {
-                            "type": "string"
+                            "type": ["string", "null"]
                           },
                           "supplierId": {
                             "type": ["string", "null"]
@@ -6132,7 +6132,7 @@
                           },
                           "kind": {
                             "type": "string",
-                            "enum": ["product", "supplier"]
+                            "enum": ["product", "supplier", "catalog"]
                           },
                           "productId": {
                             "type": ["string", "null"]

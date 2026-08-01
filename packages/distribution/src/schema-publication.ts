@@ -22,9 +22,7 @@ export const channelProductPublications = pgTable(
   "channel_product_publications",
   {
     id: typeId("channel_product_publications"),
-    channelId: typeIdRef("channel_id")
-      .notNull()
-      .references(() => channels.id, { onDelete: "cascade" }),
+    channelId: typeIdRef("channel_id").references(() => channels.id, { onDelete: "cascade" }),
     productId: typeIdRef("product_id").notNull(),
     decision: channelPublicationDecisionEnum("decision").notNull(),
     reason: text("reason"),
@@ -104,9 +102,22 @@ export const channelPublicationReindexIntents = pgTable(
       .on(table.channelId, table.kind, table.supplierId)
       // agent-quality: raw-sql reviewed -- owner: distribution; static partial-index predicate.
       .where(sql`${table.status} = 'pending' AND ${table.supplierId} IS NOT NULL`),
+    uniqueIndex("uniq_channel_pub_reindex_global_product_pending")
+      .on(table.kind, table.productId)
+      .where(
+        sql`${table.status} = 'pending' AND ${table.channelId} IS NULL AND ${table.productId} IS NOT NULL`,
+      ),
+    uniqueIndex("uniq_channel_pub_reindex_global_supplier_pending")
+      .on(table.kind, table.supplierId)
+      .where(
+        sql`${table.status} = 'pending' AND ${table.channelId} IS NULL AND ${table.supplierId} IS NOT NULL`,
+      ),
+    uniqueIndex("uniq_channel_pub_reindex_catalog_pending")
+      .on(table.kind)
+      .where(sql`${table.status} = 'pending' AND ${table.kind} = 'catalog'`),
     check(
       "ck_channel_pub_reindex_subject",
-      sql`((${table.kind} = 'product' AND ${table.productId} IS NOT NULL AND ${table.supplierId} IS NULL) OR (${table.kind} = 'supplier' AND ${table.supplierId} IS NOT NULL AND ${table.productId} IS NULL))`,
+      sql`((${table.kind} = 'product' AND ${table.productId} IS NOT NULL AND ${table.supplierId} IS NULL) OR (${table.kind} = 'supplier' AND ${table.supplierId} IS NOT NULL AND ${table.productId} IS NULL) OR (${table.kind} = 'catalog' AND ${table.channelId} IS NULL AND ${table.productId} IS NULL AND ${table.supplierId} IS NULL))`,
     ),
   ],
 )

@@ -3,7 +3,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;--> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "public"."channel_publication_reindex_intent_kind" AS ENUM('product', 'supplier');
+ CREATE TYPE "public"."channel_publication_reindex_intent_kind" AS ENUM('product', 'supplier', 'catalog');
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;--> statement-breakpoint
 DO $$ BEGIN
@@ -12,7 +12,7 @@ EXCEPTION WHEN duplicate_object THEN null;
 END $$;--> statement-breakpoint
 CREATE TABLE "channel_product_publications" (
 	"id" text PRIMARY KEY NOT NULL,
-	"channel_id" text NOT NULL,
+	"channel_id" text,
 	"product_id" text NOT NULL,
 	"decision" "channel_publication_decision" NOT NULL,
 	"reason" text,
@@ -67,6 +67,9 @@ CREATE INDEX "idx_channel_pub_reindex_product" ON "channel_publication_reindex_i
 CREATE INDEX "idx_channel_pub_reindex_supplier" ON "channel_publication_reindex_intents" USING btree ("supplier_id","requested_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "uniq_channel_pub_reindex_product_pending" ON "channel_publication_reindex_intents" USING btree ("channel_id","kind","product_id") WHERE "channel_publication_reindex_intents"."status" = 'pending' AND "channel_publication_reindex_intents"."product_id" IS NOT NULL;--> statement-breakpoint
 CREATE UNIQUE INDEX "uniq_channel_pub_reindex_supplier_pending" ON "channel_publication_reindex_intents" USING btree ("channel_id","kind","supplier_id") WHERE "channel_publication_reindex_intents"."status" = 'pending' AND "channel_publication_reindex_intents"."supplier_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_channel_pub_reindex_global_product_pending" ON "channel_publication_reindex_intents" USING btree ("kind","product_id") WHERE "channel_publication_reindex_intents"."status" = 'pending' AND "channel_publication_reindex_intents"."channel_id" IS NULL AND "channel_publication_reindex_intents"."product_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_channel_pub_reindex_global_supplier_pending" ON "channel_publication_reindex_intents" USING btree ("kind","supplier_id") WHERE "channel_publication_reindex_intents"."status" = 'pending' AND "channel_publication_reindex_intents"."channel_id" IS NULL AND "channel_publication_reindex_intents"."supplier_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "uniq_channel_pub_reindex_catalog_pending" ON "channel_publication_reindex_intents" USING btree ("kind") WHERE "channel_publication_reindex_intents"."status" = 'pending' AND "channel_publication_reindex_intents"."kind" = 'catalog';--> statement-breakpoint
 CREATE UNIQUE INDEX "uniq_channel_supplier_publications_subject" ON "channel_supplier_publications" USING btree ("channel_id","supplier_id");--> statement-breakpoint
 CREATE INDEX "idx_channel_supplier_publications_channel" ON "channel_supplier_publications" USING btree ("channel_id","updated_at");--> statement-breakpoint
 CREATE INDEX "idx_channel_supplier_publications_supplier" ON "channel_supplier_publications" USING btree ("supplier_id","updated_at");--> statement-breakpoint

@@ -177,6 +177,24 @@ bounded, resumable reindex work. Product publication changes enqueue targeted
 Channel/Product reindex work. The admin request completes after the durable
 handoff rather than after traversing a supplier's full assortment.
 
+The compatibility cutover follows the same rule. Its schema migration creates
+one `catalog` reindex intent; it does not synchronously materialize the
+Channels-by-Products Cartesian set. The publication-intent worker walks active,
+public Products in bounded ID-ordered pages, inserts missing include rules for
+active Channels with conflict-safe writes, reindexes the page, and persists the
+last Product ID as its cursor. Operators observe progress through the intent's
+`status`, `cursor`, `attempts`, `lastError`, `processingStartedAt`, and
+`completedAt` fields. A checkpoint retains the processing lease; it never
+returns the row to `pending`, where a concurrent enqueue could collide with the
+pending-subject uniqueness constraint.
+
+Product lifecycle intents may be Channel-independent. This is required for
+Channel and Supplier deletion: the deleting transaction captures affected
+Product IDs before cascading or clearing rules, records global Product intents,
+and only then removes the subject. Supplier deletion also removes its
+publication rules and clears the legacy canonical Supplier mirror, preventing
+orphaned rules from remaining effective.
+
 ## 6. Channel Connectivity Modes
 
 ### 6.1 Viator Supplier / Reservation System API

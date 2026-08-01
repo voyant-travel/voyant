@@ -73,6 +73,37 @@ describe("publication reindex intent worker", () => {
     expect(db.execute).toHaveBeenCalledTimes(2)
   })
 
+  it("keeps a checkpointed row leased and resumes it without returning to pending", async () => {
+    const resumedIntent = { ...supplierIntent, cursor: "prod_2" }
+    const db = fakeDb({
+      executeResults: [
+        { rows: [supplierIntent] },
+        { rows: [] },
+        { rows: [resumedIntent] },
+        { rows: [] },
+      ],
+      productPages: [[{ id: "prod_1" }, { id: "prod_2" }], [{ id: "prod_3" }]],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await expect(
+      drainPublicationReindexIntents(
+        { db: db as never, projection },
+        { leaseOwner: "worker_1", maxIntents: 2, productBatchSize: 2 },
+      ),
+    ).resolves.toEqual({ processed: 2 })
+
+    expect(projection.reindexEntity.mock.calls.map(([input]) => input.entityId)).toEqual([
+      "prod_1",
+      "prod_2",
+      "prod_3",
+    ])
+    expect(db.execute).toHaveBeenCalledTimes(4)
+  })
+
   it("marks failures for retry and continues draining", async () => {
     const db = fakeDb({
       executeResults: [{ rows: [productIntent] }, { rows: [] }, { rows: [] }],

@@ -254,7 +254,7 @@ export const supplierPublicationPreviewResponseSchema = z.object({
 
 export const channelPublicationReindexIntentSchema = z.object({
   id: idSchema,
-  channelId: z.string(),
+  channelId: z.string().nullable(),
   kind: channelPublicationReindexIntentKindSchema,
   productId: z.string().nullable(),
   supplierId: z.string().nullable(),

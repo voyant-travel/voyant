@@ -10,6 +10,9 @@ import {
 import { publicationServiceOperations } from "./service/publications.js"
 
 const entityIdPayloadSchema = z.object({ id: z.string().min(1) }).passthrough()
+const deletionPayloadSchema = entityIdPayloadSchema.extend({
+  affectedProductIds: z.array(z.string().min(1)),
+})
 const supplierReassignmentPayloadSchema = z
   .object({
     productId: z.string().min(1),
@@ -104,11 +107,13 @@ export const publicationSupplierUpdatedIntentSubscriber = createPublicationInten
 export const publicationSupplierDeletedIntentSubscriber = createPublicationIntentSubscriber({
   id: "@voyant-travel/distribution#subscriber.publication-intent-supplier-deleted",
   eventType: "supplier.deleted",
-  enqueue: (db, payload) =>
-    publicationServiceOperations.enqueueSupplierLifecycleReindex(db, {
-      supplierId: lifecycleEntityId(payload),
+  enqueue: (db, payload) => {
+    const event = deletionPayloadSchema.parse(payload)
+    return publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
+      productIds: event.affectedProductIds,
       requestedBy: "event:supplier.deleted",
-    }),
+    })
+  },
 })
 
 export const publicationChannelCreatedIntentSubscriber = createPublicationIntentSubscriber({
@@ -134,11 +139,13 @@ export const publicationChannelUpdatedIntentSubscriber = createPublicationIntent
 export const publicationChannelDeletedIntentSubscriber = createPublicationIntentSubscriber({
   id: "@voyant-travel/distribution#subscriber.publication-intent-channel-deleted",
   eventType: "channel.deleted",
-  enqueue: (db, payload) =>
-    publicationServiceOperations.enqueueChannelLifecycleReindex(db, {
-      channelId: lifecycleEntityId(payload),
+  enqueue: (db, payload) => {
+    const event = deletionPayloadSchema.parse(payload)
+    return publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
+      productIds: event.affectedProductIds,
       requestedBy: "event:channel.deleted",
-    }),
+    })
+  },
 })
 
 export const publicationSupplierReassignedIntentSubscriber = createPublicationIntentSubscriber({

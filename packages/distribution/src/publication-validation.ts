@@ -12,7 +12,7 @@ export const channelPublicationReindexIntentStatusSchema = z.enum([
   "completed",
   "failed",
 ])
-export const channelPublicationReindexIntentKindSchema = z.enum(["product", "supplier"])
+export const channelPublicationReindexIntentKindSchema = z.enum(["product", "supplier", "catalog"])
 export const effectivePublicationReasonSchema = z.enum([
   "channel_missing",
   "channel_inactive",
@@ -113,7 +113,7 @@ export const effectivePublicationResultSchema = z
 export const channelPublicationReindexIntentSchema = z
   .object({
     id: z.string(),
-    channelId: z.string(),
+    channelId: z.string().nullable(),
     kind: channelPublicationReindexIntentKindSchema,
     productId: z.string().nullable(),
     supplierId: z.string().nullable(),
