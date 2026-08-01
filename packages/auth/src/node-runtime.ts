@@ -264,6 +264,12 @@ export interface CustomerAuthRuntimeContext {
   methods: CustomerAuthMethods
   /** Buyer capabilities are independent from identity sign-up methods. */
   accountPolicy?: CustomerBuyerAccountPolicy | null
+  /** Server-derived Storefront sales-channel context for downstream public routes. */
+  storefrontChannel?: {
+    storefrontId: string
+    channelId: string
+    channelStatus?: string | null
+  }
 }
 
 export interface CustomerAuthSocialPolicy {
@@ -1207,6 +1213,9 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
           realm: "customer" as const,
           scopes: [],
           email: session.user.email ?? null,
+          ...(customerContext?.storefrontChannel
+            ? { storefrontChannel: customerContext.storefrontChannel }
+            : {}),
         }
         if (!buyer) {
           return {
