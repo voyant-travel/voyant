@@ -1,0 +1,113 @@
+=== ls /app/node_modules/@voyant-travel/ (real packages?) ===
+total 132
+drwxr-xr-x  2 root root 4096 Aug  1 06:22 .
+drwxr-xr-x 12 root root 4096 Aug  1 06:22 ..
+lrwxrwxrwx  1 root root  163 Aug  1 06:22 admin -> ../.pnpm/@voyant-travel+admin@file+packages+admin_@cloudflare+workers-types@4.20260702.1_@electr_977d66c80260cb66256a29bbc0c4fabf/node_modules/@voyant-travel/admin
+lrwxrwxrwx  1 root root  128 Aug  1 06:22 admin-app -> ../.pnpm/@voyant-travel+admin-app@file+packages+admin-app_c843dd5b71f303a1b35829ddd531f7c3/node_modules/@voyant-travel/admin-app
+lrwxrwxrwx  1 root root  131 Aug  1 06:22 admin-host -> ../.pnpm/@voyant-travel+admin-host@file+packages+admin-host_5dbf83623e989dc13fefabc7ffeb86bf/node_modules/@voyant-travel/admin-host
+lrwxrwxrwx  1 root root  131 Aug  1 06:22 apps-react -> ../.pnpm/@voyant-travel+apps-react@file+packages+apps-react_c456510fcdb029bbd750447daf908cc9/node_modules/@voyant-travel/apps-react
+lrwxrwxrwx  1 root root  131 Aug  1 06:22 auth-react -> ../.pnpm/@voyant-travel+auth-react@file+packages+auth-react_9b2619ed1ab247059b4c2cdefcda0ed9/node_modules/@voyant-travel/auth-react
+lrwxrwxrwx  1 root root  143 Aug  1 06:22 bookings-react -> ../.pnpm/@voyant-travel+bookings-react@file+packages+bookings-react_06e9f419d53ee5e5b2c7aeb863c66574/node_modules/@voyant-travel/bookings-react
+lrwxrwxrwx  1 root root  140 Aug  1 06:22 catalog-react -> ../.pnpm/@voyant-travel+catalog-react@file+packages+catalog-react_b91af2dd9c1fc9e1202a6f81b7fd516d/node_modules/@voyant-travel/catalog-react
+lrwxrwxrwx  1 root root  117 Aug  1 06:22 cloud-sdk -> ../.pnpm/@voyant-travel+cloud-sdk@0.11.0_typesense@3.0.6_@babel+runtime@7.29.7_/node_modules/@voyant-travel/cloud-sdk
+lrwxrwxrwx  1 root root  143 Aug  1 06:22 commerce-react -> ../.pnpm/@voyant-travel+commerce-react@file+packages+commerce-react_0cf395a5be746cacd651ce8269482786/node_modules/@voyant-travel/commerce-react
+lrwxrwxrwx  1 root root   80 Aug  1 06:22 core -> ../.pnpm/@voyant-travel+core@file+packages+core/node_modules/@voyant-travel/core
+lrwxrwxrwx  1 root root  171 Aug  1 06:22 cruises-react -> ../.pnpm/@voyant-travel+cruises-react@file+packages+cruises-react_@tanstack+react-query@5.101.2__c9ed64843eed92b2ccacaa76cb28c485/node_modules/@voyant-travel/cruises-react
+lrwxrwxrwx  1 root root  155 Aug  1 06:22 distribution-react -> ../.pnpm/@voyant-travel+distribution-react@file+packages+distribution-react_a50f3418ac756322f67047d51ae2c444/node_modules/@voyant-travel/distribution-react
+lrwxrwxrwx  1 root root  158 Aug  1 06:22 event-catalog-react -> ../.pnpm/@voyant-travel+event-catalog-react@file+packages+event-catalog-react_4b9a92ad9ac69b54bf4f51a799a984e0/node_modules/@voyant-travel/event-catalog-react
+lrwxrwxrwx  1 root root  140 Aug  1 06:22 finance-react -> ../.pnpm/@voyant-travel+finance-react@file+packages+finance-react_e38991c4ca42ec6e644b210a69ad216c/node_modules/@voyant-travel/finance-react
+lrwxrwxrwx  1 root root  140 Aug  1 06:22 flights-react -> ../.pnpm/@voyant-travel+flights-react@file+packages+flights-react_367d9b00590e2c09171fa4eba49d6342/node_modules/@voyant-travel/flights-react
+lrwxrwxrwx  1 root root  128 Aug  1 06:22 framework -> ../.pnpm/@voyant-travel+framework@file+packages+framework_989222f8dc9b4f7d1fa1338430a754cc/node_modules/@voyant-travel/framework
+lrwxrwxrwx  1 root root  162 Aug  1 06:22 hono -> ../.pnpm/@voyant-travel+hono@file+packages+hono_@cloudflare+workers-types@4.20260702.1_@electric_ffc508f13b131ca11cf389690b8afd8c/node_modules/@voyant-travel/hono
+lrwxrwxrwx  1 root root  146 Aug  1 06:22 inventory-react -> ../.pnpm/@voyant-travel+inventory-react@file+packages+inventory-react_0f1fa4bb3b7046f3f3754e7984da99bc/node_modules/@voyant-travel/inventory-react
+lrwxrwxrwx  1 root root  134 Aug  1 06:22 legal-react -> ../.pnpm/@voyant-travel+legal-react@file+packages+legal-react_f5873aa16d387c686319155befe26600/node_modules/@voyant-travel/legal-react
+lrwxrwxrwx  1 root root  134 Aug  1 06:22 media-react -> ../.pnpm/@voyant-travel+media-react@file+packages+media-react_2a099602ad28b83542c76b678fe8349d/node_modules/@voyant-travel/media-react
+lrwxrwxrwx  1 root root  131 Aug  1 06:22 mice-react -> ../.pnpm/@voyant-travel+mice-react@file+packages+mice-react_303292cfc386158d98d8963877fdf4af/node_modules/@voyant-travel/mice-react
+lrwxrwxrwx  1 root root  149 Aug  1 06:22 operations-react -> ../.pnpm/@voyant-travel+operations-react@file+packages+operations-react_2a79e8d4843456ea0c7177ac3054f513/node_modules/@voyant-travel/operations-react
+lrwxrwxrwx  1 root root  152 Aug  1 06:22 operator-standard -> ../.pnpm/@voyant-travel+operator-standard@file+packages+operator-standard_c4257c80348552e8c7c9ead8b955847a/node_modules/@voyant-travel/operator-standard
+lrwxrwxrwx  1 root root  137 Aug  1 06:22 quotes-react -> ../.pnpm/@voyant-travel+quotes-react@file+packages+quotes-react_1bf6c95e733eaaeaa978fb76bf8746c4/node_modules/@voyant-travel/quotes-react
+lrwxrwxrwx  1 root root  127 Aug  1 06:22 react -> ../.pnpm/@voyant-travel+react@file+packages+react_react-dom@19.2.7_react@19.2.7__react@19.2.7/node_modules/@voyant-travel/react
+lrwxrwxrwx  1 root root  158 Aug  1 06:22 relationships-react -> ../.pnpm/@voyant-travel+relationships-react@file+packages+relationships-react_47ed80c26f7704d99c81044390268e3b/node_modules/@voyant-travel/relationships-react
+lrwxrwxrwx  1 root root  122 Aug  1 06:22 runtime -> ../.pnpm/@voyant-travel+runtime@file+packages+runtime_83e79520c8e4fe533e62163df9d636db/node_modules/@voyant-travel/runtime
+lrwxrwxrwx  1 root root  149 Aug  1 06:22 storefront-react -> ../.pnpm/@voyant-travel+storefront-react@file+packages+storefront-react_a99fb98e291d23c81322118de682b1e1/node_modules/@voyant-travel/storefront-react
+lrwxrwxrwx  1 root root  134 Aug  1 06:22 trips-react -> ../.pnpm/@voyant-travel+trips-react@file+packages+trips-react_f2d0055d56f9312f54e0b6ca39b83847/node_modules/@voyant-travel/trips-react
+lrwxrwxrwx  1 root root  160 Aug  1 06:22 ui -> ../.pnpm/@voyant-travel+ui@file+packages+ui_@cloudflare+workers-types@4.20260702.1_@date-fns+tz@_7f23971cf88ce76ea8a50b89411ebba9/node_modules/@voyant-travel/ui
+lrwxrwxrwx  1 root root  163 Aug  1 06:22 utils -> ../.pnpm/@voyant-travel+utils@file+packages+utils_@cloudflare+workers-types@4.20260702.1_@electr_9bdf5dbd26727be1d1a2e69705dc6678/node_modules/@voyant-travel/utils
+
+=== count of @voyant-travel packages ===
+31
+=== manifest exports['.'] for framework, runtime, admin-host, accommodations ===
+----- framework -----
+version: 0.69.1
+exports[.]= {"types":"./dist/index.d.ts","import":"./dist/index.js"}
+has publishConfig: false
+files: ["dist"]
+----- runtime -----
+version: 0.19.9
+exports[.]= {"types":"./dist/index.d.ts","import":"./dist/index.js","default":"./dist/index.js"}
+has publishConfig: false
+files: ["dist"]
+----- admin-host -----
+version: 0.77.0
+exports[.]= {"types":"./dist/index.d.ts","import":"./dist/index.js","default":"./dist/index.js"}
+has publishConfig: false
+files: ["dist"]
+----- accommodations -----
+NO MANIFEST at /app/node_modules/@voyant-travel/accommodations/package.json
+----- utils -----
+version: 0.110.1
+exports[.]= {"types":"./dist/index.d.ts","import":"./dist/index.js","default":"./dist/index.js"}
+has publishConfig: false
+files: ["dist"]
+
+=== accommodations/standard-links export ===
+node:internal/modules/cjs/loader:1433
+  throw err;
+  ^
+
+Error: Cannot find module '/app/node_modules/@voyant-travel/accommodations/package.json'
+Require stack:
+- /app/[eval]
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Function._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at [eval]:1:9
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/app/[eval]' ]
+}
+
+Node.js v22.23.2
+
+=== fontkit present? ===
+/app/node_modules/.pnpm/@pdf-lib+fontkit@1.1.1
+direct:
+
+=== tsx present? ===
+/app/node_modules/.pnpm/tsx@4.22.4
+no top-level tsx bin
+=== resolve the exact relative path from project-links.generated.ts ===
+file dir: /app/dist/server/.voyant/runtime/  ->  ../../node_modules = /app/dist/server/node_modules
+ls: cannot access '/app/dist/server/node_modules': No such file or directory
+---exists check---
+MISSING dist/server/node_modules
+
+=== does accommodations ship src/standard-links.ts anywhere? ===
+ls: cannot access '/app/node_modules/@voyant-travel/accommodations/': No such file or directory
+--- via operator-standard nested ---
+ls: cannot access '/app/node_modules/@voyant-travel/operator-standard/node_modules/@voyant-travel/': No such file or directory
+
+=== is accommodations resolvable & does src exist in its real store dir ===
+store dir: /app/node_modules/.pnpm/@voyant-travel+accommodations@file+packages+accommodations_53069475be8372afef236b8f2190c677/node_modules/@voyant-travel/accommodations
+README.md
+dist
+migrations
+openapi
+package.json
+--- src present? ---
+ls: cannot access '/app/node_modules/.pnpm/@voyant-travel+accommodations@file+packages+accommodations_53069475be8372afef236b8f2190c677/node_modules/@voyant-travel/accommodations/src/standard-links.ts': No such file or directory
