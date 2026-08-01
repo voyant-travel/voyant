@@ -21,15 +21,29 @@ WORKDIR /repo
 # ── build: install the workspace, build the operator + its deps, and extract a
 #    pruned production node_modules for the runtime stage. ─────────────────────
 FROM base AS build
+# tsc needs more than the default ~2GB V8 old-space for the larger packages;
+# CI sets the same flag on every job. Without it `@voyant-travel/identity-react`
+# dies with "Ineffective mark-compacts near heap limit".
+ENV NODE_OPTIONS=--max-old-space-size=8192
 COPY . .
 RUN pnpm install --frozen-lockfile
-# Only the operator is built: its Vite config bundles the `@voyant-travel/*`
-# packages from SOURCE (the `development` resolve condition), so the whole
-# dependency graph does NOT need to be prebuilt. Emits dist/client +
-# dist/server/server.js.
+# The workspace packages are built and INSTALLED rather than inlined from
+# source. Inlining absorbs their code but not their dependencies, and the
+# pruned production install then lacks every dependency reached only through an
+# inlined package — 36 of them, which is why the image never booted
+# (voyant#3994). Building them costs ~7 minutes and ~80MB, once per release.
+RUN pnpm build
+# Emits dist/client + dist/server/server.js, with `@voyant-travel/*` left
+# external so the deployed install supplies them.
 RUN pnpm --filter operator build
 # Self-contained prod install (real node_modules, no workspace symlinks).
 RUN pnpm --filter=operator deploy --prod --legacy /deploy
+# `pnpm deploy` copies workspace manifests VERBATIM — it does not apply
+# `publishConfig`, which is a pack/publish-time transform. Our manifests point
+# `exports` at `./src/*.ts` while `files: ["dist"]` means `src/` is never
+# shipped, so without this the deployed packages reference files that do not
+# exist. This performs the same substitution npm consumers already get.
+RUN node scripts/apply-publish-config.mjs /deploy
 
 # ── runtime: minimal image — the built app + its production node_modules. ─────
 FROM node:22-slim AS runtime
