@@ -13,7 +13,7 @@ describe("storefront channel binding setup migration", () => {
     expect(storefrontChannelBindingCutoverSql).toContain(
       "storefront channel binding cutover requires the channels table",
     )
-    expect(storefrontChannelBindingCutoverSql).toContain("ORDER BY \"created_at\", \"id\"")
+    expect(storefrontChannelBindingCutoverSql).toContain('ORDER BY "created_at", "id"')
     expect(storefrontChannelBindingCutoverSql).toContain("ON CONFLICT DO NOTHING")
     expect(storefrontChannelBindingCutoverSql).toContain(
       "storefront channel binding cutover left unbound or inactive storefronts",
