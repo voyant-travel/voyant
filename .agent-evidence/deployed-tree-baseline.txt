@@ -1,0 +1,47 @@
+### BASELINE (main, inlining ON) deployed tree — from image voyant-baseline
+# Command that produced it: pnpm --filter=operator deploy --prod --legacy /deploy
+# docker build wall clock (this run, install layer CACHED): 2:34.67
+# prior cold run: 2m38s. Image size: 1.5GB
+
+## ls of a few @voyant-travel packages in /app/node_modules:
+--- @voyant-travel/core ---
+README.md
+package.json
+--- @voyant-travel/utils ---
+README.md
+package.json
+--- @voyant-travel/hono ---
+README.md
+package.json
+--- @voyant-travel/runtime ---
+README.md
+node_modules
+package.json
+--- @voyant-travel/framework ---
+README.md
+package.json
+--- @voyant-travel/react ---
+README.md
+package.json
+
+## example deployed package.json (core) exports field:
+{
+ ".": "./src/index.ts",
+ "./env": "./src/env.ts",
+ "./module": "./src/module.ts",
+ "./hooks": "./src/hooks.ts",
+ "./locking": "./src/locking.ts",
+ "./registry": "./src/registry.ts",
+ "./container": "./src/container.ts",
+ "./events": "./src/events.ts",
+ "./custom-fields": "./src/custom-fields.ts",
+ "./document-rendering": "./src/document-rendering.ts",
+ "./runtime-port": "./src/runtime-port.ts",
+ "./links": "./src/links.ts",
+ "./query": "./src/query.ts",
+ "./saga": "./src/saga.ts",
+ "./plugin": "./src/plugin.ts",
+ "./project": "./src/project.ts"
+}
+## total @voyant-travel dirs:
+31

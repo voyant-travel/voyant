@@ -1,0 +1,48 @@
+### NON-INLINE (experiment C) deployed tree — image voyant-noinline
+# deploy cmd: pnpm --filter=operator deploy --prod --legacy /deploy
+
+--- @voyant-travel/core ---
+README.md
+dist
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+--- @voyant-travel/utils ---
+README.md
+dist
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+--- @voyant-travel/hono ---
+README.md
+dist
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+--- @voyant-travel/runtime ---
+README.md
+dist
+node_modules
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+--- @voyant-travel/framework ---
+README.md
+dist
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+--- @voyant-travel/react ---
+README.md
+dist
+package.json
+  exports[.]:
+"./src/index.ts"
+  has dist/index.js: YES ; has src: no
+=== total @voyant-travel dirs ===
+31

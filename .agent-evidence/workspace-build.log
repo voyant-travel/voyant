@@ -1,0 +1,399 @@
+#12 [build 3/5] RUN pnpm build
+#12 1.658 
+#12 1.658 > voyant@0.1.0 build /repo
+#12 1.658 > turbo build
+#12 1.658 
+#12 1.698 
+#12 1.698 Attention:
+#12 1.698 Turborepo now collects completely anonymous telemetry regarding usage.
+#12 1.698 This information is used to shape the Turborepo roadmap and prioritize features.
+#12 1.698 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#12 1.698 https://turborepo.dev/docs/telemetry
+#12 1.698 
+#12 1.698 • turbo 2.10.2
+#12 1.895  WARNING  Circular package dependency detected: @voyant-travel/catalog-react, @voyant-travel/storefront-react, @voyant-travel/operations-react, @voyant-travel/finance-react, @voyant-travel/inventory-react, @voyant-travel/identity-react, @voyant-travel/relationships-react, @voyant-travel/distribution-react, @voyant-travel/commerce-react, @voyant-travel/legal-react, @voyant-travel/bookings-react
+#12 1.901 
+#12 1.901    • Packages in scope: @voyant-travel/accommodations, @voyant-travel/accommodations-contracts, @voyant-travel/action-ledger, @voyant-travel/action-ledger-react, @voyant-travel/admin, @voyant-travel/admin-app, @voyant-travel/admin-contracts, @voyant-travel/admin-extension-sdk, @voyant-travel/admin-host, @voyant-travel/admin-react, @voyant-travel/allotments, @voyant-travel/apps, @voyant-travel/apps-react, @voyant-travel/auth, @voyant-travel/auth-react, @voyant-travel/availability, @voyant-travel/bookings, @voyant-travel/bookings-contracts, @voyant-travel/bookings-react, @voyant-travel/catalog, @voyant-travel/catalog-authoring, @voyant-travel/catalog-contracts, @voyant-travel/catalog-react, @voyant-travel/charters, @voyant-travel/charters-contracts, @voyant-travel/charters-react, @voyant-travel/commerce, @voyant-travel/commerce-react, @voyant-travel/core, @voyant-travel/cruises, @voyant-travel/cruises-contracts, @voyant-travel/cruises-react, @voyant-travel/custom-fields, @voyant-travel/custom-fields-react, @voyant-travel/db, @voyant-travel/distribution, @voyant-travel/distribution-react, @voyant-travel/event-catalog, @voyant-travel/event-catalog-react, @voyant-travel/example-operator-demo, @voyant-travel/extras-contracts, @voyant-travel/finance, @voyant-travel/finance-contracts, @voyant-travel/finance-react, @voyant-travel/flights, @voyant-travel/flights-contracts, @voyant-travel/flights-react, @voyant-travel/framework, @voyant-travel/framework-migrations, @voyant-travel/hono, @voyant-travel/i18n, @voyant-travel/identity, @voyant-travel/identity-contracts, @voyant-travel/identity-react, @voyant-travel/inventory, @voyant-travel/inventory-react, @voyant-travel/legal, @voyant-travel/legal-contracts, @voyant-travel/legal-react, @voyant-travel/mcp, @voyant-travel/media, @voyant-travel/media-react, @voyant-travel/mice, @voyant-travel/mice-react, @voyant-travel/navigation-preferences, @voyant-travel/navigation-preferences-react, @voyant-travel/notifications, @voyant-travel/notifications-react, @voyant-travel/observability-sentry, @voyant-travel/operations, @voyant-travel/operations-react, @voyant-travel/operator-settings, @voyant-travel/operator-settings-react, @voyant-travel/operator-standard, @voyant-travel/payments, @voyant-travel/plugin-sanity-cms, @voyant-travel/products-contracts, @voyant-travel/public-document-delivery, @voyant-travel/quotes, @voyant-travel/quotes-contracts, @voyant-travel/quotes-react, @voyant-travel/react, @voyant-travel/realtime, @voyant-travel/realtime-react, @voyant-travel/relationships, @voyant-travel/relationships-contracts, @voyant-travel/relationships-react, @voyant-travel/reporting, @voyant-travel/reporting-contracts, @voyant-travel/reporting-react, @voyant-travel/runtime, @voyant-travel/runtime-core, @voyant-travel/schema-kit, @voyant-travel/setup, @voyant-travel/setup-react, @voyant-travel/storage, @voyant-travel/storefront, @voyant-travel/storefront-react, @voyant-travel/storefront-sdk, @voyant-travel/suppliers-contracts, @voyant-travel/templating, @voyant-travel/tools, @voyant-travel/trips, @voyant-travel/trips-react, @voyant-travel/types, @voyant-travel/ui, @voyant-travel/utils, @voyant-travel/vite-config, @voyant-travel/voyant-test-utils, @voyant-travel/voyant-typescript-config, @voyant-travel/webhook-delivery, catalog-demo-api, flights-demo-api, operator
+#12 1.901    • Running build in 114 packages
+#12 1.901    • Remote caching disabled
+#12 1.901 
+#12 2.172 @voyant-travel/templating:build: cache miss, executing bb90a2deccd72c68
+#12 2.172 @voyant-travel/framework-migrations:build: cache miss, executing 67d1af083cdd00fe
+#12 2.173 @voyant-travel/schema-kit:build: cache miss, executing f5e3a6b8852259d7
+#12 2.173 @voyant-travel/tools:build: cache miss, executing 3fa2cf8f09e37e93
+#12 2.471 @voyant-travel/schema-kit:build: 
+#12 2.471 @voyant-travel/schema-kit:build: > @voyant-travel/schema-kit@0.115.0 build /repo/packages/schema-kit
+#12 2.471 @voyant-travel/schema-kit:build: > tsc -p tsconfig.build.json
+#12 2.471 @voyant-travel/schema-kit:build: 
+#12 2.472 @voyant-travel/tools:build: 
+#12 2.472 @voyant-travel/tools:build: > @voyant-travel/tools@0.10.0 build /repo/packages/tools
+#12 2.472 @voyant-travel/tools:build: > tsc -p tsconfig.build.json
+#12 2.472 @voyant-travel/tools:build: 
+#12 2.476 @voyant-travel/templating:build: 
+#12 2.476 @voyant-travel/templating:build: > @voyant-travel/templating@0.104.2 build /repo/packages/templating
+#12 2.476 @voyant-travel/templating:build: > tsc -p tsconfig.build.json
+#12 2.476 @voyant-travel/templating:build: 
+#12 2.481 @voyant-travel/framework-migrations:build: 
+#12 2.481 @voyant-travel/framework-migrations:build: > @voyant-travel/framework-migrations@0.10.8 build /repo/packages/framework-migrations
+#12 2.481 @voyant-travel/framework-migrations:build: > tsc -p tsconfig.build.json
+#12 2.481 @voyant-travel/framework-migrations:build: 
+#12 3.616 @voyant-travel/core:build: cache miss, executing da261d31a0b60daf
+#12 3.704 @voyant-travel/admin-extension-sdk:build: cache miss, executing 97edaab45340f4da
+#12 3.704 @voyant-travel/catalog-contracts:build: cache miss, executing 2e3be55d5c766146
+#12 3.908 @voyant-travel/core:build: 
+#12 3.908 @voyant-travel/core:build: > @voyant-travel/core@0.137.0 build /repo/packages/core
+#12 3.908 @voyant-travel/core:build: > tsc -p tsconfig.build.json
+#12 3.908 @voyant-travel/core:build: 
+#12 3.999 @voyant-travel/catalog-contracts:build: 
+#12 3.999 @voyant-travel/catalog-contracts:build: > @voyant-travel/catalog-contracts@0.112.2 build /repo/packages/catalog-contracts
+#12 3.999 @voyant-travel/catalog-contracts:build: > tsc -p tsconfig.build.json
+#12 3.999 @voyant-travel/catalog-contracts:build: 
+#12 3.999 @voyant-travel/admin-extension-sdk:build: 
+#12 3.999 @voyant-travel/admin-extension-sdk:build: > @voyant-travel/admin-extension-sdk@0.3.0 build /repo/packages/admin-extension-sdk
+#12 3.999 @voyant-travel/admin-extension-sdk:build: > tsc -p tsconfig.build.json
+#12 3.999 @voyant-travel/admin-extension-sdk:build: 
+#12 4.276 @voyant-travel/extras-contracts:build: cache miss, executing 3e72da8b530ebad2
+#12 4.623 @voyant-travel/extras-contracts:build: 
+#12 4.623 @voyant-travel/extras-contracts:build: > @voyant-travel/extras-contracts@0.104.3 build /repo/packages/extras-contracts
+#12 4.623 @voyant-travel/extras-contracts:build: > tsc -p tsconfig.build.json
+#12 4.623 @voyant-travel/extras-contracts:build: 
+#12 4.827 @voyant-travel/vite-config:build: cache miss, executing c8fa49e9ecf0e529
+#12 5.042 @voyant-travel/realtime-react:build: cache miss, executing 08031d9ee6b2292d
+#12 5.163 @voyant-travel/vite-config:build: 
+#12 5.163 @voyant-travel/vite-config:build: > @voyant-travel/vite-config@0.4.0 build /repo/packages/vite-config
+#12 5.163 @voyant-travel/vite-config:build: > tsc -p tsconfig.build.json
+#12 5.163 @voyant-travel/vite-config:build: 
+#12 5.383 @voyant-travel/realtime-react:build: 
+#12 5.383 @voyant-travel/realtime-react:build: > @voyant-travel/realtime-react@0.2.2 build /repo/packages/realtime-react
+#12 5.383 @voyant-travel/realtime-react:build: > tsc -p tsconfig.build.json
+#12 5.383 @voyant-travel/realtime-react:build: 
+#12 5.523 @voyant-travel/allotments:build: cache miss, executing 9ba9285cc2b565dc
+#12 5.709 @voyant-travel/quotes-contracts:build: cache miss, executing 92c8938d0ff9c9d1
+#12 5.858 @voyant-travel/allotments:build: 
+#12 5.858 @voyant-travel/allotments:build: > @voyant-travel/allotments@0.2.1 build /repo/packages/allotments
+#12 5.858 @voyant-travel/allotments:build: > tsc -p tsconfig.build.json
+#12 5.858 @voyant-travel/allotments:build: 
+#12 6.036 @voyant-travel/quotes-contracts:build: 
+#12 6.036 @voyant-travel/quotes-contracts:build: > @voyant-travel/quotes-contracts@0.108.3 build /repo/packages/quotes-contracts
+#12 6.036 @voyant-travel/quotes-contracts:build: > tsc -p tsconfig.build.json
+#12 6.036 @voyant-travel/quotes-contracts:build: 
+#12 6.403 @voyant-travel/react:build: cache miss, executing a51c5d33bcb91ff9
+#12 6.431 @voyant-travel/i18n:build: cache miss, executing 5fdc368c9fb9b01c
+#12 6.497 @voyant-travel/charters-contracts:build: cache miss, executing c27df650425b4969
+#12 6.711 @voyant-travel/react:build: 
+#12 6.711 @voyant-travel/react:build: > @voyant-travel/react@0.104.2 build /repo/packages/react
+#12 6.711 @voyant-travel/react:build: > tsc -p tsconfig.build.json
+#12 6.711 @voyant-travel/react:build: 
+#12 6.730 @voyant-travel/i18n:build: 
+#12 6.730 @voyant-travel/i18n:build: > @voyant-travel/i18n@0.119.0 build /repo/packages/i18n
+#12 6.730 @voyant-travel/i18n:build: > tsc -p tsconfig.build.json
+#12 6.730 @voyant-travel/i18n:build: 
+#12 6.798 @voyant-travel/charters-contracts:build: 
+#12 6.798 @voyant-travel/charters-contracts:build: > @voyant-travel/charters-contracts@0.104.3 build /repo/packages/charters-contracts
+#12 6.798 @voyant-travel/charters-contracts:build: > tsc -p tsconfig.build.json
+#12 6.798 @voyant-travel/charters-contracts:build: 
+#12 6.977 @voyant-travel/legal-contracts:build: cache miss, executing 668a9e503f30b9fc
+#12 7.319 @voyant-travel/legal-contracts:build: 
+#12 7.319 @voyant-travel/legal-contracts:build: > @voyant-travel/legal-contracts@0.107.0 build /repo/packages/legal-contracts
+#12 7.319 @voyant-travel/legal-contracts:build: > tsc -p tsconfig.build.json
+#12 7.319 @voyant-travel/legal-contracts:build: 
+#12 7.568 @voyant-travel/relationships-contracts:build: cache miss, executing 6d1f510cb54d20dc
+#12 7.751 @voyant-travel/finance-contracts:build: cache miss, executing beff114679eb3e96
+#12 7.918 @voyant-travel/relationships-contracts:build: 
+#12 7.918 @voyant-travel/relationships-contracts:build: > @voyant-travel/relationships-contracts@0.109.2 build /repo/packages/relationships-contracts
+#12 7.918 @voyant-travel/relationships-contracts:build: > tsc -p tsconfig.build.json
+#12 7.918 @voyant-travel/relationships-contracts:build: 
+#12 8.091 @voyant-travel/finance-contracts:build: 
+#12 8.091 @voyant-travel/finance-contracts:build: > @voyant-travel/finance-contracts@0.108.0 build /repo/packages/finance-contracts
+#12 8.091 @voyant-travel/finance-contracts:build: > tsc -p tsconfig.build.json
+#12 8.091 @voyant-travel/finance-contracts:build: 
+#12 8.400 @voyant-travel/bookings-contracts:build: cache miss, executing 0deceae67f57fdeb
+#12 8.772 @voyant-travel/bookings-contracts:build: 
+#12 8.772 @voyant-travel/bookings-contracts:build: > @voyant-travel/bookings-contracts@0.111.0 build /repo/packages/bookings-contracts
+#12 8.772 @voyant-travel/bookings-contracts:build: > tsc -p tsconfig.build.json
+#12 8.772 @voyant-travel/bookings-contracts:build: 
+#12 9.018 @voyant-travel/identity-contracts:build: cache miss, executing 3bc9b61332fb7ee3
+#12 9.185 @voyant-travel/suppliers-contracts:build: cache miss, executing 217c3a5817096504
+#12 9.362 @voyant-travel/identity-contracts:build: 
+#12 9.362 @voyant-travel/identity-contracts:build: > @voyant-travel/identity-contracts@0.104.13 build /repo/packages/identity-contracts
+#12 9.362 @voyant-travel/identity-contracts:build: > tsc -p tsconfig.build.json
+#12 9.362 @voyant-travel/identity-contracts:build: 
+#12 9.528 @voyant-travel/suppliers-contracts:build: 
+#12 9.528 @voyant-travel/suppliers-contracts:build: > @voyant-travel/suppliers-contracts@0.104.15 build /repo/packages/suppliers-contracts
+#12 9.528 @voyant-travel/suppliers-contracts:build: > tsc -p tsconfig.build.json
+#12 9.528 @voyant-travel/suppliers-contracts:build: 
+#12 9.832 @voyant-travel/payments:build: cache miss, executing 8b5375355fcf70c1
+#12 10.18 @voyant-travel/payments:build: 
+#12 10.18 @voyant-travel/payments:build: > @voyant-travel/payments@0.8.1 build /repo/packages/payments
+#12 10.18 @voyant-travel/payments:build: > tsc -p tsconfig.build.json
+#12 10.18 @voyant-travel/payments:build: 
+#12 10.42 @voyant-travel/db:build: cache miss, executing 96036d0e2ef8fd2b
+#12 10.67 @voyant-travel/storage:build: cache miss, executing da95f052a32c3648
+#12 10.68 @voyant-travel/reporting-contracts:build: cache miss, executing 7d9d03154c8b10ff
+#12 10.74 @voyant-travel/db:build: 
+#12 10.74 @voyant-travel/db:build: > @voyant-travel/db@0.119.1 build /repo/packages/db
+#12 10.74 @voyant-travel/db:build: > tsc -p tsconfig.build.json && node scripts/fix-esm-imports.mjs
+#12 10.74 @voyant-travel/db:build: 
+#12 10.96 @voyant-travel/storage:build: 
+#12 10.96 @voyant-travel/storage:build: > @voyant-travel/storage@0.115.1 build /repo/packages/storage
+#12 10.96 @voyant-travel/storage:build: > pnpm run clean && tsc -p tsconfig.build.json
+#12 10.96 @voyant-travel/storage:build: 
+#12 10.98 @voyant-travel/reporting-contracts:build: 
+#12 10.98 @voyant-travel/reporting-contracts:build: > @voyant-travel/reporting-contracts@0.3.7 build /repo/packages/reporting-contracts
+#12 10.98 @voyant-travel/reporting-contracts:build: > tsc -p tsconfig.build.json
+#12 10.98 @voyant-travel/reporting-contracts:build: 
+#12 11.06 @voyant-travel/flights-contracts:build: cache miss, executing 8f70d3260c786a64
+#12 11.28 @voyant-travel/storage:build: 
+#12 11.28 @voyant-travel/storage:build: > @voyant-travel/storage@0.115.1 clean /repo/packages/storage
+#12 11.28 @voyant-travel/storage:build: > rm -rf dist tsconfig*.tsbuildinfo
+#12 11.28 @voyant-travel/storage:build: 
+#12 11.38 @voyant-travel/flights-contracts:build: 
+#12 11.38 @voyant-travel/flights-contracts:build: > @voyant-travel/flights-contracts@0.104.11 build /repo/packages/flights-contracts
+#12 11.38 @voyant-travel/flights-contracts:build: > tsc -p tsconfig.build.json
+#12 11.38 @voyant-travel/flights-contracts:build: 
+#12 12.28 @voyant-travel/products-contracts:build: cache miss, executing c7f16374e3edb137
+#12 12.64 @voyant-travel/products-contracts:build: 
+#12 12.64 @voyant-travel/products-contracts:build: > @voyant-travel/products-contracts@0.107.10 build /repo/packages/products-contracts
+#12 12.64 @voyant-travel/products-contracts:build: > tsc -p tsconfig.build.json
+#12 12.64 @voyant-travel/products-contracts:build: 
+#12 12.77 @voyant-travel/accommodations-contracts:build: cache miss, executing 24f2af4eba8d4883
+#12 13.13 @voyant-travel/accommodations-contracts:build: 
+#12 13.13 @voyant-travel/accommodations-contracts:build: > @voyant-travel/accommodations-contracts@0.105.8 build /repo/packages/accommodations-contracts
+#12 13.13 @voyant-travel/accommodations-contracts:build: > tsc -p tsconfig.build.json
+#12 13.13 @voyant-travel/accommodations-contracts:build: 
+#12 13.77 @voyant-travel/cruises-contracts:build: cache miss, executing 01c0e58a81e98896
+#12 14.09 @voyant-travel/cruises-contracts:build: 
+#12 14.09 @voyant-travel/cruises-contracts:build: > @voyant-travel/cruises-contracts@0.105.10 build /repo/packages/cruises-contracts
+#12 14.09 @voyant-travel/cruises-contracts:build: > tsc -p tsconfig.build.json
+#12 14.09 @voyant-travel/cruises-contracts:build: 
+#12 14.24 @voyant-travel/admin-contracts:build: cache miss, executing e5dcc22a7c068171
+#12 14.55 @voyant-travel/admin-contracts:build: 
+#12 14.55 @voyant-travel/admin-contracts:build: > @voyant-travel/admin-contracts@0.104.19 build /repo/packages/admin-contracts
+#12 14.55 @voyant-travel/admin-contracts:build: > tsc -p tsconfig.build.json
+#12 14.55 @voyant-travel/admin-contracts:build: 
+#12 15.78 @voyant-travel/db:build: fix-esm-imports: patched 0 files
+#12 15.80 @voyant-travel/types:build: cache miss, executing f33d4bdac642ab81
+#12 15.80 @voyant-travel/public-document-delivery:build: cache miss, executing 392ff5a12c34e4cd
+#12 15.80 @voyant-travel/availability:build: cache miss, executing ef24f3d7b25a22ef
+#12 16.09 @voyant-travel/types:build: 
+#12 16.09 @voyant-travel/types:build: > @voyant-travel/types@0.109.11 build /repo/packages/types
+#12 16.09 @voyant-travel/types:build: > tsc -p tsconfig.build.json
+#12 16.09 @voyant-travel/types:build: 
+#12 16.10 @voyant-travel/public-document-delivery:build: 
+#12 16.10 @voyant-travel/public-document-delivery:build: > @voyant-travel/public-document-delivery@0.4.19 build /repo/packages/public-document-delivery
+#12 16.10 @voyant-travel/public-document-delivery:build: > tsc -p tsconfig.build.json
+#12 16.10 @voyant-travel/public-document-delivery:build: 
+#12 16.11 @voyant-travel/availability:build: 
+#12 16.11 @voyant-travel/availability:build: > @voyant-travel/availability@0.2.29 build /repo/packages/availability
+#12 16.11 @voyant-travel/availability:build: > tsc -p tsconfig.build.json
+#12 16.11 @voyant-travel/availability:build: 
+#12 16.25 @voyant-travel/admin-react:build: cache miss, executing fc10eea9d110ad89
+#12 16.61 @voyant-travel/admin-react:build: 
+#12 16.61 @voyant-travel/admin-react:build: > @voyant-travel/admin-react@0.133.0 build /repo/packages/admin-react
+#12 16.61 @voyant-travel/admin-react:build: > tsc -p tsconfig.build.json
+#12 16.61 @voyant-travel/admin-react:build: 
+#12 17.12 @voyant-travel/utils:build: cache miss, executing 73acfdefa3a0bc8a
+#12 17.48 @voyant-travel/utils:build: 
+#12 17.48 @voyant-travel/utils:build: > @voyant-travel/utils@0.110.1 build /repo/packages/utils
+#12 17.48 @voyant-travel/utils:build: > tsc -p tsconfig.build.json
+#12 17.48 @voyant-travel/utils:build: 
+#12 19.10 @voyant-travel/hono:build: cache miss, executing 439b27e9ddfa5314
+#12 19.10 @voyant-travel/runtime-core:build: cache miss, executing c8689f71d1b92fbe
+#12 19.10 @voyant-travel/ui:build: cache miss, executing a037c736b29dd7ac
+#12 19.10 @voyant-travel/plugin-sanity-cms:build: cache miss, executing 0c20863f4a56092f
+#12 19.37 @voyant-travel/runtime-core:build: 
+#12 19.37 @voyant-travel/runtime-core:build: > @voyant-travel/runtime-core@0.6.7 build /repo/packages/runtime-core
+#12 19.37 @voyant-travel/runtime-core:build: > pnpm run clean && tsc -p tsconfig.build.json
+#12 19.37 @voyant-travel/runtime-core:build: 
+#12 19.37 @voyant-travel/plugin-sanity-cms:build: 
+#12 19.37 @voyant-travel/plugin-sanity-cms:build: > @voyant-travel/plugin-sanity-cms@0.105.25 build /repo/packages/plugins/sanity-cms
+#12 19.37 @voyant-travel/plugin-sanity-cms:build: > pnpm run clean && tsc -p tsconfig.json
+#12 19.37 @voyant-travel/plugin-sanity-cms:build: 
+#12 19.37 @voyant-travel/ui:build: 
+#12 19.37 @voyant-travel/ui:build: > @voyant-travel/ui@0.110.1 build /repo/packages/ui
+#12 19.37 @voyant-travel/ui:build: > tsc -p tsconfig.build.json
+#12 19.37 @voyant-travel/ui:build: 
+#12 19.37 @voyant-travel/hono:build: 
+#12 19.37 @voyant-travel/hono:build: > @voyant-travel/hono@0.138.1 build /repo/packages/hono
+#12 19.37 @voyant-travel/hono:build: > tsc -p tsconfig.build.json
+#12 19.37 @voyant-travel/hono:build: 
+#12 19.67 @voyant-travel/plugin-sanity-cms:build: 
+#12 19.67 @voyant-travel/plugin-sanity-cms:build: > @voyant-travel/plugin-sanity-cms@0.105.25 clean /repo/packages/plugins/sanity-cms
+#12 19.67 @voyant-travel/plugin-sanity-cms:build: > rm -rf dist tsconfig.tsbuildinfo
+#12 19.67 @voyant-travel/plugin-sanity-cms:build: 
+#12 19.69 @voyant-travel/runtime-core:build: 
+#12 19.69 @voyant-travel/runtime-core:build: > @voyant-travel/runtime-core@0.6.7 clean /repo/packages/runtime-core
+#12 19.69 @voyant-travel/runtime-core:build: > rm -rf dist tsconfig*.tsbuildinfo
+#12 19.69 @voyant-travel/runtime-core:build: 
+#12 22.39 @voyant-travel/action-ledger:build: cache miss, executing 0277fbc509939315
+#12 22.39 @voyant-travel/auth:build: cache miss, executing 23ef44cb15876913
+#12 22.39 @voyant-travel/reporting:build: cache miss, executing 030d343faca493f4
+#12 22.68 @voyant-travel/action-ledger:build: 
+#12 22.68 @voyant-travel/action-ledger:build: > @voyant-travel/action-ledger@0.115.9 build /repo/packages/action-ledger
+#12 22.68 @voyant-travel/action-ledger:build: > tsc -p tsconfig.build.json
+#12 22.68 @voyant-travel/action-ledger:build: 
+#12 22.68 @voyant-travel/reporting:build: 
+#12 22.68 @voyant-travel/reporting:build: > @voyant-travel/reporting@0.3.13 build /repo/packages/reporting
+#12 22.68 @voyant-travel/reporting:build: > tsc -p tsconfig.build.json
+#12 22.68 @voyant-travel/reporting:build: 
+#12 22.71 @voyant-travel/auth:build: 
+#12 22.71 @voyant-travel/auth:build: > @voyant-travel/auth@0.149.0 build /repo/packages/auth
+#12 22.71 @voyant-travel/auth:build: > tsc -p tsconfig.build.json
+#12 22.71 @voyant-travel/auth:build: 
+#12 25.78 @voyant-travel/navigation-preferences:build: cache miss, executing 7897d0275730aab8
+#12 26.13 @voyant-travel/navigation-preferences:build: 
+#12 26.13 @voyant-travel/navigation-preferences:build: > @voyant-travel/navigation-preferences@0.23.0 build /repo/packages/navigation-preferences
+#12 26.13 @voyant-travel/navigation-preferences:build: > tsc -p tsconfig.build.json
+#12 26.13 @voyant-travel/navigation-preferences:build: 
+#12 26.40 @voyant-travel/mcp:build: cache miss, executing 2b5c19dcb1101be5
+#12 26.76 @voyant-travel/mcp:build: 
+#12 26.76 @voyant-travel/mcp:build: > @voyant-travel/mcp@0.15.0 build /repo/packages/mcp
+#12 26.76 @voyant-travel/mcp:build: > tsc -p tsconfig.build.json
+#12 26.76 @voyant-travel/mcp:build: 
+#12 29.48 @voyant-travel/realtime:build: cache miss, executing de899d088150b473
+#12 29.80 @voyant-travel/realtime:build: 
+#12 29.80 @voyant-travel/realtime:build: > @voyant-travel/realtime@0.7.6 build /repo/packages/realtime
+#12 29.80 @voyant-travel/realtime:build: > tsc -p tsconfig.build.json
+#12 29.80 @voyant-travel/realtime:build: 
+#12 30.25 @voyant-travel/custom-fields:build: cache miss, executing 4baf7abd80326f7f
+#12 30.41 @voyant-travel/setup:build: cache miss, executing 982e21f93c32ef4f
+#12 30.56 @voyant-travel/custom-fields:build: 
+#12 30.56 @voyant-travel/custom-fields:build: > @voyant-travel/custom-fields@0.2.22 build /repo/packages/custom-fields
+#12 30.56 @voyant-travel/custom-fields:build: > tsc -p tsconfig.build.json
+#12 30.56 @voyant-travel/custom-fields:build: 
+#12 30.73 @voyant-travel/setup:build: 
+#12 30.73 @voyant-travel/setup:build: > @voyant-travel/setup@0.7.6 build /repo/packages/setup
+#12 30.73 @voyant-travel/setup:build: > tsc -p tsconfig.build.json
+#12 30.73 @voyant-travel/setup:build: 
+#12 31.72 @voyant-travel/observability-sentry:build: cache miss, executing 81ff9b73420226a7
+#12 32.07 @voyant-travel/observability-sentry:build: 
+#12 32.07 @voyant-travel/observability-sentry:build: > @voyant-travel/observability-sentry@0.24.0 build /repo/packages/observability-sentry
+#12 32.07 @voyant-travel/observability-sentry:build: > tsc -p tsconfig.build.json
+#12 32.07 @voyant-travel/observability-sentry:build: 
+#12 32.44 @voyant-travel/event-catalog:build: cache miss, executing 817b462eac946f87
+#12 32.80 @voyant-travel/media:build: cache miss, executing 26fcc90efa17abc0
+#12 32.82 @voyant-travel/event-catalog:build: 
+#12 32.82 @voyant-travel/event-catalog:build: > @voyant-travel/event-catalog@0.2.22 build /repo/packages/event-catalog
+#12 32.82 @voyant-travel/event-catalog:build: > tsc -p tsconfig.build.json
+#12 32.82 @voyant-travel/event-catalog:build: 
+#12 33.20 @voyant-travel/media:build: 
+#12 33.20 @voyant-travel/media:build: > @voyant-travel/media@0.6.5 build /repo/packages/media
+#12 33.20 @voyant-travel/media:build: > tsc -p tsconfig.build.json
+#12 33.20 @voyant-travel/media:build: 
+#12 34.70 @voyant-travel/webhook-delivery:build: cache miss, executing bd83e9b53120a4a7
+#12 34.92 @voyant-travel/admin:build: cache miss, executing e41554b01dba3314
+#12 35.04 @voyant-travel/webhook-delivery:build: 
+#12 35.04 @voyant-travel/webhook-delivery:build: > @voyant-travel/webhook-delivery@0.5.10 build /repo/packages/webhook-delivery
+#12 35.04 @voyant-travel/webhook-delivery:build: > pnpm run clean && tsc -p tsconfig.build.json
+#12 35.04 @voyant-travel/webhook-delivery:build: 
+#12 35.25 @voyant-travel/admin:build: 
+#12 35.25 @voyant-travel/admin:build: > @voyant-travel/admin@0.133.0 build /repo/packages/admin
+#12 35.25 @voyant-travel/admin:build: > pnpm run clean && tsc -p tsconfig.build.json
+#12 35.25 @voyant-travel/admin:build: 
+#12 35.37 @voyant-travel/webhook-delivery:build: 
+#12 35.37 @voyant-travel/webhook-delivery:build: > @voyant-travel/webhook-delivery@0.5.10 clean /repo/packages/webhook-delivery
+#12 35.37 @voyant-travel/webhook-delivery:build: > rm -rf dist tsconfig.tsbuildinfo
+#12 35.37 @voyant-travel/webhook-delivery:build: 
+#12 35.58 @voyant-travel/admin:build: 
+#12 35.58 @voyant-travel/admin:build: > @voyant-travel/admin@0.133.0 clean /repo/packages/admin
+#12 35.58 @voyant-travel/admin:build: > rm -rf dist tsconfig*.tsbuildinfo
+#12 35.58 @voyant-travel/admin:build: 
+#12 35.71 @voyant-travel/bookings:build: cache miss, executing e7d5bea5b05962bc
+#12 36.06 @voyant-travel/bookings:build: 
+#12 36.06 @voyant-travel/bookings:build: > @voyant-travel/bookings@0.226.0 build /repo/packages/bookings
+#12 36.06 @voyant-travel/bookings:build: > tsc -p tsconfig.build.json
+#12 36.06 @voyant-travel/bookings:build: 
+#12 38.28 @voyant-travel/identity:build: cache miss, executing bae5a67542cd10c8
+#12 38.69 @voyant-travel/identity:build: 
+#12 38.69 @voyant-travel/identity:build: > @voyant-travel/identity@0.226.0 build /repo/packages/identity
+#12 38.69 @voyant-travel/identity:build: > tsc -p tsconfig.build.json
+#12 38.69 @voyant-travel/identity:build: 
+#12 41.45 @voyant-travel/auth-react:build: cache miss, executing b512930f7e960d82
+#12 41.45 @voyant-travel/media-react:build: cache miss, executing dbb6eb5eaf955865
+#12 41.75 @voyant-travel/media-react:build: 
+#12 41.75 @voyant-travel/media-react:build: > @voyant-travel/media-react@0.9.0 build /repo/packages/media-react
+#12 41.75 @voyant-travel/media-react:build: > tsc -p tsconfig.build.json
+#12 41.75 @voyant-travel/media-react:build: 
+#12 41.77 @voyant-travel/auth-react:build: 
+#12 41.77 @voyant-travel/auth-react:build: > @voyant-travel/auth-react@0.149.0 build /repo/packages/auth-react
+#12 41.77 @voyant-travel/auth-react:build: > tsc -p tsconfig.build.json
+#12 41.77 @voyant-travel/auth-react:build: 
+#12 45.76 @voyant-travel/event-catalog-react:build: cache miss, executing 9074beaba804d62a
+#12 46.06 @voyant-travel/event-catalog-react:build: 
+#12 46.06 @voyant-travel/event-catalog-react:build: > @voyant-travel/event-catalog-react@0.23.0 build /repo/packages/event-catalog-react
+#12 46.06 @voyant-travel/event-catalog-react:build: > tsc -p tsconfig.build.json
+#12 46.06 @voyant-travel/event-catalog-react:build: 
+#12 47.83 @voyant-travel/custom-fields-react:build: cache miss, executing b63b8ab95b20fae8
+#12 48.15 @voyant-travel/custom-fields-react:build: 
+#12 48.15 @voyant-travel/custom-fields-react:build: > @voyant-travel/custom-fields-react@0.9.0 build /repo/packages/custom-fields-react
+#12 48.15 @voyant-travel/custom-fields-react:build: > tsc -p tsconfig.build.json
+#12 48.15 @voyant-travel/custom-fields-react:build: 
+#12 48.29 @voyant-travel/apps-react:build: cache miss, executing 5c08c62c084d529a
+#12 48.63 @voyant-travel/apps-react:build: 
+#12 48.63 @voyant-travel/apps-react:build: > @voyant-travel/apps-react@0.9.0 build /repo/packages/apps-react
+#12 48.63 @voyant-travel/apps-react:build: > tsc -p tsconfig.build.json
+#12 48.63 @voyant-travel/apps-react:build: 
+#12 50.02 @voyant-travel/setup-react:build: cache miss, executing 6b48d06979202a19
+#12 50.39 @voyant-travel/setup-react:build: 
+#12 50.39 @voyant-travel/setup-react:build: > @voyant-travel/setup-react@0.15.0 build /repo/packages/setup-react
+#12 50.39 @voyant-travel/setup-react:build: > tsc -p tsconfig.build.json
+#12 50.39 @voyant-travel/setup-react:build: 
+#12 51.94 @voyant-travel/reporting-react:build: cache miss, executing 3842c89c44f285d9
+#12 52.27 @voyant-travel/reporting-react:build: 
+#12 52.27 @voyant-travel/reporting-react:build: > @voyant-travel/reporting-react@0.9.0 build /repo/packages/reporting-react
+#12 52.27 @voyant-travel/reporting-react:build: > tsc -p tsconfig.build.json
+#12 52.27 @voyant-travel/reporting-react:build: 
+#12 53.23 @voyant-travel/apps:build: cache miss, executing b1de945f9fa2377c
+#12 53.55 @voyant-travel/apps:build: 
+#12 53.55 @voyant-travel/apps:build: > @voyant-travel/apps@0.13.0 build /repo/packages/apps
+#12 53.55 @voyant-travel/apps:build: > tsc -p tsconfig.build.json
+#12 53.55 @voyant-travel/apps:build: 
+#12 53.63 @voyant-travel/identity-react:build: cache miss, executing ac15f15ce37c1ac5
+#12 53.96 @voyant-travel/identity-react:build: 
+#12 53.96 @voyant-travel/identity-react:build: > @voyant-travel/identity-react@0.226.0 build /repo/packages/identity-react
+#12 53.96 @voyant-travel/identity-react:build: > tsc -p tsconfig.build.json
+#12 53.96 @voyant-travel/identity-react:build: 
+#12 58.15 @voyant-travel/navigation-preferences-react:build: cache miss, executing 3bf58ec19d3e1e31
+#12 58.50 @voyant-travel/navigation-preferences-react:build: 
+#12 58.50 @voyant-travel/navigation-preferences-react:build: > @voyant-travel/navigation-preferences-react@0.23.0 build /repo/packages/navigation-preferences-react
+#12 58.50 @voyant-travel/navigation-preferences-react:build: > tsc -p tsconfig.build.json
+#12 58.50 @voyant-travel/navigation-preferences-react:build: 
+#12 76.36 @voyant-travel/relationships:build: cache miss, executing d72fce9952160f01
+#12 76.36 @voyant-travel/finance:build: cache miss, executing 35e2c2ec7a73f110
+#12 76.36 @voyant-travel/bookings-react:build: cache miss, executing 40c4c43631bdf411
+#12 76.64 @voyant-travel/relationships:build: 
+#12 76.64 @voyant-travel/relationships:build: > @voyant-travel/relationships@0.132.23 build /repo/packages/relationships
+#12 76.64 @voyant-travel/relationships:build: > tsc -p tsconfig.build.json
+#12 76.64 @voyant-travel/relationships:build: 
+#12 76.64 @voyant-travel/finance:build: 
+#12 76.64 @voyant-travel/finance:build: > @voyant-travel/finance@0.226.1 build /repo/packages/finance
+#12 76.64 @voyant-travel/finance:build: > NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json
+#12 76.64 @voyant-travel/finance:build: 
+#12 76.64 @voyant-travel/bookings-react:build: 
+#12 76.64 @voyant-travel/bookings-react:build: > @voyant-travel/bookings-react@0.226.0 build /repo/packages/bookings-react
+#12 76.64 @voyant-travel/bookings-react:build: > tsc -p tsconfig.build.json
+#12 76.64 @voyant-travel/bookings-react:build: 
+#12 100.9 @voyant-travel/identity-react:build: 
+#12 100.9 @voyant-travel/identity-react:build: <--- Last few GCs --->
+#12 100.9 @voyant-travel/identity-react:build: 
+#12 100.9 @voyant-travel/identity-react:build: [1703:0x29813000]    46106 ms: Scavenge (interleaved) 2040.5 (2081.6) -> 2039.7 (2086.1) MB, pooled: 1 MB, 14.76 / 0.00 ms  (average mu = 0.171, current mu = 0.023) allocation failure; 
+#12 100.9 @voyant-travel/identity-react:build: [1703:0x29813000]    46931 ms: Mark-Compact (reduce) 2043.5 (2086.4) -> 2042.0 (2082.1) MB, pooled: 0 MB, 710.31 / 0.00 ms  (+ 2.9 ms in 0 steps since start of marking, biggest step 0.0 ms, walltime since start of marking 736 ms) (average mu = 0.171, curr
+#12 100.9 @voyant-travel/identity-react:build: 
+#12 100.9 @voyant-travel/identity-react:build: <--- JS stacktrace --->
+#12 100.9 @voyant-travel/identity-react:build: 
+#12 100.9 @voyant-travel/identity-react:build: FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+#12 100.9 @voyant-travel/identity-react:build: ----- Native stack trace -----
+#12 100.9 @voyant-travel/identity-react:build: 
+#12 100.9 @voyant-travel/identity-react:build:  1: 0xe46bbe node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+#12 100.9 @voyant-travel/identity-react:build:  2: 0x1244310 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+#12 100.9 @voyant-travel/identity-react:build:  3: 0x12445e7 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+#12 100.9 @voyant-travel/identity-react:build:  4: 0x14734f5  [node]
+#12 100.9 @voyant-travel/identity-react:build:  5: 0x1473523  [node]
+#12 100.9 @voyant-travel/identity-react:build:  6: 0x148c5fa  [node]
+#12 100.9 @voyant-travel/identity-react:build:  7: 0x148f7c8  [node]
+#12 100.9 @voyant-travel/identity-react:build:  8: 0x1cf8351  [node]
+#12 101.3 @voyant-travel/identity-react:build: Aborted (core dumped)
+#12 101.4 @voyant-travel/identity-react:build:  ELIFECYCLE  Command failed with exit code 134.
+#12 101.9 Segmentation fault (core dumped)
+#12 102.1  ELIFECYCLE  Command failed with exit code 139.
+#12 ERROR: process "/bin/sh -c pnpm build" did not complete successfully: exit code: 139

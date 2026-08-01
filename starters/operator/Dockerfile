@@ -23,10 +23,14 @@ WORKDIR /repo
 FROM base AS build
 COPY . .
 RUN pnpm install --frozen-lockfile
-# Only the operator is built: its Vite config bundles the `@voyant-travel/*`
-# packages from SOURCE (the `development` resolve condition), so the whole
-# dependency graph does NOT need to be prebuilt. Emits dist/client +
-# dist/server/server.js.
+# EXPERIMENT (voyant#3994): inlining is OFF, so @voyant-travel/* packages are
+# now external at runtime. Build the whole workspace first so their dist/
+# artifacts exist to be resolved. Then build the operator server bundle.
+# NOTE: `turbo build` sets no heap flag, and at least identity-react's tsc
+# exceeds the default ~2GB V8 heap; raise it and cap concurrency so parallel
+# tsc processes don't exhaust host RAM. This mirrors the repo `typecheck`
+# script which already runs with --max-old-space-size=8192.
+RUN NODE_OPTIONS=--max-old-space-size=8192 pnpm build --concurrency=3
 RUN pnpm --filter operator build
 # Self-contained prod install (real node_modules, no workspace symlinks).
 RUN pnpm --filter=operator deploy --prod --legacy /deploy

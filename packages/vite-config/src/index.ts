@@ -306,7 +306,10 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
         ? {
             target: "node" as const,
             external: ["pg"],
-            noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
+            // EXPERIMENT (voyant#3994): stop inlining @voyant-travel/* workspace
+            // packages so they resolve from installed node_modules at runtime.
+            // @pxmstudio/* left inlined (unchanged).
+            noExternal: [/^@pxmstudio\//],
             resolve: {
               conditions: ["development", "module", "node", "import", "default"],
             },
