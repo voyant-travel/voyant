@@ -1,7 +1,7 @@
 ALTER TABLE "products" ADD COLUMN "product_subtype_code" text;--> statement-breakpoint
 ALTER TABLE "products" ADD COLUMN "duration_minutes" integer;--> statement-breakpoint
 CREATE INDEX "idx_products_subtype_code" ON "products" USING btree ("product_subtype_code");--> statement-breakpoint
-ALTER TABLE "products" ADD CONSTRAINT "chk_products_duration_minutes_positive" CHECK ("products"."duration_minutes" > 0);--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "chk_products_duration_minutes_nonneg" CHECK ("products"."duration_minutes" >= 0);--> statement-breakpoint
 -- Seed the standard configurable Product families for first-party deployments.
 -- Idempotent via the unique `code`: re-running (or a deployment that already
 -- has an operator-authored family with the same code) is a no-op, and operator
