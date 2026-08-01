@@ -1001,16 +1001,22 @@ export function createBookingSessionModule(
 
       const { session, quote, hold, at } = preflight
 
-      const preparedPayment = options.ports.payments
-        ? await options.ports.payments.prepare({
-            session,
-            quote,
-            hold,
-            commit: input,
-            access,
-            now: at,
-          })
-        : ({ kind: "not_required" } as const)
+      let preparedPayment: Awaited<ReturnType<BookingSessionPaymentPorts["prepare"]>>
+      try {
+        preparedPayment = options.ports.payments
+          ? await options.ports.payments.prepare({
+              session,
+              quote,
+              hold,
+              commit: input,
+              access,
+              now: at,
+            })
+          : ({ kind: "not_required" } as const)
+      } catch (error) {
+        if (isIdempotencyConflictError(error)) return idempotencyConflict()
+        throw error
+      }
       if (preparedPayment.kind === "required") {
         return {
           kind: "commit_result",

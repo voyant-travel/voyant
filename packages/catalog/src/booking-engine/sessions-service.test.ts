@@ -167,6 +167,30 @@ describe("Booking Session v1 owned tracer", () => {
     ])
   })
 
+  it("returns a typed conflict when a reused Commit key maps to a changed payment requirement", async () => {
+    const payment = createPaymentHarness()
+    payment.ports.prepare = async () => {
+      throw new Error("booking_session_payment_idempotency_conflict")
+    }
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+
+    await expect(
+      harness.module.commitSession(
+        session.id,
+        {
+          expectedRevision: session.revision,
+          quoteId: quote.id,
+          holdId: hold.id,
+          idempotencyKey: "commit_changed_payment_requirement",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).resolves.toMatchObject({ kind: "rejected", error: { kind: "idempotency_conflict" } })
+    expect(harness.inventory.bookingIds).toEqual([])
+    expect(harness.repository.sessions.get(session.id)?.state).toBe("active")
+  })
+
   it("expires pending Session payments when the journey is abandoned", async () => {
     const payment = createPaymentHarness()
     const harness = createHarness({}, payment.ports)

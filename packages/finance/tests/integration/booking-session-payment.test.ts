@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  BookingSessionPaymentIdempotencyConflictError,
   createOrReuseBookingSessionPayment,
   expirePendingBookingSessionPayments,
   transferBookingSessionPaymentToBooking,
@@ -45,6 +46,24 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session payment continuity", () => {
     ])
 
     expect(first?.id).toBe(retry?.id)
+    await expect(db.select().from(paymentSessions)).resolves.toHaveLength(1)
+  })
+
+  it("rejects a reused Commit key when the required amount or currency changed", async () => {
+    const original = {
+      bookingSessionId: "bses_changed_payment_requirement",
+      commitIdempotencyKey: "commit_changed_payment_requirement",
+      amountCents: 5_000,
+      currency: "EUR",
+    }
+    await createOrReuseBookingSessionPayment(db, original)
+
+    await expect(
+      createOrReuseBookingSessionPayment(db, { ...original, amountCents: 7_500 }),
+    ).rejects.toBeInstanceOf(BookingSessionPaymentIdempotencyConflictError)
+    await expect(
+      createOrReuseBookingSessionPayment(db, { ...original, currency: "GBP" }),
+    ).rejects.toBeInstanceOf(BookingSessionPaymentIdempotencyConflictError)
     await expect(db.select().from(paymentSessions)).resolves.toHaveLength(1)
   })
 

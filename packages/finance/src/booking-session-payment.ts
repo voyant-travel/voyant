@@ -30,6 +30,13 @@ export interface CreateBookingSessionPaymentInput {
   metadata?: Record<string, unknown>
 }
 
+export class BookingSessionPaymentIdempotencyConflictError extends Error {
+  constructor() {
+    super("booking_session_payment_idempotency_conflict")
+    this.name = "BookingSessionPaymentIdempotencyConflictError"
+  }
+}
+
 export function bookingSessionPaymentIdempotencyKey(input: {
   bookingSessionId: string
   commitIdempotencyKey: string
@@ -53,7 +60,12 @@ export async function createOrReuseBookingSessionPayment(
       ),
     )
     .limit(1)
-  if (existing) return existing
+  if (existing) {
+    if (existing.amountCents !== input.amountCents || existing.currency !== input.currency) {
+      throw new BookingSessionPaymentIdempotencyConflictError()
+    }
+    return existing
+  }
 
   return financePaymentSessionService.createPaymentSession(
     db,
