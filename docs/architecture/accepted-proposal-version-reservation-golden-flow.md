@@ -2,7 +2,7 @@
 
 Status: active architecture proof for
 [#1793](https://github.com/voyant-travel/voyant/issues/1793). This note narrows the
-proposal-to-reserve trace from ADR-0004, ADR-0005, and the product package
+proposal-to-reserve trace from ADR-0018, ADR-0005, and the product package
 strategy into a testable ownership contract.
 
 ## Scope
