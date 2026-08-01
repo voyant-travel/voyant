@@ -235,6 +235,17 @@ describe("voyantStartViteConfig", () => {
     expect(config.ssr?.external).toEqual(["pg"])
   })
 
+  it("externalizes the complete Node dependency graph for production builds", () => {
+    const config = voyantStartViteConfig({
+      ...base,
+      nodeSsr: true,
+      bundleWorkspaceSource: false,
+    })
+
+    expect(config.ssr?.external).toBe(true)
+    expect(config.ssr?.noExternal).toBeUndefined()
+  })
+
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {
     expect(voyantStartViteConfig(base).server?.allowedHosts).toBe(true)
     expect(

@@ -499,15 +499,21 @@ export function createStandardOperatorRouteFiles(options: { presentations: reado
     expect(serverEntry).toContain(
       'import { createGeneratedProjectRuntime } from "./project-runtime.js"',
     )
+    expect(serverEntry).toContain('import { getGeneratedProjectLinks } from "./project-links.js"')
     expect(serverEntry).toContain("generatedProjectRuntime: createGeneratedProjectRuntime()")
+    expect(serverEntry).toContain("generatedProjectLinks: getGeneratedProjectLinks()")
     expect(serverEntry).toContain(
-      "createVoyantProjectServerEntry(withGeneratedRuntime(projectOptions)).start",
+      "createVoyantProjectServerEntry(withGeneratedArtifacts(projectOptions)).start",
     )
     const projectRuntimeEntry = await readText(
       path.join(projectRoot, ".voyant/app/project-runtime.ts"),
     )
     expect(projectRuntimeEntry).toContain(
       'import.meta.glob<GeneratedProjectRuntimeModule>(\n    "../runtime/project-runtime.generated.ts",\n    { eager: true },',
+    )
+    const projectLinksEntry = await readText(path.join(projectRoot, ".voyant/app/project-links.ts"))
+    expect(projectLinksEntry).toContain(
+      'import.meta.glob<GeneratedProjectLinksModule>(\n    "../runtime/project-links.generated.ts",\n    { eager: true },',
     )
     await expect(readText(bootstrap.routerEntry!)).resolves.toContain(
       'from "@acme/operator/standard-frontend"',

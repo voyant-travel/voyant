@@ -10,9 +10,10 @@
 #   docker build -f starters/operator/Dockerfile -t voyant-operator .
 #   docker run --rm -p 8080:8080 --env-file starters/operator/.env voyant-operator
 #
-# The Vite build bundles the `@voyant-travel/*` workspace packages into the server
-# bundle; all other deps stay external, so the runtime image ships the operator's
-# production `node_modules` (via `pnpm deploy --prod`).
+# The Vite build leaves installed runtime package imports external while still
+# bundling application-owned server chunks, so the runtime image ships built
+# workspace packages plus the operator's production `node_modules` (via
+# `pnpm deploy --prod`).
 
 FROM node:22-slim AS base
 RUN corepack enable
@@ -32,9 +33,9 @@ RUN pnpm install --frozen-lockfile
 # pruned production install then lacks every dependency reached only through an
 # inlined package — 36 of them, which is why the image never booted
 # (voyant#3994). Building them costs ~7 minutes and ~80MB, once per release.
-RUN pnpm build
-# Emits dist/client + dist/server/server.js, with `@voyant-travel/*` left
-# external so the deployed install supplies them.
+RUN pnpm build --concurrency=4
+# Emits dist/client + dist/server/server.js, with installed runtime package
+# imports external so the deployed install supplies them.
 RUN pnpm --filter operator build
 # Self-contained prod install (real node_modules, no workspace symlinks).
 RUN pnpm --filter=operator deploy --prod --legacy /deploy
@@ -52,11 +53,16 @@ WORKDIR /app
 COPY --from=build /repo/starters/operator/dist ./dist
 COPY --from=build /deploy/node_modules ./node_modules
 COPY --from=build /repo/starters/operator/package.json ./package.json
+COPY --from=build /repo/scripts/run-generated-migrations.mjs ./run-generated-migrations.mjs
 
 # The platform supplies env (DATABASE_URL / DATABASE_URL_DIRECT, realm auth secrets,
 # realm-specific session-claims secrets, VOYANT_CHECKOUT_CAPABILITY_SECRET,
 # INTERNAL_API_KEY, ORIGIN_TRUST_SECRET, APP_URL, …). The
 # server reads PORT (default 8080) and exposes /healthz for container probes.
+# Apply the exact graph-native migration plan shipped in this image before a
+# rollout with: `docker run --rm <env/database flags> <image> node
+# run-generated-migrations.mjs`. Migration is intentionally not coupled to
+# process startup, so replica restarts cannot race schema ownership.
 ENV PORT=8080
 EXPOSE 8080
 CMD ["node", "dist/server/server.js"]

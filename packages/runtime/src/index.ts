@@ -19,7 +19,11 @@ import {
   type OperatorAuthEmailSender,
   type OperatorAuthNodeEnv,
 } from "@voyant-travel/auth/node-runtime"
-import { createHttpDocumentRendererFromEnv, type EventEnvelope } from "@voyant-travel/core"
+import {
+  createHttpDocumentRendererFromEnv,
+  type EventEnvelope,
+  type LinkDefinition,
+} from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
@@ -90,6 +94,11 @@ export interface LoadVoyantProjectOptions {
    * lowering and activation share the bundled framework's private identity.
    */
   generatedProjectRuntime?: GeneratedProjectRuntime
+  /**
+   * Generated server entries inject statically imported link definitions so a
+   * production build never needs the TypeScript artifact loader.
+   */
+  generatedProjectLinks?: readonly LinkDefinition[]
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
@@ -292,7 +301,8 @@ export async function loadVoyantProject(
   if (customerBusinessAccountOnboarding) {
     await customerBusinessAccountOnboardingRuntimePort.test(customerBusinessAccountOnboarding)
   }
-  const projectLinks = await loadGeneratedProjectLinks(artifactRoot)
+  const projectLinks =
+    options.generatedProjectLinks ?? (await loadGeneratedProjectLinks(artifactRoot))
   const authRuntime = createOperatorAuthNodeRuntime({
     accessCatalog: generated.graphRuntime.accessCatalog,
     activeModules: generated.graphRuntime.modules.map((unit) => unit.localId ?? unit.id),

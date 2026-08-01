@@ -333,22 +333,20 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       ...(nodeSsr
         ? {
             target: "node" as const,
-            external: ["pg"],
             ...(bundleWorkspaceSource
               ? {
+                  external: ["pg"],
                   noExternal: [/^@voyant-travel\//, /^@pxmstudio\//],
                   resolve: {
                     conditions: ["development", "module", "node", "import", "default"],
                   },
                 }
               : {
-                  // Production: leave workspace packages external so the
-                  // deployed install supplies them along with their own
-                  // dependencies, and drop `development` so their `exports`
-                  // resolve to built output rather than to `./src`.
-                  resolve: {
-                    conditions: ["module", "node", "import", "default"],
-                  },
+                  // Vite follows linked workspace dependencies by default.
+                  // Externalize production runtime package imports explicitly;
+                  // the deployed install supplies those packages and resolves
+                  // their normal Node export conditions at runtime.
+                  external: true,
                 }),
           }
         : {}),

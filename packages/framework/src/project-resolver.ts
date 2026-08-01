@@ -892,20 +892,36 @@ async function buildLocalRuntimeEntryOverrides(
     const packageName = runtimeReferencePackageName(reference)
     const inspected = packages.get(packageName)
     if (!inspected) continue
-    const projectSource =
+    const projectRootSource =
       inspected.directory === projectRoot && inspected.record.source.reference === "."
-    const packageJson = projectSource ? undefined : await readPackageJson(inspected.directory)
+    const localFileSource = inspected.record.source.kind === "file"
+    const packageJson = projectRootSource ? undefined : await readPackageJson(inspected.directory)
     const packageEntry = lowerOwnerRuntimeEntry(reference.ownerPackageName, reference.entry)
-    const target = projectSource
-      ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
-      : resolvePackageExportTarget(
-          inspected.directory,
-          packageJson!.exports,
-          packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
-          packageName,
-        )
-    const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
-    overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
+    if (localFileSource) {
+      const target = projectRootSource
+        ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
+        : resolvePackageExportTarget(
+            inspected.directory,
+            packageJson!.exports,
+            packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
+            packageName,
+          )
+      const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
+      overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
+      continue
+    }
+
+    // Validate the published subpath while preserving the package specifier in
+    // generated artifacts. Filesystem paths inside the build-time node_modules
+    // tree are neither relocatable nor stable after `pnpm deploy` re-lays out
+    // production dependencies.
+    resolvePackageExportTarget(
+      inspected.directory,
+      packageJson!.exports,
+      packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
+      packageName,
+    )
+    overrides[packageEntry] = packageEntry
   }
   return overrides
 }

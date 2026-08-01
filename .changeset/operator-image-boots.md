@@ -1,9 +1,11 @@
 ---
 "@voyant-travel/vite-config": minor
 "@voyant-travel/runtime": minor
+"@voyant-travel/framework": minor
 ---
 
-Build and install workspace packages for production instead of inlining their source.
+Build and install relocatable workspace packages for production instead of
+inlining their source.
 
 The operator Docker image built cleanly and had never booted (voyant#3994). The
 root cause was that `ssr.noExternal: [/^@voyant-travel\//]` inlined workspace
@@ -23,7 +25,7 @@ hot-reloadable. A build now passes `false`, so `@voyant-travel/*` stay external,
 come with them. Both directions are pinned by tests — only one of them is
 visible in a production failure.
 
-This required two supporting changes, both in the application's Dockerfile:
+This also makes the complete production artifact explicit:
 
 - the workspace dists are built before the app build (~7 minutes, ~80MB, once
   per release), with `NODE_OPTIONS=--max-old-space-size=8192` because `tsc`
@@ -34,3 +36,9 @@ This required two supporting changes, both in the application's Dockerfile:
   `exports` at `./src/*.ts` while `files: ["dist"]` means `src/` is never
   shipped, so without it every deployed package references files that do not
   exist. The script performs the same substitution npm consumers already get.
+- generated package references remain symbolic package specifiers rather than
+  capturing build-time `node_modules` paths, and generated link definitions are
+  compiled into the server alongside the graph runtime
+- the operator manifest declares the product BOM runtime closure as production
+  dependencies, and the image includes an explicit graph-native migration
+  command for use before rollout

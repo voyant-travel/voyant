@@ -19,10 +19,11 @@
 // Idempotent: a manifest with no `publishConfig` is left untouched.
 
 import {
+  existsSync,
   readdirSync,
   readFileSync,
   realpathSync,
-  rmSync,
+  renameSync,
   statSync,
   writeFileSync,
 } from "node:fs"
@@ -84,6 +85,29 @@ const seen = new Set()
 let applied = 0
 let skipped = 0
 
+function manifestTargets(value) {
+  if (typeof value === "string") return [value]
+  if (Array.isArray(value)) return value.flatMap(manifestTargets)
+  if (value && typeof value === "object") return Object.values(value).flatMap(manifestTargets)
+  return []
+}
+
+function assertStaticTargetsExist(dir, manifest) {
+  const targets = [
+    ...manifestTargets(manifest.exports),
+    ...manifestTargets(manifest.main),
+    ...manifestTargets(manifest.module),
+    ...manifestTargets(manifest.types),
+    ...manifestTargets(manifest.bin),
+  ]
+  for (const target of new Set(targets)) {
+    if (!target.startsWith("./") || target.includes("*")) continue
+    if (!existsSync(join(dir, target))) {
+      throw new Error(`${manifest.name} publishes missing runtime target ${target}`)
+    }
+  }
+}
+
 for (const dir of manifestDirs(join(root, "node_modules"))) {
   const manifestPath = join(dir, "package.json")
   if (seen.has(manifestPath)) continue
@@ -105,7 +129,9 @@ for (const dir of manifestDirs(join(root, "node_modules"))) {
     if (publishConfig[field] !== undefined) manifest[field] = publishConfig[field]
   }
   delete manifest.publishConfig
-  // Break the hardlink before writing.
+  assertStaticTargetsExist(dir, manifest)
+  // Replace atomically to break the hardlink without first leaving the deploy
+  // tree with a missing manifest.
   //
   // pnpm hardlinks package files rather than copying them, so the deployed
   // manifest and the workspace's own `packages/<name>/package.json` are the
@@ -115,9 +141,11 @@ for (const dir of manifestDirs(join(root, "node_modules"))) {
   // deleting `publishConfig`, which breaks the workspace for everyone.
   //
   // No path check can catch this: the file genuinely is inside the deploy
-  // tree. Removing it first forces a fresh inode, leaving the source alone.
-  rmSync(manifestPath)
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+  // tree. Renaming a new file over it forces a fresh inode, leaving the source
+  // alone.
+  const temporaryManifestPath = `${manifestPath}.${process.pid}.tmp`
+  writeFileSync(temporaryManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" })
+  renameSync(temporaryManifestPath, manifestPath)
   applied += 1
 }
 

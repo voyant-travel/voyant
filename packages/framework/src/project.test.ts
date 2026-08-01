@@ -81,12 +81,10 @@ describe("framework project resolver", () => {
       (file) => file.path === resolution.artifacts.runtimeEntry,
     )?.contents
     expect(runtimeSource).toContain(
-      "../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/runtime.mjs",
+      '"@acme/loyalty/runtime": () => import("@acme/loyalty/runtime")',
     )
-    expect(runtimeSource).toContain(
-      'from "../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/runtime-contributor.mjs"',
-    )
-    expect(runtimeSource).not.toContain('from "@acme/loyalty/runtime"')
+    expect(runtimeSource).toContain('from "@acme/loyalty/runtime-contributor"')
+    expect(runtimeSource).not.toContain("node_modules")
   })
 
   it("matches the CLI contract with one deterministic target-neutral graph hash", async () => {
@@ -270,7 +268,7 @@ describe("framework project resolver", () => {
       (file) => file.path === resolution.artifacts.migrationRunner,
     )
     expect(runner?.contents).toContain('"@acme/loyalty#setup.z-backfill.v1": async () => {')
-    expect(runner?.contents).toContain('import("../../node_modules/@acme/loyalty/setup.mjs")')
+    expect(runner?.contents).toContain('import("@acme/loyalty/setup")')
   })
 
   it("includes deployment-owned migration folders after package schema migrations", async () => {
@@ -587,7 +585,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       (file) => file.path === resolution.artifacts.runtimeEntry,
     )?.contents
     expect(runtimeSource).toContain(
-      '"../../node_modules/@acme/loyalty-react/admin.mjs": () => import("../../node_modules/@acme/loyalty-react/admin.mjs")',
+      '"@acme/loyalty-react/admin": () => import("@acme/loyalty-react/admin")',
     )
   })
 
@@ -656,9 +654,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(
       resolution.artifacts.files.find((file) => file.path === resolution.artifacts.runtimeEntry)
         ?.contents,
-    ).toContain(
-      '"../../node_modules/@acme/loyalty-runtime/factory.mjs": () => import("../../node_modules/@acme/loyalty-runtime/factory.mjs")',
-    )
+    ).toContain('"@acme/loyalty-runtime/factory": () => import("@acme/loyalty-runtime/factory")')
   })
 
   it("rejects runtime subpaths that are absent from the referenced package exports", async () => {
