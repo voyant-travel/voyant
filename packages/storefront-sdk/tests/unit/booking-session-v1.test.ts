@@ -110,32 +110,32 @@ describe("Booking Session v1 SDK", () => {
       "/v1/public/catalog/booking-sessions/bses_demo/commit",
     ])
     expect(calls[0]?.body).toMatchObject({
-      idempotencyKey: "journey_12345678:create",
+      idempotencyKey: "test-journey:create",
       target: { kind: "product", productId: "prod_owned_1" },
     })
     expect(calls[0]?.capability).toBe(capability)
     expect(calls[0]?.body).not.toHaveProperty("capability")
     expect(calls[1]?.body).toMatchObject({
       expectedRevision: 1,
-      idempotencyKey: "journey_12345678:update",
+      idempotencyKey: "test-journey:update",
     })
     expect(calls[1]?.body).not.toHaveProperty("capability")
     expect(calls[2]?.body).toMatchObject({
       expectedRevision: 2,
-      idempotencyKey: "journey_12345678:quote",
+      idempotencyKey: "test-journey:quote",
     })
     expect(calls[2]?.body).not.toHaveProperty("capability")
     expect(calls[3]?.body).toMatchObject({
       expectedRevision: 2,
       quoteId: "bsqu_demo",
-      idempotencyKey: "journey_12345678:hold",
+      idempotencyKey: "test-journey:hold",
     })
     expect(calls[3]?.body).not.toHaveProperty("capability")
     expect(calls[4]?.body).toMatchObject({
       expectedRevision: 2,
       quoteId: "bsqu_demo",
       holdId: "bshd_demo",
-      idempotencyKey: "journey_12345678:commit",
+      idempotencyKey: "test-journey:commit",
     })
     expect(calls.slice(1).map((call) => call.capability)).toEqual([
       capability,

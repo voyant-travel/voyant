@@ -99,16 +99,29 @@ async function commitOwnedBooking(
   deps: ProductionBookingSessionModuleDeps,
   input: CommitOwnedBookingInput,
 ) {
+  // Buyer resolution may create a Relationships row. Keep that row, the
+  // Finance command, and Session/Quote/Hold consumption under one root
+  // transaction so a failed Commit leaves no partial commercial identity.
+  return deps.db.transaction((tx) =>
+    commitOwnedBookingInTransaction(deps, input, tx as PostgresJsDatabase),
+  )
+}
+
+async function commitOwnedBookingInTransaction(
+  deps: ProductionBookingSessionModuleDeps,
+  input: CommitOwnedBookingInput,
+  tx: PostgresJsDatabase,
+) {
   const handlers = await deps.resolveOwnedHandlers()
   const handler = handlers.resolve(entityModuleForSession(input.session.target))
   if (!handler) throw new Error("booking_session_commit_unsupported_vertical")
   if (!handler.deriveSelfServiceCommand) {
     throw new Error("booking_session_commit_unsupported_vertical")
   }
-  const billing = await resolveBilling(deps, input)
+  const billing = await resolveBilling(deps, input, tx)
   if (!billing) throw new Error("booking_session_commit_billing_unresolved")
   const derived = await handler.deriveSelfServiceCommand(
-    { db: deps.db, adapterContext: {} as never },
+    { db: tx, adapterContext: {} as never },
     {
       entityModule: handler.entityModule,
       entityId: entityIdForSession(input.session.target),
@@ -159,15 +172,18 @@ async function commitOwnedBooking(
     },
   })
   const result = await runtime.createFromDraft({
-    db: deps.db,
+    db: tx,
     draftId: input.session.id,
     quoteId: input.quote.id,
     caller: { personId: billing.personId ?? undefined },
-    idempotencyKey: input.idempotencyKey,
+    // The public contract scopes Commit idempotency to a Session. Finance's
+    // action-ledger scope is principal-wide, so preserve the Session boundary
+    // when crossing into that command protocol.
+    idempotencyKey: `${input.session.id}:${input.idempotencyKey}`,
     userId: input.access.actorKind === "staff" ? input.access.principalId : undefined,
   })
   if (result.status !== "ok") throw new Error(`booking_session_commit_${result.reason}`)
-  const allocations = await deps.db
+  const allocations = await tx
     .select({ id: bookingAllocations.id })
     .from(bookingAllocations)
     .where(eq(bookingAllocations.bookingId, result.bookingId))
@@ -177,17 +193,13 @@ async function commitOwnedBooking(
 async function resolveBilling(
   deps: ProductionBookingSessionModuleDeps,
   input: CommitOwnedBookingInput,
+  tx: PostgresJsDatabase,
 ): Promise<SelfServiceBillingParty | null> {
   const contact = billingContact(input.session.statePayload)
-  if (input.access.actorKind !== "anonymous" && input.access.principalId) {
-    return {
-      ...contact,
-      personId: input.access.principalId,
-      organizationId: input.access.organizationId ?? null,
-    }
-  }
+  // Authentication identifies the actor, not the buyer. In particular, a
+  // staff user id must never be persisted as the Booking's CRM person id.
   const personId = await deps.relationships?.upsertPersonFromContact(
-    deps.db,
+    tx,
     {
       firstName: contact.contactFirstName,
       lastName: contact.contactLastName,
