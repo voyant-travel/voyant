@@ -118,6 +118,15 @@ describe("Allocation schema", () => {
         capacity: 2,
       }),
     ).toThrow()
+
+    expect(() =>
+      insertAllocationResourceSchema.parse({
+        kind: "vehicle_seat",
+        label: "   ",
+        capacity: 1,
+        parentId: "vehicle_abc",
+      }),
+    ).toThrow()
   })
 
   it("does not allow changing a resource kind through patch input", () => {

@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import { AllocationServiceError } from "../../../src/availability/service-allocation.js"
-import { assertVehicleChildCapacity } from "../../../src/availability/service-allocation-resource-invariants.js"
+import {
+  assertVehicleChildCapacity,
+  assertVehicleSeatDesignationAvailable,
+} from "../../../src/availability/service-allocation-resource-invariants.js"
 
 describe("vehicle child-seat capacity", () => {
   it("accepts child seats up to the vehicle capacity", () => {
@@ -27,5 +30,28 @@ describe("vehicle child-seat capacity", () => {
         detail: { capacity: 19, existingSeatCount: 20, requestedSeatCount: 0 },
       })
     }
+  })
+})
+
+describe("vehicle seat designation", () => {
+  it("requires a nonblank seat designation", () => {
+    expect(() =>
+      assertVehicleSeatDesignationAvailable({ label: "  ", flags: {}, existingSeats: [] }),
+    ).toThrowError(AllocationServiceError)
+  })
+
+  it("rejects a duplicate label or generated row-column designation", () => {
+    expect(() =>
+      assertVehicleSeatDesignationAvailable({
+        label: "12a",
+        flags: {},
+        existingSeats: [{ label: null, flags: { row: 12, column: "A" } }],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        status: 409,
+        detail: { designation: "12a" },
+      }),
+    )
   })
 })

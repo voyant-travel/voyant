@@ -79,6 +79,42 @@ export function collectOccupants(
   return { byResource, byTravelerId, unallocated }
 }
 
+/**
+ * Roll exact seat assignments up to their parent vehicle. Vehicles are not
+ * directly assignable, but their management rows still need to show the real
+ * passenger load carried by their child seats.
+ */
+export function collectVehicleOccupants(
+  travelers: AllocationManifestTraveler[],
+  vehicles: AllocationResource[],
+  seats: AllocationResource[],
+): AllocationOccupants {
+  const vehicleIds = new Set(vehicles.map((vehicle) => vehicle.id))
+  const vehicleBySeatId = new Map(
+    seats.flatMap((seat) =>
+      seat.parentId && vehicleIds.has(seat.parentId) ? [[seat.id, seat.parentId] as const] : [],
+    ),
+  )
+  const byResource = new Map<string, AllocationManifestTraveler[]>()
+  const byTravelerId = new Map<string, AllocationManifestTraveler>()
+  const unallocated: AllocationManifestTraveler[] = []
+
+  for (const traveler of travelers) {
+    byTravelerId.set(traveler.id, traveler)
+    const seatId = traveler.allocations[VEHICLE_SEAT_KIND]
+    const vehicleId = seatId ? vehicleBySeatId.get(seatId) : undefined
+    if (!vehicleId) {
+      unallocated.push(traveler)
+      continue
+    }
+    const occupants = byResource.get(vehicleId) ?? []
+    occupants.push(traveler)
+    byResource.set(vehicleId, occupants)
+  }
+
+  return { byResource, byTravelerId, unallocated }
+}
+
 export function buildValidationIssues({
   travelers,
   resources,
@@ -210,10 +246,36 @@ export function seatRows(seats: AllocationResource[]) {
 }
 
 export function seatName(seat: AllocationResource, messages: AllocationUiMessages) {
+  return seatDesignation(seat) ?? messages.seat
+}
+
+/** Stable, human-readable seat designation used for display and uniqueness. */
+export function seatDesignation(seat: Pick<AllocationResource, "label" | "flags">): string | null {
   const row = flagNumber(seat.flags.row)
   const column = flagString(seat.flags.column)
   if (row && column) return `${row}${column}`
-  return seat.label ?? messages.seat
+  return seat.label?.trim() || null
+}
+
+export type VehicleSeatDesignationIssue = "required" | "duplicate" | null
+
+/** Validate a manually-authored seat name within its parent vehicle. */
+export function validateVehicleSeatDesignation({
+  label,
+  parentId,
+  seats,
+}: {
+  label: string
+  parentId: string | null
+  seats: AllocationResource[]
+}): VehicleSeatDesignationIssue {
+  const normalized = label.trim().toLocaleLowerCase()
+  if (!normalized) return "required"
+  const duplicate = seats.some(
+    (seat) =>
+      seat.parentId === parentId && seatDesignation(seat)?.toLocaleLowerCase() === normalized,
+  )
+  return duplicate ? "duplicate" : null
 }
 
 export function parentKindFor(kind: string) {

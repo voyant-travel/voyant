@@ -40,10 +40,13 @@ export type AllocationUiMessages = Record<string, unknown> & {
   resourceParent: string
   resourceParentPlaceholder: string
   resourceParentRequired: string
+  seatDesignationRequired: string
+  seatDesignationDuplicate: string
   createResource: string
   editResource: string
   saveResource: string
   updateResourceFailed: string
+  removeResourceFailed: string
   cancel: string
   unallocated: string
   unallocatedDescription: string
@@ -170,10 +173,13 @@ export const allocationUiEn = {
   resourceParent: "Vehicle",
   resourceParentPlaceholder: "Select the vehicle this seat belongs to…",
   resourceParentRequired: "Create a vehicle before adding its seats.",
+  seatDesignationRequired: "Enter a seat designation, such as 12A.",
+  seatDesignationDuplicate: "That seat designation already exists in this vehicle.",
   createResource: "Create resource",
   editResource: "Edit resource",
   saveResource: "Save",
   updateResourceFailed: "Could not update resource.",
+  removeResourceFailed: "Could not remove resource.",
   cancel: "Cancel",
   unallocated: "Unallocated",
   unallocatedDescription: "Travelers not assigned to this resource kind.",
@@ -320,10 +326,13 @@ export const allocationUiRo = {
   resourceParent: "Vehicul",
   resourceParentPlaceholder: "Alege vehiculul caruia ii apartine locul…",
   resourceParentRequired: "Creeaza un vehicul inainte de a-i adauga locurile.",
+  seatDesignationRequired: "Introdu o denumire pentru loc, de exemplu 12A.",
+  seatDesignationDuplicate: "Aceasta denumire de loc exista deja in vehicul.",
   createResource: "Creeaza resursa",
   editResource: "Editeaza resursa",
   saveResource: "Salveaza",
   updateResourceFailed: "Resursa nu a putut fi actualizata.",
+  removeResourceFailed: "Resursa nu a putut fi stearsa.",
   cancel: "Anuleaza",
   unallocated: "Nealocati",
   unallocatedDescription: "Calatori fara acest tip de resursa alocat.",

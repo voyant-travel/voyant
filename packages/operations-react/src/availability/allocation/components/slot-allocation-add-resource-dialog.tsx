@@ -150,6 +150,7 @@ export function AddResourceDialog({
                 value={resourceLabel}
                 onChange={(event) => onResourceLabelChange(event.target.value)}
                 placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
+                required={parentRequired}
                 autoFocus
               />
             </div>
@@ -184,7 +185,13 @@ export function AddResourceDialog({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {messages.cancel}
             </Button>
-            <Button type="submit" disabled={createPending || (parentRequired && !resourceParentId)}>
+            <Button
+              type="submit"
+              disabled={
+                createPending ||
+                (parentRequired && (!resourceParentId || resourceLabel.trim().length === 0))
+              }
+            >
               {messages.createResource}
             </Button>
           </DialogFooter>

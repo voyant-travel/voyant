@@ -20,6 +20,7 @@ import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import { AddResourceDialog } from "./slot-allocation-add-resource-dialog.js"
 import {
   collectOccupants,
+  collectVehicleOccupants,
   defaultCapacityFor,
   deriveAllocationKinds,
   isTravelerAllocatableKind,
@@ -31,6 +32,7 @@ import {
   summarizeResourceCapacity,
   VEHICLE_KIND,
   VEHICLE_SEAT_KIND,
+  validateVehicleSeatDesignation,
 } from "./slot-allocation-model.js"
 import { CapacitySummaryBadges, PassengerListPanel } from "./slot-allocation-page-panels.js"
 import { ResourceColumnsView } from "./slot-allocation-resource-view.js"
@@ -166,9 +168,16 @@ export function SlotAllocationPage({
     () => (data?.resources ?? []).filter((resource) => resource.kind === VEHICLE_KIND),
     [data?.resources],
   )
+  const vehicleSeatResources = useMemo(
+    () => (data?.resources ?? []).filter((resource) => resource.kind === VEHICLE_SEAT_KIND),
+    [data?.resources],
+  )
   const occupants = useMemo(
-    () => collectOccupants(travelers, resources, activeKind),
-    [travelers, resources, activeKind],
+    () =>
+      activeKind === VEHICLE_KIND
+        ? collectVehicleOccupants(travelers, resources, vehicleSeatResources)
+        : collectOccupants(travelers, resources, activeKind),
+    [travelers, resources, vehicleSeatResources, activeKind],
   )
   const capacitySummary = useMemo<ResourceCapacitySummary>(
     () =>
@@ -228,6 +237,21 @@ export function SlotAllocationPage({
   async function createResource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    if (activeKind === VEHICLE_SEAT_KIND) {
+      const issue = validateVehicleSeatDesignation({
+        label: resourceLabel,
+        parentId: resourceParentId,
+        seats: vehicleSeatResources,
+      })
+      if (issue) {
+        setError(
+          issue === "duplicate"
+            ? messages.seatDesignationDuplicate
+            : messages.seatDesignationRequired,
+        )
+        return
+      }
+    }
     try {
       await resourceMutation.create.mutateAsync({
         kind: activeKind,
@@ -257,6 +281,15 @@ export function SlotAllocationPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.updateResourceFailed)
       throw err
+    }
+  }
+
+  async function removeResource(resourceId: string) {
+    setError(null)
+    try {
+      await resourceMutation.remove.mutateAsync(resourceId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : messages.removeResourceFailed)
     }
   }
 
@@ -489,9 +522,7 @@ export function SlotAllocationPage({
                 void assignTraveler(travelerId, resourceId)
               }
               onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
-              onRemoveResource={(resourceId) =>
-                void resourceMutation.remove.mutateAsync(resourceId)
-              }
+              onRemoveResource={(resourceId) => void removeResource(resourceId)}
               onBookingOpen={onBookingOpen}
               renderTravelerActions={renderTravelerActions}
             />
@@ -508,9 +539,7 @@ export function SlotAllocationPage({
                 void assignTraveler(travelerId, resourceId)
               }
               onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
-              onRemoveResource={(resourceId) =>
-                void resourceMutation.remove.mutateAsync(resourceId)
-              }
+              onRemoveResource={(resourceId) => void removeResource(resourceId)}
               onEditResource={editResource}
               onBookingOpen={onBookingOpen}
               renderTravelerActions={renderTravelerActions}

@@ -1,12 +1,17 @@
-import type { AllocationResource } from "@voyant-travel/operations-react/availability"
+import type {
+  AllocationManifestTraveler,
+  AllocationResource,
+} from "@voyant-travel/operations-react/availability"
 import { describe, expect, it } from "vitest"
 
 import {
+  collectVehicleOccupants,
   defaultCapacityFor,
   deriveAllocationKinds,
   groupResourcesBySubType,
   isTravelerAllocatableKind,
   summarizeResourceCapacity,
+  validateVehicleSeatDesignation,
 } from "./slot-allocation-model.js"
 
 function resource(overrides: Partial<AllocationResource> & { id: string }): AllocationResource {
@@ -23,6 +28,35 @@ function resource(overrides: Partial<AllocationResource> & { id: string }): Allo
     sortOrder: overrides.sortOrder ?? 0,
     createdAt: overrides.createdAt ?? "2026-01-01T00:00:00Z",
     updatedAt: overrides.updatedAt ?? "2026-01-01T00:00:00Z",
+  }
+}
+
+function traveler(id: string, seatId?: string): AllocationManifestTraveler {
+  return {
+    id,
+    bookingId: `booking_${id}`,
+    bookingNumber: `BK-${id}`,
+    bookingStatus: "confirmed",
+    bookingSequence: 1,
+    paymentStatus: "paid",
+    firstName: id,
+    lastName: "Traveler",
+    fullName: `${id} Traveler`,
+    email: null,
+    phone: null,
+    isLeadTraveler: true,
+    isPrimary: true,
+    sharingGroupId: null,
+    optionId: null,
+    optionUnitId: null,
+    optionUnitCode: null,
+    roomTypeId: null,
+    bedPreference: null,
+    allocations: seatId ? { vehicle_seat: seatId } : {},
+    travelerCategory: null,
+    participantType: "traveler",
+    hasAccessibilityNeeds: false,
+    hasDietaryRequirements: false,
   }
 }
 
@@ -79,6 +113,62 @@ describe("standard operated-departure kinds", () => {
 
   it("starts a manually-created vehicle with editable coach-scale capacity", () => {
     expect(defaultCapacityFor("vehicle")).toBe(50)
+  })
+})
+
+describe("vehicle occupancy", () => {
+  it("rolls child-seat traveler assignments up to their parent vehicle", () => {
+    const vehicles = [
+      resource({ id: "vehicle_1", kind: "vehicle", capacity: 50 }),
+      resource({ id: "vehicle_2", kind: "vehicle", capacity: 20 }),
+    ]
+    const seats = [
+      resource({ id: "seat_1", kind: "vehicle_seat", parentId: "vehicle_1" }),
+      resource({ id: "seat_2", kind: "vehicle_seat", parentId: "vehicle_2" }),
+    ]
+
+    const occupants = collectVehicleOccupants(
+      [traveler("one", "seat_1"), traveler("two", "seat_2"), traveler("three")],
+      vehicles,
+      seats,
+    )
+
+    expect(occupants.byResource.get("vehicle_1")?.map((entry) => entry.id)).toEqual(["one"])
+    expect(occupants.byResource.get("vehicle_2")?.map((entry) => entry.id)).toEqual(["two"])
+    expect(occupants.unallocated.map((entry) => entry.id)).toEqual(["three"])
+  })
+})
+
+describe("manual vehicle-seat designations", () => {
+  const seats = [
+    resource({ id: "seat_1", kind: "vehicle_seat", parentId: "vehicle_1", label: "12A" }),
+    resource({
+      id: "seat_2",
+      kind: "vehicle_seat",
+      parentId: "vehicle_2",
+      flags: { row: 12, column: "A" },
+    }),
+  ]
+
+  it("requires a nonblank designation", () => {
+    expect(validateVehicleSeatDesignation({ label: "  ", parentId: "vehicle_1", seats })).toBe(
+      "required",
+    )
+  })
+
+  it("rejects duplicates within the same vehicle, case-insensitively", () => {
+    expect(validateVehicleSeatDesignation({ label: "12a", parentId: "vehicle_1", seats })).toBe(
+      "duplicate",
+    )
+    expect(validateVehicleSeatDesignation({ label: "12a", parentId: "vehicle_2", seats })).toBe(
+      "duplicate",
+    )
+  })
+
+  it("allows the same designation in a different vehicle", () => {
+    expect(
+      validateVehicleSeatDesignation({ label: "12A", parentId: "vehicle_3", seats }),
+    ).toBeNull()
   })
 })
 

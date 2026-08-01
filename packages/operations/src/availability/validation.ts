@@ -274,6 +274,13 @@ export const insertAllocationResourceSchema = allocationResourceCoreSchema.super
         message: "A vehicle seat must belong to a vehicle",
       })
     }
+    if (!value.label?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["label"],
+        message: "A vehicle seat must have a designation",
+      })
+    }
   },
 )
 export const updateAllocationResourceSchema = allocationResourceCoreSchema

@@ -12,7 +12,10 @@ import {
   clearTravelerAllocationsForResource,
   countResourceOccupants,
 } from "./service-allocation-resource-capacity.js"
-import { assertVehicleChildCapacity } from "./service-allocation-resource-invariants.js"
+import {
+  assertVehicleChildCapacity,
+  assertVehicleSeatDesignationAvailable,
+} from "./service-allocation-resource-invariants.js"
 
 export async function createAllocationResource(
   db: PostgresJsDatabase,
@@ -45,6 +48,12 @@ export async function createAllocationResource(
         capacity: parent.capacity,
         existingSeatCount: childSeatCount,
         seatsToAdd: 1,
+      })
+      await assertUniqueVehicleSeatDesignation(transactionalDb, {
+        slotId,
+        vehicleId: parent.id,
+        label: input.label,
+        flags: input.flags ?? {},
       })
     }
 
@@ -116,15 +125,19 @@ export async function updateAllocationResource(
         seatsToAdd: 0,
       })
     }
-    if (input.parentId !== undefined) {
+    if (
+      existing.kind === "vehicle_seat" &&
+      (input.label !== undefined || input.parentId !== undefined)
+    ) {
+      const effectiveParentId = input.parentId !== undefined ? input.parentId : existing.parentId
       const parent = await assertValidResourceParent(
         transactionalDb,
         slotId,
         existing.kind,
-        input.parentId,
-        { lockParent: existing.kind === "vehicle_seat" },
+        effectiveParentId,
+        { lockParent: true },
       )
-      if (existing.kind === "vehicle_seat" && parent && input.parentId !== existing.parentId) {
+      if (parent && effectiveParentId !== existing.parentId) {
         const childSeatCount = await countVehicleSeats(transactionalDb, slotId, parent.id)
         assertVehicleChildCapacity({
           capacity: parent.capacity,
@@ -132,6 +145,17 @@ export async function updateAllocationResource(
           seatsToAdd: 1,
         })
       }
+      if (parent) {
+        await assertUniqueVehicleSeatDesignation(transactionalDb, {
+          slotId,
+          vehicleId: parent.id,
+          label: input.label !== undefined ? input.label : existing.label,
+          flags: input.flags !== undefined ? input.flags : existing.flags,
+          excludeResourceId: resourceId,
+        })
+      }
+    } else if (input.parentId !== undefined) {
+      await assertValidResourceParent(transactionalDb, slotId, existing.kind, input.parentId)
     }
 
     if (input.capacity !== undefined) {
@@ -280,4 +304,35 @@ async function countVehicleSeats(db: PostgresJsDatabase, slotId: string, vehicle
       ),
     )
   return rows.length
+}
+
+async function assertUniqueVehicleSeatDesignation(
+  db: PostgresJsDatabase,
+  input: {
+    slotId: string
+    vehicleId: string
+    label: string | null | undefined
+    flags: Record<string, unknown> | null | undefined
+    excludeResourceId?: string
+  },
+) {
+  const siblings = await db
+    .select({
+      id: allocationResources.id,
+      label: allocationResources.label,
+      flags: allocationResources.flags,
+    })
+    .from(allocationResources)
+    .where(
+      and(
+        eq(allocationResources.slotId, input.slotId),
+        eq(allocationResources.parentId, input.vehicleId),
+        eq(allocationResources.kind, "vehicle_seat"),
+      ),
+    )
+  assertVehicleSeatDesignationAvailable({
+    label: input.label,
+    flags: input.flags,
+    existingSeats: siblings.filter((seat) => seat.id !== input.excludeResourceId),
+  })
 }
