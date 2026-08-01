@@ -82,3 +82,43 @@ test("rejects relationship entity quote outside pricing contexts", (t) => {
   )
   assert.match(failure(root), /quote/)
 })
+
+test("rejects active bespoke quote residues from proposal migration", (t) => {
+  const root = fixture(t)
+  write(
+    root,
+    "examples/operator-demo/scripts/seed.ts",
+    "import { bookingQuoteDetails } from '@voyant-travel/proposals/booking-extension'; const QUOTE_SEEDS = []\n",
+  )
+  write(
+    root,
+    "packages/i18n/src/admin/crm-operator.ts",
+    "export const messages = { quoteOpen: 'Open', quoteWon: 'Won', quoteLost: 'Lost', quoteArchived: 'Archived' }\n",
+  )
+  write(
+    root,
+    "starters/operator/scripts/seed-demo.mjs",
+    'console.log("\\nquote:")\n',
+  )
+  write(
+    root,
+    "packages/admin-host/src/admin-presentation.ts",
+    'export const defaultAdminHostNavMessages = { quotes: "Quotes" }\n',
+  )
+  write(
+    root,
+    "packages/operator-settings/src/service.ts",
+    "// contract variables, quotes proposal, commerce checkout tax\n",
+  )
+  write(
+    root,
+    "packages/core/src/events.ts",
+    "// Examples: `booking.created`, `quote.accepted`, `payment.received`.\n",
+  )
+  const output = failure(root)
+  assert.match(output, /bookingQuoteDetails/)
+  assert.match(output, /QUOTE_SEEDS/)
+  assert.match(output, /quoteOpen/)
+  assert.match(output, /quotes: \\"Quotes\\"/)
+  assert.match(output, /quote\.accepted/)
+})

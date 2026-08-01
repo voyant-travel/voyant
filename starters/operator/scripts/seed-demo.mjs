@@ -229,7 +229,7 @@ async function main() {
   summary.supplier = supplier.id
 
   // 3. Proposal (needs a pipeline + stage) ---------------------------------------
-  console.log("\nquote:")
+  console.log("\nproposal:")
   const person = (await list("/relationships/people?limit=50")).find(
     (p) => p.firstName === "Andrei" && p.lastName === "Ionescu",
   )

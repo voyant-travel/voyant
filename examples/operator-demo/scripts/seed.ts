@@ -95,7 +95,7 @@ import {
   facilityFeatures,
   facilityOperationSchedules,
 } from "@voyant-travel/operations"
-import { bookingQuoteDetails } from "@voyant-travel/proposals/booking-extension"
+import { bookingProposalDetails } from "@voyant-travel/proposals/booking-extension"
 import {
   pipelines,
   proposalParticipants,
@@ -1223,7 +1223,7 @@ async function seedCrm() {
   }
 
   // 6 proposals across stages
-  const QUOTE_SEEDS = [
+  const PROPOSAL_SEEDS = [
     {
       title: "Northwind Q2 board retreat, Paris",
       stage: "qualified",
@@ -1275,7 +1275,7 @@ async function seedCrm() {
   ] as const
 
   const proposalIds: string[] = []
-  for (const o of QUOTE_SEEDS) {
+  for (const o of PROPOSAL_SEEDS) {
     const proposalId = newId("proposals")
     proposalIds.push(proposalId)
     await db.insert(proposals).values({
@@ -2459,7 +2459,7 @@ async function seedBookingsAndFinance() {
     })
 
     // Extension details — populated on every booking
-    await db.insert(bookingQuoteDetails).values({
+    await db.insert(bookingProposalDetails).values({
       bookingId,
       proposalId: null,
       proposalVersionId: null,
