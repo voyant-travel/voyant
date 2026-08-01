@@ -6,4 +6,4 @@
 "@voyant-travel/storefront": patch
 ---
 
-Add Distribution-owned channel publication contracts, persistence, TypeID prefixes, effective publication resolver primitives, and provider-neutral runtime wiring for Storefront and Commerce.
+Add Distribution-owned channel publication contracts, persistence, TypeID prefixes, exact cutover snapshots, effective publication resolver primitives, and provider-neutral runtime wiring for Storefront and Commerce.

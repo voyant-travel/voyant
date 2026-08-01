@@ -32,11 +32,9 @@ const catalogIntent = {
   supplierId: null,
   cursor: null,
   metadata: {
-    cutover: {
-      at: "2026-08-01T12:00:00.000Z",
-      product: { id: "prod_cutover", createdAt: "2026-08-01T12:00:00.000Z" },
-      channel: { id: "chan_cutover", createdAt: "2026-08-01T12:00:00.000Z" },
-    },
+    snapshotVersion: "linear-v1",
+    productSnapshotCount: 1,
+    channelSnapshotCount: 3,
   },
   attempts: 0,
   leaseOwner: "worker_1",
@@ -126,12 +124,8 @@ describe("publication reindex intent worker", () => {
     const db = fakeDb({
       executeResults: [{ rows: [catalogIntent] }, { rows: [] }],
       productPages: [
-        [{ id: "prod_1", createdAt: new Date("2026-07-01T00:00:00.000Z") }],
-        [
-          { id: "chan_1", createdAt: new Date("2026-07-01T00:00:00.000Z") },
-          { id: "chan_2", createdAt: new Date("2026-07-02T00:00:00.000Z") },
-          { id: "chan_3", createdAt: new Date("2026-07-03T00:00:00.000Z") },
-        ],
+        [{ id: "prod_1" }],
+        [{ id: "chan_1" }, { id: "chan_2" }, { id: "chan_3" }],
       ],
     })
     const projection = {
@@ -153,7 +147,42 @@ describe("publication reindex intent worker", () => {
     expect(db.execute).toHaveBeenCalledTimes(2)
   })
 
-  it("fails closed when a catalog backfill has no immutable cutover bounds", async () => {
+  it("resumes a catalog snapshot within the current product channel page", async () => {
+    const resumedIntent = {
+      ...catalogIntent,
+      cursor: JSON.stringify({
+        afterProductId: null,
+        productId: "prod_1",
+        afterChannelId: "chan_2",
+      }),
+    }
+    const db = fakeDb({
+      executeResults: [{ rows: [resumedIntent] }, { rows: [] }],
+      productPages: [[{ id: "chan_3" }]],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await expect(
+      drainPublicationReindexIntents(
+        { db: db as never, projection },
+        { leaseOwner: "worker_1", maxIntents: 1, channelBatchSize: 2 },
+      ),
+    ).resolves.toEqual({ processed: 1 })
+
+    expect(db.limitValues).toEqual([2])
+    expect(db.insertValues[0]).toEqual([
+      expect.objectContaining({ productId: "prod_1", channelId: "chan_3" }),
+    ])
+    expect(projection.reindexEntity).toHaveBeenCalledWith({
+      entityModule: "products",
+      entityId: "prod_1",
+    })
+  })
+
+  it("fails closed when a catalog backfill has no immutable snapshot marker", async () => {
     const db = fakeDb({
       executeResults: [{ rows: [{ ...catalogIntent, metadata: null }] }, { rows: [] }],
       productPages: [[{ id: "prod_created_later" }]],
@@ -175,22 +204,38 @@ describe("publication reindex intent worker", () => {
     expect(projection.reindexEntity).not.toHaveBeenCalled()
   })
 
-  it("fails closed when catalog bounds omit the eligibility timestamp", async () => {
+  it("fails closed when the catalog snapshot version is unknown", async () => {
     const db = fakeDb({
       executeResults: [
         {
           rows: [
             {
               ...catalogIntent,
-              metadata: {
-                cutover: {
-                  product: catalogIntent.metadata.cutover.product,
-                  channel: catalogIntent.metadata.cutover.channel,
-                },
-              },
+              metadata: { snapshotVersion: "future-v2" },
             },
           ],
         },
+        { rows: [] },
+      ],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await drainPublicationReindexIntents(
+      { db: db as never, projection },
+      { leaseOwner: "worker_1", maxIntents: 1 },
+    )
+
+    expect(db.limitValues).toEqual([])
+    expect(db.insertValues).toEqual([])
+  })
+
+  it("fails closed when catalog snapshot counts are missing", async () => {
+    const db = fakeDb({
+      executeResults: [
+        { rows: [{ ...catalogIntent, metadata: { snapshotVersion: "linear-v1" } }] },
         { rows: [] },
       ],
     })
@@ -237,7 +282,7 @@ describe("publication reindex intent worker", () => {
 
 function fakeDb(input: {
   executeResults: unknown[]
-  productPages?: Array<Array<{ id: string; createdAt?: Date }>>
+  productPages?: Array<Array<{ id: string }>>
 }) {
   const executeResults = [...input.executeResults]
   const productPages = [...(input.productPages ?? [])]

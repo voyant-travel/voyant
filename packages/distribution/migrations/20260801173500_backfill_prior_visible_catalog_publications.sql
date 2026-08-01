@@ -1,53 +1,75 @@
 -- Seed one durable, resumable backfill instead of synchronously materializing
--- active-channels x public-products during deploy. The publication intent
--- worker owns bounded product pages, persists its cursor, and replays safely.
-WITH "cutover" AS MATERIALIZED (
-	SELECT clock_timestamp() AS "at"
-),
-"product_bound" AS (
-	SELECT "products"."id", "products"."created_at"
-	FROM "products", "cutover"
-	WHERE "products"."created_at" <= "cutover"."at"
-	ORDER BY "products"."created_at" DESC, "products"."id" DESC
-	LIMIT 1
-),
-"channel_bound" AS (
-	SELECT "channels"."id", "channels"."created_at"
-	FROM "channels", "cutover"
-	WHERE "channels"."created_at" <= "cutover"."at"
-	ORDER BY "channels"."created_at" DESC, "channels"."id" DESC
-	LIMIT 1
-)
-INSERT INTO "channel_publication_reindex_intents" (
-	"id",
-	"channel_id",
-	"kind",
-	"status",
-	"requested_by",
-	"metadata"
-)
-SELECT
-	'cpri_prior_visible_catalog_backfill',
-	NULL,
-	'catalog',
-	'pending',
-	'system:migration:20260801173500_backfill_prior_visible_catalog_publications',
-	jsonb_build_object(
-		'source', 'prior_active_public_catalog',
-		'pageSizeOwnedBy', 'distribution-publication-intent-worker',
-		'cutover', jsonb_build_object(
-			'at', "cutover"."at",
-			'product', CASE WHEN "product_bound"."id" IS NULL THEN NULL ELSE jsonb_build_object(
-				'id', "product_bound"."id",
-				'createdAt', "product_bound"."created_at"
-			) END,
-			'channel', CASE WHEN "channel_bound"."id" IS NULL THEN NULL ELSE jsonb_build_object(
-				'id', "channel_bound"."id",
-				'createdAt', "channel_bound"."created_at"
-			) END
+-- active-channels x public-products during deploy. Two linear snapshot sets
+-- preserve exact cutover eligibility without materializing the cross-product;
+-- the worker pages each immutable set independently and replays safely.
+CREATE TABLE "channel_publication_backfill_products" (
+	"intent_id" text NOT NULL,
+	"product_id" text NOT NULL,
+	CONSTRAINT "channel_publication_backfill_products_intent_id_product_id_pk" PRIMARY KEY("intent_id", "product_id")
+);
+--> statement-breakpoint
+CREATE TABLE "channel_publication_backfill_channels" (
+	"intent_id" text NOT NULL,
+	"channel_id" text NOT NULL,
+	CONSTRAINT "channel_publication_backfill_channels_intent_id_channel_id_pk" PRIMARY KEY("intent_id", "channel_id")
+);
+--> statement-breakpoint
+ALTER TABLE "channel_publication_backfill_products"
+	ADD CONSTRAINT "channel_publication_backfill_products_intent_id_fk"
+	FOREIGN KEY ("intent_id") REFERENCES "channel_publication_reindex_intents"("id") ON DELETE cascade;
+--> statement-breakpoint
+ALTER TABLE "channel_publication_backfill_channels"
+	ADD CONSTRAINT "channel_publication_backfill_channels_intent_id_fk"
+	FOREIGN KEY ("intent_id") REFERENCES "channel_publication_reindex_intents"("id") ON DELETE cascade;
+--> statement-breakpoint
+ALTER TABLE "channel_publication_backfill_channels"
+	ADD CONSTRAINT "channel_publication_backfill_channels_channel_id_fk"
+	FOREIGN KEY ("channel_id") REFERENCES "channels"("id") ON DELETE cascade;
+--> statement-breakpoint
+WITH "backfill_intent" AS (
+	INSERT INTO "channel_publication_reindex_intents" (
+		"id",
+		"channel_id",
+		"kind",
+		"status",
+		"requested_by",
+		"metadata"
+	)
+	VALUES (
+		'cpri_prior_visible_catalog_backfill',
+		NULL,
+		'catalog',
+		'pending',
+		'system:migration:20260801173500_backfill_prior_visible_catalog_publications',
+		jsonb_build_object(
+			'source', 'prior_active_public_catalog',
+			'pageSizeOwnedBy', 'distribution-publication-intent-worker',
+			'snapshotVersion', 'linear-v1'
 		)
 	)
-FROM "cutover"
-LEFT JOIN "product_bound" ON true
-LEFT JOIN "channel_bound" ON true
-ON CONFLICT DO NOTHING;
+	ON CONFLICT DO NOTHING
+	RETURNING "id"
+),
+"product_snapshot" AS (
+	INSERT INTO "channel_publication_backfill_products" ("intent_id", "product_id")
+	SELECT "backfill_intent"."id", "products"."id"
+	FROM "backfill_intent", "products"
+	WHERE "products"."status" = 'active'
+		AND "products"."visibility" = 'public'
+	ON CONFLICT DO NOTHING
+	RETURNING "product_id"
+),
+"channel_snapshot" AS (
+	INSERT INTO "channel_publication_backfill_channels" ("intent_id", "channel_id")
+	SELECT "backfill_intent"."id", "channels"."id"
+	FROM "backfill_intent", "channels"
+	WHERE "channels"."status" = 'active'
+	ON CONFLICT DO NOTHING
+	RETURNING "channel_id"
+)
+UPDATE "channel_publication_reindex_intents"
+SET "metadata" = "metadata" || jsonb_build_object(
+	'productSnapshotCount', (SELECT count(*) FROM "product_snapshot"),
+	'channelSnapshotCount', (SELECT count(*) FROM "channel_snapshot")
+)
+WHERE "id" IN (SELECT "id" FROM "backfill_intent");

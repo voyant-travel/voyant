@@ -15,6 +15,8 @@ describe("distribution schema exports", () => {
     expect(schema.channelProductPublications).toBeDefined()
     expect(schema.channelSupplierPublications).toBeDefined()
     expect(schema.channelPublicationReindexIntents).toBeDefined()
+    expect(schema.channelPublicationBackfillProducts).toBeDefined()
+    expect(schema.channelPublicationBackfillChannels).toBeDefined()
     expect(schema.channelProductPublications.channelId.notNull).toBe(true)
     expect(schema.channelSupplierPublications.channelId.notNull).toBe(true)
     expect(schema.channelPublicationReindexIntents.channelId.notNull).toBe(false)

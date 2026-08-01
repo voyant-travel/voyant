@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -120,6 +121,32 @@ export const channelPublicationReindexIntents = pgTable(
       sql`((${table.kind} = 'product' AND ${table.productId} IS NOT NULL AND ${table.supplierId} IS NULL) OR (${table.kind} = 'supplier' AND ${table.supplierId} IS NOT NULL AND ${table.productId} IS NULL) OR (${table.kind} = 'catalog' AND ${table.channelId} IS NULL AND ${table.productId} IS NULL AND ${table.supplierId} IS NULL))`,
     ),
   ],
+)
+
+/** Immutable, linear product set captured for the one-time publication cutover. */
+export const channelPublicationBackfillProducts = pgTable(
+  "channel_publication_backfill_products",
+  {
+    intentId: typeIdRef("intent_id")
+      .notNull()
+      .references(() => channelPublicationReindexIntents.id, { onDelete: "cascade" }),
+    productId: typeIdRef("product_id").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.intentId, table.productId] })],
+)
+
+/** Immutable, linear channel set captured for the one-time publication cutover. */
+export const channelPublicationBackfillChannels = pgTable(
+  "channel_publication_backfill_channels",
+  {
+    intentId: typeIdRef("intent_id")
+      .notNull()
+      .references(() => channelPublicationReindexIntents.id, { onDelete: "cascade" }),
+    channelId: typeIdRef("channel_id")
+      .notNull()
+      .references(() => channels.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.intentId, table.channelId] })],
 )
 
 export type ChannelProductPublication = typeof channelProductPublications.$inferSelect

@@ -1,13 +1,17 @@
 import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
 import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
-import { and, asc, eq, gt, lt, lte, or, sql } from "drizzle-orm"
+import { and, asc, eq, gt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   type DistributionPublicationIntentWorkerDeps,
   distributionPublicationIntentWorkerRuntimePort,
 } from "./publication-intent-runtime-port.js"
 import { publicationProductsRef } from "./publication-product-ref.js"
-import { channelProductPublications, channels } from "./schema.js"
+import {
+  channelProductPublications,
+  channelPublicationBackfillChannels,
+  channelPublicationBackfillProducts,
+} from "./schema.js"
 
 export {
   type DistributionPublicationIntentWorkerDeps,
@@ -100,18 +104,28 @@ async function claimIntent(
 }
 
 async function completeIntent(db: PostgresJsDatabase, intent: ClaimedIntent) {
-  // agent-quality: raw SQL keeps lease-owner compare-and-clear atomic.
+  // agent-quality: raw SQL keeps lease-owner completion and snapshot cleanup atomic.
   await db.execute(sql`
-    UPDATE channel_publication_reindex_intents
-    SET status = 'completed',
-        cursor = NULL,
-        lease_owner = NULL,
-        lease_until = NULL,
-        completed_at = now(),
-        updated_at = now()
-    WHERE id = ${intent.id}
-      AND status = 'processing'
-      AND lease_owner = ${intent.leaseOwner}
+    WITH completed AS (
+      UPDATE channel_publication_reindex_intents
+      SET status = 'completed',
+          cursor = NULL,
+          lease_owner = NULL,
+          lease_until = NULL,
+          completed_at = now(),
+          updated_at = now()
+      WHERE id = ${intent.id}
+        AND status = 'processing'
+        AND lease_owner = ${intent.leaseOwner}
+      RETURNING id
+    ), deleted_products AS (
+      DELETE FROM channel_publication_backfill_products
+      WHERE intent_id IN (SELECT id FROM completed)
+    ), deleted_channels AS (
+      DELETE FROM channel_publication_backfill_channels
+      WHERE intent_id IN (SELECT id FROM completed)
+    )
+    SELECT id FROM completed
   `)
 }
 
@@ -179,81 +193,44 @@ async function listSupplierProductIds(
   return result.map(({ id }) => id)
 }
 
-async function listVisibleProductIdsPage(
+async function listBackfillProductIdsPage(
   db: PostgresJsDatabase,
-  input: {
-    after: CatalogBackfillBound | null
-    upper: CatalogBackfillBound | null
-    cutoverAt: Date
-    limit: number
-  },
+  input: { intentId: string; afterId: string | null; limit: number },
 ) {
   const result = await db
-    .select({ id: publicationProductsRef.id, createdAt: publicationProductsRef.createdAt })
-    .from(publicationProductsRef)
+    .select({ id: channelPublicationBackfillProducts.productId })
+    .from(channelPublicationBackfillProducts)
     .where(
       and(
-        eq(publicationProductsRef.status, "active"),
-        eq(publicationProductsRef.visibility, "public"),
-        lte(publicationProductsRef.updatedAt, input.cutoverAt),
-        input.upper
-          ? or(
-              lt(publicationProductsRef.createdAt, input.upper.createdAt),
-              and(
-                eq(publicationProductsRef.createdAt, input.upper.createdAt),
-                lte(publicationProductsRef.id, input.upper.id),
-              ),
-            )
-          : sql`false`,
-        input.after
-          ? or(
-              gt(publicationProductsRef.createdAt, input.after.createdAt),
-              and(
-                eq(publicationProductsRef.createdAt, input.after.createdAt),
-                gt(publicationProductsRef.id, input.after.id),
-              ),
-            )
+        eq(channelPublicationBackfillProducts.intentId, input.intentId),
+        input.afterId
+          ? gt(channelPublicationBackfillProducts.productId, input.afterId)
           : undefined,
       ),
     )
-    .orderBy(asc(publicationProductsRef.createdAt), asc(publicationProductsRef.id))
+    .orderBy(asc(channelPublicationBackfillProducts.productId))
     .limit(input.limit)
-  return result
+  return result.map(({ id }) => id)
 }
 
-async function listActiveChannelIdsPage(
+async function listBackfillChannelIdsPage(
   db: PostgresJsDatabase,
-  input: {
-    after: CatalogBackfillBound | null
-    upper: CatalogBackfillBound | null
-    cutoverAt: Date
-    limit: number
-  },
+  input: { intentId: string; afterId: string | null; limit: number },
 ) {
   const rows = await db
-    .select({ id: channels.id, createdAt: channels.createdAt })
-    .from(channels)
+    .select({ id: channelPublicationBackfillChannels.channelId })
+    .from(channelPublicationBackfillChannels)
     .where(
       and(
-        eq(channels.status, "active"),
-        lte(channels.updatedAt, input.cutoverAt),
-        input.upper
-          ? or(
-              lt(channels.createdAt, input.upper.createdAt),
-              and(eq(channels.createdAt, input.upper.createdAt), lte(channels.id, input.upper.id)),
-            )
-          : sql`false`,
-        input.after
-          ? or(
-              gt(channels.createdAt, input.after.createdAt),
-              and(eq(channels.createdAt, input.after.createdAt), gt(channels.id, input.after.id)),
-            )
+        eq(channelPublicationBackfillChannels.intentId, input.intentId),
+        input.afterId
+          ? gt(channelPublicationBackfillChannels.channelId, input.afterId)
           : undefined,
       ),
     )
-    .orderBy(asc(channels.createdAt), asc(channels.id))
+    .orderBy(asc(channelPublicationBackfillChannels.channelId))
     .limit(input.limit)
-  return rows
+  return rows.map(({ id }) => id)
 }
 
 async function publishPriorVisibleProduct(
@@ -277,52 +254,36 @@ async function publishPriorVisibleProduct(
     .onConflictDoNothing()
 }
 
-type CatalogBackfillBound = {
-  id: string
-  createdAt: Date
-}
-
 type CatalogBackfillCursor = {
-  afterProduct: CatalogBackfillBound | null
-  product: CatalogBackfillBound | null
-  afterChannel: CatalogBackfillBound | null
+  afterProductId: string | null
+  productId: string | null
+  afterChannelId: string | null
 }
 
 function parseCatalogCursor(cursor: string | null): CatalogBackfillCursor {
-  if (!cursor) return { afterProduct: null, product: null, afterChannel: null }
+  if (!cursor) return { afterProductId: null, productId: null, afterChannelId: null }
   const parsed = JSON.parse(cursor) as Partial<CatalogBackfillCursor>
   return {
-    afterProduct: parseCatalogBound(parsed.afterProduct),
-    product: parseCatalogBound(parsed.product),
-    afterChannel: parseCatalogBound(parsed.afterChannel),
+    afterProductId: typeof parsed.afterProductId === "string" ? parsed.afterProductId : null,
+    productId: typeof parsed.productId === "string" ? parsed.productId : null,
+    afterChannelId: typeof parsed.afterChannelId === "string" ? parsed.afterChannelId : null,
   }
 }
 
-function parseCatalogBound(value: unknown): CatalogBackfillBound | null {
-  if (!value || typeof value !== "object") return null
-  const input = value as { id?: unknown; createdAt?: unknown }
-  if (typeof input.id !== "string" || typeof input.createdAt !== "string") return null
-  const createdAt = new Date(input.createdAt)
-  return Number.isNaN(createdAt.valueOf()) ? null : { id: input.id, createdAt }
-}
-
-function parseCatalogCutoverBounds(metadata: unknown) {
-  const cutover =
-    metadata && typeof metadata === "object"
-      ? (metadata as { cutover?: unknown }).cutover
-      : undefined
-  const bounds = cutover && typeof cutover === "object" ? cutover : {}
-  return {
-    at: parseCatalogTimestamp((bounds as { at?: unknown }).at),
-    product: parseCatalogBound((bounds as { product?: unknown }).product),
-    channel: parseCatalogBound((bounds as { channel?: unknown }).channel),
+function hasLinearCatalogSnapshot(metadata: unknown) {
+  if (metadata === null || typeof metadata !== "object") return false
+  const snapshot = metadata as {
+    snapshotVersion?: unknown
+    productSnapshotCount?: unknown
+    channelSnapshotCount?: unknown
   }
-}
-
-function parseCatalogTimestamp(value: unknown): Date | null {
-  if (typeof value !== "string") return null
-  const timestamp = new Date(value)
-  return Number.isNaN(timestamp.valueOf()) ? null : timestamp
+  return (
+    snapshot.snapshotVersion === "linear-v1" &&
+    Number.isInteger(snapshot.productSnapshotCount) &&
+    (snapshot.productSnapshotCount as number) >= 0 &&
+    Number.isInteger(snapshot.channelSnapshotCount) &&
+    (snapshot.channelSnapshotCount as number) >= 0
+  )
 }
 
 async function processCatalogBackfillIntent(
@@ -332,62 +293,55 @@ async function processCatalogBackfillIntent(
   options: { productBatchSize: number; channelBatchSize: number; leaseMs: number },
 ) {
   const cursor = parseCatalogCursor(intent.cursor)
-  const bounds = parseCatalogCutoverBounds(intent.metadata)
-  // A catalog intent without the migration's immutable cutover watermark must
-  // never widen into "everything visible now". Complete it without writes.
-  if (!bounds.at || !bounds.product) {
+  // Never widen a legacy or malformed catalog intent into current live state.
+  if (!hasLinearCatalogSnapshot(intent.metadata)) {
     await completeIntent(db, intent)
     return
   }
-  const product =
-    cursor.product ??
+  const productId =
+    cursor.productId ??
     (
-      await listVisibleProductIdsPage(db, {
-        after: cursor.afterProduct,
-        upper: bounds.product,
-        cutoverAt: bounds.at,
+      await listBackfillProductIdsPage(db, {
+        intentId: intent.id,
+        afterId: cursor.afterProductId,
         limit: 1,
       })
     )[0]
-  if (!product) {
+  if (!productId) {
     await completeIntent(db, intent)
     return
   }
 
-  const channelRows = await listActiveChannelIdsPage(db, {
-    after: cursor.product ? cursor.afterChannel : null,
-    upper: bounds.channel,
-    cutoverAt: bounds.at,
+  const channelIds = await listBackfillChannelIdsPage(db, {
+    intentId: intent.id,
+    afterId: cursor.productId ? cursor.afterChannelId : null,
     limit: options.channelBatchSize,
   })
-  await publishPriorVisibleProduct(db, {
-    productId: product.id,
-    channelIds: channelRows.map(({ id }) => id),
-  })
+  await publishPriorVisibleProduct(db, { productId, channelIds })
 
-  const lastChannel = channelRows[channelRows.length - 1]
-  if (channelRows.length === options.channelBatchSize && lastChannel) {
+  const lastChannelId = channelIds[channelIds.length - 1]
+  if (channelIds.length === options.channelBatchSize && lastChannelId) {
     await checkpointIntent(
       db,
       intent,
       JSON.stringify({
-        afterProduct: cursor.afterProduct,
-        product,
-        afterChannel: lastChannel,
+        afterProductId: cursor.afterProductId,
+        productId,
+        afterChannelId: lastChannelId,
       } satisfies CatalogBackfillCursor),
       options.leaseMs,
     )
     return
   }
 
-  await projection.reindexEntity({ entityModule: "products", entityId: product.id })
+  await projection.reindexEntity({ entityModule: "products", entityId: productId })
   await checkpointIntent(
     db,
     intent,
     JSON.stringify({
-      afterProduct: product,
-      product: null,
-      afterChannel: null,
+      afterProductId: productId,
+      productId: null,
+      afterChannelId: null,
     } satisfies CatalogBackfillCursor),
     options.leaseMs,
   )

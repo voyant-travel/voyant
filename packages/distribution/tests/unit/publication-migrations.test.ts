@@ -21,14 +21,20 @@ describe("publication cutover migrations", () => {
     const sql = migration("20260801173500_backfill_prior_visible_catalog_publications.sql")
     expect(sql).toContain("'catalog'")
     expect(sql).toContain("ON CONFLICT DO NOTHING")
-    expect(sql).toContain("clock_timestamp()")
-    expect(sql).toContain("'at', \"cutover\".\"at\"")
-    expect(sql).toContain("'cutover'")
-    expect(sql).toContain('"products"."created_at"')
-    expect(sql).toContain('"channels"."created_at"')
-    expect(sql).toMatch(/ORDER BY "products"\."created_at" DESC, "products"\."id" DESC/)
-    expect(sql).toMatch(/ORDER BY "channels"\."created_at" DESC, "channels"\."id" DESC/)
+    expect(sql).toContain('CREATE TABLE "channel_publication_backfill_products"')
+    expect(sql).toContain('CREATE TABLE "channel_publication_backfill_channels"')
+    expect(sql).toContain("'snapshotVersion', 'linear-v1'")
+    expect(sql).toContain("'productSnapshotCount'")
+    expect(sql).toContain("'channelSnapshotCount'")
+    expect(sql).toMatch(
+      /INSERT INTO "channel_publication_backfill_products"[\s\S]*FROM "backfill_intent", "products"[\s\S]*"status" = 'active'[\s\S]*"visibility" = 'public'/,
+    )
+    expect(sql).toMatch(
+      /INSERT INTO "channel_publication_backfill_channels"[\s\S]*FROM "backfill_intent", "channels"[\s\S]*"status" = 'active'/,
+    )
     expect(sql).not.toMatch(/CROSS\s+JOIN\s+"products"/i)
+    expect(sql).not.toMatch(/FROM "products"\s*,\s*"channels"/i)
+    expect(sql).toMatch(/WITH "backfill_intent"[\s\S]*"product_snapshot"[\s\S]*"channel_snapshot"/)
     expect(sql).not.toContain('INSERT INTO "channel_product_publications"')
   })
 
