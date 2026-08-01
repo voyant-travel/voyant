@@ -516,9 +516,14 @@ export const distributionUiRo = {
         saveSupplier: "Salveaza regula furnizorului",
         previewSupplier: "Previzualizeaza impactul",
         supplierImpact: "{count} produse afectate",
+        confirmSupplierImpact:
+          "Confirma salvarea acestei reguli de furnizor pentru {count} produse afectate.",
+        previewRequiredCurrent:
+          "Previzualizeaza intrarile curente pentru furnizor inainte de salvare.",
         productsEmpty: "Nu exista reguli de publicare pentru produse pe acest canal.",
         suppliersEmpty: "Nu exista reguli de publicare pentru furnizori pe acest canal.",
         noReason: "Nu exista motiv inregistrat.",
+        editRule: "Editeaza",
         deleteRule: "Sterge",
         whyTitle: "De ce efectiv",
         whyDescription: "Inspecteaza decizia efectiva fara sa folosesti maparile de produse.",

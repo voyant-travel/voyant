@@ -1,8 +1,16 @@
 "use client"
 
+// agent-quality: file-size exception -- owner: distribution-react; publication rule forms, lists, and preview gating stay co-located until a split preserves the sheet workflow tests.
 import {
   Badge,
   Button,
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
   Label,
   Sheet,
   SheetBody,
@@ -10,6 +18,10 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
 } from "@voyant-travel/ui/components"
 import { useEffect, useState } from "react"
@@ -27,6 +39,12 @@ import {
 type PublicationDecision = "include" | "exclude"
 
 const defaultPublicationDecision: PublicationDecision = "include"
+const publicationDecisions: PublicationDecision[] = ["include", "exclude"]
+
+type SupplierPreview = {
+  key: string
+  affectedProductCount: number
+}
 
 export function PublicationSheet({
   open,
@@ -70,6 +88,8 @@ export function PublicationSheet({
   const [supplierReason, setSupplierReason] = useState("")
   const [inspectorProductId, setInspectorProductId] = useState("")
   const [inspectorSupplierId, setInspectorSupplierId] = useState("")
+  const [supplierPreview, setSupplierPreview] = useState<SupplierPreview | null>(null)
+  const [supplierPreviewConfirmed, setSupplierPreviewConfirmed] = useState(false)
   const effectiveQuery = useEffectivePublication({
     channelId: channel?.id,
     productId: inspectorProductId,
@@ -87,8 +107,36 @@ export function PublicationSheet({
       setSupplierDecision(defaultPublicationDecision)
       setProductReason("")
       setSupplierReason("")
+      setSupplierPreview(null)
+      setSupplierPreviewConfirmed(false)
     }
   }, [open])
+
+  const supplierPreviewKey = [
+    channel?.id ?? "",
+    supplierId,
+    supplierDecision,
+    supplierReason.trim(),
+  ].join("|")
+  const supplierPreviewIsFresh = supplierPreview?.key === supplierPreviewKey
+
+  const updateSupplierId = (value: string) => {
+    setSupplierId(value)
+    setSupplierPreview(null)
+    setSupplierPreviewConfirmed(false)
+  }
+
+  const updateSupplierDecision = (value: PublicationDecision) => {
+    setSupplierDecision(value)
+    setSupplierPreview(null)
+    setSupplierPreviewConfirmed(false)
+  }
+
+  const updateSupplierReason = (value: string) => {
+    setSupplierReason(value)
+    setSupplierPreview(null)
+    setSupplierPreviewConfirmed(false)
+  }
 
   const saveProductRule = async () => {
     if (!channel || !productId) return
@@ -104,7 +152,7 @@ export function PublicationSheet({
   }
 
   const saveSupplierRule = async () => {
-    if (!channel || !supplierId) return
+    if (!channel || !supplierId || !supplierPreviewIsFresh || !supplierPreviewConfirmed) return
     await publication.upsertSupplier.mutateAsync({
       channelId: channel.id,
       supplierId,
@@ -113,17 +161,24 @@ export function PublicationSheet({
     })
     setSupplierId("")
     setSupplierReason("")
+    setSupplierPreview(null)
+    setSupplierPreviewConfirmed(false)
     await supplierRulesQuery.refetch()
   }
 
   const previewSupplierRule = async () => {
     if (!channel || !supplierId) return
-    await publication.previewSupplier.mutateAsync({
+    const result = await publication.previewSupplier.mutateAsync({
       channelId: channel.id,
       supplierId,
       decision: supplierDecision,
       reason: supplierReason.trim() || null,
     })
+    setSupplierPreview({
+      key: supplierPreviewKey,
+      affectedProductCount: result.affectedProductCount,
+    })
+    setSupplierPreviewConfirmed(false)
   }
 
   return (
@@ -143,75 +198,113 @@ export function PublicationSheet({
           <p className="text-sm text-muted-foreground">{page.defaultDeny}</p>
           <p className="text-xs text-muted-foreground">{page.precedence}</p>
 
-          <PublicationRuleForm
-            idPrefix="publication-product"
-            title={page.productsTitle}
-            subjectLabel={page.productLabel}
-            subjectPlaceholder={page.productPlaceholder}
-            subjects={products}
-            subjectId={productId}
-            setSubjectId={setProductId}
-            decision={productDecision}
-            setDecision={setProductDecision}
-            reason={productReason}
-            setReason={setProductReason}
-            onSave={saveProductRule}
-            saveLabel={page.saveProduct}
-            disabled={!channel || publication.upsertProduct.isPending}
-          />
-          <PublicationRuleList
-            empty={page.productsEmpty}
-            rules={productRules}
-            subjects={products}
-            subjectKey="productId"
-            includeLabel={page.include}
-            excludeLabel={page.exclude}
-            noReason={page.noReason}
-            onDelete={(id) =>
-              publication.removeProduct.mutateAsync(id).then(() => productRulesQuery.refetch())
-            }
-            deleteLabel={page.deleteRule}
-          />
-
-          <PublicationRuleForm
-            idPrefix="publication-supplier"
-            title={page.suppliersTitle}
-            subjectLabel={page.supplierLabel}
-            subjectPlaceholder={page.supplierPlaceholder}
-            subjects={suppliers}
-            subjectId={supplierId}
-            setSubjectId={setSupplierId}
-            decision={supplierDecision}
-            setDecision={setSupplierDecision}
-            reason={supplierReason}
-            setReason={setSupplierReason}
-            onSave={saveSupplierRule}
-            onPreview={previewSupplierRule}
-            previewResult={
-              publication.previewSupplier.data
-                ? page.supplierImpact.replace(
-                    "{count}",
-                    String(publication.previewSupplier.data.affectedProductCount),
-                  )
-                : null
-            }
-            saveLabel={page.saveSupplier}
-            previewLabel={page.previewSupplier}
-            disabled={!channel || publication.upsertSupplier.isPending}
-          />
-          <PublicationRuleList
-            empty={page.suppliersEmpty}
-            rules={supplierRules}
-            subjects={suppliers}
-            subjectKey="supplierId"
-            includeLabel={page.include}
-            excludeLabel={page.exclude}
-            noReason={page.noReason}
-            onDelete={(id) =>
-              publication.removeSupplier.mutateAsync(id).then(() => supplierRulesQuery.refetch())
-            }
-            deleteLabel={page.deleteRule}
-          />
+          <Tabs defaultValue="products">
+            <TabsList aria-label={page.titleEmpty}>
+              <TabsTrigger value="products">{page.productsTitle}</TabsTrigger>
+              <TabsTrigger value="suppliers">{page.suppliersTitle}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="products" className="space-y-3">
+              <PublicationRuleForm
+                idPrefix="publication-product"
+                title={page.productsTitle}
+                subjectLabel={page.productLabel}
+                subjectPlaceholder={page.productPlaceholder}
+                subjects={products}
+                subjectId={productId}
+                setSubjectId={setProductId}
+                decision={productDecision}
+                setDecision={setProductDecision}
+                reason={productReason}
+                setReason={setProductReason}
+                onSave={saveProductRule}
+                saveLabel={page.saveProduct}
+                disabled={!channel || publication.upsertProduct.isPending}
+              />
+              <PublicationRuleList
+                empty={page.productsEmpty}
+                rules={productRules}
+                subjects={products}
+                subjectKey="productId"
+                includeLabel={page.include}
+                excludeLabel={page.exclude}
+                noReason={page.noReason}
+                onEdit={(rule) => {
+                  setProductId(String(rule.productId))
+                  setProductDecision(rule.decision)
+                  setProductReason(rule.reason ?? "")
+                }}
+                onDelete={(id) =>
+                  publication.removeProduct.mutateAsync(id).then(() => productRulesQuery.refetch())
+                }
+                editLabel={page.editRule}
+                deleteLabel={page.deleteRule}
+              />
+            </TabsContent>
+            <TabsContent value="suppliers" className="space-y-3">
+              <PublicationRuleForm
+                idPrefix="publication-supplier"
+                title={page.suppliersTitle}
+                subjectLabel={page.supplierLabel}
+                subjectPlaceholder={page.supplierPlaceholder}
+                subjects={suppliers}
+                subjectId={supplierId}
+                setSubjectId={updateSupplierId}
+                decision={supplierDecision}
+                setDecision={updateSupplierDecision}
+                reason={supplierReason}
+                setReason={updateSupplierReason}
+                onSave={saveSupplierRule}
+                onPreview={previewSupplierRule}
+                previewResult={
+                  supplierPreviewIsFresh && supplierPreview
+                    ? page.supplierImpact.replace(
+                        "{count}",
+                        String(supplierPreview.affectedProductCount),
+                      )
+                    : null
+                }
+                confirmationLabel={
+                  supplierPreviewIsFresh && supplierPreview
+                    ? page.confirmSupplierImpact.replace(
+                        "{count}",
+                        String(supplierPreview.affectedProductCount),
+                      )
+                    : null
+                }
+                confirmed={supplierPreviewConfirmed}
+                setConfirmed={setSupplierPreviewConfirmed}
+                saveLabel={page.saveSupplier}
+                previewLabel={page.previewSupplier}
+                saveHelp={
+                  supplierId && !supplierPreviewIsFresh ? page.previewRequiredCurrent : undefined
+                }
+                disabled={!channel || publication.upsertSupplier.isPending}
+                saveDisabled={!supplierPreviewIsFresh || !supplierPreviewConfirmed}
+                previewDisabled={publication.previewSupplier.isPending}
+              />
+              <PublicationRuleList
+                empty={page.suppliersEmpty}
+                rules={supplierRules}
+                subjects={suppliers}
+                subjectKey="supplierId"
+                includeLabel={page.include}
+                excludeLabel={page.exclude}
+                noReason={page.noReason}
+                onEdit={(rule) => {
+                  updateSupplierId(String(rule.supplierId))
+                  updateSupplierDecision(rule.decision)
+                  updateSupplierReason(rule.reason ?? "")
+                }}
+                onDelete={(id) =>
+                  publication.removeSupplier
+                    .mutateAsync(id)
+                    .then(() => supplierRulesQuery.refetch())
+                }
+                editLabel={page.editRule}
+                deleteLabel={page.deleteRule}
+              />
+            </TabsContent>
+          </Tabs>
 
           <section className="space-y-3">
             <div>
@@ -219,7 +312,7 @@ export function PublicationSheet({
               <p className="text-xs text-muted-foreground">{page.whyDescription}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <SelectBox
+              <OptionCombobox
                 id="publication-inspector-product"
                 label={page.productLabel}
                 placeholder={page.productPlaceholder}
@@ -227,7 +320,7 @@ export function PublicationSheet({
                 onChange={setInspectorProductId}
                 options={products}
               />
-              <SelectBox
+              <OptionCombobox
                 id="publication-inspector-supplier"
                 label={page.supplierLabel}
                 placeholder={page.supplierOptional}
@@ -279,9 +372,15 @@ function PublicationRuleForm({
   onSave,
   onPreview,
   previewResult,
+  confirmationLabel,
+  confirmed,
+  setConfirmed,
   saveLabel,
   previewLabel,
+  saveHelp,
   disabled,
+  saveDisabled = false,
+  previewDisabled = false,
 }: {
   title: string
   idPrefix: string
@@ -297,9 +396,15 @@ function PublicationRuleForm({
   onSave: () => Promise<void>
   onPreview?: () => Promise<void>
   previewResult?: string | null
+  confirmationLabel?: string | null
+  confirmed?: boolean
+  setConfirmed?: (value: boolean) => void
   saveLabel: string
   previewLabel?: string
+  saveHelp?: string
   disabled: boolean
+  saveDisabled?: boolean
+  previewDisabled?: boolean
 }) {
   const { messages } = useDistributionUiI18nOrDefault()
   const page = messages.settings.channelsPage.publication
@@ -308,7 +413,7 @@ function PublicationRuleForm({
     <section className="space-y-3">
       <h3 className="text-sm font-medium">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        <SelectBox
+        <OptionCombobox
           id={`${idPrefix}-subject`}
           label={subjectLabel}
           placeholder={subjectPlaceholder}
@@ -316,18 +421,14 @@ function PublicationRuleForm({
           onChange={setSubjectId}
           options={subjects}
         />
-        <div className="grid gap-2">
-          <Label htmlFor={`${idPrefix}-decision`}>{page.decisionLabel}</Label>
-          <select
-            id={`${idPrefix}-decision`}
-            value={decision}
-            onChange={(event) => setDecision(event.target.value as PublicationDecision)}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-          >
-            <option value="include">{page.include}</option>
-            <option value="exclude">{page.exclude}</option>
-          </select>
-        </div>
+        <DecisionCombobox
+          id={`${idPrefix}-decision`}
+          label={page.decisionLabel}
+          value={decision}
+          onChange={setDecision}
+          includeLabel={page.include}
+          excludeLabel={page.exclude}
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`${idPrefix}-reason`}>{page.reasonLabel}</Label>
@@ -342,7 +443,7 @@ function PublicationRuleForm({
         <Button
           type="button"
           size="sm"
-          disabled={disabled || !subjectId}
+          disabled={disabled || !subjectId || saveDisabled}
           onClick={() => void onSave()}
         >
           {saveLabel}
@@ -352,7 +453,7 @@ function PublicationRuleForm({
             type="button"
             size="sm"
             variant="outline"
-            disabled={!subjectId}
+            disabled={!subjectId || previewDisabled}
             onClick={() => void onPreview()}
           >
             {previewLabel}
@@ -362,6 +463,17 @@ function PublicationRuleForm({
           <span className="text-xs text-muted-foreground">{previewResult}</span>
         ) : null}
       </div>
+      {confirmationLabel && setConfirmed ? (
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={!!confirmed}
+            onChange={(event) => setConfirmed(event.target.checked)}
+          />
+          <span>{confirmationLabel}</span>
+        </label>
+      ) : null}
+      {saveHelp ? <p className="text-xs text-muted-foreground">{saveHelp}</p> : null}
     </section>
   )
 }
@@ -376,7 +488,9 @@ function PublicationRuleList<
   includeLabel,
   excludeLabel,
   noReason,
+  onEdit,
   onDelete,
+  editLabel,
   deleteLabel,
 }: {
   empty: string
@@ -386,7 +500,9 @@ function PublicationRuleList<
   includeLabel: string
   excludeLabel: string
   noReason: string
+  onEdit: (rule: TRule) => void
   onDelete: (id: string) => Promise<unknown>
+  editLabel: string
   deleteLabel: string
 }) {
   if (rules.length === 0) {
@@ -412,9 +528,19 @@ function PublicationRuleList<
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{rule.reason ?? noReason}</p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void onDelete(rule.id)}>
-              {deleteLabel}
-            </Button>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => onEdit(rule)}>
+                {editLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void onDelete(rule.id)}
+              >
+                {deleteLabel}
+              </Button>
+            </div>
           </div>
         )
       })}
@@ -422,7 +548,7 @@ function PublicationRuleList<
   )
 }
 
-function SelectBox({
+function OptionCombobox({
   id,
   label,
   placeholder,
@@ -437,22 +563,113 @@ function SelectBox({
   onChange: (value: string) => void
   options: Array<ProductOption | SupplierOption>
 }) {
+  const selected = options.find((option) => option.id === value)
+  const [inputValue, setInputValue] = useState(selected?.name ?? "")
+
+  useEffect(() => {
+    setInputValue(selected?.name ?? "")
+  }, [selected?.name])
+
+  const itemToStringLabel = (optionId: unknown) => {
+    const option = options.find((entry) => entry.id === optionId)
+    return option?.name ?? String(optionId ?? "")
+  }
+
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <select
-        id={id}
+      <Combobox
+        items={options.map((option) => option.id)}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+        inputValue={inputValue}
+        autoHighlight
+        itemToStringLabel={itemToStringLabel}
+        itemToStringValue={(optionId) => String(optionId ?? "")}
+        onInputValueChange={(next) => {
+          setInputValue(next)
+          if (!next) onChange("")
+        }}
+        onValueChange={(next) => {
+          const nextValue = (next as string | null) ?? ""
+          onChange(nextValue)
+          setInputValue(nextValue ? itemToStringLabel(nextValue) : "")
+        }}
       >
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.name}
-          </option>
-        ))}
-      </select>
+        <ComboboxInput id={id} placeholder={placeholder} showClear={!!value} />
+        <ComboboxContent>
+          <ComboboxEmpty>{placeholder}</ComboboxEmpty>
+          <ComboboxList>
+            <ComboboxCollection>
+              {(optionId) => {
+                const option = options.find((entry) => entry.id === optionId)
+                return option ? (
+                  <ComboboxItem key={option.id} value={option.id}>
+                    {option.name}
+                  </ComboboxItem>
+                ) : null
+              }}
+            </ComboboxCollection>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  )
+}
+
+function DecisionCombobox({
+  id,
+  label,
+  value,
+  onChange,
+  includeLabel,
+  excludeLabel,
+}: {
+  id: string
+  label: string
+  value: PublicationDecision
+  onChange: (value: PublicationDecision) => void
+  includeLabel: string
+  excludeLabel: string
+}) {
+  const inputLabel = value === "include" ? includeLabel : excludeLabel
+  const labelForDecision = (decision: PublicationDecision) =>
+    decision === "include" ? includeLabel : excludeLabel
+  const [inputValue, setInputValue] = useState(inputLabel)
+
+  useEffect(() => {
+    setInputValue(inputLabel)
+  }, [inputLabel])
+
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Combobox
+        items={publicationDecisions}
+        value={value}
+        inputValue={inputValue}
+        autoHighlight
+        itemToStringLabel={(decision) => labelForDecision(decision as PublicationDecision)}
+        itemToStringValue={(decision) => String(decision)}
+        onInputValueChange={setInputValue}
+        onValueChange={(next) => {
+          const decision = (next as PublicationDecision | null) ?? defaultPublicationDecision
+          onChange(decision)
+          setInputValue(labelForDecision(decision))
+        }}
+      >
+        <ComboboxInput id={id} placeholder={label} />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxCollection>
+              {(decision) => (
+                <ComboboxItem key={decision} value={decision}>
+                  {labelForDecision(decision as PublicationDecision)}
+                </ComboboxItem>
+              )}
+            </ComboboxCollection>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
     </div>
   )
 }
