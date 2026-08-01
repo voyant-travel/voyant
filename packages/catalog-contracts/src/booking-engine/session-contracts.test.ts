@@ -77,4 +77,25 @@ describe("Booking Session v1 contracts", () => {
 
     expect(result.success).toBe(true)
   })
+
+  it.each([
+    {
+      kind: "quote_unavailable",
+      reason: "target_not_found",
+      nextAction: "select_alternative_inventory",
+    },
+    {
+      kind: "commit_rejected",
+      reason: "incomplete_draft",
+      nextAction: "update_selection",
+    },
+    {
+      kind: "hold_quantity_mismatch",
+      requestedQuantity: 1,
+      expectedQuantity: 2,
+      nextAction: "request_new_hold",
+    },
+  ])("accepts the actionable $kind lifecycle rejection", (error) => {
+    expect(bookingSessionOutcomeV1.safeParse({ kind: "rejected", error }).success).toBe(true)
+  })
 })

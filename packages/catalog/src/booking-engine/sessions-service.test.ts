@@ -40,7 +40,7 @@ function createHarness(
     ports: {
       repository,
       normalizeSelection: async ({ selection }) => selection,
-      composeQuote: async () => price,
+      composeQuote: async () => ({ status: "quoted", pricing: price }),
       placeCapacityHold: inventory.placeCapacityHold,
       releaseCapacityHold: inventory.releaseCapacityHold,
       commitOwnedBooking: inventory.commitOwnedBooking,
@@ -305,9 +305,15 @@ describe("Booking Session v1 owned tracer", () => {
     const second = await harness.module.commitSession(session.id, input, access)
 
     expect(first).toMatchObject({ kind: "commit_result", outcome: { kind: "committed" } })
+    if (first.kind !== "commit_result" || first.outcome.kind !== "committed") {
+      throw new Error("commit did not succeed")
+    }
     expect(second).toMatchObject({
       kind: "commit_result",
-      outcome: { kind: "idempotent_replay", equivalentToOutcome: "committed" },
+      outcome: {
+        kind: "idempotent_replay",
+        originalOutcome: { kind: "committed", booking: { id: first.outcome.booking.id } },
+      },
     })
     expect(harness.inventory.bookingIds).toHaveLength(1)
     expect(harness.inventory.allocationIds).toHaveLength(1)
@@ -524,7 +530,7 @@ describe("Booking Session v1 owned tracer", () => {
       ports: {
         repository,
         normalizeSelection: async ({ selection }) => selection,
-        composeQuote: async () => BASE_PRICING,
+        composeQuote: async () => ({ status: "quoted", pricing: BASE_PRICING }),
         placeCapacityHold: inventory.placeCapacityHold,
         releaseCapacityHold: inventory.releaseCapacityHold,
         commitOwnedBooking: async (input) =>

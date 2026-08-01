@@ -11,11 +11,13 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { PricingBasis } from "../snapshot/schema.js"
+import { pricingBreakdownV1 } from "./contracts.js"
 import type { OwnedBookingHandlerRegistry, SelfServiceBillingParty } from "./owned-handler.js"
 import { engineParametersFromDraft } from "./routes.js"
 import {
   type BookingSessionModule,
   type BookingSessionRepository,
+  BookingSessionCommitRejectedError,
   type CommitOwnedBookingInput,
   createBookingSessionModule,
   InvalidBookingSessionSelectionError,
@@ -40,7 +42,13 @@ export function createProductionBookingSessionModule(
       composeQuote: async ({ session, tx }) => {
         const handlers = await deps.resolveOwnedHandlers()
         const handler = handlers.resolve(entityModuleForSession(session.target))
-        if (!handler) throw new Error("booking_session_quote_unsupported_vertical")
+        if (!handler) {
+          return {
+            status: "unavailable",
+            reason: "target_not_bookable",
+            nextAction: "select_alternative_inventory",
+          }
+        }
         const result = await handler.computeQuote(
           { db: tx as PostgresJsDatabase, adapterContext: {} as never },
           {
@@ -55,15 +63,23 @@ export function createProductionBookingSessionModule(
           },
         )
         if (!result.available || !result.pricing) {
-          throw new Error(result.invalidReason ?? "booking_session_quote_unavailable")
+          return unavailableQuoteResult(result.invalidReason)
         }
-        return pricingBreakdownFromBasis(result.pricing)
+        return { status: "quoted", pricing: pricingBreakdownFromBasis(result.pricing) }
       },
-      placeCapacityHold: async ({ session, holdId, expiresAt, tx }) => {
+      placeCapacityHold: async ({ session, holdId, quantity, expiresAt, tx }) => {
         const handlers = await deps.resolveOwnedHandlers()
         const handler = handlers.resolve(entityModuleForSession(session.target))
         if (!handler) return "unavailable"
         if (!handler.placeHold) return "unavailable"
+        const parameters = engineParametersFromDraft(undefined, session.statePayload, {
+          entityModule: handler.entityModule,
+          sourceKind: "owned",
+        })
+        const expectedQuantity = positiveInteger(parameters.paxCount) ?? 1
+        if (expectedQuantity !== quantity) {
+          return { status: "quantity_mismatch", expectedQuantity }
+        }
         const result = await handler.placeHold(
           { db: tx as PostgresJsDatabase, adapterContext: {} as never },
           {
@@ -71,10 +87,7 @@ export function createProductionBookingSessionModule(
             entityId: entityIdForSession(session.target),
             draftId: holdId,
             ttlMs: Math.max(1, expiresAt.getTime() - Date.now()),
-            parameters: engineParametersFromDraft(undefined, session.statePayload, {
-              entityModule: handler.entityModule,
-              sourceKind: "owned",
-            }),
+            parameters,
           },
         )
         return result.status !== "unavailable" && result.holdToken === holdId
@@ -114,12 +127,12 @@ async function commitOwnedBookingInTransaction(
 ) {
   const handlers = await deps.resolveOwnedHandlers()
   const handler = handlers.resolve(entityModuleForSession(input.session.target))
-  if (!handler) throw new Error("booking_session_commit_unsupported_vertical")
+  if (!handler) throw new BookingSessionCommitRejectedError("entity_not_bookable")
   if (!handler.deriveSelfServiceCommand) {
-    throw new Error("booking_session_commit_unsupported_vertical")
+    throw new BookingSessionCommitRejectedError("entity_not_bookable")
   }
   const billing = await resolveBilling(deps, input, tx)
-  if (!billing) throw new Error("booking_session_commit_billing_unresolved")
+  if (!billing) throw new BookingSessionCommitRejectedError("incomplete_draft")
   const derived = await handler.deriveSelfServiceCommand(
     { db: tx, adapterContext: {} as never },
     {
@@ -131,7 +144,7 @@ async function commitOwnedBookingInTransaction(
       availabilityHoldToken: input.hold.id,
     },
   )
-  if (derived.status !== "ok") throw new Error(`booking_session_commit_${derived.reason}`)
+  if (derived.status !== "ok") throw new BookingSessionCommitRejectedError(derived.reason)
 
   const routeActions = createRouteActionRegistry()
   routeActions.register(FINANCE_BOOKING_CREATE_SELF_SERVICE_ROUTE_ACTION)
@@ -196,6 +209,7 @@ async function resolveBilling(
   tx: PostgresJsDatabase,
 ): Promise<SelfServiceBillingParty | null> {
   const contact = billingContact(input.session.statePayload)
+  if (!contact.contactEmail && !contact.contactPhone) return null
   // Authentication identifies the actor, not the buyer. In particular, a
   // staff user id must never be persisted as the Booking's CRM person id.
   const personId = await deps.relationships?.upsertPersonFromContact(
@@ -236,6 +250,8 @@ function entityIdForSession(target: CommitOwnedBookingInput["session"]["target"]
 }
 
 function pricingBreakdownFromBasis(pricing: PricingBasis) {
+  const supplied = pricingBreakdownV1.safeParse(pricing.breakdown)
+  if (supplied.success) return supplied.data
   const base = Number(pricing.base_amount ?? 0)
   const taxes = Number(pricing.taxes ?? 0)
   const fees = Number(pricing.fees ?? 0)
@@ -250,6 +266,35 @@ function pricingBreakdownFromBasis(pricing: PricingBasis) {
     subtotal: base,
     taxTotal: taxes,
     total,
+  }
+}
+
+function unavailableQuoteResult(invalidReason: string | undefined) {
+  if (invalidReason === "product_not_found") {
+    return {
+      status: "unavailable" as const,
+      reason: "target_not_found" as const,
+      nextAction: "select_alternative_inventory" as const,
+    }
+  }
+  if (invalidReason?.startsWith("product_status_")) {
+    return {
+      status: "unavailable" as const,
+      reason: "target_not_bookable" as const,
+      nextAction: "select_alternative_inventory" as const,
+    }
+  }
+  if (!invalidReason || invalidReason === "no_sell_amount_configured") {
+    return {
+      status: "unavailable" as const,
+      reason: "price_unavailable" as const,
+      nextAction: "contact_operator" as const,
+    }
+  }
+  return {
+    status: "unavailable" as const,
+    reason: "selection_unavailable" as const,
+    nextAction: "update_selection" as const,
   }
 }
 

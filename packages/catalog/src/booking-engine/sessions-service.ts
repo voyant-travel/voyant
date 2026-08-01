@@ -64,7 +64,7 @@ export interface BookingCommitInternalRecord {
   sessionId: string
   idempotencyKey: string
   requestFingerprint: string
-  outcome: BookingLifecycleCommitOutcomeV1
+  outcome: Exclude<BookingLifecycleCommitOutcomeV1, { kind: "idempotent_replay" }>
   bookingId?: string
   createdAt: Date
 }
@@ -117,7 +117,7 @@ export interface BookingSessionRepository {
     holdId: string
     idempotencyKey: string
     requestFingerprint: string
-    outcome: BookingLifecycleCommitOutcomeV1
+    outcome: BookingCommitInternalRecord["outcome"]
     bookingId: string
     now: Date
   }): Promise<void>
@@ -130,6 +130,31 @@ export interface ComposeBookingQuoteInput {
   now: Date
   tx: unknown
 }
+
+export type BookingSessionQuoteUnavailableReason =
+  | "target_not_found"
+  | "target_not_bookable"
+  | "price_unavailable"
+  | "selection_unavailable"
+
+export type ComposeBookingQuoteResult =
+  | { status: "quoted"; pricing: PricingBreakdownV1 }
+  | {
+      status: "unavailable"
+      reason: BookingSessionQuoteUnavailableReason
+      nextAction: "select_alternative_inventory" | "contact_operator" | "update_selection"
+    }
+
+export type PlaceBookingCapacityHoldResult =
+  | "held"
+  | "unavailable"
+  | { status: "quantity_mismatch"; expectedQuantity: number }
+
+export type BookingSessionCommitRejectionReason =
+  | "entity_not_found"
+  | "entity_not_bookable"
+  | "incomplete_draft"
+  | "price_changed"
 
 export interface CommitOwnedBookingInput {
   session: BookingSessionInternalRecord
@@ -158,7 +183,7 @@ export interface BookingSessionModulePorts {
     access: BookingSessionAccessContext
     now: Date
   }): Promise<Record<string, unknown>>
-  composeQuote(input: ComposeBookingQuoteInput): Promise<PricingBreakdownV1>
+  composeQuote(input: ComposeBookingQuoteInput): Promise<ComposeBookingQuoteResult>
   placeCapacityHold(input: {
     session: BookingSessionInternalRecord
     quote: BookingQuoteInternalRecord
@@ -169,7 +194,7 @@ export interface BookingSessionModulePorts {
     access: BookingSessionAccessContext
     now: Date
     tx: unknown
-  }): Promise<"held" | "unavailable">
+  }): Promise<PlaceBookingCapacityHoldResult>
   releaseCapacityHold(input: {
     session: BookingSessionInternalRecord
     hold: BookingHoldInternalRecord
@@ -198,6 +223,12 @@ export class InvalidBookingSessionSelectionError extends Error {
     readonly path?: string,
   ) {
     super(`booking_session_selection_${reason}${path ? `:${path}` : ""}`)
+  }
+}
+
+export class BookingSessionCommitRejectedError extends Error {
+  constructor(readonly reason: BookingSessionCommitRejectionReason) {
+    super(`booking_session_commit_${reason}`)
   }
 }
 
@@ -423,7 +454,11 @@ export function createBookingSessionModule(
           await repository.saveQuote(quote)
         }
 
-        const pricing = await options.ports.composeQuote({ session, now: at, tx })
+        const composed = await options.ports.composeQuote({ session, now: at, tx })
+        if (composed.status === "unavailable") {
+          return completeAndReturn(repository, claim.id, quoteUnavailable(composed))
+        }
+        const { pricing } = composed
         const quote: BookingQuoteInternalRecord = {
           id: newId("booking_session_quotes"),
           sessionId,
@@ -511,6 +546,17 @@ export function createBookingSessionModule(
           now: at,
           tx,
         })
+        if (typeof held === "object" && held.status === "quantity_mismatch") {
+          return completeAndReturn(repository, claim.id, {
+            kind: "rejected",
+            error: {
+              kind: "hold_quantity_mismatch",
+              requestedQuantity: hold.quantity,
+              expectedQuantity: held.expectedQuantity,
+              nextAction: "request_new_hold",
+            },
+          })
+        }
         if (held !== "held") {
           return completeAndReturn(repository, claim.id, {
             kind: "rejected",
@@ -672,8 +718,14 @@ export function createBookingSessionModule(
           }
         }
 
-        const freshPricing = await options.ports.composeQuote({ session, now: at, tx })
-        if (stableFingerprint(freshPricing) !== quote.priceFingerprint) {
+        const freshQuote = await options.ports.composeQuote({ session, now: at, tx })
+        if (freshQuote.status === "unavailable") {
+          quote.state = "superseded"
+          await repository.saveQuote(quote)
+          await releaseLiveHolds(repository, options.ports, session, access, at, tx)
+          return { status: "outcome" as const, outcome: quoteUnavailable(freshQuote) }
+        }
+        if (stableFingerprint(freshQuote.pricing) !== quote.priceFingerprint) {
           quote.state = "superseded"
           await repository.saveQuote(quote)
           await releaseLiveHolds(repository, options.ports, session, access, at, tx)
@@ -768,12 +820,15 @@ export function createBookingSessionModule(
                   reason: "missing",
                 })
               }
-              const currentPricing = await options.ports.composeQuote({
+              const currentQuoteResult = await options.ports.composeQuote({
                 session: currentSession,
                 now: currentAt,
                 tx,
               })
-              if (stableFingerprint(currentPricing) !== currentQuote.priceFingerprint) {
+              if (
+                currentQuoteResult.status === "unavailable" ||
+                stableFingerprint(currentQuoteResult.pricing) !== currentQuote.priceFingerprint
+              ) {
                 currentQuote.state = "superseded"
                 await repository.saveQuote(currentQuote)
                 throw new CommitOutcomeError({
@@ -797,6 +852,16 @@ export function createBookingSessionModule(
         })
       } catch (error) {
         if (isIdempotencyConflictError(error)) return idempotencyConflict()
+        if (error instanceof BookingSessionCommitRejectedError) {
+          return {
+            kind: "rejected",
+            error: {
+              kind: "commit_rejected",
+              reason: error.reason,
+              nextAction: commitRejectionNextAction(error.reason),
+            },
+          }
+        }
         if (
           error instanceof Error &&
           error.message === "owned inventory hold is not live at commit"
@@ -885,6 +950,33 @@ class CommitOutcomeError extends Error {
 class CommitSessionStateError extends Error {
   constructor(readonly state: "expired" | "consumed") {
     super(`booking_session_commit_session_${state}`)
+  }
+}
+
+function quoteUnavailable(
+  result: Extract<ComposeBookingQuoteResult, { status: "unavailable" }>,
+): BookingSessionOutcomeV1 {
+  return {
+    kind: "rejected",
+    error: {
+      kind: "quote_unavailable",
+      reason: result.reason,
+      nextAction: result.nextAction,
+    },
+  }
+}
+
+function commitRejectionNextAction(
+  reason: BookingSessionCommitRejectionReason,
+): "select_alternative_inventory" | "update_selection" | "request_fresh_quote" {
+  switch (reason) {
+    case "entity_not_found":
+    case "entity_not_bookable":
+      return "select_alternative_inventory"
+    case "price_changed":
+      return "request_fresh_quote"
+    case "incomplete_draft":
+      return "update_selection"
   }
 }
 
@@ -1014,8 +1106,7 @@ function replayCommit(commit: BookingCommitInternalRecord): BookingSessionOutcom
       kind: "idempotent_replay",
       nextAction: "return_idempotent_result",
       originalCommitId: commit.id,
-      equivalentToOutcome: "committed",
-      bookingId: commit.bookingId,
+      originalOutcome: commit.outcome,
     },
   }
 }

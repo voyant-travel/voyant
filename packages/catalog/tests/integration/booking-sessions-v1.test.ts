@@ -195,7 +195,7 @@ function createModule(
     ports: {
       repository,
       normalizeSelection: async ({ selection }) => structuredClone(selection),
-      composeQuote: async () => PRICING,
+      composeQuote: async () => ({ status: "quoted", pricing: PRICING }),
       placeCapacityHold: async () => "held",
       releaseCapacityHold: async () => {},
       commitOwnedBooking,

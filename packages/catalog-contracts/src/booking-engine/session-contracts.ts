@@ -125,6 +125,26 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("not_authorized") }),
   z.object({ kind: z.literal("idempotency_conflict") }),
   z.object({
+    kind: z.literal("quote_unavailable"),
+    reason: z.enum([
+      "target_not_found",
+      "target_not_bookable",
+      "price_unavailable",
+      "selection_unavailable",
+    ]),
+    nextAction: z.enum(["select_alternative_inventory", "contact_operator", "update_selection"]),
+  }),
+  z.object({
+    kind: z.literal("commit_rejected"),
+    reason: z.enum([
+      "entity_not_found",
+      "entity_not_bookable",
+      "incomplete_draft",
+      "price_changed",
+    ]),
+    nextAction: z.enum(["select_alternative_inventory", "update_selection", "request_fresh_quote"]),
+  }),
+  z.object({
     kind: z.literal("invalid_selection"),
     reason: z.enum(["unsupported_target", "forbidden_field"]),
     path: z.string().min(1).optional(),
@@ -139,6 +159,12 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
   }),
   z.object({
     kind: z.enum(["hold_required", "hold_expired", "availability_changed"]),
+    nextAction: z.literal("request_new_hold"),
+  }),
+  z.object({
+    kind: z.literal("hold_quantity_mismatch"),
+    requestedQuantity: z.number().int().positive(),
+    expectedQuantity: z.number().int().positive(),
     nextAction: z.literal("request_new_hold"),
   }),
   z.object({
