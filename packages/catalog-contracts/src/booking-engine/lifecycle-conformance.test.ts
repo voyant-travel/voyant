@@ -8,6 +8,8 @@ import {
   type BookingLifecycleObservationV1,
   bookingCommitmentPolicyV1,
   bookingLifecycleConformanceScenariosV1,
+  bookingLifecycleCommitInputV1,
+  runBookingLifecycleConformanceV1,
 } from "./lifecycle-conformance.js"
 
 describe("booking lifecycle conformance contract", () => {
@@ -31,7 +33,7 @@ describe("booking lifecycle conformance contract", () => {
     expect(
       bookingCommitmentPolicyV1.safeParse({
         id: "invalid-operator-backed",
-        kind: "operator_backed_supplier_first",
+        kind: "operator_backed_commit",
         inventoryAuthority: "sourced",
         paymentGuarantee: "pay_later_authorized",
         allowBookingBeforeSupplierSecured: true,
@@ -40,7 +42,47 @@ describe("booking lifecycle conformance contract", () => {
     ).toBe(false)
   })
 
+  it("rejects incoherent payment policy and state combinations", () => {
+    const requiredPaymentScenario = bookingLifecycleConformanceScenariosV1.find(
+      (scenario) => scenario.id === "owned-atomic-commit",
+    )!
+    const notRequiredScenario = bookingLifecycleConformanceScenariosV1.find(
+      (scenario) => scenario.id === "owned-atomic-commit-payment-not-required",
+    )!
+    const payLaterScenario = bookingLifecycleConformanceScenariosV1.find(
+      (scenario) => scenario.id === "owned-atomic-commit-pay-later-authorized",
+    )!
+
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...notRequiredScenario.input,
+        paymentGuarantee: "established",
+      }).success,
+    ).toBe(false)
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...requiredPaymentScenario.input,
+        paymentGuarantee: "post_commit_authorized",
+      }).success,
+    ).toBe(false)
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...payLaterScenario.input,
+        paymentGuarantee: "missing",
+      }).success,
+    ).toBe(false)
+  })
+
   it("runs scenario observations through the reusable conformance runner", async () => {
+    const results = await runBookingLifecycleConformanceV1({
+      commit: (_input, scenario) => observationForScenario(scenario),
+    })
+
+    expect(results).toHaveLength(BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS.length)
+    expect(results.every((result) => result.passed)).toBe(true)
+  })
+
+  it("returns successful scenario results from the assertion helper", async () => {
     const results = await assertBookingLifecycleConformanceV1({
       commit: (_input, scenario) => observationForScenario(scenario),
     })
@@ -50,7 +92,7 @@ describe("booking lifecycle conformance contract", () => {
   })
 
   it("fails supplier-first conformance when a pending supplier creates a Booking", async () => {
-    const [result] = await assertBookingLifecycleConformanceV1(
+    const [result] = await runBookingLifecycleConformanceV1(
       {
         commit: (_input, scenario) => ({
           ...observationForScenario(scenario),
@@ -69,6 +111,85 @@ describe("booking lifecycle conformance contract", () => {
 
     expect(result?.passed).toBe(false)
     expect(String(result?.error)).toContain("expected effect bookingCreated=false")
+  })
+
+  it("rejects assertion when any scenario fails", async () => {
+    await expect(
+      assertBookingLifecycleConformanceV1(
+        {
+          commit: (_input, scenario) => ({
+            ...observationForScenario(scenario),
+            effects: {
+              ...observationForScenario(scenario).effects,
+              bookingCreated: true,
+            },
+          }),
+        },
+        [
+          bookingLifecycleConformanceScenariosV1.find(
+            (scenario) => scenario.id === "sourced-supplier-first-pending",
+          )!,
+        ],
+      ),
+    ).rejects.toThrow(
+      [
+        "Booking lifecycle conformance failed for 1 scenario(s): sourced-supplier-first-pending",
+        "- sourced-supplier-first-pending: expected effect bookingCreated=false",
+      ].join("\n"),
+    )
+  })
+
+  it("fails conformance when supplier dispatch is not backed by persisted operation state", async () => {
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, scenario) => ({
+          ...observationForScenario(scenario),
+          effects: {
+            ...observationForScenario(scenario).effects,
+            supplierOperationPersisted: false,
+            supplierDispatched: true,
+          },
+        }),
+      },
+      [
+        bookingLifecycleConformanceScenariosV1.find(
+          (scenario) => scenario.id === "sourced-supplier-first-pending",
+        )!,
+      ],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain(
+      "supplier dispatch requires persisted supplier operation intent",
+    )
+  })
+
+  it("fails conformance when supplier dispatch input did not persist intent first", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "sourced-supplier-first-pending",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => observationForScenario(parsedScenario),
+      },
+      [
+        {
+          ...scenario,
+          input: {
+            ...scenario.input,
+            supplier: {
+              ...scenario.input.supplier,
+              intentPersistedBeforeDispatch: false,
+            },
+          },
+        },
+      ],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain(
+      "supplier dispatch requires input supplier intent persisted before dispatch",
+    )
   })
 })
 

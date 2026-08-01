@@ -10,7 +10,7 @@ import { bookingLifecycleConformanceScenariosV1 } from "./lifecycle-conformance-
 export const bookingCommitmentPolicyKindV1 = z.enum([
   "owned_atomic_commit",
   "sourced_supplier_first",
-  "operator_backed_supplier_first",
+  "operator_backed_commit",
 ])
 export type BookingCommitmentPolicyKindV1 = z.infer<typeof bookingCommitmentPolicyKindV1>
 
@@ -85,7 +85,7 @@ export const bookingCommitmentPolicyV1 = z
         })
       }
     }
-    if (policy.kind === "operator_backed_supplier_first") {
+    if (policy.kind === "operator_backed_commit") {
       if (policy.inventoryAuthority !== "sourced") {
         ctx.addIssue({
           code: "custom",
@@ -105,45 +105,82 @@ export const bookingCommitmentPolicyV1 = z
   })
 export type BookingCommitmentPolicyV1 = z.infer<typeof bookingCommitmentPolicyV1>
 
-export const bookingLifecycleCommitInputV1 = z.object({
-  scenarioId: z.string().min(1),
-  idempotencyKey: z.string().min(8),
-  policy: bookingCommitmentPolicyV1,
-  session: z.object({
-    id: z.string().min(1),
-    revision: z.number().int().positive(),
-    expectedRevision: z.number().int().positive(),
-    state: z.enum(["active", "consumed", "abandoned"]),
-  }),
-  quote: z.object({
-    id: z.string().min(1),
-    sessionId: z.string().min(1),
-    sessionRevision: z.number().int().positive(),
-    state: z.enum(["fresh", "expired", "superseded", "mismatched"]),
-  }),
-  hold: z.object({
-    required: z.boolean(),
-    id: z.string().min(1).optional(),
-    sessionId: z.string().min(1).optional(),
-    state: z.enum(["not_required", "live", "missing", "expired", "released", "converted"]),
-  }),
-  paymentGuarantee: paymentGuaranteeStateV1,
-  supplier: z.object({
-    state: supplierSecurityStateV1,
-    operationId: z.string().min(1).optional(),
-    intentPersistedBeforeDispatch: z.boolean().default(false),
-  }),
-  proposalAcceptance: z
-    .object({
-      proposalVersionId: z.string().min(1),
-      acceptedVersionRevision: z.number().int().positive(),
-      currentVersionRevision: z.number().int().positive(),
-      materialTermsChanged: z.boolean(),
-      freshQuoteRequired: z.literal(true),
-    })
-    .optional(),
-  replayOfCommitId: z.string().min(1).optional(),
-})
+export const bookingLifecycleCommitInputV1 = z
+  .object({
+    scenarioId: z.string().min(1),
+    idempotencyKey: z.string().min(8),
+    policy: bookingCommitmentPolicyV1,
+    session: z.object({
+      id: z.string().min(1),
+      revision: z.number().int().positive(),
+      expectedRevision: z.number().int().positive(),
+      state: z.enum(["active", "consumed", "abandoned"]),
+    }),
+    quote: z.object({
+      id: z.string().min(1),
+      sessionId: z.string().min(1),
+      sessionRevision: z.number().int().positive(),
+      state: z.enum(["fresh", "expired", "superseded", "mismatched"]),
+    }),
+    hold: z.object({
+      required: z.boolean(),
+      id: z.string().min(1).optional(),
+      sessionId: z.string().min(1).optional(),
+      state: z.enum(["not_required", "live", "missing", "expired", "released", "converted"]),
+    }),
+    paymentGuarantee: paymentGuaranteeStateV1,
+    supplier: z.object({
+      state: supplierSecurityStateV1,
+      operationId: z.string().min(1).optional(),
+      intentPersistedBeforeDispatch: z.boolean().default(false),
+    }),
+    proposalAcceptance: z
+      .object({
+        proposalVersionId: z.string().min(1),
+        acceptedVersionRevision: z.number().int().positive(),
+        currentVersionRevision: z.number().int().positive(),
+        materialTermsChanged: z.boolean(),
+        freshQuoteRequired: z.literal(true),
+      })
+      .optional(),
+    replayOfCommitId: z.string().min(1).optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (
+      input.policy.paymentGuarantee === "not_required" &&
+      input.paymentGuarantee !== "not_required"
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["paymentGuarantee"],
+        message: "not_required payment policy must use not_required payment state",
+      })
+    }
+    if (
+      input.policy.paymentGuarantee === "required_before_commit" &&
+      input.paymentGuarantee !== "established" &&
+      input.paymentGuarantee !== "missing"
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["paymentGuarantee"],
+        message:
+          "required_before_commit payment policy must use established or missing payment state",
+      })
+    }
+    if (
+      input.policy.paymentGuarantee === "pay_later_authorized" &&
+      input.paymentGuarantee !== "post_commit_authorized" &&
+      input.paymentGuarantee !== "established"
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["paymentGuarantee"],
+        message:
+          "pay_later_authorized payment policy must use post_commit_authorized or established payment state",
+      })
+    }
+  })
 export type BookingLifecycleCommitInputV1 = z.infer<typeof bookingLifecycleCommitInputV1>
 
 export const bookingLifecycleNextActionV1 = z.enum([
@@ -295,7 +332,7 @@ export interface BookingLifecycleConformanceResultV1 {
   error?: unknown
 }
 
-export async function assertBookingLifecycleConformanceV1(
+export async function runBookingLifecycleConformanceV1(
   harness: BookingLifecycleConformanceHarnessV1,
   scenarios: readonly BookingLifecycleConformanceScenarioV1[] = bookingLifecycleConformanceScenariosV1,
 ): Promise<BookingLifecycleConformanceResultV1[]> {
@@ -317,6 +354,40 @@ export async function assertBookingLifecycleConformanceV1(
   return results
 }
 
+export async function assertBookingLifecycleConformanceV1(
+  harness: BookingLifecycleConformanceHarnessV1,
+  scenarios: readonly BookingLifecycleConformanceScenarioV1[] = bookingLifecycleConformanceScenariosV1,
+): Promise<BookingLifecycleConformanceResultV1[]> {
+  const results = await runBookingLifecycleConformanceV1(harness, scenarios)
+  const failures = results.filter((result) => !result.passed)
+
+  if (failures.length > 0) {
+    throw new AggregateError(
+      failures.map((failure) => failure.error),
+      [
+        `Booking lifecycle conformance failed for ${failures.length} scenario(s): ${failures
+          .map((failure) => failure.scenarioId)
+          .join(", ")}`,
+        ...failures.map(
+          (failure) =>
+            `- ${failure.scenarioId}: ${formatConformanceError(
+              failure.scenarioId,
+              failure.error,
+            )}`,
+        ),
+      ].join("\n"),
+    )
+  }
+
+  return results
+}
+
+function formatConformanceError(scenarioId: string, error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const scenarioPrefix = `${scenarioId}: `
+  return message.startsWith(scenarioPrefix) ? message.slice(scenarioPrefix.length) : message
+}
+
 function assertScenarioObservation(
   scenario: BookingLifecycleConformanceScenarioV1,
   observation: BookingLifecycleObservationV1,
@@ -330,6 +401,19 @@ function assertScenarioObservation(
     throw new Error(
       `${scenario.id}: expected next action ${scenario.expected.nextAction}, got ${observation.outcome.nextAction}`,
     )
+  }
+
+  if (observation.effects.supplierDispatched) {
+    if (!observation.effects.supplierOperationPersisted) {
+      throw new Error(
+        `${scenario.id}: supplier dispatch requires persisted supplier operation intent`,
+      )
+    }
+    if (!scenario.input.supplier.intentPersistedBeforeDispatch) {
+      throw new Error(
+        `${scenario.id}: supplier dispatch requires input supplier intent persisted before dispatch`,
+      )
+    }
   }
 
   for (const [name, expected] of Object.entries(scenario.expected.effects)) {
@@ -366,11 +450,39 @@ function assertScenarioObservation(
 
   if (
     observation.effects.bookingCreatedBeforeSupplierSecured &&
-    scenario.input.policy.kind !== "operator_backed_supplier_first"
+    scenario.input.policy.kind !== "operator_backed_commit"
   ) {
     throw new Error(
       `${scenario.id}: only operator-backed policy may create a Booking before supplier security`,
     )
+  }
+
+  if (observation.outcome.kind === "committed") {
+    if (
+      scenario.input.policy.paymentGuarantee === "required_before_commit" &&
+      scenario.input.paymentGuarantee !== "established"
+    ) {
+      throw new Error(
+        `${scenario.id}: required-before-commit policy cannot commit without an established payment guarantee`,
+      )
+    }
+    if (
+      scenario.input.policy.paymentGuarantee === "pay_later_authorized" &&
+      scenario.input.paymentGuarantee === "post_commit_authorized" &&
+      observation.effects.paymentGuaranteeEstablished
+    ) {
+      throw new Error(
+        `${scenario.id}: pay-later commit must not report a pre-commit payment guarantee`,
+      )
+    }
+    if (
+      scenario.input.policy.paymentGuarantee === "not_required" &&
+      observation.effects.paymentGuaranteeEstablished
+    ) {
+      throw new Error(
+        `${scenario.id}: payment guarantee cannot be established when policy says not_required`,
+      )
+    }
   }
 
   if (
@@ -383,8 +495,10 @@ function assertScenarioObservation(
       "holdConverted",
       "sessionConsumed",
       "quoteConsumed",
-      "paymentGuaranteeEstablished",
     ]
+    if (scenario.input.policy.paymentGuarantee === "required_before_commit") {
+      requiredEffects.push("paymentGuaranteeEstablished")
+    }
     for (const effect of requiredEffects) {
       if (!observation.effects[effect]) {
         throw new Error(`${scenario.id}: owned atomic Commit did not observe ${effect}`)

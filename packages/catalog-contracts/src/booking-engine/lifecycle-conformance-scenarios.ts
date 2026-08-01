@@ -23,6 +23,18 @@ const ownedPolicy = {
   operatorBackedRiskAccepted: false,
 }
 
+const ownedPaymentNotRequiredPolicy = {
+  ...ownedPolicy,
+  id: "owned-payment-not-required",
+  paymentGuarantee: "not_required" as const,
+}
+
+const ownedPayLaterPolicy = {
+  ...ownedPolicy,
+  id: "owned-pay-later",
+  paymentGuarantee: "pay_later_authorized" as const,
+}
+
 const sourcedSupplierFirstPolicy = {
   id: "sourced-default",
   kind: "sourced_supplier_first" as const,
@@ -34,7 +46,7 @@ const sourcedSupplierFirstPolicy = {
 
 const operatorBackedPolicy = {
   id: "operator-backed",
-  kind: "operator_backed_supplier_first" as const,
+  kind: "operator_backed_commit" as const,
   inventoryAuthority: "sourced" as const,
   paymentGuarantee: "pay_later_authorized" as const,
   allowBookingBeforeSupplierSecured: true,
@@ -55,6 +67,8 @@ const noSupplier = {
 
 export const BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS = [
   "owned-atomic-commit",
+  "owned-atomic-commit-payment-not-required",
+  "owned-atomic-commit-pay-later-authorized",
   "payment-guarantee-required",
   "session-revision-mismatch",
   "quote-revision-mismatch",
@@ -95,6 +109,64 @@ export const bookingLifecycleConformanceScenariosV1 = [
         sessionConsumed: true,
         quoteConsumed: true,
         paymentGuaranteeEstablished: true,
+        transactionBoundary: "single" as const,
+      },
+    },
+  },
+  {
+    id: "owned-atomic-commit-payment-not-required",
+    title: "Owned inventory can commit when no payment guarantee is required",
+    decision:
+      "A not_required payment policy does not establish a payment guarantee before Commit, while owned inventory still commits atomically.",
+    input: {
+      scenarioId: "owned-atomic-commit-payment-not-required",
+      idempotencyKey: "idem_owned_no_payment",
+      policy: ownedPaymentNotRequiredPolicy,
+      session: baseSession,
+      quote: baseQuote,
+      hold: liveHold,
+      paymentGuarantee: "not_required" as const,
+      supplier: noSupplier,
+    },
+    expected: {
+      outcomeKind: "committed" as const,
+      nextAction: "none" as const,
+      effects: {
+        bookingCreated: true,
+        allocationCreated: true,
+        holdConverted: true,
+        sessionConsumed: true,
+        quoteConsumed: true,
+        paymentGuaranteeEstablished: false,
+        transactionBoundary: "single" as const,
+      },
+    },
+  },
+  {
+    id: "owned-atomic-commit-pay-later-authorized",
+    title: "Owned inventory can commit when pay-later is authorized",
+    decision:
+      "A pay_later_authorized policy may commit with post-commit collection authorization and without a pre-commit guarantee.",
+    input: {
+      scenarioId: "owned-atomic-commit-pay-later-authorized",
+      idempotencyKey: "idem_owned_pay_later",
+      policy: ownedPayLaterPolicy,
+      session: baseSession,
+      quote: baseQuote,
+      hold: liveHold,
+      paymentGuarantee: "post_commit_authorized" as const,
+      supplier: noSupplier,
+    },
+    expected: {
+      outcomeKind: "committed" as const,
+      nextAction: "none" as const,
+      effects: {
+        bookingCreated: true,
+        allocationCreated: true,
+        holdConverted: true,
+        sessionConsumed: true,
+        quoteConsumed: true,
+        paymentGuaranteeEstablished: false,
         transactionBoundary: "single" as const,
       },
     },
