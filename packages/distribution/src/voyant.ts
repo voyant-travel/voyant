@@ -139,6 +139,15 @@ export const distributionVoyantModule = defineModule({
   ],
   setupMigrations: [
     {
+      id: "@voyant-travel/distribution#setup.publication-catalog-backfill.v1",
+      source: "@voyant-travel/distribution/setup/publication-catalog-backfill",
+      runtime: {
+        entry: "@voyant-travel/distribution/setup/publication-catalog-backfill",
+        export: "runPublicationCatalogBackfillSetupMigration",
+      },
+      dependsOn: ["@voyant-travel/distribution#migrations"],
+    },
+    {
       id: "@voyant-travel/distribution#setup.storefront-channel-bindings.v1",
       source: "@voyant-travel/distribution/setup/storefront-channel-bindings",
       runtime: {

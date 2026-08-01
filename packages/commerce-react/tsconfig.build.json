@@ -916,6 +916,12 @@
         "../distribution/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/distribution/schema": ["../distribution/dist/schema.d.ts"],
+      "@voyant-travel/distribution/setup/publication-catalog-backfill": [
+        "../distribution/dist/publication-catalog-backfill-setup.d.ts"
+      ],
+      "@voyant-travel/distribution/setup/storefront-channel-bindings": [
+        "../distribution/dist/storefront-channel-binding-setup.d.ts"
+      ],
       "@voyant-travel/distribution/tools": ["../distribution/dist/mcp-runtime.d.ts"],
       "@voyant-travel/distribution/validation": ["../distribution/dist/validation.d.ts"],
       "@voyant-travel/distribution/voyant": ["../distribution/dist/voyant.d.ts"],

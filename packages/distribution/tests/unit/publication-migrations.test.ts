@@ -1,8 +1,6 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
-import packageJson from "../../package.json"
-
 function migration(name: string) {
   return readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8")
 }
@@ -19,29 +17,12 @@ type Snapshot = {
 }
 
 describe("publication cutover migrations", () => {
-  it("orders the product snapshot after the Inventory schema", () => {
-    expect(packageJson.voyant.requiresSchemas).toContain("@voyant-travel/inventory")
-  })
-
-  it("seeds a resumable catalog backfill without a channels-products cross join", () => {
+  it("creates resumable catalog backfill storage without reaching into Inventory", () => {
     const sql = migration("20260801173500_backfill_prior_visible_catalog_publications.sql")
-    expect(sql).toContain("'catalog'")
-    expect(sql).toContain("ON CONFLICT DO NOTHING")
     expect(sql).toContain('CREATE TABLE "channel_publication_backfill_products"')
     expect(sql).toContain('CREATE TABLE "channel_publication_backfill_channels"')
-    expect(sql).toContain("'snapshotVersion', 'linear-v1'")
-    expect(sql).toContain("'productSnapshotCount'")
-    expect(sql).toContain("'channelSnapshotCount'")
-    expect(sql).toMatch(
-      /INSERT INTO "channel_publication_backfill_products"[\s\S]*FROM "backfill_intent", "products"[\s\S]*"status" = 'active'[\s\S]*"visibility" = 'public'/,
-    )
-    expect(sql).toMatch(
-      /INSERT INTO "channel_publication_backfill_channels"[\s\S]*FROM "backfill_intent", "channels"[\s\S]*"status" = 'active'/,
-    )
-    expect(sql).not.toMatch(/CROSS\s+JOIN\s+"products"/i)
-    expect(sql).not.toMatch(/FROM "products"\s*,\s*"channels"/i)
-    expect(sql).toMatch(/WITH "backfill_intent"[\s\S]*"product_snapshot"[\s\S]*"channel_snapshot"/)
-    expect(sql).not.toContain('INSERT INTO "channel_product_publications"')
+    expect(sql).not.toContain('FROM "backfill_intent", "products"')
+    expect(sql).not.toContain('FROM "products"')
   })
 
   it("evolves channel-independent intents after the 1430 baseline", () => {

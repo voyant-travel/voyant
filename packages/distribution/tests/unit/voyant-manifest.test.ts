@@ -71,6 +71,14 @@ describe("distribution deployment manifests", () => {
       migrations: [{ id: "@voyant-travel/distribution#migrations" }],
       setupMigrations: [
         {
+          id: "@voyant-travel/distribution#setup.publication-catalog-backfill.v1",
+          runtime: {
+            entry: "@voyant-travel/distribution/setup/publication-catalog-backfill",
+            export: "runPublicationCatalogBackfillSetupMigration",
+          },
+          dependsOn: ["@voyant-travel/distribution#migrations"],
+        },
+        {
           id: "@voyant-travel/distribution#setup.storefront-channel-bindings.v1",
           runtime: {
             entry: "@voyant-travel/distribution/setup/storefront-channel-bindings",

@@ -57,7 +57,15 @@ describe("@voyant-travel/distribution package exports", () => {
     })
   })
 
-  it("publishes the admitted storefront channel setup migration", () => {
+  it("publishes the admitted Distribution setup migrations", () => {
+    expect(packageJson.exports["./setup/publication-catalog-backfill"]).toBe(
+      "./src/publication-catalog-backfill-setup.ts",
+    )
+    expect(packageJson.publishConfig.exports["./setup/publication-catalog-backfill"]).toEqual({
+      types: "./dist/publication-catalog-backfill-setup.d.ts",
+      import: "./dist/publication-catalog-backfill-setup.js",
+      default: "./dist/publication-catalog-backfill-setup.js",
+    })
     expect(packageJson.exports["./setup/storefront-channel-bindings"]).toBe(
       "./src/storefront-channel-binding-setup.ts",
     )

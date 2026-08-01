@@ -519,6 +519,13 @@ after the DB, Storefront, and Distribution schema migration facets. This keeps
 fresh installs independent of package migration ordering while preserving one
 transactional, idempotent cutover.
 
+The prior-visible publication snapshot is also a Distribution-owned setup
+migration, never a hard `requiresSchemas` edge to operated Inventory. It runs
+after all selected schema facets: operated deployments snapshot active public
+Products when the Inventory table is present, while sourced-only deployments
+record an explicit empty Product snapshot. Active Channels are snapshotted in
+both modes, and the two linear sets are stamped atomically before workers run.
+
 Storefront publication is still Distribution policy. Frontend composition may
 choose layout, content placement, and routes, but it never grants Product
 publication.
