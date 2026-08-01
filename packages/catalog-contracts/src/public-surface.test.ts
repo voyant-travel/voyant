@@ -7,6 +7,7 @@ import {
   type IndexerAdapter,
   type IndexerProvider,
   pickBestCachedLocale,
+  runBookingLifecycleConformanceV1,
   type SourceAdapter,
   sourceAdapterSchema,
 } from "./index.js"
@@ -59,6 +60,7 @@ describe("@voyant-travel/catalog-contracts public surface", () => {
 
   it("exports the Booking Platform lifecycle conformance kit", () => {
     expect(typeof assertBookingLifecycleConformanceV1).toBe("function")
+    expect(typeof runBookingLifecycleConformanceV1).toBe("function")
     expect(bookingLifecycleConformanceScenariosV1.map((scenario) => scenario.id)).toContain(
       "owned-atomic-commit",
     )
