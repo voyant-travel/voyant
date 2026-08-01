@@ -3,7 +3,7 @@
  *
  * This is the deployment-owned rule the inventory document builder injects via
  * its `isPublicAudienceListable` hook. It decides whether an owned product
- * (already gated as active + public + activated upstream) should be emitted
+ * (already gated as active upstream) should be emitted
  * into a public-audience search slice.
  *
  * Kept in its own module so the audience decision can be unit-tested without
@@ -23,15 +23,16 @@ export type OwnedProductStorefrontListabilityInput = {
 /**
  * Storefront/distribution listability predicate for owned products.
  *
- * The upstream inventory gate (`isPublicStorefrontProduct`) already requires
- * `status = active`, `activated = true`, and `visibility = public` before this
- * runs, so the caller only reaches here for an owned product that is otherwise
- * publicly sellable.
+ * The upstream inventory gate already requires `status = active` before this
+ * runs. Channel assignment is the distribution authority; the deprecated
+ * product-level `visibility` and `activated` compatibility fields do not
+ * participate in this decision.
  *
- * Legacy customer slices have no `channel`, so they keep the old direct
- * storefront behavior for backward compatibility. Channel-scoped customer
- * slices require an active mapping for that exact channel, so a website surface
- * and a B2B surface can expose different product sets.
+ * A channel-scoped slice requires an active mapping for that exact channel, so
+ * a website surface and a B2B surface can expose different product sets. A
+ * legacy unchannelled customer slice is listable only when the product has at
+ * least one active channel mapping. It remains an aggregate compatibility
+ * slice, not an implicit site-publication switch.
  *
  * External audiences (partner / supplier slices) also require channel
  * mappings. See docs/architecture/catalog-supply-models.md and
@@ -40,6 +41,5 @@ export type OwnedProductStorefrontListabilityInput = {
 export async function isOwnedProductStorefrontListable(
   input: OwnedProductStorefrontListabilityInput,
 ): Promise<boolean> {
-  if (input.audience === "customer" && !input.channel) return true
   return input.hasActiveChannelMapping()
 }

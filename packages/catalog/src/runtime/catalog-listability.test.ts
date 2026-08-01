@@ -1,21 +1,15 @@
 /**
  * catalog-listability — owned-product storefront listability predicate.
  *
- * Regression cover for issue #2617: an active + public + activated owned
- * product that is directly bookable must be listable in the *customer*
- * (direct storefront) search slice without an explicit channel mapping.
- * Channel mappings gate distribution to external audiences and channel-aware
- * customer slices, but not legacy unchannelled customer slices.
+ * Channel assignments are the sole distribution authority for owned products.
+ * Product lifecycle status is gated by inventory before this predicate runs.
  */
 
 import { describe, expect, it, vi } from "vitest"
 import { isOwnedProductStorefrontListable } from "./catalog-listability.js"
 
 describe("isOwnedProductStorefrontListable", () => {
-  it("lists an owned product in the customer slice without a channel mapping", async () => {
-    // Legacy customer slices carry no channel. They remain listable for
-    // backwards compatibility; channel-aware storefront slices below are gated
-    // by the requested sales channel.
+  it("requires any active mapping for the legacy unchannelled customer slice", async () => {
     const hasActiveChannelMapping = vi.fn(async () => false)
 
     const listable = await isOwnedProductStorefrontListable({
@@ -23,8 +17,15 @@ describe("isOwnedProductStorefrontListable", () => {
       hasActiveChannelMapping,
     })
 
-    expect(listable).toBe(true)
-    expect(hasActiveChannelMapping).not.toHaveBeenCalled()
+    expect(listable).toBe(false)
+    expect(hasActiveChannelMapping).toHaveBeenCalledOnce()
+
+    await expect(
+      isOwnedProductStorefrontListable({
+        audience: "customer",
+        hasActiveChannelMapping: async () => true,
+      }),
+    ).resolves.toBe(true)
   })
 
   it("requires an active channel mapping for channel-scoped customer slices", async () => {

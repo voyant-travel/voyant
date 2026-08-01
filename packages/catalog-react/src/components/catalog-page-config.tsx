@@ -155,7 +155,6 @@ export function makeProductFilters(
     { field: "familyCode", label: messages.filters.family },
     { field: "subtypeCode", label: messages.filters.subtype },
     { field: "capacityMode", label: messages.filters.capacity },
-    { field: "visibility", label: messages.filters.visibility },
     { field: "facilityId", label: messages.filters.facility },
     {
       kind: "range",

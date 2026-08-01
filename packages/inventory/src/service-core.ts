@@ -52,16 +52,14 @@ type PublishableProductState = {
   id?: string
   bookingMode: string
   status: string
-  visibility: string
-  activated: boolean
 }
 
 function isScheduledBookingMode(bookingMode: string) {
   return !DYNAMIC_BOOKING_MODES.has(bookingMode)
 }
 
-function isPublicPublishedState(product: PublishableProductState) {
-  return product.status === "active" && product.visibility === "public" && product.activated
+function isActiveLifecycleState(product: PublishableProductState) {
+  return product.status === "active"
 }
 
 function assertProductDateRange(product: ProductDateRangeShape) {
@@ -89,7 +87,7 @@ async function hasFutureOpenDeparture(db: PostgresJsDatabase, productId: string)
 }
 
 async function assertReadyToPublish(db: PostgresJsDatabase, product: PublishableProductState) {
-  if (!isPublicPublishedState(product) || !isScheduledBookingMode(product.bookingMode)) return
+  if (!isActiveLifecycleState(product) || !isScheduledBookingMode(product.bookingMode)) return
 
   if (!product.id || !(await hasFutureOpenDeparture(db, product.id))) {
     throw new ProductPublishReadinessError([

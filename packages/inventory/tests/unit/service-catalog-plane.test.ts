@@ -100,6 +100,12 @@ describe("productRowToProjection", () => {
     expect(projection.get("costAmountCents")).toBe(180000)
     expect(projection.get("marginPercent")).toBe(28)
   })
+
+  it("does not project deprecated product distribution flags", () => {
+    const projection = productRowToProjection(sampleRow, { sellerOperatorId: "op_xyz" })
+    expect(projection.has("visibility")).toBe(false)
+    expect(projection.has("activated")).toBe(false)
+  })
 })
 
 describe("deriveProductSupplyModel", () => {

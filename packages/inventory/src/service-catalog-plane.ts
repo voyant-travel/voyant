@@ -111,8 +111,6 @@ export function productRowToProjection(
     ["bookingMode", row.bookingMode],
     ["supplyModel", deriveProductSupplyModel(row.bookingMode)],
     ["capacityMode", row.capacityMode],
-    ["visibility", row.visibility],
-    ["activated", row.activated],
     ["productTypeId", row.productTypeId],
     ["subtypeCode", row.productSubtypeCode],
     ["durationMinutes", row.durationMinutes],
@@ -364,10 +362,6 @@ export function createProductDocumentEmitter(context: {
   }
 }
 
-function isPublicStorefrontProduct(row: Product): boolean {
-  return row.status === "active" && row.activated === true && row.visibility === "public"
-}
-
 function isPublicAudienceSlice(slice: IndexerSlice): boolean {
   return (
     slice.audience === "customer" || slice.audience === "partner" || slice.audience === "supplier"
@@ -386,7 +380,6 @@ async function shouldEmitForSlice(
   // just with staff-visible attribute columns.
   if (row.status !== "active") return false
   if (isPublicAudienceSlice(slice)) {
-    if (!isPublicStorefrontProduct(row)) return false
     if (isPublicAudienceListable) {
       return isPublicAudienceListable({ db, product: row, slice })
     }

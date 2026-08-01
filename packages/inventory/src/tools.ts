@@ -398,7 +398,7 @@ export const createProductTool = defineTool({
   capabilityVersion: VERSION,
   name: "create_product",
   description:
-    "Create a private draft product through Inventory's real authoring service. Publication is a separate confirmed lifecycle operation.",
+    "Create a draft product through Inventory's real authoring service. Channel assignment and publication are separate lifecycle operations.",
   inputSchema: createProductToolSchema,
   outputSchema: createProductResultSchema,
   requiredScopes: ["products:write"],
@@ -443,8 +443,8 @@ export const publishProductTool = defineTool(
     capabilityId: `${OWNER}#tool.publish-product`,
     name: "publish_product",
     description:
-      "Publish a product to the public catalog. Inventory enforces scheduled-product departure readiness before committing.",
-    patch: { status: "active", visibility: "public", activated: true },
+      "Make a product active. Inventory enforces scheduled-product departure readiness; active channel assignments control where it is distributed.",
+    patch: { status: "active" },
   }),
 )
 
@@ -453,8 +453,8 @@ export const unpublishProductTool = defineTool(
     capabilityId: `${OWNER}#tool.unpublish-product`,
     name: "unpublish_product",
     description:
-      "Remove a product from the public catalog without deleting authored product history.",
-    patch: { activated: false },
+      "Return a product to draft without deleting authored history or its channel assignments.",
+    patch: { status: "draft" },
   }),
 )
 
@@ -462,8 +462,8 @@ export const archiveProductTool = defineTool(
   productLifecycleToolDefinition({
     capabilityId: `${OWNER}#tool.archive-product`,
     name: "archive_product",
-    description: "Archive and deactivate a product while preserving its history and owned records.",
-    patch: { status: "archived", activated: false },
+    description: "Archive a product while preserving its history and owned records.",
+    patch: { status: "archived" },
   }),
 )
 

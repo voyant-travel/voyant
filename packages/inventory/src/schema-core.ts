@@ -42,7 +42,16 @@ export const products = pgTable(
      * falls back to these base columns for this locale. Null until set.
      */
     defaultLanguageTag: text("default_language_tag"),
+    /**
+     * @deprecated Compatibility-only distribution flag. Product status and
+     * active channel mappings are authoritative; new operator UI must not
+     * author or interpret this column.
+     */
     visibility: productVisibilityEnum("visibility").notNull().default("private"),
+    /**
+     * @deprecated Compatibility-only site flag. A direct storefront is a
+     * Channel; its active Product mapping controls distribution.
+     */
     activated: boolean("activated").notNull().default(false),
     reservationTimeoutMinutes: integer("reservation_timeout_minutes"),
     sellCurrency: text("sell_currency").notNull(),

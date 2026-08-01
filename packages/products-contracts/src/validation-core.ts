@@ -48,7 +48,9 @@ const productCoreSchema = z.object({
   capacityMode: productCapacityModeSchema.default("limited"),
   timezone: z.string().max(100).optional().nullable(),
   defaultLanguageTag: languageTagSchema.optional().nullable(),
+  /** @deprecated Compatibility only; channel assignments control distribution. */
   visibility: productVisibilitySchema.default("private"),
+  /** @deprecated Compatibility only; a direct storefront is modeled as a Channel. */
   activated: z.boolean().default(false),
   reservationTimeoutMinutes: z.number().int().min(0).optional().nullable(),
   sellCurrency: z.string().min(3).max(3),
@@ -151,7 +153,9 @@ export const updateProductSchema = productCoreSchema
     status: productStatusSchema,
     bookingMode: productBookingModeSchema,
     capacityMode: productCapacityModeSchema,
+    /** @deprecated Compatibility only; channel assignments control distribution. */
     visibility: productVisibilitySchema,
+    /** @deprecated Compatibility only; a direct storefront is modeled as a Channel. */
     activated: z.boolean(),
     termsShowOnContract: z.boolean(),
     tags: z.array(z.string()),
@@ -203,7 +207,9 @@ export const productListSortDirSchema = z.enum(["asc", "desc"])
 export const productListQuerySchema = z.object({
   status: productStatusSchema.optional(),
   bookingMode: productBookingModeSchema.optional(),
+  /** @deprecated Compatibility query retained while older API clients migrate. */
   visibility: productVisibilitySchema.optional(),
+  /** @deprecated Compatibility query retained while older API clients migrate. */
   activated: booleanQueryParam.optional(),
   facilityId: z.string().optional(),
   supplierId: z.string().optional(),

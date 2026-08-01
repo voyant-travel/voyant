@@ -60,8 +60,6 @@ const PRODUCT_BOOKING_MODES = [
   "open",
   "other",
 ] as const
-const PRODUCT_VISIBILITIES = ["public", "private", "hidden"] as const
-
 type SortableField = Extract<ProductsListSortField, "name" | "status" | "sellAmount">
 
 const SORTABLE_COLUMNS = {
@@ -137,7 +135,6 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const [status, setStatus] = React.useState<string>(STATUS_ALL)
   const [productTypeId, setProductTypeId] = React.useState<string>(FILTER_ALL)
   const [bookingMode, setBookingMode] = React.useState<string>(FILTER_ALL)
-  const [visibility, setVisibility] = React.useState<string>(FILTER_ALL)
   const [tag, setTag] = React.useState<string>("")
   const [dateRange, setDateRange] = React.useState<{
     from: string | null
@@ -174,7 +171,6 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     status: status === STATUS_ALL ? undefined : status,
     productTypeId: productTypeId === FILTER_ALL ? undefined : productTypeId,
     bookingMode: bookingMode === FILTER_ALL ? undefined : bookingMode,
-    visibility: visibility === FILTER_ALL ? undefined : visibility,
     tag: tag.trim() || undefined,
     dateFrom: dateRange?.from ?? undefined,
     dateTo: dateRange?.to ?? undefined,
@@ -217,7 +213,6 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     (status !== STATUS_ALL ? 1 : 0) +
     (productTypeId !== FILTER_ALL ? 1 : 0) +
     (bookingMode !== FILTER_ALL ? 1 : 0) +
-    (visibility !== FILTER_ALL ? 1 : 0) +
     (tag.trim() !== "" ? 1 : 0) +
     (dateRange?.from || dateRange?.to ? 1 : 0) +
     (departureRange?.from || departureRange?.to ? 1 : 0) +
@@ -230,7 +225,6 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     setStatus(STATUS_ALL)
     setProductTypeId(FILTER_ALL)
     setBookingMode(FILTER_ALL)
-    setVisibility(FILTER_ALL)
     setTag("")
     setDateRange(null)
     setDepartureRange(null)
@@ -422,33 +416,6 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                     {PRODUCT_BOOKING_MODES.map((value) => (
                       <SelectItem key={value} value={value}>
                         {messages.common.productBookingModeLabels[value]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="products-filter-visibility">
-                  {productMessages.filters.visibilityLabel}
-                </Label>
-                <Select
-                  value={visibility}
-                  onValueChange={(value) => {
-                    setVisibility(value ?? FILTER_ALL)
-                    resetOffset()
-                  }}
-                >
-                  <SelectTrigger id="products-filter-visibility" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={FILTER_ALL}>
-                      {productMessages.filters.visibilityAll}
-                    </SelectItem>
-                    {PRODUCT_VISIBILITIES.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {messages.common.productVisibilityLabels[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>

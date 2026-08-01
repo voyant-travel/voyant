@@ -517,7 +517,7 @@ describe("inventory tools", () => {
         { actor: "staff", audience: "staff" },
       ),
     )
-    expect(forwarded).toEqual({ status: "active", visibility: "public", activated: true })
+    expect(forwarded).toEqual({ status: "active" })
   })
 
   it("defaults composed content resolution to the grant locale and market", async () => {

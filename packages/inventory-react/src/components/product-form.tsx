@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyant-travel/ui/components/select"
-import { Switch } from "@voyant-travel/ui/components/switch"
 import { Textarea } from "@voyant-travel/ui/components/textarea"
 import { Loader2, X } from "lucide-react"
 import * as React from "react"
@@ -42,8 +41,6 @@ interface FormState {
   status: "draft" | "active" | "archived"
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   capacityMode: ProductRecord["capacityMode"]
-  visibility: ProductRecord["visibility"]
-  activated: boolean
   timezone: string
   facilityId: string
   productTypeId: string
@@ -71,8 +68,6 @@ function initialState(mode: ProductFormMode): FormState {
       status: product.status,
       bookingMode: product.bookingMode,
       capacityMode: product.capacityMode,
-      visibility: product.visibility,
-      activated: product.activated,
       timezone: product.timezone ?? "",
       facilityId: product.facilityId ?? "__none__",
       productTypeId: product.productTypeId ?? "__none__",
@@ -99,8 +94,6 @@ function initialState(mode: ProductFormMode): FormState {
     status: "draft",
     bookingMode: "itinerary",
     capacityMode: "limited",
-    visibility: "private",
-    activated: false,
     timezone: "",
     facilityId: "__none__",
     productTypeId: "__none__",
@@ -148,8 +141,6 @@ function toPayload(state: FormState): CreateProductInput {
     status: state.status,
     bookingMode: state.bookingMode,
     capacityMode: state.capacityMode,
-    visibility: state.visibility,
-    activated: state.activated,
     timezone: state.timezone.trim() || null,
     facilityId: state.facilityId === "__none__" ? null : state.facilityId,
     productTypeId: state.productTypeId === "__none__" ? null : state.productTypeId,
@@ -206,16 +197,6 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       ] as const,
     [messages],
   )
-  const visibilityOptions = React.useMemo(
-    () =>
-      [
-        { value: "public", label: messages.common.productVisibilityLabels.public },
-        { value: "private", label: messages.common.productVisibilityLabels.private },
-        { value: "hidden", label: messages.common.productVisibilityLabels.hidden },
-      ] as const,
-    [messages],
-  )
-
   const field =
     <K extends keyof FormState>(key: K) =>
     (value: FormState[K]) => {
@@ -476,39 +457,6 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               onChange={(value) => field("contractTemplateId")(value ?? "__none__")}
               placeholder={productMessages.placeholders.contractTemplateSearch}
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>{productMessages.fields.visibility}</Label>
-            <Select
-              items={visibilityOptions}
-              value={state.visibility}
-              onValueChange={(value) =>
-                value && field("visibility")(value as FormState["visibility"])
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {visibilityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-1.5 rounded-md border p-3">
-            <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="product-activated">{productMessages.fields.activated}</Label>
-              <Switch
-                id="product-activated"
-                checked={state.activated}
-                onCheckedChange={(checked) => field("activated")(checked)}
-              />
-            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
