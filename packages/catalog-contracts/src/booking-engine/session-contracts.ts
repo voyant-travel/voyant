@@ -6,14 +6,18 @@ import { bookingLifecycleCommitOutcomeV1 } from "./lifecycle-conformance.js"
 export const bookingSessionActorKindV1 = z.enum(["anonymous", "customer", "staff", "partner"])
 export type BookingSessionActorKindV1 = z.infer<typeof bookingSessionActorKindV1>
 
-export const bookingSessionTargetKindV1 = z.enum(["product", "catalog_item"])
-export type BookingSessionTargetKindV1 = z.infer<typeof bookingSessionTargetKindV1>
-
-export const bookingSessionTargetV1 = z.object({
-  kind: bookingSessionTargetKindV1,
-  productId: z.string().min(1).optional(),
-  catalogItemId: z.string().min(1).optional(),
-})
+export const bookingSessionTargetV1 = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("product"),
+    productId: z.string().min(1),
+    catalogItemId: z.never().optional(),
+  }),
+  z.object({
+    kind: z.literal("catalog_item"),
+    catalogItemId: z.string().min(1),
+    productId: z.never().optional(),
+  }),
+])
 export type BookingSessionTargetV1 = z.infer<typeof bookingSessionTargetV1>
 
 export const bookingSessionStateV1 = z.enum(["active", "consumed", "expired", "abandoned"])
@@ -21,7 +25,6 @@ export type BookingSessionStateV1 = z.infer<typeof bookingSessionStateV1>
 
 export const bookingSessionRecordV1 = z.object({
   id: z.string().min(1),
-  capability: z.string().min(16).optional(),
   target: bookingSessionTargetV1,
   actorKind: bookingSessionActorKindV1,
   state: bookingSessionStateV1,
@@ -32,26 +35,30 @@ export const bookingSessionRecordV1 = z.object({
 })
 export type BookingSessionRecordV1 = z.infer<typeof bookingSessionRecordV1>
 
+export const bookingSessionCreationSecretV1 = z.object({
+  token: z.string().min(16),
+  transport: z.enum(["header", "cookie"]),
+  headerName: z.literal("Voyant-Booking-Session-Capability"),
+})
+export type BookingSessionCreationSecretV1 = z.infer<typeof bookingSessionCreationSecretV1>
+
 export const createBookingSessionV1 = z.object({
+  idempotencyKey: z.string().min(8).max(128),
   target: bookingSessionTargetV1,
-  actorKind: bookingSessionActorKindV1.default("anonymous"),
-  expiresAt: z.string().datetime().optional(),
-  ttlMs: z.number().int().positive().optional(),
-  state: z.record(z.string(), z.unknown()).optional(),
+  selection: z.record(z.string(), z.unknown()).optional(),
 })
 export type CreateBookingSessionV1 = z.input<typeof createBookingSessionV1>
 
 export const updateBookingSessionV1 = z.object({
-  capability: z.string().min(16).optional(),
+  idempotencyKey: z.string().min(8).max(128),
   expectedRevision: z.number().int().positive(),
-  state: z.record(z.string(), z.unknown()),
+  selection: z.record(z.string(), z.unknown()),
 })
 export type UpdateBookingSessionV1 = z.input<typeof updateBookingSessionV1>
 
 export const quoteBookingSessionV1 = z.object({
-  capability: z.string().min(16).optional(),
   expectedRevision: z.number().int().positive(),
-  idempotencyKey: z.string().min(8).max(128).optional(),
+  idempotencyKey: z.string().min(8).max(128),
 })
 export type QuoteBookingSessionV1 = z.input<typeof quoteBookingSessionV1>
 
@@ -70,11 +77,10 @@ export const bookingQuoteRecordV1 = z.object({
 export type BookingQuoteRecordV1 = z.infer<typeof bookingQuoteRecordV1>
 
 export const placeBookingHoldV1 = z.object({
-  capability: z.string().min(16).optional(),
   expectedRevision: z.number().int().positive(),
   quoteId: z.string().min(1),
   quantity: z.number().int().positive().default(1),
-  idempotencyKey: z.string().min(8).max(128).optional(),
+  idempotencyKey: z.string().min(8).max(128),
 })
 export type PlaceBookingHoldV1 = z.input<typeof placeBookingHoldV1>
 
@@ -94,16 +100,18 @@ export const bookingHoldRecordV1 = z.object({
 export type BookingHoldRecordV1 = z.infer<typeof bookingHoldRecordV1>
 
 export const commitBookingSessionV1 = z.object({
-  capability: z.string().min(16).optional(),
   expectedRevision: z.number().int().positive(),
   quoteId: z.string().min(1),
   holdId: z.string().min(1),
   idempotencyKey: z.string().min(8).max(128),
-  paymentGuarantee: z
-    .enum(["not_required", "established", "post_commit_authorized"])
-    .default("not_required"),
 })
 export type CommitBookingSessionV1 = z.input<typeof commitBookingSessionV1>
+
+export const abandonBookingSessionV1 = z.object({
+  idempotencyKey: z.string().min(8).max(128),
+  expectedRevision: z.number().int().positive(),
+})
+export type AbandonBookingSessionV1 = z.input<typeof abandonBookingSessionV1>
 
 export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
   z.object({
@@ -114,6 +122,8 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("session_expired") }),
   z.object({ kind: z.literal("session_consumed") }),
   z.object({ kind: z.literal("capability_required") }),
+  z.object({ kind: z.literal("not_authorized") }),
+  z.object({ kind: z.literal("idempotency_conflict") }),
   z.object({
     kind: z.literal("quote_required"),
     nextAction: z.literal("request_fresh_quote"),
@@ -134,8 +144,13 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
 export type BookingSessionLifecycleErrorV1 = z.infer<typeof bookingSessionLifecycleErrorV1>
 
 export const bookingSessionOutcomeV1 = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("session_created"), session: bookingSessionRecordV1 }),
+  z.object({
+    kind: z.literal("session_created"),
+    session: bookingSessionRecordV1,
+    capability: bookingSessionCreationSecretV1.optional(),
+  }),
   z.object({ kind: z.literal("session_updated"), session: bookingSessionRecordV1 }),
+  z.object({ kind: z.literal("session_abandoned"), session: bookingSessionRecordV1 }),
   z.object({
     kind: z.literal("quote_created"),
     session: bookingSessionRecordV1,

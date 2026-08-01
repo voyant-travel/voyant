@@ -1,9 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { openApiValidationHook } from "@voyant-travel/hono"
-import type { ApiModule } from "@voyant-travel/hono/module"
-import type { Context } from "hono"
-
 import {
+  abandonBookingSessionV1,
   type BookingSessionActorKindV1,
   bookingSessionOutcomeV1,
   commitBookingSessionV1,
@@ -11,8 +8,11 @@ import {
   placeBookingHoldV1,
   quoteBookingSessionV1,
   updateBookingSessionV1,
-} from "./contracts.js"
-import type { BookingSessionModule } from "./sessions-service.js"
+} from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import type { ApiModule } from "@voyant-travel/hono/module"
+import type { Context } from "hono"
+import type { BookingSessionAccessContext, BookingSessionModule } from "./sessions-service.js"
 
 type Env = {
   Variables: Record<string, unknown>
@@ -21,6 +21,7 @@ type Env = {
 export interface BookingSessionRoutesOptions {
   resolveModule(c: Context): BookingSessionModule
   actorKind: BookingSessionActorKindV1
+  resolveAccess?(c: Context, actorKind: BookingSessionActorKindV1): BookingSessionAccessContext
 }
 
 const sessionParamSchema = z.object({ sessionId: z.string().min(1) })
@@ -120,15 +121,36 @@ const commitSessionRoute = createRoute({
   },
 })
 
+const abandonSessionRoute = createRoute({
+  method: "post",
+  path: "/booking-sessions/{sessionId}/abandon",
+  request: {
+    params: sessionParamSchema,
+    body: { required: true, content: { "application/json": { schema: abandonBookingSessionV1 } } },
+  },
+  responses: {
+    200: {
+      description: "Booking Session abandoned",
+      content: { "application/json": { schema: bookingSessionOutcomeV1 } },
+    },
+    400: {
+      description: "Invalid request",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 export function createBookingSessionRoutes(options: BookingSessionRoutesOptions): OpenAPIHono<Env> {
   return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     .openapi(createSessionRoute, async (c) =>
       asRouteResponse(
         c.json(
-          await options.resolveModule(c).createSession({
-            ...c.req.valid("json"),
-            actorKind: options.actorKind,
-          }),
+          await options.resolveModule(c).createSession(
+            {
+              ...c.req.valid("json"),
+            },
+            resolveAccess(options, c),
+          ),
         ),
       ),
     )
@@ -137,7 +159,11 @@ export function createBookingSessionRoutes(options: BookingSessionRoutesOptions)
         c.json(
           await options
             .resolveModule(c)
-            .updateSession(c.req.valid("param").sessionId, c.req.valid("json")),
+            .updateSession(
+              c.req.valid("param").sessionId,
+              c.req.valid("json"),
+              resolveAccess(options, c),
+            ),
         ),
       ),
     )
@@ -146,7 +172,11 @@ export function createBookingSessionRoutes(options: BookingSessionRoutesOptions)
         c.json(
           await options
             .resolveModule(c)
-            .quoteSession(c.req.valid("param").sessionId, c.req.valid("json")),
+            .quoteSession(
+              c.req.valid("param").sessionId,
+              c.req.valid("json"),
+              resolveAccess(options, c),
+            ),
         ),
       ),
     )
@@ -155,7 +185,24 @@ export function createBookingSessionRoutes(options: BookingSessionRoutesOptions)
         c.json(
           await options
             .resolveModule(c)
-            .placeHold(c.req.valid("param").sessionId, c.req.valid("json")),
+            .placeHold(
+              c.req.valid("param").sessionId,
+              c.req.valid("json"),
+              resolveAccess(options, c),
+            ),
+        ),
+      ),
+    )
+    .openapi(abandonSessionRoute, async (c) =>
+      asRouteResponse(
+        c.json(
+          await options
+            .resolveModule(c)
+            .abandonSession(
+              c.req.valid("param").sessionId,
+              c.req.valid("json"),
+              resolveAccess(options, c),
+            ),
         ),
       ),
     )
@@ -164,7 +211,11 @@ export function createBookingSessionRoutes(options: BookingSessionRoutesOptions)
         c.json(
           await options
             .resolveModule(c)
-            .commitSession(c.req.valid("param").sessionId, c.req.valid("json")),
+            .commitSession(
+              c.req.valid("param").sessionId,
+              c.req.valid("json"),
+              resolveAccess(options, c),
+            ),
         ),
       ),
     )
@@ -173,6 +224,26 @@ export function createBookingSessionRoutes(options: BookingSessionRoutesOptions)
 // biome-ignore lint/suspicious/noExplicitAny: bridges plain Hono responses to zod-openapi's inferred route union.
 function asRouteResponse(response: Response): any {
   return response
+}
+
+function resolveAccess(
+  options: BookingSessionRoutesOptions,
+  c: Context,
+): BookingSessionAccessContext {
+  return (
+    options.resolveAccess?.(c, options.actorKind) ?? {
+      actorKind: options.actorKind,
+      ...(options.actorKind === "anonymous" ? { capability: readAnonymousCapability(c) } : {}),
+    }
+  )
+}
+
+function readAnonymousCapability(c: Context): string | undefined {
+  const header = c.req.header("Voyant-Booking-Session-Capability")?.trim()
+  if (header) return header
+  const cookie = c.req.header("Cookie")
+  const match = cookie?.match(/(?:^|;\s*)voyant_booking_session=([^;]+)/)
+  return match ? decodeURIComponent(match[1] ?? "") : undefined
 }
 
 export function createBookingSessionApiModule(options: {

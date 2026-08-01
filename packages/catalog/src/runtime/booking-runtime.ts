@@ -2,6 +2,8 @@ import {
   type CatalogBookingRouteModuleOptions,
   type CatalogBookingRoutesOptions,
   catalogQuotesTable,
+  createDrizzleBookingSessionRepository,
+  createProductionBookingSessionModule,
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
 } from "@voyant-travel/catalog/booking-engine"
@@ -72,11 +74,48 @@ export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBooking
   const { inventory, operations } = catalogRuntimeExtensions()
   return {
     booking: createOperatorCatalogBookingRoutesOptions(),
+    bookingSessions: {
+      resolveModule(c) {
+        const db = getCatalogBookingDb(c) as PostgresJsDatabase
+        return createProductionBookingSessionModule({
+          db,
+          repository: createDrizzleBookingSessionRepository(db),
+          resolveOwnedHandlers: () => getOwnedBookingHandlerRegistryFromContext(c),
+        })
+      },
+      resolveAccess(c, actorKind) {
+        const vars = c.var as {
+          userId?: string
+          organizationId?: string
+          actor?: string
+        }
+        const capability =
+          actorKind === "anonymous"
+            ? (c.req.header("Voyant-Booking-Session-Capability")?.trim() ??
+              readCookie(c.req.header("Cookie"), "voyant_booking_session"))
+            : undefined
+        return {
+          actorKind,
+          ...(vars.userId ? { principalId: vars.userId } : {}),
+          ...(vars.organizationId ? { organizationId: vars.organizationId } : {}),
+          ...(capability ? { capability } : {}),
+        }
+      },
+    },
     resolveRegistry: getBookingEngineRegistryFromContext,
     getProductContent: inventory.getProductContent,
     listAvailabilitySlots: operations.listAvailabilitySlots,
     getOwnedProductById: inventory.getOwnedProductById,
   }
+}
+
+function readCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined
+  for (const part of cookieHeader.split(";")) {
+    const [rawKey, ...rawValue] = part.trim().split("=")
+    if (rawKey === name) return decodeURIComponent(rawValue.join("="))
+  }
+  return undefined
 }
 
 async function resolveHoldTtlMs(

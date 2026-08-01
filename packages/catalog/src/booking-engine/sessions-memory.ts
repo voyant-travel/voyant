@@ -6,6 +6,7 @@ import type {
   BookingQuoteInternalRecord,
   BookingSessionInternalRecord,
   BookingSessionModulePorts,
+  BookingSessionOperationRecord,
   BookingSessionRepository,
   CommitOwnedBookingInput,
 } from "./sessions-service.js"
@@ -15,6 +16,7 @@ export interface InMemoryBookingSessionRepository extends BookingSessionReposito
   quotes: Map<string, BookingQuoteInternalRecord>
   holds: Map<string, BookingHoldInternalRecord>
   commits: Map<string, BookingCommitInternalRecord>
+  operations: Map<string, BookingSessionOperationRecord>
 }
 
 export function createInMemoryBookingSessionRepository(): InMemoryBookingSessionRepository {
@@ -24,6 +26,7 @@ export function createInMemoryBookingSessionRepository(): InMemoryBookingSession
     quotes: new Map(),
     holds: new Map(),
     commits: new Map(),
+    operations: new Map(),
 
     async createSession(record) {
       repository.sessions.set(record.id, cloneSession(record))
@@ -31,6 +34,12 @@ export function createInMemoryBookingSessionRepository(): InMemoryBookingSession
     },
     async getSession(sessionId) {
       const session = repository.sessions.get(sessionId)
+      return session ? cloneSession(session) : null
+    },
+    async getSessionByCreateIdempotency(idempotencyKey) {
+      const session = [...repository.sessions.values()].find(
+        (record) => record.createIdempotencyKey === idempotencyKey,
+      )
       return session ? cloneSession(session) : null
     },
     async saveSession(record) {
@@ -64,6 +73,69 @@ export function createInMemoryBookingSessionRepository(): InMemoryBookingSession
     async saveCommit(record) {
       repository.commits.set(record.id, cloneCommit(record))
     },
+    async claimOperation(record) {
+      const existing = [...repository.operations.values()].find(
+        (operation) =>
+          operation.sessionId === record.sessionId &&
+          operation.operation === record.operation &&
+          operation.idempotencyKey === record.idempotencyKey,
+      )
+      if (existing) {
+        if (existing.requestFingerprint !== record.requestFingerprint) {
+          return { status: "conflict" as const }
+        }
+        return existing.outcome
+          ? { status: "replay" as const, outcome: structuredClone(existing.outcome) }
+          : { status: "conflict" as const }
+      }
+      repository.operations.set(record.id, {
+        id: record.id,
+        sessionId: record.sessionId,
+        operation: record.operation,
+        idempotencyKey: record.idempotencyKey,
+        requestFingerprint: record.requestFingerprint,
+        outcome: undefined as never,
+        createdAt: new Date(record.now),
+      })
+      return { status: "claimed" as const, id: record.id }
+    },
+    async completeOperation(record) {
+      const existing = repository.operations.get(record.id)
+      if (existing) {
+        repository.operations.set(record.id, {
+          ...existing,
+          outcome: structuredClone(record.outcome),
+        })
+      }
+    },
+    async consumeCommit(input) {
+      const session = repository.sessions.get(input.sessionId)
+      const quote = repository.quotes.get(input.quoteId)
+      const hold = repository.holds.get(input.holdId)
+      if (session?.state !== "active") throw new Error("booking_session_commit_session_consumed")
+      if (quote?.state !== "active") throw new Error("booking_session_commit_quote_consumed")
+      if (hold?.state !== "active") throw new Error("booking_session_commit_hold_consumed")
+      repository.sessions.set(input.sessionId, {
+        ...cloneSession(session),
+        state: "consumed",
+        updatedAt: new Date(input.now),
+      })
+      repository.quotes.set(input.quoteId, { ...cloneQuote(quote), state: "consumed" })
+      repository.holds.set(input.holdId, { ...cloneHold(hold), state: "converted" })
+      const commitId = newId("booking_session_commits")
+      repository.commits.set(commitId, {
+        id: commitId,
+        sessionId: input.sessionId,
+        idempotencyKey: input.idempotencyKey,
+        requestFingerprint: input.requestFingerprint,
+        outcome: structuredClone(input.outcome),
+        bookingId: input.bookingId,
+        createdAt: new Date(input.now),
+      })
+    },
+    async withTransactionContext(_tx, operation) {
+      return operation()
+    },
     async withSessionTransaction(sessionId, operation) {
       const previous = locks.get(sessionId) ?? Promise.resolve()
       let release: () => void = () => {}
@@ -73,8 +145,22 @@ export function createInMemoryBookingSessionRepository(): InMemoryBookingSession
       const chained = previous.then(() => current)
       locks.set(sessionId, chained)
       await previous
+      const snapshot = {
+        sessions: cloneMap(repository.sessions, cloneSession),
+        quotes: cloneMap(repository.quotes, cloneQuote),
+        holds: cloneMap(repository.holds, cloneHold),
+        commits: cloneMap(repository.commits, cloneCommit),
+        operations: cloneMap(repository.operations, cloneOperation),
+      }
       try {
         return await operation()
+      } catch (error) {
+        repository.sessions = snapshot.sessions
+        repository.quotes = snapshot.quotes
+        repository.holds = snapshot.holds
+        repository.commits = snapshot.commits
+        repository.operations = snapshot.operations
+        throw error
       } finally {
         release()
         if (locks.get(sessionId) === chained) locks.delete(sessionId)
@@ -129,6 +215,7 @@ export function createInMemoryOwnedInventoryPorts(): InMemoryOwnedInventoryPorts
       const allocationId = newId("booking_allocations")
       bookingIds.push(bookingId)
       allocationIds.push(allocationId)
+      await input.consumeSources(undefined, bookingId, [allocationId])
       return { bookingId, allocationIds: [allocationId] }
     },
   }
@@ -169,4 +256,16 @@ function cloneCommit(record: BookingCommitInternalRecord): BookingCommitInternal
     outcome: structuredClone(record.outcome),
     createdAt: new Date(record.createdAt),
   }
+}
+
+function cloneOperation(record: BookingSessionOperationRecord): BookingSessionOperationRecord {
+  return {
+    ...record,
+    outcome: structuredClone(record.outcome),
+    createdAt: new Date(record.createdAt),
+  }
+}
+
+function cloneMap<T>(map: Map<string, T>, clone: (value: T) => T): Map<string, T> {
+  return new Map([...map.entries()].map(([key, value]) => [key, clone(value)]))
 }

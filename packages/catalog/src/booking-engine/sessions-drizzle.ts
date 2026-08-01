@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks"
-import { withOptionalTransaction } from "@voyant-travel/db/transaction"
+import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -7,6 +7,7 @@ import type { PricingBreakdownV1 } from "./contracts.js"
 import {
   bookingSessionCommitsTable,
   bookingSessionHoldsTable,
+  bookingSessionOperationsTable,
   bookingSessionQuotesTable,
   bookingSessionsTable,
   type SelectBookingSession,
@@ -34,8 +35,12 @@ export function createDrizzleBookingSessionRepository(
         .insert(bookingSessionsTable)
         .values({
           id: record.id,
+          createIdempotencyKey: record.createIdempotencyKey,
+          createRequestFingerprint: record.createRequestFingerprint,
           capabilityHash: record.capabilityHash,
           actorKind: record.actorKind,
+          ownerPrincipalId: record.ownerPrincipalId,
+          ownerOrganizationId: record.ownerOrganizationId,
           targetKind: record.target.kind,
           productId: record.target.productId,
           catalogItemId: record.target.catalogItemId,
@@ -57,12 +62,22 @@ export function createDrizzleBookingSessionRepository(
         .limit(1)
       return row ? mapSession(row) : null
     },
+    async getSessionByCreateIdempotency(idempotencyKey) {
+      const [row] = await resolveDb()
+        .select()
+        .from(bookingSessionsTable)
+        .where(eq(bookingSessionsTable.createIdempotencyKey, idempotencyKey))
+        .limit(1)
+      return row ? mapSession(row) : null
+    },
     async saveSession(record) {
       await resolveDb()
         .update(bookingSessionsTable)
         .set({
           capabilityHash: record.capabilityHash,
           actorKind: record.actorKind,
+          ownerPrincipalId: record.ownerPrincipalId,
+          ownerOrganizationId: record.ownerOrganizationId,
           targetKind: record.target.kind,
           productId: record.target.productId,
           catalogItemId: record.target.catalogItemId,
@@ -182,8 +197,102 @@ export function createDrizzleBookingSessionRepository(
         createdAt: record.createdAt,
       })
     },
+    async claimOperation(record) {
+      const [row] = await resolveDb()
+        .insert(bookingSessionOperationsTable)
+        .values({
+          id: record.id,
+          sessionId: record.sessionId,
+          operation: record.operation,
+          idempotencyKey: record.idempotencyKey,
+          requestFingerprint: record.requestFingerprint,
+          createdAt: record.now,
+        })
+        .onConflictDoNothing()
+        .returning()
+      if (row) return { status: "claimed" as const, id: row.id }
+
+      const [existing] = await resolveDb()
+        .select()
+        .from(bookingSessionOperationsTable)
+        .where(
+          and(
+            eq(bookingSessionOperationsTable.sessionId, record.sessionId),
+            eq(bookingSessionOperationsTable.operation, record.operation),
+            eq(bookingSessionOperationsTable.idempotencyKey, record.idempotencyKey),
+          ),
+        )
+        .limit(1)
+      if (!existing || existing.requestFingerprint !== record.requestFingerprint) {
+        return { status: "conflict" as const }
+      }
+      return existing.outcome
+        ? { status: "replay" as const, outcome: existing.outcome as never }
+        : { status: "conflict" as const }
+    },
+    async completeOperation(record) {
+      await resolveDb()
+        .update(bookingSessionOperationsTable)
+        .set({ outcome: record.outcome })
+        .where(eq(bookingSessionOperationsTable.id, record.id))
+    },
+    async consumeCommit(input) {
+      const at = input.now
+      const [session] = await resolveDb()
+        .update(bookingSessionsTable)
+        .set({ state: "consumed", consumedAt: at, updatedAt: at })
+        .where(
+          and(
+            eq(bookingSessionsTable.id, input.sessionId),
+            eq(bookingSessionsTable.state, "active"),
+          ),
+        )
+        .returning()
+      if (!session) throw new Error("booking_session_commit_session_consumed")
+      const [quote] = await resolveDb()
+        .update(bookingSessionQuotesTable)
+        .set({ state: "consumed", consumedAt: at })
+        .where(
+          and(
+            eq(bookingSessionQuotesTable.id, input.quoteId),
+            eq(bookingSessionQuotesTable.sessionId, input.sessionId),
+            eq(bookingSessionQuotesTable.state, "active"),
+          ),
+        )
+        .returning()
+      if (!quote) throw new Error("booking_session_commit_quote_consumed")
+      const [hold] = await resolveDb()
+        .update(bookingSessionHoldsTable)
+        .set({ state: "converted", convertedAt: at })
+        .where(
+          and(
+            eq(bookingSessionHoldsTable.id, input.holdId),
+            eq(bookingSessionHoldsTable.sessionId, input.sessionId),
+            eq(bookingSessionHoldsTable.state, "active"),
+          ),
+        )
+        .returning()
+      if (!hold) throw new Error("booking_session_commit_hold_consumed")
+      await resolveDb()
+        .insert(bookingSessionCommitsTable)
+        .values({
+          id: newId("booking_session_commits"),
+          sessionId: input.sessionId,
+          idempotencyKey: input.idempotencyKey,
+          requestFingerprint: input.requestFingerprint,
+          outcome: input.outcome,
+          bookingId: input.bookingId,
+          createdAt: at,
+        })
+    },
+    async withTransactionContext(tx, operation) {
+      return txStore.run(tx as PostgresJsDatabase, operation)
+    },
     async withSessionTransaction(sessionId, operation) {
-      return withOptionalTransaction(db, async (tx) =>
+      if (typeof db.transaction !== "function") {
+        throw new Error("Booking Session writes require a transaction-capable database")
+      }
+      return db.transaction(async (tx) =>
         txStore.run(tx as PostgresJsDatabase, async () => {
           await resolveDb().execute(
             sql`select id from booking_sessions where id = ${sessionId} for update`,
@@ -198,14 +307,17 @@ export function createDrizzleBookingSessionRepository(
 function mapSession(row: SelectBookingSession, capability?: string): BookingSessionInternalRecord {
   return {
     id: row.id,
+    createIdempotencyKey: row.createIdempotencyKey,
+    createRequestFingerprint: row.createRequestFingerprint,
     capability,
     capabilityHash: row.capabilityHash ?? undefined,
-    target: {
-      kind: row.targetKind === "catalog_item" ? "catalog_item" : "product",
-      productId: row.productId ?? undefined,
-      catalogItemId: row.catalogItemId ?? undefined,
-    },
+    target:
+      row.targetKind === "catalog_item"
+        ? { kind: "catalog_item", catalogItemId: row.catalogItemId ?? "" }
+        : { kind: "product", productId: row.productId ?? "" },
     actorKind: row.actorKind as BookingSessionInternalRecord["actorKind"],
+    ownerPrincipalId: row.ownerPrincipalId ?? undefined,
+    ownerOrganizationId: row.ownerOrganizationId ?? undefined,
     state: row.state as BookingSessionInternalRecord["state"],
     revision: row.revision,
     statePayload: row.statePayload,

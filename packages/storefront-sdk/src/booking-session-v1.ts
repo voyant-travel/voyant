@@ -20,6 +20,12 @@ import {
 type ResolvedClientOptions = Required<Pick<VoyantStorefrontClientOptions, "baseUrl" | "fetcher">> &
   Pick<VoyantStorefrontClientOptions, "headers">
 
+export const BOOKING_SESSION_CAPABILITY_HEADER = "Voyant-Booking-Session-Capability"
+
+export interface BookingSessionRequestOptions extends StorefrontRequestOptions {
+  capability?: string
+}
+
 export interface OwnedProductBookingTracerInput {
   target: BookingSessionTargetV1
   journeyKey: string
@@ -28,12 +34,22 @@ export interface OwnedProductBookingTracerInput {
   requestOptions?: StorefrontRequestOptions
 }
 
-export interface OwnedProductBookingTracerResult {
-  session: BookingSessionRecordV1
-  quoteOutcome: BookingSessionOutcomeV1
-  holdOutcome: BookingSessionOutcomeV1
-  commitOutcome: BookingSessionOutcomeV1
-}
+export type OwnedProductBookingTracerResult =
+  | {
+      kind: "completed"
+      session: BookingSessionRecordV1
+      quoteOutcome: BookingSessionOutcomeV1
+      holdOutcome: BookingSessionOutcomeV1
+      commitOutcome: BookingSessionOutcomeV1
+    }
+  | {
+      kind: "stopped"
+      stage: "create" | "update" | "quote" | "hold" | "commit"
+      outcome: BookingSessionOutcomeV1
+      session?: BookingSessionRecordV1
+      quoteOutcome?: BookingSessionOutcomeV1
+      holdOutcome?: BookingSessionOutcomeV1
+    }
 
 export function createBookingSessionV1(
   client: ResolvedClientOptions,
@@ -56,7 +72,7 @@ export function updateBookingSessionV1(
   client: ResolvedClientOptions,
   sessionId: string,
   input: UpdateBookingSessionV1,
-  options?: StorefrontRequestOptions,
+  options?: BookingSessionRequestOptions,
 ) {
   return storefrontFetchWithValidation(
     `/v1/public/catalog/booking-sessions/${encodeURIComponent(sessionId)}`,
@@ -64,7 +80,7 @@ export function updateBookingSessionV1(
     client,
     {
       method: "PATCH",
-      headers: requestHeaders(options),
+      headers: bookingSessionRequestHeaders(options),
       body: JSON.stringify(input),
     },
   )
@@ -74,7 +90,7 @@ export function quoteBookingSessionV1(
   client: ResolvedClientOptions,
   sessionId: string,
   input: QuoteBookingSessionV1,
-  options?: StorefrontRequestOptions,
+  options?: BookingSessionRequestOptions,
 ) {
   return storefrontFetchWithValidation(
     `/v1/public/catalog/booking-sessions/${encodeURIComponent(sessionId)}/quote`,
@@ -82,7 +98,7 @@ export function quoteBookingSessionV1(
     client,
     {
       method: "POST",
-      headers: requestHeaders(options),
+      headers: bookingSessionRequestHeaders(options),
       body: JSON.stringify(input),
     },
   )
@@ -92,7 +108,7 @@ export function holdBookingSessionV1(
   client: ResolvedClientOptions,
   sessionId: string,
   input: PlaceBookingHoldV1,
-  options?: StorefrontRequestOptions,
+  options?: BookingSessionRequestOptions,
 ) {
   return storefrontFetchWithValidation(
     `/v1/public/catalog/booking-sessions/${encodeURIComponent(sessionId)}/hold`,
@@ -100,7 +116,7 @@ export function holdBookingSessionV1(
     client,
     {
       method: "POST",
-      headers: requestHeaders(options),
+      headers: bookingSessionRequestHeaders(options),
       body: JSON.stringify(input),
     },
   )
@@ -110,7 +126,7 @@ export function commitBookingSessionV1(
   client: ResolvedClientOptions,
   sessionId: string,
   input: CommitBookingSessionV1,
-  options?: StorefrontRequestOptions,
+  options?: BookingSessionRequestOptions,
 ) {
   return storefrontFetchWithValidation(
     `/v1/public/catalog/booking-sessions/${encodeURIComponent(sessionId)}/commit`,
@@ -118,7 +134,7 @@ export function commitBookingSessionV1(
     client,
     {
       method: "POST",
-      headers: requestHeaders(options),
+      headers: bookingSessionRequestHeaders(options),
       body: JSON.stringify(input),
     },
   )
@@ -130,23 +146,32 @@ export async function runOwnedProductBookingTracerV1(
 ): Promise<OwnedProductBookingTracerResult> {
   const created = await createBookingSessionV1(
     client,
-    { target: input.target },
+    { idempotencyKey: `${input.journeyKey}:create`, target: input.target },
     input.requestOptions,
   )
   if (created.kind !== "session_created") {
-    throw new Error(`Booking Session creation failed: ${created.kind}`)
+    return { kind: "stopped", stage: "create", outcome: created }
   }
   let session = created.session
+  const capability = created.capability?.token
+  const sessionRequestOptions: BookingSessionRequestOptions = {
+    ...input.requestOptions,
+    capability,
+  }
 
   if (input.state) {
     const updated = await updateBookingSessionV1(
       client,
       session.id,
-      { capability: session.capability, expectedRevision: session.revision, state: input.state },
-      input.requestOptions,
+      {
+        expectedRevision: session.revision,
+        selection: input.state,
+        idempotencyKey: `${input.journeyKey}:update`,
+      },
+      sessionRequestOptions,
     )
     if (updated.kind !== "session_updated") {
-      throw new Error(`Booking Session update failed: ${updated.kind}`)
+      return { kind: "stopped", stage: "update", outcome: updated, session }
     }
     session = updated.session
   }
@@ -155,44 +180,64 @@ export async function runOwnedProductBookingTracerV1(
     client,
     session.id,
     {
-      capability: session.capability,
       expectedRevision: session.revision,
       idempotencyKey: `${input.journeyKey}:quote`,
     },
-    input.requestOptions,
+    sessionRequestOptions,
   )
   if (quoteOutcome.kind !== "quote_created") {
-    throw new Error(`Booking Session quote failed: ${quoteOutcome.kind}`)
+    return { kind: "stopped", stage: "quote", outcome: quoteOutcome, session }
   }
 
   const holdOutcome = await holdBookingSessionV1(
     client,
     session.id,
     {
-      capability: session.capability,
       expectedRevision: session.revision,
       quoteId: quoteOutcome.quote.id,
       quantity: input.quantity ?? 1,
       idempotencyKey: `${input.journeyKey}:hold`,
     },
-    input.requestOptions,
+    sessionRequestOptions,
   )
   if (holdOutcome.kind !== "hold_created") {
-    throw new Error(`Booking Session hold failed: ${holdOutcome.kind}`)
+    return { kind: "stopped", stage: "hold", outcome: holdOutcome, session, quoteOutcome }
   }
 
   const commitOutcome = await commitBookingSessionV1(
     client,
     session.id,
     {
-      capability: session.capability,
       expectedRevision: session.revision,
       quoteId: quoteOutcome.quote.id,
       holdId: holdOutcome.hold.id,
       idempotencyKey: `${input.journeyKey}:commit`,
     },
-    input.requestOptions,
+    sessionRequestOptions,
   )
 
-  return { session, quoteOutcome, holdOutcome, commitOutcome }
+  if (commitOutcome.kind !== "commit_result") {
+    return {
+      kind: "stopped",
+      stage: "commit",
+      outcome: commitOutcome,
+      session,
+      quoteOutcome,
+      holdOutcome,
+    }
+  }
+
+  return { kind: "completed", session, quoteOutcome, holdOutcome, commitOutcome }
+}
+
+function bookingSessionRequestHeaders(
+  options?: BookingSessionRequestOptions,
+): HeadersInit | undefined {
+  if (!options?.capability) {
+    return requestHeaders(options)
+  }
+
+  const headers = new Headers(requestHeaders(options))
+  headers.set(BOOKING_SESSION_CAPABILITY_HEADER, options.capability)
+  return headers
 }

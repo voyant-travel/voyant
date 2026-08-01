@@ -4,15 +4,24 @@ import { createVoyantStorefrontClient } from "../../src/index.js"
 
 describe("Booking Session v1 SDK", () => {
   it("runs the owned Product journey through only v1 Session, Quote, Hold, and Commit routes", async () => {
-    const calls: Array<{ url: string; body: unknown }> = []
+    const calls: Array<{ url: string; body: unknown; capability: string | null }> = []
     const fetcher = async (url: string, init?: RequestInit) => {
       const body = init?.body ? JSON.parse(String(init.body)) : undefined
-      calls.push({ url, body })
+      calls.push({
+        url,
+        body,
+        capability: new Headers(init?.headers).get("Voyant-Booking-Session-Capability"),
+      })
 
       if (url.endsWith("/v1/public/catalog/booking-sessions")) {
         return json({
           kind: "session_created",
           session: session(1),
+          capability: {
+            token: "capability_token_123456",
+            transport: "header",
+            headerName: "Voyant-Booking-Session-Capability",
+          },
         })
       }
       if (url.endsWith("/v1/public/catalog/booking-sessions/bses_demo")) {
@@ -83,6 +92,10 @@ describe("Booking Session v1 SDK", () => {
       state: { departureSlotId: "avsl_demo", pax: { adult: 1 } },
     })
 
+    expect(result.kind).toBe("completed")
+    if (result.kind !== "completed") {
+      throw new Error(`expected completed tracer result, received ${result.stage}`)
+    }
     expect(result.commitOutcome).toMatchObject({
       kind: "commit_result",
       outcome: { kind: "committed", booking: { status: "confirmed" } },
@@ -94,31 +107,44 @@ describe("Booking Session v1 SDK", () => {
       "/v1/public/catalog/booking-sessions/bses_demo/hold",
       "/v1/public/catalog/booking-sessions/bses_demo/commit",
     ])
+    expect(calls[0]?.body).toMatchObject({
+      idempotencyKey: "journey_12345678:create",
+      target: { kind: "product", productId: "prod_owned_1" },
+    })
+    expect(calls[1]?.body).toMatchObject({
+      expectedRevision: 1,
+      idempotencyKey: "journey_12345678:update",
+    })
+    expect(calls[1]?.body).not.toHaveProperty("capability")
     expect(calls[2]?.body).toMatchObject({
-      capability: "capability_token_123456",
       expectedRevision: 2,
       idempotencyKey: "journey_12345678:quote",
     })
+    expect(calls[2]?.body).not.toHaveProperty("capability")
     expect(calls[3]?.body).toMatchObject({
-      capability: "capability_token_123456",
       expectedRevision: 2,
       quoteId: "bsqu_demo",
       idempotencyKey: "journey_12345678:hold",
     })
+    expect(calls[3]?.body).not.toHaveProperty("capability")
     expect(calls[4]?.body).toMatchObject({
-      capability: "capability_token_123456",
       expectedRevision: 2,
       quoteId: "bsqu_demo",
       holdId: "bshd_demo",
       idempotencyKey: "journey_12345678:commit",
     })
+    expect(calls.slice(1).map((call) => call.capability)).toEqual([
+      "capability_token_123456",
+      "capability_token_123456",
+      "capability_token_123456",
+      "capability_token_123456",
+    ])
   })
 })
 
 function session(revision: number) {
   return {
     id: "bses_demo",
-    capability: "capability_token_123456",
     target: { kind: "product", productId: "prod_owned_1" },
     actorKind: "anonymous",
     state: "active",

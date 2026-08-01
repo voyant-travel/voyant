@@ -1,8 +1,6 @@
-import { newId } from "@voyant-travel/db/lib/typeid"
-
 import type {
+  AbandonBookingSessionV1,
   BookingHoldRecordV1,
-  BookingLifecycleCommitOutcomeV1,
   BookingQuoteRecordV1,
   BookingSessionActorKindV1,
   BookingSessionOutcomeV1,
@@ -11,10 +9,11 @@ import type {
   CommitBookingSessionV1,
   CreateBookingSessionV1,
   PlaceBookingHoldV1,
-  PricingBreakdownV1,
   QuoteBookingSessionV1,
   UpdateBookingSessionV1,
-} from "./contracts.js"
+} from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
+import { newId } from "@voyant-travel/db/lib/typeid"
+import type { BookingLifecycleCommitOutcomeV1, PricingBreakdownV1 } from "./contracts.js"
 
 const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000
 const DEFAULT_QUOTE_TTL_MS = 10 * 60 * 1000
@@ -22,10 +21,14 @@ const DEFAULT_HOLD_TTL_MS = 15 * 60 * 1000
 
 export interface BookingSessionInternalRecord {
   id: string
+  createIdempotencyKey: string
+  createRequestFingerprint: string
   capability?: string
   capabilityHash?: string
   target: BookingSessionTargetV1
   actorKind: BookingSessionActorKindV1
+  ownerPrincipalId?: string
+  ownerOrganizationId?: string
   state: "active" | "consumed" | "expired" | "abandoned"
   revision: number
   statePayload: Record<string, unknown>
@@ -67,9 +70,27 @@ export interface BookingCommitInternalRecord {
   createdAt: Date
 }
 
+export interface BookingSessionOperationRecord {
+  id: string
+  sessionId: string
+  operation: "update" | "quote" | "hold" | "abandon"
+  idempotencyKey: string
+  requestFingerprint: string
+  outcome?: BookingSessionOutcomeV1
+  createdAt: Date
+}
+
+export type BookingSessionOperationClaim =
+  | { status: "claimed"; id: string }
+  | { status: "replay"; outcome: BookingSessionOutcomeV1 }
+  | { status: "conflict" }
+
 export interface BookingSessionRepository {
   createSession(record: BookingSessionInternalRecord): Promise<BookingSessionInternalRecord>
   getSession(sessionId: string): Promise<BookingSessionInternalRecord | null>
+  getSessionByCreateIdempotency(
+    idempotencyKey: string,
+  ): Promise<BookingSessionInternalRecord | null>
   saveSession(record: BookingSessionInternalRecord): Promise<void>
   listActiveQuotes(sessionId: string): Promise<BookingQuoteInternalRecord[]>
   getQuote(quoteId: string): Promise<BookingQuoteInternalRecord | null>
@@ -81,6 +102,26 @@ export interface BookingSessionRepository {
     idempotencyKey: string,
   ): Promise<BookingCommitInternalRecord | null>
   saveCommit(record: BookingCommitInternalRecord): Promise<void>
+  claimOperation(input: {
+    id: string
+    sessionId: string
+    operation: BookingSessionOperationRecord["operation"]
+    idempotencyKey: string
+    requestFingerprint: string
+    now: Date
+  }): Promise<BookingSessionOperationClaim>
+  completeOperation(input: { id: string; outcome: BookingSessionOutcomeV1 }): Promise<void>
+  consumeCommit(input: {
+    sessionId: string
+    quoteId: string
+    holdId: string
+    idempotencyKey: string
+    requestFingerprint: string
+    outcome: BookingLifecycleCommitOutcomeV1
+    bookingId: string
+    now: Date
+  }): Promise<void>
+  withTransactionContext?<T>(tx: unknown, operation: () => Promise<T>): Promise<T>
   withSessionTransaction<T>(sessionId: string, operation: () => Promise<T>): Promise<T>
 }
 
@@ -94,17 +135,37 @@ export interface CommitOwnedBookingInput {
   quote: BookingQuoteInternalRecord
   hold: BookingHoldInternalRecord
   idempotencyKey: string
+  requestFingerprint: string
+  access: BookingSessionAccessContext
   now: Date
+  consumeSources(tx: unknown, bookingId: string, allocationIds: string[]): Promise<void>
+}
+
+export interface BookingSessionAccessContext {
+  actorKind: BookingSessionActorKindV1
+  principalId?: string
+  organizationId?: string
+  capability?: string
+  sessionTtlMs?: number
 }
 
 export interface BookingSessionModulePorts {
   repository: BookingSessionRepository
+  normalizeSelection(input: {
+    target: BookingSessionTargetV1
+    selection: Record<string, unknown>
+    access: BookingSessionAccessContext
+    now: Date
+  }): Promise<Record<string, unknown>>
   composeQuote(input: ComposeBookingQuoteInput): Promise<PricingBreakdownV1>
   placeCapacityHold(input: {
+    session: BookingSessionInternalRecord
+    quote: BookingQuoteInternalRecord
     holdId: string
     capacityKey: string
     quantity: number
     expiresAt: Date
+    access: BookingSessionAccessContext
     now: Date
   }): Promise<"held" | "unavailable">
   commitOwnedBooking(input: CommitOwnedBookingInput): Promise<{
@@ -123,11 +184,35 @@ export interface BookingSessionModuleOptions {
 }
 
 export interface BookingSessionModule {
-  createSession(input: CreateBookingSessionV1): Promise<BookingSessionOutcomeV1>
-  updateSession(sessionId: string, input: UpdateBookingSessionV1): Promise<BookingSessionOutcomeV1>
-  quoteSession(sessionId: string, input: QuoteBookingSessionV1): Promise<BookingSessionOutcomeV1>
-  placeHold(sessionId: string, input: PlaceBookingHoldV1): Promise<BookingSessionOutcomeV1>
-  commitSession(sessionId: string, input: CommitBookingSessionV1): Promise<BookingSessionOutcomeV1>
+  createSession(
+    input: CreateBookingSessionV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
+  updateSession(
+    sessionId: string,
+    input: UpdateBookingSessionV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
+  quoteSession(
+    sessionId: string,
+    input: QuoteBookingSessionV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
+  placeHold(
+    sessionId: string,
+    input: PlaceBookingHoldV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
+  abandonSession(
+    sessionId: string,
+    input: AbandonBookingSessionV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
+  commitSession(
+    sessionId: string,
+    input: CommitBookingSessionV1,
+    access: BookingSessionAccessContext,
+  ): Promise<BookingSessionOutcomeV1>
 }
 
 export function createBookingSessionModule(
@@ -166,45 +251,85 @@ export function createBookingSessionModule(
   }
 
   return {
-    async createSession(input) {
+    async createSession(input, access) {
       const at = now()
-      const capability =
-        input.actorKind === "anonymous" || !input.actorKind ? issueCapability() : undefined
+      const createRequestFingerprint = stableFingerprint({
+        actorKind: access.actorKind,
+        principalId: access.principalId,
+        organizationId: access.organizationId,
+        target: input.target,
+        selection: input.selection ?? {},
+      })
+      const existing = await repository.getSessionByCreateIdempotency(input.idempotencyKey)
+      if (existing) {
+        if (existing.createRequestFingerprint !== createRequestFingerprint) {
+          return idempotencyConflict()
+        }
+        return { kind: "session_created", session: serializeSession(existing) }
+      }
+      const capability = access.actorKind === "anonymous" ? issueCapability() : undefined
+      const statePayload = await options.ports.normalizeSelection({
+        target: input.target,
+        selection: input.selection ?? {},
+        access,
+        now: at,
+      })
       const session: BookingSessionInternalRecord = {
         id: newId("booking_sessions"),
+        createIdempotencyKey: input.idempotencyKey,
+        createRequestFingerprint,
         capability,
         capabilityHash: capability ? await hashCapability(capability) : undefined,
         target: input.target,
-        actorKind: input.actorKind ?? "anonymous",
+        actorKind: access.actorKind,
+        ownerPrincipalId: access.principalId,
+        ownerOrganizationId: access.organizationId,
         state: "active",
         revision: 1,
-        statePayload: input.state ?? {},
-        expiresAt: input.expiresAt
-          ? new Date(input.expiresAt)
-          : new Date(at.getTime() + (input.ttlMs ?? sessionTtlMs)),
+        statePayload,
+        expiresAt: new Date(at.getTime() + (access.sessionTtlMs ?? sessionTtlMs)),
         createdAt: at,
         updatedAt: at,
       }
       await repository.createSession(session)
-      return { kind: "session_created", session: serializeSession(session) }
+      return {
+        kind: "session_created",
+        session: serializeSession(session),
+        ...(capability
+          ? {
+              capability: {
+                token: capability,
+                transport: "header" as const,
+                headerName: "Voyant-Booking-Session-Capability" as const,
+              },
+            }
+          : {}),
+      }
     },
 
-    async updateSession(sessionId, input) {
+    async updateSession(sessionId, input, access) {
       return repository.withSessionTransaction(sessionId, async () => {
+        const claim = await claimOperation(repository, sessionId, "update", input, now())
+        if (claim.status === "replay") return claim.outcome
+        if (claim.status === "conflict") return idempotencyConflict()
         const session = await loadActiveSession(sessionId)
         if (!session) return { kind: "rejected", error: { kind: "session_expired" } }
         if (session.state === "expired")
           return { kind: "rejected", error: { kind: "session_expired" } }
         if (session.state === "consumed")
           return { kind: "rejected", error: { kind: "session_consumed" } }
-        if (!(await hasSessionCapability(session, input.capability))) {
-          return { kind: "rejected", error: { kind: "capability_required" } }
-        }
+        const authorized = await authorizeSessionAccess(session, access)
+        if (authorized) return authorized
         const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
         if (revisionRejected) return revisionRejected
 
         const at = now()
-        session.statePayload = input.state
+        session.statePayload = await options.ports.normalizeSelection({
+          target: session.target,
+          selection: input.selection,
+          access,
+          now: at,
+        })
         session.revision += 1
         session.updatedAt = at
         for (const quote of await repository.listActiveQuotes(session.id)) {
@@ -212,21 +337,28 @@ export function createBookingSessionModule(
           await repository.saveQuote(quote)
         }
         await repository.saveSession(session)
-        return { kind: "session_updated", session: serializeSession(session) }
+        const outcome: BookingSessionOutcomeV1 = {
+          kind: "session_updated",
+          session: serializeSession(session),
+        }
+        await repository.completeOperation({ id: claim.id, outcome })
+        return outcome
       })
     },
 
-    async quoteSession(sessionId, input) {
+    async quoteSession(sessionId, input, access) {
       return repository.withSessionTransaction(sessionId, async () => {
+        const claim = await claimOperation(repository, sessionId, "quote", input, now())
+        if (claim.status === "replay") return claim.outcome
+        if (claim.status === "conflict") return idempotencyConflict()
         const session = await loadActiveSession(sessionId)
         if (!session || session.state === "expired") {
           return { kind: "rejected", error: { kind: "session_expired" } }
         }
         if (session.state === "consumed")
           return { kind: "rejected", error: { kind: "session_consumed" } }
-        if (!(await hasSessionCapability(session, input.capability))) {
-          return { kind: "rejected", error: { kind: "capability_required" } }
-        }
+        const authorized = await authorizeSessionAccess(session, access)
+        if (authorized) return authorized
         const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
         if (revisionRejected) return revisionRejected
 
@@ -248,25 +380,29 @@ export function createBookingSessionModule(
           expiresAt: new Date(at.getTime() + quoteTtlMs),
         }
         await repository.saveQuote(quote)
-        return {
+        const outcome: BookingSessionOutcomeV1 = {
           kind: "quote_created",
           session: serializeSession(session),
           quote: serializeQuote(quote),
         }
+        await repository.completeOperation({ id: claim.id, outcome })
+        return outcome
       })
     },
 
-    async placeHold(sessionId, input) {
+    async placeHold(sessionId, input, access) {
       return repository.withSessionTransaction(sessionId, async () => {
+        const claim = await claimOperation(repository, sessionId, "hold", input, now())
+        if (claim.status === "replay") return claim.outcome
+        if (claim.status === "conflict") return idempotencyConflict()
         const session = await loadActiveSession(sessionId)
         if (!session || session.state === "expired") {
           return { kind: "rejected", error: { kind: "session_expired" } }
         }
         if (session.state === "consumed")
           return { kind: "rejected", error: { kind: "session_consumed" } }
-        if (!(await hasSessionCapability(session, input.capability))) {
-          return { kind: "rejected", error: { kind: "capability_required" } }
-        }
+        const authorized = await authorizeSessionAccess(session, access)
+        if (authorized) return authorized
         const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
         if (revisionRejected) return revisionRejected
 
@@ -303,10 +439,13 @@ export function createBookingSessionModule(
           createdAt: at,
         }
         const held = await options.ports.placeCapacityHold({
+          session,
+          quote,
           holdId: hold.id,
           capacityKey: hold.capacityKey,
           quantity: hold.quantity,
           expiresAt: hold.expiresAt,
+          access,
           now: at,
         })
         if (held !== "held") {
@@ -316,149 +455,270 @@ export function createBookingSessionModule(
           }
         }
         await repository.saveHold(hold)
-        return {
+        const outcome: BookingSessionOutcomeV1 = {
           kind: "hold_created",
           session: serializeSession(session),
           hold: serializeHold(hold),
         }
+        await repository.completeOperation({ id: claim.id, outcome })
+        return outcome
       })
     },
 
-    async commitSession(sessionId, input) {
+    async abandonSession(sessionId, input, access) {
       return repository.withSessionTransaction(sessionId, async () => {
+        const claim = await claimOperation(repository, sessionId, "abandon", input, now())
+        if (claim.status === "replay") return claim.outcome
+        if (claim.status === "conflict") return idempotencyConflict()
         const session = await loadActiveSession(sessionId)
         if (!session || session.state === "expired") {
           return { kind: "rejected", error: { kind: "session_expired" } }
         }
-        if (!(await hasSessionCapability(session, input.capability))) {
-          return { kind: "rejected", error: { kind: "capability_required" } }
-        }
+        const authorized = await authorizeSessionAccess(session, access)
+        if (authorized) return authorized
+        if (session.state === "consumed")
+          return { kind: "rejected", error: { kind: "session_consumed" } }
+        const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
+        if (revisionRejected) return revisionRejected
 
-        const priorCommit = await repository.getCommitByIdempotency(sessionId, input.idempotencyKey)
-        if (priorCommit) {
-          return {
-            kind: "commit_result",
-            outcome: {
-              kind: "idempotent_replay",
-              nextAction: "return_idempotent_result",
-              originalCommitId: priorCommit.id,
-              equivalentToOutcome: "committed",
-              bookingId: priorCommit.bookingId,
-            },
-          }
+        const at = now()
+        session.state = "abandoned"
+        session.updatedAt = at
+        for (const quote of await repository.listActiveQuotes(session.id)) {
+          quote.state = "superseded"
+          await repository.saveQuote(quote)
         }
+        await repository.saveSession(session)
+        const outcome: BookingSessionOutcomeV1 = {
+          kind: "session_abandoned",
+          session: serializeSession(session),
+        }
+        await repository.completeOperation({ id: claim.id, outcome })
+        return outcome
+      })
+    },
 
-        if (session.state === "consumed") {
+    async commitSession(sessionId, input, access) {
+      const session = await loadActiveSession(sessionId)
+      if (!session || session.state === "expired") {
+        return { kind: "rejected", error: { kind: "session_expired" } }
+      }
+      const authorized = await authorizeSessionAccess(session, access)
+      if (authorized) return authorized
+
+      const priorCommit = await repository.getCommitByIdempotency(sessionId, input.idempotencyKey)
+      if (priorCommit) {
+        const requestFingerprint = commitRequestFingerprint(input)
+        if (priorCommit.requestFingerprint !== requestFingerprint) return idempotencyConflict()
+        return {
+          kind: "commit_result",
+          outcome: {
+            kind: "idempotent_replay",
+            nextAction: "return_idempotent_result",
+            originalCommitId: priorCommit.id,
+            equivalentToOutcome: "committed",
+            bookingId: priorCommit.bookingId,
+          },
+        }
+      }
+
+      if (session.state === "consumed") {
+        return {
+          kind: "rejected",
+          error: { kind: "commit_already_consumed", nextAction: "return_idempotent_result" },
+        }
+      }
+      const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
+      if (revisionRejected) return revisionRejected
+
+      const at = now()
+      const quote = await loadUsableQuote(repository, input.quoteId, session, at)
+      if (quote === "expired") {
+        return {
+          kind: "commit_result",
+          outcome: {
+            kind: "quote_failure",
+            nextAction: "request_fresh_quote",
+            reason: "expired",
+          },
+        }
+      }
+      if (quote === "superseded") {
+        return {
+          kind: "commit_result",
+          outcome: {
+            kind: "quote_failure",
+            nextAction: "request_fresh_quote",
+            reason: "superseded",
+          },
+        }
+      }
+      if (!quote) {
+        const latestSession = await repository.getSession(sessionId)
+        if (latestSession?.state === "consumed") {
           return {
             kind: "rejected",
             error: { kind: "commit_already_consumed", nextAction: "return_idempotent_result" },
           }
         }
-        const revisionRejected = rejectRevision(input.expectedRevision, session.revision)
-        if (revisionRejected) return revisionRejected
+        return {
+          kind: "commit_result",
+          outcome: {
+            kind: "quote_failure",
+            nextAction: "request_fresh_quote",
+            reason: "mismatched_session",
+          },
+        }
+      }
 
-        const at = now()
-        const quote = await loadUsableQuote(repository, input.quoteId, session, at)
-        if (quote === "expired") {
-          return {
-            kind: "commit_result",
-            outcome: {
-              kind: "quote_failure",
-              nextAction: "request_fresh_quote",
-              reason: "expired",
-            },
-          }
+      const hold = await loadUsableHold(repository, input.holdId, session, quote, at)
+      if (hold === "expired") {
+        return {
+          kind: "commit_result",
+          outcome: { kind: "hold_failure", nextAction: "request_new_hold", reason: "expired" },
         }
-        if (quote === "superseded") {
-          return {
-            kind: "commit_result",
-            outcome: {
-              kind: "quote_failure",
-              nextAction: "request_fresh_quote",
-              reason: "superseded",
-            },
-          }
+      }
+      if (!hold) {
+        return {
+          kind: "commit_result",
+          outcome: { kind: "hold_failure", nextAction: "request_new_hold", reason: "missing" },
         }
-        if (!quote) {
-          return {
-            kind: "commit_result",
-            outcome: {
-              kind: "quote_failure",
-              nextAction: "request_fresh_quote",
-              reason: "mismatched_session",
-            },
-          }
-        }
+      }
 
-        const hold = await loadUsableHold(repository, input.holdId, session, quote, at)
-        if (hold === "expired") {
-          return {
-            kind: "commit_result",
-            outcome: { kind: "hold_failure", nextAction: "request_new_hold", reason: "expired" },
-          }
+      const freshPricing = await options.ports.composeQuote({ session, now: at })
+      if (stableFingerprint(freshPricing) !== quote.priceFingerprint) {
+        quote.state = "superseded"
+        await repository.saveQuote(quote)
+        return {
+          kind: "commit_result",
+          outcome: {
+            kind: "quote_failure",
+            nextAction: "request_fresh_quote",
+            reason: "superseded",
+          },
         }
-        if (!hold) {
-          return {
-            kind: "commit_result",
-            outcome: { kind: "hold_failure", nextAction: "request_new_hold", reason: "missing" },
-          }
-        }
+      }
 
-        const freshPricing = await options.ports.composeQuote({ session, now: at })
-        if (stableFingerprint(freshPricing) !== quote.priceFingerprint) {
-          quote.state = "superseded"
-          await repository.saveQuote(quote)
-          return {
-            kind: "commit_result",
-            outcome: {
-              kind: "quote_failure",
-              nextAction: "request_fresh_quote",
-              reason: "superseded",
-            },
-          }
-        }
-
-        const committed = await options.ports.commitOwnedBooking({
+      const requestFingerprint = commitRequestFingerprint(input)
+      let committed: { bookingId: string; allocationIds: string[] }
+      try {
+        committed = await options.ports.commitOwnedBooking({
           session,
           quote,
           hold,
           idempotencyKey: input.idempotencyKey,
+          requestFingerprint,
+          access,
           now: at,
+          async consumeSources(tx, bookingId, allocationIds) {
+            const outcome: BookingLifecycleCommitOutcomeV1 = {
+              kind: "committed",
+              nextAction: "none",
+              booking: { id: bookingId, status: "confirmed" },
+              allocationIds,
+              consumedSessionId: session.id,
+              consumedQuoteId: quote.id,
+              convertedHoldId: hold.id,
+            }
+            await withRepositoryTransactionContext(repository, tx, () =>
+              repository.consumeCommit({
+                sessionId,
+                quoteId: quote.id,
+                holdId: hold.id,
+                idempotencyKey: input.idempotencyKey,
+                requestFingerprint,
+                outcome,
+                bookingId,
+                now: at,
+              }),
+            )
+          },
         })
-        session.state = "consumed"
-        session.updatedAt = at
-        quote.state = "consumed"
-        hold.state = "converted"
-        await repository.saveSession(session)
-        await repository.saveQuote(quote)
-        await repository.saveHold(hold)
-
-        const outcome: BookingLifecycleCommitOutcomeV1 = {
-          kind: "committed",
-          nextAction: "none",
-          booking: { id: committed.bookingId, status: "confirmed" },
-          allocationIds: committed.allocationIds,
-          consumedSessionId: session.id,
-          consumedQuoteId: quote.id,
-          convertedHoldId: hold.id,
+      } catch (error) {
+        if (isIdempotencyConflictError(error)) return idempotencyConflict()
+        if (isCommitConsumedError(error)) {
+          return {
+            kind: "rejected",
+            error: { kind: "commit_already_consumed", nextAction: "return_idempotent_result" },
+          }
         }
-        await repository.saveCommit({
-          id: newId("booking_session_commits"),
-          sessionId,
-          idempotencyKey: input.idempotencyKey,
-          requestFingerprint: stableFingerprint({
-            expectedRevision: input.expectedRevision,
-            quoteId: input.quoteId,
-            holdId: input.holdId,
-          }),
-          outcome,
-          bookingId: committed.bookingId,
-          createdAt: at,
-        })
-        return { kind: "commit_result", outcome }
-      })
+        throw error
+      }
+      const outcome: BookingLifecycleCommitOutcomeV1 = {
+        kind: "committed",
+        nextAction: "none",
+        booking: { id: committed.bookingId, status: "confirmed" },
+        allocationIds: committed.allocationIds,
+        consumedSessionId: session.id,
+        consumedQuoteId: quote.id,
+        convertedHoldId: hold.id,
+      }
+      return { kind: "commit_result", outcome }
     },
   }
+}
+
+function withRepositoryTransactionContext<T>(
+  repository: BookingSessionRepository,
+  tx: unknown,
+  operation: () => Promise<T>,
+): Promise<T> {
+  return repository.withTransactionContext
+    ? repository.withTransactionContext(tx, operation)
+    : operation()
+}
+
+async function claimOperation(
+  repository: BookingSessionRepository,
+  sessionId: string,
+  operation: BookingSessionOperationRecord["operation"],
+  input: unknown,
+  now: Date,
+): Promise<BookingSessionOperationClaim> {
+  return repository.claimOperation({
+    id: newId("booking_session_operations"),
+    sessionId,
+    operation,
+    idempotencyKey: idempotencyKeyFromInput(input),
+    requestFingerprint: stableFingerprint(input),
+    now,
+  })
+}
+
+function idempotencyKeyFromInput(input: unknown): string {
+  if (!input || typeof input !== "object") return ""
+  const value = Reflect.get(input, "idempotencyKey")
+  return typeof value === "string" ? value : ""
+}
+
+function commitRequestFingerprint(input: CommitBookingSessionV1): string {
+  return stableFingerprint({
+    expectedRevision: input.expectedRevision,
+    quoteId: input.quoteId,
+    holdId: input.holdId,
+  })
+}
+
+function idempotencyConflict(): BookingSessionOutcomeV1 {
+  return { kind: "rejected", error: { kind: "idempotency_conflict" } }
+}
+
+function isIdempotencyConflictError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "ActionLedgerIdempotencyConflictError" ||
+      error.message.includes("idempotency_conflict"))
+  )
+}
+
+function isCommitConsumedError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message === "booking_session_commit_session_consumed" ||
+      error.message === "booking_session_commit_quote_consumed" ||
+      error.message === "booking_session_commit_hold_consumed" ||
+      error.message === "owned inventory hold is not live at commit")
+  )
 }
 
 async function loadUsableQuote(
@@ -508,7 +768,6 @@ function capacityKeyForTarget(target: BookingSessionTargetV1): string {
 function serializeSession(session: BookingSessionInternalRecord): BookingSessionRecordV1 {
   return {
     id: session.id,
-    capability: session.capability,
     target: session.target,
     actorKind: session.actorKind,
     state: session.state,
@@ -548,10 +807,33 @@ async function hasSessionCapability(
   session: BookingSessionInternalRecord,
   capability: string | undefined,
 ): Promise<boolean> {
-  if (session.actorKind !== "anonymous") return true
   const expected = session.capabilityHash ?? session.capability
   if (!expected || !capability) return false
-  return expected === capability || expected === (await hashCapability(capability))
+  return (
+    constantTimeEqual(expected, capability) ||
+    constantTimeEqual(expected, await hashCapability(capability))
+  )
+}
+
+async function authorizeSessionAccess(
+  session: BookingSessionInternalRecord,
+  access: BookingSessionAccessContext,
+): Promise<BookingSessionOutcomeV1 | null> {
+  if (session.actorKind === "anonymous") {
+    return (await hasSessionCapability(session, access.capability))
+      ? null
+      : { kind: "rejected", error: { kind: "capability_required" } }
+  }
+  if (access.actorKind !== session.actorKind) {
+    return { kind: "rejected", error: { kind: "not_authorized" } }
+  }
+  if (session.ownerPrincipalId && session.ownerPrincipalId !== access.principalId) {
+    return { kind: "rejected", error: { kind: "not_authorized" } }
+  }
+  if (session.ownerOrganizationId && session.ownerOrganizationId !== access.organizationId) {
+    return { kind: "rejected", error: { kind: "not_authorized" } }
+  }
+  return null
 }
 
 async function hashCapability(capability: string): Promise<string> {
@@ -561,6 +843,17 @@ async function hashCapability(capability: string): Promise<string> {
 
 function stableFingerprint(value: unknown): string {
   return JSON.stringify(sortForStableJson(value))
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  const left = new TextEncoder().encode(a)
+  const right = new TextEncoder().encode(b)
+  let diff = left.length ^ right.length
+  const length = Math.max(left.length, right.length)
+  for (let index = 0; index < length; index += 1) {
+    diff |= (left[index] ?? 0) ^ (right[index] ?? 0)
+  }
+  return diff === 0
 }
 
 function sortForStableJson(value: unknown): unknown {
