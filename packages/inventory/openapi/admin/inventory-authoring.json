@@ -141,7 +141,7 @@
                           },
                           "durationMinutes": {
                             "type": ["integer", "null"],
-                            "minimum": 0
+                            "exclusiveMinimum": 0
                           },
                           "contractTemplateId": {
                             "type": ["string", "null"]

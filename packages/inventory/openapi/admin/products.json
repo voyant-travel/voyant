@@ -18080,7 +18080,7 @@
                   },
                   "durationMinutes": {
                     "type": ["integer", "null"],
-                    "minimum": 0
+                    "exclusiveMinimum": 0
                   },
                   "customerPaymentPolicy": {
                     "type": ["object", "null"],
@@ -18811,7 +18811,7 @@
                   },
                   "durationMinutes": {
                     "type": ["integer", "null"],
-                    "minimum": 0
+                    "exclusiveMinimum": 0
                   },
                   "customerPaymentPolicy": {
                     "type": ["object", "null"],
