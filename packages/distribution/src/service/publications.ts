@@ -394,10 +394,7 @@ export const publicationServiceOperations = {
     return row?.count ?? 0
   },
 
-  async captureChannelDeletionReindex(
-    db: PostgresJsDatabase,
-    input: { channelId: string },
-  ) {
+  async captureChannelDeletionReindex(db: PostgresJsDatabase, input: { channelId: string }) {
     // Capture before the channel cascade removes its publication rules and
     // intents. Global product intents survive that cascade and make removal
     // from every channel-scoped projection durable after commit.
@@ -417,9 +414,10 @@ export const publicationServiceOperations = {
       )
       ORDER BY product.id
     `)
-    const productIds = (
-      Array.isArray(result) ? result : ((result as { rows?: Array<{ id: string }> }).rows ?? [])
-    ).map(({ id }) => id)
+    const resultRows = Array.isArray(result)
+      ? (result as Array<{ id: string }>)
+      : ((result as { rows?: Array<{ id: string }> }).rows ?? [])
+    const productIds = resultRows.map(({ id }) => id)
     await publicationServiceOperations.enqueueCapturedProductLifecycleReindex(db, {
       productIds,
       requestedBy: "lifecycle:channel.deleted",
@@ -427,10 +425,7 @@ export const publicationServiceOperations = {
     return productIds
   },
 
-  async captureSupplierDeletionReindex(
-    db: PostgresJsDatabase,
-    input: { supplierId: string },
-  ) {
+  async captureSupplierDeletionReindex(db: PostgresJsDatabase, input: { supplierId: string }) {
     const rows = await db
       .select({ id: publicationProductsRef.id })
       .from(publicationProductsRef)
