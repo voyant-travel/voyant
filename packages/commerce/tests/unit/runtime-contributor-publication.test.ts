@@ -36,17 +36,19 @@ describe("commerce publication runtime wiring", () => {
     })
 
     const createCheckoutOptions = await ports[catalogCheckoutApiRuntimePort.id]
-    const checkout = (createCheckoutOptions as (context: Context) => {
-      publication?: {
-        isProductPublished(input: {
-          db: PostgresJsDatabase
-          bookingId: string
-          productId: string
-          storefrontId: string
-          channelId: string
-        }): Promise<boolean>
+    const checkout = (
+      createCheckoutOptions as (context: Context) => {
+        publication?: {
+          isProductPublished(input: {
+            db: PostgresJsDatabase
+            bookingId: string
+            productId: string
+            storefrontId: string
+            channelId: string
+          }): Promise<boolean>
+        }
       }
-    })({} as Context)
+    )({} as Context)
     const db = {} as PostgresJsDatabase
 
     await expect(
