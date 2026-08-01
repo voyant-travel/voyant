@@ -33,6 +33,7 @@ describe("distribution deployment manifests", () => {
       requires: {
         ports: [{ id: "catalog.runtime-services" }, { id: "catalog.projection-runtime" }],
       },
+      runtimePorts: [{ id: "distribution.publication-intent-worker-runtime" }],
       api: [
         {
           id: "@voyant-travel/distribution#api.external-refs",

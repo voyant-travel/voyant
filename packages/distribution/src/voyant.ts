@@ -68,6 +68,10 @@ export const distributionVoyantModule = defineModule({
   requires: {
     ports: [requirePort(catalogRuntimeServicesPort), requirePort(catalogProjectionRuntimePort)],
   },
+  // The wakeup job resolves the worker runtime through its graph factory.
+  // Providing the port makes the deployment provider available; declaring it
+  // here also authorizes this module's job runtime to request that provider.
+  runtimePorts: [requirePort(distributionPublicationIntentWorkerRuntimePort)],
   api: [
     {
       id: "@voyant-travel/distribution#api.external-refs",
