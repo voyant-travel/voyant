@@ -12,6 +12,7 @@ import {
   clearTravelerAllocationsForResource,
   countResourceOccupants,
 } from "./service-allocation-resource-capacity.js"
+import { assertVehicleChildCapacity } from "./service-allocation-resource-invariants.js"
 
 export async function createAllocationResource(
   db: PostgresJsDatabase,
@@ -279,21 +280,4 @@ async function countVehicleSeats(db: PostgresJsDatabase, slotId: string, vehicle
       ),
     )
   return rows.length
-}
-
-export function assertVehicleChildCapacity({
-  capacity,
-  existingSeatCount,
-  seatsToAdd,
-}: {
-  capacity: number
-  existingSeatCount: number
-  seatsToAdd: number
-}) {
-  if (existingSeatCount + seatsToAdd <= capacity) return
-  throw new AllocationServiceError("Vehicle seat count exceeds vehicle capacity", 409, {
-    capacity,
-    existingSeatCount,
-    requestedSeatCount: seatsToAdd,
-  })
 }

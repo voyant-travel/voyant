@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { AllocationServiceError } from "../../../src/availability/service-allocation.js"
-import { assertVehicleChildCapacity } from "../../../src/availability/service-allocation-resource-crud.js"
+import { assertVehicleChildCapacity } from "../../../src/availability/service-allocation-resource-invariants.js"
 
 describe("vehicle child-seat capacity", () => {
   it("accepts child seats up to the vehicle capacity", () => {
