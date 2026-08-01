@@ -51,15 +51,32 @@ describe("framework project resolver", () => {
         "./runtime": "./runtime.mjs",
         "./runtime-contributor": "./runtime-contributor.mjs",
       },
+      publishConfigExports: {
+        "./runtime": "./dist/runtime.mjs",
+        "./runtime-contributor": "./dist/runtime-contributor.mjs",
+      },
     })
+    mkdirSync(path.join(distributionRoot, "node_modules", "@acme", "loyalty", "dist"))
     writeFileSync(
-      path.join(distributionRoot, "node_modules", "@acme", "loyalty", "runtime.mjs"),
+      path.join(distributionRoot, "node_modules", "@acme", "loyalty", "dist", "runtime.mjs"),
       "export const routes = {}\n",
     )
     writeFileSync(
-      path.join(distributionRoot, "node_modules", "@acme", "loyalty", "runtime-contributor.mjs"),
+      path.join(
+        distributionRoot,
+        "node_modules",
+        "@acme",
+        "loyalty",
+        "dist",
+        "runtime-contributor.mjs",
+      ),
       "export const createLoyaltyRuntimeContribution = () => ({})\n",
     )
+    writePackage(root, {
+      name: "@acme/loyalty",
+      version: "9.9.9",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
 
     const resolution = await resolve(
       root,
@@ -81,10 +98,11 @@ describe("framework project resolver", () => {
       (file) => file.path === resolution.artifacts.runtimeEntry,
     )?.contents
     expect(runtimeSource).toContain(
-      '"@acme/loyalty/runtime": () => import("@acme/loyalty/runtime")',
+      '"../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/dist/runtime.mjs": () => import("../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/dist/runtime.mjs")',
     )
-    expect(runtimeSource).toContain('from "@acme/loyalty/runtime-contributor"')
-    expect(runtimeSource).not.toContain("node_modules")
+    expect(runtimeSource).toContain(
+      'from "../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/dist/runtime-contributor.mjs"',
+    )
   })
 
   it("matches the CLI contract with one deterministic target-neutral graph hash", async () => {
@@ -886,10 +904,12 @@ async function resolve(root: string, project: unknown) {
 
 interface WritePackageOptions {
   name: string
+  version?: string
   manifest: string
   voyant?: Record<string, unknown> | null
   compatibleWith?: Record<string, unknown>
   extraExports?: Record<string, string>
+  publishConfigExports?: Record<string, string>
 }
 
 function packageMetadata(options: { requiresSchemas?: string[] } = {}): Record<string, unknown> {
@@ -922,9 +942,12 @@ function writePackageAt(directory: string, options: WritePackageOptions): void {
     `${JSON.stringify(
       {
         name: options.name,
-        version: "1.2.3",
+        version: options.version ?? "1.2.3",
         type: "module",
         exports: { "./voyant": "./voyant.mjs", ...options.extraExports },
+        ...(options.publishConfigExports
+          ? { publishConfig: { exports: options.publishConfigExports } }
+          : {}),
         ...(voyant ? { voyant } : {}),
       },
       null,

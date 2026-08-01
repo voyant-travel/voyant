@@ -36,9 +36,12 @@ This also makes the complete production artifact explicit:
   `exports` at `./src/*.ts` while `files: ["dist"]` means `src/` is never
   shipped, so without it every deployed package references files that do not
   exist. The script performs the same substitution npm consumers already get.
-- generated package references remain symbolic package specifiers rather than
-  capturing build-time `node_modules` paths, and generated link definitions are
-  compiled into the server alongside the graph runtime
+- generated package references use relocatable bare specifiers when the package
+  is directly installed, while transitive selections stay project-relative to
+  the location selected through the product BOM and prefer built
+  `publishConfig` targets. This preserves strict pnpm nesting without capturing
+  absolute build-machine paths; generated link definitions are compiled into
+  the server alongside the graph runtime
 - the operator manifest declares the product BOM runtime closure as production
   dependencies, and the image includes an explicit graph-native migration
   command for use before rollout

@@ -144,6 +144,7 @@ interface PackageJson {
   name?: unknown
   version?: unknown
   exports?: unknown
+  publishConfig?: unknown
   voyant?: unknown
 }
 
@@ -897,31 +898,52 @@ async function buildLocalRuntimeEntryOverrides(
     const localFileSource = inspected.record.source.kind === "file"
     const packageJson = projectRootSource ? undefined : await readPackageJson(inspected.directory)
     const packageEntry = lowerOwnerRuntimeEntry(reference.ownerPackageName, reference.entry)
-    if (localFileSource) {
-      const target = projectRootSource
-        ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
-        : resolvePackageExportTarget(
+    const exportKey =
+      packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`
+    const authoredTarget = projectRootSource
+      ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
+      : resolvePackageExportTarget(
+          inspected.directory,
+          packageJson!.exports,
+          exportKey,
+          packageName,
+        )
+    const publishConfig = isRecord(packageJson?.publishConfig)
+      ? packageJson.publishConfig
+      : undefined
+    const directPackageDirectory = findNodeModulesPackage(projectRoot, packageName)
+    const directPackageJson = directPackageDirectory
+      ? await readPackageJson(directPackageDirectory)
+      : undefined
+    const directlyInstalled =
+      directPackageDirectory !== undefined &&
+      (path.resolve(directPackageDirectory) === path.resolve(inspected.directory) ||
+        (typeof packageJson?.version === "string" &&
+          packageJson.version.length > 0 &&
+          packageJson.version === directPackageJson?.version))
+    const publishedTarget =
+      !localFileSource && !directlyInstalled && publishConfig?.exports !== undefined
+        ? resolvePackageExportTarget(
             inspected.directory,
-            packageJson!.exports,
-            packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
+            publishConfig.exports,
+            exportKey,
             packageName,
           )
-      const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
-      overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
+        : undefined
+    if (!localFileSource && directlyInstalled) {
+      // A bare specifier remains relocatable across the production deploy and
+      // lets the rewritten package manifest select its built export.
+      overrides[packageEntry] = packageEntry
       continue
     }
 
-    // Validate the published subpath while preserving the package specifier in
-    // generated artifacts. Filesystem paths inside the build-time node_modules
-    // tree are neither relocatable nor stable after `pnpm deploy` re-lays out
-    // production dependencies.
-    resolvePackageExportTarget(
-      inspected.directory,
-      packageJson!.exports,
-      packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
-      packageName,
-    )
-    overrides[packageEntry] = packageEntry
+    // Preserve the package location selected through the product BOM when the
+    // package is not directly resolvable from the project. A bare specifier
+    // cannot reach this dependency in a strict pnpm install. For source
+    // workspace manifests, prefer an already-built publish target.
+    const target = publishedTarget && existsSync(publishedTarget) ? publishedTarget : authoredTarget
+    const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
+    overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
   }
   return overrides
 }

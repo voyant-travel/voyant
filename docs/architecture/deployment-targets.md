@@ -73,8 +73,10 @@ workload class well. On Node none of it is necessary.
   runtime package imports while retaining application-owned server chunks, and
   the deployed application declares the product BOM's runtime package closure
   as direct production dependencies. Deployed workspace manifests use their
-  built `publishConfig` targets; generated imports remain package specifiers and
-  never capture build-machine `node_modules` paths. The image exposes `node
+  built `publishConfig` targets. Generated imports use relocatable package
+  specifiers for direct dependencies and project-relative paths for transitive
+  selections anchored through the product BOM, preserving strict pnpm nesting
+  without capturing absolute build-machine paths. The image exposes `node
   run-generated-migrations.mjs` as an explicit pre-rollout command and boots
   `dist/server/server.js`, which validates graph artifacts and required graph
   resource env before serving traffic. Startup does not own migrations.
