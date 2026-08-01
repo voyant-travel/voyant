@@ -180,9 +180,11 @@ handoff rather than after traversing a supplier's full assortment.
 The compatibility cutover follows the same rule. Its schema migration creates
 one `catalog` reindex intent; it does not synchronously materialize the
 Channels-by-Products Cartesian set. The publication-intent worker walks active,
-public Products in bounded ID-ordered pages, inserts missing include rules for
-active Channels with conflict-safe writes, reindexes the page, and persists the
-last Product ID as its cursor. Operators observe progress through the intent's
+public Products and active Channels in independently bounded ID-ordered pages,
+inserts missing include rules with conflict-safe writes, and persists a
+composite `afterProductId`/`productId`/`afterChannelId` cursor. A Product is
+reindexed only after its final Channel page is materialized. Operators observe
+progress through the intent's
 `status`, `cursor`, `attempts`, `lastError`, `processingStartedAt`, and
 `completedAt` fields. A checkpoint retains the processing lease; it never
 returns the row to `pending`, where a concurrent enqueue could collide with the

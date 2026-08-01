@@ -24,6 +24,17 @@ const supplierIntent = {
   leaseOwner: "worker_1",
 }
 
+const catalogIntent = {
+  id: "intent_catalog",
+  channelId: null,
+  kind: "catalog" as const,
+  productId: null,
+  supplierId: null,
+  cursor: null,
+  attempts: 0,
+  leaseOwner: "worker_1",
+}
+
 describe("publication reindex intent worker", () => {
   it("claims a bounded product intent and completes it after reindex", async () => {
     const db = fakeDb({
@@ -104,6 +115,33 @@ describe("publication reindex intent worker", () => {
     expect(db.execute).toHaveBeenCalledTimes(4)
   })
 
+  it("bounds catalog backfill writes when active channels exceed the channel page", async () => {
+    const db = fakeDb({
+      executeResults: [{ rows: [catalogIntent] }, { rows: [] }],
+      productPages: [
+        [{ id: "prod_1" }],
+        [{ id: "chan_1" }, { id: "chan_2" }, { id: "chan_3" }],
+      ],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await expect(
+      drainPublicationReindexIntents(
+        { db: db as never, projection },
+        { leaseOwner: "worker_1", maxIntents: 1, channelBatchSize: 2 },
+      ),
+    ).resolves.toEqual({ processed: 1 })
+
+    expect(db.limitValues).toEqual([1, 2])
+    expect(db.insertValues).toHaveLength(1)
+    expect(db.insertValues[0]).toHaveLength(2)
+    expect(projection.reindexEntity).not.toHaveBeenCalled()
+    expect(db.execute).toHaveBeenCalledTimes(2)
+  })
+
   it("marks failures for retry and continues draining", async () => {
     const db = fakeDb({
       executeResults: [{ rows: [productIntent] }, { rows: [] }, { rows: [] }],
@@ -135,16 +173,24 @@ function fakeDb(input: { executeResults: unknown[]; productPages?: Array<Array<{
   const executeResults = [...input.executeResults]
   const productPages = [...(input.productPages ?? [])]
   const limitValues: number[] = []
+  const insertValues: unknown[][] = []
   return {
     limitValues,
+    insertValues,
     execute: vi.fn(async () => executeResults.shift() ?? { rows: [] }),
+    insert: () => ({
+      values: (values: unknown[]) => {
+        insertValues.push(values)
+        return { onConflictDoNothing: async () => {} }
+      },
+    }),
     select: () => ({
       from: () => ({
         where: () => ({
           orderBy: () => ({
             limit: async (limit: number) => {
               limitValues.push(limit)
-              return productPages.shift() ?? []
+              return (productPages.shift() ?? []).slice(0, limit)
             },
           }),
         }),

@@ -18,6 +18,7 @@ export {
 const DEFAULT_LEASE_MS = 2 * 60 * 1_000
 const DEFAULT_MAX_INTENTS = 25
 const DEFAULT_PRODUCT_BATCH_SIZE = 100
+const DEFAULT_CHANNEL_BATCH_SIZE = 100
 const DEFAULT_MAX_ATTEMPTS = 3
 const DEFAULT_RETRY_DELAY_MS = 60_000
 
@@ -37,6 +38,7 @@ export interface PublicationIntentWorkerOptions {
   leaseMs?: number
   maxIntents?: number
   productBatchSize?: number
+  channelBatchSize?: number
   maxAttempts?: number
   retryDelayMs?: number
 }
@@ -194,29 +196,110 @@ async function listVisibleProductIdsPage(
   return result.map(({ id }) => id)
 }
 
-async function publishPriorVisibleProducts(db: PostgresJsDatabase, productIds: readonly string[]) {
-  if (productIds.length === 0) return
-  const channelRows = await db
+async function listActiveChannelIdsPage(
+  db: PostgresJsDatabase,
+  input: { afterId?: string | null; limit: number },
+) {
+  const rows = await db
     .select({ id: channels.id })
     .from(channels)
-    .where(eq(channels.status, "active"))
+    .where(
+      and(eq(channels.status, "active"), input.afterId ? gt(channels.id, input.afterId) : undefined),
+    )
+    .orderBy(asc(channels.id))
+    .limit(input.limit)
+  return rows.map(({ id }) => id)
+}
 
-  for (const channel of channelRows) {
-    await db
-      .insert(channelProductPublications)
-      .values(
-        productIds.map((productId) => ({
-          channelId: channel.id,
-          productId,
-          decision: "include" as const,
-          reason: "Backfilled from prior active public catalog visibility during publication cutover.",
-          createdBy: "system:worker:prior-visible-catalog-backfill",
-          updatedBy: "system:worker:prior-visible-catalog-backfill",
-          metadata: { source: "prior_active_public_catalog" },
-        })),
-      )
-      .onConflictDoNothing()
+async function publishPriorVisibleProduct(
+  db: PostgresJsDatabase,
+  input: { productId: string; channelIds: readonly string[] },
+) {
+  if (input.channelIds.length === 0) return
+  await db
+    .insert(channelProductPublications)
+    .values(
+      input.channelIds.map((channelId) => ({
+        channelId,
+        productId: input.productId,
+        decision: "include" as const,
+        reason: "Backfilled from prior active public catalog visibility during publication cutover.",
+        createdBy: "system:worker:prior-visible-catalog-backfill",
+        updatedBy: "system:worker:prior-visible-catalog-backfill",
+        metadata: { source: "prior_active_public_catalog" },
+      })),
+    )
+    .onConflictDoNothing()
+}
+
+type CatalogBackfillCursor = {
+  afterProductId: string | null
+  productId: string | null
+  afterChannelId: string | null
+}
+
+function parseCatalogCursor(cursor: string | null): CatalogBackfillCursor {
+  if (!cursor) return { afterProductId: null, productId: null, afterChannelId: null }
+  const parsed = JSON.parse(cursor) as Partial<CatalogBackfillCursor>
+  return {
+    afterProductId: typeof parsed.afterProductId === "string" ? parsed.afterProductId : null,
+    productId: typeof parsed.productId === "string" ? parsed.productId : null,
+    afterChannelId: typeof parsed.afterChannelId === "string" ? parsed.afterChannelId : null,
   }
+}
+
+async function processCatalogBackfillIntent(
+  db: PostgresJsDatabase,
+  projection: CatalogProjectionRuntime,
+  intent: ClaimedIntent,
+  options: { productBatchSize: number; channelBatchSize: number; leaseMs: number },
+) {
+  const cursor = parseCatalogCursor(intent.cursor)
+  const productId =
+    cursor.productId ??
+    (
+      await listVisibleProductIdsPage(db, {
+        afterId: cursor.afterProductId,
+        limit: 1,
+      })
+    )[0]
+  if (!productId) {
+    await completeIntent(db, intent)
+    return
+  }
+
+  const channelIds = await listActiveChannelIdsPage(db, {
+    afterId: cursor.productId ? cursor.afterChannelId : null,
+    limit: options.channelBatchSize,
+  })
+  await publishPriorVisibleProduct(db, { productId, channelIds })
+
+  const lastChannelId = channelIds[channelIds.length - 1]
+  if (channelIds.length === options.channelBatchSize && lastChannelId) {
+    await checkpointIntent(
+      db,
+      intent,
+      JSON.stringify({
+        afterProductId: cursor.afterProductId,
+        productId,
+        afterChannelId: lastChannelId,
+      } satisfies CatalogBackfillCursor),
+      options.leaseMs,
+    )
+    return
+  }
+
+  await projection.reindexEntity({ entityModule: "products", entityId: productId })
+  await checkpointIntent(
+    db,
+    intent,
+    JSON.stringify({
+      afterProductId: productId,
+      productId: null,
+      afterChannelId: null,
+    } satisfies CatalogBackfillCursor),
+    options.leaseMs,
+  )
 }
 
 async function processIntent(
@@ -226,7 +309,7 @@ async function processIntent(
   options: Required<
     Pick<
       PublicationIntentWorkerOptions,
-      "productBatchSize" | "retryDelayMs" | "leaseMs"
+      "productBatchSize" | "channelBatchSize" | "retryDelayMs" | "leaseMs"
     >
   >,
 ) {
@@ -238,28 +321,23 @@ async function processIntent(
       return
     }
 
-    const productIds =
-      intent.kind === "catalog"
-        ? await listVisibleProductIdsPage(db, {
-            afterId: intent.cursor,
-            limit: options.productBatchSize,
-          })
-        : intent.supplierId
-          ? await listSupplierProductIds(db, {
-              supplierId: intent.supplierId,
-              afterId: intent.cursor,
-              limit: options.productBatchSize,
-            })
-          : (() => {
-              throw new Error("supplier intent is missing supplierId")
-            })()
-    if (productIds.length === 0) {
-      await completeIntent(db, intent)
+    if (intent.kind === "catalog") {
+      await processCatalogBackfillIntent(db, projection, intent, options)
       return
     }
 
-    if (intent.kind === "catalog") {
-      await publishPriorVisibleProducts(db, productIds)
+    const productIds = intent.supplierId
+      ? await listSupplierProductIds(db, {
+          supplierId: intent.supplierId,
+          afterId: intent.cursor,
+          limit: options.productBatchSize,
+        })
+      : (() => {
+          throw new Error("supplier intent is missing supplierId")
+        })()
+    if (productIds.length === 0) {
+      await completeIntent(db, intent)
+      return
     }
 
     for (const productId of productIds) {
@@ -292,6 +370,7 @@ export async function drainPublicationReindexIntents(
     leaseMs: options.leaseMs ?? DEFAULT_LEASE_MS,
     maxIntents: options.maxIntents ?? DEFAULT_MAX_INTENTS,
     productBatchSize: options.productBatchSize ?? DEFAULT_PRODUCT_BATCH_SIZE,
+    channelBatchSize: options.channelBatchSize ?? DEFAULT_CHANNEL_BATCH_SIZE,
     maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
     retryDelayMs: options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS,
   }

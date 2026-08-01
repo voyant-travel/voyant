@@ -22,7 +22,9 @@ export const channelProductPublications = pgTable(
   "channel_product_publications",
   {
     id: typeId("channel_product_publications"),
-    channelId: typeIdRef("channel_id").references(() => channels.id, { onDelete: "cascade" }),
+    channelId: typeIdRef("channel_id")
+      .notNull()
+      .references(() => channels.id, { onDelete: "cascade" }),
     productId: typeIdRef("product_id").notNull(),
     decision: channelPublicationDecisionEnum("decision").notNull(),
     reason: text("reason"),
@@ -68,9 +70,7 @@ export const channelPublicationReindexIntents = pgTable(
   "channel_publication_reindex_intents",
   {
     id: typeId("channel_publication_reindex_intents"),
-    channelId: typeIdRef("channel_id")
-      .notNull()
-      .references(() => channels.id, { onDelete: "cascade" }),
+    channelId: typeIdRef("channel_id").references(() => channels.id, { onDelete: "cascade" }),
     kind: channelPublicationReindexIntentKindEnum("kind").notNull(),
     productId: typeIdRef("product_id"),
     supplierId: typeIdRef("supplier_id"),

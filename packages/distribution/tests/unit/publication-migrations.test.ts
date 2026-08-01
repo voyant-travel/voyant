@@ -5,6 +5,17 @@ function migration(name: string) {
   return readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8")
 }
 
+type Snapshot = {
+  tables: Record<
+    string,
+    {
+      columns: Record<string, { notNull: boolean }>
+      indexes: Record<string, unknown>
+    }
+  >
+  enums: Record<string, { values: string[] }>
+}
+
 describe("publication cutover migrations", () => {
   it("seeds a resumable catalog backfill without a channels-products cross join", () => {
     const sql = migration("20260801173500_backfill_prior_visible_catalog_publications.sql")
@@ -14,11 +25,38 @@ describe("publication cutover migrations", () => {
     expect(sql).not.toContain('INSERT INTO "channel_product_publications"')
   })
 
-  it("allows channel-independent lifecycle intents", () => {
-    const sql = migration("20260801143000_channel_publications.sql")
-    expect(sql).toContain('"channel_id" text,')
-    expect(sql).toContain("uniq_channel_pub_reindex_global_product_pending")
-    expect(sql).toContain("uniq_channel_pub_reindex_global_supplier_pending")
-    expect(sql).toContain("uniq_channel_pub_reindex_catalog_pending")
+  it("evolves channel-independent intents after the 1430 baseline", () => {
+    const baseline = migration("20260801143000_channel_publications.sql")
+    const evolution = migration("20260801172000_publication_intent_leases.sql")
+    expect(baseline.match(/"channel_id" text NOT NULL/g)).toHaveLength(3)
+    expect(baseline).not.toContain("uniq_channel_pub_reindex_global_product_pending")
+    expect(evolution).toContain('ALTER COLUMN "channel_id" DROP NOT NULL')
+    expect(evolution).toContain("uniq_channel_pub_reindex_global_product_pending")
+    expect(evolution).toContain("uniq_channel_pub_reindex_global_supplier_pending")
+    expect(evolution).toContain("uniq_channel_pub_reindex_catalog_pending")
+  })
+
+  it("keeps the 1430 snapshot scoped to the baseline migration", () => {
+    const snapshot = JSON.parse(
+      readFileSync(
+        new URL("../../migrations/meta/20260801143000_snapshot.json", import.meta.url),
+        "utf8",
+      ),
+    ) as Snapshot
+    expect(
+      snapshot.tables["public.channel_reconciliation_policies"]?.columns.channel_id?.notNull,
+    ).toBe(true)
+    expect(
+      snapshot.tables["public.channel_product_publications"]?.columns.channel_id?.notNull,
+    ).toBe(true)
+    expect(
+      snapshot.tables["public.channel_publication_reindex_intents"]?.columns.channel_id?.notNull,
+    ).toBe(true)
+    expect(
+      snapshot.enums["public.channel_publication_reindex_intent_kind"]?.values,
+    ).toEqual(["product", "supplier"])
+    expect(
+      snapshot.tables["public.channel_publication_reindex_intents"]?.indexes,
+    ).not.toHaveProperty("uniq_channel_pub_reindex_catalog_pending")
   })
 })
