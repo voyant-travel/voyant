@@ -23,6 +23,23 @@ export interface StorefrontDto {
   updatedAt: string
 }
 
+export interface StorefrontChannelBindingDto {
+  storefrontId: string
+  channelId: string
+  channelName: string | null
+  channelStatus: string
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface SetStorefrontChannelBindingInput {
+  channelId: string
+}
+
+export interface StorefrontWithChannelBindingDto extends StorefrontDto {
+  channelBinding?: StorefrontChannelBindingDto | null
+}
+
 export interface StorefrontApiKeyDto {
   id: string
   storefrontId: string
@@ -177,6 +194,26 @@ export interface StorefrontRuntimeProvider {
     storefrontId: string,
     providers: readonly StorefrontCustomerAuthSocialProvider[],
   ): Promise<ResolvedStorefrontProviderCredentials>
+}
+
+export interface StorefrontChannelBindingProvider {
+  listStorefrontChannelBindings(
+    context: StorefrontRequestContext,
+    storefrontIds: readonly string[],
+  ): Promise<Record<string, StorefrontChannelBindingDto | null>>
+  getStorefrontChannelBinding(
+    context: StorefrontRequestContext,
+    storefrontId: string,
+  ): Promise<StorefrontChannelBindingDto | null>
+  setStorefrontChannelBinding(
+    context: StorefrontRequestContext,
+    storefrontId: string,
+    input: SetStorefrontChannelBindingInput,
+  ): Promise<StorefrontChannelBindingDto>
+  clearStorefrontChannelBinding(
+    context: StorefrontRequestContext,
+    storefrontId: string,
+  ): Promise<void>
 }
 
 const REQUIRED_METHODS = [

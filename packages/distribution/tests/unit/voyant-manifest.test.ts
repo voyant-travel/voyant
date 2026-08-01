@@ -64,7 +64,10 @@ describe("distribution deployment manifests", () => {
       ],
       schema: [{ id: "@voyant-travel/distribution#schema" }],
       migrations: [{ id: "@voyant-travel/distribution#migrations" }],
-      links: [{ id: "@voyant-travel/distribution#linkable.supplier" }],
+      links: [
+        { id: "@voyant-travel/distribution#linkable.channel" },
+        { id: "@voyant-travel/distribution#linkable.supplier" },
+      ],
     })
     expect(distributionVoyantModule.actions).toContainEqual(
       expect.objectContaining({
