@@ -374,7 +374,7 @@ Scope:
   request-scoped runtime dependencies.
 - Proposal composer components through `quoteEntity` with the same source
   registry, owned handler registry, promotion evaluator, and operator tax
-  transform as `/v1/{admin,public}/catalog/proposal`.
+  transform as `/v1/{admin,public}/catalog/quote`.
 - Reserve composer components through `bookEntity`, persisting independent
   component booking/order references under the envelope.
 - Start composer checkout by handing each held component booking into the
@@ -598,6 +598,6 @@ before requiring `verify:full`.
   surfaces before treating flights as live composer components.
 - Build support/admin UI for component-level cancellation preview, cancellation
   execution, and staff-remediation queues.
-- Implement Proposal Versions per ADR-0004 for proposal approval, proposal
+- Implement Proposal Versions per ADR-0018 for proposal approval, proposal
   documents, and longer sales cycles while keeping reserve materialization at
   component lifecycle boundaries.

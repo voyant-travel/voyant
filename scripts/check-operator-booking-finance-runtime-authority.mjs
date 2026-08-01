@@ -8,7 +8,7 @@ function argument(name, fallback) {
 
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
-const [deploymentResources, bookingsContributor, financeContributor, quotesContributor] =
+const [deploymentResources, bookingsContributor, financeContributor, proposalsContributor] =
   await Promise.all([
     read("packages/runtime/src/deployment-resources.ts"),
     read("packages/bookings/src/runtime-contributor.ts"),
@@ -28,7 +28,7 @@ const packagePorts = {
 const contributors = {
   bookings: bookingsContributor,
   finance: financeContributor,
-  proposals: quotesContributor,
+  proposals: proposalsContributor,
 }
 
 const violations = []

@@ -108,6 +108,22 @@ test("rejects active bespoke quote residues from proposal migration", (t) => {
   )
   write(
     root,
+    "packages/commerce/src/accepted-proposal-version-reservation-golden-flow.test.ts",
+    "interface QuoteState { id: string }\n",
+  )
+  write(
+    root,
+    "scripts/check-operator-booking-finance-runtime-authority.mjs",
+    "const quotesContributor = await read('packages/proposals/src/runtime-contributor.ts')\n",
+  )
+  write(root, "packages/mcp/src/guide.ts", "function quotesSection() { return '' }\n")
+  write(
+    root,
+    "packages/framework/src/operator-distribution.test.ts",
+    '"@voyant-travel/realtime/quotes-invalidation-extension"\n',
+  )
+  write(
+    root,
     "packages/core/src/events.ts",
     "// Examples: `booking.created`, `quote.accepted`, `payment.received`.\n",
   )
@@ -115,6 +131,10 @@ test("rejects active bespoke quote residues from proposal migration", (t) => {
   assert.match(output, /bookingQuoteDetails/)
   assert.match(output, /QUOTE_SEEDS/)
   assert.match(output, /quoteOpen/)
+  assert.match(output, /QuoteState/)
+  assert.match(output, /quotesContributor/)
+  assert.match(output, /quotesSection/)
+  assert.match(output, /quotes-invalidation-extension/)
   assert.match(output, /quotes: \\"Quotes\\"/)
   assert.match(output, /quote\.accepted/)
 })

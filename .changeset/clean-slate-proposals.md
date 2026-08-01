@@ -20,7 +20,8 @@
 "@voyant-travel/framework": patch
 "@voyant-travel/framework-migrations": patch
 "@voyant-travel/i18n": patch
-"@voyant-travel/media-react": patch
 ---
 
 Rename the bespoke sales Quote domain to Proposals across packages, routes, schemas, migrations, generated graph authorities, and operator surfaces.
+
+This beta-line release keeps no compatibility aliases, routes, package names, forwarding exports, views, or dual writes for the bespoke sales rename. Existing beta databases that contain the old bespoke quote schema must be dropped and recreated from the clean-slate migrations; there is no in-place migration path and no data-preservation guarantee for those beta databases.

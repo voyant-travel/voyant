@@ -110,12 +110,18 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Cost**               | The amount we pay a Supplier — input to margin.                                                 | *buy price, net*       |
 | **Rate**               | A Supplier's per-unit tariff (per_person, per_night, per_vehicle, flat).                        | *supplier price*       |
 | **Price**              | The customer-facing sell amount.                                                                | *sell, retail*         |
+| **Quote**              | An immutable pricing and terms answer for a concrete catalog selection before Booking. Direct customer booking flows move Pricing Quote -> optional Hold -> Commit/Booking; a Quote is not a sales pursuit and is distinct from Proposal Version. | *proposal, estimate, package offer* |
 | **Cancellation Policy** | An ordered rule set defining refund percentages by cutoff window before service date.           | *refund schedule*      |
 | **Sellability**        | The resolved answer to "is this Product buyable now for this date / pax / market / channel?" — combines Availability, Pricing, Allotments, and Policies. | *bookability* |
 
 ## Commitment chain
 
-For travel-native bespoke sales, the ladder is **Proposal -> accepted Proposal Version -> reserve workflow -> Booking / Component Booking -> Fulfillment**. Each step hardens the commitment, but accepting a Proposal Version is not the same as supplier confirmation. Generic first-party **Order** is retired from v1 runtime language by ADR-0005; use Booking, Booking Origin, Finance/Legal target links, or provider/source order refs instead.
+There are two canonical commitment flows:
+
+1. Direct catalog booking: **Pricing Quote -> optional Hold -> Commit / Booking -> Fulfillment**. A Quote prices a concrete selection and terms for a short validity window; a Hold claims inventory where the source supports it; Commit creates the durable Booking.
+2. Bespoke travel sales: **Proposal -> accepted Proposal Version -> Booking Session / reserve workflow -> Pricing Quote for live catalog-backed lines -> Booking / Component Booking -> Fulfillment**. A Proposal Version freezes a bespoke Trip Envelope revision; accepting it marks the customer decision and seeds reservation, but does not by itself confirm suppliers or create a Booking.
+
+Generic first-party **Order** is retired from v1 runtime language by ADR-0005; use Booking, Booking Origin, Finance/Legal target links, or provider/source order refs instead.
 
 | Term                    | Definition                                                                                       | Aliases to avoid         |
 | ----------------------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
@@ -160,7 +166,7 @@ For travel-native bespoke sales, the ladder is **Proposal -> accepted Proposal V
 | **Payment Schedule**  | An installment plan attached to a Booking (deposit, installment, balance, hold) with due dates.  | *plan, instalments*           |
 | **Guarantee**         | A security hold (deposit, pre-auth, card-on-file, agency letter, or Service Voucher) ensuring eventual payment. | *deposit (overloaded)* |
 | **Payment Session**   | An active payment attempt against a target (Booking, Invoice, Schedule line, Guarantee, Program, or explicit legacy/provider reference). | *checkout, intent*            |
-| **Collection Plan**   | A preview of what will be collected from the customer and when.                                  | *proposal-of-collections*        |
+| **Collection Plan**   | A preview of what will be collected from the customer and when.                                  | *proposal-of-collections; quote-of-collections (technical alias only)* |
 
 ## Distribution
 
@@ -241,6 +247,7 @@ See [agent tool library](docs/architecture/agent-tool-library.md) and
 - A **Proposal** belongs to one Person and/or Organization, moves through a Pipeline, and produces zero or more **Proposal Versions**.
 - A **Proposal Version** freezes a Trip Envelope snapshot; editing a sent Version creates another Version.
 - Accepting a **Proposal Version** marks that Version accepted, closes the Proposal won, and seeds the reserve workflow; it does not mean every live or manual component is supplier-confirmed.
+- A pricing **Quote** belongs to the Booking Platform pricing flow; it may precede an optional Hold and Commit/Booking, but it is not a Proposal Version and does not own sales-pipeline state.
 - A transactions **Legacy Offer** may still convert to a **Legacy Order** only in migration/compatibility flows; it is not the bespoke travel sales artifact called Proposal.
 - A **Booking Origin** records whether a Booking came from an accepted Proposal Version, Trip snapshot, Catalog price/availability response, provider/source order ref, or legacy transaction id.
 - A **Booking** is the first-party durable commitment record; do not require a generic first-party Order to create one.

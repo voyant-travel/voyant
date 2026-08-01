@@ -18,7 +18,7 @@ Related:
 - [Inventory Interface](./inventory-interface.md)
 - [Frontend package strategy](../frontend-package-strategy.md)
 - [ADR-0002: Pure framework contracts ship as standalone packages](../adr/0002-contract-packages.md)
-- [ADR-0018: Proposals are the travel-native bespoke sales artifact](../adr/0004-proposals-as-travel-native-sales-artifact.md)
+- [ADR-0018: Proposals are the travel-native bespoke sales artifact](../adr/0018-proposals-as-travel-native-bespoke-sales-artifact.md)
 - [ADR-0005: Retire transactions runtime before v1](../adr/0005-retire-transactions-runtime.md)
 
 ## 1. Thesis
@@ -477,7 +477,7 @@ identity dependencies, action-ledger dependencies, and relationship/proposal voc
 would also create pressure to pull `db`, `hono`, and `identity` into the package
 that everything else depends on.
 
-ADR-0004 also decided that Proposal is the travel-native sales artifact, while the
+ADR-0018 decides that Proposal is the travel-native sales artifact, while the
 repo still contains overlapping Opportunity, CRM Proposal, transactions Offer, and
 Trip Envelope concepts.
 
@@ -534,11 +534,11 @@ bookings: Offer, Order, travelers/participants, items, contact assignments,
 staff assignments, order terms, PII audit, and a booking extension linking
 Bookings back to offer/order ids.
 
-ADR-0004 changed the most important part of that ladder: bespoke travel
+ADR-0018 changed the most important part of that ladder: bespoke travel
 proposals are now Proposal and Proposal Version, not Transactions Offer. At the same
 time, the catalog booking engine already proves that a generic orders table is
-not required for cross-vertical booking flows: it writes short-lived adapter
-proposal records currently named `catalog_quotes`, reserves through adapters or
+not required for cross-vertical booking flows: it writes short-lived pricing
+Quote records named `catalog_quotes`, reserves through adapters or
 owned handlers, captures `booking_catalog_snapshot`, and exposes its read-side
 "orders" from snapshots.
 
@@ -673,7 +673,7 @@ of that workspace. But the workspace and the proposal pursuit are different
 concerns: staff or automation may compose, reprice, and reserve before or after a
 Proposal Version exists.
 
-Renaming Trips to `offers` would make the vocabulary worse. ADR-0004
+Renaming Trips to `offers` would make the vocabulary worse. ADR-0018
 preserves `transactions` Offer as a separate primitive, and vertical/source
 packages already use offer nouns for live supplier responses such as flight
 offers. The composer output should become a Proposal Version snapshot, booking
@@ -710,7 +710,7 @@ Proposal-to-reserve trace:
    frozen Trip snapshot reference. Proposals does not reserve inventory directly.
 3. Trips asks Commerce to re-evaluate each priced line through the
    Commerce Interface. Commerce returns commercial snapshots and provider or
-   adapter proposal handles where applicable.
+   adapter quote handles where applicable.
 4. Trips submits a reservation plan to the Bookings Interface. Bookings
    owns active reservation orchestration for both direct B2C storefront flows
    and accepted Proposal Version / Trip Envelope flows. Catalog-backed sourced lines
@@ -1310,8 +1310,8 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyant-travel/relationships`, `@voyant-travel/relationships-react`, `@voyant-travel/proposals`, `@voyant-travel/proposals-react` | Keep as the split Relationships and Proposals runtime surfaces for v1. | ADR-0004 moves supported proposal language to Proposal. Customer/account records belong to Relationships; proposal pursuit belongs to Proposals. |
-| `@voyant-travel/transactions`, `@voyant-travel/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Proposals, proposal-time commercial snapshots to Commerce/Trips, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
+| `@voyant-travel/relationships`, `@voyant-travel/relationships-react`, `@voyant-travel/proposals`, `@voyant-travel/proposals-react` | Keep as the split Relationships and Proposals runtime surfaces for v1. | ADR-0018 moves supported bespoke sales language to Proposal. Customer/account records belong to Relationships; proposal pursuit belongs to Proposals. |
+| `@voyant-travel/transactions`, `@voyant-travel/transactions-react` | Retire as public v1 runtime packages per ADR-0005. | Do not rename to `orders` or `commitments`. Move proposal state to Proposals, pricing Quote commercial snapshots to Commerce/Trips, booking origin/provenance to Bookings, terms to Legal/Finance, promotional offers to Commerce/Promotions, and provider order refs to vertical adapters/Catalog snapshots/Distribution external refs. |
 | `@voyant-travel/trips`, `@voyant-travel/trips-react` | Keep as the standalone Trips packages. | Keep it as a standalone workspace Module. It reads Catalog and feeds Proposals, Bookings, and Finance, but does not belong wholly to any of them. Do not expose it as a `proposals` subpath and do not rename it to `offers` while `transactions` Offer and vertical live-offer vocabulary still exist. |
 | `@voyant-travel/bookings`, `@voyant-travel/bookings-react` | Keep as the Bookings Module and deepen it. | Booking sessions, booking items, travelers, booking requirements, fulfillment, and commitment records belong here. |
 | retired beta Booking Requirements packages | Removed from the v1 workspace surface. | Requirements define what must be collected to commit a booking; runtime and React imports use Bookings owner paths. |

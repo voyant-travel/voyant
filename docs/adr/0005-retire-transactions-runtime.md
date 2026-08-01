@@ -1,7 +1,7 @@
 # ADR-0005: Retire transactions runtime before v1
 
 - **Status:** Accepted (2026-06-13)
-- **Relates to:** [ADR-0004](./0004-quotes-as-travel-native-sales-artifact.md), [product package strategy](../architecture/product-package-strategy.md)
+- **Relates to:** [ADR-0018](./0018-proposals-as-travel-native-bespoke-sales-artifact.md), [product package strategy](../architecture/product-package-strategy.md)
 - **Builds on:** [ADR-0001](./0001-tenant-scoping.md), [ADR-0002](./0002-contract-packages.md)
 
 ## Context
@@ -155,8 +155,8 @@ Distribution, and vertical adapters. That preserves the shallow seam.
 
 ### Keep Transactions Offer only
 
-Rejected for v1 runtime. ADR-0004 already moved travel-native proposal language
-to Proposal Version. Commerce and Trips need commercial snapshots and
+Rejected for v1 runtime. ADR-0018 moves travel-native bespoke sales language to
+Proposal and Proposal Version. Commerce and Trips need commercial snapshots and
 price/availability responses, not another public Offer primitive.
 
 ### Keep transactions as a compatibility runtime package

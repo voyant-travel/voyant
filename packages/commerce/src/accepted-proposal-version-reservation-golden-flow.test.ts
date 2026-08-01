@@ -34,7 +34,7 @@ interface ProposalVersion {
   tripSnapshotId: string
 }
 
-interface QuoteState {
+interface ProposalState {
   id: string
   status: "open" | "won"
   acceptedVersionId: string | null
@@ -233,7 +233,7 @@ describe("accepted Proposal Version reservation golden flow", () => {
 async function runAcceptedProposalVersionReservationGoldenFlow() {
   const calls: FlowCall[] = []
   const durableRecords: DurableOwnerRecord[] = []
-  const proposal: QuoteState = {
+  const proposal: ProposalState = {
     id: proposalId,
     status: "open",
     acceptedVersionId: null,

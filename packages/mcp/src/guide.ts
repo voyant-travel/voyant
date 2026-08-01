@@ -160,7 +160,7 @@ function guideSection(topic: GuideTopic, scope: GuideScope): string {
     case "booking-journey":
       return bookingJourneySection(scope)
     case "proposals":
-      return quotesSection(scope)
+      return proposalsSection(scope)
     case "products":
       return productsSection(scope)
     case "vocabulary":
@@ -198,7 +198,7 @@ function overviewSection(scope: GuideScope): string {
     "- Invoice / Payment — the money records downstream of a Booking.\n\n" +
     "Read these topics with `voyant_guide { topic }`:\n" +
     "- discovery — how to find the Tool you need.\n" +
-    "- booking-journey — proposal → hold → commit, and which path a supply model takes.\n" +
+    "- booking-journey — pricing Quote → optional Hold → commit, plus accepted Proposal Version → reserve → Booking.\n" +
     "- proposals — Proposal Version lifecycle; why acceptance is not confirmation.\n" +
     "- products — authoring a Product vs publishing it (a separate operation).\n" +
     "- vocabulary — room vs unit vs traveler; the trap that mis-books rooms.\n" +
@@ -254,11 +254,11 @@ function bookingJourneySection(scope: GuideScope): string {
     "escorted groups, cruises, owned series). The unit is a seat in a fixed dated " +
     "departure drawn from a finite allotment. Departures-first: you browse the dated " +
     "Availability Slots (date · seats left · price) and hold/allocate seats.\n\n" +
-    "## One journey, proposal → hold → commit\n\n" +
-    "Whatever the supply model, the single-line journey is the same shape " +
+    "## Canonical customer booking flow\n\n" +
+    "Whatever the supply model, the direct booking path has the same shape " +
     "(docs/architecture/booking-journey-architecture.md):\n\n" +
-    "1. Proposal — price the current selection (pax counts and bands, dates, Extras, " +
-    "accommodation, billing country for tax). A proposal carries an `expiresAt` (~10 " +
+    "1. Pricing Quote — price the current selection (pax counts and bands, dates, Extras, " +
+    "accommodation, billing country for tax). A Quote carries an `expiresAt` (~10 " +
     "min default) and is a live-pricing snapshot, not a commitment.\n" +
     "2. Hold (where supported) — place a time-limited claim on inventory while details " +
     "are gathered. A Hold expires; it is not a Booking.\n" +
@@ -267,15 +267,21 @@ function bookingJourneySection(scope: GuideScope): string {
     "party — a `personId` or `organizationId` — travelers, rooms — in one call): it resolves the " +
     "booking reference and idempotency key server-side (you carry neither), validates before writing, and takes `_voyant.confirmed: true`.\n\n" +
     "Because commit is its own confirmed step, quoting or holding leaves no durable " +
-    "reservation. Do not treat a successful proposal as a booked seat." +
+    "reservation. Do not treat a successful pricing Quote as a booked seat.\n\n" +
+    "## Bespoke Proposal flow\n\n" +
+    "Staff-managed bespoke sales use a separate sequence: Proposal → accepted " +
+    "Proposal Version → Booking Session / reserve workflow → pricing Quote for " +
+    "live catalog-backed lines → Booking. A Proposal Version freezes the bespoke " +
+    "Trip Envelope revision; a pricing Quote answers current price/terms for a " +
+    "specific selection." +
     (scope.writeEnabled
       ? ""
       : "\n\nWith this read-only key you can inspect Proposals, Slots, and existing " +
-        "Bookings, but you cannot proposal-to-commit.")
+        "Bookings, but you cannot quote, hold, accept, or commit.")
   )
 }
 
-function quotesSection(scope: GuideScope): string {
+function proposalsSection(scope: GuideScope): string {
   return (
     "# Proposals and Proposal Versions — acceptance is NOT confirmation\n\n" +
     writeGate(scope) +
@@ -414,6 +420,10 @@ function glossary(term?: string): string {
     [
       "Participant",
       "A role-bearer on a Proposal/Booking/Program (traveler, booker, decision-maker, finance) — broader than Traveler.",
+    ],
+    [
+      "Quote",
+      "An immutable pricing and terms answer for a concrete catalog selection before Booking. It may be followed by an optional Hold and then Commit/Booking. It is not a Proposal or Proposal Version.",
     ],
     [
       "Proposal",

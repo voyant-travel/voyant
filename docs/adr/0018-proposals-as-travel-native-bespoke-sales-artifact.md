@@ -12,6 +12,9 @@ answer produced by the booking engine before booking.
 
 The beta line can take breaking changes and reset databases. Keeping both names
 through aliases or compatibility routes would make the collision permanent.
+Existing beta databases with the old bespoke quote schema must be dropped and
+recreated from the clean-slate proposal migrations; this decision does not
+provide an in-place migration or data-preservation path.
 
 ## Decision
 
@@ -38,7 +41,8 @@ The proposal TypeID prefixes are `prps`, `prpt`, `prpd`, `prvr`, `prvl`, and
 
 No compatibility surface is kept for the bespoke sales domain: no forwarding
 exports, aliases, legacy routes, migration aliases, compatibility packages,
-views, or dual writes.
+views, or dual writes. Existing beta deployments must recreate their databases
+from the proposal clean-slate schema rather than attempting an in-place rename.
 
 ## Consequences
 
@@ -48,3 +52,8 @@ and generated authorities use Proposal vocabulary.
 
 Historical ADR-0004 prose remains as the superseded decision record. Active
 architecture and ubiquitous-language docs use Proposal terminology.
+
+The destructive beta reset is intentional and explicit: operators on beta
+schemas drop/recreate the affected databases, then reseed or reimport data using
+current Proposal surfaces. Voyant does not preserve old bespoke quote rows,
+TypeID prefixes, or compatibility views in this beta transition.
