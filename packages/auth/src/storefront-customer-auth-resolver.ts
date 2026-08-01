@@ -21,6 +21,7 @@ import {
   isStorefrontOriginAllowed,
 } from "./storefront-origins.js"
 import type {
+  StorefrontChannelBindingDto,
   StorefrontResolveContext,
   StorefrontRuntimeProvider,
 } from "./storefront-runtime-port.js"
@@ -62,6 +63,11 @@ export interface LocalStorefrontCustomerAuthResolverConfig<Env> {
     env: Env,
     request: Request,
   ) => Promise<{ context: StorefrontResolveContext; dispose?: () => Promise<void> }>
+  /** Optional request-time Storefront -> Channel binding reader. */
+  resolveStorefrontChannelBinding?: (
+    context: StorefrontResolveContext,
+    storefrontId: string,
+  ) => Promise<StorefrontChannelBindingDto | null>
   originHeader?: string
   keyHeader?: string
 }
@@ -164,6 +170,7 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
         storefront.id,
         enabledProviders,
       )
+      const channelBinding = await config.resolveStorefrontChannelBinding?.(context, storefront.id)
 
       const methods: CustomerAuthMethods = {
         emailCode: storefront.methods.emailCode,
@@ -189,6 +196,15 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
         allowedOrigins: [...storefront.allowedOrigins],
         methods,
         accountPolicy: storefront.accountPolicy as CustomerBuyerAccountPolicy,
+        ...(channelBinding
+          ? {
+              storefrontChannel: {
+                storefrontId: channelBinding.storefrontId,
+                channelId: channelBinding.channelId,
+                channelStatus: channelBinding.channelStatus,
+              },
+            }
+          : {}),
       }
     } finally {
       await dispose?.()

@@ -12,6 +12,7 @@ import { isStorefrontOriginAllowed } from "../../src/storefront-origins.js"
 import type {
   ResolvedStorefrontApiKey,
   ResolvedStorefrontProviderCredentials,
+  StorefrontChannelBindingDto,
   StorefrontDto,
   StorefrontRuntimeProvider,
 } from "../../src/storefront-runtime-port.js"
@@ -73,10 +74,17 @@ function fakeProvider(overrides?: {
   } as unknown as StorefrontRuntimeProvider
 }
 
-function makeResolver(provider: StorefrontRuntimeProvider) {
+function makeResolver(
+  provider: StorefrontRuntimeProvider,
+  resolveStorefrontChannelBinding?: (
+    context: unknown,
+    storefrontId: string,
+  ) => Promise<StorefrontChannelBindingDto | null>,
+) {
   let disposed = 0
   const resolver = createLocalStorefrontCustomerAuthResolver<{ KMS_PROVIDER?: string }>({
     provider,
+    resolveStorefrontChannelBinding,
     async openResolveContext() {
       return {
         context: { bindings: {}, db: {} as never },
@@ -117,6 +125,32 @@ describe("createLocalStorefrontCustomerAuthResolver", () => {
       accountPolicy: STOREFRONT.accountPolicy,
     })
     expect(disposed()).toBe(1)
+  })
+
+  it("carries provider-composed storefront channel context", async () => {
+    const resolveStorefrontChannelBinding = async () => ({
+      storefrontId: "sf_1",
+      channelId: "chan_web",
+      channelName: "Web",
+      channelStatus: "active",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    })
+    const { resolver } = makeResolver(fakeProvider(), resolveStorefrontChannelBinding)
+
+    const context = await resolver(
+      {},
+      request({
+        [STOREFRONT_ORIGIN_HEADER]: "https://shop.example.com",
+        [STOREFRONT_KEY_HEADER]: "vpk_token",
+      }),
+    )
+
+    expect(context.storefrontChannel).toEqual({
+      storefrontId: "sf_1",
+      channelId: "chan_web",
+      channelStatus: "active",
+    })
   })
 
   it("falls back to the standard Origin header for a direct (non-BFF) client", async () => {

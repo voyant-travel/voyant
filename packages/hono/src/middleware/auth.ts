@@ -160,6 +160,9 @@ function applyAuthContext(
   if (auth.relationshipPersonId !== undefined) {
     c.set("relationshipPersonId", auth.relationshipPersonId ?? undefined)
   }
+  if (auth.storefrontChannel !== undefined) {
+    c.set("storefrontChannel", auth.storefrontChannel)
+  }
   if (auth.buyerMembershipId !== undefined) {
     c.set("buyerMembershipId", auth.buyerMembershipId ?? undefined)
   }
