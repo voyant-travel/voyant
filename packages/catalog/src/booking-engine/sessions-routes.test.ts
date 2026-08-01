@@ -14,6 +14,9 @@ const ACTIVE_STOREFRONT = {
   channelStatus: "active",
 } as const
 
+const PUBLIC_CAPABILITY = `bcap_${"a".repeat(43)}`
+const WRONG_CAPABILITY = `bcap_${"b".repeat(43)}`
+
 function createApp(
   storefrontChannel: {
     storefrontId: string
@@ -21,6 +24,7 @@ function createApp(
     channelStatus: string | null
   } | null = ACTIVE_STOREFRONT,
 ) {
+  let currentStorefrontChannel = storefrontChannel
   const repository = createInMemoryBookingSessionRepository()
   const inventory = createInMemoryOwnedInventoryPorts()
   inventory.setCapacity("product:prod_owned_1", 2)
@@ -47,7 +51,9 @@ function createApp(
   })
   const app = new Hono()
   app.use("/v1/public/catalog/*", async (c, next) => {
-    if (storefrontChannel) c.set("storefrontChannel" as never, storefrontChannel as never)
+    if (currentStorefrontChannel) {
+      c.set("storefrontChannel" as never, currentStorefrontChannel as never)
+    }
     await next()
   })
   app.route(
@@ -59,22 +65,43 @@ function createApp(
     createBookingSessionRoutes({
       actorKind: "staff",
       resolveModule: () => module,
-      resolveAccess: () => ({ actorKind: "staff", principalId: "staff_1" }),
+      resolveAccess: () => ({
+        actorKind: "staff",
+        principalId: "staff_1",
+        staffAuthority: { admitted: true, reason: "booking_support_case" },
+      }),
     }),
   )
-  return { app, inventory, module }
+  return {
+    app,
+    inventory,
+    module,
+    setStorefrontChannel(
+      next: {
+        storefrontId: string
+        channelId: string
+        channelStatus: string | null
+      } | null,
+    ) {
+      currentStorefrontChannel = next
+    },
+  }
 }
 
 describe("Booking Session v1 routes", () => {
   it.each([
     ["missing", null],
     ["inactive", { ...ACTIVE_STOREFRONT, channelStatus: "inactive" }],
+    ["blank", { storefrontId: "  ", channelId: "  ", channelStatus: "active" }],
   ])("fails closed for %s public storefront context", async (_label, storefrontChannel) => {
     const { app } = createApp(storefrontChannel)
 
     const response = await app.request("/v1/public/catalog/booking-sessions", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
+      },
       body: JSON.stringify({
         idempotencyKey: "route_create_denied",
         target: { kind: "product", productId: "prod_owned_1" },
@@ -94,7 +121,10 @@ describe("Booking Session v1 routes", () => {
 
     const response = await app.request("/v1/public/catalog/booking-sessions", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
+      },
       body: JSON.stringify({
         idempotencyKey: "route_create_trusted_origin",
         target: { kind: "product", productId: "prod_owned_1" },
@@ -112,6 +142,101 @@ describe("Booking Session v1 routes", () => {
     )
   })
 
+  it.each([
+    ["missing", null],
+    ["inactive", { ...ACTIVE_STOREFRONT, channelStatus: "inactive" }],
+  ])("rejects %s storefront context for public reads and mutations", async (_label, next) => {
+    const { app, setStorefrontChannel } = createApp()
+    const createdResponse = await app.request("/v1/public/catalog/booking-sessions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
+      },
+      body: JSON.stringify({
+        idempotencyKey: `route_context_${_label}`,
+        target: { kind: "product", productId: "prod_owned_1" },
+      }),
+    })
+    const created = (await createdResponse.json()) as { session: { id: string; revision: number } }
+    setStorefrontChannel(next)
+
+    const read = await app.request(`/v1/public/catalog/booking-sessions/${created.session.id}`, {
+      headers: { "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY },
+    })
+    const mutation = await app.request(
+      `/v1/public/catalog/booking-sessions/${created.session.id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
+        },
+        body: JSON.stringify({
+          expectedRevision: created.session.revision,
+          idempotencyKey: `route_context_update_${_label}`,
+          selection: {},
+        }),
+      },
+    )
+
+    expect(read.status).toBe(403)
+    expect(mutation.status).toBe(403)
+  })
+
+  it("rejects a capability replayed from another active storefront", async () => {
+    const { app, setStorefrontChannel } = createApp()
+    const createdResponse = await app.request("/v1/public/catalog/booking-sessions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
+      },
+      body: JSON.stringify({
+        idempotencyKey: "route_cross_storefront",
+        target: { kind: "product", productId: "prod_owned_1" },
+      }),
+    })
+    const created = (await createdResponse.json()) as { session: { id: string } }
+    setStorefrontChannel({
+      storefrontId: "sf_other",
+      channelId: "chan_other",
+      channelStatus: "active",
+    })
+
+    const response = await app.request(
+      `/v1/public/catalog/booking-sessions/${created.session.id}`,
+      { headers: { "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY } },
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      kind: "rejected",
+      error: { kind: "not_authorized" },
+    })
+  })
+
+  it("mounts retention maintenance only on the admitted staff surface", async () => {
+    const { app } = createApp()
+    const request = {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ limit: 10 }),
+    }
+    const publicResponse = await app.request(
+      "/v1/public/catalog/booking-sessions/maintenance/expire",
+      request,
+    )
+    const adminResponse = await app.request(
+      "/v1/admin/catalog/booking-sessions/maintenance/expire",
+      request,
+    )
+
+    expect(publicResponse.status).toBe(404)
+    expect(adminResponse.status).toBe(200)
+    await expect(adminResponse.json()).resolves.toEqual({ expired: 0 })
+  })
+
   it("adapts public anonymous and admin staff transports to the same module outcomes", async () => {
     const { app, module } = createApp()
     const createSession = vi.spyOn(module, "createSession")
@@ -127,7 +252,7 @@ describe("Booking Session v1 routes", () => {
 
     const publicResponse = await app.request("/v1/public/catalog/booking-sessions", {
       method: "POST",
-      headers,
+      headers: { ...headers, "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY },
       body: publicBody,
     })
     const adminResponse = await app.request("/v1/admin/catalog/booking-sessions", {
@@ -141,7 +266,6 @@ describe("Booking Session v1 routes", () => {
     await expect(publicResponse.json()).resolves.toMatchObject({
       kind: "session_created",
       session: { actorKind: "anonymous", revision: 1, target: { productId: "prod_owned_1" } },
-      capability: { headerName: "Voyant-Booking-Session-Capability" },
     })
     await expect(adminResponse.json()).resolves.toMatchObject({
       kind: "session_created",
@@ -154,6 +278,7 @@ describe("Booking Session v1 routes", () => {
     expect(createSession.mock.calls[1]?.[1]).toEqual({
       actorKind: "staff",
       principalId: "staff_1",
+      staffAuthority: { admitted: true, reason: "booking_support_case" },
     })
   })
 
@@ -162,7 +287,7 @@ describe("Booking Session v1 routes", () => {
     const headers = { "content-type": "application/json" }
     const publicCreated = await app.request("/v1/public/catalog/booking-sessions", {
       method: "POST",
-      headers,
+      headers: { ...headers, "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY },
       body: JSON.stringify({
         idempotencyKey: "route_public_create",
         target: { kind: "product", productId: "prod_owned_1" },
@@ -170,7 +295,6 @@ describe("Booking Session v1 routes", () => {
     })
     const publicSession = (await publicCreated.json()) as {
       session: { id: string; revision: number }
-      capability: { token: string }
     }
 
     const missingCapability = await app.request(
@@ -195,7 +319,7 @@ describe("Booking Session v1 routes", () => {
         method: "POST",
         headers: {
           ...headers,
-          "Voyant-Booking-Session-Capability": "wrong_capability_token",
+          "Voyant-Booking-Session-Capability": WRONG_CAPABILITY,
         },
         body: JSON.stringify({
           expectedRevision: publicSession.session.revision,
@@ -214,7 +338,7 @@ describe("Booking Session v1 routes", () => {
         method: "POST",
         headers: {
           ...headers,
-          "Voyant-Booking-Session-Capability": publicSession.capability.token,
+          "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
         },
         body: JSON.stringify({
           expectedRevision: publicSession.session.revision,
@@ -233,7 +357,7 @@ describe("Booking Session v1 routes", () => {
         method: "POST",
         headers: {
           ...headers,
-          "Voyant-Booking-Session-Capability": publicSession.capability.token,
+          "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
         },
         body: JSON.stringify({
           expectedRevision: publicSession.session.revision,
@@ -253,7 +377,7 @@ describe("Booking Session v1 routes", () => {
         method: "POST",
         headers: {
           ...headers,
-          "Voyant-Booking-Session-Capability": publicSession.capability.token,
+          "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
         },
         body: JSON.stringify({
           expectedRevision: publicSession.session.revision,
@@ -347,7 +471,7 @@ describe("Booking Session v1 routes", () => {
         method: "POST",
         headers: {
           ...headers,
-          "Voyant-Booking-Session-Capability": publicSession.capability.token,
+          "Voyant-Booking-Session-Capability": PUBLIC_CAPABILITY,
         },
         body: JSON.stringify({
           expectedRevision: staffOnlySession.session.revision,
