@@ -202,6 +202,14 @@ export const productRowSpecSchema = z.object({
   endDate: z.string().nullish(),
   pax: z.number().int().nullish(),
   productTypeId: z.string().nullish(),
+  /** Optional Product subtype stable code (e.g. `boat-tour`). */
+  productSubtypeCode: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .max(64)
+    .nullish(),
+  /** Explicit product duration in minutes (nonnegative). */
+  durationMinutes: z.number().int().min(0).nullish(),
   contractTemplateId: z.string().nullish(),
   taxClassId: z.string().nullish(),
   customerPaymentPolicy: z.unknown().nullish(),

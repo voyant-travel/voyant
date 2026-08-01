@@ -309,8 +309,28 @@ export type ProductsUiCoreMessages = {
       status: string
       sellAmount: string
       type: string
+      family: string
+      subtype: string
+      duration: string
       bookingMode: string
       nextDeparture: string
+    }
+    reviewBadge: string
+    durationUnset: string
+    quickStart: {
+      title: string
+      description: string
+      familyHeading: string
+      startBlank: string
+      creating: string
+      presets: {
+        boatTour: { label: string; description: string }
+        dayTour: { label: string; description: string }
+        multiDayTour: { label: string; description: string }
+        timedActivity: { label: string; description: string }
+        attractionAdmission: { label: string; description: string }
+        transfer: { label: string; description: string }
+      }
     }
     loadFailed: string
     empty: string

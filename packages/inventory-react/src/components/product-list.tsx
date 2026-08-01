@@ -37,6 +37,8 @@ import {
   useProductTypes,
 } from "../index.js"
 import { ProductDialog } from "./product-dialog.js"
+import { ProductQuickStartDialog } from "./product-quick-start-dialog.js"
+import type { ProductQuickStart } from "./product-quick-starts.js"
 
 export interface ProductListProps {
   pageSize?: number
@@ -68,7 +70,7 @@ const SORTABLE_COLUMNS = {
 } as const satisfies Record<SortableField, SortableField>
 
 const SKELETON_ROW_COUNT = 6
-const TABLE_COLUMN_COUNT = 6
+const TABLE_COLUMN_COUNT = 8
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",
@@ -103,6 +105,29 @@ function formatDepartureDate(
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(parsed)
 }
 
+/**
+ * Compact duration for the list: explicit minutes ("60 min"), itinerary-derived
+ * days ("3 d"), or an em-dash when unresolved. Reads the resolved classification
+ * so it matches detail and the catalog exactly, and never guesses from booking
+ * mode.
+ */
+function formatListDuration(
+  product: ProductRecord,
+  messages: ReturnType<typeof useProductsUiI18nOrDefault>["messages"]["productList"],
+): string {
+  const c = product.classification
+  if (c?.durationProvenance === "explicit" && c.durationMinutes != null) {
+    return `${c.durationMinutes} min` // i18n-literal-ok short unit
+  }
+  if (c?.durationProvenance === "itinerary-derived" && c.durationDays != null) {
+    return `${c.durationDays} d` // i18n-literal-ok short unit
+  }
+  if (product.durationMinutes != null) {
+    return `${product.durationMinutes} min` // i18n-literal-ok short unit
+  }
+  return messages.durationUnset
+}
+
 export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps = {}) {
   const { locale, messages } = useProductsUiI18nOrDefault()
   const productMessages = messages.productList
@@ -131,6 +156,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<ProductRecord | undefined>(undefined)
+  const [quickStartOpen, setQuickStartOpen] = React.useState(false)
 
   const paxMinNumber = paxMin === "" ? undefined : Number.parseInt(paxMin, 10)
   const paxMaxNumber = paxMax === "" ? undefined : Number.parseInt(paxMax, 10)
@@ -223,21 +249,38 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     setDialogOpen(true)
   }
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     // Standalone usage (no navigation host): keep the inline create dialog.
     if (!onSelectProduct) {
       setEditing(undefined)
       setDialogOpen(true)
       return
     }
-    // With a host wired, skip the dialog — create an empty draft and drop the
-    // user straight into its detail page to fill in the rest.
+    // With a host wired, open the family / quick-start chooser first.
+    setQuickStartOpen(true)
+  }
+
+  // Every quick start (and "start blank") creates the SAME generic draft; a
+  // preset only prefills editable field defaults. `familyCode` resolves to the
+  // seeded product_types id. Then we navigate to the canonical detail page.
+  const handleQuickStart = async (quickStart: ProductQuickStart | null) => {
+    if (!onSelectProduct) return
     try {
+      const familyId = quickStart
+        ? (productTypes.find((type) => type.code === quickStart.familyCode)?.id ?? null)
+        : null
       const created = await create.mutateAsync({
         name: messages.catalogCard.untitled,
         status: "draft",
         sellCurrency: "EUR", // i18n-literal-ok ISO default currency
+        ...(quickStart
+          ? {
+              productTypeId: familyId,
+              ...quickStart.defaults,
+            }
+          : {}),
       })
+      setQuickStartOpen(false)
       onSelectProduct(created)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : productMessages.createFailed)
@@ -544,7 +587,9 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead>{productMessages.columns.type}</TableHead>
+              <TableHead>{productMessages.columns.family}</TableHead>
+              <TableHead>{productMessages.columns.subtype}</TableHead>
+              <TableHead>{productMessages.columns.duration}</TableHead>
               <TableHead>{productMessages.columns.bookingMode}</TableHead>
               <TableHead>{productMessages.columns.nextDeparture}</TableHead>
             </TableRow>
@@ -591,7 +636,33 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                       locale,
                     )}
                   </TableCell>
-                  <TableCell>{product.productTypeName ?? productMessages.noValue}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <span>
+                        {product.classification?.familyName ??
+                          product.productTypeName ??
+                          productMessages.noValue}
+                      </span>
+                      {product.classification?.reviewRequired ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-400 text-amber-700 text-xs dark:text-amber-300"
+                        >
+                          {productMessages.reviewBadge}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {product.classification?.subtypeCode ? (
+                      <Badge variant="secondary" className="text-xs">
+                        {product.classification.subtypeCode}
+                      </Badge>
+                    ) : (
+                      productMessages.noValue
+                    )}
+                  </TableCell>
+                  <TableCell>{formatListDuration(product, productMessages)}</TableCell>
                   <TableCell>
                     {messages.common.productBookingModeLabels[product.bookingMode]}
                   </TableCell>
@@ -639,6 +710,13 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
             onSelectProduct(product)
           }
         }}
+      />
+
+      <ProductQuickStartDialog
+        open={quickStartOpen}
+        onOpenChange={setQuickStartOpen}
+        onChoose={handleQuickStart}
+        creating={create.isPending}
       />
     </div>
   )
@@ -690,6 +768,12 @@ function ProductTableSkeleton({ rows }: { rows: number }) {
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-20" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-20" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-16" />
           </TableCell>
           <TableCell>
             <Skeleton className="h-4 w-24" />

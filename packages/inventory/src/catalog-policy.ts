@@ -424,6 +424,103 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  // ── Merchandising classification (family / subtype / review) ────────────
+  // The Product **family** stable code + name, resolved from `product_types`
+  // and denormalized onto the doc so catalog views facet on the stable code
+  // (e.g. Tour view locks `familyCode = "tour"`) without a query-time join.
+  // Independent of booking mode, duration, and supply model.
+  {
+    path: "familyCode",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "familyName",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  // Product subtype stable code (e.g. `boat-tour`) — a facet the Boat Tour view
+  // locks alongside `familyCode = "tour"`. Never inferred from duration.
+  {
+    path: "subtypeCode",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  // Explicit duration in minutes — a display value and range-filter facet. The
+  // legacy `durationDays` (declared below) stays as the calculated compat value.
+  {
+    path: "durationMinutes",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  // Provenance of the resolved duration: explicit / itinerary-derived /
+  // unresolved. Staff-facing — drives the review warning, not customer display.
+  {
+    path: "durationProvenance",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  // Derived review state — true when classification/duration is unresolved.
+  // Lets the general Products view and admin catalog filter actionable rows.
+  {
+    path: "classificationReviewRequired",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
   {
     path: "facilityId",
     class: "structural",

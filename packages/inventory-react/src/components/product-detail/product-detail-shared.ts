@@ -249,6 +249,51 @@ export function getProductStatusLabel(
   }
 }
 
+/**
+ * Supply model derived from booking mode — `open`/`stay` are dynamic, the rest
+ * scheduled (ADR-0010). Kept in the UI so the Organize card can show the
+ * derived value without a server round-trip.
+ */
+export function deriveSupplyModel(
+  bookingMode: ProductRecord["bookingMode"],
+): "dynamic" | "scheduled" {
+  return bookingMode === "open" || bookingMode === "stay" ? "dynamic" : "scheduled"
+}
+
+type DurationMessages = {
+  durationMinutesSuffix: string
+  durationDaysSuffix: string
+  durationUnresolved: string
+  durationExplicitHint: string
+  durationItineraryHint: string
+}
+
+/**
+ * Format the resolved duration for display: explicit minutes ("60 min"),
+ * itinerary-derived days ("3 days · From itinerary"), or "Not set" when
+ * unresolved. Falls back to the raw `durationMinutes` column when the resolved
+ * classification isn't attached (e.g. immediately after create).
+ */
+export function formatProductDuration(
+  product: Pick<ProductRecord, "durationMinutes" | "classification">,
+  messages: DurationMessages,
+): string {
+  const c = product.classification
+  if (c) {
+    if (c.durationProvenance === "explicit" && c.durationMinutes != null) {
+      return `${c.durationMinutes} ${messages.durationMinutesSuffix} · ${messages.durationExplicitHint}`
+    }
+    if (c.durationProvenance === "itinerary-derived" && c.durationDays != null) {
+      return `${c.durationDays} ${messages.durationDaysSuffix} · ${messages.durationItineraryHint}`
+    }
+    return messages.durationUnresolved
+  }
+  if (product.durationMinutes != null) {
+    return `${product.durationMinutes} ${messages.durationMinutesSuffix}`
+  }
+  return messages.durationUnresolved
+}
+
 export function getProductBookingModeLabel(
   bookingMode: ProductRecord["bookingMode"],
   messages: ProductMessagesRoot,

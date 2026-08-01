@@ -16,6 +16,7 @@ import { products } from "./schema.js"
 import { productsService } from "./service.js"
 import {
   buildProductSnapshotInput,
+  createProductClassificationProjectionExtension,
   createProductDocumentBuilder,
   createProductStorefrontCardProjectionExtension,
 } from "./service-catalog-plane.js"
@@ -79,6 +80,7 @@ export const catalogInventoryRuntimeExtension = {
   createStorefrontCardProjectionExtension: () => createProductStorefrontCardProjectionExtension(),
   createDestinationsProjectionExtension: () => createProductDestinationsProjectionExtension(),
   createTaxonomyProjectionExtension: () => createProductTaxonomyProjectionExtension(),
+  createClassificationProjectionExtension: () => createProductClassificationProjectionExtension(),
   listProductsReferencingAccommodationProperty,
   registerOwnedBookingHandler: registerProductBookingHandler,
   getProductContent: (db, productId, scope, context) =>
