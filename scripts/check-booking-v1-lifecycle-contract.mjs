@@ -89,6 +89,7 @@ for (const outcome of [
   "payment_required",
   "supplier_pending",
   "supplier_in_doubt",
+  "supplier_failed",
   "revision_mismatch",
   "quote_failure",
   "hold_failure",

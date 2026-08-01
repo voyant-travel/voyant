@@ -189,25 +189,27 @@ export const bookingLifecycleCommitInputV1 = z
     if (
       (input.supplier.state === "pending" ||
         input.supplier.state === "in_doubt" ||
-        input.supplier.state === "secured") &&
+        input.supplier.state === "secured" ||
+        input.supplier.state === "failed") &&
       !input.supplier.intentPersistedBeforeDispatch
     ) {
       ctx.addIssue({
         code: "custom",
         path: ["supplier", "intentPersistedBeforeDispatch"],
-        message: "pending, in_doubt, and secured supplier states require persisted intent",
+        message: "pending, in_doubt, secured, and failed supplier states require persisted intent",
       })
     }
     if (
       (input.supplier.state === "pending" ||
         input.supplier.state === "in_doubt" ||
-        input.supplier.state === "secured") &&
+        input.supplier.state === "secured" ||
+        input.supplier.state === "failed") &&
       !input.supplier.operationId
     ) {
       ctx.addIssue({
         code: "custom",
         path: ["supplier", "operationId"],
-        message: "pending, in_doubt, and secured supplier states require an operationId",
+        message: "pending, in_doubt, secured, and failed supplier states require an operationId",
       })
     }
   })
@@ -222,6 +224,8 @@ export const bookingLifecycleNextActionV1 = z.enum([
   "persist_and_dispatch_supplier_operation",
   "await_supplier_operation",
   "reconcile_supplier_operation",
+  "select_alternative_inventory",
+  "manual_review",
   "renew_proposal_version_acceptance",
   "return_idempotent_result",
 ])
@@ -229,7 +233,7 @@ export type BookingLifecycleNextActionV1 = z.infer<typeof bookingLifecycleNextAc
 
 const bookingStatusAfterCommitV1 = z.enum(["confirmed"])
 
-export const bookingLifecycleCommitOutcomeV1 = z.discriminatedUnion("kind", [
+const bookingLifecycleOriginalCommitOutcomeV1 = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("committed"),
     nextAction: z.literal("none"),
@@ -262,6 +266,13 @@ export const bookingLifecycleCommitOutcomeV1 = z.discriminatedUnion("kind", [
     operatorBackedRiskAccepted: z.boolean(),
   }),
   z.object({
+    kind: z.literal("supplier_failed"),
+    nextAction: z.enum(["select_alternative_inventory", "manual_review"]),
+    supplierOperationId: z.string().min(1),
+    bookingId: z.string().min(1).optional(),
+    operatorBackedRiskAccepted: z.boolean().default(false),
+  }),
+  z.object({
     kind: z.literal("revision_mismatch"),
     nextAction: z.literal("refresh_session_state"),
     expectedRevision: z.number().int().positive(),
@@ -282,13 +293,15 @@ export const bookingLifecycleCommitOutcomeV1 = z.discriminatedUnion("kind", [
     nextAction: z.literal("renew_proposal_version_acceptance"),
     proposalVersionId: z.string().min(1),
   }),
+])
+
+export const bookingLifecycleCommitOutcomeV1 = z.union([
+  bookingLifecycleOriginalCommitOutcomeV1,
   z.object({
     kind: z.literal("idempotent_replay"),
     nextAction: z.literal("return_idempotent_result"),
     originalCommitId: z.string().min(1),
-    equivalentToOutcome: z.enum(["committed", "supplier_pending", "supplier_in_doubt"]),
-    bookingId: z.string().min(1).optional(),
-    supplierOperationId: z.string().min(1).optional(),
+    originalOutcome: bookingLifecycleOriginalCommitOutcomeV1,
   }),
 ])
 export type BookingLifecycleCommitOutcomeV1 = z.infer<typeof bookingLifecycleCommitOutcomeV1>
@@ -298,6 +311,7 @@ export const bookingLifecycleCommitOutcomeKindV1 = z.enum([
   "payment_required",
   "supplier_pending",
   "supplier_in_doubt",
+  "supplier_failed",
   "revision_mismatch",
   "quote_failure",
   "hold_failure",
@@ -334,7 +348,19 @@ export type BookingLifecycleObservationV1 = z.infer<typeof bookingLifecycleObser
 export const bookingLifecycleExpectedObservationV1 = z.object({
   outcomeKind: bookingLifecycleCommitOutcomeKindV1,
   nextAction: bookingLifecycleNextActionV1,
-  effects: bookingLifecycleEffectObservationV1.partial(),
+  effects: z.object({
+    bookingCreated: z.boolean().optional(),
+    allocationCreated: z.boolean().optional(),
+    holdConverted: z.boolean().optional(),
+    sessionConsumed: z.boolean().optional(),
+    quoteConsumed: z.boolean().optional(),
+    supplierOperationPersisted: z.boolean().optional(),
+    supplierDispatched: z.boolean().optional(),
+    paymentGuaranteeEstablished: z.boolean().optional(),
+    bookingCreatedBeforeSupplierSecured: z.boolean().optional(),
+    financeStatePromotedToBookingStatus: z.boolean().optional(),
+    transactionBoundary: z.enum(["none", "single", "multiple"]).optional(),
+  }),
 })
 export type BookingLifecycleExpectedObservationV1 = z.infer<
   typeof bookingLifecycleExpectedObservationV1
@@ -552,10 +578,10 @@ function assertScenarioObservation(
     const requiredEffects: Array<keyof BookingLifecycleEffectObservationV1> = [
       "bookingCreated",
       "allocationCreated",
-      "holdConverted",
       "sessionConsumed",
       "quoteConsumed",
     ]
+    if (scenario.input.hold.required) requiredEffects.push("holdConverted")
     if (scenario.input.policy.paymentGuarantee === "required_before_commit") {
       requiredEffects.push("paymentGuaranteeEstablished")
     }
@@ -572,10 +598,14 @@ function assertScenarioObservation(
 
 function outcomeBookingId(outcome: BookingLifecycleCommitOutcomeV1): string | undefined {
   if (outcome.kind === "committed") return outcome.booking.id
-  if (outcome.kind === "supplier_pending" || outcome.kind === "supplier_in_doubt") {
+  if (
+    outcome.kind === "supplier_pending" ||
+    outcome.kind === "supplier_in_doubt" ||
+    outcome.kind === "supplier_failed"
+  ) {
     return outcome.bookingId
   }
-  if (outcome.kind === "idempotent_replay") return outcome.bookingId
+  if (outcome.kind === "idempotent_replay") return outcomeBookingId(outcome.originalOutcome)
   return undefined
 }
 
@@ -583,9 +613,13 @@ function outcomeOperatorBackedRiskAccepted(outcome: BookingLifecycleCommitOutcom
   if (
     outcome.kind === "committed" ||
     outcome.kind === "supplier_pending" ||
-    outcome.kind === "supplier_in_doubt"
+    outcome.kind === "supplier_in_doubt" ||
+    outcome.kind === "supplier_failed"
   ) {
     return outcome.operatorBackedRiskAccepted === true
+  }
+  if (outcome.kind === "idempotent_replay") {
+    return outcomeOperatorBackedRiskAccepted(outcome.originalOutcome)
   }
   return false
 }

@@ -232,8 +232,54 @@ describe("booking lifecycle conformance contract", () => {
 
     expect(result?.passed).toBe(false)
     expect(String(result?.error)).toContain(
-      "pending, in_doubt, and secured supplier states require persisted intent",
+      "pending, in_doubt, secured, and failed supplier states require persisted intent",
     )
+  })
+
+  it("keeps effects omitted from an expectation unconstrained", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "sourced-supplier-first-pending",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => ({
+          ...observationForScenario(parsedScenario),
+          effects: {
+            ...observationForScenario(parsedScenario).effects,
+            transactionBoundary: "single",
+          },
+        }),
+      },
+      [scenario],
+    )
+
+    expect(result?.passed).toBe(true)
+  })
+
+  it("returns the complete original typed outcome on idempotent replay", () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "idempotent-replay",
+    )!
+    const observation = observationForScenario(scenario)
+
+    if (!("id" in scenario.input.hold)) {
+      throw new Error("idempotent replay scenario must include a Hold")
+    }
+
+    expect(observation.outcome).toEqual({
+      kind: "idempotent_replay",
+      nextAction: "return_idempotent_result",
+      originalCommitId: "commit_conformance",
+      originalOutcome: {
+        kind: "committed",
+        nextAction: "none",
+        booking: { id: "book_conformance", status: "confirmed" },
+        allocationIds: ["alloc_1"],
+        consumedSessionId: scenario.input.session.id,
+        consumedQuoteId: scenario.input.quote.id,
+        convertedHoldId: scenario.input.hold.id,
+      },
+    })
   })
 
   it("fails conformance when supplier dispatch input has no operation id", async () => {
@@ -399,6 +445,18 @@ function outcomeForScenario(
           : undefined,
         operatorBackedRiskAccepted: scenario.input.policy.operatorBackedRiskAccepted,
       }
+    case "supplier_failed":
+      return {
+        kind: "supplier_failed",
+        nextAction: scenario.expected.nextAction as
+          | "select_alternative_inventory"
+          | "manual_review",
+        supplierOperationId: scenario.input.supplier.operationId ?? "sop_conformance",
+        bookingId: scenario.expected.effects.bookingCreated
+          ? "book_operator_backed_failed"
+          : undefined,
+        operatorBackedRiskAccepted: scenario.input.policy.operatorBackedRiskAccepted,
+      }
     case "revision_mismatch":
       return {
         kind: "revision_mismatch",
@@ -425,8 +483,15 @@ function outcomeForScenario(
         kind: "idempotent_replay",
         nextAction: "return_idempotent_result",
         originalCommitId: scenario.input.replayOfCommitId ?? "commit_1",
-        equivalentToOutcome: "committed",
-        bookingId: "book_conformance",
+        originalOutcome: {
+          kind: "committed",
+          nextAction: "none",
+          booking: { id: "book_conformance", status: "confirmed" },
+          allocationIds: ["alloc_1"],
+          consumedSessionId: scenario.input.session.id,
+          consumedQuoteId: scenario.input.quote.id,
+          convertedHoldId: scenario.input.hold.id,
+        },
       }
   }
 }

@@ -67,6 +67,7 @@ const noSupplier = {
 
 export const BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS = [
   "owned-atomic-commit",
+  "owned-atomic-commit-hold-not-required",
   "owned-atomic-commit-payment-not-required",
   "owned-atomic-commit-pay-later-authorized",
   "payment-guarantee-required",
@@ -76,6 +77,7 @@ export const BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS = [
   "hold-expired",
   "sourced-supplier-first-pending",
   "sourced-supplier-in-doubt",
+  "sourced-supplier-failed",
   "sourced-supplier-secured",
   "operator-backed-risk-accepted",
   "operator-backed-supplier-in-doubt-after-booking",
@@ -109,6 +111,34 @@ export const bookingLifecycleConformanceScenariosV1 = [
         sessionConsumed: true,
         quoteConsumed: true,
         paymentGuaranteeEstablished: true,
+        transactionBoundary: "single" as const,
+      },
+    },
+  },
+  {
+    id: "owned-atomic-commit-hold-not-required",
+    title: "Owned inventory can commit without a policy-required Hold",
+    decision:
+      "When policy does not require a Hold, owned Commit creates the Booking and Allocation atomically without claiming that a Hold was converted.",
+    input: {
+      idempotencyKey: "idem_owned_no_hold",
+      policy: ownedPaymentNotRequiredPolicy,
+      session: baseSession,
+      quote: baseQuote,
+      hold: { required: false, state: "not_required" as const },
+      paymentGuarantee: "not_required" as const,
+      supplier: noSupplier,
+    },
+    expected: {
+      outcomeKind: "committed" as const,
+      nextAction: "none" as const,
+      effects: {
+        bookingCreated: true,
+        allocationCreated: true,
+        holdConverted: false,
+        sessionConsumed: true,
+        quoteConsumed: true,
+        paymentGuaranteeEstablished: false,
         transactionBoundary: "single" as const,
       },
     },
@@ -314,6 +344,34 @@ export const bookingLifecycleConformanceScenariosV1 = [
     expected: {
       outcomeKind: "supplier_in_doubt" as const,
       nextAction: "reconcile_supplier_operation" as const,
+      effects: {
+        bookingCreated: false,
+        supplierOperationPersisted: true,
+        supplierDispatched: true,
+      },
+    },
+  },
+  {
+    id: "sourced-supplier-failed",
+    title: "Definitive supplier failure returns a typed recovery outcome",
+    decision:
+      "A definitive supplier failure remains Supplier Operation state and asks the caller to select alternative inventory without fabricating a Booking.",
+    input: {
+      idempotencyKey: "idem_supplier_failed",
+      policy: sourcedSupplierFirstPolicy,
+      session: baseSession,
+      quote: baseQuote,
+      hold: { required: false, state: "not_required" as const },
+      paymentGuarantee: "established" as const,
+      supplier: {
+        state: "failed" as const,
+        operationId: "sop_failed",
+        intentPersistedBeforeDispatch: true,
+      },
+    },
+    expected: {
+      outcomeKind: "supplier_failed" as const,
+      nextAction: "select_alternative_inventory" as const,
       effects: {
         bookingCreated: false,
         supplierOperationPersisted: true,
