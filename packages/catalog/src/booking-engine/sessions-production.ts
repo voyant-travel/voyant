@@ -15,9 +15,9 @@ import { pricingBreakdownV1 } from "./contracts.js"
 import type { OwnedBookingHandlerRegistry, SelfServiceBillingParty } from "./owned-handler.js"
 import { engineParametersFromDraft } from "./routes.js"
 import {
+  BookingSessionCommitRejectedError,
   type BookingSessionModule,
   type BookingSessionRepository,
-  BookingSessionCommitRejectedError,
   type CommitOwnedBookingInput,
   createBookingSessionModule,
   InvalidBookingSessionSelectionError,
