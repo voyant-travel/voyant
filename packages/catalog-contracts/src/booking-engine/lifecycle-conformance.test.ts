@@ -1,0 +1,166 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  assertBookingLifecycleConformanceV1,
+  BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS,
+  type BookingLifecycleCommitOutcomeV1,
+  type BookingLifecycleConformanceScenarioV1,
+  type BookingLifecycleObservationV1,
+  bookingCommitmentPolicyV1,
+  bookingLifecycleConformanceScenariosV1,
+} from "./lifecycle-conformance.js"
+
+describe("booking lifecycle conformance contract", () => {
+  it("publishes every required Booking Platform v1 scenario", () => {
+    expect(bookingLifecycleConformanceScenariosV1.map((scenario) => scenario.id)).toEqual(
+      BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS,
+    )
+  })
+
+  it("rejects policy combinations that would create implicit early Bookings", () => {
+    expect(
+      bookingCommitmentPolicyV1.safeParse({
+        id: "invalid-sourced",
+        kind: "sourced_supplier_first",
+        inventoryAuthority: "sourced",
+        paymentGuarantee: "required_before_commit",
+        allowBookingBeforeSupplierSecured: true,
+      }).success,
+    ).toBe(false)
+
+    expect(
+      bookingCommitmentPolicyV1.safeParse({
+        id: "invalid-operator-backed",
+        kind: "operator_backed_supplier_first",
+        inventoryAuthority: "sourced",
+        paymentGuarantee: "pay_later_authorized",
+        allowBookingBeforeSupplierSecured: true,
+        operatorBackedRiskAccepted: false,
+      }).success,
+    ).toBe(false)
+  })
+
+  it("runs scenario observations through the reusable conformance runner", async () => {
+    const results = await assertBookingLifecycleConformanceV1({
+      commit: (_input, scenario) => observationForScenario(scenario),
+    })
+
+    expect(results).toHaveLength(BOOKING_LIFECYCLE_CONFORMANCE_V1_REQUIRED_SCENARIO_IDS.length)
+    expect(results.every((result) => result.passed)).toBe(true)
+  })
+
+  it("fails supplier-first conformance when a pending supplier creates a Booking", async () => {
+    const [result] = await assertBookingLifecycleConformanceV1(
+      {
+        commit: (_input, scenario) => ({
+          ...observationForScenario(scenario),
+          effects: {
+            ...observationForScenario(scenario).effects,
+            bookingCreated: true,
+          },
+        }),
+      },
+      [
+        bookingLifecycleConformanceScenariosV1.find(
+          (scenario) => scenario.id === "sourced-supplier-first-pending",
+        )!,
+      ],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain("expected effect bookingCreated=false")
+  })
+})
+
+function observationForScenario(
+  scenario: BookingLifecycleConformanceScenarioV1,
+): BookingLifecycleObservationV1 {
+  const outcome = outcomeForScenario(scenario)
+  return {
+    outcome,
+    effects: {
+      bookingCreated: false,
+      allocationCreated: false,
+      holdConverted: false,
+      sessionConsumed: false,
+      quoteConsumed: false,
+      supplierOperationPersisted: false,
+      supplierDispatched: false,
+      paymentGuaranteeEstablished: false,
+      bookingCreatedBeforeSupplierSecured: false,
+      financeStatePromotedToBookingStatus: false,
+      transactionBoundary: "none",
+      ...scenario.expected.effects,
+    },
+  }
+}
+
+function outcomeForScenario(
+  scenario: BookingLifecycleConformanceScenarioV1,
+): BookingLifecycleCommitOutcomeV1 {
+  switch (scenario.expected.outcomeKind) {
+    case "committed":
+      return {
+        kind: "committed",
+        nextAction: "none",
+        booking: { id: "book_conformance", status: "confirmed" },
+        allocationIds: scenario.input.policy.kind === "owned_atomic_commit" ? ["alloc_1"] : [],
+        consumedSessionId: scenario.input.session.id,
+        consumedQuoteId: scenario.input.quote.id,
+        convertedHoldId: scenario.input.hold.id,
+        supplierOperationId: scenario.input.supplier.operationId,
+      }
+    case "payment_required":
+      return {
+        kind: "payment_required",
+        nextAction: "establish_payment_guarantee",
+        paymentTarget: "booking_session",
+        allowedGuarantees: ["deposit", "pre_auth", "card_on_file"],
+      }
+    case "supplier_pending":
+      return {
+        kind: "supplier_pending",
+        nextAction: scenario.expected.nextAction as
+          | "persist_and_dispatch_supplier_operation"
+          | "await_supplier_operation",
+        supplierOperationId: scenario.input.supplier.operationId ?? "sop_conformance",
+        bookingId: scenario.expected.effects.bookingCreated ? "book_operator_backed" : undefined,
+        operatorBackedRiskAccepted: scenario.input.policy.operatorBackedRiskAccepted,
+      }
+    case "supplier_in_doubt":
+      return {
+        kind: "supplier_in_doubt",
+        nextAction: "reconcile_supplier_operation",
+        supplierOperationId: scenario.input.supplier.operationId ?? "sop_conformance",
+      }
+    case "revision_mismatch":
+      return {
+        kind: "revision_mismatch",
+        nextAction: "refresh_session_state",
+        expectedRevision: scenario.input.session.expectedRevision,
+        actualRevision: scenario.input.session.revision,
+      }
+    case "quote_failure":
+      return {
+        kind: "quote_failure",
+        nextAction: "request_fresh_quote",
+        reason: scenario.input.quote.state === "expired" ? "expired" : "mismatched_revision",
+      }
+    case "hold_failure":
+      return { kind: "hold_failure", nextAction: "request_new_hold", reason: "expired" }
+    case "proposal_acceptance_required":
+      return {
+        kind: "proposal_acceptance_required",
+        nextAction: "renew_proposal_version_acceptance",
+        proposalVersionId: scenario.input.proposalAcceptance?.proposalVersionId ?? "prvr_1",
+      }
+    case "idempotent_replay":
+      return {
+        kind: "idempotent_replay",
+        nextAction: "return_idempotent_result",
+        originalCommitId: scenario.input.replayOfCommitId ?? "commit_1",
+        equivalentToOutcome: "committed",
+        bookingId: "book_conformance",
+      }
+  }
+}
