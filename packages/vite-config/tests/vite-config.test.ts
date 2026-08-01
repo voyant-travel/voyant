@@ -247,7 +247,11 @@ describe("voyantStartViteConfig", () => {
       })
 
       expect(config.ssr?.external).toEqual(["pg"])
-      expect(config.ssr?.noExternal).toBeUndefined()
+      expect(config.ssr?.noExternal).toEqual([
+        "@tanstack/react-start",
+        "@tanstack/start-client-core",
+        "@tanstack/start-server-core",
+      ])
       expect(config.plugins).toEqual([
         expect.objectContaining({
           name: "voyant:externalize-production-runtime",

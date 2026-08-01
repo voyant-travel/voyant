@@ -350,6 +350,11 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
                   // default SSR pipeline so framework plugins can still bundle
                   // packages that contain virtual imports.
                   external: ["pg"],
+                  noExternal: [
+                    "@tanstack/react-start",
+                    "@tanstack/start-client-core",
+                    "@tanstack/start-server-core",
+                  ],
                 }),
           }
         : {}),
