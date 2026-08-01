@@ -43,6 +43,8 @@ function writeMinimumFixture(root, overrides = {}) {
         "# ADR-0019: Booking v1 commitment-point policies",
         "- **Status:** Accepted (2026-08-01)",
         "@voyant-travel/catalog-contracts/booking-engine/lifecycle-conformance",
+        "runBookingLifecycleConformanceV1",
+        "assertBookingLifecycleConformanceV1",
         "Finance state never becomes Booking status",
       ].join("\n"),
   )

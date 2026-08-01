@@ -7,8 +7,8 @@ import {
   type BookingLifecycleConformanceScenarioV1,
   type BookingLifecycleObservationV1,
   bookingCommitmentPolicyV1,
-  bookingLifecycleConformanceScenariosV1,
   bookingLifecycleCommitInputV1,
+  bookingLifecycleConformanceScenariosV1,
   runBookingLifecycleConformanceV1,
 } from "./lifecycle-conformance.js"
 
@@ -69,6 +69,50 @@ describe("booking lifecycle conformance contract", () => {
       bookingLifecycleCommitInputV1.safeParse({
         ...payLaterScenario.input,
         paymentGuarantee: "missing",
+      }).success,
+    ).toBe(false)
+  })
+
+  it("rejects incoherent supplier state and operation identity combinations", () => {
+    const pendingScenario = bookingLifecycleConformanceScenariosV1.find(
+      (scenario) => scenario.id === "sourced-supplier-first-pending",
+    )!
+
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...pendingScenario.input,
+        supplier: {
+          state: "intent_persisted",
+          intentPersistedBeforeDispatch: true,
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...pendingScenario.input,
+        supplier: {
+          state: "pending",
+          operationId: "sop_missing_intent",
+          intentPersistedBeforeDispatch: false,
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...pendingScenario.input,
+        supplier: {
+          state: "in_doubt",
+          intentPersistedBeforeDispatch: true,
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      bookingLifecycleCommitInputV1.safeParse({
+        ...pendingScenario.input,
+        supplier: {
+          state: "secured",
+          intentPersistedBeforeDispatch: true,
+        },
       }).success,
     ).toBe(false)
   })
@@ -188,7 +232,104 @@ describe("booking lifecycle conformance contract", () => {
 
     expect(result?.passed).toBe(false)
     expect(String(result?.error)).toContain(
-      "supplier dispatch requires input supplier intent persisted before dispatch",
+      "pending, in_doubt, and secured supplier states require persisted intent",
+    )
+  })
+
+  it("fails conformance when supplier dispatch input has no operation id", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "sourced-supplier-first-pending",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => observationForScenario(parsedScenario),
+      },
+      [
+        {
+          ...scenario,
+          input: {
+            ...scenario.input,
+            supplier: {
+              state: "intent_persisted",
+              intentPersistedBeforeDispatch: true,
+            },
+          },
+        },
+      ],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain("persisted supplier intent requires an operationId")
+  })
+
+  it("fails conformance when early Booking does not consume Session and Quote", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "operator-backed-risk-accepted",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => ({
+          ...observationForScenario(parsedScenario),
+          effects: {
+            ...observationForScenario(parsedScenario).effects,
+            sessionConsumed: false,
+            quoteConsumed: false,
+          },
+        }),
+      },
+      [scenario],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain("expected effect sessionConsumed=true")
+  })
+
+  it("fails conformance when early Booking outcome omits booking id", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "operator-backed-supplier-in-doubt-after-booking",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => ({
+          ...observationForScenario(parsedScenario),
+          outcome: {
+            kind: "supplier_in_doubt",
+            nextAction: "reconcile_supplier_operation",
+            supplierOperationId: parsedScenario.input.supplier.operationId ?? "sop_conformance",
+            operatorBackedRiskAccepted: true,
+          },
+        }),
+      },
+      [scenario],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain("early Booking outcome requires bookingId")
+  })
+
+  it("fails conformance when early Booking outcome omits risk acceptance", async () => {
+    const scenario = bookingLifecycleConformanceScenariosV1.find(
+      (entry) => entry.id === "operator-backed-supplier-in-doubt-after-booking",
+    )!
+    const [result] = await runBookingLifecycleConformanceV1(
+      {
+        commit: (_input, parsedScenario) => ({
+          ...observationForScenario(parsedScenario),
+          outcome: {
+            kind: "supplier_in_doubt",
+            nextAction: "reconcile_supplier_operation",
+            supplierOperationId: parsedScenario.input.supplier.operationId ?? "sop_conformance",
+            bookingId: "book_operator_backed_doubt",
+            operatorBackedRiskAccepted: false,
+          },
+        }),
+      },
+      [scenario],
+    )
+
+    expect(result?.passed).toBe(false)
+    expect(String(result?.error)).toContain(
+      "early Booking requires outcome operator-backed risk acceptance",
     )
   })
 })
@@ -253,6 +394,10 @@ function outcomeForScenario(
         kind: "supplier_in_doubt",
         nextAction: "reconcile_supplier_operation",
         supplierOperationId: scenario.input.supplier.operationId ?? "sop_conformance",
+        bookingId: scenario.expected.effects.bookingCreated
+          ? "book_operator_backed_doubt"
+          : undefined,
+        operatorBackedRiskAccepted: scenario.input.policy.operatorBackedRiskAccepted,
       }
     case "revision_mismatch":
       return {
