@@ -37,6 +37,9 @@ export type AllocationUiMessages = Record<string, unknown> & {
   resourceOption: string
   resourceOptionPlaceholder: string
   resourceOptionNone: string
+  resourceParent: string
+  resourceParentPlaceholder: string
+  resourceParentRequired: string
   createResource: string
   editResource: string
   saveResource: string
@@ -53,9 +56,11 @@ export type AllocationUiMessages = Record<string, unknown> & {
   resourceOtherGroup: string
   rooms: string
   resources: string
+  vehicles: string
   vehicleSeats: string
   vehicle: string
   seat: string
+  operationalKindDescriptions: Record<"room" | "vehicle" | "vehicle_seat", string>
   cabins: string
   flightSeats: string
   travelers: string
@@ -162,6 +167,9 @@ export const allocationUiEn = {
   resourceOption: "Tied to option",
   resourceOptionPlaceholder: "Select an option…",
   resourceOptionNone: "Unassigned (manual)",
+  resourceParent: "Vehicle",
+  resourceParentPlaceholder: "Select the vehicle this seat belongs to…",
+  resourceParentRequired: "Create a vehicle before adding its seats.",
   createResource: "Create resource",
   editResource: "Edit resource",
   saveResource: "Save",
@@ -178,9 +186,15 @@ export const allocationUiEn = {
   resourceOtherGroup: "Other",
   rooms: "Rooms",
   resources: "Resources",
-  vehicleSeats: "Vehicle seats",
+  vehicles: "Vehicles",
+  vehicleSeats: "Seats",
   vehicle: "Vehicle",
   seat: "Seat",
+  operationalKindDescriptions: {
+    room: "Assign travelers to rooms or other shared accommodation units.",
+    vehicle: "Group travelers by the coach, minibus, aircraft, or vessel carrying them.",
+    vehicle_seat: "Assign each traveler an exact seat within a vehicle.",
+  },
   cabins: "Cabins",
   flightSeats: "Flight seats",
   travelers: "Travelers",
@@ -303,6 +317,9 @@ export const allocationUiRo = {
   resourceOption: "Optiune asociata",
   resourceOptionPlaceholder: "Alege o optiune…",
   resourceOptionNone: "Neasociata (manual)",
+  resourceParent: "Vehicul",
+  resourceParentPlaceholder: "Alege vehiculul caruia ii apartine locul…",
+  resourceParentRequired: "Creeaza un vehicul inainte de a-i adauga locurile.",
   createResource: "Creeaza resursa",
   editResource: "Editeaza resursa",
   saveResource: "Salveaza",
@@ -319,9 +336,15 @@ export const allocationUiRo = {
   resourceOtherGroup: "Altele",
   rooms: "Camere",
   resources: "Resurse",
-  vehicleSeats: "Locuri vehicul",
+  vehicles: "Vehicule",
+  vehicleSeats: "Locuri",
   vehicle: "Vehicul",
   seat: "Loc",
+  operationalKindDescriptions: {
+    room: "Aloca calatorii in camere sau alte unitati de cazare partajate.",
+    vehicle: "Grupeaza calatorii dupa autocarul, minibusul, aeronava sau vasul folosit.",
+    vehicle_seat: "Aloca fiecarui calator un loc exact intr-un vehicul.",
+  },
   cabins: "Cabine",
   flightSeats: "Locuri zbor",
   travelers: "Calatori",

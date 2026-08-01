@@ -117,6 +117,10 @@ vi.mock("@voyant-travel/ui/components", () => {
     Button: ({ children, ...props }: ReactTypes.ButtonHTMLAttributes<HTMLButtonElement>) => (
       <button {...props}>{children}</button>
     ),
+    Card: ({ children }: { children?: ReactTypes.ReactNode }) => <section>{children}</section>,
+    CardContent: Passthrough,
+    CardHeader: Passthrough,
+    CardTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
     cn: (...classes: Array<string | null | false | undefined>) => classes.filter(Boolean).join(" "),
     Dialog: Passthrough,
     DialogBody: Passthrough,
@@ -162,7 +166,7 @@ describe("SlotAllocationPage", () => {
     container = null
   })
 
-  it("shows passengers when a slot has bookings but no allocation kinds", () => {
+  it("shows booked travelers and standard logistics kinds without templates", () => {
     container = document.createElement("div")
     document.body.appendChild(container)
     root = createRoot(container)
@@ -171,7 +175,10 @@ describe("SlotAllocationPage", () => {
       root?.render(<SlotAllocationPage slotId="slot_1" />)
     })
 
-    expect(container.textContent).toContain("Passengers")
+    expect(container.textContent).toContain("Rooms")
+    expect(container.textContent).toContain("Vehicles")
+    expect(container.textContent).toContain("Seats")
+    expect(container.textContent).toContain("Add resource")
     expect(container.textContent).toContain("BK-001")
     expect(container.textContent).toContain("Ioana Iordache")
     expect(container.textContent).not.toContain("This slot has no allocations to manage.")

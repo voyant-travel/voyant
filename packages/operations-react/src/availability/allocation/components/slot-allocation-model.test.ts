@@ -2,8 +2,10 @@ import type { AllocationResource } from "@voyant-travel/operations-react/availab
 import { describe, expect, it } from "vitest"
 
 import {
+  defaultCapacityFor,
   deriveAllocationKinds,
   groupResourcesBySubType,
+  isTravelerAllocatableKind,
   summarizeResourceCapacity,
 } from "./slot-allocation-model.js"
 
@@ -25,17 +27,19 @@ function resource(overrides: Partial<AllocationResource> & { id: string }): Allo
 }
 
 describe("deriveAllocationKinds", () => {
-  it("does not seed rooms when the slot has no resources or templates", () => {
-    expect(deriveAllocationKinds({ resources: [], templateOptions: [] })).toEqual([])
+  const standardKinds = ["room", "vehicle", "vehicle_seat"]
+
+  it("exposes the standard operated-departure logistics kinds without templates", () => {
+    expect(deriveAllocationKinds({ resources: [], templateOptions: [] })).toEqual(standardKinds)
   })
 
-  it("includes room only when a room resource or template exists", () => {
+  it("keeps standard kinds stable when resources or templates repeat them", () => {
     expect(
       deriveAllocationKinds({
         resources: [resource({ id: "room_1", kind: "room" })],
         templateOptions: [],
       }),
-    ).toEqual(["room"])
+    ).toEqual(standardKinds)
 
     expect(
       deriveAllocationKinds({
@@ -46,10 +50,10 @@ describe("deriveAllocationKinds", () => {
           },
         ],
       }),
-    ).toEqual(["room"])
+    ).toEqual(standardKinds)
   })
 
-  it("deduplicates resource and template kinds while skipping parent-only kinds", () => {
+  it("deduplicates standard kinds and appends extension kinds", () => {
     expect(
       deriveAllocationKinds({
         resources: [
@@ -62,7 +66,19 @@ describe("deriveAllocationKinds", () => {
           },
         ],
       }),
-    ).toEqual(["vehicle_seat", "cabin"])
+    ).toEqual([...standardKinds, "cabin"])
+  })
+})
+
+describe("standard operated-departure kinds", () => {
+  it("treats vehicles as parent resources rather than traveler positions", () => {
+    expect(isTravelerAllocatableKind("vehicle")).toBe(false)
+    expect(isTravelerAllocatableKind("room")).toBe(true)
+    expect(isTravelerAllocatableKind("vehicle_seat")).toBe(true)
+  })
+
+  it("starts a manually-created vehicle with editable coach-scale capacity", () => {
+    expect(defaultCapacityFor("vehicle")).toBe(50)
   })
 })
 
