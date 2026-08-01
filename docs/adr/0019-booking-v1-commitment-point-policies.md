@@ -59,8 +59,8 @@ the operator or automation can claim the component is secured.
 
 ### Sourced inventory: operator-backed exception
 
-A sourced flow may select `operator_backed_supplier_first` only when an operator
-policy deliberately accepts fulfillment risk.
+A sourced flow may select `operator_backed_commit` only when an operator policy
+deliberately accepts fulfillment risk as an alternative to supplier-first.
 
 That explicit policy may create a Booking before supplier security because the
 operator is making the durable commercial commitment and taking responsibility
