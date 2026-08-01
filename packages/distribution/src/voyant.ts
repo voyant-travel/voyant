@@ -137,6 +137,21 @@ export const distributionVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  setupMigrations: [
+    {
+      id: "@voyant-travel/distribution#setup.storefront-channel-bindings.v1",
+      source: "@voyant-travel/distribution/setup/storefront-channel-bindings",
+      runtime: {
+        entry: "@voyant-travel/distribution/setup/storefront-channel-bindings",
+        export: "runStorefrontChannelBindingSetupMigration",
+      },
+      dependsOn: [
+        "@voyant-travel/db#migrations",
+        "@voyant-travel/distribution#migrations",
+        "@voyant-travel/storefront#migrations",
+      ],
+    },
+  ],
   access: {
     resources: [
       {

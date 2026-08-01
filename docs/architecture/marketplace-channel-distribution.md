@@ -512,6 +512,13 @@ may serve many Storefronts. Public Storefront requests derive Channel from the
 resolved Storefront API key or approved origin, not from caller-submitted
 Channel input.
 
+The DB package migration owns only the link-table DDL and Storefront-local
+origin-overlap validation. Channel creation, binding backfill, and the
+fail-closed active-binding check run as a Distribution-owned setup migration
+after the DB, Storefront, and Distribution schema migration facets. This keeps
+fresh installs independent of package migration ordering while preserving one
+transactional, idempotent cutover.
+
 Storefront publication is still Distribution policy. Frontend composition may
 choose layout, content placement, and routes, but it never grants Product
 publication.

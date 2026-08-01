@@ -10,14 +10,12 @@ const sql = readFileSync(
 )
 
 describe("storefront channel binding cutover", () => {
-  it("creates the standard-link table before backfill and never silently returns", () => {
-    expect(
-      sql.indexOf('CREATE TABLE IF NOT EXISTS "auth_storefront_distribution_channel"'),
-    ).toBeLessThan(sql.indexOf('INSERT INTO "auth_storefront_distribution_channel"'))
-    expect(sql).not.toContain(
-      "IF to_regclass('public.auth_storefront_distribution_channel') IS NULL THEN\n\t\tRETURN",
-    )
-    expect(sql).toContain("cutover requires the channels table")
+  it("owns only link DDL and storefront-local validation", () => {
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS "auth_storefront_distribution_channel"')
+    expect(sql).toContain('FROM "storefronts" s')
+    expect(sql).not.toContain('FROM "channels"')
+    expect(sql).not.toContain('INSERT INTO "channels"')
+    expect(sql).not.toContain('INSERT INTO "auth_storefront_distribution_channel"')
   })
 
   it("uses single-label wildcard overlap semantics", () => {

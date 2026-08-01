@@ -56,4 +56,17 @@ describe("@voyant-travel/distribution package exports", () => {
       default: "./dist/publication-intent-runtime-port.js",
     })
   })
+
+  it("publishes the admitted storefront channel setup migration", () => {
+    expect(packageJson.exports["./setup/storefront-channel-bindings"]).toBe(
+      "./src/storefront-channel-binding-setup.ts",
+    )
+    expect(
+      packageJson.publishConfig.exports["./setup/storefront-channel-bindings"],
+    ).toEqual({
+      types: "./dist/storefront-channel-binding-setup.d.ts",
+      import: "./dist/storefront-channel-binding-setup.js",
+      default: "./dist/storefront-channel-binding-setup.js",
+    })
+  })
 })
