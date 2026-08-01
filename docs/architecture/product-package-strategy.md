@@ -52,7 +52,7 @@ commerce core.
 
 ### Retail OTA / Reseller
 
-An OTA or reseller sells sourced inventory through catalog discovery, live proposal,
+An OTA or reseller sells sourced inventory through catalog discovery, live quote,
 booking, checkout, finance records, and support workflows.
 
 Typical emphasis:
@@ -160,16 +160,16 @@ and extension Interfaces, not domain records.
 
 | Target Module | Owns | Does not own |
 | --- | --- | --- |
-| `catalog` | Catalog Item projection/search plane, provenance, overlays, content cache, source freshness, booking snapshot capture, search/indexer contracts | owned product authoring, vertical operational truth, proposal-time price formation, checkout, finance documents |
+| `catalog` | Catalog Item projection/search plane, provenance, overlays, content cache, source freshness, booking snapshot capture, search/indexer contracts | owned product authoring, vertical operational truth, quote-time price formation, checkout, finance documents |
 | `inventory` | optional operated-inventory authoring: Product structure, Product Versions, product-internal components, owned inventory publication lifecycle, and future operated-inventory subdomains | sourced catalog projection/search, generic catalog overlays, OTA/reseller default installs, checkout, finance documents |
-| `commerce` | commercial decision orchestration for Catalog Items: markets, pricing rules, proposal-time FX, promotions, sellability decisions, buyer/channel/audience rules, and commercial snapshots | vertical-native live fare/offer engines, invoices, payments, operated availability/resource truth, catalog indexing |
+| `commerce` | commercial decision orchestration for Catalog Items: markets, pricing rules, quote-time FX, promotions, sellability decisions, buyer/channel/audience rules, and commercial snapshots | vertical-native live fare/offer engines, invoices, payments, operated availability/resource truth, catalog indexing |
 | `relationships` | Person, Organization, relationship/account records, customer profile context, segments, signals, support activities, proposal-linked activity references | auth/session identity, Proposal / Proposal Version records and state transitions, bookings, finance ledger state |
 | `proposals` | Proposal, Proposal Version, proposal lifecycle, B2B proposal pipeline, send/view/accept decisions, accept-to-reserve handoff | Person/Organization master records, Trip Envelope editing internals, legacy transactions Offer/Order records, final financial documents, operational fulfillment |
 | `trips` | Trip Envelope draft workspace, component ordering, manual placeholders, catalog-backed component references, traveler party, pricing snapshots, reservation plans, and checkout handoff handles | catalog projection/search, Proposal / Proposal Version records and send/view/accept state, legacy transactions Offer/Order records, final bookings/payments, active reservation orchestration |
 | `bookings` | booking sessions, reservation orchestration, booking requirements, travelers, booking items, allocations as commitment records, fulfillment/redemption, customer-safe booking state | slot/resource truth, price-rule authoring |
 | `operations` | operated execution: availability, resources, allocation resources, places, ground logistics, guides, vehicles, Room Resource Holds, and Space Resource Holds | sourced catalog discovery, invoices/payments, Proposal / Proposal Version records and state transitions |
 | `mice` | MICE Program lifecycle, program requirements, agenda/sessions, delegate/attendee roster, rooming manifest, RFP/bid workflow, Program Room Blocks, Program Space Blocks, program-level status, and links to bookings, proposals, contracts, and invoices | low-level availability/resource/space truth, Room Resource Hold / Space Resource Hold execution, Proposal / Proposal Version lifecycle, booking commitment records, invoices/payments/ledger state, supplier/channel identity |
-| `finance` | checkout collection orchestration, payment sessions, payment schedules, invoices, credit notes, tax persistence, supplier invoices, Travel Credits, settlement, profitability | proposal-time price-rule selection, catalog content |
+| `finance` | checkout collection orchestration, payment sessions, payment schedules, invoices, credit notes, tax persistence, supplier invoices, Travel Credits, settlement, profitability | quote-time price-rule selection, catalog content |
 | `distribution` | supplier-side and channel-side commercial network: suppliers, channels, source/operator links, external refs, mappings, allotments, channel push, webhooks, reconciliation, and supplier/channel identity links | internal price formation and finance ledger state |
 | `legal` | contracts, terms, signatures, templates, legal documents | proposal composition, payments |
 | `admin` | packaged staff shell and extension surfaces | domain records |
@@ -295,7 +295,7 @@ Candidate packages:
 
 Problem:
 
-Pricing, markets, and sellability are one proposal-time commercial workflow split
+Pricing, markets, and sellability are one quote-time commercial workflow split
 across multiple install seams. `sellability` already imports pricing, markets,
 availability, products, distribution, and transactions to answer one question:
 can this buyer buy this product for this date, pax, market, channel, and
@@ -340,7 +340,7 @@ Interface semantics:
   rule ids, market, promotion ids, adapter calls, source handles, validity, and
   the calculation inputs needed to explain the result.
 - Adapter output is part of the decision trace, not Commerce-internal schema.
-  Catalog/vertical/source adapters can return live proposal or offer handles, but
+  Catalog/vertical/source adapters can return live quote or offer handles, but
   Commerce should not import their native fare tables directly.
 - Idempotency belongs at the decision/snapshot seam: callers should be able to
   supply an idempotency key or target ref so replaying a decision does not mint
@@ -546,7 +546,7 @@ The deletion test says `transactions` is no longer deep enough as a Module. If
 deleted, its useful behavior reappears in existing deeper Modules:
 
 - proposal lifecycle belongs in Proposals and Proposal Versions
-- proposal-time commercial snapshots belong in Commerce and Trips
+- quote-time commercial snapshots belong in Commerce and Trips
 - promotional offers belong in Commerce/Promotions
 - booking commitments, travelers, items, allocations, fulfillment, and
   booking-origin/provenance belong in Bookings
@@ -588,7 +588,7 @@ Move the current responsibilities as follows:
   records, Trip Component commitment refs, or vertical/source-specific order ids
   captured in Catalog snapshots.
 - `booking_transaction_details` is replaced by a Bookings-owned origin table or
-  fields that can reference Proposal Version, Trip snapshot, Catalog proposal/snapshot,
+  fields that can reference Proposal Version, Trip snapshot, Catalog quote/snapshot,
   provider order ref, and any legacy migrated transaction ids.
 - `order_terms` move to Legal policy acceptance / contract terms, with payment
   terms modeled in Finance where they affect collection.
@@ -692,8 +692,8 @@ records.
 
 Required cleanup:
 
-- Replace misleading `catalogQuoteId` wording with catalog price/availability
-  response terminology when that schema can be migrated.
+- Keep `catalogQuoteId` for the canonical catalog pricing Quote reference; do
+  not reuse it for accepted Proposal Version provenance.
 - Make the composer Interface explicit: create, revise, price, freeze proposal
   snapshot, reserve, start checkout.
 - Keep manual and dynamic composition in the same workspace if they converge on

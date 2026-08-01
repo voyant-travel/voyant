@@ -425,23 +425,25 @@ Current caveats:
 
 ### 5.4. Commercial ladder
 
-ADR-0018 makes the travel-native bespoke sales ladder:
+ADR-0018 makes the travel-native bespoke sales flow:
 
-**Proposal -> accepted Proposal Version -> reserve workflow -> Order / Booking -> Fulfillment**
+**Proposal -> accepted Proposal Version -> Booking Session -> Quote + optional
+Hold -> Commit -> Booking -> Fulfillment**
 
 The composer sits before and around that ladder:
 
 - Trip Envelope in `draft` status is pre-commitment.
 - Priced Trip can be frozen into a Proposal Version, which is the sendable,
   acceptable proposal snapshot.
-- Accepting a Proposal Version starts reserve; it does not mean every live or
-  manual component is supplier-confirmed.
-- Reserved Trip creates holds and/or Booking Session / Booking / Order state.
+- Accepting a Proposal Version starts the Booking Session / reserve workflow;
+  it does not mean every live or manual component is supplier-confirmed.
+- The reserve workflow prices the exact Booking Session revision into a Quote
+  and creates optional Holds where supported. Commit creates the Booking.
 - Checkout turns the held/reserved commitment into collection.
 
-Transactions Offer remains a separate transactions package primitive for
-existing offer-to-order flows. It is not the bespoke travel proposal artifact
-for the composer.
+Transactions Offer remains only as a legacy transactions-package primitive for
+pre-v1 compatibility flows. It is not the bespoke travel proposal artifact for
+the composer.
 
 ### 5.5. Booking Sessions
 

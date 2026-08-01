@@ -1,4 +1,4 @@
-# @voyant-travel/crm-react
+# @voyant-travel/proposals-react
 
 ## 0.224.0
 

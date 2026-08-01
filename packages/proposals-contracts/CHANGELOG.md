@@ -1,4 +1,4 @@
-# @voyant-travel/quotes-contracts
+# @voyant-travel/proposals-contracts
 
 ## 0.108.3
 

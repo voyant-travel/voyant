@@ -193,7 +193,7 @@ Scope:
   `BookingDraftV1`.
 - Reuse `@voyant-travel/catalog/booking-engine` services/contracts for:
   - shape lookup
-  - proposal
+  - quote
   - per-line booking draft creation/update where needed
 - Support initial component types:
   - catalog-backed components from any installed/indexed catalog vertical
@@ -206,7 +206,7 @@ Scope:
 Acceptance:
 
 - Tests prove one envelope can hold multiple catalog-backed components.
-- Tests prove each component maps to its own booking draft/proposal reference.
+- Tests prove each component maps to its own booking draft/quote reference.
 - The composer does not reach into vertical internals when catalog
   booking-engine primitives are available.
 
@@ -224,7 +224,7 @@ Scope:
   - component tax lines
   - component totals
   - envelope total
-  - proposal expiries
+  - quote expiries
   - warnings and partial failures
 - Preserve per-component taxes. Do not collapse product, stay, flight, cruise,
   or Extra tax treatment into one blended tax line.
@@ -234,7 +234,7 @@ Acceptance:
 - Tests cover product + stay aggregate pricing.
 - Tests cover different tax lines on different components.
 - Tests cover one priced component plus one manual placeholder.
-- Tests cover partial proposal failure without losing the rest of the trip.
+- Tests cover partial quote failure without losing the rest of the trip.
 
 ### PR 06: reserve workflow
 
@@ -372,7 +372,7 @@ Scope:
 
 - Mount `createTripsApiModule(...)` in the operator starter with
   request-scoped runtime dependencies.
-- Proposal composer components through `quoteEntity` with the same source
+- Quote composer components through `quoteEntity` with the same source
   registry, owned handler registry, promotion evaluator, and operator tax
   transform as `/v1/{admin,public}/catalog/quote`.
 - Reserve composer components through `bookEntity`, persisting independent
@@ -431,7 +431,7 @@ Scope:
   - `revise_trip`
   - `price_trip`
   - `reserve_trip`
-- Reuse catalog MCP discovery tools for search/get/proposal where possible.
+- Reuse catalog MCP discovery tools for search/get/quote where possible.
 - Persist structured decisions, not prompt-dependent raw plans.
 - Enforce customer-safe audience filtering for storefront agents.
 
@@ -498,7 +498,7 @@ Scope:
   modules while preserving the existing `./service` public export surface:
   - `service-types.ts` for lifecycle result/dependency contracts
   - `service-trips.ts` for trip create/read/update/component CRUD
-  - `service-pricing.ts` for proposal application and aggregate pricing
+  - `service-pricing.ts` for quote application and aggregate pricing
   - `service-reservation.ts` for reserve/compensation
   - `service-checkout.ts` for checkout handoff
   - `service-cancellation.ts` for preview/cancel
@@ -529,7 +529,7 @@ Trip / Package Envelope
 It should prove:
 
 - multiple components under one customer-facing envelope
-- per-component booking draft and proposal refs
+- per-component booking draft and quote refs
 - aggregate price display
 - per-component tax lines
 - manual placeholder warnings

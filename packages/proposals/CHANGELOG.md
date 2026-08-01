@@ -1,4 +1,4 @@
-# @voyant-travel/crm
+# @voyant-travel/proposals
 
 ## 0.136.1
 

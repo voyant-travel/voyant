@@ -60,13 +60,14 @@ upstream of commitment:
 - The catalog plane answers *what is sellable, in what shape, projected from
   where, with which editorial overlays applied*. It is the discovery / browse /
   merchandising / search-index surface.
-- Direct catalog booking uses **Pricing Quote → optional Hold → Commit /
-  Booking → Fulfillment**. A pricing Quote is an immutable price and terms answer
-  for a concrete catalog selection. A Hold, where supported, is a temporary
-  inventory claim. Commit creates the durable Booking.
+- Direct catalog booking uses **Product → Booking Session → Pricing Quote +
+  optional Hold → Commit → Booking → Fulfillment**. A pricing Quote is an
+  immutable, expiring price and terms answer for an exact Booking Session
+  revision. A Hold, where supported, is a temporary inventory claim. Commit
+  creates the durable Booking.
 - Bespoke staff sales use **Proposal → accepted Proposal Version → Booking
-  Session / reserve workflow → pricing Quote for live catalog-backed lines →
-  Booking / Component Booking → Fulfillment**. A Proposal Version freezes the
+  Session → Pricing Quote + optional Hold → Commit → Booking / Component
+  Booking → Fulfillment**. A Proposal Version freezes the
   bespoke Trip Envelope revision; it is distinct from a pricing Quote.
 
 The layers connect at two clean points:
@@ -1233,7 +1234,11 @@ Flight adoption carries its own open questions in
 ## 11. Glossary
 
 - **Catalog Item** — a normalized sellable discovery and booking record in any vertical. The unifying noun of the catalog plane (the discovery / browse / merchandising layer).
-- **Pricing Quote** — an immutable pricing and terms answer for a concrete Catalog Item selection, created through `/v1/{admin,public}/catalog/quote`. It may be followed by an optional Hold and then Commit/Booking. It is distinct from a bespoke Proposal Version.
+- **Pricing Quote** — an immutable, expiring, server-produced price and terms
+  result for an exact Booking Session revision or equivalent provider pricing
+  request, created through `/v1/{admin,public}/catalog/quote`. It may be followed
+  by an optional Hold and then Commit/Booking. It is distinct from a bespoke
+  Proposal Version.
 - **Vertical module** — a package modeling one kind of sellable inventory. Existing verticals: `products` (tours / experiences / standalone excursions), `cruises`, `accommodations` (hotels / stays for resale), `charters` (yachts), `extras` (booking add-ons).
 - **Catalog plane** — the cross-vertical projection / overlay / snapshot / indexer surface defined by `packages/catalog`.
 - **Provenance** — the `(source_kind, source_ref, source_connection_id, source_freshness)` tuple carried by every CatalogEntry.
@@ -1264,7 +1269,11 @@ Phase 2 (RAG) and Phase 3 (Flights) carry their own glossaries in their respecti
 
 ### Voyant-wide context
 
-- [`UBIQUITOUS_LANGUAGE.md`](../../UBIQUITOUS_LANGUAGE.md) — the canonical Voyant vocabulary, including direct catalog booking (`Pricing Quote → optional Hold → Commit / Booking`) and bespoke sales (`Proposal → accepted Proposal Version → Booking Session / reserve workflow → Pricing Quote → Booking`).
+- [`UBIQUITOUS_LANGUAGE.md`](../../UBIQUITOUS_LANGUAGE.md) — the canonical
+  Voyant vocabulary, including reusable catalog booking (`Product → Booking
+  Session → Quote + optional Hold → Commit → Booking`) and bespoke sales
+  (`Proposal → accepted Proposal Version → Booking Session → Quote + optional
+  Hold → Commit → Booking`).
 - [`event-delivery-and-durable-execution-policy.md`](./event-delivery-and-durable-execution-policy.md) — the canonical event envelope and delivery semantics that catalog webhook events ride on (see §5.8).
 - [`cruises-module.md`](./cruises-module.md) — the cruise vertical module, which adopts this contract.
 - [`schema-discipline.md`](./schema-discipline.md) — the intra-domain FK rule and cross-domain link discipline that this architecture builds on.

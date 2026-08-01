@@ -12,7 +12,7 @@
  *
  * Every domain claim is sourced, never invented: `UBIQUITOUS_LANGUAGE.md`
  * (vocabulary + commitment chain), `docs/architecture/booking-journey-architecture.md`
- * (proposal/hold/commit split), `catalog-supply-models.md` (dynamic vs scheduled),
+ * (quote/hold/commit split), `catalog-supply-models.md` (dynamic vs scheduled),
  * `accepted-proposal-version-reservation-golden-flow.md` (accept → reserve → book),
  * and `packages/inventory` product status/visibility + `publish_product`
  * (authoring vs publication).
@@ -198,7 +198,7 @@ function overviewSection(scope: GuideScope): string {
     "- Invoice / Payment — the money records downstream of a Booking.\n\n" +
     "Read these topics with `voyant_guide { topic }`:\n" +
     "- discovery — how to find the Tool you need.\n" +
-    "- booking-journey — pricing Quote → optional Hold → commit, plus accepted Proposal Version → reserve → Booking.\n" +
+    "- booking-journey — Product → Booking Session → Quote → Hold/Commit/Booking; Proposal → accepted Version → Booking Session → Quote → Hold/Commit/Booking.\n" +
     "- proposals — Proposal Version lifecycle; why acceptance is not confirmation.\n" +
     "- products — authoring a Product vs publishing it (a separate operation).\n" +
     "- vocabulary — room vs unit vs traveler; the trap that mis-books rooms.\n" +
@@ -241,8 +241,10 @@ function bookingJourneySection(scope: GuideScope): string {
   return (
     "# The booking journey\n\n" +
     writeGate(scope) +
-    "The commitment ladder is: Proposal → accepted Proposal Version → reserve workflow → " +
-    "Booking → Fulfillment. Each step hardens the commitment.\n\n" +
+    "There are two commitment paths: Product → Booking Session → pricing Quote → " +
+    "optional Hold → Commit/Booking, and Proposal → accepted Proposal Version → " +
+    "Booking Session/reserve workflow → pricing Quote → optional Hold → " +
+    "Commit/Booking. Each step hardens the commitment.\n\n" +
     "## Two supply models decide the booking path\n\n" +
     "A Product's supply model is derived from its booking mode and drives which " +
     "journey applies (docs/architecture/catalog-supply-models.md):\n\n" +
@@ -271,8 +273,8 @@ function bookingJourneySection(scope: GuideScope): string {
     "## Bespoke Proposal flow\n\n" +
     "Staff-managed bespoke sales use a separate sequence: Proposal → accepted " +
     "Proposal Version → Booking Session / reserve workflow → pricing Quote for " +
-    "live catalog-backed lines → Booking. A Proposal Version freezes the bespoke " +
-    "Trip Envelope revision; a pricing Quote answers current price/terms for a " +
+    "live catalog-backed lines → optional Hold → Commit/Booking. A Proposal Version " +
+    "freezes the bespoke Trip Envelope revision; a pricing Quote answers current price/terms for a " +
     "specific selection." +
     (scope.writeEnabled
       ? ""
@@ -423,7 +425,7 @@ function glossary(term?: string): string {
     ],
     [
       "Quote",
-      "An immutable pricing and terms answer for a concrete catalog selection before Booking. It may be followed by an optional Hold and then Commit/Booking. It is not a Proposal or Proposal Version.",
+      "An immutable, expiring, server-produced price and terms result for an exact Booking Session revision or equivalent provider pricing request. It may be followed by an optional Hold and then Commit/Booking. It is not a Proposal or Proposal Version.",
     ],
     [
       "Proposal",
