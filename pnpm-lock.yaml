@@ -5683,6 +5683,15 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.27.1
         version: 3.27.1
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../../packages/accommodations
+      '@voyant-travel/action-ledger':
+        specifier: workspace:^
+        version: link:../../packages/action-ledger
+      '@voyant-travel/action-ledger-react':
+        specifier: workspace:^
+        version: link:../../packages/action-ledger-react
       '@voyant-travel/admin':
         specifier: workspace:^
         version: link:../../packages/admin
@@ -5692,90 +5701,258 @@ importers:
       '@voyant-travel/admin-host':
         specifier: workspace:^
         version: link:../../packages/admin-host
+      '@voyant-travel/admin-react':
+        specifier: workspace:^
+        version: link:../../packages/admin-react
+      '@voyant-travel/apps':
+        specifier: workspace:^
+        version: link:../../packages/apps
       '@voyant-travel/apps-react':
         specifier: workspace:^
         version: link:../../packages/apps-react
+      '@voyant-travel/auth':
+        specifier: workspace:^
+        version: link:../../packages/auth
       '@voyant-travel/auth-react':
         specifier: workspace:^
         version: link:../../packages/auth-react
+      '@voyant-travel/availability':
+        specifier: workspace:^
+        version: link:../../packages/availability
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../../packages/bookings
       '@voyant-travel/bookings-react':
         specifier: workspace:^
         version: link:../../packages/bookings-react
+      '@voyant-travel/catalog':
+        specifier: workspace:^
+        version: link:../../packages/catalog
+      '@voyant-travel/catalog-authoring':
+        specifier: workspace:^
+        version: link:../../packages/catalog-authoring
       '@voyant-travel/catalog-react':
         specifier: workspace:^
         version: link:../../packages/catalog-react
+      '@voyant-travel/charters':
+        specifier: workspace:^
+        version: link:../../packages/charters
       '@voyant-travel/cloud-sdk':
         specifier: ^0.11.0
         version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
+      '@voyant-travel/commerce':
+        specifier: workspace:^
+        version: link:../../packages/commerce
       '@voyant-travel/commerce-react':
         specifier: workspace:^
         version: link:../../packages/commerce-react
+      '@voyant-travel/connect-sdk':
+        specifier: 0.9.1
+        version: 0.9.1
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../../packages/core
+      '@voyant-travel/cruises':
+        specifier: workspace:^
+        version: link:../../packages/cruises
       '@voyant-travel/cruises-react':
         specifier: workspace:^
         version: link:../../packages/cruises-react
+      '@voyant-travel/custom-fields':
+        specifier: workspace:^
+        version: link:../../packages/custom-fields
+      '@voyant-travel/custom-fields-react':
+        specifier: workspace:^
+        version: link:../../packages/custom-fields-react
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../../packages/db
+      '@voyant-travel/distribution':
+        specifier: workspace:^
+        version: link:../../packages/distribution
       '@voyant-travel/distribution-react':
         specifier: workspace:^
         version: link:../../packages/distribution-react
+      '@voyant-travel/event-catalog':
+        specifier: workspace:^
+        version: link:../../packages/event-catalog
       '@voyant-travel/event-catalog-react':
         specifier: workspace:^
         version: link:../../packages/event-catalog-react
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../../packages/finance
+      '@voyant-travel/finance-contracts':
+        specifier: workspace:^
+        version: link:../../packages/finance-contracts
       '@voyant-travel/finance-react':
         specifier: workspace:^
         version: link:../../packages/finance-react
+      '@voyant-travel/flights':
+        specifier: workspace:^
+        version: link:../../packages/flights
       '@voyant-travel/flights-react':
         specifier: workspace:^
         version: link:../../packages/flights-react
       '@voyant-travel/framework':
         specifier: workspace:^
         version: link:../../packages/framework
+      '@voyant-travel/framework-migrations':
+        specifier: workspace:^
+        version: link:../../packages/framework-migrations
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../../packages/hono
+      '@voyant-travel/i18n':
+        specifier: workspace:^
+        version: link:../../packages/i18n
+      '@voyant-travel/identity':
+        specifier: workspace:^
+        version: link:../../packages/identity
+      '@voyant-travel/identity-react':
+        specifier: workspace:^
+        version: link:../../packages/identity-react
+      '@voyant-travel/inventory':
+        specifier: workspace:^
+        version: link:../../packages/inventory
       '@voyant-travel/inventory-react':
         specifier: workspace:^
         version: link:../../packages/inventory-react
+      '@voyant-travel/legal':
+        specifier: workspace:^
+        version: link:../../packages/legal
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../../packages/legal-react
+      '@voyant-travel/mcp':
+        specifier: workspace:^
+        version: link:../../packages/mcp
+      '@voyant-travel/media':
+        specifier: workspace:^
+        version: link:../../packages/media
       '@voyant-travel/media-react':
         specifier: workspace:^
         version: link:../../packages/media-react
+      '@voyant-travel/mice':
+        specifier: workspace:^
+        version: link:../../packages/mice
       '@voyant-travel/mice-react':
         specifier: workspace:^
         version: link:../../packages/mice-react
+      '@voyant-travel/navigation-preferences':
+        specifier: workspace:^
+        version: link:../../packages/navigation-preferences
+      '@voyant-travel/navigation-preferences-react':
+        specifier: workspace:^
+        version: link:../../packages/navigation-preferences-react
+      '@voyant-travel/notifications':
+        specifier: workspace:^
+        version: link:../../packages/notifications
+      '@voyant-travel/notifications-react':
+        specifier: workspace:^
+        version: link:../../packages/notifications-react
+      '@voyant-travel/operations':
+        specifier: workspace:^
+        version: link:../../packages/operations
       '@voyant-travel/operations-react':
         specifier: workspace:^
         version: link:../../packages/operations-react
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../../packages/operator-settings
+      '@voyant-travel/operator-settings-react':
+        specifier: workspace:^
+        version: link:../../packages/operator-settings-react
       '@voyant-travel/operator-standard':
         specifier: workspace:^
         version: link:../../packages/operator-standard
+      '@voyant-travel/payments':
+        specifier: workspace:^
+        version: link:../../packages/payments
+      '@voyant-travel/plugin-voyant-connect':
+        specifier: ^0.3.2
+        version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
+      '@voyant-travel/proposals':
+        specifier: workspace:^
+        version: link:../../packages/proposals
+      '@voyant-travel/proposals-contracts':
+        specifier: workspace:^
+        version: link:../../packages/proposals-contracts
       '@voyant-travel/proposals-react':
         specifier: workspace:^
         version: link:../../packages/proposals-react
+      '@voyant-travel/public-document-delivery':
+        specifier: workspace:^
+        version: link:../../packages/public-document-delivery
       '@voyant-travel/react':
         specifier: workspace:^
         version: link:../../packages/react
+      '@voyant-travel/realtime':
+        specifier: workspace:^
+        version: link:../../packages/realtime
+      '@voyant-travel/realtime-react':
+        specifier: workspace:^
+        version: link:../../packages/realtime-react
+      '@voyant-travel/relationships':
+        specifier: workspace:^
+        version: link:../../packages/relationships
       '@voyant-travel/relationships-react':
         specifier: workspace:^
         version: link:../../packages/relationships-react
+      '@voyant-travel/reporting':
+        specifier: workspace:^
+        version: link:../../packages/reporting
+      '@voyant-travel/reporting-contracts':
+        specifier: workspace:^
+        version: link:../../packages/reporting-contracts
+      '@voyant-travel/reporting-react':
+        specifier: workspace:^
+        version: link:../../packages/reporting-react
       '@voyant-travel/runtime':
         specifier: workspace:^
         version: link:../../packages/runtime
+      '@voyant-travel/runtime-core':
+        specifier: workspace:^
+        version: link:../../packages/runtime-core
+      '@voyant-travel/setup':
+        specifier: workspace:^
+        version: link:../../packages/setup
+      '@voyant-travel/setup-react':
+        specifier: workspace:^
+        version: link:../../packages/setup-react
+      '@voyant-travel/storage':
+        specifier: workspace:^
+        version: link:../../packages/storage
+      '@voyant-travel/storefront':
+        specifier: workspace:^
+        version: link:../../packages/storefront
       '@voyant-travel/storefront-react':
         specifier: workspace:^
         version: link:../../packages/storefront-react
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../../packages/tools
+      '@voyant-travel/trips':
+        specifier: workspace:^
+        version: link:../../packages/trips
       '@voyant-travel/trips-react':
         specifier: workspace:^
         version: link:../../packages/trips-react
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../../packages/types
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../../packages/ui
       '@voyant-travel/utils':
         specifier: workspace:^
         version: link:../../packages/utils
+      '@voyant-travel/vite-config':
+        specifier: workspace:^
+        version: link:../../packages/vite-config
+      '@voyant-travel/webhook-delivery':
+        specifier: workspace:^
+        version: link:../../packages/webhook-delivery
       better-auth:
         specifier: 1.6.23
         version: 1.6.23(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.0)(@tanstack/react-start@1.168.27(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(rollup@4.60.2)(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@electric-sql/pglite@0.5.4)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9))(mongodb@7.1.0(socks@2.8.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(solid-js@1.9.11)(vitest@4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)))(vue@3.5.39(typescript@6.0.3))
@@ -5879,87 +6056,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.3
         version: 6.0.3(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-      '@voyant-travel/accommodations':
-        specifier: workspace:^
-        version: link:../../packages/accommodations
-      '@voyant-travel/action-ledger':
-        specifier: workspace:^
-        version: link:../../packages/action-ledger
-      '@voyant-travel/auth':
-        specifier: workspace:^
-        version: link:../../packages/auth
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../../packages/bookings
-      '@voyant-travel/catalog':
-        specifier: workspace:^
-        version: link:../../packages/catalog
-      '@voyant-travel/charters':
-        specifier: workspace:^
-        version: link:../../packages/charters
       '@voyant-travel/cli':
         specifier: ^0.40.0
         version: 0.40.1(@cloudflare/workers-types@4.20260702.1)(@electric-sql/pglite@0.5.4)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))(zod@4.4.3)
-      '@voyant-travel/commerce':
-        specifier: workspace:^
-        version: link:../../packages/commerce
-      '@voyant-travel/cruises':
-        specifier: workspace:^
-        version: link:../../packages/cruises
-      '@voyant-travel/distribution':
-        specifier: workspace:^
-        version: link:../../packages/distribution
-      '@voyant-travel/event-catalog':
-        specifier: workspace:^
-        version: link:../../packages/event-catalog
-      '@voyant-travel/finance':
-        specifier: workspace:^
-        version: link:../../packages/finance
-      '@voyant-travel/flights':
-        specifier: workspace:^
-        version: link:../../packages/flights
-      '@voyant-travel/i18n':
-        specifier: workspace:^
-        version: link:../../packages/i18n
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../../packages/inventory
-      '@voyant-travel/legal':
-        specifier: workspace:^
-        version: link:../../packages/legal
-      '@voyant-travel/mcp':
-        specifier: workspace:^
-        version: link:../../packages/mcp
-      '@voyant-travel/media':
-        specifier: workspace:^
-        version: link:../../packages/media
-      '@voyant-travel/mice':
-        specifier: workspace:^
-        version: link:../../packages/mice
-      '@voyant-travel/notifications':
-        specifier: workspace:^
-        version: link:../../packages/notifications
-      '@voyant-travel/proposals':
-        specifier: workspace:^
-        version: link:../../packages/proposals
-      '@voyant-travel/realtime':
-        specifier: workspace:^
-        version: link:../../packages/realtime
-      '@voyant-travel/relationships':
-        specifier: workspace:^
-        version: link:../../packages/relationships
-      '@voyant-travel/storage':
-        specifier: workspace:^
-        version: link:../../packages/storage
-      '@voyant-travel/storefront':
-        specifier: workspace:^
-        version: link:../../packages/storefront
-      '@voyant-travel/trips':
-        specifier: workspace:^
-        version: link:../../packages/trips
-      '@voyant-travel/vite-config':
-        specifier: workspace:^
-        version: link:../../packages/vite-config
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1(@noble/hashes@2.2.0)
