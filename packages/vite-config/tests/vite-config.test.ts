@@ -237,51 +237,77 @@ describe("voyantStartViteConfig", () => {
   })
 
   it("externalizes only first-party runtime packages for production builds", async () => {
-    const config = voyantStartViteConfig({
-      ...base,
-      nodeSsr: true,
-      bundleWorkspaceSource: false,
-    })
+    const root = createAppFixture(["@voyant-travel/bookings"])
+    try {
+      const config = voyantStartViteConfig({
+        ...base,
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+        nodeSsr: true,
+        bundleWorkspaceSource: false,
+      })
 
-    expect(config.ssr?.external).toEqual(["pg"])
-    expect(config.ssr?.noExternal).toBeUndefined()
-    expect(config.plugins).toEqual([
-      expect.objectContaining({
-        name: "voyant:externalize-production-runtime",
-        enforce: "pre",
-        resolveId: expect.any(Function),
-      }),
-    ])
-    const [externalizer] = config.plugins as Plugin[]
-    const resolveId = externalizer?.resolveId
-    expect(typeof resolveId).toBe("function")
-    if (typeof resolveId !== "function") return
-    const serverContext = { environment: { config: { consumer: "server" } } }
-    const clientContext = { environment: { config: { consumer: "client" } } }
-    expect(
-      await resolveId.call(
-        serverContext as never,
-        "@voyant-travel/bookings/runtime",
-        undefined,
-        {} as never,
-      ),
-    ).toEqual({ id: "@voyant-travel/bookings/runtime", external: true })
-    expect(
-      await resolveId.call(
-        serverContext as never,
-        "@tanstack/start-server-core",
-        undefined,
-        {} as never,
-      ),
-    ).toBeNull()
-    expect(
-      await resolveId.call(
-        clientContext as never,
-        "@voyant-travel/bookings/runtime",
-        undefined,
-        {} as never,
-      ),
-    ).toBeNull()
+      expect(config.ssr?.external).toEqual(["pg"])
+      expect(config.ssr?.noExternal).toBeUndefined()
+      expect(config.plugins).toEqual([
+        expect.objectContaining({
+          name: "voyant:externalize-production-runtime",
+          enforce: "pre",
+          resolveId: expect.any(Function),
+        }),
+      ])
+      const [externalizer] = config.plugins as Plugin[]
+      const resolveId = externalizer?.resolveId
+      expect(typeof resolveId).toBe("function")
+      if (typeof resolveId !== "function") return
+      const serverContext = { environment: { config: { consumer: "server" } } }
+      const clientContext = { environment: { config: { consumer: "client" } } }
+      expect(
+        await resolveId.call(
+          serverContext as never,
+          "@voyant-travel/bookings/runtime",
+          undefined,
+          {} as never,
+        ),
+      ).toEqual({ id: "@voyant-travel/bookings/runtime", external: true })
+      expect(
+        await resolveId.call(
+          serverContext as never,
+          "@voyant-travel/data-sdk",
+          undefined,
+          {} as never,
+        ),
+      ).toBeNull()
+      const importer = join(root, ".voyant/runtime/project-runtime.generated.ts")
+      const anchoredRuntime =
+        "../../node_modules/@voyant-travel/operator-standard/node_modules/@voyant-travel/data-sdk/dist/index.js"
+      expect(
+        await resolveId.call(serverContext as never, anchoredRuntime, importer, {} as never),
+      ).toEqual({
+        id: join(
+          root,
+          "node_modules/@voyant-travel/operator-standard/node_modules/@voyant-travel/data-sdk/dist/index.js",
+        ),
+        external: true,
+      })
+      expect(
+        await resolveId.call(
+          serverContext as never,
+          "@tanstack/start-server-core",
+          undefined,
+          {} as never,
+        ),
+      ).toBeNull()
+      expect(
+        await resolveId.call(
+          clientContext as never,
+          "@voyant-travel/bookings/runtime",
+          undefined,
+          {} as never,
+        ),
+      ).toBeNull()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {

@@ -305,7 +305,7 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
   )
   const productionRuntimeExternalPlugin = bundleWorkspaceSource
     ? undefined
-    : createProductionRuntimeExternalPlugin()
+    : createProductionRuntimeExternalPlugin(appRootUrl)
   return {
     server: {
       allowedHosts,
@@ -361,13 +361,28 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
   }
 }
 
-function createProductionRuntimeExternalPlugin(): Plugin {
+function createProductionRuntimeExternalPlugin(appRootUrl: string): Plugin {
+  const productionDependencies = declaredAppRootDependencies(appRootUrl, [
+    "dependencies",
+    "optionalDependencies",
+  ])
   return {
     name: "voyant:externalize-production-runtime",
     enforce: "pre",
-    resolveId(source) {
+    resolveId(source, importer) {
       if (this.environment.config.consumer !== "server") return null
+      if (importer && source.startsWith(".")) {
+        const target = resolve(dirname(importer.split("?", 1)[0]!), source)
+        const normalizedTarget = target.replaceAll("\\", "/")
+        if (/\/node_modules\/@(?:voyant-travel|pxmstudio)\/[^/]+(?:\/|$)/.test(normalizedTarget)) {
+          // Keep BOM-anchored package files outside the bundle. Rollup rebases
+          // this absolute external to the output chunk, and Node then resolves
+          // the package's own dependencies from its preserved pnpm location.
+          return { id: target, external: true }
+        }
+      }
       if (!/^@(?:voyant-travel|pxmstudio)\/[^/]+(?:\/.*)?$/.test(source)) return null
+      if (!productionDependencies.has(packageNameForSubpath(source))) return null
       return { id: source, external: true }
     },
   }
@@ -377,23 +392,8 @@ function resolvableAppRootDependencies(
   appRootUrl: string,
   candidates: readonly string[],
 ): string[] {
+  const declaredDependencies = declaredAppRootDependencies(appRootUrl, DEPENDENCY_FIELDS)
   const packageJsonPath = fileURLToPath(new URL("./package.json", appRootUrl))
-  let parsedManifest: unknown
-  try {
-    parsedManifest = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  } catch {
-    return []
-  }
-  if (typeof parsedManifest !== "object" || parsedManifest === null) return []
-  const manifest = parsedManifest as Record<string, unknown>
-
-  const declaredDependencies = new Set<string>()
-  for (const field of DEPENDENCY_FIELDS) {
-    const dependencies = manifest[field]
-    if (typeof dependencies !== "object" || dependencies === null) continue
-    for (const dependency of Object.keys(dependencies)) declaredDependencies.add(dependency)
-  }
-
   const resolveFromApp = createRequire(packageJsonPath)
   return candidates.filter((dependency) => {
     if (!declaredDependencies.has(packageNameForSubpath(dependency))) return false
@@ -404,6 +404,27 @@ function resolvableAppRootDependencies(
       return false
     }
   })
+}
+
+function declaredAppRootDependencies(appRootUrl: string, fields: readonly string[]): Set<string> {
+  const packageJsonPath = fileURLToPath(new URL("./package.json", appRootUrl))
+  let parsedManifest: unknown
+  try {
+    parsedManifest = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  } catch {
+    return new Set()
+  }
+  if (typeof parsedManifest !== "object" || parsedManifest === null) return new Set()
+  const manifest = parsedManifest as Record<string, unknown>
+
+  const declaredDependencies = new Set<string>()
+  for (const field of fields) {
+    const dependencies = manifest[field]
+    if (typeof dependencies !== "object" || dependencies === null) continue
+    for (const dependency of Object.keys(dependencies)) declaredDependencies.add(dependency)
+  }
+
+  return declaredDependencies
 }
 
 function packageNameForSubpath(specifier: string): string {
