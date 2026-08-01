@@ -1,3 +1,4 @@
+import type { LinkService } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type {
   StorefrontApiKeyKind,
@@ -83,6 +84,7 @@ export interface UpdateStorefrontInput {
 export interface StorefrontRequestContext {
   bindings: Record<string, unknown>
   db: VoyantDb
+  link?: LinkService
   organizationId: string
 }
 
@@ -94,6 +96,7 @@ export interface StorefrontRequestContext {
 export interface StorefrontResolveContext {
   bindings: Record<string, unknown>
   db: VoyantDb
+  link?: LinkService
 }
 
 /** A token resolved to its storefront + the key row it authenticated with. */
@@ -198,11 +201,11 @@ export interface StorefrontRuntimeProvider {
 
 export interface StorefrontChannelBindingProvider {
   listStorefrontChannelBindings(
-    context: StorefrontRequestContext,
+    context: StorefrontRequestContext | StorefrontResolveContext,
     storefrontIds: readonly string[],
   ): Promise<Record<string, StorefrontChannelBindingDto | null>>
   getStorefrontChannelBinding(
-    context: StorefrontRequestContext,
+    context: StorefrontRequestContext | StorefrontResolveContext,
     storefrontId: string,
   ): Promise<StorefrontChannelBindingDto | null>
   setStorefrontChannelBinding(
@@ -243,9 +246,8 @@ export const storefrontRuntimePort = definePort<StorefrontRuntimeProvider>({
     if (provider === null || typeof provider !== "object") {
       throw new Error("auth.storefront-runtime provider must be an object.")
     }
-    const impl = provider as unknown as Record<string, unknown>
     for (const method of REQUIRED_METHODS) {
-      if (typeof impl[method] !== "function") {
+      if (typeof Reflect.get(provider, method) !== "function") {
         throw new Error(`auth.storefront-runtime provider must implement ${method}().`)
       }
     }

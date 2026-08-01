@@ -28,6 +28,7 @@ type StorefrontEnv = {
     organizationId?: string | null
     scopes?: string[] | null
     db: VoyantDb
+    link?: StorefrontRequestContext["link"]
   }
 }
 type StorefrontRouteContext = Context<StorefrontEnv>
@@ -210,7 +211,7 @@ function requestContext(c: StorefrontRouteContext): StorefrontRequestContext | R
   if (!userId) return c.json({ error: "Unauthorized" }, 401)
   const organizationId = c.get("organizationId")
   if (!organizationId) return c.json({ error: "No active operator organization." }, 403)
-  return { bindings: c.env, db: c.get("db"), organizationId }
+  return { bindings: c.env, db: c.get("db"), link: c.get("link"), organizationId }
 }
 
 function canManageStorefronts(c: StorefrontRouteContext): boolean {

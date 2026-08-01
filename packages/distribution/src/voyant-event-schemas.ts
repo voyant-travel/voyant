@@ -56,3 +56,21 @@ export const supplierLifecycleEventPayloadSchema = {
   required: ["id"],
   additionalProperties: false,
 } as const
+
+export const channelLifecycleEventPayloadSchema = {
+  type: "object",
+  properties: { id: { type: "string" } },
+  required: ["id"],
+  additionalProperties: false,
+} as const
+
+export const productSupplierReassignedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    productId: { type: "string" },
+    previousSupplierId: { type: ["string", "null"] },
+    nextSupplierId: { type: ["string", "null"] },
+  },
+  required: ["productId"],
+  additionalProperties: false,
+} as const

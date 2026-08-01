@@ -82,6 +82,7 @@ export type StorefrontCustomerAuthFailureReason =
   | "missing_key"
   | "unknown_key"
   | "origin_not_allowed"
+  | "missing_channel_binding"
 
 /**
  * Thrown by the local storefront customer-auth resolver when the presented
@@ -101,8 +102,12 @@ export class StorefrontCustomerAuthResolutionError extends Error {
     super(message)
     this.name = "StorefrontCustomerAuthResolutionError"
     this.reason = reason
-    this.status = reason === "origin_not_allowed" ? 403 : 401
-    this.code = reason === "origin_not_allowed" ? "forbidden" : "unauthorized"
+    this.status =
+      reason === "origin_not_allowed" || reason === "missing_channel_binding" ? 403 : 401
+    this.code =
+      reason === "origin_not_allowed" || reason === "missing_channel_binding"
+        ? "forbidden"
+        : "unauthorized"
   }
 }
 
@@ -170,7 +175,19 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
         storefront.id,
         enabledProviders,
       )
-      const channelBinding = await config.resolveStorefrontChannelBinding?.(context, storefront.id)
+      if (!config.resolveStorefrontChannelBinding) {
+        throw new StorefrontCustomerAuthResolutionError(
+          "missing_channel_binding",
+          "The storefront is not bound to an active sales channel.",
+        )
+      }
+      const channelBinding = await config.resolveStorefrontChannelBinding(context, storefront.id)
+      if (!channelBinding || channelBinding.channelStatus !== "active") {
+        throw new StorefrontCustomerAuthResolutionError(
+          "missing_channel_binding",
+          "The storefront is not bound to an active sales channel.",
+        )
+      }
 
       const methods: CustomerAuthMethods = {
         emailCode: storefront.methods.emailCode,
@@ -196,15 +213,11 @@ export function createLocalStorefrontCustomerAuthResolver<Env>(
         allowedOrigins: [...storefront.allowedOrigins],
         methods,
         accountPolicy: storefront.accountPolicy as CustomerBuyerAccountPolicy,
-        ...(channelBinding
-          ? {
-              storefrontChannel: {
-                storefrontId: channelBinding.storefrontId,
-                channelId: channelBinding.channelId,
-                channelStatus: channelBinding.channelStatus,
-              },
-            }
-          : {}),
+        storefrontChannel: {
+          storefrontId: channelBinding.storefrontId,
+          channelId: channelBinding.channelId,
+          channelStatus: channelBinding.channelStatus,
+        },
       }
     } finally {
       await dispose?.()
@@ -244,11 +257,19 @@ export function createLocalStorefrontCorsOriginResolver<Env>(
       if (token) {
         const resolved = await config.provider.resolveStorefrontByApiKey(context, token)
         if (!resolved) return null
-        return isStorefrontOriginAllowed(origin, resolved.storefront.allowedOrigins) ? origin : null
+        if (!isStorefrontOriginAllowed(origin, resolved.storefront.allowedOrigins)) return null
+        if (!config.resolveStorefrontChannelBinding) return null
+        const binding = await config.resolveStorefrontChannelBinding(
+          context,
+          resolved.storefront.id,
+        )
+        return binding?.channelStatus === "active" ? origin : null
       }
       // Keyless preflight: authorize purely by declared origin.
       const storefront = await config.provider.resolveStorefrontByOrigin(context, origin)
-      return storefront ? origin : null
+      if (!storefront || !config.resolveStorefrontChannelBinding) return null
+      const binding = await config.resolveStorefrontChannelBinding(context, storefront.id)
+      return binding?.channelStatus === "active" ? origin : null
     } finally {
       await dispose?.()
     }

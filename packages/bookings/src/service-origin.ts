@@ -179,41 +179,20 @@ export async function upsertBookingOrigin(
 ): Promise<BookingOrigin> {
   const values = toBookingOriginInsert(input)
 
-  // Cast: AnyDrizzleDb's union does not unify insert().onConflictDoUpdate()
+  // Cast: AnyDrizzleDb's union does not unify insert().onConflictDoNothing()
   // across drivers, though all supported Postgres drivers implement it.
   const [origin] = await (db as PostgresJsDatabase)
     .insert(bookingOrigins)
     .values(values)
-    .onConflictDoUpdate({
-      target: bookingOrigins.bookingId,
-      set: {
-        originSource: values.originSource,
-        proposalVersionId: values.proposalVersionId,
-        tripSnapshotId: values.tripSnapshotId,
-        reservationPlanId: values.reservationPlanId,
-        catalogPriceResponseId: values.catalogPriceResponseId,
-        catalogSnapshotId: values.catalogSnapshotId,
-        providerSourceKind: values.providerSourceKind,
-        providerSourceProvider: values.providerSourceProvider,
-        providerSourceConnectionId: values.providerSourceConnectionId,
-        providerSourceRef: values.providerSourceRef,
-        providerOrderRef: values.providerOrderRef,
-        storefrontId: values.storefrontId,
-        channelId: values.channelId,
-        legacyTransactionOfferId: values.legacyTransactionOfferId,
-        legacyTransactionOrderId: values.legacyTransactionOrderId,
-        legacyTransactionIds: values.legacyTransactionIds,
-        metadata: values.metadata,
-        updatedAt: values.updatedAt,
-      },
-    })
+    .onConflictDoNothing({ target: bookingOrigins.bookingId })
     .returning()
 
-  if (!origin) {
-    throw new Error("Unable to persist booking origin")
-  }
+  if (origin) return origin
 
-  return origin
+  const existing = await getBookingOriginByBookingId(db as PostgresJsDatabase, input.bookingId)
+  if (existing) return existing
+
+  throw new Error("Unable to persist booking origin")
 }
 
 export async function getBookingOriginByBookingId(

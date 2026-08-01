@@ -55,6 +55,7 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
       draftId: string
       quoteId: string
       caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
+      storefront: { storefrontId: string; channelId: string }
       idempotencyKey: string
       /** Proves the caller holds the draft; verified by the source provider. */
       draftCapabilityToken?: string
@@ -99,7 +100,11 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
         // Only consulted when the context carries no userId, so an
         // authenticated customer keeps their own principal.
         fallbackPrincipalId: guest ? `storefront-verification:${guest}` : "self-service-customer",
-        commandInput: { ...resolved.command, bookingNumber } as never,
+        commandInput: {
+          ...resolved.command,
+          bookingNumber,
+          storefrontOrigin: input.storefront,
+        } as never,
         admitted: deps.admit("customer", input.idempotencyKey),
         ...(deps.runtime ? { runtime: deps.runtime } : {}),
         async consumeSources(tx, bookingId) {

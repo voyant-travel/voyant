@@ -191,27 +191,38 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
   )
   .openapi(createChannelRoute, async (c) => {
     const row = await distributionService.createChannel(c.get("db"), c.req.valid("json"))
+    if (row) await c.get("eventBus")?.emit("channel.created", { id: row.id })
     return c.json({ data: row! }, 201)
   })
   .openapi(batchUpdateChannelsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
         ids: body.ids,
         patch: body.patch,
-        update: distributionService.updateChannel.bind(distributionService),
+        update: async (db, id, patch) => {
+          const row = await distributionService.updateChannel(db, id, patch)
+          if (row) await eventBus?.emit("channel.updated", { id: row.id })
+          return row
+        },
       }),
       200,
     )
   })
   .openapi(batchDeleteChannelsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
-        remove: distributionService.deleteChannel,
+        remove: async (db, id) => {
+          const row = await distributionService.deleteChannel(db, id)
+          if (row) await eventBus?.emit("channel.deleted", { id: row.id })
+          return row
+        },
       }),
       200,
     )
@@ -226,10 +237,12 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
       c.req.valid("param").id,
       c.req.valid("json"),
     )
+    if (row) await c.get("eventBus")?.emit("channel.updated", { id: row.id })
     return row ? c.json({ data: row }, 200) : c.json({ error: "Channel not found" }, 404)
   })
   .openapi(deleteChannelRoute, async (c) => {
     const row = await distributionService.deleteChannel(c.get("db"), c.req.valid("param").id)
+    if (row) await c.get("eventBus")?.emit("channel.deleted", { id: row.id })
     return row
       ? c.json({ success: true } as const, 200)
       : c.json({ error: "Channel not found" }, 404)

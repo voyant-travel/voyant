@@ -1,6 +1,15 @@
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
-import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core"
 
 import { channels } from "./schema-core.js"
 import {
@@ -70,6 +79,9 @@ export const channelPublicationReindexIntents = pgTable(
     cursor: text("cursor"),
     status: channelPublicationReindexIntentStatusEnum("status").notNull().default("pending"),
     attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    leaseOwner: text("lease_owner"),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
     requestedBy: text("requested_by"),
     lastError: text("last_error"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
@@ -80,6 +92,7 @@ export const channelPublicationReindexIntents = pgTable(
   },
   (table) => [
     index("idx_channel_pub_reindex_pending").on(table.status, table.requestedAt),
+    index("idx_channel_pub_reindex_ready").on(table.status, table.nextAttemptAt, table.requestedAt),
     index("idx_channel_pub_reindex_channel").on(table.channelId, table.requestedAt),
     index("idx_channel_pub_reindex_product").on(table.productId, table.requestedAt),
     index("idx_channel_pub_reindex_supplier").on(table.supplierId, table.requestedAt),
@@ -91,6 +104,10 @@ export const channelPublicationReindexIntents = pgTable(
       .on(table.channelId, table.kind, table.supplierId)
       // agent-quality: raw-sql reviewed -- owner: distribution; static partial-index predicate.
       .where(sql`${table.status} = 'pending' AND ${table.supplierId} IS NOT NULL`),
+    check(
+      "ck_channel_pub_reindex_subject",
+      sql`((${table.kind} = 'product' AND ${table.productId} IS NOT NULL AND ${table.supplierId} IS NULL) OR (${table.kind} = 'supplier' AND ${table.supplierId} IS NOT NULL AND ${table.productId} IS NULL))`,
+    ),
   ],
 )
 

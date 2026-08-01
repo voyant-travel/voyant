@@ -23,6 +23,11 @@ import type { EntityOverlayChangedPayload } from "./events/taxonomy.js"
 import type { OwnedAvailabilitySearchHandlerRegistry } from "./search/owned-search-handler.js"
 import type { DocumentBuilder } from "./services/indexer-service.js"
 
+export {
+  type CatalogProjectionRuntimeProvider,
+  catalogProjectionRuntimePort,
+} from "./subscriber-runtime-ports.js"
+
 export interface CatalogProjectionExtension {
   readonly name: string
   project(

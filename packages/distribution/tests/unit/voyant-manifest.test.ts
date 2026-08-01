@@ -26,10 +26,13 @@ describe("distribution deployment manifests", () => {
         ports: [
           { id: "distribution.channel-push-runtime" },
           { id: "catalog.extension.distribution" },
+          { id: "distribution.publication-intent-worker-runtime" },
           { id: "finance.distribution-payment-policy.runtime" },
         ],
       },
-      requires: { ports: [{ id: "catalog.runtime-services" }] },
+      requires: {
+        ports: [{ id: "catalog.runtime-services" }, { id: "catalog.projection-runtime" }],
+      },
       api: [
         {
           id: "@voyant-travel/distribution#api.external-refs",
@@ -261,6 +264,24 @@ describe("distribution deployment manifests", () => {
         additionalProperties: false,
       })
     }
+    for (const eventType of ["channel.created", "channel.updated", "channel.deleted"]) {
+      expect(schemas[eventType]).toEqual({
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+        additionalProperties: false,
+      })
+    }
+    expect(schemas["product.supplier.reassigned"]).toEqual({
+      type: "object",
+      properties: {
+        productId: { type: "string" },
+        previousSupplierId: { type: ["string", "null"] },
+        nextSupplierId: { type: ["string", "null"] },
+      },
+      required: ["productId"],
+      additionalProperties: false,
+    })
   })
 
   it("references exported runtimes with matching mounts", () => {
@@ -316,6 +337,37 @@ describe("distribution deployment manifests", () => {
   })
 
   it("references each payload-free package job", () => {
+    expect(distributionVoyantModule.jobs).toEqual([
+      expect.objectContaining({
+        id: "distribution.publication-reindex-intents",
+        wakeup: true,
+        runtime: {
+          entry: "@voyant-travel/distribution/publication-intent-worker",
+          export: "runDistributionPublicationIntentWorkerJob",
+        },
+      }),
+    ])
+    expect(distributionVoyantModule.subscribers?.map(({ eventType }) => eventType)).toEqual([
+      "product.created",
+      "product.updated",
+      "product.deleted",
+      "supplier.created",
+      "supplier.updated",
+      "supplier.deleted",
+      "channel.created",
+      "channel.updated",
+      "channel.deleted",
+      "product.supplier.reassigned",
+    ])
+    expect(distributionVoyantModule.subscribers).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/distribution#subscriber.publication-intent-product-supplier-reassigned",
+        runtime: {
+          entry: "@voyant-travel/distribution/publication-intent-subscribers",
+          export: "createPublicationSupplierReassignedIntentSubscriberGraphRuntime",
+        },
+      }),
+    )
     expect(distributionChannelPushVoyantPlugin.jobs).toEqual([
       expect.objectContaining({
         id: "channel.booking.push",
