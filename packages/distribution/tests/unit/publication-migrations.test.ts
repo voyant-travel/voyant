@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
+import packageJson from "../../package.json"
+
 function migration(name: string) {
   return readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8")
 }
@@ -17,6 +19,10 @@ type Snapshot = {
 }
 
 describe("publication cutover migrations", () => {
+  it("orders the product snapshot after the Inventory schema", () => {
+    expect(packageJson.voyant.requiresSchemas).toContain("@voyant-travel/inventory")
+  })
+
   it("seeds a resumable catalog backfill without a channels-products cross join", () => {
     const sql = migration("20260801173500_backfill_prior_visible_catalog_publications.sql")
     expect(sql).toContain("'catalog'")
