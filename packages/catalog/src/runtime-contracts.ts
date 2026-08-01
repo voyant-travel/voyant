@@ -86,6 +86,20 @@ export interface CatalogDistributionRuntimeExtension {
   ): Promise<{ reservationTimeoutMinutes: number | null } | null>
 }
 
+/**
+ * Provider-neutral request-time publication decision used by public catalog
+ * and checkout consumers. The selected Distribution implementation owns the
+ * policy and persistence; consumers only supply their resolved database and
+ * channel identity.
+ */
+export interface CatalogPublicationRuntime {
+  isProductPublished(input: {
+    db: AnyDrizzleDb
+    productId: string
+    channelId: string
+  }): Promise<boolean>
+}
+
 export interface CatalogCruisesRuntimeExtension extends CatalogPolicyRuntimeExtension {
   readonly shipFieldPolicy: readonly FieldPolicy[]
   listCruisesReferencingShip(
@@ -205,6 +219,9 @@ export const catalogCommerceRuntimeExtensionPort = extensionPort<CatalogCommerce
 )
 export const catalogDistributionRuntimeExtensionPort =
   extensionPort<CatalogDistributionRuntimeExtension>("catalog.extension.distribution")
+export const catalogPublicationRuntimePort = extensionPort<CatalogPublicationRuntime>(
+  "catalog.publication.runtime",
+)
 export const catalogCruisesRuntimeExtensionPort = extensionPort<CatalogCruisesRuntimeExtension>(
   "catalog.extension.cruises",
 )

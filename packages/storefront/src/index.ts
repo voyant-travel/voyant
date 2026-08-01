@@ -1,3 +1,7 @@
+import {
+  type CatalogPublicationRuntime,
+  catalogPublicationRuntimePort,
+} from "@voyant-travel/catalog/runtime-contracts"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
@@ -225,13 +229,24 @@ export function createStorefrontApiModule(options?: StorefrontApiModuleOptions):
 }
 
 export const createStorefrontVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const [offers, persistence] = await Promise.all([
+  const [offers, persistence, publication] = await Promise.all([
     getPort(storefrontOffersRuntimePort),
     getPort(storefrontIntakeRuntimePort),
+    getPort<CatalogPublicationRuntime>(catalogPublicationRuntimePort),
   ])
   const configured = createStorefrontApiModule({
     offers,
     intake: { persistence },
+    publication: {
+      isProductPublished: ({ productId, context }) => {
+        if (!context.db || !context.channelId) return false
+        return publication.isProductPublished({
+          db: context.db,
+          productId,
+          channelId: context.channelId,
+        })
+      },
+    },
   })
   const selected: ApiModule = { module: configured.module }
   if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {

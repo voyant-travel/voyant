@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- distribution manifest centralizes ports, events, subscribers, jobs, and deployment-owned links.
 import {
   catalogDistributionRuntimeExtensionPort,
+  catalogPublicationRuntimePort,
   catalogProjectionRuntimePort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/ports"
@@ -61,6 +62,7 @@ export const distributionVoyantModule = defineModule({
     ports: [
       providePort(channelPushRuntimePort),
       providePort(catalogDistributionRuntimeExtensionPort),
+      providePort(catalogPublicationRuntimePort),
       providePort(distributionPublicationIntentWorkerRuntimePort),
       providePort(financeDistributionPaymentPolicyRuntimePort),
     ],

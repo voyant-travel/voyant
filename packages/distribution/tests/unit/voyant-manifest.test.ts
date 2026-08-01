@@ -26,6 +26,7 @@ describe("distribution deployment manifests", () => {
         ports: [
           { id: "distribution.channel-push-runtime" },
           { id: "catalog.extension.distribution" },
+          { id: "catalog.publication.runtime" },
           { id: "distribution.publication-intent-worker-runtime" },
           { id: "finance.distribution-payment-policy.runtime" },
         ],

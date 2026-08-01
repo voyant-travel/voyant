@@ -3,8 +3,10 @@ import {
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/projection-runtime"
 import {
+  type CatalogPublicationRuntime,
   type CatalogRuntimeServices,
   catalogDistributionRuntimeExtensionPort,
+  catalogPublicationRuntimePort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/runtime-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
@@ -60,6 +62,14 @@ export function createDistributionRuntimePortContribution(
       },
     },
     [catalogDistributionRuntimeExtensionPort.id]: catalogDistributionRuntimeExtension,
+    [catalogPublicationRuntimePort.id]: {
+      isProductPublished: ({ db, productId, channelId }) =>
+        catalogDistributionRuntimeExtension.hasEffectiveProductPublication(
+          db,
+          productId,
+          channelId,
+        ),
+    } satisfies CatalogPublicationRuntime,
     [financeDistributionPaymentPolicyRuntimePort.id]: {
       resolveSupplierPolicy: resolveBookingSupplierPaymentPolicy,
       resolveSupplierPolicyById: resolveSupplierPaymentPolicyById,
