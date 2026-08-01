@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   getLegacyTransactionLinkFromBookingOrigin,
   toBookingOriginInsert,
   toCatalogReservationBookingOriginInput,
   toDirectB2CBookingOriginInput,
+  upsertBookingOrigin,
 } from "../../src/service-origin.js"
 
 describe("booking origins", () => {
@@ -155,5 +156,47 @@ describe("booking origins", () => {
         entityId: "prod_1797",
       },
     })
+  })
+
+  it("keeps the first persisted booking storefront/channel origin immutable", async () => {
+    const existing = {
+      ...toBookingOriginInsert({
+        bookingId: "book_direct_1797",
+        originSource: "direct_b2c",
+        storefrontId: "sf_first",
+        channelId: "chan_first",
+      }),
+      createdAt: new Date("2026-06-13T12:00:00.000Z"),
+      updatedAt: new Date("2026-06-13T12:00:00.000Z"),
+    }
+    const update = vi.fn()
+    const db = {
+      update,
+      insert: () => ({
+        values: () => ({
+          onConflictDoNothing: () => ({
+            returning: async () => [],
+          }),
+        }),
+      }),
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [existing],
+          }),
+        }),
+      }),
+    }
+
+    const result = await upsertBookingOrigin(db as never, {
+      bookingId: "book_direct_1797",
+      originSource: "direct_b2c",
+      storefrontId: "sf_second",
+      channelId: "chan_second",
+    })
+
+    expect(result.storefrontId).toBe("sf_first")
+    expect(result.channelId).toBe("chan_first")
+    expect(update).not.toHaveBeenCalled()
   })
 })

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- publication mutation and durable intent enqueue stay transactionally colocated.
 import type { EventBus } from "@voyant-travel/core"
 import { RequestValidationError } from "@voyant-travel/hono"
 import { and, desc, eq, sql } from "drizzle-orm"
@@ -96,6 +97,53 @@ async function enqueueSupplierPublicationReindex(
     .onConflictDoNothing()
 }
 
+async function listActiveChannelIds(db: PostgresJsDatabase) {
+  const rows = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(eq(channels.status, "active"))
+  return rows.map(({ id }) => id)
+}
+
+async function listVisibleProductIds(db: PostgresJsDatabase) {
+  const rows = await db
+    .select({ id: publicationProductsRef.id })
+    .from(publicationProductsRef)
+    .where(
+      and(
+        eq(publicationProductsRef.status, "active"),
+        eq(publicationProductsRef.visibility, "public"),
+      ),
+    )
+  return rows.map(({ id }) => id)
+}
+
+async function enqueueProductPublicationReindexForChannels(
+  db: PostgresJsDatabase,
+  input: { productId: string; channelIds: readonly string[]; requestedBy?: string | null },
+) {
+  for (const channelId of new Set(input.channelIds)) {
+    await enqueueProductPublicationReindex(db, {
+      channelId,
+      productId: input.productId,
+      requestedBy: input.requestedBy ?? null,
+    })
+  }
+}
+
+async function enqueueSupplierPublicationReindexForChannels(
+  db: PostgresJsDatabase,
+  input: { supplierId: string; channelIds: readonly string[]; requestedBy?: string | null },
+) {
+  for (const channelId of new Set(input.channelIds)) {
+    await enqueueSupplierPublicationReindex(db, {
+      channelId,
+      supplierId: input.supplierId,
+      requestedBy: input.requestedBy ?? null,
+    })
+  }
+}
+
 async function emitPublicationChanged(
   eventBus: EventBus | undefined,
   db: PostgresJsDatabase,
@@ -169,33 +217,36 @@ export const publicationServiceOperations = {
     data: CreateChannelProductPublicationInput,
     options: { eventBus?: EventBus; actorId?: string | null } = {},
   ) {
-    await requireChannel(db, data.channelId)
-    await requireProduct(db, data.productId)
-    const now = new Date()
     const actorId = data.updatedBy ?? options.actorId ?? null
-    const existing = await publicationServiceOperations.getProductPublicationForSubject(db, data)
-    const [row] = await db
-      .insert(channelProductPublications)
-      .values({
-        ...data,
-        createdBy: data.createdBy ?? actorId,
-        updatedBy: actorId,
-      })
-      .onConflictDoUpdate({
-        target: [channelProductPublications.channelId, channelProductPublications.productId],
-        set: {
-          decision: data.decision,
-          reason: data.reason ?? null,
+    const { existing, row } = await db.transaction(async (tx) => {
+      await requireChannel(tx, data.channelId)
+      await requireProduct(tx, data.productId)
+      const now = new Date()
+      const existing = await publicationServiceOperations.getProductPublicationForSubject(tx, data)
+      const [row] = await tx
+        .insert(channelProductPublications)
+        .values({
+          ...data,
+          createdBy: data.createdBy ?? actorId,
           updatedBy: actorId,
-          metadata: data.metadata ?? null,
-          updatedAt: now,
-        },
+        })
+        .onConflictDoUpdate({
+          target: [channelProductPublications.channelId, channelProductPublications.productId],
+          set: {
+            decision: data.decision,
+            reason: data.reason ?? null,
+            updatedBy: actorId,
+            metadata: data.metadata ?? null,
+            updatedAt: now,
+          },
+        })
+        .returning()
+      await enqueueProductPublicationReindex(tx, {
+        channelId: data.channelId,
+        productId: data.productId,
+        requestedBy: actorId,
       })
-      .returning()
-    await enqueueProductPublicationReindex(db, {
-      channelId: data.channelId,
-      productId: data.productId,
-      requestedBy: actorId,
+      return { existing, row: row! }
     })
     await emitPublicationChanged(options.eventBus, db, {
       channelId: data.channelId,
@@ -203,7 +254,7 @@ export const publicationServiceOperations = {
       publicationId: row?.id ?? null,
       operation: existing ? "updated" : "created",
     })
-    return row!
+    return row
   },
 
   async updateProductPublication(
@@ -212,28 +263,32 @@ export const publicationServiceOperations = {
     data: UpdateChannelProductPublicationInput,
     options: { eventBus?: EventBus; actorId?: string | null } = {},
   ) {
-    const [existing] = await db
-      .select({
-        channelId: channelProductPublications.channelId,
-        productId: channelProductPublications.productId,
-      })
-      .from(channelProductPublications)
-      .where(eq(channelProductPublications.id, id))
-      .limit(1)
-    if (!existing) return null
     const actorId = data.updatedBy ?? options.actorId ?? null
-    const [row] = await db
-      .update(channelProductPublications)
-      .set({ ...data, updatedBy: actorId, updatedAt: new Date() })
-      .where(eq(channelProductPublications.id, id))
-      .returning()
-    await enqueueProductPublicationReindex(db, { ...existing, requestedBy: actorId })
+    const outcome = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({
+          channelId: channelProductPublications.channelId,
+          productId: channelProductPublications.productId,
+        })
+        .from(channelProductPublications)
+        .where(eq(channelProductPublications.id, id))
+        .limit(1)
+      if (!existing) return null
+      const [row] = await tx
+        .update(channelProductPublications)
+        .set({ ...data, updatedBy: actorId, updatedAt: new Date() })
+        .where(eq(channelProductPublications.id, id))
+        .returning()
+      await enqueueProductPublicationReindex(tx, { ...existing, requestedBy: actorId })
+      return { existing, row: row ?? null }
+    })
+    if (!outcome) return null
     await emitPublicationChanged(options.eventBus, db, {
-      ...existing,
-      publicationId: row?.id ?? null,
+      ...outcome.existing,
+      publicationId: outcome.row?.id ?? null,
       operation: "updated",
     })
-    return row ?? null
+    return outcome.row
   },
 
   async deleteProductPublication(
@@ -241,20 +296,24 @@ export const publicationServiceOperations = {
     id: string,
     options: { eventBus?: EventBus; actorId?: string | null } = {},
   ) {
-    const [row] = await db
-      .delete(channelProductPublications)
-      .where(eq(channelProductPublications.id, id))
-      .returning({
-        id: channelProductPublications.id,
-        channelId: channelProductPublications.channelId,
-        productId: channelProductPublications.productId,
+    const row = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .delete(channelProductPublications)
+        .where(eq(channelProductPublications.id, id))
+        .returning({
+          id: channelProductPublications.id,
+          channelId: channelProductPublications.channelId,
+          productId: channelProductPublications.productId,
+        })
+      if (!row) return null
+      await enqueueProductPublicationReindex(tx, {
+        channelId: row.channelId,
+        productId: row.productId,
+        requestedBy: options.actorId ?? null,
       })
-    if (!row) return null
-    await enqueueProductPublicationReindex(db, {
-      channelId: row.channelId,
-      productId: row.productId,
-      requestedBy: options.actorId ?? null,
+      return row
     })
+    if (!row) return null
     await emitPublicationChanged(options.eventBus, db, {
       ...row,
       publicationId: row.id,
@@ -324,6 +383,74 @@ export const publicationServiceOperations = {
     return row?.count ?? 0
   },
 
+  async enqueueProductLifecycleReindex(
+    db: PostgresJsDatabase,
+    input: { productId: string; requestedBy?: string | null },
+  ) {
+    const channelIds = await listActiveChannelIds(db)
+    await enqueueProductPublicationReindexForChannels(db, {
+      productId: input.productId,
+      channelIds,
+      requestedBy: input.requestedBy ?? null,
+    })
+    return { enqueued: channelIds.length }
+  },
+
+  async enqueueSupplierLifecycleReindex(
+    db: PostgresJsDatabase,
+    input: { supplierId: string; requestedBy?: string | null },
+  ) {
+    const channelIds = await listActiveChannelIds(db)
+    await enqueueSupplierPublicationReindexForChannels(db, {
+      supplierId: input.supplierId,
+      channelIds,
+      requestedBy: input.requestedBy ?? null,
+    })
+    return { enqueued: channelIds.length }
+  },
+
+  async enqueueChannelLifecycleReindex(
+    db: PostgresJsDatabase,
+    input: { channelId: string; requestedBy?: string | null },
+  ) {
+    await requireChannel(db, input.channelId)
+    const productIds = await listVisibleProductIds(db)
+    for (const productId of productIds) {
+      await enqueueProductPublicationReindex(db, {
+        channelId: input.channelId,
+        productId,
+        requestedBy: input.requestedBy ?? null,
+      })
+    }
+    return { enqueued: productIds.length }
+  },
+
+  async enqueueSupplierReassignmentReindex(
+    db: PostgresJsDatabase,
+    input: {
+      productId: string
+      previousSupplierId?: string | null
+      nextSupplierId?: string | null
+      requestedBy?: string | null
+    },
+  ) {
+    const channelIds = await listActiveChannelIds(db)
+    await enqueueProductPublicationReindexForChannels(db, {
+      productId: input.productId,
+      channelIds,
+      requestedBy: input.requestedBy ?? null,
+    })
+    for (const supplierId of new Set([input.previousSupplierId, input.nextSupplierId])) {
+      if (!supplierId) continue
+      await enqueueSupplierPublicationReindexForChannels(db, {
+        supplierId,
+        channelIds,
+        requestedBy: input.requestedBy ?? null,
+      })
+    }
+    return { enqueued: channelIds.length }
+  },
+
   async previewSupplierPublication(
     db: PostgresJsDatabase,
     data: PreviewChannelSupplierPublicationInput,
@@ -345,38 +472,41 @@ export const publicationServiceOperations = {
     data: CreateChannelSupplierPublicationInput,
     options: { actorId?: string | null } = {},
   ) {
-    await requireChannel(db, data.channelId)
-    await ensureSupplierExists(db, data.supplierId)
-    const now = new Date()
     const actorId = data.updatedBy ?? options.actorId ?? null
-    const [row] = await db
-      .insert(channelSupplierPublications)
-      .values({
-        ...data,
-        createdBy: data.createdBy ?? actorId,
-        updatedBy: actorId,
-      })
-      .onConflictDoUpdate({
-        target: [channelSupplierPublications.channelId, channelSupplierPublications.supplierId],
-        set: {
-          decision: data.decision,
-          reason: data.reason ?? null,
+    const row = await db.transaction(async (tx) => {
+      await requireChannel(tx, data.channelId)
+      await ensureSupplierExists(tx, data.supplierId)
+      const now = new Date()
+      const [row] = await tx
+        .insert(channelSupplierPublications)
+        .values({
+          ...data,
+          createdBy: data.createdBy ?? actorId,
           updatedBy: actorId,
-          metadata: data.metadata ?? null,
-          updatedAt: now,
-        },
+        })
+        .onConflictDoUpdate({
+          target: [channelSupplierPublications.channelId, channelSupplierPublications.supplierId],
+          set: {
+            decision: data.decision,
+            reason: data.reason ?? null,
+            updatedBy: actorId,
+            metadata: data.metadata ?? null,
+            updatedAt: now,
+          },
+        })
+        .returning()
+      await enqueueSupplierPublicationReindex(tx, {
+        channelId: data.channelId,
+        supplierId: data.supplierId,
+        requestedBy: actorId,
       })
-      .returning()
-    await enqueueSupplierPublicationReindex(db, {
-      channelId: data.channelId,
-      supplierId: data.supplierId,
-      requestedBy: actorId,
+      return row!
     })
     const affectedProductCount = await publicationServiceOperations.countProductsForSupplier(
       db,
       data.supplierId,
     )
-    return { publication: row!, affectedProductCount }
+    return { publication: row, affectedProductCount }
   },
 
   async updateSupplierPublication(
@@ -385,27 +515,31 @@ export const publicationServiceOperations = {
     data: UpdateChannelSupplierPublicationInput,
     options: { actorId?: string | null } = {},
   ) {
-    const [existing] = await db
-      .select({
-        channelId: channelSupplierPublications.channelId,
-        supplierId: channelSupplierPublications.supplierId,
-      })
-      .from(channelSupplierPublications)
-      .where(eq(channelSupplierPublications.id, id))
-      .limit(1)
-    if (!existing) return null
     const actorId = data.updatedBy ?? options.actorId ?? null
-    const [row] = await db
-      .update(channelSupplierPublications)
-      .set({ ...data, updatedBy: actorId, updatedAt: new Date() })
-      .where(eq(channelSupplierPublications.id, id))
-      .returning()
-    await enqueueSupplierPublicationReindex(db, { ...existing, requestedBy: actorId })
+    const outcome = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({
+          channelId: channelSupplierPublications.channelId,
+          supplierId: channelSupplierPublications.supplierId,
+        })
+        .from(channelSupplierPublications)
+        .where(eq(channelSupplierPublications.id, id))
+        .limit(1)
+      if (!existing) return null
+      const [row] = await tx
+        .update(channelSupplierPublications)
+        .set({ ...data, updatedBy: actorId, updatedAt: new Date() })
+        .where(eq(channelSupplierPublications.id, id))
+        .returning()
+      await enqueueSupplierPublicationReindex(tx, { ...existing, requestedBy: actorId })
+      return { existing, row: row ?? null }
+    })
+    if (!outcome) return null
     const affectedProductCount = await publicationServiceOperations.countProductsForSupplier(
       db,
-      existing.supplierId,
+      outcome.existing.supplierId,
     )
-    return row ? { publication: row, affectedProductCount } : null
+    return outcome.row ? { publication: outcome.row, affectedProductCount } : null
   },
 
   async deleteSupplierPublication(
@@ -413,20 +547,24 @@ export const publicationServiceOperations = {
     id: string,
     options: { actorId?: string | null } = {},
   ) {
-    const [row] = await db
-      .delete(channelSupplierPublications)
-      .where(eq(channelSupplierPublications.id, id))
-      .returning({
-        id: channelSupplierPublications.id,
-        channelId: channelSupplierPublications.channelId,
-        supplierId: channelSupplierPublications.supplierId,
+    const row = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .delete(channelSupplierPublications)
+        .where(eq(channelSupplierPublications.id, id))
+        .returning({
+          id: channelSupplierPublications.id,
+          channelId: channelSupplierPublications.channelId,
+          supplierId: channelSupplierPublications.supplierId,
+        })
+      if (!row) return null
+      await enqueueSupplierPublicationReindex(tx, {
+        channelId: row.channelId,
+        supplierId: row.supplierId,
+        requestedBy: options.actorId ?? null,
       })
-    if (!row) return null
-    await enqueueSupplierPublicationReindex(db, {
-      channelId: row.channelId,
-      supplierId: row.supplierId,
-      requestedBy: options.actorId ?? null,
+      return row
     })
+    if (!row) return null
     return { id: row.id }
   },
 

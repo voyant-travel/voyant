@@ -1161,6 +1161,19 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       const session = await auth.api.getSession({ headers: request.headers })
 
       if (!session) {
+        if (customerSurface && customerContext?.storefrontChannel) {
+          return {
+            isAnonymousRequest: true,
+            userId: "anonymous-storefront",
+            organizationId: null,
+            callerType: "session",
+            actor: "customer",
+            audience: "customer",
+            realm: "customer",
+            scopes: [],
+            storefrontChannel: customerContext.storefrontChannel,
+          }
+        }
         return null
       }
 

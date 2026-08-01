@@ -392,6 +392,18 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
     } satisfies StorefrontRequestContext
   }
 
+  function requireActiveStorefrontChannel(c: Context<Env>): Response | null {
+    const storefrontChannel = c.get("storefrontChannel")
+    if (
+      !storefrontChannel?.storefrontId ||
+      !storefrontChannel.channelId ||
+      storefrontChannel.channelStatus !== "active"
+    ) {
+      return c.json({ error: "Active storefront channel context is required." }, 403)
+    }
+    return null
+  }
+
   async function isProductPublished(productId: string, context: StorefrontRequestContext) {
     if (!options?.publication) return true
     return options.publication.isProductPublished({ productId, context })
@@ -450,7 +462,14 @@ export function createStorefrontPublicRoutes(options?: StorefrontServiceOptions)
   // `/offers/{slug}/apply`, `/offers/redeem`), so hoisting them ahead of the
   // remaining plain catalog/booking legs preserves route-match order — and
   // `/offers/redeem` (a POST) never collides with `/offers/{slug}` (a GET).
-  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  const app = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  app.use("*", async (c, next) => {
+    const denied = requireActiveStorefrontChannel(c)
+    if (denied) return denied
+    return next()
+  })
+
+  return app
     .openapi(listProductOffersRoute, async (c) => {
       const query = c.req.valid("query")
       const offers = await storefrontService.listApplicableOffers({

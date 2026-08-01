@@ -59,6 +59,15 @@ export {
   type EnqueueGraphWebhookEventOptions,
   enqueueGraphWebhookEvent,
 } from "./outbound-webhooks.js"
+export * from "./publication-intent-subscribers.js"
+export {
+  type DistributionPublicationIntentWorkerDeps,
+  type DistributionPublicationIntentWorkerRuntime,
+  distributionPublicationIntentWorkerRuntimePort,
+  drainPublicationReindexIntents,
+  type PublicationIntentWorkerOptions,
+  runDistributionPublicationIntentWorkerJob,
+} from "./publication-intent-worker.js"
 export {
   type PublicationChannelStatus,
   type PublicationDecision,

@@ -170,7 +170,7 @@ describe("auth identity/access deployment manifests", () => {
     })
   })
 
-  it("declares storefront as a linkable identity without coupling to distribution", () => {
+  it("declares storefront as a linkable identity and deployment-owned channel link", () => {
     expect(authStorefrontVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#storefront",
       links: [
@@ -178,6 +178,11 @@ describe("auth identity/access deployment manifests", () => {
           id: "@voyant-travel/auth#linkable.storefront",
           kind: "linkable",
           source: "@voyant-travel/auth/linkables",
+        },
+        {
+          id: "@voyant-travel/auth#link.storefront-channel",
+          kind: "definition",
+          source: "@voyant-travel/auth/standard-links",
         },
       ],
       api: [
