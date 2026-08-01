@@ -1,7 +1,8 @@
 import { bookingAllocations, bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { createDbClient } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { closeTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { createDrizzleBookingSessionRepository } from "../../src/booking-engine/sessions-drizzle.js"
@@ -31,11 +32,19 @@ const PRICING = {
   total: 10_000,
 }
 
+type ConcurrentTestDb = PostgresJsDatabase & {
+  $client?: { end?: (options?: { timeout?: number | null }) => Promise<unknown> }
+}
+
 describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () => {
-  let db: ReturnType<typeof createTestDb>
+  let db: ConcurrentTestDb
 
   beforeAll(() => {
-    db = createTestDb()
+    db = createDbClient(process.env.TEST_DATABASE_URL ?? "", {
+      adapter: "node",
+      nodeMaxConnections: 4,
+      timeouts: { statementMs: false, queryMs: false, connectMs: false },
+    }) as ConcurrentTestDb
   })
 
   beforeEach(async () => {
@@ -43,7 +52,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
   })
 
   afterAll(async () => {
-    await closeTestDb()
+    await db.$client?.end?.({ timeout: 0 })
   })
 
   it("replays concurrent create and mutation keys without unique errors", async () => {
@@ -102,7 +111,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
     const repository = createDrizzleBookingSessionRepository(db)
     const module = createModule(repository, async (input) =>
       db.transaction(async (tx) => {
-        const graph = await insertBookingGraph(tx as typeof db)
+        const graph = await insertBookingGraph(tx as PostgresJsDatabase)
         entrants += 1
         if (entrants === 2) releaseEntrants?.()
         await bothEntered
@@ -139,7 +148,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
     const repository = createDrizzleBookingSessionRepository(db)
     const module = createModule(repository, async (input) =>
       db.transaction(async (tx) => {
-        const graph = await insertBookingGraph(tx as typeof db)
+        const graph = await insertBookingGraph(tx as PostgresJsDatabase)
         await input.consumeSources(tx, graph.bookingId, [graph.allocationId])
         throw new Error("fault_after_booking_item_allocation")
       }),
@@ -222,7 +231,7 @@ async function createQuoteAndHold(module: ReturnType<typeof createModule>) {
   return { session: created.session, quote: quoted.quote, hold: held.hold }
 }
 
-async function insertBookingGraph(db: ReturnType<typeof createTestDb>) {
+async function insertBookingGraph(db: PostgresJsDatabase) {
   const bookingId = newId("bookings")
   const bookingItemId = newId("booking_items")
   const allocationId = newId("booking_allocations")
@@ -249,7 +258,7 @@ async function insertBookingGraph(db: ReturnType<typeof createTestDb>) {
   return { bookingId, bookingItemId, allocationId }
 }
 
-async function resetTables(db: ReturnType<typeof createTestDb>) {
+async function resetTables(db: PostgresJsDatabase) {
   await db.execute(sql`
     TRUNCATE
       booking_session_commits,
