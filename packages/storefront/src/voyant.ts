@@ -1,6 +1,6 @@
 import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/ports"
 import { bookingsGuestVerificationRuntimePort } from "@voyant-travel/bookings/runtime-port"
-import { catalogPublicationRuntimePort } from "@voyant-travel/catalog/runtime-contracts"
+import { catalogPublicationRuntimePort } from "@voyant-travel/catalog/ports"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 
 // Lightweight reference (id only) so the deployment-graph manifest stays
