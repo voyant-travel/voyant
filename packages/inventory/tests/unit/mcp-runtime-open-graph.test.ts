@@ -45,9 +45,10 @@ describe("inventory Open Graph image Tool runtime", () => {
     const emit = vi.fn().mockResolvedValue(undefined)
     const inventory = await inventoryRuntime(emit)
 
-    await expect(
-      inventory.setProductOpenGraphImage("prod_1", "pmed_1"),
-    ).rejects.toMatchObject({ code, meta: { productId: "prod_1", reason } })
+    await expect(inventory.setProductOpenGraphImage("prod_1", "pmed_1")).rejects.toMatchObject({
+      code,
+      meta: { productId: "prod_1", reason },
+    })
     expect(emit).not.toHaveBeenCalled()
   })
 })
