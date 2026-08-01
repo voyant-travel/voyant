@@ -8,7 +8,7 @@ export type DistributionRouteEnv = {
     /**
      * Request-scoped event bus set by the framework (`createApp`). Optional so
      * the routes still mount in tests / hosts that don't wire a bus. Product
-     * mapping mutations pass it through to the service so
+     * mapping and Channel mutations pass it through to the service so
      * `product.publication.changed` fires from the service layer (covering
      * batch paths too).
      */

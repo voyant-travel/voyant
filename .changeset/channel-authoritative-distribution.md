@@ -1,6 +1,7 @@
 ---
 "@voyant-travel/catalog": patch
 "@voyant-travel/catalog-react": patch
+"@voyant-travel/distribution": patch
 "@voyant-travel/inventory": patch
 "@voyant-travel/inventory-react": patch
 "@voyant-travel/products-contracts": patch

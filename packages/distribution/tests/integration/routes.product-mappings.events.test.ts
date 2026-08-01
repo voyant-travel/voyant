@@ -245,4 +245,69 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       expect(e.data.operation).toBe("deactivated")
     }
   })
+
+  it("reindexes every mapped Product when its Channel is deactivated", async () => {
+    const channel = await seedChannel({ status: "active" })
+    const products = [await seedProduct(), await seedProduct()]
+    for (const product of products) {
+      const res = await app.request("/product-mappings", {
+        method: "POST",
+        ...json({ channelId: channel.id, productId: product.id }),
+      })
+      expect(res.status).toBe(201)
+    }
+    captured = createCapturingBus()
+
+    const res = await app.request(`/channels/${channel.id}`, {
+      method: "PATCH",
+      ...json({ status: "inactive" }),
+    })
+    expect(res.status).toBe(200)
+
+    const events = publicationEvents()
+    expect(events).toHaveLength(2)
+    expect(new Set(events.map((event) => event.data.productId))).toEqual(
+      new Set(products.map((product) => product.id)),
+    )
+    for (const event of events) {
+      expect(event.data).toMatchObject({
+        channelId: channel.id,
+        operation: "updated",
+        previousActive: true,
+        nextActive: true,
+        channelStatus: "inactive",
+      })
+    }
+  })
+
+  it("reindexes every mapped Product before Channel deletion cascades its mappings", async () => {
+    const channel = await seedChannel({ status: "active" })
+    const products = [await seedProduct(), await seedProduct()]
+    for (const product of products) {
+      const res = await app.request("/product-mappings", {
+        method: "POST",
+        ...json({ channelId: channel.id, productId: product.id }),
+      })
+      expect(res.status).toBe(201)
+    }
+    captured = createCapturingBus()
+
+    const res = await app.request(`/channels/${channel.id}`, { method: "DELETE" })
+    expect(res.status).toBe(200)
+
+    const events = publicationEvents()
+    expect(events).toHaveLength(2)
+    expect(new Set(events.map((event) => event.data.productId))).toEqual(
+      new Set(products.map((product) => product.id)),
+    )
+    for (const event of events) {
+      expect(event.data).toMatchObject({
+        channelId: channel.id,
+        operation: "deleted",
+        previousActive: true,
+        nextActive: null,
+        channelStatus: null,
+      })
+    }
+  })
 })

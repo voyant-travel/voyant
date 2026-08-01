@@ -3,8 +3,9 @@
  *
  * Emitted (after the write commits) by every service path that mutates a
  * product↔channel mapping — create, update, delete, and the activate /
- * deactivate cases of update. Batch/import paths route through the same
- * single-item service methods, so they emit too.
+ * deactivate cases of update — and by Channel update/delete paths for every
+ * affected mapping. Batch/import paths route through the same single-item
+ * service methods, so they emit too.
  *
  * `product.publication.changed` is the durable signal that a product's
  * storefront publication may have shifted: adding an active mapping to an
@@ -31,8 +32,8 @@ export const PRODUCT_PUBLICATION_CHANGED_EVENT = "product.publication.changed" a
 
 /**
  * Which write produced the event. `activated` / `deactivated` are the update
- * cases where the mapping's `active` flag flipped; a plain field edit is
- * `updated`.
+ * cases where the mapping's `active` flag flipped; a plain field edit or a
+ * Channel-level update is `updated`.
  */
 export type ProductPublicationOperation =
   | "created"

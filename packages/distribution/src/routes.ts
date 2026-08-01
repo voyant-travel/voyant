@@ -181,23 +181,25 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
   })
   .openapi(batchUpdateChannelsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchUpdate({
         db: c.get("db"),
         ids: body.ids,
         patch: body.patch,
-        update: distributionService.updateChannel.bind(distributionService),
+        update: (db, id, patch) => distributionService.updateChannel(db, id, patch, eventBus),
       }),
       200,
     )
   })
   .openapi(batchDeleteChannelsRoute, async (c) => {
     const body = c.req.valid("json")
+    const eventBus = c.get("eventBus")
     return c.json(
       await handleBatchDelete({
         db: c.get("db"),
         ids: body.ids,
-        remove: distributionService.deleteChannel,
+        remove: (db, id) => distributionService.deleteChannel(db, id, eventBus),
       }),
       200,
     )
@@ -211,11 +213,16 @@ const channelRoutes = new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openA
       c.get("db"),
       c.req.valid("param").id,
       c.req.valid("json"),
+      c.get("eventBus"),
     )
     return row ? c.json({ data: row }, 200) : c.json({ error: "Channel not found" }, 404)
   })
   .openapi(deleteChannelRoute, async (c) => {
-    const row = await distributionService.deleteChannel(c.get("db"), c.req.valid("param").id)
+    const row = await distributionService.deleteChannel(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.get("eventBus"),
+    )
     return row
       ? c.json({ success: true } as const, 200)
       : c.json({ error: "Channel not found" }, 404)
