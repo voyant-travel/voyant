@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
+import type { Plugin } from "vite"
 import { describe, expect, it } from "vitest"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
@@ -235,18 +236,52 @@ describe("voyantStartViteConfig", () => {
     expect(config.ssr?.external).toEqual(["pg"])
   })
 
-  it("externalizes the complete Node dependency graph for production builds", () => {
+  it("externalizes only first-party runtime packages for production builds", async () => {
     const config = voyantStartViteConfig({
       ...base,
       nodeSsr: true,
       bundleWorkspaceSource: false,
     })
 
-    expect(config.ssr?.external).toBe(true)
-    expect(config.ssr?.noExternal).toEqual([
-      "@tanstack/start-client-core",
-      "@tanstack/start-server-core",
+    expect(config.ssr?.external).toEqual(["pg"])
+    expect(config.ssr?.noExternal).toBeUndefined()
+    expect(config.plugins).toEqual([
+      expect.objectContaining({
+        name: "voyant:externalize-production-runtime",
+        enforce: "pre",
+        resolveId: expect.any(Function),
+      }),
     ])
+    const [externalizer] = config.plugins as Plugin[]
+    const resolveId = externalizer?.resolveId
+    expect(typeof resolveId).toBe("function")
+    if (typeof resolveId !== "function") return
+    const serverContext = { environment: { config: { consumer: "server" } } }
+    const clientContext = { environment: { config: { consumer: "client" } } }
+    expect(
+      await resolveId.call(
+        serverContext as never,
+        "@voyant-travel/bookings/runtime",
+        undefined,
+        {} as never,
+      ),
+    ).toEqual({ id: "@voyant-travel/bookings/runtime", external: true })
+    expect(
+      await resolveId.call(
+        serverContext as never,
+        "@tanstack/start-server-core",
+        undefined,
+        {} as never,
+      ),
+    ).toBeNull()
+    expect(
+      await resolveId.call(
+        clientContext as never,
+        "@voyant-travel/bookings/runtime",
+        undefined,
+        {} as never,
+      ),
+    ).toBeNull()
   })
 
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {

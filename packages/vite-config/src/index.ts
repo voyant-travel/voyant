@@ -303,6 +303,9 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     appRootUrl,
     VOYANT_SSR_OPTIMIZE_DEPS,
   )
+  const productionRuntimeExternalPlugin = bundleWorkspaceSource
+    ? undefined
+    : createProductionRuntimeExternalPlugin()
   return {
     server: {
       allowedHosts,
@@ -342,19 +345,31 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
                   },
                 }
               : {
-                  // Vite follows linked workspace dependencies by default.
-                  // Externalize production runtime package imports explicitly;
-                  // the deployed install supplies those packages and resolves
-                  // their normal Node export conditions at runtime. TanStack
-                  // Start's core packages contain virtual #tanstack-* imports
-                  // that its Vite plugin must replace during the server build.
-                  external: true,
-                  noExternal: ["@tanstack/start-client-core", "@tanstack/start-server-core"],
+                  // The production externalizer marks only first-party package
+                  // imports external. Keep ordinary dependencies in Vite's
+                  // default SSR pipeline so framework plugins can still bundle
+                  // packages that contain virtual imports.
+                  external: ["pg"],
                 }),
           }
         : {}),
     },
-    plugins,
+    plugins: [
+      ...(productionRuntimeExternalPlugin ? [productionRuntimeExternalPlugin] : []),
+      ...plugins,
+    ],
+  }
+}
+
+function createProductionRuntimeExternalPlugin(): Plugin {
+  return {
+    name: "voyant:externalize-production-runtime",
+    enforce: "pre",
+    resolveId(source) {
+      if (this.environment.config.consumer !== "server") return null
+      if (!/^@(?:voyant-travel|pxmstudio)\/[^/]+(?:\/.*)?$/.test(source)) return null
+      return { id: source, external: true }
+    },
   }
 }
 
