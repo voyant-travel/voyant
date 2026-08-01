@@ -138,6 +138,30 @@ async function renderWithHost(children: ReactNode, hostApi: ProductDetailApi = a
 }
 
 describe("product detail accessibility", () => {
+  it("surfaces save failures in the form instead of leaving an unhandled rejection", async () => {
+    const patch = vi.fn().mockRejectedValue(new Error("Create a future open departure first."))
+    await renderWithHost(
+      <ProductDetailForm
+        product={{ ...product, name: "Whale watching", sellCurrency: "EUR" }}
+        onSuccess={() => undefined}
+      />,
+      { ...api, patch },
+    )
+
+    await act(async () => {
+      document
+        .querySelector("form")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(patch).toHaveBeenCalledOnce()
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+      "Create a future open departure first.",
+    )
+  })
+
   it("associates labels with all fourteen product controls and validation messages", async () => {
     await renderWithHost(<ProductDetailForm product={product} onSuccess={() => undefined} />)
 

@@ -13,7 +13,7 @@ export default function CatalogToursIndexPage({
   updateSearch,
   scopeOptions,
 }: CatalogAdminRoutePageProps) {
-  // Tours = scheduled products in the Tour family (family code `tour`).
+  // Tours = products in the Tour family (family code `tour`).
   // Duration is display/range only — not the scope identity.
   return (
     <ScheduledCatalogHost

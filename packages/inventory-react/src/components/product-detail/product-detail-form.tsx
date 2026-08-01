@@ -222,6 +222,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
   }, [defaultLanguageTag])
 
   const [tagInput, setTagInput] = useState("")
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const { data: typesData } = useQuery({
     queryKey: ["product-types"],
@@ -246,6 +247,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
   }, [product, form])
 
   const onSubmit = async (values: ProductFormOutput) => {
+    setSubmitError(null)
     const resolvedDefaultLanguage = values.defaultLanguageTag?.trim() || adminBaseLocale
     const payload = {
       name: values.name,
@@ -274,14 +276,18 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       baseTermsHtml: values.termsHtml ?? "",
     }
 
-    if (isEditing) {
-      await api.patch(`/v1/admin/products/${product.id}`, payload)
-      await translations.persist(product.id, persistOptions)
-      onSuccess()
-    } else {
-      const result = await api.post<{ id: string }>("/v1/admin/products", payload)
-      await translations.persist(result.id, persistOptions)
-      onSuccess(result.id)
+    try {
+      if (isEditing) {
+        await api.patch(`/v1/admin/products/${product.id}`, payload)
+        await translations.persist(product.id, persistOptions)
+        onSuccess()
+      } else {
+        const result = await api.post<{ id: string }>("/v1/admin/products", payload)
+        await translations.persist(result.id, persistOptions)
+        onSuccess(result.id)
+      }
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : productMessages.saveFailed)
     }
   }
 
@@ -709,6 +715,15 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
           </div>
         )}
       </div>
+
+      {submitError ? (
+        <p
+          role="alert"
+          className="whitespace-pre-line rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+        >
+          {submitError}
+        </p>
+      ) : null}
 
       <div className="flex items-center justify-end gap-2">
         {onCancel ? (

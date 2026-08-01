@@ -202,11 +202,11 @@ export async function getResolvedProductById(
   const row = rows[0]
   if (!row) return null
 
-  const projection = productRowToProjection(row, {
+  const baseProjection = productRowToProjection(row, {
     sellerOperatorId: context.sellerOperatorId,
   })
   const classificationProjection = await projectProductClassification(db, row)
-  for (const [path, value] of classificationProjection) projection.set(path, value)
+  const projection = new Map([...baseProjection, ...classificationProjection])
   return resolveEntityView(db, getProductsRegistry(), "products", id, projection, context.scope)
 }
 
@@ -243,12 +243,10 @@ export async function listResolvedProducts(
     rows.map((row) => projectProductClassification(db, row)),
   )
   return rows.map((row, index) => {
-    const projection = productRowToProjection(row, {
+    const baseProjection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
     })
-    for (const [path, value] of classificationProjections[index] ?? []) {
-      projection.set(path, value)
-    }
+    const projection = new Map([...baseProjection, ...(classificationProjections[index] ?? [])])
     return resolveEntityViewWithOverlays(
       registry,
       projection,
