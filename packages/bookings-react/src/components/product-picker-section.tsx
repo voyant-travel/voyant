@@ -108,6 +108,7 @@ export function ProductPickerSection({
   // or rebuilding, so keep a direct, bounded Inventory query in the picker.
   const ownedProductsQuery = useProducts({
     search: debouncedProductSearch || undefined,
+    status: "active",
     limit: 30,
     enabled: enabled && !lockProduct,
   })
