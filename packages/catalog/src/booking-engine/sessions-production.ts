@@ -189,6 +189,7 @@ async function commitOwnedBookingInTransaction(
     draftId: input.session.id,
     quoteId: input.quote.id,
     caller: { personId: billing.personId ?? undefined },
+    ...(input.access.storefront ? { storefront: input.access.storefront } : {}),
     // The public contract scopes Commit idempotency to a Session. Finance's
     // action-ledger scope is principal-wide, so preserve the Session boundary
     // when crossing into that command protocol.

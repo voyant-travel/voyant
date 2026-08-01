@@ -15,7 +15,13 @@ import type { Context } from "hono"
 import type { BookingSessionAccessContext, BookingSessionModule } from "./sessions-service.js"
 
 type Env = {
-  Variables: Record<string, unknown>
+  Variables: Record<string, unknown> & {
+    storefrontChannel?: {
+      storefrontId: string
+      channelId: string
+      channelStatus?: string | null
+    }
+  }
 }
 
 export interface BookingSessionRoutesOptions {
@@ -42,6 +48,10 @@ const createSessionRoute = createRoute({
       description: "Invalid request",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -59,6 +69,10 @@ const updateSessionRoute = createRoute({
     },
     400: {
       description: "Invalid request",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -80,6 +94,10 @@ const quoteSessionRoute = createRoute({
       description: "Invalid request",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -97,6 +115,10 @@ const holdSessionRoute = createRoute({
     },
     400: {
       description: "Invalid request",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -118,6 +140,10 @@ const commitSessionRoute = createRoute({
       description: "Invalid request",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
@@ -137,11 +163,31 @@ const abandonSessionRoute = createRoute({
       description: "Invalid request",
       content: { "application/json": { schema: errorResponseSchema } },
     },
+    403: {
+      description: "Active storefront channel context is required for public booking sessions",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
   },
 })
 
 export function createBookingSessionRoutes(options: BookingSessionRoutesOptions): OpenAPIHono<Env> {
-  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  const app = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  if (options.actorKind === "anonymous") {
+    app.use("*", async (c, next) => {
+      if (!activeStorefront(c)) {
+        return c.json(
+          {
+            error: "Active storefront channel context is required.",
+            code: "active_storefront_channel_required",
+          },
+          403,
+        )
+      }
+      return next()
+    })
+  }
+
+  return app
     .openapi(createSessionRoute, async (c) =>
       asRouteResponse(
         c.json(
@@ -230,12 +276,32 @@ function resolveAccess(
   options: BookingSessionRoutesOptions,
   c: Context,
 ): BookingSessionAccessContext {
-  return (
-    options.resolveAccess?.(c, options.actorKind) ?? {
-      actorKind: options.actorKind,
-      ...(options.actorKind === "anonymous" ? { capability: readAnonymousCapability(c) } : {}),
-    }
-  )
+  const resolved = options.resolveAccess?.(c, options.actorKind) ?? {
+    actorKind: options.actorKind,
+    ...(options.actorKind === "anonymous" ? { capability: readAnonymousCapability(c) } : {}),
+  }
+  if (options.actorKind !== "anonymous") return resolved
+
+  // The anonymous middleware has already rejected a missing/inactive binding.
+  // Re-read the trusted Hono variable here so no custom access resolver can
+  // substitute body or session-state storefront identifiers.
+  const storefront = activeStorefront(c as Context<Env>)
+  return { ...resolved, ...(storefront ? { storefront } : {}) }
+}
+
+function activeStorefront(c: Context<Env>) {
+  const storefrontChannel = c.get("storefrontChannel")
+  if (
+    !storefrontChannel?.storefrontId ||
+    !storefrontChannel.channelId ||
+    storefrontChannel.channelStatus !== "active"
+  ) {
+    return null
+  }
+  return {
+    storefrontId: storefrontChannel.storefrontId,
+    channelId: storefrontChannel.channelId,
+  }
 }
 
 function readAnonymousCapability(c: Context): string | undefined {

@@ -1,5 +1,5 @@
 import { Hono } from "hono"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   createInMemoryBookingSessionRepository,
@@ -8,7 +8,19 @@ import {
 import { createBookingSessionRoutes } from "./sessions-routes.js"
 import { createBookingSessionModule } from "./sessions-service.js"
 
-function createApp() {
+const ACTIVE_STOREFRONT = {
+  storefrontId: "sf_public",
+  channelId: "chan_public",
+  channelStatus: "active",
+} as const
+
+function createApp(
+  storefrontChannel: {
+    storefrontId: string
+    channelId: string
+    channelStatus: string | null
+  } | null = ACTIVE_STOREFRONT,
+) {
   const repository = createInMemoryBookingSessionRepository()
   const inventory = createInMemoryOwnedInventoryPorts()
   inventory.setCapacity("product:prod_owned_1", 2)
@@ -34,6 +46,10 @@ function createApp() {
     },
   })
   const app = new Hono()
+  app.use("/v1/public/catalog/*", async (c, next) => {
+    if (storefrontChannel) c.set("storefrontChannel" as never, storefrontChannel as never)
+    await next()
+  })
   app.route(
     "/v1/public/catalog",
     createBookingSessionRoutes({ actorKind: "anonymous", resolveModule: () => module }),
@@ -46,12 +62,59 @@ function createApp() {
       resolveAccess: () => ({ actorKind: "staff", principalId: "staff_1" }),
     }),
   )
-  return { app, inventory }
+  return { app, inventory, module }
 }
 
 describe("Booking Session v1 routes", () => {
+  it.each([
+    ["missing", null],
+    ["inactive", { ...ACTIVE_STOREFRONT, channelStatus: "inactive" }],
+  ])("fails closed for %s public storefront context", async (_label, storefrontChannel) => {
+    const { app } = createApp(storefrontChannel)
+
+    const response = await app.request("/v1/public/catalog/booking-sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "route_create_denied",
+        target: { kind: "product", productId: "prod_owned_1" },
+      }),
+    })
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: "Active storefront channel context is required.",
+      code: "active_storefront_channel_required",
+    })
+  })
+
+  it("derives anonymous storefront access from trusted Hono context only", async () => {
+    const { app, module } = createApp()
+    const createSession = vi.spyOn(module, "createSession")
+
+    const response = await app.request("/v1/public/catalog/booking-sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "route_create_trusted_origin",
+        target: { kind: "product", productId: "prod_owned_1" },
+        storefront: { storefrontId: "sf_untrusted", channelId: "chan_untrusted" },
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(createSession).toHaveBeenCalledWith(
+      expect.not.objectContaining({ storefront: expect.anything() }),
+      expect.objectContaining({
+        actorKind: "anonymous",
+        storefront: { storefrontId: "sf_public", channelId: "chan_public" },
+      }),
+    )
+  })
+
   it("adapts public anonymous and admin staff transports to the same module outcomes", async () => {
-    const { app } = createApp()
+    const { app, module } = createApp()
+    const createSession = vi.spyOn(module, "createSession")
     const publicBody = JSON.stringify({
       idempotencyKey: "route_create_public",
       target: { kind: "product", productId: "prod_owned_1" },
@@ -83,6 +146,14 @@ describe("Booking Session v1 routes", () => {
     await expect(adminResponse.json()).resolves.toMatchObject({
       kind: "session_created",
       session: { actorKind: "staff", revision: 1, target: { productId: "prod_owned_1" } },
+    })
+    expect(createSession.mock.calls[0]?.[1]).toMatchObject({
+      actorKind: "anonymous",
+      storefront: { storefrontId: "sf_public", channelId: "chan_public" },
+    })
+    expect(createSession.mock.calls[1]?.[1]).toEqual({
+      actorKind: "staff",
+      principalId: "staff_1",
     })
   })
 

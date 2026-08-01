@@ -172,6 +172,8 @@ export interface BookingSessionAccessContext {
   principalId?: string
   organizationId?: string
   capability?: string
+  /** Trusted request context resolved by the public transport, never session state. */
+  storefront?: { storefrontId: string; channelId: string }
   sessionTtlMs?: number
 }
 

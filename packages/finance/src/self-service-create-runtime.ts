@@ -55,7 +55,8 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
       draftId: string
       quoteId: string
       caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
-      storefront: { storefrontId: string; channelId: string }
+      /** Required by public callers; omitted by trusted staff workflows. */
+      storefront?: { storefrontId: string; channelId: string }
       idempotencyKey: string
       /** Proves the caller holds the draft; verified by the source provider. */
       draftCapabilityToken?: string
@@ -103,7 +104,7 @@ export function createSelfServiceCreateRuntime(deps: SelfServiceCreateRuntimeDep
         commandInput: {
           ...resolved.command,
           bookingNumber,
-          storefrontOrigin: input.storefront,
+          ...(input.storefront ? { storefrontOrigin: input.storefront } : {}),
         } as never,
         admitted: deps.admit("customer", input.idempotencyKey),
         ...(deps.runtime ? { runtime: deps.runtime } : {}),
