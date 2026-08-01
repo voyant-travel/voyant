@@ -6,6 +6,41 @@ import { describe, expect, it, vi } from "vitest"
 import { createStorefrontPublicRoutes } from "../../src/routes-public.js"
 
 describe("createStorefrontPublicRoutes", () => {
+  it("passes server-derived storefront channel context to publication guards", async () => {
+    const isProductPublished = vi.fn(async () => false)
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set(
+        "storefrontChannel" as never,
+        {
+          storefrontId: "sf_bound",
+          channelId: "chan_bound",
+          channelStatus: "active",
+        } as never,
+      )
+      await next()
+    })
+    app.route(
+      "/",
+      createStorefrontPublicRoutes({
+        publication: { isProductPublished },
+      }),
+    )
+
+    const res = await app.request("/products/prod_1/departures?channelId=chan_public_param")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ data: [], total: 0, limit: 100, offset: 0 })
+    expect(isProductPublished).toHaveBeenCalledWith({
+      productId: "prod_1",
+      context: expect.objectContaining({
+        storefrontId: "sf_bound",
+        channelId: "chan_bound",
+        channelStatus: "active",
+      }),
+    })
+  })
+
   it("rejects malformed composite price-preview selections with public-route errors", async () => {
     const app = new Hono()
     app.onError(handleApiError)
