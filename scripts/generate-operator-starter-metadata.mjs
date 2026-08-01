@@ -237,10 +237,15 @@ const generatedRoutes = voyantGeneratedRoutes({
   files: createStandardOperatorRouteFiles({ presentations: productBom.graph.presentations }),
 })
 
-export default defineConfig(
+// Vite merges this project-root config over the one the CLI builds, so the
+// production/development split has to be made HERE too — otherwise this file
+// silently restores \`noExternal\` and the build inlines workspace source
+// again (voyant#3994). \`command\` is "serve" for dev and "build" for a build.
+export default defineConfig(({ command }) =>
   voyantStartViteConfig({
     appRootUrl,
     nodeSsr: true,
+    bundleWorkspaceSource: command === "serve",
     plugins: [
       generatedRoutes.plugin,
       devtools(),
