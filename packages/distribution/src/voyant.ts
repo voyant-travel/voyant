@@ -11,6 +11,7 @@ import {
 import { financeDistributionPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 import {
+  channelProductMappingChangedEventPayloadSchema,
   productPublicationChangedEventPayloadSchema,
   supplierLifecycleEventPayloadSchema,
 } from "./voyant-event-schemas.js"
@@ -497,6 +498,14 @@ export const distributionVoyantModule = defineModule({
       eventType: "product.publication.changed",
       version: "1.0.0",
       payloadSchema: productPublicationChangedEventPayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "distribution", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/distribution#event.channel-product-mapping-changed",
+      eventType: "channel.product_mapping.changed",
+      version: "1.0.0",
+      payloadSchema: channelProductMappingChangedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "distribution", category: "domain" },
     },
