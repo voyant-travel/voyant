@@ -25,6 +25,8 @@ describe("booking origins", () => {
         providerSourceConnectionId: "src_conn_1797",
         providerSourceRef: "sailing_1797",
         providerOrderRef: "provider_order_1797",
+        storefrontId: "sf_1797",
+        channelId: "chan_1797",
         legacyTransactionOfferId: "off_legacy_1797",
         legacyTransactionOrderId: "ord_legacy_1797",
         metadata: { channel: "proposal" },
@@ -45,6 +47,8 @@ describe("booking origins", () => {
       providerSourceConnectionId: "src_conn_1797",
       providerSourceRef: "sailing_1797",
       providerOrderRef: "provider_order_1797",
+      storefrontId: "sf_1797",
+      channelId: "chan_1797",
       legacyTransactionOfferId: "off_legacy_1797",
       legacyTransactionOrderId: "ord_legacy_1797",
       legacyTransactionIds: {
@@ -71,6 +75,8 @@ describe("booking origins", () => {
       providerSourceConnectionId: null,
       providerSourceRef: null,
       providerOrderRef: null,
+      storefrontId: null,
+      channelId: null,
       legacyTransactionOfferId: null,
       legacyTransactionOrderId: null,
       legacyTransactionIds: { offerId: "off_1797", orderId: "ord_1797" },
@@ -86,6 +92,8 @@ describe("booking origins", () => {
     const input = toDirectB2CBookingOriginInput({
       bookingId: "book_direct_1797",
       externalBookingRef: "storefront-cart-123",
+      storefrontId: "sf_direct",
+      channelId: "chan_direct",
       items: [
         { sourceSnapshotId: "bcsn_1" },
         { sourceSnapshotId: "bcsn_1" },
@@ -97,6 +105,8 @@ describe("booking origins", () => {
       bookingId: "book_direct_1797",
       originSource: "direct_b2c",
       catalogSnapshotId: null,
+      storefrontId: "sf_direct",
+      channelId: "chan_direct",
       metadata: {
         source: "public_bookings_service.create_session",
         externalBookingRef: "storefront-cart-123",
@@ -119,6 +129,8 @@ describe("booking origins", () => {
       providerSourceConnectionId: "src_conn_1797",
       providerSourceRef: "departure_1797",
       providerOrderRef: "ord_provider_1797",
+      storefrontId: "sf_trip",
+      channelId: "chan_trip",
       metadata: { entityModule: "products", entityId: "prod_1797" },
     })
 
@@ -133,6 +145,8 @@ describe("booking origins", () => {
       providerSourceConnectionId: "src_conn_1797",
       providerSourceRef: "departure_1797",
       providerOrderRef: "ord_provider_1797",
+      storefrontId: "sf_trip",
+      channelId: "chan_trip",
       metadata: {
         source: "bookings.submit_reservation_plan",
         tripEnvelopeId: "trenv_1797",
