@@ -460,7 +460,9 @@ async function loadCatalogHydrationData(
             description: productTypes.description,
           })
           .from(productTypes)
-          .where(and(inArray(productTypes.id, productTypeIds), eq(productTypes.active, true)))
+          // Inactive controls whether a family can be selected for new edits;
+          // it must not erase the meaning of products already assigned to it.
+          .where(inArray(productTypes.id, productTypeIds))
       : Promise.resolve([]),
     db
       .select({
@@ -956,31 +958,54 @@ export const catalogProductsService = {
 
     const rowById = new Map(rows.map((row) => [row.id, row] as const))
 
-    // Legacy itinerary-derived duration (max day number of each product's
-    // default itinerary), fetched in bulk so the resolver's fallback matches
-    // the read paths and the catalog-plane projection exactly.
+    // Legacy itinerary-derived duration (max day number of the default
+    // itinerary, falling back to the first itinerary), fetched in bulk so the
+    // resolver's fallback matches list/detail and catalog-plane exactly.
     const itineraryDurationByProduct = new Map<string, number>()
     if (rows.length > 0) {
-      const durationRows = await db
+      const itineraryRows = await db
         .select({
+          id: productItineraries.id,
           productId: productItineraries.productId,
-          maxDay: sql<number | null>`max(${productDays.dayNumber})`,
+          isDefault: productItineraries.isDefault,
+          sortOrder: productItineraries.sortOrder,
         })
         .from(productItineraries)
-        .innerJoin(productDays, eq(productDays.itineraryId, productItineraries.id))
         .where(
-          and(
-            inArray(
-              productItineraries.productId,
-              rows.map((row) => row.id),
-            ),
-            eq(productItineraries.isDefault, true),
+          inArray(
+            productItineraries.productId,
+            rows.map((row) => row.id),
           ),
         )
-        .groupBy(productItineraries.productId)
-      for (const row of durationRows) {
-        if (row.maxDay != null && row.maxDay > 0) {
-          itineraryDurationByProduct.set(row.productId, row.maxDay)
+        .orderBy(
+          asc(productItineraries.productId),
+          desc(productItineraries.isDefault),
+          asc(productItineraries.sortOrder),
+        )
+      const selectedItineraryByProduct = new Map<string, string>()
+      for (const itinerary of itineraryRows) {
+        if (!selectedItineraryByProduct.has(itinerary.productId)) {
+          selectedItineraryByProduct.set(itinerary.productId, itinerary.id)
+        }
+      }
+      const productByItinerary = new Map(
+        [...selectedItineraryByProduct].map(([productId, itineraryId]) => [itineraryId, productId]),
+      )
+      const selectedItineraryIds = [...productByItinerary.keys()]
+      if (selectedItineraryIds.length > 0) {
+        const durationRows = await db
+          .select({
+            itineraryId: productDays.itineraryId,
+            maxDay: sql<number | null>`max(${productDays.dayNumber})`,
+          })
+          .from(productDays)
+          .where(inArray(productDays.itineraryId, selectedItineraryIds))
+          .groupBy(productDays.itineraryId)
+        for (const durationRow of durationRows) {
+          const productId = productByItinerary.get(durationRow.itineraryId)
+          if (productId && durationRow.maxDay != null && durationRow.maxDay > 0) {
+            itineraryDurationByProduct.set(productId, durationRow.maxDay)
+          }
         }
       }
     }

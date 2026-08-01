@@ -249,17 +249,6 @@ export function getProductStatusLabel(
   }
 }
 
-/**
- * Supply model derived from booking mode — `open`/`stay` are dynamic, the rest
- * scheduled (ADR-0010). Kept in the UI so the Organize card can show the
- * derived value without a server round-trip.
- */
-export function deriveSupplyModel(
-  bookingMode: ProductRecord["bookingMode"],
-): "dynamic" | "scheduled" {
-  return bookingMode === "open" || bookingMode === "stay" ? "dynamic" : "scheduled"
-}
-
 type DurationMessages = {
   durationMinutesSuffix: string
   durationDaysSuffix: string
@@ -292,6 +281,15 @@ export function formatProductDuration(
     return `${product.durationMinutes} ${messages.durationMinutesSuffix}`
   }
   return messages.durationUnresolved
+}
+
+/** Turn a stable subtype code into operator-facing copy without changing it. */
+export function formatProductSubtype(code: string): string {
+  return code
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 export function getProductBookingModeLabel(

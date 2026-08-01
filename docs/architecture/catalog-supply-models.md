@@ -67,10 +67,12 @@ first, legacy itinerary-day fallback second, otherwise `unresolved` with a
 review warning), never the family.
 
 Catalog views facet on the stable family/subtype codes, not on free-text
-labels: a Tour view locks `familyCode = tour`; a Boat Tour view additionally
-locks `subtypeCode = boat-tour`. This is independent of which surface (§3)
-the product renders in — a `scheduled` Tour and a `dynamic` Tour both facet
-the same way.
+labels. The standard Tour, Activity, Attraction, Event, and Transportation
+views each lock their corresponding `familyCode`; the Boat Tour view locks
+`familyCode = tour` plus `subtypeCode = boat-tour`. This is independent of
+which surface (§3) the product renders in — a `scheduled` Tour and a `dynamic`
+Tour both facet the same way. Excursions remains a contextual compatibility
+view for scheduled products and is not primary family navigation.
 
 ## 3. Two catalog surfaces (split on the mechanic)
 

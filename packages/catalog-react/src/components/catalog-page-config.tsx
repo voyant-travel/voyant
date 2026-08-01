@@ -32,8 +32,7 @@ export function makeProductColumns(
     statusColumn(messages),
     sourceColumn(messages),
     lookupColumn("supplierId", messages.columns.supplier, formatSupplier, messages),
-    daysColumn(messages),
-    nightsColumn(messages),
+    durationColumn(messages),
     priceColumn("sellAmountCents", "sellCurrency", messages.columns.price, messages, locale),
   ]
 }
@@ -155,7 +154,6 @@ export function makeProductFilters(
     // Tour view locks `familyCode`; the Boat Tour facet locks `subtypeCode`.
     { field: "familyCode", label: messages.filters.family },
     { field: "subtypeCode", label: messages.filters.subtype },
-    { field: "productTypeId", label: messages.filters.type },
     { field: "capacityMode", label: messages.filters.capacity },
     { field: "visibility", label: messages.filters.visibility },
     { field: "facilityId", label: messages.filters.facility },
@@ -391,28 +389,29 @@ function textColumn(
   }
 }
 
-function daysColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
+function durationColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
   return {
-    id: "durationDays",
-    header: messages.columns.days,
+    id: "duration",
+    header: messages.columns.duration,
     cell: ({ row }) => {
+      const minutes = numberField(row.original, "durationMinutes")
+      if (minutes != null) {
+        return (
+          <span className="tabular-nums">
+            {messages.card.minutes.replace("{minutes}", String(minutes))}
+          </span>
+        )
+      }
       const days = numberField(row.original, "durationDays")
       if (days == null)
         return <span className="text-muted-foreground">{messages.values.empty}</span>
-      return <span className="tabular-nums">{days}</span>
-    },
-  }
-}
-
-function nightsColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
-  return {
-    id: "nights",
-    header: messages.columns.nights,
-    cell: ({ row }) => {
-      const days = numberField(row.original, "durationDays")
-      if (days == null || days < 1)
-        return <span className="text-muted-foreground">{messages.values.empty}</span>
-      return <span className="tabular-nums">{Math.max(0, days - 1)}</span>
+      return (
+        <span className="tabular-nums">
+          {messages.card.daysNights
+            .replace("{days}", String(days))
+            .replace("{nights}", String(Math.max(0, days - 1)))}
+        </span>
+      )
     },
   }
 }

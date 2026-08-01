@@ -7,12 +7,17 @@
 // list/detail read paths.
 import type { IndexerSlice } from "@voyant-travel/catalog"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { productDays, productItineraries, products, productTypes } from "../../src/schema.js"
 import { catalogProductsService } from "../../src/service-catalog.js"
-import { createProductClassificationProjectionExtension } from "../../src/service-catalog-plane.js"
+import {
+  buildProductSnapshotInput,
+  createProductClassificationProjectionExtension,
+  getResolvedProductById,
+} from "../../src/service-catalog-plane.js"
 import { coreProductsService } from "../../src/service-core.js"
 import { productListQuerySchema } from "../../src/validation.js"
 
@@ -82,6 +87,34 @@ describe.skipIf(!DB_AVAILABLE)("Product classification (integration)", () => {
       expect(projection.get("classificationReviewRequired")).toBe(false)
     })
 
+    it("keeps resolved views and booking snapshots in classification parity", async () => {
+      const family = await insertTourFamily()
+      const product = await insertProduct({
+        productTypeId: family.id,
+        productSubtypeCode: "boat-tour",
+        durationMinutes: 60,
+      })
+      const context = {
+        sellerOperatorId: "operator_test",
+        scope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" } as const,
+      }
+
+      const view = await getResolvedProductById(db, product.id, context)
+      const snapshot = await buildProductSnapshotInput(db, product.id, context)
+
+      expect(view?.values.get("familyCode")).toBe("tour")
+      expect(view?.values.get("subtypeCode")).toBe("boat-tour")
+      expect(view?.values.get("durationMinutes")).toBe(60)
+      expect(snapshot?.frozenPayload).toMatchObject({
+        familyCode: "tour",
+        subtypeCode: "boat-tour",
+        durationMinutes: 60,
+        durationProvenance: "explicit",
+        classificationReviewRequired: false,
+        classificationReviewReasons: [],
+      })
+    })
+
     it("falls back to the itinerary-derived day count when no explicit duration is authored", async () => {
       const family = await insertTourFamily()
       const product = await insertProduct({ productTypeId: family.id, name: "Alps Multi-day Trek" })
@@ -104,6 +137,30 @@ describe.skipIf(!DB_AVAILABLE)("Product classification (integration)", () => {
       expect(projection.get("durationDays")).toBe(2)
       expect(projection.get("durationProvenance")).toBe("itinerary-derived")
       expect(projection.get("classificationReviewRequired")).toBe(false)
+    })
+
+    it("uses the first itinerary when a legacy product has no default itinerary", async () => {
+      const family = await insertTourFamily()
+      const product = await insertProduct({ productTypeId: family.id, name: "Legacy Trek" })
+      const [itinerary] = await db
+        .insert(productItineraries)
+        .values({ productId: product.id, name: "Only itinerary", isDefault: false })
+        .returning()
+      if (!itinerary) throw new Error("failed to insert itinerary")
+      await db.insert(productDays).values([
+        { itineraryId: itinerary.id, dayNumber: 1 },
+        { itineraryId: itinerary.id, dayNumber: 4 },
+      ])
+
+      const detail = await coreProductsService.getProductByIdWithType(db, product.id)
+      const search = await catalogProductsService.listSearchDocuments(db, {
+        productIds: [product.id],
+        limit: 50,
+        offset: 0,
+      })
+
+      expect(detail?.classification?.durationDays).toBe(4)
+      expect(search.data.find((row) => row.productId === product.id)?.durationDays).toBe(4)
     })
 
     it("flags for review a product with no family and no resolvable duration", async () => {
@@ -160,6 +217,27 @@ describe.skipIf(!DB_AVAILABLE)("Product classification (integration)", () => {
           reviewReasons: [],
         }),
       )
+    })
+
+    it("preserves the classification of products assigned to an inactive family", async () => {
+      const family = await insertTourFamily()
+      await db.update(productTypes).set({ active: false }).where(eq(productTypes.id, family.id))
+      const product = await insertProduct({
+        productTypeId: family.id,
+        durationMinutes: 60,
+      })
+
+      const result = await catalogProductsService.listSearchDocuments(db, {
+        productIds: [product.id],
+        limit: 50,
+        offset: 0,
+      })
+
+      expect(result.data.find((row) => row.productId === product.id)).toMatchObject({
+        familyCode: "tour",
+        familyName: "Tour",
+        reviewReasons: [],
+      })
     })
   })
 

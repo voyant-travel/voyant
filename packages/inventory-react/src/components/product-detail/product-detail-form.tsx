@@ -51,6 +51,8 @@ export type ProductData = {
   visibility: "public" | "private" | "hidden"
   activated: boolean
   productTypeId: string | null
+  productSubtypeCode?: string | null
+  durationMinutes?: number | null
   taxClassId: string | null
   sellCurrency: string
   tags: string[]
@@ -90,6 +92,8 @@ function initialValues(product: ProductData | undefined) {
       visibility: product.visibility,
       activated: product.activated,
       productTypeId: product.productTypeId ?? "",
+      productSubtypeCode: product.productSubtypeCode ?? "",
+      durationMinutes: product.durationMinutes ?? null,
       taxClassId: product.taxClassId ?? "",
       sellCurrency: product.sellCurrency,
       tags: product.tags ?? [],
@@ -107,6 +111,8 @@ function initialValues(product: ProductData | undefined) {
     visibility: "private" as const,
     activated: false,
     productTypeId: "",
+    productSubtypeCode: "",
+    durationMinutes: null,
     taxClassId: "",
     sellCurrency: "EUR",
     tags: [] as string[],
@@ -130,6 +136,13 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     visibility: z.enum(["public", "private", "hidden"]),
     activated: z.boolean(),
     productTypeId: z.string().optional().nullable(),
+    productSubtypeCode: z
+      .string()
+      .max(64)
+      .refine((value) => !value || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value), {
+        message: productMessages.validationSubtypeCode,
+      }),
+    durationMinutes: z.number().int().min(0).nullable(),
     taxClassId: z.string().optional().nullable(),
     sellCurrency: z
       .string()
@@ -245,6 +258,8 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       visibility: values.visibility,
       activated: values.activated,
       productTypeId: values.productTypeId || null,
+      productSubtypeCode: values.productSubtypeCode || null,
+      durationMinutes: values.durationMinutes,
       taxClassId: values.taxClassId || null,
       sellCurrency: values.sellCurrency,
       tags: values.tags,
@@ -511,10 +526,10 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 rounded-md border p-3 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
             <Label id="product-detail-product-type-label" htmlFor="product-detail-product-type">
-              {productMessages.productTypeLabel}
+              {productMessages.familyLabel}
             </Label>
             <Select
               value={form.watch("productTypeId") ?? ""}
@@ -545,6 +560,52 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="product-detail-subtype">{productMessages.subtypeLabel}</Label>
+            <Input
+              id="product-detail-subtype"
+              value={form.watch("productSubtypeCode") ?? ""}
+              onChange={(event) =>
+                form.setValue("productSubtypeCode", event.target.value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              placeholder={productMessages.subtypePlaceholder}
+              aria-invalid={!!form.formState.errors.productSubtypeCode}
+            />
+            {form.formState.errors.productSubtypeCode?.message ? (
+              <p className="text-destructive text-xs">
+                {form.formState.errors.productSubtypeCode.message}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="product-detail-duration">{productMessages.durationLabel}</Label>
+            <div className="relative">
+              <Input
+                id="product-detail-duration"
+                type="number"
+                min={0}
+                step={1}
+                value={form.watch("durationMinutes") ?? ""}
+                onChange={(event) =>
+                  form.setValue(
+                    "durationMinutes",
+                    event.target.value === "" ? null : Number(event.target.value),
+                    { shouldDirty: true, shouldValidate: true },
+                  )
+                }
+                className="pr-12"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground text-xs">
+                {productMessages.durationMinutesSuffix}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2 rounded-md border p-3">
             <div className="flex items-center justify-between gap-4">
               <Label htmlFor="product-detail-activated">{productMessages.activatedLabel}</Label>

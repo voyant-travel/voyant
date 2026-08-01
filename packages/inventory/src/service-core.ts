@@ -11,7 +11,7 @@ import {
   products,
   productTypes,
 } from "./schema.js"
-import { resolveItineraryDurationDays } from "./service-catalog-plane.js"
+import { deriveProductSupplyModel, resolveItineraryDurationDays } from "./service-catalog-plane.js"
 import type {
   insertProductSchema,
   productListQuerySchema,
@@ -319,15 +319,18 @@ export const coreProductsService = {
           productTypeName: productTypes.name,
           // Family stable code, resolved from product_types.
           familyCode: productTypes.code,
-          // Legacy itinerary-derived duration (max day number of the default
-          // itinerary) — the resolver's fallback when no explicit duration is
-          // authored. Correlated subquery to keep the list a single round-trip.
+          // Legacy itinerary-derived duration (default itinerary, else first)
+          // — identical to detail and catalog projection semantics.
           itineraryDurationDays: sql<number | null>`(
             select max(pd.day_number)
             from product_days pd
-            join product_itineraries pi on pi.id = pd.itinerary_id
-            where pi.product_id = ${products.id}
-              and pi.is_default = true
+            where pd.itinerary_id = (
+              select pi.id
+              from product_itineraries pi
+              where pi.product_id = ${products.id}
+              order by pi.is_default desc, pi.sort_order asc
+              limit 1
+            )
           )`,
           // Earliest upcoming open departure (null when none is scheduled).
           nextDeparture: sql<Date | null>`(
@@ -353,6 +356,7 @@ export const coreProductsService = {
       // catalog-plane projection and the legacy Catalog search document.
       data: rows.map((row) => ({
         ...row,
+        supplyModel: deriveProductSupplyModel(row.bookingMode),
         classification: resolveProductClassification({
           family: row.familyCode ? { code: row.familyCode, name: row.productTypeName ?? "" } : null,
           subtypeCode: row.productSubtypeCode,
@@ -404,6 +408,7 @@ export const coreProductsService = {
     return {
       ...row.product,
       productType: row.productType?.id ? row.productType : null,
+      supplyModel: deriveProductSupplyModel(row.product.bookingMode),
       classification,
     }
   },

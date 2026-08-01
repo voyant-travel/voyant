@@ -98,6 +98,7 @@ const productSchema = z.object({
   termsHtml: z.string().nullable(),
   termsShowOnContract: z.boolean(),
   bookingMode: z.enum(productBookingModeValues),
+  supplyModel: z.enum(["dynamic", "scheduled"]).optional(),
   capacityMode: z.enum(productCapacityModeValues),
   timezone: z.string().nullable(),
   defaultLanguageTag: z.string().nullable(),

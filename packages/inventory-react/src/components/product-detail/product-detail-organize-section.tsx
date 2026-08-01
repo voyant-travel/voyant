@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { Badge, DropdownMenuItem } from "@voyant-travel/ui/components"
+import { Badge, Button, DropdownMenuItem } from "@voyant-travel/ui/components"
 import { AlertTriangle, Pencil } from "lucide-react"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { ActionMenu, DetailRow, Section } from "./product-detail-section-shell.js"
 import {
-  deriveSupplyModel,
   formatProductDuration,
+  formatProductSubtype,
   getProductBookingModeLabel,
   type ProductRecord,
 } from "./product-detail-shared.js"
@@ -20,9 +20,11 @@ type ProductCoreMessages = ReturnType<typeof useProductDetailMessages>["products
 function ReviewWarning({
   classification,
   messages,
+  onEdit,
 }: {
   classification: NonNullable<ProductRecord["classification"]>
   messages: ProductCoreMessages
+  onEdit: () => void
 }) {
   if (!classification.reviewRequired) return null
   return (
@@ -41,6 +43,9 @@ function ReviewWarning({
             <li>{messages.reviewUnresolvedDuration}</li>
           ) : null}
         </ul>
+        <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={onEdit}>
+          {messages.reviewClassificationAction}
+        </Button>
       </div>
     </div>
   )
@@ -66,8 +71,9 @@ export function ProductOrganizeSection({
   const classification = product.classification
   const familyLabel =
     classification?.familyName ?? product.productTypeName ?? classification?.familyCode ?? null
-  const subtypeLabel = classification?.subtypeCode ?? product.productSubtypeCode ?? null
-  const supplyModel = deriveSupplyModel(product.bookingMode)
+  const subtypeCode = classification?.subtypeCode ?? product.productSubtypeCode ?? null
+  const subtypeLabel = subtypeCode ? formatProductSubtype(subtypeCode) : null
+  const supplyModel = product.supplyModel
 
   return (
     <Section
@@ -82,7 +88,7 @@ export function ProductOrganizeSection({
       }
     >
       {classification ? (
-        <ReviewWarning classification={classification} messages={productMessages} />
+        <ReviewWarning classification={classification} messages={productMessages} onEdit={onEdit} />
       ) : null}
       <DetailRow
         label={productMessages.tagsLabel}
@@ -139,7 +145,9 @@ export function ProductOrganizeSection({
           <span>
             {supplyModel === "dynamic"
               ? productMessages.supplyModelDynamic
-              : productMessages.supplyModelScheduled}
+              : supplyModel === "scheduled"
+                ? productMessages.supplyModelScheduled
+                : productMessages.noValue}
           </span>
         }
       />

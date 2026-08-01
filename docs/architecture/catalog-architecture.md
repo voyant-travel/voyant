@@ -232,8 +232,9 @@ Adoption strategy: extras participate in the snapshot and provenance shapes; ful
 `packages/products`' existing `product_types` table is recast as the
 merchandising **Product family** — no physical table rename, no new table.
 Standard first-party deployments idempotently seed five families (`tour`,
-`activity`, `attraction`, `event`, `transportation`); operators may add,
-rename, or deactivate their own. Family (`products.productTypeId`), the
+`activity`, `attraction`, `event`, `transportation`). Operators may add custom
+families and rename display labels or deactivate choices; codes are immutable,
+and standard or referenced families cannot be deleted. Family (`products.productTypeId`), the
 optional **Product subtype** (`products.productSubtypeCode`), the resolved
 duration, and the review state (flagged when a product has no family or an
 unresolved duration) are computed by one shared resolver and emitted

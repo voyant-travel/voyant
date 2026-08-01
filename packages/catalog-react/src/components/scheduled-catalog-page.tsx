@@ -3,11 +3,10 @@
 import type { ReactNode } from "react"
 
 /**
- * Scheduled (fixed-departure) catalog surface — products whose departures are
- * known and finite, so it's a **departures-first browse** (the grid + each
- * product's dated departures and remaining seats/allotment in the detail
- * sheet). Pinned to `supplyModel: scheduled` so it never mixes with
- * dynamically-composed packages.
+ * Product-family catalog surface. Family and subtype views intentionally do
+ * not lock booking/supply mechanics: those concepts are orthogonal to how a
+ * product is merchandised. The legacy Excursions context remains the only
+ * scheduled-only scope.
  *
  * The scope is defined by the **Product family / subtype stable codes**, NOT by
  * duration. The old `durationDays ≤ 1` / `≥ 2` split is retired: a product's
@@ -16,7 +15,7 @@ import type { ReactNode } from "react"
  * (subtype `boat-tour`) exactly like a multi-day tour, and it is never shunted
  * into a short/`excursions` bucket because it is brief. "Excursion" is
  * contextual vocabulary, not a `≤ 1-day` family.
- *   - `tours`      — locks family code `tour`
+ *   - family views — lock exactly one standard family code
  *   - `boat-tours` — locks family `tour` + subtype `boat-tour`
  *   - `excursions` — contextual scheduled browse (no duration lock)
  *
@@ -25,7 +24,14 @@ import type { ReactNode } from "react"
  * injected. This surface only owns the header layout + the supply-model /
  * family-code locks that define the scope.
  */
-export type ScheduledScope = "excursions" | "tours" | "boat-tours"
+export type ScheduledScope =
+  | "excursions"
+  | "tours"
+  | "boat-tours"
+  | "activities"
+  | "attractions"
+  | "events"
+  | "transportation"
 
 export interface ScheduledCatalogLocks {
   lockedFacets: Record<string, Array<string | number>>
@@ -37,13 +43,12 @@ export function resolveScheduledScopeLocks(scope: ScheduledScope): ScheduledCata
   switch (scope) {
     case "tours":
       return {
-        lockedFacets: { supplyModel: ["scheduled"], familyCode: ["tour"] },
+        lockedFacets: { familyCode: ["tour"] },
         lockedRanges: {},
       }
     case "boat-tours":
       return {
         lockedFacets: {
-          supplyModel: ["scheduled"],
           familyCode: ["tour"],
           subtypeCode: ["boat-tour"],
         },
@@ -52,6 +57,14 @@ export function resolveScheduledScopeLocks(scope: ScheduledScope): ScheduledCata
     case "excursions":
       // Contextual scheduled browse — no duration identity.
       return { lockedFacets: { supplyModel: ["scheduled"] }, lockedRanges: {} }
+    case "activities":
+      return { lockedFacets: { familyCode: ["activity"] }, lockedRanges: {} }
+    case "attractions":
+      return { lockedFacets: { familyCode: ["attraction"] }, lockedRanges: {} }
+    case "events":
+      return { lockedFacets: { familyCode: ["event"] }, lockedRanges: {} }
+    case "transportation":
+      return { lockedFacets: { familyCode: ["transportation"] }, lockedRanges: {} }
   }
 }
 

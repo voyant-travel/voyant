@@ -205,6 +205,8 @@ export async function getResolvedProductById(
   const projection = productRowToProjection(row, {
     sellerOperatorId: context.sellerOperatorId,
   })
+  const classificationProjection = await projectProductClassification(db, row)
+  for (const [path, value] of classificationProjection) projection.set(path, value)
   return resolveEntityView(db, getProductsRegistry(), "products", id, projection, context.scope)
 }
 
@@ -237,10 +239,16 @@ export async function listResolvedProducts(
     "products",
     rows.map((row) => row.id),
   )
-  return rows.map((row) => {
+  const classificationProjections = await Promise.all(
+    rows.map((row) => projectProductClassification(db, row)),
+  )
+  return rows.map((row, index) => {
     const projection = productRowToProjection(row, {
       sellerOperatorId: context.sellerOperatorId,
     })
+    for (const [path, value] of classificationProjections[index] ?? []) {
+      projection.set(path, value)
+    }
     return resolveEntityViewWithOverlays(
       registry,
       projection,
@@ -622,6 +630,35 @@ export async function resolveItineraryDurationDays(
   return estimateItineraryDurationDays(db, defaultItinerary.id)
 }
 
+async function projectProductClassification(
+  db: AnyDrizzleDb,
+  row: Pick<Product, "id" | "productTypeId" | "productSubtypeCode" | "durationMinutes">,
+): Promise<Map<string, unknown>> {
+  const [familyRow] = row.productTypeId
+    ? await db
+        .select({ code: productTypes.code, name: productTypes.name })
+        .from(productTypes)
+        .where(eq(productTypes.id, row.productTypeId))
+        .limit(1)
+    : []
+  const classification = resolveProductClassification({
+    family: familyRow ?? null,
+    subtypeCode: row.productSubtypeCode,
+    durationMinutes: row.durationMinutes,
+    itineraryDurationDays: await resolveItineraryDurationDays(db, row.id),
+  })
+  return new Map<string, unknown>([
+    ["familyCode", classification.familyCode],
+    ["familyName", classification.familyName],
+    ["subtypeCode", classification.subtypeCode],
+    ["durationMinutes", classification.durationMinutes],
+    ["durationDays", classification.durationDays],
+    ["durationProvenance", classification.durationProvenance],
+    ["classificationReviewRequired", classification.reviewRequired],
+    ["classificationReviewReasons", classification.reviewReasons],
+  ])
+}
+
 /**
  * Product classification projection extension — the catalog-plane half of the
  * shared `resolveProductClassification`. Joins `product_types` for the family
@@ -645,33 +682,7 @@ export function createProductClassificationProjectionExtension(): ProductProject
         .where(eq(products.id, productId))
         .limit(1)
       if (!row) return new Map()
-
-      const [familyRow] = row.productTypeId
-        ? await db
-            .select({ code: productTypes.code, name: productTypes.name })
-            .from(productTypes)
-            .where(eq(productTypes.id, row.productTypeId))
-            .limit(1)
-        : []
-
-      const itineraryDurationDays = await resolveItineraryDurationDays(db, productId)
-
-      const classification = resolveProductClassification({
-        family: familyRow ?? null,
-        subtypeCode: row.productSubtypeCode,
-        durationMinutes: row.durationMinutes,
-        itineraryDurationDays,
-      })
-
-      return new Map<string, unknown>([
-        ["familyCode", classification.familyCode],
-        ["familyName", classification.familyName],
-        ["subtypeCode", classification.subtypeCode],
-        ["durationMinutes", classification.durationMinutes],
-        ["durationDays", classification.durationDays],
-        ["durationProvenance", classification.durationProvenance],
-        ["classificationReviewRequired", classification.reviewRequired],
-      ])
+      return projectProductClassification(db, { id: productId, ...row })
     },
   }
 }

@@ -36,6 +36,7 @@ import {
   useProducts,
   useProductTypes,
 } from "../index.js"
+import { formatProductSubtype } from "./product-detail/product-detail-shared.js"
 import { ProductDialog } from "./product-dialog.js"
 import { ProductQuickStartDialog } from "./product-quick-start-dialog.js"
 import type { ProductQuickStart } from "./product-quick-starts.js"
@@ -165,7 +166,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
   const sellAmountMaxCents =
     sellAmountMax === "" ? undefined : Math.round(Number.parseFloat(sellAmountMax) * 100)
 
-  const { data: productTypesData } = useProductTypes({ limit: 100 })
+  const { data: productTypesData, isPending: productTypesPending } = useProductTypes({ limit: 100 })
   const productTypes = productTypesData?.data ?? []
 
   const { data, isPending, isFetching, isError } = useProducts({
@@ -267,8 +268,13 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
     if (!onSelectProduct) return
     try {
       const familyId = quickStart
-        ? (productTypes.find((type) => type.code === quickStart.familyCode)?.id ?? null)
+        ? (productTypes.find((type) => type.active && type.code === quickStart.familyCode)?.id ??
+          null)
         : null
+      if (quickStart && !familyId) {
+        toast.error(productMessages.familyUnavailable)
+        return
+      }
       const created = await create.mutateAsync({
         name: messages.catalogCard.untitled,
         status: "draft",
@@ -279,6 +285,27 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
               ...quickStart.defaults,
             }
           : {}),
+      })
+      setQuickStartOpen(false)
+      onSelectProduct(created)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : productMessages.createFailed)
+    }
+  }
+
+  const handleFamilyStart = async (familyCode: string) => {
+    if (!onSelectProduct) return
+    const familyId = productTypes.find((type) => type.active && type.code === familyCode)?.id
+    if (!familyId) {
+      toast.error(productMessages.familyUnavailable)
+      return
+    }
+    try {
+      const created = await create.mutateAsync({
+        name: messages.catalogCard.untitled,
+        status: "draft",
+        sellCurrency: "EUR", // i18n-literal-ok ISO default currency
+        productTypeId: familyId,
       })
       setQuickStartOpen(false)
       onSelectProduct(created)
@@ -647,6 +674,13 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                         <Badge
                           variant="outline"
                           className="border-amber-400 text-amber-700 text-xs dark:text-amber-300"
+                          title={product.classification.reviewReasons
+                            .map((reason) =>
+                              reason === "missing_family"
+                                ? productMessages.reviewMissingFamily
+                                : productMessages.reviewMissingDuration,
+                            )
+                            .join("; ")}
                         >
                           {productMessages.reviewBadge}
                         </Badge>
@@ -656,7 +690,7 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
                   <TableCell>
                     {product.classification?.subtypeCode ? (
                       <Badge variant="secondary" className="text-xs">
-                        {product.classification.subtypeCode}
+                        {formatProductSubtype(product.classification.subtypeCode)}
                       </Badge>
                     ) : (
                       productMessages.noValue
@@ -716,6 +750,11 @@ export function ProductList({ pageSize = 25, onSelectProduct }: ProductListProps
         open={quickStartOpen}
         onOpenChange={setQuickStartOpen}
         onChoose={handleQuickStart}
+        onChooseFamily={handleFamilyStart}
+        families={productTypes
+          .filter((type) => type.active)
+          .map(({ code, name }) => ({ code, name }))}
+        loadingFamilies={productTypesPending}
         creating={create.isPending}
       />
     </div>

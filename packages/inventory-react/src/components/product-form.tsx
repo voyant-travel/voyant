@@ -47,6 +47,8 @@ interface FormState {
   timezone: string
   facilityId: string
   productTypeId: string
+  productSubtypeCode: string
+  durationMinutes: string
   contractTemplateId: string
   taxClassId: string
   sellCurrency: string
@@ -74,6 +76,8 @@ function initialState(mode: ProductFormMode): FormState {
       timezone: product.timezone ?? "",
       facilityId: product.facilityId ?? "__none__",
       productTypeId: product.productTypeId ?? "__none__",
+      productSubtypeCode: product.productSubtypeCode ?? "",
+      durationMinutes: product.durationMinutes != null ? String(product.durationMinutes) : "",
       contractTemplateId: product.contractTemplateId ?? "__none__",
       taxClassId: product.taxClassId ?? "__none__",
       sellCurrency: product.sellCurrency,
@@ -100,6 +104,8 @@ function initialState(mode: ProductFormMode): FormState {
     timezone: "",
     facilityId: "__none__",
     productTypeId: "__none__",
+    productSubtypeCode: "",
+    durationMinutes: "",
     contractTemplateId: "__none__",
     taxClassId: "__none__",
     sellCurrency: "EUR", // i18n-literal-ok ISO default currency
@@ -147,6 +153,8 @@ function toPayload(state: FormState): CreateProductInput {
     timezone: state.timezone.trim() || null,
     facilityId: state.facilityId === "__none__" ? null : state.facilityId,
     productTypeId: state.productTypeId === "__none__" ? null : state.productTypeId,
+    productSubtypeCode: state.productSubtypeCode.trim() || null,
+    durationMinutes: toIntegerOrNull(state.durationMinutes),
     contractTemplateId: state.contractTemplateId === "__none__" ? null : state.contractTemplateId,
     taxClassId: state.taxClassId === "__none__" ? null : state.taxClassId,
     sellCurrency: state.sellCurrency.trim().toUpperCase(),
@@ -238,6 +246,19 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
       toIntegerOrNull(state.reservationTimeoutMinutes) == null
     ) {
       setError(productMessages.validation.reservationTimeoutInvalid)
+      return
+    }
+
+    if (
+      state.productSubtypeCode.trim() &&
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(state.productSubtypeCode.trim())
+    ) {
+      setError(productMessages.validation.subtypeInvalid)
+      return
+    }
+
+    if (state.durationMinutes.trim() && toIntegerOrNull(state.durationMinutes) == null) {
+      setError(productMessages.validation.durationInvalid)
       return
     }
 
@@ -402,6 +423,31 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               value={state.productTypeId === "__none__" ? null : state.productTypeId}
               onChange={(value) => field("productTypeId")(value ?? "__none__")}
               placeholder={productMessages.placeholders.productTypeSearch}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-subtype-code">{productMessages.fields.productSubtype}</Label>
+            <Input
+              id="product-subtype-code"
+              value={state.productSubtypeCode}
+              onChange={(event) => field("productSubtypeCode")(event.target.value)}
+              placeholder={productMessages.placeholders.productSubtype}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="product-duration-minutes">
+              {productMessages.fields.durationMinutes}
+            </Label>
+            <Input
+              id="product-duration-minutes"
+              type="number"
+              min="0"
+              step="1"
+              value={state.durationMinutes}
+              onChange={(event) => field("durationMinutes")(event.target.value)}
+              placeholder={productMessages.placeholders.durationMinutes}
             />
           </div>
 

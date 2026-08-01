@@ -27,6 +27,7 @@ export type CatalogUiMessages = {
       | "pricing"
       | "defaultQuantity"
       | "type"
+      | "duration"
       | "days"
       | "nights"
       | "availableDepartures"
@@ -142,6 +143,7 @@ export type CatalogUiMessages = {
       nextDeparture: string
       departures: string
       oneDeparture: string
+      minutes: string
       daysNights: string
       nights: string
       flightIncluded: string

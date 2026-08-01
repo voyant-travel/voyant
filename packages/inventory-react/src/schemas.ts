@@ -67,6 +67,7 @@ export const productRecordSchema = z.object({
   termsHtml: z.string().nullable(),
   termsShowOnContract: z.boolean(),
   bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
+  supplyModel: z.enum(["dynamic", "scheduled"]).optional(),
   capacityMode: z.enum(["free_sale", "limited", "on_request"]),
   timezone: z.string().nullable(),
   defaultLanguageTag: z.string().nullable().optional(),

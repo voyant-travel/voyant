@@ -47,7 +47,7 @@ export interface StandardProductFamily {
  * `*_product_families` migration). Ids are fixed so the seed is stable across
  * deployments and re-runs.
  */
-export const STANDARD_PRODUCT_FAMILIES: readonly StandardProductFamily[] = [
+export const STANDARD_PRODUCT_FAMILIES = [
   {
     id: "ptyp_01kyyt22n7eddtvjwehx3pxxe2",
     code: "tour",
@@ -84,7 +84,7 @@ export const STANDARD_PRODUCT_FAMILIES: readonly StandardProductFamily[] = [
     description: "Moving travellers from A to B — transfers, shuttles, and the like.",
     sortOrder: 4,
   },
-] as const
+] as const satisfies readonly StandardProductFamily[]
 
 /** Stable family codes as a union for quick-start presets and typing. */
 export type StandardProductFamilyCode = (typeof STANDARD_PRODUCT_FAMILIES)[number]["code"]
