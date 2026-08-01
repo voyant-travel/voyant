@@ -337,9 +337,12 @@ export type DistributionUiMessages = {
         saveSupplier: string
         previewSupplier: string
         supplierImpact: string
+        confirmSupplierImpact: string
+        previewRequiredCurrent: string
         productsEmpty: string
         suppliersEmpty: string
         noReason: string
+        editRule: string
         deleteRule: string
         whyTitle: string
         whyDescription: string
