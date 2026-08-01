@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 
+import { adminRootHead } from "@voyant-travel/admin/app"
 import { describe, expect, it } from "vitest"
-import { z } from "zod"
-import "../src/start"
 
-describe("operator schema runtime", () => {
-  it("disables Zod JIT so strict CSP does not report eval violations", () => {
-    expect(z.config().jitless).toBe(true)
+describe("operator document bootstrap", () => {
+  it("disables Zod JIT before browser-dependent bootstrap work", () => {
+    const script = adminRootHead({ title: "Voyant" }).scripts[0]?.children ?? ""
+    const zodConfigPosition = script.indexOf("__zod_globalConfig")
+    const browserPreferencePosition = script.indexOf('localStorage.getItem("theme")')
+
+    expect(zodConfigPosition).toBeGreaterThanOrEqual(0)
+    expect(browserPreferencePosition).toBeGreaterThan(zodConfigPosition)
+    expect(script).toContain("jitless:true")
   })
 })

@@ -677,7 +677,11 @@
           "422": {
             "description": "The product graph specification is invalid"
           }
-        }
+        },
+        "operationId": "postAdminProductsCompose",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/products/{id}/duplicate": {
@@ -749,7 +753,11 @@
           "404": {
             "description": "The source product does not exist"
           }
-        }
+        },
+        "operationId": "postAdminProductsByIdDuplicate",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "admin"
       }
     }
   },

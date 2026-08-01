@@ -54,4 +54,33 @@ describe("vehicle seat designation", () => {
       }),
     )
   })
+
+  it("rejects a duplicate generated designation supplied by a flags-only update", () => {
+    expect(() =>
+      assertVehicleSeatDesignationAvailable({
+        label: null,
+        flags: { row: 12, column: "A" },
+        existingSeats: [{ label: "12a", flags: {} }],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        status: 409,
+        detail: { designation: "12a" },
+      }),
+    )
+  })
+
+  it("rejects flags that remove the only generated seat designation", () => {
+    expect(() =>
+      assertVehicleSeatDesignationAvailable({
+        label: null,
+        flags: {},
+        existingSeats: [],
+      }),
+    ).toThrowError(
+      expect.objectContaining({
+        status: 400,
+      }),
+    )
+  })
 })

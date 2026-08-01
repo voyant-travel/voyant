@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises"
 import { OpenAPIHono } from "@hono/zod-openapi"
 
 import type { OpenApiDocument } from "@voyant-travel/hono/openapi"
-import { generateOpenApiDocument } from "@voyant-travel/hono/openapi"
+import { generateOpenApiDocument, stampModuleMetadata } from "@voyant-travel/hono/openapi"
 
 import { inventoryAuthoringRoutes } from "../src/authoring/extension.js"
 import { productRoutes } from "../src/routes.js"
@@ -20,7 +20,7 @@ const options = {
 }
 
 function withPrefix(document: OpenApiDocument, prefix: string): OpenApiDocument {
-  return {
+  const prefixed = {
     ...document,
     paths: Object.fromEntries(
       Object.entries(document.paths ?? {}).map(([path, item]) => [
@@ -28,7 +28,14 @@ function withPrefix(document: OpenApiDocument, prefix: string): OpenApiDocument 
         item,
       ]),
     ),
-  }
+  } as OpenApiDocument
+
+  // These package-owned documents are generated outside the application
+  // manifest composer, so explicitly run the same metadata stamping step used
+  // by composed OpenAPI generation. The absolute prefixed path lets the shared
+  // helper derive stable operation ids, summaries, the `products` owner, and
+  // the admin/storefront surface without duplicating that policy here.
+  return stampModuleMetadata(prefixed, new Map())
 }
 
 async function writeDocument(path: string, document: OpenApiDocument) {

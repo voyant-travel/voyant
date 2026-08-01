@@ -85,7 +85,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsTags",
+        "summary": "GET /v1/public/products/tags",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/categories": {
@@ -177,7 +182,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsCategories",
+        "summary": "GET /v1/public/products/categories",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/destinations": {
@@ -350,7 +360,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsDestinations",
+        "summary": "GET /v1/public/products/destinations",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products": {
@@ -1215,7 +1230,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProducts",
+        "summary": "GET /v1/public/products",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/slug/{slug}": {
@@ -1931,7 +1951,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsSlugBySlug",
+        "summary": "GET /v1/public/products/slug/{slug}",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}": {
@@ -2647,7 +2672,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsById",
+        "summary": "GET /v1/public/products/{id}",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}/brochure": {
@@ -2774,7 +2804,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsByIdBrochure",
+        "summary": "GET /v1/public/products/{id}/brochure",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}/content": {
@@ -3158,7 +3193,12 @@
               }
             }
           }
-        }
+        },
+        "operationId": "getPublicProductsByIdContent",
+        "summary": "GET /v1/public/products/{id}/content",
+        "tags": ["products"],
+        "x-voyant-module": "products",
+        "x-voyant-surface": "storefront"
       }
     }
   },

@@ -127,7 +127,7 @@ export async function updateAllocationResource(
     }
     if (
       existing.kind === "vehicle_seat" &&
-      (input.label !== undefined || input.parentId !== undefined)
+      (input.label !== undefined || input.flags !== undefined || input.parentId !== undefined)
     ) {
       const effectiveParentId = input.parentId !== undefined ? input.parentId : existing.parentId
       const parent = await assertValidResourceParent(
