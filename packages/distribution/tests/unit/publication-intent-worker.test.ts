@@ -31,6 +31,13 @@ const catalogIntent = {
   productId: null,
   supplierId: null,
   cursor: null,
+  metadata: {
+    cutover: {
+      at: "2026-08-01T12:00:00.000Z",
+      product: { id: "prod_cutover", createdAt: "2026-08-01T12:00:00.000Z" },
+      channel: { id: "chan_cutover", createdAt: "2026-08-01T12:00:00.000Z" },
+    },
+  },
   attempts: 0,
   leaseOwner: "worker_1",
 }
@@ -119,8 +126,12 @@ describe("publication reindex intent worker", () => {
     const db = fakeDb({
       executeResults: [{ rows: [catalogIntent] }, { rows: [] }],
       productPages: [
-        [{ id: "prod_1" }],
-        [{ id: "chan_1" }, { id: "chan_2" }, { id: "chan_3" }],
+        [{ id: "prod_1", createdAt: new Date("2026-07-01T00:00:00.000Z") }],
+        [
+          { id: "chan_1", createdAt: new Date("2026-07-01T00:00:00.000Z") },
+          { id: "chan_2", createdAt: new Date("2026-07-02T00:00:00.000Z") },
+          { id: "chan_3", createdAt: new Date("2026-07-03T00:00:00.000Z") },
+        ],
       ],
     })
     const projection = {
@@ -140,6 +151,61 @@ describe("publication reindex intent worker", () => {
     expect(db.insertValues[0]).toHaveLength(2)
     expect(projection.reindexEntity).not.toHaveBeenCalled()
     expect(db.execute).toHaveBeenCalledTimes(2)
+  })
+
+  it("fails closed when a catalog backfill has no immutable cutover bounds", async () => {
+    const db = fakeDb({
+      executeResults: [{ rows: [{ ...catalogIntent, metadata: null }] }, { rows: [] }],
+      productPages: [[{ id: "prod_created_later" }]],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await expect(
+      drainPublicationReindexIntents(
+        { db: db as never, projection },
+        { leaseOwner: "worker_1", maxIntents: 1 },
+      ),
+    ).resolves.toEqual({ processed: 1 })
+
+    expect(db.limitValues).toEqual([])
+    expect(db.insertValues).toEqual([])
+    expect(projection.reindexEntity).not.toHaveBeenCalled()
+  })
+
+  it("fails closed when catalog bounds omit the eligibility timestamp", async () => {
+    const db = fakeDb({
+      executeResults: [
+        {
+          rows: [
+            {
+              ...catalogIntent,
+              metadata: {
+                cutover: {
+                  product: catalogIntent.metadata.cutover.product,
+                  channel: catalogIntent.metadata.cutover.channel,
+                },
+              },
+            },
+          ],
+        },
+        { rows: [] },
+      ],
+    })
+    const projection = {
+      reindexEntity: vi.fn(async () => {}),
+      deleteEntity: vi.fn(async () => {}),
+    }
+
+    await drainPublicationReindexIntents(
+      { db: db as never, projection },
+      { leaseOwner: "worker_1", maxIntents: 1 },
+    )
+
+    expect(db.limitValues).toEqual([])
+    expect(db.insertValues).toEqual([])
   })
 
   it("marks failures for retry and continues draining", async () => {
@@ -169,7 +235,10 @@ describe("publication reindex intent worker", () => {
   })
 })
 
-function fakeDb(input: { executeResults: unknown[]; productPages?: Array<Array<{ id: string }>> }) {
+function fakeDb(input: {
+  executeResults: unknown[]
+  productPages?: Array<Array<{ id: string; createdAt?: Date }>>
+}) {
   const executeResults = [...input.executeResults]
   const productPages = [...(input.productPages ?? [])]
   const limitValues: number[] = []

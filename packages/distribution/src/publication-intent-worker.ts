@@ -1,6 +1,6 @@
 import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
 import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
-import { and, asc, eq, gt, sql } from "drizzle-orm"
+import { and, asc, eq, gt, lt, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   type DistributionPublicationIntentWorkerDeps,
@@ -29,6 +29,7 @@ type ClaimedIntent = {
   productId: string | null
   supplierId: string | null
   cursor: string | null
+  metadata: unknown
   attempts: number
   leaseOwner: string
 }
@@ -90,6 +91,7 @@ async function claimIntent(
       intent.product_id AS "productId",
       intent.supplier_id AS "supplierId",
       intent.cursor,
+      intent.metadata,
       intent.attempts,
       intent.lease_owner AS "leaseOwner"
   `)
@@ -179,36 +181,79 @@ async function listSupplierProductIds(
 
 async function listVisibleProductIdsPage(
   db: PostgresJsDatabase,
-  input: { afterId?: string | null; limit: number },
+  input: {
+    after: CatalogBackfillBound | null
+    upper: CatalogBackfillBound | null
+    cutoverAt: Date
+    limit: number
+  },
 ) {
   const result = await db
-    .select({ id: publicationProductsRef.id })
+    .select({ id: publicationProductsRef.id, createdAt: publicationProductsRef.createdAt })
     .from(publicationProductsRef)
     .where(
       and(
         eq(publicationProductsRef.status, "active"),
         eq(publicationProductsRef.visibility, "public"),
-        input.afterId ? gt(publicationProductsRef.id, input.afterId) : undefined,
+        lte(publicationProductsRef.updatedAt, input.cutoverAt),
+        input.upper
+          ? or(
+              lt(publicationProductsRef.createdAt, input.upper.createdAt),
+              and(
+                eq(publicationProductsRef.createdAt, input.upper.createdAt),
+                lte(publicationProductsRef.id, input.upper.id),
+              ),
+            )
+          : sql`false`,
+        input.after
+          ? or(
+              gt(publicationProductsRef.createdAt, input.after.createdAt),
+              and(
+                eq(publicationProductsRef.createdAt, input.after.createdAt),
+                gt(publicationProductsRef.id, input.after.id),
+              ),
+            )
+          : undefined,
       ),
     )
-    .orderBy(asc(publicationProductsRef.id))
+    .orderBy(asc(publicationProductsRef.createdAt), asc(publicationProductsRef.id))
     .limit(input.limit)
-  return result.map(({ id }) => id)
+  return result
 }
 
 async function listActiveChannelIdsPage(
   db: PostgresJsDatabase,
-  input: { afterId?: string | null; limit: number },
+  input: {
+    after: CatalogBackfillBound | null
+    upper: CatalogBackfillBound | null
+    cutoverAt: Date
+    limit: number
+  },
 ) {
   const rows = await db
-    .select({ id: channels.id })
+    .select({ id: channels.id, createdAt: channels.createdAt })
     .from(channels)
     .where(
-      and(eq(channels.status, "active"), input.afterId ? gt(channels.id, input.afterId) : undefined),
+      and(
+        eq(channels.status, "active"),
+        lte(channels.updatedAt, input.cutoverAt),
+        input.upper
+          ? or(
+              lt(channels.createdAt, input.upper.createdAt),
+              and(eq(channels.createdAt, input.upper.createdAt), lte(channels.id, input.upper.id)),
+            )
+          : sql`false`,
+        input.after
+          ? or(
+              gt(channels.createdAt, input.after.createdAt),
+              and(eq(channels.createdAt, input.after.createdAt), gt(channels.id, input.after.id)),
+            )
+          : undefined,
+      ),
     )
-    .orderBy(asc(channels.id))
+    .orderBy(asc(channels.createdAt), asc(channels.id))
     .limit(input.limit)
-  return rows.map(({ id }) => id)
+  return rows
 }
 
 async function publishPriorVisibleProduct(
@@ -232,20 +277,52 @@ async function publishPriorVisibleProduct(
     .onConflictDoNothing()
 }
 
+type CatalogBackfillBound = {
+  id: string
+  createdAt: Date
+}
+
 type CatalogBackfillCursor = {
-  afterProductId: string | null
-  productId: string | null
-  afterChannelId: string | null
+  afterProduct: CatalogBackfillBound | null
+  product: CatalogBackfillBound | null
+  afterChannel: CatalogBackfillBound | null
 }
 
 function parseCatalogCursor(cursor: string | null): CatalogBackfillCursor {
-  if (!cursor) return { afterProductId: null, productId: null, afterChannelId: null }
+  if (!cursor) return { afterProduct: null, product: null, afterChannel: null }
   const parsed = JSON.parse(cursor) as Partial<CatalogBackfillCursor>
   return {
-    afterProductId: typeof parsed.afterProductId === "string" ? parsed.afterProductId : null,
-    productId: typeof parsed.productId === "string" ? parsed.productId : null,
-    afterChannelId: typeof parsed.afterChannelId === "string" ? parsed.afterChannelId : null,
+    afterProduct: parseCatalogBound(parsed.afterProduct),
+    product: parseCatalogBound(parsed.product),
+    afterChannel: parseCatalogBound(parsed.afterChannel),
   }
+}
+
+function parseCatalogBound(value: unknown): CatalogBackfillBound | null {
+  if (!value || typeof value !== "object") return null
+  const input = value as { id?: unknown; createdAt?: unknown }
+  if (typeof input.id !== "string" || typeof input.createdAt !== "string") return null
+  const createdAt = new Date(input.createdAt)
+  return Number.isNaN(createdAt.valueOf()) ? null : { id: input.id, createdAt }
+}
+
+function parseCatalogCutoverBounds(metadata: unknown) {
+  const cutover =
+    metadata && typeof metadata === "object"
+      ? (metadata as { cutover?: unknown }).cutover
+      : undefined
+  const bounds = cutover && typeof cutover === "object" ? cutover : {}
+  return {
+    at: parseCatalogTimestamp((bounds as { at?: unknown }).at),
+    product: parseCatalogBound((bounds as { product?: unknown }).product),
+    channel: parseCatalogBound((bounds as { channel?: unknown }).channel),
+  }
+}
+
+function parseCatalogTimestamp(value: unknown): Date | null {
+  if (typeof value !== "string") return null
+  const timestamp = new Date(value)
+  return Number.isNaN(timestamp.valueOf()) ? null : timestamp
 }
 
 async function processCatalogBackfillIntent(
@@ -255,48 +332,62 @@ async function processCatalogBackfillIntent(
   options: { productBatchSize: number; channelBatchSize: number; leaseMs: number },
 ) {
   const cursor = parseCatalogCursor(intent.cursor)
-  const productId =
-    cursor.productId ??
+  const bounds = parseCatalogCutoverBounds(intent.metadata)
+  // A catalog intent without the migration's immutable cutover watermark must
+  // never widen into "everything visible now". Complete it without writes.
+  if (!bounds.at || !bounds.product) {
+    await completeIntent(db, intent)
+    return
+  }
+  const product =
+    cursor.product ??
     (
       await listVisibleProductIdsPage(db, {
-        afterId: cursor.afterProductId,
+        after: cursor.afterProduct,
+        upper: bounds.product,
+        cutoverAt: bounds.at,
         limit: 1,
       })
     )[0]
-  if (!productId) {
+  if (!product) {
     await completeIntent(db, intent)
     return
   }
 
-  const channelIds = await listActiveChannelIdsPage(db, {
-    afterId: cursor.productId ? cursor.afterChannelId : null,
+  const channelRows = await listActiveChannelIdsPage(db, {
+    after: cursor.product ? cursor.afterChannel : null,
+    upper: bounds.channel,
+    cutoverAt: bounds.at,
     limit: options.channelBatchSize,
   })
-  await publishPriorVisibleProduct(db, { productId, channelIds })
+  await publishPriorVisibleProduct(db, {
+    productId: product.id,
+    channelIds: channelRows.map(({ id }) => id),
+  })
 
-  const lastChannelId = channelIds[channelIds.length - 1]
-  if (channelIds.length === options.channelBatchSize && lastChannelId) {
+  const lastChannel = channelRows[channelRows.length - 1]
+  if (channelRows.length === options.channelBatchSize && lastChannel) {
     await checkpointIntent(
       db,
       intent,
       JSON.stringify({
-        afterProductId: cursor.afterProductId,
-        productId,
-        afterChannelId: lastChannelId,
+        afterProduct: cursor.afterProduct,
+        product,
+        afterChannel: lastChannel,
       } satisfies CatalogBackfillCursor),
       options.leaseMs,
     )
     return
   }
 
-  await projection.reindexEntity({ entityModule: "products", entityId: productId })
+  await projection.reindexEntity({ entityModule: "products", entityId: product.id })
   await checkpointIntent(
     db,
     intent,
     JSON.stringify({
-      afterProductId: productId,
-      productId: null,
-      afterChannelId: null,
+      afterProduct: product,
+      product: null,
+      afterChannel: null,
     } satisfies CatalogBackfillCursor),
     options.leaseMs,
   )
