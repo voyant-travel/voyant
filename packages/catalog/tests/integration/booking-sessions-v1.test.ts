@@ -15,11 +15,8 @@ import {
   bookingItemsRef,
   bookingsRef,
 } from "../../src/booking-engine/bookings-ref.js"
-import { createDrizzleBookingSessionRepository } from "../../src/booking-engine/sessions-drizzle.js"
 import { createSourceAdapterRegistry } from "../../src/booking-engine/registry.js"
-import { createSupplierOperationWorkflow } from "../../src/booking-engine/supplier-operation-workflow.js"
-import { supplierOperationsTable } from "../../src/booking-engine/supplier-operations-schema.js"
-import { createDrizzleSupplierOperationRepository } from "../../src/booking-engine/supplier-operations.js"
+import { createDrizzleBookingSessionRepository } from "../../src/booking-engine/sessions-drizzle.js"
 import {
   bookingSessionAuditEventsTable,
   bookingSessionCommitsTable,
@@ -33,6 +30,9 @@ import {
   type CommitOwnedBookingInput,
   createBookingSessionModule,
 } from "../../src/booking-engine/sessions-service.js"
+import { createSupplierOperationWorkflow } from "../../src/booking-engine/supplier-operation-workflow.js"
+import { createDrizzleSupplierOperationRepository } from "../../src/booking-engine/supplier-operations.js"
+import { supplierOperationsTable } from "../../src/booking-engine/supplier-operations-schema.js"
 
 const DB_AVAILABLE = Boolean(process.env.TEST_DATABASE_URL)
 const ACCESS = {
