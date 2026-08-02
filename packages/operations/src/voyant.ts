@@ -272,6 +272,17 @@ export const operationsVoyantModule = defineModule({
       risk: "medium",
     },
     {
+      id: "@voyant-travel/operations#tool.rebuild-booking-actions",
+      name: "rebuild_booking_actions",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "rebuildBookingActionsTool",
+      },
+      requiredScopes: ["operations:write"],
+      context: ["operations"],
+      risk: "medium",
+    },
+    {
       id: "@voyant-travel/operations#tool.list-departures",
       name: "list_departures",
       runtime: {
@@ -408,6 +419,24 @@ export const operationsVoyantModule = defineModule({
       effectBoundary: "local",
       targetLifecycle: "existing",
       from: { tools: ["@voyant-travel/operations#tool.update-departure"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.rebuild-booking-actions",
+      version: "v1",
+      kind: "execute",
+      targetType: "booking-action-projection",
+      resource: "operations",
+      action: "write",
+      requiredScopes: ["operations:write"],
+      risk: "medium",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      availability: { status: "available" },
+      effectBoundary: "local",
+      targetLifecycle: "existing",
+      from: { tools: ["@voyant-travel/operations#tool.rebuild-booking-actions"] },
     },
     {
       id: "@voyant-travel/operations#action.get-departure",

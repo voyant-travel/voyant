@@ -159,7 +159,7 @@ describe("operations deployment manifest", () => {
     const actions = operationsVoyantModule.actions ?? []
     const readTools = tools.filter((tool) => tool.requiredScopes?.includes("operations:read"))
     expect(readTools).toHaveLength(8)
-    expect(actions).toHaveLength(10)
+    expect(actions).toHaveLength(11)
     for (const tool of readTools) {
       expect(tool).toMatchObject({
         requiredScopes: ["operations:read"],
@@ -187,6 +187,7 @@ describe("operations deployment manifest", () => {
 
     expect(writeTools.map((tool) => tool.name).sort()).toEqual([
       "create_departure",
+      "rebuild_booking_actions",
       "update_departure",
     ])
 
@@ -211,12 +212,20 @@ describe("operations deployment manifest", () => {
             parentAnchor: { targetType: "product", targetIdField: "productId" },
           },
         })
-      } else {
+      } else if (tool.name === "update_departure") {
         expect(action).toMatchObject({
           approval: "required",
           targetLifecycle: "existing",
           commandTargetField: "id",
           reversible: true,
+        })
+      } else {
+        expect(action).toMatchObject({
+          id: "@voyant-travel/operations#action.rebuild-booking-actions",
+          approval: "required",
+          targetType: "booking-action-projection",
+          targetLifecycle: "existing",
+          reversible: false,
         })
       }
     }
