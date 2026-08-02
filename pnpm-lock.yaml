@@ -4536,7 +4536,7 @@ importers:
         specifier: workspace:*
         version: link:../payments
       '@voyant-travel/plugin-voyant-connect':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../plugins/voyant-connect
       '@voyant-travel/proposals':
         specifier: workspace:*
