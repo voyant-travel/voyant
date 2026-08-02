@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: proposals; package-owned graph manifest keeps APIs, tools, actions, access, presentation extensions, and runtime factories together for authority review.
 
-import { catalogBookingRuntimePort } from "@voyant-travel/catalog/api-runtime-ports"
+import { catalogBookingRuntimePort } from "@voyant-travel/catalog/ports"
 import {
   defineExtension,
   defineModule,
