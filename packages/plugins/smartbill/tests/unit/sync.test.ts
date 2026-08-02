@@ -246,6 +246,7 @@ describe("syncSmartbillInvoiceEvent", () => {
         eventNames: {
           issued: "invoice.issued",
           proformaIssued: "invoice.proforma.issued",
+          proformaConverted: "invoice.proforma.converted",
           voided: "invoice.voided",
           syncRequested: "invoice.external.sync.requested",
         },
@@ -293,6 +294,7 @@ describe("syncSmartbillInvoiceEvent", () => {
         eventNames: {
           issued: "invoice.issued",
           proformaIssued: "invoice.proforma.issued",
+          proformaConverted: "invoice.proforma.converted",
           voided: "invoice.voided",
           syncRequested: "invoice.external.sync.requested",
         },
