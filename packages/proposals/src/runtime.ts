@@ -49,9 +49,13 @@ export async function createProposalsRuntime(
           },
           access,
         )
-        return outcome.kind === "session_created"
-          ? { kind: "created", session: outcome.session }
-          : { kind: "rejected", code: outcome.error.kind }
+        if (outcome.kind === "session_created") {
+          return { kind: "created", session: outcome.session }
+        }
+        if (outcome.kind === "rejected") {
+          return { kind: "rejected", code: outcome.error.kind }
+        }
+        return { kind: "rejected", code: "booking_session_create_unexpected_outcome" }
       },
       resolvePublicProposalBaseUrl: (context) =>
         resolvePublicBaseUrl(host.primitives.env(context.env)),

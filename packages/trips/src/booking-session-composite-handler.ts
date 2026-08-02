@@ -453,18 +453,17 @@ function childHold(
   session: BookingSessionInternalRecord,
   componentId: string,
 ): BookingHoldInternalRecord {
-  const parent = "hold" in input ? input.hold : undefined
-  const id = `${parent?.id ?? input.holdId}:${componentId}`
+  const id = `${"hold" in input ? input.hold.id : input.holdId}:${componentId}`
   return {
     id,
     sessionId: session.id,
-    quoteId: parent?.quoteId ?? input.quote.id,
+    quoteId: "hold" in input ? input.hold.quoteId : input.quote.id,
     target: session.target,
     quantity: componentQuantity(session.statePayload),
     state: "active",
     capacityKey: componentCapacityKey(session.target, componentId),
-    expiresAt: parent?.expiresAt ?? input.expiresAt,
-    createdAt: parent?.createdAt ?? input.now,
+    expiresAt: "hold" in input ? input.hold.expiresAt : input.expiresAt,
+    createdAt: "hold" in input ? input.hold.createdAt : input.now,
   }
 }
 
