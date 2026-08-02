@@ -47,8 +47,18 @@ export function createDrizzleBookingSessionRepository(
           storefrontId: record.storefrontOrigin?.storefrontId ?? null,
           channelId: record.storefrontOrigin?.channelId ?? null,
           targetKind: record.target.kind,
-          productId: record.target.productId,
-          catalogItemId: record.target.catalogItemId,
+          productId: record.target.kind === "product" ? record.target.productId : null,
+          catalogItemId: record.target.kind === "catalog_item" ? record.target.catalogItemId : null,
+          tripSnapshotId:
+            record.target.kind === "trip_snapshot" ? record.target.tripSnapshotId : null,
+          tripEnvelopeId:
+            record.target.kind === "trip_snapshot" ? record.target.tripEnvelopeId : null,
+          proposalId:
+            record.origin?.kind === "accepted_proposal_version" ? record.origin.proposalId : null,
+          proposalVersionId:
+            record.origin?.kind === "accepted_proposal_version"
+              ? record.origin.proposalVersionId
+              : null,
           state: record.state,
           revision: record.revision,
           statePayload: record.statePayload,
@@ -96,8 +106,18 @@ export function createDrizzleBookingSessionRepository(
           storefrontId: record.storefrontOrigin?.storefrontId ?? null,
           channelId: record.storefrontOrigin?.channelId ?? null,
           targetKind: record.target.kind,
-          productId: record.target.productId,
-          catalogItemId: record.target.catalogItemId,
+          productId: record.target.kind === "product" ? record.target.productId : null,
+          catalogItemId: record.target.kind === "catalog_item" ? record.target.catalogItemId : null,
+          tripSnapshotId:
+            record.target.kind === "trip_snapshot" ? record.target.tripSnapshotId : null,
+          tripEnvelopeId:
+            record.target.kind === "trip_snapshot" ? record.target.tripEnvelopeId : null,
+          proposalId:
+            record.origin?.kind === "accepted_proposal_version" ? record.origin.proposalId : null,
+          proposalVersionId:
+            record.origin?.kind === "accepted_proposal_version"
+              ? record.origin.proposalVersionId
+              : null,
           state: record.state,
           revision: record.revision,
           statePayload: record.statePayload,
@@ -415,7 +435,23 @@ function mapSession(row: SelectBookingSession): BookingSessionInternalRecord {
     target:
       row.targetKind === "catalog_item"
         ? { kind: "catalog_item", catalogItemId: row.catalogItemId ?? "" }
-        : { kind: "product", productId: row.productId ?? "" },
+        : row.targetKind === "trip_snapshot"
+          ? {
+              kind: "trip_snapshot",
+              tripSnapshotId: row.tripSnapshotId ?? "",
+              tripEnvelopeId: row.tripEnvelopeId ?? "",
+            }
+          : { kind: "product", productId: row.productId ?? "" },
+    ...(row.proposalId && row.proposalVersionId && row.tripSnapshotId
+      ? {
+          origin: {
+            kind: "accepted_proposal_version" as const,
+            proposalId: row.proposalId,
+            proposalVersionId: row.proposalVersionId,
+            tripSnapshotId: row.tripSnapshotId,
+          },
+        }
+      : {}),
     actorKind: row.actorKind as BookingSessionInternalRecord["actorKind"],
     ownerPrincipalId: row.ownerPrincipalId ?? undefined,
     ownerOrganizationId: row.ownerOrganizationId ?? undefined,

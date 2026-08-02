@@ -249,6 +249,10 @@ export const pricingLineV1 = z.object({
   /** How quantity is interpreted for this line. Booking UIs use this to
    * distinguish inventory held from travelers charged. */
   pricingBasis: z.enum(["per_person", "per_unit", "per_booking"]).optional(),
+  /** Aggregate Quote provenance for one Trip Component. */
+  componentId: z.string().min(1).optional(),
+  pricingQuoteId: z.string().min(1).optional(),
+  authority: z.enum(["booking_quote", "accepted_proposal_manual"]).optional(),
 })
 
 export const pricingTaxV1 = z.object({
@@ -259,6 +263,8 @@ export const pricingTaxV1 = z.object({
   base: z.number().int(),
   includedInPrice: z.boolean().optional(),
   scope: z.enum(["included", "excluded", "withheld"]).optional(),
+  componentId: z.string().min(1).optional(),
+  pricingQuoteId: z.string().min(1).optional(),
 })
 
 export const pricingBreakdownV1 = z.object({
