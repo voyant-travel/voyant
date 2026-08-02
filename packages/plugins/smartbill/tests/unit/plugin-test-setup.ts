@@ -1,6 +1,17 @@
-import { vi } from "vitest"
+import { type Mock, vi } from "vitest"
 
-export const financeServiceMock = {
+interface FinanceServiceMock {
+  listInvoiceExternalRefs: Mock
+  registerInvoiceExternalRef: Mock
+  applyExternalInvoiceAllocation: Mock
+  updateInvoice: Mock
+  listInvoiceAttachments: Mock
+  createInvoiceRendition: Mock
+  createInvoiceAttachment: Mock
+  ensureExternalInvoiceNumberSeries: Mock
+}
+
+export const financeServiceMock: FinanceServiceMock = {
   listInvoiceExternalRefs: vi.fn(),
   registerInvoiceExternalRef: vi.fn(),
   applyExternalInvoiceAllocation: vi.fn(),

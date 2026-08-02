@@ -1,14 +1,8 @@
 {
-  "extends": [
-    "./tsconfig.json",
-    "../../typescript-config/dep-paths.json"
-  ],
+  "extends": ["./tsconfig.json", "../../typescript-config/dep-paths.json"],
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "."
   },
-  "include": [
-    "src/**/*",
-    "tests/**/*"
-  ]
+  "include": ["src/**/*", "tests/**/*"]
 }

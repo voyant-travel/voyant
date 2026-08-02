@@ -1,4 +1,5 @@
 import type { BootstrapContext } from "@voyant-travel/core"
+import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 
@@ -30,7 +31,7 @@ describe("SmartBill selected graph runtime factory", () => {
       api: [{ id: "@voyant-travel/plugin-smartbill#api.admin", surface: "admin" }],
       hasPort: () => true,
       getPort,
-    })
+    } as unknown as VoyantGraphRuntimeFactoryContext)
     const services = new Map<string, unknown>()
     const context = {
       bindings,
@@ -67,7 +68,7 @@ describe("SmartBill selected graph runtime factory", () => {
       api: [{ id: "@voyant-travel/plugin-smartbill#api.admin", surface: "admin" }],
       hasPort: () => true,
       getPort: async () => host,
-    })
+    } as unknown as VoyantGraphRuntimeFactoryContext)
 
     await expect(
       configured.module.bootstrap?.({

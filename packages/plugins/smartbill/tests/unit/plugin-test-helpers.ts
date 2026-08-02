@@ -1,5 +1,5 @@
 import type { Plugin } from "@voyant-travel/core"
-import { beforeEach, vi } from "vitest"
+import { beforeEach, type Mock, vi } from "vitest"
 import { financeServiceMock } from "./plugin-test-setup.js"
 
 export type { SmartbillFetch } from "../../src/types.js"
@@ -55,7 +55,11 @@ export function bytesResponse(status: number, bytes: Uint8Array, contentType = "
       throw new Error("not json")
     },
     text: async () => new TextDecoder().decode(bytes),
-    arrayBuffer: async () => bytes.buffer.slice(0),
+    arrayBuffer: async (): Promise<ArrayBuffer> => {
+      const copy = new ArrayBuffer(bytes.byteLength)
+      new Uint8Array(copy).set(bytes)
+      return copy
+    },
     headers: {
       get: (name: string) => (name.toLowerCase() === "content-type" ? contentType : null),
     },
@@ -71,7 +75,7 @@ export const baseOptions = {
   seriesName: "A",
 }
 
-export function makeLogger() {
+export function makeLogger(): { error: Mock; info: Mock } {
   return {
     error: vi.fn(),
     info: vi.fn(),

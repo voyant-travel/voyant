@@ -31,7 +31,7 @@ function buildApp(runtime?: unknown) {
         }),
       }
     : undefined
-  const app = new Hono()
+  const app = new Hono<{ Variables: { db: unknown; container: unknown } }>()
   app.use("*", async (c, next) => {
     c.set("db", db)
     if (container) c.set("container", container)
