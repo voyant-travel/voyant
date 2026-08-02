@@ -72,6 +72,7 @@ import {
 } from "../index.js"
 import {
   commitManualBookingSessionV1,
+  type ManualBookingSessionContinuation,
   ManualBookingSessionError,
 } from "../manual-booking-session-client.js"
 import { useVoyantBookingsContext } from "../provider.js"
@@ -155,6 +156,7 @@ export interface ManualBookingAttempt {
    */
   labelReference: string | null
   idempotencyKey: string
+  continuation?: ManualBookingSessionContinuation
 }
 
 export function formatManualBookingAmount(
@@ -1529,7 +1531,28 @@ export function ManualBookingCreateForm({
       allowDuplicate: false,
       ...contactPayload,
     } satisfies Record<string, unknown>
-    const fingerprint = JSON.stringify(booking)
+    if (!quoteDraft) {
+      submissionRef.current = false
+      setError(copy.validation.pricingUnavailable)
+      return
+    }
+    const fingerprint = JSON.stringify({
+      booking: {
+        ...booking,
+        // The generated default label is cosmetic. Fingerprint the user's
+        // explicit choice so an identical retry keeps the same continuation.
+        ...(groupMembership?.action === "create"
+          ? {
+              groupMembership: {
+                ...groupMembership,
+                label: sharedRoom.groupLabel?.trim() || null,
+              },
+            }
+          : {}),
+      },
+      quoteDraft,
+      quantity: redistributed.travelers.length,
+    })
     if (!attemptRef.current || attemptRef.current.fingerprint !== fingerprint) {
       attemptRef.current = {
         fingerprint,
@@ -1551,7 +1574,6 @@ export function ManualBookingCreateForm({
             `${messages.bookingCreateDialog.labels.sharedRoomGeneratedLabelPrefix} - ${attempt.labelReference}`,
         }
       }
-      if (!quoteDraft) throw new Error(copy.validation.pricingUnavailable)
       const result = await commitManualBookingSessionV1(client, {
         productId: product.productId,
         selection: buildManualBookingSessionSelection({
@@ -1563,6 +1585,12 @@ export function ManualBookingCreateForm({
         }),
         quantity: redistributed.travelers.length,
         idempotencyKey: attempt.idempotencyKey,
+        ...(attempt.continuation ? { continuation: attempt.continuation } : {}),
+        onContinuation: (continuation) => {
+          if (attemptRef.current?.idempotencyKey === attempt.idempotencyKey) {
+            attemptRef.current = { ...attemptRef.current, continuation }
+          }
+        },
       })
       if (result.kind === "payment_required") {
         if (result.redirectUrl && typeof window !== "undefined") {

@@ -10,12 +10,23 @@ export interface ManualBookingSessionClientOptions {
   fetcher: VoyantFetcher
 }
 
+export interface ManualBookingSessionContinuation {
+  sessionId: string
+  revision: number
+  quoteId: string
+  holdId: string
+  commitIdempotencyKey: string
+}
+
 export interface ManualBookingSessionCommitInput {
   productId: string
   selection: Record<string, unknown>
   quantity: number
   idempotencyKey: string
   payment?: { returnUrl?: string; cancelUrl?: string }
+  continuation?: ManualBookingSessionContinuation
+  /** Persisted before Commit so a lost response can be retried idempotently. */
+  onContinuation?: (continuation: ManualBookingSessionContinuation) => void
 }
 
 export type ManualBookingSessionCommitResult =
@@ -34,6 +45,10 @@ export async function commitManualBookingSessionV1(
   client: ManualBookingSessionClientOptions,
   input: ManualBookingSessionCommitInput,
 ): Promise<ManualBookingSessionCommitResult> {
+  if (input.continuation) {
+    return commitContinuation(client, input.continuation, input.payment)
+  }
+
   const created = await request(client, "/v1/admin/catalog/booking-sessions", {
     method: "POST",
     body: JSON.stringify({
@@ -66,37 +81,47 @@ export async function commitManualBookingSessionV1(
     "hold_created",
   )
   const commitIdempotencyKey = key(input.idempotencyKey, "commit")
+  const continuation: ManualBookingSessionContinuation = {
+    sessionId: session.id,
+    revision: session.revision,
+    quoteId: quoted.quote.id,
+    holdId: held.hold.id,
+    commitIdempotencyKey,
+  }
+  input.onContinuation?.(continuation)
+  return commitContinuation(client, continuation, input.payment)
+}
+
+async function commitContinuation(
+  client: ManualBookingSessionClientOptions,
+  continuation: ManualBookingSessionContinuation,
+  payment?: ManualBookingSessionCommitInput["payment"],
+): Promise<ManualBookingSessionCommitResult> {
   const committed = expectOutcome(
-    await request(client, path(session.id, "commit"), {
+    await request(client, path(continuation.sessionId, "commit"), {
       method: "POST",
       body: JSON.stringify({
-        expectedRevision: session.revision,
-        quoteId: quoted.quote.id,
-        holdId: held.hold.id,
-        idempotencyKey: commitIdempotencyKey,
-        ...(input.payment ? { payment: input.payment } : {}),
+        expectedRevision: continuation.revision,
+        quoteId: continuation.quoteId,
+        holdId: continuation.holdId,
+        idempotencyKey: continuation.commitIdempotencyKey,
+        ...(payment ? { payment } : {}),
       }),
     }),
     "commit_result",
   )
-  if (committed.outcome.kind === "committed") {
-    return { kind: "committed", bookingId: committed.outcome.booking.id }
+  const outcome =
+    committed.outcome.kind === "idempotent_replay"
+      ? committed.outcome.originalOutcome
+      : committed.outcome
+  if (outcome.kind === "committed") {
+    return { kind: "committed", bookingId: outcome.booking.id }
   }
-  if (
-    committed.outcome.kind === "idempotent_replay" &&
-    committed.outcome.originalOutcome.kind === "committed"
-  ) {
-    return { kind: "committed", bookingId: committed.outcome.originalOutcome.booking.id }
-  }
-  if (committed.outcome.kind === "payment_required") {
+  if (outcome.kind === "payment_required") {
     return {
       kind: "payment_required",
-      sessionId: session.id,
-      revision: session.revision,
-      quoteId: quoted.quote.id,
-      holdId: held.hold.id,
-      commitIdempotencyKey,
-      redirectUrl: committed.outcome.paymentSession.redirectUrl,
+      ...continuation,
+      redirectUrl: outcome.paymentSession.redirectUrl,
     }
   }
   throw new ManualBookingSessionError(committed)

@@ -160,6 +160,10 @@ booking number, authoritative quoted price, and Booking lifecycle state remain
 server-owned. Staff payment schedules describe collection state; they do not
 turn payment state into a Booking lifecycle status. The admin manual-booking
 form uses this path and no longer calls a Finance creation Tool directly.
+General authenticated Session operations require the Catalog Booking Session
+scope. The established `bookings:write` plus `finance:write` authority also
+admits the staff write route and is required for `staffBooking`; the Catalog
+scope alone cannot submit Finance-owned operator details.
 
 Until a sourced target implements the Supplier Operation side of this same v1
 protocol, the admin form rejects sourced Commit rather than bypassing the

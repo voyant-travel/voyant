@@ -42,7 +42,7 @@ export function createProductionBookingSessionPaymentPorts(
       // start a second customer checkout session alongside it.
       if (
         access.actorKind === "staff" &&
-        access.staffAuthority?.admitted &&
+        access.staffBookingAuthority?.admitted &&
         hasStaffPaymentSchedule(session.statePayload)
       ) {
         return { kind: "not_required" }

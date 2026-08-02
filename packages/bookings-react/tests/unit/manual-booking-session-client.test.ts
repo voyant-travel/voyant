@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { commitManualBookingSessionV1 } from "../../src/manual-booking-session-client.js"
+import {
+  commitManualBookingSessionV1,
+  type ManualBookingSessionContinuation,
+} from "../../src/manual-booking-session-client.js"
 
 function json(body: unknown) {
   return Response.json(body)
@@ -102,6 +105,77 @@ describe("manual Booking Session v1 client", () => {
       commitIdempotencyKey: "manual-booking:payment:commit",
       redirectUrl: "https://payments.test/pays_1",
     })
+  })
+
+  it("retries only Commit when the first Commit response is lost", async () => {
+    let continuation: ManualBookingSessionContinuation | undefined
+    const firstFetcher = vi.fn(async (url: string) => {
+      if (url.endsWith("/booking-sessions")) {
+        return json({ kind: "session_created", session: session() })
+      }
+      if (url.endsWith("/quote")) return json(quote())
+      if (url.endsWith("/hold")) return json(hold())
+      throw new Error("connection reset after Commit")
+    })
+
+    await expect(
+      commitManualBookingSessionV1(
+        { baseUrl: "", fetcher: firstFetcher },
+        {
+          productId: "prod_1",
+          selection: {},
+          quantity: 1,
+          idempotencyKey: "manual-booking:retry",
+          onContinuation: (value) => {
+            continuation = value
+          },
+        },
+      ),
+    ).rejects.toThrow("connection reset after Commit")
+    expect(continuation).toEqual({
+      sessionId: "bses_1",
+      revision: 1,
+      quoteId: "bsqu_1",
+      holdId: "bshd_1",
+      commitIdempotencyKey: "manual-booking:retry:commit",
+    })
+
+    const retryFetcher = vi.fn(async () =>
+      json({
+        kind: "commit_result",
+        outcome: {
+          kind: "idempotent_replay",
+          nextAction: "return_idempotent_result",
+          originalCommitId: "bscm_1",
+          originalOutcome: {
+            kind: "committed",
+            nextAction: "none",
+            booking: { id: "book_1", status: "confirmed" },
+            allocationIds: ["bkac_1"],
+            consumedSessionId: "bses_1",
+            consumedQuoteId: "bsqu_1",
+            convertedHoldId: "bshd_1",
+          },
+        },
+      }),
+    )
+    await expect(
+      commitManualBookingSessionV1(
+        { baseUrl: "", fetcher: retryFetcher },
+        {
+          productId: "prod_1",
+          selection: {},
+          quantity: 1,
+          idempotencyKey: "manual-booking:retry",
+          ...(continuation ? { continuation } : {}),
+        },
+      ),
+    ).resolves.toEqual({ kind: "committed", bookingId: "book_1" })
+    expect(retryFetcher).toHaveBeenCalledTimes(1)
+    expect(retryFetcher).toHaveBeenCalledWith(
+      "/v1/admin/catalog/booking-sessions/bses_1/commit",
+      expect.objectContaining({ credentials: "include", method: "POST" }),
+    )
   })
 
   it("exposes typed recovery without embedding UI copy", async () => {

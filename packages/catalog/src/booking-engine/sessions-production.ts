@@ -158,7 +158,7 @@ async function commitOwnedBookingInTransaction(
   )
   if (derived.status !== "ok") throw new BookingSessionCommitRejectedError(derived.reason)
   const command =
-    input.access.actorKind === "staff" && input.access.staffAuthority?.admitted
+    input.access.actorKind === "staff" && input.access.staffBookingAuthority?.admitted
       ? applyStaffSelection(derived.command, input.session.statePayload)
       : derived.command
 
@@ -226,7 +226,7 @@ async function resolveBilling(
   tx: PostgresJsDatabase,
 ): Promise<SelfServiceBillingParty | null> {
   const contact = billingContact(input.session.statePayload)
-  if (input.access.actorKind === "staff" && input.access.staffAuthority?.admitted) {
+  if (input.access.actorKind === "staff" && input.access.staffBookingAuthority?.admitted) {
     if (contact.personId || contact.organizationId) return contact
   }
   if (!contact.contactEmail && !contact.contactPhone) return null
@@ -345,7 +345,7 @@ export function normalizeProductSelection(
   rejectForbiddenSelection(customerSelection)
   if (
     rawStaffBooking !== undefined &&
-    (access?.actorKind !== "staff" || !access.staffAuthority?.admitted)
+    (access?.actorKind !== "staff" || !access.staffBookingAuthority?.admitted)
   ) {
     throw new InvalidBookingSessionSelectionError("forbidden_field", "selection.staffBooking")
   }

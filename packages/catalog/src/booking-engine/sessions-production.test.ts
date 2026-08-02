@@ -196,6 +196,7 @@ describe("normalizeProductSelection", () => {
         actorKind: "staff",
         principalId: "usr_staff",
         staffAuthority: { admitted: true, reason: "manual_booking" },
+        staffBookingAuthority: { admitted: true, reason: "bookings_and_finance_write" },
       },
     )
 
@@ -313,6 +314,10 @@ describe("production Booking Session ports", () => {
       actorKind: "staff" as const,
       principalId: "usr_staff",
       staffAuthority: { admitted: true as const, reason: "manual_booking" },
+      staffBookingAuthority: {
+        admitted: true as const,
+        reason: "bookings_and_finance_write",
+      },
     }
     const module = createCommittableProductionModule({
       productId: "derived_product",

@@ -34,6 +34,10 @@ describe("production Booking Session staff payment policy", () => {
           actorKind: "staff",
           principalId: "usr_staff",
           staffAuthority: { admitted: true, reason: "manual_booking" },
+          staffBookingAuthority: {
+            admitted: true,
+            reason: "bookings_and_finance_write",
+          },
         },
       } as never),
     ).resolves.toEqual({ kind: "not_required" })
