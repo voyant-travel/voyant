@@ -70,7 +70,10 @@ import {
   type BookingCreateTravelCreditRedemptionInput,
   usePricingPreview,
 } from "../index.js"
-import { commitManualBookingSessionV1 } from "../manual-booking-session-client.js"
+import {
+  commitManualBookingSessionV1,
+  ManualBookingSessionError,
+} from "../manual-booking-session-client.js"
 import { useVoyantBookingsContext } from "../provider.js"
 import {
   findAlreadyPaidInstallmentMissingPaymentDate,
@@ -1572,7 +1575,13 @@ export function ManualBookingCreateForm({
       attemptRef.current = null
       onCreated(result.bookingId)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : copy.validation.create)
+      setError(
+        cause instanceof ManualBookingSessionError
+          ? copy.validation.bookingSession[cause.recovery]
+          : cause instanceof Error
+            ? cause.message
+            : copy.validation.create,
+      )
     } finally {
       submissionRef.current = false
       setSubmitting(false)

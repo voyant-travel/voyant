@@ -48,6 +48,15 @@ export type BookingsUiCreateListMessages = {
       sourcedBookingSessionRequired: string
       promotionBookingSessionRequired: string
       paymentGuaranteeRequired: string
+      bookingSession: {
+        revisionConflict: string
+        quoteChanged: string
+        availabilityChanged: string
+        quoteUnavailable: string
+        commitRejected: string
+        notAuthorized: string
+        unknown: string
+      }
       overrideReason: string
       payment: string
       paidPaymentDate: string

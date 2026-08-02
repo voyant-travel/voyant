@@ -56,6 +56,18 @@ export const bookingsUiEnCreateList = {
         "Promotion codes are not authoritative in Booking Session v1 yet. Remove the code before committing this booking.",
       paymentGuaranteeRequired:
         "This booking requires a payment guarantee, but no payment continuation is available.",
+      bookingSession: {
+        revisionConflict:
+          "The booking changed while it was being committed. Review it and try again.",
+        quoteChanged: "The price changed or expired. Review the refreshed total and try again.",
+        availabilityChanged:
+          "The selected availability is no longer held. Review the departure and try again.",
+        quoteUnavailable:
+          "The selected product could not be quoted. Review the selection and try again.",
+        commitRejected: "The booking could not be committed from the current selection.",
+        notAuthorized: "You do not have permission to commit this booking.",
+        unknown: "The Booking Session rejected this request. Review the booking and try again.",
+      },
       overrideReason: "Add a reason for the manual total.",
       payment: "Complete the payment schedule and make its total match the sell amount.",
       paidPaymentDate: "Payment date is required when Already paid is checked.",

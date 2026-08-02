@@ -103,6 +103,36 @@ describe("manual Booking Session v1 client", () => {
       redirectUrl: "https://payments.test/pays_1",
     })
   })
+
+  it("exposes typed recovery without embedding UI copy", async () => {
+    const fetcher = vi.fn(async () =>
+      json({
+        kind: "rejected",
+        error: {
+          kind: "revision_conflict",
+          expectedRevision: 1,
+          actualRevision: 2,
+          actualState: "active",
+        },
+      }),
+    )
+
+    await expect(
+      commitManualBookingSessionV1(
+        { baseUrl: "", fetcher },
+        {
+          productId: "prod_1",
+          selection: {},
+          quantity: 1,
+          idempotencyKey: "manual-booking:conflict",
+        },
+      ),
+    ).rejects.toMatchObject({
+      name: "ManualBookingSessionError",
+      message: "manual_booking_session_revisionConflict",
+      recovery: "revisionConflict",
+    })
+  })
 })
 
 function session() {

@@ -130,34 +130,47 @@ function expectOutcome<K extends BookingSessionOutcomeV1["kind"]>(
 }
 
 export class ManualBookingSessionError extends Error {
+  readonly recovery: ManualBookingSessionRecovery
+
   constructor(readonly outcome: BookingSessionOutcomeV1) {
-    super(messageForOutcome(outcome))
+    const recovery = recoveryForOutcome(outcome)
+    super(`manual_booking_session_${recovery}`)
     this.name = "ManualBookingSessionError"
+    this.recovery = recovery
   }
 }
 
-function messageForOutcome(outcome: BookingSessionOutcomeV1): string {
-  if (outcome.kind !== "rejected") return `Booking Session returned ${outcome.kind}.`
+export type ManualBookingSessionRecovery =
+  | "revisionConflict"
+  | "quoteChanged"
+  | "availabilityChanged"
+  | "quoteUnavailable"
+  | "commitRejected"
+  | "notAuthorized"
+  | "unknown"
+
+function recoveryForOutcome(outcome: BookingSessionOutcomeV1): ManualBookingSessionRecovery {
+  if (outcome.kind !== "rejected") return "unknown"
   switch (outcome.error.kind) {
     case "revision_conflict":
-      return "The booking changed while it was being committed. Review it and try again."
+      return "revisionConflict"
     case "quote_expired":
     case "quote_superseded":
     case "quote_required":
-      return "The price changed or expired. Review the refreshed total and try again."
+      return "quoteChanged"
     case "hold_expired":
     case "hold_required":
     case "availability_changed":
-      return "The selected availability is no longer held. Review the departure and try again."
+      return "availabilityChanged"
     case "quote_unavailable":
-      return "The selected product could not be quoted. Review the selection and try again."
+      return "quoteUnavailable"
     case "commit_rejected":
-      return "The booking could not be committed from the current selection."
+      return "commitRejected"
     case "not_authorized":
     case "capability_required":
     case "capability_scope_required":
-      return "You do not have permission to commit this booking."
+      return "notAuthorized"
     default:
-      return `Booking Session rejected the request (${outcome.error.kind}).`
+      return "unknown"
   }
 }

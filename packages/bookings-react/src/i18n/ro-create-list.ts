@@ -56,6 +56,19 @@ export const bookingsUiRoCreateList = {
         "Codurile promotionale nu sunt inca autoritative in Booking Session v1. Elimina codul inainte de finalizarea rezervarii.",
       paymentGuaranteeRequired:
         "Aceasta rezervare necesita o garantie de plata, dar continuarea platii nu este disponibila.",
+      bookingSession: {
+        revisionConflict:
+          "Rezervarea s-a schimbat in timpul finalizarii. Verifica datele si incearca din nou.",
+        quoteChanged:
+          "Pretul s-a schimbat sau a expirat. Verifica totalul actualizat si incearca din nou.",
+        availabilityChanged:
+          "Disponibilitatea selectata nu mai este retinuta. Verifica plecarea si incearca din nou.",
+        quoteUnavailable:
+          "Produsul selectat nu a putut fi cotat. Verifica selectia si incearca din nou.",
+        commitRejected: "Rezervarea nu a putut fi finalizata din selectia curenta.",
+        notAuthorized: "Nu ai permisiunea de a finaliza aceasta rezervare.",
+        unknown: "Booking Session a respins cererea. Verifica rezervarea si incearca din nou.",
+      },
       overrideReason: "Adauga un motiv pentru totalul manual.",
       payment: "Completeaza calendarul de plata, cu un total egal valorii rezervarii.",
       paidPaymentDate: "Data platii este obligatorie cand plata este marcata ca deja achitata.",
