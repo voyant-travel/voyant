@@ -16,6 +16,10 @@ import {
   bookingsRef,
 } from "../../src/booking-engine/bookings-ref.js"
 import { createDrizzleBookingSessionRepository } from "../../src/booking-engine/sessions-drizzle.js"
+import { createSourceAdapterRegistry } from "../../src/booking-engine/registry.js"
+import { createSupplierOperationWorkflow } from "../../src/booking-engine/supplier-operation-workflow.js"
+import { supplierOperationsTable } from "../../src/booking-engine/supplier-operations-schema.js"
+import { createDrizzleSupplierOperationRepository } from "../../src/booking-engine/supplier-operations.js"
 import {
   bookingSessionAuditEventsTable,
   bookingSessionCommitsTable,
@@ -194,6 +198,83 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
     await expect(db.select().from(bookingSessionHoldsTable)).resolves.toEqual([
       expect.objectContaining({ id: prepared.hold.id, state: "active" }),
     ])
+  })
+
+  it("serializes one durable supplier reservation intent across competing Commit keys", async () => {
+    const sessions = createDrizzleBookingSessionRepository(db)
+    const module = createBookingSessionModule({
+      ports: {
+        repository: sessions,
+        normalizeSelection: async ({ selection }) => selection,
+        composeQuote: async () => ({ status: "quoted", pricing: PRICING }),
+        placeCapacityHold: async () => "unavailable",
+        releaseCapacityHold: async () => {},
+        commitOwnedBooking: async () => {
+          throw new Error("owned commit is not used")
+        },
+      },
+    })
+    const created = await module.createSession(
+      {
+        idempotencyKey: "postgres_supplier_session",
+        target: { kind: "catalog_item", catalogItemId: "crus_pg_supplier" },
+      },
+      ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+    const quoted = await module.quoteSession(
+      created.session.id,
+      { expectedRevision: created.session.revision, idempotencyKey: "postgres_supplier_quote" },
+      ACCESS,
+    )
+    if (quoted.kind !== "quote_created") throw new Error("quote not created")
+
+    let reservationCalls = 0
+    const registry = createSourceAdapterRegistry()
+    registry.register("conn_pg_supplier", {
+      kind: "cruise:postgres",
+      capabilities: {
+        verticals: ["cruises"],
+        supportsLiveResolution: true,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: true,
+        postBookOperations: ["status"],
+      },
+      async reserve() {
+        reservationCalls += 1
+        return { upstream_ref: "PG-UPSTREAM-1", status: "confirmed" }
+      },
+    })
+    const workflow = createSupplierOperationWorkflow({
+      repository: createDrizzleSupplierOperationRepository(db),
+      registry,
+    })
+    const base = {
+      sessionId: created.session.id,
+      quoteId: quoted.quote.id,
+      requestFingerprint: "postgres_supplier_fingerprint",
+      entityModule: "cruises",
+      entityId: "crus_pg_supplier",
+      sourceKind: "cruise:postgres",
+      sourceConnectionId: "conn_pg_supplier",
+      sourceRef: "upstream-cruise",
+      request: {
+        entity_module: "cruises",
+        entity_id: "crus_pg_supplier",
+        parameters: {},
+      },
+      adapterContext: { connection_id: "conn_pg_supplier" },
+      now: new Date("2026-08-02T10:00:00.000Z"),
+    }
+    const outcomes = await Promise.all([
+      workflow.dispatch({ ...base, commitIdempotencyKey: "postgres_supplier_commit_a" }),
+      workflow.dispatch({ ...base, commitIdempotencyKey: "postgres_supplier_commit_b" }),
+    ])
+
+    expect(outcomes.filter((outcome) => outcome.kind === "secured")).toHaveLength(1)
+    expect(outcomes.filter((outcome) => outcome.kind === "idempotency_conflict")).toHaveLength(1)
+    expect(reservationCalls).toBe(1)
+    await expect(db.select().from(supplierOperationsTable)).resolves.toHaveLength(1)
   })
 
   it("continues a paid Session into exactly one Booking under a concurrent Commit retry", async () => {
@@ -417,6 +498,7 @@ async function insertBookingGraph(db: PostgresJsDatabase) {
 async function resetTables(db: PostgresJsDatabase) {
   await db.execute(sql`
     TRUNCATE
+      supplier_operations,
       booking_session_commits,
       booking_session_operations,
       booking_session_holds,

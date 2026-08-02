@@ -34,6 +34,8 @@ import type {
   DiscoveryPage,
   GetContentRequest,
   GetContentResult,
+  GetReservationRequest,
+  GetReservationResult,
   LiveResolveRequest,
   LiveResolveResult,
   ReserveRequest,
@@ -50,8 +52,12 @@ import type {
   CruiseAdapter,
   CruiseSearchProjectionEntry,
   ExternalCabinCategory,
+  ExternalContactInput,
   ExternalCruise,
+  ExternalFareVariant,
   ExternalItineraryDay,
+  ExternalPassengerComposition,
+  ExternalPassengerInput,
   ExternalSailing,
   ExternalShip,
   SourceRef,
@@ -123,6 +129,10 @@ export function cruiseAdapterToSourceAdapter(
     supportsLiveResolution: true,
     supportsDriftDetection: false,
     supportsBookingForwarding: true,
+    supportsReservationRetrieval: Boolean(
+      cruiseAdapter.getBooking || cruiseAdapter.getBookingByIdempotencyKey,
+    ),
+    supportsReservationLookupByIdempotencyKey: Boolean(cruiseAdapter.getBookingByIdempotencyKey),
     postBookOperations: ["cancel", "status"],
     supportsContentFetch,
     supportedContentLocales: options.supportedContentLocales,
@@ -193,21 +203,45 @@ export function cruiseAdapterToSourceAdapter(
 
     async liveResolve(
       _ctx: SourceAdapterContext,
-      _request: LiveResolveRequest,
+      request: LiveResolveRequest,
     ): Promise<LiveResolveResult> {
-      // Cruise pricing flows through `fetchSailingPricing` per
-      // sailing — but the catalog `LiveResolveRequest` is keyed by
-      // entity_id (the cruise typeid), not by sailing. v1 leaves
-      // this as an explicit not-supported: callers should use the
-      // cruises module's per-sailing pricing routes directly. The
-      // catalog plane's quote engine still works because cruises'
-      // own quote path is exercised through the vertical's routes.
-      return {
-        values: {},
-        failed: {
-          /* nothing — empty result is the contract */
-        },
+      const values: LiveResolveResult["values"] = {}
+      const failed: NonNullable<LiveResolveResult["failed"]> = {}
+      const sailingRef = sourceRefFromParameter(request.parameters?.sailingId)
+      const cabinCategoryRef = sourceRefFromParameter(
+        request.parameters?.cabinCategoryRef ?? request.parameters?.cabinCategoryId,
+      )
+      const occupancy = positiveInteger(request.parameters?.occupancy)
+      if (!sailingRef || !cabinCategoryRef || !occupancy) {
+        for (const id of request.ids) failed[id] = "unsupported"
+        return { values, failed }
       }
+      const rows = await cruiseAdapter.fetchSailingPricing(sailingRef)
+      const row = rows.find(
+        (candidate) =>
+          sourceRefsMatch(candidate.cabinCategoryRef, cabinCategoryRef) &&
+          candidate.occupancy === occupancy &&
+          optionalStringMatches(candidate.fareCode, request.parameters?.fareCode) &&
+          optionalStringMatches(candidate.fareVariant, request.parameters?.fareVariant),
+      )
+      for (const id of request.ids) {
+        if (!row || row.availability === "sold_out") {
+          failed[id] = "unavailable"
+          continue
+        }
+        values[id] = {
+          priceCents: Math.round(Number.parseFloat(row.pricePerPerson) * 100) * occupancy,
+          currency: row.currency,
+          availability: row.availability,
+          sailingRef,
+          cabinCategoryRef,
+          occupancy,
+          fareCode: row.fareCode ?? null,
+          fareVariant: row.fareVariant ?? null,
+          bookingTerms: row.bookingTerms ?? null,
+        }
+      }
+      return Object.keys(failed).length > 0 ? { values, failed } : { values }
     },
 
     async getContent(
@@ -254,16 +288,73 @@ export function cruiseAdapterToSourceAdapter(
       }
     },
 
-    async reserve(_ctx: SourceAdapterContext, _request: ReserveRequest): Promise<ReserveResult> {
-      // Cruise reservations require per-sailing context (cabin
-      // category, occupancy, fare code, passengers). The catalog
-      // `ReserveRequest` doesn't carry that level of detail, so v1
-      // leaves cruise booking on the vertical's own commit path
-      // (`POST /v1/admin/cruises/:key/booking`). When the journey
-      // standardizes the descriptor, this shim can route through.
-      throw new Error(
-        `cruise booking via catalog SourceAdapter is not supported in v1 — call the cruises vertical's commit path directly (POST /v1/admin/cruises/:key/booking)`,
+    async reserve(_ctx: SourceAdapterContext, request: ReserveRequest): Promise<ReserveResult> {
+      const sailingRef = requiredSourceRef(request.parameters.sailingId, "sailingId")
+      const cabinCategoryRef = requiredSourceRef(
+        request.parameters.cabinCategoryRef ?? request.parameters.cabinCategoryId,
+        "cabinCategoryId",
       )
+      const occupancy = positiveInteger(request.parameters.occupancy)
+      const party = recordValue(request.party)
+      const contact = requiredRecord(party?.contact, "party.contact")
+      const passengers = Array.isArray(party?.passengers) ? party.passengers : []
+      if (!occupancy || passengers.length === 0) {
+        throw new Error("cruise reservation requires occupancy and passengers")
+      }
+      const sailing = await cruiseAdapter.fetchSailing(sailingRef)
+      if (!sailing) throw new Error("cruise reservation sailing is unavailable")
+      const result = await cruiseAdapter.createBooking({
+        ...(request.idempotency_key ? { idempotencyKey: request.idempotency_key } : {}),
+        sailingRef,
+        cabinCategoryRef,
+        occupancy,
+        passengerComposition: externalPassengerComposition(request.parameters.passengerComposition),
+        fareCode: optionalString(request.parameters.fareCode),
+        fareVariant: fareVariant(request.parameters.fareVariant),
+        passengers: passengers.map((passenger) => externalPassenger(passenger)),
+        contact: externalContact(contact),
+        bookingTerms: recordValue(request.parameters.bookingTerms) as never,
+        notes: optionalString(request.parameters.notes),
+      })
+      return {
+        upstream_ref: result.connectorBookingRef,
+        status: result.connectorStatus === "pending" ? "pending" : "confirmed",
+        upstream_payload: {
+          connectorStatus: result.connectorStatus ?? null,
+          sailing: {
+            departureDate: sailing.departureDate,
+            returnDate: sailing.returnDate,
+            sailingRef,
+            cabinCategoryRef,
+          },
+          ...(result.finalQuote ? { finalQuote: result.finalQuote } : {}),
+          ...(result.finalComponents ? { finalComponents: result.finalComponents } : {}),
+          ...(result.finalBookingTerms ? { finalBookingTerms: result.finalBookingTerms } : {}),
+        },
+      }
+    },
+
+    async getReservation(
+      _ctx: SourceAdapterContext,
+      request: GetReservationRequest,
+    ): Promise<GetReservationResult | null> {
+      const result =
+        request.upstream_ref !== undefined
+          ? await cruiseAdapter.getBooking?.(request.upstream_ref)
+          : request.idempotency_key !== undefined
+            ? await cruiseAdapter.getBookingByIdempotencyKey?.(request.idempotency_key)
+            : null
+      if (!result) return null
+      return {
+        upstream_ref: result.connectorBookingRef,
+        status: result.connectorStatus === "pending" ? "pending" : "confirmed",
+        upstream_payload: {
+          connectorStatus: result.connectorStatus ?? null,
+          ...(result.finalQuote ? { finalQuote: result.finalQuote } : {}),
+          ...(result.finalComponents ? { finalComponents: result.finalComponents } : {}),
+          ...(result.finalBookingTerms ? { finalBookingTerms: result.finalBookingTerms } : {}),
+        },
+      }
     },
 
     async cancel(_ctx: SourceAdapterContext, _request: CancelRequest): Promise<CancelResult> {
@@ -271,6 +362,120 @@ export function cruiseAdapterToSourceAdapter(
       // cruise vertical's own routes for now.
       throw new Error("cruise cancellation via catalog SourceAdapter is not supported in v1")
     },
+  }
+}
+
+function sourceRefFromParameter(value: unknown): SourceRef | null {
+  if (typeof value === "string" && value.trim()) {
+    return decodeSourceRef(value) ?? { externalId: value.trim() }
+  }
+  const record = recordValue(value)
+  return typeof record?.externalId === "string" && record.externalId.trim()
+    ? (record as SourceRef)
+    : null
+}
+
+function requiredSourceRef(value: unknown, field: string): SourceRef {
+  const ref = sourceRefFromParameter(value)
+  if (!ref) throw new Error(`cruise reservation requires ${field}`)
+  return ref
+}
+
+function sourceRefsMatch(left: SourceRef, right: SourceRef): boolean {
+  return encodeSourceRef(left) === encodeSourceRef(right) || left.externalId === right.externalId
+}
+
+function positiveInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null
+}
+
+function optionalStringMatches(actual: unknown, requested: unknown): boolean {
+  const expected = optionalString(requested)
+  return !expected || actual === expected
+}
+
+function fareVariant(value: unknown): ExternalFareVariant | null {
+  return value === "cruise_only" || value === "air_inclusive" ? value : null
+}
+
+function externalPassengerComposition(value: unknown): ExternalPassengerComposition | null {
+  const composition = recordValue(value)
+  const adults = positiveInteger(composition?.adults) ?? 0
+  const children = positiveInteger(composition?.children) ?? 0
+  const infants = positiveInteger(composition?.infants) ?? 0
+  const seniors = positiveInteger(composition?.seniors) ?? 0
+  if (adults + children + infants + seniors === 0) return null
+  return {
+    adults,
+    ...(children > 0 ? { children } : {}),
+    ...(infants > 0 ? { infants } : {}),
+    ...(seniors > 0 ? { seniors } : {}),
+    ...(Array.isArray(composition?.childAges)
+      ? {
+          childAges: composition.childAges.filter(
+            (age): age is number => typeof age === "number" && Number.isInteger(age) && age >= 0,
+          ),
+        }
+      : {}),
+  }
+}
+
+function recordValue(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function requiredRecord(value: unknown, field: string): Record<string, unknown> {
+  const record = recordValue(value)
+  if (!record) throw new Error(`cruise reservation requires ${field}`)
+  return record
+}
+
+function requiredString(value: unknown, field: string): string {
+  const result = optionalString(value)
+  if (!result) throw new Error(`cruise reservation requires ${field}`)
+  return result
+}
+
+function externalPassenger(value: unknown): ExternalPassengerInput {
+  const passenger = requiredRecord(value, "party.passengers[]")
+  const category = optionalString(passenger.travelerCategory)
+  return {
+    firstName: requiredString(passenger.firstName, "passenger.firstName"),
+    lastName: requiredString(passenger.lastName, "passenger.lastName"),
+    email: optionalString(passenger.email),
+    phone: optionalString(passenger.phone),
+    travelerCategory:
+      category === "adult" ||
+      category === "child" ||
+      category === "infant" ||
+      category === "senior" ||
+      category === "other"
+        ? category
+        : null,
+    preferredLanguage: optionalString(passenger.preferredLanguage),
+    specialRequests: optionalString(passenger.specialRequests),
+    isPrimary: passenger.isPrimary === true,
+  }
+}
+
+function externalContact(contact: Record<string, unknown>): ExternalContactInput {
+  return {
+    firstName: requiredString(contact.firstName, "contact.firstName"),
+    lastName: requiredString(contact.lastName, "contact.lastName"),
+    email: optionalString(contact.email),
+    phone: optionalString(contact.phone),
+    language: optionalString(contact.language),
+    country: optionalString(contact.country),
+    region: optionalString(contact.region),
+    city: optionalString(contact.city),
+    address: optionalString(contact.address),
+    postalCode: optionalString(contact.postalCode),
   }
 }
 
