@@ -246,7 +246,10 @@ export function cruiseAdapterToSourceAdapter(
             earlyBookingDeadline: row.earlyBookingDeadline ?? null,
             earlyBookingBonusDescription: row.earlyBookingBonusDescription ?? null,
           },
-          components: row.components ?? [],
+          components: (row.components ?? []).map((component) => ({
+            ...component,
+            label: component.label ?? null,
+          })),
           occupancy,
           guestCount: occupancy,
           ...(row.bookingTerms !== undefined ? { bookingTerms: row.bookingTerms } : {}),
