@@ -575,6 +575,43 @@ describe("Booking Session v1 owned tracer", () => {
     expect(harness.repository.commits.size).toBe(0)
   })
 
+  it("distinguishes manual component work from a pending supplier operation", async () => {
+    const harness = createHarness({}, undefined, async () => ({
+      kind: "component_commit_pending",
+      nextAction: "continue_component_commit",
+      components: [{ componentId: "trcp_manual", state: "manual_confirmation_required" }],
+    }))
+    const created = await harness.module.createAcceptedProposalSession(
+      {
+        idempotencyKey: "proposal_manual_pending",
+        proposalId: "prps_manual_pending",
+        proposalVersionId: "prvr_manual_pending",
+        tripSnapshotId: "trsn_manual_pending",
+        tripEnvelopeId: "trip_manual_pending",
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+    const quoted = await harness.module.quoteSession(
+      created.session.id,
+      { expectedRevision: 1, idempotencyKey: "quote_manual_pending" },
+      ANONYMOUS_ACCESS,
+    )
+    if (quoted.kind !== "quote_created") throw new Error("quote not created")
+
+    await harness.module.commitSession(
+      created.session.id,
+      {
+        expectedRevision: 1,
+        quoteId: quoted.quote.id,
+        idempotencyKey: "commit_manual_pending",
+      },
+      ANONYMOUS_ACCESS,
+    )
+
+    expect(harness.repository.sessions.get(created.session.id)?.state).toBe("component_pending")
+  })
+
   it("creates no Booking or Allocation residue before Commit, then commits exactly once", async () => {
     const { harness, session, capability, quote, hold } = await createQuoteAndHold()
 

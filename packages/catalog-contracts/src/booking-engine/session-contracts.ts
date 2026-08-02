@@ -18,6 +18,13 @@ export const bookingSessionTargetV1 = z.discriminatedUnion("kind", [
     productId: z.never().optional(),
   }),
   z.object({
+    kind: z.literal("owned_entity"),
+    entityModule: z.string().min(1),
+    entityId: z.string().min(1),
+    productId: z.never().optional(),
+    catalogItemId: z.never().optional(),
+  }),
+  z.object({
     kind: z.literal("trip_snapshot"),
     tripSnapshotId: z.string().min(1),
     tripEnvelopeId: z.string().min(1),
@@ -41,6 +48,7 @@ export type BookingSessionOriginV1 = z.infer<typeof bookingSessionOriginV1>
 export const bookingSessionStateV1 = z.enum([
   "active",
   "supplier_pending",
+  "component_pending",
   "consumed",
   "expired",
   "abandoned",
@@ -228,6 +236,7 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
       "target_not_found",
       "target_not_bookable",
       "price_unavailable",
+      "policy_unavailable",
       "selection_unavailable",
     ]),
     nextAction: z.enum(["select_alternative_inventory", "contact_operator", "update_selection"]),

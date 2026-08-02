@@ -78,6 +78,13 @@
       "when": 1785668400000,
       "tag": "20260802140000_supplier_operation_scopes",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785672000000,
+      "tag": "20260802150000_booking_session_component_pending",
+      "breakpoints": true
     }
   ]
 }

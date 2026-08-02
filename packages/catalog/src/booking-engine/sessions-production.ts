@@ -161,7 +161,10 @@ function createProductionCompositeLeafRuntime(
       if (!result.available || !result.pricing) {
         return unavailableQuoteResult(result.invalidReason)
       }
-      return { status: "quoted", pricing: pricingBreakdownFromBasis(result.pricing) }
+      return {
+        status: "quoted",
+        pricing: pricingBreakdownFromBasis(result.pricing, result.upstreamPayload),
+      }
     },
     async placeCapacityHold(input) {
       const { session, holdId, quantity, expiresAt, tx } = input
@@ -191,7 +194,7 @@ function createProductionCompositeLeafRuntime(
       return result.status !== "unavailable" && result.holdToken === holdId ? "held" : "unavailable"
     },
     async releaseCapacityHold({ session, hold, tx }) {
-      if (session.target.kind !== "product") return
+      if (session.target.kind !== "product" && session.target.kind !== "owned_entity") return
       const handlers = await deps.resolveOwnedHandlers()
       const handler = handlers.resolve(entityModuleForSession(session.target))
       if (!handler?.releaseHold) return
@@ -621,19 +624,24 @@ function billingContact(payload: Record<string, unknown>) {
 
 function entityModuleForSession(target: CommitOwnedBookingInput["session"]["target"]) {
   if (target.kind === "product") return "products"
+  if (target.kind === "owned_entity") return target.entityModule
   if (target.kind === "trip_snapshot") return "trips"
   return "catalog"
 }
 
 function entityIdForSession(target: CommitOwnedBookingInput["session"]["target"]) {
   if (target.kind === "product") return target.productId
+  if (target.kind === "owned_entity") return target.entityId
   if (target.kind === "trip_snapshot") return target.tripSnapshotId
   return target.catalogItemId
 }
 
-function pricingBreakdownFromBasis(pricing: PricingBasis) {
+function pricingBreakdownFromBasis(pricing: PricingBasis, policySource?: Record<string, unknown>) {
+  const policyEvidence = policyEvidenceFromValues(policySource)
   const supplied = pricingBreakdownV1.safeParse(pricing.breakdown)
-  if (supplied.success) return supplied.data
+  if (supplied.success) {
+    return policyEvidence ? { ...supplied.data, policyEvidence } : supplied.data
+  }
   const base = Number(pricing.base_amount ?? 0)
   const taxes = Number(pricing.taxes ?? 0)
   const fees = Number(pricing.fees ?? 0)
@@ -648,6 +656,7 @@ function pricingBreakdownFromBasis(pricing: PricingBasis) {
     subtotal: base,
     taxTotal: taxes,
     total,
+    ...(policyEvidence ? { policyEvidence } : {}),
   }
 }
 
@@ -659,6 +668,7 @@ function pricingBreakdownFromLiveValues(values: Record<string, unknown>) {
   const fees = numberValue(values.feesCents) ?? 0
   const surcharges = numberValue(values.surchargesCents) ?? 0
   const total = priceCents + taxes + fees + surcharges
+  const policyEvidence = policyEvidenceFromValues(values)
   return {
     currency,
     lines: [
@@ -697,6 +707,22 @@ function pricingBreakdownFromLiveValues(values: Record<string, unknown>) {
     subtotal: priceCents + fees + surcharges,
     taxTotal: taxes,
     total,
+    ...(policyEvidence ? { policyEvidence } : {}),
+  }
+}
+
+function policyEvidenceFromValues(values?: Record<string, unknown>) {
+  if (!values) return undefined
+  const cancellation =
+    values.cancellationSnapshot ??
+    values.cancellation_snapshot ??
+    values.cancellationPolicy ??
+    values.cancellation_policy
+  const bookingTerms = values.bookingTerms ?? values.booking_terms ?? values.terms
+  if (cancellation === undefined && bookingTerms === undefined) return undefined
+  return {
+    ...(cancellation !== undefined ? { cancellation } : {}),
+    ...(bookingTerms !== undefined ? { bookingTerms } : {}),
   }
 }
 

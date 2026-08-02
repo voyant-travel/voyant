@@ -49,6 +49,9 @@ export function createDrizzleBookingSessionRepository(
           targetKind: record.target.kind,
           productId: record.target.kind === "product" ? record.target.productId : null,
           catalogItemId: record.target.kind === "catalog_item" ? record.target.catalogItemId : null,
+          targetEntityModule:
+            record.target.kind === "owned_entity" ? record.target.entityModule : null,
+          targetEntityId: record.target.kind === "owned_entity" ? record.target.entityId : null,
           tripSnapshotId:
             record.target.kind === "trip_snapshot" ? record.target.tripSnapshotId : null,
           tripEnvelopeId:
@@ -108,6 +111,9 @@ export function createDrizzleBookingSessionRepository(
           targetKind: record.target.kind,
           productId: record.target.kind === "product" ? record.target.productId : null,
           catalogItemId: record.target.kind === "catalog_item" ? record.target.catalogItemId : null,
+          targetEntityModule:
+            record.target.kind === "owned_entity" ? record.target.entityModule : null,
+          targetEntityId: record.target.kind === "owned_entity" ? record.target.entityId : null,
           tripSnapshotId:
             record.target.kind === "trip_snapshot" ? record.target.tripSnapshotId : null,
           tripEnvelopeId:
@@ -363,7 +369,11 @@ export function createDrizzleBookingSessionRepository(
         .where(
           and(
             eq(bookingSessionsTable.id, input.sessionId),
-            inArray(bookingSessionsTable.state, ["active", "supplier_pending"]),
+            inArray(bookingSessionsTable.state, [
+              "active",
+              "supplier_pending",
+              "component_pending",
+            ]),
           ),
         )
         .returning()
@@ -435,13 +445,19 @@ function mapSession(row: SelectBookingSession): BookingSessionInternalRecord {
     target:
       row.targetKind === "catalog_item"
         ? { kind: "catalog_item", catalogItemId: row.catalogItemId ?? "" }
-        : row.targetKind === "trip_snapshot"
+        : row.targetKind === "owned_entity"
           ? {
-              kind: "trip_snapshot",
-              tripSnapshotId: row.tripSnapshotId ?? "",
-              tripEnvelopeId: row.tripEnvelopeId ?? "",
+              kind: "owned_entity",
+              entityModule: row.targetEntityModule ?? "",
+              entityId: row.targetEntityId ?? "",
             }
-          : { kind: "product", productId: row.productId ?? "" },
+          : row.targetKind === "trip_snapshot"
+            ? {
+                kind: "trip_snapshot",
+                tripSnapshotId: row.tripSnapshotId ?? "",
+                tripEnvelopeId: row.tripEnvelopeId ?? "",
+              }
+            : { kind: "product", productId: row.productId ?? "" },
     ...(row.proposalId && row.proposalVersionId && row.tripSnapshotId
       ? {
           origin: {

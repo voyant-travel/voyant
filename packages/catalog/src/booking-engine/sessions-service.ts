@@ -190,6 +190,7 @@ export type BookingSessionQuoteUnavailableReason =
   | "target_not_found"
   | "target_not_bookable"
   | "price_unavailable"
+  | "policy_unavailable"
   | "selection_unavailable"
 
 export type ComposeBookingQuoteResult =
@@ -270,7 +271,7 @@ export type CommitCompositeBookingResult =
   | { kind: "committed"; bookings: CompositeBookingCommitment[] }
   | Extract<
       BookingLifecycleCommitOutcomeV1,
-      { kind: "component_commit_pending" | "proposal_acceptance_required" }
+      { kind: "component_commit_pending" | "proposal_acceptance_required" | "hold_failure" }
     >
 
 export interface BookingSessionCompositeLeafRuntime {
@@ -1074,13 +1075,14 @@ export function createBookingSessionModule(
           return { status: "outcome" as const, outcome: lockedAuthorization }
         }
         const at = now()
-        const sourcedContinuation =
-          (session.target.kind === "catalog_item" || session.target.kind === "trip_snapshot") &&
-          session.state === "supplier_pending"
-        if (!sourcedContinuation && session.state === "active" && session.expiresAt <= at) {
+        const durableContinuation =
+          (session.target.kind === "catalog_item" && session.state === "supplier_pending") ||
+          (session.target.kind === "trip_snapshot" &&
+            (session.state === "supplier_pending" || session.state === "component_pending"))
+        if (!durableContinuation && session.state === "active" && session.expiresAt <= at) {
           await expireSession(repository, options.ports, session, access, at, tx)
         }
-        if (session.state !== "active" && !sourcedContinuation) {
+        if (session.state !== "active" && !durableContinuation) {
           return {
             status: "outcome" as const,
             outcome:
@@ -1098,7 +1100,7 @@ export function createBookingSessionModule(
         const revisionRejected = rejectRevision(input.expectedRevision, session)
         if (revisionRejected) return { status: "outcome" as const, outcome: revisionRejected }
 
-        const quote = sourcedContinuation
+        const quote = durableContinuation
           ? await loadPersistedSourcedQuote(repository, input.quoteId, session)
           : await loadUsableQuote(repository, input.quoteId, session, at)
         if (quote === "expired" || quote === "superseded") {
@@ -1144,11 +1146,14 @@ export function createBookingSessionModule(
         }
 
         const hold = input.holdId
-          ? sourcedContinuation
+          ? durableContinuation
             ? await loadPersistedSourcedHold(repository, input.holdId, session, quote)
             : await loadUsableHold(repository, input.holdId, session, quote, at)
           : null
-        if (hold === "expired" || (!hold && session.target.kind === "product")) {
+        if (
+          hold === "expired" ||
+          (!hold && (session.target.kind === "product" || session.target.kind === "owned_entity"))
+        ) {
           await releaseLiveHolds(repository, options.ports, session, access, at, tx)
           return {
             status: "outcome" as const,
@@ -1163,7 +1168,7 @@ export function createBookingSessionModule(
           }
         }
 
-        if (sourcedContinuation) {
+        if (durableContinuation) {
           return { status: "ready" as const, session, quote, hold, at }
         }
 
@@ -1265,7 +1270,12 @@ export function createBookingSessionModule(
           }
           if (compositeResult.kind !== "committed") {
             if (compositeResult.kind === "component_commit_pending") {
-              await markCompositeSessionPending(repository, session.id, at)
+              await markCompositeSessionPending(
+                repository,
+                session.id,
+                compositeResult.components,
+                at,
+              )
             }
             return { kind: "commit_result", outcome: compositeResult }
           }
@@ -1662,12 +1672,21 @@ async function consumeCommittedSources(input: {
 async function markCompositeSessionPending(
   repository: BookingSessionRepository,
   sessionId: string,
+  components: Extract<
+    BookingLifecycleCommitOutcomeV1,
+    { kind: "component_commit_pending" }
+  >["components"],
   at: Date,
 ): Promise<void> {
   await repository.withSessionTransaction(sessionId, async () => {
     const current = await repository.getSession(sessionId)
     if (!current || current.state === "consumed") return
-    current.state = "supplier_pending"
+    current.state = components.some(
+      (component) =>
+        component.state === "supplier_pending" || component.state === "supplier_in_doubt",
+    )
+      ? "supplier_pending"
+      : "component_pending"
     current.updatedAt = at
     await repository.saveSession(current)
   })
@@ -1706,7 +1725,8 @@ async function consumeCompositeCommittedSources(input: {
   await input.repository.withTransactionContext(input.tx, async () => {
     const currentAt = input.now()
     const currentSession = await input.repository.getSession(input.session.id)
-    const continuing = currentSession?.state === "supplier_pending"
+    const continuing =
+      currentSession?.state === "supplier_pending" || currentSession?.state === "component_pending"
     if (currentSession?.state !== "active" && !continuing) {
       throw new CommitSessionStateError(
         currentSession?.state === "consumed" ? "consumed" : "expired",
@@ -2062,6 +2082,9 @@ async function loadPersistedSourcedHold(
 
 function capacityKeyForTarget(target: BookingSessionTargetV1): string {
   if (target.kind === "product" && target.productId) return `product:${target.productId}`
+  if (target.kind === "owned_entity" && target.entityModule && target.entityId) {
+    return `owned_entity:${target.entityModule}:${target.entityId}`
+  }
   if (target.kind === "catalog_item" && target.catalogItemId)
     return `catalog_item:${target.catalogItemId}`
   if (target.kind === "trip_snapshot" && target.tripSnapshotId)

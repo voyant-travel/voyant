@@ -17,6 +17,22 @@ import {
 import type { TripComponent, TripSnapshot } from "./schema.js"
 import { tripComponents } from "./schema.js"
 import { appendWarningCodes, createComponentEvent } from "./service-internals.js"
+
+export interface TripBookingSessionCompositePersistence {
+  loadSnapshot(db: PostgresJsDatabase, snapshotId: string): Promise<TripSnapshot | null>
+  loadCurrentComponents(db: PostgresJsDatabase, envelopeId: string): Promise<TripComponent[]>
+  loadAllocationIds(db: PostgresJsDatabase, bookingId: string): Promise<string[]>
+  markManualConfirmationRequired(db: PostgresJsDatabase, component: TripComponent): Promise<void>
+  recordComponentCommit(input: {
+    db: PostgresJsDatabase
+    session: BookingSessionInternalRecord
+    snapshot: TripSnapshot
+    component: TripComponent
+    quote: BookingQuoteInternalRecord
+    commitment: CompositeBookingCommitment
+  }): Promise<void>
+}
+
 import { getTripSnapshotById } from "./service-snapshots.js"
 
 /**
@@ -24,14 +40,25 @@ import { getTripSnapshotById } from "./service-snapshots.js"
  * Snapshot. Catalog supplies the leaf quote/hold/commit implementation so the
  * coordinator never reimplements a vertical or supplier commitment point.
  */
-export function createTripBookingSessionCompositeHandler(): BookingSessionCompositeHandler {
+export function createTripBookingSessionCompositeHandler(
+  overrides: Partial<TripBookingSessionCompositePersistence> = {},
+): BookingSessionCompositeHandler {
+  const persistence: TripBookingSessionCompositePersistence = {
+    loadSnapshot: getTripSnapshotById,
+    loadCurrentComponents: currentComponents,
+    loadAllocationIds: allocationIdsForBooking,
+    markManualConfirmationRequired,
+    recordComponentCommit: (input) => recordComponentCommit(input),
+    ...overrides,
+  }
   return {
     async composeQuote(input) {
       const database = input.tx as PostgresJsDatabase
-      const snapshot = await loadTargetSnapshot(database, input.session)
+      const snapshot = await loadTargetSnapshot(database, input.session, persistence.loadSnapshot)
       const components = frozenComponents(snapshot)
       const lines: PricingBreakdownV1["lines"] = []
       const taxes: PricingBreakdownV1["taxes"] = []
+      const componentPolicies: NonNullable<PricingBreakdownV1["componentPolicies"]> = []
 
       for (const proposalLine of snapshot.proposal.lines) {
         const component = components.get(proposalLine.componentId)
@@ -67,12 +94,17 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
           tx: input.tx,
         })
         if (quoted.status === "unavailable") return quoted
-        const catalogQuoteId = catalogQuoteIdFromComponent(component)
+        const acceptedPolicy = acceptedPolicyEvidence(component)
+        if (!hasRequiredPolicyEvidence(acceptedPolicy, quoted.pricing.policyEvidence)) {
+          return unavailable("policy_unavailable")
+        }
+        if (quoted.pricing.policyEvidence) {
+          componentPolicies.push({ componentId: component.id, ...quoted.pricing.policyEvidence })
+        }
         lines.push(
           ...quoted.pricing.lines.map((line) => ({
             ...line,
             componentId: component.id,
-            ...(catalogQuoteId ? { pricingQuoteId: catalogQuoteId } : {}),
             authority: "booking_quote" as const,
           })),
         )
@@ -80,18 +112,17 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
           ...quoted.pricing.taxes.map((tax) => ({
             ...tax,
             componentId: component.id,
-            ...(catalogQuoteId ? { pricingQuoteId: catalogQuoteId } : {}),
           })),
         )
       }
 
-      const pricing = aggregatePricing(snapshot.currency, lines, taxes)
+      const pricing = aggregatePricing(snapshot.currency, lines, taxes, componentPolicies)
       return { status: "quoted", pricing }
     },
 
     async placeCapacityHold(input) {
       const database = input.tx as PostgresJsDatabase
-      const snapshot = await loadTargetSnapshot(database, input.session)
+      const snapshot = await loadTargetSnapshot(database, input.session, persistence.loadSnapshot)
       const components = frozenComponents(snapshot)
       const held: Array<{
         session: BookingSessionInternalRecord
@@ -138,11 +169,11 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
 
     async releaseCapacityHold(input) {
       const database = input.tx as PostgresJsDatabase
-      const snapshot = await loadTargetSnapshot(database, input.session)
+      const snapshot = await loadTargetSnapshot(database, input.session, persistence.loadSnapshot)
       for (const component of frozenComponents(snapshot).values()) {
         if (!isCatalogBackedTripComponent(component)) continue
         const child = childSession(input.session, component)
-        if (child.target.kind !== "product") continue
+        if (child.target.kind !== "product" && child.target.kind !== "owned_entity") continue
         await input.leaf.releaseCapacityHold({
           session: child,
           hold: childHold(input, child, component.id),
@@ -155,7 +186,7 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
 
     async commit(input) {
       const database = input.db as PostgresJsDatabase
-      const snapshot = await loadTargetSnapshot(database, input.session)
+      const snapshot = await loadTargetSnapshot(database, input.session, persistence.loadSnapshot)
       if (materialTermsChanged(snapshot, input.quote.pricing)) {
         return {
           kind: "proposal_acceptance_required",
@@ -164,8 +195,20 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
         }
       }
 
+      if (hasOwnedCapacityComponents(snapshot) && !input.hold) {
+        return {
+          kind: "hold_failure",
+          nextAction: "request_new_hold",
+          reason: "missing",
+        }
+      }
+
       const frozen = frozenComponents(snapshot)
-      const current = await currentComponents(database, snapshot.envelopeId)
+      const current = new Map(
+        (await persistence.loadCurrentComponents(database, snapshot.envelopeId)).map(
+          (component) => [component.id, component],
+        ),
+      )
       const commitments: CompositeBookingCommitment[] = []
       const pending: Array<{
         componentId: string
@@ -189,7 +232,7 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
           continue
         }
         if (live.bookingId) {
-          const allocationIds = await allocationIdsForBooking(database, live.bookingId)
+          const allocationIds = await persistence.loadAllocationIds(database, live.bookingId)
           commitments.push({ componentId: live.id, bookingId: live.bookingId, allocationIds })
           pending.push({
             componentId: live.id,
@@ -199,7 +242,7 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
           continue
         }
         if (!isCatalogBackedTripComponent(component)) {
-          await markManualConfirmationRequired(database, live)
+          await persistence.markManualConfirmationRequired(database, live)
           pending.push({
             componentId: live.id,
             state: "manual_confirmation_required",
@@ -213,7 +256,7 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
         }
         const child = childSession(input.session, component)
         const quote = childQuote(input.quote, pricing)
-        if (child.target.kind === "product") {
+        if (child.target.kind === "product" || child.target.kind === "owned_entity") {
           if (!input.hold) throw new Error("owned inventory hold is not live at commit")
           const hold = childHold({ hold: input.hold, now: input.now }, child, component.id)
           const result = await input.leaf.commitOwned({
@@ -224,14 +267,22 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
             requestFingerprint: componentFingerprint(input.requestFingerprint, component.id),
             access: input.access,
             now: input.now,
-            async consumeSources() {},
+            async consumeSources(tx, bookingId, allocationIds) {
+              await persistence.recordComponentCommit({
+                db: tx as PostgresJsDatabase,
+                session: input.session,
+                snapshot,
+                component: live,
+                quote,
+                commitment: { componentId: component.id, bookingId, allocationIds },
+              })
+            },
           })
           const commitment = {
             componentId: component.id,
             bookingId: result.bookingId,
             allocationIds: result.allocationIds,
           }
-          await recordComponentCommit(database, input.session, snapshot, live, quote, commitment)
           commitments.push(commitment)
           pending.push({
             componentId: component.id,
@@ -249,7 +300,21 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
           requestFingerprint: componentFingerprint(input.requestFingerprint, component.id),
           access: input.access,
           now: input.now,
-          async consumeSources() {},
+          async consumeSources(tx, bookingId, allocationIds, supplierOperationId) {
+            await persistence.recordComponentCommit({
+              db: tx as PostgresJsDatabase,
+              session: input.session,
+              snapshot,
+              component: live,
+              quote,
+              commitment: {
+                componentId: component.id,
+                bookingId,
+                allocationIds,
+                supplierOperationId,
+              },
+            })
+          },
         })
         if (sourced.kind === "committed") {
           const commitment = {
@@ -258,7 +323,6 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
             allocationIds: sourced.allocationIds,
             supplierOperationId: sourced.supplierOperationId,
           }
-          await recordComponentCommit(database, input.session, snapshot, live, quote, commitment)
           commitments.push(commitment)
           pending.push({
             componentId: component.id,
@@ -289,12 +353,22 @@ export function createTripBookingSessionCompositeHandler(): BookingSessionCompos
   }
 }
 
+function hasOwnedCapacityComponents(snapshot: TripSnapshot): boolean {
+  return [...frozenComponents(snapshot).values()].some(
+    (component) =>
+      isCatalogBackedTripComponent(component) &&
+      component.sourceKind === "owned" &&
+      component.entityModule === "products",
+  )
+}
+
 async function loadTargetSnapshot(
   db: PostgresJsDatabase,
   session: BookingSessionInternalRecord,
+  loadSnapshot: TripBookingSessionCompositePersistence["loadSnapshot"],
 ): Promise<TripSnapshot> {
   if (session.target.kind !== "trip_snapshot") throw new Error("trip_snapshot_target_required")
-  const snapshot = await getTripSnapshotById(db, session.target.tripSnapshotId)
+  const snapshot = await loadSnapshot(db, session.target.tripSnapshotId)
   if (!snapshot || snapshot.envelopeId !== session.target.tripEnvelopeId) {
     throw new Error("trip_snapshot_target_not_found")
   }
@@ -335,8 +409,12 @@ function childSession(
 }
 
 function componentTarget(component: TripComponent): BookingSessionTargetV1 {
-  if (component.sourceKind === "owned" && component.entityModule === "products") {
-    return { kind: "product", productId: required(component.entityId, "component.entityId") }
+  if (component.sourceKind === "owned") {
+    const entityModule = required(component.entityModule, "component.entityModule")
+    const entityId = required(component.entityId, "component.entityId")
+    return entityModule === "products"
+      ? { kind: "product", productId: entityId }
+      : { kind: "owned_entity", entityModule, entityId }
   }
   return { kind: "catalog_item", catalogItemId: required(component.entityId, "component.entityId") }
 }
@@ -413,10 +491,19 @@ function aggregatePricing(
   currency: string,
   lines: PricingBreakdownV1["lines"],
   taxes: PricingBreakdownV1["taxes"],
+  componentPolicies: NonNullable<PricingBreakdownV1["componentPolicies"]>,
 ): PricingBreakdownV1 {
   const subtotal = lines.reduce((sum, line) => sum + line.totalAmount, 0)
   const taxTotal = taxes.reduce((sum, tax) => sum + tax.amount, 0)
-  return { currency, lines, taxes, subtotal, taxTotal, total: subtotal + taxTotal }
+  return {
+    currency,
+    lines,
+    taxes,
+    subtotal,
+    taxTotal,
+    total: subtotal + taxTotal,
+    ...(componentPolicies.length > 0 ? { componentPolicies } : {}),
+  }
 }
 
 function materialTermsChanged(snapshot: TripSnapshot, pricing: PricingBreakdownV1): boolean {
@@ -424,7 +511,78 @@ function materialTermsChanged(snapshot: TripSnapshot, pricing: PricingBreakdownV
     pricing.currency !== snapshot.currency ||
     pricing.subtotal !== snapshot.subtotalAmountCents ||
     pricing.taxTotal !== snapshot.taxAmountCents ||
-    pricing.total !== snapshot.totalAmountCents
+    pricing.total !== snapshot.totalAmountCents ||
+    materialComponentPricingChanged(snapshot, pricing) ||
+    materialPolicyChanged(snapshot, pricing)
+  )
+}
+
+function materialComponentPricingChanged(
+  snapshot: TripSnapshot,
+  pricing: PricingBreakdownV1,
+): boolean {
+  return snapshot.proposal.lines.some((line) => {
+    const current = componentPricing(pricing, line.componentId)
+    return (
+      !current ||
+      current.currency !== line.currency ||
+      current.subtotal !== line.subtotalAmountCents ||
+      current.taxTotal !== line.taxAmountCents ||
+      current.total !== line.totalAmountCents
+    )
+  })
+}
+
+function materialPolicyChanged(snapshot: TripSnapshot, pricing: PricingBreakdownV1): boolean {
+  const current = new Map(
+    (pricing.componentPolicies ?? []).map((policy) => [policy.componentId, policy]),
+  )
+  for (const component of frozenComponents(snapshot).values()) {
+    if (!isCatalogBackedTripComponent(component)) continue
+    const accepted = acceptedPolicyEvidence(component)
+    const fresh = current.get(component.id)
+    if (accepted?.cancellation !== undefined || fresh?.cancellation !== undefined) {
+      if (stableJson(accepted?.cancellation) !== stableJson(fresh?.cancellation)) return true
+    }
+    if (accepted?.bookingTerms !== undefined || fresh?.bookingTerms !== undefined) {
+      if (stableJson(accepted?.bookingTerms) !== stableJson(fresh?.bookingTerms)) return true
+    }
+  }
+  return false
+}
+
+function acceptedPolicyEvidence(component: TripComponent) {
+  const bookingTerms = component.metadata.bookingTerms ?? component.metadata.booking_terms
+  if (component.cancellationSnapshot == null && bookingTerms === undefined) return undefined
+  return {
+    ...(component.cancellationSnapshot != null
+      ? { cancellation: component.cancellationSnapshot }
+      : {}),
+    ...(bookingTerms !== undefined ? { bookingTerms } : {}),
+  }
+}
+
+function hasRequiredPolicyEvidence(
+  accepted: ReturnType<typeof acceptedPolicyEvidence>,
+  fresh: PricingBreakdownV1["policyEvidence"],
+) {
+  if (!accepted) return true
+  if (accepted.cancellation !== undefined && fresh?.cancellation === undefined) return false
+  if (accepted.bookingTerms !== undefined && fresh?.bookingTerms === undefined) return false
+  return true
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(sortJson(value))
+}
+
+function sortJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortJson)
+  if (!value || typeof value !== "object") return value
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => [key, sortJson(item)]),
   )
 }
 
@@ -433,7 +591,7 @@ async function currentComponents(db: PostgresJsDatabase, envelopeId: string) {
     .select()
     .from(tripComponents)
     .where(eq(tripComponents.envelopeId, envelopeId))
-  return new Map(rows.map((component) => [component.id, component]))
+  return rows
 }
 
 async function allocationIdsForBooking(db: PostgresJsDatabase, bookingId: string) {
@@ -465,14 +623,15 @@ async function markManualConfirmationRequired(db: PostgresJsDatabase, component:
   })
 }
 
-async function recordComponentCommit(
-  db: PostgresJsDatabase,
-  session: BookingSessionInternalRecord,
-  snapshot: TripSnapshot,
-  component: TripComponent,
-  quote: BookingQuoteInternalRecord,
-  commitment: CompositeBookingCommitment,
-) {
+async function recordComponentCommit(input: {
+  db: PostgresJsDatabase
+  session: BookingSessionInternalRecord
+  snapshot: TripSnapshot
+  component: TripComponent
+  quote: BookingQuoteInternalRecord
+  commitment: CompositeBookingCommitment
+}) {
+  const { db, session, snapshot, component, quote, commitment } = input
   const [updated] = await db
     .update(tripComponents)
     .set({
@@ -506,7 +665,6 @@ async function recordComponentCommit(
     tripComponentId: component.id,
     bookingSessionId: session.id,
     bookingSessionQuoteId: quote.id,
-    catalogPriceResponseId: catalogQuoteIdFromPricing(quote.pricing),
     supplierOperationId: commitment.supplierOperationId,
   })
 }
@@ -516,14 +674,6 @@ function requiredProposalOrigin(session: BookingSessionInternalRecord) {
     throw new Error("accepted_proposal_version_origin_required")
   }
   return session.origin
-}
-
-function catalogQuoteIdFromComponent(component: TripComponent): string | undefined {
-  return component.catalogQuoteId ?? undefined
-}
-
-function catalogQuoteIdFromPricing(pricing: PricingBreakdownV1): string | undefined {
-  return pricing.lines.find((line) => line.pricingQuoteId)?.pricingQuoteId
 }
 
 function componentQuantity(payload: Record<string, unknown>): number {
@@ -538,6 +688,9 @@ function componentQuantity(payload: Record<string, unknown>): number {
 
 function componentCapacityKey(target: BookingSessionTargetV1, componentId: string) {
   if (target.kind === "product") return `product:${target.productId}:${componentId}`
+  if (target.kind === "owned_entity") {
+    return `owned_entity:${target.entityModule}:${target.entityId}:${componentId}`
+  }
   if (target.kind === "catalog_item") return `catalog_item:${target.catalogItemId}:${componentId}`
   return `trip_snapshot:${target.tripSnapshotId}:${componentId}`
 }
@@ -550,11 +703,14 @@ function componentFingerprint(parent: string, componentId: string) {
   return `${parent}:${componentId}`
 }
 
-function unavailable(reason: "selection_unavailable") {
+function unavailable(reason: "selection_unavailable" | "policy_unavailable") {
   return {
     status: "unavailable" as const,
     reason,
-    nextAction: "update_selection" as const,
+    nextAction:
+      reason === "policy_unavailable"
+        ? ("contact_operator" as const)
+        : ("update_selection" as const),
   }
 }
 

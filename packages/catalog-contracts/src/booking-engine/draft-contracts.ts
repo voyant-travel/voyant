@@ -251,7 +251,6 @@ export const pricingLineV1 = z.object({
   pricingBasis: z.enum(["per_person", "per_unit", "per_booking"]).optional(),
   /** Aggregate Quote provenance for one Trip Component. */
   componentId: z.string().min(1).optional(),
-  pricingQuoteId: z.string().min(1).optional(),
   authority: z.enum(["booking_quote", "accepted_proposal_manual"]).optional(),
 })
 
@@ -264,7 +263,11 @@ export const pricingTaxV1 = z.object({
   includedInPrice: z.boolean().optional(),
   scope: z.enum(["included", "excluded", "withheld"]).optional(),
   componentId: z.string().min(1).optional(),
-  pricingQuoteId: z.string().min(1).optional(),
+})
+
+export const bookingPolicyEvidenceV1 = z.object({
+  cancellation: z.unknown().optional(),
+  bookingTerms: z.unknown().optional(),
 })
 
 export const pricingBreakdownV1 = z.object({
@@ -274,6 +277,12 @@ export const pricingBreakdownV1 = z.object({
   subtotal: z.number().int(),
   taxTotal: z.number().int(),
   total: z.number().int(),
+  /** Fresh policy evidence for a leaf Quote. */
+  policyEvidence: bookingPolicyEvidenceV1.optional(),
+  /** Component-tagged policy evidence for an aggregate Trip Quote. */
+  componentPolicies: z
+    .array(bookingPolicyEvidenceV1.extend({ componentId: z.string().min(1) }))
+    .optional(),
 })
 
 export const bookingPaymentScheduleV1 = z.object({
