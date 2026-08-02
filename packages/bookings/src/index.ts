@@ -29,7 +29,6 @@ import {
 } from "./runtime-port.js"
 
 export {
-  type AcceptedProposalBookingOriginInput,
   BOOKING_ACTION_LEDGER_CAPABILITIES,
   BOOKING_PII_READ_CAPABILITY,
   BOOKING_STATUS_CAPABILITIES,
@@ -102,6 +101,7 @@ export {
   type UpdateBookingGroupInput,
 } from "./service-groups.js"
 export {
+  type AcceptedProposalBookingOriginInput,
   type CatalogReservationBookingOriginInput,
   type DirectB2CBookingOriginInput,
   type DirectB2CBookingOriginItemInput,

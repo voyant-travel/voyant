@@ -1,4 +1,4 @@
-import { bookingAllocations, setAcceptedProposalBookingOrigin } from "@voyant-travel/bookings"
+import { bookingsService, setAcceptedProposalBookingOrigin } from "@voyant-travel/bookings"
 import type {
   BookingHoldInternalRecord,
   BookingQuoteInternalRecord,
@@ -595,10 +595,7 @@ async function currentComponents(db: PostgresJsDatabase, envelopeId: string) {
 }
 
 async function allocationIdsForBooking(db: PostgresJsDatabase, bookingId: string) {
-  const rows = await db
-    .select({ id: bookingAllocations.id })
-    .from(bookingAllocations)
-    .where(eq(bookingAllocations.bookingId, bookingId))
+  const rows = await bookingsService.listAllocations(db, bookingId)
   return rows.map((row) => row.id)
 }
 

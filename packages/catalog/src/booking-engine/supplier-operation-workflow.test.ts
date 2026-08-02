@@ -132,15 +132,15 @@ describe("Supplier Operation workflow", () => {
     }))
     const workflow = workflowWith(repository, { reserve })
 
-    await expect(
-      workflow.dispatch({ ...input(), scopeKey: "tcmp_cruise" }),
-    ).resolves.toMatchObject({
-      kind: "secured",
-      operation: {
-        scopeKey: "tcmp_cruise",
-        adapterIdempotencyKey: "bses_1:tcmp_cruise:commit-key:reserve",
+    await expect(workflow.dispatch({ ...input(), scopeKey: "tcmp_cruise" })).resolves.toMatchObject(
+      {
+        kind: "secured",
+        operation: {
+          scopeKey: "tcmp_cruise",
+          adapterIdempotencyKey: "bses_1:tcmp_cruise:commit-key:reserve",
+        },
       },
-    })
+    )
     await expect(
       workflow.dispatch({
         ...input(),
