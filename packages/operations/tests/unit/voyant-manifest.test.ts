@@ -8,11 +8,23 @@ describe("operations deployment manifest", () => {
       id: "@voyant-travel/operations",
       packageName: "@voyant-travel/operations",
       provides: {
-        ports: [{ id: "catalog.extension.operations" }, { id: "operations.expired-holds-job" }],
+        ports: [
+          { id: "catalog.extension.operations" },
+          { id: "operations.expired-holds-job" },
+          { id: "bookings.booking-action-projection.runtime" },
+        ],
       },
       // Required as well as provided — the job resolves the port at run time and
       // composition rejects an undeclared request.
-      runtimePorts: [{ id: "operations.expired-holds-job" }],
+      runtimePorts: [
+        { id: "operations.expired-holds-job" },
+        { id: "bookings.booking-action-projection.runtime" },
+        {
+          id: "bookings.booking-action-source.runtime",
+          optional: true,
+          cardinality: "many",
+        },
+      ],
       jobs: [
         {
           id: "operations.release-expired-availability-holds",
@@ -21,13 +33,27 @@ describe("operations deployment manifest", () => {
             export: "runOperationsReleaseExpiredHoldsJob",
           },
         },
+        {
+          id: "operations.project-booking-actions",
+          runtime: {
+            entry: "@voyant-travel/operations/booking-actions-job",
+            export: "runBookingActionIncrementalProjectionJob",
+          },
+        },
+        {
+          id: "operations.rebuild-booking-actions",
+          runtime: {
+            entry: "@voyant-travel/operations/booking-actions-job",
+            export: "runBookingActionProjectionRebuildJob",
+          },
+        },
       ],
       api: [
         {
           id: "@voyant-travel/operations#api.admin",
           surface: "admin",
           openapi: { document: "operations" },
-          runtime: { entry: "@voyant-travel/operations", export: "operationsApiModule" },
+          runtime: { entry: "@voyant-travel/operations", export: "createOperationsVoyantRuntime" },
         },
       ],
       schema: [{ id: "@voyant-travel/operations#schema" }],
