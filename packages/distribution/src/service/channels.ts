@@ -9,8 +9,8 @@ import type {
 import { and, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { emitProductPublicationChanged } from "../events.js"
-import { channelContactProjections, channelProductMappings, channels } from "../schema.js"
+import { channelContactProjections, channels } from "../schema.js"
+import { publicationServiceOperations } from "./publications.js"
 import type { ChannelListQuery, CreateChannelInput, UpdateChannelInput } from "./types.js"
 
 const channelEntityType = "channel"
@@ -73,37 +73,6 @@ async function ensureChannelExists(db: PostgresJsDatabase, channelId: string) {
     .where(eq(channels.id, channelId))
     .limit(1)
   return row ?? null
-}
-
-async function loadChannelPublicationTargets(db: PostgresJsDatabase, channelId: string) {
-  return db
-    .select({
-      mappingId: channelProductMappings.id,
-      productId: channelProductMappings.productId,
-      active: channelProductMappings.active,
-    })
-    .from(channelProductMappings)
-    .where(eq(channelProductMappings.channelId, channelId))
-}
-
-export async function emitChannelPublicationChanges(
-  eventBus: EventBus | undefined,
-  db: PostgresJsDatabase,
-  channelId: string,
-  targets: Awaited<ReturnType<typeof loadChannelPublicationTargets>>,
-  operation: "updated" | "deleted",
-) {
-  if (!eventBus) return
-  for (const target of targets) {
-    await emitProductPublicationChanged(eventBus, db, {
-      productId: target.productId,
-      channelId,
-      mappingId: target.mappingId,
-      previousActive: target.active,
-      nextActive: operation === "deleted" ? null : target.active,
-      operation,
-    })
-  }
 }
 
 async function syncChannelIdentity(
@@ -318,8 +287,6 @@ export const channelServiceOperations = {
     if (!existing) {
       return null
     }
-    const publicationTargets = eventBus ? await loadChannelPublicationTargets(db, id) : []
-
     await db
       .update(channels)
       .set({ ...toUpdateChannelBaseValues(data), updatedAt: new Date() })
@@ -331,27 +298,31 @@ export const channelServiceOperations = {
       contactEmail: data.contactEmail === undefined ? existing.contactEmail : data.contactEmail,
     })
 
-    // Channel status/kind changes affect every channel-scoped catalog slice,
-    // even though no individual mapping row changed. Reindex each mapped
-    // Product against the Channel's new state.
-    await emitChannelPublicationChanges(eventBus, db, id, publicationTargets, "updated")
-
-    return channelServiceOperations.getChannelById(db, id)
+    const row = await channelServiceOperations.getChannelById(db, id)
+    if (row) await eventBus?.emit("channel.updated", { id: row.id })
+    return row
   },
 
   async deleteChannel(db: PostgresJsDatabase, id: string, eventBus?: EventBus) {
-    // Capture mappings before the channel delete cascades them away. Their
-    // Product documents must be reindexed/tombstoned after the Channel is gone.
-    const publicationTargets = eventBus ? await loadChannelPublicationTargets(db, id) : []
-    await deleteChannelIdentity(db, id)
-    const [row] = await db
-      .delete(channels)
-      .where(eq(channels.id, id))
-      .returning({ id: channels.id })
+    const row = await db.transaction(async (tx) => {
+      const affectedProductIds = await publicationServiceOperations.captureChannelDeletionReindex(
+        tx,
+        { channelId: id },
+      )
+      await deleteChannelIdentity(tx, id)
+      const [row] = await tx
+        .delete(channels)
+        .where(eq(channels.id, id))
+        .returning({ id: channels.id })
+      return row ? { ...row, affectedProductIds } : null
+    })
     if (row) {
-      await emitChannelPublicationChanges(eventBus, db, id, publicationTargets, "deleted")
+      await eventBus?.emit("channel.deleted", {
+        id: row.id,
+        affectedProductIds: row.affectedProductIds,
+      })
     }
-    return row ?? null
+    return row
   },
 
   async listChannelContactPoints(db: PostgresJsDatabase, channelId: string) {

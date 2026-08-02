@@ -1,5 +1,27 @@
 # @voyant-travel/storefront
 
+## 0.231.1
+
+### Patch Changes
+
+- bdc0443: Add Distribution-owned channel publication contracts, persistence, TypeID prefixes, exact cutover snapshots, effective publication resolver primitives, and provider-neutral runtime wiring for Storefront and Commerce.
+- Updated dependencies [bdc0443]
+  - @voyant-travel/catalog@0.227.1
+  - @voyant-travel/commerce@0.46.3
+  - @voyant-travel/auth@0.150.1
+
+## 0.231.0
+
+### Patch Changes
+
+- Updated dependencies [5d3b563]
+- Updated dependencies [2601445]
+  - @voyant-travel/finance@0.229.0
+  - @voyant-travel/commerce@0.46.2
+  - @voyant-travel/legal@0.229.0
+  - @voyant-travel/bookings@0.229.0
+  - @voyant-travel/identity@0.229.0
+
 ## 0.230.0
 
 ### Patch Changes

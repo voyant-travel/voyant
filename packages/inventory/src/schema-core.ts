@@ -44,13 +44,13 @@ export const products = pgTable(
     defaultLanguageTag: text("default_language_tag"),
     /**
      * @deprecated Compatibility-only distribution flag. Product status and
-     * active channel mappings are authoritative; new operator UI must not
-     * author or interpret this column.
+     * Distribution-owned Publication are authoritative; new operator UI must
+     * not author or interpret this column.
      */
     visibility: productVisibilityEnum("visibility").notNull().default("private"),
     /**
-     * @deprecated Compatibility-only site flag. A direct storefront is a
-     * Channel; its active Product mapping controls distribution.
+     * @deprecated Compatibility-only site flag. A direct Storefront resolves
+     * a Channel whose effective Publication controls assortment.
      */
     activated: boolean("activated").notNull().default(false),
     reservationTimeoutMinutes: integer("reservation_timeout_minutes"),

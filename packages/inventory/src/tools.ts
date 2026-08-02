@@ -415,7 +415,7 @@ export const createProductTool = defineTool({
   capabilityVersion: VERSION,
   name: "create_product",
   description:
-    "Create a draft product through Inventory's real authoring service. Channel assignment and publication are separate lifecycle operations.",
+    "Create a draft product through Inventory's real authoring service. Channel publication is a separate operation.",
   inputSchema: createProductToolSchema,
   outputSchema: createProductResultSchema,
   requiredScopes: ["products:write"],
@@ -481,7 +481,7 @@ export const publishProductTool = defineTool(
     capabilityId: `${OWNER}#tool.publish-product`,
     name: "publish_product",
     description:
-      "Make a product active. Inventory enforces scheduled-product departure readiness; active channel assignments control where it is distributed.",
+      "Make a product active. Inventory enforces scheduled-product departure readiness; effective channel publication controls where it is distributed.",
     patch: { status: "active" },
   }),
 )
@@ -491,7 +491,7 @@ export const unpublishProductTool = defineTool(
     capabilityId: `${OWNER}#tool.unpublish-product`,
     name: "unpublish_product",
     description:
-      "Return a product to draft without deleting authored history or its channel assignments.",
+      "Return a product to draft without deleting authored history or its channel publication rules.",
     patch: { status: "draft" },
   }),
 )

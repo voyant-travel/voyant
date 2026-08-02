@@ -1,5 +1,29 @@
 # @voyant-travel/distribution
 
+## 0.219.1
+
+### Patch Changes
+
+- bdc0443: Add Distribution-owned channel publication contracts, persistence, TypeID prefixes, exact cutover snapshots, effective publication resolver primitives, and provider-neutral runtime wiring for Storefront and Commerce.
+- Updated dependencies [bdc0443]
+  - @voyant-travel/catalog@0.227.1
+
+## 0.219.0
+
+### Patch Changes
+
+- 2601445: Continue owned Product Booking Session Commit through an idempotent pre-Booking
+  Finance payment session, selected payment adapter, and atomic transfer to the
+  created Booking. Expose typed payment-required continuation and recovery through
+  the shared route contract, Storefront SDK, and React hooks.
+- Updated dependencies [5d3b563]
+- Updated dependencies [f25ad34]
+- Updated dependencies [2601445]
+  - @voyant-travel/catalog@0.227.0
+  - @voyant-travel/finance@0.229.0
+  - @voyant-travel/bookings@0.229.0
+  - @voyant-travel/identity@0.229.0
+
 ## 0.218.0
 
 ### Patch Changes

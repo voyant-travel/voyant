@@ -16,30 +16,25 @@ import type { IndexerSlice } from "@voyant-travel/catalog-contracts/indexer/cont
 export type OwnedProductStorefrontListabilityInput = {
   audience: IndexerSlice["audience"]
   channel?: string
-  /** Resolves whether the product is published to an active sales channel. */
-  hasActiveChannelMapping: () => boolean | Promise<boolean>
+  /** Resolves Distribution-owned effective product publication for the channel. */
+  isEffectivelyPublished: () => boolean | Promise<boolean>
 }
 
 /**
  * Storefront/distribution listability predicate for owned products.
  *
  * The upstream inventory gate already requires `status = active` before this
- * runs. Channel assignment is the distribution authority; the deprecated
+ * runs. Effective Publication is the distribution authority; the deprecated
  * product-level `visibility` and `activated` compatibility fields do not
  * participate in this decision.
  *
- * A channel-scoped slice requires an active mapping for that exact channel, so
- * a website surface and a B2B surface can expose different product sets. A
- * legacy unchannelled customer slice is listable only when the product has at
- * least one active channel mapping. It remains an aggregate compatibility
- * slice, not an implicit site-publication switch.
- *
- * External audiences (partner / supplier slices) also require channel
- * mappings. See docs/architecture/catalog-supply-models.md and
- * federated-operating-mode.md.
+ * Public and external slices require an explicit server-derived channel.
+ * Unchannelled customer slices remain buildable for compatibility with existing
+ * index infrastructure, but they are no longer an authorization fallback.
  */
 export async function isOwnedProductStorefrontListable(
   input: OwnedProductStorefrontListabilityInput,
 ): Promise<boolean> {
-  return input.hasActiveChannelMapping()
+  if (!input.channel) return false
+  return input.isEffectivelyPublished()
 }

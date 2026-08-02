@@ -24,6 +24,7 @@ describe("catalog deployment manifest", () => {
           { id: "catalog.content-runtime" },
           { id: "catalog.projection-runtime" },
           { id: "catalog.booking-snapshot-runtime" },
+          { id: "catalog.booking-session-maintenance-job" },
           { id: "catalog.runtime-services" },
           { id: "catalog.draft-reaper-job" },
           { id: "catalog.reindex-products-job" },
@@ -42,6 +43,7 @@ describe("catalog deployment manifest", () => {
           { id: "catalog.extension.inventory" },
           { id: "catalog.extension.operations" },
           { id: "finance.operator-settings.runtime" },
+          { id: "payments.adapter.runtime", optional: true },
         ],
       },
       api: [
@@ -107,6 +109,7 @@ describe("catalog deployment manifest", () => {
       { id: "catalog.search-runtime" },
       { id: "catalog.projection-runtime" },
       { id: "catalog.booking-snapshot-runtime" },
+      { id: "catalog.booking-session-maintenance-job" },
       { id: "catalog.draft-reaper-job" },
       { id: "catalog.reindex-products-job" },
       { id: "catalog.sources-sync-job" },
@@ -118,6 +121,22 @@ describe("catalog deployment manifest", () => {
       ]),
     )
     expect(catalogVoyantModule.jobs).toEqual([
+      {
+        id: "catalog.maintain-booking-sessions",
+        schedule: { cron: "10 * * * *", overlap: "skip" },
+        scheduling: {
+          required: true,
+          profiles: {
+            eager: { cron: "*/15 * * * *", overlap: "skip" },
+            economical: { cron: "10 */6 * * *", overlap: "skip" },
+            "scale-to-zero": { cron: "10 */6 * * *", overlap: "skip" },
+          },
+        },
+        runtime: {
+          entry: "@voyant-travel/catalog/booking-session-maintenance-job",
+          export: "runCatalogBookingSessionMaintenanceJob",
+        },
+      },
       {
         id: "catalog.reindex-products",
         wakeup: true,

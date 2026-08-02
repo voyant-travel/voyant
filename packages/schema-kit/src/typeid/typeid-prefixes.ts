@@ -210,6 +210,9 @@ export const PREFIXES = {
   channel_settlement_approvals: "chap",
   channel_availability_push_intents: "cavi",
   channel_content_push_intents: "ccpi",
+  channel_product_publications: "chpp",
+  channel_supplier_publications: "chsu",
+  channel_publication_reindex_intents: "chpi",
   facilities: "fac",
   facility_contacts: "fcon",
   facility_features: "ffea",
@@ -400,6 +403,7 @@ export const PREFIXES = {
   booking_session_holds: "bshd",
   booking_session_commits: "bscm",
   booking_session_operations: "bsop",
+  booking_session_audit_events: "bsae",
 
   // --- TRAVEL COMPOSER ---
   trip_envelopes: "trip",

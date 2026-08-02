@@ -1,18 +1,19 @@
 /**
- * Product-mapping publication events.
+ * Product-mapping lifecycle events.
  *
  * Verifies that every product↔channel mapping write path emits
- * `product.publication.changed` from the SERVICE layer (via the routes that
+ * `channel.product_mapping.changed` from the SERVICE layer (via the routes that
  * pass the request-scoped bus through), including the batch paths that fan out
  * over the single-item service methods. The event carries the prev/new mapping
- * active state, the operation source, and the channel kind/status.
+ * active state, the operation source, and the channel kind/status. Mapping
+ * events do not grant or revoke Distribution-owned Publication.
  */
 
 import type { EventBus } from "@voyant-travel/core"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { PRODUCT_PUBLICATION_CHANGED_EVENT } from "../../src/events.js"
+import { CHANNEL_PRODUCT_MAPPING_CHANGED_EVENT } from "../../src/events.js"
 import { distributionRoutes } from "../../src/routes.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -43,7 +44,7 @@ function createCapturingBus(): { bus: EventBus; events: CapturedEvent[] } {
   return { bus: bus as EventBus, events }
 }
 
-describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
+describe.skipIf(!DB_AVAILABLE)("product mapping lifecycle events", () => {
   let app: Hono
   let db: ReturnType<typeof import("@voyant-travel/db/test-utils").createTestDb>
   let captured: ReturnType<typeof createCapturingBus>
@@ -88,8 +89,8 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
     return row! as { id: string }
   }
 
-  function publicationEvents() {
-    return captured.events.filter((e) => e.event === PRODUCT_PUBLICATION_CHANGED_EVENT)
+  function mappingEvents() {
+    return captured.events.filter((e) => e.event === CHANNEL_PRODUCT_MAPPING_CHANGED_EVENT)
   }
 
   it("emits `created` with prev=null and the channel kind/status", async () => {
@@ -102,7 +103,7 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
     })
     expect(res.status).toBe(201)
 
-    const events = publicationEvents()
+    const events = mappingEvents()
     expect(events).toHaveLength(1)
     expect(events[0]!.data).toMatchObject({
       productId: product.id,
@@ -130,7 +131,7 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       ...json({ active: false }),
     })
     expect(off.status).toBe(200)
-    expect(publicationEvents()[0]!.data).toMatchObject({
+    expect(mappingEvents()[0]!.data).toMatchObject({
       operation: "deactivated",
       previousActive: true,
       nextActive: false,
@@ -142,7 +143,7 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       ...json({ active: true }),
     })
     expect(on.status).toBe(200)
-    expect(publicationEvents()[0]!.data).toMatchObject({
+    expect(mappingEvents()[0]!.data).toMatchObject({
       operation: "activated",
       previousActive: false,
       nextActive: true,
@@ -163,7 +164,7 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       method: "PATCH",
       ...json({ externalProductId: "ext-123" }),
     })
-    expect(publicationEvents()[0]!.data).toMatchObject({
+    expect(mappingEvents()[0]!.data).toMatchObject({
       operation: "updated",
       previousActive: true,
       nextActive: true,
@@ -185,12 +186,12 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       method: "PATCH",
       ...json({ productId: to.id }),
     })
-    const events = publicationEvents()
+    const events = mappingEvents()
     expect(events).toHaveLength(2)
     const byProduct = Object.fromEntries(events.map((e) => [e.data.productId as string, e.data]))
     // The new product gains the mapping.
     expect(byProduct[to.id]).toMatchObject({ productId: to.id, channelId: channel.id })
-    // The old product lost it — a removal so its catalog doc can be tombstoned.
+    // The old product lost the external mapping; Publication remains unchanged.
     expect(byProduct[from.id]).toMatchObject({
       productId: from.id,
       channelId: channel.id,
@@ -211,7 +212,7 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
 
     const res = await app.request(`/product-mappings/${mappingId}`, { method: "DELETE" })
     expect(res.status).toBe(200)
-    expect(publicationEvents()[0]!.data).toMatchObject({
+    expect(mappingEvents()[0]!.data).toMatchObject({
       productId: product.id,
       channelId: channel.id,
       operation: "deleted",
@@ -239,14 +240,14 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
       ...json({ ids, patch: { active: false } }),
     })
     expect(res.status).toBe(200)
-    const events = publicationEvents()
+    const events = mappingEvents()
     expect(events).toHaveLength(2)
     for (const e of events) {
       expect(e.data.operation).toBe("deactivated")
     }
   })
 
-  it("reindexes every mapped Product when its Channel is deactivated", async () => {
+  it("does not turn a Channel update into Product publication events", async () => {
     const channel = await seedChannel({ status: "active" })
     const products = [await seedProduct(), await seedProduct()]
     for (const product of products) {
@@ -264,23 +265,14 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
     })
     expect(res.status).toBe(200)
 
-    const events = publicationEvents()
-    expect(events).toHaveLength(2)
-    expect(new Set(events.map((event) => event.data.productId))).toEqual(
-      new Set(products.map((product) => product.id)),
-    )
-    for (const event of events) {
-      expect(event.data).toMatchObject({
-        channelId: channel.id,
-        operation: "updated",
-        previousActive: true,
-        nextActive: true,
-        channelStatus: "inactive",
-      })
-    }
+    expect(mappingEvents()).toHaveLength(0)
+    expect(captured.events).toContainEqual({
+      event: "channel.updated",
+      data: { id: channel.id },
+    })
   })
 
-  it("reindexes every mapped Product before Channel deletion cascades its mappings", async () => {
+  it("emits Channel deletion separately from mapping and publication authority", async () => {
     const channel = await seedChannel({ status: "active" })
     const products = [await seedProduct(), await seedProduct()]
     for (const product of products) {
@@ -295,19 +287,10 @@ describe.skipIf(!DB_AVAILABLE)("product mapping publication events", () => {
     const res = await app.request(`/channels/${channel.id}`, { method: "DELETE" })
     expect(res.status).toBe(200)
 
-    const events = publicationEvents()
-    expect(events).toHaveLength(2)
-    expect(new Set(events.map((event) => event.data.productId))).toEqual(
-      new Set(products.map((product) => product.id)),
-    )
-    for (const event of events) {
-      expect(event.data).toMatchObject({
-        channelId: channel.id,
-        operation: "deleted",
-        previousActive: true,
-        nextActive: null,
-        channelStatus: null,
-      })
-    }
+    expect(mappingEvents()).toHaveLength(0)
+    expect(captured.events).toContainEqual({
+      event: "channel.deleted",
+      data: { id: channel.id, affectedProductIds: [] },
+    })
   })
 })

@@ -1,60 +1,56 @@
 /**
  * catalog-listability — owned-product storefront listability predicate.
  *
- * Channel assignments are the sole distribution authority for owned products.
- * Product lifecycle status is gated by inventory before this predicate runs.
+ * Publication is Distribution-owned and channel-scoped. The catalog indexer may
+ * still materialize unchannelled customer slices for compatibility, but they no
+ * longer authorize product visibility.
  */
 
 import { describe, expect, it, vi } from "vitest"
 import { isOwnedProductStorefrontListable } from "./catalog-listability.js"
 
 describe("isOwnedProductStorefrontListable", () => {
-  it("requires any active mapping for the legacy unchannelled customer slice", async () => {
-    const hasActiveChannelMapping = vi.fn(async () => false)
+  it("default-denies unchannelled customer slices", async () => {
+    const isEffectivelyPublished = vi.fn(async () => true)
 
     const listable = await isOwnedProductStorefrontListable({
       audience: "customer",
-      hasActiveChannelMapping,
+      isEffectivelyPublished,
     })
 
     expect(listable).toBe(false)
-    expect(hasActiveChannelMapping).toHaveBeenCalledOnce()
-
-    await expect(
-      isOwnedProductStorefrontListable({
-        audience: "customer",
-        hasActiveChannelMapping: async () => true,
-      }),
-    ).resolves.toBe(true)
+    expect(isEffectivelyPublished).not.toHaveBeenCalled()
   })
 
-  it("requires an active channel mapping for channel-scoped customer slices", async () => {
-    const withMapping = await isOwnedProductStorefrontListable({
+  it("requires effective publication for channel-scoped customer slices", async () => {
+    const published = await isOwnedProductStorefrontListable({
       audience: "customer",
       channel: "chan_website",
-      hasActiveChannelMapping: async () => true,
+      isEffectivelyPublished: async () => true,
     })
-    const withoutMapping = await isOwnedProductStorefrontListable({
+    const denied = await isOwnedProductStorefrontListable({
       audience: "customer",
       channel: "chan_b2b",
-      hasActiveChannelMapping: async () => false,
+      isEffectivelyPublished: async () => false,
     })
 
-    expect(withMapping).toBe(true)
-    expect(withoutMapping).toBe(false)
+    expect(published).toBe(true)
+    expect(denied).toBe(false)
   })
 
-  it("requires an active channel mapping for external (partner) slices", async () => {
-    const withMapping = await isOwnedProductStorefrontListable({
+  it("requires effective publication for external (partner) slices", async () => {
+    const published = await isOwnedProductStorefrontListable({
       audience: "partner",
-      hasActiveChannelMapping: async () => true,
+      channel: "chan_partner",
+      isEffectivelyPublished: async () => true,
     })
-    const withoutMapping = await isOwnedProductStorefrontListable({
+    const denied = await isOwnedProductStorefrontListable({
       audience: "partner",
-      hasActiveChannelMapping: async () => false,
+      channel: "chan_partner",
+      isEffectivelyPublished: async () => false,
     })
 
-    expect(withMapping).toBe(true)
-    expect(withoutMapping).toBe(false)
+    expect(published).toBe(true)
+    expect(denied).toBe(false)
   })
 })

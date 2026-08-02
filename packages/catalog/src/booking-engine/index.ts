@@ -228,6 +228,10 @@ export {
   type InMemoryOwnedInventoryPorts,
 } from "./sessions-memory.js"
 export {
+  createProductionBookingSessionPaymentPorts,
+  type ProductionBookingSessionPaymentDeps,
+} from "./sessions-payment-production.js"
+export {
   createProductionBookingSessionModule,
   type ProductionBookingSessionModuleDeps,
 } from "./sessions-production.js"
@@ -237,17 +241,20 @@ export {
   createBookingSessionRoutes,
 } from "./sessions-routes.js"
 export {
+  bookingSessionAuditEventsTable,
   bookingSessionCommitsTable,
   bookingSessionHoldsTable,
   bookingSessionOperationsTable,
   bookingSessionQuotesTable,
   bookingSessionsTable,
   type InsertBookingSession,
+  type InsertBookingSessionAuditEvent,
   type InsertBookingSessionCommit,
   type InsertBookingSessionHold,
   type InsertBookingSessionOperation,
   type InsertBookingSessionQuote,
   type SelectBookingSession,
+  type SelectBookingSessionAuditEvent,
   type SelectBookingSessionCommit,
   type SelectBookingSessionHold,
   type SelectBookingSessionOperation,
@@ -258,6 +265,7 @@ export {
   type BookingHoldInternalRecord,
   type BookingQuoteInternalRecord,
   type BookingSessionAccessContext,
+  type BookingSessionAuditRecord,
   type BookingSessionInternalRecord,
   type BookingSessionModule,
   type BookingSessionModuleOptions,

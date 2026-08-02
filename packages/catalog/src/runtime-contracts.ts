@@ -4,6 +4,7 @@ import type {
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { PaymentPolicy } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { SourceAdapterContext } from "./adapter/contract.js"
 import type {
@@ -22,6 +23,11 @@ import type { EmbeddingProvider } from "./embeddings/contract.js"
 import type { EntityOverlayChangedPayload } from "./events/taxonomy.js"
 import type { OwnedAvailabilitySearchHandlerRegistry } from "./search/owned-search-handler.js"
 import type { DocumentBuilder } from "./services/indexer-service.js"
+
+export {
+  type CatalogProjectionRuntimeProvider,
+  catalogProjectionRuntimePort,
+} from "./subscriber-runtime-ports.js"
 
 export interface CatalogProjectionExtension {
   readonly name: string
@@ -70,7 +76,7 @@ export interface CatalogCommerceRuntimeExtension {
 
 export interface CatalogDistributionRuntimeExtension {
   loadActiveChannelIds(db: AnyDrizzleDb): Promise<readonly string[]>
-  hasActiveSalesChannelMapping(
+  hasEffectiveProductPublication(
     db: AnyDrizzleDb,
     productId: string,
     channelId?: string,
@@ -79,6 +85,21 @@ export interface CatalogDistributionRuntimeExtension {
     db: AnyDrizzleDb,
     supplierId: string,
   ): Promise<{ reservationTimeoutMinutes: number | null } | null>
+  loadSupplierPaymentPolicy(db: AnyDrizzleDb, supplierId: string): Promise<PaymentPolicy | null>
+}
+
+/**
+ * Provider-neutral request-time publication decision used by public catalog
+ * and checkout consumers. The selected Distribution implementation owns the
+ * policy and persistence; consumers only supply their resolved database and
+ * channel identity.
+ */
+export interface CatalogPublicationRuntime {
+  isProductPublished(input: {
+    db: AnyDrizzleDb
+    productId: string
+    channelId: string
+  }): Promise<boolean>
 }
 
 export interface CatalogCruisesRuntimeExtension extends CatalogPolicyRuntimeExtension {
@@ -157,6 +178,15 @@ export interface CatalogInventoryRuntimeExtension {
     db: AnyDrizzleDb,
     productId: string,
   ): Promise<{ supplierId: string | null; reservationTimeoutMinutes: number | null } | null>
+  loadProductPaymentPolicyContext(
+    db: AnyDrizzleDb,
+    productId: string,
+  ): Promise<{
+    listingPolicy: PaymentPolicy | null
+    categoryPolicy: PaymentPolicy | null
+    supplierId: string | null
+    departureDate: string | null
+  } | null>
   enrichProductQuoteShape: CatalogProductQuoteEnricher
   buildSnapshotInput(
     db: AnyDrizzleDb,
@@ -201,6 +231,9 @@ export const catalogCommerceRuntimeExtensionPort = extensionPort<CatalogCommerce
 )
 export const catalogDistributionRuntimeExtensionPort =
   extensionPort<CatalogDistributionRuntimeExtension>("catalog.extension.distribution")
+export const catalogPublicationRuntimePort = extensionPort<CatalogPublicationRuntime>(
+  "catalog.publication.runtime",
+)
 export const catalogCruisesRuntimeExtensionPort = extensionPort<CatalogCruisesRuntimeExtension>(
   "catalog.extension.cruises",
 )
