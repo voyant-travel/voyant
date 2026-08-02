@@ -416,7 +416,11 @@ describe("cruiseAdapterToSourceAdapter.reserve / cancel", () => {
         { connection_id: "conn-x" },
         { entity_module: "cruises", entity_id: "crus_x", parameters: {} },
       ),
-    ).rejects.toThrow(/requires sailingId/i)
+    ).rejects.toMatchObject({
+      message: expect.stringMatching(/requires sailingId/i),
+      certainty: "not_sent",
+      errorClass: "cruise_reservation_preflight_failed",
+    })
   })
 
   it("cancel throws to keep cruise cancellation on the vertical's commit path in v1", async () => {

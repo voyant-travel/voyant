@@ -77,10 +77,15 @@ export const supplierOperationsTable = pgTable(
     ),
     check("supplier_operations_attempt_count", sql`${table.attemptCount} >= 0`),
     check("supplier_operations_version", sql`${table.version} >= 0`),
-    uniqueIndex("uidx_supplier_operations_session_reserve").on(
+    uniqueIndex("uidx_supplier_operations_session_commit").on(
       table.sessionId,
-      table.operationKind,
+      table.commitIdempotencyKey,
     ),
+    uniqueIndex("uidx_supplier_operations_session_reserve_guard")
+      .on(table.sessionId, table.operationKind)
+      .where(
+        sql`${table.state} IN ('queued','submitted','pending','succeeded','in_doubt','manual_review') OR (${table.state} = 'manually_resolved' AND ${table.upstreamStatus} = 'succeeded')`,
+      ),
     uniqueIndex("uidx_supplier_operations_adapter_idem").on(
       table.sourceConnectionId,
       table.adapterIdempotencyKey,

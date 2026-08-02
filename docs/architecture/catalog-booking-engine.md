@@ -170,9 +170,12 @@ scope alone cannot submit Finance-owned operator details.
 Catalog Item Sessions resolve adapter identity exclusively from the durable
 `catalog_sourced_entries` row. A caller supplies the local Catalog Item and its
 bookable selection, but never an adapter kind, connection id, or upstream
-identity. Commit persists one Session-wide Supplier Operation before dispatch,
-including the exact Quote, request fingerprint, safe request payload, stable
-adapter idempotency key, attempts, and reconciliation evidence.
+identity. Commit persists one active Supplier Operation per Session before
+dispatch, including the exact Quote, request fingerprint, safe request payload,
+stable adapter idempotency key, attempts, and reconciliation evidence. A
+definitive refusal may be followed by a new operation for an updated selection;
+pending, ambiguous, secured, and manually secured operations continue to block
+competing dispatches.
 
 The default `supplier_first` policy creates no Booking while the operation is
 queued, submitted, pending, in doubt, or awaiting manual review. Generic

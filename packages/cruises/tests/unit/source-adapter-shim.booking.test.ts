@@ -38,6 +38,23 @@ describe("cruise SourceAdapter booking tracer", () => {
         fareCode: "FLEX",
         currency: "EUR",
         pricePerPerson: "1250.00",
+        secondGuestPricePerPerson: "950.00",
+        components: [
+          {
+            kind: "tax",
+            amount: "100.00",
+            currency: "EUR",
+            direction: "addition",
+            perPerson: true,
+          },
+          {
+            kind: "onboard_credit",
+            amount: "50.00",
+            currency: "EUR",
+            direction: "credit",
+            perPerson: false,
+          },
+        ],
         availability: "available",
       },
     ])
@@ -61,7 +78,7 @@ describe("cruise SourceAdapter booking tracer", () => {
         },
       ),
     ).resolves.toMatchObject({
-      values: { [entityId]: { priceCents: 250000, currency: "EUR" } },
+      values: { [entityId]: { priceCents: 235000, currency: "EUR" } },
     })
 
     const request = {
@@ -96,5 +113,73 @@ describe("cruise SourceAdapter booking tracer", () => {
         { idempotency_key: request.idempotency_key },
       ),
     ).resolves.toMatchObject({ upstream_ref: first?.upstream_ref, status: "confirmed" })
+  })
+
+  it("maps only explicit secured connector statuses to a secured reservation", async () => {
+    const cruiseRef = { externalId: "cruise-status" }
+    const shipRef = { externalId: "ship-status" }
+    const sailingRef = { externalId: "sailing-status" }
+    const cabinCategoryRef = { externalId: "suite" }
+    const cruise = new MockCruiseAdapter({ name: "status-tracer" })
+    cruise.addCruise(
+      {
+        sourceRef: cruiseRef,
+        name: "Status Cruise",
+        slug: "status-cruise",
+        cruiseType: "ocean",
+        lineName: "Example Line",
+        defaultShipRef: shipRef,
+        nights: 3,
+      },
+      [
+        {
+          sourceRef: sailingRef,
+          cruiseRef,
+          shipRef,
+          departureDate: "2027-03-01",
+          returnDate: "2027-03-04",
+          salesStatus: "open",
+        },
+      ],
+    )
+    const adapter = cruiseAdapterToSourceAdapter(cruise)
+    const request = {
+      entity_module: "cruises",
+      entity_id: `crus_${encodeSourceRef(cruiseRef)}`,
+      parameters: {
+        sailingId: encodeSourceRef(sailingRef),
+        cabinCategoryId: encodeSourceRef(cabinCategoryRef),
+        occupancy: 1,
+      },
+      party: {
+        contact: { firstName: "Ada", lastName: "Lovelace" },
+        passengers: [{ firstName: "Ada", lastName: "Lovelace" }],
+      },
+    }
+
+    cruise.setBookingResult(sailingRef, cabinCategoryRef, {
+      connectorBookingRef: "UP-FAILED",
+      connectorStatus: "cancelled",
+    })
+    await expect(
+      adapter.reserve?.(
+        { connection_id: "conn_cruise" },
+        { ...request, idempotency_key: "failed-key" },
+      ),
+    ).resolves.toMatchObject({ upstream_ref: "UP-FAILED", status: "failed" })
+
+    cruise.setBookingResult(sailingRef, cabinCategoryRef, {
+      connectorBookingRef: "UP-UNKNOWN",
+      connectorStatus: "deposit_required",
+    })
+    await expect(
+      adapter.reserve?.(
+        { connection_id: "conn_cruise" },
+        { ...request, idempotency_key: "unknown-key" },
+      ),
+    ).resolves.toMatchObject({ upstream_ref: "UP-UNKNOWN", status: "pending" })
+    await expect(
+      adapter.getReservation?.({ connection_id: "conn_cruise" }, { upstream_ref: "UP-UNKNOWN" }),
+    ).resolves.toMatchObject({ status: "pending" })
   })
 })

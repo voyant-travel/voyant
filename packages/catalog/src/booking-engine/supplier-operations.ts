@@ -4,7 +4,7 @@ import type {
   SupplierOperationStateV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/supplier-operations"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -61,6 +61,7 @@ export interface SupplierOperationRepository {
     commitIdempotencyKey: string,
   ): Promise<SupplierOperationInternalRecord | null>
   getBySession(sessionId: string): Promise<SupplierOperationInternalRecord | null>
+  getBlockingBySession(sessionId: string): Promise<SupplierOperationInternalRecord | null>
   getForUpdate(operationId: string): Promise<SupplierOperationInternalRecord | null>
   list(input: {
     state?: SupplierOperationStateV1
@@ -79,19 +80,76 @@ export function createDrizzleSupplierOperationRepository(
       .select()
       .from(supplierOperationsTable)
       .where(eq(supplierOperationsTable.sessionId, sessionId))
+      .orderBy(desc(supplierOperationsTable.createdAt), desc(supplierOperationsTable.id))
+      .limit(1)
+    return row ? mapSupplierOperation(row) : null
+  }
+
+  async function getBlockingBySession(
+    sessionId: string,
+  ): Promise<SupplierOperationInternalRecord | null> {
+    const [row] = await db
+      .select()
+      .from(supplierOperationsTable)
+      .where(
+        and(
+          eq(supplierOperationsTable.sessionId, sessionId),
+          or(
+            inArray(supplierOperationsTable.state, [
+              "queued",
+              "submitted",
+              "pending",
+              "succeeded",
+              "in_doubt",
+              "manual_review",
+            ]),
+            and(
+              eq(supplierOperationsTable.state, "manually_resolved"),
+              eq(supplierOperationsTable.upstreamStatus, "succeeded"),
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(supplierOperationsTable.createdAt), desc(supplierOperationsTable.id))
+      .limit(1)
+    return row ? mapSupplierOperation(row) : null
+  }
+
+  async function getByCommit(
+    sessionId: string,
+    commitIdempotencyKey: string,
+  ): Promise<SupplierOperationInternalRecord | null> {
+    const [row] = await db
+      .select()
+      .from(supplierOperationsTable)
+      .where(
+        and(
+          eq(supplierOperationsTable.sessionId, sessionId),
+          eq(supplierOperationsTable.commitIdempotencyKey, commitIdempotencyKey),
+        ),
+      )
       .limit(1)
     return row ? mapSupplierOperation(row) : null
   }
 
   return {
     async createOrReplay(record) {
+      const replay = await getByCommit(record.sessionId, record.commitIdempotencyKey)
+      if (replay) {
+        return replay.requestFingerprint === record.requestFingerprint
+          ? { status: "replay", operation: replay }
+          : { status: "conflict" }
+      }
+      if (await getBlockingBySession(record.sessionId)) {
+        return { status: "conflict" }
+      }
       const [created] = await db
         .insert(supplierOperationsTable)
         .values(toInsert(record))
         .onConflictDoNothing()
         .returning()
       if (created) return { status: "created", operation: mapSupplierOperation(created) }
-      const existing = await getBySession(record.sessionId)
+      const existing = await getByCommit(record.sessionId, record.commitIdempotencyKey)
       if (
         !existing ||
         existing.commitIdempotencyKey !== record.commitIdempotencyKey ||
@@ -112,12 +170,15 @@ export function createDrizzleSupplierOperationRepository(
     },
 
     async getByCommit(sessionId, commitIdempotencyKey) {
-      const existing = await getBySession(sessionId)
-      return existing?.commitIdempotencyKey === commitIdempotencyKey ? existing : null
+      return getByCommit(sessionId, commitIdempotencyKey)
     },
 
     async getBySession(sessionId) {
       return getBySession(sessionId)
+    },
+
+    async getBlockingBySession(sessionId) {
+      return getBlockingBySession(sessionId)
     },
 
     async getForUpdate(operationId) {

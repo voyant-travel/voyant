@@ -124,6 +124,32 @@ describe("Supplier Operation workflow", () => {
     expect(reserve).toHaveBeenCalledTimes(1)
   })
 
+  it("allows a new reservation intent after a definitive refusal", async () => {
+    const repository = memoryRepository()
+    const reserve = vi
+      .fn()
+      .mockResolvedValueOnce({ upstream_ref: "UP-REFUSED", status: "failed" as const })
+      .mockResolvedValueOnce({ upstream_ref: "UP-ALTERNATIVE", status: "confirmed" as const })
+    const workflow = workflowWith(repository, { reserve })
+
+    await expect(workflow.dispatch(input())).resolves.toMatchObject({
+      kind: "failed",
+      operation: { state: "refused" },
+    })
+    await expect(
+      workflow.dispatch({
+        ...input(),
+        commitIdempotencyKey: "alternative-key",
+        requestFingerprint: "fingerprint-2",
+      }),
+    ).resolves.toMatchObject({
+      kind: "secured",
+      operation: { state: "succeeded", upstreamRef: "UP-ALTERNATIVE" },
+    })
+    expect(repository.rows).toHaveLength(2)
+    expect(reserve).toHaveBeenCalledTimes(2)
+  })
+
   it("retries only when the adapter proves the request was not sent", async () => {
     const repository = memoryRepository()
     const reserve = vi
@@ -291,15 +317,24 @@ function memoryRepository(): SupplierOperationRepository & {
   return {
     rows,
     async createOrReplay(record): Promise<CreateSupplierOperationResult> {
-      const existing = rows.find((row) => row.sessionId === record.sessionId)
-      if (!existing) {
-        rows.push(record)
-        return { status: "created", operation: record }
+      const replay = rows.find(
+        (row) =>
+          row.sessionId === record.sessionId &&
+          row.commitIdempotencyKey === record.commitIdempotencyKey,
+      )
+      if (replay) {
+        return replay.requestFingerprint === record.requestFingerprint
+          ? { status: "replay", operation: replay }
+          : { status: "conflict" }
       }
-      return existing.commitIdempotencyKey === record.commitIdempotencyKey &&
-        existing.requestFingerprint === record.requestFingerprint
-        ? { status: "replay", operation: existing }
-        : { status: "conflict" }
+      const blocking = rows.find(
+        (row) => row.sessionId === record.sessionId && blocksReplacement(row),
+      )
+      if (blocking) {
+        return { status: "conflict" }
+      }
+      rows.push(record)
+      return { status: "created", operation: record }
     },
     async get(operationId) {
       return rows.find((row) => row.id === operationId) ?? null
@@ -312,7 +347,14 @@ function memoryRepository(): SupplierOperationRepository & {
       )
     },
     async getBySession(sessionId) {
-      return rows.find((row) => row.sessionId === sessionId) ?? null
+      for (let index = rows.length - 1; index >= 0; index -= 1) {
+        const row = rows[index]
+        if (row?.sessionId === sessionId) return row
+      }
+      return null
+    },
+    async getBlockingBySession(sessionId) {
+      return rows.find((row) => row.sessionId === sessionId && blocksReplacement(row)) ?? null
     },
     async getForUpdate(operationId) {
       return rows.find((row) => row.id === operationId) ?? null
@@ -334,4 +376,16 @@ function memoryRepository(): SupplierOperationRepository & {
       operation.version += 1
     },
   }
+}
+
+function blocksReplacement(operation: SupplierOperationInternalRecord): boolean {
+  return (
+    operation.state === "queued" ||
+    operation.state === "submitted" ||
+    operation.state === "pending" ||
+    operation.state === "succeeded" ||
+    operation.state === "in_doubt" ||
+    operation.state === "manual_review" ||
+    (operation.state === "manually_resolved" && operation.upstreamStatus === "succeeded")
+  )
 }

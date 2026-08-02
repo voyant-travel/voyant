@@ -43,7 +43,9 @@ CREATE TABLE "supplier_operations" (
   CONSTRAINT "supplier_operations_attempt_count" CHECK ("attempt_count" >= 0)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "uidx_supplier_operations_session_reserve" ON "supplier_operations" USING btree ("session_id","operation_kind");
+CREATE UNIQUE INDEX "uidx_supplier_operations_session_commit" ON "supplier_operations" USING btree ("session_id","commit_idempotency_key");
+--> statement-breakpoint
+CREATE UNIQUE INDEX "uidx_supplier_operations_session_reserve_guard" ON "supplier_operations" USING btree ("session_id","operation_kind") WHERE "state" IN ('queued','submitted','pending','succeeded','in_doubt','manual_review') OR ("state" = 'manually_resolved' AND "upstream_status" = 'succeeded');
 --> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_supplier_operations_adapter_idem" ON "supplier_operations" USING btree ("source_connection_id","adapter_idempotency_key");
 --> statement-breakpoint

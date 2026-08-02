@@ -200,7 +200,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
     ])
   })
 
-  it("serializes one durable supplier reservation intent across competing Commit keys", async () => {
+  it("serializes active supplier intents and permits a replacement after refusal", async () => {
     const sessions = createDrizzleBookingSessionRepository(db)
     const module = createBookingSessionModule({
       ports: {
@@ -242,11 +242,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
       },
       async reserve() {
         reservationCalls += 1
-        return { upstream_ref: "PG-UPSTREAM-1", status: "confirmed" }
+        return reservationCalls === 1
+          ? { upstream_ref: "PG-UPSTREAM-1", status: "pending" }
+          : { upstream_ref: "PG-UPSTREAM-2", status: "confirmed" }
       },
     })
+    const supplierOperations = createDrizzleSupplierOperationRepository(db)
     const workflow = createSupplierOperationWorkflow({
-      repository: createDrizzleSupplierOperationRepository(db),
+      repository: supplierOperations,
       registry,
     })
     const base = {
@@ -271,10 +274,33 @@ describe.skipIf(!DB_AVAILABLE)("Booking Session v1 PostgreSQL invariants", () =>
       workflow.dispatch({ ...base, commitIdempotencyKey: "postgres_supplier_commit_b" }),
     ])
 
-    expect(outcomes.filter((outcome) => outcome.kind === "secured")).toHaveLength(1)
+    expect(outcomes.filter((outcome) => outcome.kind === "pending")).toHaveLength(1)
     expect(outcomes.filter((outcome) => outcome.kind === "idempotency_conflict")).toHaveLength(1)
     expect(reservationCalls).toBe(1)
     await expect(db.select().from(supplierOperationsTable)).resolves.toHaveLength(1)
+
+    const firstOperation = await supplierOperations.getBySession(created.session.id)
+    if (!firstOperation) throw new Error("supplier operation not created")
+    firstOperation.state = "refused"
+    firstOperation.upstreamStatus = "failed"
+    firstOperation.resolvedAt = new Date("2026-08-02T10:01:00.000Z")
+    firstOperation.updatedAt = firstOperation.resolvedAt
+    firstOperation.nextReconcileAt = undefined
+    await supplierOperations.save(firstOperation)
+
+    await expect(
+      workflow.dispatch({
+        ...base,
+        commitIdempotencyKey: "postgres_supplier_commit_alternative",
+        requestFingerprint: "postgres_supplier_fingerprint_alternative",
+        now: new Date("2026-08-02T10:02:00.000Z"),
+      }),
+    ).resolves.toMatchObject({
+      kind: "secured",
+      operation: { upstreamRef: "PG-UPSTREAM-2", state: "succeeded" },
+    })
+    expect(reservationCalls).toBe(2)
+    await expect(db.select().from(supplierOperationsTable)).resolves.toHaveLength(2)
   })
 
   it("continues a paid Session into exactly one Booking under a concurrent Commit retry", async () => {

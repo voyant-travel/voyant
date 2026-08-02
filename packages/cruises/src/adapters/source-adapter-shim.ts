@@ -43,12 +43,15 @@ import type {
   SourceAdapter,
   SourceAdapterContext,
 } from "@voyant-travel/catalog"
+import { ReservationDispatchError } from "@voyant-travel/catalog"
 import type { Provenance } from "@voyant-travel/catalog/provenance"
 
 import { CRUISES_CONTENT_SCHEMA_VERSION, type CruiseContent } from "../content-shape.js"
 import { decodeSourceRef, encodeSourceRef } from "../lib/key.js"
+import { composeQuote } from "../service-pricing.js"
 
 import type {
+  CreateExternalBookingInput,
   CruiseAdapter,
   CruiseSearchProjectionEntry,
   ExternalCabinCategory,
@@ -229,8 +232,27 @@ export function cruiseAdapterToSourceAdapter(
           failed[id] = "unavailable"
           continue
         }
+        const quote = composeQuote({
+          price: {
+            pricePerPerson: row.pricePerPerson,
+            originalPricePerPerson: row.originalPricePerPerson ?? null,
+            secondGuestPricePerPerson: row.secondGuestPricePerPerson ?? null,
+            singlePricePerPerson: row.singlePricePerPerson ?? null,
+            singleSupplementPercent: row.singleSupplementPercent ?? null,
+            currency: row.currency,
+            fareCode: row.fareCode ?? null,
+            fareCodeName: row.fareCodeName ?? null,
+            fareVariant: row.fareVariant ?? "cruise_only",
+            earlyBookingDeadline: row.earlyBookingDeadline ?? null,
+            earlyBookingBonusDescription: row.earlyBookingBonusDescription ?? null,
+          },
+          components: row.components ?? [],
+          occupancy,
+          guestCount: occupancy,
+          ...(row.bookingTerms !== undefined ? { bookingTerms: row.bookingTerms } : {}),
+        })
         values[id] = {
-          priceCents: Math.round(Number.parseFloat(row.pricePerPerson) * 100) * occupancy,
+          priceCents: decimalAmountToCents(quote.totalForCabin),
           currency: row.currency,
           availability: row.availability,
           sailingRef,
@@ -289,43 +311,57 @@ export function cruiseAdapterToSourceAdapter(
     },
 
     async reserve(_ctx: SourceAdapterContext, request: ReserveRequest): Promise<ReserveResult> {
-      const sailingRef = requiredSourceRef(request.parameters.sailingId, "sailingId")
-      const cabinCategoryRef = requiredSourceRef(
-        request.parameters.cabinCategoryRef ?? request.parameters.cabinCategoryId,
-        "cabinCategoryId",
-      )
-      const occupancy = positiveInteger(request.parameters.occupancy)
-      const party = recordValue(request.party)
-      const contact = requiredRecord(party?.contact, "party.contact")
-      const passengers = Array.isArray(party?.passengers) ? party.passengers : []
-      if (!occupancy || passengers.length === 0) {
-        throw new Error("cruise reservation requires occupancy and passengers")
+      let sailing: ExternalSailing
+      let bookingInput: CreateExternalBookingInput
+      try {
+        const sailingRef = requiredSourceRef(request.parameters.sailingId, "sailingId")
+        const cabinCategoryRef = requiredSourceRef(
+          request.parameters.cabinCategoryRef ?? request.parameters.cabinCategoryId,
+          "cabinCategoryId",
+        )
+        const occupancy = positiveInteger(request.parameters.occupancy)
+        const party = recordValue(request.party)
+        const contact = requiredRecord(party?.contact, "party.contact")
+        const passengers = Array.isArray(party?.passengers) ? party.passengers : []
+        if (!occupancy || passengers.length === 0) {
+          throw new Error("cruise reservation requires occupancy and passengers")
+        }
+        const resolvedSailing = await cruiseAdapter.fetchSailing(sailingRef)
+        if (!resolvedSailing) throw new Error("cruise reservation sailing is unavailable")
+        sailing = resolvedSailing
+        bookingInput = {
+          ...(request.idempotency_key ? { idempotencyKey: request.idempotency_key } : {}),
+          sailingRef,
+          cabinCategoryRef,
+          occupancy,
+          passengerComposition: externalPassengerComposition(
+            request.parameters.passengerComposition,
+          ),
+          fareCode: optionalString(request.parameters.fareCode),
+          fareVariant: fareVariant(request.parameters.fareVariant),
+          passengers: passengers.map((passenger) => externalPassenger(passenger)),
+          contact: externalContact(contact),
+          bookingTerms: recordValue(request.parameters.bookingTerms) as never,
+          notes: optionalString(request.parameters.notes),
+        }
+      } catch (error) {
+        throw new ReservationDispatchError(
+          error instanceof Error ? error.message : "invalid cruise reservation request",
+          "not_sent",
+          "cruise_reservation_preflight_failed",
+        )
       }
-      const sailing = await cruiseAdapter.fetchSailing(sailingRef)
-      if (!sailing) throw new Error("cruise reservation sailing is unavailable")
-      const result = await cruiseAdapter.createBooking({
-        ...(request.idempotency_key ? { idempotencyKey: request.idempotency_key } : {}),
-        sailingRef,
-        cabinCategoryRef,
-        occupancy,
-        passengerComposition: externalPassengerComposition(request.parameters.passengerComposition),
-        fareCode: optionalString(request.parameters.fareCode),
-        fareVariant: fareVariant(request.parameters.fareVariant),
-        passengers: passengers.map((passenger) => externalPassenger(passenger)),
-        contact: externalContact(contact),
-        bookingTerms: recordValue(request.parameters.bookingTerms) as never,
-        notes: optionalString(request.parameters.notes),
-      })
+      const result = await cruiseAdapter.createBooking(bookingInput)
       return {
         upstream_ref: result.connectorBookingRef,
-        status: result.connectorStatus === "pending" ? "pending" : "confirmed",
+        status: reserveStatusFromConnector(result.connectorStatus),
         upstream_payload: {
           connectorStatus: result.connectorStatus ?? null,
           sailing: {
             departureDate: sailing.departureDate,
             returnDate: sailing.returnDate,
-            sailingRef,
-            cabinCategoryRef,
+            sailingRef: bookingInput.sailingRef,
+            cabinCategoryRef: bookingInput.cabinCategoryRef,
           },
           ...(result.finalQuote ? { finalQuote: result.finalQuote } : {}),
           ...(result.finalComponents ? { finalComponents: result.finalComponents } : {}),
@@ -347,7 +383,7 @@ export function cruiseAdapterToSourceAdapter(
       if (!result) return null
       return {
         upstream_ref: result.connectorBookingRef,
-        status: result.connectorStatus === "pending" ? "pending" : "confirmed",
+        status: reservationStatusFromConnector(result.connectorStatus),
         upstream_payload: {
           connectorStatus: result.connectorStatus ?? null,
           ...(result.finalQuote ? { finalQuote: result.finalQuote } : {}),
@@ -363,6 +399,51 @@ export function cruiseAdapterToSourceAdapter(
       throw new Error("cruise cancellation via catalog SourceAdapter is not supported in v1")
     },
   }
+}
+
+function reserveStatusFromConnector(value: string | null | undefined): ReserveResult["status"] {
+  const normalized = value?.trim().toLowerCase()
+  switch (normalized) {
+    case "held":
+    case "confirmed":
+    case "ticketed":
+      return normalized
+    case "failed":
+    case "refused":
+    case "cancelled":
+      return "failed"
+    default:
+      return "pending"
+  }
+}
+
+function reservationStatusFromConnector(
+  value: string | null | undefined,
+): GetReservationResult["status"] {
+  const normalized = value?.trim().toLowerCase()
+  switch (normalized) {
+    case "held":
+    case "confirmed":
+    case "ticketed":
+    case "failed":
+    case "refused":
+    case "cancelled":
+    case "cancelling":
+    case "pending":
+      return normalized
+    default:
+      return "pending"
+  }
+}
+
+function decimalAmountToCents(value: string): number {
+  const match = /^(-?)(\d+)\.(\d{2})$/.exec(value)
+  if (!match) throw new Error(`invalid composed cruise amount: ${value}`)
+  const cents = BigInt(match[2] ?? "0") * 100n + BigInt(match[3] ?? "0")
+  const signed = match[1] === "-" ? -cents : cents
+  const result = Number(signed)
+  if (!Number.isSafeInteger(result)) throw new Error(`cruise amount exceeds safe cents: ${value}`)
+  return result
 }
 
 function sourceRefFromParameter(value: unknown): SourceRef | null {

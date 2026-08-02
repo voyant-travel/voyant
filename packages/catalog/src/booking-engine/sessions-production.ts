@@ -140,13 +140,8 @@ export function createProductionBookingSessionModule(
       hasActiveSupplierOperation: async ({ sessionId, tx }) => {
         const operation = await createDrizzleSupplierOperationRepository(
           tx as PostgresJsDatabase,
-        ).getBySession(sessionId)
-        return Boolean(
-          operation &&
-            operation.state !== "refused" &&
-            operation.state !== "cancelled" &&
-            !(operation.state === "manually_resolved" && operation.upstreamStatus !== "succeeded"),
-        )
+        ).getBlockingBySession(sessionId)
+        return Boolean(operation)
       },
       payments,
     },
@@ -290,7 +285,11 @@ async function commitSourcedBooking(
     const transaction = tx as PostgresJsDatabase
     const operationRepository = createDrizzleSupplierOperationRepository(transaction)
     const operation = await operationRepository.getForUpdate(result.operation.id)
-    if (operation?.state !== "succeeded") {
+    if (
+      !operation ||
+      (operation.state !== "succeeded" &&
+        !(operation.state === "manually_resolved" && operation.upstreamStatus === "succeeded"))
+    ) {
       throw new Error("supplier_operation_not_secured")
     }
     if (operation.bookingId) {
