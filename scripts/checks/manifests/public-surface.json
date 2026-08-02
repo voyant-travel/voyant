@@ -23,7 +23,12 @@
     "@voyant-travel/products-contracts",
     "@voyant-travel/schema-kit"
   ],
-  "$pending": {
-    "@voyant-travel/trips-contracts": "Required by connect#106; the package does not exist yet."
-  }
+  "$notTripsContracts": [
+    "There is deliberately no trips-contracts entry. A Trip Envelope composes",
+    "already-committed components (tripComponentKindEnum: catalog_booking,",
+    "flight_order, external_order, placeholders) and is not sourced from a",
+    "supplier; a supplier-sold tour or package is a Product. The Connect source",
+    "verticals are accommodations, charters, cruises, flights, and products.",
+    "See connect#106."
+  ]
 }
