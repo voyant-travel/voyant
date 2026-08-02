@@ -46,13 +46,12 @@
   "peerDependenciesMeta": {
     "@voyant-travel/catalog": {
       "optional": true
+    },
+    "@voyant-travel/cruises": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "@voyant-travel/catalog": "workspace:^",
-    "@voyant-travel/catalog-contracts": "workspace:^",
-    "@voyant-travel/cruises": "workspace:^",
-    "@voyant-travel/cruises-contracts": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "catalog:",
     "vitest": "catalog:"
