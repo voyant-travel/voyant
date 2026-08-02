@@ -70,10 +70,7 @@ import {
   type BookingCreateTravelCreditRedemptionInput,
   usePricingPreview,
 } from "../index.js"
-import {
-  createManualBookingThroughTool,
-  getManualBookingToolAvailability,
-} from "../manual-booking-mcp-client.js"
+import { commitManualBookingSessionV1 } from "../manual-booking-session-client.js"
 import { useVoyantBookingsContext } from "../provider.js"
 import {
   findAlreadyPaidInstallmentMissingPaymentDate,
@@ -150,8 +147,8 @@ export interface ManualBookingAttempt {
   fingerprint: string
   /**
    * Cosmetic reference for the default shared-room group label only. The durable
-   * booking reference is resolved server-side by `create_booking` (voyant#3933),
-   * so this is never sent as the booking number.
+   * booking reference is allocated by Booking Session Commit, so this is never
+   * sent as the booking number.
    */
   labelReference: string | null
   idempotencyKey: string
@@ -344,6 +341,47 @@ export function buildManualBookingQuoteDraft(input: {
   })
 }
 
+const BOOKING_SESSION_ENGINE_OWNED_FIELDS = new Set([
+  "productId",
+  "optionId",
+  "slotId",
+  "catalogId",
+  "availabilityHoldToken",
+  "bookingNumber",
+  "initialStatus",
+  "sellAmountCentsOverride",
+  "catalogSellAmountCents",
+  "confirmedSellAmountCents",
+  "priceOverrideReason",
+])
+
+export function buildManualBookingSessionSelection(input: {
+  quoteDraft: BookingDraftV1
+  booking: Record<string, unknown>
+  catalogAmountCents: number | null
+  confirmedAmountCents: number
+  priceOverrideReason: string | null
+}): Record<string, unknown> {
+  const draftSelection = Object.fromEntries(
+    Object.entries(input.quoteDraft).filter(([field]) => field !== "entity"),
+  )
+  const staffBooking = Object.fromEntries(
+    Object.entries(input.booking).filter(
+      ([field]) => !BOOKING_SESSION_ENGINE_OWNED_FIELDS.has(field),
+    ),
+  )
+  if (input.catalogAmountCents != null && input.catalogAmountCents !== input.confirmedAmountCents) {
+    if (!input.priceOverrideReason) {
+      throw new Error("manual_booking_price_override_reason_required")
+    }
+    staffBooking.manualPriceOverride = {
+      amountCents: input.confirmedAmountCents,
+      reason: input.priceOverrideReason,
+    }
+  }
+  return { ...draftSelection, staffBooking }
+}
+
 export function resolveManualBookingPricing(input: {
   pricing: PriceBreakdownValue | null
   quoteTotalAmountCents: number | null
@@ -520,9 +558,6 @@ export function ManualBookingCreateForm({
   const errorRef = React.useRef<HTMLParagraphElement>(null)
   const [submitting, setSubmitting] = React.useState(false)
   const [payloadMismatchUnitIds, setPayloadMismatchUnitIds] = React.useState<string[]>([])
-  const [permissionState, setPermissionState] = React.useState<
-    "checking" | "allowed" | "denied" | "error"
-  >("checking")
   const attemptRef = React.useRef<ManualBookingAttempt | null>(null)
   const submissionRef = React.useRef(false)
   const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
@@ -680,20 +715,6 @@ export function ManualBookingCreateForm({
     },
     [allOpenSlots, product.optionId],
   )
-
-  React.useEffect(() => {
-    let active = true
-    void getManualBookingToolAvailability(client)
-      .then((availability) => {
-        if (active) setPermissionState(availability.canCreate ? "allowed" : "denied")
-      })
-      .catch(() => {
-        if (active) setPermissionState("error")
-      })
-    return () => {
-      active = false
-    }
-  }, [client])
 
   React.useEffect(() => {
     setProduct((prev) => {
@@ -1302,6 +1323,14 @@ export function ManualBookingCreateForm({
       setError(copy.validation.pricingPending)
       return
     }
+    if (isSourcedProduct) {
+      setError(copy.validation.sourcedBookingSessionRequired)
+      return
+    }
+    if (hasPromotionCode) {
+      setError(copy.validation.promotionBookingSessionRequired)
+      return
+    }
     if (!sourcedQuoteReady) {
       setError(copy.validation.pricingUnavailable)
       return
@@ -1467,9 +1496,6 @@ export function ManualBookingCreateForm({
       billTo,
       contact,
     })
-    const initialStatus = hasAnyPaidPayment(paymentSchedule)
-      ? ("confirmed" as const)
-      : ("awaiting_payment" as const)
     const booking = {
       productId: product.productId,
       optionId: selectedSlot?.optionId ?? product.optionId,
@@ -1496,8 +1522,7 @@ export function ManualBookingCreateForm({
         : generateInvoiceAndContract
           ? { contractDocument: true, invoiceDocument: true, invoiceType: "invoice" as const }
           : { contractDocument: false, invoiceDocument: false },
-      initialStatus,
-      suppressNotifications: initialStatus === "confirmed" && !notifyTraveler ? true : undefined,
+      suppressNotifications: !notifyTraveler ? true : undefined,
       allowDuplicate: false,
       ...contactPayload,
     } satisfies Record<string, unknown>
@@ -1505,8 +1530,8 @@ export function ManualBookingCreateForm({
     if (!attemptRef.current || attemptRef.current.fingerprint !== fingerprint) {
       attemptRef.current = {
         fingerprint,
-        // Cosmetic reference for the default shared-room group label; the durable
-        // booking reference is allocated server-side by `create_booking`.
+        // Cosmetic reference for the default shared-room group label; Booking
+        // Session Commit allocates the durable booking reference server-side.
         labelReference: generateBookingNumber(),
         idempotencyKey: createIdempotencyKey(),
       }
@@ -1523,12 +1548,26 @@ export function ManualBookingCreateForm({
             `${messages.bookingCreateDialog.labels.sharedRoomGeneratedLabelPrefix} - ${attempt.labelReference}`,
         }
       }
-      // The reference is resolved server-side; the stable idempotencyKey makes a
-      // retry replay the original booking instead of creating a second one.
-      const result = await createManualBookingThroughTool(client, {
-        booking,
+      if (!quoteDraft) throw new Error(copy.validation.pricingUnavailable)
+      const result = await commitManualBookingSessionV1(client, {
+        productId: product.productId,
+        selection: buildManualBookingSessionSelection({
+          quoteDraft,
+          booking,
+          catalogAmountCents: resolvedPricing.catalogAmountCents,
+          confirmedAmountCents: resolvedPricing.confirmedAmountCents,
+          priceOverrideReason: resolvedPricing.priceOverrideReason,
+        }),
+        quantity: redistributed.travelers.length,
         idempotencyKey: attempt.idempotencyKey,
       })
+      if (result.kind === "payment_required") {
+        if (result.redirectUrl && typeof window !== "undefined") {
+          window.location.assign(result.redirectUrl)
+          return
+        }
+        throw new Error(copy.validation.paymentGuaranteeRequired)
+      }
       await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slots() })
       attemptRef.current = null
       onCreated(result.bookingId)
@@ -1883,22 +1922,6 @@ export function ManualBookingCreateForm({
           ) : null}
         </div>
 
-        {permissionState === "denied" ? (
-          <p
-            role="alert"
-            className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-          >
-            {copy.permissions.denied}
-          </p>
-        ) : null}
-        {permissionState === "error" ? (
-          <p
-            role="alert"
-            className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-          >
-            {copy.permissions.error}
-          </p>
-        ) : null}
         {error ? (
           <p
             ref={errorRef}
@@ -1907,6 +1930,22 @@ export function ManualBookingCreateForm({
             className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
           >
             {error}
+          </p>
+        ) : null}
+        {isSourcedProduct ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            {copy.validation.sourcedBookingSessionRequired}
+          </p>
+        ) : null}
+        {hasPromotionCode ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            {copy.validation.promotionBookingSessionRequired}
           </p>
         ) : null}
         <div className="mt-4 flex items-center justify-end gap-2 border-t px-1 pt-3">
@@ -1918,7 +1957,8 @@ export function ManualBookingCreateForm({
             size="sm"
             disabled={
               submitting ||
-              permissionState !== "allowed" ||
+              isSourcedProduct ||
+              hasPromotionCode ||
               !product.productId ||
               !hasBookingTiming ||
               !hasSelectedUnits ||
@@ -1930,11 +1970,9 @@ export function ManualBookingCreateForm({
             {submitting ? (
               <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
             ) : null}
-            {permissionState === "checking"
-              ? copy.permissions.checking
-              : hasAnyPaidPayment(paymentSchedule)
-                ? messages.bookingCreateDialog.actions.createConfirmedBooking
-                : messages.bookingCreateDialog.actions.createAwaitingPaymentBooking}
+            {hasAnyPaidPayment(paymentSchedule)
+              ? messages.bookingCreateDialog.actions.createConfirmedBooking
+              : messages.bookingCreateDialog.actions.createAwaitingPaymentBooking}
           </Button>
         </div>
       </div>

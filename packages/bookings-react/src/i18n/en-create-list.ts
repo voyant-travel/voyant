@@ -50,6 +50,12 @@ export const bookingsUiEnCreateList = {
       pricingPending: "Wait a moment while we calculate the total.",
       pricingUnavailable:
         "We couldn't calculate a live supplier price. Review the selection and try again.",
+      sourcedBookingSessionRequired:
+        "This supplier source does not support Booking Session v1 Commit yet. Use a v1-capable source or contact operations.",
+      promotionBookingSessionRequired:
+        "Promotion codes are not authoritative in Booking Session v1 yet. Remove the code before committing this booking.",
+      paymentGuaranteeRequired:
+        "This booking requires a payment guarantee, but no payment continuation is available.",
       overrideReason: "Add a reason for the manual total.",
       payment: "Complete the payment schedule and make its total match the sell amount.",
       paidPaymentDate: "Payment date is required when Already paid is checked.",
@@ -64,11 +70,6 @@ export const bookingsUiEnCreateList = {
       valid: "Promotion applied. New total: {amount}.",
       invalid: "This promotion code is not valid for this booking.",
       unavailable: "We couldn't check this promotion code. Try again.",
-    },
-    permissions: {
-      checking: "Checking permissions…",
-      denied: "You need Bookings write and Finance write permissions to create a booking.",
-      error: "Booking creation permissions could not be checked. Refresh and try again.",
     },
     actions: {
       create: "Create booking",

@@ -50,6 +50,12 @@ export const bookingsUiRoCreateList = {
       pricingPending: "Asteapta putin cat timp calculam totalul.",
       pricingUnavailable:
         "Nu am putut calcula pretul furnizorului. Verifica selectia si incearca din nou.",
+      sourcedBookingSessionRequired:
+        "Aceasta sursa nu accepta inca finalizarea prin Booking Session v1. Foloseste o sursa compatibila sau contacteaza operatiunile.",
+      promotionBookingSessionRequired:
+        "Codurile promotionale nu sunt inca autoritative in Booking Session v1. Elimina codul inainte de finalizarea rezervarii.",
+      paymentGuaranteeRequired:
+        "Aceasta rezervare necesita o garantie de plata, dar continuarea platii nu este disponibila.",
       overrideReason: "Adauga un motiv pentru totalul manual.",
       payment: "Completeaza calendarul de plata, cu un total egal valorii rezervarii.",
       paidPaymentDate: "Data platii este obligatorie cand plata este marcata ca deja achitata.",
@@ -64,12 +70,6 @@ export const bookingsUiRoCreateList = {
       valid: "Promotie aplicata. Total nou: {amount}.",
       invalid: "Acest cod promotional nu este valabil pentru rezervarea selectata.",
       unavailable: "Codul promotional nu a putut fi verificat. Incearca din nou.",
-    },
-    permissions: {
-      checking: "Se verifica permisiunile…",
-      denied:
-        "Ai nevoie de permisiuni de scriere pentru Rezervari si Finance pentru a crea rezervarea.",
-      error: "Permisiunile nu au putut fi verificate. Reincarca pagina si incearca din nou.",
     },
     actions: {
       create: "Creeaza rezervarea",
