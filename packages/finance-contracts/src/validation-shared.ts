@@ -5,6 +5,7 @@ export const ianaTimeZoneSchema = z
   .trim()
   .min(1)
   .max(100)
+  .describe("IANA timezone for the local business date, for example Europe/Bucharest.")
   .refine(
     (value) => {
       try {

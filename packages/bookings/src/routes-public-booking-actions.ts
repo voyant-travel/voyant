@@ -10,7 +10,7 @@ import type { BookingActionProjectionRuntime } from "./runtime-port.js"
 
 const route = createBookingsPublicRoute({
   method: "get",
-  path: "/bookings/{bookingId}/actions",
+  path: "/{bookingId}/actions",
   tags: ["Bookings"],
   summary: "List customer-safe next actions for a booking",
   request: { params: z.object({ bookingId: z.string().min(1) }) },
