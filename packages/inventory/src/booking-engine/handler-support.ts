@@ -13,9 +13,11 @@ import { productPaxPricingTiers, products } from "../schema-core.js"
 import type {
   CreateProductsBookingHandlerOptions,
   DraftLike,
+  OptionUnitBandCandidate,
   ResolvedOptionPrice,
   ResolvedPaxPricingTier,
 } from "./handler.js"
+import { deriveTravelerCategory } from "./product-runtime-support.js"
 
 export async function loadProduct(
   db: AnyDrizzleDb,
@@ -527,6 +529,72 @@ export function bookingExtraLinesFromAddonSelections(input: {
 }
 
 /**
+ * One (option unit × pax band) charge resolved from an option price rule.
+ *
+ * `priceQuote` renders these as the quote's base lines and
+ * `bookingItemLinesFromPaxBands` turns the same list into the commit's booking
+ * item lines. Deriving both from one function is what keeps the quote and the
+ * commit from disagreeing about which units a person-priced product reserves.
+ */
+export interface PaxBandUnitCharge {
+  unitId: string
+  travelerCategory: string
+  count: number
+  sellAmountCents: number
+}
+
+export function paxBandUnitCharges(
+  resolvedPrice: ResolvedOptionPrice | null | undefined,
+  pax: Partial<Record<string, number>> | undefined,
+): PaxBandUnitCharge[] {
+  if (!resolvedPrice) return []
+  const claimed = new Set<string>()
+  return sortedByOperatorOrder(resolvedPrice.unitPrices).flatMap((unit) => {
+    if (!unit.travelerCategory) return []
+    // One unit per band. `deriveTravelerCategory` collapses every age tier
+    // under 18 onto `child`, so an operator selling "Child 6-12" and
+    // "Child 0-5" has two units competing for one band. Charging both bills
+    // the same child twice and reserves two seats for them (voyant#4118).
+    if (claimed.has(unit.travelerCategory)) return []
+    const count = pax?.[unit.travelerCategory] ?? 0
+    if (count <= 0) return []
+    const sellAmountCents = unit.sellAmountCents ?? 0
+    if (sellAmountCents <= 0) return []
+    claimed.add(unit.travelerCategory)
+    return [
+      {
+        unitId: unit.unitId,
+        travelerCategory: unit.travelerCategory,
+        count,
+        sellAmountCents,
+      },
+    ]
+  })
+}
+
+/**
+ * Order unit prices the way the operator ordered the units.
+ *
+ * Which unit wins a contested band has to be the operator's call, and it has
+ * to be the same call twice: the quote and the commit each resolve the price
+ * in a separate query, and the underlying `option_unit_price_rules` select
+ * carries no `ORDER BY`, so relying on the returned order would let the two
+ * disagree. `unitId` breaks ties so units sharing a `sort_order` — and the
+ * several category rows a single unit can carry — still land in a stable
+ * order.
+ */
+function sortedByOperatorOrder(
+  unitPrices: ReadonlyArray<ResolvedOptionPrice["unitPrices"][number]>,
+): ResolvedOptionPrice["unitPrices"][number][] {
+  return [...unitPrices].sort((left, right) => {
+    const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER
+    const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder
+    return left.unitId.localeCompare(right.unitId)
+  })
+}
+
+/**
  * Three-way price computation:
  *
  * 1. **Per-band** (preferred): when `resolvedPrice.unitPrices` matches
@@ -546,32 +614,30 @@ export function priceQuote(input: {
   resolvedPrice: ResolvedOptionPrice | null
   pax: Partial<Record<string, number>> | undefined
   effectivePax: number
+  /** Option the resolved price belongs to, stamped onto the band lines as
+   *  quote provenance so the commit can match them back to its item lines. */
+  optionId?: string | null
 }): PricedQuote {
   const { product, resolvedPrice, pax, effectivePax } = input
 
-  if (resolvedPrice && resolvedPrice.unitPrices.length > 0) {
-    const bandLines: PricedLine[] = []
+  const bandCharges = paxBandUnitCharges(resolvedPrice, pax)
+  if (bandCharges.length > 0) {
     let total = 0
-    for (const unit of resolvedPrice.unitPrices) {
-      if (!unit.travelerCategory) continue
-      const count = pax?.[unit.travelerCategory] ?? 0
-      if (count <= 0) continue
-      const sell = unit.sellAmountCents ?? 0
-      if (sell <= 0) continue
-      const lineTotal = sell * count
+    const bandLines: PricedLine[] = bandCharges.map((charge) => {
+      const lineTotal = charge.sellAmountCents * charge.count
       total += lineTotal
-      bandLines.push({
+      return {
         kind: "base",
-        label: `${product.name} — ${unit.travelerCategory}`,
-        quantity: count,
-        unitAmount: sell,
+        label: `${product.name} — ${charge.travelerCategory}`,
+        quantity: charge.count,
+        unitAmount: charge.sellAmountCents,
         totalAmount: lineTotal,
         pricingBasis: "per_person",
-      })
-    }
-    if (bandLines.length > 0) {
-      return { totalCents: total, lines: bandLines }
-    }
+        ...(input.optionId ? { optionId: input.optionId } : {}),
+        optionUnitId: charge.unitId,
+      }
+    })
+    return { totalCents: total, lines: bandLines }
   }
 
   if (resolvedPrice && resolvedPrice.baseSellAmountCents !== null) {
@@ -641,6 +707,69 @@ export function bookingItemLinesFromOptionSelections(
         ]
       : [],
   )
+  return lines.length > 0 ? lines : undefined
+}
+
+/**
+ * Item lines for a product the journey never showed a units step for.
+ *
+ * `buildOwnedProductDraftShape` renders the `option-units` sub-step only for
+ * options that sell room/vehicle inventory, so a person-priced product's draft
+ * carries pax bands and no `configure.optionSelections`. Without this the
+ * commit arrived with no item lines at all and booking creation refused it
+ * (voyant#4113).
+ *
+ * Preferred source: the option price rule's per-band unit prices, which is
+ * exactly what `priceQuote` charged for. Deriving from the same
+ * `paxBandUnitCharges` list means each line corresponds 1:1 to an accepted
+ * quote base line, so `fillMissingBookingItemSellAmounts` can reconcile them
+ * by provenance and the customer is billed per unit what they were quoted.
+ *
+ * Amounts are deliberately left unset: the accepted quote is authoritative, so
+ * the price the shopper saw wins over whatever the resolver says at commit
+ * time.
+ */
+export function bookingItemLinesFromPaxBands(input: {
+  optionId: string
+  resolvedPrice: ResolvedOptionPrice | null | undefined
+  pax: Partial<Record<string, number>> | undefined
+}): SelfServiceItemLines | undefined {
+  const lines = paxBandUnitCharges(input.resolvedPrice, input.pax).map((charge) => ({
+    optionId: input.optionId,
+    optionUnitId: charge.unitId,
+    quantity: charge.count,
+  }))
+  return lines.length > 0 ? lines : undefined
+}
+
+/**
+ * Fallback item lines for a person-priced option whose price is configured at
+ * the option or product level rather than per unit — there is no per-band unit
+ * price to derive from, but the units still exist and each pax band still has
+ * to reserve one.
+ *
+ * Bands map onto units by the unit's own age window (`deriveTravelerCategory`,
+ * the same rule the price resolver uses). When two units derive the same band
+ * — "Child 6-12" and "Child 0-5" both derive `child` — the first in sort order
+ * takes the whole band's count rather than each taking it in full, which would
+ * reserve the party twice. A band with no matching unit is dropped: the option
+ * has nothing to reserve for it, and inventing a unit would bill a traveler
+ * against someone else's rate.
+ */
+export function bookingItemLinesFromPaxBandUnits(input: {
+  optionId: string
+  units: ReadonlyArray<OptionUnitBandCandidate>
+  pax: Partial<Record<string, number>> | undefined
+}): SelfServiceItemLines | undefined {
+  const claimed = new Set<string>()
+  const lines = input.units.flatMap((unit) => {
+    const band = deriveTravelerCategory(unit)
+    if (!band || claimed.has(band)) return []
+    const quantity = input.pax?.[band] ?? 0
+    if (quantity <= 0) return []
+    claimed.add(band)
+    return [{ optionId: input.optionId, optionUnitId: unit.id, quantity }]
+  })
   return lines.length > 0 ? lines : undefined
 }
 
