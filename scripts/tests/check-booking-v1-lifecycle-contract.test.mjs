@@ -108,6 +108,11 @@ function writeMinimumFixture(root, overrides = {}) {
     "packages/admin-react/src/client/client.ts",
     overrides.adminClient ?? "bookingsOperations.cancel",
   )
+  write(
+    root,
+    "packages/notifications/src/voyant.ts",
+    overrides.notificationsManifest ?? 'eventType: "booking.confirmed"',
+  )
   const bookingOpenApi = JSON.stringify({
     paths: {},
     components: {
@@ -261,4 +266,11 @@ test("rejects the retired confirm operation in authenticated admin clients", (t)
   assert.match(output, /admin-contracts.*confirmBookingSchema/)
   assert.match(output, /admin-contracts.*bookings\.confirm/)
   assert.match(output, /admin-react.*bookingsOperations\.confirm/)
+})
+
+test("rejects the retired Booking expiry event in Notifications", (t) => {
+  const root = fixture(t)
+  writeMinimumFixture(root, { notificationsManifest: 'eventType: "booking.expired"' })
+
+  assert.match(failure(root), /notifications.*booking\.expired/)
 })

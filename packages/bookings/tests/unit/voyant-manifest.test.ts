@@ -246,7 +246,6 @@ describe("bookings deployment manifest", () => {
             resolveVisibleValues: async () => ({}),
           },
           "bookings.finance.runtime": {
-            createStaleBookingHoldsJobRuntime: () => ({}),
             quoteBookingAmendment: async () => {
               throw new Error("not used")
             },

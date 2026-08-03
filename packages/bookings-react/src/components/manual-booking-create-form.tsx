@@ -353,6 +353,7 @@ const BOOKING_SESSION_ENGINE_OWNED_FIELDS = new Set([
   "catalogId",
   "availabilityHoldToken",
   "bookingNumber",
+  "initialStatus",
   "sellAmountCentsOverride",
   "catalogSellAmountCents",
   "confirmedSellAmountCents",

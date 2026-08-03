@@ -191,6 +191,9 @@ for (const legacyAdminContract of [
 const adminClient = read("packages/admin-react/src/client/client.ts")
 rejectText("packages/admin-react/src/client/client.ts", adminClient, "bookingsOperations.confirm")
 
+const notificationsManifest = read("packages/notifications/src/voyant.ts")
+rejectText("packages/notifications/src/voyant.ts", notificationsManifest, '"booking.expired"')
+
 for (const path of [
   "packages/bookings/openapi/admin/bookings.json",
   "packages/bookings/openapi/storefront/bookings.json",

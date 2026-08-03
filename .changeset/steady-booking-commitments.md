@@ -4,6 +4,7 @@
 "@voyant-travel/bookings-react": minor
 "@voyant-travel/admin-contracts": minor
 "@voyant-travel/admin-react": minor
+"@voyant-travel/i18n": patch
 "@voyant-travel/catalog": patch
 "@voyant-travel/commerce": minor
 "@voyant-travel/finance": minor
@@ -11,6 +12,7 @@
 "@voyant-travel/operations-react": patch
 "@voyant-travel/storefront": patch
 "@voyant-travel/trips": patch
+"@voyant-travel/trips-react": minor
 ---
 
 Make commercial commitment the sole Booking creation boundary for Booking
