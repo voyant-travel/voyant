@@ -84,6 +84,9 @@ export function summarizeSlotExtras(
       selectedRows.filter((selection) => selection.collectionStatus === status).length
     const pendingCollectionCount = countCollection("pending")
     const fulfilledTravelerCount = countStatus("fulfilled")
+    // Only a single agreed currency can be summed; anything else has to stay
+    // null so a caller cannot add euros to lei.
+    const sharedCurrency = currencies.size === 1 ? ([...currencies][0] ?? null) : null
 
     return {
       productExtraId: extra.id,
@@ -110,11 +113,10 @@ export function summarizeSlotExtras(
         refunded: countCollection("refunded"),
       },
       /** Null when selected travelers disagree on currency — the caller must not sum across them. */
-      collectionCurrency: currencies.size === 1 ? [...currencies][0] : null,
-      collectionAmountCents:
-        currencies.size === 1
-          ? selectedRows.reduce((sum, selection) => sum + (selection.collectionAmountCents ?? 0), 0)
-          : null,
+      collectionCurrency: sharedCurrency,
+      collectionAmountCents: sharedCurrency
+        ? selectedRows.reduce((sum, selection) => sum + (selection.collectionAmountCents ?? 0), 0)
+        : null,
       outstandingCollectionCount: pendingCollectionCount,
       /** True once every selected traveler has been marked fulfilled. */
       fulfillmentComplete:
