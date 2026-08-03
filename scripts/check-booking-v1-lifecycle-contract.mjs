@@ -156,6 +156,16 @@ for (const forbiddenBookingField of [
 
 const bookingCreateContract = read("packages/finance/src/service-booking-create.ts")
 rejectText("packages/finance/src/service-booking-create.ts", bookingCreateContract, "initialStatus")
+requireText(
+  "packages/finance/src/service-booking-create.ts",
+  bookingCreateContract,
+  "WHERE b.status IN ('confirmed', 'in_progress')",
+)
+rejectText(
+  "packages/finance/src/service-booking-create.ts",
+  bookingCreateContract,
+  "b.status NOT IN",
+)
 
 for (const retiredBookingLifecycleFile of [
   "packages/bookings/src/stale-holds-job.ts",

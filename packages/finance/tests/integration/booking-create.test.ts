@@ -1024,7 +1024,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(bookingRows).toHaveLength(2)
   })
 
-  it("ignores expired bookings when checking duplicates", async () => {
+  it("ignores completed bookings when checking duplicates", async () => {
     const { productId, optionId } = await seedProduct()
     const slot = await seedSlot({ productId, optionId })
 
@@ -1040,7 +1040,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
 
     await db
       .update(bookings)
-      .set({ status: "expired" })
+      .set({ status: "completed" })
       .where(eq(bookings.id, first.result.booking.id))
 
     const second = await createBooking(db, {
@@ -4956,7 +4956,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(await db.select().from(paymentInstruments)).toHaveLength(0)
   })
 
-  it("settles one durable booking, result ledger, and outbox entry across exact replays", async () => {
+  it("settles one durable booking, result ledger, and outbox event pair across exact replays", async () => {
     const { productId, unitId } = await seedProduct()
     const idempotencyKey = "finance-booking-create-replay"
     const command = await durableCommand(idempotencyKey, {
@@ -4979,12 +4979,20 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     )
     expect(await db.select().from(bookings)).toHaveLength(1)
     expect(await db.select().from(bookingItemTaxLines)).toHaveLength(1)
-    expect(await db.select().from(eventOutboxTable)).toEqual([
-      expect.objectContaining({
-        eventId: financeBookingCreatedEventId(first.value.bookingId),
-        name: "booking.created",
-      }),
-    ])
+    const outboxRows = await db.select().from(eventOutboxTable)
+    expect(outboxRows).toHaveLength(2)
+    expect(outboxRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventId: financeBookingCreatedEventId(first.value.bookingId),
+          name: "booking.created",
+        }),
+        expect.objectContaining({
+          eventId: `evt_finance_booking_confirmed_${first.value.bookingId}`,
+          name: "booking.confirmed",
+        }),
+      ]),
+    )
     expect(
       await db
         .select()
@@ -5014,7 +5022,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(results.map((result) => result.replayed).sort()).toEqual([false, true])
     expect(new Set(results.map((result) => result.value.bookingId)).size).toBe(1)
     expect(await db.select().from(bookings)).toHaveLength(1)
-    expect(await db.select().from(eventOutboxTable)).toHaveLength(1)
+    expect(await db.select().from(eventOutboxTable)).toHaveLength(2)
     expect(
       await db
         .select()

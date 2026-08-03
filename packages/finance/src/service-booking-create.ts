@@ -830,7 +830,7 @@ async function findDuplicateBookingForCreate(
       b.booking_number AS "bookingNumber",
       b.status AS "status"
     FROM bookings b
-    WHERE b.status NOT IN ('cancelled', 'expired')
+    WHERE b.status IN ('confirmed', 'in_progress')
       AND ${partyCondition}
       AND EXISTS (
         SELECT 1

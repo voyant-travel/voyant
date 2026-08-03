@@ -95,7 +95,8 @@ function writeMinimumFixture(root, overrides = {}) {
   write(
     root,
     "packages/finance/src/service-booking-create.ts",
-    overrides.bookingCreateContract ?? 'status: "confirmed"',
+    overrides.bookingCreateContract ??
+      "status: \"confirmed\" WHERE b.status IN ('confirmed', 'in_progress')",
   )
   write(root, "packages/bookings/src/routes-admin.ts", overrides.bookingAdminRoutes ?? "cancel")
   write(
@@ -273,4 +274,15 @@ test("rejects the retired Booking expiry event in Notifications", (t) => {
   writeMinimumFixture(root, { notificationsManifest: 'eventType: "booking.expired"' })
 
   assert.match(failure(root), /notifications.*booking\.expired/)
+})
+
+test("rejects negative beta lifecycle predicates in duplicate detection", (t) => {
+  const root = fixture(t)
+  writeMinimumFixture(root, {
+    bookingCreateContract: "WHERE b.status NOT IN ('cancelled', 'expired')",
+  })
+
+  const output = failure(root)
+  assert.match(output, /missing.*confirmed.*in_progress/)
+  assert.match(output, /forbidden.*b\.status NOT IN/)
 })
