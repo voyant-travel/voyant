@@ -3358,25 +3358,23 @@ const bookingsServiceInternal = {
         if (data.status === "cancelled") {
           await lockBookingFinanceInsertionFence(tx, id)
         }
-        const rows = await tx.execute(
-          sql`SELECT id, booking_number, status, accepted_at, confirmed_at
-              FROM ${bookings}
-              WHERE ${bookings.id} = ${id}
-              FOR UPDATE`,
-        )
-        const booking = toRows<{
-          id: string
-          booking_number: string
-          status: BookingStatus
-          accepted_at: Date | null
-          confirmed_at: Date | null
-        }>(rows)[0]
+        const [booking] = await tx
+          .select({
+            id: bookings.id,
+            bookingNumber: bookings.bookingNumber,
+            status: bookings.status,
+            acceptedAt: bookings.acceptedAt,
+            confirmedAt: bookings.confirmedAt,
+          })
+          .from(bookings)
+          .where(eq(bookings.id, id))
+          .for("update")
 
         if (!booking) {
           throw new BookingServiceError("not_found")
         }
 
-        if (booking.accepted_at === null && isAcceptedBookingStatus(data.status)) {
+        if (booking.acceptedAt === null && isAcceptedBookingStatus(data.status)) {
           await assertMonthlyBookingLimitAvailable(
             tx as PostgresJsDatabase,
             runtime.monthlyBookingLimit,
@@ -3390,8 +3388,8 @@ const bookingsServiceInternal = {
         const updates: Record<string, unknown> = {
           status: data.status,
           acceptedAt:
-            booking.accepted_at ?? (isAcceptedBookingStatus(data.status) ? now : undefined),
-          confirmedAt: confirmedAtForStatus(data.status, booking.confirmed_at, now),
+            booking.acceptedAt ?? (isAcceptedBookingStatus(data.status) ? now : undefined),
+          confirmedAt: confirmedAtForStatus(data.status, booking.confirmedAt, now),
           updatedAt: now,
         }
         if (data.suppressNotifications === true) {

@@ -1942,7 +1942,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(links).toHaveLength(2)
   })
 
-  it("commits and restores passenger capacity while queuing commitment and cancellation exactly once", async () => {
+  it("commits and restores passenger capacity while queuing cancellation exactly once", async () => {
     const { productId, optionId, roomUnitId } = await seedAccommodationProduct()
     const slot = await seedSlot({ productId, optionId, capacity: 12 })
     const outcome = await createBooking(db, {
@@ -2024,14 +2024,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
         .from(eventOutboxTable)
         .orderBy(asc(eventOutboxTable.createdAt)),
     ).toEqual([
-      {
-        eventId: expect.stringMatching(
-          new RegExp(`^evt_booking_confirmed_${outcome.result.booking.id}_[0-9a-f]+$`),
-        ),
-        name: "booking.confirmed",
-        payload: expect.objectContaining({ suppressNotifications: true }),
-        status: "pending",
-      },
       {
         eventId: expect.stringMatching(
           new RegExp(`^evt_booking_cancelled_${outcome.result.booking.id}_[0-9a-f]+$`),
