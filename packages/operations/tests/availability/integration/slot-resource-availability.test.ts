@@ -66,17 +66,22 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
 
   async function seedBookingWithTraveler(input: {
     travelerId: string
-    status?: "draft" | "on_hold" | "awaiting_payment" | "confirmed" | "in_progress" | "completed"
+    status?: "confirmed" | "in_progress" | "completed" | "cancelled"
     allocations?: Record<string, string>
   }) {
     const bookingId = newId("bookings")
+    const bookingItemId = newId("booking_items")
     await db.execute(sql`
       INSERT INTO bookings (id, booking_number, status, sell_currency)
       VALUES (${bookingId}, ${`B${bookingId.slice(-6)}`}, ${input.status ?? "confirmed"}, 'USD')
     `)
     await db.execute(sql`
-      INSERT INTO booking_allocations (id, booking_id, availability_slot_id, quantity, allocation_type, status)
-      VALUES (${newId("booking_allocations")}, ${bookingId}, ${slotId}, 1, 'unit', 'confirmed')
+      INSERT INTO booking_items (id, booking_id, title, status, quantity, sell_currency, product_id, availability_slot_id)
+      VALUES (${bookingItemId}, ${bookingId}, 'Slot seat', 'confirmed', 1, 'USD', ${productId}, ${slotId})
+    `)
+    await db.execute(sql`
+      INSERT INTO booking_allocations (id, booking_id, booking_item_id, product_id, availability_slot_id, quantity, allocation_type, status)
+      VALUES (${newId("booking_allocations")}, ${bookingId}, ${bookingItemId}, ${productId}, ${slotId}, 1, 'unit', 'confirmed')
     `)
     await db.execute(sql`
       INSERT INTO booking_travelers (id, booking_id, participant_type, first_name, last_name)
@@ -110,12 +115,15 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(sgl?.available).toBe(1)
   })
 
-  it("treats awaiting_payment bookings as active slot demand", async () => {
+  // The v1 commitment lifecycle (#4100) contracted `booking_status` to
+  // confirmed/in_progress/completed/cancelled — pre-commitment holds are
+  // booking sessions now, so `in_progress` is the mid-trip live booking.
+  it("treats in_progress bookings as active slot demand", async () => {
     const dblId = await seedResource({ kind: "room", capacity: 1, label: "DBL 1", sortOrder: 1 })
     const travelerId = newId("booking_travelers")
     await seedBookingWithTraveler({
       travelerId,
-      status: "awaiting_payment",
+      status: "in_progress",
       allocations: { room: dblId },
     })
 
@@ -123,7 +131,7 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(resources.find((row) => row.id === dblId)?.assigned).toBe(1)
 
     const manifest = await getSlotAllocationManifest(db, slotId)
-    expect(manifest?.summary.bookingsByStatus.awaiting_payment).toBe(1)
+    expect(manifest?.summary.bookingsByStatus.in_progress).toBe(1)
     expect(manifest?.summary.travelerCount).toBe(1)
     expect(manifest?.bookings[0]?.travelers[0]?.id).toBe(travelerId)
 
@@ -133,11 +141,11 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(violations[0]?.existingAssigned).toBe(1)
   })
 
-  it("excludes draft bookings from slot allocation demand", async () => {
+  it("excludes cancelled bookings from slot allocation demand", async () => {
     const dblId = await seedResource({ kind: "room", capacity: 1, label: "DBL 1", sortOrder: 1 })
     await seedBookingWithTraveler({
       travelerId: newId("booking_travelers"),
-      status: "draft",
+      status: "cancelled",
       allocations: { room: dblId },
     })
 
@@ -145,7 +153,7 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(resources.find((row) => row.id === dblId)?.assigned).toBe(0)
 
     const manifest = await getSlotAllocationManifest(db, slotId)
-    expect(manifest?.summary.bookingsByStatus.draft).toBeUndefined()
+    expect(manifest?.summary.bookingsByStatus.cancelled).toBeUndefined()
     expect(manifest?.summary.travelerCount).toBe(0)
     expect(manifest?.bookings).toHaveLength(0)
 
