@@ -86,6 +86,38 @@ function writeMinimumFixture(root, overrides = {}) {
   write(root, "packages/bookings/src/schema-operations.ts", overrides.bookingSchema ?? "bookings")
   write(
     root,
+    "packages/bookings/src/schema-shared.ts",
+    overrides.bookingSharedSchema ??
+      'bookingStatusEnum ["confirmed", "in_progress", "completed", "cancelled"] supplierConfirmationStatusEnum bookingItemStatusEnum ["confirmed", "cancelled", "fulfilled"] bookingAllocationTypeEnum',
+  )
+  write(root, "packages/bookings/src/schema-items.ts", overrides.bookingItemsSchema ?? "status")
+  write(root, "packages/bookings/src/schema-core.ts", overrides.bookingCoreSchema ?? "acceptedAt")
+  write(
+    root,
+    "packages/finance/src/service-booking-create.ts",
+    overrides.bookingCreateContract ?? 'status: "confirmed"',
+  )
+  write(root, "packages/bookings/src/routes-admin.ts", overrides.bookingAdminRoutes ?? "cancel")
+  const bookingOpenApi = JSON.stringify({
+    paths: {},
+    components: {
+      schemas: {
+        BookingStatus: { enum: ["confirmed", "in_progress", "completed", "cancelled"] },
+      },
+    },
+  })
+  write(
+    root,
+    "packages/bookings/openapi/admin/bookings.json",
+    overrides.bookingsAdminOpenApi ?? bookingOpenApi,
+  )
+  write(
+    root,
+    "packages/bookings/openapi/storefront/bookings.json",
+    overrides.bookingsStorefrontOpenApi ?? bookingOpenApi,
+  )
+  write(
+    root,
     "packages/catalog/src/booking-engine/operator-routes.ts",
     overrides.catalogRoutes ?? '"/v1/public/catalog/booking-sessions"',
   )
@@ -110,6 +142,20 @@ function writeMinimumFixture(root, overrides = {}) {
         "genuine_commitment",
         "resumable_staff_attempt",
         'DROP TABLE "booking_drafts"',
+      ].join("\n"),
+  )
+  write(
+    root,
+    "packages/bookings/migrations/20260802200000_booking_v1_status_cutover.sql",
+    overrides.betaBookingStatusCutover ??
+      [
+        "ambiguous supplier effect",
+        "unresolved external payment effect",
+        "booking_v1_legacy_allocations_to_release",
+        "genuine_commitment",
+        "abandoned_attempt",
+        'DROP TABLE IF EXISTS "booking_session_states"',
+        "CREATE TYPE \"booking_status\" AS ENUM ('confirmed', 'in_progress', 'completed', 'cancelled')",
       ].join("\n"),
   )
   write(
@@ -177,4 +223,18 @@ test("rejects retired beta routes in published Booking OpenAPI", (t) => {
   const output = failure(root)
   assert.match(output, /missing.*booking-sessions/)
   assert.match(output, /forbidden.*catalog\/drafts/)
+})
+
+test("rejects beta Booking lifecycle state in published Booking OpenAPI", (t) => {
+  const root = fixture(t)
+  writeMinimumFixture(root, {
+    bookingsAdminOpenApi: JSON.stringify({
+      paths: { "/v1/admin/bookings/{id}/confirm": {} },
+      components: { schemas: { BookingStatus: { enum: ["on_hold", "confirmed"] } } },
+    }),
+  })
+
+  const output = failure(root)
+  assert.match(output, /forbidden.*on_hold/)
+  assert.match(output, /forbidden.*confirm/)
 })

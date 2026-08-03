@@ -723,14 +723,13 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       slotId: slot.id,
       availabilityHoldToken: holdToken,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "on_hold",
       pax: 2,
       ...bookingParty(),
     })
 
     expect(outcome.status).toBe("ok")
     if (outcome.status !== "ok") return
-    expect(outcome.result.booking.status).toBe("on_hold")
+    expect(outcome.result.booking.status).toBe("confirmed")
 
     const [slotAfter] = await db
       .select({ remainingPax: availabilitySlots.remainingPax })
@@ -751,7 +750,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(allocations[0]).toMatchObject({
       availabilitySlotId: slot.id,
       quantity: 2,
-      status: "held",
+      status: "confirmed",
       metadata: {
         availabilityHoldId: hold.id,
         availabilityHoldToken: holdToken,
@@ -814,7 +813,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       slotId: slot.id,
       availabilityHoldToken: holdToken,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "on_hold",
       pax: 2,
       ...bookingParty(),
     })
@@ -911,7 +909,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
 
     expect(outcome.status).toBe("ok")
     if (outcome.status !== "ok") return
-    expect(outcome.result.booking.status).toBe("draft")
+    expect(outcome.result.booking.status).toBe("confirmed")
     expect(outcome.result.travelers).toHaveLength(2)
     expect(outcome.result.travelers[0]?.firstName).toBe("Alice")
     expect(outcome.result.paymentSchedules).toHaveLength(2)
@@ -1277,7 +1275,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "confirmed",
       ...bookingParty(),
       paymentSchedules: [
         {
@@ -1329,7 +1326,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "confirmed",
       ...bookingParty(),
       paymentSchedules: [
         {
@@ -1448,7 +1444,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "confirmed",
       ...bookingParty(),
     })
     expect(outcome.status).toBe("ok")
@@ -1522,7 +1517,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "confirmed",
       ...bookingParty(),
     })
     expect(outcome.status).toBe("ok")
@@ -1948,7 +1942,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(links).toHaveLength(2)
   })
 
-  it("holds and restores passenger capacity while queuing confirm and cancel exactly once", async () => {
+  it("commits and restores passenger capacity while queuing commitment and cancellation exactly once", async () => {
     const { productId, optionId, roomUnitId } = await seedAccommodationProduct()
     const slot = await seedSlot({ productId, optionId, capacity: 12 })
     const outcome = await createBooking(db, {
@@ -1956,7 +1950,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       optionId,
       slotId: slot.id,
       bookingNumber: nextBookingNumber(),
-      initialStatus: "on_hold",
       pax: 2,
       ...bookingParty(),
       travelers: [
@@ -2000,17 +1993,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       emit: directEmit,
       subscribe: vi.fn(() => ({ unsubscribe() {} })),
     } as never
-
-    const confirmed = await bookingsService.confirmBooking(
-      db,
-      outcome.result.booking.id,
-      { note: "QA confirmation", suppressNotifications: true },
-      "user_qa",
-      { eventBus },
-    )
-    expect(confirmed.status).toBe("ok")
-    expect(await remaining()).toBe(10)
-    expect(directEmit).not.toHaveBeenCalled()
 
     const cancelled = await bookingsService.cancelBooking(
       db,
@@ -4359,11 +4341,9 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
   })
 
   it.each([
-    ["on_hold", "closed", 12],
-    ["confirmed", "closed", 12],
-    ["on_hold", "cancelled", 10],
-    ["confirmed", "cancelled", 10],
-  ] as const)("cancels a %s allocation on a %s departure safely", async (initialStatus, slotStatus, expectedRemainingPax) => {
+    ["closed", 12],
+    ["cancelled", 10],
+  ] as const)("cancels an allocation on a %s departure safely", async (slotStatus, expectedRemainingPax) => {
     const { productId, optionId, roomUnitId } = await seedAccommodationProduct()
     const slot = await seedSlot({ productId, optionId, capacity: 12 })
     const outcome = await createBooking(db, {
@@ -4371,7 +4351,6 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       optionId,
       slotId: slot.id,
       bookingNumber: nextBookingNumber(),
-      initialStatus,
       pax: 2,
       ...bookingParty(),
       itemLines: [{ optionUnitId: roomUnitId, quantity: 1 }],
