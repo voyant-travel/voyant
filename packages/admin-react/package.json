@@ -34,14 +34,14 @@
     "@voyant-travel/admin-contracts": "workspace:^"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "@testing-library/react": "^16.0.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "jsdom": "^29.1.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

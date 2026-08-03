@@ -42,7 +42,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "liquidjs": "^10.27.1"
+    "liquidjs": "^10.27.2"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
