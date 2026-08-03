@@ -125,7 +125,13 @@ for (const [source, required] of [
       "createOperatorCatalogBookingSnapshotRuntime",
     ],
   ],
-  [movedRuntimeFactories[3], ["createVoyantConnectSources", "createOwnedBookingHandlersRegistry"]],
+  // The booking engine resolves its inventory channel from the sources port
+  // rather than constructing Voyant Connect itself; the channel package owns
+  // that construction now. Still package-owned, which is what this asserts.
+  [
+    movedRuntimeFactories[3],
+    ["sources?.registerFallback", "createOwnedBookingHandlersRegistry"],
+  ],
   [
     movedRuntimeFactories[4],
     [

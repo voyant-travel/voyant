@@ -1,4 +1,4 @@
-import { catalogSourcesRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
+import { catalogSourcesRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { defineAdapter, providePort } from "@voyant-travel/graph-contracts"
 
 /**
@@ -15,7 +15,14 @@ export const voyantConnectAdapter = defineAdapter({
   provides: {
     ports: [providePort(catalogSourcesRuntimeExtensionPort)],
   },
-  meta: { ownership: "package" },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "This adapter binds an inventory channel behind the catalog sources port; agents act on catalog and booking Tools, never on the channel directly.",
+    },
+  },
 })
 
 export default voyantConnectAdapter
