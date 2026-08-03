@@ -26,9 +26,7 @@ describe("Booking v1 beta draft cutover migration", () => {
   it("restores owned capacity before releasing holds", () => {
     const restoreCapacity = migration.indexOf('UPDATE "availability_slots" slot')
     const releaseHolds = migration.indexOf('UPDATE "availability_holds" hold')
-    const releaseScratchTable = migration.indexOf(
-      'DROP TABLE "booking_v1_legacy_holds_to_release"',
-    )
+    const releaseScratchTable = migration.indexOf('DROP TABLE "booking_v1_legacy_holds_to_release"')
     const classifySessions = migration.indexOf('INSERT INTO "booking_sessions"')
 
     expect(restoreCapacity).toBeGreaterThan(-1)
