@@ -48,7 +48,6 @@
     "./booking-engine/supplier-operations": "./src/booking-engine/supplier-operations.ts",
     "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts",
     "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
-    "./booking-engine/drafts-schema": "./src/booking-engine/drafts-schema.ts",
     "./booking-snapshot-subscriber": "./src/booking-snapshot-subscriber-runtime.ts",
     "./offers": "./src/offers/operator-routes.ts",
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
@@ -59,7 +58,6 @@
     "./subscriber-runtime-ports": "./src/subscriber-runtime-ports.ts",
     "./booking-engine/operator-routes": "./src/booking-engine/operator-routes.ts",
     "./runtime-port": "./src/content-runtime-port.ts",
-    "./draft-reaper-job": "./src/draft-reaper-job.ts",
     "./booking-session-maintenance-job": "./src/booking-session-maintenance-job.ts",
     "./reindex-job": "./src/reindex-job.ts",
     "./sources-sync-job": "./src/sources-sync-job.ts",
@@ -103,6 +101,7 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "generate:openapi": "tsx scripts/generate-booking-openapi.ts",
     "prepack": "pnpm run build",
     "db:generate": "drizzle-kit generate --config=drizzle.migrations.config.ts --name=catalog_baseline && node ../../scripts/migrations/guard-create-type.mjs ./migrations && node ../../scripts/migrations/ensure-extensions.mjs ./migrations"
   },
@@ -389,11 +388,6 @@
         "types": "./dist/content-runtime-port.d.ts",
         "import": "./dist/content-runtime-port.js",
         "default": "./dist/content-runtime-port.js"
-      },
-      "./draft-reaper-job": {
-        "types": "./dist/draft-reaper-job.d.ts",
-        "import": "./dist/draft-reaper-job.js",
-        "default": "./dist/draft-reaper-job.js"
       },
       "./booking-session-maintenance-job": {
         "types": "./dist/booking-session-maintenance-job.d.ts",
