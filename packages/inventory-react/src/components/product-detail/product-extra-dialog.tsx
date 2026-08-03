@@ -178,6 +178,16 @@ export function ProductExtraDialog({
           <SheetDescription>{extraMessages.dialogDescription}</SheetDescription>
         </SheetHeader>
         <SheetBody className="grid gap-4">
+          {/* Product Plan / Options is the only authoring entry point for an
+              Extra, so the rule about what may *not* be an Extra belongs here,
+              where the operator is about to create one. */}
+          <div className="rounded-md border bg-muted/40 p-3 text-sm">
+            <div className="font-medium">{extraMessages.ownershipGuidanceTitle}</div>
+            <p className="mt-1 text-muted-foreground text-xs">{extraMessages.ownershipGuidance}</p>
+            <p className="mt-2 text-muted-foreground text-xs">
+              {extraMessages.ownershipGuidanceEscalation}
+            </p>
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
             <Field label={extraMessages.nameLabel}>
               <Input
