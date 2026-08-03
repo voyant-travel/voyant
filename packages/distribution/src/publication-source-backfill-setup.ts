@@ -56,12 +56,12 @@ BEGIN
     "metadata"
   )
   SELECT
-    'chsc_backfill_' || encode(
-      sha256(
-        (channel."id" || E'\\u0000' || source."source_kind" || E'\\u0000' ||
-          coalesce(source."source_connection_id", ''))::bytea
-      ),
-      'hex'
+    -- Deterministic surrogate so a re-run is idempotent. chr(31) is the unit
+    -- separator: it cannot occur in a source kind or connection id, and unlike
+    -- NUL it is a legal character in a PostgreSQL text value.
+    'chsc_backfill_' || md5(
+      channel."id" || chr(31) || source."source_kind" || chr(31) ||
+        coalesce(source."source_connection_id", '')
     ),
     channel."id",
     source."source_kind",

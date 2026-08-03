@@ -40,6 +40,15 @@ describe("publication source backfill setup migration", () => {
     expect(publicationSourceBackfillSetupSql).toContain("ON CONFLICT DO NOTHING")
   })
 
+  it("uses only escape sequences PostgreSQL accepts in a text value", () => {
+    // A NUL separator (`\u0000`) parses in TypeScript but PostgreSQL rejects it
+    // with "invalid Unicode escape value", which failed the whole setup
+    // migration at deploy time. chr(31) needs no escape syntax at all.
+    expect(publicationSourceBackfillSetupSql).not.toMatch(/\\u0000/)
+    expect(publicationSourceBackfillSetupSql).not.toMatch(/E'/)
+    expect(publicationSourceBackfillSetupSql).toContain("chr(31)")
+  })
+
   it("executes through the migration runner client", async () => {
     const query = vi.fn(async () => ({ rows: [] }))
 
