@@ -102,9 +102,18 @@ origin queries converts a slow query into an outage, which is what it was
 deployed to prevent.
 
 Coalescing requires one addition to the shared KV contract: a conditional
-`putIfAbsent`. Redis (`SET NX`), Postgres (`INSERT … ON CONFLICT DO NOTHING`),
-and the in-memory store all implement it honestly, so it does not violate the
-existing rule against promising Redis semantics through a KV adapter.
+`putIfAbsent`. Redis (`SET NX`), Postgres (an `INSERT … ON CONFLICT` whose
+update branch is filtered on the committed expiry), and the in-memory store all
+implement it honestly, so it does not violate the existing rule against
+promising Redis semantics through a KV adapter. Every implementation must treat
+an entry that exists but has expired as absent — a plain `DO NOTHING` cannot,
+and would leave a lapsed slot permanently unelectable.
+
+An elected refresher may hold the request it was elected on. What the contract
+requires is that no *other* arrival waits: losers are told they lost and serve
+what they already have. Moving the refresh off the requesting handler entirely
+is desirable but not always available — a middleware cannot always observe the
+response of work it schedules after returning.
 
 ### 6. Time-based expiry is a fallback, not an invalidation strategy
 
@@ -120,6 +129,13 @@ staleness rather than a guarantee of freshness.
 small single-instance deployment. It is not a posture for serving a public
 storefront under load, because the tier meant to shield the database is the
 database.
+
+Whatever the posture, it has to be one the deployment can observe. The Postgres
+store's TTL'd writes threw on every call for as long as it has existed — the
+expiry was bound as a `Date`, which the postgres.js adapter cannot serialize —
+and the response cache's best-effort write catch swallowed it, so the tier
+reported nothing while storing nothing. A cache whose failures are invisible is
+indistinguishable from one that is merely cold.
 
 A deployment that mounts public routes declares how it serves them — a
 non-database T2 (Redis or platform KV), or a declared T1 in front of the origin.
