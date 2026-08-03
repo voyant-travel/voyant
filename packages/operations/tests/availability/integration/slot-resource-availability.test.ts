@@ -271,17 +271,17 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
       VALUES (${bookingId}, 'BK-UNIT-EDIT', 'confirmed', 'USD')
     `)
     await db.execute(sql`
-      INSERT INTO booking_items (id, booking_id, title, sell_currency, quantity, option_id, option_unit_id)
+      INSERT INTO booking_items (id, booking_id, title, status, sell_currency, quantity, option_id, option_unit_id)
       VALUES
-        (${oldItemId}, ${bookingId}, 'Old DBL', 'USD', 2, ${optionId}, ${dblUnitId}),
-        (${newItemId}, ${bookingId}, 'New TWN', 'USD', 2, ${optionId}, ${twnUnitId})
+        (${oldItemId}, ${bookingId}, 'Old DBL', 'confirmed', 'USD', 2, ${optionId}, ${dblUnitId}),
+        (${newItemId}, ${bookingId}, 'New TWN', 'confirmed', 'USD', 2, ${optionId}, ${twnUnitId})
     `)
     await db.execute(sql`
       INSERT INTO booking_allocations
         (id, booking_id, booking_item_id, product_id, option_id, option_unit_id, availability_slot_id, quantity, allocation_type, status, created_at, updated_at)
       VALUES
-        (${newId("booking_allocations")}, ${bookingId}, ${oldItemId}, ${productId}, ${optionId}, ${dblUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${new Date("2026-01-01T00:00:00Z")}, ${new Date("2026-01-01T00:00:00Z")}),
-        (${newId("booking_allocations")}, ${bookingId}, ${newItemId}, ${productId}, ${optionId}, ${twnUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${new Date("2026-01-02T00:00:00Z")}, ${new Date("2026-01-02T00:00:00Z")})
+        (${newId("booking_allocations")}, ${bookingId}, ${oldItemId}, ${productId}, ${optionId}, ${dblUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${"2026-01-01T00:00:00Z"}::timestamptz, ${"2026-01-01T00:00:00Z"}::timestamptz),
+        (${newId("booking_allocations")}, ${bookingId}, ${newItemId}, ${productId}, ${optionId}, ${twnUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${"2026-01-02T00:00:00Z"}::timestamptz, ${"2026-01-02T00:00:00Z"}::timestamptz)
     `)
     await db.execute(sql`
       INSERT INTO booking_travelers (id, booking_id, participant_type, first_name, last_name)
