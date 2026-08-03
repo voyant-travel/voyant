@@ -71,12 +71,14 @@ END $$;
 -- runner wraps this entire file and its ledger write in one PostgreSQL
 -- transaction, so capacity restoration, classification, and table removal are
 -- atomic. The temporary table also makes the release set stable while slots are
--- updated before holds, matching the runtime lock order.
+-- updated before holds, matching the runtime lock order. Its lifetime is
+-- explicit so statement-level migration replay cannot drop it at an implicit
+-- commit between the capture and release statements.
 CREATE TEMP TABLE "booking_v1_legacy_holds_to_release" (
   "id" text PRIMARY KEY,
   "slot_id" text NOT NULL,
   "pax_count" integer NOT NULL
-) ON COMMIT DROP;
+);
 --> statement-breakpoint
 DO $$
 BEGIN
@@ -125,6 +127,9 @@ BEGIN
   FROM "booking_v1_legacy_holds_to_release" released
   WHERE hold."id" = released."id";
 END $$;
+--> statement-breakpoint
+
+DROP TABLE "booking_v1_legacy_holds_to_release";
 --> statement-breakpoint
 
 -- Resumable means an unconsumed, unexpired draft owned by an operator member.
