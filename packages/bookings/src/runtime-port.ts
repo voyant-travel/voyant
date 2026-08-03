@@ -2,6 +2,14 @@ import type {
   BookingAmendmentFinancialConsequences,
   BookingAmendmentPrice,
 } from "@voyant-travel/bookings-contracts"
+import type {
+  BookingActionListQuery,
+  BookingActionRecord,
+  BookingActionSourceSnapshot,
+  BookingActionSyncMode,
+  BookingActionSyncSummary,
+  PublicBookingActionRecord,
+} from "@voyant-travel/bookings-contracts/booking-actions"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -115,6 +123,63 @@ export interface BookingsRelationshipsRuntime {
   getOrganizationById(db: PostgresJsDatabase, organizationId: string): Promise<unknown | null>
 }
 
+/**
+ * A module-owned reader of current authoritative obligations.
+ *
+ * Implementations must reread source tables and return their current state;
+ * event payloads are only wake-up signals and must never be projected as
+ * authority. The `sourceModule/sourceType/sourceId` tuple must be stable.
+ */
+export interface BookingActionSourceRuntime {
+  id: string
+  sourceModule: string
+  read(
+    db: PostgresJsDatabase,
+    options: { changedAfter?: Date },
+  ): Promise<ReadonlyArray<BookingActionSourceSnapshot>>
+}
+
+export interface BookingActionProjectionService {
+  synchronize(
+    sources: ReadonlyArray<BookingActionSourceRuntime>,
+    mode: BookingActionSyncMode,
+  ): Promise<BookingActionSyncSummary>
+  listStaff(query: BookingActionListQuery): Promise<{
+    data: BookingActionRecord[]
+    count: number
+    limit: number
+    offset: number
+    asOf: string
+  }>
+  listCustomer(bookingId: string): Promise<{
+    data: PublicBookingActionRecord[]
+    asOf: string
+  }>
+  getDeadlineBySource(input: {
+    sourceModule: string
+    sourceType: string
+    sourceId: string
+  }): Promise<{
+    dueAt: string
+    timeZone: string
+    deadlineSemantics: "instant" | "local_date_end"
+  } | null>
+  getDeadlinesBySource(input: {
+    sourceModule: string
+    sourceType: string
+    sourceIds: ReadonlyArray<string>
+  }): Promise<ReadonlyMap<string, string>>
+}
+
+/** Operations-owned read/projection boundary consumed by API and reminder modules. */
+export interface BookingActionProjectionRuntime {
+  create(db: PostgresJsDatabase): BookingActionProjectionService
+  synchronize(
+    sources: ReadonlyArray<BookingActionSourceRuntime>,
+    mode: BookingActionSyncMode,
+  ): Promise<BookingActionSyncSummary>
+}
+
 function objectPort<T extends object>(id: string, methods: readonly string[] = []) {
   return definePort<T>({
     id,
@@ -142,85 +207,6 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
 export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsApiModuleOptions>(
   "bookings.requirements.runtime",
 )
-/**
- * Durable creation of one booking from a public draft and quote.
- *
- * Bookings owns the `/v1/public/bookings` resource, but Finance owns the
- * durable create command that composes a booking together with its payment
- * schedules, tax lines, and documents — and Finance depends on Bookings, not
- * the reverse. So the route lives here and the command arrives through this
- * port, the same way `bookings.finance.runtime` already inverts that edge.
- *
- * Consumed optionally: a deployment without a provider serves no public
- * creation route, which is the fail-closed posture the selected graph's
- * create action already declares.
- */
-export interface BookingsSelfServiceCreateRuntime {
-  createFromDraft(input: {
-    db: PostgresJsDatabase
-    draftId: string
-    quoteId: string
-    /** Proven identity: an account, or a contact a challenge verified. */
-    caller: { personId?: string; verifiedEmail?: string; verifiedPhone?: string }
-    /** Server-derived storefront/channel binding for immutable booking provenance. */
-    storefront: { storefrontId: string; channelId: string }
-    /** Stable request key; the durable command claims against it. */
-    idempotencyKey: string
-    /** Proves the caller holds the draft they are booking. */
-    draftCapabilityToken?: string
-    /**
-     * The challenge that authorized a guest create. Absent for an
-     * authenticated customer, who is identified by their account instead — the
-     * provider derives the ledger principal from whichever is present, so this
-     * must never be accepted from an already-authenticated caller.
-     */
-    guestChallengeId?: string
-    /** The authenticated customer's user id, for ledger attribution. */
-    userId?: string
-    /**
-     * Runs inside the create transaction, so anything spent here commits or
-     * rolls back with the booking.
-     */
-    consumeSources?(tx: PostgresJsDatabase, bookingId: string): Promise<void>
-  }): Promise<BookingsSelfServiceCreateResult>
-}
-
-export type BookingsSelfServiceCreateResult =
-  | {
-      status: "ok"
-      bookingId: string
-      bookingNumber: string
-      /** The booking's real persisted status; null when it could not be read. */
-      bookingStatus?: string | null
-    }
-  | { status: "rejected"; reason: string }
-
-/**
- * Reads and spends the storefront verification challenge that authorizes a
- * guest booking create.
- *
- * Bookings owns the public create route but not the challenge; Storefront owns
- * the challenge but depends on Bookings, so it arrives through this port.
- * Consumed optionally: without it only authenticated customers can create.
- */
-export interface BookingsGuestVerificationRuntime {
-  /** The destination a challenge was verified for, read before the command. */
-  peekVerifiedDestination(
-    db: PostgresJsDatabase,
-    input: { challengeId: string; subjectRef: string },
-  ): Promise<{ channel: "email" | "sms"; destination: string } | null>
-  /** Spend it inside the create transaction, single-use. */
-  consume(
-    tx: PostgresJsDatabase,
-    input: {
-      challengeId: string
-      subjectRef: string
-      /** The destination the peek established; re-checked when spending. */
-      destination: string
-      consumedRef: string
-    },
-  ): Promise<{ status: "consumed"; destination: string } | { status: "rejected" }>
-}
 
 export const bookingsAccommodationRuntimePort = objectPort<BookingsAccommodationRuntime>(
   "bookings.accommodation.runtime",
@@ -242,11 +228,11 @@ export const bookingsRelationshipsRuntimePort = objectPort<BookingsRelationships
   "bookings.relationships.runtime",
   ["loadPersonTravelSnapshot", "upsertPersonFromContact", "getPersonById", "getOrganizationById"],
 )
-export const bookingsSelfServiceCreateRuntimePort = objectPort<BookingsSelfServiceCreateRuntime>(
-  "bookings.self-service-create.runtime",
-  ["createFromDraft"],
+export const bookingActionSourceRuntimePort = objectPort<BookingActionSourceRuntime>(
+  "bookings.booking-action-source.runtime",
+  ["read"],
 )
-export const bookingsGuestVerificationRuntimePort = objectPort<BookingsGuestVerificationRuntime>(
-  "bookings.guest-verification.runtime",
-  ["peekVerifiedDestination", "consume"],
+export const bookingActionProjectionRuntimePort = objectPort<BookingActionProjectionRuntime>(
+  "bookings.booking-action-projection.runtime",
+  ["create", "synchronize"],
 )
