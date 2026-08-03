@@ -1,5 +1,134 @@
 # @voyant-travel/framework
 
+## 0.74.0
+
+### Minor Changes
+
+- e4833a1: Make the response-cache posture of a deployment declarable, and report it.
+
+  A route that declares `Cache-Control: public, s-maxage=900` is addressing every
+  shared cache at once, but nothing told its author which of them the deployment
+  actually has. The standard self-hosted profile selects `cache: "postgres"`, so
+  the tier meant to shield the database _is_ the database, with only a per-process
+  in-memory cache in front of it whose entries are capped at 60 seconds. Managed
+  deployments select Redis and put the Voyant Cloud dispatcher at the edge. The
+  two products cached public responses very differently and neither said so.
+
+  `deployment.responseCache` is where a deployment now states how it serves shared
+  public responses:
+
+      responseCache: { edge: "declared" | "none" }
+
+  `"declared"` means an HTTP cache in front of the origin honours the route's
+  `Cache-Control` — a CDN, a reverse proxy, or the dispatcher. `"none"` means the
+  origin is the only shared cache. The field is optional and absent reads as
+  `"none"`, never as a tier that might be there.
+
+  It is deliberately not a provider role. Nothing is bound or constructed from it,
+  so it has no entry in `VoyantDeploymentProviders` or
+  `DEPLOYMENT_PROVIDER_CONTRACTS`. It records the one thing the provider
+  selections cannot express — whether anything sits in front of the origin — and
+  it travels with the deployment through `defineProject`, the resolved graph, and
+  the generated Node artifact.
+
+  The Node runtime reports three postures once at startup, on the console channel
+  the generated entrypoint already uses for boot messages:
+
+  - public routes mounted over `cache: "postgres"` with no declared edge tier,
+    naming both remedies: a response cache that is not the database, or an edge
+    tier the deployment declares;
+  - `rateLimit: "memory"`, which keeps counters per process — the runtime cannot
+    observe the instance count, so it states the condition rather than guessing
+    the multiplier;
+  - `sharedState: "memory"`, which is not shared across processes despite the name.
+
+  None of these fail the boot. Every posture is supported; what was not supported
+  was the deployment being unable to tell.
+
+  `@voyant-travel/operator-standard` declares `{ edge: "none" }`, which is what it
+  already was. Its `cache` provider is unchanged — the point is to make the choice
+  visible, not to change it. The guardrail in
+  `scripts/check-public-cache-policy.mjs` now asserts that the standard profile
+  declares a posture rather than pinning the `cache: "postgres"` literal that kept
+  the pattern in place.
+
+  See ADR 0021 section 7 and `docs/architecture/caching-architecture.md` rule 12,
+  which documents the two postures a self-hosted deployment can declare to reach
+  managed response-caching behaviour without adopting a Voyant-specific component.
+
+### Patch Changes
+
+- Updated dependencies [c35841b]
+- Updated dependencies [e4833a1]
+  - @voyant-travel/hono@0.140.0
+  - @voyant-travel/operator-standard@0.20.0
+  - @voyant-travel/action-ledger@0.115.11
+  - @voyant-travel/cruises@0.235.4
+  - @voyant-travel/plugin-voyant-connect@0.9.0
+  - @voyant-travel/core@0.137.2
+
+## 0.73.1
+
+### Patch Changes
+
+- @voyant-travel/operator-standard@0.19.15
+- @voyant-travel/cruises@0.235.3
+- @voyant-travel/plugin-voyant-connect@0.8.0
+
+## 0.73.0
+
+### Patch Changes
+
+- 2bc1570: Add an optional conditional-write `putIfAbsent` to the shared KV contract.
+
+  Coalescing concurrent misses onto one origin computation needs a way to elect a
+  single revalidator across processes: exactly one caller gets `true` and performs
+  the origin work, every other caller gets `false` and serves what it already has.
+  `KVStore` gains `putIfAbsent(key, value, options?)` for that, and it never
+  blocks — a loser is told it lost rather than made to wait.
+
+  The member is optional because it is only worth having when the backend decides
+  it atomically. Each store that implements it does so in one round trip:
+
+  - `createMemoryKvNamespace` reads and writes without awaiting in between, which
+    a single-threaded isolate cannot interleave.
+  - `createRedisKvStore` issues `SET key value NX [EX ttl]` and reports the write
+    only on the `OK` reply, never on a nil one.
+  - `createPostgresKvStore` issues one `INSERT … ON CONFLICT (key) DO UPDATE …
+WHERE kv_store.expires_at IS NOT NULL AND kv_store.expires_at <= now()
+RETURNING`, so the conflicting caller re-reads the committed expiry under the
+    row lock and `RETURNING` yields a row only to the caller that wrote.
+
+  All three treat an entry that exists but has expired as absent, matching how
+  `get` already treats it, so a lapsed slot can be won again rather than
+  deadlocking behind a holder that is gone.
+
+  `createTieredKvStore` exposes `putIfAbsent` only when its L2 does, and delegates
+  the decision there. L1 is per-process and would hand every process its own
+  winner, so it cannot arbitrate; it only mirrors the winner's value, still capped
+  by `l2PromotionTtlSeconds`. A tier over an L2 that cannot elect omits the member
+  entirely, degrading callers to no coalescing rather than to a false election.
+
+  The node-redis TCP adapter in `@voyant-travel/framework` now forwards `nx` as
+  the SET `NX` condition. It previously dropped unrecognised options, which would
+  have turned a conditional write into an unconditional one that always reported
+  success — every caller a winner, which is the failure this contract exists to
+  prevent.
+
+  See ADR 0021 §5.
+
+- Updated dependencies [2bc1570]
+- Updated dependencies [2bc1570]
+- Updated dependencies [14033fb]
+  - @voyant-travel/utils@0.111.0
+  - @voyant-travel/db@0.120.0
+  - @voyant-travel/hono@0.139.0
+  - @voyant-travel/operator-standard@0.19.14
+  - @voyant-travel/runtime-core@0.6.8
+  - @voyant-travel/action-ledger@0.115.10
+  - @voyant-travel/cruises@0.235.2
+  - @voyant-travel/types@0.109.12
+
 ## 0.72.0
 
 ### Minor Changes

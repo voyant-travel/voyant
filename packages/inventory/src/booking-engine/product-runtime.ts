@@ -433,6 +433,26 @@ export function registerProductBookingHandler(
           return undefined
         }
       },
+      async loadOptionUnits(ctx, args) {
+        const db = asPostgresDb(ctx.db)
+        return db
+          .select({
+            id: optionUnits.id,
+            unitType: optionUnits.unitType,
+            minAge: optionUnits.minAge,
+            maxAge: optionUnits.maxAge,
+          })
+          .from(optionUnits)
+          .innerJoin(productOptions, eq(optionUnits.optionId, productOptions.id))
+          .where(
+            and(
+              eq(optionUnits.optionId, args.optionId),
+              eq(productOptions.productId, args.productId),
+              eq(optionUnits.isHidden, false),
+            ),
+          )
+          .orderBy(asc(optionUnits.sortOrder), asc(optionUnits.createdAt))
+      },
       async loadSlotDate(ctx, slotId) {
         const db = asPostgresDb(ctx.db)
         const [slot] = await db
@@ -498,6 +518,7 @@ export function registerProductBookingHandler(
               unitType: optionUnits.unitType,
               minAge: optionUnits.minAge,
               maxAge: optionUnits.maxAge,
+              sortOrder: optionUnits.sortOrder,
             })
             .from(optionUnits)
             .where(and(eq(optionUnits.optionId, args.optionId), eq(optionUnits.isHidden, false))),
@@ -538,6 +559,7 @@ export function registerProductBookingHandler(
                 travelerCategory: band as "adult" | "child" | "infant" | "senior",
                 pricingMode: up.pricingMode,
                 sellAmountCents: up.sellAmountCents,
+                sortOrder: unit.sortOrder,
               },
             ]
           }
@@ -548,6 +570,7 @@ export function registerProductBookingHandler(
               travelerCategory: deriveTravelerCategory(unit),
               pricingMode: up.pricingMode,
               sellAmountCents: up.sellAmountCents,
+              sortOrder: unit.sortOrder,
             },
           ]
         })

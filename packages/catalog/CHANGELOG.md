@@ -1,5 +1,99 @@
 # @voyant-travel/catalog
 
+## 0.236.0
+
+### Minor Changes
+
+- c35841b: Cache body-keyed public POST reads in the framework, and let catalog search
+  declare its own policy.
+
+  `publicResponseCache` was GET-only, so `POST /v1/public/catalog/search` — the
+  slowest public read there is — could not declare a cache policy at all. The gap
+  was filled downstream by a bespoke cache in the Voyant Cloud dispatcher that
+  hardcoded the route path, invented its own TTL, and omitted
+  `stale-while-revalidate`. Self-hosted deployments got nothing, and any second
+  body-keyed read would have needed the same bespoke treatment.
+
+  A module now declares participation with `bodyKeyedCache`, listing public
+  sub-paths whose POST reads are keyed on the canonicalized request body as well
+  as the URL and the variant headers. The declaration lives at mount time rather
+  than in a response header because the middleware has to canonicalize the body
+  _before_ the route runs; the policy itself still lives on the response, which is
+  what lets an edge tier honour the same contract instead of matching a path.
+
+  Keying is fail-closed. A request goes to the origin uncached when it carries a
+  query string (an unknown parameter must not alias a body-only key), a non-JSON
+  or oversized body (64 KiB), `Authorization`, or a caller-specific body field
+  anywhere in the payload — embeddings, personalization, session, customer, user,
+  preview, or debug. Bodies differing only in property order share an entry.
+
+  `POST /v1/public/catalog/search` declares
+  `public, s-maxage=60, stale-while-revalidate=300` for an empty-query browse and
+  `s-maxage=30` for a keyword search, on the public surface only. The TTLs stay
+  short on purpose: the key carries no catalog projection generation, so the clock
+  is still the only invalidation there is (voyant-travel/platform#1726).
+
+  See ADR 0021 §2.
+
+### Patch Changes
+
+- Updated dependencies [c35841b]
+  - @voyant-travel/hono@0.140.0
+  - @voyant-travel/bookings@0.237.2
+  - @voyant-travel/finance@0.237.2
+  - @voyant-travel/core@0.137.2
+
+## 0.235.0
+
+### Minor Changes
+
+- 4c694f6: Gate sourced catalog entries on channel publication, and let operators choose
+  which supply sources each channel sells.
+
+  Sourced entries never passed a listability gate: `syncSources` emitted every
+  discovered projection into every slice the deployment materialized, so
+  attaching a supply connection published that supplier's whole catalogue to the
+  operator's live storefront with no publish step. Channel publication could not
+  reach them either — its subjects are a product id and a canonical Supplier, and
+  a sourced entry has neither.
+
+  `channel_source_publications` adds the missing subject: an include/exclude
+  decision on a `(source_kind, source_connection_id)` pair, resolved
+  default-deny with connection beating source kind, mirroring the existing
+  product-beats-supplier ordering. The discovery sync and the catalog document
+  builder both consult it, so revoking publication removes the inventory on the
+  next index pass; staff slices stay ungated so operators can still browse a
+  connected supplier to decide what to sell. Admin gets a Supply sources tab
+  alongside Products and Suppliers, with the same preview-and-confirm step that
+  supplier rules use.
+
+  Index documents now carry `isSourced`, `sourceKind`, and `sourceConnectionId`
+  in every vertical, so storefronts can scope on ownership directly instead of
+  inferring it from `supplyModel` or an id prefix.
+
+  Deployments with inventory already indexed are backfilled with an explicit
+  `include` rule per connection per active channel, so nothing disappears from a
+  live storefront on upgrade — the status quo becomes something the operator can
+  see and revoke rather than something implied by having connected at all.
+  Connections attached after this ships are unpublished until chosen.
+
+### Patch Changes
+
+- Updated dependencies [4c694f6]
+  - @voyant-travel/catalog-contracts@0.116.0
+
+## 0.234.2
+
+### Patch Changes
+
+- Updated dependencies [2bc1570]
+- Updated dependencies [2bc1570]
+- Updated dependencies [14033fb]
+  - @voyant-travel/db@0.120.0
+  - @voyant-travel/hono@0.139.0
+  - @voyant-travel/bookings@0.237.1
+  - @voyant-travel/finance@0.237.1
+
 ## 0.234.1
 
 ### Patch Changes
