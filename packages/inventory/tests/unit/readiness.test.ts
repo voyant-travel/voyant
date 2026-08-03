@@ -225,7 +225,7 @@ describe("evaluateProductReadiness", () => {
     })
   })
 
-  describe("distribution", () => {
+  describe("facts owned by another module", () => {
     it("warns when the product reaches no active channel", () => {
       const result = evaluateProductReadiness(readyProduct({ activeChannelCount: 0 }))
       expect(codes(result.warnings)).toContain("no_active_channel")
@@ -234,6 +234,35 @@ describe("evaluateProductReadiness", () => {
     it("skips the channel check when distribution could not be resolved", () => {
       const result = evaluateProductReadiness(readyProduct({ activeChannelCount: null }))
       expect(codes(result.issues)).not.toContain("no_active_channel")
+    })
+
+    it("skips the meeting-point check when availability could not be resolved", () => {
+      const result = evaluateProductReadiness(readyProduct({ hasMeetingPoint: null }))
+      expect(codes(result.issues)).not.toContain("missing_meeting_point")
+    })
+
+    it("skips the allocation-template check when availability could not be resolved", () => {
+      const result = evaluateProductReadiness(
+        readyProduct({
+          durationMinutes: null,
+          itineraryDurationDays: 7,
+          defaultItinerary: { id: "pitin_01" },
+          itineraryDayNumbers: [1, 2, 3, 4, 5, 6, 7],
+          hasAllocationTemplate: null,
+        }),
+      )
+      expect(codes(result.issues)).not.toContain("missing_allocation_template")
+    })
+
+    it("never blocks publication on an unresolved external fact", () => {
+      const result = evaluateProductReadiness(
+        readyProduct({
+          activeChannelCount: null,
+          hasMeetingPoint: null,
+          hasAllocationTemplate: null,
+        }),
+      )
+      expect(result.ready).toBe(true)
     })
   })
 

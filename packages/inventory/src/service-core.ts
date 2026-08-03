@@ -1,7 +1,8 @@
 import { RequestValidationError } from "@voyant-travel/hono"
-import { and, asc, desc, eq, getTableColumns, ilike, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, getTableColumns, gte, ilike, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { nextDepartureAt, upcomingDepartureExists } from "./availability-slot-access.js"
 import { resolveProductClassification } from "./classification.js"
 import type { ProductReadinessIssue } from "./readiness.js"
 import {
@@ -240,20 +241,7 @@ export const coreProductsService = {
     if (query.departureFrom || query.departureTo) {
       // Match products with at least one upcoming open departure whose date
       // falls in the requested window. Mirrors the `nextDeparture` subquery.
-      const fromBound = query.departureFrom
-        ? sql`and ${availabilitySlots.startsAt}::date >= ${query.departureFrom}::date`
-        : sql``
-      const toBound = query.departureTo
-        ? sql`and ${availabilitySlots.startsAt}::date <= ${query.departureTo}::date`
-        : sql``
-      conditions.push(
-        // agent-quality: raw-sql reviewed -- owner: inventory; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`exists (select 1 from ${availabilitySlots}
-          where ${availabilitySlots.productId} = ${products.id}
-            and ${availabilitySlots.status} = 'open'
-            and ${availabilitySlots.startsAt} >= now()
-            ${fromBound} ${toBound})`,
-      )
+      conditions.push(upcomingDepartureExists(query.departureFrom, query.departureTo))
     }
 
     if (query.paxMin !== undefined) {
@@ -317,13 +305,7 @@ export const coreProductsService = {
             )
           )`,
           // Earliest upcoming open departure (null when none is scheduled).
-          nextDeparture: sql<Date | null>`(
-            select min(${availabilitySlots.startsAt})
-            from ${availabilitySlots}
-            where ${availabilitySlots.productId} = ${products.id}
-              and ${availabilitySlots.status} = 'open'
-              and ${availabilitySlots.startsAt} >= now()
-          )`,
+          nextDeparture: nextDepartureAt(),
         })
         .from(products)
         .leftJoin(productTypes, eq(productTypes.id, products.productTypeId))

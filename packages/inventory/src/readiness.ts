@@ -122,10 +122,16 @@ export interface ProductReadinessInput {
   futureOpenSlotCount: number
   /** True when any future slot carries an explicit capacity. */
   hasSlotCapacity: boolean
-  /** True when the product has a meeting configuration or any pickup point. */
-  hasMeetingPoint: boolean
-  /** True when any option of this product has an allocation-resource template. */
-  hasAllocationTemplate: boolean
+  /**
+   * True when the product has a meeting configuration or any pickup point, or
+   * `null` when Availability could not be resolved. `null` skips the check.
+   */
+  hasMeetingPoint: boolean | null
+  /**
+   * True when any option of this product has an allocation-resource template,
+   * or `null` when Availability could not be resolved. `null` skips the check.
+   */
+  hasAllocationTemplate: boolean | null
 
   /**
    * Count of active channel publications covering this product, or `null` when
@@ -342,7 +348,7 @@ export function evaluateProductReadiness(input: ProductReadinessInput): ProductR
   }
 
   // ---- Ground logistics ---------------------------------------------------
-  if (scheduled && !input.hasMeetingPoint) {
+  if (scheduled && input.hasMeetingPoint === false) {
     add({
       code: "missing_meeting_point",
       severity: "warning",
@@ -352,7 +358,7 @@ export function evaluateProductReadiness(input: ProductReadinessInput): ProductR
     })
   }
 
-  if (needsItinerary && !input.hasAllocationTemplate) {
+  if (needsItinerary && input.hasAllocationTemplate === false) {
     add({
       code: "missing_allocation_template",
       severity: "warning",

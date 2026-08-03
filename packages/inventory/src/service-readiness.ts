@@ -4,18 +4,21 @@
  * Assembles the facts `evaluateProductReadiness` needs and returns the derived
  * result. Everything here is a read; readiness is never stored.
  *
- * Distribution is deliberately *not* a dependency of inventory. A caller that
- * can resolve channel publication passes a `resolveActiveChannelCount`
- * function; without one the channel check is skipped rather than guessed.
+ * Facts owned by another module are never read out of that module's tables.
+ * Ground logistics and allocation templates belong to Availability, and channel
+ * publication belongs to Distribution, so each arrives through an optional
+ * resolver the deployment wires up. Unresolved means the check is *skipped*,
+ * never guessed — a deployment without Distribution must not be told its
+ * products reach no channel.
+ *
+ * The one exception is `availability_slots`, which inventory already reads
+ * directly for the pre-existing future-departure publish check.
  */
 
-import {
-  availabilitySlots,
-  productMeetingConfigs,
-  productOptionResourceTemplates,
-} from "@voyant-travel/operations"
-import { and, asc, count, eq, gte, inArray } from "drizzle-orm"
+import { and, asc, count, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+import { readFutureOpenSlotFacts } from "./availability-slot-access.js"
 
 import {
   evaluateProductReadiness,
@@ -39,8 +42,18 @@ import {
  */
 export type ActiveChannelCountResolver = (productId: string) => Promise<number>
 
+/**
+ * Resolves an Availability-owned fact about a product. Supplied by the
+ * deployment; omitted resolvers leave the corresponding check unevaluated.
+ */
+export type ProductFactResolver = (productId: string) => Promise<boolean>
+
 export interface ProductReadinessOptions {
   resolveActiveChannelCount?: ActiveChannelCountResolver
+  /** True when the product has a meeting point or any pickup point. */
+  resolveHasMeetingPoint?: ProductFactResolver
+  /** True when any option of the product has an allocation-resource template. */
+  resolveHasAllocationTemplate?: ProductFactResolver
 }
 
 /**
@@ -85,68 +98,41 @@ async function loadReadinessInput(
       dayServiceCostAmountsCents: [],
       futureOpenSlotCount: 0,
       hasSlotCapacity: false,
-      hasMeetingPoint: false,
-      hasAllocationTemplate: false,
+      hasMeetingPoint: null,
+      hasAllocationTemplate: null,
       activeChannelCount: null,
     }
   }
 
-  const now = new Date()
-
-  const [family, defaultOptionRow, defaultItineraryRow, futureSlots, meetingConfig] =
-    await Promise.all([
-      subject.productTypeId
-        ? db
-            .select({ id: productTypes.id })
-            .from(productTypes)
-            .where(eq(productTypes.id, subject.productTypeId))
-            .limit(1)
-        : Promise.resolve([]),
-      db
-        .select({ id: productOptions.id, status: productOptions.status })
-        .from(productOptions)
-        .where(and(eq(productOptions.productId, productId), eq(productOptions.isDefault, true)))
-        .orderBy(asc(productOptions.sortOrder), asc(productOptions.createdAt))
-        .limit(1),
-      db
-        .select({ id: productItineraries.id })
-        .from(productItineraries)
-        .where(
-          and(eq(productItineraries.productId, productId), eq(productItineraries.isDefault, true)),
-        )
-        .orderBy(asc(productItineraries.sortOrder), asc(productItineraries.createdAt))
-        .limit(1),
-      db
-        .select({
-          id: availabilitySlots.id,
-          initialPax: availabilitySlots.initialPax,
-          unlimited: availabilitySlots.unlimited,
-        })
-        .from(availabilitySlots)
-        .where(
-          and(
-            eq(availabilitySlots.productId, productId),
-            eq(availabilitySlots.status, "open"),
-            gte(availabilitySlots.startsAt, now),
-          ),
-        )
-        .limit(50),
-      db
-        .select({ id: productMeetingConfigs.id })
-        .from(productMeetingConfigs)
-        .where(
-          and(
-            eq(productMeetingConfigs.productId, productId),
-            eq(productMeetingConfigs.active, true),
-          ),
-        )
-        .limit(1),
-    ])
+  const [family, defaultOptionRow, defaultItineraryRow, futureSlots] = await Promise.all([
+    subject.productTypeId
+      ? db
+          .select({ id: productTypes.id })
+          .from(productTypes)
+          .where(eq(productTypes.id, subject.productTypeId))
+          .limit(1)
+      : Promise.resolve([]),
+    db
+      .select({ id: productOptions.id, status: productOptions.status })
+      .from(productOptions)
+      .where(and(eq(productOptions.productId, productId), eq(productOptions.isDefault, true)))
+      .orderBy(asc(productOptions.sortOrder), asc(productOptions.createdAt))
+      .limit(1),
+    db
+      .select({ id: productItineraries.id })
+      .from(productItineraries)
+      .where(
+        and(eq(productItineraries.productId, productId), eq(productItineraries.isDefault, true)),
+      )
+      .orderBy(asc(productItineraries.sortOrder), asc(productItineraries.createdAt))
+      .limit(1),
+    readFutureOpenSlotFacts(db, productId),
+  ])
 
   const defaultOption = defaultOptionRow[0] ?? null
   const defaultItinerary = defaultItineraryRow[0] ?? null
 
-  const [unitCount, pricingTierCount, itineraryDays, optionIds] = await Promise.all([
+  const [unitCount, pricingTierCount, itineraryDays] = await Promise.all([
     defaultOption
       ? db
           .select({ value: count() })
@@ -164,37 +150,24 @@ async function loadReadinessInput(
           .where(eq(productDays.itineraryId, defaultItinerary.id))
           .orderBy(asc(productDays.dayNumber))
       : Promise.resolve([] as { dayNumber: number; id: string }[]),
-    db
-      .select({ id: productOptions.id })
-      .from(productOptions)
-      .where(eq(productOptions.productId, productId)),
   ])
 
   const dayIds = itineraryDays.map((day) => day.id)
-  const [dayServiceCosts, allocationTemplates] = await Promise.all([
+  const dayServiceCosts =
     dayIds.length > 0
-      ? db
+      ? await db
           .select({ costAmountCents: productDayServices.costAmountCents })
           .from(productDayServices)
           .where(inArray(productDayServices.dayId, dayIds))
-      : Promise.resolve([] as { costAmountCents: number }[]),
-    optionIds.length > 0
-      ? db
-          .select({ id: productOptionResourceTemplates.id })
-          .from(productOptionResourceTemplates)
-          .where(
-            inArray(
-              productOptionResourceTemplates.productOptionId,
-              optionIds.map((option) => option.id),
-            ),
-          )
-          .limit(1)
-      : Promise.resolve([] as { id: string }[]),
-  ])
+      : []
 
-  const activeChannelCount = options.resolveActiveChannelCount
-    ? await options.resolveActiveChannelCount(productId)
-    : null
+  // Availability- and Distribution-owned facts. Each is skipped, not guessed,
+  // when the deployment supplies no resolver.
+  const [activeChannelCount, hasMeetingPoint, hasAllocationTemplate] = await Promise.all([
+    options.resolveActiveChannelCount ? options.resolveActiveChannelCount(productId) : null,
+    options.resolveHasMeetingPoint ? options.resolveHasMeetingPoint(productId) : null,
+    options.resolveHasAllocationTemplate ? options.resolveHasAllocationTemplate(productId) : null,
+  ])
 
   return {
     ...baseInput(subject),
@@ -206,12 +179,10 @@ async function loadReadinessInput(
     defaultItinerary,
     itineraryDayNumbers: itineraryDays.map((day) => day.dayNumber),
     dayServiceCostAmountsCents: dayServiceCosts.map((service) => service.costAmountCents),
-    futureOpenSlotCount: futureSlots.length,
-    hasSlotCapacity: futureSlots.some(
-      (slot) => slot.unlimited || (slot.initialPax != null && slot.initialPax > 0),
-    ),
-    hasMeetingPoint: meetingConfig.length > 0,
-    hasAllocationTemplate: allocationTemplates.length > 0,
+    futureOpenSlotCount: futureSlots.count,
+    hasSlotCapacity: futureSlots.hasCapacity,
+    hasMeetingPoint,
+    hasAllocationTemplate,
     activeChannelCount,
   }
 }
