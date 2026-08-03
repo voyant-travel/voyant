@@ -179,6 +179,18 @@ for (const legacyBookingRoute of [
   rejectText("packages/bookings/src/routes-admin.ts", bookingAdminRoutes, legacyBookingRoute)
 }
 
+const adminBookingContracts = read("packages/admin-contracts/src/bookings.ts")
+for (const legacyAdminContract of [
+  "confirmBookingSchema",
+  'id: "bookings.confirm"',
+  'pathTemplate: "/v1/admin/bookings/:id/confirm"',
+]) {
+  rejectText("packages/admin-contracts/src/bookings.ts", adminBookingContracts, legacyAdminContract)
+}
+
+const adminClient = read("packages/admin-react/src/client/client.ts")
+rejectText("packages/admin-react/src/client/client.ts", adminClient, "bookingsOperations.confirm")
+
 for (const path of [
   "packages/bookings/openapi/admin/bookings.json",
   "packages/bookings/openapi/storefront/bookings.json",

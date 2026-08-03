@@ -98,6 +98,16 @@ function writeMinimumFixture(root, overrides = {}) {
     overrides.bookingCreateContract ?? 'status: "confirmed"',
   )
   write(root, "packages/bookings/src/routes-admin.ts", overrides.bookingAdminRoutes ?? "cancel")
+  write(
+    root,
+    "packages/admin-contracts/src/bookings.ts",
+    overrides.adminBookingContracts ?? 'id: "bookings.cancel"',
+  )
+  write(
+    root,
+    "packages/admin-react/src/client/client.ts",
+    overrides.adminClient ?? "bookingsOperations.cancel",
+  )
   const bookingOpenApi = JSON.stringify({
     paths: {},
     components: {
@@ -237,4 +247,18 @@ test("rejects beta Booking lifecycle state in published Booking OpenAPI", (t) =>
   const output = failure(root)
   assert.match(output, /forbidden.*on_hold/)
   assert.match(output, /forbidden.*confirm/)
+})
+
+test("rejects the retired confirm operation in authenticated admin clients", (t) => {
+  const root = fixture(t)
+  writeMinimumFixture(root, {
+    adminBookingContracts:
+      'confirmBookingSchema id: "bookings.confirm" pathTemplate: "/v1/admin/bookings/:id/confirm"',
+    adminClient: "bookingsOperations.confirm",
+  })
+
+  const output = failure(root)
+  assert.match(output, /admin-contracts.*confirmBookingSchema/)
+  assert.match(output, /admin-contracts.*bookings\.confirm/)
+  assert.match(output, /admin-react.*bookingsOperations\.confirm/)
 })

@@ -2,6 +2,8 @@
 "@voyant-travel/bookings-contracts": minor
 "@voyant-travel/bookings": minor
 "@voyant-travel/bookings-react": minor
+"@voyant-travel/admin-contracts": minor
+"@voyant-travel/admin-react": minor
 "@voyant-travel/catalog": patch
 "@voyant-travel/commerce": minor
 "@voyant-travel/finance": minor
