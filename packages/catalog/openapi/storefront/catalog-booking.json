@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_created"
-                ]
+                "enum": ["session_created"]
               },
               "session": {
                 "type": "object",
@@ -38,19 +36,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -58,19 +51,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -78,9 +66,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -91,11 +77,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -103,9 +85,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -116,11 +96,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -132,9 +108,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -149,23 +123,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -207,19 +171,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_updated"
-                ]
+                "enum": ["session_updated"]
               },
               "session": {
                 "type": "object",
@@ -235,19 +194,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -255,19 +209,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -275,9 +224,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -288,11 +235,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -300,9 +243,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -313,11 +254,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -329,9 +266,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -346,23 +281,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -404,19 +329,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_resumed"
-                ]
+                "enum": ["session_resumed"]
               },
               "session": {
                 "type": "object",
@@ -432,19 +352,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -452,19 +367,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -472,9 +382,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -485,11 +393,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -497,9 +401,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -510,11 +412,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -526,9 +424,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -543,23 +439,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -594,10 +480,7 @@
                   },
                   "redaction": {
                     "type": "string",
-                    "enum": [
-                      "none",
-                      "selection_omitted"
-                    ]
+                    "enum": ["none", "selection_omitted"]
                   }
                 },
                 "required": [
@@ -613,19 +496,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_adopted"
-                ]
+                "enum": ["session_adopted"]
               },
               "session": {
                 "type": "object",
@@ -641,19 +519,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -661,19 +534,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -681,9 +549,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -694,11 +560,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -706,9 +568,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -719,11 +579,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -735,9 +591,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -752,23 +606,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -803,10 +647,7 @@
                   },
                   "redaction": {
                     "type": "string",
-                    "enum": [
-                      "none",
-                      "selection_omitted"
-                    ]
+                    "enum": ["none", "selection_omitted"]
                   }
                 },
                 "required": [
@@ -822,19 +663,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_renewed"
-                ]
+                "enum": ["session_renewed"]
               },
               "session": {
                 "type": "object",
@@ -850,19 +686,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -870,19 +701,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -890,9 +716,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -903,11 +727,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -915,9 +735,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -928,11 +746,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -944,9 +758,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -961,23 +773,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -1019,19 +821,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "session_abandoned"
-                ]
+                "enum": ["session_abandoned"]
               },
               "session": {
                 "type": "object",
@@ -1047,19 +844,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -1067,19 +859,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -1087,9 +874,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -1100,11 +885,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -1112,9 +893,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -1125,11 +904,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -1141,9 +916,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -1158,23 +931,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -1216,19 +979,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session"
-            ]
+            "required": ["kind", "session"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "quote_created"
-                ]
+                "enum": ["quote_created"]
               },
               "session": {
                 "type": "object",
@@ -1244,19 +1002,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -1264,19 +1017,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -1284,9 +1032,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -1297,11 +1043,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -1309,9 +1051,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -1322,11 +1062,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -1338,9 +1074,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -1355,23 +1089,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -1429,12 +1153,7 @@
                   },
                   "state": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "superseded",
-                      "consumed",
-                      "expired"
-                    ]
+                    "enum": ["active", "superseded", "consumed", "expired"]
                   },
                   "pricing": {
                     "type": "object",
@@ -1478,11 +1197,7 @@
                             },
                             "pricingBasis": {
                               "type": "string",
-                              "enum": [
-                                "per_person",
-                                "per_unit",
-                                "per_booking"
-                              ]
+                              "enum": ["per_person", "per_unit", "per_booking"]
                             },
                             "componentId": {
                               "type": "string",
@@ -1490,18 +1205,10 @@
                             },
                             "authority": {
                               "type": "string",
-                              "enum": [
-                                "booking_quote",
-                                "accepted_proposal_manual"
-                              ]
+                              "enum": ["booking_quote", "accepted_proposal_manual"]
                             }
                           },
-                          "required": [
-                            "kind",
-                            "label",
-                            "unitAmount",
-                            "totalAmount"
-                          ]
+                          "required": ["kind", "label", "unitAmount", "totalAmount"]
                         }
                       },
                       "taxes": {
@@ -1530,24 +1237,14 @@
                             },
                             "scope": {
                               "type": "string",
-                              "enum": [
-                                "included",
-                                "excluded",
-                                "withheld"
-                              ]
+                              "enum": ["included", "excluded", "withheld"]
                             },
                             "componentId": {
                               "type": "string",
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "code",
-                            "label",
-                            "rate",
-                            "amount",
-                            "base"
-                          ]
+                          "required": ["code", "label", "rate", "amount", "base"]
                         }
                       },
                       "subtotal": {
@@ -1578,20 +1275,11 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "componentId"
-                          ]
+                          "required": ["componentId"]
                         }
                       }
                     },
-                    "required": [
-                      "currency",
-                      "lines",
-                      "taxes",
-                      "subtotal",
-                      "taxTotal",
-                      "total"
-                    ]
+                    "required": ["currency", "lines", "taxes", "subtotal", "taxTotal", "total"]
                   },
                   "quotedAt": {
                     "type": "string",
@@ -1613,20 +1301,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session",
-              "quote"
-            ]
+            "required": ["kind", "session", "quote"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "hold_created"
-                ]
+                "enum": ["hold_created"]
               },
               "session": {
                 "type": "object",
@@ -1642,19 +1324,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -1662,19 +1339,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -1682,9 +1354,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -1695,11 +1365,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -1707,9 +1373,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -1720,11 +1384,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -1736,9 +1396,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "accepted_proposal_version"
-                            ]
+                            "enum": ["accepted_proposal_version"]
                           },
                           "proposalId": {
                             "type": "string",
@@ -1753,23 +1411,13 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "proposalId",
-                          "proposalVersionId",
-                          "tripSnapshotId"
-                        ]
+                        "required": ["kind", "proposalId", "proposalVersionId", "tripSnapshotId"]
                       }
                     ]
                   },
                   "actorKind": {
                     "type": "string",
-                    "enum": [
-                      "anonymous",
-                      "customer",
-                      "staff",
-                      "partner"
-                    ]
+                    "enum": ["anonymous", "customer", "staff", "partner"]
                   },
                   "state": {
                     "type": "string",
@@ -1832,19 +1480,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -1852,19 +1495,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       },
                       {
@@ -1872,9 +1510,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "owned_entity"
-                            ]
+                            "enum": ["owned_entity"]
                           },
                           "entityModule": {
                             "type": "string",
@@ -1885,11 +1521,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "entityModule",
-                          "entityId"
-                        ],
+                        "required": ["kind", "entityModule", "entityId"],
                         "additionalProperties": false
                       },
                       {
@@ -1897,9 +1529,7 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "trip_snapshot"
-                            ]
+                            "enum": ["trip_snapshot"]
                           },
                           "tripSnapshotId": {
                             "type": "string",
@@ -1910,11 +1540,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "tripSnapshotId",
-                          "tripEnvelopeId"
-                        ],
+                        "required": ["kind", "tripSnapshotId", "tripEnvelopeId"],
                         "additionalProperties": false
                       }
                     ]
@@ -1925,12 +1551,7 @@
                   },
                   "state": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "converted",
-                      "released",
-                      "expired"
-                    ]
+                    "enum": ["active", "converted", "released", "expired"]
                   },
                   "expiresAt": {
                     "type": "string",
@@ -1953,20 +1574,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "session",
-              "hold"
-            ]
+            "required": ["kind", "session", "hold"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "commit_result"
-                ]
+                "enum": ["commit_result"]
               },
               "outcome": {
                 "anyOf": [
@@ -1975,15 +1590,11 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "committed"
-                        ]
+                        "enum": ["committed"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "none"
-                        ]
+                        "enum": ["none"]
                       },
                       "booking": {
                         "type": "object",
@@ -1994,15 +1605,10 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "confirmed"
-                            ]
+                            "enum": ["confirmed"]
                           }
                         },
-                        "required": [
-                          "id",
-                          "status"
-                        ]
+                        "required": ["id", "status"]
                       },
                       "allocationIds": {
                         "type": "array",
@@ -2045,15 +1651,11 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "component_bookings_committed"
-                        ]
+                        "enum": ["component_bookings_committed"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "none"
-                        ]
+                        "enum": ["none"]
                       },
                       "bookings": {
                         "type": "array",
@@ -2070,9 +1672,7 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "confirmed"
-                              ]
+                              "enum": ["confirmed"]
                             },
                             "allocationIds": {
                               "type": "array",
@@ -2086,12 +1686,7 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "componentId",
-                            "bookingId",
-                            "status",
-                            "allocationIds"
-                          ]
+                          "required": ["componentId", "bookingId", "status", "allocationIds"]
                         },
                         "minItems": 1
                       },
@@ -2121,15 +1716,11 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "component_commit_pending"
-                        ]
+                        "enum": ["component_commit_pending"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "continue_component_commit"
-                        ]
+                        "enum": ["continue_component_commit"]
                       },
                       "components": {
                         "type": "array",
@@ -2158,52 +1749,32 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "componentId",
-                            "state"
-                          ]
+                          "required": ["componentId", "state"]
                         }
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "components"
-                    ]
+                    "required": ["kind", "nextAction", "components"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "payment_required"
-                        ]
+                        "enum": ["payment_required"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "establish_payment_guarantee"
-                        ]
+                        "enum": ["establish_payment_guarantee"]
                       },
                       "paymentTarget": {
                         "type": "string",
-                        "enum": [
-                          "booking_session",
-                          "quote",
-                          "supplier_operation"
-                        ]
+                        "enum": ["booking_session", "quote", "supplier_operation"]
                       },
                       "allowedGuarantees": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": [
-                            "deposit",
-                            "pre_auth",
-                            "card_on_file",
-                            "agency_letter"
-                          ]
+                          "enum": ["deposit", "pre_auth", "card_on_file", "agency_letter"]
                         }
                       },
                       "paymentSession": {
@@ -2236,17 +1807,11 @@
                             "maxLength": 3
                           },
                           "redirectUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "format": "uri"
                           },
                           "expiresAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "format": "date-time"
                           }
                         },
@@ -2273,9 +1838,7 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "supplier_pending"
-                        ]
+                        "enum": ["supplier_pending"]
                       },
                       "nextAction": {
                         "type": "string",
@@ -2297,26 +1860,18 @@
                         "default": false
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "supplierOperationId"
-                    ]
+                    "required": ["kind", "nextAction", "supplierOperationId"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "supplier_in_doubt"
-                        ]
+                        "enum": ["supplier_in_doubt"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "reconcile_supplier_operation"
-                        ]
+                        "enum": ["reconcile_supplier_operation"]
                       },
                       "supplierOperationId": {
                         "type": "string",
@@ -2342,16 +1897,11 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "supplier_failed"
-                        ]
+                        "enum": ["supplier_failed"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "select_alternative_inventory",
-                          "manual_review"
-                        ]
+                        "enum": ["select_alternative_inventory", "manual_review"]
                       },
                       "supplierOperationId": {
                         "type": "string",
@@ -2366,26 +1916,18 @@
                         "default": false
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "supplierOperationId"
-                    ]
+                    "required": ["kind", "nextAction", "supplierOperationId"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "revision_mismatch"
-                        ]
+                        "enum": ["revision_mismatch"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "refresh_session_state"
-                        ]
+                        "enum": ["refresh_session_state"]
                       },
                       "expectedRevision": {
                         "type": "integer",
@@ -2396,27 +1938,18 @@
                         "exclusiveMinimum": 0
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "expectedRevision",
-                      "actualRevision"
-                    ]
+                    "required": ["kind", "nextAction", "expectedRevision", "actualRevision"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "quote_failure"
-                        ]
+                        "enum": ["quote_failure"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_fresh_quote"
-                        ]
+                        "enum": ["request_fresh_quote"]
                       },
                       "reason": {
                         "type": "string",
@@ -2428,83 +1961,54 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "reason"
-                    ]
+                    "required": ["kind", "nextAction", "reason"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "hold_failure"
-                        ]
+                        "enum": ["hold_failure"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_new_hold"
-                        ]
+                        "enum": ["request_new_hold"]
                       },
                       "reason": {
                         "type": "string",
-                        "enum": [
-                          "missing",
-                          "expired",
-                          "released",
-                          "mismatched_session"
-                        ]
+                        "enum": ["missing", "expired", "released", "mismatched_session"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "reason"
-                    ]
+                    "required": ["kind", "nextAction", "reason"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "proposal_acceptance_required"
-                        ]
+                        "enum": ["proposal_acceptance_required"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "renew_proposal_version_acceptance"
-                        ]
+                        "enum": ["renew_proposal_version_acceptance"]
                       },
                       "proposalVersionId": {
                         "type": "string",
                         "minLength": 1
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "proposalVersionId"
-                    ]
+                    "required": ["kind", "nextAction", "proposalVersionId"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "idempotent_replay"
-                        ]
+                        "enum": ["idempotent_replay"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "return_idempotent_result"
-                        ]
+                        "enum": ["return_idempotent_result"]
                       },
                       "originalCommitId": {
                         "type": "string",
@@ -2517,15 +2021,11 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "committed"
-                                ]
+                                "enum": ["committed"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "none"
-                                ]
+                                "enum": ["none"]
                               },
                               "booking": {
                                 "type": "object",
@@ -2536,15 +2036,10 @@
                                   },
                                   "status": {
                                     "type": "string",
-                                    "enum": [
-                                      "confirmed"
-                                    ]
+                                    "enum": ["confirmed"]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "status"
-                                ]
+                                "required": ["id", "status"]
                               },
                               "allocationIds": {
                                 "type": "array",
@@ -2587,15 +2082,11 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "component_bookings_committed"
-                                ]
+                                "enum": ["component_bookings_committed"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "none"
-                                ]
+                                "enum": ["none"]
                               },
                               "bookings": {
                                 "type": "array",
@@ -2612,9 +2103,7 @@
                                     },
                                     "status": {
                                       "type": "string",
-                                      "enum": [
-                                        "confirmed"
-                                      ]
+                                      "enum": ["confirmed"]
                                     },
                                     "allocationIds": {
                                       "type": "array",
@@ -2663,15 +2152,11 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "component_commit_pending"
-                                ]
+                                "enum": ["component_commit_pending"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "continue_component_commit"
-                                ]
+                                "enum": ["continue_component_commit"]
                               },
                               "components": {
                                 "type": "array",
@@ -2700,52 +2185,32 @@
                                       "minLength": 1
                                     }
                                   },
-                                  "required": [
-                                    "componentId",
-                                    "state"
-                                  ]
+                                  "required": ["componentId", "state"]
                                 }
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "components"
-                            ]
+                            "required": ["kind", "nextAction", "components"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "payment_required"
-                                ]
+                                "enum": ["payment_required"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "establish_payment_guarantee"
-                                ]
+                                "enum": ["establish_payment_guarantee"]
                               },
                               "paymentTarget": {
                                 "type": "string",
-                                "enum": [
-                                  "booking_session",
-                                  "quote",
-                                  "supplier_operation"
-                                ]
+                                "enum": ["booking_session", "quote", "supplier_operation"]
                               },
                               "allowedGuarantees": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": [
-                                    "deposit",
-                                    "pre_auth",
-                                    "card_on_file",
-                                    "agency_letter"
-                                  ]
+                                  "enum": ["deposit", "pre_auth", "card_on_file", "agency_letter"]
                                 }
                               },
                               "paymentSession": {
@@ -2778,17 +2243,11 @@
                                     "maxLength": 3
                                   },
                                   "redirectUrl": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "format": "uri"
                                   },
                                   "expiresAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "format": "date-time"
                                   }
                                 },
@@ -2815,9 +2274,7 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "supplier_pending"
-                                ]
+                                "enum": ["supplier_pending"]
                               },
                               "nextAction": {
                                 "type": "string",
@@ -2839,26 +2296,18 @@
                                 "default": false
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "supplierOperationId"
-                            ]
+                            "required": ["kind", "nextAction", "supplierOperationId"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "supplier_in_doubt"
-                                ]
+                                "enum": ["supplier_in_doubt"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "reconcile_supplier_operation"
-                                ]
+                                "enum": ["reconcile_supplier_operation"]
                               },
                               "supplierOperationId": {
                                 "type": "string",
@@ -2884,16 +2333,11 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "supplier_failed"
-                                ]
+                                "enum": ["supplier_failed"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "select_alternative_inventory",
-                                  "manual_review"
-                                ]
+                                "enum": ["select_alternative_inventory", "manual_review"]
                               },
                               "supplierOperationId": {
                                 "type": "string",
@@ -2908,26 +2352,18 @@
                                 "default": false
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "supplierOperationId"
-                            ]
+                            "required": ["kind", "nextAction", "supplierOperationId"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "revision_mismatch"
-                                ]
+                                "enum": ["revision_mismatch"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "refresh_session_state"
-                                ]
+                                "enum": ["refresh_session_state"]
                               },
                               "expectedRevision": {
                                 "type": "integer",
@@ -2938,27 +2374,18 @@
                                 "exclusiveMinimum": 0
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "expectedRevision",
-                              "actualRevision"
-                            ]
+                            "required": ["kind", "nextAction", "expectedRevision", "actualRevision"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "quote_failure"
-                                ]
+                                "enum": ["quote_failure"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "request_fresh_quote"
-                                ]
+                                "enum": ["request_fresh_quote"]
                               },
                               "reason": {
                                 "type": "string",
@@ -2970,95 +2397,60 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "reason"
-                            ]
+                            "required": ["kind", "nextAction", "reason"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "hold_failure"
-                                ]
+                                "enum": ["hold_failure"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "request_new_hold"
-                                ]
+                                "enum": ["request_new_hold"]
                               },
                               "reason": {
                                 "type": "string",
-                                "enum": [
-                                  "missing",
-                                  "expired",
-                                  "released",
-                                  "mismatched_session"
-                                ]
+                                "enum": ["missing", "expired", "released", "mismatched_session"]
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "reason"
-                            ]
+                            "required": ["kind", "nextAction", "reason"]
                           },
                           {
                             "type": "object",
                             "properties": {
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "proposal_acceptance_required"
-                                ]
+                                "enum": ["proposal_acceptance_required"]
                               },
                               "nextAction": {
                                 "type": "string",
-                                "enum": [
-                                  "renew_proposal_version_acceptance"
-                                ]
+                                "enum": ["renew_proposal_version_acceptance"]
                               },
                               "proposalVersionId": {
                                 "type": "string",
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "kind",
-                              "nextAction",
-                              "proposalVersionId"
-                            ]
+                            "required": ["kind", "nextAction", "proposalVersionId"]
                           }
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction",
-                      "originalCommitId",
-                      "originalOutcome"
-                    ]
+                    "required": ["kind", "nextAction", "originalCommitId", "originalOutcome"]
                   }
                 ]
               }
             },
-            "required": [
-              "kind",
-              "outcome"
-            ]
+            "required": ["kind", "outcome"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "rejected"
-                ]
+                "enum": ["rejected"]
               },
               "error": {
                 "oneOf": [
@@ -3067,9 +2459,7 @@
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "revision_conflict"
-                        ]
+                        "enum": ["revision_conflict"]
                       },
                       "expectedRevision": {
                         "type": "integer",
@@ -3091,63 +2481,44 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "expectedRevision",
-                      "actualRevision",
-                      "actualState"
-                    ]
+                    "required": ["kind", "expectedRevision", "actualRevision", "actualState"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "session_expired"
-                        ]
+                        "enum": ["session_expired"]
                       }
                     },
-                    "required": [
-                      "kind"
-                    ]
+                    "required": ["kind"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "session_consumed"
-                        ]
+                        "enum": ["session_consumed"]
                       }
                     },
-                    "required": [
-                      "kind"
-                    ]
+                    "required": ["kind"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "capability_required"
-                        ]
+                        "enum": ["capability_required"]
                       }
                     },
-                    "required": [
-                      "kind"
-                    ]
+                    "required": ["kind"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "capability_scope_required"
-                        ]
+                        "enum": ["capability_scope_required"]
                       },
                       "action": {
                         "type": "string",
@@ -3163,68 +2534,48 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "action"
-                    ]
+                    "required": ["kind", "action"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "not_authorized"
-                        ]
+                        "enum": ["not_authorized"]
                       }
                     },
-                    "required": [
-                      "kind"
-                    ]
+                    "required": ["kind"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "idempotency_conflict"
-                        ]
+                        "enum": ["idempotency_conflict"]
                       }
                     },
-                    "required": [
-                      "kind"
-                    ]
+                    "required": ["kind"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "supplier_operation_active"
-                        ]
+                        "enum": ["supplier_operation_active"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "reconcile_supplier_operation"
-                        ]
+                        "enum": ["reconcile_supplier_operation"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "quote_unavailable"
-                        ]
+                        "enum": ["quote_unavailable"]
                       },
                       "reason": {
                         "type": "string",
@@ -3245,20 +2596,14 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "reason",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "reason", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "commit_rejected"
-                        ]
+                        "enum": ["commit_rejected"]
                       },
                       "reason": {
                         "type": "string",
@@ -3278,46 +2623,32 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "reason",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "reason", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "invalid_selection"
-                        ]
+                        "enum": ["invalid_selection"]
                       },
                       "reason": {
                         "type": "string",
-                        "enum": [
-                          "unsupported_target",
-                          "forbidden_field"
-                        ]
+                        "enum": ["unsupported_target", "forbidden_field"]
                       },
                       "path": {
                         "type": "string",
                         "minLength": 1
                       }
                     },
-                    "required": [
-                      "kind",
-                      "reason"
-                    ]
+                    "required": ["kind", "reason"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "renewal_not_allowed"
-                        ]
+                        "enum": ["renewal_not_allowed"]
                       },
                       "reason": {
                         "type": "string",
@@ -3328,85 +2659,56 @@
                         ]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "reason"
-                    ]
+                    "required": ["kind", "reason"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "quote_required"
-                        ]
+                        "enum": ["quote_required"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_fresh_quote"
-                        ]
+                        "enum": ["request_fresh_quote"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "quote_expired",
-                          "quote_superseded"
-                        ]
+                        "enum": ["quote_expired", "quote_superseded"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_fresh_quote"
-                        ]
+                        "enum": ["request_fresh_quote"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "hold_required",
-                          "hold_expired",
-                          "availability_changed"
-                        ]
+                        "enum": ["hold_required", "hold_expired", "availability_changed"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_new_hold"
-                        ]
+                        "enum": ["request_new_hold"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "hold_quantity_mismatch"
-                        ]
+                        "enum": ["hold_quantity_mismatch"]
                       },
                       "requestedQuantity": {
                         "type": "integer",
@@ -3418,46 +2720,29 @@
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "request_new_hold"
-                        ]
+                        "enum": ["request_new_hold"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "requestedQuantity",
-                      "expectedQuantity",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "requestedQuantity", "expectedQuantity", "nextAction"]
                   },
                   {
                     "type": "object",
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "commit_already_consumed"
-                        ]
+                        "enum": ["commit_already_consumed"]
                       },
                       "nextAction": {
                         "type": "string",
-                        "enum": [
-                          "return_idempotent_result"
-                        ]
+                        "enum": ["return_idempotent_result"]
                       }
                     },
-                    "required": [
-                      "kind",
-                      "nextAction"
-                    ]
+                    "required": ["kind", "nextAction"]
                   }
                 ]
               }
             },
-            "required": [
-              "kind",
-              "error"
-            ]
+            "required": ["kind", "error"]
           }
         ]
       },
@@ -3470,20 +2755,14 @@
           },
           "subjectType": {
             "type": "string",
-            "enum": [
-              "booking_session",
-              "booking_amendment"
-            ]
+            "enum": ["booking_session", "booking_amendment"]
           },
           "subjectId": {
             "type": "string",
             "minLength": 1
           },
           "sessionId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "scopeKey": {
@@ -3491,40 +2770,24 @@
             "minLength": 1
           },
           "quoteId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "holdId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "bookingItemId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "amendmentId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "operationKind": {
             "type": "string",
-            "enum": [
-              "reserve",
-              "modify",
-              "cancel"
-            ]
+            "enum": ["reserve", "modify", "cancel"]
           },
           "state": {
             "type": "string",
@@ -3542,10 +2805,7 @@
           },
           "commitmentPolicy": {
             "type": "string",
-            "enum": [
-              "supplier_first",
-              "operator_backed"
-            ]
+            "enum": ["supplier_first", "operator_backed"]
           },
           "entityModule": {
             "type": "string",
@@ -3584,31 +2844,19 @@
             "minimum": 0
           },
           "upstreamRef": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "upstreamStatus": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "bookingId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "lastErrorClass": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "safeEvidence": {
@@ -3616,52 +2864,31 @@
             "additionalProperties": {}
           },
           "submittedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "lastCheckedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "sourceUpdatedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "nextReconcileAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "resolvedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "resolvedBy": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "resolutionReason": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           },
           "createdAt": {
@@ -3737,19 +2964,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "product"
-                            ]
+                            "enum": ["product"]
                           },
                           "productId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productId"
-                        ],
+                        "required": ["kind", "productId"],
                         "additionalProperties": false
                       },
                       {
@@ -3757,19 +2979,14 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "catalog_item"
-                            ]
+                            "enum": ["catalog_item"]
                           },
                           "catalogItemId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "catalogItemId"
-                        ],
+                        "required": ["kind", "catalogItemId"],
                         "additionalProperties": false
                       }
                     ]
@@ -3796,10 +3013,7 @@
                     "minItems": 1
                   }
                 },
-                "required": [
-                  "idempotencyKey",
-                  "target"
-                ]
+                "required": ["idempotencyKey", "target"]
               }
             }
           }
@@ -3829,9 +3043,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3850,9 +3062,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3899,9 +3109,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3942,11 +3150,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "idempotencyKey",
-                  "expectedRevision",
-                  "selection"
-                ]
+                "required": ["idempotencyKey", "expectedRevision", "selection"]
               }
             }
           }
@@ -3976,9 +3180,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3997,9 +3199,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4038,10 +3238,7 @@
                     "exclusiveMinimum": 0
                   }
                 },
-                "required": [
-                  "idempotencyKey",
-                  "expectedRevision"
-                ]
+                "required": ["idempotencyKey", "expectedRevision"]
               }
             }
           }
@@ -4071,9 +3268,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4116,11 +3311,7 @@
                     "exclusiveMinimum": 0
                   }
                 },
-                "required": [
-                  "idempotencyKey",
-                  "expectedRevision",
-                  "extendBySeconds"
-                ]
+                "required": ["idempotencyKey", "expectedRevision", "extendBySeconds"]
               }
             }
           }
@@ -4150,9 +3341,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4191,10 +3380,7 @@
                     "maxLength": 128
                   }
                 },
-                "required": [
-                  "expectedRevision",
-                  "idempotencyKey"
-                ]
+                "required": ["expectedRevision", "idempotencyKey"]
               }
             }
           }
@@ -4224,9 +3410,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4245,9 +3429,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4295,11 +3477,7 @@
                     "maxLength": 128
                   }
                 },
-                "required": [
-                  "expectedRevision",
-                  "quoteId",
-                  "idempotencyKey"
-                ]
+                "required": ["expectedRevision", "quoteId", "idempotencyKey"]
               }
             }
           }
@@ -4329,9 +3507,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4350,9 +3526,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4391,10 +3565,7 @@
                     "exclusiveMinimum": 0
                   }
                 },
-                "required": [
-                  "idempotencyKey",
-                  "expectedRevision"
-                ]
+                "required": ["idempotencyKey", "expectedRevision"]
               }
             }
           }
@@ -4424,9 +3595,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4445,9 +3614,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4507,11 +3674,7 @@
                     }
                   }
                 },
-                "required": [
-                  "expectedRevision",
-                  "quoteId",
-                  "idempotencyKey"
-                ]
+                "required": ["expectedRevision", "quoteId", "idempotencyKey"]
               }
             }
           }
@@ -4541,9 +3704,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4562,9 +3723,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4640,10 +3799,7 @@
                             "type": "string"
                           },
                           "endsAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "timezone": {
                             "type": "string"
@@ -4655,28 +3811,16 @@
                             "type": "boolean"
                           },
                           "remainingPax": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "initialPax": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "nights": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "days": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           }
                         },
                         "required": [
@@ -4695,9 +3839,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "rows"
-                  ]
+                  "required": ["rows"]
                 }
               }
             }
@@ -4720,9 +3862,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }

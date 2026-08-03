@@ -3,8 +3,8 @@ import { writeFile } from "node:fs/promises"
 import { OpenAPIHono } from "@hono/zod-openapi"
 import {
   generateOpenApiDocument,
-  selectSurface,
   type OpenApiDocument,
+  selectSurface,
 } from "@voyant-travel/hono/openapi"
 
 import { mountCatalogBookingRoutes } from "../src/booking-engine/operator-routes.js"
@@ -38,10 +38,7 @@ async function writeDocument(path: string, document: OpenApiDocument) {
 }
 
 await Promise.all([
-  writeDocument(
-    "../openapi/admin/catalog-booking.json",
-    selectSurface(complete, "admin"),
-  ),
+  writeDocument("../openapi/admin/catalog-booking.json", selectSurface(complete, "admin")),
   writeDocument(
     "../openapi/storefront/catalog-booking.json",
     selectSurface(complete, "storefront"),
