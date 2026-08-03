@@ -26,5 +26,6 @@ what the graph cannot supply at all, because it is a property of the
 deployment's own runtime state. See `docs/architecture/graph-host-options.md`.
 
 `hostOptions` is required rather than optional on the context, since composition
-always supplies it. That is breaking only for code constructing the context
-itself, which outside the framework's own test helpers nothing does.
+always supplies it and a factory should be able to read a field off it without
+guarding. That is breaking only for code constructing the context itself, which
+in this repository is exclusively test fixtures.
