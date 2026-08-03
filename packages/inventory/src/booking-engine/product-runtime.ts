@@ -29,6 +29,7 @@ import {
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import { and, asc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { ResolvedUnitPrice } from "./handler.js"
 import {
   deriveTravelerCategory,
   humanizeFieldKey,
@@ -544,7 +545,10 @@ export function registerProductBookingHandler(
         const bandByCategoryId = unitPriceRows.some((up) => up.pricingCategoryId !== null)
           ? paxBandCodesByCategoryId(await loadProductTravelerCategories(db, args.productId))
           : new Map<string, string>()
-        const unitPrices = unitPriceRows.flatMap((up) => {
+        // Annotated: the two branches below carry different `travelerCategory`
+        // types (a resolved band code vs the age-derived category), which
+        // otherwise widens the result to `unknown[]`.
+        const unitPrices = unitPriceRows.flatMap((up): ResolvedUnitPrice[] => {
           const unit = unitsById.get(up.unitId)
           if (!unit) return []
           if (up.pricingCategoryId !== null) {
