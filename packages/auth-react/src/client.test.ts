@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { createAuthBasePathFetcher } from "./client.js"
+import { createAuthBasePathFetcher, type VoyantFetcher } from "./client.js"
 
 describe("createAuthBasePathFetcher", () => {
   it("routes only auth calls under the configured API base URL to the selected realm", async () => {
@@ -34,7 +34,9 @@ describe("createAuthBasePathFetcher", () => {
   })
 
   it("leaves shared deployment-owned auth paths on the default prefix", async () => {
-    const fetcher = vi.fn(async () => new Response(null, { status: 204 }))
+    // Typed parameters so `mock.calls[n][0]` is the requested URL rather than an
+    // element of an empty tuple.
+    const fetcher = vi.fn<VoyantFetcher>(async () => new Response(null, { status: 204 }))
     const adminFetcher = createAuthBasePathFetcher(fetcher, {
       baseUrl: "https://operator.example/api",
       authBasePath: "/auth/admin",
