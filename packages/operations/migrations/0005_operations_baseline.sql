@@ -23,7 +23,9 @@ CREATE TABLE "departure_service_operations" (
 	"traveler_scope" text DEFAULT 'all' NOT NULL,
 	"status" "departure_service_operation_status" DEFAULT 'planned' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "ck_departure_service_operations_inclusion_role" CHECK ("departure_service_operations"."inclusion_role" IN ('included', 'optional')),
+	CONSTRAINT "ck_departure_service_operations_traveler_scope" CHECK ("departure_service_operations"."traveler_scope" IN ('all', 'adults', 'children'))
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "uidx_departure_service_operations_slot_source" ON "departure_service_operations" USING btree ("slot_id","source_day_service_id");--> statement-breakpoint

@@ -1,5 +1,7 @@
 import { typeId } from "@voyant-travel/db/lib/typeid-column"
+import { sql } from "drizzle-orm"
 import {
+  check,
   date,
   index,
   integer,
@@ -87,6 +89,31 @@ export const departureServiceOperations = pgTable(
     index("idx_departure_service_operations_status").on(table.status),
     index("idx_departure_service_operations_supplier").on(table.supplierId),
     index("idx_departure_service_operations_facility").on(table.facilityId),
+    /**
+     * `inclusion_role` and `traveler_scope` mirror vocabularies inventory owns
+     * (`day_service_inclusion_role`, `day_service_traveler_scope`). Operations
+     * cannot import inventory's pgEnum without a cross-domain schema
+     * dependency, and minting a second Postgres enum type of the same name
+     * would make this copy look authoritative — so the domain is pinned with a
+     * check constraint instead, the same way `supplier_operations` pins its
+     * subject types.
+     *
+     * Without these the columns were plain `text` with a default and accepted
+     * any string, so a materializer bug could silently write an
+     * inclusion role no reader understands.
+     *
+     * If inventory adds a value, this constraint must be widened in the same
+     * change — that coupling is the point, and a failing insert is a far better
+     * signal than a row nothing can interpret.
+     */
+    check(
+      "ck_departure_service_operations_inclusion_role",
+      sql`${table.inclusionRole} IN ('included', 'optional')`,
+    ),
+    check(
+      "ck_departure_service_operations_traveler_scope",
+      sql`${table.travelerScope} IN ('all', 'adults', 'children')`,
+    ),
   ],
 )
 
