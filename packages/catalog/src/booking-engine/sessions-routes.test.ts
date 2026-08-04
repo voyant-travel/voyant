@@ -432,7 +432,7 @@ describe("Booking Session v1 routes", () => {
     )
     const publicQuote = (await quoted.json()) as {
       kind: "quote_created"
-      quote: { id: string }
+      quote: { id: string; requirementsFingerprint: string }
     }
     expect(publicQuote).toMatchObject({ kind: "quote_created" })
     const publicHoldResponse = await app.request(
@@ -501,7 +501,7 @@ describe("Booking Session v1 routes", () => {
     )
     const staffQuoteBody = (await staffQuote.json()) as {
       kind: "quote_created"
-      quote: { id: string }
+      quote: { id: string; requirementsFingerprint: string }
     }
     expect(staffQuoteBody).toMatchObject({ kind: "quote_created" })
     const staffHoldResponse = await app.request(
