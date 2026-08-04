@@ -330,6 +330,8 @@ describe("unsatisfiableRequiredRequirementsV1", () => {
           ],
         }),
       ),
-    ).toEqual([{ requirementKey: "bookingFields.seatPreference", reason: "booking_field_required" }])
+    ).toEqual([
+      { requirementKey: "bookingFields.seatPreference", reason: "booking_field_required" },
+    ])
   })
 })

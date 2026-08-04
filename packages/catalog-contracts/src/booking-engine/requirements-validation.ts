@@ -246,7 +246,9 @@ function configureSubStepFindings(
       }
       case "option-units": {
         const units = asArray(configure.optionSelections) ?? []
-        const picked = units.reduce((sum, entry) => {
+        // Explicit type argument: on `unknown[]` the non-generic `reduce`
+        // overload wins and the accumulator would infer as `unknown`.
+        const picked = units.reduce<number>((sum, entry) => {
           const quantity = asRecord(entry)?.quantity
           return sum + (typeof quantity === "number" && quantity > 0 ? quantity : 0)
         }, 0)
