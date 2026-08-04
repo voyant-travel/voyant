@@ -262,7 +262,7 @@ const conflictsRoute = createRoute({
 
 // --- ledger plumbing --------------------------------------------------------
 
-const LEDGER_ACTION_VERSION = 1
+const LEDGER_ACTION_VERSION = "v1"
 
 function actionLedgerContext(c: Context<Env>): ActionLedgerRequestContextValues {
   const vars = c.var as Record<string, unknown>

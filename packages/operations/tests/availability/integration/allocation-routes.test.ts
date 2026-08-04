@@ -257,9 +257,7 @@ describe.skipIf(!DB_AVAILABLE)("Availability allocation routes", () => {
       "traveler_unassigned",
     ])
 
-    const missing = await app.request(
-      `/slots/${newId("availability_slots")}/allocation/conflicts`,
-    )
+    const missing = await app.request(`/slots/${newId("availability_slots")}/allocation/conflicts`)
     expect(missing.status).toBe(404)
   })
 
@@ -273,10 +271,10 @@ describe.skipIf(!DB_AVAILABLE)("Availability allocation routes", () => {
       capacity: 1,
       parentId: coach.id,
     })
-    const assigned = await app.request(
-      `/slots/${slotId}/allocation/travelers/${travelerIds[0]}`,
-      { method: "PATCH", ...json({ kind: "vehicle_seat", resourceId: seat.id }) },
-    )
+    const assigned = await app.request(`/slots/${slotId}/allocation/travelers/${travelerIds[0]}`, {
+      method: "PATCH",
+      ...json({ kind: "vehicle_seat", resourceId: seat.id }),
+    })
     expect(assigned.status).toBe(200)
 
     const res = await app.request(
@@ -311,17 +309,15 @@ describe.skipIf(!DB_AVAILABLE)("Availability allocation routes", () => {
     const listed = await app.request(`/slots/${slotId}/allocation/fleet-resources`)
     expect((await listed.json()).data).toHaveLength(1)
 
-    const detach = await app.request(
-      `/slots/${slotId}/allocation/fleet-resources/${coachId}`,
-      { method: "DELETE" },
-    )
+    const detach = await app.request(`/slots/${slotId}/allocation/fleet-resources/${coachId}`, {
+      method: "DELETE",
+    })
     expect(detach.status).toBe(200)
     expect((await detach.json()).data.removedResourceIds).toHaveLength(1)
 
-    const missing = await app.request(
-      `/slots/${slotId}/allocation/fleet-resources/${coachId}`,
-      { method: "DELETE" },
-    )
+    const missing = await app.request(`/slots/${slotId}/allocation/fleet-resources/${coachId}`, {
+      method: "DELETE",
+    })
     expect(missing.status).toBe(404)
   })
 

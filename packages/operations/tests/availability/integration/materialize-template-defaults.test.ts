@@ -257,10 +257,7 @@ describe.skipIf(!DB_AVAILABLE)("materialize template defaults (integration)", ()
       defaultCount: 1,
       flags: {
         layoutSpec: {
-          rows: [
-            { cells: ["seat", "aisle", "seat"] },
-            { cells: ["void", "aisle", "seat"] },
-          ],
+          rows: [{ cells: ["seat", "aisle", "seat"] }, { cells: ["void", "aisle", "seat"] }],
         },
       },
     })

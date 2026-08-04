@@ -6,13 +6,13 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { products } from "../../../../inventory/src/schema.js"
-import { resources, resourceSlotAssignments } from "../../../src/resources/schema.js"
 import { AllocationServiceError } from "../../../src/availability/service-allocation.js"
 import {
   attachDepartureResource,
   detachDepartureResource,
   listDepartureResourceLinks,
 } from "../../../src/availability/service-allocation-resource-link.js"
+import { resourceSlotAssignments, resources } from "../../../src/resources/schema.js"
 
 const DB_AVAILABLE = Boolean(process.env.TEST_DATABASE_URL)
 
@@ -80,9 +80,14 @@ describe.skipIf(!DB_AVAILABLE)("departure fleet-resource link (integration)", ()
   })
 
   it("attaches a fleet resource as an allocation resource and opens its fleet commitment", async () => {
-    const link = await attachDepartureResource(db, slotId, { resourceId: coachId }, {
-      actorId: "usr_test",
-    })
+    const link = await attachDepartureResource(
+      db,
+      slotId,
+      { resourceId: coachId },
+      {
+        actorId: "usr_test",
+      },
+    )
 
     expect(link.created).toBe(true)
     expect(link.resource.kind).toBe("vehicle")

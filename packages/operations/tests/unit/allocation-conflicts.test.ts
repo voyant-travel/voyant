@@ -116,10 +116,7 @@ describe("evaluateAllocationConflicts", () => {
         traveler("t1", { allocations: { room: "r1" }, hasAccessibilityNeeds: true }),
         traveler("t2", { allocations: { room: "r2" }, hasAccessibilityNeeds: true }),
       ],
-      resources: [
-        resource("r1"),
-        resource("r2", { flags: { accessibilityNeeded: true } }),
-      ],
+      resources: [resource("r1"), resource("r2", { flags: { accessibilityNeeded: true } })],
     })
     expect(codes(conflicts)).toEqual(["inaccessible_assignment"])
     expect(conflicts[0]?.subjectId).toBe("t1")
