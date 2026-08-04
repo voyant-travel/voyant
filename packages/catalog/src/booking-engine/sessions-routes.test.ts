@@ -466,6 +466,7 @@ describe("Booking Session v1 routes", () => {
         body: JSON.stringify({
           expectedRevision: publicSession.session.revision,
           quoteId: publicQuote.quote.id,
+          requirementsFingerprint: publicQuote.quote.requirementsFingerprint,
           holdId: publicHold.hold.id,
           idempotencyKey: "route_public_commit_key",
         }),
@@ -528,6 +529,7 @@ describe("Booking Session v1 routes", () => {
         body: JSON.stringify({
           expectedRevision: adminSession.session.revision,
           quoteId: staffQuoteBody.quote.id,
+          requirementsFingerprint: staffQuoteBody.quote.requirementsFingerprint,
           holdId: staffHold.hold.id,
           idempotencyKey: "route_staff_commit_key",
         }),
