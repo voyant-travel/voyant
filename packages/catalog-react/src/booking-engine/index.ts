@@ -101,8 +101,9 @@ export {
   useBookingSession,
 } from "./use-booking-session.js"
 export {
-  publicSelection,
-  type UseOfferPreview,
+  OfferPreviewRejectedError,
+  type OfferPreviewScope,
   type UseOfferPreviewOptions,
+  type UseOfferPreviewResult,
   useOfferPreview,
 } from "./use-offer-preview.js"
