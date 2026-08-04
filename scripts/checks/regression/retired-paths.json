@@ -39,6 +39,10 @@
       "retiredBy": ["catalog-runtime-authority", "node-runtime-product-authority"]
     },
     {
+      "path": "packages/catalog-react/src/booking-engine/use-booking-commit.ts",
+      "retiredBy": ["booking-create-authority"]
+    },
+    {
       "path": "packages/catalog/src/booking-engine/book.ts",
       "retiredBy": ["booking-create-authority"]
     },

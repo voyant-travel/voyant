@@ -13,7 +13,7 @@
  *   - `useBookingSession`      — create / resume / PATCH the selection
  *   - `useBookingQuote`        — price the current Session revision
  *   - `useBookingHold`         — hold real capacity against a Quote
- *   - `useBookingCommit`       — commit the Quote (+ Hold) into a Booking
+ *   - `useCommitBookingSession`       — commit the Quote (+ Hold) into a Booking
  *   - `useBookingRequirements` — the descriptor accessor with a fallback
  *
  * They share `useBookingJourneyApi()`, which derives the API base from the
@@ -66,12 +66,6 @@ export {
   unsatisfiedBookingRequirements,
 } from "./session-outcomes.js"
 export {
-  type BookingCommitInput,
-  type UseBookingCommit,
-  type UseBookingCommitOptions,
-  useBookingCommit,
-} from "./use-booking-commit.js"
-export {
   type PlaceBookingHoldInput,
   type UseBookingHold,
   type UseBookingHoldOptions,
@@ -100,6 +94,12 @@ export {
   type UseBookingSessionOptions,
   useBookingSession,
 } from "./use-booking-session.js"
+export {
+  type BookingCommitInput,
+  type UseCommitBookingSession,
+  type UseCommitBookingSessionOptions,
+  useCommitBookingSession,
+} from "./use-commit-booking-session.js"
 export {
   OfferPreviewRejectedError,
   type OfferPreviewScope,

@@ -13,7 +13,7 @@ import { bookingSessionIdempotencyKey, commitBookingSession } from "./session-cl
 import { bookingSessionOutcomeOf, bookingSessionRejection } from "./session-outcomes.js"
 import { type BookingJourneyApiOptions, useBookingJourneyApi } from "./use-booking-journey-api.js"
 
-export interface UseBookingCommitOptions extends BookingJourneyApiOptions {
+export interface UseCommitBookingSessionOptions extends BookingJourneyApiOptions {
   sessionId: string | null
   revision: number | null
   /** Stable root shared with `useBookingSession` — see its idempotency note. */
@@ -33,7 +33,7 @@ export interface BookingCommitInput {
   payment?: CommitBookingSessionV1["payment"]
 }
 
-export interface UseBookingCommit {
+export interface UseCommitBookingSession {
   /**
    * The admitted Commit outcome — `committed`, `payment_required`,
    * `supplier_pending`, `idempotent_replay`, … Kept whole; a host branches on
@@ -63,7 +63,9 @@ export interface UseBookingCommit {
  * booking. The same derivation is what lets a host persist the key up front,
  * via `idempotencyKeyFor`, and finish the Commit after a reload.
  */
-export function useBookingCommit(options: UseBookingCommitOptions): UseBookingCommit {
+export function useCommitBookingSession(
+  options: UseCommitBookingSessionOptions,
+): UseCommitBookingSession {
   const api = useBookingJourneyApi(options)
   const { sessionId, revision, idempotencyRoot } = options
   const [outcome, setOutcome] = useState<BookingSessionOutcomeV1 | null>(null)
