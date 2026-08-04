@@ -52,18 +52,28 @@ interface LegacyRedirectRule {
  */
 const LEGACY_REDIRECT_RULES: readonly LegacyRedirectRule[] = [
   // Extras were a standalone beta surface; they are Product-owned Options now.
+  //
+  // There is no `/products/options` route and there never was: Options are an
+  // authoring group *inside* Product detail, anchored as `#authoring-options`
+  // (see `authoringGroupDeepLink` in @voyant-travel/inventory-react). The old
+  // target matched `/products/$id` with `id = "options"`, so it turned one
+  // not-found page into another — invisible while nothing called this table.
+  //
+  // A legacy extras id is not a product id, so the detail rule cannot resolve
+  // the anchor without a lookup this layer has no business doing. It lands on
+  // the Product index, which is where an operator can find the owning Product.
   {
     key: "extras.detail",
     family: "extras",
     pattern: /^\/extras\/([^/]+)\/?$/,
-    to: (m) => `/products/options/${m[1]}`,
+    to: () => "/products",
     status: 308,
   },
   {
     key: "extras.index",
     family: "extras",
     pattern: /^\/extras\/?$/,
-    to: () => "/products/options",
+    to: () => "/products",
     status: 308,
   },
   // The scheduled Catalog browse surface is the Product catalog now.
@@ -90,11 +100,17 @@ const LEGACY_REDIRECT_RULES: readonly LegacyRedirectRule[] = [
     status: 308,
   },
   // Operator Availability deep link → the Departure workspace on the slot.
+  //
+  // The workspace is `/operations/availability/$id` — the route is declared as
+  // `${basePath}/$id` with `basePath = "/operations/availability"` in
+  // @voyant-travel/operations-react's admin route contribution. There is no
+  // `/operations/departures` route; "Departures" is the operator-facing *label*
+  // for that surface, not its path.
   {
     key: "availability.slot",
     family: "availability",
     pattern: /^\/availability\/slots\/([^/]+)\/?$/,
-    to: (m) => `/operations/departures/${m[1]}`,
+    to: (m) => `/operations/availability/${m[1]}`,
     status: 308,
   },
 ]
@@ -167,6 +183,47 @@ export class InMemoryLegacyPathUsageStore implements LegacyPathUsageStore {
       lastSeenAt: value.lastSeenAt,
     }))
   }
+}
+
+/**
+ * The process-wide usage binding both ends of the compatibility layer resolve.
+ *
+ * The writer is the request boundary (a redirect middleware on the host that
+ * serves the deep links) and the reader is the acceptance dashboard (an admin
+ * route inside `@voyant-travel/operations`). Those two are composed by packages
+ * that cannot import each other — the serving seam knows nothing about a
+ * module's routes, and a module cannot reach the host — so without a binding
+ * they would each hold their own store and the dashboard would report a zero
+ * the redirects never had a chance to increment. That is the exact failure this
+ * whole module exists to prevent, so the binding lives here, next to the
+ * interface it satisfies.
+ *
+ * Defaults to an in-memory store: correct for the single-process Node operator
+ * deployment, and enough for tests. Anything multi-process must bind a durable
+ * implementation with {@link setLegacyPathUsageStore} before serving its first
+ * request — until it does, "usage is zero" is only *this* process's zero, which
+ * is not the fleet-wide fact a release review needs.
+ */
+let boundLegacyPathUsageStore: LegacyPathUsageStore = new InMemoryLegacyPathUsageStore()
+
+/** The store the redirect middleware records into and the dashboard reads. */
+export function getLegacyPathUsageStore(): LegacyPathUsageStore {
+  return boundLegacyPathUsageStore
+}
+
+/**
+ * Bind the deployment's durable usage store. Call once, before the first
+ * request; both the middleware and the dashboard resolve the store per call, so
+ * a later rebind is honoured but silently discards whatever the default store
+ * already counted.
+ */
+export function setLegacyPathUsageStore(store: LegacyPathUsageStore): void {
+  boundLegacyPathUsageStore = store
+}
+
+/** Test seam: restore the in-memory default so a suite cannot leak into the next. */
+export function resetLegacyPathUsageStore(): void {
+  boundLegacyPathUsageStore = new InMemoryLegacyPathUsageStore()
 }
 
 export interface LegacyRedirectOutcome {

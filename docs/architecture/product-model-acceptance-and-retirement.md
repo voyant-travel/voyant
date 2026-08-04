@@ -79,6 +79,20 @@ zero" a fact a release review can check** rather than an assumption. The
 redirects and the counter are **built and instrumented only**; they are not
 deleted here.
 
+**Where this runs.** `legacyRedirects`
+(`@voyant-travel/hono/middleware/legacy-redirects`) is the HTTP edge, mounted
+unconditionally by `serveAdminHost` ahead of static serving and auth. That is
+the only seam that sees these paths: they are UI deep links at the origin root,
+and the admin host routes only `/api/*` into the composed framework app, so a
+superseded bookmark would otherwise reach the SSR handler and render a not-found
+page. It is deliberately **not** mounted in `mountApp`: a storefront deployment
+serves `/catalog/*slug` as real published content at the origin root, and
+redirecting it there would break a live public URL to repair an operator
+bookmark. The writer (the middleware) and the reader (the dashboard below) share
+one store through `get`/`setLegacyPathUsageStore` in `@voyant-travel/core`;
+a multi-process deployment must bind a durable store there before serving, or
+the reported zero is only one process's zero.
+
 ## Acceptance dashboard metrics (no PII)
 
 `computeAcceptanceMetrics` (`@voyant-travel/operations`) reports six health
@@ -86,6 +100,23 @@ signals over injectable providers: readiness failures, reconciliation drift,
 unassigned travelers, missing costs, legacy-path usage, and rollup
 disagreement. Every field is a **count** or a route-keyed usage row — no
 traveler name, email, booking reference, or any other PII is read or emitted.
+
+It is served at `GET /v1/admin/operations/acceptance/aggregates`, following the
+same `/aggregates` convention as the availability dashboard read-models, with
+two deliberate differences: the response is `no-store` (legacy-path usage gates
+a deletion review and must not answer from a snapshot), and the envelope carries
+a `meta.financeProviderBound` flag so an unmeasured `0` for the two money
+signals is not mistaken for a measured one.
+
+`createAcceptanceMetricsProviders` binds the providers. Readiness failures,
+reconciliation drift and unassigned travelers are single fleet-wide raw-SQL
+counts — raw SQL because the tables belong to other modules and the
+`operations->availability` reach-in budget is exhausted. Missing costs and
+rollup disagreement are read from the departure-profitability port that already
+backs the departure workspace, because money is Finance's and Operations must
+not recompute it. The readiness mirror expresses the **blocking** rules of
+`evaluateProductReadiness`; Inventory owns that evaluator, so a new blocking
+rule there must be reflected here or this count silently understates.
 
 ## The deletion gate (out of scope here)
 

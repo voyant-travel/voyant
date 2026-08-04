@@ -66,6 +66,10 @@ export {
   computeAcceptanceMetrics,
   legacyPathUsageRowSchema,
 } from "./acceptance-metrics.js"
+export type { AcceptanceMetricsProviderOptions } from "./acceptance-metrics-providers.js"
+export { createAcceptanceMetricsProviders } from "./acceptance-metrics-providers.js"
+export type { AcceptanceAdminRoutes } from "./acceptance-routes.js"
+export { acceptanceAdminRoutes } from "./acceptance-routes.js"
 export {
   OPERATIONS_EXPIRED_HOLDS_JOB_ID,
   requestAvailabilityHoldExpiryWake,
