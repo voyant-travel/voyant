@@ -1,6 +1,6 @@
 {
-  "id": "1a85b86d-d6ab-45e9-b782-dfc1ac4ff768",
-  "prevId": "0b77670a-70f7-445f-a1b3-c7dc306e5dad",
+  "id": "e71545cc-97b4-4a20-b863-d7611b5c24e7",
+  "prevId": "1a85b86d-d6ab-45e9-b782-dfc1ac4ff768",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2400,6 +2400,22 @@
           "primaryKey": false,
           "notNull": true,
           "default": 1
+        },
+        "planned_cost_basis": {
+          "name": "planned_cost_basis",
+          "type": "day_service_planned_cost_basis",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'per_service_unit'"
+        },
+        "quantity_driver": {
+          "name": "quantity_driver",
+          "type": "day_service_quantity_driver",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'service_units'"
         },
         "sort_order": {
           "name": "sort_order",
@@ -7328,6 +7344,30 @@
       "values": [
         "included",
         "optional"
+      ]
+    },
+    "public.day_service_planned_cost_basis": {
+      "name": "day_service_planned_cost_basis",
+      "schema": "public",
+      "values": [
+        "flat",
+        "per_person",
+        "per_room",
+        "per_night",
+        "per_vehicle",
+        "per_service_unit"
+      ]
+    },
+    "public.day_service_quantity_driver": {
+      "name": "day_service_quantity_driver",
+      "schema": "public",
+      "values": [
+        "fixed",
+        "pax",
+        "rooms",
+        "nights",
+        "vehicles",
+        "service_units"
       ]
     },
     "public.day_service_traveler_scope": {
