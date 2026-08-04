@@ -130,39 +130,62 @@ All under `<app>/node_modules/.pnpm/`:
 to `file:` archives regardless of version, so the earlier "@voyant duplicate"
 hypothesis is disproved.
 
-## Recommended fix (not applied — see rationale)
+## Fix applied
 
-The defect is that the starter pins `@tanstack/react-router` but lets the
-TanStack Start hydration toolchain (`@tanstack/react-start*`,
-`@tanstack/start-client-core`, `@tanstack/router-core`, …) float independently,
-so a floated harness runs against a pinned, older router with a different store
-field name. Fix by pinning the **whole `@tanstack/*` router+start family
-coherently** so the harness and the router always come from one release train:
+`scripts/package-starters.mjs` now emits `pnpm.overrides` in the generated
+starter `package.json` pinning the **whole `@tanstack/*` router + Start family**
+to one coherent release train, so a lockfile-less consumer install can no longer
+float half the family past the other:
 
-1. **(recommended, durable)** In `scripts/package-starters.mjs`, emit
-   `pnpm.overrides` for the entire TanStack router/start family
-   (`@tanstack/react-router`, `@tanstack/router-core`, `@tanstack/router-plugin`,
-   `@tanstack/router-generator`, `@tanstack/router-utils`,
-   `@tanstack/react-start`, `@tanstack/react-start-client`,
-   `@tanstack/react-start-server`, `@tanstack/react-start-rsc`,
-   `@tanstack/start-client-core`, `@tanstack/start-server-core`,
-   `@tanstack/history`) locked to the versions the workspace lockfile resolves
-   (the coherent set the release was built and tested against). Derive them from
-   the workspace so the coordinate can't drift out of the family again. This
-   removes the split install entirely; its effect (single copy per package,
-   matching harness/router) is verifiable with the reproduction above.
-2. Alternatively, bump the starter `@tanstack/react-router` coordinate so the app
-   router is built by the same release train the toolchain floats to (e.g.
-   `1.170.19` → router-core `1.171.16`, which has `ids`). This is tail-chasing:
-   the float will drift again on the next TanStack publish.
+```
+@tanstack/react-router 1.170.17   @tanstack/router-core 1.171.14
+@tanstack/router-plugin 1.168.19  @tanstack/router-generator 1.167.18
+@tanstack/router-utils 1.162.2    @tanstack/react-start 1.168.27
+@tanstack/react-start-client 1.168.15  @tanstack/react-start-server 1.167.21
+@tanstack/start-client-core 1.170.13   @tanstack/start-server-core 1.169.16
+@tanstack/start-plugin-core 1.171.19   @tanstack/history 1.162.0
+```
 
-### Why not committed here
+**Single source of truth:** the family *names* are one list
+(`TANSTACK_ROUTER_START_FAMILY`) and every *version* is derived from the
+workspace's own resolved install (`node_modules/.pnpm`, asserting exactly one
+version per package). The workspace is already a coherent `matchesId`-era set
+(react-router 1.170.17 → router-core 1.171.14 → start-client-core 1.170.13), so
+the emitted pins can never split the two halves. Adding a new family member later
+is a one-line addition to that array; its version resolves automatically. Chose
+this over a static block in `standard-node-starter.json` because a hand-listed
+version block is exactly the kind of thing that drifts out of sync with the
+workspace it must match.
 
-Per the task ("fix only if clear-cut"; "a precise diagnosis with evidence is
-worth more than a speculative fix"), and because option 1 is a starter-generation
-design change that pins a dozen third-party versions and should be owned/reviewed
-by the runtime team, the deliverable is the verified diagnosis + a reproduction
-recipe so any candidate fix can be checked. Option 2 is a stop-gap, not a fix.
+**No product code changed.** In particular `@tanstack/router-core` was **not**
+added to `VOYANT_DEDUPE_DEPENDENCIES` in `packages/vite-config/src/index.ts`: the
+overrides make the install contain a single `router-core` copy (verified below),
+so a dedupe entry would be redundant — added only if evidence showed the split
+survived, which it does not.
+
+The harness merge holds in practice: the acceptance harness
+(`minimal-starter-acceptance.test.mjs:371-379`) spreads its `file:` overrides on
+top of `packageJson.pnpm?.overrides`, so the starter-emitted TanStack pins
+survive — the installed app `package.json` carries both the 12 TanStack pins and
+the ~110 `file:` overrides.
+
+### Verification (clean pnpm metadata → today's registry, where 1.168.17 is `latest`)
+
+- `node --test scripts/tests/minimal-starter-acceptance.test.mjs` — **run 1: 5/5 pass**
+  (`FIX_RUN1_EXIT=0`); **run 2: 5/5 pass** (`FIX_RUN2_EXIT=0`). Zero `pageerror`
+  lines in either log. The `start`-mode subtest "hydrates the production client
+  bundle without browser errors" passing *is* the empty-`browserErrors` assertion
+  (test line ~588).
+- Installed family in the passing fixture is a single, coherent set — one
+  `react-router` (1.170.17), one `router-core` (1.171.14), `start-client-core`
+  1.170.13 from the same train. The harness now reads `router.stores.matchesId`,
+  the field the pinned router-core actually builds.
+- Control (same clean metadata, **without** the fix): floats to
+  `react-start-client@1.168.17` → `start-client-core@1.170.15` and fails 5/5 with
+  the `router.stores.ids.get()` crash — the reproduction documented above.
+
+Rejected: bumping `@tanstack/react-router` to `1.170.19` alone. It re-couples for
+exactly one upstream publish, then drifts again.
 
 ## Instrumentation left on the branch (in the test file)
 
