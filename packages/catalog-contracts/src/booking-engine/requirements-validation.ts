@@ -440,3 +440,67 @@ function numberMap(value: unknown): Record<string, number> {
   }
   return entries
 }
+
+/**
+ * Traveler-field keys the Booking Session can actually carry.
+ *
+ * `normalizeBookingSelection` projects a stored traveler down to this set
+ * (`sessions-production.ts`, `normalizeTraveler`), deliberately: the richer
+ * fields a wizard collects — `documents`, `dateOfBirth`, `preferredLanguage`,
+ * `specialRequests` — are plaintext PII that the v1 posture does not keep on
+ * an open Session.
+ *
+ * That makes them unsatisfiable, not merely unchecked. A vertical marking one
+ * of them `required` would publish a descriptor its own commit path can never
+ * satisfy, and the buyer would be told to supply something the pipeline drops
+ * on the way in — voyant#4113's shape, arriving through the enforcement added
+ * to prevent it.
+ *
+ * So the mismatch is a contract error, surfaced by the conformance suite at
+ * development time rather than as a dead-ended quote in production. Widening
+ * this set means widening the selection projection first, and deciding where
+ * the PII lands.
+ */
+export const REPRESENTABLE_TRAVELER_FIELD_KEYS_V1: ReadonlySet<string> = new Set([
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "band",
+  "travelerCategory",
+  "isPrimary",
+])
+
+/** Booking-field groups the public selection has a bucket for. */
+export const REPRESENTABLE_BOOKING_FIELD_GROUPS_V1: ReadonlySet<string> = new Set([
+  "billing",
+  "company",
+])
+
+/**
+ * Required requirements the Session could never satisfy, whatever the buyer
+ * enters. Empty is the only acceptable value; a non-empty result is a defect
+ * in the descriptor, not in the selection.
+ */
+export function unsatisfiableRequiredRequirementsV1(
+  requirements: BookingRequirementsV1,
+): UnsatisfiedRequirementV1[] {
+  const unsatisfiable: UnsatisfiedRequirementV1[] = []
+  for (const field of requirements.travelerFields) {
+    if (field.required && !REPRESENTABLE_TRAVELER_FIELD_KEYS_V1.has(field.key)) {
+      unsatisfiable.push({
+        requirementKey: `travelerFields.${field.key}`,
+        reason: "traveler_field_required",
+      })
+    }
+  }
+  for (const field of requirements.bookingFields) {
+    if (field.required && !REPRESENTABLE_BOOKING_FIELD_GROUPS_V1.has(field.group)) {
+      unsatisfiable.push({
+        requirementKey: `bookingFields.${field.key}`,
+        reason: "booking_field_required",
+      })
+    }
+  }
+  return unsatisfiable
+}

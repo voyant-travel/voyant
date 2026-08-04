@@ -3,6 +3,7 @@ import type { BookingRequirementsV1, PaxBandDependencyV1 } from "./requirements-
 import { bookingRequirementsV1 } from "./requirements-contracts.js"
 import {
   requiredRequirementKeysV1,
+  unsatisfiableRequiredRequirementsV1,
   validateSelectionAgainstRequirements,
 } from "./requirements-validation.js"
 
@@ -759,6 +760,19 @@ function assertRequirementsCheckable(
   const probe = {
     travelers: requirements.paxBands.map((band) => ({ band: band.code })),
   }
+  const unsatisfiable = unsatisfiableRequiredRequirementsV1(requirements)
+  if (unsatisfiable.length > 0) {
+    // Checkable is not the same as satisfiable. The Booking Session projects a
+    // traveler down to a fixed set of fields, so a descriptor marking anything
+    // outside it required publishes a demand the buyer can never meet — the
+    // shape of voyant#4113, arriving through the enforcement added to stop it.
+    throw new Error(
+      `${scenarioId}: ${unsatisfiable
+        .map((entry) => entry.requirementKey)
+        .join(", ")} marked required but the Booking Session cannot carry it`,
+    )
+  }
+
   const named = new Set(
     validateSelectionAgainstRequirements(requirements, probe).map((entry) => entry.requirementKey),
   )

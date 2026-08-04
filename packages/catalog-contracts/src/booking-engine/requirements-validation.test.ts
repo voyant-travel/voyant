@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest"
 
 import type { BookingRequirementsV1 } from "./requirements-contracts.js"
-import { DEFAULT_PAYMENT_INTENTS, defaultRequirementsFlags } from "./requirements-defaults.js"
+import {
+  DEFAULT_PAYMENT_INTENTS,
+  defaultBookingFields,
+  defaultRequirementsFlags,
+  defaultTravelerFields,
+} from "./requirements-defaults.js"
 import {
   requiredRequirementKeysV1,
+  unsatisfiableRequiredRequirementsV1,
   validateSelectionAgainstRequirements,
 } from "./requirements-validation.js"
 
@@ -271,5 +277,59 @@ describe("requiredRequirementKeysV1", () => {
       "travelerFields.firstName",
       "bookingFields.buyerType",
     ])
+  })
+})
+
+describe("unsatisfiableRequiredRequirementsV1", () => {
+  it("passes the descriptor every first-party vertical publishes today", () => {
+    expect(
+      unsatisfiableRequiredRequirementsV1(
+        requirements({
+          travelerFields: [...defaultTravelerFields()],
+          bookingFields: [...defaultBookingFields()],
+        }),
+      ),
+    ).toEqual([])
+  })
+
+  it("rejects a required traveler field the selection projection drops", () => {
+    // voyant#4113 arriving through the enforcement built to prevent it: the
+    // descriptor asks for a passport, `normalizeTraveler` drops `documents`,
+    // and the buyer can never satisfy the quote however much they type.
+    expect(
+      unsatisfiableRequiredRequirementsV1(
+        requirements({
+          travelerFields: [{ key: "passport", label: "Passport", type: "text", required: true }],
+        }),
+      ),
+    ).toEqual([{ requirementKey: "travelerFields.passport", reason: "traveler_field_required" }])
+  })
+
+  it("does not flag the same field when it is optional", () => {
+    expect(
+      unsatisfiableRequiredRequirementsV1(
+        requirements({
+          travelerFields: [{ key: "passport", label: "Passport", type: "text", required: false }],
+        }),
+      ),
+    ).toEqual([])
+  })
+
+  it("rejects a required booking field in a group the selection has no bucket for", () => {
+    expect(
+      unsatisfiableRequiredRequirementsV1(
+        requirements({
+          bookingFields: [
+            {
+              key: "seatPreference",
+              label: "Seat",
+              type: "text",
+              required: true,
+              group: "preferences",
+            },
+          ],
+        }),
+      ),
+    ).toEqual([{ requirementKey: "bookingFields.seatPreference", reason: "booking_field_required" }])
   })
 })
