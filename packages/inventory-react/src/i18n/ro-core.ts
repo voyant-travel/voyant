@@ -67,6 +67,11 @@ export const productsUiCoreRo = {
       private: "Privat",
       hidden: "Ascuns",
     },
+    scheduleTermLabels: {
+      session: { singular: "Sesiune", plural: "Sesiuni" },
+      occurrence: { singular: "Apariție", plural: "Apariții" },
+      departure: { singular: "Plecare", plural: "Plecări" },
+    },
   },
   comboboxes: {
     product: {

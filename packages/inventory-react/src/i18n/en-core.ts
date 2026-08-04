@@ -68,6 +68,11 @@ export const productsUiCoreEn = {
       private: "Private",
       hidden: "Hidden",
     },
+    scheduleTermLabels: {
+      session: { singular: "Session", plural: "Sessions" },
+      occurrence: { singular: "Occurrence", plural: "Occurrences" },
+      departure: { singular: "Departure", plural: "Departures" },
+    },
   },
   comboboxes: {
     product: {
