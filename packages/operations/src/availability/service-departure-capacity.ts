@@ -31,8 +31,7 @@
  * worse than one that matches the manifest.
  */
 
-import { availabilitySlots } from "@voyant-travel/availability/schema"
-import { eq, sql } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { activeBookingAllocationStatusesSql, activeBookingStatusesSql } from "./booking-statuses.js"
@@ -41,6 +40,7 @@ import {
   type SlotResourceAvailability,
 } from "./service-allocation-resource-capacity.js"
 import { executeRows } from "./service-allocation-sql.js"
+import { getSlotById } from "./service-core.js"
 import { countSlotHolds, type SlotHoldCounts } from "./service-holds.js"
 
 /** Allocation rows split by what they still do to the slot's inventory. */
@@ -179,16 +179,7 @@ export async function getDepartureCapacityCounters(
   slotId: string,
   now: Date = new Date(),
 ): Promise<DepartureCapacityCounters | null> {
-  const [slot] = await db
-    .select({
-      id: availabilitySlots.id,
-      unlimited: availabilitySlots.unlimited,
-      initialPax: availabilitySlots.initialPax,
-      remainingPax: availabilitySlots.remainingPax,
-    })
-    .from(availabilitySlots)
-    .where(eq(availabilitySlots.id, slotId))
-    .limit(1)
+  const slot = await getSlotById(db, slotId)
 
   if (!slot) return null
 

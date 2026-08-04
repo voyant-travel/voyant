@@ -24,12 +24,11 @@
  * the whole departure, not by counting what a page happened to return.
  */
 
-import { type AvailabilitySlot, availabilitySlots } from "@voyant-travel/availability/schema"
+import type { AvailabilitySlot } from "@voyant-travel/availability/schema"
 import type {
   FinanceDepartureProfitabilityReport,
   FinanceDepartureProfitabilityRow,
 } from "@voyant-travel/finance-contracts/runtime-port"
-import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { readDepartureProfitabilityReport } from "./departure-profitability-runtime.js"
@@ -38,6 +37,7 @@ import {
   derivePaidAmountCents,
   loadSlotBookingRows,
 } from "./service-allocation-manifest-queries.js"
+import { getSlotById } from "./service-core.js"
 import {
   type DepartureCapacityCounters,
   getDepartureCapacityCounters,
@@ -159,11 +159,7 @@ export async function getDepartureSummary(
 ): Promise<DepartureSummary | null> {
   const now = options.now ?? new Date()
 
-  const [slot] = await db
-    .select()
-    .from(availabilitySlots)
-    .where(eq(availabilitySlots.id, slotId))
-    .limit(1)
+  const slot = await getSlotById(db, slotId)
 
   if (!slot) return null
 
