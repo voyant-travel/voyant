@@ -112,6 +112,11 @@ vi.mock("@voyant-travel/operations-react/availability", () => ({
     remove: { isPending: false, mutateAsync: testState.removeResource },
   }),
   useAssignTravelerAllocationMutation: () => ({
+    isPending: false,
+    mutateAsync: vi.fn(),
+  }),
+  useTravelerRoomingPreferencesMutation: () => ({
+    isPending: false,
     mutateAsync: vi.fn(),
   }),
   useAutoAllocatePreviewMutation: () => ({
@@ -209,6 +214,9 @@ vi.mock("@voyant-travel/ui/components", () => {
     EmptyMedia: Passthrough,
     EmptyTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h3>{children}</h3>,
     Input: (props: ReactTypes.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+    Textarea: (props: ReactTypes.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+      <textarea {...props} />
+    ),
     Label: ({ children, ...props }: ReactTypes.LabelHTMLAttributes<HTMLLabelElement>) => (
       <span {...props}>{children}</span>
     ),
