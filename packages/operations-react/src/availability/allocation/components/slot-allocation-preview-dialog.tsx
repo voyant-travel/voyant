@@ -121,7 +121,17 @@ export function AllocationPreviewDialog({
                           .replace(
                             "{relaxed}",
                             compromise.relaxed
-                              .map((code) => copy.relaxations[code] ?? code)
+                              // `relaxed` is typed `string` on the wire on
+                              // purpose, so a newer server's code renders as
+                              // itself rather than being dropped — the same
+                              // open-union contract the conflict codes use.
+                              // The catalogue is a closed Record, so the lookup
+                              // has to be widened rather than the wire narrowed.
+                              .map(
+                                (code) =>
+                                  (copy.relaxations as Record<string, string | undefined>)[code] ??
+                                  code,
+                              )
                               .join(", "),
                           )}
                       </li>

@@ -96,7 +96,13 @@ export function RoomingPreferencesDialog({
             <p className="text-muted-foreground text-xs">{copy.description}</p>
             <div className="grid gap-1.5">
               <Label htmlFor="rooming-bed-preference">{copy.bedPreferenceLabel}</Label>
-              <Select value={bedPreference} onValueChange={setBedPreference}>
+              {/* The Select clears to `null`; the sentinel is what "no
+                  preference" means in this form's state, and `submit` maps it
+                  back to a null bed preference on the wire. */}
+              <Select
+                value={bedPreference}
+                onValueChange={(value) => setBedPreference(value ?? NO_BED_PREFERENCE)}
+              >
                 <SelectTrigger id="rooming-bed-preference" className="w-full">
                   <SelectValue placeholder={copy.bedPreferenceNone} />
                 </SelectTrigger>
