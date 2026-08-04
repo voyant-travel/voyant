@@ -220,6 +220,12 @@ export const productListQuerySchema = z.object({
   familyCode: z.string().optional(),
   /** Facet on the Product subtype stable code (e.g. `boat-tour`). */
   productSubtypeCode: z.string().optional(),
+  /**
+   * Operator classification-review queue filter. `pending` returns every row
+   * that needs review; the reason-specific values narrow to one reason. Ambiguous
+   * legacy rows surface here rather than being silently guessed.
+   */
+  classificationReview: z.enum(["pending", "missing_family", "unresolved_duration"]).optional(),
   contractTemplateId: typeIdSchema("contract_templates").optional(),
   taxClassId: z.string().optional(),
   categoryId: z.string().optional(),
