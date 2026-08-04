@@ -111,6 +111,18 @@ export const productsUiCoreEn = {
     title: "Products",
     description: "Manage the products you sell.",
   },
+  productAuthoringNav: {
+    label: "Product authoring sections",
+    groups: {
+      overview: "Overview & readiness",
+      content: "Content",
+      plan: "Plan",
+      options: "Options & pricing",
+      availability: "Availability",
+      distribution: "Distribution",
+      history: "History",
+    },
+  },
   productDetailPage: {
     actions: {
       back: "Back",

@@ -89,6 +89,19 @@ export type ProductsUiCoreMessages = {
     title: string
     description: string
   }
+  productAuthoringNav: {
+    /** Accessible label for the authoring group navigation landmark. */
+    label: string
+    groups: {
+      overview: string
+      content: string
+      plan: string
+      options: string
+      availability: string
+      distribution: string
+      history: string
+    }
+  }
   productDetailPage: {
     actions: {
       back: string

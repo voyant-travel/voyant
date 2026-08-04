@@ -110,6 +110,18 @@ export const productsUiCoreRo = {
     title: "Produse",
     description: "Administreaza produsele pe care le vinzi.",
   },
+  productAuthoringNav: {
+    label: "Secțiuni de configurare a produsului",
+    groups: {
+      overview: "Prezentare și pregătire",
+      content: "Conținut",
+      plan: "Plan",
+      options: "Opțiuni și prețuri",
+      availability: "Disponibilitate",
+      distribution: "Distribuție",
+      history: "Istoric",
+    },
+  },
   productDetailPage: {
     actions: {
       back: "Inapoi",
