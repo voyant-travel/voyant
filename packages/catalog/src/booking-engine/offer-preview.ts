@@ -19,11 +19,11 @@
  */
 
 import type {
-  BookingQuoteUnavailableReasonV1,
   OfferPreviewOutcomeV1,
   OfferPreviewRequestV1,
   OfferPreviewResultV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/preview-contracts"
+import type { BookingQuoteUnavailableReasonV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 
 import type { BookingRequirementsV1 } from "./contracts.js"
 import { InvalidBookingSessionSelectionError } from "./errors.js"
