@@ -1061,7 +1061,11 @@ describe("Booking Session v1 owned tracer", () => {
       advance(ms: number) {
         currentNow = new Date(currentNow.getTime() + ms)
       },
-      setPrice() {},
+      // Same shape as `createHarness()` so `createQuoteAndHold` infers the real
+      // quote record here; a narrower stub degrades it to `{ id }` and the
+      // fingerprint read below stops typechecking.
+      setPrice(_next: typeof BASE_PRICING) {},
+      setRequirements(_next: BookingRequirementsV1) {},
     }
     const { session, capability, quote, hold } = await createQuoteAndHold(harness)
 
