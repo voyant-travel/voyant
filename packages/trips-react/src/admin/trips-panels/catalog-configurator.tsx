@@ -207,7 +207,7 @@ export function CatalogConfigurator({
           shape={shape}
           onDraftChange={(bookingDraft) => onChange({ ...pending, bookingDraft })}
         />
-      ) : pending.bookingDraft && quote.isQuoting ? (
+      ) : pending.bookingDraft && quote.isSettling ? (
         <p className="text-muted-foreground text-sm">{t.loadingOptions}</p>
       ) : null}
     </div>
