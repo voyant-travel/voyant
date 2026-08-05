@@ -63,7 +63,12 @@ export function buildServerInstructions(scope: GuideScope): string {
       ? "This key can read catalog and booking data and invoke state-changing Tools (subject to per-Tool scopes and the confirmation protocol below)."
       : "This key is READ-ONLY: it can list and read, but the create/update/publish/book Tools below are not reachable with it. Ignore write instructions."
   return [
-    "This MCP server is the admin surface of a Voyant deployment — an online travel agency, tour-operator, and destination-management platform. Through it you can discover and operate the operator's catalog (Products, Options, and dated departures/Slots), the sales pipeline (Proposals and Proposal Versions), Bookings and their Travelers, and downstream Invoices and Payments.",
+    // The CRM was missing from this list, and that omission was load-bearing:
+    // asked to find a client, the agent read this sentence, saw no mention of
+    // people, and went looking in `bookings_query` instead — reproducibly, 3/3
+    // runs. An overview an agent uses to decide where things live has to name
+    // every domain it can reach, or the ones it omits effectively do not exist.
+    "This MCP server is the admin surface of a Voyant deployment — an online travel agency, tour-operator, and destination-management platform. Through it you can discover and operate the operator's CRM (People — also called clients or customers — and Organizations), the catalog (Products, Options, and dated departures/Slots), the sales pipeline (Proposals and Proposal Versions), Bookings and their Travelers, and downstream Invoices and Payments.",
     "",
     access,
     "",
@@ -74,8 +79,10 @@ export function buildServerInstructions(scope: GuideScope): string {
     "these meta-tools and the guide. READS are grouped by product area into one",
     "`<domain>_query` tool (a discriminated union on `resource`): read products with",
     '`inventory_query` (`resource: "products"`/`"product"`), dated departures with',
-    '`operations_query` (`resource: "departures"`) — search the record noun (`products`,',
-    "`bookings`, `departures`) to find its query tool. Travelers are read through their",
+    '`operations_query` (`resource: "departures"`), and CRM people with',
+    '`relationships_query` (`resource: "people"` to search by name, `"person"` to read',
+    "one by id) — search the record noun (`products`, `bookings`, `departures`,",
+    "`people`) to find its query tool. Travelers are read through their",
     "booking record, not a standalone tool. WRITES stay one Tool each (verb-first, e.g.",
     "`create_booking`, `publish_product`) so their per-action policy stays explicit.",
     "",

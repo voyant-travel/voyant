@@ -139,6 +139,8 @@ async function runJourney(input: {
   tools: unknown[]
   task: string
   maxCalls: number
+  /** The server's own `instructions`, exactly as a real MCP client surfaces them. */
+  serverInstructions: string
 }): Promise<JourneyRun> {
   const messages: Array<Record<string, unknown>> = [
     {
@@ -147,7 +149,15 @@ async function runJourney(input: {
         "You are the back-office agent for a travel operator, connected to its MCP server. " +
         "Use the tools to actually perform the work end to end. Never invent data. If a write " +
         "reports that confirmation or approval is required, follow the instructions in the " +
-        "error and complete it. Finish by stating what you created, including any ids.",
+        "error and complete it. Finish by stating what you created, including any ids." +
+        // A real MCP client reads `instructions` from `initialize` and puts it in
+        // front of the model. This harness did not, which made it a WORSE client
+        // than the ones we ship to — and the guide layer (voyant#3931) exists
+        // precisely to orient the agent before its first call. Measuring a surface
+        // while withholding its own operating instructions measures the harness.
+        (input.serverInstructions
+          ? `\n\n--- server instructions ---\n${input.serverInstructions}`
+          : ""),
     },
     { role: "user", content: input.task },
   ]
@@ -316,17 +326,11 @@ const JOURNEYS: CapabilityJourney[] = [
     expect: "departure",
     maxCalls: 14,
     requiresDispatch: true,
-    // Reproduced 4/4 runs. `search_tools("departures")` DOES return
-    // operations_query, and the agent still answers "There are no tools available
-    // to list departures, which suggests there are no departures scheduled" —
-    // asserting a BUSINESS FACT from a discovery miss, without dispatching. The
-    // vocabulary fixes moved the other five journeys and not this one, so the
-    // cause is not the index. Same failure mode as the record-name search in the
-    // mcp package's KNOWN_GAPS: the agent decides the data is absent because
-    // discovery felt incomplete. Current read: the guide layer (W7) has to
-    // establish up front that a query tool must be CALLED before concluding
-    // anything is empty.
-    knownGap: "answers from the tool index without dispatching (voyant#3921)",
+    // Was a documented gap: the agent answered "there are no tools available to
+    // list departures, which suggests there are no departures scheduled" without
+    // dispatching — a business claim from a discovery miss. Fixed by having the
+    // harness read the server `instructions` on `initialize` like a real MCP
+    // client, which is what the guide layer (voyant#3931) is for.
   },
 ]
 
@@ -401,6 +405,25 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
   beforeAll(async () => {
     if (!enabled) return
     const app = await mountRealMcp()
+    // Handshake first, like a real client: `instructions` is returned here and
+    // nowhere else.
+    const initialized = await readRpc(
+      await app.request(
+        "/",
+        rpc("initialize", {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: { name: "voyant-capability-eval", version: "0.0.0" },
+        }),
+        TEST_ENV,
+        TEST_CTX,
+      ),
+    )
+    const serverInstructions = String(
+      (initialized.result as { instructions?: string } | undefined)?.instructions ?? "",
+    )
+    process.stdout.write(`server instructions: ${serverInstructions.length} chars\n`)
+
     const listed = await readRpc(await app.request("/", rpc("tools/list", {}), TEST_ENV, TEST_CTX))
     const tools = (
       (listed.result as { tools?: Array<Record<string, unknown>> } | undefined)?.tools ?? []
@@ -417,7 +440,13 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
       try {
         runs.set(
           journey.id,
-          await runJourney({ app, tools, task: journey.task, maxCalls: journey.maxCalls }),
+          await runJourney({
+            app,
+            tools,
+            task: journey.task,
+            maxCalls: journey.maxCalls,
+            serverInstructions,
+          }),
         )
       } catch (err) {
         runs.set(journey.id, {
