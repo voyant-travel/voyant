@@ -394,11 +394,12 @@ export async function loadVoyantProject(
             storefrontChannelBinding.getStorefrontChannelBinding(context, storefrontId),
         })
       : undefined
-  // A host-supplied resolver (the managed profile) authenticates the storefront
-  // against its control plane, which has no channel concept, so the context it
-  // returns never carries one and every public catalog read 403s on a guard it
-  // cannot satisfy (#4323). The binding rows are local either way — read them
-  // here so both auth profiles agree on whether a public surface has a channel.
+  // A host-supplied resolver (a `voyant-cloud` deployment) authenticates the
+  // storefront against its control plane, which has no channel concept, so the
+  // context it returns never carries one and every public catalog read 403s on a
+  // guard it cannot satisfy (#4323). The binding rows are local either way —
+  // read them here so both auth profiles agree on whether a public surface has
+  // a channel.
   const hostCustomerAuthContext = options.host?.resolveCustomerAuthContext
   const customerAuthContextResolver =
     hostCustomerAuthContext && storefrontRuntimeProvider

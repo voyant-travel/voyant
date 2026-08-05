@@ -335,9 +335,9 @@ describe("Voyant project runtime composition", () => {
   })
 
   it("resolves the storefront channel a host customer-auth context never carries", async () => {
-    // The managed profile supplies its own resolver and its control plane has no
-    // channel concept, so the context comes back without one and every public
-    // catalog read 403s (#4323). The binding lives in the deployment database.
+    // A `voyant-cloud` deployment supplies its own resolver and its control
+    // plane has no channel concept, so the context comes back without one and
+    // every public catalog read 403s (#4323). The binding itself is local.
     const resolveCustomerAuthContext = async () => ({
       baseURL: "https://shop.example.com",
       trustedOrigins: ["https://shop.example.com"],
