@@ -539,6 +539,6 @@ function SetupStepRow({
 }
 
 function resolveStepMessages(step: AdminSetupStepContribution, locale: string | null | undefined) {
-  const language = locale?.toLowerCase().startsWith("ro") ? "ro" : "en"
+  const language = locale?.toLowerCase().split("-")[0] ?? "en"
   return step.messages[language] ?? step.messages.en ?? Object.values(step.messages)[0]!
 }

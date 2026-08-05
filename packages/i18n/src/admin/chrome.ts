@@ -10,6 +10,7 @@ export type AdminChromeMessages = {
   language: string
   english: string
   romanian: string
+  spanish: string
   somethingWentWrong: string
   somethingWentWrongDetail: string
   requestFailed: string
@@ -42,6 +43,7 @@ export const adminChromeMessages = {
     language: "Language",
     english: "English",
     romanian: "Romanian",
+    spanish: "Spanish",
     somethingWentWrong: "Something went wrong",
     somethingWentWrongDetail: "Something went wrong while loading this page.",
     requestFailed: "Request failed",
@@ -73,6 +75,7 @@ export const adminChromeMessages = {
     language: "Limbă",
     english: "Engleză",
     romanian: "Română",
+    spanish: "Spaniolă",
     somethingWentWrong: "Ceva nu a funcționat",
     somethingWentWrongDetail: "A apărut o eroare la încărcarea acestei pagini.",
     requestFailed: "Solicitarea a eșuat",
@@ -93,5 +96,37 @@ export const adminChromeMessages = {
       "Extensia nu este compatibilă cu această versiune de administrare (necesită {required}, versiunea curentă oferă {provided}).",
     appPageTitle: "Aplicație",
     appPageUnavailable: "Această pagină de aplicație nu mai este disponibilă.",
+  },
+  es: {
+    loading: "Cargando...",
+    account: "Cuenta",
+    notifications: "Notificaciones",
+    logOut: "Cerrar sesión",
+    light: "Claro",
+    dark: "Oscuro",
+    language: "Idioma",
+    english: "Inglés",
+    romanian: "Rumano",
+    spanish: "Español",
+    somethingWentWrong: "Algo ha salido mal",
+    somethingWentWrongDetail: "Se ha producido un error al cargar esta página.",
+    requestFailed: "La solicitud ha fallado",
+    retry: "Inténtalo de nuevo",
+    goToDashboard: "Ir al panel",
+    loadingAdminWorkspace: "Cargando el espacio de trabajo",
+    loadingWorkspace: "Cargando el espacio de trabajo",
+    pageNotFound: "Página no encontrada",
+    pageNotFoundDescription: "La página solicitada no existe o ya no está disponible.",
+    soon: "Próximamente",
+    beta: "Beta",
+    toggleSidebar: "Mostrar u ocultar la barra lateral",
+    toggleSidebarShortcut: "Mostrar u ocultar la barra lateral (Cmd/Ctrl+B)",
+    unknownUser: "Usuario desconocido",
+    extensionLoading: "Cargando la extensión…",
+    extensionLoadFailed: "No se ha podido cargar esta extensión y se ha omitido.",
+    extensionIncompatible:
+      "Esta extensión no es compatible con esta versión de administración (requiere {required}, la administración ofrece {provided}).",
+    appPageTitle: "Aplicación",
+    appPageUnavailable: "Esta página de la aplicación ya no está disponible.",
   },
 } satisfies LocaleMessageDefinitions<AdminChromeMessages>

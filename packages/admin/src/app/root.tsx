@@ -33,7 +33,7 @@ export interface AdminRootHeadOptions {
  * Load-bearing: keep in sync with the ThemeProvider storage key (`theme`) and
  * locale storage key (`admin-locale`).
  */
-const ADMIN_BOOTSTRAP_SCRIPT = `(function(){globalThis.__zod_globalConfig=Object.assign({},globalThis.__zod_globalConfig,{jitless:true});var t=localStorage.getItem("theme");if(t==="dark"||(!t||t==="system")&&matchMedia("(prefers-color-scheme:dark)").matches){document.documentElement.classList.add("dark")}var l=localStorage.getItem("admin-locale")||(navigator.language||"en");l=l.toLowerCase().split("-")[0];document.documentElement.lang=l==="ro"?"ro":"en"})()`
+const ADMIN_BOOTSTRAP_SCRIPT = `(function(){globalThis.__zod_globalConfig=Object.assign({},globalThis.__zod_globalConfig,{jitless:true});var t=localStorage.getItem("theme");if(t==="dark"||(!t||t==="system")&&matchMedia("(prefers-color-scheme:dark)").matches){document.documentElement.classList.add("dark")}var l=localStorage.getItem("admin-locale")||(navigator.language||"en");l=l.toLowerCase().split("-")[0];document.documentElement.lang=l==="ro"||l==="es"?l:"en"})()`
 
 /**
  * The root route `head()` payload for a Voyant admin app: charset/viewport,

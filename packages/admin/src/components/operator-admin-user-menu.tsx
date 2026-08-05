@@ -124,6 +124,10 @@ export function OperatorAdminUserMenu({
                 {messages.romanian}
                 {resolvedLocale === "ro" && <Check className="ml-auto h-4 w-4" />}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void setLocale("es").catch(() => undefined)}>
+                {messages.spanish}
+                {resolvedLocale === "es" && <Check className="ml-auto h-4 w-4" />}
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void onSignOut?.()}>
