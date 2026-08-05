@@ -334,11 +334,36 @@ const JOURNEYS: CapabilityJourney[] = [
     // product is published"). Authoring and publishing are separate lifecycle
     // steps by design — the guide says so — but nothing in create_product hints
     // that a booking will fail without the second one.
-    task: `Add a bookable option called 'Standard ${RUN_MARK}' to the product 'Capability Eval Tour ${RUN_MARK}', add a priced unit for it (1 adult seat at 500 EUR), then publish the product so it can be sold. Confirm the ids.`,
+    // The task used to say "add an option called X", which manufactured the exact
+    // bug it then tripped over: create_product already seeds a default option, so
+    // the agent made a second one, put the unit there, and the booking resolved to
+    // the empty default. A real operator makes the product SELLABLE; it does not
+    // decide to create a second option first. Asking for the outcome rather than
+    // the mechanism is also what lets this journey detect the default-option
+    // problem instead of causing it.
+    task: `Make the product 'Capability Eval Tour ${RUN_MARK}' sellable: it needs a priced bookable unit (1 adult seat at 500 EUR) on its option, and it must be published. Reuse the option it already has rather than creating another. Confirm what you changed.`,
     expect: "option",
     maxCalls: 26,
-    verify: `select 1 from product_options o join products p on p.id = o.product_id
+    // Verify the UNIT, not the option. Checking for a product_options row made
+    // this journey unfalsifiable: create_product seeds a default option, so the
+    // row exists before the journey runs and the check passed while the agent got
+    // stuck in the approval loop and created no unit at all. The thing that makes
+    // a product sellable is a priced unit, so that is what has to be asserted.
+    verify: `select 1 from option_units u
+             join product_options o on o.id = u.option_id
+             join products p on p.id = o.product_id
              where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+    // THE remaining blocker, and the one worth fixing next. Creating a priced
+    // unit goes through confirmation AND approval, and the agent frequently loses
+    // the thread in that loop: 21-24 calls, 200k+ tokens, and then it reports
+    // "successfully published" having written no unit at all. Only the database
+    // check catches that — the prose is confident either way.
+    //
+    // When it does complete, everything downstream works: booking-create has
+    // produced a real booking (BK-2608-845755) end to end. So the write chain is
+    // capable and unreliable, and the unreliability lives here, in the
+    // approval/confirmation round trip rather than in any single tool.
+    knownGap: "priced-unit creation gets lost in the approval loop and reports success anyway",
   },
   {
     // Ops write: a dated departure for the product just created. First journey
@@ -392,6 +417,7 @@ const JOURNEYS: CapabilityJourney[] = [
       "priced unit + capacity missing; 20 creates still demand a caller-invented idempotency key",
     verify: `select 1 from bookings b join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
+    knownGap: "succeeds intermittently; the write chain is capable but not yet reliable",
   },
   {
     // The last link in the commercial chain, and the one never exercised until

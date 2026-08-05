@@ -420,8 +420,15 @@ export const createProductTool = defineTool({
   // across a retry with different input, and the ledger rejects the fingerprint.
   resolvesIdempotencyKeyServerSide: true,
 
+  // voyant#3921: the default option has to be stated. `ensureDefaultOption` seeds
+  // a "Standard" option on every create so the pricing grid opens with something
+  // attached — deliberate, and invisible from here. Measured against the real
+  // graph: the agent, not knowing, created a SECOND option, put its priced unit
+  // there, and the booking then resolved to the empty default and refused with
+  // "no bookable units". Every product in the eval ended up with two options, one
+  // holding the inventory and one holding nothing.
   description:
-    "Create a draft product through Inventory's real authoring service. Channel publication is a separate operation.",
+    "Create a draft product through Inventory's real authoring service. A default option named \"Standard\" is created with it, so add priced units to THAT option rather than creating another one — list the product's options first and reuse the existing one unless you genuinely need a second. Channel publication is a separate operation.",
   inputSchema: createProductToolSchema,
   outputSchema: createProductResultSchema,
   requiredScopes: ["products:write"],
