@@ -35,6 +35,7 @@ export {
   type Visibility,
 } from "./context.js"
 export { defineTool, type ToolDefinition } from "./define-tool.js"
+export { deriveCommandIdempotencyKey } from "./derive-idempotency-key.js"
 export {
   enforceAudienceAuthorization,
   isToolError,
@@ -55,7 +56,6 @@ export {
   type HandlerAdmissionIdentityHint,
   withServerResolvedIdempotencyKey,
 } from "./handler-action-policy.js"
-export { deriveCommandIdempotencyKey } from "./derive-idempotency-key.js"
 export { boundedEditDistance, findNearMatches, type NearMatches } from "./near-matches.js"
 export {
   assertSingleToolsPackageInstance,
