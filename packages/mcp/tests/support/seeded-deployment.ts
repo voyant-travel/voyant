@@ -84,10 +84,20 @@ const listProductsTool = defineTool({
   capabilityVersion: "v1",
   name: "list_products",
   description:
-    "List products with optional filters (status) and pagination. Returns " +
+    "List products with optional filters (status, search) and pagination. Returns " +
     "{ data, total, limit, offset }. Read-only.",
+  // `search` mirrors the real tool, which filters by (status, booking mode,
+  // category, tag, SEARCH, date range, price/pax bounds). The fixture carried
+  // only `status` and was therefore unfaithful on the one axis the live-client
+  // eval exercises hardest — finding a record by name. A journey that is
+  // impossible here but routine in production makes the harness measure the
+  // fixture rather than the surface.
   inputSchema: z.object({
     status: z.string().optional(),
+    search: z
+      .string()
+      .optional()
+      .describe("Case-insensitive substring match against the product name."),
     limit: z.number().int().min(1).max(100).optional(),
     offset: z.number().int().min(0).optional(),
   }),
@@ -101,8 +111,13 @@ const listProductsTool = defineTool({
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   annotations: { idempotentHint: true },
-  async handler({ status, limit = 25, offset = 0 }) {
-    const filtered = SEED_PRODUCTS.filter((p) => (status ? p.status === status : true))
+  async handler({ status, search, limit = 25, offset = 0 }) {
+    const needle = search?.toLowerCase().trim()
+    const filtered = SEED_PRODUCTS.filter(
+      (p) =>
+        (status ? p.status === status : true) &&
+        (needle ? p.name.toLowerCase().includes(needle) : true),
+    )
     return {
       data: filtered.slice(offset, offset + limit).map((p) => ({ ...p })),
       total: filtered.length,

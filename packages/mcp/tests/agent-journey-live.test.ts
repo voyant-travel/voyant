@@ -66,15 +66,6 @@ const SCENARIOS: LiveScenario[] = [
     maxCalls: 6,
   },
   {
-    // Chains an id from one result into the next call — the pattern #3921
-    // Finding 2 says we should stop asking models to do, kept here as a READ so
-    // it stays cheap and deterministic enough to assert on.
-    id: "chain-an-id",
-    task: "What is the itinerary of the Kyoto Cherry Blossom Tour? List the stops.",
-    expect: "bamboo",
-    maxCalls: 8,
-  },
-  {
     // The actionable-error claim (voyant#3947/#3950): a deliberately impossible
     // filter should produce a recoverable failure, not a dead end.
     id: "recover-from-error",
@@ -84,6 +75,42 @@ const SCENARIOS: LiveScenario[] = [
   },
 ]
 
+/**
+ * Scenarios that reproduce a KNOWN, unfixed surface defect.
+ *
+ * These run and are reported, but a failure here is the documented state rather
+ * than a broken build. They are asserted to KEEP failing, so that fixing the
+ * surface turns this test red and tells whoever did it to promote the scenario
+ * into {@link SCENARIOS} — a green eval that quietly stopped exercising the bug
+ * is how a regression like this gets re-introduced.
+ */
+const KNOWN_GAPS: LiveScenario[] = [
+  {
+    // voyant#3921: an agent that searches for a RECORD NAME in `search_tools`
+    // does not recover. Reproduced against gpt-4o-mini AND gpt-4o, and against
+    // four different response designs (bare empty result, advisory `noMatch`
+    // block, `exactMatch: false` flag, worked example). It searches the tool
+    // catalog for "Kyoto Cherry Blossom Tour", gets no tool name match, and
+    // concludes the RECORD does not exist — gpt-4o quits after a single call.
+    //
+    // The seeded `list_products` now carries the real tool's `search` filter, so
+    // the journey IS satisfiable; the model never reaches it. Returning the query
+    // tools as fallback results stopped the worst behaviour (gpt-4o-mini went
+    // from 9 calls and exhaustion to 3) but did not close the gap.
+    //
+    // Current read: this is not fixable in the search RESPONSE, because by then
+    // the model has already framed the task wrongly. It belongs to the guide
+    // layer (W7) — the server `instructions` should establish the two-step
+    // "records live behind <domain>_query" model BEFORE the first call.
+    id: "chain-an-id",
+    task: "What is the itinerary of the Kyoto Cherry Blossom Tour? List the stops.",
+    expect: "bamboo",
+    maxCalls: 8,
+  },
+]
+
+const ALL_SCENARIOS = [...SCENARIOS, ...KNOWN_GAPS]
+
 const scores = new Map<string, LiveRunResult>()
 
 function formatReport(): string {
@@ -92,8 +119,14 @@ function formatReport(): string {
     "  columns: id | mcp calls | prompt+completion tokens (real) | tool sequence",
   ]
   for (const [id, run] of scores) {
+    // Print the ARGUMENTS, not just the tool names. A model that calls the right
+    // tool with the wrong argument looks identical to a model that succeeded
+    // until you see what it asked for.
     const sequence = run.calls
-      .map((c) => `${c.name}${c.args.resource ? `(${String(c.args.resource)})` : ""}`)
+      .map((c) => {
+        const detail = c.args.resource ?? c.args.query ?? c.args.name ?? ""
+        return `${c.name}(${String(detail)})${c.isError ? "!" : ""}`
+      })
       .join(" → ")
     lines.push(
       `  ${run.exhausted ? "✗" : "✓"} ${id.padEnd(20)} calls=${String(run.calls.length).padStart(2)} ` +
@@ -123,7 +156,7 @@ describe.skipIf(!apiKey)("live-client agent journey eval", () => {
       return { text, isError: result?.isError === true }
     }
 
-    for (const scenario of SCENARIOS) {
+    for (const scenario of ALL_SCENARIOS) {
       scores.set(
         scenario.id,
         await runLiveJourney({
@@ -140,7 +173,7 @@ describe.skipIf(!apiKey)("live-client agent journey eval", () => {
       )
     }
     process.stdout.write(`\n${formatReport()}\n\n`)
-  }, LIVE_TIMEOUT_MS * SCENARIOS.length)
+  }, LIVE_TIMEOUT_MS * ALL_SCENARIOS.length)
 
   it.each(SCENARIOS)("answers '$id' from tool results alone", ({ id, expect: needle }) => {
     const run = scores.get(id)
@@ -149,6 +182,21 @@ describe.skipIf(!apiKey)("live-client agent journey eval", () => {
     expect(run?.answer.toLowerCase(), `${id} answer: ${run?.answer}`).toContain(
       needle.toLowerCase(),
     )
+  })
+
+  it.each(KNOWN_GAPS)("still cannot answer '$id' — documented gap", ({ id, expect: needle }) => {
+    // Asserted to keep FAILING. When the guide layer (W7) establishes the
+    // two-step record-lookup model and this starts passing, this test goes red
+    // and tells you to move the scenario into SCENARIOS. An eval that silently
+    // stops exercising a known bug is how the bug comes back.
+    const run = scores.get(id)
+    expect(run, `${id} did not run`).toBeDefined()
+    const answered = run?.answer.toLowerCase().includes(needle.toLowerCase()) ?? false
+    expect(
+      answered,
+      `'${id}' now SUCCEEDS. The surface gap it documents appears to be fixed — verify against ` +
+        "a second model, then promote it from KNOWN_GAPS into SCENARIOS.",
+    ).toBe(false)
   })
 
   it("reaches every answer through the MCP surface, never from model memory", () => {

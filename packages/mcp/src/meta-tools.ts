@@ -173,10 +173,11 @@ function registerSearchTools({ server, surface, projection }: RegisterMetaToolsI
     {
       description:
         "Find tools by keyword and/or domain. Reads are grouped into one " +
-        "`<domain>_query` tool per product area — search for the record you want " +
-        "(e.g. `products`, `bookings`) to find its query tool. Returns names and " +
-        "one-line descriptions only — call describe_tool for a tool's full input " +
-        "schema, then call_tool (or the flat tool name) to run it.",
+        "`<domain>_query` tool per product area — search for the KIND of record you " +
+        "want (e.g. `products`, `bookings`, not an individual record's name) to find " +
+        "its query tool, then call that tool to look up the individual record. " +
+        "Returns names and one-line descriptions only — call describe_tool for a " +
+        "tool's full input schema, then call_tool (or the flat tool name) to run it.",
       inputSchema: z.object({
         query: z.string().trim().optional(),
         domain: z.string().trim().optional(),
@@ -252,16 +253,68 @@ function searchTools(
 
   matches.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
   const returned = matches.slice(0, limit)
+
+  // A zero-hit search used to return a bare `{ total: 0, tools: [] }`, which a
+  // model reads as "the thing you asked about does not exist".
+  //
+  // Observed in the live-client eval (voyant#3936): asked for one seeded product
+  // by name, the model searched three times with progressively shorter queries
+  // and then told the user there were "no available records for a Kyoto Cherry
+  // Blossom Tour in the system" — a false negative stated as fact, about a record
+  // that was right there. It had mistaken this for a search over DATA.
+  //
+  // Adding advisory prose was tried first and made it WORSE: the model persisted
+  // to nine calls, cycling the same queries, and still never read the advice. A
+  // dead end is not fixed by explaining the dead end. What a model acts on is
+  // TOOLS, in the field it already knows how to read — so a no-hit search falls
+  // back to the query tools, which is the answer to "where do I look for a
+  // record" in the only vocabulary the caller is already using.
+  const fellBack = matches.length === 0 && !args.domain
+  const fallback = fellBack ? queryToolCandidates(projection) : []
+
   const payload = {
     total: matches.length,
     returned: returned.length,
     truncated: matches.length > returned.length,
-    tools: returned.map(({ score: _score, ...tool }) => tool),
+    tools: fellBack ? fallback : returned.map(({ score: _score, ...tool }) => tool),
+    ...(fellBack ? { howToFindARecord: recordLookupGuidance() } : {}),
   }
   return {
     content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
     structuredContent: payload,
   }
+}
+
+/**
+ * The instruction a no-hit search returns alongside the query tools.
+ *
+ * Kept deliberately short. Three progressively more elaborate versions were tried
+ * against live models (voyant#3936) — an advisory `noMatch` block, an
+ * `exactMatch: false` flag, a worked example — and none of them changed what the
+ * model did. Prose in the response is not the lever; what measurably helped was
+ * putting usable TOOLS in `tools` where a caller already looks. So this says the
+ * one thing the payload cannot say structurally, and stops.
+ */
+function recordLookupGuidance(): Record<string, unknown> {
+  return {
+    instruction:
+      "Individual records are looked up through the query tools listed in `tools`, not by " +
+      "searching here. Pick the tool for the kind of record you want, set its `resource`, and " +
+      "use that resource's own filters (many accept a `search` or name filter).",
+  }
+}
+
+/** The per-domain query tools, as search candidates — the record-lookup entry points. */
+function queryToolCandidates(projection: ReadProjection): SearchCandidate[] {
+  return [...projection.queryTools.values()]
+    .map((queryTool) => ({
+      name: queryTool.name,
+      description: queryToolDescription(queryTool),
+      domain: queryTool.domain,
+      tier: "read",
+      keywords: queryTool.resources.map((member) => member.resource),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 /** Rank an exact/prefix name match above a substring match above a description-only hit. */
