@@ -86,7 +86,8 @@
     },
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyant-travel/db"
+      "@voyant-travel/db",
+      "@voyant-travel/operations"
     ],
     "runtime": {
       "entry": "./runtime-contributor",

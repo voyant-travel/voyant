@@ -26,6 +26,8 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
+import { loadCutlineManifest } from "./cutline-manifest.mjs"
+
 const ROOT = new URL("../..", import.meta.url).pathname
 const MANIFEST = join(ROOT, "packages/framework-migrations/cutline.generated.json")
 const EMIT_INIT = process.argv.includes("--emit-init")
@@ -64,8 +66,8 @@ if (!existsSync(MANIFEST)) {
   console.error("cutline manifest missing — frozen at cutover; it must be committed.")
   process.exit(1)
 }
-const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"))
-const committed = manifest.cutline ?? {}
+const manifest = loadCutlineManifest(ROOT)
+const committed = manifest.cutline
 // A cutline package may have been ABSORBED by another (module consolidation).
 // Its frozen tags stay recorded here — they are the historical truth about what
 // the cutover deployments had materialised — but they now live in the absorbing
@@ -73,7 +75,7 @@ const committed = manifest.cutline ?? {}
 // not need this map: on those databases the tags are already in the ledger under
 // the retired source name, and the absorbing source's `legacySources` adopts
 // them before the cutline is consulted.
-const absorbedBy = manifest.absorbedBy ?? {}
+const absorbedBy = manifest.absorbedBy
 const problems = []
 let postCutline = 0
 for (const [pkg, tags] of Object.entries(committed)) {
