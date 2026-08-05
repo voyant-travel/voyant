@@ -11,7 +11,12 @@
  * Returning `null` from a starter means "this processor isn't configured" so
  * callers fall back gracefully (bank-transfer paths still work).
  */
-import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
+import type {
+  PaymentAdapter,
+  PaymentAdapterRuntimeContext,
+  PaymentCheckoutHandoff,
+  PaymentHostedCheckout,
+} from "@voyant-travel/payments"
 import { paymentCheckoutRedirectUrl } from "@voyant-travel/payments"
 import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -48,16 +53,42 @@ export interface CardPaymentStartArgs {
   db: PostgresJsDatabase
   sessionId: string
   billing: CardPaymentBilling
+  /**
+   * What the shopper is paying for, in `locale`. A hosted-checkout provider
+   * renders it as the line item, so it names the product — never an internal
+   * identifier.
+   */
   description?: string
+  /** BCP 47 tag for the language the checkout page should be rendered in. */
+  locale?: string
+  /**
+   * Opaque, stable reference to the caller's own customer record, so a
+   * provider can bind a stored customer without keying on the email address.
+   * See `PaymentInitiationInput["customer"].reference`.
+   */
+  customerReference?: string
   returnUrl?: string
   cancelUrl?: string
   shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
+  /**
+   * The checkout handoffs the calling surface can actually render, most
+   * preferred first. Omitted means `["redirect"]`, so a surface that has not
+   * said it can mount an in-page form never receives one.
+   */
+  acceptedCheckoutHandoffs?: readonly PaymentCheckoutHandoff[]
 }
 
-/** Result of a card-payment start: the hosted-payment URL to redirect to. */
+/**
+ * Result of a card-payment start.
+ *
+ * `checkout` is the handoff the processor chose; `redirectUrl` is its
+ * redirect-arm projection, kept so every existing caller reads what it always
+ * read and gets `null` — not a type error — when the handoff is embedded.
+ */
 export interface CardPaymentStartResult {
   redirectUrl: string | null
+  checkout: PaymentHostedCheckout | null
 }
 
 /**
@@ -159,11 +190,15 @@ export async function startPaymentAdapterCardPayment(
     .returning()
   if (!session) {
     const [continuation] = await args.db
-      .select({ redirectUrl: paymentSessions.redirectUrl })
+      .select({ redirectUrl: paymentSessions.redirectUrl, checkout: paymentSessions.checkout })
       .from(paymentSessions)
       .where(eq(paymentSessions.id, args.sessionId))
       .limit(1)
-    return continuation ? { redirectUrl: continuation.redirectUrl } : null
+    // The claim was lost to a concurrent start; hand back whatever handoff that
+    // start persisted rather than initiating a second payment.
+    return continuation
+      ? { redirectUrl: continuation.redirectUrl, checkout: continuation.checkout ?? null }
+      : null
   }
 
   const metadata = {
@@ -177,10 +212,13 @@ export async function startPaymentAdapterCardPayment(
       paymentSessionId: session.id,
       money: { amountMinor: session.amountCents, currency: session.currency },
       description: args.description ?? session.notes ?? undefined,
+      locale: args.locale,
       returnUrl: args.returnUrl ?? session.returnUrl ?? undefined,
       cancelUrl: args.cancelUrl ?? session.cancelUrl ?? undefined,
+      acceptedCheckoutHandoffs: args.acceptedCheckoutHandoffs,
       idempotencyKey,
       customer: {
+        reference: args.customerReference ?? null,
         email: args.billing.email,
         phone: args.billing.phone ?? null,
         firstName: args.billing.firstName,
@@ -225,10 +263,10 @@ export async function startPaymentAdapterCardPayment(
     throw error
   }
 
-  // This starter has no way to mount an in-page form, so it never asks for the
-  // embedded handoff and an adapter must not hand it one. `null` here is the
-  // same "nothing to redirect to" the seam has always been able to return.
-  return { redirectUrl: paymentCheckoutRedirectUrl(result.checkout) }
+  return {
+    redirectUrl: paymentCheckoutRedirectUrl(result.checkout),
+    checkout: result.checkout ?? null,
+  }
 }
 
 export function createPaymentAdapterCardPaymentStarter(

@@ -1,5 +1,89 @@
 # @voyant-travel/payments
 
+## 0.11.0
+
+### Minor Changes
+
+- 380dad7: A hosted checkout is initiated with what the shopper is buying, in their
+  language, keyed to a customer rather than an email address.
+
+  `PaymentInitiationInput` is what a hosted-checkout provider renders to the
+  shopper, and three of its fields could not carry the meaning that page needs.
+
+  `description` is the only product-shaped field on the contract, so a caller that
+  sends an identifier leaves the provider nothing else to show — and the Booking
+  Session commit path sent `Booking Session bses_01k…`. It now names the product
+  and, where the target has one, its departure, both resolved in the Session's
+  locale. The name comes from `loadProductPaymentPolicyContext`, which takes an
+  optional `locale` and returns the product's translated `name`, falling back to
+  its base name rather than to a language the shopper did not ask for.
+
+  `locale` is new and optional: a BCP 47 tag for the language the shopper has been
+  reading the funnel in, so a hosted page is rendered in it instead of guessed
+  from the browser. The Booking Session populates it from its own scope.
+
+  `customer.reference` is new and optional: an opaque, stable reference to the
+  runtime's own customer record. Without it a provider that wants to reuse a
+  stored customer — and therefore offer a stored payment method — has to key that
+  binding on the email address, which binds two people who share an inbox, breaks
+  when the address is corrected, and forces the provider to retain personal data
+  purely as a join key. The Booking Session populates it from the CRM person the
+  buyer was identified as, falling back to the owning principal only on a
+  customer-actor Session: on a staff-created one the principal is the agent, not
+  the shopper.
+
+  All three are additive. An adapter that ignores them behaves exactly as before.
+
+## 0.10.0
+
+### Minor Changes
+
+- 79da374: `PaymentInitiationResult.checkout` is a discriminated union with a `redirect` arm
+  and an `embedded` arm, so the port can express an in-page payment.
+
+  `PaymentHostedCheckout` was a `url` with a label: `kind` was
+  `"hosted_checkout" | "redirect"`, `url` was required, and both values mean "send
+  the shopper somewhere else". A provider that supports in-page payment (Stripe
+  Elements, Adyen Drop-in, Braintree Hosted Fields) hands back a per-session client
+  secret plus a publishable key and the page mounts the form itself — there was no
+  arm of the union that could carry that, so no adapter could offer it and the
+  shopper was redirected off the storefront at the last step of the funnel.
+
+  The union is now:
+
+  - `PaymentRedirectCheckout` — `kind: "hosted_checkout" | "redirect"`, `url`
+    required. Today's behaviour, unchanged.
+  - `PaymentEmbeddedCheckout` — `kind: "embedded"`, carrying the opaque
+    `clientSecret`, the `publishableKey`, and an optional `providerAccountId` for
+    platform-scoped providers. No `url`. The runtime forwards these and never
+    learns what the front end does with them.
+
+  Both arms keep `expiresAt`.
+
+  The two sides negotiate, so gaining an arm never takes one away. An adapter
+  advertises `capabilities.embeddedCheckout`; a caller declares
+  `PaymentInitiationInput.acceptedCheckoutHandoffs`, the arms it can render in
+  preference order. **Omitting it means `["redirect"]`** — a caller that has not
+  opted in is never handed a form it cannot mount. `embeddedCheckout` is optional
+  and absent means `false`, so an existing redirect adapter needs no change.
+
+  New helpers: `isRedirectPaymentCheckout`, `isEmbeddedPaymentCheckout`,
+  `paymentCheckoutHandoff`, `paymentCheckoutRedirectUrl`,
+  `supportedPaymentCheckoutHandoffs`, `acceptedPaymentCheckoutHandoffs`, and
+  `negotiatePaymentCheckoutHandoff`.
+
+  The conformance kit covers both arms and the downgrade. An adapter declaring
+  `embeddedCheckout` must return a well-formed `embedded` arm to a caller that
+  accepts one, supplied through the new `embeddedInitiation` fixture, and _every_
+  adapter is now probed with a redirect-only caller — a storefront that only knows
+  how to redirect must not break when an adapter gains in-page support.
+
+  Finance is a redirect-only caller: `startPaymentAdapterCardPayment` and
+  `applyPaymentAdapterInitiationResult` read the URL through
+  `paymentCheckoutRedirectUrl(...)` rather than `checkout?.url`, and never request
+  the embedded arm. Persisting an embedded handoff so a storefront can mount a form
+  is follow-on work, not part of the port.
+
 ## 0.9.3
 
 ### Patch Changes

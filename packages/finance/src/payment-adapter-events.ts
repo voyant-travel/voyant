@@ -1,5 +1,6 @@
 import type {
   PaymentCallbackEvent,
+  PaymentHostedCheckout,
   PaymentInitiationResult,
   PaymentProcessorIdentity,
   PaymentSessionState,
@@ -43,6 +44,8 @@ type PaymentAdapterStateUpdate = {
   processorSessionId?: string | null
   processorPaymentId?: string | null
   redirectUrl?: string | null
+  /** The whole handoff. `redirectUrl` stays its flattened redirect-arm view. */
+  checkout?: PaymentHostedCheckout | null
   idempotencyKey?: string
   initiationClaimedAt?: Date
   statusLeaseToken?: string
@@ -123,6 +126,7 @@ async function applyLockedNonCompletionStateUpdate(
         ),
         metadata: mergeJsonbColumn(paymentSessions.metadata, providerData.metadata),
         redirectUrl: update.redirectUrl,
+        checkout: update.checkout,
         idempotencyKey: update.idempotencyKey,
         failedAt,
         cancelledAt,
@@ -169,6 +173,7 @@ async function applyPaymentAdapterStateUpdate(
         expectedPaymentAdapterStatusLeaseToken: update.statusLeaseToken,
         sessionUpdate: {
           redirectUrl: update.redirectUrl,
+          checkout: update.checkout,
           idempotencyKey: update.idempotencyKey,
         },
       },
@@ -205,6 +210,7 @@ export async function applyPaymentAdapterInitiationResult(
       processorSessionId: result.processorSessionId,
       processorPaymentId: result.processorPaymentId,
       redirectUrl: paymentCheckoutRedirectUrl(result.checkout),
+      checkout: result.checkout ?? null,
       idempotencyKey: result.idempotencyKey,
       initiationClaimedAt: claim.claimedAt,
     },
