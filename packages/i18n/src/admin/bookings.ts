@@ -1,5 +1,6 @@
 import type { LocaleMessageSchema } from "../runtime.js"
 import { adminBookingsMessagesEnPart1 } from "./bookings/en-part-1.js"
+import { adminBookingsMessagesEsPart1 } from "./bookings/es-part-1.js"
 import { adminBookingsMessagesRoPart1 } from "./bookings/ro-part-1.js"
 
 export const adminBookingsMessages = {
@@ -11,6 +12,11 @@ export const adminBookingsMessages = {
   ro: {
     bookings: {
       ...adminBookingsMessagesRoPart1,
+    },
+  },
+  es: {
+    bookings: {
+      ...adminBookingsMessagesEsPart1,
     },
   },
 }
