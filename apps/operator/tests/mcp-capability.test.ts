@@ -16,6 +16,24 @@
  * without either. It WRITES (that is the point), so point TEST_DATABASE_URL at a
  * disposable database.
  *
+ * KNOWN REMAINING WORK — the idempotency sweep.
+ *
+ * Five creates now derive their key server-side and declare
+ * `resolvesIdempotencyKeyServerSide` (person, product, option, unit, departure).
+ * Roughly seventy tools still advertise a caller-facing `idempotencyKey`.
+ *
+ * That is NOT a blind sweep. Many are amendments and approvals where the caller
+ * legitimately correlates a retry against an exact prior command, and stripping
+ * the key there would break the guarantee it exists for. Each site needs the
+ * judgement "does the handler own this command, or does the caller?".
+ *
+ * A chokepoint fix was tried and reverted: deriving inside
+ * `executeInventoryGeneratedChild` would cover all four inventory children at
+ * once, but `withServerResolvedIdempotencyKey` asserts the admission is
+ * authentically minted, and the generated-children unit fixtures pass plain
+ * objects. That assertion is correct and stricter than what came before, so the
+ * fixtures need minting first — do that before retrying the chokepoint.
+ *
  * The journeys are chained on purpose — the person must exist before the booking,
  * the product before the departure — because that dependency is exactly what an
  * endpoint-shaped surface makes hard and what #3921 is trying to fix.
