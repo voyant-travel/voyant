@@ -566,7 +566,11 @@ function classifyDispatchResult(result: CallToolResult): {
  * from correct.
  */
 function unknownToolResult(name: string, surface?: AuthorizedSurface): CallToolResult {
-  const known = surface ? [...surface.keys()] : []
+  // Meta-tool names belong in the candidate set too. The model namespaced
+  // `call_tool` itself — `functions.call_tool` — and the prefix strip found no
+  // match because the surface map holds only DOMAIN tools, so it got the generic
+  // "use search_tools" hint for a tool it was already holding correctly.
+  const known = [...META_TOOL_NAMES, ...(surface ? [...surface.keys()] : [])]
   const afterPrefix = name.includes(".") ? (name.split(".").pop() ?? "") : ""
   const exactAfterPrefix = afterPrefix && known.includes(afterPrefix) ? afterPrefix : undefined
   const near = exactAfterPrefix ? undefined : findNearMatches(name, known)

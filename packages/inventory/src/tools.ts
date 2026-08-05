@@ -414,6 +414,12 @@ export const createProductTool = defineTool({
   capabilityId: `${OWNER}#tool.create-product`,
   capabilityVersion: VERSION,
   name: "create_product",
+  // voyant#3921: this handler derives its own idempotency key, so the caller must
+  // not be asked for one. Without this flag the admission still lists
+  // `idempotencyKey` as caller-required, the agent invents a value, reuses it
+  // across a retry with different input, and the ledger rejects the fingerprint.
+  resolvesIdempotencyKeyServerSide: true,
+
   description:
     "Create a draft product through Inventory's real authoring service. Channel publication is a separate operation.",
   inputSchema: createProductToolSchema,
