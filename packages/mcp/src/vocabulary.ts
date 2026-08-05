@@ -195,9 +195,41 @@ export const VOCABULARY_ALIASES: Readonly<Record<string, readonly string[]>> = {
  * narrowed by this.
  */
 export function expandSearchTerm(term: string): string[] {
-  const canonical = VOCABULARY_ALIASES[term]
-  if (!canonical) return [term]
+  // Singularise before lookup. The alias table records "client"; an agent asks
+  // for "clients". Measured against the real graph, that one missing plural sent
+  // `search_tools("clients")` to `identity_named_contact` instead of
+  // `relationships_query`, and the agent concluded the client did not exist —
+  // the same class of false negative the aliases were added to remove, produced
+  // by the aliases themselves not firing.
+  const singular = singularise(term)
+  // The singular is a match target in its own right, not just a lookup key. Tools
+  // are named in the singular (`create_departure`), so a caller typing
+  // "departures" must reach them even when the alias table sends the CANONICAL
+  // term somewhere else entirely — the doc makes Slot canonical and "departure"
+  // its alias, so looking up "departures" yielded ["departures", "slot"] and
+  // matched neither `create_departure` nor `operations_query`. The agent then
+  // reported that no departures were scheduled, from a discovery miss.
+  const forms = singular === term ? [term] : [term, singular]
+  const canonical = VOCABULARY_ALIASES[term] ?? VOCABULARY_ALIASES[singular]
+  if (!canonical) return forms
   // A canonical term can be multi-word ("supplier payment"); match on each word
   // so a haystack containing `list_supplier_payments` is reached.
-  return [term, ...canonical.flatMap((value) => [value, ...value.split(/\s+/)])]
+  return [...forms, ...canonical.flatMap((value) => [value, ...value.split(/\s+/)])]
+}
+
+/**
+ * Crude English singularisation, deliberately.
+ *
+ * A stemmer would be the wrong tool: this only has to undo the plural a caller
+ * types on a domain noun, and the cost of over-stemming is a wrong match, which
+ * is worse than a miss. So it handles the three endings that actually occur in
+ * this vocabulary and leaves everything else alone.
+ */
+function singularise(term: string): string {
+  if (term.endsWith("ies") && term.length > 4) return `${term.slice(0, -3)}y`
+  if (term.endsWith("ses") || term.endsWith("xes") || term.endsWith("ches")) {
+    return term.slice(0, -2)
+  }
+  if (term.endsWith("s") && !term.endsWith("ss")) return term.slice(0, -1)
+  return term
 }

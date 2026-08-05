@@ -19,8 +19,10 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { insertOutboxEvents } from "@voyant-travel/db/outbox"
 import {
   defineToolContextContribution,
+  deriveCommandIdempotencyKey,
   ToolError,
   type ToolHandlerActionPolicyContext,
+  withServerResolvedIdempotencyKey,
 } from "@voyant-travel/tools"
 import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -139,12 +141,19 @@ export const voyantToolContextContribution = defineToolContextContribution({
           visibility: "private",
           activated: false,
         })
+        // voyant#3921: resolve the idempotency key server-side when the caller did
+        // not supply one, exactly as create_person and book_product do. Requiring
+        // the model to invent an opaque token made this fail on first attempt with
+        // ACTION_POLICY_REQUIRED, on a requirement absent from the input schema —
+        // the agent could only discover it by failing and reading the guide.
+        const resolvedIdempotencyKey =
+          legacyIdempotencyKey ?? (await deriveCommandIdempotencyKey("create-product", draft))
         const result = await executeProductCreateCommand({
           c,
           db: asLedgerDb(db),
-          idempotencyKey: legacyIdempotencyKey,
+          idempotencyKey: resolvedIdempotencyKey,
           input: draft,
-          admitted,
+          admitted: withServerResolvedIdempotencyKey(admitted, resolvedIdempotencyKey),
         })
         const productId =
           result.value &&

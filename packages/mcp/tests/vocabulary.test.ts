@@ -77,6 +77,31 @@ describe("search vocabulary", () => {
     expect(expandSearchTerm("reservation")).toContain("booking")
   })
 
+  it("resolves the plural a caller actually types", () => {
+    // The measured failure: search_tools("clients") missed the alias entirely and
+    // routed to identity tools, so the agent reported the client did not exist.
+    expect(expandSearchTerm("clients")).toContain("person")
+    expect(expandSearchTerm("customers")).toContain("person")
+    expect(expandSearchTerm("companies")).toContain("organization")
+    expect(expandSearchTerm("reservations")).toContain("booking")
+  })
+
+  it("keeps the singular as a match target, not just a lookup key", () => {
+    // The measured failure: the doc makes Slot canonical with "departure" as its
+    // alias, so "departures" expanded to ["departures", "slot"] and matched
+    // neither `create_departure` nor `operations_query`. The agent then told the
+    // user no departures were scheduled — a business claim from a search miss.
+    const forms = expandSearchTerm("departures")
+    expect(forms).toContain("departure")
+    expect(forms).toContain("departures")
+  })
+
+  it("does not over-singularise a word ending in double-s", () => {
+    // "address" must not become "addres". Over-stemming produces a WRONG match,
+    // which is worse than the miss it was meant to fix.
+    expect(expandSearchTerm("address")).toEqual(["address"])
+  })
+
   it("leaves an unknown term exactly as it was", () => {
     // Expansion must only ever widen. A term we have no alias for has to behave
     // identically to before this existed, or every unrecognised search changes.
