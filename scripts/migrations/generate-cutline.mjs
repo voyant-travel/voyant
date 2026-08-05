@@ -26,8 +26,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { loadCutlineManifest } from "./cutline-manifest.mjs"
-
 const ROOT = new URL("../..", import.meta.url).pathname
 const MANIFEST = join(ROOT, "packages/framework-migrations/cutline.generated.json")
 const EMIT_INIT = process.argv.includes("--emit-init")
@@ -66,27 +64,13 @@ if (!existsSync(MANIFEST)) {
   console.error("cutline manifest missing — frozen at cutover; it must be committed.")
   process.exit(1)
 }
-const manifest = loadCutlineManifest(ROOT)
-const committed = manifest.cutline
-// A cutline package may have been ABSORBED by another (module consolidation).
-// Its frozen tags stay recorded here — they are the historical truth about what
-// the cutover deployments had materialised — but they now live in the absorbing
-// package's journal, so that is where existence is asserted. The collector does
-// not need this map: on those databases the tags are already in the ledger under
-// the retired source name, and the absorbing source's `legacySources` adopts
-// them before the cutline is consulted.
-const absorbedBy = manifest.absorbedBy
+const committed = JSON.parse(readFileSync(MANIFEST, "utf8")).cutline ?? {}
 const problems = []
 let postCutline = 0
 for (const [pkg, tags] of Object.entries(committed)) {
-  const owner = absorbedBy[pkg] ?? pkg
-  const current = currentTags(owner)
+  const current = currentTags(pkg)
   if (current === null) {
-    problems.push(
-      owner === pkg
-        ? `${pkg}: cutline package no longer ships a migrations folder`
-        : `${pkg}: absorbed by ${owner}, which ships no migrations folder`,
-    )
+    problems.push(`${pkg}: cutline package no longer ships a migrations folder`)
     continue
   }
   const set = new Set(current)
@@ -95,7 +79,7 @@ for (const [pkg, tags] of Object.entries(committed)) {
       problems.push(`${pkg}: frozen cutline tag "${tag}" is missing (deleted/renamed?) — immutable`)
     }
   }
-  postCutline += owner === pkg ? current.length - tags.length : 0
+  postCutline += current.length - tags.length
 }
 if (problems.length > 0) {
   console.error("frozen-cutline violation:")

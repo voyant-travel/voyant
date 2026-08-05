@@ -191,9 +191,7 @@ export async function loadNodeSchemaMigrationSource(
   }
   return {
     ...source,
-    // The idempotency key is this migration's own historical ledger identity;
-    // legacySources names the sources this one absorbed in a consolidation.
-    legacyNames: [migration.idempotencyKey, ...(migration.legacySources ?? [])],
+    legacyNames: [migration.idempotencyKey],
   }
 }
 

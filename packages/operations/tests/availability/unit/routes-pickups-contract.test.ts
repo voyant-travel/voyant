@@ -6,7 +6,7 @@ import type {
   pickupGroups,
   pickupLocations,
   productMeetingConfigs,
-} from "@voyant-travel/operations/schema"
+} from "@voyant-travel/availability/schema"
 import { listResponse, listResponseSchema } from "@voyant-travel/types"
 import type { InferSelectModel } from "drizzle-orm"
 import { describe, expect, it } from "vitest"

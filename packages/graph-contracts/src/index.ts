@@ -282,25 +282,6 @@ export interface VoyantGraphFacetEntity {
   export?: string
 }
 
-/**
- * A migration facet, which may declare the ledger source names it absorbed.
- *
- * The migration ledger is keyed `(source, tag)`, and `source` is the unscoped
- * package name. When one package absorbs another's migration history — a module
- * consolidation — the tags move to a new source name and would otherwise re-run
- * against objects that already exist. `legacySources` names the retired sources
- * so the ledger lookup still finds those rows.
- *
- * This is for a pure ownership move: the tags and their SQL are carried over
- * byte-identical, so the content hashes still match. A migration whose SQL
- * changes, or which supersedes several retired tags with one new baseline, is a
- * different problem — see `SUPERSEDED_LEDGER_IDENTITIES` in
- * `@voyant-travel/framework-migrations`.
- */
-export interface VoyantGraphMigrationFacet extends VoyantGraphFacetEntity {
-  legacySources?: readonly string[]
-}
-
 /** Distinguishes entity metadata from executable cross-module link definitions. */
 export interface VoyantGraphLinkDeclaration extends VoyantGraphFacetEntity {
   kind: "linkable" | "definition"
@@ -429,7 +410,7 @@ export interface VoyantGraphUnitManifest {
   requires?: VoyantGraphCapabilityDeclaration
   api?: readonly VoyantGraphRouteBundle[]
   schema?: readonly VoyantGraphFacetEntity[]
-  migrations?: readonly VoyantGraphMigrationFacet[]
+  migrations?: readonly VoyantGraphFacetEntity[]
   links?: readonly VoyantGraphLinkDeclaration[]
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]

@@ -30,7 +30,6 @@ import {
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphLinkDeclaration,
   type VoyantGraphMessageReference,
-  type VoyantGraphMigrationFacet,
   type VoyantGraphPortDeclaration,
   type VoyantGraphPresentationDeclaration,
   type VoyantGraphProject,
@@ -111,7 +110,6 @@ export {
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphMessageReference,
-  type VoyantGraphMigrationFacet,
   type VoyantGraphPortDeclaration,
   type VoyantGraphPresentationDeclaration,
   type VoyantGraphProject,
@@ -423,7 +421,7 @@ export interface ResolvedVoyantGraphUnit {
   }
   api: readonly VoyantGraphRouteBundle[]
   schema: readonly VoyantGraphFacetEntity[]
-  migrations: readonly VoyantGraphMigrationFacet[]
+  migrations: readonly VoyantGraphFacetEntity[]
   links: readonly VoyantGraphLinkDeclaration[]
   subscribers: readonly VoyantGraphSubscriber[]
   events: readonly VoyantGraphEvent[]
