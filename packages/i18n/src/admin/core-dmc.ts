@@ -18,4 +18,10 @@ export const dmcAdminCoreMessages = {
       description: "Cadru operational pentru companiile de turism.",
     },
   },
+  es: {
+    dashboard: {
+      title: "Consola de Voyant",
+      description: "Marco operativo para empresas de viajes.",
+    },
+  },
 }

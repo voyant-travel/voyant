@@ -54,4 +54,22 @@ export const dmcAdminNavMessages = {
       finance: "Financiar",
     },
   },
+  es: {
+    nav: {
+      dashboard: "Panel",
+      contacts: "Contactos",
+      suppliers: "Proveedores",
+      products: "Productos",
+      availability: "Disponibilidad",
+      resources: "Recursos",
+      bookings: "Reservas",
+      notifications: "Notificaciones",
+      notificationTemplates: "Plantillas",
+      notificationReminderRules: "Reglas de recordatorio",
+      notificationDeliveries: "Envíos",
+      notificationReminderRuns: "Ejecuciones de recordatorios",
+      distribution: "Distribución",
+      finance: "Finanzas",
+    },
+  },
 } satisfies LocaleMessageDefinitions<{ nav: DmcAdminNavMessages }>
