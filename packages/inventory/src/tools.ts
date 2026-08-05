@@ -52,12 +52,6 @@ import {
   updateOptionUnitTool as updateOptionUnitDefinition,
   updateProductOptionTool as updateProductOptionDefinition,
 } from "./option-tools.js"
-import {
-  appliedProductUnitConfigurationSchema,
-  applyProductUnitConfigurationInputSchema,
-  previewProductUnitConfigurationInputSchema,
-  productUnitConfigurationPreviewSchema,
-} from "./product-unit-configuration.js"
 import { insertProductSchema, productListQuerySchema, updateProductSchema } from "./validation.js"
 
 const OWNER = "@voyant-travel/inventory"
@@ -280,10 +274,6 @@ function inventoryContent(ctx: InventoryToolContext): InventoryContentToolServic
 
 function inventoryAuthoring(ctx: InventoryToolContext): InventoryAuthoringToolServices {
   return requireService(ctx.inventoryAuthoring, "inventoryAuthoring")
-}
-
-function inventoryConfiguration(ctx: InventoryToolContext): InventoryConfigurationToolServices {
-  return requireService(ctx.inventoryConfiguration, "inventoryConfiguration")
 }
 
 export const composeProductToolInputSchema = z.object({
@@ -550,63 +540,19 @@ export const composeProductTool = defineTool({
   },
 })
 
-export const previewProductUnitConfigurationTool = defineTool({
-  capabilityId: `${OWNER}#tool.preview-product-unit-configuration`,
-  capabilityVersion: VERSION,
-  name: "preview_product_unit_configuration",
-  description:
-    // voyant#3921: the "not this one" sentence is load-bearing. Asked to add a
-    // priced unit, the agent found this pair first — the names contain "unit" and
-    // "configuration" and read as applicable — and spent 20+ calls on a
-    // preview/apply cycle that edits units it does not have. The run that went
-    // straight to create_option_unit finished in five.
-    "Prevalidate an edit to EXISTING room/unit quantities and prices, returning an exhaustive " +
-    "approval plan with before/after values for every unit including untouched ones. " +
-    "Pass the returned ready plan unchanged to apply_product_unit_configuration. " +
-    "This tool EDITS units that already exist — to add the first unit to an option, " +
-    "use create_option_unit instead.",
-  inputSchema: previewProductUnitConfigurationInputSchema,
-  outputSchema: productUnitConfigurationPreviewSchema,
-  requiredScopes: ["products:read", "pricing:read"],
-  audience: STAFF_AUDIENCE,
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
-  annotations: { readOnlyHint: true, idempotentHint: true },
-  async handler(input, ctx: InventoryToolContext) {
-    return productUnitConfigurationPreviewSchema.parse(
-      await inventoryConfiguration(ctx).previewProductUnitConfiguration(input),
-    )
-  },
-})
-
-export const applyProductUnitConfigurationTool = defineTool({
-  capabilityId: `${OWNER}#tool.apply-product-unit-configuration`,
-  capabilityVersion: VERSION,
-  name: "apply_product_unit_configuration",
-  description:
-    "Atomically apply an unchanged preview_product_unit_configuration plan. Requires confirmation " +
-    "because the full input is the operator's exact before/after approval record. Stale plans fail " +
-    "without writing; exact retries return replayed. This applies a bulk edit to EXISTING units — " +
-    "to add a new priced unit to an option, use create_option_unit instead.",
-  inputSchema: applyProductUnitConfigurationInputSchema,
-  outputSchema: appliedProductUnitConfigurationSchema,
-  requiredScopes: ["products:write", "pricing:write"],
-  audience: STAFF_AUDIENCE,
-  tier: "write",
-  riskPolicy: {
-    destructive: false,
-    reversible: true,
-    dryRunSupported: false,
-    confirmationRequired: true,
-    sideEffects: ["data-write"],
-  },
-  annotations: { idempotentHint: true },
-  async handler(input, ctx: InventoryToolContext) {
-    return appliedProductUnitConfigurationSchema.parse(
-      await inventoryConfiguration(ctx).applyProductUnitConfiguration(input),
-    )
-  },
-})
+// voyant#3921: the preview/apply unit-configuration TOOLS are gone. They made an
+// agent carry an exhaustive before/after plan verbatim between two calls, and
+// they read as the way to touch units at all, so an agent trying to ADD one spent
+// twenty-odd calls cycling over units that did not exist; removing them took that
+// journey 0/10 to 10/10. create_option_unit and update_option_unit cover
+// add-a-unit and change-a-unit, and the agent finds them unaided.
+//
+// The Tool wrappers are deleted rather than merely unbound: first-party manifest
+// convergence requires every defineTool export to be declared in the selected
+// graph, so "keep the export for programmatic callers" is not a state this repo
+// allows. The SERVICES they wrapped — previewProductUnitConfiguration and
+// applyProductUnitConfiguration in product-unit-configuration.ts — are untouched
+// and still serve routes, the operator UI and their integration tests.
 
 // Product options and their bookable units live in their own file; re-declare
 // them through `defineTool` here so the manifest's single
@@ -647,8 +593,6 @@ export const inventoryTools = [
   unpublishProductTool,
   archiveProductTool,
   composeProductTool,
-  previewProductUnitConfigurationTool,
-  applyProductUnitConfigurationTool,
 ] as const
 
 function productLifecycleToolDefinition(input: {
