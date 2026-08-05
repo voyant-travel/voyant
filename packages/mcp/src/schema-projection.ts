@@ -108,7 +108,10 @@ export function toMcpInputSchema(
     schema instanceof z.ZodObject
       ? schema.shape
       : Object.assign({}, ...collectInputObjectShapes(schema))
-  const projectedShape = withResponseFormat(projectShapeForMcpDiscovery(shape), listShaped)
+  const projectedShape = withServerResolvedFieldsHidden(
+    withResponseFormat(projectShapeForMcpDiscovery(shape), listShaped),
+    entry,
+  )
   if (!entry.actionPolicy) {
     return z.looseObject(projectedShape)
   }
@@ -121,6 +124,34 @@ export function toMcpInputSchema(
     ...projectedShape,
     [TOOL_ACTION_INVOCATION_FIELD]: actionInvocationSchemaFor(entry).optional(),
   })
+}
+
+/**
+ * Hide a top-level `idempotencyKey` from tools whose handler derives one.
+ *
+ * A Tool that declares `resolvesIdempotencyKeyServerSide` is excluded from the
+ * admission's required fields — but its DOMAIN schema often still advertises a
+ * legacy top-level `idempotencyKey`, and an advertised field is an invitation.
+ * Measured against the real graph: the agent supplied its own key to
+ * `create_option_unit`, which overrode the derived one, then reused that key on a
+ * retry with different arguments and got "Action ledger idempotency key was
+ * reused with a different fingerprint". The derivation was correct and the
+ * caller was able to defeat it simply by being offered the field.
+ *
+ * Deriving and advertising are the two halves that have to agree. This is the
+ * second half, scoped to exactly the tools that already derive: if the policy
+ * does not ask the caller for a key, the caller is not shown one.
+ */
+function withServerResolvedFieldsHidden(
+  shape: z.ZodRawShape,
+  entry: ToolManifestEntry,
+): z.ZodRawShape {
+  const policy = entry.actionPolicy
+  if (!policy || !("idempotencyKey" in shape)) return shape
+  const required: readonly string[] = policy.invocation.requiredFields
+  if (required.includes("idempotencyKey")) return shape
+  const { idempotencyKey: _hidden, ...rest } = shape
+  return rest
 }
 
 /**

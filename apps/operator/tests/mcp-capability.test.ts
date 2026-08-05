@@ -34,6 +34,14 @@
  * objects. That assertion is correct and stricter than what came before, so the
  * fixtures need minting first — do that before retrying the chokepoint.
  *
+ * READING THE PASS RATES. The journeys are chained, so a downstream rate is
+ * CAPPED by its upstream one: if product-option-create leaves no priced unit on
+ * an attempt, booking-create on that same attempt is correctly refused, and
+ * invoice-issue after it has no booking to invoice. A 0/3 on booking-create
+ * therefore does not mean booking is broken — it usually means the setup ahead of
+ * it failed. Read the chain top-down and fix the first link that is not 3/3;
+ * today that is product-option-create.
+ *
  * The journeys are chained on purpose — the person must exist before the booking,
  * the product before the departure — because that dependency is exactly what an
  * endpoint-shaped surface makes hard and what #3921 is trying to fix.
