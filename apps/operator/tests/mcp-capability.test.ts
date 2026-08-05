@@ -414,7 +414,12 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // departure — the multi-call orchestration #3921 Finding 2 is about.
       id: "booking-create",
       domain: "bookings",
-      task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} on the 2026-09-15 departure for 2 adults. Confirm the booking reference.`,
+      // The task used to say "for 2 adults" and name nobody. The agent found the
+    // client, called book_product, and then correctly stopped to ask who the two
+    // adults were — a Booking carries Travelers with names and contact details,
+    // and it cannot invent them. That was the journey being unrealistic, not the
+    // surface being unhelpful: a real operator booking a trip knows who is going.
+    task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} (email ioana.${RUN_MARK}@example.com) on the 2026-09-15 departure. She travels with one companion, Andrei Popescu${RUN_MARK}; both are adults and Ioana is the lead traveller and the billing party. Confirm the booking reference.`,
       expect: "book",
       maxCalls: 24,
       // Reaches the real domain constraint and stops there:
