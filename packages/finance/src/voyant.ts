@@ -418,6 +418,26 @@ export const financeVoyantModule = defineModule({
       risk: "high",
     },
     {
+      id: "@voyant-travel/finance#tool.record-payment-dispute",
+      name: "record_payment_dispute",
+      runtime: {
+        entry: "@voyant-travel/finance/tools",
+        export: "recordPaymentDisputeTool",
+      },
+      requiredScopes: ["finance:write"],
+      context: ["finance"],
+      risk: "high",
+      // Declared rather than inferred: the trailing noun of `/finance/payments`
+      // and `/finance/invoices/{id}/payments` is also `payment`, so the name
+      // match reported recording a *payment* as covered by a Tool that only
+      // records a dispute against one. This Tool fronts the dispute endpoints
+      // and nothing else.
+      adminWrites: [
+        "/v1/admin/finance/payment-disputes",
+        "/v1/admin/finance/payment-disputes/{id}",
+      ],
+    },
+    {
       id: "@voyant-travel/finance#tool.preview-unsynced-proforma-from-booking",
       name: "preview_unsynced_proforma_from_booking",
       runtime: {

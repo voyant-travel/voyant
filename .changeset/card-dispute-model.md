@@ -2,6 +2,9 @@
 "@voyant-travel/payments": minor
 "@voyant-travel/finance": minor
 "@voyant-travel/finance-contracts": minor
+"@voyant-travel/finance-react": minor
+"@voyant-travel/bookings-react": minor
+"@voyant-travel/react": minor
 "@voyant-travel/schema-kit": patch
 ---
 
@@ -57,6 +60,19 @@ the problem — so the event reports the session's current state and puts what
 changed in `dispute`. The conformance kit validates the signal's shape and folds
 it into the duplicate-callback identity, so an adapter cannot vary a dispute
 across a replay.
+
+**An agent can record one too.** `record_payment_dispute` fronts the dispute
+endpoints for an agent reconciling a processor console. It declares its
+`adminWrites` rather than leaning on the name match, because `/finance/payments`
+and `/finance/invoices/{id}/payments` share the trailing noun `payment` and the
+inference would have reported *recording a payment* as covered by a Tool that
+only records a dispute against one.
+
+**The banner degrades, it does not crash.** `BookingDisputeBanner` renders on the
+booking detail page whether or not the host asked for it, so it reads the finance
+context through the new `useOptionalVoyantReactContext`: a host that has not
+mounted `VoyantFinanceProvider` gets no banner rather than a crashed page. Every
+other finance hook stays strict — they are the point of the screen they are on.
 
 **Deliberately not in scope.** Payouts acquire no model here — money moving from
 a processor to the operator's bank is not the booking ledger's concern. Evidence
