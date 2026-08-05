@@ -1,5 +1,6 @@
 import type { LocaleMessageSchema } from "../runtime.js"
 import { operatorAdminSettingsMessagesEnPart1 } from "./settings-operator/en-part-1.js"
+import { operatorAdminSettingsMessagesEsPart1 } from "./settings-operator/es-part-1.js"
 import { operatorAdminSettingsMessagesRoPart1 } from "./settings-operator/ro-part-1.js"
 
 export const operatorAdminSettingsMessages = {
@@ -11,6 +12,11 @@ export const operatorAdminSettingsMessages = {
   ro: {
     settings: {
       ...operatorAdminSettingsMessagesRoPart1,
+    },
+  },
+  es: {
+    settings: {
+      ...operatorAdminSettingsMessagesEsPart1,
     },
   },
 }
