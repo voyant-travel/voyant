@@ -53,6 +53,14 @@ export interface DispatchStaffAlertInput {
    * everyone twice.
    */
   eventId: string
+  /**
+   * Seam for tests. Staff alerts carry a `templateLabel` rather than a
+   * `templateSlug` precisely because they have no row in
+   * `notification_templates`; sending the slug instead makes every staff alert
+   * fail with "Notification template not found". Injecting the enqueue lets a
+   * test pin that, which is otherwise only observable against a live database.
+   */
+  enqueue?: typeof enqueueNotification
 }
 
 export interface DispatchStaffAlertResult {
@@ -135,6 +143,7 @@ export async function dispatchStaffAlert(
   input: DispatchStaffAlertInput,
 ): Promise<DispatchStaffAlertResult> {
   const { db, runtime, eventKey } = input
+  const enqueue = input.enqueue ?? enqueueNotification
 
   const definition = getStaffAlertDefinition(eventKey)
   if (!definition) return { skipped: "disabled", enqueued: 0 }
@@ -173,12 +182,12 @@ export async function dispatchStaffAlert(
       isAssignee: recipient.isAssignee,
     })
 
-    await enqueueNotification({
+    await enqueue({
       db,
       registry: runtime.dispatcher,
       input: {
         idempotencyKey: `staff-alert:${input.eventId}:${eventKey}:${recipient.email}`,
-        templateSlug: definition.templateSlug,
+        templateLabel: definition.templateSlug,
         channel: "email",
         to: recipient.email,
         subject: rendered.subject,
@@ -253,7 +262,7 @@ export async function sendStaffAlertTest(
         // so the key carries the request's own nonce. `randomUUID` is fine
         // here: unlike the subscriber path there is no redelivery to dedupe.
         idempotencyKey: `staff-alert-test:${input.eventKey}:${randomUUID()}`,
-        templateSlug: definition.templateSlug,
+        templateLabel: definition.templateSlug,
         channel: "email",
         to: recipient.email,
         subject: `[Test] ${rendered.subject}`,
