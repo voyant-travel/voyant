@@ -328,7 +328,13 @@ const JOURNEYS: CapabilityJourney[] = [
     // chain reachable end to end rather than blocked at the last step.
     id: "product-option-create",
     domain: "products",
-    task: `Add a bookable option called 'Standard ${RUN_MARK}' to the product 'Capability Eval Tour ${RUN_MARK}', then add a priced unit for it: 1 adult seat at 500 EUR. Confirm both ids.`,
+    // Publication is part of making a product sellable, and the booking refusal
+    // only said so once its error stopped collapsing three causes into one
+    // ("The product being booked was not found, or is not bookable... confirm the
+    // product is published"). Authoring and publishing are separate lifecycle
+    // steps by design — the guide says so — but nothing in create_product hints
+    // that a booking will fail without the second one.
+    task: `Add a bookable option called 'Standard ${RUN_MARK}' to the product 'Capability Eval Tour ${RUN_MARK}', add a priced unit for it (1 adult seat at 500 EUR), then publish the product so it can be sold. Confirm the ids.`,
     expect: "option",
     maxCalls: 26,
     verify: `select 1 from product_options o join products p on p.id = o.product_id
