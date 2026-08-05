@@ -9,7 +9,13 @@ import {
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { ToolErrorCode, ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
-import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  deriveCommandIdempotencyKey,
+  requireService,
+  ToolError,
+  withServerResolvedIdempotencyKey,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { availabilityService } from "./availability/service.js"
@@ -53,13 +59,30 @@ export const voyantToolContextContribution = defineToolContextContribution({
           admitted: ToolHandlerActionPolicyContext,
         ) {
           const { idempotencyKey: legacyIdempotencyKey, ...commandInput } = input
-          admittedCreatedCommandIdempotencyKey(admitted, legacyIdempotencyKey)
+          // voyant#3921: derive the key server-side when the caller did not supply
+          // one, as create_person and create_product now do. Observed against the
+          // real graph: the agent invented its own key, retried with different
+          // input, and got "Action ledger idempotency key was reused with a
+          // different fingerprint" — a token it should never have been carrying.
+          // Hashing the command input makes a genuine retry replay the original
+          // departure and two different departures get two different keys.
+          const resolvedAdmitted = admitted.invocation.idempotencyKey?.trim()
+            ? admitted
+            : withServerResolvedIdempotencyKey(
+                admitted,
+                legacyIdempotencyKey ??
+                  (await deriveCommandIdempotencyKey("create-departure", commandInput)),
+              )
+          const resolvedIdempotencyKey = admittedCreatedCommandIdempotencyKey(
+            resolvedAdmitted,
+            legacyIdempotencyKey,
+          )
           const result = await executeAdmittedCreatedTargetCommand(
             {
               db: db as unknown as AnyDrizzleDb,
               context: actionLedgerContext(c),
-              admitted,
-              idempotencyKey: legacyIdempotencyKey,
+              admitted: resolvedAdmitted,
+              idempotencyKey: resolvedIdempotencyKey,
               commandTargetType: "departure-create-command",
               canonicalTargetType: "departure",
               resultReferenceType: "departure",

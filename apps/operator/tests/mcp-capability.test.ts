@@ -304,6 +304,19 @@ const JOURNEYS: CapabilityJourney[] = [
     verify: `select 1 from products where name ilike '%capability eval tour ${RUN_MARK}%'`,
   },
   {
+    // A product is not sellable until it has an option and a priced unit. This is
+    // the setup an agent must infer from a booking refusal today — see the
+    // booking-create note. Covering it explicitly is what makes the commercial
+    // chain reachable end to end rather than blocked at the last step.
+    id: "product-option-create",
+    domain: "products",
+    task: `Add a bookable option called 'Standard ${RUN_MARK}' to the product 'Capability Eval Tour ${RUN_MARK}', then add a priced unit for it: 1 adult seat at 500 EUR. Confirm both ids.`,
+    expect: "option",
+    maxCalls: 26,
+    verify: `select 1 from product_options o join products p on p.id = o.product_id
+             where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+  },
+  {
     // Ops write: a dated departure for the product just created. First journey
     // to depend on another journey's output rather than seeded data.
     id: "ops-departure-create",
@@ -337,8 +350,22 @@ const JOURNEYS: CapabilityJourney[] = [
     // NOT_FOUND with no way back — it now gets "Call it as book_product" and
     // recovers; and CONFIRMATION_REQUIRED is reached and handled.
     //
-    // Promote this once the chain grows option/unit/pricing journeys.
-    knownGap: "product needs option + priced unit + capacity before it is bookable",
+    // product-option-create now creates the option, but a PRICED UNIT with
+    // capacity is still missing, so the refusal above still stands. The wider
+    // blocker is idempotency: 20 of the 23 create tools still advertise an
+    // `idempotencyKey` the agent must invent, described only as "Must match the
+    // admitted Tool invocation idempotency key" — meaningless to a caller. The
+    // agent duly invents one, reuses it across a retry with different input, and
+    // gets "Action ledger idempotency key was reused with a different
+    // fingerprint". Observed on create_departure and create_product_option here.
+    //
+    // The fix is the one already applied to create_person/create_product/
+    // create_departure, generalised: derive server-side everywhere, then strip
+    // the field from the MCP-projected input schema (schema-projection.ts) so no
+    // agent ever sees it. Both halves have to land together — stripping the field
+    // while 20 tools still require it would break every one of them.
+    knownGap:
+      "priced unit + capacity missing; 20 creates still demand a caller-invented idempotency key",
     verify: `select 1 from bookings b join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
   },
