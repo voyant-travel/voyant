@@ -452,6 +452,8 @@ export const notificationsUiRo: NotificationsUiMessages = {
       extraAddresses: "Alte adrese",
       extraAddressesDesc: "Căsuțe partajate precum ops@ sau contabilitate@.",
       addAddress: "Adaugă adresă",
+      removeAddress: "Elimină",
+      dialogDescription: "Alege cine primește această alertă.",
       addressPlaceholder: "ops@example.com",
       noRecipients: "Nimeni nu va primi această alertă. Alege cel puțin un destinatar.",
     },
@@ -462,6 +464,8 @@ export const notificationsUiRo: NotificationsUiMessages = {
     },
     actions: {
       sendTest: "Trimite test",
+      configure: "Configurează",
+      done: "Gata",
       sending: "Se trimite…",
       save: "Salvează",
       saving: "Se salvează…",

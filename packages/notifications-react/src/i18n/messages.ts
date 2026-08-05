@@ -408,6 +408,8 @@ export type NotificationsUiMessages = {
       extraAddresses: string
       extraAddressesDesc: string
       addAddress: string
+      removeAddress: string
+      dialogDescription: string
       addressPlaceholder: string
       noRecipients: string
     }
@@ -418,6 +420,8 @@ export type NotificationsUiMessages = {
     }
     actions: {
       sendTest: string
+      configure: string
+      done: string
       sending: string
       save: string
       saving: string

@@ -447,6 +447,8 @@ export const notificationsUiEn: NotificationsUiMessages = {
       extraAddresses: "Other addresses",
       extraAddressesDesc: "Shared mailboxes such as ops@ or accounting@.",
       addAddress: "Add address",
+      removeAddress: "Remove",
+      dialogDescription: "Choose who receives this alert.",
       addressPlaceholder: "ops@example.com",
       noRecipients: "Nobody will receive this alert. Pick at least one recipient.",
     },
@@ -457,6 +459,8 @@ export const notificationsUiEn: NotificationsUiMessages = {
     },
     actions: {
       sendTest: "Send test",
+      configure: "Configure",
+      done: "Done",
       sending: "Sending…",
       save: "Save",
       saving: "Saving…",
