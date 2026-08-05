@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { StaffAlertBrand } from "./emails/brand.js"
-import { renderStaffAlertEmail } from "./emails/render.jsx"
+import { renderStaffAlertEmail } from "./emails/render.js"
 import { sampleStaffAlertContext } from "./emails/samples.js"
 import type { notificationTargetTypeEnum } from "./schema.js"
 import { enqueueNotification } from "./service-durable-send.js"

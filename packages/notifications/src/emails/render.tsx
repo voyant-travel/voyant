@@ -5,12 +5,12 @@ import type { StaffAlertContextMap, StaffAlertEventKey } from "../staff-alert-re
 import type { StaffAlertBrand } from "./brand.js"
 import { formatMoney } from "./format.js"
 import { staffAlertEmailMessagesFor } from "./messages/index.js"
-import { StaffBookingCancelledEmail } from "./staff/booking-cancelled.jsx"
-import { StaffBookingConfirmedEmail } from "./staff/booking-confirmed.jsx"
-import { StaffContractSignedEmail } from "./staff/contract-signed.jsx"
-import { StaffCustomerSignalCreatedEmail } from "./staff/customer-signal-created.jsx"
-import { StaffInvoiceSettledEmail } from "./staff/invoice-settled.jsx"
-import { StaffPaymentCompletedEmail } from "./staff/payment-completed.jsx"
+import { StaffBookingCancelledEmail } from "./staff/booking-cancelled.js"
+import { StaffBookingConfirmedEmail } from "./staff/booking-confirmed.js"
+import { StaffContractSignedEmail } from "./staff/contract-signed.js"
+import { StaffCustomerSignalCreatedEmail } from "./staff/customer-signal-created.js"
+import { StaffInvoiceSettledEmail } from "./staff/invoice-settled.js"
+import { StaffPaymentCompletedEmail } from "./staff/payment-completed.js"
 
 export interface RenderStaffAlertEmailInput<K extends StaffAlertEventKey = StaffAlertEventKey> {
   eventKey: K

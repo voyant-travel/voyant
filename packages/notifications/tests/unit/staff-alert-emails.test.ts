@@ -7,7 +7,7 @@ import {
   type StaffAlertBrand,
 } from "../../src/emails/brand.js"
 import { formatDateRange, formatMoney } from "../../src/emails/format.js"
-import { renderStaffAlertEmail } from "../../src/emails/render.jsx"
+import { renderStaffAlertEmail } from "../../src/emails/render.js"
 import type { StaffAlertContextMap } from "../../src/staff-alert-registry.js"
 
 const brand: StaffAlertBrand = {

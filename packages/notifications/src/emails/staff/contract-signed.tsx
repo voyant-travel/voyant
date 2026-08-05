@@ -1,8 +1,8 @@
 import type { StaffContractSignedContext } from "../../staff-alert-registry.js"
 import type { StaffAlertBrand } from "../brand.js"
-import { CTAButton, DetailList, DetailRow } from "../components.jsx"
+import { CTAButton, DetailList, DetailRow } from "../components.js"
 import { formatDateTime } from "../format.js"
-import { StaffAlertLayout } from "../layout.jsx"
+import { StaffAlertLayout } from "../layout.js"
 import type { StaffAlertEmailMessages } from "../messages/index.js"
 
 export interface StaffContractSignedEmailProps {

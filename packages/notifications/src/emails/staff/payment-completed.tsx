@@ -1,8 +1,8 @@
 import type { StaffPaymentCompletedContext } from "../../staff-alert-registry.js"
 import type { StaffAlertBrand } from "../brand.js"
-import { Callout, CTAButton, DetailList, DetailRow, StatBlock } from "../components.jsx"
+import { Callout, CTAButton, DetailList, DetailRow, StatBlock } from "../components.js"
 import { formatMoney } from "../format.js"
-import { StaffAlertLayout } from "../layout.jsx"
+import { StaffAlertLayout } from "../layout.js"
 import type { StaffAlertEmailMessages } from "../messages/index.js"
 
 export interface StaffPaymentCompletedEmailProps {
