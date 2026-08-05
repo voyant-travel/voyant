@@ -414,8 +414,21 @@ export const createProductTool = defineTool({
   capabilityId: `${OWNER}#tool.create-product`,
   capabilityVersion: VERSION,
   name: "create_product",
+  // voyant#3921: this handler derives its own idempotency key, so the caller must
+  // not be asked for one. Without this flag the admission still lists
+  // `idempotencyKey` as caller-required, the agent invents a value, reuses it
+  // across a retry with different input, and the ledger rejects the fingerprint.
+  resolvesIdempotencyKeyServerSide: true,
+
+  // voyant#3921: the default option has to be stated. `ensureDefaultOption` seeds
+  // a "Standard" option on every create so the pricing grid opens with something
+  // attached — deliberate, and invisible from here. Measured against the real
+  // graph: the agent, not knowing, created a SECOND option, put its priced unit
+  // there, and the booking then resolved to the empty default and refused with
+  // "no bookable units". Every product in the eval ended up with two options, one
+  // holding the inventory and one holding nothing.
   description:
-    "Create a draft product through Inventory's real authoring service. Channel publication is a separate operation.",
+    "Create a draft product through Inventory's real authoring service. A default option named \"Standard\" is created with it, so add priced units to THAT option rather than creating another one — list the product's options first and reuse the existing one unless you genuinely need a second. Channel publication is a separate operation.",
   inputSchema: createProductToolSchema,
   outputSchema: createProductResultSchema,
   requiredScopes: ["products:write"],
@@ -510,7 +523,11 @@ export const composeProductTool = defineTool({
   capabilityVersion: VERSION,
   name: "compose_product",
   description:
-    "Atomically author a complete product graph through Inventory's category-aware composer: product, options, units, pricing rules, and itinerary. Invalid graphs return actionable issues without writing. Departures and publication remain separate confirmed operations.",
+    // voyant#3921: says what it is FOR, so it stops being the default answer to
+    // "add a unit". The agent reached for this repeatedly to add one unit to an
+    // existing product and looped, because composing a whole graph over a product
+    // that already exists is not what it does.
+    "Atomically author a COMPLETE product graph in one call — product, options, units, pricing rules and itinerary together — through Inventory's category-aware composer. Use it to create a fully-specified product from nothing; it is not the way to add one unit or option to a product that already exists (use create_option_unit or create_product_option for that). Invalid graphs return actionable issues without writing. Departures and publication remain separate confirmed operations.",
   inputSchema: composeProductToolInputSchema,
   outputSchema: composeProductToolOutputSchema,
   requiredScopes: ["products:write"],
@@ -538,9 +555,16 @@ export const previewProductUnitConfigurationTool = defineTool({
   capabilityVersion: VERSION,
   name: "preview_product_unit_configuration",
   description:
-    "Prevalidate a room/unit quantity and price edit and return an exhaustive approval plan. " +
-    "The plan includes exact before/after values for every unit, including untouched units. " +
-    "Pass the returned ready plan unchanged to apply_product_unit_configuration.",
+    // voyant#3921: the "not this one" sentence is load-bearing. Asked to add a
+    // priced unit, the agent found this pair first — the names contain "unit" and
+    // "configuration" and read as applicable — and spent 20+ calls on a
+    // preview/apply cycle that edits units it does not have. The run that went
+    // straight to create_option_unit finished in five.
+    "Prevalidate an edit to EXISTING room/unit quantities and prices, returning an exhaustive " +
+    "approval plan with before/after values for every unit including untouched ones. " +
+    "Pass the returned ready plan unchanged to apply_product_unit_configuration. " +
+    "This tool EDITS units that already exist — to add the first unit to an option, " +
+    "use create_option_unit instead.",
   inputSchema: previewProductUnitConfigurationInputSchema,
   outputSchema: productUnitConfigurationPreviewSchema,
   requiredScopes: ["products:read", "pricing:read"],
@@ -562,7 +586,8 @@ export const applyProductUnitConfigurationTool = defineTool({
   description:
     "Atomically apply an unchanged preview_product_unit_configuration plan. Requires confirmation " +
     "because the full input is the operator's exact before/after approval record. Stale plans fail " +
-    "without writing; exact retries return replayed.",
+    "without writing; exact retries return replayed. This applies a bulk edit to EXISTING units — " +
+    "to add a new priced unit to an option, use create_option_unit instead.",
   inputSchema: applyProductUnitConfigurationInputSchema,
   outputSchema: appliedProductUnitConfigurationSchema,
   requiredScopes: ["products:write", "pricing:write"],
