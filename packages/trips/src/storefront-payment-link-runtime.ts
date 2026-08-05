@@ -6,7 +6,11 @@ import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
-import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/payments"
+import type {
+  PaymentAdapter,
+  PaymentAdapterRuntimeContext,
+  PaymentCheckoutHandoff,
+} from "@voyant-travel/payments"
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
@@ -40,6 +44,7 @@ interface AdapterCardPaymentStartArgs {
   cancelUrl?: string
   shipping?: Record<string, unknown>
   metadata?: Record<string, unknown>
+  acceptedCheckoutHandoffs?: readonly PaymentCheckoutHandoff[]
 }
 type PaymentAdapterCardPaymentStarterFactory = (
   adapter: PaymentAdapter,
@@ -195,8 +200,12 @@ const unconfiguredStartCardPayment: PaymentLinkRoutesOptions["startCardPayment"]
 /**
  * Start a card payment for a payment-link session via this deployment's selected
  * processor (the same neutral adapter the checkout path uses), returning the
- * processor's hosted-checkout redirect URL. Enables paying a payment link by
- * card, not just the full booking checkout.
+ * handoff it chose. Enables paying a payment link by card, not just the full
+ * booking checkout.
+ *
+ * The accepted handoffs come from the request, because only the page knows
+ * whether it can mount an in-page form. This runtime forwards that answer and
+ * makes no judgement of its own.
  */
 function createAdapterStartCardPayment(
   adapter: PaymentAdapter | Promise<PaymentAdapter>,
@@ -232,8 +241,13 @@ function createAdapterStartCardPayment(
       returnUrl: session.returnUrl,
       cancelUrl: session.cancelUrl,
       shipping: session.shipping,
+      acceptedCheckoutHandoffs: session.acceptedCheckoutHandoffs,
     })
-    return { configured: true, redirectUrl: result?.redirectUrl ?? null }
+    return {
+      configured: true,
+      redirectUrl: result?.redirectUrl ?? null,
+      checkout: result?.checkout ?? null,
+    }
   }
 }
 
