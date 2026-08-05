@@ -8,7 +8,7 @@
  */
 
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
-import { and, eq, inArray, isNull } from "drizzle-orm"
+import { eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { ResolvedStaffAlertSetting } from "./service-staff-alerts.js"
@@ -204,7 +204,7 @@ export async function findStaffUserEmail(
     .select({ email: authUser.email, locale: userProfilesTable.locale })
     .from(authUser)
     .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
-    .where(and(eq(authUser.id, userId), inArray(authUser.id, [userId])))
+    .where(eq(authUser.id, userId))
     .limit(1)
   if (!row?.email) return null
   return { email: row.email, locale: row.locale }

@@ -8,14 +8,19 @@
  * `notifications->operator-settings` table-privacy pair that does not exist).
  */
 
+import { randomUUID } from "node:crypto"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { StaffAlertBrand } from "./emails/brand.js"
 import { renderStaffAlertEmail } from "./emails/render.jsx"
+import { sampleStaffAlertContext } from "./emails/samples.js"
 import type { notificationTargetTypeEnum } from "./schema.js"
 import { enqueueNotification } from "./service-durable-send.js"
 import type { NotificationService } from "./service-shared.js"
-import { resolveStaffAlertRecipients } from "./service-staff-alert-recipients.js"
+import {
+  findStaffUserEmail,
+  resolveStaffAlertRecipients,
+} from "./service-staff-alert-recipients.js"
 import { getStaffAlertSetting, listStaffAlertOptOutUserIds } from "./service-staff-alerts.js"
 import {
   getStaffAlertDefinition,
@@ -196,4 +201,79 @@ export async function dispatchStaffAlert(
   }
 
   return { skipped: null, enqueued }
+}
+
+export interface SendStaffAlertTestInput {
+  db: PostgresJsDatabase
+  runtime: StaffAlertRuntime
+  eventKey: StaffAlertEventKey
+  /** The staff user asking for the test — the only person it is sent to. */
+  userId: string | null
+}
+
+export interface SendStaffAlertTestResult {
+  sent: boolean
+  recipient: string | null
+  reason: string | null
+}
+
+/**
+ * Send one alert to the requesting user, using sample data.
+ *
+ * Deliberately ignores the alert's enabled flag and routing: the point is to
+ * check that the sending domain works and the layout reads well BEFORE
+ * switching an alert on. It also never fans out — a test that mailed the whole
+ * team would be worse than no test.
+ */
+export async function sendStaffAlertTest(
+  input: SendStaffAlertTestInput,
+): Promise<SendStaffAlertTestResult> {
+  const definition = getStaffAlertDefinition(input.eventKey)
+  if (!definition) return { sent: false, recipient: null, reason: "unknown_alert" }
+  if (!input.userId) return { sent: false, recipient: null, reason: "no_current_user" }
+
+  const recipient = await findStaffUserEmail(input.db, input.userId)
+  if (!recipient) return { sent: false, recipient: null, reason: "no_email_on_account" }
+
+  const brand = await input.runtime.resolveBrand(input.db)
+  const context = sampleStaffAlertContext(input.eventKey)
+  const rendered = await renderStaffAlertEmail({
+    eventKey: input.eventKey,
+    context,
+    brand: { ...brand, locale: recipient.locale ?? brand.locale },
+    isAssignee: false,
+  })
+
+  try {
+    await enqueueNotification({
+      db: input.db,
+      registry: input.runtime.dispatcher,
+      input: {
+        // Time-independent keys would collapse a second test onto the first,
+        // so the key carries the request's own nonce. `randomUUID` is fine
+        // here: unlike the subscriber path there is no redelivery to dedupe.
+        idempotencyKey: `staff-alert-test:${input.eventKey}:${randomUUID()}`,
+        templateSlug: definition.templateSlug,
+        channel: "email",
+        to: recipient.email,
+        subject: `[Test] ${rendered.subject}`,
+        html: rendered.html,
+        text: rendered.text,
+        targetType: "other",
+        targetId: null,
+        metadata: { staffAlert: true, staffAlertTest: true, eventKey: input.eventKey },
+      },
+    })
+  } catch (error) {
+    // The usual cause is an unconfigured sending domain, which
+    // `resolveDeliverySender` reports by throwing. Surfacing it on the settings
+    // page is the whole reason this action exists.
+    return {
+      sent: false,
+      recipient: recipient.email,
+      reason: error instanceof Error ? error.message : "send_failed",
+    }
+  }
+
+  return { sent: true, recipient: recipient.email, reason: null }
 }
