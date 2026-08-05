@@ -9,6 +9,7 @@ import {
   firstHandlerActionPolicyIdentityMismatch,
   mintHandlerActionPolicyContext,
 } from "./handler-action-policy.js"
+import { findNearMatches } from "./near-matches.js"
 import { warnOnDuplicateToolsPackageInstance } from "./package-instance.js"
 import {
   type AnyToolDefinition,
@@ -317,11 +318,32 @@ function parseToolInput(
   return input.data
 }
 
+/**
+ * voyant#3950: an unregistered tool name is where `candidates` earns its keep.
+ *
+ * This used to inline EVERY registered name into the message — ~270 of them on
+ * the operator graph, as one unstructured comma-joined string. That is a
+ * directory listing charged to the agent's context at the exact moment it is
+ * already lost, and it buries the one name it probably meant.
+ *
+ * Near matches instead: a handful of structured `candidates` the transport can
+ * present or cap, plus `didYouMean` when one name is unambiguously nearest.
+ * When nothing is close the message says how to enumerate rather than
+ * enumerating — discovery is a tool call, not an error payload.
+ */
 function unknownToolError(name: string, knownNames: Iterable<string>): ToolError {
+  const { candidates, didYouMean } = findNearMatches(name, knownNames)
+  const suffix = didYouMean
+    ? ` Did you mean "${didYouMean}"?`
+    : candidates.length > 0
+      ? ` Close matches: ${candidates.join(", ")}.`
+      : " Use the discovery tools to list what this deployment serves."
   return new ToolError(
-    `Tool "${name}" is not registered. Known tools: ${Array.from(knownNames).join(", ") || "(none)"}`,
+    `Tool "${name}" is not registered.${suffix}`,
     "NOT_FOUND",
     { name },
+    undefined,
+    { ...(candidates.length > 0 ? { candidates } : {}), ...(didYouMean ? { didYouMean } : {}) },
   )
 }
 
