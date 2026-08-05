@@ -14,6 +14,10 @@
  */
 
 import { bookingsService } from "@voyant-travel/bookings"
+// Narrow entry on purpose: the `@voyant-travel/finance` barrel is forbidden
+// here (see `module.test.ts`) because it drags the whole 87k-line module
+// into the import closure. `service-invoice-core` carries two imports.
+import { financeInvoiceCoreService } from "@voyant-travel/finance/service-invoice-core"
 import { getOperatorProfile } from "@voyant-travel/operator-settings/service"
 import { relationshipsService } from "@voyant-travel/relationships"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -38,20 +42,26 @@ function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null
 }
 
-/** A booking row's customer, as far as bookings itself records one. */
+/**
+ * A booking's customer.
+ *
+ * `bookings` records the counterparty as `contact_*`, not `customer_*`. Reading
+ * the wrong column names does not fail — every field simply comes back
+ * undefined and the email renders "Unknown customer" with no total, which is
+ * exactly the kind of quietly useless alert this feature exists to avoid.
+ */
 function partyFromBooking(booking: Record<string, unknown>): StaffAlertParty | null {
-  const name =
-    asString(booking.customerName) ??
-    [asString(booking.customerFirstName), asString(booking.customerLastName)]
-      .filter(Boolean)
-      .join(" ")
+  const name = [asString(booking.contactFirstName), asString(booking.contactLastName)]
+    .filter(Boolean)
+    .join(" ")
   if (!name) return null
-  return { name, email: asString(booking.customerEmail) }
+  return { name, email: asString(booking.contactEmail) }
 }
 
+/** The sell-side total. `base*` columns are the operator's reporting currency. */
 function moneyFromBooking(booking: Record<string, unknown>) {
-  const amountCents = asNumber(booking.totalCents) ?? asNumber(booking.totalAmountCents)
-  const currency = asString(booking.currency)
+  const amountCents = asNumber(booking.sellAmountCents)
+  const currency = asString(booking.sellCurrency)
   if (amountCents === null || !currency) return null
   return { amountCents, currency }
 }
@@ -80,9 +90,9 @@ const bookingConfirmedResolver: StaffAlertContextResolver<"staff.booking.confirm
         asString(payload.bookingNumber) ?? asString(booking.bookingNumber) ?? bookingId,
       customer: partyFromBooking(booking),
       total: moneyFromBooking(booking),
-      travelStartDate: asString(booking.startDate) ?? asString(booking.travelStartDate),
-      travelEndDate: asString(booking.endDate) ?? asString(booking.travelEndDate),
-      travelerCount: asNumber(booking.travelerCount) ?? asNumber(booking.paxCount),
+      travelStartDate: asString(booking.startDate),
+      travelEndDate: asString(booking.endDate),
+      travelerCount: asNumber(booking.pax),
     }
   },
 }
@@ -142,51 +152,69 @@ const paymentCompletedResolver: StaffAlertContextResolver<"staff.payment.complet
 const invoiceSettledResolver: StaffAlertContextResolver<"staff.invoice.settled"> = {
   eventKey: "staff.invoice.settled",
   async resolve({ db, payload }) {
-    const invoiceId = asString(payload.invoiceId) ?? asString(payload.id)
+    const invoiceId = asString(payload.invoiceId)
     if (!invoiceId) return null
 
-    const bookingId = asString(payload.bookingId)
-    const booking = bookingId ? await loadBooking(db as PostgresJsDatabase, bookingId) : null
+    // The event carries settlement figures only — `paidCents`, `balanceDueCents`
+    // and a payment id, with no number, currency or booking. Everything a human
+    // needs to recognise the invoice has to come from the record itself.
+    const database = db as PostgresJsDatabase
+    const invoice = (await financeInvoiceCoreService.getInvoiceById(database, invoiceId)) as Record<
+      string,
+      unknown
+    > | null
+    if (!invoice) return null
+
+    const bookingId = asString(invoice.bookingId)
+    const booking = bookingId ? await loadBooking(database, bookingId) : null
+    const totalCents = asNumber(invoice.totalCents)
+    const currency = asString(invoice.currency)
 
     return {
       adminPath: `/finance/invoices/${invoiceId}`,
       assigneeUserId: null,
-      actorUserId: asString(payload.actorId),
+      actorUserId: null,
       invoiceId,
-      invoiceNumber: asString(payload.invoiceNumber) ?? asString(payload.number),
+      invoiceNumber: asString(invoice.invoiceNumber),
       bookingId,
-      bookingNumber: booking ? (asString(booking.bookingNumber) ?? bookingId) : null,
+      bookingNumber: booking ? asString(booking.bookingNumber) : null,
       customer: booking ? partyFromBooking(booking) : null,
-      total: payloadMoney(payload),
+      total: totalCents !== null && currency ? { amountCents: totalCents, currency } : null,
     }
   },
-}
-
-function payloadMoney(payload: Record<string, unknown>) {
-  const amountCents = asNumber(payload.totalCents) ?? asNumber(payload.amountCents)
-  const currency = asString(payload.currency)
-  if (amountCents === null || !currency) return null
-  return { amountCents, currency }
 }
 
 const contractSignedResolver: StaffAlertContextResolver<"staff.contract.signed"> = {
   eventKey: "staff.contract.signed",
   async resolve({ db, payload }) {
-    const contractId = asString(payload.contractId) ?? asString(payload.id)
+    const contractId = asString(payload.contractId)
     if (!contractId) return null
 
+    const database = db as PostgresJsDatabase
     const bookingId = asString(payload.bookingId)
-    const booking = bookingId ? await loadBooking(db as PostgresJsDatabase, bookingId) : null
+    const booking = bookingId ? await loadBooking(database, bookingId) : null
+
+    // The payload names the signing party by id, not by name. Resolve it
+    // through CRM rather than leaving the alert to say "Unknown customer" —
+    // who signed is the one fact this alert exists to carry.
+    const personId = asString(payload.personId)
+    const person = personId ? await relationshipsService.getPersonById(database, personId) : null
+    const signerName = person
+      ? [person.firstName, person.lastName].filter(Boolean).join(" ").trim() || null
+      : booking
+        ? (partyFromBooking(booking)?.name ?? null)
+        : null
 
     return {
       adminPath: bookingId ? `/bookings/${bookingId}` : `/legal/contracts/${contractId}`,
       assigneeUserId: null,
-      actorUserId: asString(payload.actorId),
+      actorUserId: null,
       contractId,
       bookingId,
-      bookingNumber: booking ? (asString(booking.bookingNumber) ?? bookingId) : null,
-      signerName: asString(payload.signerName) ?? asString(payload.signedBy),
-      signedAt: asString(payload.signedAt) ?? asString(payload.occurredAt),
+      bookingNumber:
+        (booking ? asString(booking.bookingNumber) : null) ?? asString(payload.contractNumber),
+      signerName,
+      signedAt: asString(payload.occurredAt),
     }
   },
 }

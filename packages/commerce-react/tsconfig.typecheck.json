@@ -1013,6 +1013,7 @@
       "@voyant-travel/finance/self-service-booking-source": [
         "../finance/dist/self-service-booking-source.d.ts"
       ],
+      "@voyant-travel/finance/service-invoice-core": ["../finance/dist/service-invoice-core.d.ts"],
       "@voyant-travel/finance/setup/travel-credits": [
         "../finance/dist/service-travel-credits-migration.d.ts"
       ],
