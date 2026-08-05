@@ -158,8 +158,7 @@ export const operatorAdminSettingsMessagesEsPart1 = {
     addPolicyProfile: "Añadir perfil",
     addPolicyRule: "Añadir regla",
     policyEmpty: "Todavía no hay perfiles de política fiscal.",
-    policyRulesEmpty:
-      "Todavía no hay reglas de política. Añade reglas ordenadas para este perfil.",
+    policyRulesEmpty: "Todavía no hay reglas de política. Añade reglas ordenadas para este perfil.",
     deletePolicyProfileConfirm: "¿Eliminar este perfil de política fiscal y sus reglas?",
     deletePolicyRuleConfirm: "¿Eliminar esta regla de política fiscal?",
     editPolicyProfileSheetTitle: "Editar perfil de política fiscal",
@@ -246,7 +245,8 @@ export const operatorAdminSettingsMessagesEsPart1 = {
       horizontalLogoDescription:
         "Tu logotipo horizontal completo, incluido el logotipo tipográfico cuando corresponda.",
       iconTitle: "Icono",
-      iconDescription: "Tu símbolo de marca compacto para ubicaciones cuadradas o con poco espacio.",
+      iconDescription:
+        "Tu símbolo de marca compacto para ubicaciones cuadradas o con poco espacio.",
       faviconTitle: "Favicon",
       faviconDescription:
         "El icono de la pestaña del navegador que usan las superficies de cara al cliente.",
@@ -337,7 +337,8 @@ export const operatorAdminSettingsMessagesEsPart1 = {
       description:
         "Plantillas de URL de cara al cliente que se usan al compartir enlaces de pago de reservas y de facturas.",
       bookingCheckoutUrlTemplateLabel: "Plantilla de URL de pago de la reserva",
-      bookingCheckoutUrlTemplatePlaceholder: "https://viajes.ejemplo.com/reserva/pagar/{bookingCode}",
+      bookingCheckoutUrlTemplatePlaceholder:
+        "https://viajes.ejemplo.com/reserva/pagar/{bookingCode}",
       bookingCheckoutUrlTemplateHelp:
         "Usa {bookingCode} o {bookingId} para los enlaces de pago a nivel de reserva.",
       invoicePayUrlTemplateLabel: "Plantilla de URL de pago de la factura",
@@ -350,8 +351,7 @@ export const operatorAdminSettingsMessagesEsPart1 = {
     title: "Catálogos de precios",
     description: "Crea catálogos de precios con nombre, moneda y planteamiento de precios.",
     addCatalog: "Añadir catálogo",
-    empty:
-      "Todavía no hay catálogos de precios. Crea un catálogo para definir tarifas por moneda.",
+    empty: "Todavía no hay catálogos de precios. Crea un catálogo para definir tarifas por moneda.",
     default: "Por defecto",
     inactive: "Inactivo",
     edit: "Editar",
@@ -384,8 +384,7 @@ export const operatorAdminSettingsMessagesEsPart1 = {
   },
   paymentsPage: {
     title: "Pagos",
-    description:
-      "Elige una pasarela de pago y conéctala para empezar a aceptar pagos con tarjeta.",
+    description: "Elige una pasarela de pago y conéctala para empezar a aceptar pagos con tarjeta.",
     activeProvider: "Proveedor activo",
     connected: "Conectado",
     disconnected: "No conectado",
@@ -406,8 +405,7 @@ export const operatorAdminSettingsMessagesEsPart1 = {
     modeTest: "Prueba",
     modeLive: "Producción",
     capabilities: "Capacidades",
-    configuredViaEnv:
-      "Este proveedor de pagos se configura mediante variables de entorno.",
+    configuredViaEnv: "Este proveedor de pagos se configura mediante variables de entorno.",
     configuredViaEnvHint:
       "Para cambiar de pasarela o de credenciales, actualiza los ajustes de entorno. La conexión desde la aplicación está disponible en las cuentas gestionadas.",
     credentialsTitle: "Conectar {provider}",

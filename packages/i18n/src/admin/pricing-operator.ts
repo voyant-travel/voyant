@@ -332,8 +332,7 @@ export const operatorAdminPricingMessages = {
         saveChanges: "Guardar cambios",
         createDependency: "Añadir dependencia",
         title: "Dependencias entre categorías",
-        description:
-          "Reglas entre categorías de tarifa: requiere, limita por principal, excluye.",
+        description: "Reglas entre categorías de tarifa: requiere, limita por principal, excluye.",
         newDependency: "Nueva dependencia",
         tableMaster: "Principal",
         tableDependent: "Dependiente",

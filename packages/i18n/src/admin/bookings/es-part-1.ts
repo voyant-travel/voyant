@@ -93,7 +93,8 @@ export const adminBookingsMessagesEsPart1 = {
     pricingSummary: {
       title: "Precio",
       fromInvoice: "De la factura {number}",
-      fromSnapshot: "Estimado a partir de la instantánea del catálogo; el definitivo está en la factura",
+      fromSnapshot:
+        "Estimado a partir de la instantánea del catálogo; el definitivo está en la factura",
       subtotalLabel: "Base imponible",
       feesLabel: "Gastos de gestión",
       surchargesLabel: "Recargos",
@@ -302,8 +303,7 @@ export const adminBookingsMessagesEsPart1 = {
     },
     contractDialog: {
       title: "Añadir contrato",
-      description:
-        "Genera un contrato a partir de la plantilla configurada o sube un PDF firmado.",
+      description: "Genera un contrato a partir de la plantilla configurada o sube un PDF firmado.",
       modeLabel: "Origen",
       modeGenerate: "Generar",
       modeUpload: "Subir",

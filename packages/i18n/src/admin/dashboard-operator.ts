@@ -228,7 +228,8 @@ export const operatorAdminDashboardMessages = {
       onboardingDescription:
         "Empieza configurando los registros operativos que tu equipo usa cada día.",
       onboardingProductsTitle: "Crea tu primer producto",
-      onboardingProductsDescription: "Añade los hoteles, cruceros, actividades o circuitos que vendes.",
+      onboardingProductsDescription:
+        "Añade los hoteles, cruceros, actividades o circuitos que vendes.",
       onboardingProductsAction: "Añadir producto",
       onboardingSuppliersTitle: "Añade un proveedor",
       onboardingSuppliersDescription:

@@ -643,7 +643,8 @@ export const adminResourcesMessages = {
           assignedByPlaceholder: "ops-team@voyant.local",
           releasedAtLabel: "Liberado el",
           notesLabel: "Notas",
-          notesPlaceholder: "Petición de la tripulación, bloqueo por mantenimiento, notas de emparejamiento...",
+          notesPlaceholder:
+            "Petición de la tripulación, bloqueo por mantenimiento, notas de emparejamiento...",
           cancel: "Cancelar",
           save: "Guardar adjudicación",
           create: "Crear adjudicación",

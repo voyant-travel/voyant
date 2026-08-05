@@ -3,6 +3,10 @@ import { operatorAdminProductsMessagesEnCore } from "./products-operator/en-core
 import { operatorAdminProductsMessagesEnEditorial } from "./products-operator/en-editorial.js"
 import { operatorAdminProductsMessagesEnOperations } from "./products-operator/en-operations.js"
 import { operatorAdminProductsMessagesEnTaxonomy } from "./products-operator/en-taxonomy.js"
+import { operatorAdminProductsMessagesEsCore } from "./products-operator/es-core.js"
+import { operatorAdminProductsMessagesEsEditorial } from "./products-operator/es-editorial.js"
+import { operatorAdminProductsMessagesEsOperations } from "./products-operator/es-operations.js"
+import { operatorAdminProductsMessagesEsTaxonomy } from "./products-operator/es-taxonomy.js"
 import { operatorAdminProductsMessagesRoCore } from "./products-operator/ro-core.js"
 import { operatorAdminProductsMessagesRoEditorial } from "./products-operator/ro-editorial.js"
 import { operatorAdminProductsMessagesRoOperations } from "./products-operator/ro-operations.js"
@@ -23,6 +27,14 @@ export const operatorAdminProductsMessages = {
       core: operatorAdminProductsMessagesRoCore,
       editorial: operatorAdminProductsMessagesRoEditorial,
       operations: operatorAdminProductsMessagesRoOperations,
+    },
+  },
+  es: {
+    products: {
+      taxonomy: operatorAdminProductsMessagesEsTaxonomy,
+      core: operatorAdminProductsMessagesEsCore,
+      editorial: operatorAdminProductsMessagesEsEditorial,
+      operations: operatorAdminProductsMessagesEsOperations,
     },
   },
 }
