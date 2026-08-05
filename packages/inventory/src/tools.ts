@@ -52,6 +52,13 @@ import {
   updateOptionUnitTool as updateOptionUnitDefinition,
   updateProductOptionTool as updateProductOptionDefinition,
 } from "./option-tools.js"
+// Type-only: the Tools that wrapped these schemas are gone, but
+// InventoryConfigurationToolServices still describes the services mcp-runtime
+// contributes for routes and the operator UI, and it is typed from them.
+import type {
+  applyProductUnitConfigurationInputSchema,
+  previewProductUnitConfigurationInputSchema,
+} from "./product-unit-configuration.js"
 import { insertProductSchema, productListQuerySchema, updateProductSchema } from "./validation.js"
 
 const OWNER = "@voyant-travel/inventory"
