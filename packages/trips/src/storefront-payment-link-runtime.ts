@@ -10,6 +10,7 @@ import type {
   PaymentAdapter,
   PaymentAdapterRuntimeContext,
   PaymentCheckoutHandoff,
+  PaymentHostedCheckout,
 } from "@voyant-travel/payments"
 import type {
   PaymentLinkRoutesOptions,
@@ -24,7 +25,19 @@ import { tripsService } from "./service.js"
 const FINANCE_CARD_PAYMENT_MODULE = "@voyant-travel/finance/card-payment"
 
 type StartCardPayment = ReturnType<CommerceCardPaymentRuntime["createStartCardPayment"]>
+/** Commerce's neutral port result. Redirect-only by contract. */
 type CardPaymentStartResult = Awaited<ReturnType<NonNullable<StartCardPayment>>>
+/**
+ * Finance's adapter starter result, which is wider than Commerce's port: it
+ * also carries the chosen handoff. Deriving this from Commerce used to work
+ * only because the two happened to agree; they no longer do, and the
+ * payment-link route needs the handoff that the booking-engine checkout — still
+ * redirect-only — does not.
+ */
+type AdapterCardPaymentStartResult = {
+  redirectUrl: string | null
+  checkout: PaymentHostedCheckout | null
+} | null
 interface AdapterCardPaymentStartArgs {
   db: PostgresJsDatabase
   sessionId: string
@@ -54,7 +67,7 @@ type PaymentAdapterCardPaymentStarterFactory = (
     idempotencyKey(sessionId: string): string
     resolveNotifyUrl?(c: Context): string | undefined
   },
-) => (context: Context, args: AdapterCardPaymentStartArgs) => Promise<CardPaymentStartResult>
+) => (context: Context, args: AdapterCardPaymentStartArgs) => Promise<AdapterCardPaymentStartResult>
 
 /** Standard selected payment provider exposed through Commerce's neutral port. */
 export function createCommerceCardPaymentRuntime(
