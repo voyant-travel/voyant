@@ -1,5 +1,6 @@
 import type { LocaleMessageSchema } from "../runtime.js"
 import { distributionEn } from "./distribution-dmc/en.js"
+import { distributionEs } from "./distribution-dmc/es.js"
 import { distributionRo } from "./distribution-dmc/ro.js"
 
 export type DmcAdminDistributionMessages = (typeof distributionEn)["distribution"]
@@ -8,4 +9,5 @@ export type DmcAdminDistributionModuleMessages = LocaleMessageSchema<typeof dist
 export const adminDmcDistributionMessages = {
   en: distributionEn,
   ro: distributionRo,
+  es: distributionEs,
 }
