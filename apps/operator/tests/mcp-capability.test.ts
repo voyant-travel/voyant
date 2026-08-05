@@ -311,175 +311,203 @@ interface CapabilityJourney {
   intermittent?: string
 }
 
-const JOURNEYS: CapabilityJourney[] = [
-  {
-    id: "people-create",
-    domain: "people",
-    task: `Add a new private client named Ioana Marinescu${RUN_MARK} with email ioana.${RUN_MARK}@example.com. Confirm her id.`,
-    expect: "ioana",
-    maxCalls: 14,
-    verify: `select 1 from people where last_name ilike '%marinescu${RUN_MARK}%'`,
-  },
-  {
-    id: "people-find",
-    domain: "people",
-    task: `Find the client Ioana Marinescu${RUN_MARK} and tell me her email address.`,
-    expect: `ioana.${RUN_MARK}@example.com`,
-    maxCalls: 12,
-    requiresDispatch: true,
-  },
-  {
-    id: "product-create",
-    domain: "products",
-    task: `Create a product called 'Capability Eval Tour ${RUN_MARK}', a guided road tour sold by date. Confirm its id.`,
-    expect: `capability eval tour ${RUN_MARK}`,
-    maxCalls: 18,
-    verify: `select 1 from products where name ilike '%capability eval tour ${RUN_MARK}%'`,
-  },
-  {
-    // A product is not sellable until it has an option and a priced unit. This is
-    // the setup an agent must infer from a booking refusal today — see the
-    // booking-create note. Covering it explicitly is what makes the commercial
-    // chain reachable end to end rather than blocked at the last step.
-    id: "product-option-create",
-    domain: "products",
-    // Publication is part of making a product sellable, and the booking refusal
-    // only said so once its error stopped collapsing three causes into one
-    // ("The product being booked was not found, or is not bookable... confirm the
-    // product is published"). Authoring and publishing are separate lifecycle
-    // steps by design — the guide says so — but nothing in create_product hints
-    // that a booking will fail without the second one.
-    // The task used to say "add an option called X", which manufactured the exact
-    // bug it then tripped over: create_product already seeds a default option, so
-    // the agent made a second one, put the unit there, and the booking resolved to
-    // the empty default. A real operator makes the product SELLABLE; it does not
-    // decide to create a second option first. Asking for the outcome rather than
-    // the mechanism is also what lets this journey detect the default-option
-    // problem instead of causing it.
-    task: `Make the product 'Capability Eval Tour ${RUN_MARK}' sellable: it needs a priced bookable unit (1 adult seat at 500 EUR) on its option, and it must be published. Reuse the option it already has rather than creating another. Confirm what you changed.`,
-    expect: "option",
-    maxCalls: 26,
-    // Verify the UNIT, not the option. Checking for a product_options row made
-    // this journey unfalsifiable: create_product seeds a default option, so the
-    // row exists before the journey runs and the check passed while the agent got
-    // stuck in the approval loop and created no unit at all. The thing that makes
-    // a product sellable is a priced unit, so that is what has to be asserted.
-    verify: `select 1 from option_units u
+/**
+ * Journeys for one attempt. Parameterised by the mark so repeated attempts write
+ * distinct records and never collide or have to be deleted — deleting rows out of
+ * band once corrupted the action ledger's replay and made an agent truthfully
+ * report success for a row that no longer existed.
+ */
+function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
+  return [
+    {
+      id: "people-create",
+      domain: "people",
+      task: `Add a new private client named Ioana Marinescu${RUN_MARK} with email ioana.${RUN_MARK}@example.com. Confirm her id.`,
+      expect: "ioana",
+      maxCalls: 14,
+      verify: `select 1 from people where last_name ilike '%marinescu${RUN_MARK}%'`,
+    },
+    {
+      id: "people-find",
+      domain: "people",
+      task: `Find the client Ioana Marinescu${RUN_MARK} and tell me her email address.`,
+      expect: `ioana.${RUN_MARK}@example.com`,
+      maxCalls: 12,
+      requiresDispatch: true,
+    },
+    {
+      id: "product-create",
+      domain: "products",
+      task: `Create a product called 'Capability Eval Tour ${RUN_MARK}', a guided road tour sold by date. Confirm its id.`,
+      expect: `capability eval tour ${RUN_MARK}`,
+      maxCalls: 18,
+      verify: `select 1 from products where name ilike '%capability eval tour ${RUN_MARK}%'`,
+    },
+    {
+      // A product is not sellable until it has an option and a priced unit. This is
+      // the setup an agent must infer from a booking refusal today — see the
+      // booking-create note. Covering it explicitly is what makes the commercial
+      // chain reachable end to end rather than blocked at the last step.
+      id: "product-option-create",
+      domain: "products",
+      // Publication is part of making a product sellable, and the booking refusal
+      // only said so once its error stopped collapsing three causes into one
+      // ("The product being booked was not found, or is not bookable... confirm the
+      // product is published"). Authoring and publishing are separate lifecycle
+      // steps by design — the guide says so — but nothing in create_product hints
+      // that a booking will fail without the second one.
+      // The task used to say "add an option called X", which manufactured the exact
+      // bug it then tripped over: create_product already seeds a default option, so
+      // the agent made a second one, put the unit there, and the booking resolved to
+      // the empty default. A real operator makes the product SELLABLE; it does not
+      // decide to create a second option first. Asking for the outcome rather than
+      // the mechanism is also what lets this journey detect the default-option
+      // problem instead of causing it.
+      task: `Make the product 'Capability Eval Tour ${RUN_MARK}' sellable: it needs a priced bookable unit (1 adult seat at 500 EUR) on its option, and it must be published. Reuse the option it already has rather than creating another. Confirm what you changed.`,
+      expect: "option",
+      maxCalls: 26,
+      // Verify the UNIT, not the option. Checking for a product_options row made
+      // this journey unfalsifiable: create_product seeds a default option, so the
+      // row exists before the journey runs and the check passed while the agent got
+      // stuck in the approval loop and created no unit at all. The thing that makes
+      // a product sellable is a priced unit, so that is what has to be asserted.
+      verify: `select 1 from option_units u
              join product_options o on o.id = u.option_id
              join products p on p.id = o.product_id
              where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
-    // THE remaining blocker, and the one worth fixing next. Creating a priced
-    // unit goes through confirmation AND approval, and the agent frequently loses
-    // the thread in that loop: 21-24 calls, 200k+ tokens, and then it reports
-    // "successfully published" having written no unit at all. Only the database
-    // check catches that — the prose is confident either way.
-    //
-    // When it does complete, everything downstream works: booking-create has
-    // produced a real booking (BK-2608-845755) end to end. So the write chain is
-    // capable and unreliable, and the unreliability lives here, in the
-    // approval/confirmation round trip rather than in any single tool.
-    intermittent:
-      "priced-unit creation gets lost in the confirmation/approval loop — 20+ calls, " +
-      "200k+ tokens, and it has reported success while writing nothing",
-  },
-  {
-    // Ops write: a dated departure for the product just created. First journey
-    // to depend on another journey's output rather than seeded data.
-    id: "ops-departure-create",
-    domain: "ops",
-    task: `Create a departure for the product 'Capability Eval Tour ${RUN_MARK}' on 2026-09-15 with 20 seats available. Confirm the departure id.`,
-    expect: "2026-09-15",
-    maxCalls: 20,
-    verify: `select 1 from availability_slots s join products p on p.id = s.product_id
+      // THE remaining blocker, and the one worth fixing next. Creating a priced
+      // unit goes through confirmation AND approval, and the agent frequently loses
+      // the thread in that loop: 21-24 calls, 200k+ tokens, and then it reports
+      // "successfully published" having written no unit at all. Only the database
+      // check catches that — the prose is confident either way.
+      //
+      // When it does complete, everything downstream works: booking-create has
+      // produced a real booking (BK-2608-845755) end to end. So the write chain is
+      // capable and unreliable, and the unreliability lives here, in the
+      // approval/confirmation round trip rather than in any single tool.
+      intermittent:
+        "priced-unit creation gets lost in the confirmation/approval loop — 20+ calls, " +
+        "200k+ tokens, and it has reported success while writing nothing",
+    },
+    {
+      // Ops write: a dated departure for the product just created. First journey
+      // to depend on another journey's output rather than seeded data.
+      id: "ops-departure-create",
+      domain: "ops",
+      task: `Create a departure for the product 'Capability Eval Tour ${RUN_MARK}' on 2026-09-15 with 20 seats available. Confirm the departure id.`,
+      expect: "2026-09-15",
+      maxCalls: 20,
+      verify: `select 1 from availability_slots s join products p on p.id = s.product_id
              where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
-  },
-  {
-    // The commercial commit point, and the first journey through the
-    // confirmation/approval protocol. Depends on the person, the product AND the
-    // departure — the multi-call orchestration #3921 Finding 2 is about.
-    id: "booking-create",
-    domain: "bookings",
-    task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} on the 2026-09-15 departure for 2 adults. Confirm the booking reference.`,
-    expect: "book",
-    maxCalls: 24,
-    // Reaches the real domain constraint and stops there:
-    //   "This product has no bookable units on the selected option, so the
-    //    booking would reserve nothing."
-    // That is CORRECT — a product is not sellable until it has an option, a
-    // priced unit, and capacity. The gap is that this journey does not create
-    // them, not that the surface refuses. It is exactly the multi-write setup
-    // #3921 Finding 2 is about: "book the product you just made" is four or five
-    // prior writes an agent has to infer, and nothing in create_product says so.
-    //
-    // Two MCP-level defects surfaced on the way and are FIXED: the model called
-    // `functions.book_product` (its own namespacing artifact) and got a bare
-    // NOT_FOUND with no way back — it now gets "Call it as book_product" and
-    // recovers; and CONFIRMATION_REQUIRED is reached and handled.
-    //
-    // product-option-create now creates the option, but a PRICED UNIT with
-    // capacity is still missing, so the refusal above still stands. The wider
-    // blocker is idempotency: 20 of the 23 create tools still advertise an
-    // `idempotencyKey` the agent must invent, described only as "Must match the
-    // admitted Tool invocation idempotency key" — meaningless to a caller. The
-    // agent duly invents one, reuses it across a retry with different input, and
-    // gets "Action ledger idempotency key was reused with a different
-    // fingerprint". Observed on create_departure and create_product_option here.
-    //
-    // The fix is the one already applied to create_person/create_product/
-    // create_departure, generalised: derive server-side everywhere, then strip
-    // the field from the MCP-projected input schema (schema-projection.ts) so no
-    // agent ever sees it. Both halves have to land together — stripping the field
-    // while 20 tools still require it would break every one of them.
-    verify: `select 1 from bookings b join people pe on pe.id = b.person_id
+    },
+    {
+      // The commercial commit point, and the first journey through the
+      // confirmation/approval protocol. Depends on the person, the product AND the
+      // departure — the multi-call orchestration #3921 Finding 2 is about.
+      id: "booking-create",
+      domain: "bookings",
+      task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} on the 2026-09-15 departure for 2 adults. Confirm the booking reference.`,
+      expect: "book",
+      maxCalls: 24,
+      // Reaches the real domain constraint and stops there:
+      //   "This product has no bookable units on the selected option, so the
+      //    booking would reserve nothing."
+      // That is CORRECT — a product is not sellable until it has an option, a
+      // priced unit, and capacity. The gap is that this journey does not create
+      // them, not that the surface refuses. It is exactly the multi-write setup
+      // #3921 Finding 2 is about: "book the product you just made" is four or five
+      // prior writes an agent has to infer, and nothing in create_product says so.
+      //
+      // Two MCP-level defects surfaced on the way and are FIXED: the model called
+      // `functions.book_product` (its own namespacing artifact) and got a bare
+      // NOT_FOUND with no way back — it now gets "Call it as book_product" and
+      // recovers; and CONFIRMATION_REQUIRED is reached and handled.
+      //
+      // product-option-create now creates the option, but a PRICED UNIT with
+      // capacity is still missing, so the refusal above still stands. The wider
+      // blocker is idempotency: 20 of the 23 create tools still advertise an
+      // `idempotencyKey` the agent must invent, described only as "Must match the
+      // admitted Tool invocation idempotency key" — meaningless to a caller. The
+      // agent duly invents one, reuses it across a retry with different input, and
+      // gets "Action ledger idempotency key was reused with a different
+      // fingerprint". Observed on create_departure and create_product_option here.
+      //
+      // The fix is the one already applied to create_person/create_product/
+      // create_departure, generalised: derive server-side everywhere, then strip
+      // the field from the MCP-projected input schema (schema-projection.ts) so no
+      // agent ever sees it. Both halves have to land together — stripping the field
+      // while 20 tools still require it would break every one of them.
+      verify: `select 1 from bookings b join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
-    intermittent: "has booked end to end (BK-2608-845755); depends on the unit above",
-  },
-  {
-    // The last link in the commercial chain, and the one never exercised until
-    // now — it was only ever in a scratchpad runner, so "invoice-issue is
-    // untested" was true in the most literal sense: the journey did not exist.
-    // Depends on booking-create, so it inherits whatever blocks that.
-    id: "invoice-issue",
-    domain: "invoices",
-    task: `Issue a proforma invoice for the booking belonging to Ioana Marinescu${RUN_MARK}. Confirm the document number.`,
-    expect: "proforma",
-    maxCalls: 24,
-    verify: `select 1 from invoices i join bookings b on b.id = i.booking_id
+      intermittent: "has booked end to end (BK-2608-845755); depends on the unit above",
+    },
+    {
+      // The last link in the commercial chain, and the one never exercised until
+      // now — it was only ever in a scratchpad runner, so "invoice-issue is
+      // untested" was true in the most literal sense: the journey did not exist.
+      // Depends on booking-create, so it inherits whatever blocks that.
+      id: "invoice-issue",
+      domain: "invoices",
+      task: `Issue a proforma invoice for the booking belonging to Ioana Marinescu${RUN_MARK}. Confirm the document number.`,
+      expect: "proforma",
+      maxCalls: 24,
+      verify: `select 1 from invoices i join bookings b on b.id = i.booking_id
              join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
-    knownGap: "depends on booking-create, which is gated on the approval loop",
-  },
-  {
-    id: "contracts-read",
-    domain: "contracts",
-    task: "What contract templates exist? If there are none, say so explicitly.",
-    expect: "template",
-    maxCalls: 12,
-    requiresDispatch: true,
-  },
-  {
-    id: "invoices-read",
-    domain: "invoices",
-    task: "How many invoices exist, and what is the most recent one? If there are none, say so explicitly.",
-    expect: "invoice",
-    maxCalls: 12,
-    requiresDispatch: true,
-  },
-  {
-    id: "ops-departures",
-    domain: "ops",
-    task: "List the departures scheduled for the catalog. If there are none, say so explicitly.",
-    expect: "departure",
-    maxCalls: 14,
-    requiresDispatch: true,
-    // Was a documented gap: the agent answered "there are no tools available to
-    // list departures, which suggests there are no departures scheduled" without
-    // dispatching — a business claim from a discovery miss. Fixed by having the
-    // harness read the server `instructions` on `initialize` like a real MCP
-    // client, which is what the guide layer (voyant#3931) is for.
-  },
-]
+      knownGap: "depends on booking-create, which is gated on the approval loop",
+    },
+    {
+      id: "contracts-read",
+      domain: "contracts",
+      task: "What contract templates exist? If there are none, say so explicitly.",
+      expect: "template",
+      maxCalls: 12,
+      requiresDispatch: true,
+    },
+    {
+      id: "invoices-read",
+      domain: "invoices",
+      task: "How many invoices exist, and what is the most recent one? If there are none, say so explicitly.",
+      expect: "invoice",
+      maxCalls: 12,
+      requiresDispatch: true,
+    },
+    {
+      id: "ops-departures",
+      domain: "ops",
+      task: "List the departures scheduled for the catalog. If there are none, say so explicitly.",
+      expect: "departure",
+      maxCalls: 14,
+      requiresDispatch: true,
+      // Was a documented gap: the agent answered "there are no tools available to
+      // list departures, which suggests there are no departures scheduled" without
+      // dispatching — a business claim from a discovery miss. Fixed by having the
+      // harness read the server `instructions` on `initialize` like a real MCP
+      // client, which is what the guide layer (voyant#3931) is for.
+    },
+  ]
+}
 
+/**
+ * How many times each journey runs.
+ *
+ * At n=1 this harness cannot tell a fix from a coin flip, and that has already
+ * caused several wrong attributions: a change would look like an improvement, the
+ * next run would look like a regression, and both were variance. A model driving
+ * a multi-step write is genuinely stochastic, so the only honest score is a pass
+ * RATE. Reads settle at 1/1; the writes are where the spread lives.
+ *
+ * Default 1 keeps an ordinary run cheap. Set VOYANT_EVAL_RUNS=5 when measuring a
+ * change to the write path — that is the only setting whose numbers mean anything.
+ */
+const RUNS = Math.max(1, Number(process.env.VOYANT_EVAL_RUNS ?? "1"))
+
+/** Shape only — used to drive `it.each`. Outcomes live in `passes`. */
+const JOURNEYS = buildJourneys(RUN_MARK)
+
+/** Every attempt, in order, per journey. */
+const attempts = new Map<string, JourneyRun[]>()
+const passes = new Map<string, boolean[]>()
 const runs = new Map<string, JourneyRun>()
 const verified = new Map<string, boolean>()
 
@@ -519,10 +547,13 @@ function report(): string {
     // failed — a read journey that answered from the tool index without ever
     // dispatching. A report that disagrees with its own assertions is the same
     // defect this file was rewritten to remove, one level up.
-    const done = journeyPassed(journey, run)
+    const outcomes = passes.get(journey.id) ?? []
+    const passed = outcomes.filter(Boolean).length
+    const done = outcomes.length > 0 ? passed === outcomes.length : journeyPassed(journey, run)
+    const rate = outcomes.length > 1 ? ` ${passed}/${outcomes.length}` : ""
     const errs = run.calls.filter((c) => c.isError).length
     lines.push(
-      `  ${done ? "✓" : "✗"} ${journey.id.padEnd(18)} [${journey.domain.padEnd(9)}] ` +
+      `  ${done ? "✓" : outcomes.length && passed ? "~" : "✗"}${rate} ${journey.id.padEnd(18)} [${journey.domain.padEnd(9)}] ` +
         `calls=${String(run.calls.length).padStart(2)} errors=${errs} tokens=${run.tokens}` +
         (run.exhausted ? " EXHAUSTED" : ""),
     )
@@ -548,75 +579,99 @@ function report(): string {
 }
 
 describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
-  beforeAll(async () => {
-    if (!enabled) return
-    const app = await mountRealMcp()
-    // Handshake first, like a real client: `instructions` is returned here and
-    // nowhere else.
-    const initialized = await readRpc(
-      await app.request(
-        "/",
-        rpc("initialize", {
-          protocolVersion: "2025-06-18",
-          capabilities: {},
-          clientInfo: { name: "voyant-capability-eval", version: "0.0.0" },
-        }),
-        TEST_ENV,
-        TEST_CTX,
-      ),
-    )
-    const serverInstructions = String(
-      (initialized.result as { instructions?: string } | undefined)?.instructions ?? "",
-    )
-    process.stdout.write(`server instructions: ${serverInstructions.length} chars\n`)
-
-    const listed = await readRpc(await app.request("/", rpc("tools/list", {}), TEST_ENV, TEST_CTX))
-    const tools = (
-      (listed.result as { tools?: Array<Record<string, unknown>> } | undefined)?.tools ?? []
-    ).map((tool) => ({
-      type: "function" as const,
-      function: {
-        name: String(tool.name),
-        description: String(tool.description ?? "").slice(0, 1024),
-        parameters: tool.inputSchema ?? { type: "object", properties: {} },
-      },
-    }))
-
-    for (const journey of JOURNEYS) {
-      try {
-        runs.set(
-          journey.id,
-          await runJourney({
-            app,
-            tools,
-            task: journey.task,
-            maxCalls: journey.maxCalls,
-            serverInstructions,
+  beforeAll(
+    async () => {
+      if (!enabled) return
+      const app = await mountRealMcp()
+      // Handshake first, like a real client: `instructions` is returned here and
+      // nowhere else.
+      const initialized = await readRpc(
+        await app.request(
+          "/",
+          rpc("initialize", {
+            protocolVersion: "2025-06-18",
+            capabilities: {},
+            clientInfo: { name: "voyant-capability-eval", version: "0.0.0" },
           }),
-        )
-      } catch (err) {
-        runs.set(journey.id, {
-          calls: [],
-          answer: `FATAL: ${String(err).slice(0, 300)}`,
-          tokens: 0,
-          exhausted: true,
-        })
-      }
-    }
-    // Grade against the DATABASE, not the closing prose. Done after all journeys
-    // so a later one cannot be blamed for an earlier one's missing row.
-    for (const journey of JOURNEYS) {
-      if (!journey.verify) continue
-      const rows = await (verifyDb as { execute: (q: unknown) => Promise<unknown> }).execute(
-        // `sql` is a TEMPLATE TAG — passing a plain string makes drizzle read it as
-        // a template-strings array and send only its first character. `sql.raw`
-        // is the escape hatch for a query built as a string.
-        sqlRaw.raw(journey.verify),
+          TEST_ENV,
+          TEST_CTX,
+        ),
       )
-      verified.set(journey.id, rowCount(rows) > 0)
-    }
-    process.stdout.write(`\n${report()}\n\n`)
-  }, JOURNEY_TIMEOUT_MS * JOURNEYS.length)
+      const serverInstructions = String(
+        (initialized.result as { instructions?: string } | undefined)?.instructions ?? "",
+      )
+      process.stdout.write(`server instructions: ${serverInstructions.length} chars\n`)
+
+      const listed = await readRpc(
+        await app.request("/", rpc("tools/list", {}), TEST_ENV, TEST_CTX),
+      )
+      const tools = (
+        (listed.result as { tools?: Array<Record<string, unknown>> } | undefined)?.tools ?? []
+      ).map((tool) => ({
+        type: "function" as const,
+        function: {
+          name: String(tool.name),
+          description: String(tool.description ?? "").slice(0, 1024),
+          parameters: tool.inputSchema ?? { type: "object", properties: {} },
+        },
+      }))
+
+      for (let attempt = 0; attempt < RUNS; attempt += 1) {
+        // A fresh mark per attempt: distinct records, no collisions, nothing to
+        // delete afterwards.
+        const mark = RUNS === 1 ? RUN_MARK : `${RUN_MARK}${attempt}`
+        const journeys = buildJourneys(mark)
+
+        for (const journey of journeys) {
+          let run: JourneyRun
+          try {
+            run = await runJourney({
+              app,
+              tools,
+              task: journey.task,
+              maxCalls: journey.maxCalls,
+              serverInstructions,
+            })
+          } catch (err) {
+            run = {
+              calls: [],
+              answer: `FATAL: ${String(err).slice(0, 300)}`,
+              tokens: 0,
+              exhausted: true,
+            }
+          }
+          attempts.set(journey.id, [...(attempts.get(journey.id) ?? []), run])
+          // Keep the LAST attempt as the representative transcript for the report.
+          runs.set(journey.id, run)
+        }
+
+        // Grade this attempt against the DATABASE before the next one runs, so a
+        // later attempt's rows can never satisfy an earlier attempt's check.
+        for (const journey of journeys) {
+          const run = runs.get(journey.id)
+          let passed = false
+          if (run) {
+            if (journey.verify) {
+              const rows = await (
+                verifyDb as { execute: (q: unknown) => Promise<unknown> }
+              ).execute(
+                // `sql` is a TEMPLATE TAG — a plain string is read as a
+                // template-strings array and only its first character is sent.
+                sqlRaw.raw(journey.verify),
+              )
+              passed = rowCount(rows) > 0
+              verified.set(journey.id, passed)
+            } else {
+              passed = journeyPassed(journey, run)
+            }
+          }
+          passes.set(journey.id, [...(passes.get(journey.id) ?? []), passed])
+        }
+      }
+      process.stdout.write(`\n${report()}\n\n`)
+    },
+    JOURNEY_TIMEOUT_MS * JOURNEYS.length * RUNS,
+  )
 
   it.each(
     JOURNEYS.filter((journey) => journey.intermittent),
@@ -649,6 +704,19 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
     const run = runs.get(id)
     expect(run, `${id} did not run`).toBeDefined()
     expect(run?.calls.length, `${id} answered without calling any tool`).toBeGreaterThan(0)
+
+    const outcomes = passes.get(id) ?? []
+    if (outcomes.length > 0) {
+      // Every attempt must pass. A journey that works most of the time is not
+      // working — that is precisely the state `intermittent` exists to describe,
+      // and a gated journey has claimed it is past it.
+      const failed = outcomes.length - outcomes.filter(Boolean).length
+      expect(
+        failed,
+        `${id} failed ${failed} of ${outcomes.length} attempts. Last answer: ${run?.answer.slice(0, 240)}`,
+      ).toBe(0)
+      return
+    }
 
     if (verify) {
       // The real assertion for a write: the row exists. Prose is not evidence.

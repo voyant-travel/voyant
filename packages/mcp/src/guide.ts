@@ -332,7 +332,31 @@ function productsSection(scope: GuideScope): string {
     "retires it.\n\n" +
     "So a well-authored draft Product is still invisible and unbookable until it is " +
     "explicitly published. Do not assume creating a Product lists it; check its " +
-    "`status`/`visibility`, and publish as a deliberate step." +
+    "`status`/`visibility`, and publish as a deliberate step.\n\n" +
+    // voyant#3921: this recipe exists because the surface offers four plausible
+    // ways to price a unit — create_option_unit, apply_product_unit_configuration,
+    // compose_product, update_product_option — and nothing said which one. Asked
+    // to make a product sellable, the agent tried three of them in turn and gave
+    // up: 21-27 calls, 200k+ tokens, no unit written. The one run that went
+    // straight to create_option_unit finished in five calls. The tools were all
+    // there and all correct; the missing thing was the order.
+    "## Making a new Product sellable\n\n" +
+    "In order, and these are the exact Tools:\n\n" +
+    "1. `create_product` — creates the Product AND a default Option named " +
+    "'Standard'. You do not need to create an Option; reuse that one unless you " +
+    "genuinely want a second.\n" +
+    "2. `create_option_unit` — add a priced, bookable unit to that Option. This is " +
+    "the step that makes the Product sellable at all: an Option with no unit " +
+    "reserves nothing, and a booking against it is refused. Use this Tool, not " +
+    "`compose_product` (whole-graph authoring) and not " +
+    "`apply_product_unit_configuration` (bulk reconfiguration of units that already " +
+    "exist).\n" +
+    "3. `create_departure` — for date-based products, add the dated departure(s) " +
+    "customers will book.\n" +
+    "4. `publish_product` — promote it to the public catalog.\n\n" +
+    'Check with `inventory_query` (`resource: "product_options"`, then ' +
+    '`"option_units"`) that the unit you created sits on the Option being booked. ' +
+    "A unit on a different Option reads exactly like no unit at all." +
     (scope.writeEnabled
       ? ""
       : "\n\nWith this read-only key you can inspect a Product's status and visibility " +
