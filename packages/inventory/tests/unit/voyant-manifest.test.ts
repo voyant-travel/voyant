@@ -144,15 +144,12 @@ describe("inventory deployment manifests", () => {
       "create_product",
       "update_product",
       "set_product_open_graph_image",
-      // voyant#3921: the preview/apply pair left the agent surface. It required
-      // the caller to carry an exhaustive before/after plan verbatim between two
-      // calls, and it read as the way to touch units at all — so an agent trying
-      // to ADD one spent twenty-odd calls cycling over units that did not exist.
-      // configure_option_units does both halves in one call, computing the plan
-      // server-side and returning it for confirmation, so the review step is kept
-      // and the transcription is not. The exports remain for programmatic
-      // callers; only the graph binding changed.
-      "configure_option_units",
+      // voyant#3921: preview/apply_product_unit_configuration left the agent
+      // surface and nothing replaced them. They made an agent carry an exhaustive
+      // before/after plan between two calls and read as the way to touch units at
+      // all, so adding one cost twenty-odd wasted calls; removing them took that
+      // journey 0/10 → 10/10. create_option_unit and update_option_unit already
+      // cover add-a-unit and change-a-unit, and the agent finds them unaided.
       "update_product_day",
       "publish_product",
       "unpublish_product",
@@ -183,13 +180,6 @@ describe("inventory deployment manifests", () => {
         expect.objectContaining({
           id: "@voyant-travel/inventory#action.publish-product",
           risk: "high",
-          ledger: "required",
-          approval: "required",
-          allowedActorTypes: ["staff"],
-        }),
-        expect.objectContaining({
-          id: "@voyant-travel/inventory#action.apply-product-unit-configuration",
-          commandTargetField: "productId",
           ledger: "required",
           approval: "required",
           allowedActorTypes: ["staff"],

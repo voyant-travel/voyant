@@ -398,6 +398,24 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
         "200k+ tokens, and it has reported success while writing nothing",
     },
     {
+      // Exercises configure_option_units, the tool that replaced the preview/apply
+      // pair. Added because its absence was the whole problem: the pair was removed
+      // from the agent surface and the replacement was never once called across ten
+      // runs, so nobody noticed it could not work at all — it was
+      // confirmation-gated generically, which refuses the unconfirmed call before
+      // the handler can return the plan that the confirmed call then requires. A
+      // capability with no journey is a capability nobody is checking.
+      id: "option-unit-reprice",
+      domain: "products",
+      task: `The adult seat on 'Capability Eval Tour ${RUN_MARK}' should now cost 650 EUR instead of 500. Change it, reviewing the before/after before you commit.`,
+      expect: "650",
+      maxCalls: 22,
+      verify: `select 1 from option_units u
+             join product_options o on o.id = u.option_id
+             join products p on p.id = o.product_id
+             where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+    },
+    {
       // Ops write: a dated departure for the product just created. First journey
       // to depend on another journey's output rather than seeded data.
       id: "ops-departure-create",
@@ -415,11 +433,11 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       id: "booking-create",
       domain: "bookings",
       // The task used to say "for 2 adults" and name nobody. The agent found the
-    // client, called book_product, and then correctly stopped to ask who the two
-    // adults were — a Booking carries Travelers with names and contact details,
-    // and it cannot invent them. That was the journey being unrealistic, not the
-    // surface being unhelpful: a real operator booking a trip knows who is going.
-    task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} (email ioana.${RUN_MARK}@example.com) on the 2026-09-15 departure. She travels with one companion, Andrei Popescu${RUN_MARK}; both are adults and Ioana is the lead traveller and the billing party. Confirm the booking reference.`,
+      // client, called book_product, and then correctly stopped to ask who the two
+      // adults were — a Booking carries Travelers with names and contact details,
+      // and it cannot invent them. That was the journey being unrealistic, not the
+      // surface being unhelpful: a real operator booking a trip knows who is going.
+      task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} (email ioana.${RUN_MARK}@example.com) on the 2026-09-15 departure. She travels with one companion, Andrei Popescu${RUN_MARK}; both are adults and Ioana is the lead traveller and the billing party. Confirm the booking reference.`,
       expect: "book",
       maxCalls: 24,
       // Reaches the real domain constraint and stops there:

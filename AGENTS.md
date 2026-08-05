@@ -101,6 +101,25 @@ The fast lane runs changed-file linting plus Turbo affected typecheck/test and
 architecture checks. The full lane is intended for CI, release prep, and broad
 cross-package changes.
 
+### Reading a build result correctly
+
+Two traps have each cost real rework here, and both make a FAILED build look
+green:
+
+- **`$?` after a pipe is the last command's.** `pnpm -F pkg build | tail -3;
+  echo $?` reports `tail`'s status, not the build's. A package that failed to
+  compile reads as exit 0. Write the output to a file and capture the status
+  from the build itself:
+  `npx tsc -p tsconfig.build.json > out.txt 2>&1; echo "exit=$?"`.
+- **Never leave a build running while you switch branches.** A tsc run reads
+  sibling packages' `dist` as it goes, so a checkout underneath it produces
+  errors belonging to no coherent tree — `TS18046 'x' is of type 'unknown'` on
+  files nobody touched is the usual shape. Both the failure and a later "clean"
+  result from the same run are meaningless. Finish, then switch.
+
+`tsc` is silent on success, so the honest check is an explicit exit code plus
+`grep -c "error TS"` — not the absence of output, and not the summary line.
+
 ## Internal Dev Agent
 
 AFK agent queue, remote sandbox, browser evidence, and code-execution tooling

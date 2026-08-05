@@ -260,11 +260,6 @@ export interface InventoryConfigurationToolServices {
   applyProductUnitConfiguration(
     input: z.input<typeof applyProductUnitConfigurationInputSchema>,
   ): Promise<unknown>
-  /** One-call configure: previews server-side, then applies once confirmed. */
-  configureOptionUnits(
-    input: z.input<typeof previewProductUnitConfigurationInputSchema>,
-    confirmed: boolean,
-  ): Promise<unknown>
 }
 
 /** Tool context with the inventory service injected. */
@@ -551,40 +546,6 @@ export const composeProductTool = defineTool({
     const admitted = admitHandlerActionPolicy(ctx, COMPOSE_PRODUCT_HANDLER_POLICY)
     return composeProductToolOutputSchema.parse(
       await inventoryAuthoring(ctx).composeProduct(input, admitted),
-    )
-  },
-})
-
-export const configureOptionUnitsTool = defineTool({
-  capabilityId: `${OWNER}#tool.configure-option-units`,
-  capabilityVersion: VERSION,
-  name: "configure_option_units",
-  description:
-    "Change the quantity and/or price of EXISTING units on a product option, in one call. " +
-    "Returns the exhaustive before/after plan for confirmation, then applies it unchanged when " +
-    "you call again with _voyant.confirmed=true and the same changes. To add a unit that does " +
-    "not exist yet, use create_option_unit instead.",
-  inputSchema: previewProductUnitConfigurationInputSchema,
-  outputSchema: appliedProductUnitConfigurationSchema,
-  requiredScopes: ["products:write", "pricing:write"],
-  audience: STAFF_AUDIENCE,
-  tier: "write",
-  riskPolicy: {
-    destructive: false,
-    reversible: true,
-    dryRunSupported: true,
-    // The gate is real, but it is satisfied by a flag rather than by
-    // transcribing a plan: the unconfirmed call returns the plan to review.
-    confirmationRequired: true,
-    sideEffects: ["data-write"],
-  },
-  async handler(input, ctx: InventoryToolContext) {
-    const confirmed = Boolean(
-      (ctx as { handlerActionPolicy?: { invocation?: { confirmed?: boolean } } })
-        .handlerActionPolicy?.invocation?.confirmed,
-    )
-    return appliedProductUnitConfigurationSchema.parse(
-      await inventoryConfiguration(ctx).configureOptionUnits(input, confirmed),
     )
   },
 })
