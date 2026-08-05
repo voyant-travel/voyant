@@ -4,13 +4,16 @@ import {
   bookingsRelationshipsRuntimePort,
   bookingsSupplierAmendmentRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
-import { analyticsPort } from "@voyant-travel/core/analytics"
 import {
   defineExtension,
   defineModule,
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
+// From `/runtime-port`, not `/analytics`: a package manifest must stay
+// import-cheap, so it may reach only for authoring helpers and port contracts.
+// `@voyant-travel/core/analytics` carries the emitter and the catalogue too.
+import { analyticsPort } from "@voyant-travel/core/runtime-port"
 import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import {
   catalogBookingRuntimePort,
