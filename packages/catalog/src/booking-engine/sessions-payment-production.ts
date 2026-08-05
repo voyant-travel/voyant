@@ -128,6 +128,10 @@ export function createProductionBookingSessionPaymentPorts(
               ...(contact.lastName ? { lastName: contact.lastName } : {}),
               ...(contact.phone ? { phone: contact.phone } : {}),
               ...(contact.country ? { country: contact.country } : {}),
+              ...(contact.state ? { state: contact.state } : {}),
+              ...(contact.city ? { city: contact.city } : {}),
+              ...(contact.postalCode ? { postalCode: contact.postalCode } : {}),
+              ...(contact.details ? { details: contact.details } : {}),
             },
             description: `Booking Session ${session.id}`,
             returnUrl: commit.payment?.returnUrl,
@@ -208,6 +212,13 @@ function paymentContact(payload: Record<string, unknown>) {
     email: stringValue(contact?.email),
     phone: stringValue(contact?.phone),
     country: stringValue(address?.country),
+    // `CardPaymentBilling.state` — a processor that computes tax from the
+    // billing address needs the subdivision, not just the country
+    // (voyant#4290).
+    state: stringValue(address?.region),
+    city: stringValue(address?.city),
+    postalCode: stringValue(address?.postal),
+    details: stringValue(address?.line1),
   }
 }
 
