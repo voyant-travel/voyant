@@ -441,12 +441,13 @@ function describeTool(
       return errorResult(err)
     }
   }
-  const binding = surface.get(name)
+  const resolvedName = resolveInvocationName(surface, name)
+  const binding = surface.get(resolvedName)
   // A flat read name is folded into its query tool and no longer describable.
-  if (!binding || projection.hiddenReadNames.has(name))
+  if (!binding || projection.hiddenReadNames.has(resolvedName))
     return unknownToolResult(name, surface, projection)
   try {
-    const descriptor = advertiseTool(registry, binding.entry, name, binding.aliasFor)
+    const descriptor = advertiseTool(registry, binding.entry, resolvedName, binding.aliasFor)
     return {
       content: [{ type: "text", text: JSON.stringify(descriptor, null, 2) }],
       structuredContent: descriptor,
@@ -474,8 +475,16 @@ function registerCallTool(input: RegisterMetaToolsInput): void {
       annotations: { openWorldHint: true },
     },
     async (args) => {
+      // Tolerate a client namespace prefix before anything else, so both the
+      // query-tool route and the flat route see the same resolved name.
+      const invocationName = resolveInvocationName(surface, args.name)
+      const queryToolName = projection.queryToolFor(args.name)
+        ? args.name
+        : projection.queryToolFor(invocationName)
+          ? invocationName
+          : args.name
       // A query tool routes through the projection to the underlying read.
-      const queryTool = projection.queryToolFor(args.name)
+      const queryTool = projection.queryToolFor(queryToolName)
       if (queryTool) {
         const startedAt = now()
         const { result, member } = await dispatchQueryTool({
@@ -499,9 +508,9 @@ function registerCallTool(input: RegisterMetaToolsInput): void {
         }
         return result
       }
-      const binding = surface.get(args.name)
+      const binding = surface.get(invocationName)
       // A flat read name is folded into its query tool and no longer callable.
-      if (!binding || projection.hiddenReadNames.has(args.name))
+      if (!binding || projection.hiddenReadNames.has(invocationName))
         return unknownToolResult(args.name, surface, projection)
       const def = registry.get(binding.entry.name)
       if (!def) return unknownToolResult(args.name, surface, projection)
@@ -509,7 +518,11 @@ function registerCallTool(input: RegisterMetaToolsInput): void {
       const startedAt = now()
       const result = await dispatchToResult(
         registry,
-        args.name,
+        // The RESOLVED name. Passing the caller's namespaced form here sent
+        // `functions.publish_product` all the way to the registry, which cannot
+        // find it and answers with its own unknown-tool error — deeper, less
+        // helpful, and after the binding had already been resolved correctly.
+        invocationName,
         binding.entry,
         args.arguments ?? {},
         ctx,
@@ -566,6 +579,27 @@ function classifyDispatchResult(result: CallToolResult): {
  * happened: the booking journey failed twice on names that were one prefix away
  * from correct.
  */
+
+/**
+ * Resolve a caller-supplied tool name against the surface, tolerating a client
+ * namespace prefix.
+ *
+ * Models routinely emit `functions.book_product` — an artifact of their own
+ * tool-calling layer, not of this surface. Measured against the real graph it
+ * cost a wasted round trip in nearly every write journey: the call failed, the
+ * agent read the "call it as X" hint, and repeated itself.
+ *
+ * Accepting the prefixed form is unambiguous because no tool name here contains
+ * a dot, so `a.b` can only ever be a namespaced `b`. The error path still exists
+ * for names that genuinely do not resolve — this just stops charging a round trip
+ * for a naming convention the caller cannot help.
+ */
+function resolveInvocationName(surface: AuthorizedSurface, name: string): string {
+  if (surface.has(name) || !name.includes(".")) return name
+  const unprefixed = name.split(".").pop() ?? name
+  return unprefixed.length > 0 ? unprefixed : name
+}
+
 function unknownToolResult(
   name: string,
   surface?: AuthorizedSurface,
