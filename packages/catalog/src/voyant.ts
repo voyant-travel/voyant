@@ -4,6 +4,7 @@ import {
   bookingsRelationshipsRuntimePort,
   bookingsSupplierAmendmentRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { analyticsPort } from "@voyant-travel/core/analytics"
 import {
   defineExtension,
   defineModule,
@@ -452,6 +453,9 @@ export const catalogBookingEngineVoyantModule = defineModule({
     // Resolves the billing party for a verified guest, who has no account.
     // Optional: without it only authenticated customers can self-serve.
     requirePort(bookingsRelationshipsRuntimePort, { optional: true }),
+    // Product analytics. Optional, and unbound is the intended default for a
+    // self-hosted deployment: nothing here depends on an analytics vendor.
+    requirePort(analyticsPort, { optional: true }),
   ],
   api: [
     {
