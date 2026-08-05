@@ -388,6 +388,21 @@ const JOURNEYS: CapabilityJourney[] = [
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
   },
   {
+    // The last link in the commercial chain, and the one never exercised until
+    // now — it was only ever in a scratchpad runner, so "invoice-issue is
+    // untested" was true in the most literal sense: the journey did not exist.
+    // Depends on booking-create, so it inherits whatever blocks that.
+    id: "invoice-issue",
+    domain: "invoices",
+    task: `Issue a proforma invoice for the booking belonging to Ioana Marinescu${RUN_MARK}. Confirm the document number.`,
+    expect: "proforma",
+    maxCalls: 24,
+    verify: `select 1 from invoices i join bookings b on b.id = i.booking_id
+             join people pe on pe.id = b.person_id
+             where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
+    knownGap: "depends on booking-create, which is gated on the approval loop",
+  },
+  {
     id: "contracts-read",
     domain: "contracts",
     task: "What contract templates exist? If there are none, say so explicitly.",
