@@ -41,6 +41,7 @@ import {
 import { toMcpMeta } from "./register.js"
 import { DEFAULT_RESPONSE_BUDGET_BYTES, isListShapedOutput } from "./response-budget.js"
 import { toMcpInputSchema, toMcpOutputContract } from "./schema-projection.js"
+import { expandSearchTerm } from "./vocabulary.js"
 
 export { toolDomain } from "./read-projection.js"
 
@@ -243,12 +244,25 @@ function searchTools(
   const domain = args.domain?.toLowerCase().trim()
   const limit = Math.min(args.limit ?? DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT)
 
+  // Expand each term through the ubiquitous-language aliases before matching, so
+  // a caller using the BUSINESS word reaches the tool named after the domain
+  // word. Without this, "add a client" found nothing while `create_person` sat
+  // in the registry — see vocabulary.ts. A term stays itself when unknown, and
+  // a term matches if ANY of its expansions appears, so this only ever widens.
+  const expanded = terms.map((term) => expandSearchTerm(term))
+
   const matches: Array<SearchCandidate & { score: number }> = []
   for (const candidate of discoverableCandidates(surface, projection)) {
     if (domain && candidate.domain.toLowerCase() !== domain) continue
-    const haystack = `${candidate.name} ${candidate.description} ${candidate.domain}`.toLowerCase()
-    if (terms.length > 0 && !terms.every((term) => haystack.includes(term))) continue
-    matches.push({ ...candidate, score: scoreCandidate(candidate, terms) })
+    const haystack =
+      `${candidate.name} ${candidate.description} ${candidate.domain} ${(candidate.keywords ?? []).join(" ")}`.toLowerCase()
+    if (
+      expanded.length > 0 &&
+      !expanded.every((forms) => forms.some((f) => haystack.includes(f)))
+    ) {
+      continue
+    }
+    matches.push({ ...candidate, score: scoreCandidate(candidate, expanded) })
   }
 
   matches.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
@@ -317,12 +331,16 @@ function queryToolCandidates(projection: ReadProjection): SearchCandidate[] {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-/** Rank an exact/prefix name match above a substring match above a description-only hit. */
-function scoreMatch(name: string, terms: readonly string[]): number {
-  if (terms.length === 0) return 0
+/**
+ * Rank an exact/prefix name match above a substring match above a
+ * description-only hit. Each entry of `termGroups` is one search term and its
+ * vocabulary expansions; the term counts as present when ANY form matches.
+ */
+function scoreMatch(name: string, termGroups: readonly (readonly string[])[]): number {
+  if (termGroups.length === 0) return 0
   const lowered = name.toLowerCase()
-  if (terms.every((term) => lowered === term)) return 3
-  if (terms.every((term) => lowered.includes(term))) return 2
+  if (termGroups.every((forms) => forms.some((f) => lowered === f))) return 3
+  if (termGroups.every((forms) => forms.some((f) => lowered.includes(f)))) return 2
   return 1
 }
 
@@ -331,10 +349,13 @@ function scoreMatch(name: string, terms: readonly string[]): number {
  * tool's resource names), so a search for a record noun ranks the query tool as
  * highly as a write tool that carries the noun in its own name.
  */
-function scoreCandidate(candidate: SearchCandidate, terms: readonly string[]): number {
-  let best = scoreMatch(candidate.name, terms)
+function scoreCandidate(
+  candidate: SearchCandidate,
+  termGroups: readonly (readonly string[])[],
+): number {
+  let best = scoreMatch(candidate.name, termGroups)
   for (const keyword of candidate.keywords ?? []) {
-    best = Math.max(best, scoreMatch(keyword, terms))
+    best = Math.max(best, scoreMatch(keyword, termGroups))
     if (best === 3) break
   }
   return best
