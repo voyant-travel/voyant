@@ -144,8 +144,15 @@ describe("inventory deployment manifests", () => {
       "create_product",
       "update_product",
       "set_product_open_graph_image",
-      "preview_product_unit_configuration",
-      "apply_product_unit_configuration",
+      // voyant#3921: the preview/apply pair left the agent surface. It required
+      // the caller to carry an exhaustive before/after plan verbatim between two
+      // calls, and it read as the way to touch units at all — so an agent trying
+      // to ADD one spent twenty-odd calls cycling over units that did not exist.
+      // configure_option_units does both halves in one call, computing the plan
+      // server-side and returning it for confirmation, so the review step is kept
+      // and the transcription is not. The exports remain for programmatic
+      // callers; only the graph binding changed.
+      "configure_option_units",
       "update_product_day",
       "publish_product",
       "unpublish_product",

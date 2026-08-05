@@ -33,27 +33,34 @@ export interface McpOutputContract {
  * A description is not documentation here; it is the only channel that reaches
  * the model before the first call.
  */
+/**
+ * The `_voyant` control fields, described — and kept SHORT (voyant#3921).
+ *
+ * They were previously bare `z.boolean().optional()` and friends: the shape with
+ * none of the meaning, so an agent could see `confirmed` existed and had no way
+ * to learn it was mandatory or where an approvalId comes from.
+ *
+ * A first pass wrote full protocol explanations here and was measured at no
+ * improvement (0/3 before, 0/3 after) while adding ~10KB to the aggregate
+ * describe cost, because these fields appear on EVERY action-policy tool. What
+ * actually moved that journey was ungating request_action_approval and putting
+ * the recipe in the guide. So these say the minimum a caller cannot infer, and
+ * the protocol lives in `voyant_guide` where it is read once rather than
+ * serialized into every descriptor.
+ */
 const actionInvocationFields = {
   confirmed: z
     .boolean()
-    .describe(
-      "Set true to authorise this write. Required for this tool — a call without it is refused with CONFIRMATION_REQUIRED and nothing is written. Send it on the FIRST call; there is no need to be refused once to learn this.",
-    ),
-  requestId: z
-    .uuid()
-    .describe("Caller-generated UUID correlating this request in the action ledger."),
+    .describe("Set true to authorise this write; required, or the call is refused."),
+  requestId: z.uuid().describe("Caller-generated UUID correlating this request in the ledger."),
   approvalId: z
     .string()
     .trim()
     .min(1)
     .describe(
-      "Approval authorising this exact command. Obtain it BEFORE calling: request_action_approval creates one and returns its id, then approve_action_approval decides it — a requested approval stays pending until decided, and passing a pending id fails identically.",
+      "Approval authorising this exact command. Get one with request_action_approval, then approve_action_approval — a pending approval is rejected.",
     ),
-  reasonCode: z
-    .string()
-    .trim()
-    .min(1)
-    .describe("Optional short reason recorded with the action in the ledger."),
+  reasonCode: z.string().trim().min(1).describe("Optional reason recorded with the action."),
   // Compatibility fields used by handler-owned policies and generic actions
   // that have not yet declared server-owned target resolution.
   targetId: z.string().trim().min(1).describe("Id of the existing record this action targets."),
@@ -62,9 +69,7 @@ const actionInvocationFields = {
     .trim()
     .min(1)
     .max(255)
-    .describe(
-      "Stable retry key. Reuse the SAME value to replay an identical command; a different command under a reused key is rejected.",
-    ),
+    .describe("Stable retry key; reuse the same value to replay an identical command."),
   idempotencyFingerprint: z
     .string()
     .trim()

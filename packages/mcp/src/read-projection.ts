@@ -141,9 +141,16 @@ export function queryToolInputSchema(
     if (resource !== undefined && member.resource !== resource) continue
     const def = registry.get(member.entry.name)
     if (!def) continue
+    // Project WITHOUT the member's action metadata. `toMcpInputSchema` appends the
+    // `_voyant` control object, and in a discriminated union that object is
+    // repeated once per branch — `bookings_query` paid for it 22 times. A query
+    // tool is read-only and dispatches reads, so none of those controls apply to
+    // it; carrying them multiplied a constant across every member for no caller
+    // benefit. Dispatch is unaffected: the registry still validates each read's
+    // own untouched domain schema.
     const memberObject = toMcpInputSchema(
       def.inputSchema,
-      member.entry,
+      { ...member.entry, actionPolicy: undefined },
       isListShapedOutput(def.outputSchema),
     )
     branches.push(

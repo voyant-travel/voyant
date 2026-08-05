@@ -234,6 +234,12 @@ function formatReport(scores: readonly DiscoveryScore[]): string {
  * when each journey discovered and described one FLAT read (`get_booking` alone
  * was ~12,700, dominated by its full Booking output schema).
  *
+ * LOWERED 56,000 → 48,000: measured 43,730. The ceiling went up for the search
+ * vocabulary and has come back down further than it rose, because the query
+ * projection stopped repeating the `_voyant` control object once per union
+ * branch — `bookings_query` was carrying it 22 times for a read-only tool that
+ * cannot use any of those controls. Ratchets only shrink; this one shrank.
+ *
  * RAISED 45,000 → 56,000 when the search vocabulary landed (voyant#3921).
  * Measured 38,587 → 48,184, a deliberate +25%: expanding a query through the
  * ubiquitous-language aliases MATCHES MORE TOOLS, so every `search_tools`
@@ -257,7 +263,7 @@ function formatReport(scores: readonly DiscoveryScore[]): string {
  * drift (a broad `search_tools` over the many booking WRITE tools is the largest
  * remaining line), while still tripping if a describe payload balloons again.
  */
-const DISCOVERY_TOKEN_CEILING = 56_000
+const DISCOVERY_TOKEN_CEILING = 48_000
 
 /**
  * This hook composes the whole selected graph and runs every journey, which

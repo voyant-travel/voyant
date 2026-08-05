@@ -255,23 +255,20 @@ export const inventoryVoyantModule = defineModule({
       context: ["inventory"],
       risk: "medium",
     },
+    // voyant#3921: preview_product_unit_configuration and
+    // apply_product_unit_configuration are no longer on the agent surface. They
+    // required the caller to carry an exhaustive before/after plan verbatim
+    // between two calls, and they named themselves as the way to touch units, so
+    // an agent trying to ADD one spent twenty-odd calls in a preview/apply cycle
+    // over units that did not exist. configure_option_units does both halves in
+    // one call, computing the plan server-side and returning it for confirmation.
+    // The exports remain for programmatic callers; only the graph binding is gone.
     {
-      id: "@voyant-travel/inventory#tool.preview-product-unit-configuration",
-      name: "preview_product_unit_configuration",
+      id: "@voyant-travel/inventory#tool.configure-option-units",
+      name: "configure_option_units",
       runtime: {
         entry: "@voyant-travel/inventory/tools",
-        export: "previewProductUnitConfigurationTool",
-      },
-      requiredScopes: ["products:read", "pricing:read"],
-      context: ["inventoryConfiguration"],
-      risk: "low",
-    },
-    {
-      id: "@voyant-travel/inventory#tool.apply-product-unit-configuration",
-      name: "apply_product_unit_configuration",
-      runtime: {
-        entry: "@voyant-travel/inventory/tools",
-        export: "applyProductUnitConfigurationTool",
+        export: "configureOptionUnitsTool",
       },
       requiredScopes: ["products:write", "pricing:write"],
       context: ["inventoryConfiguration"],
@@ -467,19 +464,14 @@ export const inventoryVoyantModule = defineModule({
       targetLifecycle: "existing",
       from: { tools: ["@voyant-travel/inventory#tool.set-product-open-graph-image"] },
     },
+    // One action for the consolidated Tool. It keeps the apply action's governance
+    // verbatim — same risk, ledger, approval, target and effect boundary — because
+    // consolidating the CALLS must not quietly relax the policy on the write. The
+    // separate read action for the preview goes with the separate preview Tool:
+    // the plan is now computed inside this action rather than fetched by the
+    // caller beforehand.
     {
-      id: "@voyant-travel/inventory#action.preview-product-unit-configuration",
-      version: "v1",
-      kind: "read",
-      targetType: "product",
-      requiredScopes: ["products:read", "pricing:read"],
-      risk: "low",
-      ledger: "optional",
-      allowedActorTypes: ["staff"],
-      from: { tools: ["@voyant-travel/inventory#tool.preview-product-unit-configuration"] },
-    },
-    {
-      id: "@voyant-travel/inventory#action.apply-product-unit-configuration",
+      id: "@voyant-travel/inventory#action.configure-option-units",
       version: "v1",
       kind: "execute",
       targetType: "product",
@@ -493,7 +485,7 @@ export const inventoryVoyantModule = defineModule({
       allowedActorTypes: ["staff"],
       availability: { status: "available" },
       effectBoundary: "local",
-      from: { tools: ["@voyant-travel/inventory#tool.apply-product-unit-configuration"] },
+      from: { tools: ["@voyant-travel/inventory#tool.configure-option-units"] },
     },
     {
       id: "@voyant-travel/inventory#action.update-product-day",

@@ -260,6 +260,42 @@ export const voyantToolContextContribution = defineToolContextContribution({
     }
     const inventoryConfiguration: InventoryConfigurationToolServices = {
       previewProductUnitConfiguration: (input) => previewProductUnitConfiguration(db, input),
+      /**
+       * voyant#3921: one call instead of preview-then-apply.
+       *
+       * The pair required the caller to carry an exhaustive before/after plan
+       * verbatim between two calls — the carried-token antipattern, and the thing
+       * an agent is least reliable at. Worse, the pair NAMED itself as the way to
+       * touch units, so an agent trying to add one spent twenty calls in a
+       * preview/apply cycle over units that did not exist yet.
+       *
+       * The safety property the pair protected is that a human sees the exact
+       * before/after before it commits. That is preserved, not dropped: the
+       * unconfirmed call computes the plan server-side and returns it as the
+       * CONFIRMATION_REQUIRED payload, so the plan is still reviewed — the caller
+       * simply no longer has to transcribe it. The confirmed call recomputes and
+       * applies, so a plan that went stale between the two fails closed exactly as
+       * it did before.
+       */
+      async configureOptionUnits(input, confirmed) {
+        const preview = await previewProductUnitConfiguration(db, input)
+        if (preview.status === "invalid") {
+          throw new ToolError(
+            "The requested unit configuration is not valid; nothing was changed.",
+            "INVALID_INPUT",
+            { issues: preview.issues },
+          )
+        }
+        if (!confirmed) {
+          throw new ToolError(
+            "Review the before/after plan in this error's `plan`, then call again with " +
+              "_voyant.confirmed=true and the SAME changes to apply it.",
+            "CONFIRMATION_REQUIRED",
+            { plan: preview },
+          )
+        }
+        return this.applyProductUnitConfiguration(preview)
+      },
       async applyProductUnitConfiguration(input) {
         const result = await applyProductUnitConfiguration(db, input)
         // Emit on exact replay too: if a prior request committed and then lost
