@@ -304,6 +304,45 @@ const JOURNEYS: CapabilityJourney[] = [
     verify: `select 1 from products where name ilike '%capability eval tour ${RUN_MARK}%'`,
   },
   {
+    // Ops write: a dated departure for the product just created. First journey
+    // to depend on another journey's output rather than seeded data.
+    id: "ops-departure-create",
+    domain: "ops",
+    task: `Create a departure for the product 'Capability Eval Tour ${RUN_MARK}' on 2026-09-15 with 20 seats available. Confirm the departure id.`,
+    expect: "2026-09-15",
+    maxCalls: 20,
+    verify: `select 1 from availability_slots s join products p on p.id = s.product_id
+             where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+  },
+  {
+    // The commercial commit point, and the first journey through the
+    // confirmation/approval protocol. Depends on the person, the product AND the
+    // departure — the multi-call orchestration #3921 Finding 2 is about.
+    id: "booking-create",
+    domain: "bookings",
+    task: `Book the product 'Capability Eval Tour ${RUN_MARK}' for the client Ioana Marinescu${RUN_MARK} on the 2026-09-15 departure for 2 adults. Confirm the booking reference.`,
+    expect: "book",
+    maxCalls: 24,
+    // Reaches the real domain constraint and stops there:
+    //   "This product has no bookable units on the selected option, so the
+    //    booking would reserve nothing."
+    // That is CORRECT — a product is not sellable until it has an option, a
+    // priced unit, and capacity. The gap is that this journey does not create
+    // them, not that the surface refuses. It is exactly the multi-write setup
+    // #3921 Finding 2 is about: "book the product you just made" is four or five
+    // prior writes an agent has to infer, and nothing in create_product says so.
+    //
+    // Two MCP-level defects surfaced on the way and are FIXED: the model called
+    // `functions.book_product` (its own namespacing artifact) and got a bare
+    // NOT_FOUND with no way back — it now gets "Call it as book_product" and
+    // recovers; and CONFIRMATION_REQUIRED is reached and handled.
+    //
+    // Promote this once the chain grows option/unit/pricing journeys.
+    knownGap: "product needs option + priced unit + capacity before it is bookable",
+    verify: `select 1 from bookings b join people pe on pe.id = b.person_id
+             where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
+  },
+  {
     id: "contracts-read",
     domain: "contracts",
     task: "What contract templates exist? If there are none, say so explicitly.",

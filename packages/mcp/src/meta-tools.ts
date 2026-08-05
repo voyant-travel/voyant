@@ -20,6 +20,7 @@ import { z } from "@hono/zod-openapi"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
+  findNearMatches,
   type ToolContext,
   ToolError,
   type ToolManifestEntry,
@@ -442,7 +443,7 @@ function describeTool(
   }
   const binding = surface.get(name)
   // A flat read name is folded into its query tool and no longer describable.
-  if (!binding || projection.hiddenReadNames.has(name)) return unknownToolResult(name)
+  if (!binding || projection.hiddenReadNames.has(name)) return unknownToolResult(name, surface)
   try {
     const descriptor = advertiseTool(registry, binding.entry, name, binding.aliasFor)
     return {
@@ -499,9 +500,10 @@ function registerCallTool(input: RegisterMetaToolsInput): void {
       }
       const binding = surface.get(args.name)
       // A flat read name is folded into its query tool and no longer callable.
-      if (!binding || projection.hiddenReadNames.has(args.name)) return unknownToolResult(args.name)
+      if (!binding || projection.hiddenReadNames.has(args.name))
+        return unknownToolResult(args.name, surface)
       const def = registry.get(binding.entry.name)
-      if (!def) return unknownToolResult(args.name)
+      if (!def) return unknownToolResult(args.name, surface)
       const output = toMcpOutputContract(def.outputSchema)
       const startedAt = now()
       const result = await dispatchToResult(
@@ -544,11 +546,54 @@ function classifyDispatchResult(result: CallToolResult): {
 }
 
 /** The result for a name that is unknown OR filtered by the caller's scopes/audience. */
-function unknownToolResult(name: string): CallToolResult {
+/**
+ * The error a caller gets for a tool name that is not on its surface.
+ *
+ * Two recoveries are offered, because both failures were observed against a real
+ * model driving the real graph:
+ *
+ * 1. A NAMESPACED name. Asked to book a product, the model called
+ *    `functions.book_product` and `functions.inventory_query` — an artifact of
+ *    how its own tool-calling layer names things. Both are exact matches once the
+ *    prefix is dropped, but edit distance cannot see that: "functions." is ten
+ *    edits away, far outside any sane typo tolerance. So strip a leading
+ *    `segment.` and check for an exact hit first.
+ * 2. A near miss. Handled by the shared vocabulary-free matcher, which is the
+ *    right tool for a genuine typo.
+ *
+ * Without either, the caller gets "does not exist" and stops — which is what
+ * happened: the booking journey failed twice on names that were one prefix away
+ * from correct.
+ */
+function unknownToolResult(name: string, surface?: AuthorizedSurface): CallToolResult {
+  const known = surface ? [...surface.keys()] : []
+  const afterPrefix = name.includes(".") ? (name.split(".").pop() ?? "") : ""
+  const exactAfterPrefix = afterPrefix && known.includes(afterPrefix) ? afterPrefix : undefined
+  const near = exactAfterPrefix ? undefined : findNearMatches(name, known)
+
+  const suggestion =
+    exactAfterPrefix ??
+    near?.didYouMean ??
+    (near?.candidates.length ? near.candidates[0] : undefined)
+  const hint = exactAfterPrefix
+    ? ` Call it as "${exactAfterPrefix}" — this surface does not namespace tool names.`
+    : near?.didYouMean
+      ? ` Did you mean "${near.didYouMean}"?`
+      : near?.candidates.length
+        ? ` Close matches: ${near.candidates.join(", ")}.`
+        : " Use search_tools to find the tool you need."
+
   return errorResult(
     new ToolError(
-      `Tool "${name}" is not available. It does not exist or your grant does not authorize it.`,
+      `Tool "${name}" is not available. It does not exist or your grant does not authorize it.${hint}`,
       "NOT_FOUND",
+      undefined,
+      undefined,
+      {
+        ...(suggestion ? { didYouMean: suggestion } : {}),
+        ...(near?.candidates.length ? { candidates: near.candidates } : {}),
+        ...(exactAfterPrefix ? { candidates: [exactAfterPrefix] } : {}),
+      },
     ),
   )
 }
