@@ -340,6 +340,12 @@ async function executeTool(
     // PROVIDER_ERROR whose raw text reaches the caller (voyant#4115).
     if (isToolError(err)) throw toToolError(err)
     const message = err instanceof Error ? err.message : String(err)
+    // voyant#3950: PROVIDER_ERROR (terminal) is the deliberate classification for
+    // an UNRECOGNIZED throw, not a default nobody revisited. We know nothing about
+    // what failed here, and this wrapper covers writes as well as reads — telling
+    // an agent to retry a write whose outcome we cannot characterise is how you
+    // get a duplicate booking. A handler that knows its failure is transient
+    // should throw PROVIDER_UNAVAILABLE itself; `isToolError` above preserves it.
     throw new ToolError(`Tool "${name}" failed: ${message}`, "PROVIDER_ERROR", undefined, {
       cause: err,
     })
