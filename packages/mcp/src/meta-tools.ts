@@ -443,7 +443,8 @@ function describeTool(
   }
   const binding = surface.get(name)
   // A flat read name is folded into its query tool and no longer describable.
-  if (!binding || projection.hiddenReadNames.has(name)) return unknownToolResult(name, surface)
+  if (!binding || projection.hiddenReadNames.has(name))
+    return unknownToolResult(name, surface, projection)
   try {
     const descriptor = advertiseTool(registry, binding.entry, name, binding.aliasFor)
     return {
@@ -501,9 +502,9 @@ function registerCallTool(input: RegisterMetaToolsInput): void {
       const binding = surface.get(args.name)
       // A flat read name is folded into its query tool and no longer callable.
       if (!binding || projection.hiddenReadNames.has(args.name))
-        return unknownToolResult(args.name, surface)
+        return unknownToolResult(args.name, surface, projection)
       const def = registry.get(binding.entry.name)
-      if (!def) return unknownToolResult(args.name, surface)
+      if (!def) return unknownToolResult(args.name, surface, projection)
       const output = toMcpOutputContract(def.outputSchema)
       const startedAt = now()
       const result = await dispatchToResult(
@@ -565,12 +566,25 @@ function classifyDispatchResult(result: CallToolResult): {
  * happened: the booking journey failed twice on names that were one prefix away
  * from correct.
  */
-function unknownToolResult(name: string, surface?: AuthorizedSurface): CallToolResult {
+function unknownToolResult(
+  name: string,
+  surface?: AuthorizedSurface,
+  projection?: ReadProjection,
+): CallToolResult {
   // Meta-tool names belong in the candidate set too. The model namespaced
   // `call_tool` itself — `functions.call_tool` — and the prefix strip found no
   // match because the surface map holds only DOMAIN tools, so it got the generic
   // "use search_tools" hint for a tool it was already holding correctly.
-  const known = [...META_TOOL_NAMES, ...(surface ? [...surface.keys()] : [])]
+  // The `<domain>_query` tools have to be in here too. They are the names an
+  // agent uses most, and they exist only in the projection — not in the surface
+  // map, which holds the raw reads they replace. Without them
+  // `functions.inventory_query` fell through to the generic "use search_tools"
+  // hint and the agent retried the identical call four times in a row.
+  const known = [
+    ...META_TOOL_NAMES,
+    ...(projection ? [...projection.queryTools.keys()] : []),
+    ...(surface ? [...surface.keys()] : []),
+  ]
   const afterPrefix = name.includes(".") ? (name.split(".").pop() ?? "") : ""
   const exactAfterPrefix = afterPrefix && known.includes(afterPrefix) ? afterPrefix : undefined
   const near = exactAfterPrefix ? undefined : findNearMatches(name, known)

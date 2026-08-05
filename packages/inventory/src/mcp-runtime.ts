@@ -388,16 +388,24 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listProductOptions: (input: Parameters<typeof optionProductsService.listOptions>[1]) =>
           optionProductsService.listOptions(db, input),
         getProductOptionById: (id: string) => optionProductsService.getOptionById(db, id),
-        createProductOption: (
+        createProductOption: async (
           input: Parameters<InventoryOptionToolServices["createProductOption"]>[0],
           admitted: ToolHandlerActionPolicyContext,
         ) => {
           const { idempotencyKey, productId, ...data } = input
+          // voyant#3921: derive server-side, matching create_person/product/
+          // departure. Paired with `resolvesIdempotencyKeyServerSide` on the Tool
+          // so the caller is never asked for a key it would then misuse across a
+          // retry. Both halves are required: deriving without declaring leaves the
+          // admission demanding a key, declaring without deriving leaves it absent.
+          const resolvedIdempotencyKey =
+            idempotencyKey ??
+            (await deriveCommandIdempotencyKey("create-product-option", { productId, ...data }))
           return executeInventoryGeneratedChild({
             c,
             db: asLedgerDb(db),
-            admitted,
-            idempotencyKey,
+            admitted: withServerResolvedIdempotencyKey(admitted, resolvedIdempotencyKey),
+            idempotencyKey: resolvedIdempotencyKey,
             commandTargetType: "product-option-create-command",
             canonicalTargetType: "product_option",
             resultReferenceType: "product_option",
@@ -444,16 +452,23 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listOptionUnits: (input: Parameters<typeof optionProductsService.listUnits>[1]) =>
           optionProductsService.listUnits(db, input),
         getOptionUnitById: (id: string) => optionProductsService.getUnitById(db, id),
-        createOptionUnit: (
+        createOptionUnit: async (
           input: Parameters<InventoryOptionToolServices["createOptionUnit"]>[0],
           admitted: ToolHandlerActionPolicyContext,
         ) => {
           const { idempotencyKey, optionId, ...data } = input
+          // voyant#3921: derive server-side, paired with the Tool's
+          // `resolvesIdempotencyKeyServerSide` declaration. This is the last write
+          // in the product-setup chain, so until it landed a product could not
+          // reach a bookable state through MCP at all.
+          const resolvedIdempotencyKey =
+            idempotencyKey ??
+            (await deriveCommandIdempotencyKey("create-option-unit", { optionId, ...data }))
           return executeInventoryGeneratedChild({
             c,
             db: asLedgerDb(db),
-            admitted,
-            idempotencyKey,
+            admitted: withServerResolvedIdempotencyKey(admitted, resolvedIdempotencyKey),
+            idempotencyKey: resolvedIdempotencyKey,
             commandTargetType: "option-unit-create-command",
             canonicalTargetType: "option_unit",
             resultReferenceType: "option_unit",
