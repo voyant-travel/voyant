@@ -67,7 +67,7 @@ describe("generic MCP action-policy gate", () => {
       expect.anything(),
       expect.objectContaining({
         targetId: "target_1",
-        idempotencyKey: expect.stringMatching(/^mcp-request:[0-9a-f]{64}$/),
+        idempotencyKey: expect.stringMatching(/^mcp-request:sha256:[0-9a-f]{64}$/),
       }),
     )
   })
