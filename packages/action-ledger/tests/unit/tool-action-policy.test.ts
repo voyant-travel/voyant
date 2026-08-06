@@ -43,7 +43,7 @@ describe("generic MCP action-policy gate", () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
-  it("writes a server-owned required-ledger preflight before dispatch and records success", async () => {
+  it("derives a stable key for a server-owned required-ledger action", async () => {
     const selected = action()
     const events: string[] = []
     let sequence = 0
@@ -54,7 +54,7 @@ describe("generic MCP action-policy gate", () => {
     })
 
     const result = await gate(selected).execute(
-      execution(selected, { confirmed: true, requestId }),
+      execution(selected, { confirmed: true }),
       async () => {
         events.push("dispatch")
         return { ok: true }
@@ -67,7 +67,7 @@ describe("generic MCP action-policy gate", () => {
       expect.anything(),
       expect.objectContaining({
         targetId: "target_1",
-        idempotencyKey: requestId,
+        idempotencyKey: expect.stringMatching(/^mcp-request:[0-9a-f]{64}$/),
       }),
     )
   })

@@ -1702,7 +1702,6 @@ describe("createMcpApiRoutes", () => {
         resolvedTargetId: "notification:hello",
         invocation: {
           confirmed: true,
-          requestId: expect.stringMatching(/^mcp-request:[0-9a-f]{64}$/),
           approvalId: "approval_1",
         },
       }),
