@@ -195,6 +195,14 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 createdAt: toIsoString(authorization.approval.createdAt),
               },
               replayed: authorization.replayed,
+              // Same shape and same reason as issue_invoice_from_booking below:
+              // the approval is created by THIS call, so the caller needs the
+              // approve-then-retry pair, not the generic three steps that begin
+              // by requesting another approval.
+              nextSteps: [
+                `1. Call approve_action_approval with approvalId "${authorization.approval.id}". The approval exists but is PENDING; re-calling issue_invoice_refund before this step returns this same response.`,
+                `2. Call issue_invoice_refund again with the identical input plus approvalId "${authorization.approval.id}". An altered command no longer matches what was approved.`,
+              ],
             }
           }
           if (authorization.status === "already_executed") {
