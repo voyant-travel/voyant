@@ -1669,7 +1669,7 @@ describe("createMcpApiRoutes", () => {
             invocation: {
               controlField: "_voyant",
               requiredFields: ["confirmed"],
-              optionalFields: ["reasonCode", "approvalId", "requestId"],
+              optionalFields: ["reasonCode", "approvalId"],
               targetResolution: "package-resolver",
             },
           },

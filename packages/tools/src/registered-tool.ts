@@ -145,10 +145,9 @@ function deriveActionPolicy(
   }
   if (enforcement === "generic") {
     if (serverOwnedGenericTarget) {
-      // `requestId` is deliberately NOT pushed here any more. The generic gate
-      // derives it from the command fingerprint it already computes, so there is
-      // no token for the caller to invent or carry across an approval. It stays
-      // honoured when supplied — see the optionalFields list below.
+      // `requestId` is deliberately not advertised. The generic gate derives it
+      // from the command fingerprint it already computes, so there is no token
+      // for the caller to invent or carry across an approval.
     } else {
       if (action.ledger === "required") requiredFields.push("targetId")
       if (action.kind === "execute" && action.ledger === "required") {
@@ -181,7 +180,7 @@ function deriveActionPolicy(
       optionalFields:
         enforcement === "generic"
           ? serverOwnedGenericTarget
-            ? ["reasonCode", "approvalId", "requestId"]
+            ? ["reasonCode", "approvalId"]
             : ["reasonCode", "approvalId", "idempotencyFingerprint"]
           : ["reasonCode", "approvalId", "idempotencyFingerprint"],
       fingerprintAlgorithm: "action-ledger-command-v1",

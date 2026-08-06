@@ -566,7 +566,7 @@ function financeRefundAuthorizationError(
 // check the codes that exist today.
 const INVOICE_NUMBERING_REMEDIATION: Record<InvoiceNumberAllocationErrorCode, string> = {
   no_active_series_for_scope:
-    "No active number series exists for this document type. Create one with create_invoice_number_series for this scope, or activate an existing one, then retry.",
+    "No active number series exists for this document type. Ask an operator to create or activate a default series for this scope, then retry. Number-series setup is currently available through the Finance admin surface, not an MCP Tool.",
   invoice_number_series_not_found:
     "The requested number series id does not exist. List the series and pass a valid id, or omit seriesId to use the default for the scope.",
   invoice_number_series_inactive:

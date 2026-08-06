@@ -50,6 +50,7 @@ import { readFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { createDbClient } from "@voyant-travel/db"
+import { financeService } from "@voyant-travel/finance"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { sql as sqlRaw } from "drizzle-orm"
 import { Hono } from "hono"
@@ -710,6 +711,26 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
     async () => {
       if (!enabled) return
       const app = await mountRealMcp()
+      // Invoice numbering is deployment configuration, not part of the travel
+      // agent's request to issue a proforma. A real agency configures this before
+      // taking bookings; an empty disposable database does not. Seed the same
+      // prerequisite through Finance's real service so this journey measures the
+      // issue capability rather than whether a brand-new deployment was set up.
+      await financeService.createInvoiceNumberSeries(verifyDb as NonNullable<typeof verifyDb>, {
+        code: "CAPABILITY-PROFORMA",
+        name: "Capability evaluation proformas",
+        prefix: "PF",
+        separator: "-",
+        padLength: 6,
+        currentSequence: 0,
+        resetStrategy: "annual",
+        resetAt: null,
+        scope: "proforma",
+        isDefault: true,
+        externalProvider: null,
+        externalConfigKey: null,
+        active: true,
+      })
       // Handshake first, like a real client: `instructions` is returned here and
       // nowhere else.
       const initialized = await readRpc(

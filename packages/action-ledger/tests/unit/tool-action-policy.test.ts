@@ -54,7 +54,10 @@ describe("generic MCP action-policy gate", () => {
     })
 
     const result = await gate(selected).execute(
-      execution(selected, { confirmed: true }),
+      // Even an old client-supplied requestId cannot override the server's
+      // command-derived key; otherwise omitting it on an approved retry changes
+      // the key and invalidates the approval.
+      execution(selected, { confirmed: true, requestId: "caller-placeholder" }),
       async () => {
         events.push("dispatch")
         return { ok: true }

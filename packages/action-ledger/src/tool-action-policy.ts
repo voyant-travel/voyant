@@ -110,13 +110,15 @@ export function createToolActionPolicyGate(
       // metadata requires requestId`.
       //
       // `fingerprint` is already a deterministic hash of this exact command,
-      // computed one line above for the approval record. Defaulting to it gives
+      // computed one line above for the approval record. Using it gives
       // the stability the protocol wants by construction: the request and the
       // approved retry hash identically, while a different command gets a
-      // different key. An explicit requestId still wins, so nothing that supplies
-      // one changes behaviour.
+      // different key. Do not let an explicit requestId override it: a live GPT
+      // client supplied a placeholder on the approval request and omitted it on
+      // the retry, which made the approved command reject its own retry. The
+      // server-owned path must have exactly one authority for this key.
       const executionKey = serverOwnedTarget
-        ? (execution.invocation.requestId?.trim() ?? "") || `mcp-request:${fingerprint}`
+        ? `mcp-request:${fingerprint}`
         : requiredInvocationString(execution, "idempotencyKey")
       const approved =
         selected.approval === "required"
