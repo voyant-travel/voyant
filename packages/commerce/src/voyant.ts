@@ -1,3 +1,4 @@
+import { catalogBookingSessionSettlementRuntimePort } from "@voyant-travel/catalog/booking-session-settlement-runtime-port"
 import {
   catalogCommerceRuntimeExtensionPort,
   catalogPublicationRuntimePort,
@@ -530,6 +531,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
     requirePort(catalogCheckoutApiRuntimePort),
     requirePort(catalogCheckoutDatabaseRuntimePort),
     requirePort(catalogCheckoutLegalRuntimePort),
+    requirePort(catalogBookingSessionSettlementRuntimePort),
   ],
   api: [
     {

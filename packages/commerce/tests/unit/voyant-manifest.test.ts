@@ -1,3 +1,4 @@
+import { catalogBookingSessionSettlementRuntimePort } from "@voyant-travel/catalog/booking-session-settlement-runtime-port"
 import {
   catalogCommerceRuntimeExtensionPort,
   catalogPublicationRuntimePort,
@@ -252,6 +253,7 @@ describe("commerce deployment manifest", () => {
         { id: catalogCheckoutApiRuntimePort.id },
         { id: catalogCheckoutDatabaseRuntimePort.id },
         { id: catalogCheckoutLegalRuntimePort.id },
+        { id: catalogBookingSessionSettlementRuntimePort.id },
       ],
       api: [
         {
