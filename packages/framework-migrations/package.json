@@ -19,7 +19,7 @@
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "pg": "^8.22.0",
-    "@types/pg": "^8.11.10",
+    "@types/pg": "^8.20.3",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

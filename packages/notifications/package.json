@@ -51,12 +51,12 @@
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "liquidjs": "^10.27.1",
-    "react": "^19.2.7",
+    "liquidjs": "^10.28.0",
+    "react": "^19.2.8",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
+    "@types/react": "^19.2.18",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
