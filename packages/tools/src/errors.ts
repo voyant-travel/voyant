@@ -78,7 +78,14 @@ export const TOOL_ERROR_DEFAULTS: Record<ToolErrorCode, ToolErrorDefault> = {
   },
   CONFIRMATION_REQUIRED: {
     retryable: false,
-    nextSteps: ["Re-call this tool with _voyant.confirmed=true to proceed."],
+    // The second clause exists because confirmation and approval are asserted
+    // INDEPENDENTLY on every dispatch, so a caller holding one and rebuilding the
+    // control block without the other ping-pongs between the two errors forever.
+    // Measured: four CONFIRMATION_REQUIRED in a single booking journey, from an
+    // agent that had already obtained its approval and kept dropping it.
+    nextSteps: [
+      "Re-call this tool with _voyant.confirmed=true to proceed. Keep any _voyant.approvalId you have already obtained on the same call — confirmation and approval are checked separately, and supplying one without the other fails on the one you dropped.",
+    ],
   },
   NOT_FOUND: {
     retryable: false,

@@ -152,6 +152,10 @@ describe("generic MCP action-policy gate", () => {
     expect(error.nextSteps?.[0]).toContain("approval_1")
     expect(error.nextSteps?.[1]).toContain("_voyant.approvalId")
     expect(error.nextSteps?.[1]).toContain("approval_1")
+    // Confirmation is asserted on the approved retry too, so the retry step has
+    // to say to keep it. Without this an agent alternates between
+    // APPROVAL_REQUIRED and CONFIRMATION_REQUIRED, holding one field at a time.
+    expect(error.nextSteps?.[1]).toContain("_voyant.confirmed=true")
     // The loop-causing instruction must not survive anywhere in the remediation.
     expect(error.nextSteps?.join(" ")).toMatch(/do NOT call request_action_approval/)
   })
