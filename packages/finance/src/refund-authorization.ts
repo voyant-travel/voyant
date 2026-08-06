@@ -70,7 +70,35 @@ export const FINANCE_REFUND_SETTLEMENT_CAPABILITY = {
   ...FINANCE_REFUND_CAPABILITY,
   id: "finance:refund-settlement",
   resource: "refund_settlement",
+  /**
+   * `conditional`, not `required` — and this is the one place the money leg
+   * deliberately differs from the accounting leg.
+   *
+   * A member of staff holding `finance:refund` **is** the authority. Sending
+   * them round an approval loop to approve their own refund is not a control,
+   * it is a second click plus a screen explaining why the first one did
+   * nothing. Approval exists for principals that are not a person exercising a
+   * grant — an agent acting on someone's behalf — and
+   * {@link refundSettlementNeedsApproval} is where that line is drawn.
+   */
+  approvalPolicy: "conditional",
 } as const satisfies ActionLedgerCapabilityDefinition
+
+/**
+ * Whether *this* caller has to have the refund approved.
+ *
+ * A human who holds the grant does not: they are the approver. An agent does,
+ * whatever grant it is carrying, because the point of the approval is that a
+ * person signed off on money leaving — and an internal/system caller is already
+ * executing something a person authorized upstream.
+ */
+export function refundSettlementNeedsApproval(
+  access: ActionLedgerCapabilityAccessResult,
+  callerType: string | null | undefined,
+) {
+  if (!access.allowed) return false
+  return callerType === "agent"
+}
 
 export const FINANCE_REFUND_SETTLEMENT_APPROVAL_POLICY = "finance-refund-settlement-approval-v1"
 export const FINANCE_REFUND_SETTLEMENT_ACTION_NAME = "finance.refund.settle"
@@ -109,7 +137,18 @@ export type FinanceRefundAuthorizationOutcome<TExecuted> =
   | {
       status: "authorized"
       access: ActionLedgerCapabilityAccessResult
-      approvedAction: BuildActionLedgerApprovedExecutionFieldsInput
+      /**
+       * The approval this executes under, or `null` when the caller needed
+       * none — a person holding the grant is the authority, so there is no
+       * approval to point at and the ledger records the execution directly.
+       */
+      approvedAction: BuildActionLedgerApprovedExecutionFieldsInput | null
+      /** Replay identity, present on both paths. */
+      execution: {
+        idempotencyScope: string
+        idempotencyKey: string
+        idempotencyFingerprint: string
+      }
     }
   | {
       status: "approval_required"
@@ -155,6 +194,12 @@ export type FinanceRefundSettlementAuthorizationResult =
 /** What differs between the accounting leg and the money leg. */
 interface FinanceRefundActionSpec {
   capability: ActionLedgerCapabilityDefinition
+  /**
+   * Whether this caller needs an approval. Defaults to "yes" — the accounting
+   * leg's `required` policy makes the answer moot there, but the money leg
+   * decides per caller.
+   */
+  needsApproval?: (access: ActionLedgerCapabilityAccessResult) => boolean
   actionName: string
   routeOrToolName: string
   approvalPolicy: string
@@ -201,6 +246,7 @@ export async function authorizeFinanceRefundSettlement(
 ): Promise<FinanceRefundSettlementAuthorizationResult> {
   const outcome = await authorizeFinanceRefundAction(input, {
     capability: FINANCE_REFUND_SETTLEMENT_CAPABILITY,
+    needsApproval: (access) => refundSettlementNeedsApproval(access, input.callerType),
     actionName: FINANCE_REFUND_SETTLEMENT_ACTION_NAME,
     routeOrToolName: FINANCE_REFUND_SETTLEMENT_ROUTE_OR_TOOL_NAME,
     approvalPolicy: FINANCE_REFUND_SETTLEMENT_APPROVAL_POLICY,
@@ -252,7 +298,7 @@ async function authorizeFinanceRefundAction(
 
   const approvalRequirement = evaluateActionLedgerApprovalRequirement({
     access,
-    conditionalApprovalRequired: true,
+    conditionalApprovalRequired: spec.needsApproval ? spec.needsApproval(access) : true,
     reasonCode: spec.reasonCode,
   })
   const targetState = await spec.loadTargetState(input.db)
@@ -316,10 +362,31 @@ async function authorizeFinanceRefundAction(
         approvalId: validation.approval.id,
         idempotencyFingerprint: validation.idempotencyFingerprint,
       },
+      execution: {
+        idempotencyScope: `${spec.routeOrToolName}:${spec.targetId}`,
+        idempotencyKey: input.idempotencyKey ?? validation.approval.id,
+        idempotencyFingerprint: validation.idempotencyFingerprint,
+      },
     }
   }
 
   if (!input.idempotencyKey) return { status: "missing_idempotency_key", access }
+
+  // Nobody to ask. A person holding `finance:refund` is the authority this
+  // action is gated on, so routing them through an approval they would grant
+  // themselves adds a screen and no control (voyant#4303).
+  if (!approvalRequirement.required) {
+    return {
+      status: "authorized",
+      access,
+      approvedAction: null,
+      execution: {
+        idempotencyScope: `${spec.routeOrToolName}:${spec.targetId}`,
+        idempotencyKey: input.idempotencyKey,
+        idempotencyFingerprint: fingerprint,
+      },
+    }
+  }
 
   try {
     const result = await requestActionLedgerApproval(input.db, {

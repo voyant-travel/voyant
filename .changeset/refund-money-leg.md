@@ -1,6 +1,9 @@
 ---
 "@voyant-travel/finance": minor
 "@voyant-travel/finance-contracts": minor
+"@voyant-travel/finance-react": minor
+"@voyant-travel/bookings-react": minor
+"@voyant-travel/i18n": minor
 "@voyant-travel/schema-kit": patch
 ---
 
@@ -45,14 +48,50 @@ leaves it owed, a decline fails it and releases the amount, and a thrown error
 resolves nothing — the row stays `pending`, its amount stays held, and the note
 says the outcome is unknown.
 
-**Authorization is the existing one, not a second path.** Recording a settlement
-runs the same `finance:refund` capability, grants and `required` approval policy
-that govern issuing the credit note, so a deployment configures who may refund
-once. The route preserves the `authorized` / `approval_required` distinction:
-`202` with the pending approval when policy demands one, `201` with the
-settlement when it does not — one endpoint, so an operator UI needs one button
-rather than two flows. The settlement stores the `approvalId` and
-`requestedActionId` it executed under.
+**Authorization is the existing one, not a second path.** The money leg's
+capability is spread from `finance:refund`, so the grant it demands, its
+`critical` risk and its irreversibility are the same values and cannot drift; it
+carries its own id only because the graph keys one capability per action.
+
+It differs in exactly one respect, deliberately: `approvalPolicy` is
+`conditional`, not `required`. **A member of staff holding `finance:refund` is
+the authority** — routing them through an approval they would grant themselves
+is not a control, it is a second click plus a screen explaining why the first
+one did nothing. Approval is required for an agent, whatever grant it carries,
+because the point of it is that a person signed off on money leaving. Issuing
+the credit note is unchanged: `required` for everyone.
+
+The route still preserves the `authorized` / `approval_required` distinction —
+`202` with the pending approval when one is needed, `201` with the settlement
+when it is not — so one endpoint serves both and the UI needs one button rather
+than two flows.
+
+## The operator can see it and do it
+
+Backend-only, this would have been invisible. The money leg is now on the four
+screens where the question comes up:
+
+- **Booking detail, above the tabs** — a banner when a refund is owed. An issued
+  credit note reads identically whether or not the money left, so nothing else
+  on that page could say a customer is still waiting.
+- **Booking detail, finance tab** — a **Refunds** section directly under the
+  payments summary, with a primary **Refund customer** action, *Still owed* /
+  *Already paid* totals, and per-refund *Mark as paid* / *Mark as failed*. Money
+  out sits next to money in.
+- **Invoice detail, credit notes** — a *Refund* column and a per-row **Refund**
+  action. The credit note is issued on that screen, so "and did they get the
+  money?" belongs there rather than one screen away.
+- **Payment detail** — *Still refundable*, the figure that stops a double
+  refund, with a note when a pending refund is holding part of it.
+
+The dialog asks how the customer was paid back with a **select**, and the fields
+under it change with the answer: a card reversal asks which payment session it
+reverses, a voucher can be worth more than the refund, an offset asks whose
+account is credited. The currency is the payment's whenever there is one — the
+refundable bound is currency-matched server-side — and a currency **picker**
+otherwise, never a typed ISO code. Status badges carry the shared status tones,
+so *Not paid yet* is amber, *Paid* green and *Failed* red wherever they appear.
+Full `en` + `ro` parity.
 
 Two dimensions come from operator practice rather than the schema:
 

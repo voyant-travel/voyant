@@ -719,6 +719,13 @@ describe("finance deployment manifest", () => {
           "@voyant-travel/finance#admin.contribution.booking-pending-payment-sessions",
           "booking.details.finance-start",
         ],
+        // Directly under the payments summary: money out is the mirror of money
+        // in, and "did we actually refund them?" should not need a second
+        // screen to answer (voyant#4303).
+        [
+          "@voyant-travel/finance#admin.contribution.booking-refunds",
+          "booking.details.finance-start",
+        ],
         [
           "@voyant-travel/finance#admin.contribution.booking-payment-policy",
           "booking.details.finance-end",

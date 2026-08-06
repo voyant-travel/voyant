@@ -177,7 +177,12 @@ export const voyantToolContextContribution = defineToolContextContribution({
             throw financeRefundSettlementAuthorizationError(authorization)
           }
 
-          const approved = buildActionLedgerApprovedExecutionFields(authorization.approvedAction)
+          // An agent always carries an approval here — `needsApproval` returns
+          // true for `callerType === "agent"` — but the field is optional on
+          // the shared result, so read it defensively rather than asserting.
+          const approved = authorization.approvedAction
+            ? buildActionLedgerApprovedExecutionFields(authorization.approvedAction)
+            : null
           const row = await financeService.refundSettlements.recordRefundSettlement(
             db as PostgresJsDatabase,
             {
@@ -185,13 +190,20 @@ export const voyantToolContextContribution = defineToolContextContribution({
                 typeof financeService.refundSettlements.recordRefundSettlement
               >[1]),
               idempotencyKey,
-              approvalId: approved.approvalId,
-              requestedActionId: authorization.approvedAction.requestedActionId,
+              approvalId: approved?.approvalId ?? null,
+              requestedActionId: authorization.approvedAction?.requestedActionId ?? null,
             },
             {
               ...getFinanceRouteRuntime(c),
               actionLedgerContext: requestContext,
               actionLedgerAuthorizationSource: authorization.access.authorizationSource,
+              actionLedgerCapabilityId: authorization.access.capabilityId,
+              actionLedgerCapabilityVersion: authorization.access.capabilityVersion,
+              actionLedgerCausationActionId: approved?.causationActionId ?? null,
+              actionLedgerApprovalId: approved?.approvalId ?? null,
+              actionLedgerIdempotencyScope: authorization.execution.idempotencyScope,
+              actionLedgerIdempotencyKey: authorization.execution.idempotencyKey,
+              actionLedgerIdempotencyFingerprint: authorization.execution.idempotencyFingerprint,
             },
           )
           if (!row) {
@@ -348,6 +360,16 @@ export const voyantToolContextContribution = defineToolContextContribution({
             throw financeRefundAuthorizationError(authorization)
           }
 
+          // Unreachable: `finance:refund` is `approvalPolicy: "required"`, so
+          // the accounting leg never authorizes without an approval. Narrowing
+          // it here rather than asserting keeps that fact checked instead of
+          // assumed, should the policy ever be relaxed.
+          if (!authorization.approvedAction) {
+            throw new ToolError(
+              "Invoice refund was authorized without an approval.",
+              "INVALID_INPUT",
+            )
+          }
           const approved = buildActionLedgerApprovedExecutionFields(authorization.approvedAction)
           const creditNote = await financeService.createCreditNote(db, input.invoiceId, command, {
             eventBus: c.get("eventBus"),

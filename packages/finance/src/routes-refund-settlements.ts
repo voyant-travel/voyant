@@ -354,11 +354,23 @@ export const financeRefundSettlementRoutes = new OpenAPIHono<Env>({
         {
           ...settlement,
           idempotencyKey,
-          approvalId: authorization.approvedAction.approvalId,
-          requestedActionId: authorization.approvedAction.requestedActionId,
+          // Null on the direct path: the caller held the grant, so there is no
+          // approval to point at and the ledger records who executed instead.
+          approvalId: authorization.approvedAction?.approvalId ?? null,
+          requestedActionId: authorization.approvedAction?.requestedActionId ?? null,
           authorizedByUserId: settlement.authorizedByUserId ?? c.get("userId") ?? null,
         },
-        settlementRuntime(c),
+        {
+          ...settlementRuntime(c),
+          actionLedgerCapabilityId: authorization.access.capabilityId,
+          actionLedgerCapabilityVersion: authorization.access.capabilityVersion,
+          actionLedgerAuthorizationSource: authorization.access.authorizationSource,
+          actionLedgerCausationActionId: authorization.approvedAction?.requestedActionId ?? null,
+          actionLedgerApprovalId: authorization.approvedAction?.approvalId ?? null,
+          actionLedgerIdempotencyScope: authorization.execution.idempotencyScope,
+          actionLedgerIdempotencyKey: authorization.execution.idempotencyKey,
+          actionLedgerIdempotencyFingerprint: authorization.execution.idempotencyFingerprint,
+        },
       )
       return row
         ? c.json({ data: row }, 201)
