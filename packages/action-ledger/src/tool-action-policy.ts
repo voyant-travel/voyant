@@ -99,11 +99,25 @@ export function createToolActionPolicyGate(
         return dispatch()
       }
 
-      const executionKey = requiredInvocationString(
-        execution,
-        serverOwnedTarget ? "requestId" : "idempotencyKey",
-      )
       const fingerprint = await commandFingerprint(selected, execution, targetId)
+      // A server-owned target has no caller-supplied id to key on, so the protocol
+      // asked the caller to invent a `requestId` — and then required the SAME one
+      // on the approved retry (see validateApproval, which compares it to the
+      // requested action's idempotencyKey). Asking a model to mint an opaque token
+      // and carry it across a human approval is the least reliable way to satisfy
+      // a requirement the server can satisfy itself, and measured against a real
+      // agent it simply failed: `ACTION_POLICY_REQUIRED: Tool action invocation
+      // metadata requires requestId`.
+      //
+      // `fingerprint` is already a deterministic hash of this exact command,
+      // computed one line above for the approval record. Defaulting to it gives
+      // the stability the protocol wants by construction: the request and the
+      // approved retry hash identically, while a different command gets a
+      // different key. An explicit requestId still wins, so nothing that supplies
+      // one changes behaviour.
+      const executionKey = serverOwnedTarget
+        ? (execution.invocation.requestId?.trim() ?? "") || `mcp-request:${fingerprint}`
+        : requiredInvocationString(execution, "idempotencyKey")
       const approved =
         selected.approval === "required"
           ? serverOwnedTarget

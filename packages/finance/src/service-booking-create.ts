@@ -2573,9 +2573,18 @@ export async function createBookingMutation(
             productId: input.productId,
             optionId: input.optionId ?? null,
             slotId: input.slotId ?? null,
-            lineOptionIds: normalizedItemLines
-              .map((line) => line.optionId)
-              .filter((value): value is string => typeof value === "string"),
+            // Item lines carry an optionUnitId, not an optionId, so the options
+            // a booking actually touches have to come back through the units.
+            lineOptionIds: [
+              ...new Set(
+                (normalizedItemLines ?? []).flatMap((line) => {
+                  const unit = productOptionUnits.find(
+                    (candidate) => candidate.optionUnitId === line.optionUnitId,
+                  )
+                  return unit?.optionId ? [unit.optionId] : []
+                }),
+              ),
+            ],
           }),
         })
       }
