@@ -526,25 +526,11 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       verify: `select 1 from invoices i join bookings b on b.id = i.booking_id
              join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
-      // Measured 0/3 with errors=0 — which is the finding, not a null result. The
-      // agent hit NOTHING it could recognise as a failure: the first call returns
-      // `approval_required`, a SUCCESS payload carrying an approval id and no
-      // instruction, so it reported that and stopped. The actionable-errors work
-      // (voyant#3950) only ever reached the ERROR path, so this was never covered.
-      // Fixed by deriving the idempotency key from the command and returning the
-      // two concrete next steps; see finance/src/mcp-runtime.ts.
-      //
-      // Still a knownGap because the fix is unit-tested but NOT yet confirmed
-      // end to end: the run after it broke upstream at product-option-create, so
-      // this journey never received a booking to invoice. Do not read a future
-      // 0/3 here as the approval payload regressing without first checking that
-      // booking-create passed on that attempt.
-      // The measured trace is the agent doing the RIGHT thing: it queries bookings
-      // for the client, finds none because booking-create was refused upstream,
-      // and stops rather than inventing one. So a 0/3 here has never yet been
-      // evidence about invoicing at all — it is product publication failing three
-      // links earlier. Fix that before reading anything into this number.
-      knownGap: "unit-tested; blocked upstream on product publication, not on invoicing",
+      // First completed end to end once the harness supplied ordinary deployment
+      // configuration (a default proforma number series) and Finance consumed the
+      // approval id from the shared `_voyant` control. This is asserted now: a
+      // future failure is a regression, though its rate remains capped by the
+      // chained publication and booking journeys above it.
     },
     {
       id: "contracts-read",
