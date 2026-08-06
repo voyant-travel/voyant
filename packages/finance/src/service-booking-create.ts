@@ -896,7 +896,11 @@ async function diagnoseProductRefusal(
   if (optionIds.length > 0) {
     const owned = (await tx.execute(sql`
       SELECT id FROM product_options
-      WHERE product_id = ${input.productId} AND id IN ${sql.raw(`('${optionIds.join("','")}')`)}
+      WHERE product_id = ${input.productId}
+        AND id IN (${sql.join(
+          optionIds.map((optionId) => sql`${optionId}`),
+          sql`, `,
+        )})
     `)) as unknown as Array<{ id: string }>
     const ownedIds = new Set(owned.map((row) => row.id))
     const foreign = optionIds.filter((id) => !ownedIds.has(id))

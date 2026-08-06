@@ -662,6 +662,10 @@ function report(): string {
     if (!done) lines.push(`      answer: ${run.answer.slice(0, 220)}`)
     for (const failed of run.calls.filter((c) => c.isError)) {
       lines.push(`      ✗ ${failed.name}: ${failed.snippet.slice(0, 200)}`)
+      // The error tells us which guard refused; the arguments tell us why. This
+      // is especially important for `_voyant` protocol failures, where omitted,
+      // misplaced and false control fields all produce the same error code.
+      lines.push(`        args: ${JSON.stringify(failed.args).slice(0, 800)}`)
     }
     // Across ALL attempts, not just the last. A 6/10 journey fails for a reason
     // the final transcript may not contain at all, and reading one sample to
