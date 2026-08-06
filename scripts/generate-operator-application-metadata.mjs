@@ -286,10 +286,25 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    environment: "jsdom",
+    // "node", not "jsdom". Every one of this app's test files is a server test —
+    // they mount the graph, hit the database, and call routes. Nothing touches a
+    // DOM, so a jsdom environment was being built and torn down per worker for
+    // nobody. A file that genuinely needs one can opt in with a
+    // \`// @vitest-environment jsdom\` docblock.
+    environment: "node",
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     passWithNoTests: true,
     testTimeout: 30_000,
+    // Measured on a 12-core host: unconstrained, this suite peaked at 5,769 MB
+    // across 13 concurrent vitest processes, because each file mounts its own
+    // full graph runtime and database client. That is ~440 MB per file, and
+    // nothing capped how many ran at once — so the peak scaled with core count
+    // and the suite was killed outright on a developer machine under load.
+    //
+    // Capped rather than serialised: \`fileParallelism: false\` would fix the
+    // memory and cost most of the wall-clock. Two forks keeps the concurrency
+    // that matters while bounding the peak to roughly a fifth of what it was.
+    poolOptions: { forks: { maxForks: 2, minForks: 1 } },
     server: {
       deps: {
         inline: [
