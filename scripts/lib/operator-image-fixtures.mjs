@@ -8,10 +8,7 @@
  * where a wrong answer reads as a green run.
  */
 
-import {
-  assertMigrationReport,
-  extractMigrationReport,
-} from "../assert-migration-report.mjs"
+import { assertMigrationReport, extractMigrationReport } from "../assert-migration-report.mjs"
 import { selectUpgradeBaseline } from "../resolve-upgrade-baseline.mjs"
 import { verifyOperatorImageIdentity } from "../verify-operator-image-identity.mjs"
 

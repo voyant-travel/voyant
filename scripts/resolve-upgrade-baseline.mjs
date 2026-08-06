@@ -40,7 +40,9 @@ function compareReleases(left, right) {
  */
 export function selectUpgradeBaseline({ tags, candidateVersion, unusableBaselines = [] }) {
   const unusable = new Set(unusableBaselines)
-  const releases = tags.filter((tag) => RELEASE_SEMVER.test(tag)).filter((tag) => !unusable.has(tag))
+  const releases = tags
+    .filter((tag) => RELEASE_SEMVER.test(tag))
+    .filter((tag) => !unusable.has(tag))
 
   // A candidate that is itself a release must upgrade from something older; a
   // main snapshot (sha-<git-sha>) has no place in the release order and

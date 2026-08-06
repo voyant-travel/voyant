@@ -259,10 +259,7 @@ requireFragments(UPGRADE, upgrade, [
     "DROP DATABASE IF EXISTS",
     "upgrade acceptance must own a database the fresh-database stage has not already migrated",
   ],
-  [
-    "--expect-applied",
-    "upgrade acceptance must prove the baseline produced a real prior state",
-  ],
+  ["--expect-applied", "upgrade acceptance must prove the baseline produced a real prior state"],
   ["--expect-no-op", "upgrade acceptance must pin re-entrancy of the candidate's plan"],
   ["SKIPPED:", "upgrade acceptance must skip loudly rather than pass silently"],
 ])
