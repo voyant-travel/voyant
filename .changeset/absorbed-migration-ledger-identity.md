@@ -1,6 +1,6 @@
 ---
 "@voyant-travel/framework-migrations": patch
-"@voyant-travel/graph-contracts": patch
+"@voyant-travel/graph-contracts": minor
 "@voyant-travel/framework": patch
 "@voyant-travel/operations": patch
 ---

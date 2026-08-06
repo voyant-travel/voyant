@@ -26,6 +26,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
+import { trackedFilesIn } from "../lib/tracked-files.mjs"
 import { absorbedSourcesByOwner, loadCutlineManifest } from "./cutline-manifest.mjs"
 
 const ROOT = new URL("../..", import.meta.url).pathname
@@ -49,6 +50,20 @@ function declaredLegacyMigrationSources(dir) {
   if (!existsSync(manifestPath)) return null
   const parsed = JSON.parse(readFileSync(manifestPath, "utf8"))
   return parsed.voyant?.legacyMigrationSources ?? []
+}
+
+/**
+ * Package directories, from the TRACKED tree — a leftover directory from a
+ * deleted package is not this tree's source and must not be read.
+ */
+function trackedPackageDirs() {
+  const tracked = trackedFilesIn(ROOT)
+  const dirs = new Set()
+  for (const file of tracked ?? readdirSync(join(ROOT, "packages")).map((d) => `packages/${d}/x`)) {
+    const match = file.match(/^packages\/([^/]+)\//)
+    if (match) dirs.add(match[1])
+  }
+  return [...dirs].sort()
 }
 
 // --emit-init: build the cutline from ALL current package tags. The union proof
@@ -135,10 +150,15 @@ for (const [owner, retired] of absorbedSourcesByOwner(manifest)) {
       )
     }
   }
-  for (const source of declared) {
+}
+// Every claim, not just the ones the frozen cutline knows about: a claimed
+// source that still ships migrations is two sources owning one (source, tag),
+// and a claim on a name nothing ever used is a typo that adopts nothing.
+for (const dir of trackedPackageDirs()) {
+  for (const source of declaredLegacyMigrationSources(dir) ?? []) {
     if (currentTags(source) !== null) {
       problems.push(
-        `${owner}: claims the ledger identities of "${source}", which still ships its own ` +
+        `${dir}: claims the ledger identities of "${source}", which still ships its own ` +
           "migrations folder — two sources cannot own one (source, tag)",
       )
     }
