@@ -371,7 +371,13 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // decide to create a second option first. Asking for the outcome rather than
       // the mechanism is also what lets this journey detect the default-option
       // problem instead of causing it.
-      task: `Make the product 'Capability Eval Tour ${RUN_MARK}' sellable: it needs a priced bookable unit (1 adult seat at 500 EUR) on its option, and it must be published. Reuse the option it already has rather than creating another. Confirm what you changed.`,
+      // Publication used to be asked for HERE, and it is not achievable here: a
+      // scheduled product cannot be published until it has a future open
+      // departure, and the departure journey runs next. The task was impossible
+      // in the order given, so measuring it measured the ordering. Publication
+      // now has its own journey after the departure exists, which is both the
+      // real dependency and the order a person would work in.
+      task: `Make the product 'Capability Eval Tour ${RUN_MARK}' sellable: it needs a priced bookable unit (1 adult seat at 500 EUR) on its option, and a sell price on the product. Reuse the option it already has rather than creating another. Confirm what you changed.`,
       expect: "option",
       maxCalls: 26,
       // Verify the UNIT, not the option. Checking for a product_options row made
@@ -390,8 +396,7 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       verify: `select 1 from option_units u
              join product_options o on o.id = u.option_id
              join products p on p.id = o.product_id
-             where p.name ilike '%capability eval tour ${RUN_MARK}%'
-               and p.status = 'active'`,
+             where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
       // THE remaining blocker, and the one worth fixing next. Creating a priced
       // unit goes through confirmation AND approval, and the agent frequently loses
       // the thread in that loop: 21-24 calls, 200k+ tokens, and then it reports
@@ -441,6 +446,25 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       maxCalls: 20,
       verify: `select 1 from availability_slots s join products p on p.id = s.product_id
              where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+    },
+    {
+      // Publication, in the only position where it can succeed: after the priced
+      // unit AND after the departure. `no_future_open_departure` is a blocking
+      // readiness rule for scheduled products (#4030), so asking for publication
+      // before the departure exists is asking for something the domain correctly
+      // refuses — which is what the chain used to do.
+      //
+      // This is also the journey that proves the readiness refusal is legible.
+      // It used to arrive as `[PROVIDER_ERROR] Product is not ready to publish`,
+      // terminal and detail-free; it now names each blocking issue and what to do
+      // about it, which is what let this ordering bug be diagnosed at all.
+      id: "product-publish",
+      domain: "products",
+      task: `Publish the product 'Capability Eval Tour ${RUN_MARK}' so it can be sold. If it is refused, read the reason, fix what it names, and try again. Confirm the final status.`,
+      expect: "publish",
+      maxCalls: 22,
+      verify: `select 1 from products
+             where name ilike '%capability eval tour ${RUN_MARK}%' and status = 'active'`,
     },
     {
       // The commercial commit point, and the first journey through the
