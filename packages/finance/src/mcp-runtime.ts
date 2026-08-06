@@ -1,5 +1,9 @@
 import { buildActionLedgerApprovedExecutionFields } from "@voyant-travel/action-ledger"
-import { defineToolContextContribution, ToolError } from "@voyant-travel/tools"
+import {
+  defineToolContextContribution,
+  deriveCommandIdempotencyKey,
+  ToolError,
+} from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -47,10 +51,26 @@ export const voyantToolContextContribution = defineToolContextContribution({
         ...financeBookingToolServices(db as PostgresJsDatabase, c),
         async issueInvoiceFromBooking(input: {
           command: CreateInvoiceFromBookingInput
-          idempotencyKey: string
+          idempotencyKey?: string
           approvalId?: string
         }) {
-          return executeInvoiceIssueTool({ db, c, ...input })
+          // Derived from the command CONTENT, not invented by the caller, and for
+          // the same reason as every other create (voyant#3921 Finding 2): the key
+          // has to be identical on the call that REQUESTS approval and the call
+          // that executes it, so making the caller carry it across two round trips
+          // — through a human approval in the middle — is the least reliable way
+          // to satisfy a requirement the server can satisfy itself. A hash of the
+          // command gives exactly the property the ledger wants: the retry that
+          // follows an approval derives the same key and replays, while a
+          // genuinely different invoice derives a different one.
+          return executeInvoiceIssueTool({
+            db,
+            c,
+            ...input,
+            idempotencyKey:
+              input.idempotencyKey ??
+              (await deriveCommandIdempotencyKey("issue-invoice-from-booking", input.command)),
+          })
         },
         async recordPaymentDispute(
           input: Parameters<typeof financeService.paymentDisputes.recordPaymentDispute>[1],
@@ -391,6 +411,23 @@ function pendingApprovalResult(input: {
       expiresAt: toIsoString(input.approval.expiresAt),
       createdAt: toIsoString(input.approval.createdAt),
     },
+    // An approval id and a status are DATA; they do not tell a caller what to do
+    // with them. Measured against the real surface, this response is where
+    // invoice issue stalls: the agent receives `approval_required`, has already
+    // had its approval created for it by the call above, and then either calls
+    // request_action_approval a second time or re-calls this tool unchanged and
+    // gets the identical response forever. Both failures are the response's
+    // fault, not the model's.
+    //
+    // This is the same defect the APPROVAL_REQUIRED error carries next steps for
+    // (voyant#3950) — but that treatment only ever reached the ERROR path, and
+    // `approval_required` is a success payload, so it was never covered. Note the
+    // steps are TWO, not the error's three: the request step has already
+    // happened here, and telling the caller to repeat it is what caused the loop.
+    nextSteps: [
+      `1. Call approve_action_approval with approvalId "${input.approval.id}". The approval exists but is PENDING until it is decided; re-calling issue_invoice_from_booking before this step returns this same response.`,
+      `2. Call issue_invoice_from_booking again with the identical command plus approvalId "${input.approval.id}". Do not change the command — an altered command no longer matches what was approved.`,
+    ],
     replayed: input.replayed,
   }
 }
