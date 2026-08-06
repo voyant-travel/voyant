@@ -329,7 +329,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
               // by requesting another approval.
               nextSteps: [
                 `1. Call approve_action_approval with approvalId "${authorization.approval.id}". The approval exists but is PENDING; re-calling issue_invoice_refund before this step returns this same response.`,
-                `2. Call issue_invoice_refund again with the identical input plus approvalId "${authorization.approval.id}", keeping _voyant.confirmed=true. An altered command no longer matches what was approved.`,
+                `2. Call issue_invoice_refund again with the identical input, _voyant.approvalId set to "${authorization.approval.id}", and _voyant.confirmed=true. Do not put approvalId at the top level. An altered command no longer matches what was approved.`,
               ],
             }
           }
@@ -662,7 +662,7 @@ function pendingApprovalResult(input: {
     // happened here, and telling the caller to repeat it is what caused the loop.
     nextSteps: [
       `1. Call approve_action_approval with approvalId "${input.approval.id}". The approval exists but is PENDING until it is decided; re-calling issue_invoice_from_booking before this step returns this same response.`,
-      `2. Call issue_invoice_from_booking again with the identical command plus approvalId "${input.approval.id}", keeping _voyant.confirmed=true. Do not change the command — an altered command no longer matches what was approved.`,
+      `2. Call issue_invoice_from_booking again with the identical command, _voyant.approvalId set to "${input.approval.id}", and _voyant.confirmed=true. Do not put approvalId at the top level. Do not change the command — an altered command no longer matches what was approved.`,
     ],
     replayed: input.replayed,
   }
