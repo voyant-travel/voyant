@@ -3,6 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const executeFinanceStaffBookingCreateCommand = vi.hoisted(() => vi.fn())
 const authorizeFinanceInvoiceIssue = vi.hoisted(() => vi.fn())
+const issueInvoiceFromBookingCommand = vi.hoisted(() => vi.fn())
+
+vi.mock("./service-issue.js", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  issueInvoiceFromBookingCommand,
+}))
 
 vi.mock("./booking-create-command.js", () => ({
   executeFinanceStaffBookingCreateCommand,
@@ -108,6 +114,48 @@ describe("finance issue_invoice_from_booking MCP runtime", () => {
     expect(authorizeFinanceInvoiceIssue.mock.calls[0]?.[0]?.idempotencyKey).toBe(
       "caller-chosen-key",
     )
+  })
+
+  /**
+   * `InvoiceNumberAllocationError` calls `super(code)`, so an agent that reached
+   * invoice issue got `[PROVIDER_ERROR] ... failed: no_active_series_for_scope` —
+   * terminal, blameless, unactionable — while the operator UI has shown a full
+   * remediation sentence for that same code all along.
+   */
+  it("turns an opaque numbering refusal into an actionable one", async () => {
+    authorizeFinanceInvoiceIssue.mockResolvedValue({
+      status: "authorized",
+      access: { authorizationSource: "scope" },
+      approvedAction: { requestedActionId: "a", approvalId: "b", idempotencyFingerprint: "c" },
+    })
+    issueInvoiceFromBookingCommand.mockRejectedValue(
+      Object.assign(new Error("no_active_series_for_scope"), {
+        code: "no_active_series_for_scope",
+        scope: "proforma",
+      }),
+    )
+
+    const error = (await issue({ command }).catch((thrown) => thrown)) as {
+      code?: string
+      nextSteps?: string[]
+      meta?: unknown
+    }
+
+    expect(error.code).toBe("INVALID_INPUT")
+    expect(error.nextSteps?.[0]).toContain("create_invoice_number_series")
+    expect(error.meta).toMatchObject({ reason: "no_active_series_for_scope", scope: "proforma" })
+  })
+
+  it("rethrows a non-numbering failure untouched", async () => {
+    authorizeFinanceInvoiceIssue.mockResolvedValue({
+      status: "authorized",
+      access: { authorizationSource: "scope" },
+      approvedAction: { requestedActionId: "a", approvalId: "b", idempotencyFingerprint: "c" },
+    })
+    const other = new Error("connection reset")
+    issueInvoiceFromBookingCommand.mockRejectedValue(other)
+
+    await expect(issue({ command })).rejects.toBe(other)
   })
 
   it("tells the caller to approve and retry, naming the approval id", async () => {
