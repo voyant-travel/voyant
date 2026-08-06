@@ -73,7 +73,7 @@ export const TOOL_ERROR_DEFAULTS: Record<ToolErrorCode, ToolErrorDefault> = {
     nextSteps: [
       "1. Call request_action_approval to create an approval for this exact command; it returns an approval id.",
       "2. Call approve_action_approval with that id. A requested approval is pending until it is decided — re-calling before this step fails identically.",
-      "3. Re-call this tool with _voyant.approvalId set to that id, and the command otherwise unchanged.",
+      '3. Re-call this tool with a nested control object like "_voyant": {"confirmed": true, "approvalId": "<approved id>"}, and the command otherwise unchanged. Do not send flat keys such as "_voyant.approvalId".',
     ],
   },
   CONFIRMATION_REQUIRED: {
@@ -84,7 +84,7 @@ export const TOOL_ERROR_DEFAULTS: Record<ToolErrorCode, ToolErrorDefault> = {
     // Measured: four CONFIRMATION_REQUIRED in a single booking journey, from an
     // agent that had already obtained its approval and kept dropping it.
     nextSteps: [
-      "Re-call this tool with _voyant.confirmed=true to proceed. Keep any _voyant.approvalId you have already obtained on the same call — confirmation and approval are checked separately, and supplying one without the other fails on the one you dropped.",
+      'Re-call this tool with a nested control object exactly like "_voyant": {"confirmed": true}. Do not send a flat "_voyant.confirmed" key. If you already have an approval id, keep it in that same object as "approvalId" — confirmation and approval are checked separately.',
     ],
   },
   NOT_FOUND: {

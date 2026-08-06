@@ -611,7 +611,7 @@ async function requestApprovalPreflight(input: {
         // bounced with CONFIRMATION_REQUIRED — which is precisely what a measured
         // agent did four times in one booking journey, alternating between the two
         // errors without ever holding both fields at once.
-        `2. Re-call this tool with _voyant.approvalId set to "${result.approval.id}", KEEPING _voyant.confirmed=true, and the command otherwise unchanged. Both fields must be present on the same call.`,
+        `2. Re-call this tool with the nested control object "_voyant": {"confirmed": true, "approvalId": "${result.approval.id}"}, and the command otherwise unchanged. Do not send flat keys such as "_voyant.confirmed". Both fields must be present on the same call.`,
       ],
     },
   )
