@@ -166,6 +166,7 @@ describe("generic MCP action-policy gate", () => {
 
   it("creates and replays an approval preflight without dispatch", async () => {
     const selected = action({ approval: "required" })
+    const derivedRequestId = `mcp-request:${await exactFingerprint(selected, { value: 1 })}`
     const requestApproval = vi.spyOn(actionLedgerService, "requestApproval")
     requestApproval
       .mockResolvedValueOnce(approvalRequest(false) as never)
@@ -180,7 +181,7 @@ describe("generic MCP action-policy gate", () => {
         approvalId: "approval_1",
         requestedActionId: "requested_1",
         status: "pending",
-        requestId,
+        requestId: derivedRequestId,
         idempotencyFingerprint: expect.stringMatching(/^sha256:/),
         replayed: false,
       },
@@ -189,7 +190,7 @@ describe("generic MCP action-policy gate", () => {
       code: "APPROVAL_REQUIRED",
       meta: {
         approvalId: "approval_1",
-        requestId,
+        requestId: derivedRequestId,
         idempotencyFingerprint: expect.stringMatching(/^sha256:/),
         replayed: true,
       },
@@ -200,7 +201,7 @@ describe("generic MCP action-policy gate", () => {
       expect.objectContaining({
         requestedAction: expect.objectContaining({
           targetId: "target_1",
-          idempotencyKey: requestId,
+          idempotencyKey: derivedRequestId,
           idempotencyFingerprint: expect.stringMatching(/^sha256:/),
         }),
       }),
@@ -259,10 +260,11 @@ describe("generic MCP action-policy gate", () => {
     const selected = action({ approval: "required" })
     const commandInput = { value: 1 }
     const fingerprint = await exactFingerprint(selected, commandInput)
+    const derivedRequestId = `mcp-request:${fingerprint}`
     vi.spyOn(actionLedgerService, "validateApprovedAction").mockResolvedValue({
       ok: true,
       approval: { id: "approval_1" },
-      requestedAction: { id: "requested_1", idempotencyKey: requestId },
+      requestedAction: { id: "requested_1", idempotencyKey: derivedRequestId },
       idempotencyFingerprint: fingerprint,
     } as never)
     const appended: unknown[] = []

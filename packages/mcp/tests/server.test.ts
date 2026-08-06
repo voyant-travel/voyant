@@ -1793,7 +1793,6 @@ describe("createMcpApiRoutes", () => {
             recordId: " ",
             _voyant: {
               confirmed: true,
-              requestId: "6c0f3fb4-2c96-4c3a-a520-28166167fb18",
             },
           },
         }),
