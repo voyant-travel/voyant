@@ -393,6 +393,13 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // produced a real booking (BK-2608-845755) end to end. So the write chain is
       // capable and unreliable, and the unreliability lives here, in the
       // approval/confirmation round trip rather than in any single tool.
+      // One measured 27-call/280k-token exhaustion here was NOT the approval loop:
+      // the agent called list_price_catalogs, which threw on its own output
+      // because its hand-written catalogType enum shared two of seven values with
+      // the price_catalog_type pgEnum. A read tool broken for most of the rows it
+      // returns burns the budget of every journey that consults it, and it only
+      // showed up on a database that happened to hold a `gross` catalog. Fixed;
+      // pinned by a test in packages/commerce/src/tools.test.ts.
       intermittent:
         "priced-unit creation gets lost in the confirmation/approval loop — 20+ calls, " +
         "200k+ tokens, and it has reported success while writing nothing",
@@ -485,7 +492,20 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       verify: `select 1 from invoices i join bookings b on b.id = i.booking_id
              join people pe on pe.id = b.person_id
              where pe.last_name ilike '%marinescu${RUN_MARK}%'`,
-      knownGap: "depends on booking-create, which is gated on the approval loop",
+      // Measured 0/3 with errors=0 — which is the finding, not a null result. The
+      // agent hit NOTHING it could recognise as a failure: the first call returns
+      // `approval_required`, a SUCCESS payload carrying an approval id and no
+      // instruction, so it reported that and stopped. The actionable-errors work
+      // (voyant#3950) only ever reached the ERROR path, so this was never covered.
+      // Fixed by deriving the idempotency key from the command and returning the
+      // two concrete next steps; see finance/src/mcp-runtime.ts.
+      //
+      // Still a knownGap because the fix is unit-tested but NOT yet confirmed
+      // end to end: the run after it broke upstream at product-option-create, so
+      // this journey never received a booking to invoice. Do not read a future
+      // 0/3 here as the approval payload regressing without first checking that
+      // booking-create passed on that attempt.
+      knownGap: "unit-tested; awaiting an attempt where the chain reaches it",
     },
     {
       id: "contracts-read",
