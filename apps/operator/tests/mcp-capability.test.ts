@@ -379,10 +379,19 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // row exists before the journey runs and the check passed while the agent got
       // stuck in the approval loop and created no unit at all. The thing that makes
       // a product sellable is a priced unit, so that is what has to be asserted.
+      // Asserts BOTH halves of the task, because checking only the unit made this
+      // journey report 3/3 while the product stayed in `draft` — every one of the
+      // nine products this harness has ever created is still draft, so the
+      // publication half has never once succeeded. That false green was not
+      // harmless: it is exactly why booking-create fails with "not bookable", and
+      // it sent me looking downstream at invoices for a defect that lives here.
+      // Same trap the note above describes for product_options; a verify that
+      // covers part of the task is a verify that certifies the wrong thing.
       verify: `select 1 from option_units u
              join product_options o on o.id = u.option_id
              join products p on p.id = o.product_id
-             where p.name ilike '%capability eval tour ${RUN_MARK}%'`,
+             where p.name ilike '%capability eval tour ${RUN_MARK}%'
+               and p.status = 'active'`,
       // THE remaining blocker, and the one worth fixing next. Creating a priced
       // unit goes through confirmation AND approval, and the agent frequently loses
       // the thread in that loop: 21-24 calls, 200k+ tokens, and then it reports
@@ -505,7 +514,12 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // this journey never received a booking to invoice. Do not read a future
       // 0/3 here as the approval payload regressing without first checking that
       // booking-create passed on that attempt.
-      knownGap: "unit-tested; awaiting an attempt where the chain reaches it",
+      // The measured trace is the agent doing the RIGHT thing: it queries bookings
+      // for the client, finds none because booking-create was refused upstream,
+      // and stops rather than inventing one. So a 0/3 here has never yet been
+      // evidence about invoicing at all — it is product publication failing three
+      // links earlier. Fix that before reading anything into this number.
+      knownGap: "unit-tested; blocked upstream on product publication, not on invoicing",
     },
     {
       id: "contracts-read",
