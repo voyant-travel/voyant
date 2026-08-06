@@ -667,6 +667,18 @@ function report(): string {
       // misplaced and false control fields all produce the same error code.
       lines.push(`        args: ${JSON.stringify(failed.args).slice(0, 800)}`)
     }
+    // Approval protocols often return a successful `approval_required` payload.
+    // If the journey later fails, error-only logging hides the decisive call and
+    // makes a stalled protocol look like "errors=0". Preserve a bounded trace of
+    // every successful dispatch for failed journeys so the real-model run is
+    // diagnosable without changing what the model itself saw.
+    if (!done) {
+      for (const call of run.calls.filter((c) => !c.isError)) {
+        lines.push(
+          `      · ${call.name} args=${JSON.stringify(call.args).slice(0, 500)} result=${call.snippet.slice(0, 300)}`,
+        )
+      }
+    }
     // Across ALL attempts, not just the last. A 6/10 journey fails for a reason
     // the final transcript may not contain at all, and reading one sample to
     // explain an aggregate is how you end up fixing whichever failure happened to

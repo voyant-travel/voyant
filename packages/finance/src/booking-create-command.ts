@@ -242,9 +242,9 @@ export function bookingCreateCommandError(
     // already name their problem and their fix; these now do too.
     // The generic sentence remains only as a fallback. When the diagnostic ran it
     // names the actual cause, because "not found, or is not bookable, confirm it
-    // is published" was a guess covering five unrelated failures — and it sent a
-    // real agent to verify a publication that was already correct while the true
-    // cause (a departure on a different option) went unmentioned.
+    // is published" was a guess covering five unrelated failures. In the measured
+    // run the publication was already correct, but the trace could not distinguish
+    // the remaining causes; the diagnostic makes the next failure say which fired.
     case "product_not_found":
       return new ToolError(
         outcome.detail ??

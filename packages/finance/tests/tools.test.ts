@@ -108,7 +108,7 @@ describe("finance tools", () => {
         policyName: "finance-approval-v1",
         policyVersion: "v1",
         riskSnapshot: "high",
-        reasonCode: null,
+        reasonCode: "finance_approval_requested",
         expiresAt: null,
         createdAt: "2026-08-06T10:00:00.000Z",
       },

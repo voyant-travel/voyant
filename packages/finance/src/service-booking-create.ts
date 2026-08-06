@@ -865,11 +865,10 @@ async function findDuplicateBookingForCreate(
  * one selected. One return value, five causes, and the caller-facing message had
  * to pick one and hope.
  *
- * It picked "confirm the product is published", which is the one cause this
- * function can rule out first — and measured against a real agent that is exactly
- * what went wrong: the product was published and active, the departure existed,
- * and the booking was refused because the two were attached to different options.
- * The agent was told to go and check something that was already true.
+ * It picked "confirm the product is published" even when the measured product
+ * was already active. The trace did not expose which of the remaining causes
+ * fired, so this diagnostic makes that distinction observable instead of
+ * presenting an inference as the answer.
  *
  * Ordered from the most fundamental to the most specific so the first true
  * statement is also the most useful one.
@@ -930,7 +929,7 @@ async function diagnoseProductRefusal(
   if (product.status !== "active") {
     return `Product ${input.productId} is ${product.status}, not active. Publish it with publish_product before selling it.`
   }
-  return "The product, its options and its departure all resolve individually, so the refusal is not one of the usual four. Re-read the product with inventory_query and confirm the option carries a priced, bookable unit."
+  return "The product, its options and its departure all resolve individually, so the refusal is not one of the diagnosed identity or ownership mismatches. Re-read the product with inventory_query and confirm the option carries a priced, bookable unit."
 }
 
 async function loadProductOptionUnits(
