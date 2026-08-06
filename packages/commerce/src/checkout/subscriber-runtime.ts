@@ -6,7 +6,7 @@ import {
 import {
   type CatalogBookingSessionSettlementRuntime,
   catalogBookingSessionSettlementRuntimePort,
-} from "@voyant-travel/catalog/booking-session-settlement-runtime-port"
+} from "@voyant-travel/catalog/ports"
 import type { BootstrapContext, EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

@@ -1,5 +1,5 @@
-import { catalogBookingSessionSettlementRuntimePort } from "@voyant-travel/catalog/booking-session-settlement-runtime-port"
 import {
+  catalogBookingSessionSettlementRuntimePort,
   catalogCommerceRuntimeExtensionPort,
   catalogPublicationRuntimePort,
   catalogRuntimeServicesPort,
