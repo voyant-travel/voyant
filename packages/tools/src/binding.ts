@@ -108,6 +108,10 @@ export interface ToolActionInvocationPolicy {
     | "approvalId"
     | "targetId"
     | "idempotencyKey"
+    // `requestId` moved from requiredFields to here: the generic gate derives it
+    // from the command fingerprint, so a caller no longer has to mint one, but
+    // an explicitly supplied value is still honoured.
+    | "requestId"
     | "idempotencyFingerprint"
   )[]
   fingerprintAlgorithm: "action-ledger-command-v1"
