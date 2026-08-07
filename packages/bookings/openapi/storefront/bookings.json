@@ -728,10 +728,7 @@
                     "maxLength": 255
                   },
                   "departureId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255
                   },
@@ -739,34 +736,22 @@
                     "type": "object",
                     "properties": {
                       "firstName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1,
                         "maxLength": 120
                       },
                       "lastName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1,
                         "maxLength": 120
                       },
                       "email": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 320,
                         "format": "email"
                       },
                       "phone": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1,
                         "maxLength": 40
                       }
@@ -783,12 +768,7 @@
                     "maxLength": 5000
                   }
                 },
-                "required": [
-                  "productId",
-                  "contact",
-                  "locale",
-                  "message"
-                ]
+                "required": ["productId", "contact", "locale", "message"]
               }
             }
           }
@@ -817,45 +797,25 @@
                           "type": "string"
                         },
                         "departureId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contact": {
                           "type": "object",
                           "properties": {
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "firstName",
-                            "lastName",
-                            "email",
-                            "phone"
-                          ]
+                          "required": ["firstName", "lastName", "email", "phone"]
                         },
                         "locale": {
                           "type": "string"
@@ -865,10 +825,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "closed"
-                          ]
+                          "enum": ["open", "closed"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -892,9 +849,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -922,45 +877,25 @@
                           "type": "string"
                         },
                         "departureId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contact": {
                           "type": "object",
                           "properties": {
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "firstName",
-                            "lastName",
-                            "email",
-                            "phone"
-                          ]
+                          "required": ["firstName", "lastName", "email", "phone"]
                         },
                         "locale": {
                           "type": "string"
@@ -970,10 +905,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "closed"
-                          ]
+                          "enum": ["open", "closed"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -997,9 +929,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1015,9 +945,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1033,9 +961,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1051,9 +977,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
