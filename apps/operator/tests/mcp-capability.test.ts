@@ -172,72 +172,80 @@ async function runJourney(input: {
   /** The server's own `instructions`, exactly as a real MCP client surfaces them. */
   serverInstructions: string
 }): Promise<JourneyRun> {
-  const messages: Array<Record<string, unknown>> = [
-    {
-      role: "system",
-      content:
-        "You are the back-office agent for a travel operator, connected to its MCP server. " +
-        "Use the tools to actually perform the work end to end. Never invent data. If a write " +
-        "reports that confirmation or approval is required, follow the instructions in the " +
-        "error and complete it. Finish by stating what you created, including any ids." +
-        // A real MCP client reads `instructions` from `initialize` and puts it in
-        // front of the model. This harness did not, which made it a WORSE client
-        // than the ones we ship to — and the guide layer (voyant#3931) exists
-        // precisely to orient the agent before its first call. Measuring a surface
-        // while withholding its own operating instructions measures the harness.
-        (input.serverInstructions
-          ? `\n\n--- server instructions ---\n${input.serverInstructions}`
-          : ""),
-    },
-    { role: "user", content: input.task },
-  ]
+  const instructions =
+    "You are the back-office agent for a travel operator, connected to its MCP server. " +
+    "Use the tools to actually perform the work end to end. Never invent data. If a write " +
+    "reports that confirmation or approval is required, follow the instructions in the " +
+    "error and complete it. Finish by stating what you created, including any ids." +
+    // A real MCP client reads `instructions` from `initialize` and puts it in
+    // front of the model. This harness did not, which made it a WORSE client
+    // than the ones we ship to — and the guide layer (voyant#3931) exists
+    // precisely to orient the agent before its first call. Measuring a surface
+    // while withholding its own operating instructions measures the harness.
+    (input.serverInstructions ? `\n\n--- server instructions ---\n${input.serverInstructions}` : "")
   const calls: ToolCallRecord[] = []
   let tokens = 0
+  let previousResponseId: string | undefined
+  let nextInput: unknown = input.task
 
   for (let turn = 0; turn <= input.maxCalls; turn += 1) {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: MODEL,
-        messages,
+        instructions,
+        input: nextInput,
         tools: input.tools,
         tool_choice: "auto",
-        ...(MODEL.startsWith("gpt-5")
-          ? { reasoning_effort: REASONING_EFFORT }
-          : { temperature: 0 }),
+        reasoning: { effort: REASONING_EFFORT },
+        previous_response_id: previousResponseId,
+        store: true,
       }),
     })
     if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 300)}`)
     const body = (await res.json()) as {
-      choices?: Array<{ message: Record<string, unknown> }>
-      usage?: { prompt_tokens?: number; completion_tokens?: number }
+      id?: string
+      output_text?: string
+      output?: Array<
+        | { type: "function_call"; call_id: string; name: string; arguments: string }
+        | { type: string; content?: Array<{ type?: string; text?: string }> }
+      >
+      usage?: { input_tokens?: number; output_tokens?: number }
     }
-    tokens += (body.usage?.prompt_tokens ?? 0) + (body.usage?.completion_tokens ?? 0)
-    const message = body.choices?.[0]?.message
-    if (!message) throw new Error("OpenAI returned no message")
-    messages.push(message)
-
-    const toolCalls =
-      (message.tool_calls as Array<{
-        id: string
-        function: { name: string; arguments: string }
-      }>) ?? []
+    if (!body.id) throw new Error("OpenAI returned no response id")
+    previousResponseId = body.id
+    tokens += (body.usage?.input_tokens ?? 0) + (body.usage?.output_tokens ?? 0)
+    const toolCalls = (body.output ?? []).filter(
+      (item): item is Extract<NonNullable<typeof body.output>[number], { type: "function_call" }> =>
+        item.type === "function_call",
+    )
     if (toolCalls.length === 0) {
-      return { calls, answer: String(message.content ?? ""), tokens, exhausted: false }
+      const text =
+        body.output_text ??
+        (body.output ?? [])
+          .flatMap((item) => ("content" in item ? (item.content ?? []) : []))
+          .map((content) => content.text ?? "")
+          .join("")
+      return { calls, answer: text, tokens, exhausted: false }
     }
 
+    const functionOutputs: Array<{
+      type: "function_call_output"
+      call_id: string
+      output: string
+    }> = []
     for (const call of toolCalls) {
       let args: Record<string, unknown> = {}
       try {
-        args = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>
+        args = JSON.parse(call.arguments || "{}") as Record<string, unknown>
       } catch {
         args = {}
       }
       const rpcBody = await readRpc(
         await input.app.request(
           "/",
-          rpc("tools/call", { name: call.function.name, arguments: args }),
+          rpc("tools/call", { name: call.name, arguments: args }),
           TEST_ENV,
           TEST_CTX,
         ),
@@ -251,13 +259,14 @@ async function runJourney(input: {
           : (result?.content?.[0]?.text ?? JSON.stringify(rpcBody))
       ).slice(0, 12_000)
       calls.push({
-        name: call.function.name,
+        name: call.name,
         args,
         isError: result?.isError === true,
         snippet: text.slice(0, 300),
       })
-      messages.push({ role: "tool", tool_call_id: call.id, content: text })
+      functionOutputs.push({ type: "function_call_output", call_id: call.call_id, output: text })
     }
+    nextInput = functionOutputs
   }
   return { calls, answer: "", tokens, exhausted: true }
 }
@@ -819,11 +828,9 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
         (listed.result as { tools?: Array<Record<string, unknown>> } | undefined)?.tools ?? []
       ).map((tool) => ({
         type: "function" as const,
-        function: {
-          name: String(tool.name),
-          description: String(tool.description ?? "").slice(0, 1024),
-          parameters: tool.inputSchema ?? { type: "object", properties: {} },
-        },
+        name: String(tool.name),
+        description: String(tool.description ?? "").slice(0, 1024),
+        parameters: tool.inputSchema ?? { type: "object", properties: {} },
       }))
 
       for (let attempt = 0; attempt < RUNS; attempt += 1) {

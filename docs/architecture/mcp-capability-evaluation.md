@@ -36,10 +36,11 @@ depend on stale JavaScript beside package TypeScript sources.
 The default model is `gpt-5.6-terra` at medium reasoning effort: the balanced
 quality/cost tier for a multi-step operator capability evaluation. Use
 `--model gpt-5.6-luna` for an explicit cost-sensitive comparison; never mix model
-results under one baseline. The harness currently uses Chat Completions because
-that is the established client contract and both GPT-5.6 tiers support it with
-function calling. Evaluate a Responses API migration separately so endpoint
-effects are not misattributed to the model change.
+results under one baseline. The harness uses the Responses API with medium
+reasoning and continues each Tool turn through `previous_response_id`. GPT-5.6
+does not support function Tools with nonzero reasoning effort on Chat Completions;
+using Responses preserves the reasoning baseline instead of silently setting it
+to `none`.
 
 Artifacts are written under `.agent-runs/mcp-capability/<timestamp>/` unless
 `--artifacts` selects another directory. `report.json` records the model, run count,
