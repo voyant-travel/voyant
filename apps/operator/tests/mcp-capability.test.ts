@@ -361,7 +361,7 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
     {
       id: "product-create",
       domain: "products",
-      task: `Create a product called 'Capability Eval Tour ${RUN_MARK}', a guided road tour sold by date. Confirm its id.`,
+      task: `Create a product called 'Capability Eval Tour ${RUN_MARK}', a guided road tour sold by date in EUR. Confirm its id.`,
       expect: `capability eval tour ${RUN_MARK}`,
       maxCalls: 18,
       verify: `select 1 from products where name ilike '%capability eval tour ${RUN_MARK}%'`,
