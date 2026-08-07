@@ -46,15 +46,16 @@
  * the product before the departure — because that dependency is exactly what an
  * endpoint-shaped surface makes hard and what #3921 is trying to fix.
  */
-import { readFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { createDbClient } from "@voyant-travel/db"
+import { dbClientDispose } from "@voyant-travel/db/transaction-capability"
 import { financeService } from "@voyant-travel/finance"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { sql as sqlRaw } from "drizzle-orm"
 import { Hono } from "hono"
-import { beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { accessCatalog } from "../.voyant/access/selected-access-catalog.generated"
 import {
@@ -75,7 +76,9 @@ function resolveKey(): string | undefined {
   }
 }
 const apiKey = resolveKey()
-const MODEL = process.env.VOYANT_EVAL_MODEL ?? "gpt-4o"
+const MODEL = process.env.VOYANT_EVAL_MODEL ?? "gpt-5.6-terra"
+const REASONING_EFFORT = "medium"
+const REPORT_FILE = process.env.VOYANT_EVAL_REPORT_FILE?.trim()
 const enabled = Boolean(TEST_DATABASE_URL && apiKey)
 
 /** A live model turn plus a real dispatch is slow; the default would time out on latency. */
@@ -200,7 +203,9 @@ async function runJourney(input: {
         messages,
         tools: input.tools,
         tool_choice: "auto",
-        temperature: 0,
+        ...(MODEL.startsWith("gpt-5")
+          ? { reasoning_effort: REASONING_EFFORT }
+          : { temperature: 0 }),
       }),
     })
     if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 300)}`)
@@ -692,6 +697,77 @@ function report(): string {
   return lines.join("\n")
 }
 
+function writeMachineReport(): void {
+  if (!REPORT_FILE) return
+
+  const destination = resolve(REPORT_FILE)
+  const journeys = JOURNEYS.map((journey) => {
+    const journeyAttempts = attempts.get(journey.id) ?? []
+    const outcomes = passes.get(journey.id) ?? []
+    return {
+      id: journey.id,
+      domain: journey.domain,
+      classification: journey.knownGap
+        ? "known-gap"
+        : journey.intermittent
+          ? "intermittent"
+          : "gated",
+      passCount: outcomes.filter(Boolean).length,
+      attemptCount: outcomes.length,
+      callBudget: journey.maxCalls,
+      attempts: journeyAttempts.map((attempt, index) => ({
+        index: index + 1,
+        passed: outcomes[index] ?? false,
+        calls: attempt.calls.length,
+        errors: attempt.calls.filter((call) => call.isError).length,
+        tokens: attempt.tokens,
+        exhausted: attempt.exhausted,
+        trace: attempt.calls.map((call) => ({
+          name: call.name,
+          isError: call.isError,
+          args: JSON.stringify(call.args).slice(0, 1_000),
+          result: call.snippet.slice(0, 1_000),
+        })),
+        answer: attempt.answer.slice(0, 2_000),
+      })),
+    }
+  })
+
+  mkdirSync(dirname(destination), { recursive: true })
+  writeFileSync(
+    destination,
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: new Date().toISOString(),
+        model: MODEL,
+        reasoningEffort: MODEL.startsWith("gpt-5") ? REASONING_EFFORT : null,
+        runMark: RUN_MARK,
+        configuredRuns: RUNS,
+        journeys,
+        totals: {
+          journeys: journeys.length,
+          attempts: journeys.reduce((total, journey) => total + journey.attemptCount, 0),
+          passes: journeys.reduce((total, journey) => total + journey.passCount, 0),
+          calls: journeys.reduce(
+            (total, journey) =>
+              total + journey.attempts.reduce((sum, attempt) => sum + attempt.calls, 0),
+            0,
+          ),
+          tokens: journeys.reduce(
+            (total, journey) =>
+              total + journey.attempts.reduce((sum, attempt) => sum + attempt.tokens, 0),
+            0,
+          ),
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  )
+  process.stdout.write(`machine report: ${destination}\n`)
+}
+
 describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
   beforeAll(
     async () => {
@@ -803,9 +879,15 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
         }
       }
       process.stdout.write(`\n${report()}\n\n`)
+      writeMachineReport()
     },
     JOURNEY_TIMEOUT_MS * JOURNEYS.length * RUNS,
   )
+
+  afterAll(async () => {
+    const dispose = dbClientDispose(verifyDb)
+    if (dispose) await dispose()
+  })
 
   it.each(
     JOURNEYS.filter((journey) => journey.intermittent),
