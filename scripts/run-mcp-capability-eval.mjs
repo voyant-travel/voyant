@@ -17,6 +17,7 @@ export function parseArgs(argv) {
   const values = [...argv]
   while (values.length > 0) {
     const value = values.shift()
+    if (value === "--") continue
     if (value === "--mode") {
       options.mode = requiredValue(value, values.shift())
       continue

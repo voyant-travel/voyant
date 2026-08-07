@@ -10,7 +10,15 @@ test("defaults to a one-run smoke evaluation", () => {
 })
 
 test("accepts the measurement lane and artifact destination", () => {
-  const options = parseArgs(["--mode", "measure", "--model", "gpt-test", "--artifacts", "tmp/eval"])
+  const options = parseArgs([
+    "--",
+    "--mode",
+    "measure",
+    "--model",
+    "gpt-test",
+    "--artifacts",
+    "tmp/eval",
+  ])
   assert.equal(options.mode, "measure")
   assert.equal(options.model, "gpt-test")
   assert.match(options.artifactDir, /tmp\/eval$/)
