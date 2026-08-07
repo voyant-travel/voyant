@@ -20,6 +20,7 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyant-travel/bookings/schema"
+import { cancellationTermsEvidenceV1Schema } from "@voyant-travel/bookings-contracts"
 import { withBookingFinanceInsertionFence } from "@voyant-travel/db/booking-finance-fence"
 import { classifyOccupancyPrice } from "@voyant-travel/products-contracts/occupancy-pricing"
 import { and, asc, eq, sql } from "drizzle-orm"
@@ -548,6 +549,7 @@ const bookingCreateBaseSchema = z.object({
   contactAddressLine1: z.string().max(500).optional().nullable(),
   contactAddressLine2: z.string().max(500).optional().nullable(),
   contactPostalCode: z.string().max(20).optional().nullable(),
+  cancellationTermsEvidence: cancellationTermsEvidenceV1Schema.optional().nullable(),
 
   // Orchestration fields
   travelers: z
@@ -583,6 +585,7 @@ const bookingCreateOperatorInputSchema = bookingCreateBaseSchema
     catalogSellAmountCents: true,
     confirmedSellAmountCents: true,
     priceOverrideReason: true,
+    cancellationTermsEvidence: true,
   })
   .extend({
     // The reference is resolved server-side: omit it and the tool allocates one.
