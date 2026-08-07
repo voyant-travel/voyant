@@ -195,7 +195,17 @@ async function main() {
     })
     if (status === 0) {
       status = await run("pnpm", ["-C", "apps/operator", "db:migrate"], {
-        env,
+        env: {
+          ...env,
+          NODE_OPTIONS: [
+            process.env.NODE_OPTIONS,
+            "--conditions=development",
+            "--import=tsx",
+            "--max-old-space-size=8192",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
         logFile: path.join(artifactDir, "migrate.log"),
       })
     }

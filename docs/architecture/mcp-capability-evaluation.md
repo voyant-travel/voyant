@@ -29,6 +29,10 @@ temporary PostgreSQL 16 Docker container on a random localhost port, migrates it
 runs the focused evaluation, and removes the container. A supplied database is
 assumed disposable and is not dropped by the runner.
 
+Migration runs with the repository's development export condition and the `tsx`
+loader, matching the integration CI lane. A clean workspace therefore does not
+depend on stale JavaScript beside package TypeScript sources.
+
 The default model is `gpt-5.6-terra` at medium reasoning effort: the balanced
 quality/cost tier for a multi-step operator capability evaluation. Use
 `--model gpt-5.6-luna` for an explicit cost-sensitive comparison; never mix model
