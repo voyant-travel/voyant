@@ -456,7 +456,7 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
       // to depend on another journey's output rather than seeded data.
       id: "ops-departure-create",
       domain: "ops",
-      task: `Create a departure for the product 'Capability Eval Tour ${RUN_MARK}' on 2026-09-15 with 20 seats available. Confirm the departure id.`,
+      task: `Create a departure for the product 'Capability Eval Tour ${RUN_MARK}' on 2026-09-15 at 09:00 +03:00 in Europe/Bucharest with 20 seats available. Confirm the departure id.`,
       expect: "2026-09-15",
       maxCalls: 20,
       verify: `select 1 from availability_slots s join products p on p.id = s.product_id
