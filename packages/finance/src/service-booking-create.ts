@@ -20,7 +20,6 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyant-travel/bookings/schema"
-import { cancellationTermsEvidenceV1Schema } from "@voyant-travel/bookings-contracts"
 import { withBookingFinanceInsertionFence } from "@voyant-travel/db/booking-finance-fence"
 import { classifyOccupancyPrice } from "@voyant-travel/products-contracts/occupancy-pricing"
 import { and, asc, eq, sql } from "drizzle-orm"
@@ -549,7 +548,16 @@ const bookingCreateBaseSchema = z.object({
   contactAddressLine1: z.string().max(500).optional().nullable(),
   contactAddressLine2: z.string().max(500).optional().nullable(),
   contactPostalCode: z.string().max(20).optional().nullable(),
-  cancellationTermsEvidence: cancellationTermsEvidenceV1Schema.optional().nullable(),
+  cancellationTermsEvidence: z
+    .object({
+      schemaVersion: z.literal(1),
+      source: z.enum(["booking_quote", "supplier_quote"]),
+      sourceId: z.string().min(1),
+      capturedAt: z.string().datetime(),
+      policy: z.unknown(),
+    })
+    .optional()
+    .nullable(),
 
   // Orchestration fields
   travelers: z
