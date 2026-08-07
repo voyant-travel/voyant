@@ -198,7 +198,7 @@ async function main() {
         env: {
           ...env,
           NODE_OPTIONS: [
-            process.env.NODE_OPTIONS,
+            env.NODE_OPTIONS,
             "--conditions=development",
             "--import=tsx",
             "--max-old-space-size=8192",
