@@ -393,7 +393,7 @@ function inspectOperatorApplicationDependencies(repoRoot) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
   const expectedLifecycleScripts = {
     dev: "voyant develop",
-    build: "voyant build",
+    build: "voyant build && node ../../scripts/package-operator-admin-shell.mjs",
     start: "voyant start",
     "db:migrate": "voyant migrate",
   }

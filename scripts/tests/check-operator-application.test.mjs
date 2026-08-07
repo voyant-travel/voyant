@@ -332,7 +332,9 @@ test("rejects operator application lifecycle scripts that bypass the CLI", () =>
       const stderr = String(error.stderr)
       return (
         stderr.includes('script dev must be exactly "voyant develop"') &&
-        stderr.includes('script build must be exactly "voyant build"') &&
+        stderr.includes(
+          'script build must be exactly "voyant build && node ../../scripts/package-operator-admin-shell.mjs"',
+        ) &&
         stderr.includes('script start must be exactly "voyant start"') &&
         stderr.includes('script db:migrate must be exactly "voyant migrate"')
       )
