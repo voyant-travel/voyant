@@ -860,27 +860,20 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
           attempts.set(journey.id, [...(attempts.get(journey.id) ?? []), run])
           // Keep the LAST attempt as the representative transcript for the report.
           runs.set(journey.id, run)
-        }
 
-        // Grade this attempt against the DATABASE before the next one runs, so a
-        // later attempt's rows can never satisfy an earlier attempt's check.
-        for (const journey of journeys) {
-          const run = runs.get(journey.id)
+          // Grade immediately, before the next journey can write a row that
+          // accidentally satisfies this journey's assertion.
           let passed = false
-          if (run) {
-            if (journey.verify) {
-              const rows = await (
-                verifyDb as { execute: (q: unknown) => Promise<unknown> }
-              ).execute(
-                // `sql` is a TEMPLATE TAG — a plain string is read as a
-                // template-strings array and only its first character is sent.
-                sqlRaw.raw(journey.verify),
-              )
-              passed = rowCount(rows) > 0
-              verified.set(journey.id, passed)
-            } else {
-              passed = journeyPassed(journey, run)
-            }
+          if (journey.verify) {
+            const rows = await (verifyDb as { execute: (q: unknown) => Promise<unknown> }).execute(
+              // `sql` is a TEMPLATE TAG — a plain string is read as a
+              // template-strings array and only its first character is sent.
+              sqlRaw.raw(journey.verify),
+            )
+            passed = rowCount(rows) > 0
+            verified.set(journey.id, passed)
+          } else {
+            passed = journeyPassed(journey, run)
           }
           passes.set(journey.id, [...(passes.get(journey.id) ?? []), passed])
         }
