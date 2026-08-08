@@ -16,6 +16,7 @@ import {
   resolveOperatorDashboardWindow,
   setDepartureTravelerAssignmentsTool,
   setDepartureTravelerRoomingPreferencesTool,
+  UPDATE_DEPARTURE_HANDLER_POLICY,
   updateDepartureTool,
 } from "../src/tools.js"
 
@@ -163,7 +164,9 @@ describe("Operations tools", () => {
 
   it("accepts a full read-modify-write snapshot and forwards compatibility fields", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(updateDepartureTool)
+    writeRegistry.register(updateDepartureTool, {
+      actionPolicy: UPDATE_DEPARTURE_HANDLER_POLICY.actionPolicy,
+    })
     const snapshot = {
       id: "avsl_1",
       productId: "prod_1",
@@ -196,7 +199,7 @@ describe("Operations tools", () => {
     const result = await writeRegistry.dispatch(
       "update_departure",
       { ...snapshot, notes: "Meet at the station - platform 2" },
-      contextWith({
+      admittedUpdateContext(contextWith({
         async updateDeparture(_id, patch) {
           forwarded = patch
           return {
@@ -208,7 +211,7 @@ describe("Operations tools", () => {
             updatedAt: new Date(snapshot.updatedAt),
           }
         },
-      }),
+      })),
     )
 
     expect(forwarded).toMatchObject({
@@ -517,18 +520,20 @@ describe("Operations tools", () => {
 
   it("accepts the compatibility productId field but surfaces a rejected ownership move", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(updateDepartureTool)
+    writeRegistry.register(updateDepartureTool, {
+      actionPolicy: UPDATE_DEPARTURE_HANDLER_POLICY.actionPolicy,
+    })
     let called = false
     await expect(
       writeRegistry.dispatch(
         "update_departure",
         { id: "avsl_1", productId: "prod_other" },
-        contextWith({
+        admittedUpdateContext(contextWith({
           async updateDeparture() {
             called = true
             throw new Error("Availability slot product ownership is immutable")
           },
-        }),
+        })),
       ),
     ).rejects.toThrow("product ownership is immutable")
     expect(called).toBe(true)
@@ -700,6 +705,28 @@ describe("Operations tools", () => {
     expect(result).toMatchObject({ total: 3, upcomingSlots: 2, upcomingPax: 31 })
   })
 })
+
+function admittedUpdateContext<T extends ToolContext>(context: T): T {
+  return {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: UPDATE_DEPARTURE_HANDLER_POLICY.capabilityId,
+      capabilityVersion: UPDATE_DEPARTURE_HANDLER_POLICY.capabilityVersion,
+      canonicalName: UPDATE_DEPARTURE_HANDLER_POLICY.canonicalName,
+      actionPolicy: {
+        ...UPDATE_DEPARTURE_HANDLER_POLICY.actionPolicy,
+        enforcement: "handler",
+        invocation: {
+          controlField: "_voyant",
+          requiredFields: ["approvalId", "idempotencyFingerprint"],
+          optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+          fingerprintAlgorithm: "action-ledger-command-v1",
+        },
+      },
+      invocation: { approvalId: "appr_update", idempotencyFingerprint: "fp_update" },
+    } as never,
+  }
+}
 
 describe("Operations dashboard Tool", () => {
   it("publishes a structural, staff-only composed read", () => {

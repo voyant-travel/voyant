@@ -2,6 +2,11 @@ import type { ToolHandlerActionPolicyContext } from "@voyant-travel/tools"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const executeAdmittedCreatedTargetCommand = vi.hoisted(() => vi.fn())
+const executeAdmittedExistingTargetCommand = vi.hoisted(() => vi.fn())
+
+vi.mock("@voyant-travel/action-ledger", () => ({
+  executeAdmittedExistingTargetCommand,
+}))
 
 vi.mock("@voyant-travel/action-ledger/created-command", () => ({
   executeAdmittedCreatedTargetCommand,
@@ -38,6 +43,7 @@ async function contributeOperations(
 afterEach(() => {
   vi.restoreAllMocks()
   executeAdmittedCreatedTargetCommand.mockReset()
+  executeAdmittedExistingTargetCommand.mockReset()
 })
 
 describe("departure created-target runtime", () => {
@@ -128,12 +134,16 @@ describe("departure created-target runtime", () => {
       agentId: "agent_1",
       organizationId: "org_1",
     })
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      await handlers.prepare({})
+      return { replayed: false, value: await handlers.execute() }
+    })
 
     await expect(
       operations.updateDeparture("avsl_1", {
         updatedAt: "2026-07-28T12:00:00.000Z",
         notes: "Stale edit",
-      }),
+      }, {} as ToolHandlerActionPolicyContext),
     ).rejects.toMatchObject({
       code: "INVALID_INPUT",
       meta: {
@@ -147,6 +157,32 @@ describe("departure created-target runtime", () => {
         },
       },
     })
+  })
+
+  it("updates once and reloads the authoritative departure on an exact approved retry", async () => {
+    const first = { id: "avsl_1", status: "closed", notes: "Weather" }
+    const current = { ...first, notes: "Weather confirmed" }
+    const update = vi.spyOn(availabilityService, "updateSlot").mockResolvedValue(first as never)
+    const reload = vi.spyOn(availabilityService, "getSlotById").mockResolvedValue(current as never)
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({})
+        completed = true
+        return { replayed: false, value: await handlers.execute() }
+      }
+      return { replayed: true, value: await handlers.replay({}) }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+
+    await expect(operations.updateDeparture("avsl_1", { status: "closed" }, admitted)).resolves
+      .toEqual(first)
+    await expect(operations.updateDeparture("avsl_1", { status: "closed" }, admitted)).resolves
+      .toEqual(current)
+
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(reload).toHaveBeenCalledTimes(1)
   })
 
   it("resolves all selected booking-action sources for a deterministic rebuild", async () => {

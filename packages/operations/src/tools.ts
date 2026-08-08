@@ -374,6 +374,27 @@ export const CREATE_DEPARTURE_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const UPDATE_DEPARTURE_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.update-departure`,
+  capabilityVersion: VERSION,
+  canonicalName: "update_departure",
+  actionPolicy: {
+    id: `${OWNER}#action.update-departure`,
+    capabilityId: `${OWNER}#action.update-departure`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "id",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "medium",
+    ledger: "required",
+    approval: "required",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -453,9 +474,12 @@ export const updateDepartureTool = defineTool<
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: DEPARTURE_WRITE_RISK,
+  actionPolicyEnforcement: "handler",
+  annotations: { idempotentHint: true },
   async handler({ id, ...patch }, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, UPDATE_DEPARTURE_HANDLER_POLICY)
     return parseJsonResult(departureOutputSchema, {
-      departure: await operations(ctx).updateDeparture(id, patch),
+      departure: await operations(ctx).updateDeparture(id, patch, admitted),
     })
   },
 })
