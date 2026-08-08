@@ -23,7 +23,7 @@
     "@voyant-travel/operations": "workspace:^",
     "@voyant-travel/proposals": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
-    "better-auth": "1.6.23",
+    "better-auth": "1.6.26",
     "dotenv": "^17.4.2",
     "drizzle-orm": "catalog:",
     "postgres": "^3.4.9",
