@@ -287,8 +287,11 @@ async function executeBookingStatusToolCommand(input: {
     isRecord(preview.policyEntitlement) &&
     preview.policyEntitlement.status === "manual_review"
   ) {
+    const reviewReasons = Array.isArray(preview.policyEntitlement.reasons)
+      ? preview.policyEntitlement.reasons.join(", ")
+      : "unknown"
     throw new ToolError(
-      "Cancellation policy entitlement requires manual review; no cancellation was written.",
+      `Cancellation policy entitlement requires manual review (${reviewReasons}); no cancellation was written.`,
       "INVALID_INPUT",
       {
         bookingId: input.input.id,
