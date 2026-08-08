@@ -199,19 +199,21 @@ describe("Operations tools", () => {
     const result = await writeRegistry.dispatch(
       "update_departure",
       { ...snapshot, notes: "Meet at the station - platform 2" },
-      admittedUpdateContext(contextWith({
-        async updateDeparture(_id, patch) {
-          forwarded = patch
-          return {
-            ...snapshot,
-            ...patch,
-            startsAt: new Date(snapshot.startsAt),
-            endsAt: new Date(snapshot.endsAt),
-            createdAt: new Date(snapshot.createdAt),
-            updatedAt: new Date(snapshot.updatedAt),
-          }
-        },
-      })),
+      admittedUpdateContext(
+        contextWith({
+          async updateDeparture(_id, patch) {
+            forwarded = patch
+            return {
+              ...snapshot,
+              ...patch,
+              startsAt: new Date(snapshot.startsAt),
+              endsAt: new Date(snapshot.endsAt),
+              createdAt: new Date(snapshot.createdAt),
+              updatedAt: new Date(snapshot.updatedAt),
+            }
+          },
+        }),
+      ),
     )
 
     expect(forwarded).toMatchObject({
@@ -528,12 +530,14 @@ describe("Operations tools", () => {
       writeRegistry.dispatch(
         "update_departure",
         { id: "avsl_1", productId: "prod_other" },
-        admittedUpdateContext(contextWith({
-          async updateDeparture() {
-            called = true
-            throw new Error("Availability slot product ownership is immutable")
-          },
-        })),
+        admittedUpdateContext(
+          contextWith({
+            async updateDeparture() {
+              called = true
+              throw new Error("Availability slot product ownership is immutable")
+            },
+          }),
+        ),
       ),
     ).rejects.toThrow("product ownership is immutable")
     expect(called).toBe(true)

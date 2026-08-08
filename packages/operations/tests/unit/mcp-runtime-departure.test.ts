@@ -140,10 +140,14 @@ describe("departure created-target runtime", () => {
     })
 
     await expect(
-      operations.updateDeparture("avsl_1", {
-        updatedAt: "2026-07-28T12:00:00.000Z",
-        notes: "Stale edit",
-      }, {} as ToolHandlerActionPolicyContext),
+      operations.updateDeparture(
+        "avsl_1",
+        {
+          updatedAt: "2026-07-28T12:00:00.000Z",
+          notes: "Stale edit",
+        },
+        {} as ToolHandlerActionPolicyContext,
+      ),
     ).rejects.toMatchObject({
       code: "INVALID_INPUT",
       meta: {
@@ -176,10 +180,12 @@ describe("departure created-target runtime", () => {
     const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
     const admitted = {} as ToolHandlerActionPolicyContext
 
-    await expect(operations.updateDeparture("avsl_1", { status: "closed" }, admitted)).resolves
-      .toEqual(first)
-    await expect(operations.updateDeparture("avsl_1", { status: "closed" }, admitted)).resolves
-      .toEqual(current)
+    await expect(
+      operations.updateDeparture("avsl_1", { status: "closed" }, admitted),
+    ).resolves.toEqual(first)
+    await expect(
+      operations.updateDeparture("avsl_1", { status: "closed" }, admitted),
+    ).resolves.toEqual(current)
 
     expect(update).toHaveBeenCalledTimes(1)
     expect(reload).toHaveBeenCalledTimes(1)
