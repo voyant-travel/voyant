@@ -213,7 +213,9 @@ describe("MCP guide layer", () => {
     const products = await guideText(a, "products")
     expect(products).toMatch(/publish/i)
     expect(products).toMatch(/draft/i)
-    expect(products).toMatch(/create_option_unit.*update_product.*create_departure.*publish_product/is)
+    expect(products).toMatch(
+      /create_option_unit.*update_product.*create_departure.*publish_product/is,
+    )
     expect(products).toMatch(/create_option_unit.*does not set a price/is)
 
     const vocab = await guideText(a, "vocabulary")
