@@ -123,7 +123,15 @@ async function readRpc(res: Response): Promise<Record<string, unknown>> {
 let verifyDb: ReturnType<typeof createDbClient> | undefined
 
 async function mountRealMcp(): Promise<Hono> {
-  const selected = await createGeneratedTestDeploymentResources(createGeneratedGraphRuntime())
+  const db = createDbClient(TEST_DATABASE_URL as string, {
+    adapter: "node",
+    nodeMaxConnections: 4,
+    timeouts: { statementMs: false, queryMs: false, connectMs: false },
+  })
+  verifyDb = db
+  const selected = await createGeneratedTestDeploymentResources(createGeneratedGraphRuntime(), {
+    database: db,
+  })
   const composed = await composeVoyantGraphRuntime({
     runtime: selected.runtime,
     capabilities: selected.capabilities,
@@ -134,12 +142,6 @@ async function mountRealMcp(): Promise<Hono> {
     ?.lazyAdminRoutes?.()
   if (!routes) throw new Error("selected graph did not expose MCP admin routes")
 
-  const db = createDbClient(TEST_DATABASE_URL as string, {
-    adapter: "node",
-    nodeMaxConnections: 4,
-    timeouts: { statementMs: false, queryMs: false, connectMs: false },
-  })
-  verifyDb = db
   const scopes = accessCatalog.resources.flatMap((resource) =>
     resource.actions.map((action) => `${resource.resource}:${action.action}`),
   )
