@@ -13,6 +13,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 }))
 
 import { availabilityService } from "../../src/availability/service.js"
+import * as resourceLinks from "../../src/availability/service-allocation-resource-link.js"
 import { AvailabilitySlotRevisionConflictError } from "../../src/availability/service-core.js"
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
 import { CREATE_DEPARTURE_HANDLER_POLICY, type OperationsToolServices } from "../../src/tools.js"
@@ -189,6 +190,59 @@ describe("departure created-target runtime", () => {
 
     expect(update).toHaveBeenCalledTimes(1)
     expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("attaches once and reloads the authoritative fleet link on an exact approved retry", async () => {
+    const resource = {
+      id: "alrs_1",
+      slotId: "avsl_1",
+      kind: "vehicle",
+      refType: "resource",
+      refId: "res_1",
+      capacity: 40,
+      flags: { resourceAssignmentId: "resa_1" },
+    }
+    const attach = vi.spyOn(resourceLinks, "attachDepartureResource").mockResolvedValue({
+      resource,
+      assignmentId: "resa_1",
+      created: true,
+    } as never)
+    const list = vi
+      .spyOn(resourceLinks, "listDepartureResourceLinks")
+      .mockResolvedValue([resource] as never)
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({})
+        completed = true
+        return { replayed: false, value: await handlers.execute() }
+      }
+      return { replayed: true, value: await handlers.replay() }
+    })
+    const operations = await contributeOperations({
+      actor: "staff",
+      organizationId: "org_1",
+      userId: "user_1",
+    })
+    const admitted = {} as ToolHandlerActionPolicyContext
+
+    await expect(
+      operations.attachDepartureFleetResource(
+        "avsl_1",
+        { resourceId: "res_1", flags: {}, sortOrder: 0 },
+        admitted,
+      ),
+    ).resolves.toMatchObject({ created: true, assignmentId: "resa_1" })
+    await expect(
+      operations.attachDepartureFleetResource(
+        "avsl_1",
+        { resourceId: "res_1", flags: {}, sortOrder: 0 },
+        admitted,
+      ),
+    ).resolves.toMatchObject({ created: false, assignmentId: "resa_1" })
+
+    expect(attach).toHaveBeenCalledTimes(1)
+    expect(list).toHaveBeenCalledTimes(1)
   })
 
   it("resolves all selected booking-action sources for a deterministic rebuild", async () => {

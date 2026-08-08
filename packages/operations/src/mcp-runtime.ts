@@ -170,12 +170,61 @@ export const voyantToolContextContribution = defineToolContextContribution({
             throw error
           }
         },
-        attachDepartureFleetResource(departureId: string, input: AttachDepartureResourceInput) {
-          return withAllocationToolErrors(() =>
-            attachDepartureResource(db as PostgresJsDatabase, departureId, input, {
-              actorId: c.get("userId") ?? null,
-            }),
+        async attachDepartureFleetResource(
+          departureId: string,
+          input: AttachDepartureResourceInput,
+          admitted: ToolHandlerActionPolicyContext,
+        ) {
+          let attached: Awaited<ReturnType<typeof attachDepartureResource>> | undefined
+          const result = await executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, ...input },
+              evaluatedRisk: "medium",
+            },
+            {
+              async prepare(tx) {
+                attached = await withAllocationToolErrors(() =>
+                  attachDepartureResource(tx as PostgresJsDatabase, departureId, input, {
+                    actorId: c.get("userId") ?? null,
+                  }),
+                )
+              },
+              execute() {
+                if (!attached) throw new Error("Fleet resource attachment produced no result")
+                return Promise.resolve(attached)
+              },
+              async replay() {
+                const resources = await listDepartureResourceLinks(
+                  db as PostgresJsDatabase,
+                  departureId,
+                )
+                const resource = resources.find((candidate) => candidate.refId === input.resourceId)
+                if (!resource) {
+                  throw new ToolError(
+                    "The attached fleet resource could not be reloaded.",
+                    "NOT_FOUND",
+                    { departureId, fleetResourceId: input.resourceId },
+                  )
+                }
+                const assignmentId =
+                  typeof resource.flags.resourceAssignmentId === "string"
+                    ? resource.flags.resourceAssignmentId
+                    : ""
+                if (!assignmentId) {
+                  throw new ToolError(
+                    "The attached fleet resource has no assignment reference.",
+                    "PROVIDER_ERROR",
+                    { departureId, fleetResourceId: input.resourceId },
+                  )
+                }
+                return { resource, assignmentId, created: false }
+              },
+            },
           )
+          return result.value
         },
         async detachDepartureFleetResource(
           departureId: string,

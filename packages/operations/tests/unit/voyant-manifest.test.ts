@@ -224,6 +224,7 @@ describe("operations deployment manifest", () => {
         targetType: "departure",
         targetLifecycle: "existing",
         commandTargetField: "departureId",
+        existingTarget: { durability: "handler-command-result-v1" },
         risk: "medium",
         reversible: true,
       },
