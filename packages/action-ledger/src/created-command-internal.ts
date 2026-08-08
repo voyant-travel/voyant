@@ -535,8 +535,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
   const approvalReasonCode =
     input.admitted.invocation.reasonCode ??
     (approvalId && !input.admitted.invocation.idempotencyFingerprint
-      ? ((await actionLedgerService.getApproval(input.db, approvalId))?.requestedAction?.entry
-          .reasonCode ?? null)
+      ? ((await actionLedgerService.getApproval(input.db, approvalId))?.approval.reasonCode ?? null)
       : null)
   const fingerprint = await buildActionApprovalCommandFingerprint({
     actionName,

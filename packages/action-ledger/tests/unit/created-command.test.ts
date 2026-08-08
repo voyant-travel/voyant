@@ -1473,7 +1473,6 @@ function mockApprovedExistingCommand(
     approvalId: "appr_existing",
     idempotencyKey: "price_1",
     idempotencyFingerprint: fingerprint,
-    reasonCode: "operator_approved",
   })
   vi.spyOn(actionLedgerService, "validateApprovedAction").mockImplementation(async (_db, input) =>
     input.organizationId !== requestedAction.organizationId
