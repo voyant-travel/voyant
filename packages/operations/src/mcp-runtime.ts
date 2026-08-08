@@ -34,6 +34,7 @@ import {
   listDepartureResourceLinks,
 } from "./availability/service-allocation-resource-link.js"
 import {
+  getDepartureRoomBlockMaterializationResult,
   type MaterializeFromRoomBlockInput,
   materializeDepartureRoomsFromBlock,
   releaseDepartureRoomBlock,
@@ -283,12 +284,44 @@ export const voyantToolContextContribution = defineToolContextContribution({
             },
           ).then((result) => result.value)
         },
-        materializeDepartureRoomBlock(departureId: string, input: MaterializeFromRoomBlockInput) {
-          return withAllocationToolErrors(() =>
-            materializeDepartureRoomsFromBlock(db as PostgresJsDatabase, departureId, input, {
-              actorId: c.get("userId") ?? null,
-            }),
-          )
+        materializeDepartureRoomBlock(
+          departureId: string,
+          input: MaterializeFromRoomBlockInput,
+          admitted: ToolHandlerActionPolicyContext,
+        ) {
+          let materialized:
+            | Awaited<ReturnType<typeof materializeDepartureRoomsFromBlock>>
+            | undefined
+          return executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, ...input },
+              evaluatedRisk: "medium",
+            },
+            {
+              async prepare(tx) {
+                materialized = await withAllocationToolErrors(() =>
+                  materializeDepartureRoomsFromBlock(tx as PostgresJsDatabase, departureId, input, {
+                    actorId: c.get("userId") ?? null,
+                  }),
+                )
+              },
+              execute() {
+                if (!materialized) throw new Error("Room block materialization produced no result")
+                return Promise.resolve(materialized)
+              },
+              replay: () =>
+                withAllocationToolErrors(() =>
+                  getDepartureRoomBlockMaterializationResult(
+                    db as PostgresJsDatabase,
+                    departureId,
+                    input,
+                  ),
+                ),
+            },
+          ).then((result) => result.value)
         },
         releaseDepartureRoomBlock(
           departureId: string,

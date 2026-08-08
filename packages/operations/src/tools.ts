@@ -458,6 +458,27 @@ export const SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.materialize-departure-room-block`,
+  capabilityVersion: VERSION,
+  canonicalName: "materialize_departure_room_block",
+  actionPolicy: {
+    id: `${OWNER}#action.materialize-departure-room-block`,
+    capabilityId: `${OWNER}#action.materialize-departure-room-block`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "medium",
+    ledger: "required",
+    approval: "required",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -739,10 +760,12 @@ export const materializeDepartureRoomBlockTool = defineTool<
   tier: "write",
   riskPolicy: ROOM_BLOCK_MATERIALIZE_RISK,
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, ...input }, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY)
     return parseJsonResult(
       materializeDepartureRoomBlockOutputSchema,
-      await operations(ctx).materializeDepartureRoomBlock(departureId, input),
+      await operations(ctx).materializeDepartureRoomBlock(departureId, input, admitted),
     )
   },
 })
