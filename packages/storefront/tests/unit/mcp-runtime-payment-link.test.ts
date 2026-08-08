@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const executeAdmittedExistingTargetCommand = vi.hoisted(() => vi.fn())
 
-vi.mock("@voyant-travel/action-ledger", () => ({ executeAdmittedExistingTargetCommand }))
+vi.mock("@voyant-travel/action-ledger", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@voyant-travel/action-ledger")>()),
+  executeAdmittedExistingTargetCommand,
+}))
 
 import { financeService } from "@voyant-travel/finance"
 import { createPaymentLinkToolServices } from "../../src/mcp-runtime.js"
