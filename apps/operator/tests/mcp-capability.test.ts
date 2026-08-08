@@ -638,6 +638,16 @@ async function seedCancellationPolicy(mark: string): Promise<void> {
     priority: 100,
   })
   if (!assignment) throw new Error("Cannot assign cancellation policy")
+  const resolved = await policiesService.resolvePolicy(verifyDb, {
+    kind: "cancellation",
+    productId,
+    at: new Date().toISOString().slice(0, 10),
+  })
+  if (resolved?.policy.id !== policy.id) {
+    throw new Error("Seeded cancellation policy is not applicable to the product")
+  }
+  const snapshot = await policiesService.captureCancellationPolicySnapshot(verifyDb, policy.id)
+  if (!snapshot) throw new Error("Seeded cancellation policy cannot be captured")
 }
 
 /** Exactly the conditions `it.each` asserts, so the report can never disagree. */
