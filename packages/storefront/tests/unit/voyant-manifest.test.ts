@@ -346,6 +346,7 @@ describe("storefront deployment manifest", () => {
           targetLifecycle: "existing",
           allowedActorTypes: ["staff"],
           approval: "required",
+          existingTarget: { durability: "handler-command-result-v1" },
         }),
       ]),
     )
