@@ -1,4 +1,5 @@
 export * from "./closed-provider-adapters.js"
+export * from "./closed-live-provider.js"
 export * from "./live-provider.js"
 export * from "./managed-runtime.js"
 export * from "./provider-ports.js"
