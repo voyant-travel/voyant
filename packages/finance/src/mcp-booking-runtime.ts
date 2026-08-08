@@ -90,11 +90,10 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
                   termsInput: { productId: string },
                 ) {
                   const capturedAt = new Date().toISOString()
-                  const policy =
-                    await financeRuntime.captureApplicableCancellationPolicySnapshot(
-                      transaction,
-                      { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
-                    )
+                  const policy = await financeRuntime.captureApplicableCancellationPolicySnapshot(
+                    transaction,
+                    { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
+                  )
                   return policy
                     ? {
                         schemaVersion: 1 as const,
