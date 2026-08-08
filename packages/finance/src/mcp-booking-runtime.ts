@@ -8,13 +8,13 @@
  * into the Finance tool-context contribution there.
  */
 import {
-  type BookingsCancellationPolicyRuntime,
   bookingsService,
   bookingToolDetailSchema,
   redactBookingContact,
   redactTravelerIdentity,
   shouldRevealBookingPii,
 } from "@voyant-travel/bookings"
+import type { BookingsCancellationPolicyRuntime } from "@voyant-travel/bookings/runtime-port"
 import { isStaffRbacEnforced } from "@voyant-travel/hono"
 import { ToolError, withServerResolvedIdempotencyKey } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
