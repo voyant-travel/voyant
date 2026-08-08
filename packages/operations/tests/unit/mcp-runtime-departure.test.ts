@@ -15,6 +15,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 import { availabilityService } from "../../src/availability/service.js"
 import * as assignments from "../../src/availability/service-allocation-assignment-batch.js"
 import * as resourceLinks from "../../src/availability/service-allocation-resource-link.js"
+import * as roomBlocks from "../../src/availability/service-allocation-room-block.js"
 import * as travelerPreferences from "../../src/availability/service-allocation-traveler-preferences.js"
 import { AvailabilitySlotRevisionConflictError } from "../../src/availability/service-core.js"
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
@@ -334,6 +335,47 @@ describe("departure created-target runtime", () => {
     ).resolves.toMatchObject({ unchanged: 1 })
 
     expect(assign).toHaveBeenCalledTimes(1)
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("materializes rooms once and reloads the authoritative block resources on retry", async () => {
+    const outcome = {
+      blockId: "block_1",
+      kind: "room",
+      created: 2,
+      skippedExisting: 0,
+      roomsPickedUp: 2,
+      pickupId: "pickup_1",
+      remainingAfter: 3,
+      resources: [],
+    }
+    const materialize = vi
+      .spyOn(roomBlocks, "materializeDepartureRoomsFromBlock")
+      .mockResolvedValue(outcome)
+    const reload = vi
+      .spyOn(roomBlocks, "getDepartureRoomBlockMaterializationResult")
+      .mockResolvedValue({ ...outcome, created: 0, skippedExisting: 2, roomsPickedUp: 0 })
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({})
+        completed = true
+        return { replayed: false, value: await handlers.execute() }
+      }
+      return { replayed: true, value: await handlers.replay() }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+    const input = { blockId: "block_1", kind: "room", namePattern: "Room {sequence}" }
+
+    await expect(
+      operations.materializeDepartureRoomBlock("avsl_1", input, admitted),
+    ).resolves.toMatchObject({ created: 2, roomsPickedUp: 2 })
+    await expect(
+      operations.materializeDepartureRoomBlock("avsl_1", input, admitted),
+    ).resolves.toMatchObject({ created: 0, skippedExisting: 2 })
+
+    expect(materialize).toHaveBeenCalledTimes(1)
     expect(reload).toHaveBeenCalledTimes(1)
   })
 

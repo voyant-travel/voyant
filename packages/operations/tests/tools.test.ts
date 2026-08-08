@@ -8,6 +8,7 @@ import {
   createDepartureTool,
   detachDepartureFleetResourceTool,
   getOperatorDashboardSummaryTool,
+  MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY,
   materializeDepartureRoomBlockTool,
   type OperationsToolServices,
   type OperatorDashboardToolContext,
@@ -378,50 +379,54 @@ describe("Operations tools", () => {
 
   it("draws a departure's rooms from a contracted block and reports the hold it took", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(materializeDepartureRoomBlockTool)
+    writeRegistry.register(materializeDepartureRoomBlockTool, {
+      actionPolicy: MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY.actionPolicy,
+    })
     let forwarded: unknown
     let forwardedDepartureId: string | undefined
     const materializedAt = new Date("2026-07-28T12:00:00.000Z")
     const result = await writeRegistry.dispatch<{ resources: Array<Record<string, unknown>> }>(
       "materialize_departure_room_block",
       { departureId: "avsl_1", blockId: "rmbk_1", rooms: 2 },
-      contextWith({
-        async materializeDepartureRoomBlock(departureId, input) {
-          forwardedDepartureId = departureId
-          forwarded = input
-          return {
-            blockId: input.blockId,
-            kind: input.kind,
-            created: 2,
-            skippedExisting: 0,
-            roomsPickedUp: 2,
-            pickupId: "rbpu_1",
-            remainingAfter: 18,
-            resources: [
-              {
-                id: "alrs_room_1",
-                slotId: departureId,
-                kind: input.kind,
-                refType: "room_block",
-                refId: input.blockId,
-                label: "Room 1",
-                capacity: 2,
-                occupancyMin: 1,
-                roomTypeId: "rmty_double",
-                bedConfiguration: "twin",
-                accessible: false,
-                minAge: null,
-                maxAge: null,
-                flags: { roomBlockPickupId: "rbpu_1" },
-                parentId: null,
-                sortOrder: 0,
-                createdAt: materializedAt,
-                updatedAt: materializedAt,
-              },
-            ],
-          }
-        },
-      }),
+      admittedMaterializeContext(
+        contextWith({
+          async materializeDepartureRoomBlock(departureId, input) {
+            forwardedDepartureId = departureId
+            forwarded = input
+            return {
+              blockId: input.blockId,
+              kind: input.kind,
+              created: 2,
+              skippedExisting: 0,
+              roomsPickedUp: 2,
+              pickupId: "rbpu_1",
+              remainingAfter: 18,
+              resources: [
+                {
+                  id: "alrs_room_1",
+                  slotId: departureId,
+                  kind: input.kind,
+                  refType: "room_block",
+                  refId: input.blockId,
+                  label: "Room 1",
+                  capacity: 2,
+                  occupancyMin: 1,
+                  roomTypeId: "rmty_double",
+                  bedConfiguration: "twin",
+                  accessible: false,
+                  minAge: null,
+                  maxAge: null,
+                  flags: { roomBlockPickupId: "rbpu_1" },
+                  parentId: null,
+                  sortOrder: 0,
+                  createdAt: materializedAt,
+                  updatedAt: materializedAt,
+                },
+              ],
+            }
+          },
+        }),
+      ),
     )
 
     expect(forwardedDepartureId).toBe("avsl_1")
@@ -811,6 +816,29 @@ function admittedAssignmentsContext<T extends ToolContext>(context: T): T {
         },
       },
       invocation: { approvalId: "appr_assign", idempotencyFingerprint: "fp_assign" },
+    } as never,
+  }
+}
+
+function admittedMaterializeContext<T extends ToolContext>(context: T): T {
+  const policy = MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY
+  return {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: policy.capabilityId,
+      capabilityVersion: policy.capabilityVersion,
+      canonicalName: policy.canonicalName,
+      actionPolicy: {
+        ...policy.actionPolicy,
+        enforcement: "handler",
+        invocation: {
+          controlField: "_voyant",
+          requiredFields: ["approvalId", "idempotencyFingerprint"],
+          optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+          fingerprintAlgorithm: "action-ledger-command-v1",
+        },
+      },
+      invocation: { approvalId: "appr_materialize", idempotencyFingerprint: "fp_materialize" },
     } as never,
   }
 }

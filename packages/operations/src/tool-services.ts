@@ -59,6 +59,7 @@ export interface OperationsToolServices {
   materializeDepartureRoomBlock(
     departureId: string,
     input: z.infer<typeof materializeFromRoomBlockSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   releaseDepartureRoomBlock(
     departureId: string,
