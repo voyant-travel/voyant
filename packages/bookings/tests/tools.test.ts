@@ -147,9 +147,9 @@ describe("bookings tools", () => {
       requiredScopes: ["bookings:write"],
       riskPolicy: { destructive: true, reversible: false, confirmationRequired: true },
     })
-    expect(
-      bookingsTools.find((tool) => tool.name === "cancel_booking"),
-    ).toMatchObject({ resolvesIdempotencyKeyServerSide: true })
+    expect(bookingsTools.find((tool) => tool.name === "cancel_booking")).toMatchObject({
+      resolvesIdempotencyKeyServerSide: true,
+    })
     expect(
       bookingsTools
         .find((tool) => tool.name === "cancel_booking")
