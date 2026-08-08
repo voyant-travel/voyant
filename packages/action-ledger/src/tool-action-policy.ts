@@ -197,6 +197,23 @@ export function createToolActionPolicyGate(
           attempt += 1
           continue
         }
+        if (!terminal) {
+          throw new ToolError(
+            "This approved Tool execution is already in progress.",
+            "PROVIDER_UNAVAILABLE",
+            {
+              reason: "approved_execution_in_progress",
+              attempt,
+              actionId: preflight.entry.id,
+            },
+            undefined,
+            {
+              nextSteps: [
+                "Wait briefly, then retry the same approved command. Do not request another approval.",
+              ],
+            },
+          )
+        }
         throw duplicateDispatchError(preflight.entry.id, serverOwnedTarget, executionKey)
       }
 
