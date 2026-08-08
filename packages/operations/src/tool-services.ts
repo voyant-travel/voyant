@@ -36,6 +36,7 @@ export interface OperationsToolServices {
   attachDepartureFleetResource(
     departureId: string,
     input: z.infer<typeof attachDepartureResourceSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   detachDepartureFleetResource(
     departureId: string,

@@ -2,6 +2,7 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import {
+  ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY,
   attachDepartureFleetResourceTool,
   CREATE_DEPARTURE_HANDLER_POLICY,
   createDepartureTool,
@@ -240,36 +241,40 @@ describe("Operations tools", () => {
 
   it("attaches a fleet resource with the departure lifted out of the flat argument object", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(attachDepartureFleetResourceTool)
+    writeRegistry.register(attachDepartureFleetResourceTool, {
+      actionPolicy: ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY.actionPolicy,
+    })
     let forwarded: unknown
     let forwardedDepartureId: string | undefined
     const result = await writeRegistry.dispatch(
       "attach_departure_fleet_resource",
       { departureId: "avsl_1", resourceId: "res_coach_1", capacity: 48 },
-      contextWith({
-        async attachDepartureFleetResource(departureId, input) {
-          forwardedDepartureId = departureId
-          forwarded = input
-          return {
-            resource: {
-              id: "alrs_1",
-              slotId: departureId,
-              kind: "vehicle",
-              refType: "resource",
-              refId: "res_coach_1",
-              label: "Coach 1 (C1)",
-              capacity: 48,
-              flags: { resourceAssignmentId: "resa_1" },
-              parentId: null,
-              sortOrder: 0,
-              createdAt: new Date("2026-07-28T12:00:00.000Z"),
-              updatedAt: new Date("2026-07-28T12:00:00.000Z"),
-            },
-            assignmentId: "resa_1",
-            created: true,
-          }
-        },
-      }),
+      admittedAttachContext(
+        contextWith({
+          async attachDepartureFleetResource(departureId, input) {
+            forwardedDepartureId = departureId
+            forwarded = input
+            return {
+              resource: {
+                id: "alrs_1",
+                slotId: departureId,
+                kind: "vehicle",
+                refType: "resource",
+                refId: "res_coach_1",
+                label: "Coach 1 (C1)",
+                capacity: 48,
+                flags: { resourceAssignmentId: "resa_1" },
+                parentId: null,
+                sortOrder: 0,
+                createdAt: new Date("2026-07-28T12:00:00.000Z"),
+                updatedAt: new Date("2026-07-28T12:00:00.000Z"),
+              },
+              assignmentId: "resa_1",
+              created: true,
+            }
+          },
+        }),
+      ),
     )
 
     expect(forwardedDepartureId).toBe("avsl_1")
@@ -728,6 +733,28 @@ function admittedUpdateContext<T extends ToolContext>(context: T): T {
         },
       },
       invocation: { approvalId: "appr_update", idempotencyFingerprint: "fp_update" },
+    } as never,
+  }
+}
+
+function admittedAttachContext<T extends ToolContext>(context: T): T {
+  return {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY.capabilityId,
+      capabilityVersion: ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY.capabilityVersion,
+      canonicalName: ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY.canonicalName,
+      actionPolicy: {
+        ...ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY.actionPolicy,
+        enforcement: "handler",
+        invocation: {
+          controlField: "_voyant",
+          requiredFields: ["approvalId", "idempotencyFingerprint"],
+          optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+          fingerprintAlgorithm: "action-ledger-command-v1",
+        },
+      },
+      invocation: { approvalId: "appr_attach", idempotencyFingerprint: "fp_attach" },
     } as never,
   }
 }

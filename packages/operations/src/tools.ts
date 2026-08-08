@@ -395,6 +395,27 @@ export const UPDATE_DEPARTURE_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.attach-departure-fleet-resource`,
+  capabilityVersion: VERSION,
+  canonicalName: "attach_departure_fleet_resource",
+  actionPolicy: {
+    id: `${OWNER}#action.attach-departure-fleet-resource`,
+    capabilityId: `${OWNER}#action.attach-departure-fleet-resource`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "medium",
+    ledger: "required",
+    approval: "required",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -577,10 +598,12 @@ export const attachDepartureFleetResourceTool = defineTool<
   tier: "write",
   riskPolicy: DEPARTURE_WRITE_RISK,
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, ...input }, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY)
     return parseJsonResult(
       attachDepartureFleetResourceOutputSchema,
-      await operations(ctx).attachDepartureFleetResource(departureId, input),
+      await operations(ctx).attachDepartureFleetResource(departureId, input, admitted),
     )
   },
 })
