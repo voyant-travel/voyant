@@ -14,6 +14,10 @@ import type {
 export interface StorefrontShoppingContext {
   storefrontId: string
   channelId: string
+  /** Voyant-managed customer identity; absent/null for an anonymous capability owner. */
+  userId?: string | null
+  /** Voyant-managed buyer account selected for the journey, never browser-derived. */
+  buyerAccountId?: string | null
 }
 
 export interface StorefrontShoppingRuntime {

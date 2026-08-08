@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   createStorefrontShoppingGateway,
   type StorefrontResolvedScope,
+  type StorefrontShoppingContext,
   type StorefrontShoppingResult,
   StorefrontShoppingUnavailableError,
   storefrontPresentationMoneySchema,
@@ -12,7 +13,12 @@ import {
   storefrontTripSelectionUpdateSchema,
 } from "../../src/shopping/index.js"
 
-const context = { storefrontId: "storefront_public", channelId: "channel_web" }
+const context = {
+  storefrontId: "storefront_public",
+  channelId: "channel_web",
+  userId: "user_managed_123",
+  buyerAccountId: "buyer_account_123",
+} satisfies StorefrontShoppingContext
 const scope: StorefrontResolvedScope = {
   marketId: "market_ro",
   locale: "ro-RO",
@@ -42,6 +48,8 @@ describe("storefront shopping schemas", () => {
     "connectionId",
     "source",
     "sourceId",
+    "userId",
+    "buyerAccountId",
   ])("rejects browser trust selector %s", (selector) => {
     expect(() =>
       storefrontShoppingRequestSchema.parse({
