@@ -1,10 +1,6 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
-import {
-  type BookingsCancellationPolicyRuntime,
-  bookingsCancellationPolicyRuntimePort,
-} from "@voyant-travel/bookings/runtime-port"
 import type { Module } from "@voyant-travel/core"
 import { customFieldsRuntimePort } from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
@@ -22,7 +18,6 @@ import {
 } from "./checkout-routes.js"
 import { createInvoiceFxRoutes } from "./invoice-fx.js"
 import { financeLinkable } from "./linkables.js"
-import { configureFinanceBookingCancellationCapture } from "./mcp-booking-runtime.js"
 import {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -226,12 +221,6 @@ export const financeApiModule: ApiModule = createFinanceApiModule()
 
 export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort, getPorts, hasPort, hostOptions }) => {
-    const cancellationPolicy = await getPort<BookingsCancellationPolicyRuntime>(
-      bookingsCancellationPolicyRuntimePort,
-    )
-    configureFinanceBookingCancellationCapture((db, input) =>
-      cancellationPolicy.captureApplicableCancellationPolicySnapshot(db, input),
-    )
     const configured = createFinanceApiModule({
       ...createFinanceRuntime(
         await getPort(financeHostRuntimePort),

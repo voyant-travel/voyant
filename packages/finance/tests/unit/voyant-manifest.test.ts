@@ -36,7 +36,6 @@ describe("finance deployment manifest", () => {
       },
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
       runtimePorts: [
-        { id: "bookings.cancellation-policy.runtime" },
         { id: "finance.host.runtime" },
         { id: "custom-fields.runtime" },
         { id: "finance.notifications.runtime" },
@@ -561,6 +560,7 @@ describe("finance deployment manifest", () => {
       {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#bookings-create-extension",
+        runtimePorts: [{ id: "bookings.cancellation-policy.runtime" }],
         tools: [
           expect.objectContaining({
             id: "@voyant-travel/finance#bookings-create-extension.tool.book-product",

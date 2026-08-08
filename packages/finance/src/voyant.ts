@@ -57,7 +57,6 @@ export const financeVoyantModule = defineModule({
   localId: "finance",
   runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
   runtimePorts: [
-    requirePort(bookingsCancellationPolicyRuntimePort),
     requirePort(financeHostRuntimePort),
     requirePort(customFieldsRuntimePort),
     requirePort(financeNotificationsRuntimePort),
@@ -710,6 +709,7 @@ export const financeBookingsCreateVoyantPlugin = defineExtension({
   id: "@voyant-travel/finance#bookings-create-extension",
   packageName: "@voyant-travel/finance",
   localId: "finance.bookings-create-extension",
+  runtimePorts: [requirePort(bookingsCancellationPolicyRuntimePort)],
   tools: [
     {
       id: "@voyant-travel/finance#bookings-create-extension.tool.book-product",
