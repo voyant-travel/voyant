@@ -40,10 +40,6 @@ export type FinanceRouteRuntime = {
    * why the settlement record does not depend on it.
    */
   executeRefundSettlement?: ExecuteRefundSettlement
-  captureApplicableCancellationPolicySnapshot?: (
-    db: PostgresJsDatabase,
-    input: { productId: string; at: string },
-  ) => Promise<unknown | null>
 } & InvoiceFxOptions
 
 export type ExecuteRefundSettlement = (input: {
@@ -72,7 +68,6 @@ export interface FinanceRuntimeOptions
   resolveMonthlyBookingLimit?: MonthlyBookingLimitResolver
   /** Populated by `createFinanceRuntime` when a payment adapter is selected. */
   executeRefundSettlement?: ExecuteRefundSettlement
-  captureApplicableCancellationPolicySnapshot?: FinanceRouteRuntime["captureApplicableCancellationPolicySnapshot"]
 }
 
 export function buildFinanceRouteRuntime(
@@ -112,7 +107,5 @@ export function buildFinanceRouteRuntime(
     resolveInvoiceExchangeRateResolver: options.resolveInvoiceExchangeRateResolver,
     onInvoiceFxResolutionError: options.onInvoiceFxResolutionError,
     executeRefundSettlement: options.executeRefundSettlement,
-    captureApplicableCancellationPolicySnapshot:
-      options.captureApplicableCancellationPolicySnapshot,
   }
 }

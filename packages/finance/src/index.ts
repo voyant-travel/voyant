@@ -22,6 +22,7 @@ import {
 } from "./checkout-routes.js"
 import { createInvoiceFxRoutes } from "./invoice-fx.js"
 import { financeLinkable } from "./linkables.js"
+import { configureFinanceBookingCancellationCapture } from "./mcp-booking-runtime.js"
 import {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -228,6 +229,9 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
     const cancellationPolicy = await getPort<BookingsCancellationPolicyRuntime>(
       bookingsCancellationPolicyRuntimePort,
     )
+    configureFinanceBookingCancellationCapture((db, input) =>
+      cancellationPolicy.captureApplicableCancellationPolicySnapshot(db, input),
+    )
     const configured = createFinanceApiModule({
       ...createFinanceRuntime(
         await getPort(financeHostRuntimePort),
@@ -245,8 +249,6 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
       // quota. A host that installs a live allowance on bookings alone would
       // serve one cap from the booking routes and another from these.
       ...(hostOptions as Partial<FinanceApiModuleOptions>),
-      captureApplicableCancellationPolicySnapshot: (db, input) =>
-        cancellationPolicy.captureApplicableCancellationPolicySnapshot(db, input),
     })
     const bootstrap = configured.module.bootstrap
     const selected: ApiModule = {

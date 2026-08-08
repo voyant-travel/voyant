@@ -39,6 +39,20 @@ import { toJsonValue } from "./tool-json.js"
 
 type BookingRuntimeDb = PostgresJsDatabase
 
+type CancellationPolicyCapture = (
+  db: PostgresJsDatabase,
+  input: { productId: string; at: string },
+) => Promise<unknown | null>
+
+let captureApplicableCancellationPolicySnapshot: CancellationPolicyCapture | undefined
+
+/** Bind the selected graph's Legal provider for the static Finance Tool context. */
+export function configureFinanceBookingCancellationCapture(
+  capture: CancellationPolicyCapture,
+): void {
+  captureApplicableCancellationPolicySnapshot = capture
+}
+
 export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>) {
   return {
     createBooking: async (
@@ -76,7 +90,7 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
       const bookingNumber = await allocateBookingNumber(db)
       const commandInput = mapBookProductIntentToCommand(input, bookingNumber)
       const financeRuntime = getFinanceRouteRuntime(c)
-      const captureCancellationPolicy = financeRuntime?.captureApplicableCancellationPolicySnapshot
+      const captureCancellationPolicy = captureApplicableCancellationPolicySnapshot
       const result = await executeFinanceBookProductCommand({
         db,
         context: financeToolActionLedgerContext(c),
