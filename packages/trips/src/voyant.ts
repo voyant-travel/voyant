@@ -513,6 +513,7 @@ export const tripsVoyantModule = defineModule({
     },
     {
       id: "@voyant-travel/trips#action.select-candidate",
+      capabilityId: "@voyant-travel/trips#action.select-candidate",
       version: "v1",
       kind: "execute",
       targetType: "trip-requirement",
@@ -526,6 +527,7 @@ export const tripsVoyantModule = defineModule({
       availability: { status: "available" },
       effectBoundary: "local",
       targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
       from: { tools: ["@voyant-travel/trips#tool.select-candidate"] },
     },
   ],
