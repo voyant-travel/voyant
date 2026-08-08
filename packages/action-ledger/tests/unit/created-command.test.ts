@@ -532,7 +532,10 @@ describe("existing-target durable command protocol", () => {
         },
         handlers,
       ),
-    ).rejects.toMatchObject({ code: "ACTION_POLICY_REQUIRED" })
+    ).rejects.toMatchObject({
+      name: "ActionLedgerIdempotencyConflictError",
+      message: "Action ledger idempotency key was reused with a different fingerprint",
+    })
   })
 
   it("rolls back the claim and package intent when intent preparation fails", async () => {
