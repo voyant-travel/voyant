@@ -20,8 +20,11 @@ Every browser object is strict. A browser may request only `marketId`, `locale`,
 and `currency`; it cannot choose a tenant, organization, storefront, channel,
 engine, provider, connection, or source. The host supplies trusted
 `storefrontId` and `channelId` context, resolves the request against active
-market configuration, and returns the selected scope plus the available values
-for pickers.
+market configuration, and may attach Voyant-managed `userId` and
+`buyerAccountId` ownership for a signed-in journey. Those identity values are
+nullable/absent for anonymous capability-owned journeys and are never accepted
+from the browser body. The runtime returns the selected scope plus the available
+values for pickers.
 
 Search prices carry both their supplier-native amount and their one selected
 presentation-currency amount. A currency conversion must include the server's
