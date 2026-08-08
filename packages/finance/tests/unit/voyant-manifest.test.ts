@@ -36,6 +36,7 @@ describe("finance deployment manifest", () => {
       },
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
       runtimePorts: [
+        { id: "bookings.cancellation-policy.runtime" },
         { id: "finance.host.runtime" },
         { id: "custom-fields.runtime" },
         { id: "finance.notifications.runtime" },

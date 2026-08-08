@@ -8,8 +8,6 @@
  * into the Finance tool-context contribution there.
  */
 import {
-  type BookingsCancellationPolicyRuntime,
-  bookingsCancellationPolicyRuntimePort,
   bookingsService,
   bookingToolDetailSchema,
   redactBookingContact,
@@ -78,9 +76,6 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
       const bookingNumber = await allocateBookingNumber(db)
       const commandInput = mapBookProductIntentToCommand(input, bookingNumber)
       const financeRuntime = getFinanceRouteRuntime(c)
-      const cancellationPolicy = c.var.container?.resolve<BookingsCancellationPolicyRuntime>(
-        bookingsCancellationPolicyRuntimePort.id,
-      )
       const result = await executeFinanceBookProductCommand({
         db,
         context: financeToolActionLedgerContext(c),
@@ -88,7 +83,7 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
         admitted: withServerResolvedIdempotencyKey(admitted, idempotencyKey),
         runtime: {
           ...financeRuntime,
-          ...(cancellationPolicy
+          ...(financeRuntime?.captureApplicableCancellationPolicySnapshot
             ? {
                 async captureBookingCancellationTerms(
                   transaction: PostgresJsDatabase,
@@ -96,7 +91,7 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
                 ) {
                   const capturedAt = new Date().toISOString()
                   const policy =
-                    await cancellationPolicy.captureApplicableCancellationPolicySnapshot(
+                    await financeRuntime.captureApplicableCancellationPolicySnapshot(
                       transaction,
                       { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
                     )
