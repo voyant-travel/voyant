@@ -9,8 +9,8 @@
  */
 import {
   type BookingsCancellationPolicyRuntime,
-  bookingsService,
   bookingsCancellationPolicyRuntimePort,
+  bookingsService,
   bookingToolDetailSchema,
   redactBookingContact,
   redactTravelerIdentity,
@@ -95,10 +95,11 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
                   termsInput: { productId: string },
                 ) {
                   const capturedAt = new Date().toISOString()
-                  const policy = await cancellationPolicy.captureApplicableCancellationPolicySnapshot(
-                    transaction,
-                    { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
-                  )
+                  const policy =
+                    await cancellationPolicy.captureApplicableCancellationPolicySnapshot(
+                      transaction,
+                      { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
+                    )
                   return policy
                     ? {
                         schemaVersion: 1 as const,

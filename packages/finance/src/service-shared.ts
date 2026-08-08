@@ -1089,16 +1089,13 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   captureBookingCancellationTerms?: (
     db: PostgresJsDatabase,
     input: { productId: string },
-  ) => Promise<
-    | {
-        schemaVersion: 1
-        source: "booking_quote"
-        sourceId: string
-        capturedAt: string
-        policy: unknown
-      }
-    | null
-  >
+  ) => Promise<{
+    schemaVersion: 1
+    source: "booking_quote"
+    sourceId: string
+    capturedAt: string
+    policy: unknown
+  } | null>
 }
 
 export interface InvoiceVoidedEvent {
