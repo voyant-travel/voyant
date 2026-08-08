@@ -146,13 +146,15 @@ describe("bookings tools", () => {
       tier: "destructive",
       requiredScopes: ["bookings:write"],
       riskPolicy: { destructive: true, reversible: false, confirmationRequired: true },
+      actionPolicy: {
+        invocation: { requiredFields: expect.not.arrayContaining(["idempotencyKey"]) },
+      },
     })
     expect(
       bookingsTools
         .find((tool) => tool.name === "cancel_booking")
         ?.inputSchema.parse({
           id: "bk_1",
-          idempotencyKey: "cancel-bk-1",
           approvalId: "dead-top-level-field",
         }),
     ).not.toHaveProperty("approvalId")
