@@ -8,7 +8,9 @@
  * into the Finance tool-context contribution there.
  */
 import {
+  type BookingsCancellationPolicyRuntime,
   bookingsService,
+  bookingsCancellationPolicyRuntimePort,
   bookingToolDetailSchema,
   redactBookingContact,
   redactTravelerIdentity,
@@ -75,12 +77,41 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
       const idempotencyKey = await deriveBookProductIdempotencyKey(input)
       const bookingNumber = await allocateBookingNumber(db)
       const commandInput = mapBookProductIntentToCommand(input, bookingNumber)
+      const financeRuntime = getFinanceRouteRuntime(c)
+      const cancellationPolicy = c.var.container?.resolve<BookingsCancellationPolicyRuntime>(
+        bookingsCancellationPolicyRuntimePort.id,
+      )
       const result = await executeFinanceBookProductCommand({
         db,
         context: financeToolActionLedgerContext(c),
         commandInput,
         admitted: withServerResolvedIdempotencyKey(admitted, idempotencyKey),
-        runtime: getFinanceRouteRuntime(c),
+        runtime: {
+          ...financeRuntime,
+          ...(cancellationPolicy
+            ? {
+                async captureBookingCancellationTerms(
+                  transaction: PostgresJsDatabase,
+                  termsInput: { productId: string },
+                ) {
+                  const capturedAt = new Date().toISOString()
+                  const policy = await cancellationPolicy.captureApplicableCancellationPolicySnapshot(
+                    transaction,
+                    { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
+                  )
+                  return policy
+                    ? {
+                        schemaVersion: 1 as const,
+                        source: "booking_quote" as const,
+                        sourceId: `book_product:${idempotencyKey}`,
+                        capturedAt,
+                        policy,
+                      }
+                    : null
+                },
+              }
+            : {}),
+        },
       })
       const detail = await readBookingCreateResult(db, c, result.value.bookingId, result.replayed)
       return {
