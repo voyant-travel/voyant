@@ -58,9 +58,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
         ...financeBookingToolServices(
           db as PostgresJsDatabase,
           c,
-          resources[
-            bookingsCancellationPolicyRuntimePort.id
-          ] as BookingsCancellationPolicyRuntime,
+          resources[bookingsCancellationPolicyRuntimePort.id] as BookingsCancellationPolicyRuntime,
         ),
         async issueInvoiceFromBooking(input: {
           command: CreateInvoiceFromBookingInput
