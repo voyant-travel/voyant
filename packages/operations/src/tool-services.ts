@@ -49,6 +49,7 @@ export interface OperationsToolServices {
   setDepartureTravelerAssignments(
     departureId: string,
     input: z.infer<typeof batchAssignTravelerAllocationsSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   /**
    * Room inventory drawn from a contracted accommodation block. Both legs go

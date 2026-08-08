@@ -23,6 +23,7 @@ import { availabilityService } from "./availability/service.js"
 import {
   type AssignTravelerAllocationsBatchInput,
   assignTravelerAllocationsBatch,
+  getTravelerAllocationsBatchResult,
 } from "./availability/service-allocation-assignment-batch.js"
 import { AllocationServiceError } from "./availability/service-allocation-errors.js"
 import {
@@ -252,12 +253,35 @@ export const voyantToolContextContribution = defineToolContextContribution({
         setDepartureTravelerAssignments(
           departureId: string,
           input: AssignTravelerAllocationsBatchInput,
+          admitted: ToolHandlerActionPolicyContext,
         ) {
-          return withAllocationToolErrors(() =>
-            assignTravelerAllocationsBatch(db as PostgresJsDatabase, departureId, input, {
-              actorId: c.get("userId") ?? null,
-            }),
-          )
+          let assigned: Awaited<ReturnType<typeof assignTravelerAllocationsBatch>> | undefined
+          return executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, ...input },
+              evaluatedRisk: "medium",
+            },
+            {
+              async prepare(tx) {
+                assigned = await withAllocationToolErrors(() =>
+                  assignTravelerAllocationsBatch(tx as PostgresJsDatabase, departureId, input, {
+                    actorId: c.get("userId") ?? null,
+                  }),
+                )
+              },
+              execute() {
+                if (!assigned) throw new Error("Traveler assignment produced no result")
+                return Promise.resolve(assigned)
+              },
+              replay: () =>
+                withAllocationToolErrors(() =>
+                  getTravelerAllocationsBatchResult(db as PostgresJsDatabase, departureId, input),
+                ),
+            },
+          ).then((result) => result.value)
         },
         materializeDepartureRoomBlock(departureId: string, input: MaterializeFromRoomBlockInput) {
           return withAllocationToolErrors(() =>

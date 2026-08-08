@@ -605,6 +605,7 @@ export const operationsVoyantModule = defineModule({
       availability: { status: "available" },
       effectBoundary: "local",
       targetLifecycle: "existing",
+      existingTarget: { durability: "handler-command-result-v1" },
       from: { tools: ["@voyant-travel/operations#tool.set-departure-traveler-assignments"] },
     },
     {

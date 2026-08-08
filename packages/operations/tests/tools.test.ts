@@ -15,6 +15,7 @@ import {
   rebuildBookingActionsTool,
   releaseDepartureRoomBlockTool,
   resolveOperatorDashboardWindow,
+  SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY,
   SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY,
   setDepartureTravelerAssignmentsTool,
   setDepartureTravelerRoomingPreferencesTool,
@@ -335,7 +336,9 @@ describe("Operations tools", () => {
 
   it("places a whole set of travelers in one call", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(setDepartureTravelerAssignmentsTool)
+    writeRegistry.register(setDepartureTravelerAssignmentsTool, {
+      actionPolicy: SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY.actionPolicy,
+    })
     let forwarded: unknown
     const result = await writeRegistry.dispatch(
       "set_departure_traveler_assignments",
@@ -347,18 +350,20 @@ describe("Operations tools", () => {
           { travelerId: "bkpt_2", resourceId: null },
         ],
       },
-      contextWith({
-        async setDepartureTravelerAssignments(_departureId, input) {
-          forwarded = input
-          return {
-            kind: input.kind,
-            assigned: 1,
-            unassigned: 1,
-            unchanged: 0,
-            travelerIds: ["bkpt_1", "bkpt_2"],
-          }
-        },
-      }),
+      admittedAssignmentsContext(
+        contextWith({
+          async setDepartureTravelerAssignments(_departureId, input) {
+            forwarded = input
+            return {
+              kind: input.kind,
+              assigned: 1,
+              unassigned: 1,
+              unchanged: 0,
+              travelerIds: ["bkpt_1", "bkpt_2"],
+            }
+          },
+        }),
+      ),
     )
 
     expect(forwarded).not.toHaveProperty("departureId")
@@ -783,6 +788,29 @@ function admittedRoomingPreferencesContext<T extends ToolContext>(context: T): T
         },
       },
       invocation: { approvalId: "appr_rooming", idempotencyFingerprint: "fp_rooming" },
+    } as never,
+  }
+}
+
+function admittedAssignmentsContext<T extends ToolContext>(context: T): T {
+  const policy = SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY
+  return {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: policy.capabilityId,
+      capabilityVersion: policy.capabilityVersion,
+      canonicalName: policy.canonicalName,
+      actionPolicy: {
+        ...policy.actionPolicy,
+        enforcement: "handler",
+        invocation: {
+          controlField: "_voyant",
+          requiredFields: ["approvalId", "idempotencyFingerprint"],
+          optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+          fingerprintAlgorithm: "action-ledger-command-v1",
+        },
+      },
+      invocation: { approvalId: "appr_assign", idempotencyFingerprint: "fp_assign" },
     } as never,
   }
 }
