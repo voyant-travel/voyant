@@ -298,45 +298,54 @@ async function prepareBookingContractTarget(
     },
   }
 
-  const contract = reusable
-    ? await db
-        .update(contracts)
-        .set({
-          title: reusable.title || `${selected.template.name} — ${booking.bookingNumber}`,
-          templateVersionId: selected.version.id,
-          personId: reusable.personId ?? booking.personId,
-          organizationId: reusable.organizationId ?? booking.organizationId,
-          channelId: reusable.channelId ?? origin?.channelId ?? null,
-          language,
-          variables,
-          renderedBody,
-          renderedBodyFormat: "html",
-          metadata,
-          updatedAt: new Date(),
-        })
-        .where(and(eq(contracts.id, reusable.id), eq(contracts.status, "draft")))
-        .returning()
-        .then(([row]) => row ?? null)
-    : await contractsService.createContract(
-        db,
-        {
-          scope: "customer",
-          status: "draft",
-          title: `${selected.template.name} — ${booking.bookingNumber}`,
-          templateVersionId: selected.version.id,
-          seriesId: null,
-          bookingId,
-          personId: booking.personId,
-          organizationId: booking.organizationId,
-          channelId: origin?.channelId ?? null,
-          language,
-          variables,
-          renderedBody,
-          renderedBodyFormat: "html",
-          metadata,
-        },
-        { allowBookingContractWorkflow: true },
-      )
+  let contract: typeof contracts.$inferSelect | null
+  if (reusable) {
+    contract = await db
+      .update(contracts)
+      .set({
+        title: reusable.title || `${selected.template.name} — ${booking.bookingNumber}`,
+        templateVersionId: selected.version.id,
+        personId: reusable.personId ?? booking.personId,
+        organizationId: reusable.organizationId ?? booking.organizationId,
+        channelId: reusable.channelId ?? origin?.channelId ?? null,
+        language,
+        variables,
+        renderedBody,
+        renderedBodyFormat: "html",
+        metadata,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contracts.id, reusable.id), eq(contracts.status, "draft")))
+      .returning()
+      .then(([row]) => row ?? null)
+  } else {
+    const created = await contractsService.createContract(
+      db,
+      {
+        scope: "customer",
+        status: "draft",
+        title: `${selected.template.name} — ${booking.bookingNumber}`,
+        templateVersionId: selected.version.id,
+        seriesId: null,
+        bookingId,
+        personId: booking.personId,
+        organizationId: booking.organizationId,
+        channelId: origin?.channelId ?? null,
+        language,
+        variables,
+        metadata,
+      },
+      { allowBookingContractWorkflow: true },
+    )
+    contract = created
+      ? await db
+          .update(contracts)
+          .set({ renderedBody, renderedBodyFormat: "html", updatedAt: new Date() })
+          .where(eq(contracts.id, created.id))
+          .returning()
+          .then(([row]) => row ?? null)
+      : null
+  }
   if (!contract) return { status: "skipped", reason: "contract_not_mutable" }
 
   return {
