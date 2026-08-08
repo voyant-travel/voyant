@@ -20,8 +20,7 @@ export function createOwnedBookingHandlersRegistry(
     captureCancellationPolicySnapshot: (
       db: Parameters<typeof legal.captureCancellationPolicySnapshot>[0],
       input: Parameters<typeof legal.captureCancellationPolicySnapshot>[1],
-    ) =>
-      legal.captureCancellationPolicySnapshot(db, input),
+    ) => legal.captureCancellationPolicySnapshot(db, input),
   }
   inventory.registerOwnedBookingHandler(registry, host)
   accommodations.registerOwnedBookingHandler(registry, host)
