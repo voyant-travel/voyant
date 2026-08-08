@@ -531,7 +531,13 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
   }
   const actionName = requiredValue(selected.capabilityId, "capability id")
   const approvalPolicy = selected.approval === "required" ? "required" : "none"
-  const approvalReasonCode = input.admitted.invocation.reasonCode ?? null
+  const approvalId = input.admitted.invocation.approvalId?.trim()
+  const approvalReasonCode =
+    input.admitted.invocation.reasonCode ??
+    (approvalId && !input.admitted.invocation.idempotencyFingerprint
+      ? ((await actionLedgerService.getApproval(input.db, approvalId))?.requestedAction?.entry
+          .reasonCode ?? null)
+      : null)
   const fingerprint = await buildActionApprovalCommandFingerprint({
     actionName,
     actionVersion: selected.version,
@@ -557,7 +563,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
   ) {
     throw new ActionLedgerCreatedCommandProtocolError("forged_approval_linkage")
   }
-  if (selected.approval === "required" && !input.admitted.invocation.approvalId?.trim()) {
+  if (selected.approval === "required" && !approvalId) {
     await throwHandlerApprovalRequired({
       db: input.db,
       context: input.context,
@@ -580,7 +586,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
   const approvalControls =
     selected.approval === "required"
       ? {
-          approvalId: input.admitted.invocation.approvalId ?? "",
+          approvalId: approvalId ?? "",
           idempotencyKey,
           idempotencyFingerprint:
             input.admitted.invocation.idempotencyFingerprint?.trim() || fingerprint,
