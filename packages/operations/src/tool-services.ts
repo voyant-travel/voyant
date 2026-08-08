@@ -68,6 +68,7 @@ export interface OperationsToolServices {
     departureId: string,
     travelerId: string,
     input: z.infer<typeof updateTravelerRoomingPreferencesSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   rebuildBookingActions(): Promise<BookingActionSyncSummary>
   getAvailabilityOverview(query: z.infer<typeof availabilityOverviewQuerySchema>): Promise<unknown>
