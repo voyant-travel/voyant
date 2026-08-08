@@ -41,9 +41,13 @@ export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["finance"],
-  contribute: ({ context, request, resources }) => {
+  async contribute({ context, request, resources }) {
     const c = request as Context<Env>
     const db = context.db as Parameters<typeof financeService.listInvoices>[0]
+    const cancellationPolicy = (await Promise.resolve(
+      resources[bookingsCancellationPolicyRuntimePort.id],
+    )) as BookingsCancellationPolicyRuntime
+    await bookingsCancellationPolicyRuntimePort.test(cancellationPolicy)
     return {
       finance: {
         listInvoices: (query: Parameters<typeof financeService.listInvoices>[1]) =>
@@ -58,7 +62,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
         ...financeBookingToolServices(
           db as PostgresJsDatabase,
           c,
-          resources[bookingsCancellationPolicyRuntimePort.id] as BookingsCancellationPolicyRuntime,
+          cancellationPolicy,
         ),
         async issueInvoiceFromBooking(input: {
           command: CreateInvoiceFromBookingInput
