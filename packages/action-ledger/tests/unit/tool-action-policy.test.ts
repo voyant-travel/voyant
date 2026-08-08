@@ -303,7 +303,10 @@ describe("generic MCP action-policy gate", () => {
       requestedAction: { id: "requested_1", idempotencyKey: derivedRequestId },
       idempotencyFingerprint: fingerprint,
     } as never)
-    const entries = new Map<string, { id: string; status: string; idempotencyScope?: string | null }>()
+    const entries = new Map<
+      string,
+      { id: string; status: string; idempotencyScope?: string | null }
+    >()
     vi.spyOn(actionLedgerService, "appendEntry").mockImplementation(async (_db, input) => {
       const identity = `${input.idempotencyScope}:${input.idempotencyKey}`
       const existing = entries.get(identity)
@@ -312,12 +315,15 @@ describe("generic MCP action-policy gate", () => {
       entries.set(identity, entry)
       return { entry, replayed: false } as never
     })
-    vi.spyOn(actionLedgerService, "listEntries").mockImplementation(async (_db, input) => ({
-      entries: [...entries.values()].filter(
-        (entry) => entry.idempotencyScope === input.idempotencyScope,
-      ),
-      nextCursor: null,
-    }) as never)
+    vi.spyOn(actionLedgerService, "listEntries").mockImplementation(
+      async (_db, input) =>
+        ({
+          entries: [...entries.values()].filter(
+            (entry) => entry.idempotencyScope === input.idempotencyScope,
+          ),
+          nextCursor: null,
+        }) as never,
+    )
     let completeRetry!: (value: { ok: true }) => void
     const retryResult = new Promise<{ ok: true }>((resolve) => {
       completeRetry = resolve

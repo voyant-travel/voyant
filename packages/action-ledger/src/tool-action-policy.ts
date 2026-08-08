@@ -156,7 +156,7 @@ export function createToolActionPolicyGate(
 
       const actionName = selected.capabilityId ?? selected.id
       let attempt = 1
-      let preflight
+      let preflight: Awaited<ReturnType<typeof appendActionLedgerMutation>>
       while (true) {
         preflight = await appendActionLedgerMutation(input.db, {
           context: input.requestContext,
