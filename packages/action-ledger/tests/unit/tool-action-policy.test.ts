@@ -318,10 +318,14 @@ describe("generic MCP action-policy gate", () => {
       ),
       nextCursor: null,
     }) as never)
+    let completeRetry!: (value: { ok: true }) => void
+    const retryResult = new Promise<{ ok: true }>((resolve) => {
+      completeRetry = resolve
+    })
     const dispatch = vi
       .fn<() => Promise<{ ok: true }>>()
       .mockRejectedValueOnce(new Error("readiness changed before publication"))
-      .mockResolvedValueOnce({ ok: true })
+      .mockReturnValueOnce(retryResult)
     const invoke = () =>
       gate(selected).execute(
         execution(selected, { confirmed: true, approvalId: "approval_1" }, commandInput),
@@ -329,7 +333,15 @@ describe("generic MCP action-policy gate", () => {
       )
 
     await expect(invoke()).rejects.toThrow("readiness changed before publication")
-    await expect(invoke()).resolves.toEqual({ ok: true })
+    const retry = invoke()
+    await vi.waitFor(() => expect(dispatch).toHaveBeenCalledTimes(2))
+    await expect(invoke()).rejects.toMatchObject({
+      code: "PROVIDER_UNAVAILABLE",
+      retryable: true,
+      meta: { reason: "approved_execution_in_progress", attempt: 2 },
+    })
+    completeRetry({ ok: true })
+    await expect(retry).resolves.toEqual({ ok: true })
     expect(dispatch).toHaveBeenCalledTimes(2)
   })
 
