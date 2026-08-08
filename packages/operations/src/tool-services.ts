@@ -26,6 +26,7 @@ export interface OperationsToolServices {
   updateDeparture(
     id: string,
     patch: Partial<z.infer<typeof availabilitySlotCoreSchema>> & { updatedAt?: string },
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   /**
    * Departure-planning writes. Each mirrors one leg of

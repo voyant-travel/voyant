@@ -216,6 +216,7 @@ describe("operations deployment manifest", () => {
         approval: "required",
         targetLifecycle: "existing",
         commandTargetField: "id",
+        existingTarget: { durability: "handler-command-result-v1" },
         reversible: true,
       },
       attach_departure_fleet_resource: {

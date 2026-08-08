@@ -1,3 +1,4 @@
+import { executeAdmittedExistingTargetCommand } from "@voyant-travel/action-ledger"
 import { executeAdmittedCreatedTargetCommand } from "@voyant-travel/action-ledger/created-command"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger/request-context"
 import {
@@ -126,9 +127,34 @@ export const voyantToolContextContribution = defineToolContextContribution({
         async updateDeparture(
           id: string,
           patch: Parameters<typeof availabilityService.updateSlot>[2],
+          admitted: ToolHandlerActionPolicyContext,
         ) {
           try {
-            return await availabilityService.updateSlot(db, id, patch, { eventBus })
+            let updated: Awaited<ReturnType<typeof availabilityService.updateSlot>> | undefined
+            const result = await executeAdmittedExistingTargetCommand(
+              {
+                db: db as unknown as AnyDrizzleDb,
+                context: actionLedgerContext(c),
+                admitted,
+                commandInput: { id, ...patch },
+                evaluatedRisk: "medium",
+              },
+              {
+                async prepare(tx) {
+                  updated = await availabilityService.updateSlot(
+                    tx as PostgresJsDatabase,
+                    id,
+                    patch,
+                    { eventBus },
+                  )
+                },
+                execute() {
+                  return Promise.resolve(updated)
+                },
+                replay: () => availabilityService.getSlotById(db as PostgresJsDatabase, id),
+              },
+            )
+            return result.value
           } catch (error) {
             if (error instanceof AvailabilitySlotRevisionConflictError) {
               throw new ToolError(
