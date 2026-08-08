@@ -14,6 +14,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 
 import { availabilityService } from "../../src/availability/service.js"
 import * as assignments from "../../src/availability/service-allocation-assignment-batch.js"
+import * as allocationAudit from "../../src/availability/service-allocation-audit.js"
 import * as resourceLinks from "../../src/availability/service-allocation-resource-link.js"
 import * as roomBlocks from "../../src/availability/service-allocation-room-block.js"
 import * as travelerPreferences from "../../src/availability/service-allocation-traveler-preferences.js"
@@ -377,6 +378,74 @@ describe("departure created-target runtime", () => {
 
     expect(materialize).toHaveBeenCalledTimes(1)
     expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("detaches once and reloads the deletion outcome from its command audit", async () => {
+    const outcome = { removedResourceIds: ["seat_1", "coach_1"], assignmentId: "assign_1" }
+    const detach = vi.spyOn(resourceLinks, "detachDepartureResource").mockResolvedValue(outcome)
+    const audit = vi
+      .spyOn(allocationAudit, "findAllocationAuditByCommandClaim")
+      .mockResolvedValue(outcome)
+    const command = { causation: { claimActionId: "act_claim_1" } }
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({}, command)
+        completed = true
+        return { replayed: false, value: await handlers.execute(command) }
+      }
+      return { replayed: true, value: await handlers.replay(command) }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+
+    await expect(
+      operations.detachDepartureFleetResource("avsl_1", "res_1", { cascade: true }, admitted),
+    ).resolves.toEqual(outcome)
+    await expect(
+      operations.detachDepartureFleetResource("avsl_1", "res_1", { cascade: true }, admitted),
+    ).resolves.toEqual(outcome)
+
+    expect(detach).toHaveBeenCalledTimes(1)
+    expect(audit).toHaveBeenCalledWith(expect.anything(), {
+      slotId: "avsl_1",
+      action: "resource.detach",
+      commandClaimActionId: "act_claim_1",
+    })
+  })
+
+  it("releases a room block once and reloads the deletion outcome from its command audit", async () => {
+    const outcome = { blockId: "block_1", kind: "room", removed: 2, roomsReleased: 2 }
+    const release = vi.spyOn(roomBlocks, "releaseDepartureRoomBlock").mockResolvedValue(outcome)
+    const audit = vi
+      .spyOn(allocationAudit, "findAllocationAuditByCommandClaim")
+      .mockResolvedValue({ removed: 2, roomsReleased: 2 })
+    const command = { causation: { claimActionId: "act_claim_2" } }
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({}, command)
+        completed = true
+        return { replayed: false, value: await handlers.execute(command) }
+      }
+      return { replayed: true, value: await handlers.replay(command) }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+
+    await expect(
+      operations.releaseDepartureRoomBlock("avsl_1", "block_1", { kind: "room" }, admitted),
+    ).resolves.toEqual(outcome)
+    await expect(
+      operations.releaseDepartureRoomBlock("avsl_1", "block_1", { kind: "room" }, admitted),
+    ).resolves.toEqual(outcome)
+
+    expect(release).toHaveBeenCalledTimes(1)
+    expect(audit).toHaveBeenCalledWith(expect.anything(), {
+      slotId: "avsl_1",
+      action: "resources.release.room-block",
+      commandClaimActionId: "act_claim_2",
+    })
   })
 
   it("resolves all selected booking-action sources for a deterministic rebuild", async () => {

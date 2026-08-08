@@ -353,7 +353,15 @@ export async function releaseDepartureRoomBlock(
       slotId,
       action: "resources.release.room-block",
       actorId: options.actorId ?? null,
-      before: { kind, blockId, removed: removedRows.length, roomsReleased },
+      before: {
+        ...(options.commandClaimActionId
+          ? { commandClaimActionId: options.commandClaimActionId }
+          : {}),
+        kind,
+        blockId,
+        removed: removedRows.length,
+        roomsReleased,
+      },
     })
 
     return { blockId, kind, removed: removedRows.length, roomsReleased }

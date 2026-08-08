@@ -25,6 +25,7 @@ import {
   assignTravelerAllocationsBatch,
   getTravelerAllocationsBatchResult,
 } from "./availability/service-allocation-assignment-batch.js"
+import { findAllocationAuditByCommandClaim } from "./availability/service-allocation-audit.js"
 import { AllocationServiceError } from "./availability/service-allocation-errors.js"
 import {
   type AttachDepartureResourceInput,
@@ -233,21 +234,49 @@ export const voyantToolContextContribution = defineToolContextContribution({
           departureId: string,
           fleetResourceId: string,
           options: Omit<DetachDepartureResourceOptions, "actorId">,
+          admitted: ToolHandlerActionPolicyContext,
         ) {
-          const detached = await withAllocationToolErrors(() =>
-            detachDepartureResource(db as PostgresJsDatabase, departureId, fleetResourceId, {
-              actorId: c.get("userId") ?? null,
-              ...options,
-            }),
+          let detached: Awaited<ReturnType<typeof detachDepartureResource>> | undefined
+          const result = await executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, fleetResourceId, ...options },
+              evaluatedRisk: "high",
+            },
+            {
+              async prepare(tx, command) {
+                detached = await withAllocationToolErrors(() =>
+                  detachDepartureResource(tx as PostgresJsDatabase, departureId, fleetResourceId, {
+                    actorId: c.get("userId") ?? null,
+                    commandClaimActionId: command.causation.claimActionId,
+                    ...options,
+                  }),
+                )
+                if (!detached) {
+                  throw new ToolError(
+                    "That fleet resource is not attached to this departure.",
+                    "NOT_FOUND",
+                    { departureId, fleetResourceId },
+                  )
+                }
+              },
+              execute() {
+                if (!detached) throw new Error("Fleet resource detachment produced no result")
+                return Promise.resolve(detached)
+              },
+              async replay(command) {
+                const audit = await findAllocationAuditByCommandClaim(db as PostgresJsDatabase, {
+                  slotId: departureId,
+                  action: "resource.detach",
+                  commandClaimActionId: command.causation.claimActionId,
+                })
+                return detachedResourceOutcome(audit, departureId, fleetResourceId)
+              },
+            },
           )
-          if (!detached) {
-            throw new ToolError(
-              "That fleet resource is not attached to this departure.",
-              "NOT_FOUND",
-              { departureId, fleetResourceId },
-            )
-          }
-          return detached
+          return result.value
         },
         listDepartureFleetResources: (departureId: string) =>
           listDepartureResourceLinks(db as PostgresJsDatabase, departureId),
@@ -327,12 +356,46 @@ export const voyantToolContextContribution = defineToolContextContribution({
           departureId: string,
           blockId: string,
           options: { kind?: string },
+          admitted: ToolHandlerActionPolicyContext,
         ) {
-          return withAllocationToolErrors(() =>
-            releaseDepartureRoomBlock(db as PostgresJsDatabase, departureId, blockId, options, {
-              actorId: c.get("userId") ?? null,
-            }),
-          )
+          let released: Awaited<ReturnType<typeof releaseDepartureRoomBlock>> | undefined
+          return executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, blockId, ...options },
+              evaluatedRisk: "high",
+            },
+            {
+              async prepare(tx, command) {
+                released = await withAllocationToolErrors(() =>
+                  releaseDepartureRoomBlock(
+                    tx as PostgresJsDatabase,
+                    departureId,
+                    blockId,
+                    options,
+                    {
+                      actorId: c.get("userId") ?? null,
+                      commandClaimActionId: command.causation.claimActionId,
+                    },
+                  ),
+                )
+              },
+              execute() {
+                if (!released) throw new Error("Room block release produced no result")
+                return Promise.resolve(released)
+              },
+              async replay(command) {
+                const audit = await findAllocationAuditByCommandClaim(db as PostgresJsDatabase, {
+                  slotId: departureId,
+                  action: "resources.release.room-block",
+                  commandClaimActionId: command.causation.claimActionId,
+                })
+                return releasedRoomBlockOutcome(audit, blockId, options.kind ?? "room")
+              },
+            },
+          ).then((result) => result.value)
         },
         setDepartureTravelerRoomingPreferences(
           departureId: string,
@@ -422,6 +485,44 @@ export const voyantToolContextContribution = defineToolContextContribution({
  * placement moved — is carried through as `meta` rather than flattened into
  * prose.
  */
+function detachedResourceOutcome(
+  audit: Record<string, unknown> | null,
+  departureId: string,
+  fleetResourceId: string,
+): { removedResourceIds: string[]; assignmentId: string | null } {
+  const removedResourceIds = audit?.removedResourceIds
+  const assignmentId = audit?.assignmentId
+  if (
+    !Array.isArray(removedResourceIds) ||
+    !removedResourceIds.every((value): value is string => typeof value === "string") ||
+    (assignmentId !== null && typeof assignmentId !== "string")
+  ) {
+    throw new ToolError("The durable fleet detachment result could not be reloaded.", "NOT_FOUND", {
+      departureId,
+      fleetResourceId,
+    })
+  }
+  return { removedResourceIds, assignmentId: assignmentId ?? null }
+}
+
+function releasedRoomBlockOutcome(
+  audit: Record<string, unknown> | null,
+  blockId: string,
+  kind: string,
+): { blockId: string; kind: string; removed: number; roomsReleased: number } {
+  if (typeof audit?.removed !== "number" || typeof audit.roomsReleased !== "number") {
+    throw new ToolError(
+      "The durable room block release result could not be reloaded.",
+      "NOT_FOUND",
+      {
+        blockId,
+        kind,
+      },
+    )
+  }
+  return { blockId, kind, removed: audit.removed, roomsReleased: audit.roomsReleased }
+}
+
 async function withAllocationToolErrors<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run()
