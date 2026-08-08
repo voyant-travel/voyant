@@ -59,11 +59,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
           financeService.voidInvoice(db, id, input),
         // create_booking + book_product (voyant#3933) — both compose the durable
         // booking-create command; book_product resolves reference and key server-side.
-        ...financeBookingToolServices(
-          db as PostgresJsDatabase,
-          c,
-          cancellationPolicy,
-        ),
+        ...financeBookingToolServices(db as PostgresJsDatabase, c, cancellationPolicy),
         async issueInvoiceFromBooking(input: {
           command: CreateInvoiceFromBookingInput
           idempotencyKey?: string
