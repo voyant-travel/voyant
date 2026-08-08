@@ -315,6 +315,7 @@ async function executeBookingStatusToolCommand(input: {
     )
   }
   const previewJson = canonicalJson(preview)
+  const canonicalPreview = JSON.parse(previewJson) as Record<string, unknown>
   const bufferedEvents: BufferedEvent[] = []
   const bufferingEventBus = {
     async emit(event: string, data: unknown, metadata?: unknown, options?: unknown) {
@@ -333,7 +334,7 @@ async function executeBookingStatusToolCommand(input: {
         id: input.input.id,
         note: input.input.note ?? null,
         suppressNotifications: input.input.suppressNotifications === true,
-        consequencePreview: preview,
+        consequencePreview: canonicalPreview,
       },
       evaluatedRisk: "critical",
       idempotencyKey: input.input.idempotencyKey,
