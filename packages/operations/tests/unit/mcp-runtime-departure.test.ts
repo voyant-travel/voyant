@@ -13,6 +13,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 }))
 
 import { availabilityService } from "../../src/availability/service.js"
+import * as assignments from "../../src/availability/service-allocation-assignment-batch.js"
 import * as resourceLinks from "../../src/availability/service-allocation-resource-link.js"
 import * as travelerPreferences from "../../src/availability/service-allocation-traveler-preferences.js"
 import { AvailabilitySlotRevisionConflictError } from "../../src/availability/service-core.js"
@@ -291,6 +292,48 @@ describe("departure created-target runtime", () => {
     ).resolves.toMatchObject({ bedPreference: "double" })
 
     expect(update).toHaveBeenCalledTimes(1)
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("assigns travelers once and reloads their authoritative allocations on retry", async () => {
+    const outcome = {
+      kind: "room",
+      assigned: 1,
+      unassigned: 0,
+      unchanged: 0,
+      travelerIds: ["trav_1"],
+      violations: [],
+    }
+    const assign = vi
+      .spyOn(assignments, "assignTravelerAllocationsBatch")
+      .mockResolvedValue(outcome)
+    const reload = vi
+      .spyOn(assignments, "getTravelerAllocationsBatchResult")
+      .mockResolvedValue({ ...outcome, unchanged: 1 })
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({})
+        completed = true
+        return { replayed: false, value: await handlers.execute() }
+      }
+      return { replayed: true, value: await handlers.replay() }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+    const input = {
+      kind: "room",
+      assignments: [{ travelerId: "trav_1", resourceId: "room_1" }],
+    } as const
+
+    await expect(
+      operations.setDepartureTravelerAssignments("avsl_1", input, admitted),
+    ).resolves.toMatchObject({ unchanged: 0 })
+    await expect(
+      operations.setDepartureTravelerAssignments("avsl_1", input, admitted),
+    ).resolves.toMatchObject({ unchanged: 1 })
+
+    expect(assign).toHaveBeenCalledTimes(1)
     expect(reload).toHaveBeenCalledTimes(1)
   })
 

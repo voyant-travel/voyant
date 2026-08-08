@@ -437,6 +437,27 @@ export const SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.set-departure-traveler-assignments`,
+  capabilityVersion: VERSION,
+  canonicalName: "set_departure_traveler_assignments",
+  actionPolicy: {
+    id: `${OWNER}#action.set-departure-traveler-assignments`,
+    capabilityId: `${OWNER}#action.set-departure-traveler-assignments`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "medium",
+    ledger: "required",
+    approval: "required",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -681,10 +702,16 @@ export const setDepartureTravelerAssignmentsTool = defineTool<
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: DEPARTURE_WRITE_RISK,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, ...input }, ctx) {
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      SET_DEPARTURE_TRAVELER_ASSIGNMENTS_HANDLER_POLICY,
+    )
     return parseJsonResult(
       departureTravelerAssignmentsOutputSchema,
-      await operations(ctx).setDepartureTravelerAssignments(departureId, input),
+      await operations(ctx).setDepartureTravelerAssignments(departureId, input, admitted),
     )
   },
 })
