@@ -4,7 +4,7 @@ import {
   buildActionLedgerMutationEntryInput,
   buildExistingTargetIdempotencyScope,
 } from "@voyant-travel/action-ledger"
-import { bookingItems, bookingOrigins, bookings } from "@voyant-travel/bookings/schema"
+import { bookingsService, getBookingOriginByBookingId } from "@voyant-travel/bookings"
 import type { EventEnvelope } from "@voyant-travel/core"
 import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -64,6 +64,8 @@ interface PreparedTarget {
   organizationId: string | null
   descriptor: LegalDocumentRenderDescriptor
 }
+
+type BookingContractReviewInput = Parameters<typeof bookingContractReviewSnapshot>[0]
 
 /**
  * Project one booking confirmation into one ledgered, durable Legal document
@@ -195,7 +197,7 @@ async function prepareBookingContractTarget(
   | ({ status: "prepared" } & PreparedTarget)
   | Exclude<BookingContractConfirmationResult, { status: "generated" | "pending" }>
 > {
-  const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  const booking = await bookingsService.getBookingById(db, bookingId)
   if (!booking) return { status: "skipped", reason: "booking_not_found" }
 
   const existingContracts = await db
@@ -227,12 +229,8 @@ async function prepareBookingContractTarget(
     }
   }
 
-  const [origin] = await db
-    .select()
-    .from(bookingOrigins)
-    .where(eq(bookingOrigins.bookingId, bookingId))
-    .limit(1)
-  const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
+  const origin = await getBookingOriginByBookingId(db, bookingId)
+  const items = await bookingsService.listItems(db, bookingId)
   const language = resolveBookingContractLanguage(booking)
   const reusable = existingContracts.find((contract) => {
     const metadata = record(contract.metadata)
@@ -411,8 +409,8 @@ async function resolveTemplateSelection(
 }
 
 function bookingContractVariables(
-  booking: typeof bookings.$inferSelect,
-  items: readonly (typeof bookingItems.$inferSelect)[],
+  booking: BookingContractReviewInput["booking"],
+  items: BookingContractReviewInput["items"],
 ): Record<string, unknown> {
   const primaryProduct = items[0]
   const normalizedItems = items.map((item) => ({
