@@ -285,7 +285,7 @@ describe("generic MCP action-policy gate", () => {
       expect.objectContaining({ status: "requested", causationActionId: "requested_1" }),
       expect.objectContaining({
         status: "succeeded",
-        causationActionId: "requested_1",
+        causationActionId: "entry_1",
         approvalId: "approval_1",
         idempotencyFingerprint: fingerprint,
       }),
