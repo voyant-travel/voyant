@@ -416,6 +416,27 @@ export const ATTACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.set-departure-traveler-rooming-preferences`,
+  capabilityVersion: VERSION,
+  canonicalName: "set_departure_traveler_rooming_preferences",
+  actionPolicy: {
+    id: `${OWNER}#action.set-departure-traveler-rooming-preferences`,
+    capabilityId: `${OWNER}#action.set-departure-traveler-rooming-preferences`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "medium",
+    ledger: "required",
+    approval: "required",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -750,10 +771,21 @@ export const setDepartureTravelerRoomingPreferencesTool = defineTool<
   audience: STAFF_AUDIENCE,
   tier: "write",
   riskPolicy: DEPARTURE_WRITE_RISK,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, travelerId, ...input }, ctx) {
+    const admitted = admitHandlerActionPolicy(
+      ctx,
+      SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY,
+    )
     return parseJsonResult(
       departureTravelerRoomingPreferencesOutputSchema,
-      await operations(ctx).setDepartureTravelerRoomingPreferences(departureId, travelerId, input),
+      await operations(ctx).setDepartureTravelerRoomingPreferences(
+        departureId,
+        travelerId,
+        input,
+        admitted,
+      ),
     )
   },
 })

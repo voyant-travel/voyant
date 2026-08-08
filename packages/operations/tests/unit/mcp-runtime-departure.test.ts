@@ -14,6 +14,7 @@ vi.mock("@voyant-travel/action-ledger/created-command", () => ({
 
 import { availabilityService } from "../../src/availability/service.js"
 import * as resourceLinks from "../../src/availability/service-allocation-resource-link.js"
+import * as travelerPreferences from "../../src/availability/service-allocation-traveler-preferences.js"
 import { AvailabilitySlotRevisionConflictError } from "../../src/availability/service-core.js"
 import { voyantToolContextContribution } from "../../src/mcp-runtime.js"
 import { CREATE_DEPARTURE_HANDLER_POLICY, type OperationsToolServices } from "../../src/tools.js"
@@ -243,6 +244,54 @@ describe("departure created-target runtime", () => {
 
     expect(attach).toHaveBeenCalledTimes(1)
     expect(list).toHaveBeenCalledTimes(1)
+  })
+
+  it("updates rooming preferences once and reloads them on an exact approved retry", async () => {
+    const update = vi
+      .spyOn(travelerPreferences, "updateTravelerRoomingPreferences")
+      .mockResolvedValue({
+        travelerId: "trav_1",
+        bedPreference: "twin",
+        roomTypeId: null,
+      })
+    const reload = vi
+      .spyOn(travelerPreferences, "getTravelerRoomingPreferences")
+      .mockResolvedValue({
+        travelerId: "trav_1",
+        bedPreference: "double",
+        roomTypeId: null,
+      })
+    let completed = false
+    executeAdmittedExistingTargetCommand.mockImplementation(async (_input, handlers) => {
+      if (!completed) {
+        await handlers.prepare({})
+        completed = true
+        return { replayed: false, value: await handlers.execute() }
+      }
+      return { replayed: true, value: await handlers.replay() }
+    })
+    const operations = await contributeOperations({ actor: "staff", organizationId: "org_1" })
+    const admitted = {} as ToolHandlerActionPolicyContext
+
+    await expect(
+      operations.setDepartureTravelerRoomingPreferences(
+        "avsl_1",
+        "trav_1",
+        { bedPreference: "twin" },
+        admitted,
+      ),
+    ).resolves.toMatchObject({ bedPreference: "twin" })
+    await expect(
+      operations.setDepartureTravelerRoomingPreferences(
+        "avsl_1",
+        "trav_1",
+        { bedPreference: "twin" },
+        admitted,
+      ),
+    ).resolves.toMatchObject({ bedPreference: "double" })
+
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(reload).toHaveBeenCalledTimes(1)
   })
 
   it("resolves all selected booking-action sources for a deterministic rebuild", async () => {

@@ -15,6 +15,7 @@ import {
   rebuildBookingActionsTool,
   releaseDepartureRoomBlockTool,
   resolveOperatorDashboardWindow,
+  SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY,
   setDepartureTravelerAssignmentsTool,
   setDepartureTravelerRoomingPreferencesTool,
   UPDATE_DEPARTURE_HANDLER_POLICY,
@@ -484,19 +485,23 @@ describe("Operations tools", () => {
 
   it("clears one rooming preference while leaving the other stored value alone", async () => {
     const writeRegistry = createToolRegistry()
-    writeRegistry.register(setDepartureTravelerRoomingPreferencesTool)
+    writeRegistry.register(setDepartureTravelerRoomingPreferencesTool, {
+      actionPolicy: SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY.actionPolicy,
+    })
     let forwarded: unknown
     let forwardedTravelerId: string | undefined
     const result = await writeRegistry.dispatch(
       "set_departure_traveler_rooming_preferences",
       { departureId: "avsl_1", travelerId: "bkpt_1", roomTypeId: null },
-      contextWith({
-        async setDepartureTravelerRoomingPreferences(_departureId, travelerId, input) {
-          forwardedTravelerId = travelerId
-          forwarded = input
-          return { travelerId, bedPreference: "twin", roomTypeId: null }
-        },
-      }),
+      admittedRoomingPreferencesContext(
+        contextWith({
+          async setDepartureTravelerRoomingPreferences(_departureId, travelerId, input) {
+            forwardedTravelerId = travelerId
+            forwarded = input
+            return { travelerId, bedPreference: "twin", roomTypeId: null }
+          },
+        }),
+      ),
     )
 
     expect(forwardedTravelerId).toBe("bkpt_1")
@@ -755,6 +760,29 @@ function admittedAttachContext<T extends ToolContext>(context: T): T {
         },
       },
       invocation: { approvalId: "appr_attach", idempotencyFingerprint: "fp_attach" },
+    } as never,
+  }
+}
+
+function admittedRoomingPreferencesContext<T extends ToolContext>(context: T): T {
+  const policy = SET_DEPARTURE_TRAVELER_ROOMING_PREFERENCES_HANDLER_POLICY
+  return {
+    ...context,
+    handlerActionPolicy: {
+      capabilityId: policy.capabilityId,
+      capabilityVersion: policy.capabilityVersion,
+      canonicalName: policy.canonicalName,
+      actionPolicy: {
+        ...policy.actionPolicy,
+        enforcement: "handler",
+        invocation: {
+          controlField: "_voyant",
+          requiredFields: ["approvalId", "idempotencyFingerprint"],
+          optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+          fingerprintAlgorithm: "action-ledger-command-v1",
+        },
+      },
+      invocation: { approvalId: "appr_rooming", idempotencyFingerprint: "fp_rooming" },
     } as never,
   }
 }

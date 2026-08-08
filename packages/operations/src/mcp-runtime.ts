@@ -38,6 +38,7 @@ import {
   releaseDepartureRoomBlock,
 } from "./availability/service-allocation-room-block.js"
 import {
+  getTravelerRoomingPreferences,
   type UpdateTravelerRoomingPreferencesInput,
   updateTravelerRoomingPreferences,
 } from "./availability/service-allocation-traveler-preferences.js"
@@ -280,16 +281,39 @@ export const voyantToolContextContribution = defineToolContextContribution({
           departureId: string,
           travelerId: string,
           input: UpdateTravelerRoomingPreferencesInput,
+          admitted: ToolHandlerActionPolicyContext,
         ) {
-          return withAllocationToolErrors(() =>
-            updateTravelerRoomingPreferences(
-              db as PostgresJsDatabase,
-              departureId,
-              travelerId,
-              input,
-              { actorId: c.get("userId") ?? null },
-            ),
-          )
+          let updated: Awaited<ReturnType<typeof updateTravelerRoomingPreferences>> | undefined
+          return executeAdmittedExistingTargetCommand(
+            {
+              db: db as unknown as AnyDrizzleDb,
+              context: actionLedgerContext(c),
+              admitted,
+              commandInput: { departureId, travelerId, ...input },
+              evaluatedRisk: "medium",
+            },
+            {
+              async prepare(tx) {
+                updated = await withAllocationToolErrors(() =>
+                  updateTravelerRoomingPreferences(
+                    tx as PostgresJsDatabase,
+                    departureId,
+                    travelerId,
+                    input,
+                    { actorId: c.get("userId") ?? null },
+                  ),
+                )
+              },
+              execute() {
+                if (!updated) throw new Error("Rooming preference update produced no result")
+                return Promise.resolve(updated)
+              },
+              replay: () =>
+                withAllocationToolErrors(() =>
+                  getTravelerRoomingPreferences(db as PostgresJsDatabase, departureId, travelerId),
+                ),
+            },
+          ).then((result) => result.value)
         },
         async rebuildBookingActions() {
           const projection = requireService(
