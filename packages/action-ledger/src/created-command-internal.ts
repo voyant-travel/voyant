@@ -582,7 +582,8 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
       ? {
           approvalId: input.admitted.invocation.approvalId ?? "",
           idempotencyKey,
-          idempotencyFingerprint: input.admitted.invocation.idempotencyFingerprint ?? "",
+          idempotencyFingerprint:
+            input.admitted.invocation.idempotencyFingerprint?.trim() || fingerprint,
           reasonCode: input.admitted.invocation.reasonCode ?? null,
         }
       : undefined
