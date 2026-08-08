@@ -290,7 +290,12 @@ async function executeBookingStatusToolCommand(input: {
     throw new ToolError(
       "Cancellation policy entitlement requires manual review; no cancellation was written.",
       "INVALID_INPUT",
-      { bookingId: input.input.id, reason: "policy_manual_review_required" },
+      {
+        bookingId: input.input.id,
+        reason: "policy_manual_review_required",
+        reasons: preview.policyEntitlement.reasons,
+        items: preview.policyEntitlement.items,
+      },
     )
   }
   const previewJson = canonicalJson(preview)
