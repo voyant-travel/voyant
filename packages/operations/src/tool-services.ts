@@ -44,6 +44,7 @@ export interface OperationsToolServices {
     options: Omit<z.infer<typeof detachDepartureResourceQuerySchema>, "cascade"> & {
       cascade?: boolean
     },
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   listDepartureFleetResources(departureId: string): Promise<unknown>
   setDepartureTravelerAssignments(
@@ -65,6 +66,7 @@ export interface OperationsToolServices {
     departureId: string,
     blockId: string,
     options: { kind?: string },
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<unknown>
   setDepartureTravelerRoomingPreferences(
     departureId: string,

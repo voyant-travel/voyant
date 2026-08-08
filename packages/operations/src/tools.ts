@@ -479,6 +479,48 @@ export const MATERIALIZE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY = {
   },
 } as const satisfies HandlerActionPolicyExpectation
 
+export const DETACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.detach-departure-fleet-resource`,
+  capabilityVersion: VERSION,
+  canonicalName: "detach_departure_fleet_resource",
+  actionPolicy: {
+    id: `${OWNER}#action.detach-departure-fleet-resource`,
+    capabilityId: `${OWNER}#action.detach-departure-fleet-resource`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "high",
+    ledger: "required",
+    approval: "required",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
+export const RELEASE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.release-departure-room-block`,
+  capabilityVersion: VERSION,
+  canonicalName: "release_departure_room_block",
+  actionPolicy: {
+    id: `${OWNER}#action.release-departure-room-block`,
+    capabilityId: `${OWNER}#action.release-departure-room-block`,
+    version: VERSION,
+    kind: "execute",
+    targetType: "departure",
+    commandTargetField: "departureId",
+    targetLifecycle: "existing",
+    existingTarget: { durability: "handler-command-result-v1" },
+    risk: "high",
+    ledger: "required",
+    approval: "required",
+    reversible: false,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
+
 const createDepartureArgs = availabilitySlotCoreSchema
   .extend({
     idempotencyKey: z
@@ -692,10 +734,18 @@ export const detachDepartureFleetResourceTool = defineTool<
   audience: STAFF_AUDIENCE,
   tier: "destructive",
   riskPolicy: DEPARTURE_FLEET_DETACH_RISK,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, fleetResourceId, ...options }, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, DETACH_DEPARTURE_FLEET_RESOURCE_HANDLER_POLICY)
     return parseJsonResult(
       detachDepartureFleetResourceOutputSchema,
-      await operations(ctx).detachDepartureFleetResource(departureId, fleetResourceId, options),
+      await operations(ctx).detachDepartureFleetResource(
+        departureId,
+        fleetResourceId,
+        options,
+        admitted,
+      ),
     )
   },
 })
@@ -791,10 +841,13 @@ export const releaseDepartureRoomBlockTool = defineTool<
   audience: STAFF_AUDIENCE,
   tier: "destructive",
   riskPolicy: ROOM_BLOCK_RELEASE_RISK,
+  annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler({ departureId, blockId, ...options }, ctx) {
+    const admitted = admitHandlerActionPolicy(ctx, RELEASE_DEPARTURE_ROOM_BLOCK_HANDLER_POLICY)
     return parseJsonResult(
       releaseDepartureRoomBlockOutputSchema,
-      await operations(ctx).releaseDepartureRoomBlock(departureId, blockId, options),
+      await operations(ctx).releaseDepartureRoomBlock(departureId, blockId, options, admitted),
     )
   },
 })
