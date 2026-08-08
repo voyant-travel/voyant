@@ -590,7 +590,7 @@ export async function executeAdmittedExistingTargetCommand<TValue, TCommandPaylo
           idempotencyKey,
           idempotencyFingerprint:
             input.admitted.invocation.idempotencyFingerprint?.trim() || fingerprint,
-          reasonCode: input.admitted.invocation.reasonCode ?? null,
+          reasonCode: approvalReasonCode,
         }
       : undefined
   const commandInput: ExecuteCreatedTargetCommandInput & { resultReferenceType: string } = {
