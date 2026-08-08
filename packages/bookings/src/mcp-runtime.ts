@@ -38,6 +38,10 @@ import {
   type BookingRouteRuntime,
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
+import {
+  type BookingsCancellationPolicyRuntime,
+  bookingsCancellationPolicyRuntimePort,
+} from "./runtime-port.js"
 import type { Env } from "./routes-shared.js"
 import { bookingPiiAccessLog } from "./schema.js"
 import { bookingsService } from "./service.js"
@@ -49,7 +53,7 @@ export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["bookings", "bookingsExtras", "bookingRequirements"],
-  contribute: (input) => {
+  async contribute(input) {
     const { request, context } = input
     const c = request as Context<Env>
     const db = context.db as Parameters<typeof bookingsService.listBookings>[0]
@@ -61,6 +65,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
       enforceRbac: isStaffRbacEnforced(c.env),
     })
     const amendmentRuntime = getBookingToolRouteRuntime(c)
+    const cancellationPolicyValue = await Promise.resolve(
+      input.resources[bookingsCancellationPolicyRuntimePort.id],
+    )
+    const cancellationPolicy = cancellationPolicyValue as
+      | BookingsCancellationPolicyRuntime
+      | undefined
+    if (cancellationPolicy) await bookingsCancellationPolicyRuntimePort.test(cancellationPolicy)
     const amendmentDependencies = {
       finance: amendmentRuntime.amendmentFinance,
       supplier: amendmentRuntime.amendmentSupplier,
@@ -117,6 +128,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
               input,
               admitted,
               loadBookingDetail,
+              evaluateCancellationPolicy: cancellationPolicy?.evaluateCancellationSnapshot,
             })
           },
           async previewTravelerCorrectionAmendment(
@@ -276,6 +288,7 @@ async function executeBookingStatusToolCommand(input: {
   }
   admitted: ToolHandlerActionPolicyContext
   loadBookingDetail: (id: string) => Promise<unknown>
+  evaluateCancellationPolicy?: BookingCancellationPolicyEvaluator
 }) {
   const routeRuntime = getBookingToolRouteRuntime(input.c)
   const preview = await bookingStatusConsequencePreviewForAdmission({
@@ -345,7 +358,8 @@ async function executeBookingStatusToolCommand(input: {
           input.action,
           input.input.suppressNotifications === true,
           Boolean(routeRuntime.recordCancellationFinancialSettlement),
-          routeRuntime.cancellationPolicy?.evaluateCancellationSnapshot,
+          input.evaluateCancellationPolicy ??
+            routeRuntime.cancellationPolicy?.evaluateCancellationSnapshot,
           policyEntitlementAsOf(preview),
         )
         if (canonicalJson(currentPreview) !== previewJson) {
@@ -450,6 +464,7 @@ async function bookingStatusConsequencePreviewForAdmission(input: {
   input: { id: string; suppressNotifications?: boolean }
   admitted: ToolHandlerActionPolicyContext
   settlementHookAvailable: boolean
+  evaluateCancellationPolicy?: BookingCancellationPolicyEvaluator
 }) {
   const approvalId = input.admitted.invocation.approvalId?.trim()
   if (approvalId) {
@@ -478,7 +493,8 @@ async function bookingStatusConsequencePreviewForAdmission(input: {
     input.action,
     input.input.suppressNotifications === true,
     input.settlementHookAvailable,
-    getBookingToolRouteRuntime(input.c).cancellationPolicy?.evaluateCancellationSnapshot,
+    input.evaluateCancellationPolicy ??
+      getBookingToolRouteRuntime(input.c).cancellationPolicy?.evaluateCancellationSnapshot,
   )
 }
 
