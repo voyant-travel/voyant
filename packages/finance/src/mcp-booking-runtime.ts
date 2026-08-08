@@ -76,8 +76,7 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
       const bookingNumber = await allocateBookingNumber(db)
       const commandInput = mapBookProductIntentToCommand(input, bookingNumber)
       const financeRuntime = getFinanceRouteRuntime(c)
-      const captureCancellationPolicy =
-        financeRuntime?.captureApplicableCancellationPolicySnapshot
+      const captureCancellationPolicy = financeRuntime?.captureApplicableCancellationPolicySnapshot
       const result = await executeFinanceBookProductCommand({
         db,
         context: financeToolActionLedgerContext(c),
@@ -92,10 +91,10 @@ export function financeBookingToolServices(db: BookingRuntimeDb, c: Context<Env>
                   termsInput: { productId: string },
                 ) {
                   const capturedAt = new Date().toISOString()
-                  const policy = await captureCancellationPolicy(
-                    transaction,
-                    { productId: termsInput.productId, at: capturedAt.slice(0, 10) },
-                  )
+                  const policy = await captureCancellationPolicy(transaction, {
+                    productId: termsInput.productId,
+                    at: capturedAt.slice(0, 10),
+                  })
                   return policy
                     ? {
                         schemaVersion: 1 as const,
