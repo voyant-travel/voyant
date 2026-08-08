@@ -44,10 +44,13 @@ export const voyantToolContextContribution = defineToolContextContribution({
   async contribute({ context, request, resources }) {
     const c = request as Context<Env>
     const db = context.db as Parameters<typeof financeService.listInvoices>[0]
-    const cancellationPolicy = (await Promise.resolve(
+    const cancellationPolicyValue = await Promise.resolve(
       resources[bookingsCancellationPolicyRuntimePort.id],
-    )) as BookingsCancellationPolicyRuntime
-    await bookingsCancellationPolicyRuntimePort.test(cancellationPolicy)
+    )
+    const cancellationPolicy = cancellationPolicyValue as
+      | BookingsCancellationPolicyRuntime
+      | undefined
+    if (cancellationPolicy) await bookingsCancellationPolicyRuntimePort.test(cancellationPolicy)
     return {
       finance: {
         listInvoices: (query: Parameters<typeof financeService.listInvoices>[1]) =>
