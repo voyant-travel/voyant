@@ -482,7 +482,6 @@ describe("existing-target durable command protocol", () => {
       invocation: {
         idempotencyKey: "price_1",
         approvalId: "appr_existing",
-        idempotencyFingerprint: fingerprint,
         reasonCode: "operator_approved",
       },
     })
@@ -524,6 +523,15 @@ describe("existing-target durable command protocol", () => {
     }
     await expect(
       executeAdmittedExistingTargetCommand(existingCommandInput(harness.db, changedKey), handlers),
+    ).rejects.toMatchObject({ code: "ACTION_POLICY_REQUIRED" })
+    await expect(
+      executeAdmittedExistingTargetCommand(
+        {
+          ...existingCommandInput(harness.db, admitted),
+          commandInput: { tripId: "trip_1", currency: "USD" },
+        },
+        handlers,
+      ),
     ).rejects.toMatchObject({ code: "ACTION_POLICY_REQUIRED" })
   })
 
