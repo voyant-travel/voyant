@@ -322,7 +322,7 @@ async function bookAuthorizedSelection(
         : "storefront_trip_booking_session_rejected",
     )
   }
-  await db
+  const [completed] = (await db
     .update(tripStorefrontBookingOperations)
     .set({
       snapshotId: snapshot.id,
@@ -331,6 +331,10 @@ async function bookAuthorizedSelection(
       updatedAt: now?.() ?? new Date(),
     })
     .where(eq(tripStorefrontBookingOperations.operationDigest, operationDigest))
+    .returning()) as TripStorefrontBookingOperation[]
+  if (!completed) {
+    throw new StorefrontTripBookingError("storefront_trip_booking_session_rejected")
+  }
   return bookingResult(input.selectionRef, resolved.access.ownerUserId, outcome)
 }
 
