@@ -791,7 +791,7 @@ export function createBookingSessionModule(
       updatedAt: at,
     }
     if (validateCompositePricing) {
-      const priced = await options.ports.composeQuote({ session, now: at })
+      const priced = await options.ports.composeQuote({ session, now: at, tx: undefined })
       if (priced.status === "unavailable") return quoteUnavailable(priced)
     }
     const created = await repository.createSession(session)

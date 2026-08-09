@@ -52,6 +52,13 @@ export const bookingSessionPublicTargetV1 = z.discriminatedUnion("kind", [
       entityId: z.string().min(1),
     })
     .strict(),
+  z
+    .object({
+      kind: z.literal("trip_snapshot"),
+      tripSnapshotId: z.string().min(1),
+      tripEnvelopeId: z.string().min(1),
+    })
+    .strict(),
   z.object({ kind: z.literal("managed_itinerary") }).strict(),
 ])
 export type BookingSessionPublicTargetV1 = z.infer<typeof bookingSessionPublicTargetV1>
