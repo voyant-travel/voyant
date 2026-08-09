@@ -2,4 +2,4 @@
 "@voyant-travel/operations": patch
 ---
 
-Claim approved departure updates and fleet attachments inside handler transactions, replaying authoritative departure planning state instead of redispatching mutations.
+Claim every supported approved departure-planning mutation inside its handler transaction and replay the authoritative or audited command result instead of redispatching. Explicitly withhold projection rebuilds until they have a transaction-aware durable implementation.
