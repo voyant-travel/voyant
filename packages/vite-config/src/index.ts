@@ -62,6 +62,12 @@ export function voyantChunkOutput(viteMajor: number, extraManualChunks?: ExtraMa
   const chunkName = (id: string) => voyantVendorChunk(id) ?? extraManualChunks?.(id)
   if (viteMajor >= 8) {
     return {
+      // Explicit groups can leave order-sensitive dependencies in automatic
+      // chunks. Rolldown then permits circular chunk imports, and the portable
+      // admin document can choose a different evaluation order than SSR. Keep
+      // the smaller explicit groups, but preserve the source module order so a
+      // cycle cannot observe an uninitialized export.
+      strictExecutionOrder: true,
       codeSplitting: {
         // Keep named vendor chunks from absorbing their transitive dependencies.
         // In particular, Recharts shares small helpers with workspace chrome;

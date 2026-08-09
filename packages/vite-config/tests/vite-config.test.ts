@@ -68,8 +68,9 @@ describe("voyantVendorChunk", () => {
 })
 
 describe("voyantChunkOutput", () => {
-  it("uses explicit Rolldown dependency boundaries on Vite 8", () => {
+  it("preserves execution order across explicit Rolldown boundaries on Vite 8", () => {
     const output = voyantChunkOutput(8)
+    expect("strictExecutionOrder" in output && output.strictExecutionOrder).toBe(true)
     expect("codeSplitting" in output && output.codeSplitting.includeDependenciesRecursively).toBe(
       false,
     )
