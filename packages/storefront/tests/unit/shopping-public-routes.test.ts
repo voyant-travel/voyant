@@ -46,6 +46,9 @@ function tripRuntime(): StorefrontTripSelectionsRuntime {
       scope,
       items: [],
     })),
+    book: vi.fn(async () => {
+      throw new Error("not used")
+    }),
   }
 }
 
@@ -97,7 +100,12 @@ describe("Storefront shopping public routes", () => {
           .filter(({ method }) => method !== "ALL")
           .map(({ method, path }) => `${method} ${path}`),
       ),
-    ]).toEqual(["POST /search", "POST /trip-selections", "PATCH /trip-selections"])
+    ]).toEqual([
+      "POST /search",
+      "POST /trip-selections",
+      "PATCH /trip-selections",
+      "POST /trip-selections/book",
+    ])
   })
 
   it("requires an active server-resolved Storefront Channel and ignores no browser selector", async () => {
