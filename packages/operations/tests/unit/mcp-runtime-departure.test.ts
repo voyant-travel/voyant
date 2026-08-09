@@ -326,7 +326,7 @@ describe("departure created-target runtime", () => {
     const input = {
       kind: "room",
       assignments: [{ travelerId: "trav_1", resourceId: "room_1" }],
-    } as const
+    }
 
     await expect(
       operations.setDepartureTravelerAssignments("avsl_1", input, admitted),
