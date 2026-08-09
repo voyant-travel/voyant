@@ -2,4 +2,4 @@
 "@voyant-travel/vite-config": patch
 ---
 
-Preserve module execution order across explicit Vite 8 vendor chunks so portable admin-shell documents cannot observe uninitialized circular imports.
+Co-locate the rich-text editor with its Tiptap vendor graph so portable admin-shell documents cannot observe uninitialized circular imports without increasing the initial preload closure.
