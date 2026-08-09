@@ -290,6 +290,10 @@ describe("operations deployment manifest", () => {
         targetType: "booking-action-projection",
         targetLifecycle: "existing",
         reversible: false,
+        availability: {
+          status: "unavailable",
+          reasonCode: "unsafe-nontransactional-effect",
+        },
       },
     }
 

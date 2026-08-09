@@ -684,7 +684,10 @@ export const operationsVoyantModule = defineModule({
       approval: "required",
       reversible: false,
       allowedActorTypes: ["staff"],
-      availability: { status: "available" },
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
       effectBoundary: "local",
       targetLifecycle: "existing",
       from: { tools: ["@voyant-travel/operations#tool.rebuild-booking-actions"] },
