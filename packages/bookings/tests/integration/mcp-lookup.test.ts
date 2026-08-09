@@ -66,7 +66,11 @@ describe.skipIf(!DB_AVAILABLE)("Bookings MCP lookup", () => {
   it("redacts traveler identity when get_booking resolves by booking number", async () => {
     const [booking] = await db
       .insert(bookings)
-      .values({ bookingNumber: "BK-MCP-PII-001", sellCurrency: "EUR" })
+      .values({
+        bookingNumber: "BK-MCP-PII-001",
+        status: "confirmed",
+        sellCurrency: "EUR",
+      })
       .returning({ id: bookings.id })
     await db.insert(bookingTravelers).values({
       bookingId: booking.id,
