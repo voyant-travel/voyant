@@ -591,6 +591,11 @@ describe("createMcpApiRoutes", () => {
     // package-owned domain ids; a wrong guess must not turn a valid query into a
     // dead end that requires another discovery round-trip.
     expect(await searchToolNames(app, { query: "echo", domain: "crm" })).toContain("echo")
+    expect(
+      await searchToolNames(app, {
+        query: "echo text with status access details for the roster",
+      }),
+    ).toContain("echo")
     expect((await describeTool(app, "echo")).structuredContent).toMatchObject({
       name: "echo",
       outputSchema: {

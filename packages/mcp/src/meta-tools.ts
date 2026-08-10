@@ -260,7 +260,13 @@ function searchTools(
     const haystack =
       `${candidate.name} ${candidate.description} ${candidate.domain} ${(candidate.keywords ?? []).join(" ")}`.toLowerCase()
     const matchedGroups = expanded.filter((forms) => forms.some((form) => haystack.includes(form)))
-    const minimumCoverage = expanded.length <= 2 ? 1 : Math.ceil((expanded.length * 2) / 3)
+    // Models often search with a full intent phrase ("staff team roster users roles
+    // access status"), while a Tool's identity carries only the two discriminating
+    // nouns (`team_members`, `team_roles`). Requiring a fraction of every qualifier
+    // turns that strong partial match into a zero-hit fallback. Two matched groups
+    // are enough to admit a long-query candidate; coverage and exactness below still
+    // rank candidates with more evidence first.
+    const minimumCoverage = expanded.length <= 2 ? 1 : 2
     if (expanded.length > 0 && matchedGroups.length < minimumCoverage) continue
 
     // Real operator searches are phrases, not boolean expressions. Requiring
