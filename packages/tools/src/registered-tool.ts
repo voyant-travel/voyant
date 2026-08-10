@@ -185,13 +185,17 @@ function deriveActionPolicy(
       : tool.resolvesIdempotencyKeyServerSide || serverOwnedGenericTarget
         ? (["approvalId"] as const)
         : (["approvalId", "idempotencyFingerprint"] as const)
+  const optionalConfirmationFields =
+    action.kind === "execute" && !requiredFields.includes("confirmed")
+      ? (["confirmed"] as const)
+      : []
   return {
     ...action,
     enforcement,
     invocation: {
       controlField: TOOL_ACTION_INVOCATION_FIELD,
       requiredFields,
-      optionalFields: ["reasonCode", ...optionalApprovalFields],
+      optionalFields: ["reasonCode", ...optionalConfirmationFields, ...optionalApprovalFields],
       fingerprintAlgorithm: "action-ledger-command-v1",
       ...targetResolution,
     },

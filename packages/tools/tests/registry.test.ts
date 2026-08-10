@@ -475,7 +475,10 @@ describe("createToolRegistry", () => {
       commandTargetField: "recordId",
       existingTarget: { durability: "handler-command-result-v1" },
       enforcement: "handler",
-      invocation: { requiredFields: ["idempotencyKey"] },
+      invocation: {
+        requiredFields: ["idempotencyKey"],
+        optionalFields: ["reasonCode", "confirmed"],
+      },
     })
     expect(registry.list()[0]?.actionPolicy?.invocation.requiredFields).not.toContain("targetId")
 

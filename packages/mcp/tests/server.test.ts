@@ -955,7 +955,8 @@ describe("createMcpApiRoutes", () => {
       | undefined
     const invocationSchema = listedTool?.inputSchema.properties?._voyant
     expect(invocationSchema?.properties).toHaveProperty("reasonCode")
-    expect(invocationSchema?.properties).not.toHaveProperty("confirmed")
+    expect(invocationSchema?.properties).toHaveProperty("confirmed")
+    expect(invocationSchema?.required ?? []).not.toContain("confirmed")
     expect(invocationSchema?.properties).not.toHaveProperty("targetId")
     expect(invocationSchema?.required ?? []).not.toContain("targetId")
     expect(listedTool?._meta).toMatchObject({
