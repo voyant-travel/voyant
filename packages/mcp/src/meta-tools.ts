@@ -402,15 +402,18 @@ function registerDescribeTool({
         "here to get just that branch, which is far cheaper than the whole union.",
       inputSchema: z.object({
         name: z.string().trim().min(1),
-        resource: z
-          .string()
-          .trim()
-          .min(1)
-          .optional()
-          .describe(
-            "For a `<domain>_query` tool: narrow the returned input schema to this " +
-              "one resource. The resource names are listed in the tool's description.",
-          ),
+        resource: z.preprocess(
+          (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+          z
+            .string()
+            .trim()
+            .min(1)
+            .optional()
+            .describe(
+              "For a `<domain>_query` tool: narrow the returned input schema to this " +
+                "one resource. The resource names are listed in the tool's description.",
+            ),
+        ),
       }),
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
