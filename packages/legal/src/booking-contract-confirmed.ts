@@ -5,7 +5,6 @@ import {
   buildExistingTargetIdempotencyScope,
 } from "@voyant-travel/action-ledger"
 import { bookingsService, getBookingOriginByBookingId } from "@voyant-travel/bookings"
-import { bookings } from "@voyant-travel/bookings/schema"
 import type { EventBus, EventEnvelope } from "@voyant-travel/core"
 import { and, desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -514,24 +513,10 @@ async function promotePaidAcceptedBookingContract(
   )
   if (signed.status !== "signed") return
 
-  const cleanedNotes = (booking.internalNotes ?? "")
-    .split("\n")
-    .filter(
-      (line) =>
-        !line.startsWith(CONTRACT_ACCEPTANCE_MARKER_PREFIX) &&
-        !line.startsWith(PAYMENT_CONFIRMATION_MARKER_PREFIX),
-    )
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim()
-  await db
-    .update(bookings)
-    .set({
-      internalNotes: cleanedNotes || null,
-      revision: sql`${bookings.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(bookings.id, booking.id))
+  await bookingsService.setSystemInternalNotes(db, booking.id, [
+    { prefix: CONTRACT_ACCEPTANCE_MARKER_PREFIX, note: null },
+    { prefix: PAYMENT_CONFIRMATION_MARKER_PREFIX, note: null },
+  ])
 }
 
 async function resolveTemplateSelection(

@@ -1,4 +1,4 @@
-import { bookings } from "@voyant-travel/bookings/schema"
+import { bookingsService } from "@voyant-travel/bookings"
 import type {
   CommerceAcceptanceDraftInput,
   CommerceLegalRuntime,
@@ -48,28 +48,13 @@ export function createCommerceLegalRuntime(
           .orderBy(desc(contracts.createdAt), desc(contracts.id))
           .limit(1)
         if (!contract) {
-          const [booking] = await tx
-            .select({ id: bookings.id, internalNotes: bookings.internalNotes })
-            .from(bookings)
-            .where(eq(bookings.id, bookingId))
-            .limit(1)
-          if (!booking) return
           const marker = `${PAYMENT_CONFIRMATION_MARKER_PREFIX}${JSON.stringify({
             paymentSessionId,
             confirmedAt: new Date().toISOString(),
           })}`
-          const notes = (booking.internalNotes ?? "")
-            .split("\n")
-            .filter((line) => !line.startsWith(PAYMENT_CONFIRMATION_MARKER_PREFIX))
-          notes.push(marker)
-          await tx
-            .update(bookings)
-            .set({
-              internalNotes: notes.filter(Boolean).join("\n"),
-              revision: sql`${bookings.revision} + 1`,
-              updatedAt: new Date(),
-            })
-            .where(eq(bookings.id, bookingId))
+          await bookingsService.setSystemInternalNotes(tx, bookingId, [
+            { prefix: PAYMENT_CONFIRMATION_MARKER_PREFIX, note: marker },
+          ])
           return
         }
         if (contract.status === "signed" || contract.status === "executed") return
