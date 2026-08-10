@@ -14441,6 +14441,20 @@
                   "selection": {
                     "type": "object",
                     "properties": {
+                      "contractAcceptance": {
+                        "type": "object",
+                        "properties": {
+                          "acceptedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "acceptedMarketing": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        },
+                        "required": ["acceptedAt"]
+                      },
                       "configure": {
                         "type": "object",
                         "properties": {
