@@ -394,6 +394,9 @@ describe("production Booking Session ports", () => {
           contractAcceptance: {
             acceptedAt: "2026-08-10T12:00:00.000Z",
             acceptedMarketing: false,
+            templateId: "clt_1",
+            templateVersionId: "cltv_1",
+            contentDigest: `booking-contract-acceptance:v1:sha256:${"a".repeat(64)}`,
           },
         },
       },
@@ -419,7 +422,7 @@ describe("production Booking Session ports", () => {
     )
 
     expect(financeCreate.resolvedCommand?.internalNotes).toBe(
-      '__contract_acceptance__:{"acceptedAt":"2026-08-10T12:00:00.000Z","acceptedMarketing":false}',
+      `__contract_acceptance__:{"acceptedAt":"2026-08-10T12:00:00.000Z","acceptedMarketing":false,"templateId":"clt_1","templateVersionId":"cltv_1","contentDigest":"booking-contract-acceptance:v1:sha256:${"a".repeat(64)}"}`,
     )
   })
 

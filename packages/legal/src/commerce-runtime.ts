@@ -1,3 +1,4 @@
+import { bookings } from "@voyant-travel/bookings/schema"
 import type {
   CommerceAcceptanceDraftInput,
   CommerceLegalRuntime,
@@ -5,6 +6,7 @@ import type {
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { and, desc, eq, sql } from "drizzle-orm"
 
+import { PAYMENT_CONFIRMATION_MARKER_PREFIX } from "./booking-contract-confirmed.js"
 import { contracts } from "./contracts/schema.js"
 import { contractsService } from "./contracts/service.js"
 import { contractSeriesService } from "./contracts/service-series.js"
@@ -45,7 +47,32 @@ export function createCommerceLegalRuntime(
           .where(and(eq(contracts.bookingId, bookingId), eq(contracts.scope, "customer")))
           .orderBy(desc(contracts.createdAt), desc(contracts.id))
           .limit(1)
-        if (!contract || contract.status === "signed" || contract.status === "executed") return
+        if (!contract) {
+          const [booking] = await tx
+            .select({ id: bookings.id, internalNotes: bookings.internalNotes })
+            .from(bookings)
+            .where(eq(bookings.id, bookingId))
+            .limit(1)
+          if (!booking) return
+          const marker = `${PAYMENT_CONFIRMATION_MARKER_PREFIX}${JSON.stringify({
+            paymentSessionId,
+            confirmedAt: new Date().toISOString(),
+          })}`
+          const notes = (booking.internalNotes ?? "")
+            .split("\n")
+            .filter((line) => !line.startsWith(PAYMENT_CONFIRMATION_MARKER_PREFIX))
+          notes.push(marker)
+          await tx
+            .update(bookings)
+            .set({
+              internalNotes: notes.filter(Boolean).join("\n"),
+              revision: sql`${bookings.revision} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(bookings.id, bookingId))
+          return
+        }
+        if (contract.status === "signed" || contract.status === "executed") return
         const metadata =
           contract.metadata &&
           typeof contract.metadata === "object" &&

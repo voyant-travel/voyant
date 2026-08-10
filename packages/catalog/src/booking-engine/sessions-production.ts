@@ -762,7 +762,8 @@ const CONTRACT_ACCEPTANCE_MARKER_PREFIX = "__contract_acceptance__:"
 /**
  * Project validated public acceptance into a system-owned Booking note.
  * Callers cannot write arbitrary operator notes: this function serializes the
- * only two admitted fields into the marker consumed by Legal.
+ * admitted acceptance plus server-issued preview evidence into the marker
+ * consumed and re-verified by Legal.
  */
 function bookingContractAcceptanceNote(payload: Record<string, unknown>): string | null {
   const acceptance = asRecord(payload.contractAcceptance)
@@ -771,9 +772,16 @@ function bookingContractAcceptanceNote(payload: Record<string, unknown>): string
       ? acceptance.acceptedAt
       : null
   if (!acceptedAt) return null
+  const templateId = stringValue(acceptance?.templateId)
+  const templateVersionId = stringValue(acceptance?.templateVersionId)
+  const contentDigest = stringValue(acceptance?.contentDigest)
+  if (!templateId || !templateVersionId || !contentDigest) return null
   return `${CONTRACT_ACCEPTANCE_MARKER_PREFIX}${JSON.stringify({
     acceptedAt,
     acceptedMarketing: acceptance?.acceptedMarketing === true,
+    templateId,
+    templateVersionId,
+    contentDigest,
   })}`
 }
 
@@ -1052,6 +1060,9 @@ export function normalizeBookingSelection(
         typeof contractAcceptance?.acceptedMarketing === "boolean"
           ? contractAcceptance.acceptedMarketing
           : undefined,
+      templateId: stringValue(contractAcceptance?.templateId),
+      templateVersionId: stringValue(contractAcceptance?.templateVersionId),
+      contentDigest: stringValue(contractAcceptance?.contentDigest),
     }),
     configure: pruneEmpty({
       pax: normalizeStringNumberMap(asRecord(configure?.pax)),
