@@ -33,7 +33,7 @@ export function SuppliersListSkeleton() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>

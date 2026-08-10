@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@voyant-travel/ui/components"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
+import { SECONDARY_COLUMN_CLASS } from "@voyant-travel/ui/lib/responsive"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { ArrowDown, ArrowUp, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
@@ -141,7 +142,10 @@ export function SuppliersPage({
               </Button>
             }
           />
-          <PopoverContent align="start" className="w-[20rem] p-4">
+          <PopoverContent
+            align="start"
+            className="max-h-[75vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto p-4"
+          >
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="suppliers-filter-type">
@@ -257,7 +261,7 @@ export function SuppliersPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
@@ -282,13 +286,16 @@ export function SuppliersPage({
                 sortDir={sortDir}
                 onSort={toggleSort}
               />
-              <th className="px-4 py-3 font-medium">{messages.suppliersPage.columns.country}</th>
+              <th className={cn("px-4 py-3 font-medium", SECONDARY_COLUMN_CLASS)}>
+                {messages.suppliersPage.columns.country}
+              </th>
               <SortableHeader
                 label={messages.suppliersPage.columns.currency}
                 field="defaultCurrency"
                 sortBy={sortBy}
                 sortDir={sortDir}
                 onSort={toggleSort}
+                className={SECONDARY_COLUMN_CLASS}
               />
             </tr>
           </thead>
@@ -318,8 +325,12 @@ export function SuppliersPage({
                       {messages.common.supplierStatusLabels[supplier.status]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{supplier.country ?? messages.common.none}</td>
-                  <td className="px-4 py-3">{supplier.defaultCurrency ?? messages.common.none}</td>
+                  <td className={cn("px-4 py-3", SECONDARY_COLUMN_CLASS)}>
+                    {supplier.country ?? messages.common.none}
+                  </td>
+                  <td className={cn("px-4 py-3", SECONDARY_COLUMN_CLASS)}>
+                    {supplier.defaultCurrency ?? messages.common.none}
+                  </td>
                 </tr>
               ))
             )}
@@ -372,15 +383,17 @@ function SortableHeader({
   sortBy,
   sortDir,
   onSort,
+  className,
 }: {
   label: string
   field: SuppliersListSortField
   sortBy: SuppliersListSortField
   sortDir: SuppliersListSortDir
   onSort: (field: SuppliersListSortField) => void
+  className?: string
 }) {
   return (
-    <th className="px-4 py-3 font-medium">
+    <th className={cn("px-4 py-3 font-medium", className)}>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSort(field)}>
         {label}
         {sortBy === field &&
