@@ -100,6 +100,18 @@ export const bookingSelectionEngineOwnedV1 = z.object({
  * added anywhere else is denied by default.
  */
 export const bookingSelectionPublicV1 = z.object({
+  /**
+   * The customer's explicit acceptance of the contract shown by the
+   * storefront. Template identity and rendered content remain server-owned;
+   * the browser only records the customer's act and its timestamp.
+   */
+  contractAcceptance: z
+    .object({
+      acceptedAt: z.string().datetime(),
+      acceptedMarketing: z.boolean().default(false),
+    })
+    .optional(),
+
   // Step 1 — Configure
   configure: z
     .object({
