@@ -1642,7 +1642,7 @@ describe("createMcpApiRoutes", () => {
           targetType: "notification",
           risk: "critical",
           ledger: "required",
-          approval: "required",
+          approval: "never",
         },
       },
     )
@@ -1685,7 +1685,7 @@ describe("createMcpApiRoutes", () => {
             invocation: {
               controlField: "_voyant",
               requiredFields: ["confirmed"],
-              optionalFields: ["reasonCode", "approvalId"],
+              optionalFields: ["reasonCode"],
               targetResolution: "package-resolver",
             },
           },
@@ -1702,7 +1702,6 @@ describe("createMcpApiRoutes", () => {
             message: "hello",
             _voyant: {
               confirmed: true,
-              approvalId: "approval_1",
             },
           },
         }),
@@ -1718,7 +1717,6 @@ describe("createMcpApiRoutes", () => {
         resolvedTargetId: "notification:hello",
         invocation: {
           confirmed: true,
-          approvalId: "approval_1",
         },
       }),
     ])
