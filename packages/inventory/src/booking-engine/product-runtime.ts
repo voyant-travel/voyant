@@ -60,9 +60,10 @@ function asPostgresDb(db: unknown): PostgresJsDatabase {
  * running this separately — the band loader and the price resolver —
  * derive the same tier codes from the same rows.
  */
-async function loadProductTravelerCategories(
+export async function loadProductTravelerCategories(
   db: PostgresJsDatabase,
   productId: string,
+  referencedCategoryIds: readonly string[] = [],
 ): Promise<TravelerCategoryRow[]> {
   const optionRows = await db
     .select({ id: productOptions.id })
@@ -81,6 +82,13 @@ async function loadProductTravelerCategories(
   const scopeClauses = [eq(pricingCategories.productId, productId)]
   if (optionIds.length > 0) scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
   if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
+  if (referencedCategoryIds.length > 0) {
+    // The pricing editor permits shared/global categories (all three scope
+    // columns null) on a unit-price row. They are part of this product's
+    // sellable traveler model by reference even though they are not owned by
+    // the product hierarchy itself.
+    scopeClauses.push(inArray(pricingCategories.id, [...new Set(referencedCategoryIds)]))
+  }
 
   return db
     .select({
@@ -557,9 +565,15 @@ export function registerProductBookingHandler(
         // what `loadPaxBands` builds the journey's bands from. Resolving a
         // subset would give the second "Child …" tier a different code here
         // than the shopper was offered, and its price would never match.
-        const bandByCategoryId = unitPriceRows.some((up) => up.pricingCategoryId !== null)
-          ? paxBandCodesByCategoryId(await loadProductTravelerCategories(db, args.productId))
-          : new Map<string, string>()
+        const referencedCategoryIds = unitPriceRows.flatMap((row) =>
+          row.pricingCategoryId ? [row.pricingCategoryId] : [],
+        )
+        const bandByCategoryId =
+          referencedCategoryIds.length > 0
+            ? paxBandCodesByCategoryId(
+                await loadProductTravelerCategories(db, args.productId, referencedCategoryIds),
+              )
+            : new Map<string, string>()
         // Annotated: the two branches below carry different `travelerCategory`
         // types (a resolved band code vs the age-derived category), which
         // otherwise widens the result to `unknown[]`.
