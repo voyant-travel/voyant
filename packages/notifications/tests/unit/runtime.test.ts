@@ -30,10 +30,10 @@ describe("createNotificationsRuntime", () => {
     expect(runtime.resolvePublicCustomerPortalBaseUrl?.({})).toBe("https://portal.example.test")
   })
 
-  it("resolves no customer portal URL when deployment configuration is unset", () => {
+  it("does not reuse the admin origin for customer links", () => {
     const runtime = createNotificationsRuntime(primitives({ APP_URL: "https://operator.test/api" }))
 
     expect(runtime.resolvePublicCustomerPortalBaseUrl?.({})).toBeNull()
-    expect(runtime.resolvePublicCheckoutBaseUrl?.({})).toBe("https://operator.test")
+    expect(runtime.resolvePublicCheckoutBaseUrl?.({})).toBeNull()
   })
 })

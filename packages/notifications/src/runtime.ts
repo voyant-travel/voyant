@@ -74,12 +74,7 @@ function resolveReminderSweepLockManager(env: Readonly<Record<string, unknown>>)
 }
 
 function resolvePublicBaseUrl(env: Readonly<Record<string, unknown>>): string | null {
-  for (const key of ["PUBLIC_CHECKOUT_BASE_URL", "DASH_BASE_URL", "APP_URL"] as const) {
-    const value = nonEmpty(env[key])
-    if (!value) continue
-    return key === "APP_URL" ? value.replace(/\/api\/?$/, "") : value
-  }
-  return null
+  return nonEmpty(env.PUBLIC_CHECKOUT_BASE_URL) ?? null
 }
 
 function resolvePublicCustomerPortalBaseUrl(env: Readonly<Record<string, unknown>>): string | null {
