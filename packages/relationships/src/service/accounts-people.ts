@@ -48,6 +48,29 @@ import { paginate } from "./helpers.js"
 
 const cardPaymentMethodBrands = new Set(["visa", "mastercard", "amex", "revolut"])
 
+/**
+ * An instrument a payment provider stored, as the payment path reports it.
+ *
+ * Mirrors `PaymentStoredInstrument` on the payment port without importing it:
+ * the CRM must not take a dependency on the payments package to record what a
+ * payment produced, and the two are versioned separately.
+ */
+export interface ProjectedPaymentMethodInput {
+  /** The adapter that issued `token`. Without it the token can charge nothing. */
+  providerId: string
+  token: string
+  authorizedReuses: readonly string[]
+  status?: "usable" | "requires_new_agreement" | "expired" | "revoked"
+  providerCustomerReference?: string | null
+  fingerprint?: string | null
+  brand?: string | null
+  last4?: string | null
+  holderName?: string | null
+  expMonth?: number | null
+  expYear?: number | null
+  agreementReference?: string | null
+}
+
 function assertValidPaymentMethodFields(data: {
   brand: string
   last4?: string | null
@@ -536,6 +559,74 @@ export const peopleAccountsService = {
       .update(personPaymentMethods)
       .set(data)
       .where(eq(personPaymentMethods.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  /**
+   * Record an instrument a payment provider actually stored.
+   *
+   * Written from the payment path rather than by a person, so it validates
+   * nothing an operator would be asked to fix and rejects nothing: a provider
+   * that reports an instrument the CRM finds odd still stored it, and refusing
+   * to write the row would leave the operator with a card they cannot see and
+   * we cannot explain.
+   *
+   * Idempotent on (provider, token). A payment reports its instrument on the
+   * callback and again on the reconciliation poll, and a reissued card reports
+   * a changed status long after settlement — all three converge on one row.
+   * `person_id` is deliberately not part of the update: a token belongs to one
+   * customer at the provider, so a report tying it to a different person is a
+   * fault upstream, and silently reassigning the row would hide it behind a
+   * card appearing on the wrong customer.
+   */
+  async recordProjectedPersonPaymentMethod(
+    db: PostgresJsDatabase,
+    personId: string,
+    instrument: ProjectedPaymentMethodInput,
+  ) {
+    const [existing] = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(eq(people.id, personId))
+      .limit(1)
+    if (!existing) return null
+
+    const values = {
+      personId,
+      source: "payment" as const,
+      brand: instrument.brand ?? "unknown",
+      last4: instrument.last4 ?? null,
+      holderName: instrument.holderName ?? null,
+      expMonth: instrument.expMonth ?? null,
+      expYear: instrument.expYear ?? null,
+      processorToken: instrument.token,
+      providerId: instrument.providerId,
+      providerCustomerReference: instrument.providerCustomerReference ?? null,
+      fingerprint: instrument.fingerprint ?? null,
+      authorizedReuses: [...instrument.authorizedReuses],
+      status: instrument.status ?? ("usable" as const),
+      agreementReference: instrument.agreementReference ?? null,
+    }
+    const [row] = await db
+      .insert(personPaymentMethods)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [personPaymentMethods.providerId, personPaymentMethods.processorToken],
+        set: {
+          brand: values.brand,
+          last4: values.last4,
+          holderName: values.holderName,
+          expMonth: values.expMonth,
+          expYear: values.expYear,
+          providerCustomerReference: values.providerCustomerReference,
+          fingerprint: values.fingerprint,
+          authorizedReuses: values.authorizedReuses,
+          status: values.status,
+          agreementReference: values.agreementReference,
+          updatedAt: new Date(),
+        },
+      })
       .returning()
     return row ?? null
   },

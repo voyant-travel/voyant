@@ -36,6 +36,13 @@
       "when": 1785801660000,
       "tag": "20260804000100_proposal_entity_labels",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786492860000,
+      "tag": "20260812000100_person_payment_method_provenance",
+      "breakpoints": true
     }
   ]
 }
