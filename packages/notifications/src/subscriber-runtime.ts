@@ -1,5 +1,8 @@
+import { bookingItems } from "@voyant-travel/bookings/schema"
 import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
-import { and, eq } from "drizzle-orm"
+import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
+import { contracts } from "@voyant-travel/legal/schema"
+import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { notificationReminderRuns } from "./schema.js"
 import type { NotificationService } from "./service.js"
@@ -16,6 +19,14 @@ export const NOTIFICATIONS_BOOKING_CONFIRMED_REMINDER_SUBSCRIBER_ID =
   "@voyant-travel/notifications#subscriber.reminder-booking-confirmed"
 export const NOTIFICATIONS_PAYMENT_COMPLETED_REMINDER_SUBSCRIBER_ID =
   "@voyant-travel/notifications#subscriber.reminder-payment-completed"
+export const NOTIFICATIONS_CHECKOUT_FINALIZED_REMINDER_SUBSCRIBER_ID =
+  "@voyant-travel/notifications#subscriber.reminder-checkout-finalized"
+export const NOTIFICATIONS_INVOICE_RENDERED_REMINDER_SUBSCRIBER_ID =
+  "@voyant-travel/notifications#subscriber.reminder-invoice-rendered"
+export const NOTIFICATIONS_CONTRACT_DOCUMENT_REMINDER_SUBSCRIBER_ID =
+  "@voyant-travel/notifications#subscriber.reminder-contract-document-generated"
+export const NOTIFICATIONS_PRODUCT_CONTENT_REMINDER_SUBSCRIBER_ID =
+  "@voyant-travel/notifications#subscriber.reminder-product-content-changed"
 export const NOTIFICATIONS_BOOKING_CANCELLED_REMINDER_SUBSCRIBER_ID =
   "@voyant-travel/notifications#subscriber.reminder-booking-cancelled"
 /** Deployment-owned services required by package-owned Notifications subscribers. */
@@ -49,6 +60,24 @@ interface PaymentCompletedPayload extends Record<string, unknown> {
   provider: string
 }
 
+interface CheckoutFinalizedPayload extends Record<string, unknown> {
+  bookingId: string
+  paymentSessionId: string
+}
+
+interface InvoiceRenderedPayload extends Record<string, unknown> {
+  invoiceId: string
+}
+
+interface ContractDocumentGeneratedPayload extends Record<string, unknown> {
+  contractId: string
+}
+
+interface ProductContentChangedPayload extends Record<string, unknown> {
+  id: string
+  axis?: string
+}
+
 interface BookingCancelledPayload extends Record<string, unknown> {
   bookingId: string
   bookingNumber: string
@@ -68,6 +97,27 @@ function resolveRuntime(container: ModuleContainer): NotificationsSubscriberRunt
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error)
+}
+
+async function dispatchPaymentCompleteForBooking(
+  db: PostgresJsDatabase,
+  runtime: NotificationsSubscriberRuntime,
+  dependencies: NotificationsSubscriberDependencies,
+  bookingId: string,
+  paymentSessionId: string | null,
+  eventData: Record<string, unknown>,
+) {
+  const isPaidInFull = dependencies.isPaidInFull ?? bookingIsPaidInFullForNotification
+  const isNotificationsSuppressed =
+    dependencies.isNotificationsSuppressed ?? bookingNotificationsSuppressedForNotification
+  if (await isNotificationsSuppressed(db, bookingId)) return
+  if (!(await isPaidInFull(db, bookingId))) return
+  await (dependencies.dispatchReminderRules ?? dispatchReminderEventRules)(
+    db,
+    runtime.dispatcher,
+    { targetType: "payment_complete", bookingId, paymentSessionId, eventData },
+    { documentAttachmentResolver: runtime.documentAttachmentResolver },
+  )
 }
 
 export function createBookingConfirmedReminderSubscriberRuntime(
@@ -123,19 +173,13 @@ export function createPaymentCompletedReminderSubscriberRuntime(
         try {
           const runtime = resolveRuntime(container)
           const db = runtime.resolveDb(bindings)
-          if (await isNotificationsSuppressed(db, data.bookingId)) return
-          if (!(await isPaidInFull(db, data.bookingId))) return
-
-          await dispatchReminderRules(
+          await dispatchPaymentCompleteForBooking(
             db,
-            runtime.dispatcher,
-            {
-              targetType: "payment_complete",
-              bookingId: data.bookingId,
-              paymentSessionId: data.paymentSessionId,
-              eventData: data,
-            },
-            { documentAttachmentResolver: runtime.documentAttachmentResolver },
+            runtime,
+            { dispatchReminderRules, isPaidInFull, isNotificationsSuppressed },
+            data.bookingId,
+            data.paymentSessionId,
+            data,
           )
         } catch (error) {
           logger.error(
@@ -143,6 +187,154 @@ export function createPaymentCompletedReminderSubscriberRuntime(
           )
         }
       })
+    },
+  }
+}
+
+export function createCheckoutFinalizedReminderSubscriberRuntime(
+  dependencies: NotificationsSubscriberDependencies = {},
+): SubscriberRuntimeDescriptor {
+  const logger = dependencies.logger ?? console
+  return {
+    id: NOTIFICATIONS_CHECKOUT_FINALIZED_REMINDER_SUBSCRIBER_ID,
+    eventType: "checkout.finalized",
+    register: ({ bindings, container, eventBus }) => {
+      eventBus.subscribe<CheckoutFinalizedPayload>("checkout.finalized", async ({ data }) => {
+        try {
+          const runtime = resolveRuntime(container)
+          await dispatchPaymentCompleteForBooking(
+            runtime.resolveDb(bindings),
+            runtime,
+            dependencies,
+            data.bookingId,
+            data.paymentSessionId,
+            data,
+          )
+        } catch (error) {
+          logger.error(
+            `[notifications] checkout_finalized bundle delivery failed for booking ${data.bookingId}: ${errorMessage(error)}`,
+          )
+        }
+      })
+    },
+  }
+}
+
+async function retryPaymentBundleForBooking(
+  db: PostgresJsDatabase,
+  runtime: NotificationsSubscriberRuntime,
+  dependencies: NotificationsSubscriberDependencies,
+  bookingId: string,
+  eventData: Record<string, unknown>,
+) {
+  const [session] = await db
+    .select({ id: paymentSessions.id })
+    .from(paymentSessions)
+    .where(and(eq(paymentSessions.bookingId, bookingId), eq(paymentSessions.status, "paid")))
+    .orderBy(desc(paymentSessions.completedAt), desc(paymentSessions.updatedAt))
+    .limit(1)
+  if (!session) return
+  await dispatchPaymentCompleteForBooking(
+    db,
+    runtime,
+    dependencies,
+    bookingId,
+    session.id,
+    eventData,
+  )
+}
+
+export function createInvoiceRenderedReminderSubscriberRuntime(
+  dependencies: NotificationsSubscriberDependencies = {},
+): SubscriberRuntimeDescriptor {
+  const logger = dependencies.logger ?? console
+  return {
+    id: NOTIFICATIONS_INVOICE_RENDERED_REMINDER_SUBSCRIBER_ID,
+    eventType: "invoice.rendered",
+    register: ({ bindings, container, eventBus }) => {
+      eventBus.subscribe<InvoiceRenderedPayload>("invoice.rendered", async ({ data }) => {
+        try {
+          const runtime = resolveRuntime(container)
+          const db = runtime.resolveDb(bindings)
+          const [invoice] = await db
+            .select({ bookingId: invoices.bookingId })
+            .from(invoices)
+            .where(eq(invoices.id, data.invoiceId))
+            .limit(1)
+          if (!invoice) return
+          await retryPaymentBundleForBooking(db, runtime, dependencies, invoice.bookingId, data)
+        } catch (error) {
+          logger.error(
+            `[notifications] invoice_rendered bundle retry failed for invoice ${data.invoiceId}: ${errorMessage(error)}`,
+          )
+        }
+      })
+    },
+  }
+}
+
+export function createContractDocumentReminderSubscriberRuntime(
+  dependencies: NotificationsSubscriberDependencies = {},
+): SubscriberRuntimeDescriptor {
+  const logger = dependencies.logger ?? console
+  return {
+    id: NOTIFICATIONS_CONTRACT_DOCUMENT_REMINDER_SUBSCRIBER_ID,
+    eventType: "contract.document.generated",
+    register: ({ bindings, container, eventBus }) => {
+      eventBus.subscribe<ContractDocumentGeneratedPayload>(
+        "contract.document.generated",
+        async ({ data }) => {
+          try {
+            const runtime = resolveRuntime(container)
+            const db = runtime.resolveDb(bindings)
+            const [contract] = await db
+              .select({ bookingId: contracts.bookingId })
+              .from(contracts)
+              .where(eq(contracts.id, data.contractId))
+              .limit(1)
+            if (!contract?.bookingId) return
+            await retryPaymentBundleForBooking(db, runtime, dependencies, contract.bookingId, data)
+          } catch (error) {
+            logger.error(
+              `[notifications] contract_document_generated bundle retry failed for contract ${data.contractId}: ${errorMessage(error)}`,
+            )
+          }
+        },
+      )
+    },
+  }
+}
+
+export function createProductContentReminderSubscriberRuntime(
+  dependencies: NotificationsSubscriberDependencies = {},
+): SubscriberRuntimeDescriptor {
+  const logger = dependencies.logger ?? console
+  return {
+    id: NOTIFICATIONS_PRODUCT_CONTENT_REMINDER_SUBSCRIBER_ID,
+    eventType: "product.content.changed",
+    register: ({ bindings, container, eventBus }) => {
+      eventBus.subscribe<ProductContentChangedPayload>(
+        "product.content.changed",
+        async ({ data }) => {
+          if (data.axis && data.axis !== "media") return
+          try {
+            const runtime = resolveRuntime(container)
+            const db = runtime.resolveDb(bindings)
+            const paidBookings = await db
+              .selectDistinct({ bookingId: bookingItems.bookingId })
+              .from(bookingItems)
+              .innerJoin(paymentSessions, eq(paymentSessions.bookingId, bookingItems.bookingId))
+              .where(and(eq(bookingItems.productId, data.id), eq(paymentSessions.status, "paid")))
+            for (const { bookingId } of paidBookings) {
+              await retryPaymentBundleForBooking(db, runtime, dependencies, bookingId, data)
+            }
+          } catch (error) {
+            logger.error(
+              `[notifications] product_content_changed bundle retry failed for product ${data.id}: ${errorMessage(error)}`,
+            )
+          }
+        },
+      )
     },
   }
 }
@@ -213,10 +405,22 @@ export const notificationsBookingConfirmedReminderSubscriber =
   createBookingConfirmedReminderSubscriberRuntime()
 export const notificationsPaymentCompletedReminderSubscriber =
   createPaymentCompletedReminderSubscriberRuntime()
+export const notificationsCheckoutFinalizedReminderSubscriber =
+  createCheckoutFinalizedReminderSubscriberRuntime()
+export const notificationsInvoiceRenderedReminderSubscriber =
+  createInvoiceRenderedReminderSubscriberRuntime()
+export const notificationsContractDocumentReminderSubscriber =
+  createContractDocumentReminderSubscriberRuntime()
+export const notificationsProductContentReminderSubscriber =
+  createProductContentReminderSubscriberRuntime()
 export const notificationsBookingCancelledReminderSubscriber =
   createBookingCancelledReminderSubscriberRuntime()
 export const notificationsReminderSubscriberRuntimeDescriptors = [
   notificationsBookingConfirmedReminderSubscriber,
   notificationsPaymentCompletedReminderSubscriber,
+  notificationsCheckoutFinalizedReminderSubscriber,
+  notificationsInvoiceRenderedReminderSubscriber,
+  notificationsContractDocumentReminderSubscriber,
+  notificationsProductContentReminderSubscriber,
   notificationsBookingCancelledReminderSubscriber,
 ] as const
