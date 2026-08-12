@@ -213,8 +213,7 @@ describe("production Booking Session hosted-checkout initiation", () => {
 
     expect(startArgs().storeInstrument).toEqual({
       merchantInitiated: true,
-      agreementReference:
-        "booking-terms:v3:bses_01k:2026-08-12T09:00:00.000Z",
+      agreementReference: "booking-terms:v3:bses_01k:2026-08-12T09:00:00.000Z",
     })
   })
 
@@ -505,6 +504,7 @@ function startArgs() {
     description?: string
     locale?: string
     customerReference?: string
+    storeInstrument?: { merchantInitiated: boolean; agreementReference?: string }
     billing?: Record<string, unknown>
     acceptedCheckoutHandoffs?: readonly ("redirect" | "embedded")[]
   }
