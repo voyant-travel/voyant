@@ -1,10 +1,10 @@
-import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { bookings } from "@voyant-travel/bookings/schema"
 import { invoiceRenditions, invoices } from "@voyant-travel/finance/schema"
-import { productMedia } from "@voyant-travel/inventory/schema"
 import { contractAttachments, contracts } from "@voyant-travel/legal/schema"
 import { and, desc, eq, ne, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { bookingItemsRef, productMediaRef } from "./payment-bundle-refs.js"
 import { enqueueNotification } from "./service-durable-send.js"
 import { buildNotificationPortalContext } from "./service-portal-context.js"
 import type {
@@ -248,9 +248,9 @@ async function listProductBookingDocuments(
   bookingId: string,
 ): Promise<BookingDocumentBundleItem[]> {
   const itemRows = await db
-    .select({ productId: bookingItems.productId })
-    .from(bookingItems)
-    .where(eq(bookingItems.bookingId, bookingId))
+    .select({ productId: bookingItemsRef.productId })
+    .from(bookingItemsRef)
+    .where(eq(bookingItemsRef.bookingId, bookingId))
   const productIds = [
     ...new Set(
       itemRows
@@ -262,17 +262,17 @@ async function listProductBookingDocuments(
 
   const brochureRows = await db
     .select()
-    .from(productMedia)
+    .from(productMediaRef)
     .where(
       and(
-        eq(productMedia.isBrochure, true),
-        eq(productMedia.isBrochureCurrent, true),
-        or(...productIds.map((productId) => eq(productMedia.productId, productId))),
+        eq(productMediaRef.isBrochure, true),
+        eq(productMediaRef.isBrochureCurrent, true),
+        or(...productIds.map((productId) => eq(productMediaRef.productId, productId))),
       ),
     )
-    .orderBy(desc(productMedia.brochureVersion), desc(productMedia.createdAt))
+    .orderBy(desc(productMediaRef.brochureVersion), desc(productMediaRef.createdAt))
 
-  const bestByProductId = new Map<string, typeof productMedia.$inferSelect>()
+  const bestByProductId = new Map<string, typeof productMediaRef.$inferSelect>()
   for (const brochure of brochureRows) {
     if (!bestByProductId.has(brochure.productId)) bestByProductId.set(brochure.productId, brochure)
   }

@@ -3998,9 +3998,6 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../inventory
       '@voyant-travel/legal':
         specifier: workspace:^
         version: link:../legal

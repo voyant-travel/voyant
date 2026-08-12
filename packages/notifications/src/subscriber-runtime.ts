@@ -1,9 +1,12 @@
-import { bookingItems } from "@voyant-travel/bookings/schema"
 import type { ModuleContainer, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
-import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
-import { contracts } from "@voyant-travel/legal/schema"
 import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import {
+  bookingItemsRef,
+  contractsRef,
+  invoicesRef,
+  paymentSessionsRef,
+} from "./payment-bundle-refs.js"
 import { notificationReminderRuns } from "./schema.js"
 import type { NotificationService } from "./service.js"
 import type { BookingDocumentAttachmentResolver } from "./service-booking-documents.js"
@@ -228,10 +231,10 @@ async function retryPaymentBundleForBooking(
   eventData: Record<string, unknown>,
 ) {
   const [session] = await db
-    .select({ id: paymentSessions.id })
-    .from(paymentSessions)
-    .where(and(eq(paymentSessions.bookingId, bookingId), eq(paymentSessions.status, "paid")))
-    .orderBy(desc(paymentSessions.completedAt), desc(paymentSessions.updatedAt))
+    .select({ id: paymentSessionsRef.id })
+    .from(paymentSessionsRef)
+    .where(and(eq(paymentSessionsRef.bookingId, bookingId), eq(paymentSessionsRef.status, "paid")))
+    .orderBy(desc(paymentSessionsRef.completedAt), desc(paymentSessionsRef.updatedAt))
     .limit(1)
   if (!session) return
   await dispatchPaymentCompleteForBooking(
@@ -257,9 +260,9 @@ export function createInvoiceRenderedReminderSubscriberRuntime(
           const runtime = resolveRuntime(container)
           const db = runtime.resolveDb(bindings)
           const [invoice] = await db
-            .select({ bookingId: invoices.bookingId })
-            .from(invoices)
-            .where(eq(invoices.id, data.invoiceId))
+            .select({ bookingId: invoicesRef.bookingId })
+            .from(invoicesRef)
+            .where(eq(invoicesRef.id, data.invoiceId))
             .limit(1)
           if (!invoice) return
           await retryPaymentBundleForBooking(db, runtime, dependencies, invoice.bookingId, data)
@@ -288,9 +291,9 @@ export function createContractDocumentReminderSubscriberRuntime(
             const runtime = resolveRuntime(container)
             const db = runtime.resolveDb(bindings)
             const [contract] = await db
-              .select({ bookingId: contracts.bookingId })
-              .from(contracts)
-              .where(eq(contracts.id, data.contractId))
+              .select({ bookingId: contractsRef.bookingId })
+              .from(contractsRef)
+              .where(eq(contractsRef.id, data.contractId))
               .limit(1)
             if (!contract?.bookingId) return
             await retryPaymentBundleForBooking(db, runtime, dependencies, contract.bookingId, data)
@@ -321,10 +324,15 @@ export function createProductContentReminderSubscriberRuntime(
             const runtime = resolveRuntime(container)
             const db = runtime.resolveDb(bindings)
             const paidBookings = await db
-              .selectDistinct({ bookingId: bookingItems.bookingId })
-              .from(bookingItems)
-              .innerJoin(paymentSessions, eq(paymentSessions.bookingId, bookingItems.bookingId))
-              .where(and(eq(bookingItems.productId, data.id), eq(paymentSessions.status, "paid")))
+              .selectDistinct({ bookingId: bookingItemsRef.bookingId })
+              .from(bookingItemsRef)
+              .innerJoin(
+                paymentSessionsRef,
+                eq(paymentSessionsRef.bookingId, bookingItemsRef.bookingId),
+              )
+              .where(
+                and(eq(bookingItemsRef.productId, data.id), eq(paymentSessionsRef.status, "paid")),
+              )
             for (const { bookingId } of paidBookings) {
               await retryPaymentBundleForBooking(db, runtime, dependencies, bookingId, data)
             }

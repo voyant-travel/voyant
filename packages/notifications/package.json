@@ -43,7 +43,6 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/legal": "workspace:^",
-    "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
     "@voyant-travel/proposals": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
@@ -188,8 +187,7 @@
     },
     "schema": "./schema",
     "requiresSchemas": [
-      "@voyant-travel/db",
-      "@voyant-travel/inventory"
+      "@voyant-travel/db"
     ]
   },
   "private": true
