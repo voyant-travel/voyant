@@ -279,6 +279,7 @@ export async function listBookingNotificationItems(db: PostgresJsDatabase, booki
       sellCurrency: bookingItems.sellCurrency,
       unitSellAmountCents: bookingItems.unitSellAmountCents,
       totalSellAmountCents: bookingItems.totalSellAmountCents,
+      productId: bookingItems.productId,
     })
     .from(bookingItems)
     .where(eq(bookingItems.bookingId, bookingId))

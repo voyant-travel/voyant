@@ -1,8 +1,15 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it, vi } from "vitest"
 
-import { requiredAttachmentTypes } from "../../src/service-reminder-events.js"
-import type { NotificationReminderRuleRow } from "../../src/service-shared.js"
+import {
+  missingRequiredAttachmentTypes,
+  requiredAttachmentTypes,
+  shouldResolveBookingEventDocuments,
+} from "../../src/service-reminder-events.js"
+import type {
+  BookingDocumentBundleItem,
+  NotificationReminderRuleRow,
+} from "../../src/service-shared.js"
 
 function rule(overrides: Partial<NotificationReminderRuleRow> = {}): NotificationReminderRuleRow {
   return {
@@ -48,5 +55,24 @@ describe("requiredAttachmentTypes", () => {
   it("ignores legacy and unknown attachment labels", async () => {
     const { db } = dbWithMetadata({ attachments: ["contract", "product", "receipt"] })
     await expect(requiredAttachmentTypes(db, rule())).resolves.toEqual(["contract"])
+  })
+})
+
+describe("post-payment document readiness", () => {
+  it("does not resolve documents when a payment template selects no attachments", () => {
+    expect(shouldResolveBookingEventDocuments("payment_complete", "email", [])).toBe(false)
+    expect(shouldResolveBookingEventDocuments("booking_confirmed", "email", [])).toBe(true)
+  })
+
+  it("waits until every booked product has a current brochure", () => {
+    const brochure = {
+      documentType: "brochure",
+      metadata: { productId: "product_1" },
+    } as BookingDocumentBundleItem
+
+    expect(
+      missingRequiredAttachmentTypes(["brochure"], [brochure], ["product_1", "product_2"]),
+    ).toEqual(["brochure"])
+    expect(missingRequiredAttachmentTypes(["brochure"], [brochure], ["product_1"])).toEqual([])
   })
 })

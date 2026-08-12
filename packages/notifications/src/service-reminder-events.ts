@@ -16,7 +16,11 @@ import {
   serializeBookingPaymentContext,
 } from "./service-reminder-booking-context.js"
 import { markReminderRunFailed, markReminderRunSkipped } from "./service-reminder-run-state.js"
-import type { NotificationReminderRuleRow, NotificationService } from "./service-shared.js"
+import type {
+  BookingDocumentBundleItem,
+  NotificationReminderRuleRow,
+  NotificationService,
+} from "./service-shared.js"
 import {
   buildReminderDedupeKey,
   listBookingNotificationItems,
@@ -58,6 +62,44 @@ export async function requiredAttachmentTypes(
           .limit(1)
       : []
   return configuredAttachmentTypes(template?.metadata ?? null)
+}
+
+export function shouldResolveBookingEventDocuments(
+  targetType: BookingEventReminderTargetType,
+  channel: NotificationReminderRuleRow["channel"],
+  requiredDocumentTypes: ReadonlyArray<BookingDocumentBundleItem["documentType"]>,
+) {
+  return (
+    channel === "email" &&
+    (targetType === "booking_confirmed" ||
+      (targetType === "payment_complete" && requiredDocumentTypes.length > 0))
+  )
+}
+
+export function missingRequiredAttachmentTypes(
+  requiredDocumentTypes: ReadonlyArray<BookingDocumentBundleItem["documentType"]>,
+  documents: ReadonlyArray<BookingDocumentBundleItem>,
+  bookedProductIds: ReadonlyArray<string>,
+) {
+  const readyTypes = new Set(documents.map(({ documentType }) => documentType))
+  const missingTypes = requiredDocumentTypes.filter((type) => !readyTypes.has(type))
+
+  if (requiredDocumentTypes.includes("brochure")) {
+    const brochureProductIds = new Set(
+      documents
+        .filter(({ documentType }) => documentType === "brochure")
+        .map(({ metadata }) => metadata?.productId)
+        .filter((productId): productId is string => typeof productId === "string"),
+    )
+    if (
+      bookedProductIds.some((productId) => !brochureProductIds.has(productId)) &&
+      !missingTypes.includes("brochure")
+    ) {
+      missingTypes.push("brochure")
+    }
+  }
+
+  return missingTypes
 }
 
 async function sendBookingEventReminder(
@@ -122,9 +164,11 @@ async function sendBookingEventReminder(
 
   const requiredDocumentTypes =
     rule.channel === "email" ? await requiredAttachmentTypes(db, rule) : []
-  const shouldResolveDocuments =
-    rule.channel === "email" &&
-    (input.targetType === "booking_confirmed" || input.targetType === "payment_complete")
+  const shouldResolveDocuments = shouldResolveBookingEventDocuments(
+    input.targetType,
+    rule.channel,
+    requiredDocumentTypes,
+  )
   const [participants, items, paymentContext, unfilteredDocumentContext] = await Promise.all([
     db
       .select({
@@ -145,15 +189,25 @@ async function sendBookingEventReminder(
           db,
           booking.id,
           runtime.documentAttachmentResolver,
-          requiredDocumentTypes.length > 0 ? requiredDocumentTypes : undefined,
+          input.targetType === "payment_complete" ? requiredDocumentTypes : undefined,
         )
       : Promise.resolve({ documents: [], attachments: [] }),
   ])
   const documentContext = unfilteredDocumentContext
 
   if (input.targetType === "payment_complete" && requiredDocumentTypes.length > 0) {
-    const readyTypes = new Set(documentContext.documents.map(({ documentType }) => documentType))
-    const missingTypes = requiredDocumentTypes.filter((type) => !readyTypes.has(type))
+    const bookedProductIds = [
+      ...new Set(
+        items
+          .map((item) => item.productId)
+          .filter((productId): productId is string => typeof productId === "string"),
+      ),
+    ]
+    const missingTypes = missingRequiredAttachmentTypes(
+      requiredDocumentTypes,
+      documentContext.documents,
+      bookedProductIds,
+    )
     if (
       missingTypes.length > 0 ||
       documentContext.attachments.length !== documentContext.documents.length
