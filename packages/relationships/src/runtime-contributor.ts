@@ -13,13 +13,13 @@ import {
 } from "@voyant-travel/core/custom-fields"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
-  type FinanceStoredInstrumentRuntime,
-  financeStoredInstrumentRuntimePort,
-} from "@voyant-travel/finance/runtime-port"
-import {
   type CustomFieldValueOperationsRuntime,
   customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
+import {
+  type FinanceStoredInstrumentRuntime,
+  financeStoredInstrumentRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
