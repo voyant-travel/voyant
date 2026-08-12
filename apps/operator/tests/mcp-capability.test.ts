@@ -61,6 +61,7 @@ import { invoices } from "@voyant-travel/finance/schema"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { contractsService, policiesService } from "@voyant-travel/legal"
 import { proposalsService, tripSnapshotToProposalVersionApply } from "@voyant-travel/proposals"
+import { organizations } from "@voyant-travel/relationships/schema"
 import { tripsService } from "@voyant-travel/trips"
 import { sql as sqlRaw } from "drizzle-orm"
 import { Hono } from "hono"
@@ -73,6 +74,7 @@ import {
 } from "./api/generated-project-runtime.js"
 import { measureResponseFormats } from "./support/mcp-response-format-metrics.js"
 import { fetchWithTransientRetry } from "./support/openai-response-retry.js"
+import { createProcessInactivityTimeout } from "./support/process-inactivity-timeout.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 
@@ -93,8 +95,8 @@ const REASONING_EFFORT = "medium"
 const REPORT_FILE = process.env.VOYANT_EVAL_REPORT_FILE?.trim()
 const enabled = Boolean(TEST_DATABASE_URL && (EVAL_PROVIDER === "codex" || apiKey))
 
-/** A live model turn plus a real dispatch is slow; the default would time out on latency. */
-const JOURNEY_TIMEOUT_MS = 180_000
+/** Kill a genuinely wedged model process, not a healthy multi-turn journey. */
+const JOURNEY_INACTIVITY_TIMEOUT_MS = 180_000
 
 const TEST_ENV = {
   DATABASE_URL: TEST_DATABASE_URL ?? "",
@@ -450,8 +452,10 @@ async function runCodexJourney(input: {
             fatal: {
               source: "model_transport" as const,
               status: null,
-              code: "codex_exec_failed",
-              message: result.stderr.slice(0, 300),
+              code: result.timedOut ? "codex_exec_inactivity_timeout" : "codex_exec_failed",
+              message: result.timedOut
+                ? `Codex produced no output for ${JOURNEY_INACTIVITY_TIMEOUT_MS}ms. ${result.stderr.slice(0, 220)}`
+                : result.stderr.slice(0, 300),
             },
           }),
     }
@@ -461,7 +465,9 @@ async function runCodexJourney(input: {
   }
 }
 
-function spawnCodex(args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+function spawnCodex(
+  args: string[],
+): Promise<{ exitCode: number; stdout: string; stderr: string; timedOut: boolean }> {
   return new Promise((resolvePromise, reject) => {
     const env = { ...process.env }
     for (const key of [
@@ -475,16 +481,30 @@ function spawnCodex(args: string[]): Promise<{ exitCode: number; stdout: string;
     const child = spawn("codex", args, { env, stdio: ["ignore", "pipe", "pipe"] })
     const stdout: Buffer[] = []
     const stderr: Buffer[] = []
-    child.stdout.on("data", (chunk) => stdout.push(chunk))
-    child.stderr.on("data", (chunk) => stderr.push(chunk))
-    child.once("error", reject)
-    const timeout = setTimeout(() => child.kill("SIGTERM"), JOURNEY_TIMEOUT_MS)
+    let timedOut = false
+    const inactivity = createProcessInactivityTimeout(JOURNEY_INACTIVITY_TIMEOUT_MS, () => {
+      timedOut = true
+      child.kill("SIGTERM")
+    })
+    child.stdout.on("data", (chunk) => {
+      stdout.push(chunk)
+      inactivity.touch()
+    })
+    child.stderr.on("data", (chunk) => {
+      stderr.push(chunk)
+      inactivity.touch()
+    })
+    child.once("error", (error) => {
+      inactivity.clear()
+      reject(error)
+    })
     child.once("close", (exitCode) => {
-      clearTimeout(timeout)
+      inactivity.clear()
       resolvePromise({
         exitCode: exitCode ?? 1,
         stdout: Buffer.concat(stdout).toString("utf8"),
         stderr: Buffer.concat(stderr).toString("utf8"),
+        timedOut,
       })
     })
   })
@@ -537,7 +557,7 @@ const RUN_MARK = process.env.VOYANT_EVAL_MARK ?? String(Date.now()).slice(-6)
 
 interface CapabilityJourney {
   id: string
-  group: "commercial" | "proposal" | "amendment" | "supplier" | "contract"
+  group: "commercial" | "proposal" | "amendment" | "supplier" | "contract" | "organization"
   domain: string
   task: string
   expect: string
@@ -915,6 +935,49 @@ function buildJourneys(RUN_MARK: string): CapabilityJourney[] {
              where name = 'Dormant Experiences ${RUN_MARK}' and status = 'inactive'`,
     },
     {
+      id: "organization-create",
+      group: "organization",
+      domain: "organizations",
+      task: `Create an active client organization named 'Northstar Corporate Travel ${RUN_MARK}' with legal name 'Northstar Corporate Travel SRL', website 'https://northstar-${RUN_MARK}.example.com', tax id 'RO${RUN_MARK}42', default currency EUR, preferred language en, and 30-day payment terms. Confirm its organization id and recorded commercial details.`,
+      expect: "northstar",
+      maxCalls: 16,
+      verify: `select 1 from organizations
+             where name = 'Northstar Corporate Travel ${RUN_MARK}'
+               and legal_name = 'Northstar Corporate Travel SRL'
+               and website = 'https://northstar-${RUN_MARK}.example.com'
+               and tax_id = 'RO${RUN_MARK}42'
+               and relation = 'client'
+               and default_currency = 'EUR'
+               and preferred_language = 'en'
+               and payment_terms = 30
+               and status = 'active'`,
+    },
+    {
+      id: "organization-find",
+      group: "organization",
+      domain: "organizations",
+      task: `Find the CRM organization 'Danube Corporate Events ${RUN_MARK}' and report its legal name, relationship, tax id, default currency, and payment terms.`,
+      expect: `RODANUBE${RUN_MARK}`,
+      maxCalls: 12,
+      requiresDispatch: true,
+    },
+    {
+      id: "organization-deactivate",
+      group: "organization",
+      domain: "organizations",
+      task: `Mark the CRM organization 'Former Alpine Client ${RUN_MARK}' inactive without changing its name, client relationship, tax id, currency, language, or 45-day payment terms. Confirm its final status.`,
+      expect: "inactive",
+      maxCalls: 16,
+      verify: `select 1 from organizations
+             where name = 'Former Alpine Client ${RUN_MARK}'
+               and relation = 'client'
+               and tax_id = 'ROALPINE${RUN_MARK}'
+               and default_currency = 'EUR'
+               and preferred_language = 'de'
+               and payment_terms = 45
+               and status = 'inactive'`,
+    },
+    {
       id: "contract-template-create",
       group: "contract",
       domain: "contracts",
@@ -1067,6 +1130,37 @@ async function seedSupplierJourney(journeyId: string, mark: string): Promise<voi
     supplierId: supplier.id,
     email: fixture.email,
   })
+}
+
+async function seedOrganizationJourney(journeyId: string, mark: string): Promise<void> {
+  if (!verifyDb) throw new Error("Capability eval database is not mounted")
+  if (journeyId === "organization-create") return
+  const values =
+    journeyId === "organization-find"
+      ? {
+          name: `Danube Corporate Events ${mark}`,
+          legalName: "Danube Corporate Events SRL",
+          relation: "client" as const,
+          taxId: `RODANUBE${mark}`,
+          defaultCurrency: "EUR",
+          preferredLanguage: "ro",
+          paymentTerms: 30,
+          status: "active" as const,
+        }
+      : journeyId === "organization-deactivate"
+        ? {
+            name: `Former Alpine Client ${mark}`,
+            legalName: "Former Alpine Client GmbH",
+            relation: "client" as const,
+            taxId: `ROALPINE${mark}`,
+            defaultCurrency: "EUR",
+            preferredLanguage: "de",
+            paymentTerms: 45,
+            status: "active" as const,
+          }
+        : null
+  if (!values) throw new Error(`Unknown organization journey ${journeyId}`)
+  await verifyDb.insert(organizations).values(values)
 }
 
 async function seedProposalAuthoring(mark: string): Promise<void> {
@@ -1633,6 +1727,9 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
           if (journey.group === "amendment") await seedBookingAmendment(mark)
           if (journey.group === "supplier") await seedSupplierJourney(journey.id, mark)
           if (journey.group === "contract") await seedContractJourney(journey.id, mark)
+          if (journey.group === "organization") {
+            await seedOrganizationJourney(journey.id, mark)
+          }
           if (journey.id === "proposal-accept") await seedProposalAcceptance(mark)
           if (journey.id === "paid-refund") await seedPaidCancellationRefund(mark)
           let run: JourneyRun
@@ -1689,7 +1786,7 @@ describe.skipIf(!enabled)("MCP capability — a travel agent's job", () => {
       process.stdout.write(`\n${report()}\n\n`)
       writeMachineReport()
     },
-    JOURNEY_TIMEOUT_MS * JOURNEYS.length * RUNS,
+    JOURNEY_INACTIVITY_TIMEOUT_MS * JOURNEYS.length * RUNS,
   )
 
   afterAll(async () => {

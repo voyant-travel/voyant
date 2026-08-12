@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: trips; this suite exercises the aggregate composite lifecycle through one shared snapshot harness.
 import type {
   BookingHoldInternalRecord,
   BookingQuoteInternalRecord,
@@ -132,6 +133,7 @@ describe("accepted Proposal Version Booking Session composite", () => {
       sourceConnectionId: "connection_server",
       sourceRef: "product_1",
       metadata: {
+        sourceProvider: "tui",
         bookingDraftV1: {
           entity: {
             module: "products",
@@ -155,6 +157,16 @@ describe("accepted Proposal Version Booking Session composite", () => {
     const state = harness([selectedPackage])
     const commitSourced = vi.fn(async (input) => {
       expect(input.session.target).toEqual({ kind: "catalog_item", catalogItemId: "prod_1" })
+      expect(input.session.sourcedTargetPin).toEqual({
+        entityModule: "products",
+        entityId: "prod_1",
+        sourceKind: "voyant-connect",
+        sourceProvider: "tui",
+        sourceConnectionId: "connection_server",
+        sourceRef: "product_1",
+        projection: { title: "Live component", description: "Live component" },
+        title: "Live component",
+      })
       expect(input.session.statePayload).toMatchObject({
         configure: {
           departureDate: "2026-09-10",
@@ -220,6 +232,64 @@ describe("accepted Proposal Version Booking Session composite", () => {
         idempotencyKey: `commit_package:${selectedPackage.id}`,
       }),
     )
+  })
+
+  it("commits a customer-built Trip without an accepted Proposal origin", async () => {
+    const selectedPackage = component({
+      sourceKind: "voyant-connect",
+      sourceConnectionId: "connection_server",
+      sourceRef: "product_1",
+    })
+    const state = harness([selectedPackage])
+    state.session.origin = undefined
+    state.session.actorKind = "customer"
+    state.session.ownerPrincipalId = undefined
+    const handler = createTripBookingSessionCompositeHandler(state.persistence)
+    const leaf = leafRuntime()
+    const quote = await createQuote(handler, state.session, leaf, state.db)
+
+    await expect(
+      handler.commit({
+        session: state.session,
+        quote,
+        idempotencyKey: "commit_customer_trip",
+        requestFingerprint: "fp_customer_trip",
+        access: ACCESS,
+        now: NOW,
+        consumeSources: async () => {},
+        leaf,
+        db: state.db,
+      }),
+    ).resolves.toMatchObject({ kind: "committed" })
+  })
+
+  it("commits an originless customer Trip against its accepted fresh quote", async () => {
+    const state = harness([component()])
+    state.session.origin = undefined
+    state.session.actorKind = "customer"
+    state.session.ownerPrincipalId = undefined
+    const handler = createTripBookingSessionCompositeHandler(state.persistence)
+    const quote = await createQuote(
+      handler,
+      state.session,
+      leafRuntime({ quoteTotal: 12_000 }),
+      state.db,
+    )
+
+    await expect(
+      handler.commit({
+        session: state.session,
+        quote,
+        hold: aggregateHold(state.session, quote),
+        idempotencyKey: "commit_customer_changed_price",
+        requestFingerprint: "fp_customer_changed_price",
+        access: ACCESS,
+        now: NOW,
+        consumeSources: async () => {},
+        leaf: leafRuntime({ quoteTotal: 12_000 }),
+        db: state.db,
+      }),
+    ).resolves.toMatchObject({ kind: "committed" })
   })
 
   it("keeps an ambiguous package confirmation in doubt without materializing a booking", async () => {
@@ -473,7 +543,8 @@ function harness(components: TripComponent[]) {
   const allocations = new Map<string, string[]>()
   const db = {
     transaction: async <T>(operation: (tx: unknown) => Promise<T>) => operation({}),
-  } as unknown as PostgresJsDatabase
+    // agent-quality: unsafe-cast reviewed -- owner: trips; this transaction-only test double deliberately implements the persistence surface used by the handler.
+  } as PostgresJsDatabase
   const persistence: TripBookingSessionCompositePersistence = {
     loadSnapshot: async () => snapshot,
     loadCurrentComponents: async () => components,
@@ -688,7 +759,7 @@ function tripSnapshot(components: TripComponent[]): TripSnapshot {
     componentCount: lines.length,
     pricedComponentCount: lines.length,
     frozenEnvelope: {},
-    frozenComponents: components as unknown as Record<string, unknown>[],
+    frozenComponents: components.map((component) => ({ ...component })),
     proposal: {
       envelopeId: "trip_1",
       title: "Bespoke trip",

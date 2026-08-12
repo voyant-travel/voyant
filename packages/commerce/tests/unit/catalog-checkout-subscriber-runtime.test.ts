@@ -8,9 +8,12 @@ import { catalogCheckoutLegalRuntimePort } from "../../src/checkout/runtime-port
 import {
   COMMERCE_ACCEPTANCE_SIGNATURE_SUBSCRIBER_ID,
   COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID,
+  COMMERCE_INVOICE_PAYMENT_SIGNATURE_SUBSCRIBER_ID,
   createAcceptanceSignatureSubscriberRuntime,
   createCheckoutFinalizeSubscriberGraphRuntime,
   createCheckoutFinalizeSubscriberRuntime,
+  createInvoicePaymentSignatureSubscriberRuntime,
+  recordLinkedBookingPaymentConfirmation,
 } from "../../src/checkout/subscriber-runtime.js"
 
 type Handler = (
@@ -70,6 +73,63 @@ describe("catalog-checkout subscriber runtimes", () => {
     })
     expect(withDb).toHaveBeenCalledWith(bindings, expect.any(Function))
     expect(persistSignature).toHaveBeenCalledWith(db, "contract_1", eventBus, legalPort)
+  })
+
+  it("recovers a linked paid checkout before promoting the generated contract", async () => {
+    const db = {} as PostgresJsDatabase
+    const calls: string[] = []
+    const promoteLinkedPayment = vi.fn(async () => {
+      calls.push("payment")
+    })
+    const persistSignature = vi.fn(async () => {
+      calls.push("signature")
+    })
+    const { eventBus, subscriptions } = recordingEventBus()
+    const descriptor = createAcceptanceSignatureSubscriberRuntime({
+      legal: legalPort,
+      withDb: async (_bindings, operation) => operation(db),
+      promoteLinkedPayment,
+      persistSignature,
+    })
+
+    await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
+    await subscriptions[0]?.handler(
+      event("contract.document.generated", { contractId: "contract_card_1" }),
+    )
+
+    expect(promoteLinkedPayment).toHaveBeenCalledWith(db, "contract_card_1", legalPort)
+    expect(calls).toEqual(["payment", "signature"])
+  })
+
+  it("records a transferred paid Booking Session as contract payment confirmation", async () => {
+    const limit = vi.fn(async () => [{ id: "session_card_1" }])
+    const db = {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            orderBy: () => ({ limit }),
+          }),
+        }),
+      }),
+    } as PostgresJsDatabase
+    const paidLegalPort: AcceptanceSignatureLegalPort = {
+      ...legalPort,
+      getContract: vi.fn(async () => ({
+        id: "contract_card_1",
+        bookingId: "booking_card_1",
+        metadata: null,
+        status: "draft",
+      })),
+      recordBookingPaymentConfirmation: vi.fn(async () => undefined),
+    }
+
+    await recordLinkedBookingPaymentConfirmation(db, "contract_card_1", paidLegalPort)
+
+    expect(paidLegalPort.recordBookingPaymentConfirmation).toHaveBeenCalledWith(
+      db,
+      "booking_card_1",
+      "session_card_1",
+    )
   })
 
   it("logs and rethrows acceptance-signature failures for outbox retry", async () => {
@@ -150,6 +210,83 @@ describe("catalog-checkout subscriber runtimes", () => {
       "session_1",
     )
     expect(persistSignature).toHaveBeenCalledWith(db, "contract_1", scopedEventBus, paidLegalPort)
+  })
+
+  it("promotes an accepted booking contract after a completed invoice payment", async () => {
+    const db = {} as PostgresJsDatabase
+    const scopedEventBus = createEventBus()
+    const persistSignature = vi.fn(async () => undefined)
+    const paidLegalPort: AcceptanceSignatureLegalPort = {
+      ...legalPort,
+      getBookingContract: vi.fn(async () => ({
+        id: "contract_bank_1",
+        bookingId: "booking_bank_1",
+        metadata: null,
+        status: "draft",
+      })),
+      recordBookingPaymentConfirmation: vi.fn(async () => undefined),
+    }
+    const withDb = vi.fn(async (_bindings, operation) => operation(db))
+    const { eventBus, subscriptions } = recordingEventBus()
+    const descriptor = createInvoicePaymentSignatureSubscriberRuntime({
+      withDb,
+      legal: paidLegalPort,
+      persistSignature,
+    })
+    await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
+
+    await subscriptions[0]?.handler(
+      event("invoice.payment.recorded", {
+        bookingId: "booking_bank_1",
+        paymentId: "payment_bank_1",
+        status: "completed",
+      }),
+      { eventBus: scopedEventBus },
+    )
+
+    expect(descriptor).toMatchObject({
+      id: COMMERCE_INVOICE_PAYMENT_SIGNATURE_SUBSCRIBER_ID,
+      eventType: "invoice.payment.recorded",
+    })
+    expect(subscriptions[0]?.inline).toBe(true)
+    expect(paidLegalPort.recordBookingPaymentConfirmation).toHaveBeenCalledWith(
+      db,
+      "booking_bank_1",
+      "payment_bank_1",
+    )
+    expect(persistSignature).toHaveBeenCalledWith(
+      db,
+      "contract_bank_1",
+      scopedEventBus,
+      paidLegalPort,
+    )
+  })
+
+  it("ignores invoice payments that are incomplete or unrelated to a booking", async () => {
+    const withDb = vi.fn(async (_bindings, operation) => operation({} as PostgresJsDatabase))
+    const { eventBus, subscriptions } = recordingEventBus()
+    const descriptor = createInvoicePaymentSignatureSubscriberRuntime({
+      withDb,
+      legal: legalPort,
+    })
+    await descriptor.register({ bindings: {}, container: createContainer(), eventBus })
+
+    await subscriptions[0]?.handler(
+      event("invoice.payment.recorded", {
+        bookingId: "booking_bank_1",
+        paymentId: "payment_bank_1",
+        status: "pending",
+      }),
+    )
+    await subscriptions[0]?.handler(
+      event("invoice.payment.recorded", {
+        bookingId: null,
+        paymentId: "payment_unrelated_1",
+        status: "completed",
+      }),
+    )
+
+    expect(withDb).not.toHaveBeenCalled()
   })
 
   it("commits paid Booking Sessions before finalizing their booking", async () => {

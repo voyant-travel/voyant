@@ -27,6 +27,35 @@ export const voyantToolContextContribution = defineToolContextContribution({
       async resolveSellability(input) {
         return json(await sellabilityService.resolve(db, input))
       },
+      async listSellabilityPolicies(input) {
+        return json(await sellabilityService.listPolicies(db, input))
+      },
+      async getSellabilityPolicy(id) {
+        return json(await sellabilityService.getPolicyById(db, id))
+      },
+      async createSellabilityPolicy(input, admitted) {
+        const result = await executeCommerceCreate(
+          db,
+          requestContext,
+          COMMERCE_CREATED_TARGET_POLICIES.sellabilityPolicy,
+          undefined,
+          input,
+          admitted,
+          async (tx) => {
+            const row = await sellabilityService.createPolicy(tx, input)
+            if (!row) throw new Error("Sellability policy creation returned no row")
+            return { id: row.id }
+          },
+        )
+        return json({
+          status: "created" as const,
+          sellabilityPolicy: result.value,
+          replayed: result.replayed,
+        })
+      },
+      async updateSellabilityPolicy(id, input) {
+        return json(await sellabilityService.updatePolicy(db, id, input))
+      },
       async listCancellationPolicies(input) {
         return json(await pricingService.listCancellationPolicies(db, input))
       },

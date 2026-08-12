@@ -9,6 +9,7 @@ import {
 } from "@voyant-travel/catalog/ports"
 import type { BootstrapContext, EventBus, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { and, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -37,6 +38,8 @@ export const COMMERCE_ACCEPTANCE_SIGNATURE_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.catalog-checkout-contract-document-generated"
 export const COMMERCE_CHECKOUT_FINALIZE_SUBSCRIBER_ID =
   "@voyant-travel/commerce#subscriber.catalog-checkout-payment-completed"
+export const COMMERCE_INVOICE_PAYMENT_SIGNATURE_SUBSCRIBER_ID =
+  "@voyant-travel/commerce#subscriber.catalog-checkout-invoice-payment-recorded"
 
 export interface CatalogCheckoutRuntimeDatabase<TBindings = unknown>
   extends CatalogCheckoutDatabaseRuntime {
@@ -46,6 +49,7 @@ export interface CatalogCheckoutRuntimeDatabase<TBindings = unknown>
 export interface AcceptanceSignatureSubscriberRuntimeOptions<TBindings = unknown>
   extends CatalogCheckoutRuntimeDatabase<TBindings> {
   legal: AcceptanceSignatureLegalPort
+  promoteLinkedPayment?: typeof recordLinkedBookingPaymentConfirmation
   persistSignature?: typeof persistAcceptanceSignature
   logger?: Pick<Console, "error">
 }
@@ -78,10 +82,53 @@ interface PaymentCompletedPayload {
   paymentIntent?: "card" | "bank_transfer" | "hold" | "ticket_on_credit"
 }
 
+interface InvoicePaymentRecordedPayload {
+  bookingId: string | null
+  paymentId: string
+  status: "pending" | "completed" | "failed" | "refunded"
+}
+
+/**
+ * Recover the card path when the shopper's paid Commit wins the settlement
+ * subscriber race.
+ *
+ * The Booking Session payment is transferred onto the Booking in the same
+ * transaction that creates it. The earlier `payment.completed` event may have
+ * already been delivered while that payment still targeted the Booking
+ * Session, so document generation is the first durable post-commit checkpoint
+ * guaranteed to see both the Contract and the transferred payment.
+ */
+export async function recordLinkedBookingPaymentConfirmation(
+  db: PostgresJsDatabase,
+  contractId: string,
+  legal: AcceptanceSignatureLegalPort,
+): Promise<void> {
+  const contract = await legal.getContract(db, contractId)
+  if (!contract?.bookingId) return
+
+  const { paymentSessions } = await import("@voyant-travel/finance/schema")
+  const [paymentSession] = await db
+    .select({ id: paymentSessions.id })
+    .from(paymentSessions)
+    .where(
+      and(
+        eq(paymentSessions.bookingId, contract.bookingId),
+        inArray(paymentSessions.status, ["authorized", "paid"]),
+      ),
+    )
+    .orderBy(desc(paymentSessions.updatedAt), desc(paymentSessions.id))
+    .limit(1)
+  if (!paymentSession) return
+
+  await legal.recordBookingPaymentConfirmation(db, contract.bookingId, paymentSession.id)
+}
+
 /** Build the acceptance-signature descriptor without activating its manifest runtime. */
 export function createAcceptanceSignatureSubscriberRuntime<TBindings = unknown>(
   options: AcceptanceSignatureSubscriberRuntimeOptions<TBindings>,
 ): SubscriberRuntimeDescriptor {
+  const promoteLinkedPayment =
+    options.promoteLinkedPayment ?? recordLinkedBookingPaymentConfirmation
   const persistSignature = options.persistSignature ?? persistAcceptanceSignature
   const logger = options.logger ?? console
 
@@ -94,9 +141,10 @@ export function createAcceptanceSignatureSubscriberRuntime<TBindings = unknown>(
         "contract.document.generated",
         async ({ data }) => {
           try {
-            await options.withDb(runtimeBindings, (db) =>
-              persistSignature(db, data.contractId, eventBus, options.legal),
-            )
+            await options.withDb(runtimeBindings, async (db) => {
+              await promoteLinkedPayment(db, data.contractId, options.legal)
+              await persistSignature(db, data.contractId, eventBus, options.legal)
+            })
           } catch (error) {
             logger.error("[catalog-checkout] persistAcceptanceSignature failed", error)
             throw error
@@ -195,6 +243,45 @@ export function createCheckoutFinalizeSubscriberRuntime<TBindings = unknown>(
   }
 }
 
+/** Promote checkout acceptance after an operator confirms a booking invoice payment. */
+export function createInvoicePaymentSignatureSubscriberRuntime<TBindings = unknown>(
+  options: AcceptanceSignatureSubscriberRuntimeOptions<TBindings>,
+): SubscriberRuntimeDescriptor {
+  const persistSignature = options.persistSignature ?? persistAcceptanceSignature
+  const logger = options.logger ?? console
+
+  return {
+    id: COMMERCE_INVOICE_PAYMENT_SIGNATURE_SUBSCRIBER_ID,
+    eventType: "invoice.payment.recorded",
+    register: ({ bindings, eventBus }) => {
+      const runtimeBindings = bindings as TBindings
+      eventBus.subscribe<InvoicePaymentRecordedPayload>(
+        "invoice.payment.recorded",
+        async ({ data }, context) => {
+          if (data.status !== "completed" || !data.bookingId) return
+          const bookingId = data.bookingId
+          const nestedEventBus = (context?.eventBus ?? eventBus) as EventBus
+          try {
+            await options.withDb(runtimeBindings, async (db) => {
+              await options.legal.recordBookingPaymentConfirmation(db, bookingId, data.paymentId)
+              const contract = await options.legal.getBookingContract(db, bookingId)
+              if (!contract) return
+              await persistSignature(db, contract.id, nestedEventBus, options.legal)
+            })
+          } catch (error) {
+            logger.error(
+              `[catalog-checkout] invoice payment signature promotion failed for booking ${bookingId}`,
+              error,
+            )
+            throw error
+          }
+        },
+        { inline: true },
+      )
+    },
+  }
+}
+
 /** Selected-graph factory for acceptance-signature promotion. */
 export const createAcceptanceSignatureSubscriberGraphRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) =>
@@ -228,4 +315,13 @@ export const createCheckoutFinalizeSubscriberGraphRuntime = defineGraphRuntimeFa
       },
     }
   },
+)
+
+/** Selected-graph factory for operator-recorded booking payment promotion. */
+export const createInvoicePaymentSignatureSubscriberGraphRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) =>
+    createInvoicePaymentSignatureSubscriberRuntime({
+      ...(await getPort(catalogCheckoutDatabaseRuntimePort)),
+      legal: await getPort(catalogCheckoutLegalRuntimePort),
+    }),
 )

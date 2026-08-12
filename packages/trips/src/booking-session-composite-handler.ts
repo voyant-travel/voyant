@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: trips; aggregate quote, hold, commit, compensation, and component projection intentionally remain one composite protocol.
 import { bookingsService, setAcceptedProposalBookingOrigin } from "@voyant-travel/bookings"
 import type {
   BookingHoldInternalRecord,
@@ -272,10 +273,13 @@ export function createTripBookingSessionCompositeHandler(
       const database = input.db as PostgresJsDatabase
       const snapshot = await loadTargetSnapshot(database, input.session, persistence.loadSnapshot)
       if (materialTermsChanged(snapshot, input.quote.pricing)) {
-        return {
-          kind: "proposal_acceptance_required",
-          nextAction: "renew_proposal_version_acceptance",
-          proposalVersionId: requiredProposalOrigin(input.session).proposalVersionId,
+        const proposalOrigin = acceptedProposalOrigin(input.session)
+        if (proposalOrigin) {
+          return {
+            kind: "proposal_acceptance_required",
+            nextAction: "renew_proposal_version_acceptance",
+            proposalVersionId: proposalOrigin.proposalVersionId,
+          }
         }
       }
 
@@ -462,7 +466,8 @@ async function loadTargetSnapshot(
 function frozenComponents(snapshot: TripSnapshot): Map<string, TripComponent> {
   return new Map(
     snapshot.frozenComponents.map((value) => {
-      const component = value as unknown as TripComponent
+      // agent-quality: unsafe-cast reviewed -- owner: trips; immutable snapshots store the validated TripComponent projection as JSON records.
+      const component = { ...value } as TripComponent
       return [component.id, component]
     }),
   )
@@ -480,6 +485,24 @@ function childSession(
   return {
     ...parent,
     target: componentTarget(component),
+    sourcedTargetPin:
+      component.sourceKind !== "owned" && component.sourceConnectionId && component.sourceRef
+        ? {
+            entityModule: required(component.entityModule, "component.entityModule"),
+            entityId: required(component.entityId, "component.entityId"),
+            sourceKind: required(component.sourceKind, "component.sourceKind"),
+            sourceProvider: componentSourceProvider(component),
+            sourceConnectionId: component.sourceConnectionId,
+            sourceRef: component.sourceRef,
+            projection: compact({
+              title: component.title,
+              description: component.description,
+            }),
+            title:
+              component.title ??
+              `Sourced ${required(component.entityModule, "component.entityModule")}`,
+          }
+        : undefined,
     statePayload: compact({
       configure: draft.configure,
       billing: parentBilling ?? draft.billing,
@@ -735,25 +758,24 @@ async function recordComponentCommit(input: {
       bookingSessionQuoteId: quote.id,
     },
   })
-  const origin = requiredProposalOrigin(session)
-  await setAcceptedProposalBookingOrigin(db, {
-    bookingId: commitment.bookingId,
-    proposalId: origin.proposalId,
-    proposalVersionId: origin.proposalVersionId,
-    tripEnvelopeId: snapshot.envelopeId,
-    tripSnapshotId: snapshot.id,
-    tripComponentId: component.id,
-    bookingSessionId: session.id,
-    bookingSessionQuoteId: quote.id,
-    supplierOperationId: commitment.supplierOperationId,
-  })
+  const origin = acceptedProposalOrigin(session)
+  if (origin) {
+    await setAcceptedProposalBookingOrigin(db, {
+      bookingId: commitment.bookingId,
+      proposalId: origin.proposalId,
+      proposalVersionId: origin.proposalVersionId,
+      tripEnvelopeId: snapshot.envelopeId,
+      tripSnapshotId: snapshot.id,
+      tripComponentId: component.id,
+      bookingSessionId: session.id,
+      bookingSessionQuoteId: quote.id,
+      supplierOperationId: commitment.supplierOperationId,
+    })
+  }
 }
 
-function requiredProposalOrigin(session: BookingSessionInternalRecord) {
-  if (session.origin?.kind !== "accepted_proposal_version") {
-    throw new Error("accepted_proposal_version_origin_required")
-  }
-  return session.origin
+function acceptedProposalOrigin(session: BookingSessionInternalRecord) {
+  return session.origin?.kind === "accepted_proposal_version" ? session.origin : undefined
 }
 
 function componentQuantity(payload: Record<string, unknown>): number {
@@ -807,4 +829,9 @@ function compact(value: Record<string, unknown>): Record<string, unknown> {
 function required(value: string | null | undefined, label: string): string {
   if (!value) throw new Error(`${label} is required`)
   return value
+}
+
+function componentSourceProvider(component: TripComponent): string | null {
+  const value = component.metadata.sourceProvider
+  return typeof value === "string" && value.length > 0 ? value : null
 }

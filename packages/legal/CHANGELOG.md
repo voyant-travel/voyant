@@ -1,5 +1,27 @@
 # @voyant-travel/legal
 
+## 0.249.14
+
+### Patch Changes
+
+- 900c452: Keep production runtime-port startup preflight side-effect free while retaining exhaustive behavioral provider verification for CI and release gates.
+
+## 0.249.13
+
+### Patch Changes
+
+- 18f623f: Verify storefront contract acceptance against the pre-commit preview before server-assigned booking identifiers are added, so paid bookings promote their numbered contracts to signed.
+
+## 0.249.12
+
+### Patch Changes
+
+- c164b40: Carry explicit storefront contract acceptance through Booking Session checkout so paid card bookings sign their numbered contract automatically and deferred bank transfers retain a numbered draft until settlement.
+- Updated dependencies [bdc0190]
+- Updated dependencies [c164b40]
+  - @voyant-travel/bookings@0.240.12
+  - @voyant-travel/catalog@0.253.3
+
 ## 0.249.11
 
 ### Patch Changes
