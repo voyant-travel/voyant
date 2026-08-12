@@ -38,7 +38,7 @@ export function OrganizationDialog({
         data-slot="organization-dialog"
         side="right"
         size="lg"
-        className="w-full sm:w-3/4"
+        className="data-[side=right]:w-full"
       >
         <SheetHeader>
           <SheetTitle>

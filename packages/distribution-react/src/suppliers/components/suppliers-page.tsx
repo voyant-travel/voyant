@@ -34,6 +34,9 @@ import { SupplierDialog } from "./supplier-dialog.js"
 
 const ALL = "__all__"
 
+/** Zero-based indexes of the columns hidden below `md`: Country and Currency. */
+const SECONDARY_SUPPLIER_COLUMNS = [3, 4] as const
+
 export type SuppliersPageProps = {
   pageSize?: number
   onSupplierOpen?: (supplier: Supplier) => void
@@ -301,7 +304,7 @@ export function SuppliersPage({
           </thead>
           <tbody>
             {query.isPending ? (
-              <LoadingRows columns={5} rows={8} />
+              <LoadingRows columns={5} rows={8} secondaryColumns={SECONDARY_SUPPLIER_COLUMNS} />
             ) : query.isError ? (
               <MessageRow columns={5}>{messages.suppliersPage.loadFailed}</MessageRow>
             ) : rows.length === 0 ? (
@@ -403,16 +406,35 @@ function SortableHeader({
   )
 }
 
-function LoadingRows({ rows, columns }: { rows: number; columns: number }) {
+/**
+ * `secondaryColumns` names the zero-based indexes that the real table drops
+ * below `md`. They have to be mirrored here: otherwise the pending state is two
+ * columns wider than the table it stands in for, keeping exactly the horizontal
+ * width the responsive columns exist to remove, and the list reflows once the
+ * query resolves.
+ */
+function LoadingRows({
+  rows,
+  columns,
+  secondaryColumns = [],
+}: {
+  rows: number
+  columns: number
+  secondaryColumns?: readonly number[]
+}) {
   return Array.from({ length: rows }, (_, rowIndex) => `row-${rowIndex}`).map((rowKey) => (
     <tr key={rowKey} className="border-t">
-      {Array.from({ length: columns }, (__, columnIndex) => `${rowKey}-cell-${columnIndex}`).map(
-        (columnKey) => (
-          <td key={columnKey} className="px-4 py-3">
-            <div className="h-4 w-full max-w-32 animate-pulse rounded bg-muted" />
-          </td>
-        ),
-      )}
+      {Array.from({ length: columns }, (__, columnIndex) => columnIndex).map((columnIndex) => (
+        <td
+          key={`${rowKey}-cell-${columnIndex}`}
+          className={cn(
+            "px-4 py-3",
+            secondaryColumns.includes(columnIndex) && SECONDARY_COLUMN_CLASS,
+          )}
+        >
+          <div className="h-4 w-full max-w-32 animate-pulse rounded bg-muted" />
+        </td>
+      ))}
     </tr>
   ))
 }

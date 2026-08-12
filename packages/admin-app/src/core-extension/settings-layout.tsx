@@ -84,14 +84,25 @@ export function AdminCoreSettingsLayout({
 
   const isActive = (href: string) => pathname.replace(/\/$/, "") === href
 
+  const activeHref =
+    navGroups.flatMap((group) => group.items).find((item) => isActive(item.href))?.href ?? null
+
   // On a phone the nav is a scroll strip roughly six times wider than the
   // viewport, so without this the active section is almost always scrolled out
   // of sight and there is nothing to say which of ~18 sections you are in.
+  //
+  // Keyed on the active entry rather than on mount: the settings pages are child
+  // routes of this layout, so moving between them — including via browser
+  // back/forward — keeps this component alive, and a mount-only effect would
+  // leave the strip parked on whichever section was active when it first
+  // rendered. Keying on the resolved href rather than `pathname` also avoids
+  // re-scrolling when only a query string changes.
   const navRef = useRef<HTMLElement | null>(null)
   useEffect(() => {
+    if (!activeHref) return
     const active = navRef.current?.querySelector<HTMLElement>("[data-settings-nav-active='true']")
     active?.scrollIntoView({ block: "nearest", inline: "center" })
-  }, [])
+  }, [activeHref])
 
   // Full-height two-pane settings shell. It bleeds out of the shared page
   // padding (px-4 py-6 md:px-6 from the workspace layout) so the panes stay

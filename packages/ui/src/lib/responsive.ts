@@ -41,3 +41,20 @@ export const TOUCH_CHECKBOX_CLASS =
  * 32px from `md` up.
  */
 export const TOUCH_ICON_BUTTON_CLASS = "size-11 md:size-8"
+
+/**
+ * Full-bleed side sheets on a phone.
+ *
+ * `SheetContent` defaults to `data-[side=right]:w-3/4`, which leaves a ~98px
+ * dead gutter on a 390px screen while the form inside is cramped. Passing a
+ * plain `w-full` does **not** override it: Tailwind compiles the variant to
+ * `.data-\[side\=right\]\:w-3\/4[data-side="right"]`, a class **plus** an
+ * attribute selector, which outranks the bare `.w-full` class — and `cn`'s
+ * tailwind-merge keeps both because their modifiers differ. The override has to
+ * match the side variant to win.
+ *
+ * Safe at every width: the primitive still applies `data-[side=right]:sm:max-w-sm`
+ * (or the caller's own `sm:max-w-*`), so from `sm` up the sheet is capped exactly
+ * as before and only the phone case changes.
+ */
+export const SHEET_FULL_WIDTH_ON_PHONE_CLASS = "data-[side=right]:w-full data-[side=left]:w-full"
