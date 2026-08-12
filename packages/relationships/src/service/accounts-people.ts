@@ -494,9 +494,32 @@ export const peopleAccountsService = {
 
   // ── Payment methods ────────────────────────────────────────────────────
 
+  /**
+   * Projected rather than selected whole, so `processor_token` never leaves the
+   * server.
+   *
+   * It is the one column that can charge the customer, and every authenticated
+   * admin client would receive it on a screen that only needs a brand and four
+   * digits to render. A caller that means to charge names the method by id and
+   * lets the server resolve the token.
+   */
   listPersonPaymentMethods(db: PostgresJsDatabase, personId: string) {
     return db
-      .select()
+      .select({
+        id: personPaymentMethods.id,
+        personId: personPaymentMethods.personId,
+        source: personPaymentMethods.source,
+        brand: personPaymentMethods.brand,
+        last4: personPaymentMethods.last4,
+        holderName: personPaymentMethods.holderName,
+        expMonth: personPaymentMethods.expMonth,
+        expYear: personPaymentMethods.expYear,
+        providerId: personPaymentMethods.providerId,
+        authorizedReuses: personPaymentMethods.authorizedReuses,
+        status: personPaymentMethods.status,
+        isDefault: personPaymentMethods.isDefault,
+        createdAt: personPaymentMethods.createdAt,
+      })
       .from(personPaymentMethods)
       .where(eq(personPaymentMethods.personId, personId))
       .orderBy(desc(personPaymentMethods.isDefault), desc(personPaymentMethods.createdAt))
