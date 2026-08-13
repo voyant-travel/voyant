@@ -78,6 +78,26 @@ Rules:
   architecture checker rejects `z.custom()` and opaque top-level output schemas in
   canonical Tool runtime modules.
 
+### `actionPolicy.id` is an opaque key, not an identity
+
+A manifest consumer must not parse `actionPolicy.id`, must not require a package
+prefix on it, and must not infer an owner from it. It is a **lookup key**: the gate
+in `@voyant-travel/action-ledger` selects the graph action whose own `id` is exactly
+equal to it, and everything load-bearing about that action — kind, target, risk,
+ledger, approval — comes from the resolved declaration, not from the string.
+Ownership is asserted by `capabilityId` against the Tool's `owner`, which is
+validated separately.
+
+Most first-party actions read `<package>#action.<name>`, which is the convention for
+new ones. The `booking.*` family (`booking.status.cancel`, `booking.pii.read`,
+`booking.item.create`, and their siblings) does not, and that is **not** drift to be
+normalized: the selected action's `id` is written verbatim into the action ledger as
+`action_name`, and it feeds the approval command fingerprint. Renaming one would
+orphan every historical entry for that action, break the drift queries that count
+them, and invalidate any approval already issued against the old key. The two shapes
+therefore coexist permanently, and only a consumer that treats the prefix as
+meaningful is wrong.
+
 ## Intent-level workflow tools
 
 Some jobs an operator does are not one service call — they are a fixed sequence of

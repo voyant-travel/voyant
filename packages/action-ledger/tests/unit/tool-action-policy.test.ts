@@ -27,6 +27,45 @@ describe("generic MCP action-policy gate", () => {
     expect(dispatch).toHaveBeenCalledOnce()
   })
 
+  // voyant#4596: `actionPolicy.id` is an opaque graph key, not an owner-scoped
+  // identity. A consumer that requires it to share a package with the Tool's
+  // `owner` rejects the whole legacy `booking.*` family, which selects fine.
+  it("selects an action whose id carries no package prefix", async () => {
+    const selected = legacyKeyedAction()
+    const dispatch = vi.fn(async () => ({ ok: true }))
+
+    await expect(gate(selected).execute(execution(selected, {}), dispatch)).resolves.toEqual({
+      ok: true,
+    })
+    expect(dispatch).toHaveBeenCalledOnce()
+  })
+
+  // The other half of "opaque": the key is matched by exact equality, so
+  // renaming one to the prefixed convention is a wire-visible change, not a
+  // cosmetic one.
+  it("refuses a policy whose id does not equal the selected action id", async () => {
+    const selected = legacyKeyedAction()
+    const submitted = execution(selected, {})
+    const dispatch = vi.fn(async () => ({ ok: true }))
+
+    await expect(
+      gate(selected).execute(
+        {
+          ...submitted,
+          actionPolicy: {
+            ...submitted.actionPolicy,
+            id: "@voyant-travel/bookings#action.cancel-booking",
+          },
+        },
+        dispatch,
+      ),
+    ).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      meta: { actionId: "@voyant-travel/bookings#action.cancel-booking" },
+    })
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+
   it("fails closed when a ledgered action has no server-resolved target", async () => {
     const selected = action()
     const dispatch = vi.fn(async () => ({ ok: true }))
@@ -477,6 +516,17 @@ function action(
     from: { tools: ["@voyant-travel/test#tool.mutate"] },
     ...overrides,
   }
+}
+
+/** Shaped like the real `booking.status.cancel`: dotted key, unrelated capability id. */
+function legacyKeyedAction(): VoyantGraphActionDeclaration {
+  return action({
+    id: "booking.status.cancel",
+    capabilityId: "bookings:status:cancel",
+    kind: "read",
+    ledger: "optional",
+    risk: "low",
+  })
 }
 
 function execution(
