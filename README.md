@@ -227,18 +227,38 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 [`@voyant-travel/admin`](./packages/admin/README.md); cross-cutting primitives in
 [`packages/ui`](./packages/ui/README.md).
 
-### Adapters and integrations
+## Extending the platform
 
-Vendor integrations are **adapters**, not plugins — "plugin" is retired as a
-classification. See
-[the taxonomy](./docs/architecture/module-provider-plugin-taxonomy.md).
+"Plugin" is retired as a classification ([RFC #3395](./docs/architecture/module-provider-plugin-taxonomy.md)),
+and no package in this repository declares that kind — `verify:deprecated-graph-kinds`
+denies it. Modules are components of the one deployable and are not selectable.
+Substitution happens at two seams instead.
+
+### Adapters and providers
+
+Adapters and providers swap a vendor or infrastructure implementation *inside*
+the deployment. They are ordinary graph units selected through the resolved
+deployment graph — object storage, KV, rate limiting, and search all resolve
+this way, as does [`@voyant-travel/storage`](./packages/storage/README.md).
 
 | Package | Description |
 | --- | --- |
-| [`@voyant-travel/payments`](./packages/payments) | The payment adapter contract: initiate/status/verify, provider catalog, and remote transport |
-| [`@voyant-travel/voyant-connect-adapter`](./packages/voyant-connect-adapter) | Voyant Connect supplier connectivity |
-| [`plugin-netopia`](https://github.com/voyant-travel/plugin-netopia) | Netopia payments (separate repository) |
-| [`plugin-payload`](https://github.com/voyant-travel/plugin-payload) | Payload CMS sync (separate repository) |
+| [`@voyant-travel/payments`](./packages/payments) | The payment adapter contract — initiate/status/verify, provider catalog, and remote transport. Netopia and Voyant Pay are catalog providers |
+| [`@voyant-travel/voyant-connect-adapter`](./packages/voyant-connect-adapter) | Voyant Connect supplier connectivity, on top of the external `@voyant-travel/connect-sdk` |
+
+### Apps
+
+An **app** is a separately deployed service activated for a deployment through
+OAuth. App code never executes inside the Operator process and never
+contributes migrations, routes, providers, or any other executable server code.
+Apps integrate through scoped APIs, events, durable webhook subscriptions,
+app-owned namespaced custom fields, and sandboxed admin extensions.
+
+The deployment-local runtime for this — registration, immutable declarative
+releases, consent, installation, grants, pause/revoke/uninstall — lives in
+[`@voyant-travel/apps`](./packages/apps). Accounting and CRM integrations such
+as SmartBill are apps. See
+[the Remote App Platform RFC](./docs/architecture/remote-app-platform-rfc.md).
 
 ## Architecture
 
