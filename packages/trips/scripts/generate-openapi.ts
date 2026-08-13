@@ -17,6 +17,7 @@
 
 import { writeFile } from "node:fs/promises"
 
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { OpenApiDocument } from "@voyant-travel/hono/openapi"
 import { generateOpenApiDocument, stampModuleMetadata } from "@voyant-travel/hono/openapi"
 
@@ -34,11 +35,25 @@ const options = {
 /**
  * The same factory produces both documents — admin-only legs are documented on
  * the public surface too and answer 403 there at runtime, which is the existing
- * contract `createTripsApiModule` mounts. Surface is therefore not passed here.
+ * contract `createTripsApiModule` mounts. Surface is therefore not passed to
+ * the factory.
+ *
+ * `apiId` is not decoration: `createTripsApiModule` stamps each mounted route
+ * tree with its graph API bundle, and `voyant-manifest.test.ts` asserts every
+ * operation in the storefront document carries it. Generating without the same
+ * stamp silently drops `x-voyant-api-id` from every operation.
  */
 const targets = [
-  { file: "../openapi/admin/trips.json", prefix: "/v1/admin/trips" },
-  { file: "../openapi/storefront/trips.json", prefix: "/v1/public/trips" },
+  {
+    file: "../openapi/admin/trips.json",
+    prefix: "/v1/admin/trips",
+    apiId: "@voyant-travel/trips#api.admin",
+  },
+  {
+    file: "../openapi/storefront/trips.json",
+    prefix: "/v1/public/trips",
+    apiId: "@voyant-travel/trips#api.public",
+  },
 ] as const
 
 function withPrefix(document: OpenApiDocument, prefix: string): OpenApiDocument {
@@ -68,10 +83,15 @@ function serialize(document: OpenApiDocument) {
  * reshaped without regenerating.
  */
 await Promise.all(
-  targets.map(({ file, prefix }) =>
+  targets.map(({ file, prefix, apiId }) =>
     writeFile(
       new URL(file, import.meta.url),
-      serialize(withPrefix(generateOpenApiDocument(createTripsRoutes(), options), prefix)),
+      serialize(
+        withPrefix(
+          generateOpenApiDocument(stampOpenApiRegistryApiId(createTripsRoutes(), apiId), options),
+          prefix,
+        ),
+      ),
     ),
   ),
 )
