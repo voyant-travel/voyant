@@ -12,15 +12,18 @@
 </h1>
 
 <p align="center">
-  The open-source travel commerce framework for OTAs, tour operators, and DMCs.
+  The open-source travel commerce platform for OTAs, tour operators, and DMCs.
 </p>
 
 <p align="center">
   <a href="https://github.com/voyant-travel/voyant/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Voyant is released under the Apache 2.0 license." />
   </a>
-  <a href="https://www.npmjs.com/package/@voyant-travel/core">
-    <img src="https://img.shields.io/npm/v/@voyant-travel/core.svg?label=%40voyant-travel%2Fcore" alt="Current @voyant-travel/core npm version." />
+  <a href="https://www.npmjs.com/package/@voyant-travel/cli">
+    <img src="https://img.shields.io/npm/v/@voyant-travel/cli.svg?label=%40voyant-travel%2Fcli" alt="Current @voyant-travel/cli npm version." />
+  </a>
+  <a href="https://github.com/voyant-travel/voyant/pkgs/container/operator">
+    <img src="https://img.shields.io/badge/ghcr.io-voyant--travel%2Foperator-blue.svg" alt="The Operator container image on GHCR." />
   </a>
   <a href="https://github.com/voyant-travel/voyant/issues">
     <img src="https://img.shields.io/badge/issues-welcome-brightgreen.svg" alt="Issues welcome!" />
@@ -36,47 +39,72 @@
 </h4>
 
 <p align="center">
-  Voyant ships deployable starter apps, package-owned background execution, and
-  a wide set of headless domain modules (catalog, commerce, inventory, operations,
-  relationships, proposals, bookings, finance, distribution, legal, charters,
-  cruises, accommodation resale, and more) that you compose into your own
-  travel platform.
+  Voyant is delivered as the <strong>Operator</strong> — a complete, deployable
+  travel commerce back office — composed from a wide set of headless domain
+  modules (catalog, commerce, inventory, operations, relationships, proposals,
+  bookings, finance, distribution, legal, charters, cruises, accommodation
+  resale, and more) that live in this repository.
 </p>
 
 ## Getting started
 
-Install the CLI, scaffold an app from a first-party starter, and run it locally.
+The Operator is a resident Node application distributed as a container image.
+Run it managed, or self-host it.
+
+### Managed
+
+[Voyant Cloud](https://voyant.travel) provisions and upgrades an Operator
+deployment for you: one Postgres database and one runtime per organization. A
+running deployment can be exported as a self-host bundle at any time — see
+[Exporting From Voyant Cloud](./docs/exporting-from-voyant-cloud.md).
+
+### Self-hosted
+
+The composed Operator image is published to GHCR and is the supported
+self-host artifact:
 
 ```bash
-# 1. Install the CLI
-npm install -g @voyant-travel/cli
-
-# 2. Scaffold a project from the operator starter
-voyant new my-travel-app
-cd my-travel-app
-pnpm install
-
-# 3. Configure the app
-cp .env.example .env
-# set your secrets (DATABASE_URL, BETTER_AUTH_ADMIN_SECRET, …) in .env
-
-# 4. Run the app
-pnpm db:migrate
-pnpm dev
+docker pull ghcr.io/voyant-travel/operator:latest
+docker run --rm -p 8080:8080 --env-file ./operator.env \
+  ghcr.io/voyant-travel/operator:latest
 ```
 
-> `voyant new` scaffolds from the `operator` starter by default. Pass `--starter <name>` to pick another built-in starter (downloaded from GitHub Release assets for the matching CLI release), or point it at a custom local starter directory.
+The server listens on `PORT` (default `8080`) and exposes `/healthz` for
+container probes. It needs a Postgres URL and a set of auth, session, and
+integration secrets — [`apps/operator/.env.example`](./apps/operator/.env.example)
+is the authoritative key list.
+
+> Every push to `main` publishes an immutable `sha-<git-sha>` tag; deliberate
+> releases publish a bare semver tag, and `latest` is promoted from an
+> already-verified release digest. **Pin a semver tag or a digest in
+> production** — a `sha-` snapshot records which commit was built, not which
+> version was released. See
+> [Operator Image Distribution](./docs/architecture/operator-image-distribution.md).
+
+### From source
+
+To generate and own a project instead, use the CLI:
+
+```bash
+npm install -g @voyant-travel/cli
+voyant new my-travel-app
+cd my-travel-app && pnpm install
+cp .env.example .env   # set DATABASE_URL, auth secrets, …
+pnpm db:migrate && pnpm dev
+```
 
 Visit the [documentation](https://voyant.travel/docs) to learn more.
 
 ## What is Voyant?
 
-Voyant is a framework for building travel commerce platforms. Instead of a
-monolithic booking system, it gives you composable, headless domain modules
-and deployable application shells that you own and extend.
+Voyant is a travel commerce platform for OTAs, tour operators, and DMCs.
+Instead of a monolithic booking system, the product is assembled from
+composable, headless domain modules resolved into a single deployment graph —
+so the Operator you run is a real, complete application, and the modules behind
+it stay independently versioned and extensible.
 
-- **Deployable application shells, not just isolated packages.** First-party
-  starters ship as real, runnable apps.
+- **A deployable product, not a pile of packages.** The Operator is composed,
+  built, and shipped as one artifact.
 - **A normalized travel operations data model** on PostgreSQL + Drizzle.
 - **Headless domain modules** for catalog, commerce, inventory, operations,
   relationships, proposals, bookings, finance, distribution, legal, charters,
@@ -84,12 +112,11 @@ and deployable application shells that you own and extend.
 - **Hono-based API transport** with optional Next.js route helpers.
 - **Package-owned subscribers and jobs** selected with their domain modules and
   hosted by self-managed infrastructure or Voyant Cloud.
-- **Better Auth wiring** in first-party starters, with core packages staying
-  auth-provider agnostic.
+- **Better Auth wiring** in the generated application, with core packages
+  staying auth-provider agnostic.
 - **Versioned React packages per domain** (`relationships-react`,
-  `inventory-react`, `commerce-react`, `bookings-react`, …) consumed as
-  ordinary dependencies: hooks, clients, providers, query keys, and reusable
-  UI that wrap each module's HTTP contract.
+  `inventory-react`, `commerce-react`, `bookings-react`, …): hooks, clients,
+  providers, query keys, and reusable UI that wrap each module's HTTP contract.
 - **Optional integrations** for payments, e-invoicing, storage, CMS sync, and
   notifications.
 
@@ -98,21 +125,44 @@ trip composition. It is not positioned as a hotel PMS or first-party
 hotel-operations system. See
 [`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
 
-## Starters
+## The Operator
 
-Voyant ships one first-party starter:
+The Operator is the first-party product: a tour operator and DMC back office
+running as a resident Node process (TanStack Start + React 19, Hono, Better
+Auth, Drizzle on Postgres). It is composed from the modules below through the
+resolved deployment graph and booted by
+[`@voyant-travel/runtime`](./packages/runtime).
 
-| Starter | Purpose | Stack |
-| --- | --- | --- |
-| Operator (generated by the CLI) | Tour operator platform | Node, TanStack Start, Hono, Better Auth, Drizzle |
+The unified composed application graph is **Node-only** — a fully composed
+operator cannot stay resident on Cloudflare Workers, though Workers still host
+separate edge-native storefront and federated surfaces. The measurements and
+the decision behind that are in
+[Deployment Targets](./docs/architecture/deployment-targets.md) and
+[Node Runtime Authority](./docs/architecture/node-runtime-authority.md).
 
-## The framework surface
+[`apps/operator`](./apps/operator/README.md) is the checked-in integration
+application that exercises the whole product in this workspace. It is not the
+consumer project — generated projects come from the CLI's
+`STANDARD_NODE_STARTER` contract, documented in
+[Standard Node Starter Acceptance](./docs/architecture/standard-node-starter-acceptance.md).
+
+## The module surface
+
+Voyant's packages are the composition surface for the product; most are
+internal to it rather than separately installable. **Fourteen packages are
+published to npm** — chiefly the `*-contracts` tier plus
+[`@voyant-travel/cli`](https://www.npmjs.com/package/@voyant-travel/cli),
+`@voyant-travel/ui`, `@voyant-travel/payments`, `@voyant-travel/schema-kit`,
+`@voyant-travel/app-manifest`, and `@voyant-travel/admin-extension-sdk`. The
+rest of the tables below map the repository, not the npm registry; see
+[`docs/frontend-package-strategy.md`](./docs/frontend-package-strategy.md) for
+what may be published and why.
 
 ### Core platform
 
 | Package | Description |
 | --- | --- |
-| [`@voyant-travel/core`](./packages/core/README.md) | Module system, container, event bus, and plugins |
+| [`@voyant-travel/core`](./packages/core/README.md) | Module system, container, event bus, and adapter registration |
 | [`@voyant-travel/db`](./packages/db/README.md) | Drizzle schemas, TypeID, and database adapters |
 | [`@voyant-travel/hono`](./packages/hono/README.md) | `createApp`, middleware, auth, and actor guards |
 | [`@voyant-travel/react`](./packages/react) | Shared React provider and typed fetch client |
@@ -171,14 +221,18 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 [`@voyant-travel/admin`](./packages/admin/README.md); cross-cutting primitives in
 [`packages/ui`](./packages/ui/README.md).
 
-### Plugins
+### Adapters and integrations
+
+Vendor integrations are **adapters**, not plugins — "plugin" is retired as a
+classification. See
+[the taxonomy](./docs/architecture/module-provider-plugin-taxonomy.md).
 
 | Package | Description |
 | --- | --- |
-| [`@voyant-travel/plugin-netopia`](https://github.com/voyant-travel/plugin-netopia) | Netopia payments |
-| [`@voyant-travel/plugin-smartbill`](./packages/plugins/smartbill/README.md) | SmartBill e-invoicing (Romanian tax compliance) |
-| [`@voyant-travel/plugin-payload-cms`](https://github.com/voyant-travel/plugin-payload) | Payload CMS sync |
-| [`@voyant-travel/plugin-sanity-cms`](./packages/plugins/sanity-cms/README.md) | Sanity CMS sync |
+| [`@voyant-travel/payments`](./packages/payments) | The payment adapter contract: initiate/status/verify, provider catalog, and remote transport |
+| [`@voyant-travel/voyant-connect-adapter`](./packages/voyant-connect-adapter) | Voyant Connect supplier connectivity |
+| [`plugin-netopia`](https://github.com/voyant-travel/plugin-netopia) | Netopia payments (separate repository) |
+| [`plugin-payload`](https://github.com/voyant-travel/plugin-payload) | Payload CMS sync (separate repository) |
 
 ## Architecture
 
@@ -186,13 +240,16 @@ Voyant keeps a strict boundary between reusable business logic and deployment sh
 
 - `packages/*` hold reusable business logic, schemas, services, routes, adapters, and contracts
 - `apps/*` own UI, auth wiring, deployment shape, and runtime-specific configuration
-- Core packages stay framework-agnostic even when first-party starters use React, TanStack Start, Hono, Better Auth, and Cloudflare Workers
+- Core packages stay framework-agnostic even when the generated application uses React, TanStack Start, Hono, Better Auth, and Drizzle
 - Transport adapters stay thin and call shared domain services rather than owning business logic
 - Package manifests contribute required subscribers and jobs; deployment hosts provide their runtime infrastructure
+- Modules are components of one deployable, not independently shipped services ([ADR-0016](./docs/adr/0016-modules-as-components-of-one-deployable.md))
 
 Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions
 live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes
-live in [`docs/migrations/`](./docs/migrations/README.md).
+live in [`docs/migrations/`](./docs/migrations/README.md). Start with
+[the unified deployment graph](./docs/architecture/unified-deployment-graph.md),
+which is what resolves modules into the shipped Operator.
 
 ### Security model
 
@@ -206,12 +263,12 @@ revisited.
 ## Contributing
 
 This repository is the workspace that powers the framework, the Operator
-integration application, packaged starter generation, runners, and examples.
+integration application, generated project packaging, runners, and examples.
 
 | Area | What it contains |
 | --- | --- |
 | [`packages/*`](./packages) | Reusable business logic, schemas, services, transport adapters, and integrations |
-| [`packages/plugins/*`](./packages/plugins) | First-party plugin bundles (payments, invoicing, CMS sync) |
+| [`packages/*-contracts`](./packages) | Published contract packages consumed outside this repository |
 | [`apps/operator`](./apps/operator/README.md) | Checked-in Operator integration and deployable application |
 | [`apps/*`](./apps) | Applications, reference/demo APIs, and the shadcn registry host |
 | [`examples/operator-demo`](./examples/operator-demo/README.md) | Destructive and generated Operator demo fixtures |
