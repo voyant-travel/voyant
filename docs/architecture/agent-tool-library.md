@@ -88,15 +88,32 @@ ledger, approval — comes from the resolved declaration, not from the string.
 Ownership is asserted by `capabilityId` against the Tool's `owner`, which is
 validated separately.
 
-Most first-party actions read `<package>#action.<name>`, which is the convention for
-new ones. The `booking.*` family (`booking.status.cancel`, `booking.pii.read`,
-`booking.item.create`, and their siblings) does not, and that is **not** drift to be
-normalized: the selected action's `id` is written verbatim into the action ledger as
-`action_name`, and it feeds the approval command fingerprint. Renaming one would
-orphan every historical entry for that action, break the drift queries that count
-them, and invalidate any approval already issued against the old key. The two shapes
-therefore coexist permanently, and only a consumer that treats the prefix as
-meaningful is wrong.
+It is not an audit identity either. The ledger records `capabilityId ?? id` as its
+`action_name`, so for any action that declares a capability — which is nearly all of
+them — `actionPolicy.id` never reaches a persisted row. Do not read a graph action id
+as the thing you would search ledger history for.
+
+Every one of the 277 first-party graph actions is now qualified by the package that
+declares it — `<packageName>#…`, usually `#action.<name>` and sometimes with a facet
+segment in between — and `verify:graph-conformance` holds that line, allowlist and
+all. The six that did not follow it (bookings'
+`booking.status.{cancel,start,complete,override}` and `booking.pii.read`, plus
+`relationships.person_document.reveal`) were renamed in voyant#4596.
+
+That checker is an **authoring** rule and does not change the paragraphs above. A
+consumer still must not require the prefix: `actionPolicy.id` remains an opaque key,
+and a custom module from outside this repo names its actions whatever it likes, where
+no checker of ours can reach it.
+
+**Renaming a graph action id is only safe while it is not the ledger name.** Those six
+each either declare a `capabilityId` (so the gate persists that instead) or are
+recorded by a package-local route path under its own constant, so nothing persisted
+moved. The `booking.status.*` literals in `bookings/src/routes-admin.ts` and
+`service-core.ts`, and `PERSON_DOCUMENT_REVEAL_ACTION_NAME` in relationships, are
+ledger identity: they are what `action_ledger_entries.action_name` holds, they
+participate in the idempotency unique index and the approval command fingerprint, and
+they must not be renamed to match the graph. Before renaming an action id, check
+which of the two you are holding.
 
 ## Intent-level workflow tools
 

@@ -54,14 +54,14 @@ describe("generic MCP action-policy gate", () => {
           ...submitted,
           actionPolicy: {
             ...submitted.actionPolicy,
-            id: "@voyant-travel/bookings#action.cancel-booking",
+            id: "@voyant-travel/legacy#action.cancel",
           },
         },
         dispatch,
       ),
     ).rejects.toMatchObject({
       code: "ACTION_POLICY_REQUIRED",
-      meta: { actionId: "@voyant-travel/bookings#action.cancel-booking" },
+      meta: { actionId: "@voyant-travel/legacy#action.cancel" },
     })
     expect(dispatch).not.toHaveBeenCalled()
   })
@@ -518,11 +518,11 @@ function action(
   }
 }
 
-/** Shaped like the real `booking.status.cancel`: dotted key, unrelated capability id. */
+/** A dotted key with an unrelated capability id — the shape the contract admits. */
 function legacyKeyedAction(): VoyantGraphActionDeclaration {
   return action({
-    id: "booking.status.cancel",
-    capabilityId: "bookings:status:cancel",
+    id: "legacy.status.cancel",
+    capabilityId: "legacy:status:cancel",
     kind: "read",
     ledger: "optional",
     risk: "low",
