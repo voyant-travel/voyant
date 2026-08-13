@@ -723,6 +723,37 @@ describe("production Booking Session ports", () => {
     expect(quoted.quote.pricing.promotionCodeStatus).toEqual({ kind: "code_not_found" })
   })
 
+  it("does not let a code read as applied when no promotions module is wired", async () => {
+    // No evaluator: the quote is priced and carries no rejection, which a
+    // client reads as "applied" — so the code has to be answered explicitly.
+    const module = createCommittableProductionModule({ productId: "prod_1" })
+    const access = {
+      actorKind: "anonymous" as const,
+      capability: TEST_CAPABILITY,
+      ...STOREFRONT_ACCESS,
+    }
+    const created = await module.createSession(
+      {
+        ...committableCreateInput("create_unwired_promotion"),
+        selection: {
+          ...committableCreateInput("ignored").selection,
+          promotionCode: "GREEK15",
+        },
+      },
+      access,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+    const quoted = await module.quoteSession(
+      created.session.id,
+      { expectedRevision: created.session.revision, idempotencyKey: "quote_unwired_promotion" },
+      access,
+    )
+
+    if (quoted.kind !== "quote_created") throw new Error("quote not created")
+    expect(quoted.quote.pricing.total).toBe(10_000)
+    expect(quoted.quote.pricing.promotionCodeStatus).toEqual({ kind: "code_not_found" })
+  })
+
   it("keeps quoting at full price when promotion evaluation throws", async () => {
     const module = createCommittableProductionModule(
       { productId: "prod_1" },

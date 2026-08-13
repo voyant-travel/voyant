@@ -933,9 +933,17 @@ async function promotedPricing(
   const code = stringValue(session.statePayload.promotionCode)
   const evaluate = await deps.resolvePromotionEvaluator?.(db)
   if (!evaluate || session.target.kind !== "product") {
-    return code
-      ? { ...breakdown, promotionCodeStatus: { kind: "code_not_applicable", reason: "scope" } }
-      : breakdown
+    // Saying nothing here would be read as "applied" by a client that has a
+    // priced quote and no rejection, so a code always gets an answer. A
+    // deployment with no promotions module cannot find the code at all;
+    // promotions only scope to products, so any other target is out of scope.
+    if (!code) return breakdown
+    return {
+      ...breakdown,
+      promotionCodeStatus: evaluate
+        ? { kind: "code_not_applicable", reason: "scope" }
+        : { kind: "code_not_found" },
+    }
   }
   const travelers = arrayValue(session.statePayload.travelers) ?? []
   try {

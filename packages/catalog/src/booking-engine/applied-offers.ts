@@ -13,7 +13,7 @@
  */
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { and, eq, inArray, isNotNull } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 
 import { pricingBreakdownV1 } from "./contracts.js"
 import type { AppliedOffer } from "./promotions-contract.js"
@@ -53,12 +53,7 @@ async function readSessionQuotePricing(
   const commits = await db
     .select({ sessionId: bookingSessionCommitsTable.sessionId })
     .from(bookingSessionCommitsTable)
-    .where(
-      and(
-        eq(bookingSessionCommitsTable.bookingId, bookingId),
-        isNotNull(bookingSessionCommitsTable.bookingId),
-      ),
-    )
+    .where(eq(bookingSessionCommitsTable.bookingId, bookingId))
   const sessionIds = [...new Set(commits.map((commit) => commit.sessionId))]
   if (sessionIds.length === 0) return []
   const rows = await db
