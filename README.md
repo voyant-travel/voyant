@@ -40,27 +40,27 @@
 
 <p align="center">
   Voyant is a complete travel commerce platform — catalog, pricing, inventory,
-  bookings, finance, CRM, proposals, and distribution in one deployable back
-  office called the <strong>Operator</strong>. Self-host it, or let Voyant Cloud
-  run it for you.
+  bookings, finance, CRM, proposals, and distribution in one back office for
+  OTAs, tour operators, and DMCs.
 </p>
 
 ## Getting started
 
-The Operator is a resident Node application distributed as a container image.
-Run it managed, or self-host it.
+Voyant runs as a resident Node application. Run it yourself, or have it run for
+you.
 
-### Managed
+### Voyant Platform
 
-[Voyant Cloud](https://voyant.travel) provisions and upgrades an Operator
-deployment for you: one Postgres database and one runtime per organization. A
-running deployment can be exported as a self-host bundle at any time — see
-[Exporting From Voyant Cloud](./docs/exporting-from-voyant-cloud.md).
+[Voyant Platform](https://voyant.travel) is the managed offering: it provisions,
+upgrades, and operates your deployment — one Postgres database and one runtime
+per organization. A running deployment can be exported as a self-host bundle at
+any time, so you can move to Voyant OSS whenever you want
+([details](./docs/exporting-from-voyant-cloud.md)).
 
-### Self-hosted
+### Voyant OSS
 
-The composed Operator image is published to GHCR and is the supported
-self-host artifact:
+Voyant OSS is this repository: the whole platform under Apache-2.0, published as
+a container image.
 
 ```bash
 docker pull ghcr.io/voyant-travel/operator:latest
@@ -96,12 +96,9 @@ Visit the [documentation](https://voyant.travel/docs) to learn more.
 
 ## What is Voyant?
 
-Voyant is the back office an OTA, tour operator, or DMC actually runs on. It is
-not a toolkit you assemble into a product — it is the product, and it is open
-source. The same platform runs both ways: the whole thing is Apache-2.0 and
-published as a container image you can self-host, and Voyant Cloud is the
-managed version of it. Nothing is held back from the open edition to make the
-managed one worth paying for.
+Voyant is the back office an OTA, tour operator, or DMC runs on. It comes in two
+editions of the same software: **Voyant OSS**, the complete Apache-2.0 platform
+you self-host, and **Voyant Platform**, the managed offering.
 
 What it covers:
 
@@ -119,40 +116,36 @@ What it covers:
 - **Distribution and storefronts** — channel distribution plus a public booking
   surface for customers.
 
-Underneath, it runs on Postgres with a normalized travel operations data model,
-serves a Hono API, and boots as a resident Node process. Domain modules
-contribute their own subscribers, jobs, and React surfaces, so the platform can
-be extended without forking it.
+It sits on a normalized travel operations data model, and each domain module
+contributes its own API surface, subscribers, jobs, and React components, so the
+platform can be extended in place.
 
-Voyant supports accommodation as catalog inventory for resale, packaging, and
-trip composition. It is not a hotel PMS or a hotel-operations system. See
+Accommodation is held as sellable catalog inventory, for resale, packaging, and
+trip composition — see
 [`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
 
-## The Operator
+## How it runs
 
-The Operator is the product — there is one, and this is it. It runs as a
-resident Node process (TanStack Start + React 19, Hono, Better Auth, Drizzle on
-Postgres), assembled from the modules below through the resolved deployment
-graph and booted by [`@voyant-travel/runtime`](./packages/runtime).
-
-The unified composed application graph is **Node-only** — a fully composed
-operator cannot stay resident on Cloudflare Workers, though Workers still host
-separate edge-native storefront and federated surfaces. The measurements and
-the decision behind that are in
+Voyant runs as a resident Node process on Postgres — TanStack Start + React 19
+for the dashboard, Hono for the API, Better Auth for identity, Drizzle for data
+access. The modules below are assembled through the resolved deployment graph
+and booted by [`@voyant-travel/runtime`](./packages/runtime). Node is the target
+for the composed application; edge-native storefront and federated surfaces keep
+their own hosts. The reasoning and measurements are in
 [Deployment Targets](./docs/architecture/deployment-targets.md) and
 [Node Runtime Authority](./docs/architecture/node-runtime-authority.md).
 
-[`apps/operator`](./apps/operator/README.md) is the checked-in integration
-application that exercises the whole product in this workspace. It is not the
-consumer project — generated projects come from the CLI's
-`STANDARD_NODE_STARTER` contract, documented in
+The deployable is published as `ghcr.io/voyant-travel/operator`.
+[`apps/operator`](./apps/operator/README.md) is the checked-in application that
+exercises the whole platform in this workspace; generated projects come from the
+CLI's `STANDARD_NODE_STARTER` contract, documented in
 [Standard Node Starter Acceptance](./docs/architecture/standard-node-starter-acceptance.md).
 
 ## The module surface
 
-The platform is built from the modules below. They are internal components of
-one deployable rather than a menu of separately installable libraries — see
-[ADR-0016](./docs/adr/0016-modules-as-components-of-one-deployable.md).
+The platform is built from the modules below — components of one deployable,
+resolved together into the running application
+([ADR-0016](./docs/adr/0016-modules-as-components-of-one-deployable.md)).
 
 **Fourteen of them are published to npm**: the `*-contracts` tier plus
 `@voyant-travel/ui`, `@voyant-travel/payments`, `@voyant-travel/schema-kit`,
@@ -172,7 +165,7 @@ what may be published and why.
 | [`@voyant-travel/db`](./packages/db/README.md) | Drizzle schemas, TypeID, and database adapters |
 | [`@voyant-travel/hono`](./packages/hono/README.md) | `createApp`, middleware, auth, and actor guards |
 | [`@voyant-travel/react`](./packages/react) | Shared React provider and typed fetch client |
-| [`@voyant-travel/auth`](./packages/auth/README.md) | Better Auth wiring for the Operator application |
+| [`@voyant-travel/auth`](./packages/auth/README.md) | Better Auth wiring for the Voyant application |
 | [`@voyant-travel/auth-react`](./packages/auth-react/README.md) | Auth React hooks and components |
 | [`@voyant-travel/types`](./packages/types/README.md) | Shared workspace types |
 | [`@voyant-travel/utils`](./packages/utils/README.md) | Shared utility functions |
@@ -229,10 +222,10 @@ live under `@voyant-travel/bookings-react/requirements`; checkout UI lives under
 
 ## Extending the platform
 
-"Plugin" is retired as a classification ([RFC #3395](./docs/architecture/module-provider-plugin-taxonomy.md)),
-and no package in this repository declares that kind — `verify:deprecated-graph-kinds`
-denies it. Modules are components of the one deployable and are not selectable.
-Substitution happens at two seams instead.
+Voyant keeps a small extension vocabulary: **modules** are the components the
+platform is built from, and customization happens at two seams —
+**adapters and providers**, and **apps**. See
+[the taxonomy](./docs/architecture/module-provider-plugin-taxonomy.md).
 
 ### Adapters and providers
 
@@ -249,7 +242,7 @@ this way, as does [`@voyant-travel/storage`](./packages/storage/README.md).
 ### Apps
 
 An **app** is a separately deployed service activated for a deployment through
-OAuth. App code never executes inside the Operator process and never
+OAuth. App code runs entirely outside the Voyant process and never
 contributes migrations, routes, providers, or any other executable server code.
 Apps integrate through scoped APIs, events, durable webhook subscriptions,
 app-owned namespaced custom fields, and sandboxed admin extensions.
@@ -266,7 +259,7 @@ Voyant keeps a strict boundary between reusable business logic and deployment sh
 
 - `packages/*` hold reusable business logic, schemas, services, routes, adapters, and contracts
 - `apps/*` own UI, auth wiring, deployment shape, and runtime-specific configuration
-- Domain packages stay transport- and UI-agnostic even though the Operator uses React, TanStack Start, Hono, Better Auth, and Drizzle
+- Domain packages stay transport- and UI-agnostic even though the application layer uses React, TanStack Start, Hono, Better Auth, and Drizzle
 - Transport adapters stay thin and call shared domain services rather than owning business logic
 - Package manifests contribute required subscribers and jobs; deployment hosts provide their runtime infrastructure
 - Modules are components of one deployable, not independently shipped services ([ADR-0016](./docs/adr/0016-modules-as-components-of-one-deployable.md))
@@ -275,7 +268,7 @@ Architecture decisions live in [`docs/adr/`](./docs/adr/); domain conventions
 live in [`docs/architecture/`](./docs/architecture/); per-minor migration notes
 live in [`docs/migrations/`](./docs/migrations/README.md). Start with
 [the unified deployment graph](./docs/architecture/unified-deployment-graph.md),
-which is what resolves modules into the shipped Operator.
+which is what resolves modules into the shipped application.
 
 ### Security model
 
@@ -288,7 +281,7 @@ revisited.
 
 ## Contributing
 
-This repository is the whole platform: the domain modules, the Operator
+This repository is Voyant OSS: the domain modules, the deployable
 application, generated project packaging, runners, and examples.
 
 | Area | What it contains |
