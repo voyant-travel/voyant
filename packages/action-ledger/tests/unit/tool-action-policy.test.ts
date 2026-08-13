@@ -66,6 +66,22 @@ describe("generic MCP action-policy gate", () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
+  // The actual ownership assertion: the owning module names the Tool
+  // capabilities allowed to select the action, and nothing string-matches a
+  // policy field against `owner`. A consumer must not reimplement this.
+  it("refuses a Tool the selected action does not bind in from.tools", async () => {
+    const selected = action({ from: { tools: ["@voyant-travel/other#tool.mutate"] } })
+    const dispatch = vi.fn(async () => ({ ok: true }))
+
+    await expect(
+      gate(selected).execute(execution(selected, { confirmed: true, requestId }), dispatch),
+    ).rejects.toMatchObject({
+      code: "ACTION_POLICY_REQUIRED",
+      meta: { capabilityId: "@voyant-travel/test#tool.mutate" },
+    })
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+
   it("fails closed when a ledgered action has no server-resolved target", async () => {
     const selected = action()
     const dispatch = vi.fn(async () => ({ ok: true }))

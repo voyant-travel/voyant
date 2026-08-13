@@ -85,8 +85,14 @@ prefix on it, and must not infer an owner from it. It is a **lookup key**: the g
 in `@voyant-travel/action-ledger` selects the graph action whose own `id` is exactly
 equal to it, and everything load-bearing about that action — kind, target, risk,
 ledger, approval — comes from the resolved declaration, not from the string.
-Ownership is asserted by `capabilityId` against the Tool's `owner`, which is
-validated separately.
+
+**No field of the action policy is an ownership claim, so do not validate one against
+`owner`.** The owning module states which Tools may select an action by naming their
+capability ids in its `from.tools`, and `resolveSelectedAction` enforces exactly that:
+the invoking Tool capability must appear in the declaration's tool list. The action's
+own `capabilityId` is a capability token — `bookings:status:cancel` — checked only for
+equality against the selected declaration. It is not package-shaped and never was, so
+a consumer that requires it to share a package with `owner` rejects a valid selection.
 
 It is not an audit identity either. The ledger records `capabilityId ?? id` as its
 `action_name`, so for any action that declares a capability — which is nearly all of

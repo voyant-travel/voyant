@@ -63,15 +63,18 @@ export interface ToolActionPolicyBinding {
    * `capabilityId ?? id` as its `action_name`, so for any action that declares
    * a capability this key never reaches a persisted row.
    *
-   * Ownership is asserted by {@link ToolActionPolicyBinding.capabilityId}
-   * against the Tool's `owner`, which is validated separately.
+   * There is no field here a consumer can derive ownership from — do not try.
+   * The owning module states which Tools may select the action, by naming their
+   * capability ids in the declaration's `from.tools`, and the gate enforces that
+   * binding. Nothing string-matches a field of this policy against `owner`.
    */
   id: string
   /**
-   * Capability identity of the selected action, checked against the owning
-   * unit. This — not {@link ToolActionPolicyBinding.id} — is the field that
-   * carries the ownership claim, and it is what the action ledger persists as
-   * `action_name`.
+   * Capability identity of the selected action — a capability token such as
+   * `bookings:status:cancel`, **not** a package-shaped identifier and not
+   * comparable to the Tool's `owner`. The gate checks only that it equals the
+   * selected graph declaration's own capability. It is what the action ledger
+   * persists as `action_name`.
    */
   capabilityId: string
   version: string
