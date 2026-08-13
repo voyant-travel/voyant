@@ -49,12 +49,11 @@
 Voyant runs as a resident Node application. Run it yourself, or have it run for
 you.
 
-### Voyant Platform
+### Voyant
 
-[Voyant Platform](https://voyant.travel) is the managed offering: it provisions,
-upgrades, and operates your deployment — one Postgres database and one runtime
-per organization. A running deployment can be exported as a self-host bundle at
-any time, so you can move to Voyant OSS whenever you want
+Have the [Voyant team](https://voyant.travel) run it for you. Provisioning,
+upgrades, security, and maintenance are all handled — you get the platform
+without operating it. A deployment can be exported to Voyant OSS at any time
 ([details](./docs/exporting-from-voyant-cloud.md)).
 
 ### Voyant OSS
@@ -96,9 +95,9 @@ Visit the [documentation](https://voyant.travel/docs) to learn more.
 
 ## What is Voyant?
 
-Voyant is the back office an OTA, tour operator, or DMC runs on. It comes in two
-editions of the same software: **Voyant OSS**, the complete Apache-2.0 platform
-you self-host, and **Voyant Platform**, the managed offering.
+Voyant is the back office an OTA, tour operator, or DMC runs on. It comes two
+ways: **Voyant OSS**, the complete Apache-2.0 platform you self-host, and
+**Voyant**, the same platform run for you.
 
 What it covers:
 
