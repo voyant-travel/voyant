@@ -42,7 +42,7 @@ export function promotionEvaluationInputFor(input: {
   audience: PromotionEvaluationInput["slice"]["audience"]
   pax: number
   at: Date
-  code: string | null
+  code: string | null | undefined
   hasChildTraveler?: boolean
 }): PromotionEvaluationInput {
   return {
