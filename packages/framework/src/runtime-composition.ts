@@ -192,6 +192,7 @@ function runtimePortStub(id: string): unknown {
     resolveNotificationDispatcher: unavailable,
     listBookingReminderRuns: unavailableAsync,
     resolveSupplierPolicy: unavailableAsync,
+    resolveProposalVersionPolicy: unavailableAsync,
     resolveSupplierPolicyById: unavailableAsync,
     resolveBookingPolicy: unavailableAsync,
     resolveEntityPolicy: unavailableAsync,
