@@ -181,10 +181,17 @@ async function serializeEagerToolSurface(): Promise<{
 }
 
 function diagnose(tools: SerializedTool[], totalBytes: number): string {
+  // Per-tool bytes, largest first. The total alone says the payload grew; it
+  // does not say which tool grew, and the difference decides whether the cause
+  // is a newly-eager domain tool or one tier-0 schema getting fatter. Chasing a
+  // 355-byte overage without this cost a whole debugging cycle (voyant#4598).
+  const sized = tools
+    .map((tool) => ({ name: tool.name, bytes: Buffer.byteLength(JSON.stringify(tool), "utf8") }))
+    .sort((left, right) => right.bytes - left.bytes)
   return [
     `MCP tools/list payload: ${totalBytes.toLocaleString()} bytes across ${tools.length} eager tools`,
     `  ~${Math.round(totalBytes / BYTES_PER_TOKEN).toLocaleString()} tokens charged on every connection`,
-    `  tools: ${tools.map(({ name }) => name).join(", ")}`,
+    ...sized.map(({ name, bytes }) => `    ${bytes.toLocaleString().padStart(7)}  ${name}`),
     "",
     "  Progressive disclosure (voyant#3927) keeps only tier-0 resident. If this grew,",
     "  a domain tool was likely registered eagerly again — discover it through",
