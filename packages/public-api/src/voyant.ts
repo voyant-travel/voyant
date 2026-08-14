@@ -41,7 +41,7 @@ import {
 export const publicApiVoyantModule = defineModule({
   id: "@voyant-travel/public-api",
   packageName: "@voyant-travel/public-api",
-  localId: "storefront",
+  localId: "public-api",
   provides: {
     capabilities: ["public-api.data-owner"],
     ports: [
