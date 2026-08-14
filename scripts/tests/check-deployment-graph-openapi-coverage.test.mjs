@@ -100,7 +100,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
         },
       ]),
       "packages/admin/package.json": "{}\n",
-      "packages/storefront/package.json": "{}\n",
+      "packages/public-api/package.json": "{}\n",
       "packages/bookings/openapi/admin/bookings.json": openapi({
         "/v1/admin/bookings": {
           get: { responses: { 200: { description: "OK" } }, "x-voyant-api-id": apiId },
@@ -146,7 +146,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
           },
         },
       }),
-      "openapi/storefront/bookings.json": openapi({
+      "openapi/public-api/bookings.json": openapi({
         "/v1/public/bookings": {
           get: {
             responses: { 200: { description: "OK" } },
@@ -179,7 +179,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
           ],
         },
       ]),
-      "openapi/storefront/charters.json": openapi({
+      "openapi/public-api/charters.json": openapi({
         "/v1/public/charters": {
           get: {
             responses: { 200: { description: "OK" } },
@@ -579,7 +579,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
           post: { responses: { 200: { description: "OK" } }, "x-voyant-api-id": apiIds.flights },
         },
       }),
-      "openapi/storefront/accommodations-content-public.json": openapi({
+      "openapi/public-api/accommodations-content-public.json": openapi({
         "/v1/public/accommodations/{id}/content": {
           get: {
             responses: { 200: { description: "OK" } },
@@ -587,7 +587,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
           },
         },
       }),
-      "openapi/storefront/proposals-proposal-public.json": openapi({
+      "openapi/public-api/proposals-proposal-public.json": openapi({
         "/v1/public/proposals/{proposalVersionId}": {
           get: { responses: { 200: { description: "OK" } }, "x-voyant-api-id": apiIds.proposals },
         },

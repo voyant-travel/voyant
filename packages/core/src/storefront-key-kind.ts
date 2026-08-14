@@ -12,13 +12,13 @@
  *
  * Dependency-free by construction: `core` is below both `hono` and `auth`.
  */
-import type { VoyantStorefrontKeyKind } from "./env.js"
+import type { VoyantPublicApiKeyKind } from "./env.js"
 
 /** Token prefix per key kind. Deployed clients hold these; they never change. */
 export const STOREFRONT_KEY_PREFIXES = {
   publishable: "vpk_",
   secret: "vsk_",
-} as const satisfies Record<VoyantStorefrontKeyKind, string>
+} as const satisfies Record<VoyantPublicApiKeyKind, string>
 
 /** Header a storefront client presents its access key on. */
 export const STOREFRONT_KEY_HEADER = "x-api-key"
@@ -34,7 +34,7 @@ export const STOREFRONT_KEY_HEADER = "x-api-key"
  *
  * Web Crypto only, so it runs in Node, workerd and the browser alike.
  */
-export async function hashStorefrontKeyToken(token: string): Promise<string> {
+export async function hashPublicApiKeyToken(token: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
@@ -48,12 +48,12 @@ export async function hashStorefrontKeyToken(token: string): Promise<string> {
  * so a non-storefront credential (a `voy_` deployment key, an OAuth token) is
  * never mistaken for one.
  */
-export function classifyStorefrontKeyToken(
+export function classifyPublicApiKeyToken(
   token: string | null | undefined,
-): VoyantStorefrontKeyKind | null {
+): VoyantPublicApiKeyKind | null {
   const value = token?.trim()
   if (!value) return null
-  for (const kind of Object.keys(STOREFRONT_KEY_PREFIXES) as VoyantStorefrontKeyKind[]) {
+  for (const kind of Object.keys(STOREFRONT_KEY_PREFIXES) as VoyantPublicApiKeyKind[]) {
     if (value.startsWith(STOREFRONT_KEY_PREFIXES[kind])) return kind
   }
   return null

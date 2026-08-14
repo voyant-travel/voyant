@@ -15,7 +15,7 @@
 import type { ApiKeyPermissions } from "./api-keys.js"
 import { normalizeApiKeyPermissions, permissionsToStrings } from "./api-keys.js"
 
-export type StorefrontKeyScopes = ApiKeyPermissions
+export type PublicApiKeyScopes = ApiKeyPermissions
 
 /**
  * The grant a secret key is minted with unless the operator picks otherwise:
@@ -27,19 +27,19 @@ export type StorefrontKeyScopes = ApiKeyPermissions
  * to reach them, and a default that included them would make the narrow case
  * the one requiring effort.
  */
-export const STOREFRONT_SECRET_KEY_DEFAULT_SCOPES: StorefrontKeyScopes = Object.freeze({
+export const STOREFRONT_SECRET_KEY_DEFAULT_SCOPES: PublicApiKeyScopes = Object.freeze({
   bookings: ["read", "write"],
   finance: ["read", "write"],
   legal: ["read"],
   markets: ["read"],
   products: ["read"],
   storefront: ["read", "write"],
-}) as StorefrontKeyScopes
+}) as PublicApiKeyScopes
 
 /** The unrestricted grant. Only ever set when an operator explicitly opts in. */
-export const STOREFRONT_KEY_WILDCARD_SCOPES: StorefrontKeyScopes = Object.freeze({
+export const STOREFRONT_KEY_WILDCARD_SCOPES: PublicApiKeyScopes = Object.freeze({
   "*": ["*"],
-}) as StorefrontKeyScopes
+}) as PublicApiKeyScopes
 
 /**
  * Whether a grant is the unrestricted one. The admin surface uses this to be
@@ -47,8 +47,8 @@ export const STOREFRONT_KEY_WILDCARD_SCOPES: StorefrontKeyScopes = Object.freeze
  * deployment admin key by another name, which is the thing voyant#4625 set out
  * to retire — so it must be a visible choice, never a quiet default.
  */
-export function isWildcardStorefrontKeyScopes(
-  scopes: StorefrontKeyScopes | null | undefined,
+export function isWildcardPublicApiKeyScopes(
+  scopes: PublicApiKeyScopes | null | undefined,
 ): boolean {
   return normalizeApiKeyPermissions(scopes)["*"]?.includes("*") === true
 }
@@ -61,16 +61,16 @@ export function isWildcardStorefrontKeyScopes(
  * key minted before this shipped. An explicitly empty grant stays `{}` and
  * means what it says.
  */
-export function normalizeStorefrontKeyScopes(
-  scopes: StorefrontKeyScopes | null | undefined,
-): StorefrontKeyScopes | null {
+export function normalizePublicApiKeyScopes(
+  scopes: PublicApiKeyScopes | null | undefined,
+): PublicApiKeyScopes | null {
   if (scopes === null || scopes === undefined) return null
   return normalizeApiKeyPermissions(scopes)
 }
 
 /** Flat `resource:action` strings, for an auth context's `scopes`. */
-export function storefrontKeyScopeStrings(
-  scopes: StorefrontKeyScopes | null | undefined,
+export function publicApiKeyScopeStrings(
+  scopes: PublicApiKeyScopes | null | undefined,
 ): string[] {
   return permissionsToStrings(scopes)
 }

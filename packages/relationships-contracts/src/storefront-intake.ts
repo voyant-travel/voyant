@@ -1,12 +1,12 @@
 /** Import-cheap context shared by Storefront intake and its persistence provider. */
-export interface StorefrontIntakeContext {
+export interface PublicApiIntakeContext {
   db?: unknown
   eventBus?: unknown
   env?: unknown
   context?: unknown
 }
 
-export interface StorefrontIntakeSignal {
+export interface PublicApiIntakeSignal {
   id: string
   personId: string
   kind: "wishlist" | "notify" | "inquiry" | "request_offer" | "referral"
@@ -18,18 +18,18 @@ export interface StorefrontIntakeSignal {
   metadata?: Record<string, unknown> | null
 }
 
-export interface StorefrontIntakePerson {
+export interface PublicApiIntakePerson {
   id: string
 }
 
-export interface StorefrontIntakePersistence<
-  Context extends StorefrontIntakeContext = StorefrontIntakeContext,
+export interface PublicApiIntakePersistence<
+  Context extends PublicApiIntakeContext = PublicApiIntakeContext,
 > {
   findSignal(input: {
     context: Context
-    kind: StorefrontIntakeSignal["kind"]
+    kind: PublicApiIntakeSignal["kind"]
     sourceSubmissionId: string
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  }): Promise<PublicApiIntakeSignal | null> | PublicApiIntakeSignal | null
   createPerson(input: {
     context: Context
     data: {
@@ -43,15 +43,15 @@ export interface StorefrontIntakePersistence<
       sourceRef: string
       tags: string[]
     }
-  }): Promise<StorefrontIntakePerson | null> | StorefrontIntakePerson | null
+  }): Promise<PublicApiIntakePerson | null> | PublicApiIntakePerson | null
   createCustomerSignal(input: {
     context: Context
     data: {
       personId: string
       productId?: string | null
       optionUnitId?: string | null
-      kind: StorefrontIntakeSignal["kind"]
-      source: StorefrontIntakeSignal["source"]
+      kind: PublicApiIntakeSignal["kind"]
+      source: PublicApiIntakeSignal["source"]
       status: "new"
       priority: "normal"
       notes?: string | null
@@ -59,14 +59,14 @@ export interface StorefrontIntakePersistence<
       sourceSubmissionId: string
       metadata: Record<string, unknown>
     }
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  }): Promise<PublicApiIntakeSignal | null> | PublicApiIntakeSignal | null
   updateCustomerSignal(input: {
     context: Context
     id: string
     data: {
       metadata: Record<string, unknown>
     }
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
+  }): Promise<PublicApiIntakeSignal | null> | PublicApiIntakeSignal | null
   deleteCustomerSignal(input: { context: Context; id: string }): Promise<unknown> | unknown
   deletePerson(input: { context: Context; id: string }): Promise<unknown> | unknown
 }

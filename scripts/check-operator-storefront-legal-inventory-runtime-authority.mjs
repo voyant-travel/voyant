@@ -18,7 +18,7 @@ const [
   inventoryContributor,
 ] = await Promise.all([
   read("packages/runtime/src/deployment-resources.ts"),
-  read("packages/storefront/src/runtime-contributor.ts"),
+  read("packages/public-api/src/runtime-contributor.ts"),
   read("packages/relationships/src/runtime-contributor.ts"),
   read("packages/notifications/src/runtime-contributor.ts"),
   read("packages/trips/src/runtime-contributor.ts"),
@@ -78,7 +78,7 @@ if (/host\.capabilities|loadInventoryRuntime/.test(inventoryContributor)) {
 }
 
 for (const factory of [
-  "createStorefrontRuntimePortContribution",
+  "createPublicApiRuntimePortContribution",
   "createLegalRuntimePortContribution",
   "createInventoryRuntimePortContribution",
 ]) {

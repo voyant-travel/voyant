@@ -7,7 +7,7 @@ const authoring = readFileSync(
   "utf8",
 )
 const storefront = readFileSync(
-  new URL("../../openapi/storefront/products.json", import.meta.url),
+  new URL("../../openapi/public-api/products.json", import.meta.url),
   "utf8",
 )
 

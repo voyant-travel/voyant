@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
-import { storefrontRuntimePort } from "@voyant-travel/auth/storefront-runtime-port"
+import { publicApiRuntimePort } from "@voyant-travel/auth/storefront-runtime-port"
 import { createVoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import { legalDocumentArtifactProviderPort } from "@voyant-travel/legal"
 import { describe, expect, it, vi } from "vitest"
@@ -18,15 +18,13 @@ import {
 
 // The link-service binding reader needs a live deployment database; the runtime
 // wiring under test is which resolver consults it, not how it reads rows.
-vi.mock("@voyant-travel/auth/storefront-channel-binding-provider", () => ({
-  createLinkServiceStorefrontChannelBindingProvider: () => ({
-    getStorefrontChannelBinding: async (_context: unknown, storefrontId: string) => ({
-      storefrontId,
+vi.mock("@voyant-travel/auth/public-api-channel-provider", () => ({
+  createPublicApiChannelProvider: () => ({
+    resolveChannelForKey: async () => ({
       channelId: "chan_web",
       channelName: "Web",
       channelStatus: "active",
-      createdAt: null,
-      updatedAt: null,
+      implicit: false,
     }),
   }),
 }))
@@ -427,12 +425,12 @@ describe("Voyant project runtime composition", () => {
       trustedOrigins: ["https://shop.example.com"],
       methods: { emailCode: true, emailPassword: true },
     })
-    mocks.runtimePorts[storefrontRuntimePort.id] = {
-      resolveStorefrontByApiKey: async () => ({
+    mocks.runtimePorts[publicApiRuntimePort.id] = {
+      resolvePublicApiByApiKey: async () => ({
         storefront: { id: "sf_1", allowedOrigins: ["https://shop.example.com"] },
         key: { id: "sfk_1" },
       }),
-      resolveStorefrontByOrigin: async () => null,
+      resolvePublicApiByOrigin: async () => null,
     }
     try {
       const projectRoot = await createGeneratedProject()
@@ -446,7 +444,7 @@ describe("Voyant project runtime composition", () => {
       const wired = mocks.authRuntimeOptions[0]?.resolveCustomerAuthContext as (
         env: unknown,
         request: Request,
-      ) => Promise<{ baseURL: string; storefrontChannel?: Record<string, string> }>
+      ) => Promise<{ baseURL: string; publicChannel?: Record<string, string> }>
       expect(wired).not.toBe(resolveCustomerAuthContext)
 
       const context = await wired(
@@ -460,13 +458,12 @@ describe("Voyant project runtime composition", () => {
         }),
       )
       expect(context.baseURL).toBe("https://shop.example.com")
-      expect(context.storefrontChannel).toEqual({
-        storefrontId: "sf_1",
+      expect(context.publicChannel).toEqual({
         channelId: "chan_web",
         channelStatus: "active",
       })
     } finally {
-      delete mocks.runtimePorts[storefrontRuntimePort.id]
+      delete mocks.runtimePorts[publicApiRuntimePort.id]
     }
   })
 

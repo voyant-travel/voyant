@@ -58,7 +58,7 @@ import type { BookingSessionAccessContext } from "./sessions-service.js"
 
 const PRODUCT_TARGET = { kind: "product", productId: "prod_selection" } as const
 const STOREFRONT_ACCESS = {
-  storefront: { storefrontId: "sf_public", channelId: "chan_public" },
+  storefront: { channelId: "chan_public" },
 } as const
 const TEST_CAPABILITY = `bcap_${"a".repeat(43)}`
 
@@ -938,9 +938,9 @@ describe("production Booking Session ports", () => {
       {
         actorKind: "anonymous",
         capability: TEST_CAPABILITY,
-        storefront: { storefrontId: "sf_public", channelId: "chan_public" },
+        storefront: { channelId: "chan_public" },
       } satisfies BookingSessionAccessContext,
-      { storefront: { storefrontId: "sf_public", channelId: "chan_public" } },
+      { storefront: { channelId: "chan_public" } },
     ],
     [
       "staff",

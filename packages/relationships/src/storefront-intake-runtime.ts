@@ -1,13 +1,13 @@
 import type {
-  StorefrontIntakeContext,
-  StorefrontIntakePersistence,
+  PublicApiIntakeContext,
+  PublicApiIntakePersistence,
 } from "@voyant-travel/relationships-contracts/storefront-intake"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { customerSignals } from "./schema.js"
 import { relationshipsService } from "./service/index.js"
 
-function requireStorefrontDb(context: StorefrontIntakeContext): PostgresJsDatabase {
+function requirePublicApiDb(context: PublicApiIntakeContext): PostgresJsDatabase {
   if (!context.db) {
     throw new Error("Storefront intake requires a request database")
   }
@@ -15,10 +15,10 @@ function requireStorefrontDb(context: StorefrontIntakeContext): PostgresJsDataba
 }
 
 /** Standard graph adapter from Storefront intake to the selected Relationships package. */
-export function createStorefrontIntakePersistence(): StorefrontIntakePersistence {
+export function createPublicApiIntakePersistence(): PublicApiIntakePersistence {
   return {
     async findSignal({ context, kind, sourceSubmissionId }) {
-      const db = requireStorefrontDb(context)
+      const db = requirePublicApiDb(context)
       const [row] = await db
         .select()
         .from(customerSignals)
@@ -32,19 +32,19 @@ export function createStorefrontIntakePersistence(): StorefrontIntakePersistence
       return row ?? null
     },
     createPerson({ context, data }) {
-      return relationshipsService.createPerson(requireStorefrontDb(context), data)
+      return relationshipsService.createPerson(requirePublicApiDb(context), data)
     },
     createCustomerSignal({ context, data }) {
-      return relationshipsService.createCustomerSignal(requireStorefrontDb(context), data)
+      return relationshipsService.createCustomerSignal(requirePublicApiDb(context), data)
     },
     updateCustomerSignal({ context, id, data }) {
-      return relationshipsService.updateCustomerSignal(requireStorefrontDb(context), id, data)
+      return relationshipsService.updateCustomerSignal(requirePublicApiDb(context), id, data)
     },
     deleteCustomerSignal({ context, id }) {
-      return relationshipsService.deleteCustomerSignal(requireStorefrontDb(context), id)
+      return relationshipsService.deleteCustomerSignal(requirePublicApiDb(context), id)
     },
     deletePerson({ context, id }) {
-      return relationshipsService.deletePerson(requireStorefrontDb(context), id)
+      return relationshipsService.deletePerson(requirePublicApiDb(context), id)
     },
   }
 }

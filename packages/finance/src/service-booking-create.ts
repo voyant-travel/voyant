@@ -93,16 +93,14 @@ const documentGenerationInputSchema = z
   })
   .default({ contractDocument: false, invoiceDocument: false, invoiceType: "invoice" })
 
-const storefrontOriginInputSchema = z.object({
-  storefrontId: z.string().min(1),
+const publicApiOriginInputSchema = z.object({
   channelId: z.string().min(1),
 })
 
-async function persistFirstBookingStorefrontOrigin(
+async function persistFirstBookingPublicApiOrigin(
   db: PostgresJsDatabase,
   input: {
     bookingId: string
-    storefrontId: string
     channelId: string
     buyerKind: "guest" | "personal" | "business"
   },
@@ -118,14 +116,12 @@ async function persistFirstBookingStorefrontOrigin(
     INSERT INTO booking_origins (
       booking_id,
       origin_source,
-      storefront_id,
       channel_id,
       metadata
     )
     VALUES (
       ${input.bookingId},
       'direct_b2c',
-      ${input.storefrontId},
       ${input.channelId},
       ${metadata}::jsonb
     )
@@ -572,7 +568,7 @@ const bookingCreateBaseSchema = z.object({
 
 export const bookingCreateSchema = bookingCreateBaseSchema
   .extend({
-    storefrontOrigin: storefrontOriginInputSchema.optional(),
+    publicApiOrigin: publicApiOriginInputSchema.optional(),
   })
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
@@ -2635,11 +2631,10 @@ export async function createBookingMutation(
         })
       }
       const bookingId = booking.id
-      if (input.storefrontOrigin) {
-        await persistFirstBookingStorefrontOrigin(tx, {
+      if (input.publicApiOrigin) {
+        await persistFirstBookingPublicApiOrigin(tx, {
           bookingId,
-          storefrontId: input.storefrontOrigin.storefrontId,
-          channelId: input.storefrontOrigin.channelId,
+          channelId: input.publicApiOrigin.channelId,
           buyerKind: input.personId ? "personal" : "guest",
         })
       }

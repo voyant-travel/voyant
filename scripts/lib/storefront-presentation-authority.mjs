@@ -53,7 +53,7 @@ export function checkStorefrontPresentationAuthority({
     failures.push(`Storefront route hosts grew to ${hostLines} lines; ratchet is 80`)
 
   for (const token of [
-    '"@voyant-travel/storefront#presentation.customer"',
+    '"@voyant-travel/public-api#presentation.customer"',
     "presentationFactories",
     "StorefrontComposerPage",
     "CruiseDetailPage",
@@ -72,7 +72,7 @@ export function checkStorefrontPresentationAuthority({
   }
 
   for (const token of [
-    'id: "@voyant-travel/storefront#presentation.customer"',
+    'id: "@voyant-travel/public-api#presentation.customer"',
     "accountSignInSearchSchema",
     "confirmationSearchSchema",
     "getStorefrontCustomerProductDetailRoute",
@@ -116,8 +116,8 @@ export function checkStorefrontPresentationAuthority({
 
   for (const token of [
     "presentations: [",
-    'id: "@voyant-travel/storefront#presentation.customer"',
-    'entry: "@voyant-travel/storefront-react/storefront/presentation-routes"',
+    'id: "@voyant-travel/public-api#presentation.customer"',
+    'entry: "@voyant-travel/public-api-react/public-api/presentation-routes"',
     'export: "createStorefrontPresentationContribution"',
   ]) {
     if (!graphDeclaration.includes(token)) {

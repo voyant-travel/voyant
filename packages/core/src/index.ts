@@ -53,7 +53,7 @@ export type {
   VoyantAuthContext,
   VoyantCallerType,
   VoyantPermission,
-  VoyantStorefrontKeyKind,
+  VoyantPublicApiKeyKind,
   VoyantVariables,
 } from "./env.js"
 export type {
@@ -207,8 +207,8 @@ export type {
 } from "./saga.js"
 export { createSaga, SagaError, sagaStep } from "./saga.js"
 export {
-  classifyStorefrontKeyToken,
-  hashStorefrontKeyToken,
+  classifyPublicApiKeyToken,
+  hashPublicApiKeyToken,
   STOREFRONT_KEY_HEADER,
   STOREFRONT_KEY_PREFIXES,
 } from "./storefront-key-kind.js"

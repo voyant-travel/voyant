@@ -81,31 +81,31 @@ export {
   type TripShoppingReferenceStore,
 } from "./shopping-opaque-references.js"
 export {
-  type CreateStorefrontTripInput,
-  createStorefrontTrip,
-  createStorefrontTripCapability,
-  resolveStorefrontTripAccess,
+  type CreatePublicApiTripInput,
+  createPublicApiTrip,
+  createPublicApiTripCapability,
+  resolvePublicApiTripAccess,
   STOREFRONT_TRIP_CAPABILITY_HEADER,
   STOREFRONT_TRIP_CAPABILITY_TTL_MS,
-  type StorefrontTripAccessOptions,
-  type StorefrontTripAccessResolution,
-  type StorefrontTripContext,
-  type StorefrontTripHandle,
-  type StorefrontTripScope,
-  storefrontTripScopeSchema,
+  type PublicApiTripAccessOptions,
+  type PublicApiTripAccessResolution,
+  type PublicApiTripContext,
+  type PublicApiTripHandle,
+  type PublicApiTripScope,
+  publicApiTripScopeSchema,
 } from "./storefront-access.js"
 export {
-  type StorefrontTripOfferResolutionInput,
-  type StorefrontTripOfferResolver,
-  storefrontTripOfferResolverPort,
+  type PublicApiTripOfferResolutionInput,
+  type PublicApiTripOfferResolver,
+  publicApiTripOfferResolverPort,
 } from "./storefront-trip-offer-resolver-port.js"
 export {
-  createStorefrontTripSelectionsRuntime,
-  StorefrontTripSelectionAccessError,
-  StorefrontTripSelectionConflictError,
-  StorefrontTripSelectionMutationError,
-  type StorefrontTripSelectionsRuntimeOptions,
-  StorefrontTripSelectionUnavailableError,
+  createPublicApiTripSelectionsRuntime,
+  PublicApiTripSelectionAccessError,
+  PublicApiTripSelectionConflictError,
+  PublicApiTripSelectionMutationError,
+  type PublicApiTripSelectionsRuntimeOptions,
+  PublicApiTripSelectionUnavailableError,
 } from "./storefront-trip-selections-runtime.js"
 
 export const tripsModule: Module = {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  classifyStorefrontKeyToken,
-  hashStorefrontKeyToken,
+  classifyPublicApiKeyToken,
+  hashPublicApiKeyToken,
   STOREFRONT_KEY_HEADER,
   STOREFRONT_KEY_PREFIXES,
 } from "../../src/storefront-key-kind.js"
@@ -15,24 +15,24 @@ import {
  */
 describe("storefront key classification", () => {
   it("classifies each kind by its prefix", () => {
-    expect(classifyStorefrontKeyToken("vpk_abc")).toBe("publishable")
-    expect(classifyStorefrontKeyToken("vsk_abc")).toBe("secret")
+    expect(classifyPublicApiKeyToken("vpk_abc")).toBe("publishable")
+    expect(classifyPublicApiKeyToken("vsk_abc")).toBe("secret")
   })
 
   it("returns null for anything that is not a storefront key", () => {
     // A `voy_` deployment key, an OAuth token or a session JWT must never be
     // mistaken for one — the capability line would then read the wrong ceiling.
     for (const token of ["voy_abc", "vy_abc", "abc.def.ghi", "", "   ", undefined, null]) {
-      expect(classifyStorefrontKeyToken(token)).toBeNull()
+      expect(classifyPublicApiKeyToken(token)).toBeNull()
     }
   })
 
   it("trims surrounding whitespace before classifying", () => {
-    expect(classifyStorefrontKeyToken("  vsk_abc  ")).toBe("secret")
+    expect(classifyPublicApiKeyToken("  vsk_abc  ")).toBe("secret")
   })
 
   it("does not classify a prefix that merely contains the marker", () => {
-    expect(classifyStorefrontKeyToken("xvpk_abc")).toBeNull()
+    expect(classifyPublicApiKeyToken("xvpk_abc")).toBeNull()
   })
 
   it("pins the deployed prefixes and header — clients hold these", () => {
@@ -46,19 +46,19 @@ describe("storefront key hashing", () => {
     // Pinned against a known vector rather than against itself: issuance and
     // the admin-surface lookup both resolve through this, so a changed digest
     // would make every existing secret key silently stop resolving.
-    expect(await hashStorefrontKeyToken("abc")).toBe(
+    expect(await hashPublicApiKeyToken("abc")).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     )
-    expect(await hashStorefrontKeyToken("")).toBe(
+    expect(await hashPublicApiKeyToken("")).toBe(
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     )
   })
 
   it("is stable and distinct per token", async () => {
     const [first, second, other] = await Promise.all([
-      hashStorefrontKeyToken("vsk_one"),
-      hashStorefrontKeyToken("vsk_one"),
-      hashStorefrontKeyToken("vsk_two"),
+      hashPublicApiKeyToken("vsk_one"),
+      hashPublicApiKeyToken("vsk_one"),
+      hashPublicApiKeyToken("vsk_two"),
     ])
     expect(first).toBe(second)
     expect(first).not.toBe(other)

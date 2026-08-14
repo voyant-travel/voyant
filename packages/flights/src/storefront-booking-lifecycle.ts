@@ -8,26 +8,26 @@ import type {
 import { FLIGHT_CAPABILITIES } from "./contract/types.js"
 import type {
   AdmittedFlightShoppingSource,
-  FlightStorefrontShoppingContext,
+  FlightPublicApiShoppingContext,
 } from "./runtime-port.js"
 
 const DEFAULT_PRICE_LOCK_TTL_MS = 10 * 60_000
 
 /** Exact server-only authority sealed into a Storefront opaque offer ref. */
-export interface BoundStorefrontFlightOffer {
-  authority: FlightStorefrontShoppingContext
+export interface BoundPublicApiFlightOffer {
+  authority: FlightPublicApiShoppingContext
   connectionId: string
   offer: FlightOffer
   revision: number
 }
 
-export interface StorefrontFlightPriceLock extends BoundStorefrontFlightOffer {
+export interface PublicApiFlightPriceLock extends BoundPublicApiFlightOffer {
   pricedAt: string
   expiresAt: string
 }
 
-export interface StorefrontFlightHold {
-  authority: FlightStorefrontShoppingContext
+export interface PublicApiFlightHold {
+  authority: FlightPublicApiShoppingContext
   connectionId: string
   offerId: string
   orderId: string
@@ -35,30 +35,29 @@ export interface StorefrontFlightHold {
   expiresAt: string
 }
 
-export type StorefrontFlightHoldOutcome =
-  | { kind: "held"; hold: StorefrontFlightHold; order: FlightOrder }
+export type PublicApiFlightHoldOutcome =
+  | { kind: "held"; hold: PublicApiFlightHold; order: FlightOrder }
   | { kind: "compensated"; reason: string }
   | { kind: "in_doubt"; operationId: string; reason: string }
 
-export type StorefrontFlightCommitOutcome =
+export type PublicApiFlightCommitOutcome =
   | { kind: "committed"; order: FlightOrder }
   | { kind: "in_doubt"; operationId: string; reason: string }
 
-export type StorefrontFlightMutationOutcome =
-  | StorefrontFlightHoldOutcome
-  | StorefrontFlightCommitOutcome
+export type PublicApiFlightMutationOutcome =
+  | PublicApiFlightHoldOutcome
+  | PublicApiFlightCommitOutcome
 
-export interface StorefrontFlightOperationClaimInput {
+export interface PublicApiFlightOperationClaimInput {
   operation: "hold" | "commit"
-  storefrontId: string
   channelId: string
   idempotencyKey: string
   requestFingerprint: string
 }
 
-export type StorefrontFlightOperationClaim =
+export type PublicApiFlightOperationClaim =
   | { status: "claimed"; operationId: string }
-  | { status: "replay"; outcome: StorefrontFlightMutationOutcome }
+  | { status: "replay"; outcome: PublicApiFlightMutationOutcome }
   | { status: "conflict" }
   | { status: "in_progress"; operationId: string }
 
@@ -67,47 +66,47 @@ export type StorefrontFlightOperationClaim =
  * `(storefront, channel, operation, idempotencyKey)` and persist the exact
  * fingerprint before any supplier call.
  */
-export interface StorefrontFlightOperationStore {
-  claim(input: StorefrontFlightOperationClaimInput): Promise<StorefrontFlightOperationClaim>
-  complete(operationId: string, outcome: StorefrontFlightMutationOutcome): Promise<void>
+export interface PublicApiFlightOperationStore {
+  claim(input: PublicApiFlightOperationClaimInput): Promise<PublicApiFlightOperationClaim>
+  complete(operationId: string, outcome: PublicApiFlightMutationOutcome): Promise<void>
   markInDoubt(
     operationId: string,
-    outcome: Extract<StorefrontFlightMutationOutcome, { kind: "in_doubt" }>,
+    outcome: Extract<PublicApiFlightMutationOutcome, { kind: "in_doubt" }>,
   ): Promise<void>
 }
 
 export interface ProviderFirstFlightBookingLifecycleOptions {
   /** Revalidate active storefront, channel, market, locale, and currency. */
-  assertActiveStorefrontScope(context: FlightStorefrontShoppingContext): Promise<void>
+  assertActivePublicApiScope(context: FlightPublicApiShoppingContext): Promise<void>
   listAdmittedShoppingSources(
-    context: FlightStorefrontShoppingContext,
+    context: FlightPublicApiShoppingContext,
   ): Promise<readonly AdmittedFlightShoppingSource[]>
-  operations: StorefrontFlightOperationStore
+  operations: PublicApiFlightOperationStore
   now?: () => Date
   priceLockTtlMs?: number
 }
 
 export interface ProviderFirstFlightBookingLifecycle {
   requote(input: {
-    context: FlightStorefrontShoppingContext
-    binding: BoundStorefrontFlightOffer
+    context: FlightPublicApiShoppingContext
+    binding: BoundPublicApiFlightOffer
     expectedRevision: number
-  }): Promise<StorefrontFlightPriceLock>
+  }): Promise<PublicApiFlightPriceLock>
   hold(input: {
-    context: FlightStorefrontShoppingContext
-    lock: StorefrontFlightPriceLock
+    context: FlightPublicApiShoppingContext
+    lock: PublicApiFlightPriceLock
     expectedRevision: number
     idempotencyKey: string
     passengers: FlightPassenger[]
     contact?: { email?: string; phone?: string }
     ancillaries?: AncillarySelection
-  }): Promise<StorefrontFlightHoldOutcome>
+  }): Promise<PublicApiFlightHoldOutcome>
   commit(input: {
-    context: FlightStorefrontShoppingContext
-    hold: StorefrontFlightHold
+    context: FlightPublicApiShoppingContext
+    hold: PublicApiFlightHold
     expectedRevision: number
     idempotencyKey: string
-  }): Promise<StorefrontFlightCommitOutcome>
+  }): Promise<PublicApiFlightCommitOutcome>
 }
 
 /**
@@ -136,13 +135,13 @@ export function createProviderFirstFlightBookingLifecycle(
         offer: input.binding.offer,
       })
       if (!response.valid) {
-        throw new StorefrontFlightLifecycleError(
+        throw new PublicApiFlightLifecycleError(
           "flight_offer_unavailable",
           response.invalidReason ?? "Provider rejected the selected flight offer.",
         )
       }
       if (response.offer.offerId !== input.binding.offer.offerId) {
-        throw new StorefrontFlightLifecycleError(
+        throw new PublicApiFlightLifecycleError(
           "flight_offer_identity_changed",
           "Provider changed the selected offer identity while repricing.",
         )
@@ -181,12 +180,11 @@ export function createProviderFirstFlightBookingLifecycle(
       })
       const claim = await options.operations.claim({
         operation: "hold",
-        storefrontId: input.context.storefrontId,
         channelId: input.context.channelId,
         idempotencyKey: requiredKey(input.idempotencyKey),
         requestFingerprint: fingerprint,
       })
-      const replay = mutationClaimOutcome<StorefrontFlightHoldOutcome>(claim)
+      const replay = mutationClaimOutcome<PublicApiFlightHoldOutcome>(claim)
       if (replay) return replay
       const operationId = claimedOperationId(claim)
 
@@ -213,7 +211,7 @@ export function createProviderFirstFlightBookingLifecycle(
       const deadline = order.paymentDeadline
       if (order.status !== "confirmed" || !deadline || isExpired(deadline, now())) {
         const compensated = await compensateHold(source, adapterContext, order.orderId)
-        const outcome: StorefrontFlightHoldOutcome = compensated
+        const outcome: PublicApiFlightHoldOutcome = compensated
           ? { kind: "compensated", reason: "provider_did_not_return_a_live_hold" }
           : {
               kind: "in_doubt",
@@ -225,7 +223,7 @@ export function createProviderFirstFlightBookingLifecycle(
           : settlementInDoubt(operationId)
       }
 
-      const outcome: StorefrontFlightHoldOutcome = {
+      const outcome: PublicApiFlightHoldOutcome = {
         kind: "held",
         hold: {
           authority: input.lock.authority,
@@ -258,12 +256,11 @@ export function createProviderFirstFlightBookingLifecycle(
       })
       const claim = await options.operations.claim({
         operation: "commit",
-        storefrontId: input.context.storefrontId,
         channelId: input.context.channelId,
         idempotencyKey: requiredKey(input.idempotencyKey),
         requestFingerprint: fingerprint,
       })
-      const replay = mutationClaimOutcome<StorefrontFlightCommitOutcome>(claim)
+      const replay = mutationClaimOutcome<PublicApiFlightCommitOutcome>(claim)
       if (replay) return replay
       const operationId = claimedOperationId(claim)
 
@@ -273,7 +270,7 @@ export function createProviderFirstFlightBookingLifecycle(
           input.hold.orderId,
         )
         if (response.order.status !== "ticketed") {
-          const outcome: StorefrontFlightCommitOutcome = {
+          const outcome: PublicApiFlightCommitOutcome = {
             kind: "in_doubt",
             operationId,
             reason: `provider_commit_status_${response.order.status}`,
@@ -282,7 +279,7 @@ export function createProviderFirstFlightBookingLifecycle(
             ? outcome
             : settlementInDoubt(operationId)
         }
-        const outcome: StorefrontFlightCommitOutcome = {
+        const outcome: PublicApiFlightCommitOutcome = {
           kind: "committed",
           order: response.order,
         }
@@ -294,7 +291,7 @@ export function createProviderFirstFlightBookingLifecycle(
         try {
           const current = await source.adapter.getOrder(sourceContext(source), input.hold.orderId)
           if (current.order.status === "ticketed") {
-            const outcome: StorefrontFlightCommitOutcome = {
+            const outcome: PublicApiFlightCommitOutcome = {
               kind: "committed",
               order: current.order,
             }
@@ -313,7 +310,7 @@ export function createProviderFirstFlightBookingLifecycle(
   }
 }
 
-export class StorefrontFlightLifecycleError extends Error {
+export class PublicApiFlightLifecycleError extends Error {
   constructor(
     readonly code:
       | "flight_scope_mismatch"
@@ -331,21 +328,21 @@ export class StorefrontFlightLifecycleError extends Error {
     message: string,
   ) {
     super(message)
-    this.name = "StorefrontFlightLifecycleError"
+    this.name = "PublicApiFlightLifecycleError"
   }
 }
 
 async function resolveAdmittedSource(
   options: ProviderFirstFlightBookingLifecycleOptions,
-  context: FlightStorefrontShoppingContext,
+  context: FlightPublicApiShoppingContext,
   connectionId: string,
 ): Promise<AdmittedFlightShoppingSource> {
   assertContext(context)
-  await options.assertActiveStorefrontScope(context)
+  await options.assertActivePublicApiScope(context)
   const sources = await options.listAdmittedShoppingSources(context)
   const source = sources.find((candidate) => candidate.connectionId === connectionId)
   if (!source) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_source_not_admitted",
       "The selected flight source is no longer admitted for this Storefront scope.",
     )
@@ -369,7 +366,7 @@ function requireHoldCapability(adapter: FlightConnectorAdapter): void {
     !adapter.capabilities.declared.includes(FLIGHT_CAPABILITIES.HOLDS) ||
     typeof adapter.ticketOrder !== "function"
   ) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_hold_unsupported",
       "The admitted provider cannot complete the required hold-then-ticket lifecycle.",
     )
@@ -377,27 +374,26 @@ function requireHoldCapability(adapter: FlightConnectorAdapter): void {
 }
 
 function assertAuthority(
-  actual: FlightStorefrontShoppingContext,
-  expected: FlightStorefrontShoppingContext,
+  actual: FlightPublicApiShoppingContext,
+  expected: FlightPublicApiShoppingContext,
 ): void {
   assertContext(actual)
   if (
-    actual.storefrontId !== expected.storefrontId ||
     actual.channelId !== expected.channelId ||
     actual.marketId !== expected.marketId ||
     actual.locale !== expected.locale ||
     actual.currency !== expected.currency
   ) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_scope_mismatch",
       "Opaque flight authority does not match the active Storefront scope.",
     )
   }
 }
 
-function assertContext(context: FlightStorefrontShoppingContext): void {
+function assertContext(context: FlightPublicApiShoppingContext): void {
   if (Object.values(context).some((value) => !value.trim())) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_scope_mismatch",
       "Storefront flight authority must be fully resolved server-side.",
     )
@@ -406,7 +402,7 @@ function assertContext(context: FlightStorefrontShoppingContext): void {
 
 function assertRevision(expected: number, actual: number): void {
   if (!Number.isSafeInteger(expected) || expected < 0 || expected !== actual) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_revision_conflict",
       "Flight lifecycle revision changed after it was read.",
     )
@@ -416,10 +412,10 @@ function assertRevision(expected: number, actual: number): void {
 function assertNotExpired(
   value: string | undefined,
   now: Date,
-  code: StorefrontFlightLifecycleError["code"],
+  code: PublicApiFlightLifecycleError["code"],
 ): void {
   if (value && isExpired(value, now)) {
-    throw new StorefrontFlightLifecycleError(code, "Flight lifecycle authority has expired.")
+    throw new PublicApiFlightLifecycleError(code, "Flight lifecycle authority has expired.")
   }
 }
 
@@ -427,13 +423,13 @@ function boundedExpiry(
   now: Date,
   ttlMs: number,
   upstream: string | undefined,
-  code: StorefrontFlightLifecycleError["code"],
+  code: PublicApiFlightLifecycleError["code"],
 ): Date {
   const local = new Date(now.getTime() + ttlMs)
   if (!upstream) return local
   const parsed = new Date(upstream)
   if (!Number.isFinite(parsed.getTime()) || parsed <= now) {
-    throw new StorefrontFlightLifecycleError(code, "Provider returned an expired flight offer.")
+    throw new PublicApiFlightLifecycleError(code, "Provider returned an expired flight offer.")
   }
   return parsed < local ? parsed : local
 }
@@ -445,7 +441,7 @@ function isExpired(value: string, now: Date): boolean {
 
 function requiredKey(value: string): string {
   if (!value.trim() || value !== value.trim() || value.length > 200) {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_idempotency_key_invalid",
       "Flight lifecycle idempotency key is invalid.",
     )
@@ -453,18 +449,18 @@ function requiredKey(value: string): string {
   return value
 }
 
-function mutationClaimOutcome<T extends StorefrontFlightMutationOutcome>(
-  claim: StorefrontFlightOperationClaim,
+function mutationClaimOutcome<T extends PublicApiFlightMutationOutcome>(
+  claim: PublicApiFlightOperationClaim,
 ): T | undefined {
   if (claim.status === "replay") return claim.outcome as T
   if (claim.status === "conflict") {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_idempotency_conflict",
       "Flight lifecycle idempotency key was reused for different input.",
     )
   }
   if (claim.status === "in_progress") {
-    throw new StorefrontFlightLifecycleError(
+    throw new PublicApiFlightLifecycleError(
       "flight_operation_in_progress",
       `Flight lifecycle operation ${claim.operationId} is already in progress.`,
     )
@@ -472,15 +468,15 @@ function mutationClaimOutcome<T extends StorefrontFlightMutationOutcome>(
   return undefined
 }
 
-function claimedOperationId(claim: StorefrontFlightOperationClaim): string {
+function claimedOperationId(claim: PublicApiFlightOperationClaim): string {
   if (claim.status !== "claimed") throw new Error("flight_operation_claim_invalid")
   return claim.operationId
 }
 
 async function settle(
-  operations: StorefrontFlightOperationStore,
+  operations: PublicApiFlightOperationStore,
   operationId: string,
-  outcome: StorefrontFlightMutationOutcome,
+  outcome: PublicApiFlightMutationOutcome,
   compensate?: () => Promise<void>,
 ): Promise<boolean> {
   try {

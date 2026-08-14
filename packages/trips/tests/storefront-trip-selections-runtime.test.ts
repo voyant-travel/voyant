@@ -1,27 +1,27 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { sha256Hex } from "@voyant-travel/hono"
-import type { StorefrontShoppingContext } from "@voyant-travel/storefront/shopping"
+import type { PublicApiShoppingContext } from "@voyant-travel/public-api/shopping"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   type TripComponent,
   type TripEnvelope,
   type TripSnapshot,
-  type TripStorefrontAccess,
-  type TripStorefrontBookingOperation,
+  type TripPublicAccess,
+  type TripPublicApiBookingOperation,
   tripComponents,
   tripEnvelopes,
   tripSnapshots,
-  tripStorefrontAccess,
-  tripStorefrontBookingOperations,
+  tripPublicAccess,
+  tripPublicBookingOperations,
 } from "../src/schema.js"
-import type { StorefrontTripOfferResolutionInput } from "../src/storefront-trip-offer-resolver-port.js"
+import type { PublicApiTripOfferResolutionInput } from "../src/storefront-trip-offer-resolver-port.js"
 import {
-  createStorefrontTripSelectionsRuntime,
-  StorefrontTripBookingError,
-  StorefrontTripSelectionAccessError,
-  StorefrontTripSelectionConflictError,
-  StorefrontTripSelectionUnavailableError,
+  createPublicApiTripSelectionsRuntime,
+  PublicApiTripBookingError,
+  PublicApiTripSelectionAccessError,
+  PublicApiTripSelectionConflictError,
+  PublicApiTripSelectionUnavailableError,
 } from "../src/storefront-trip-selections-runtime.js"
 
 const NOW = new Date("2026-08-08T10:00:00.000Z")
@@ -29,7 +29,6 @@ const CAPABILITY = `tcap_${"a".repeat(64)}`
 const ITEM_ONE = `tsi_${"b".repeat(64)}`
 const ITEM_TWO = `tsi_${"c".repeat(64)}`
 const CONTEXT = {
-  storefrontId: "storefront_bucharest",
   channelId: "channel_direct",
   userId: "customer_1",
   buyerAccountId: "buyer_1",
@@ -48,7 +47,7 @@ const SCOPE = {
 describe("Storefront Trip selections runtime", () => {
   it("fails unavailable without an offerRef resolver and never treats a Trip id as a selection", async () => {
     const state = await seededState()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       now: () => NOW,
     })
@@ -58,14 +57,14 @@ describe("Storefront Trip selections runtime", () => {
         scope: SCOPE,
         offers: [{ kind: "product", offerRef: "offer-public-ref-0001" }],
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionUnavailableError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionUnavailableError)
     await expect(
       runtime.update(CONTEXT, {
         selectionRef: "trip_storefront_internal_0001",
         expectedRevision: 1,
         mutation: { kind: "remove", itemRef: ITEM_ONE },
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
   })
 
   it("redeems one-time offers inside the same transaction that creates the selection", async () => {
@@ -87,7 +86,7 @@ describe("Storefront Trip selections runtime", () => {
         metadata: {},
       },
     }))
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(db),
       offerResolver: { resolve, resolveInTransaction },
       now: () => NOW,
@@ -113,7 +112,7 @@ describe("Storefront Trip selections runtime", () => {
     const state = emptyState()
     const resolver = {
       resolve: vi.fn(
-        async (_context: StorefrontShoppingContext, input: StorefrontTripOfferResolutionInput) => ({
+        async (_context: PublicApiShoppingContext, input: PublicApiTripOfferResolutionInput) => ({
           component: {
             kind: "catalog_booking" as const,
             catalogRef: {
@@ -136,7 +135,7 @@ describe("Storefront Trip selections runtime", () => {
       ),
     }
     const itemRefs = [ITEM_ONE, ITEM_TWO]
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       offerResolver: resolver,
       now: () => NOW,
@@ -188,7 +187,7 @@ describe("Storefront Trip selections runtime", () => {
     const resolve = vi.fn(async () => ({
       component: { kind: "catalog_booking" as const, metadata: {} },
     }))
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       offerResolver: { resolve },
       now: () => NOW,
@@ -214,7 +213,7 @@ describe("Storefront Trip selections runtime", () => {
 
     const concurrent = await seededState()
     concurrent.forceCasConflictRevision = 2
-    const concurrentRuntime = createStorefrontTripSelectionsRuntime({
+    const concurrentRuntime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(concurrent)),
       now: () => NOW,
     })
@@ -224,13 +223,13 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         mutation: { kind: "remove", itemRef: ITEM_ONE },
       }),
-    ).rejects.toEqual(new StorefrontTripSelectionConflictError(1, 2))
+    ).rejects.toEqual(new PublicApiTripSelectionConflictError(1, 2))
     expect(concurrent.components[0]?.status).toBe("draft")
   })
 
   it("keeps the revision unchanged when add, remove, or reorder validation fails", async () => {
     const state = await seededState()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       now: () => NOW,
     })
@@ -244,7 +243,7 @@ describe("Storefront Trip selections runtime", () => {
           offer: { kind: "flight", offerRef: "flight-offer-ref-001" },
         },
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionUnavailableError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionUnavailableError)
     expect(state.access?.revision).toBe(1)
 
     await expect(
@@ -270,10 +269,10 @@ describe("Storefront Trip selections runtime", () => {
   it("rejects an expired selection before mutation", async () => {
     const state = await seededState()
     state.access = {
-      ...(state.access as TripStorefrontAccess),
+      ...(state.access as TripPublicAccess),
       expiresAt: new Date("2026-08-08T09:59:59.000Z"),
     }
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       now: () => NOW,
     })
@@ -284,18 +283,18 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         mutation: { kind: "remove", itemRef: ITEM_ONE },
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
     expect(state.access?.revision).toBe(1)
   })
 
   it.each([
-    { context: { ...CONTEXT, storefrontId: "storefront_other" }, boundary: "storefront" },
+    { context: { ...CONTEXT, channelId: "chan_other" }, boundary: "channel" },
     { context: { ...CONTEXT, channelId: "channel_other" }, boundary: "channel" },
     { context: { ...CONTEXT, userId: "customer_other" }, boundary: "customer" },
     { context: { ...CONTEXT, buyerAccountId: "buyer_other" }, boundary: "buyer account" },
   ])("isolates selections from a different $boundary", async ({ context }) => {
     const state = await seededState()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       now: () => NOW,
     })
@@ -306,7 +305,7 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         mutation: { kind: "remove", itemRef: ITEM_ONE },
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
     expect(state.access?.revision).toBe(1)
     expect(state.components[0]?.status).toBe("draft")
   })
@@ -316,10 +315,10 @@ describe("Storefront Trip selections runtime", () => {
     state.envelope = {
       ...state.envelope,
       constraints: {
-        storefrontScope: { marketId: "market_ro", locale: "ro-RO", currency: "USD" },
+        publicApiScope: { marketId: "market_ro", locale: "ro-RO", currency: "USD" },
       },
     }
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       compositeBookingSessions: { createValidatedTripSnapshotSession: vi.fn() },
       now: () => NOW,
@@ -331,20 +330,20 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         mutation: { kind: "remove", itemRef: ITEM_ONE },
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
     await expect(
       runtime.book(CONTEXT, {
         selectionRef: CAPABILITY,
         expectedRevision: 1,
         idempotencyKey: "book_scope_drift",
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
   })
 
   it("fails before Catalog conversion when the exact revision is stale or unpriced", async () => {
     const state = await seededState()
     const createValidatedTripSnapshotSession = vi.fn()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: (operation) => operation(createDb(state)),
       compositeBookingSessions: { createValidatedTripSnapshotSession },
       now: () => NOW,
@@ -356,32 +355,32 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 0,
         idempotencyKey: "book_stale_revision",
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionConflictError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionConflictError)
     await expect(
       runtime.book(CONTEXT, {
         selectionRef: CAPABILITY,
         expectedRevision: 1,
         idempotencyKey: "book_missing_price",
       }),
-    ).rejects.toEqual(new StorefrontTripBookingError("storefront_trip_booking_pricing_unavailable"))
+    ).rejects.toEqual(new PublicApiTripBookingError("storefront_trip_booking_pricing_unavailable"))
     expect(createValidatedTripSnapshotSession).not.toHaveBeenCalled()
     expect(state.snapshots).toHaveLength(0)
     expect(state.bookingOperations).toHaveLength(0)
   })
 
   it.each([
-    { context: { ...CONTEXT, storefrontId: "storefront_other" }, boundary: "storefront" },
+    { context: { ...CONTEXT, channelId: "chan_other" }, boundary: "channel" },
     { context: { ...CONTEXT, channelId: "channel_other" }, boundary: "channel" },
     { context: { ...CONTEXT, userId: "customer_other" }, boundary: "owner" },
   ])("rejects Trip booking replay across a different $boundary", async ({ context }) => {
     const state = await pricedState()
     state.access = {
-      ...(state.access as TripStorefrontAccess),
+      ...(state.access as TripPublicAccess),
       ownerUserId: CONTEXT.userId,
       ownerBuyerAccountId: CONTEXT.buyerAccountId,
     }
     const createValidatedTripSnapshotSession = vi.fn()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: transactional(state),
       compositeBookingSessions: { createValidatedTripSnapshotSession },
       now: () => NOW,
@@ -393,7 +392,7 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         idempotencyKey: "book_wrong_boundary",
       }),
-    ).rejects.toBeInstanceOf(StorefrontTripSelectionAccessError)
+    ).rejects.toBeInstanceOf(PublicApiTripSelectionAccessError)
     expect(createValidatedTripSnapshotSession).not.toHaveBeenCalled()
     expect(state.snapshots).toHaveLength(0)
   })
@@ -404,7 +403,7 @@ describe("Storefront Trip selections runtime", () => {
       kind: "session_created" as const,
       session: bookingSessionRecord(),
     }))
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: transactional(state),
       compositeBookingSessions: { createValidatedTripSnapshotSession },
       now: () => NOW,
@@ -438,7 +437,7 @@ describe("Storefront Trip selections runtime", () => {
       kind: "session_created" as const,
       session: bookingSessionRecord(),
     }))
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: transactional(state),
       compositeBookingSessions: { createValidatedTripSnapshotSession },
       now: () => NOW,
@@ -448,7 +447,7 @@ describe("Storefront Trip selections runtime", () => {
       expectedRevision: 1,
       idempotencyKey: "book_trip_conflict",
     })
-    state.access = { ...(state.access as TripStorefrontAccess), revision: 2 }
+    state.access = { ...(state.access as TripPublicAccess), revision: 2 }
 
     await expect(
       runtime.book(CONTEXT, {
@@ -457,7 +456,7 @@ describe("Storefront Trip selections runtime", () => {
         idempotencyKey: "book_trip_conflict",
       }),
     ).rejects.toEqual(
-      new StorefrontTripBookingError("storefront_trip_booking_idempotency_conflict"),
+      new PublicApiTripBookingError("storefront_trip_booking_idempotency_conflict"),
     )
     expect(createValidatedTripSnapshotSession).toHaveBeenCalledOnce()
     expect(state.snapshots).toHaveLength(1)
@@ -465,7 +464,7 @@ describe("Storefront Trip selections runtime", () => {
 
   it("rolls back the snapshot and idempotency claim when Catalog rejects creation", async () => {
     const state = await pricedState()
-    const runtime = createStorefrontTripSelectionsRuntime({
+    const runtime = createPublicApiTripSelectionsRuntime({
       withTransaction: transactional(state),
       compositeBookingSessions: {
         createValidatedTripSnapshotSession: vi.fn(async () => ({
@@ -486,7 +485,7 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 1,
         idempotencyKey: "book_trip_rejected",
       }),
-    ).rejects.toEqual(new StorefrontTripBookingError("storefront_trip_booking_pricing_unavailable"))
+    ).rejects.toEqual(new PublicApiTripBookingError("storefront_trip_booking_pricing_unavailable"))
     expect(state.snapshots).toHaveLength(0)
     expect(state.bookingOperations).toHaveLength(0)
   })
@@ -494,12 +493,12 @@ describe("Storefront Trip selections runtime", () => {
 
 interface State {
   envelope?: TripEnvelope
-  access?: TripStorefrontAccess
+  access?: TripPublicAccess
   components: TripComponent[]
   nextComponent: number
   forceCasConflictRevision?: number
   snapshots: TripSnapshot[]
-  bookingOperations: TripStorefrontBookingOperation[]
+  bookingOperations: TripPublicApiBookingOperation[]
 }
 
 function emptyState(): State {
@@ -512,7 +511,6 @@ async function seededState(): Promise<State> {
     access: {
       envelopeId: "trip_storefront_1",
       capabilityDigest: await sha256Hex(CAPABILITY),
-      storefrontId: CONTEXT.storefrontId,
       channelId: CONTEXT.channelId,
       marketId: SCOPE.marketId,
       locale: SCOPE.locale,
@@ -528,7 +526,7 @@ async function seededState(): Promise<State> {
       componentRow({
         id: "trip_component_internal_1",
         metadata: {
-          storefrontSelection: {
+          publicApiSelection: {
             version: 1,
             itemRef: ITEM_ONE,
             kind: "product",
@@ -546,7 +544,7 @@ async function seededState(): Promise<State> {
 async function pricedState(): Promise<State> {
   const state = await seededState()
   state.access = {
-    ...(state.access as TripStorefrontAccess),
+    ...(state.access as TripPublicAccess),
     ownerUserId: null,
     ownerBuyerAccountId: null,
   }
@@ -573,11 +571,10 @@ function createDb(state: State): AnyDrizzleDb {
             state.envelope = { ...envelopeRow(), ...(values as Partial<TripEnvelope>) }
             return [state.envelope]
           }
-          if (table === tripStorefrontAccess) {
+          if (table === tripPublicAccess) {
             state.access = {
               envelopeId: state.envelope?.id ?? "trip_storefront_1",
               capabilityDigest: "",
-              storefrontId: "",
               channelId: "",
               marketId: "",
               locale: "",
@@ -588,8 +585,8 @@ function createDb(state: State): AnyDrizzleDb {
               expiresAt: NOW,
               createdAt: NOW,
               updatedAt: NOW,
-              ...(values as Partial<TripStorefrontAccess>),
-            } as TripStorefrontAccess
+              ...(values as Partial<TripPublicAccess>),
+            } as TripPublicAccess
             return [state.access]
           }
           if (table === tripComponents) {
@@ -609,7 +606,7 @@ function createDb(state: State): AnyDrizzleDb {
             state.snapshots.push(snapshot)
             return [snapshot]
           }
-          if (table === tripStorefrontBookingOperations) {
+          if (table === tripPublicBookingOperations) {
             const existing = state.bookingOperations.find(
               (operation) => operation.operationDigest === values.operationDigest,
             )
@@ -621,7 +618,7 @@ function createDb(state: State): AnyDrizzleDb {
               createdAt: NOW,
               updatedAt: NOW,
               ...values,
-            } as TripStorefrontBookingOperation
+            } as TripPublicApiBookingOperation
             state.bookingOperations.push(operation)
             return [operation]
           }
@@ -637,7 +634,7 @@ function createDb(state: State): AnyDrizzleDb {
       from: (table: unknown) => ({
         where: () => {
           const rows =
-            table === tripStorefrontAccess
+            table === tripPublicAccess
               ? state.access
                 ? [state.access]
                 : []
@@ -647,17 +644,17 @@ function createDb(state: State): AnyDrizzleDb {
                   : []
                 : table === tripComponents
                   ? state.components
-                  : table === tripStorefrontBookingOperations
+                  : table === tripPublicBookingOperations
                     ? state.bookingOperations
                     : []
           return Object.assign(Promise.resolve(rows), {
             limit: async () => {
-              if (table === tripStorefrontAccess) return state.access ? [state.access] : []
+              if (table === tripPublicAccess) return state.access ? [state.access] : []
               if (table === tripEnvelopes) return state.envelope ? [state.envelope] : []
               if (table === tripComponents) {
                 return state.components.length > 0 ? [state.components[0]] : []
               }
-              if (table === tripStorefrontBookingOperations) {
+              if (table === tripPublicBookingOperations) {
                 return state.bookingOperations.length > 0 ? [state.bookingOperations[0]] : []
               }
               return []
@@ -674,10 +671,10 @@ function createDb(state: State): AnyDrizzleDb {
       set: (values: Record<string, unknown>) => ({
         where: () => ({
           returning: async () => {
-            if (table === tripStorefrontAccess) {
+            if (table === tripPublicAccess) {
               if (state.forceCasConflictRevision !== undefined) {
                 state.access = {
-                  ...(state.access as TripStorefrontAccess),
+                  ...(state.access as TripPublicAccess),
                   revision: state.forceCasConflictRevision,
                 }
                 state.forceCasConflictRevision = undefined
@@ -700,7 +697,7 @@ function createDb(state: State): AnyDrizzleDb {
               state.envelope = { ...state.envelope, ...(values as Partial<TripEnvelope>) }
               return [state.envelope]
             }
-            if (table === tripStorefrontBookingOperations) {
+            if (table === tripPublicBookingOperations) {
               const operation = state.bookingOperations[0]
               if (!operation) return []
               Object.assign(operation, values)
@@ -749,8 +746,8 @@ function envelopeRow(): TripEnvelope {
     description: null,
     travelerParty: {},
     constraints: {
-      storefrontScope: { marketId: "market_ro", locale: "ro-RO", currency: "EUR" },
-      storefrontResolvedScope: SCOPE,
+      publicApiScope: { marketId: "market_ro", locale: "ro-RO", currency: "EUR" },
+      publicApiResolvedScope: SCOPE,
     },
     aggregateCurrency: null,
     aggregateSubtotalAmountCents: null,
@@ -766,8 +763,8 @@ function envelopeRow(): TripEnvelope {
     reservedAt: null,
     checkoutIdempotencyKey: null,
     checkoutStartedAt: null,
-    createdBy: `storefront:${CONTEXT.storefrontId}:customer:${CONTEXT.userId}`,
-    updatedBy: `storefront:${CONTEXT.storefrontId}:customer:${CONTEXT.userId}`,
+    createdBy: `channel:${CONTEXT.channelId}:customer:${CONTEXT.userId}`,
+    updatedBy: `channel:${CONTEXT.channelId}:customer:${CONTEXT.userId}`,
     createdAt: NOW,
     updatedAt: NOW,
   }

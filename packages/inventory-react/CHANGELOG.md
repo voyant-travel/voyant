@@ -17,7 +17,7 @@
 - Updated dependencies [8413c21]
   - @voyant-travel/finance-react@0.280.0
   - @voyant-travel/finance@0.248.0
-  - @voyant-travel/storefront-react@0.282.0
+  - @voyant-travel/public-api-react@0.282.0
   - @voyant-travel/catalog-react@0.278.0
 
 ## 0.161.0
@@ -34,7 +34,7 @@
   - @voyant-travel/finance@0.247.0
   - @voyant-travel/inventory@0.41.0
   - @voyant-travel/catalog-react@0.277.0
-  - @voyant-travel/storefront-react@0.281.0
+  - @voyant-travel/public-api-react@0.281.0
 
 ## 0.160.0
 
@@ -76,7 +76,7 @@
   - @voyant-travel/finance-react@0.278.0
   - @voyant-travel/catalog-react@0.276.0
   - @voyant-travel/media-react@0.13.0
-  - @voyant-travel/storefront-react@0.280.0
+  - @voyant-travel/public-api-react@0.280.0
 
 ## 0.159.0
 
@@ -85,7 +85,7 @@
 - Updated dependencies [c164b40]
   - @voyant-travel/catalog-contracts@0.132.0
   - @voyant-travel/catalog-react@0.275.0
-  - @voyant-travel/storefront-react@0.279.0
+  - @voyant-travel/public-api-react@0.279.0
   - @voyant-travel/finance-react@0.277.0
 
 ## 0.158.0
@@ -97,7 +97,7 @@
   - @voyant-travel/finance@0.246.0
   - @voyant-travel/finance-react@0.276.0
   - @voyant-travel/catalog-react@0.274.0
-  - @voyant-travel/storefront-react@0.278.0
+  - @voyant-travel/public-api-react@0.278.0
 
 ## 0.157.1
 
@@ -117,7 +117,7 @@
 - Updated dependencies [b760ac6]
   - @voyant-travel/catalog-contracts@0.131.0
   - @voyant-travel/finance-react@0.275.0
-  - @voyant-travel/storefront-react@0.277.0
+  - @voyant-travel/public-api-react@0.277.0
   - @voyant-travel/catalog-react@0.273.0
 
 ## 0.156.0
@@ -127,7 +127,7 @@
 - Updated dependencies [6b672c0]
 - Updated dependencies [03a91d0]
   - @voyant-travel/catalog-contracts@0.130.0
-  - @voyant-travel/storefront-react@0.276.0
+  - @voyant-travel/public-api-react@0.276.0
   - @voyant-travel/catalog-react@0.272.0
   - @voyant-travel/finance-react@0.274.0
 
@@ -137,13 +137,13 @@
 
 - @voyant-travel/catalog-react@0.271.0
 - @voyant-travel/finance-react@0.273.0
-- @voyant-travel/storefront-react@0.275.0
+- @voyant-travel/public-api-react@0.275.0
 
 ## 0.154.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.274.0
+- @voyant-travel/public-api-react@0.274.0
 - @voyant-travel/finance-react@0.272.0
 - @voyant-travel/catalog-react@0.270.0
 
@@ -154,7 +154,7 @@
 - Updated dependencies [21a28ef]
   - @voyant-travel/catalog-contracts@0.129.0
   - @voyant-travel/catalog-react@0.269.0
-  - @voyant-travel/storefront-react@0.273.0
+  - @voyant-travel/public-api-react@0.273.0
   - @voyant-travel/finance-react@0.271.0
 
 ## 0.152.0
@@ -165,7 +165,7 @@
   - @voyant-travel/finance@0.245.0
   - @voyant-travel/finance-react@0.270.0
   - @voyant-travel/catalog-react@0.268.0
-  - @voyant-travel/storefront-react@0.272.0
+  - @voyant-travel/public-api-react@0.272.0
 
 ## 0.151.0
 
@@ -177,7 +177,7 @@
   - @voyant-travel/catalog-react@0.267.0
   - @voyant-travel/finance-react@0.269.0
   - @voyant-travel/media-react@0.12.0
-  - @voyant-travel/storefront-react@0.271.0
+  - @voyant-travel/public-api-react@0.271.0
   - @voyant-travel/types@0.109.13
 
 ## 0.150.0
@@ -187,7 +187,7 @@
 - Updated dependencies [688f164]
   - @voyant-travel/catalog-contracts@0.128.0
   - @voyant-travel/catalog-react@0.266.0
-  - @voyant-travel/storefront-react@0.270.0
+  - @voyant-travel/public-api-react@0.270.0
   - @voyant-travel/finance-react@0.268.0
 
 ## 0.149.0
@@ -197,7 +197,7 @@
 - Updated dependencies [56e2050]
   - @voyant-travel/catalog-contracts@0.127.0
   - @voyant-travel/catalog-react@0.265.0
-  - @voyant-travel/storefront-react@0.269.0
+  - @voyant-travel/public-api-react@0.269.0
   - @voyant-travel/finance-react@0.267.0
 
 ## 0.148.0
@@ -209,7 +209,7 @@
   - @voyant-travel/finance-react@0.266.0
   - @voyant-travel/i18n@0.123.0
   - @voyant-travel/catalog-react@0.264.0
-  - @voyant-travel/storefront-react@0.268.0
+  - @voyant-travel/public-api-react@0.268.0
 
 ## 0.147.0
 
@@ -271,7 +271,7 @@
   - @voyant-travel/react@0.106.0
   - @voyant-travel/catalog-react@0.263.0
   - @voyant-travel/admin@0.135.0
-  - @voyant-travel/storefront-react@0.267.0
+  - @voyant-travel/public-api-react@0.267.0
   - @voyant-travel/inventory@0.40.0
   - @voyant-travel/i18n@0.122.1
   - @voyant-travel/finance-react@0.265.0
@@ -286,7 +286,7 @@
   - @voyant-travel/finance-react@0.264.0
   - @voyant-travel/react@0.105.0
   - @voyant-travel/catalog-react@0.262.0
-  - @voyant-travel/storefront-react@0.266.0
+  - @voyant-travel/public-api-react@0.266.0
 
 ## 0.145.0
 
@@ -299,7 +299,7 @@
   - @voyant-travel/finance@0.242.0
   - @voyant-travel/finance-react@0.263.0
   - @voyant-travel/catalog-react@0.261.0
-  - @voyant-travel/storefront-react@0.265.0
+  - @voyant-travel/public-api-react@0.265.0
 
 ## 0.144.0
 
@@ -309,14 +309,14 @@
   - @voyant-travel/finance@0.241.0
   - @voyant-travel/inventory@0.38.0
   - @voyant-travel/finance-react@0.262.0
-  - @voyant-travel/storefront-react@0.264.0
+  - @voyant-travel/public-api-react@0.264.0
   - @voyant-travel/catalog-react@0.260.0
 
 ## 0.143.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.263.0
+- @voyant-travel/public-api-react@0.263.0
 - @voyant-travel/finance-react@0.261.0
 - @voyant-travel/catalog-react@0.259.0
 
@@ -399,7 +399,7 @@
   - @voyant-travel/inventory@0.37.0
   - @voyant-travel/operations@0.22.0
   - @voyant-travel/catalog-react@0.258.0
-  - @voyant-travel/storefront-react@0.262.0
+  - @voyant-travel/public-api-react@0.262.0
 
 ## 0.141.0
 
@@ -451,7 +451,7 @@
   - @voyant-travel/operations@0.21.0
   - @voyant-travel/catalog-react@0.257.0
   - @voyant-travel/finance-react@0.259.0
-  - @voyant-travel/storefront-react@0.261.0
+  - @voyant-travel/public-api-react@0.261.0
 
 ## 0.140.0
 
@@ -461,7 +461,7 @@
   - @voyant-travel/catalog-contracts@0.125.0
   - @voyant-travel/inventory@0.35.0
   - @voyant-travel/catalog-react@0.256.0
-  - @voyant-travel/storefront-react@0.260.0
+  - @voyant-travel/public-api-react@0.260.0
   - @voyant-travel/finance-react@0.258.0
 
 ## 0.139.0
@@ -472,7 +472,7 @@
   - @voyant-travel/operations@0.20.0
   - @voyant-travel/catalog-react@0.255.0
   - @voyant-travel/finance-react@0.257.0
-  - @voyant-travel/storefront-react@0.259.0
+  - @voyant-travel/public-api-react@0.259.0
 
 ## 0.138.0
 
@@ -483,7 +483,7 @@
   - @voyant-travel/i18n@0.122.0
   - @voyant-travel/finance-react@0.256.0
   - @voyant-travel/catalog-react@0.254.0
-  - @voyant-travel/storefront-react@0.258.0
+  - @voyant-travel/public-api-react@0.258.0
 
 ## 0.137.0
 
@@ -520,7 +520,7 @@
 
 - Updated dependencies [f569b10]
   - @voyant-travel/catalog-react@0.253.0
-  - @voyant-travel/storefront-react@0.257.0
+  - @voyant-travel/public-api-react@0.257.0
   - @voyant-travel/finance-react@0.255.0
 
 ## 0.136.0
@@ -589,7 +589,7 @@
 - Updated dependencies [9ef6a65]
   - @voyant-travel/catalog-contracts@0.124.0
   - @voyant-travel/catalog-react@0.252.0
-  - @voyant-travel/storefront-react@0.256.0
+  - @voyant-travel/public-api-react@0.256.0
   - @voyant-travel/finance-react@0.254.0
 
 ## 0.135.0
@@ -599,7 +599,7 @@
 - Updated dependencies [ef8871d]
   - @voyant-travel/catalog-contracts@0.123.0
   - @voyant-travel/catalog-react@0.251.0
-  - @voyant-travel/storefront-react@0.255.0
+  - @voyant-travel/public-api-react@0.255.0
   - @voyant-travel/finance-react@0.253.0
 
 ## 0.134.0
@@ -609,7 +609,7 @@
 - Updated dependencies [b52433d]
   - @voyant-travel/catalog-contracts@0.122.0
   - @voyant-travel/catalog-react@0.250.0
-  - @voyant-travel/storefront-react@0.254.0
+  - @voyant-travel/public-api-react@0.254.0
   - @voyant-travel/finance-react@0.252.0
 
 ## 0.133.0
@@ -654,7 +654,7 @@
   - @voyant-travel/operations@0.18.0
   - @voyant-travel/catalog-react@0.249.0
   - @voyant-travel/finance-react@0.251.0
-  - @voyant-travel/storefront-react@0.253.0
+  - @voyant-travel/public-api-react@0.253.0
 
 ## 0.132.0
 
@@ -663,7 +663,7 @@
 - Updated dependencies [0976af1]
   - @voyant-travel/catalog-contracts@0.121.0
   - @voyant-travel/catalog-react@0.248.0
-  - @voyant-travel/storefront-react@0.252.0
+  - @voyant-travel/public-api-react@0.252.0
   - @voyant-travel/finance-react@0.250.0
 
 ## 0.131.0
@@ -731,7 +731,7 @@
   - @voyant-travel/catalog-contracts@0.120.0
   - @voyant-travel/inventory@0.33.0
   - @voyant-travel/catalog-react@0.247.0
-  - @voyant-travel/storefront-react@0.251.0
+  - @voyant-travel/public-api-react@0.251.0
   - @voyant-travel/finance-react@0.249.0
 
 ## 0.130.0
@@ -742,7 +742,7 @@
   - @voyant-travel/catalog-contracts@0.119.0
   - @voyant-travel/inventory@0.32.0
   - @voyant-travel/catalog-react@0.246.0
-  - @voyant-travel/storefront-react@0.250.0
+  - @voyant-travel/public-api-react@0.250.0
   - @voyant-travel/finance-react@0.248.0
 
 ## 0.129.0
@@ -753,7 +753,7 @@
   - @voyant-travel/catalog-contracts@0.118.0
   - @voyant-travel/inventory@0.31.0
   - @voyant-travel/catalog-react@0.245.0
-  - @voyant-travel/storefront-react@0.249.0
+  - @voyant-travel/public-api-react@0.249.0
   - @voyant-travel/finance-react@0.247.0
 
 ## 0.128.0
@@ -764,7 +764,7 @@
   - @voyant-travel/operations@0.17.0
   - @voyant-travel/finance-react@0.246.0
   - @voyant-travel/catalog-react@0.244.0
-  - @voyant-travel/storefront-react@0.248.0
+  - @voyant-travel/public-api-react@0.248.0
 
 ## 0.127.0
 
@@ -778,7 +778,7 @@
   - @voyant-travel/inventory@0.30.0
   - @voyant-travel/finance@0.239.0
   - @voyant-travel/catalog-react@0.243.0
-  - @voyant-travel/storefront-react@0.247.0
+  - @voyant-travel/public-api-react@0.247.0
 
 ## 0.126.0
 
@@ -788,7 +788,7 @@
   - @voyant-travel/operations@0.16.0
   - @voyant-travel/catalog-react@0.242.0
   - @voyant-travel/finance-react@0.244.0
-  - @voyant-travel/storefront-react@0.246.0
+  - @voyant-travel/public-api-react@0.246.0
 
 ## 0.125.0
 
@@ -798,7 +798,7 @@
   - @voyant-travel/operations@0.15.0
   - @voyant-travel/catalog-react@0.241.0
   - @voyant-travel/finance-react@0.243.0
-  - @voyant-travel/storefront-react@0.245.0
+  - @voyant-travel/public-api-react@0.245.0
 
 ## 0.124.0
 
@@ -809,7 +809,7 @@
   - @voyant-travel/inventory@0.29.0
   - @voyant-travel/catalog-react@0.240.0
   - @voyant-travel/finance-react@0.242.0
-  - @voyant-travel/storefront-react@0.244.0
+  - @voyant-travel/public-api-react@0.244.0
 
 ## 0.123.0
 
@@ -852,7 +852,7 @@
   - @voyant-travel/catalog-contracts@0.117.0
   - @voyant-travel/catalog-react@0.239.0
   - @voyant-travel/finance-react@0.241.0
-  - @voyant-travel/storefront-react@0.243.0
+  - @voyant-travel/public-api-react@0.243.0
 
 ## 0.122.0
 
@@ -860,7 +860,7 @@
 
 - @voyant-travel/finance-react@0.240.0
 - @voyant-travel/catalog-react@0.238.0
-- @voyant-travel/storefront-react@0.242.0
+- @voyant-travel/public-api-react@0.242.0
 
 ## 0.121.0
 
@@ -870,7 +870,7 @@
   - @voyant-travel/catalog-contracts@0.116.0
   - @voyant-travel/catalog-react@0.237.0
   - @voyant-travel/finance-react@0.239.0
-  - @voyant-travel/storefront-react@0.241.0
+  - @voyant-travel/public-api-react@0.241.0
 
 ## 0.120.0
 
@@ -881,7 +881,7 @@
   - @voyant-travel/types@0.109.12
   - @voyant-travel/catalog-react@0.236.0
   - @voyant-travel/finance-react@0.238.0
-  - @voyant-travel/storefront-react@0.240.0
+  - @voyant-travel/public-api-react@0.240.0
 
 ## 0.119.0
 
@@ -891,7 +891,7 @@
   - @voyant-travel/i18n@0.119.4
   - @voyant-travel/finance@0.237.0
   - @voyant-travel/finance-react@0.237.0
-  - @voyant-travel/storefront-react@0.239.0
+  - @voyant-travel/public-api-react@0.239.0
   - @voyant-travel/catalog-react@0.235.0
 
 ## 0.118.0
@@ -902,14 +902,14 @@
   - @voyant-travel/finance@0.236.0
   - @voyant-travel/finance-react@0.236.0
   - @voyant-travel/catalog-react@0.234.0
-  - @voyant-travel/storefront-react@0.238.0
+  - @voyant-travel/public-api-react@0.238.0
 
 ## 0.117.0
 
 ### Patch Changes
 
 - @voyant-travel/finance@0.235.0
-- @voyant-travel/storefront-react@0.237.0
+- @voyant-travel/public-api-react@0.237.0
 - @voyant-travel/finance-react@0.235.0
 - @voyant-travel/catalog-react@0.233.0
 
@@ -922,7 +922,7 @@
   - @voyant-travel/finance@0.234.0
   - @voyant-travel/operations@0.13.0
   - @voyant-travel/finance-react@0.234.0
-  - @voyant-travel/storefront-react@0.236.0
+  - @voyant-travel/public-api-react@0.236.0
   - @voyant-travel/catalog-react@0.232.0
 
 ## 0.115.0
@@ -932,7 +932,7 @@
 - Updated dependencies [15c1c64]
   - @voyant-travel/finance@0.233.0
   - @voyant-travel/finance-react@0.233.0
-  - @voyant-travel/storefront-react@0.235.0
+  - @voyant-travel/public-api-react@0.235.0
   - @voyant-travel/catalog-react@0.231.0
 
 ## 0.114.0
@@ -942,7 +942,7 @@
 - Updated dependencies [e93c0a7]
   - @voyant-travel/catalog-contracts@0.115.0
   - @voyant-travel/catalog-react@0.230.0
-  - @voyant-travel/storefront-react@0.234.0
+  - @voyant-travel/public-api-react@0.234.0
   - @voyant-travel/finance-react@0.232.0
   - @voyant-travel/finance@0.232.0
 
@@ -968,7 +968,7 @@
   - @voyant-travel/operations@0.12.0
   - @voyant-travel/i18n@0.119.3
   - @voyant-travel/finance-react@0.231.0
-  - @voyant-travel/storefront-react@0.233.0
+  - @voyant-travel/public-api-react@0.233.0
   - @voyant-travel/finance@0.231.0
 
 ## 0.112.0
@@ -980,7 +980,7 @@
   - @voyant-travel/finance@0.230.0
   - @voyant-travel/catalog-contracts@0.114.0
   - @voyant-travel/catalog-react@0.228.0
-  - @voyant-travel/storefront-react@0.232.0
+  - @voyant-travel/public-api-react@0.232.0
   - @voyant-travel/finance-react@0.230.0
 
 ## 0.111.0
@@ -991,7 +991,7 @@
 - Updated dependencies [f25ad34]
 - Updated dependencies [2601445]
   - @voyant-travel/catalog-contracts@0.113.0
-  - @voyant-travel/storefront-react@0.231.0
+  - @voyant-travel/public-api-react@0.231.0
   - @voyant-travel/finance@0.229.0
   - @voyant-travel/catalog-react@0.227.0
   - @voyant-travel/finance-react@0.229.0
@@ -1005,7 +1005,7 @@
   - @voyant-travel/catalog-react@0.226.0
   - @voyant-travel/finance-react@0.228.0
   - @voyant-travel/media-react@0.10.0
-  - @voyant-travel/storefront-react@0.230.0
+  - @voyant-travel/public-api-react@0.230.0
   - @voyant-travel/finance@0.228.0
 
 ## 0.109.0
@@ -1016,7 +1016,7 @@
   - @voyant-travel/i18n@0.119.2
   - @voyant-travel/finance@0.227.0
   - @voyant-travel/inventory@0.26.0
-  - @voyant-travel/storefront-react@0.229.0
+  - @voyant-travel/public-api-react@0.229.0
   - @voyant-travel/finance-react@0.227.0
   - @voyant-travel/catalog-react@0.225.0
 
@@ -1028,7 +1028,7 @@
   - @voyant-travel/finance@0.226.0
   - @voyant-travel/finance-react@0.226.0
   - @voyant-travel/catalog-react@0.224.0
-  - @voyant-travel/storefront-react@0.228.0
+  - @voyant-travel/public-api-react@0.228.0
 
 ## 0.107.0
 
@@ -1041,7 +1041,7 @@
   - @voyant-travel/finance@0.225.0
   - @voyant-travel/admin@0.133.0
   - @voyant-travel/finance-react@0.225.0
-  - @voyant-travel/storefront-react@0.227.0
+  - @voyant-travel/public-api-react@0.227.0
   - @voyant-travel/catalog-react@0.223.0
   - @voyant-travel/media-react@0.9.0
 
@@ -1053,7 +1053,7 @@
 - @voyant-travel/admin@0.132.0
 - @voyant-travel/catalog-react@0.222.0
 - @voyant-travel/finance-react@0.224.0
-- @voyant-travel/storefront-react@0.226.0
+- @voyant-travel/public-api-react@0.226.0
 - @voyant-travel/media-react@0.8.0
 
 ## 0.105.0
@@ -1065,13 +1065,13 @@
   - @voyant-travel/finance@0.223.0
   - @voyant-travel/finance-react@0.223.0
   - @voyant-travel/catalog-react@0.221.0
-  - @voyant-travel/storefront-react@0.225.0
+  - @voyant-travel/public-api-react@0.225.0
 
 ## 0.104.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.224.0
+- @voyant-travel/public-api-react@0.224.0
 - @voyant-travel/finance-react@0.222.0
 - @voyant-travel/catalog-react@0.220.0
 - @voyant-travel/finance@0.222.0
@@ -1091,7 +1091,7 @@
 - Updated dependencies [52c794d]
 - Updated dependencies [52c794d]
   - @voyant-travel/finance@0.221.0
-  - @voyant-travel/storefront-react@0.223.0
+  - @voyant-travel/public-api-react@0.223.0
   - @voyant-travel/inventory@0.24.0
   - @voyant-travel/operations@0.11.4
   - @voyant-travel/finance-react@0.221.0
@@ -1109,7 +1109,7 @@
   - @voyant-travel/finance-react@0.220.0
   - @voyant-travel/operations@0.11.3
   - @voyant-travel/types@0.109.10
-  - @voyant-travel/storefront-react@0.222.0
+  - @voyant-travel/public-api-react@0.222.0
   - @voyant-travel/admin@0.131.1
   - @voyant-travel/catalog-react@0.218.0
   - @voyant-travel/media-react@0.7.2
@@ -1118,7 +1118,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.221.0
+- @voyant-travel/public-api-react@0.221.0
 - @voyant-travel/finance-react@0.219.0
 - @voyant-travel/catalog-react@0.217.0
 - @voyant-travel/finance@0.219.0
@@ -1134,7 +1134,7 @@
   - @voyant-travel/inventory@0.23.1
   - @voyant-travel/finance-react@0.218.0
   - @voyant-travel/catalog-react@0.216.0
-  - @voyant-travel/storefront-react@0.220.0
+  - @voyant-travel/public-api-react@0.220.0
   - @voyant-travel/operations@0.11.1
 
 ## 0.99.0
@@ -1147,7 +1147,7 @@
   - @voyant-travel/operations@0.11.0
   - @voyant-travel/catalog-react@0.215.0
   - @voyant-travel/finance-react@0.217.0
-  - @voyant-travel/storefront-react@0.219.0
+  - @voyant-travel/public-api-react@0.219.0
   - @voyant-travel/finance@0.217.0
 
 ## 0.98.0
@@ -1174,7 +1174,7 @@
   - @voyant-travel/inventory@0.22.4
   - @voyant-travel/finance-react@0.216.0
   - @voyant-travel/catalog-react@0.214.0
-  - @voyant-travel/storefront-react@0.218.0
+  - @voyant-travel/public-api-react@0.218.0
   - @voyant-travel/operations@0.10.7
 
 ## 0.97.0
@@ -1185,7 +1185,7 @@
   - @voyant-travel/i18n@0.118.2
   - @voyant-travel/finance@0.215.0
   - @voyant-travel/inventory@0.22.2
-  - @voyant-travel/storefront-react@0.217.0
+  - @voyant-travel/public-api-react@0.217.0
   - @voyant-travel/finance-react@0.215.0
   - @voyant-travel/catalog-react@0.213.0
   - @voyant-travel/operations@0.10.6
@@ -1215,7 +1215,7 @@
   - @voyant-travel/catalog-react@0.212.0
   - @voyant-travel/finance-react@0.214.0
   - @voyant-travel/media-react@0.7.0
-  - @voyant-travel/storefront-react@0.216.0
+  - @voyant-travel/public-api-react@0.216.0
   - @voyant-travel/finance@0.214.0
   - @voyant-travel/inventory@0.22.1
   - @voyant-travel/operations@0.10.5
@@ -1259,7 +1259,7 @@
   - @voyant-travel/inventory@0.22.0
   - @voyant-travel/finance-react@0.213.0
   - @voyant-travel/catalog-react@0.211.0
-  - @voyant-travel/storefront-react@0.215.0
+  - @voyant-travel/public-api-react@0.215.0
   - @voyant-travel/finance@0.213.0
 
 ## 0.94.0
@@ -1269,7 +1269,7 @@
 - @voyant-travel/inventory@0.21.12
 - @voyant-travel/finance-react@0.212.0
 - @voyant-travel/catalog-react@0.210.0
-- @voyant-travel/storefront-react@0.214.0
+- @voyant-travel/public-api-react@0.214.0
 - @voyant-travel/finance@0.212.0
 
 ## 0.93.0
@@ -1279,14 +1279,14 @@
 - @voyant-travel/inventory@0.21.10
 - @voyant-travel/finance-react@0.211.0
 - @voyant-travel/catalog-react@0.209.0
-- @voyant-travel/storefront-react@0.213.0
+- @voyant-travel/public-api-react@0.213.0
 - @voyant-travel/finance@0.211.0
 
 ## 0.92.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.212.0
+- @voyant-travel/public-api-react@0.212.0
 - @voyant-travel/finance-react@0.210.0
 - @voyant-travel/catalog-react@0.208.0
 - @voyant-travel/finance@0.210.0
@@ -1299,7 +1299,7 @@
 - @voyant-travel/inventory@0.21.8
 - @voyant-travel/finance-react@0.209.0
 - @voyant-travel/catalog-react@0.207.0
-- @voyant-travel/storefront-react@0.211.0
+- @voyant-travel/public-api-react@0.211.0
 - @voyant-travel/finance@0.209.0
 
 ## 0.90.0
@@ -1312,7 +1312,7 @@
   - @voyant-travel/catalog-react@0.206.0
   - @voyant-travel/finance-react@0.208.0
   - @voyant-travel/media-react@0.6.0
-  - @voyant-travel/storefront-react@0.210.0
+  - @voyant-travel/public-api-react@0.210.0
   - @voyant-travel/finance@0.208.0
   - @voyant-travel/inventory@0.21.7
 
@@ -1324,7 +1324,7 @@
 - @voyant-travel/inventory@0.21.2
 - @voyant-travel/finance-react@0.207.0
 - @voyant-travel/catalog-react@0.205.0
-- @voyant-travel/storefront-react@0.209.0
+- @voyant-travel/public-api-react@0.209.0
 
 ## 0.88.0
 
@@ -1334,7 +1334,7 @@
   - @voyant-travel/i18n@0.117.3
   - @voyant-travel/finance@0.206.0
   - @voyant-travel/inventory@0.21.1
-  - @voyant-travel/storefront-react@0.208.0
+  - @voyant-travel/public-api-react@0.208.0
   - @voyant-travel/finance-react@0.206.0
   - @voyant-travel/catalog-react@0.204.0
 
@@ -1346,7 +1346,7 @@
   - @voyant-travel/inventory@0.21.0
   - @voyant-travel/finance@0.205.0
   - @voyant-travel/finance-react@0.205.0
-  - @voyant-travel/storefront-react@0.207.0
+  - @voyant-travel/public-api-react@0.207.0
   - @voyant-travel/catalog-react@0.203.0
 
 ## 0.86.0
@@ -1359,7 +1359,7 @@
   - @voyant-travel/media-react@0.5.0
   - @voyant-travel/catalog-react@0.202.0
   - @voyant-travel/finance-react@0.204.0
-  - @voyant-travel/storefront-react@0.206.0
+  - @voyant-travel/public-api-react@0.206.0
   - @voyant-travel/finance@0.204.0
   - @voyant-travel/inventory@0.20.1
 
@@ -1372,13 +1372,13 @@
   - @voyant-travel/catalog-react@0.201.0
   - @voyant-travel/inventory@0.20.0
   - @voyant-travel/finance-react@0.203.0
-  - @voyant-travel/storefront-react@0.205.0
+  - @voyant-travel/public-api-react@0.205.0
 
 ## 0.84.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.204.0
+- @voyant-travel/public-api-react@0.204.0
 - @voyant-travel/finance-react@0.202.0
 - @voyant-travel/catalog-react@0.200.0
 - @voyant-travel/finance@0.202.0
@@ -1392,7 +1392,7 @@
   - @voyant-travel/finance@0.201.0
   - @voyant-travel/finance-react@0.201.0
   - @voyant-travel/inventory@0.19.4
-  - @voyant-travel/storefront-react@0.203.0
+  - @voyant-travel/public-api-react@0.203.0
   - @voyant-travel/catalog-react@0.199.0
 
 ## 0.82.0
@@ -1405,7 +1405,7 @@
   - @voyant-travel/inventory@0.19.3
   - @voyant-travel/finance@0.200.0
   - @voyant-travel/ui@0.109.6
-  - @voyant-travel/storefront-react@0.202.0
+  - @voyant-travel/public-api-react@0.202.0
   - @voyant-travel/catalog-react@0.198.0
 
 ## 0.81.0
@@ -1416,7 +1416,7 @@
 - @voyant-travel/inventory@0.19.2
 - @voyant-travel/finance-react@0.199.0
 - @voyant-travel/catalog-react@0.197.0
-- @voyant-travel/storefront-react@0.201.0
+- @voyant-travel/public-api-react@0.201.0
 
 ## 0.80.1
 
@@ -1520,7 +1520,7 @@
 - Updated dependencies [e2cb9f5]
   - @voyant-travel/i18n@0.117.2
   - @voyant-travel/finance-react@0.198.1
-  - @voyant-travel/storefront-react@0.200.1
+  - @voyant-travel/public-api-react@0.200.1
   - @voyant-travel/admin@0.129.1
   - @voyant-travel/catalog-react@0.196.1
   - @voyant-travel/media-react@0.4.1
@@ -1533,7 +1533,7 @@
 ### Patch Changes
 
 - @voyant-travel/inventory@0.19.0
-- @voyant-travel/storefront-react@0.200.0
+- @voyant-travel/public-api-react@0.200.0
 - @voyant-travel/finance-react@0.198.0
 - @voyant-travel/catalog-react@0.196.0
 - @voyant-travel/finance@0.198.0
@@ -1545,7 +1545,7 @@
 - Updated dependencies [b07a0a3]
   - @voyant-travel/finance@0.197.0
   - @voyant-travel/inventory@0.18.0
-  - @voyant-travel/storefront-react@0.199.0
+  - @voyant-travel/public-api-react@0.199.0
   - @voyant-travel/catalog-react@0.195.0
   - @voyant-travel/finance-react@0.197.0
 
@@ -1558,7 +1558,7 @@
 - Updated dependencies [bf548af]
   - @voyant-travel/inventory@0.17.0
   - @voyant-travel/finance@0.196.0
-  - @voyant-travel/storefront-react@0.198.0
+  - @voyant-travel/public-api-react@0.198.0
   - @voyant-travel/finance-react@0.196.0
   - @voyant-travel/catalog-react@0.194.0
 
@@ -1570,7 +1570,7 @@
 - @voyant-travel/inventory@0.16.2
 - @voyant-travel/finance-react@0.195.0
 - @voyant-travel/catalog-react@0.193.0
-- @voyant-travel/storefront-react@0.197.0
+- @voyant-travel/public-api-react@0.197.0
 
 ## 0.76.0
 
@@ -1580,7 +1580,7 @@
   - @voyant-travel/inventory@0.16.1
   - @voyant-travel/finance-react@0.194.0
   - @voyant-travel/catalog-react@0.192.0
-  - @voyant-travel/storefront-react@0.196.0
+  - @voyant-travel/public-api-react@0.196.0
   - @voyant-travel/finance@0.194.0
 
 ## 0.75.0
@@ -1605,7 +1605,7 @@
   - @voyant-travel/catalog-react@0.191.0
   - @voyant-travel/finance-react@0.193.0
   - @voyant-travel/media-react@0.4.0
-  - @voyant-travel/storefront-react@0.195.0
+  - @voyant-travel/public-api-react@0.195.0
   - @voyant-travel/finance@0.193.0
 
 ## 0.74.1
@@ -1624,7 +1624,7 @@
 - Updated dependencies [e68a705]
   - @voyant-travel/finance@0.192.0
   - @voyant-travel/finance-react@0.192.0
-  - @voyant-travel/storefront-react@0.194.0
+  - @voyant-travel/public-api-react@0.194.0
   - @voyant-travel/catalog-react@0.190.0
   - @voyant-travel/inventory@0.15.2
 
@@ -1637,7 +1637,7 @@
   - @voyant-travel/finance-react@0.191.0
   - @voyant-travel/inventory@0.15.1
   - @voyant-travel/catalog-react@0.189.0
-  - @voyant-travel/storefront-react@0.193.0
+  - @voyant-travel/public-api-react@0.193.0
 
 ## 0.72.0
 
@@ -1647,7 +1647,7 @@
   - @voyant-travel/inventory@0.15.0
   - @voyant-travel/finance@0.190.0
   - @voyant-travel/types@0.109.9
-  - @voyant-travel/storefront-react@0.192.0
+  - @voyant-travel/public-api-react@0.192.0
   - @voyant-travel/finance-react@0.190.0
   - @voyant-travel/catalog-react@0.188.0
 
@@ -1659,7 +1659,7 @@
   - @voyant-travel/catalog-contracts@0.112.0
   - @voyant-travel/inventory@0.14.28
   - @voyant-travel/catalog-react@0.187.0
-  - @voyant-travel/storefront-react@0.191.0
+  - @voyant-travel/public-api-react@0.191.0
   - @voyant-travel/finance-react@0.189.0
   - @voyant-travel/finance@0.189.0
 
@@ -1674,7 +1674,7 @@
   - @voyant-travel/ui@0.109.4
   - @voyant-travel/catalog-react@0.186.0
   - @voyant-travel/finance-react@0.188.0
-  - @voyant-travel/storefront-react@0.190.0
+  - @voyant-travel/public-api-react@0.190.0
 
 ## 0.69.0
 
@@ -1691,7 +1691,7 @@
 
 - @voyant-travel/catalog-react@0.185.0
 - @voyant-travel/finance-react@0.187.0
-- @voyant-travel/storefront-react@0.189.0
+- @voyant-travel/public-api-react@0.189.0
 - @voyant-travel/finance@0.187.0
 - @voyant-travel/inventory@0.14.24
 
@@ -1710,7 +1710,7 @@
 
 - @voyant-travel/catalog-react@0.184.0
 - @voyant-travel/finance-react@0.186.0
-- @voyant-travel/storefront-react@0.188.0
+- @voyant-travel/public-api-react@0.188.0
 - @voyant-travel/finance@0.186.0
 - @voyant-travel/inventory@0.14.22
 
@@ -1723,7 +1723,7 @@
   - @voyant-travel/finance-react@0.185.0
   - @voyant-travel/inventory@0.14.21
   - @voyant-travel/catalog-react@0.183.0
-  - @voyant-travel/storefront-react@0.187.0
+  - @voyant-travel/public-api-react@0.187.0
 
 ## 0.66.0
 
@@ -1741,7 +1741,7 @@
   - @voyant-travel/inventory@0.14.20
   - @voyant-travel/catalog-react@0.182.0
   - @voyant-travel/finance-react@0.184.0
-  - @voyant-travel/storefront-react@0.186.0
+  - @voyant-travel/public-api-react@0.186.0
   - @voyant-travel/finance@0.184.0
 
 ## 0.65.0
@@ -1749,7 +1749,7 @@
 ### Patch Changes
 
 - @voyant-travel/finance@0.183.0
-- @voyant-travel/storefront-react@0.185.0
+- @voyant-travel/public-api-react@0.185.0
 - @voyant-travel/finance-react@0.183.0
 - @voyant-travel/catalog-react@0.181.0
 - @voyant-travel/inventory@0.14.19
@@ -1763,14 +1763,14 @@
   - @voyant-travel/admin@0.128.3
   - @voyant-travel/catalog-react@0.180.2
   - @voyant-travel/finance-react@0.182.4
-  - @voyant-travel/storefront-react@0.184.2
+  - @voyant-travel/public-api-react@0.184.2
   - @voyant-travel/finance@0.182.4
 
 ## 0.64.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.184.0
+- @voyant-travel/public-api-react@0.184.0
 - @voyant-travel/finance-react@0.182.0
 - @voyant-travel/catalog-react@0.180.0
 - @voyant-travel/finance@0.182.0
@@ -1787,7 +1787,7 @@
   - @voyant-travel/inventory@0.14.13
   - @voyant-travel/finance-react@0.181.0
   - @voyant-travel/catalog-react@0.179.0
-  - @voyant-travel/storefront-react@0.183.0
+  - @voyant-travel/public-api-react@0.183.0
 
 ## 0.62.1
 
@@ -1800,14 +1800,14 @@
   - @voyant-travel/admin@0.128.2
   - @voyant-travel/catalog-react@0.178.1
   - @voyant-travel/finance-react@0.180.1
-  - @voyant-travel/storefront-react@0.182.1
+  - @voyant-travel/public-api-react@0.182.1
 
 ## 0.62.0
 
 ### Patch Changes
 
 - Updated dependencies [ecf1680]
-  - @voyant-travel/storefront-react@0.182.0
+  - @voyant-travel/public-api-react@0.182.0
   - @voyant-travel/i18n@0.114.0
   - @voyant-travel/admin@0.128.1
   - @voyant-travel/catalog-react@0.178.0
@@ -1819,7 +1819,7 @@
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.181.0
+- @voyant-travel/public-api-react@0.181.0
 - @voyant-travel/finance-react@0.179.0
 - @voyant-travel/catalog-react@0.177.0
 - @voyant-travel/finance@0.179.0
@@ -1834,7 +1834,7 @@
   - @voyant-travel/i18n@0.113.0
   - @voyant-travel/catalog-react@0.176.0
   - @voyant-travel/finance-react@0.178.0
-  - @voyant-travel/storefront-react@0.180.0
+  - @voyant-travel/public-api-react@0.180.0
   - @voyant-travel/finance@0.178.0
   - @voyant-travel/inventory@0.14.9
 
@@ -1845,7 +1845,7 @@
 - @voyant-travel/finance@0.177.0
 - @voyant-travel/inventory@0.14.8
 - @voyant-travel/types@0.109.8
-- @voyant-travel/storefront-react@0.179.0
+- @voyant-travel/public-api-react@0.179.0
 - @voyant-travel/finance-react@0.177.0
 - @voyant-travel/catalog-react@0.175.0
 
@@ -1854,7 +1854,7 @@
 ### Patch Changes
 
 - Updated dependencies [abc32b6]
-  - @voyant-travel/storefront-react@0.178.0
+  - @voyant-travel/public-api-react@0.178.0
   - @voyant-travel/finance@0.176.0
   - @voyant-travel/inventory@0.14.7
   - @voyant-travel/types@0.109.7
@@ -1866,7 +1866,7 @@
 ### Patch Changes
 
 - Updated dependencies [a160a81]
-  - @voyant-travel/storefront-react@0.177.0
+  - @voyant-travel/public-api-react@0.177.0
   - @voyant-travel/finance@0.175.0
   - @voyant-travel/inventory@0.14.6
   - @voyant-travel/types@0.109.6
@@ -1882,13 +1882,13 @@
   - @voyant-travel/inventory@0.14.5
   - @voyant-travel/finance-react@0.174.0
   - @voyant-travel/catalog-react@0.172.0
-  - @voyant-travel/storefront-react@0.176.0
+  - @voyant-travel/public-api-react@0.176.0
 
 ## 0.55.0
 
 ### Patch Changes
 
-- @voyant-travel/storefront-react@0.175.0
+- @voyant-travel/public-api-react@0.175.0
 - @voyant-travel/finance-react@0.173.0
 - @voyant-travel/catalog-react@0.171.0
 - @voyant-travel/finance@0.173.0
@@ -1903,7 +1903,7 @@
   - @voyant-travel/utils@0.108.0
   - @voyant-travel/inventory@0.14.3
   - @voyant-travel/finance-react@0.172.0
-  - @voyant-travel/storefront-react@0.174.0
+  - @voyant-travel/public-api-react@0.174.0
   - @voyant-travel/ui@0.109.3
   - @voyant-travel/catalog-react@0.170.0
 
@@ -1916,7 +1916,7 @@
   - @voyant-travel/finance-react@0.171.0
   - @voyant-travel/inventory@0.14.1
   - @voyant-travel/catalog-react@0.169.0
-  - @voyant-travel/storefront-react@0.173.0
+  - @voyant-travel/public-api-react@0.173.0
 
 ## 0.52.0
 
@@ -1926,7 +1926,7 @@
   - @voyant-travel/i18n@0.112.1
   - @voyant-travel/inventory@0.14.0
   - @voyant-travel/finance@0.170.0
-  - @voyant-travel/storefront-react@0.172.0
+  - @voyant-travel/public-api-react@0.172.0
   - @voyant-travel/finance-react@0.170.0
   - @voyant-travel/catalog-react@0.168.0
 
@@ -1942,7 +1942,7 @@
   - @voyant-travel/inventory@0.13.6
   - @voyant-travel/catalog-react@0.167.0
   - @voyant-travel/finance-react@0.169.0
-  - @voyant-travel/storefront-react@0.171.0
+  - @voyant-travel/public-api-react@0.171.0
 
 ## 0.50.0
 
@@ -1953,7 +1953,7 @@
   - @voyant-travel/finance-react@0.168.0
   - @voyant-travel/inventory@0.13.5
   - @voyant-travel/catalog-react@0.166.0
-  - @voyant-travel/storefront-react@0.170.0
+  - @voyant-travel/public-api-react@0.170.0
 
 ## 0.49.0
 
@@ -1964,7 +1964,7 @@
   - @voyant-travel/inventory@0.13.4
   - @voyant-travel/finance-react@0.167.0
   - @voyant-travel/catalog-react@0.165.0
-  - @voyant-travel/storefront-react@0.169.0
+  - @voyant-travel/public-api-react@0.169.0
 
 ## 0.48.0
 
@@ -1980,7 +1980,7 @@
   - @voyant-travel/i18n@0.112.0
   - @voyant-travel/inventory@0.13.3
   - @voyant-travel/catalog-react@0.164.0
-  - @voyant-travel/storefront-react@0.168.0
+  - @voyant-travel/public-api-react@0.168.0
 
 ## 0.47.0
 
@@ -1991,7 +1991,7 @@
   - @voyant-travel/finance-react@0.165.0
   - @voyant-travel/inventory@0.13.2
   - @voyant-travel/catalog-react@0.163.0
-  - @voyant-travel/storefront-react@0.167.0
+  - @voyant-travel/public-api-react@0.167.0
 
 ## 0.46.0
 
@@ -2000,7 +2000,7 @@
 - @voyant-travel/inventory@0.13.1
 - @voyant-travel/finance-react@0.164.0
 - @voyant-travel/catalog-react@0.162.0
-- @voyant-travel/storefront-react@0.166.0
+- @voyant-travel/public-api-react@0.166.0
 - @voyant-travel/finance@0.164.0
 
 ## 0.45.0
@@ -2011,7 +2011,7 @@
   - @voyant-travel/finance@0.163.0
   - @voyant-travel/inventory@0.13.0
   - @voyant-travel/finance-react@0.163.0
-  - @voyant-travel/storefront-react@0.165.0
+  - @voyant-travel/public-api-react@0.165.0
   - @voyant-travel/catalog-react@0.161.0
 
 ## 0.44.1
@@ -2040,7 +2040,7 @@
 - Updated dependencies [8f0fa26]
   - @voyant-travel/finance@0.162.0
   - @voyant-travel/inventory@0.12.0
-  - @voyant-travel/storefront-react@0.164.0
+  - @voyant-travel/public-api-react@0.164.0
   - @voyant-travel/finance-react@0.162.0
   - @voyant-travel/catalog-react@0.160.0
 
@@ -2054,7 +2054,7 @@
   - @voyant-travel/finance@0.161.0
   - @voyant-travel/catalog-react@0.159.0
   - @voyant-travel/finance-react@0.161.0
-  - @voyant-travel/storefront-react@0.163.0
+  - @voyant-travel/public-api-react@0.163.0
   - @voyant-travel/inventory@0.11.1
 
 ## 0.42.0
@@ -2070,7 +2070,7 @@
 - Updated dependencies [6604f9e]
   - @voyant-travel/finance@0.160.0
   - @voyant-travel/inventory@0.11.0
-  - @voyant-travel/storefront-react@0.162.0
+  - @voyant-travel/public-api-react@0.162.0
   - @voyant-travel/finance-react@0.160.0
   - @voyant-travel/catalog-react@0.158.0
 
@@ -2099,7 +2099,7 @@
   - @voyant-travel/finance@0.159.0
   - @voyant-travel/inventory@0.10.4
   - @voyant-travel/finance-react@0.159.0
-  - @voyant-travel/storefront-react@0.161.0
+  - @voyant-travel/public-api-react@0.161.0
   - @voyant-travel/catalog-react@0.157.0
 
 ## 0.40.0
@@ -2121,7 +2121,7 @@
   - @voyant-travel/finance@0.158.0
   - @voyant-travel/inventory@0.10.3
   - @voyant-travel/types@0.109.2
-  - @voyant-travel/storefront-react@0.160.0
+  - @voyant-travel/public-api-react@0.160.0
 
 ## 0.39.0
 
@@ -2130,7 +2130,7 @@
 - Updated dependencies [0808b21]
   - @voyant-travel/catalog-contracts@0.111.0
   - @voyant-travel/catalog-react@0.155.0
-  - @voyant-travel/storefront-react@0.159.0
+  - @voyant-travel/public-api-react@0.159.0
   - @voyant-travel/finance-react@0.157.0
   - @voyant-travel/finance@0.157.0
   - @voyant-travel/inventory@0.10.2
@@ -2153,7 +2153,7 @@
   - @voyant-travel/i18n@0.111.1
   - @voyant-travel/inventory@0.10.1
   - @voyant-travel/react@0.104.2
-  - @voyant-travel/storefront-react@0.158.1
+  - @voyant-travel/public-api-react@0.158.1
   - @voyant-travel/ui@0.109.1
 
 ## 0.38.0
@@ -2166,7 +2166,7 @@
   - @voyant-travel/catalog-contracts@0.110.0
   - @voyant-travel/inventory@0.10.0
   - @voyant-travel/i18n@0.111.0
-  - @voyant-travel/storefront-react@0.158.0
+  - @voyant-travel/public-api-react@0.158.0
   - @voyant-travel/catalog-react@0.154.0
   - @voyant-travel/admin@0.123.2
 
@@ -2176,7 +2176,7 @@
 
 - @voyant-travel/finance@0.155.0
 - @voyant-travel/inventory@0.9.2
-- @voyant-travel/storefront-react@0.157.0
+- @voyant-travel/public-api-react@0.157.0
 - @voyant-travel/finance-react@0.155.0
 - @voyant-travel/catalog-react@0.153.0
 
@@ -2194,7 +2194,7 @@
   - @voyant-travel/admin@0.123.0
   - @voyant-travel/finance-react@0.154.0
   - @voyant-travel/catalog-react@0.152.0
-  - @voyant-travel/storefront-react@0.156.0
+  - @voyant-travel/public-api-react@0.156.0
 
 ## 0.35.0
 
@@ -2240,7 +2240,7 @@
   - @voyant-travel/inventory@0.9.0
   - @voyant-travel/admin@0.122.0
   - @voyant-travel/finance-react@0.153.0
-  - @voyant-travel/storefront-react@0.155.0
+  - @voyant-travel/public-api-react@0.155.0
   - @voyant-travel/catalog-react@0.151.0
   - @voyant-travel/types@0.108.1
 

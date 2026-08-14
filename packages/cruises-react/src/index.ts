@@ -18,7 +18,7 @@ export {
   type PricesListFilters,
   type SailingsListFilters,
   type ShipsListFilters,
-  type StorefrontListFilters,
+  type PublicApiListFilters,
 } from "./query-keys.js"
 export {
   getCategoryCabinsQueryOptions,
@@ -33,6 +33,6 @@ export {
   getShipDecksQueryOptions,
   getShipQueryOptions,
   getShipsQueryOptions,
-  getStorefrontCruisesQueryOptions,
+  getPublicApiCruisesQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"

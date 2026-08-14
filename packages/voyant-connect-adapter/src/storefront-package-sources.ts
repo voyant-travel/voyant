@@ -5,18 +5,18 @@ import {
 } from "@voyant-travel/connect-sdk"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type {
-  StorefrontDynamicPackageSourceOffer,
-  StorefrontDynamicPackageSourceProvider,
-} from "@voyant-travel/storefront/shopping/provider-ports"
+  PublicApiDynamicPackageSourceOffer,
+  PublicApiDynamicPackageSourceProvider,
+} from "@voyant-travel/public-api/shopping/provider-ports"
 
 import { resolveVoyantConnectEnv } from "./env.js"
 
 const BOARD_CODES = new Set(["RO", "BB", "HB", "FB", "AI"])
 
 /** Connect's admitted cross-provider package search behind Storefront's closed port. */
-export function createVoyantConnectStorefrontPackageSourceProvider(
+export function createVoyantConnectPublicApiPackageSourceProvider(
   primitives: VoyantRuntimeHostPrimitives,
-): StorefrontDynamicPackageSourceProvider {
+): PublicApiDynamicPackageSourceProvider {
   return {
     async resolveSources() {
       const config = resolveVoyantConnectEnv(primitives.env(undefined), {
@@ -67,7 +67,7 @@ function connectContinuation(response: unknown): { nextCursor?: string } {
 }
 
 type PackageSourceInput = Parameters<
-  Awaited<ReturnType<StorefrontDynamicPackageSourceProvider["resolveSources"]>>[number]["search"]
+  Awaited<ReturnType<PublicApiDynamicPackageSourceProvider["resolveSources"]>>[number]["search"]
 >[0]
 
 function packageQuery(input: PackageSourceInput): PackageSearchQuery {
@@ -108,7 +108,7 @@ function packageQuery(input: PackageSourceInput): PackageSearchQuery {
 function packageOffer(
   offer: PackageOffer,
   input: PackageSourceInput,
-): StorefrontDynamicPackageSourceOffer | undefined {
+): PublicApiDynamicPackageSourceOffer | undefined {
   const accommodationName = offer.stay.name ?? offer.stay.ref.label ?? undefined
   if (!accommodationName || offer.flights.length === 0) return undefined
   const firstFlight = offer.flights[0]

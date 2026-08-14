@@ -35,10 +35,10 @@ import {
   relationshipsRouteRuntimePort,
 } from "./runtime-port.js"
 import { relationshipsService } from "./service/index.js"
-import { createStorefrontIntakePersistence } from "./storefront-intake-runtime.js"
+import { createPublicApiIntakePersistence } from "./storefront-intake-runtime.js"
 
-const storefrontIntakeRuntimePortReference = {
-  id: "storefront.intake.runtime",
+const publicApiIntakeRuntimePortReference = {
+  id: "public-api.intake.runtime",
 } as const
 
 const relationshipCustomFieldTables = {
@@ -217,7 +217,7 @@ export function createRelationshipsRuntimePortContribution(
     },
   }
   return {
-    [storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence(),
+    [publicApiIntakeRuntimePortReference.id]: createPublicApiIntakePersistence(),
     [customFieldValueReaderRuntimePort.id]: customFields,
     [customFieldValueLifecycleRuntimePort.id]: relationshipCustomFieldValues,
     [customFieldValueOperationsRuntimePort.id]: relationshipCustomFieldValueOperations,

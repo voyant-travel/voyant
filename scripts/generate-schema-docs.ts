@@ -64,7 +64,7 @@ import * as proposalsSalesSchema from "../packages/proposals/src/schema-sales.ts
 import * as relationshipsAccountsSchema from "../packages/relationships/src/schema-accounts.ts"
 import * as relationshipsActivitiesSchema from "../packages/relationships/src/schema-activities.ts"
 import * as relationshipsSignalsSchema from "../packages/relationships/src/schema-signals.ts"
-import * as storefrontVerificationSchema from "../packages/storefront/src/verification/schema.ts"
+import * as publicApiVerificationSchema from "../packages/public-api/src/verification/schema.ts"
 
 type ImportedModule = Record<string, unknown>
 
@@ -200,7 +200,7 @@ const sections: SectionDefinition[] = [
   },
   {
     title: "Notifications & Verification",
-    modules: [notificationsSchema, storefrontVerificationSchema],
+    modules: [notificationsSchema, publicApiVerificationSchema],
   },
   {
     title: "Accommodations",

@@ -3,21 +3,20 @@ import { sha256Hex } from "@voyant-travel/hono"
 import { describe, expect, it } from "vitest"
 import {
   type TripEnvelope,
-  type TripStorefrontAccess,
+  type TripPublicAccess,
   tripComponents,
   tripEnvelopes,
-  tripStorefrontAccess,
+  tripPublicAccess,
 } from "../src/schema.js"
 import {
-  createStorefrontTrip,
-  resolveStorefrontTripAccess,
+  createPublicApiTrip,
+  resolvePublicApiTripAccess,
   STOREFRONT_TRIP_CAPABILITY_TTL_MS,
 } from "../src/storefront-access.js"
 
 const CAPABILITY = `tcap_${"a".repeat(64)}`
 const NOW = new Date("2026-08-08T10:00:00.000Z")
 const CONTEXT = {
-  storefrontId: "storefront_bucharest",
   channelId: "channel_direct",
   userId: "anonymous-storefront",
 }
@@ -25,8 +24,8 @@ const SCOPE = { marketId: "market_ro", locale: "ro-RO", currency: "EUR" }
 
 describe("storefront Trip access", () => {
   it("creates an empty managed Trip and persists only the capability digest", async () => {
-    const state: { envelope?: TripEnvelope; access?: TripStorefrontAccess } = {}
-    const result = await createStorefrontTrip(
+    const state: { envelope?: TripEnvelope; access?: TripPublicAccess } = {}
+    const result = await createPublicApiTrip(
       createDb(state),
       { title: "City and coast", scope: SCOPE },
       CONTEXT,
@@ -36,12 +35,11 @@ describe("storefront Trip access", () => {
     expect(result.capability).toBe(CAPABILITY)
     expect(result.trip.envelope.id).toBe("trip_storefront_1")
     expect(result.trip.envelope.travelerParty).toEqual({})
-    expect(result.trip.envelope.constraints).toEqual({ storefrontScope: SCOPE })
+    expect(result.trip.envelope.constraints).toEqual({ publicApiScope: SCOPE })
     expect(result.trip.envelope.createdBy).toBe("storefront:storefront_bucharest:anonymous")
     expect(state.access).toMatchObject({
       envelopeId: "trip_storefront_1",
       capabilityDigest: await sha256Hex(CAPABILITY),
-      storefrontId: CONTEXT.storefrontId,
       channelId: CONTEXT.channelId,
       ...SCOPE,
       ownerUserId: null,
@@ -54,15 +52,15 @@ describe("storefront Trip access", () => {
   it("resolves only in the bound storefront and channel", async () => {
     const state = await seededState()
     const db = createDb(state)
-    const result = await resolveStorefrontTripAccess(db, CAPABILITY, CONTEXT, { now: () => NOW })
+    const result = await resolvePublicApiTripAccess(db, CAPABILITY, CONTEXT, { now: () => NOW })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.access.currency).toBe("EUR")
 
     await expect(
-      resolveStorefrontTripAccess(
+      resolvePublicApiTripAccess(
         db,
         CAPABILITY,
-        { ...CONTEXT, storefrontId: "storefront_other" },
+        { ...CONTEXT, channelId: "chan_other" },
         { now: () => NOW },
       ),
     ).resolves.toEqual({ ok: false, reason: "wrong_storefront" })
@@ -71,14 +69,14 @@ describe("storefront Trip access", () => {
   it("fails closed for malformed, expired, and differently-owned capabilities", async () => {
     const state = await seededState()
     const db = createDb(state)
-    await expect(resolveStorefrontTripAccess(db, "trip_storefront_1", CONTEXT)).resolves.toEqual({
+    await expect(resolvePublicApiTripAccess(db, "trip_storefront_1", CONTEXT)).resolves.toEqual({
       ok: false,
       reason: "invalid",
     })
 
     state.access = { ...state.access, expiresAt: new Date("2026-08-08T09:00:00.000Z") }
     await expect(
-      resolveStorefrontTripAccess(db, CAPABILITY, CONTEXT, { now: () => NOW }),
+      resolvePublicApiTripAccess(db, CAPABILITY, CONTEXT, { now: () => NOW }),
     ).resolves.toEqual({ ok: false, reason: "expired" })
 
     state.access = {
@@ -87,7 +85,7 @@ describe("storefront Trip access", () => {
       ownerUserId: "customer_1",
     }
     await expect(
-      resolveStorefrontTripAccess(
+      resolvePublicApiTripAccess(
         db,
         CAPABILITY,
         { ...CONTEXT, userId: "customer_2" },
@@ -97,14 +95,13 @@ describe("storefront Trip access", () => {
   })
 })
 
-async function seededState(): Promise<{ envelope: TripEnvelope; access: TripStorefrontAccess }> {
+async function seededState(): Promise<{ envelope: TripEnvelope; access: TripPublicAccess }> {
   const envelope = envelopeRow()
   return {
     envelope,
     access: {
       envelopeId: envelope.id,
       capabilityDigest: await sha256Hex(CAPABILITY),
-      storefrontId: CONTEXT.storefrontId,
       channelId: CONTEXT.channelId,
       marketId: SCOPE.marketId,
       locale: SCOPE.locale,
@@ -126,7 +123,7 @@ function envelopeRow(): TripEnvelope {
     title: "City and coast",
     description: null,
     travelerParty: {},
-    constraints: { storefrontScope: SCOPE },
+    constraints: { publicApiScope: SCOPE },
     aggregateCurrency: null,
     aggregateSubtotalAmountCents: null,
     aggregateTaxAmountCents: null,
@@ -148,7 +145,7 @@ function envelopeRow(): TripEnvelope {
   }
 }
 
-function createDb(state: { envelope?: TripEnvelope; access?: TripStorefrontAccess }): AnyDrizzleDb {
+function createDb(state: { envelope?: TripEnvelope; access?: TripPublicAccess }): AnyDrizzleDb {
   const tx = {
     insert: (table: unknown) => ({
       values: (values: Record<string, unknown>) => ({
@@ -157,13 +154,13 @@ function createDb(state: { envelope?: TripEnvelope; access?: TripStorefrontAcces
             state.envelope = { ...envelopeRow(), ...values } as TripEnvelope
             return [state.envelope]
           }
-          if (table === tripStorefrontAccess) {
+          if (table === tripPublicAccess) {
             state.access = {
               revision: 1,
               createdAt: NOW,
               updatedAt: NOW,
               ...values,
-            } as TripStorefrontAccess
+            } as TripPublicAccess
             return [state.access]
           }
           return []
@@ -177,7 +174,7 @@ function createDb(state: { envelope?: TripEnvelope; access?: TripStorefrontAcces
       from: (table: unknown) => ({
         where: () => ({
           limit: async () => {
-            if (table === tripStorefrontAccess) return state.access ? [state.access] : []
+            if (table === tripPublicAccess) return state.access ? [state.access] : []
             if (table === tripEnvelopes) return state.envelope ? [state.envelope] : []
             return []
           },

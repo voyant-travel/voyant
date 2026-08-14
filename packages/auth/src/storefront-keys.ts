@@ -15,22 +15,22 @@
  * `crypto.subtle`), which is available in Node, workerd, and the browser.
  */
 import {
-  classifyStorefrontKeyToken,
-  hashStorefrontKeyToken,
+  classifyPublicApiKeyToken,
+  hashPublicApiKeyToken,
   STOREFRONT_KEY_PREFIXES,
 } from "@voyant-travel/core"
-import type { StorefrontApiKeyKind } from "@voyant-travel/db/schema/iam"
+import type { PublicApiKeyKind } from "@voyant-travel/db/schema/iam"
 
 // The prefix table lives in `core` because the capability middleware in
 // `@voyant-travel/hono` classifies a token before this package is reachable,
 // and two copies of it drifting apart is an auth bypass (voyant#4625).
-const KEY_PREFIXES = STOREFRONT_KEY_PREFIXES satisfies Record<StorefrontApiKeyKind, string>
+const KEY_PREFIXES = STOREFRONT_KEY_PREFIXES satisfies Record<PublicApiKeyKind, string>
 
 /** Bytes of entropy in the random portion of a key (256 bits). */
 const KEY_RANDOM_BYTES = 32
 
-export interface GeneratedStorefrontApiKey {
-  kind: StorefrontApiKeyKind
+export interface GeneratedPublicApiApiKey {
+  kind: PublicApiKeyKind
   /** Full plaintext token — shown once, never stored. */
   token: string
   /** SHA-256 hex digest of `token`; the only value persisted for lookup. */
@@ -50,8 +50,8 @@ function base64UrlFromBytes(bytes: Uint8Array): string {
  * and the admin-surface lookup in `@voyant-travel/hono` cannot compute
  * different digests for the same token.
  */
-export async function hashStorefrontApiKey(token: string): Promise<string> {
-  return hashStorefrontKeyToken(token)
+export async function hashPublicApiApiKey(token: string): Promise<string> {
+  return hashPublicApiKeyToken(token)
 }
 
 /**
@@ -59,8 +59,8 @@ export async function hashStorefrontApiKey(token: string): Promise<string> {
  * recognised storefront-key prefix, letting callers reject obviously-invalid
  * tokens before hitting the database.
  */
-export function classifyStorefrontApiKey(token: string): StorefrontApiKeyKind | null {
-  return classifyStorefrontKeyToken(token)
+export function classifyPublicApiApiKey(token: string): PublicApiKeyKind | null {
+  return classifyPublicApiKeyToken(token)
 }
 
 /**
@@ -68,16 +68,16 @@ export function classifyStorefrontApiKey(token: string): StorefrontApiKeyKind | 
  * plaintext exists; persist `tokenHash`/`tokenPreview` and surface `token` to
  * the operator exactly once.
  */
-export async function generateStorefrontApiKey(
-  kind: StorefrontApiKeyKind,
-): Promise<GeneratedStorefrontApiKey> {
+export async function generatePublicApiApiKey(
+  kind: PublicApiKeyKind,
+): Promise<GeneratedPublicApiApiKey> {
   const random = new Uint8Array(KEY_RANDOM_BYTES)
   crypto.getRandomValues(random)
   const token = `${KEY_PREFIXES[kind]}${base64UrlFromBytes(random)}`
   return {
     kind,
     token,
-    tokenHash: await hashStorefrontApiKey(token),
+    tokenHash: await hashPublicApiApiKey(token),
     // Prefix (4 chars) + first 6 chars of the random body: enough to
     // disambiguate in a list, far too little to guess the token.
     tokenPreview: token.slice(0, KEY_PREFIXES[kind].length + 6),

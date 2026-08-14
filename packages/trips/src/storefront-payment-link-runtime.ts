@@ -15,7 +15,7 @@ import type {
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
-} from "@voyant-travel/storefront/payment-link"
+} from "@voyant-travel/public-api/payment-link"
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"

@@ -4,7 +4,7 @@
 "@voyant-travel/i18n": patch
 "@voyant-travel/notifications": patch
 "@voyant-travel/operator-settings": patch
-"@voyant-travel/storefront": patch
+"@voyant-travel/public-api": patch
 "@voyant-travel/trips": patch
 "@voyant-travel/trips-react": patch
 ---

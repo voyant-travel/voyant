@@ -6,7 +6,7 @@ vi.mock("@voyant-travel/connect-sdk", () => ({
   createVoyantConnectClient: vi.fn(() => ({ packages: { searchAcrossProviders } })),
 }))
 
-import { createVoyantConnectStorefrontPackageSourceProvider } from "./storefront-package-sources.js"
+import { createVoyantConnectPublicApiPackageSourceProvider } from "./storefront-package-sources.js"
 
 function primitives(env: Record<string, unknown>) {
   return {
@@ -77,11 +77,11 @@ describe("Voyant Connect Storefront package sources", () => {
       ],
       connectionDiagnostics: [{ connectionId: "connection_secret", status: "ok" }],
     })
-    const provider = createVoyantConnectStorefrontPackageSourceProvider(
+    const provider = createVoyantConnectPublicApiPackageSourceProvider(
       primitives({ VOYANT_API_KEY: "credential_secret", VOYANT_CONNECT_OPERATOR_ID: "op_1" }),
     )
     const sources = await provider.resolveSources({
-      context: { storefrontId: "sf_1", channelId: "ch_1" },
+      context: { channelId: "ch_1" },
       scope: input.scope,
       destination: input.destination,
     })
@@ -130,11 +130,11 @@ describe("Voyant Connect Storefront package sources", () => {
   })
 
   it("fails closed when Connect cannot enforce the requested package filter", async () => {
-    const provider = createVoyantConnectStorefrontPackageSourceProvider(
+    const provider = createVoyantConnectPublicApiPackageSourceProvider(
       primitives({ VOYANT_API_KEY: "key", VOYANT_CONNECT_OPERATOR_ID: "op_1" }),
     )
     const [source] = await provider.resolveSources({
-      context: { storefrontId: "sf_1", channelId: "ch_1" },
+      context: { channelId: "ch_1" },
       scope: input.scope,
       destination: input.destination,
     })
@@ -146,7 +146,7 @@ describe("Voyant Connect Storefront package sources", () => {
 
   it("maps the public free-text destination query to Connect's city search", async () => {
     searchAcrossProviders.mockResolvedValue({ offers: [] })
-    const provider = createVoyantConnectStorefrontPackageSourceProvider(
+    const provider = createVoyantConnectPublicApiPackageSourceProvider(
       primitives({ VOYANT_API_KEY: "key", VOYANT_CONNECT_OPERATOR_ID: "op_1" }),
     )
     const queryInput = {
@@ -156,7 +156,7 @@ describe("Voyant Connect Storefront package sources", () => {
       pagination: undefined,
     }
     const [source] = await provider.resolveSources({
-      context: { storefrontId: "sf_1", channelId: "ch_1" },
+      context: { channelId: "ch_1" },
       scope: input.scope,
       destination: queryInput.destination,
     })
@@ -169,11 +169,11 @@ describe("Voyant Connect Storefront package sources", () => {
   })
 
   it("continues to reject coordinates that Connect cannot enforce", async () => {
-    const provider = createVoyantConnectStorefrontPackageSourceProvider(
+    const provider = createVoyantConnectPublicApiPackageSourceProvider(
       primitives({ VOYANT_API_KEY: "key", VOYANT_CONNECT_OPERATOR_ID: "op_1" }),
     )
     const [source] = await provider.resolveSources({
-      context: { storefrontId: "sf_1", channelId: "ch_1" },
+      context: { channelId: "ch_1" },
       scope: input.scope,
       destination: { latitude: 48.8566, longitude: 2.3522 },
     })
@@ -188,10 +188,10 @@ describe("Voyant Connect Storefront package sources", () => {
   })
 
   it("returns no source when server-owned Connect configuration is absent", async () => {
-    const provider = createVoyantConnectStorefrontPackageSourceProvider(primitives({}))
+    const provider = createVoyantConnectPublicApiPackageSourceProvider(primitives({}))
     await expect(
       provider.resolveSources({
-        context: { storefrontId: "sf_1", channelId: "ch_1" },
+        context: { channelId: "ch_1" },
         scope: input.scope,
         destination: input.destination,
       }),

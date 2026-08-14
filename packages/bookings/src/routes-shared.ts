@@ -52,8 +52,7 @@ export type Env = {
     apiKeyId?: string
     scopes?: string[] | null
     isInternalRequest?: boolean
-    storefrontChannel?: {
-      storefrontId: string
+    publicChannel?: {
       channelId: string
       channelStatus?: string | null
     }

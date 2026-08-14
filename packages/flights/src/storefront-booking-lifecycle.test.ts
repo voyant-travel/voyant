@@ -4,17 +4,16 @@ import type { FlightConnectorAdapter } from "./contract/adapter.js"
 import type { FlightOffer, FlightOrder } from "./contract/types.js"
 import { FLIGHT_CAPABILITIES } from "./contract/types.js"
 import {
-  type BoundStorefrontFlightOffer,
+  type BoundPublicApiFlightOffer,
   createProviderFirstFlightBookingLifecycle,
-  StorefrontFlightLifecycleError,
-  type StorefrontFlightMutationOutcome,
-  type StorefrontFlightOperationClaimInput,
-  type StorefrontFlightOperationStore,
+  PublicApiFlightLifecycleError,
+  type PublicApiFlightMutationOutcome,
+  type PublicApiFlightOperationClaimInput,
+  type PublicApiFlightOperationStore,
 } from "./storefront-booking-lifecycle.js"
 
 const now = new Date("2030-01-01T00:00:00.000Z")
 const authority = {
-  storefrontId: "storefront_1",
   channelId: "channel_web",
   marketId: "market_ro",
   locale: "ro-RO",
@@ -31,9 +30,9 @@ describe("provider-first Storefront flight booking lifecycle", () => {
         context: { connectionId: "attacker_override" } as never,
       },
     ])
-    const assertActiveStorefrontScope = vi.fn(async () => {})
+    const assertActivePublicApiScope = vi.fn(async () => {})
     const lifecycle = createProviderFirstFlightBookingLifecycle({
-      assertActiveStorefrontScope,
+      assertActivePublicApiScope,
       listAdmittedShoppingSources: list,
       operations: operationStore(),
       now: () => now,
@@ -45,7 +44,7 @@ describe("provider-first Storefront flight booking lifecycle", () => {
       expectedRevision: 0,
     })
 
-    expect(assertActiveStorefrontScope).toHaveBeenCalledWith(authority)
+    expect(assertActivePublicApiScope).toHaveBeenCalledWith(authority)
     expect(list).toHaveBeenCalledWith(authority)
     expect(adapter.priceOffer).toHaveBeenCalledWith(
       expect.objectContaining({ connectionId: "connection_exact" }),
@@ -238,21 +237,21 @@ describe("provider-first Storefront flight booking lifecycle", () => {
         idempotencyKey: "other_key",
         passengers: [passenger()],
       }),
-    ).rejects.toBeInstanceOf(StorefrontFlightLifecycleError)
+    ).rejects.toBeInstanceOf(PublicApiFlightLifecycleError)
     expect(adapter.bookFlight).toHaveBeenCalledTimes(1)
   })
 })
 
-function lifecycleFor(adapter: FlightConnectorAdapter, operations: StorefrontFlightOperationStore) {
+function lifecycleFor(adapter: FlightConnectorAdapter, operations: PublicApiFlightOperationStore) {
   return createProviderFirstFlightBookingLifecycle({
-    assertActiveStorefrontScope: async () => {},
+    assertActivePublicApiScope: async () => {},
     listAdmittedShoppingSources: async () => [{ connectionId: "connection_exact", adapter }],
     operations,
     now: () => now,
   })
 }
 
-function binding(): BoundStorefrontFlightOffer {
+function binding(): BoundPublicApiFlightOffer {
   return { authority, connectionId: "connection_exact", offer: offer(), revision: 0 }
 }
 
@@ -336,14 +335,14 @@ function adapterStub(
   }
 }
 
-function operationStore(): StorefrontFlightOperationStore {
+function operationStore(): PublicApiFlightOperationStore {
   const rows = new Map<
     string,
-    { fingerprint: string; operationId: string; outcome?: StorefrontFlightMutationOutcome }
+    { fingerprint: string; operationId: string; outcome?: PublicApiFlightMutationOutcome }
   >()
   return {
-    async claim(input: StorefrontFlightOperationClaimInput) {
-      const key = `${input.storefrontId}:${input.channelId}:${input.operation}:${input.idempotencyKey}`
+    async claim(input: PublicApiFlightOperationClaimInput) {
+      const key = `${input.channelId}:${input.operation}:${input.idempotencyKey}`
       const existing = rows.get(key)
       if (existing) {
         if (existing.fingerprint !== input.requestFingerprint)

@@ -3,8 +3,8 @@ import { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantCruisesContext } from "../provider.js"
-import { cruisesQueryKeys, type StorefrontListFilters } from "../query-keys.js"
-import { getStorefrontCruisesQueryOptions } from "../query-options.js"
+import { cruisesQueryKeys, type PublicApiListFilters } from "../query-keys.js"
+import { getPublicApiCruisesQueryOptions } from "../query-options.js"
 import {
   cruiseSourceSchema,
   effectiveItineraryDaySchema,
@@ -13,7 +13,7 @@ import {
   singleEnvelope,
 } from "../schemas.js"
 
-export interface UseStorefrontCruisesOptions extends StorefrontListFilters {
+export interface UsePublicApiCruisesOptions extends PublicApiListFilters {
   enabled?: boolean
 }
 
@@ -22,18 +22,18 @@ export interface UseStorefrontCruisesOptions extends StorefrontListFilters {
  * cruise_search_index on the server. Mixes local and external entries
  * with provenance markers so the UI can render an "External" badge.
  */
-export function useStorefrontCruises(options: UseStorefrontCruisesOptions = {}) {
+export function usePublicApiCruises(options: UsePublicApiCruisesOptions = {}) {
   const { baseUrl, fetcher } = useVoyantCruisesContext()
   const { enabled = true, ...filters } = options
   return useQuery({
-    ...getStorefrontCruisesQueryOptions({ baseUrl, fetcher }, filters),
+    ...getPublicApiCruisesQueryOptions({ baseUrl, fetcher }, filters),
     enabled,
   })
 }
 
 // Cruise detail — wraps the rich storefront detail payload that includes
 // the index summary plus the source-resolved cruise + sailings.
-const storefrontCruiseDetailSchema = singleEnvelope(
+const publicApiCruiseDetailSchema = singleEnvelope(
   z.object({
     source: cruiseSourceSchema,
     sourceProvider: z.string().nullable(),
@@ -44,24 +44,24 @@ const storefrontCruiseDetailSchema = singleEnvelope(
   }),
 )
 
-export type StorefrontCruiseDetail = z.infer<typeof storefrontCruiseDetailSchema>["data"]
+export type PublicApiCruiseDetail = z.infer<typeof publicApiCruiseDetailSchema>["data"]
 
-export interface UseStorefrontCruiseOptions {
+export interface UsePublicApiCruiseOptions {
   enabled?: boolean
 }
 
-export function useStorefrontCruise(
+export function usePublicApiCruise(
   slug: string | null | undefined,
-  options: UseStorefrontCruiseOptions = {},
+  options: UsePublicApiCruiseOptions = {},
 ) {
   const { baseUrl, fetcher } = useVoyantCruisesContext()
   const { enabled = true } = options
   return useQuery({
-    queryKey: cruisesQueryKeys.storefrontCruise(slug ?? ""),
-    queryFn: async (): Promise<StorefrontCruiseDetail> => {
+    queryKey: cruisesQueryKeys.publicApiCruise(slug ?? ""),
+    queryFn: async (): Promise<PublicApiCruiseDetail> => {
       const result = await fetchWithValidation(
         `/v1/public/cruises/${encodeURIComponent(slug ?? "")}`,
-        storefrontCruiseDetailSchema,
+        publicApiCruiseDetailSchema,
         { baseUrl, fetcher },
       )
       return result.data
@@ -71,7 +71,7 @@ export function useStorefrontCruise(
 }
 
 // Sailing detail — accepts both local TypeIDs and `<provider>:<ref>` keys.
-const storefrontSailingSchema = singleEnvelope(
+const publicApiSailingSchema = singleEnvelope(
   z.object({
     source: z.union([z.literal("local"), z.literal("external")]),
     sourceProvider: z.string().optional(),
@@ -81,20 +81,20 @@ const storefrontSailingSchema = singleEnvelope(
   }),
 )
 
-export type StorefrontSailingDetail = z.infer<typeof storefrontSailingSchema>["data"]
+export type PublicApiSailingDetail = z.infer<typeof publicApiSailingSchema>["data"]
 
-export function useStorefrontSailing(
+export function usePublicApiSailing(
   key: string | null | undefined,
-  options: UseStorefrontCruiseOptions = {},
+  options: UsePublicApiCruiseOptions = {},
 ) {
   const { baseUrl, fetcher } = useVoyantCruisesContext()
   const { enabled = true } = options
   return useQuery({
-    queryKey: cruisesQueryKeys.storefrontSailing(key ?? ""),
-    queryFn: async (): Promise<StorefrontSailingDetail> => {
+    queryKey: cruisesQueryKeys.publicApiSailing(key ?? ""),
+    queryFn: async (): Promise<PublicApiSailingDetail> => {
       const result = await fetchWithValidation(
         `/v1/public/cruises/sailings/${encodeURIComponent(key ?? "")}`,
-        storefrontSailingSchema,
+        publicApiSailingSchema,
         { baseUrl, fetcher },
       )
       return result.data

@@ -2,12 +2,12 @@
 /**
  * Storefront resolvers — populate the previously-empty
  * `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug`
- * endpoints in `@voyant-travel/storefront` with real data.
+ * endpoints in `@voyant-travel/public-api` with real data.
  *
  * Wire via:
  *
- *   const storefrontModule = createStorefrontApiModule({
- *     offers: createPromotionsStorefrontResolvers(),
+ *   const publicApiModule = createPublicApiModule({
+ *     offers: createPromotionsPublicApiResolvers(),
  *   })
  *
  * Per docs/architecture/promotions-architecture.md §8.
@@ -39,14 +39,14 @@ import {
 } from "./service-evaluator.js"
 import type { PromotionalOfferScope } from "./validation.js"
 
-export interface StorefrontRequestContext {
+export interface PublicApiRequestContext {
   db?: AnyDrizzleDb
   eventBus?: unknown
   env?: unknown
   context?: unknown
 }
 
-export interface StorefrontPromotionalOffer {
+export interface PublicApiPromotionalOffer {
   id: string
   name: string
   slug: string | null
@@ -66,7 +66,7 @@ export interface StorefrontPromotionalOffer {
   updatedAt: string
 }
 
-export interface StorefrontOfferApplyInput {
+export interface PublicApiOfferApplyInput {
   productId: string
   departureId?: string | null
   bookingId?: string | null
@@ -79,11 +79,11 @@ export interface StorefrontOfferApplyInput {
   currency: string
 }
 
-export interface StorefrontOfferRedeemInput extends StorefrontOfferApplyInput {
+export interface PublicApiOfferRedeemInput extends PublicApiOfferApplyInput {
   code: string
 }
 
-export interface StorefrontAppliedOffer {
+export interface PublicApiAppliedOffer {
   offerId: string
   offerName: string
   discountAppliedCents: number
@@ -96,7 +96,7 @@ export interface StorefrontAppliedOffer {
   stackable: boolean
 }
 
-export interface StorefrontOfferMutationResult {
+export interface PublicApiOfferMutationResult {
   status: "applied" | "not_applicable" | "invalid" | "conflict"
   reason:
     | "offer_not_found"
@@ -115,7 +115,7 @@ export interface StorefrontOfferMutationResult {
     | "session_mismatch"
     | "conflict"
     | null
-  offer: StorefrontPromotionalOffer | null
+  offer: PublicApiPromotionalOffer | null
   target: {
     bookingId: string | null
     sessionId: string | null
@@ -128,7 +128,7 @@ export interface StorefrontOfferMutationResult {
     discountAppliedCents: number
     discountedPriceCents: number
   }
-  appliedOffers: StorefrontAppliedOffer[]
+  appliedOffers: PublicApiAppliedOffer[]
   conflict: {
     policy: "best_discount_wins" | "stackable_compose"
     autoAppliedOfferIds: string[]
@@ -138,34 +138,34 @@ export interface StorefrontOfferMutationResult {
   } | null
 }
 
-export interface StorefrontOfferResolvers {
+export interface PublicApiOfferResolvers {
   listApplicableOffers?: (
     input: {
       productId: string
       departureId?: string
       locale?: string
-    } & StorefrontRequestContext,
-  ) => Promise<StorefrontPromotionalOffer[]> | StorefrontPromotionalOffer[]
+    } & PublicApiRequestContext,
+  ) => Promise<PublicApiPromotionalOffer[]> | PublicApiPromotionalOffer[]
   getOfferBySlug?: (
     input: {
       slug: string
       locale?: string
-    } & StorefrontRequestContext,
-  ) => Promise<StorefrontPromotionalOffer | null> | StorefrontPromotionalOffer | null
+    } & PublicApiRequestContext,
+  ) => Promise<PublicApiPromotionalOffer | null> | PublicApiPromotionalOffer | null
   applyOffer?: (
     input: {
       slug: string
-      body: StorefrontOfferApplyInput
-    } & StorefrontRequestContext,
-  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
+      body: PublicApiOfferApplyInput
+    } & PublicApiRequestContext,
+  ) => Promise<PublicApiOfferMutationResult> | PublicApiOfferMutationResult
   redeemOffer?: (
     input: {
-      body: StorefrontOfferRedeemInput
-    } & StorefrontRequestContext,
-  ) => Promise<StorefrontOfferMutationResult> | StorefrontOfferMutationResult
+      body: PublicApiOfferRedeemInput
+    } & PublicApiRequestContext,
+  ) => Promise<PublicApiOfferMutationResult> | PublicApiOfferMutationResult
 }
 
-export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
+export function createPromotionsPublicApiResolvers(): PublicApiOfferResolvers {
   return {
     async listApplicableOffers(input) {
       const db = resolveDb(input)
@@ -209,10 +209,10 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
         baseRows.map((r) => r.id),
       )
 
-      const out: StorefrontPromotionalOffer[] = []
+      const out: PublicApiPromotionalOffer[] = []
       for (const offer of baseRows) {
         if (!matchesProduct(offer.scope, offersMatchingProduct.has(offer.id))) continue
-        out.push(toStorefrontDto(offer, productLinkLookups.get(offer.id) ?? []))
+        out.push(toPublicApiDto(offer, productLinkLookups.get(offer.id) ?? []))
       }
       return out
     },
@@ -225,7 +225,7 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
       if (!offer) return null
 
       const links = await loadApplicableProductIds(db, [offer.id])
-      return toStorefrontDto(offer, links.get(offer.id) ?? [])
+      return toPublicApiDto(offer, links.get(offer.id) ?? [])
     },
 
     async applyOffer(input) {
@@ -246,7 +246,7 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
         return emptyResult(input.body, "invalid", validity, await dtoForOffer(db, offer))
       }
 
-      return evaluateStorefrontMutation(db, input.body, {
+      return evaluatePublicApiMutation(db, input.body, {
         manualOffer: offer,
         code: undefined,
         offer: await dtoForOffer(db, offer),
@@ -258,7 +258,7 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
       if (!db) return notConfiguredResult(input.body)
 
       const offer = await findActiveOfferByCode(db, input.body.code)
-      return evaluateStorefrontMutation(db, input.body, {
+      return evaluatePublicApiMutation(db, input.body, {
         manualOffer: offer,
         code: input.body.code,
         offer: offer ? await dtoForOffer(db, offer) : null,
@@ -267,7 +267,7 @@ export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers 
   }
 }
 
-function resolveDb(input: StorefrontRequestContext): AnyDrizzleDb | undefined {
+function resolveDb(input: PublicApiRequestContext): AnyDrizzleDb | undefined {
   return input.db ?? undefined
 }
 
@@ -313,10 +313,10 @@ async function loadApplicableProductIds(
   return out
 }
 
-function toStorefrontDto(
+function toPublicApiDto(
   offer: PromotionalOffer,
   applicableProductIds: string[],
-): StorefrontPromotionalOffer {
+): PublicApiPromotionalOffer {
   return {
     id: offer.id,
     name: offer.name,
@@ -376,9 +376,9 @@ async function findActiveOfferByCode(
 async function dtoForOffer(
   db: AnyDrizzleDb,
   offer: PromotionalOffer,
-): Promise<StorefrontPromotionalOffer> {
+): Promise<PublicApiPromotionalOffer> {
   const links = await loadApplicableProductIds(db, [offer.id])
-  return toStorefrontDto(offer, links.get(offer.id) ?? [])
+  return toPublicApiDto(offer, links.get(offer.id) ?? [])
 }
 
 function currentValidityStatus(
@@ -390,14 +390,14 @@ function currentValidityStatus(
   return null
 }
 
-type MutationBody = StorefrontOfferApplyInput | StorefrontOfferRedeemInput
+type MutationBody = PublicApiOfferApplyInput | PublicApiOfferRedeemInput
 
 function emptyResult(
   input: MutationBody,
-  status: StorefrontOfferMutationResult["status"],
-  reason: NonNullable<StorefrontOfferMutationResult["reason"]>,
-  offer: StorefrontPromotionalOffer | null,
-): StorefrontOfferMutationResult {
+  status: PublicApiOfferMutationResult["status"],
+  reason: NonNullable<PublicApiOfferMutationResult["reason"]>,
+  offer: PublicApiPromotionalOffer | null,
+): PublicApiOfferMutationResult {
   return {
     status,
     reason,
@@ -414,19 +414,19 @@ function emptyResult(
   }
 }
 
-function notConfiguredResult(input: MutationBody): StorefrontOfferMutationResult {
+function notConfiguredResult(input: MutationBody): PublicApiOfferMutationResult {
   return emptyResult(input, "invalid", "offer_not_found", null)
 }
 
-async function evaluateStorefrontMutation(
+async function evaluatePublicApiMutation(
   db: AnyDrizzleDb,
   input: MutationBody,
   options: {
     manualOffer: PromotionalOffer | null
     code?: string
-    offer: StorefrontPromotionalOffer | null
+    offer: PublicApiPromotionalOffer | null
   },
-): Promise<StorefrontOfferMutationResult> {
+): Promise<PublicApiOfferMutationResult> {
   const evaluation = await evaluateOffersForProduct(createDrizzleOfferDataSource(db), {
     productId: input.productId,
     slice: {
@@ -444,7 +444,7 @@ async function evaluateStorefrontMutation(
     return emptyResult(input, "invalid", codeReason, options.offer)
   }
 
-  const appliedOffers = evaluation.applied.map(toStorefrontAppliedOffer)
+  const appliedOffers = evaluation.applied.map(toPublicApiAppliedOffer)
   const manualOfferId = options.manualOffer?.id ?? null
   const selectedOfferIds = appliedOffers.map((offer) => offer.offerId)
   const manualSelected = manualOfferId ? selectedOfferIds.includes(manualOfferId) : false
@@ -487,13 +487,13 @@ async function evaluateStorefrontMutation(
 
 function codeStatusToReason(
   status: CodeStatus,
-): NonNullable<StorefrontOfferMutationResult["reason"]> | null {
+): NonNullable<PublicApiOfferMutationResult["reason"]> | null {
   if (status == null || status.kind === "code_valid") return null
   if (status.kind === "code_not_applicable") return status.reason
   return status.kind
 }
 
-function toStorefrontAppliedOffer(offer: StorefrontAppliedOffer): StorefrontAppliedOffer {
+function toPublicApiAppliedOffer(offer: PublicApiAppliedOffer): PublicApiAppliedOffer {
   return {
     offerId: offer.offerId,
     offerName: offer.offerName,
@@ -508,7 +508,7 @@ function toStorefrontAppliedOffer(offer: StorefrontAppliedOffer): StorefrontAppl
   }
 }
 
-function targetFromInput(input: MutationBody): StorefrontOfferMutationResult["target"] {
+function targetFromInput(input: MutationBody): PublicApiOfferMutationResult["target"] {
   return {
     bookingId: input.bookingId ?? null,
     sessionId: input.sessionId ?? null,
@@ -522,7 +522,7 @@ function buildConflict(input: {
   manualOfferId: string | null
   selectedOfferIds: string[]
   manualSelected: boolean
-}): StorefrontOfferMutationResult["conflict"] {
+}): PublicApiOfferMutationResult["conflict"] {
   if (input.autoAppliedOfferIds.length === 0 && input.manualSelected) return null
 
   const policy = input.manualSelected ? "stackable_compose" : "best_discount_wins"

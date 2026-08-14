@@ -1,12 +1,12 @@
-import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
+import { publicApiVerificationRuntimePort } from "@voyant-travel/public-api/runtime-port"
 import {
-  buildStorefrontVerificationSenders,
-  type StorefrontVerificationRoutesOptions,
-} from "@voyant-travel/storefront/verification"
+  buildPublicApiVerificationSenders,
+  type PublicApiVerificationRoutesOptions,
+} from "@voyant-travel/public-api/verification"
 import { describe, expect, it, vi } from "vitest"
 
 import { createNotificationsRuntimePortContribution } from "../../src/runtime-contributor.js"
-import { toStorefrontVerificationNotificationProvider } from "../../src/storefront-verification-runtime.js"
+import { toPublicApiVerificationNotificationProvider } from "../../src/storefront-verification-runtime.js"
 import type { NotificationProvider } from "../../src/types.js"
 
 function durableProvider(
@@ -23,7 +23,7 @@ function durableProvider(
 
 function contributionOptions(
   providers: ReadonlyArray<NotificationProvider>,
-): StorefrontVerificationRoutesOptions {
+): PublicApiVerificationRoutesOptions {
   const contribution = createNotificationsRuntimePortContribution({
     primitives: {
       env: (bindings: unknown) => (bindings as Record<string, unknown> | undefined) ?? {},
@@ -40,13 +40,13 @@ function contributionOptions(
       throw new Error("unselected port must not be read")
     },
   } as never)
-  return contribution[storefrontVerificationRuntimePort.id] as StorefrontVerificationRoutesOptions
+  return contribution[publicApiVerificationRuntimePort.id] as PublicApiVerificationRoutesOptions
 }
 
 describe("storefront verification notification providers", () => {
   it("delivers an email challenge through durable delivery (voyant#3923)", async () => {
     const send = vi.fn(async () => ({ id: "ntf_1", provider: "voyant-cloud" }))
-    const senders = buildStorefrontVerificationSenders(
+    const senders = buildPublicApiVerificationSenders(
       {},
       contributionOptions([durableProvider("voyant-cloud", ["email"], send)]),
     )
@@ -78,7 +78,7 @@ describe("storefront verification notification providers", () => {
   it("delivers an SMS challenge through the sms-capable provider", async () => {
     const email = vi.fn(async () => ({ id: "ntf_email", provider: "email-provider" }))
     const sms = vi.fn(async () => ({ id: "ntf_sms", provider: "sms-provider" }))
-    const senders = buildStorefrontVerificationSenders(
+    const senders = buildPublicApiVerificationSenders(
       {},
       contributionOptions([
         durableProvider("email-provider", ["email"], email),
@@ -100,7 +100,7 @@ describe("storefront verification notification providers", () => {
 
   it("keys deliveries by payload so a replay dedupes and a fresh code does not", async () => {
     const send = vi.fn(async () => ({ id: "ntf_1", provider: "voyant-cloud" }))
-    const provider = toStorefrontVerificationNotificationProvider(
+    const provider = toPublicApiVerificationNotificationProvider(
       durableProvider("voyant-cloud", ["email"], send),
     )
     const payload = {
@@ -122,7 +122,7 @@ describe("storefront verification notification providers", () => {
   })
 
   it("fails closed with a named provider when durable delivery is missing", async () => {
-    const provider = toStorefrontVerificationNotificationProvider({
+    const provider = toPublicApiVerificationNotificationProvider({
       name: "legacy",
       channels: ["email"],
     } as unknown as NotificationProvider)
@@ -151,8 +151,8 @@ describe("storefront verification notification providers", () => {
       },
     } as never)
     const options = contribution[
-      storefrontVerificationRuntimePort.id
-    ] as StorefrontVerificationRoutesOptions
+      publicApiVerificationRuntimePort.id
+    ] as PublicApiVerificationRoutesOptions
 
     expect(options.resolveProviders?.({})).toEqual([])
   })

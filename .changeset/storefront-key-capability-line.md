@@ -19,7 +19,7 @@
 "@voyant-travel/proposals": minor
 "@voyant-travel/public-document-delivery": minor
 "@voyant-travel/realtime": minor
-"@voyant-travel/storefront": minor
+"@voyant-travel/public-api": minor
 "@voyant-travel/trips": minor
 "@voyant-travel/types": minor
 ---
@@ -57,4 +57,4 @@ client sets freely.
 **Breaking for custom public routes.** A deployment-authored `ApiModule` that
 mounts `/v1/public/*` routes must declare `publishable` for browser clients to
 reach them; without it the routes are secret-key-only. First-party modules are
-already declared. See `docs/architecture/storefront-key-capability-line.md`.
+already declared. See `docs/architecture/public-api-key-capability-line.md`.

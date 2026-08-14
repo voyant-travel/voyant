@@ -1,42 +1,42 @@
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type {
-  StorefrontShoppingContext,
-  StorefrontTripSelectionCreate,
-} from "@voyant-travel/storefront/shopping"
+  PublicApiShoppingContext,
+  PublicApiTripSelectionCreate,
+} from "@voyant-travel/public-api/shopping"
 
-import type { StorefrontTripScope } from "./storefront-access.js"
+import type { PublicApiTripScope } from "./storefront-access.js"
 import type { CreateTripComponentBodyInput } from "./validation.js"
 
-type StorefrontOfferSelection = StorefrontTripSelectionCreate["offers"][number]
+type PublicApiOfferSelection = PublicApiTripSelectionCreate["offers"][number]
 
-export interface StorefrontTripOfferResolutionInput extends StorefrontOfferSelection {
-  scope: StorefrontTripScope
+export interface PublicApiTripOfferResolutionInput extends PublicApiOfferSelection {
+  scope: PublicApiTripScope
 }
 
 /** Sequence is owned by the Trip selection mutation, never by an offer payload. */
-export type StorefrontTripOfferComponent = Omit<CreateTripComponentBodyInput, "sequence">
+export type PublicApiTripOfferComponent = Omit<CreateTripComponentBodyInput, "sequence">
 
 /**
  * Closed trust-plane seam from a gateway-issued offerRef to a Trips component.
  * Deployments may resolve only the opaque offerRef plus trusted context/scope;
  * raw entity, connection, source, or provider selectors never cross this port.
  */
-export interface StorefrontTripOfferResolver {
+export interface PublicApiTripOfferResolver {
   resolve(
-    context: StorefrontShoppingContext,
-    input: StorefrontTripOfferResolutionInput,
-  ): Promise<{ component: StorefrontTripOfferComponent } | null>
+    context: PublicApiShoppingContext,
+    input: PublicApiTripOfferResolutionInput,
+  ): Promise<{ component: PublicApiTripOfferComponent } | null>
   /** Keep one-time redemption inside the selection mutation transaction. */
   resolveInTransaction?(
     db: AnyDrizzleDb,
-    context: StorefrontShoppingContext,
-    input: StorefrontTripOfferResolutionInput,
-  ): Promise<{ component: StorefrontTripOfferComponent } | null>
+    context: PublicApiShoppingContext,
+    input: PublicApiTripOfferResolutionInput,
+  ): Promise<{ component: PublicApiTripOfferComponent } | null>
 }
 
-export const storefrontTripOfferResolverPort = definePort<StorefrontTripOfferResolver>({
-  id: "trips.storefront-offer-resolver.runtime",
+export const publicApiTripOfferResolverPort = definePort<PublicApiTripOfferResolver>({
+  id: "trips.public-offer-resolver.runtime",
   test(provider) {
     if (
       provider === null ||

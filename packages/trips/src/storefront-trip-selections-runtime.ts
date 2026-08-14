@@ -2,24 +2,24 @@ import type { CatalogCompositeBookingSessionRuntime } from "@voyant-travel/catal
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { randomBytesHex, sha256Hex } from "@voyant-travel/hono"
 import {
-  type StorefrontResolvedScope,
-  type StorefrontShoppingContext,
-  type StorefrontTripBooking,
-  type StorefrontTripBookingCreate,
-  type StorefrontTripSelection,
-  type StorefrontTripSelectionCreate,
-  type StorefrontTripSelectionsRuntime,
-  type StorefrontTripSelectionUpdate,
-  storefrontResolvedScopeSchema,
-} from "@voyant-travel/storefront/shopping"
+  type PublicApiResolvedScope,
+  type PublicApiShoppingContext,
+  type PublicApiTripBooking,
+  type PublicApiTripBookingCreate,
+  type PublicApiTripSelection,
+  type PublicApiTripSelectionCreate,
+  type PublicApiTripSelectionsRuntime,
+  type PublicApiTripSelectionUpdate,
+  publicApiResolvedScopeSchema,
+} from "@voyant-travel/public-api/shopping"
 import { and, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
-import type { TripComponent, TripStorefrontAccess } from "./schema.js"
+import type { TripComponent, TripPublicAccess } from "./schema.js"
 import {
-  type TripStorefrontBookingOperation,
-  tripStorefrontAccess,
-  tripStorefrontBookingOperations,
+  type TripPublicApiBookingOperation,
+  tripPublicAccess,
+  tripPublicBookingOperations,
 } from "./schema.js"
 import { freezeTripSnapshot } from "./service-snapshots.js"
 import {
@@ -31,14 +31,14 @@ import {
 } from "./service-trips.js"
 import type { Trip } from "./service-types.js"
 import {
-  createStorefrontTripInTransaction,
-  resolveStorefrontTripAccess,
-  type StorefrontTripScope,
+  createPublicApiTripInTransaction,
+  resolvePublicApiTripAccess,
+  type PublicApiTripScope,
 } from "./storefront-access.js"
-import type { StorefrontTripOfferResolver } from "./storefront-trip-offer-resolver-port.js"
+import type { PublicApiTripOfferResolver } from "./storefront-trip-offer-resolver-port.js"
 import { type CreateTripComponentBodyInput, createTripComponentBodySchema } from "./validation.js"
 
-const storefrontSelectionItemMetadataSchema = z
+const publicApiSelectionItemMetadataSchema = z
   .object({
     version: z.literal(1),
     itemRef: z.string().regex(/^tsi_[a-f0-9]{64}$/),
@@ -47,27 +47,27 @@ const storefrontSelectionItemMetadataSchema = z
   })
   .strict()
 
-type StorefrontOfferSelection = StorefrontTripSelectionCreate["offers"][number]
+type PublicApiOfferSelection = PublicApiTripSelectionCreate["offers"][number]
 
-export class StorefrontTripSelectionUnavailableError extends Error {
+export class PublicApiTripSelectionUnavailableError extends Error {
   readonly code = "storefront_trip_selection_unavailable"
 
   constructor(reason = "offer_resolution_unavailable") {
     super(`Storefront Trip selection is unavailable: ${reason}.`)
-    this.name = "StorefrontTripSelectionUnavailableError"
+    this.name = "PublicApiTripSelectionUnavailableError"
   }
 }
 
-export class StorefrontTripSelectionAccessError extends Error {
+export class PublicApiTripSelectionAccessError extends Error {
   readonly code = "storefront_trip_selection_not_found"
 
   constructor() {
     super("Storefront Trip selection was not found.")
-    this.name = "StorefrontTripSelectionAccessError"
+    this.name = "PublicApiTripSelectionAccessError"
   }
 }
 
-export class StorefrontTripSelectionConflictError extends Error {
+export class PublicApiTripSelectionConflictError extends Error {
   readonly code = "storefront_trip_selection_revision_conflict"
 
   constructor(
@@ -77,20 +77,20 @@ export class StorefrontTripSelectionConflictError extends Error {
     super(
       `Storefront Trip selection revision conflict: expected ${expectedRevision}, actual ${actualRevision}.`,
     )
-    this.name = "StorefrontTripSelectionConflictError"
+    this.name = "PublicApiTripSelectionConflictError"
   }
 }
 
-export class StorefrontTripSelectionMutationError extends Error {
+export class PublicApiTripSelectionMutationError extends Error {
   readonly code = "storefront_trip_selection_invalid_mutation"
 
   constructor(message: string) {
     super(message)
-    this.name = "StorefrontTripSelectionMutationError"
+    this.name = "PublicApiTripSelectionMutationError"
   }
 }
 
-export class StorefrontTripBookingError extends Error {
+export class PublicApiTripBookingError extends Error {
   constructor(
     readonly code:
       | "storefront_trip_booking_idempotency_conflict"
@@ -98,13 +98,13 @@ export class StorefrontTripBookingError extends Error {
       | "storefront_trip_booking_session_rejected",
   ) {
     super(code)
-    this.name = "StorefrontTripBookingError"
+    this.name = "PublicApiTripBookingError"
   }
 }
 
-export interface StorefrontTripSelectionsRuntimeOptions {
+export interface PublicApiTripSelectionsRuntimeOptions {
   withTransaction<T>(operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>
-  offerResolver?: StorefrontTripOfferResolver
+  offerResolver?: PublicApiTripOfferResolver
   now?: () => Date
   createSelectionRef?: () => string
   createItemRef?: () => string
@@ -114,9 +114,9 @@ export interface StorefrontTripSelectionsRuntimeOptions {
 }
 
 /** Trips-owned provider for the Storefront gateway's stateful selection port. */
-export function createStorefrontTripSelectionsRuntime(
-  options: StorefrontTripSelectionsRuntimeOptions,
-): StorefrontTripSelectionsRuntime {
+export function createPublicApiTripSelectionsRuntime(
+  options: PublicApiTripSelectionsRuntimeOptions,
+): PublicApiTripSelectionsRuntime {
   const createItemRef = options.createItemRef ?? (() => `tsi_${randomBytesHex(32)}`)
 
   return {
@@ -130,9 +130,9 @@ export function createStorefrontTripSelectionsRuntime(
           input.offers,
         )
         const itemRefs = offers.map(() =>
-          storefrontSelectionItemMetadataSchema.shape.itemRef.parse(createItemRef()),
+          publicApiSelectionItemMetadataSchema.shape.itemRef.parse(createItemRef()),
         )
-        const handle = await createStorefrontTripInTransaction(
+        const handle = await createPublicApiTripInTransaction(
           db,
           { scope: coreScope(input.scope) },
           context,
@@ -143,8 +143,8 @@ export function createStorefrontTripSelectionsRuntime(
         )
         await updateTrip(db, handle.trip.envelope.id, {
           constraints: {
-            storefrontScope: handle.scope,
-            storefrontResolvedScope: input.scope,
+            publicApiScope: handle.scope,
+            publicApiResolvedScope: input.scope,
           },
         })
         const components: TripComponent[] = []
@@ -157,7 +157,7 @@ export function createStorefrontTripSelectionsRuntime(
               metadata: withSelectionMetadata(
                 resolved.component.metadata,
                 itemRefs[sequence] as string,
-                input.offers[sequence] as StorefrontOfferSelection,
+                input.offers[sequence] as PublicApiOfferSelection,
               ),
             }),
           )
@@ -176,7 +176,7 @@ export function createStorefrontTripSelectionsRuntime(
         )
         const components = selectionComponents(resolved.trip)
         if (resolved.access.revision !== input.expectedRevision) {
-          throw new StorefrontTripSelectionConflictError(
+          throw new PublicApiTripSelectionConflictError(
             input.expectedRevision,
             resolved.access.revision,
           )
@@ -223,7 +223,7 @@ export function createStorefrontTripSelectionsRuntime(
         }
 
         const trip = await getTrip(db, resolved.access.envelopeId)
-        if (!trip) throw new StorefrontTripSelectionAccessError()
+        if (!trip) throw new PublicApiTripSelectionAccessError()
         return selectionResult(
           input.selectionRef,
           nextRevision,
@@ -235,7 +235,7 @@ export function createStorefrontTripSelectionsRuntime(
 
     async book(context, input) {
       if (!options.compositeBookingSessions) {
-        throw new StorefrontTripBookingError("storefront_trip_booking_session_rejected")
+        throw new PublicApiTripBookingError("storefront_trip_booking_session_rejected")
       }
       const catalog = await options.compositeBookingSessions
       return options.withTransaction(async (db) =>
@@ -248,17 +248,17 @@ export function createStorefrontTripSelectionsRuntime(
 async function bookAuthorizedSelection(
   db: AnyDrizzleDb,
   catalog: CatalogCompositeBookingSessionRuntime,
-  context: StorefrontShoppingContext,
-  input: StorefrontTripBookingCreate,
+  context: PublicApiShoppingContext,
+  input: PublicApiTripBookingCreate,
   now: (() => Date) | undefined,
-): Promise<StorefrontTripBooking> {
+): Promise<PublicApiTripBooking> {
   const resolved = await resolveAuthorizedSelection(db, input.selectionRef, context, now)
   if (resolved.access.revision !== input.expectedRevision) {
-    throw new StorefrontTripSelectionConflictError(input.expectedRevision, resolved.access.revision)
+    throw new PublicApiTripSelectionConflictError(input.expectedRevision, resolved.access.revision)
   }
   const components = selectionComponents(resolved.trip)
   if (components.length === 0 || components.some((component) => !component.pricingSnapshot)) {
-    throw new StorefrontTripBookingError("storefront_trip_booking_pricing_unavailable")
+    throw new PublicApiTripBookingError("storefront_trip_booking_pricing_unavailable")
   }
 
   const operationDigest = await sha256Hex(
@@ -271,7 +271,6 @@ async function bookAuthorizedSelection(
       version: 1,
       capabilityDigest: resolved.access.capabilityDigest,
       revision: input.expectedRevision,
-      storefrontId: resolved.access.storefrontId,
       channelId: resolved.access.channelId,
       ownerUserId: resolved.access.ownerUserId,
       ownerBuyerAccountId: resolved.access.ownerBuyerAccountId,
@@ -285,10 +284,10 @@ async function bookAuthorizedSelection(
   })
   if (!operation.claimed) {
     if (operation.record.requestFingerprint !== requestFingerprint) {
-      throw new StorefrontTripBookingError("storefront_trip_booking_idempotency_conflict")
+      throw new PublicApiTripBookingError("storefront_trip_booking_idempotency_conflict")
     }
     if (!operation.record.outcome) {
-      throw new StorefrontTripBookingError("storefront_trip_booking_session_rejected")
+      throw new PublicApiTripBookingError("storefront_trip_booking_session_rejected")
     }
     return bookingResult(input.selectionRef, resolved.access.ownerUserId, operation.record.outcome)
   }
@@ -305,10 +304,7 @@ async function bookAuthorizedSelection(
     tripEnvelopeId: resolved.access.envelopeId,
     capability,
     ownerUserId: resolved.access.ownerUserId,
-    storefront: {
-      storefrontId: resolved.access.storefrontId,
-      channelId: resolved.access.channelId,
-    },
+    channel: { channelId: resolved.access.channelId },
     scope: {
       locale: resolved.access.locale,
       market: resolved.access.marketId,
@@ -316,24 +312,24 @@ async function bookAuthorizedSelection(
     },
   })
   if (outcome.kind !== "session_created") {
-    throw new StorefrontTripBookingError(
+    throw new PublicApiTripBookingError(
       outcome.kind === "rejected" && outcome.error.kind === "quote_unavailable"
         ? "storefront_trip_booking_pricing_unavailable"
         : "storefront_trip_booking_session_rejected",
     )
   }
   const [completed] = (await db
-    .update(tripStorefrontBookingOperations)
+    .update(tripPublicBookingOperations)
     .set({
       snapshotId: snapshot.id,
       bookingSessionId: outcome.session.id,
       outcome,
       updatedAt: now?.() ?? new Date(),
     })
-    .where(eq(tripStorefrontBookingOperations.operationDigest, operationDigest))
-    .returning()) as TripStorefrontBookingOperation[]
+    .where(eq(tripPublicBookingOperations.operationDigest, operationDigest))
+    .returning()) as TripPublicApiBookingOperation[]
   if (!completed) {
-    throw new StorefrontTripBookingError("storefront_trip_booking_session_rejected")
+    throw new PublicApiTripBookingError("storefront_trip_booking_session_rejected")
   }
   return bookingResult(input.selectionRef, resolved.access.ownerUserId, outcome)
 }
@@ -342,29 +338,29 @@ async function claimBookingOperation(
   db: AnyDrizzleDb,
   input: { operationDigest: string; envelopeId: string; requestFingerprint: string },
 ): Promise<
-  | { claimed: true; record: TripStorefrontBookingOperation }
-  | { claimed: false; record: TripStorefrontBookingOperation }
+  | { claimed: true; record: TripPublicApiBookingOperation }
+  | { claimed: false; record: TripPublicApiBookingOperation }
 > {
   const [claimed] = (await db
-    .insert(tripStorefrontBookingOperations)
+    .insert(tripPublicBookingOperations)
     .values(input)
     .onConflictDoNothing()
-    .returning()) as TripStorefrontBookingOperation[]
+    .returning()) as TripPublicApiBookingOperation[]
   if (claimed) return { claimed: true, record: claimed }
   const [existing] = (await db
     .select()
-    .from(tripStorefrontBookingOperations)
-    .where(eq(tripStorefrontBookingOperations.operationDigest, input.operationDigest))
-    .limit(1)) as TripStorefrontBookingOperation[]
-  if (!existing) throw new StorefrontTripBookingError("storefront_trip_booking_session_rejected")
+    .from(tripPublicBookingOperations)
+    .where(eq(tripPublicBookingOperations.operationDigest, input.operationDigest))
+    .limit(1)) as TripPublicApiBookingOperation[]
+  if (!existing) throw new PublicApiTripBookingError("storefront_trip_booking_session_rejected")
   return { claimed: false, record: existing }
 }
 
 async function bookingResult(
   selectionRef: string,
   ownerUserId: string | null,
-  outcome: StorefrontTripBooking["outcome"],
-): Promise<StorefrontTripBooking> {
+  outcome: PublicApiTripBooking["outcome"],
+): Promise<PublicApiTripBooking> {
   return {
     ...(!ownerUserId
       ? { bookingSessionCapability: await deriveBookingCapability(selectionRef) }
@@ -396,11 +392,11 @@ async function deriveBookingCapability(selectionRef: string): Promise<string> {
 }
 
 async function resolveOffers(
-  resolver: StorefrontTripOfferResolver | undefined,
+  resolver: PublicApiTripOfferResolver | undefined,
   db: AnyDrizzleDb,
-  context: StorefrontShoppingContext,
-  scope: StorefrontResolvedScope,
-  offers: StorefrontTripSelectionCreate["offers"],
+  context: PublicApiShoppingContext,
+  scope: PublicApiResolvedScope,
+  offers: PublicApiTripSelectionCreate["offers"],
 ): Promise<Array<{ component: CreateTripComponentBodyInput }>> {
   const resolved: Array<{ component: CreateTripComponentBodyInput }> = []
   for (const offer of offers) {
@@ -410,40 +406,40 @@ async function resolveOffers(
 }
 
 async function resolveOffer(
-  resolver: StorefrontTripOfferResolver | undefined,
+  resolver: PublicApiTripOfferResolver | undefined,
   db: AnyDrizzleDb,
-  context: StorefrontShoppingContext,
-  scope: StorefrontTripScope,
-  offer: StorefrontOfferSelection,
+  context: PublicApiShoppingContext,
+  scope: PublicApiTripScope,
+  offer: PublicApiOfferSelection,
 ): Promise<{ component: CreateTripComponentBodyInput }> {
-  if (!resolver) throw new StorefrontTripSelectionUnavailableError()
+  if (!resolver) throw new PublicApiTripSelectionUnavailableError()
   const input = { ...offer, scope }
   const resolution = resolver.resolveInTransaction
     ? await resolver.resolveInTransaction(db, context, input)
     : await resolver.resolve(context, input)
-  if (!resolution) throw new StorefrontTripSelectionUnavailableError("offer_unavailable")
+  if (!resolution) throw new PublicApiTripSelectionUnavailableError("offer_unavailable")
   return { component: createTripComponentBodySchema.parse(resolution.component) }
 }
 
 async function resolveAuthorizedSelection(
   db: AnyDrizzleDb,
   selectionRef: string,
-  context: StorefrontShoppingContext,
+  context: PublicApiShoppingContext,
   now: (() => Date) | undefined,
-): Promise<{ access: TripStorefrontAccess; trip: Trip }> {
-  const resolution = await resolveStorefrontTripAccess(db, selectionRef, context, {
+): Promise<{ access: TripPublicAccess; trip: Trip }> {
+  const resolution = await resolvePublicApiTripAccess(db, selectionRef, context, {
     ...(now ? { now } : {}),
   })
-  if (!resolution.ok) throw new StorefrontTripSelectionAccessError()
+  if (!resolution.ok) throw new PublicApiTripSelectionAccessError()
   assertScopeIntegrity(resolution.access, resolution.trip)
   return resolution
 }
 
-function assertScopeIntegrity(access: TripStorefrontAccess, trip: Trip): void {
+function assertScopeIntegrity(access: TripPublicAccess, trip: Trip): void {
   const constraints = trip.envelope.constraints
   const stored =
     constraints && typeof constraints === "object" && !Array.isArray(constraints)
-      ? (constraints as Record<string, unknown>).storefrontScope
+      ? (constraints as Record<string, unknown>).publicApiScope
       : undefined
   const parsed = z
     .object({ marketId: z.string(), locale: z.string(), currency: z.string() })
@@ -455,7 +451,7 @@ function assertScopeIntegrity(access: TripStorefrontAccess, trip: Trip): void {
     parsed.data.locale !== access.locale ||
     parsed.data.currency !== access.currency
   ) {
-    throw new StorefrontTripSelectionAccessError()
+    throw new PublicApiTripSelectionAccessError()
   }
   resolvedScope(access, trip)
 }
@@ -463,7 +459,7 @@ function assertScopeIntegrity(access: TripStorefrontAccess, trip: Trip): void {
 type PreparedMutation =
   | {
       kind: "add"
-      offer: StorefrontOfferSelection
+      offer: PublicApiOfferSelection
       itemRef: string
       sequence: number
       component: CreateTripComponentBodyInput
@@ -472,11 +468,11 @@ type PreparedMutation =
   | { kind: "reorder"; components: TripComponent[] }
 
 async function prepareMutation(
-  resolver: StorefrontTripOfferResolver | undefined,
+  resolver: PublicApiTripOfferResolver | undefined,
   db: AnyDrizzleDb,
-  context: StorefrontShoppingContext,
-  scope: StorefrontTripScope,
-  input: StorefrontTripSelectionUpdate,
+  context: PublicApiShoppingContext,
+  scope: PublicApiTripScope,
+  input: PublicApiTripSelectionUpdate,
   components: TripComponent[],
   createItemRef: () => string,
   nextSequence: number,
@@ -489,7 +485,7 @@ async function prepareMutation(
     return {
       kind: "add",
       offer: input.mutation.offer,
-      itemRef: storefrontSelectionItemMetadataSchema.shape.itemRef.parse(createItemRef()),
+      itemRef: publicApiSelectionItemMetadataSchema.shape.itemRef.parse(createItemRef()),
       sequence: nextSequence,
       component: resolved.component,
     }
@@ -497,7 +493,7 @@ async function prepareMutation(
   if (input.mutation.kind === "remove") {
     const component = byItemRef.get(input.mutation.itemRef)
     if (!component) {
-      throw new StorefrontTripSelectionMutationError("Selection item was not found.")
+      throw new PublicApiTripSelectionMutationError("Selection item was not found.")
     }
     return { kind: "remove", component }
   }
@@ -506,13 +502,13 @@ async function prepareMutation(
     input.mutation.itemRefs.length !== components.length ||
     new Set(input.mutation.itemRefs).size !== components.length
   ) {
-    throw new StorefrontTripSelectionMutationError(
+    throw new PublicApiTripSelectionMutationError(
       "Reorder must contain every selection item exactly once.",
     )
   }
   const reordered = input.mutation.itemRefs.map((itemRef) => byItemRef.get(itemRef))
   if (reordered.some((component) => component === undefined)) {
-    throw new StorefrontTripSelectionMutationError(
+    throw new PublicApiTripSelectionMutationError(
       "Reorder must contain every selection item exactly once.",
     )
   }
@@ -521,49 +517,47 @@ async function prepareMutation(
 
 async function compareAndSwapRevision(
   db: AnyDrizzleDb,
-  access: TripStorefrontAccess,
+  access: TripPublicAccess,
   expectedRevision: number,
   now: Date,
 ): Promise<number> {
   const nextRevision = expectedRevision + 1
   const [updated] = (await db
-    .update(tripStorefrontAccess)
+    .update(tripPublicAccess)
     .set({ revision: nextRevision, updatedAt: now })
     .where(
       and(
-        eq(tripStorefrontAccess.envelopeId, access.envelopeId),
-        eq(tripStorefrontAccess.capabilityDigest, access.capabilityDigest),
-        eq(tripStorefrontAccess.storefrontId, access.storefrontId),
-        eq(tripStorefrontAccess.channelId, access.channelId),
-        eq(tripStorefrontAccess.marketId, access.marketId),
-        eq(tripStorefrontAccess.locale, access.locale),
-        eq(tripStorefrontAccess.currency, access.currency),
+        eq(tripPublicAccess.envelopeId, access.envelopeId),
+        eq(tripPublicAccess.capabilityDigest, access.capabilityDigest),
+        eq(tripPublicAccess.channelId, access.channelId),
+        eq(tripPublicAccess.marketId, access.marketId),
+        eq(tripPublicAccess.locale, access.locale),
+        eq(tripPublicAccess.currency, access.currency),
         access.ownerUserId === null
-          ? isNull(tripStorefrontAccess.ownerUserId)
-          : eq(tripStorefrontAccess.ownerUserId, access.ownerUserId),
+          ? isNull(tripPublicAccess.ownerUserId)
+          : eq(tripPublicAccess.ownerUserId, access.ownerUserId),
         access.ownerBuyerAccountId === null
-          ? isNull(tripStorefrontAccess.ownerBuyerAccountId)
-          : eq(tripStorefrontAccess.ownerBuyerAccountId, access.ownerBuyerAccountId),
-        eq(tripStorefrontAccess.revision, expectedRevision),
+          ? isNull(tripPublicAccess.ownerBuyerAccountId)
+          : eq(tripPublicAccess.ownerBuyerAccountId, access.ownerBuyerAccountId),
+        eq(tripPublicAccess.revision, expectedRevision),
       ),
     )
-    .returning()) as TripStorefrontAccess[]
+    .returning()) as TripPublicAccess[]
   if (updated) return updated.revision
 
   const [actual] = (await db
     .select()
-    .from(tripStorefrontAccess)
-    .where(eq(tripStorefrontAccess.envelopeId, access.envelopeId))
-    .limit(1)) as TripStorefrontAccess[]
-  if (!actual) throw new StorefrontTripSelectionAccessError()
-  if (!sameAccessBoundary(access, actual)) throw new StorefrontTripSelectionAccessError()
-  throw new StorefrontTripSelectionConflictError(expectedRevision, actual.revision)
+    .from(tripPublicAccess)
+    .where(eq(tripPublicAccess.envelopeId, access.envelopeId))
+    .limit(1)) as TripPublicAccess[]
+  if (!actual) throw new PublicApiTripSelectionAccessError()
+  if (!sameAccessBoundary(access, actual)) throw new PublicApiTripSelectionAccessError()
+  throw new PublicApiTripSelectionConflictError(expectedRevision, actual.revision)
 }
 
-function sameAccessBoundary(expected: TripStorefrontAccess, actual: TripStorefrontAccess): boolean {
+function sameAccessBoundary(expected: TripPublicAccess, actual: TripPublicAccess): boolean {
   return (
     expected.capabilityDigest === actual.capabilityDigest &&
-    expected.storefrontId === actual.storefrontId &&
     expected.channelId === actual.channelId &&
     expected.marketId === actual.marketId &&
     expected.locale === actual.locale &&
@@ -583,12 +577,12 @@ function selectionComponents(trip: Trip): TripComponent[] {
 
 function selectionItem(
   component: TripComponent,
-): z.infer<typeof storefrontSelectionItemMetadataSchema> {
-  const parsed = storefrontSelectionItemMetadataSchema.safeParse(
-    (component.metadata as Record<string, unknown>).storefrontSelection,
+): z.infer<typeof publicApiSelectionItemMetadataSchema> {
+  const parsed = publicApiSelectionItemMetadataSchema.safeParse(
+    (component.metadata as Record<string, unknown>).publicApiSelection,
   )
   if (!parsed.success) {
-    throw new StorefrontTripSelectionAccessError()
+    throw new PublicApiTripSelectionAccessError()
   }
   return parsed.data
 }
@@ -596,11 +590,11 @@ function selectionItem(
 function withSelectionMetadata(
   metadata: Record<string, unknown>,
   itemRef: string,
-  offer: StorefrontOfferSelection,
+  offer: PublicApiOfferSelection,
 ): Record<string, unknown> {
   return {
     ...metadata,
-    storefrontSelection: {
+    publicApiSelection: {
       version: 1,
       itemRef,
       kind: offer.kind,
@@ -612,9 +606,9 @@ function withSelectionMetadata(
 function selectionResult(
   selectionRef: string,
   revision: number,
-  scope: StorefrontResolvedScope,
+  scope: PublicApiResolvedScope,
   components: TripComponent[],
-): StorefrontTripSelection {
+): PublicApiTripSelection {
   return {
     selectionRef,
     revision,
@@ -626,24 +620,24 @@ function selectionResult(
   }
 }
 
-function coreScope(scope: StorefrontResolvedScope): StorefrontTripScope {
+function coreScope(scope: PublicApiResolvedScope): PublicApiTripScope {
   return { marketId: scope.marketId, locale: scope.locale, currency: scope.currency }
 }
 
-function accessScope(access: TripStorefrontAccess): StorefrontTripScope {
+function accessScope(access: TripPublicAccess): PublicApiTripScope {
   return { marketId: access.marketId, locale: access.locale, currency: access.currency }
 }
 
-function resolvedScope(access: TripStorefrontAccess, trip: Trip): StorefrontResolvedScope {
+function resolvedScope(access: TripPublicAccess, trip: Trip): PublicApiResolvedScope {
   const constraints = trip.envelope.constraints as Record<string, unknown>
-  const scope = storefrontResolvedScopeSchema.safeParse(constraints.storefrontResolvedScope)
+  const scope = publicApiResolvedScopeSchema.safeParse(constraints.publicApiResolvedScope)
   if (!scope.success || !sameScope(access, scope.data)) {
-    throw new StorefrontTripSelectionAccessError()
+    throw new PublicApiTripSelectionAccessError()
   }
   return scope.data
 }
 
-function sameScope(access: TripStorefrontAccess, scope: StorefrontTripScope): boolean {
+function sameScope(access: TripPublicAccess, scope: PublicApiTripScope): boolean {
   return (
     access.marketId === scope.marketId &&
     access.locale === scope.locale &&

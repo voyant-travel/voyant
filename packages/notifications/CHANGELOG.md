@@ -10,7 +10,7 @@
   - @voyant-travel/legal@0.250.1
   - @voyant-travel/operator-settings@0.17.33
   - @voyant-travel/relationships@0.134.1
-  - @voyant-travel/storefront@0.256.1
+  - @voyant-travel/public-api@0.256.1
 
 ## 0.149.0
 
@@ -35,7 +35,7 @@
 - Updated dependencies [f9ff2da]
   - @voyant-travel/relationships@0.134.0
   - @voyant-travel/bookings@0.241.0
-  - @voyant-travel/storefront@0.256.0
+  - @voyant-travel/public-api@0.256.0
   - @voyant-travel/finance@0.247.0
   - @voyant-travel/tools@0.10.3
   - @voyant-travel/legal@0.250.0
@@ -68,7 +68,7 @@
   - @voyant-travel/relationships@0.133.21
   - @voyant-travel/legal@0.249.9
   - @voyant-travel/operator-settings@0.17.30
-  - @voyant-travel/storefront@0.255.2
+  - @voyant-travel/public-api@0.255.2
 
 ## 0.148.6
 
@@ -85,7 +85,7 @@
 - Updated dependencies [2feabd0]
 - Updated dependencies [d359373]
 - Updated dependencies [4c2b4ce]
-  - @voyant-travel/storefront@0.255.0
+  - @voyant-travel/public-api@0.255.0
   - @voyant-travel/finance@0.245.7
   - @voyant-travel/operator-settings@0.17.29
   - @voyant-travel/legal@0.249.8
@@ -108,7 +108,7 @@
 - Updated dependencies [34713bd]
 - Updated dependencies [3a91bc8]
   - @voyant-travel/action-ledger@0.115.17
-  - @voyant-travel/storefront@0.254.0
+  - @voyant-travel/public-api@0.254.0
   - @voyant-travel/tools@0.10.1
   - @voyant-travel/proposals@0.138.1
   - @voyant-travel/finance@0.245.6
@@ -131,7 +131,7 @@
   - @voyant-travel/finance@0.245.0
   - @voyant-travel/legal@0.249.3
   - @voyant-travel/operator-settings@0.17.27
-  - @voyant-travel/storefront@0.253.5
+  - @voyant-travel/public-api@0.253.5
 
 ## 0.148.2
 
@@ -140,7 +140,7 @@
 - Updated dependencies [afb6866]
 - Updated dependencies [5d1b298]
   - @voyant-travel/db@0.121.0
-  - @voyant-travel/storefront@0.253.4
+  - @voyant-travel/public-api@0.253.4
   - @voyant-travel/action-ledger@0.115.16
   - @voyant-travel/bookings@0.240.3
   - @voyant-travel/finance@0.244.3
@@ -160,7 +160,7 @@
   - @voyant-travel/finance@0.244.0
   - @voyant-travel/legal@0.249.1
   - @voyant-travel/operator-settings@0.17.25
-  - @voyant-travel/storefront@0.253.1
+  - @voyant-travel/public-api@0.253.1
 
 ## 0.148.0
 
@@ -209,7 +209,7 @@
   - @voyant-travel/hono@0.142.1
   - @voyant-travel/legal@0.249.0
   - @voyant-travel/proposals@0.137.29
-  - @voyant-travel/storefront@0.253.0
+  - @voyant-travel/public-api@0.253.0
 
 ## 0.147.20
 
@@ -217,7 +217,7 @@
 
 - Updated dependencies [1be6b76]
   - @voyant-travel/finance@0.243.0
-  - @voyant-travel/storefront@0.252.0
+  - @voyant-travel/public-api@0.252.0
   - @voyant-travel/legal@0.248.1
 
 ## 0.147.19
@@ -228,7 +228,7 @@
 - Updated dependencies [d98648a]
   - @voyant-travel/bookings@0.240.0
   - @voyant-travel/finance@0.242.0
-  - @voyant-travel/storefront@0.251.0
+  - @voyant-travel/public-api@0.251.0
   - @voyant-travel/proposals@0.137.28
   - @voyant-travel/legal@0.248.0
 
@@ -238,7 +238,7 @@
 
 - Updated dependencies [380dad7]
   - @voyant-travel/finance@0.241.0
-  - @voyant-travel/storefront@0.250.0
+  - @voyant-travel/public-api@0.250.0
   - @voyant-travel/legal@0.247.0
   - @voyant-travel/proposals@0.137.27
 
@@ -248,7 +248,7 @@
 
 - Updated dependencies [79da374]
   - @voyant-travel/finance@0.240.1
-  - @voyant-travel/storefront@0.249.0
+  - @voyant-travel/public-api@0.249.0
 
 ## 0.147.16
 
@@ -259,7 +259,7 @@
   - @voyant-travel/finance@0.240.0
   - @voyant-travel/hono@0.142.0
   - @voyant-travel/legal@0.246.0
-  - @voyant-travel/storefront@0.248.0
+  - @voyant-travel/public-api@0.248.0
   - @voyant-travel/proposals@0.137.26
   - @voyant-travel/action-ledger@0.115.14
 
@@ -272,7 +272,7 @@
   - @voyant-travel/core@0.139.0
   - @voyant-travel/hono@0.141.0
   - @voyant-travel/legal@0.245.0
-  - @voyant-travel/storefront@0.247.0
+  - @voyant-travel/public-api@0.247.0
   - @voyant-travel/bookings@0.238.4
   - @voyant-travel/finance@0.239.1
   - @voyant-travel/action-ledger@0.115.13
@@ -284,7 +284,7 @@
 ### Patch Changes
 
 - @voyant-travel/proposals@0.137.24
-- @voyant-travel/storefront@0.246.0
+- @voyant-travel/public-api@0.246.0
 - @voyant-travel/legal@0.244.0
 
 ## 0.147.13
@@ -292,14 +292,14 @@
 ### Patch Changes
 
 - @voyant-travel/legal@0.243.0
-- @voyant-travel/storefront@0.245.0
+- @voyant-travel/public-api@0.245.0
 
 ## 0.147.12
 
 ### Patch Changes
 
 - @voyant-travel/proposals@0.137.19
-- @voyant-travel/storefront@0.244.0
+- @voyant-travel/public-api@0.244.0
 - @voyant-travel/legal@0.242.0
 
 ## 0.147.11
@@ -307,7 +307,7 @@
 ### Patch Changes
 
 - @voyant-travel/proposals@0.137.18
-- @voyant-travel/storefront@0.243.0
+- @voyant-travel/public-api@0.243.0
 - @voyant-travel/legal@0.241.0
 
 ## 0.147.10
@@ -315,7 +315,7 @@
 ### Patch Changes
 
 - @voyant-travel/proposals@0.137.17
-- @voyant-travel/storefront@0.242.0
+- @voyant-travel/public-api@0.242.0
 - @voyant-travel/legal@0.240.0
 
 ## 0.147.9
@@ -326,7 +326,7 @@
 - Updated dependencies [b3cfd05]
 - Updated dependencies [b7bb6c8]
   - @voyant-travel/finance@0.239.0
-  - @voyant-travel/storefront@0.241.0
+  - @voyant-travel/public-api@0.241.0
   - @voyant-travel/legal@0.239.0
 
 ## 0.147.8
@@ -342,13 +342,13 @@
   - @voyant-travel/hono@0.140.1
   - @voyant-travel/legal@0.238.2
   - @voyant-travel/proposals@0.137.15
-  - @voyant-travel/storefront@0.240.1
+  - @voyant-travel/public-api@0.240.1
 
 ## 0.147.7
 
 ### Patch Changes
 
-- @voyant-travel/storefront@0.240.0
+- @voyant-travel/public-api@0.240.0
 - @voyant-travel/legal@0.238.0
 
 ## 0.147.6
@@ -359,7 +359,7 @@
   - @voyant-travel/finance@0.238.0
   - @voyant-travel/bookings@0.238.0
   - @voyant-travel/legal@0.237.0
-  - @voyant-travel/storefront@0.239.0
+  - @voyant-travel/public-api@0.239.0
   - @voyant-travel/proposals@0.137.13
 
 ## 0.147.5
@@ -373,7 +373,7 @@
   - @voyant-travel/finance@0.237.2
   - @voyant-travel/legal@0.236.4
   - @voyant-travel/proposals@0.137.12
-  - @voyant-travel/storefront@0.238.4
+  - @voyant-travel/public-api@0.238.4
   - @voyant-travel/core@0.137.2
 
 ## 0.147.4
@@ -388,7 +388,7 @@
   - @voyant-travel/bookings@0.237.1
   - @voyant-travel/finance@0.237.1
   - @voyant-travel/legal@0.236.2
-  - @voyant-travel/storefront@0.238.2
+  - @voyant-travel/public-api@0.238.2
   - @voyant-travel/action-ledger@0.115.10
   - @voyant-travel/proposals@0.137.10
   - @voyant-travel/types@0.109.12
@@ -409,7 +409,7 @@
 - Updated dependencies [f69e880]
   - @voyant-travel/bookings@0.237.0
   - @voyant-travel/finance@0.237.0
-  - @voyant-travel/storefront@0.238.1
+  - @voyant-travel/public-api@0.238.1
   - @voyant-travel/legal@0.236.1
 
 ## 0.147.2
@@ -419,7 +419,7 @@
 - Updated dependencies [eeaa5b5]
   - @voyant-travel/finance@0.236.0
   - @voyant-travel/proposals@0.137.9
-  - @voyant-travel/storefront@0.238.0
+  - @voyant-travel/public-api@0.238.0
   - @voyant-travel/legal@0.236.0
   - @voyant-travel/bookings@0.236.0
 
@@ -428,7 +428,7 @@
 ### Patch Changes
 
 - @voyant-travel/finance@0.235.0
-- @voyant-travel/storefront@0.237.0
+- @voyant-travel/public-api@0.237.0
 - @voyant-travel/bookings@0.235.0
 - @voyant-travel/legal@0.235.0
 - @voyant-travel/proposals@0.137.8
@@ -452,7 +452,7 @@
   - @voyant-travel/core@0.137.1
   - @voyant-travel/finance@0.234.0
   - @voyant-travel/legal@0.234.0
-  - @voyant-travel/storefront@0.236.0
+  - @voyant-travel/public-api@0.236.0
   - @voyant-travel/proposals@0.137.7
   - @voyant-travel/db@0.119.4
 
@@ -464,7 +464,7 @@
   - @voyant-travel/bookings@0.233.0
   - @voyant-travel/finance@0.233.0
   - @voyant-travel/proposals@0.137.6
-  - @voyant-travel/storefront@0.235.0
+  - @voyant-travel/public-api@0.235.0
   - @voyant-travel/legal@0.233.0
   - @voyant-travel/db@0.119.3
 
@@ -473,7 +473,7 @@
 ### Patch Changes
 
 - @voyant-travel/proposals@0.137.5
-- @voyant-travel/storefront@0.234.0
+- @voyant-travel/public-api@0.234.0
 - @voyant-travel/bookings@0.232.0
 - @voyant-travel/finance@0.232.0
 - @voyant-travel/legal@0.232.0
@@ -483,7 +483,7 @@
 ### Patch Changes
 
 - @voyant-travel/legal@0.231.0
-- @voyant-travel/storefront@0.233.0
+- @voyant-travel/public-api@0.233.0
 - @voyant-travel/bookings@0.231.0
 - @voyant-travel/finance@0.231.0
 - @voyant-travel/proposals@0.137.4
@@ -497,7 +497,7 @@
   - @voyant-travel/finance@0.230.0
   - @voyant-travel/bookings@0.230.0
   - @voyant-travel/proposals@0.137.3
-  - @voyant-travel/storefront@0.232.0
+  - @voyant-travel/public-api@0.232.0
   - @voyant-travel/legal@0.230.0
 
 ## 0.146.1
@@ -508,7 +508,7 @@
 - Updated dependencies [2601445]
   - @voyant-travel/finance@0.229.0
   - @voyant-travel/legal@0.229.0
-  - @voyant-travel/storefront@0.231.0
+  - @voyant-travel/public-api@0.231.0
   - @voyant-travel/bookings@0.229.0
   - @voyant-travel/proposals@0.137.2
 
@@ -519,7 +519,7 @@
 - @voyant-travel/bookings@0.228.0
 - @voyant-travel/finance@0.228.0
 - @voyant-travel/legal@0.228.0
-- @voyant-travel/storefront@0.230.0
+- @voyant-travel/public-api@0.230.0
 - @voyant-travel/proposals@0.137.1
 
 ## 0.145.0
@@ -537,7 +537,7 @@
   - @voyant-travel/bookings@0.227.0
   - @voyant-travel/legal@0.227.0
   - @voyant-travel/finance@0.227.0
-  - @voyant-travel/storefront@0.229.0
+  - @voyant-travel/public-api@0.229.0
   - @voyant-travel/db@0.119.2
 
 ## 0.144.1
@@ -548,7 +548,7 @@
   - @voyant-travel/bookings@0.226.0
   - @voyant-travel/finance@0.226.0
   - @voyant-travel/legal@0.226.0
-  - @voyant-travel/storefront@0.228.0
+  - @voyant-travel/public-api@0.228.0
   - @voyant-travel/quotes@0.136.1
 
 ## 0.144.0
@@ -561,7 +561,7 @@
   - @voyant-travel/finance@0.225.0
   - @voyant-travel/tools@0.10.0
   - @voyant-travel/core@0.137.0
-  - @voyant-travel/storefront@0.227.0
+  - @voyant-travel/public-api@0.227.0
   - @voyant-travel/quotes@0.136.0
   - @voyant-travel/legal@0.225.0
   - @voyant-travel/action-ledger@0.115.9
@@ -580,7 +580,7 @@
   - @voyant-travel/finance@0.224.0
   - @voyant-travel/legal@0.224.0
   - @voyant-travel/quotes@0.135.17
-  - @voyant-travel/storefront@0.226.0
+  - @voyant-travel/public-api@0.226.0
 
 ## 0.142.13
 
@@ -613,7 +613,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [fae0f36]
 - Updated dependencies [d02a4e8]
   - @voyant-travel/tools@0.9.0
-  - @voyant-travel/storefront@0.225.0
+  - @voyant-travel/public-api@0.225.0
   - @voyant-travel/bookings@0.223.0
   - @voyant-travel/action-ledger@0.115.7
   - @voyant-travel/finance@0.223.0
@@ -627,7 +627,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.222.0
 - @voyant-travel/finance@0.222.0
 - @voyant-travel/legal@0.222.0
-- @voyant-travel/storefront@0.224.0
+- @voyant-travel/public-api@0.224.0
 - @voyant-travel/quotes@0.135.15
 
 ## 0.142.10
@@ -642,7 +642,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.221.1
   - @voyant-travel/legal@0.221.1
   - @voyant-travel/quotes@0.135.14
-  - @voyant-travel/storefront@0.223.1
+  - @voyant-travel/public-api@0.223.1
 
 ## 0.142.9
 
@@ -665,7 +665,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.221.0
   - @voyant-travel/finance@0.221.0
   - @voyant-travel/hono@0.136.0
-  - @voyant-travel/storefront@0.223.0
+  - @voyant-travel/public-api@0.223.0
   - @voyant-travel/tools@0.8.0
   - @voyant-travel/legal@0.221.0
   - @voyant-travel/quotes@0.135.13
@@ -685,7 +685,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/db@0.119.0
   - @voyant-travel/hono@0.135.0
   - @voyant-travel/legal@0.220.0
-  - @voyant-travel/storefront@0.222.0
+  - @voyant-travel/public-api@0.222.0
   - @voyant-travel/quotes@0.135.12
   - @voyant-travel/types@0.109.10
 
@@ -696,7 +696,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [6df3ab4]
   - @voyant-travel/legal@0.219.0
   - @voyant-travel/tools@0.7.2
-  - @voyant-travel/storefront@0.221.0
+  - @voyant-travel/public-api@0.221.0
   - @voyant-travel/bookings@0.219.0
   - @voyant-travel/finance@0.219.0
   - @voyant-travel/quotes@0.135.11
@@ -709,7 +709,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.218.0
   - @voyant-travel/finance@0.218.0
   - @voyant-travel/legal@0.218.0
-  - @voyant-travel/storefront@0.220.0
+  - @voyant-travel/public-api@0.220.0
   - @voyant-travel/quotes@0.135.10
 
 ## 0.142.5
@@ -717,7 +717,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - @voyant-travel/legal@0.217.0
-- @voyant-travel/storefront@0.219.0
+- @voyant-travel/public-api@0.219.0
 - @voyant-travel/bookings@0.217.0
 - @voyant-travel/finance@0.217.0
 - @voyant-travel/quotes@0.135.9
@@ -734,7 +734,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.216.2
   - @voyant-travel/db@0.118.6
   - @voyant-travel/legal@0.216.1
-  - @voyant-travel/storefront@0.218.1
+  - @voyant-travel/public-api@0.218.1
 
 ## 0.142.3
 
@@ -750,7 +750,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.216.0
   - @voyant-travel/finance@0.216.0
   - @voyant-travel/legal@0.216.0
-  - @voyant-travel/storefront@0.218.0
+  - @voyant-travel/public-api@0.218.0
   - @voyant-travel/quotes@0.135.8
 
 ## 0.142.1
@@ -758,7 +758,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - @voyant-travel/finance@0.215.0
-- @voyant-travel/storefront@0.217.0
+- @voyant-travel/public-api@0.217.0
 - @voyant-travel/quotes@0.135.7
 - @voyant-travel/bookings@0.215.0
 - @voyant-travel/legal@0.215.0
@@ -770,7 +770,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.214.0
 - @voyant-travel/finance@0.214.0
 - @voyant-travel/legal@0.214.0
-- @voyant-travel/storefront@0.216.0
+- @voyant-travel/public-api@0.216.0
 - @voyant-travel/quotes@0.135.5
 
 ## 0.141.4
@@ -778,7 +778,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - @voyant-travel/legal@0.213.0
-- @voyant-travel/storefront@0.215.0
+- @voyant-travel/public-api@0.215.0
 - @voyant-travel/bookings@0.213.0
 - @voyant-travel/finance@0.213.0
 - @voyant-travel/quotes@0.135.3
@@ -790,7 +790,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.212.0
 - @voyant-travel/finance@0.212.0
 - @voyant-travel/legal@0.212.0
-- @voyant-travel/storefront@0.214.0
+- @voyant-travel/public-api@0.214.0
 - @voyant-travel/quotes@0.135.2
 
 ## 0.141.2
@@ -800,7 +800,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.211.0
 - @voyant-travel/finance@0.211.0
 - @voyant-travel/legal@0.211.0
-- @voyant-travel/storefront@0.213.0
+- @voyant-travel/public-api@0.213.0
 - @voyant-travel/quotes@0.135.1
 
 ## 0.141.1
@@ -812,7 +812,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.210.0
   - @voyant-travel/finance@0.210.0
   - @voyant-travel/legal@0.210.0
-  - @voyant-travel/storefront@0.212.0
+  - @voyant-travel/public-api@0.212.0
 
 ## 0.141.0
 
@@ -824,7 +824,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 ### Patch Changes
 
-- @voyant-travel/storefront@0.211.0
+- @voyant-travel/public-api@0.211.0
 - @voyant-travel/bookings@0.209.0
 - @voyant-travel/finance@0.209.0
 - @voyant-travel/legal@0.209.0
@@ -837,7 +837,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.208.0
 - @voyant-travel/finance@0.208.0
 - @voyant-travel/legal@0.208.0
-- @voyant-travel/storefront@0.210.0
+- @voyant-travel/public-api@0.210.0
 - @voyant-travel/quotes@0.134.7
 
 ## 0.139.5
@@ -848,7 +848,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.207.0
   - @voyant-travel/finance@0.207.0
   - @voyant-travel/legal@0.207.0
-  - @voyant-travel/storefront@0.209.0
+  - @voyant-travel/public-api@0.209.0
   - @voyant-travel/quotes@0.134.5
 
 ## 0.139.4
@@ -856,7 +856,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - Updated dependencies [5daf427]
-  - @voyant-travel/storefront@0.208.0
+  - @voyant-travel/public-api@0.208.0
   - @voyant-travel/hono@0.134.6
   - @voyant-travel/finance@0.206.0
   - @voyant-travel/quotes@0.134.4
@@ -870,7 +870,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [58baffe]
   - @voyant-travel/legal@0.205.0
   - @voyant-travel/finance@0.205.0
-  - @voyant-travel/storefront@0.207.0
+  - @voyant-travel/public-api@0.207.0
   - @voyant-travel/quotes@0.134.3
   - @voyant-travel/bookings@0.205.0
 
@@ -881,7 +881,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.204.0
 - @voyant-travel/finance@0.204.0
 - @voyant-travel/legal@0.204.0
-- @voyant-travel/storefront@0.206.0
+- @voyant-travel/public-api@0.206.0
 - @voyant-travel/quotes@0.134.2
 
 ## 0.139.1
@@ -893,7 +893,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/action-ledger@0.115.0
   - @voyant-travel/bookings@0.203.0
   - @voyant-travel/tools@0.7.0
-  - @voyant-travel/storefront@0.205.0
+  - @voyant-travel/public-api@0.205.0
   - @voyant-travel/legal@0.203.0
   - @voyant-travel/quotes@0.134.1
 
@@ -923,7 +923,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.202.0
   - @voyant-travel/finance@0.202.0
   - @voyant-travel/legal@0.202.0
-  - @voyant-travel/storefront@0.204.0
+  - @voyant-travel/public-api@0.204.0
 
 ## 0.138.1
 
@@ -936,7 +936,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.201.1
   - @voyant-travel/legal@0.201.1
   - @voyant-travel/quotes@0.133.1
-  - @voyant-travel/storefront@0.203.1
+  - @voyant-travel/public-api@0.203.1
 
 ## 0.138.0
 
@@ -964,7 +964,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/quotes@0.133.0
   - @voyant-travel/finance@0.201.0
   - @voyant-travel/legal@0.201.0
-  - @voyant-travel/storefront@0.203.0
+  - @voyant-travel/public-api@0.203.0
   - @voyant-travel/bookings@0.201.0
 
 ## 0.137.0
@@ -993,7 +993,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [952d817]
   - @voyant-travel/legal@0.200.0
   - @voyant-travel/core@0.136.0
-  - @voyant-travel/storefront@0.202.0
+  - @voyant-travel/public-api@0.202.0
   - @voyant-travel/action-ledger@0.113.2
   - @voyant-travel/bookings@0.200.0
   - @voyant-travel/db@0.118.5
@@ -1014,7 +1014,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.134.4
   - @voyant-travel/legal@0.199.0
   - @voyant-travel/quotes@0.132.3
-  - @voyant-travel/storefront@0.201.0
+  - @voyant-travel/public-api@0.201.0
 
 ## 0.136.1
 
@@ -1023,7 +1023,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.198.1
 - @voyant-travel/finance@0.198.1
 - @voyant-travel/legal@0.198.1
-- @voyant-travel/storefront@0.200.1
+- @voyant-travel/public-api@0.200.1
 
 ## 0.136.0
 
@@ -1050,7 +1050,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - @voyant-travel/legal@0.198.0
 - @voyant-travel/quotes@0.132.2
-- @voyant-travel/storefront@0.200.0
+- @voyant-travel/public-api@0.200.0
 - @voyant-travel/bookings@0.198.0
 - @voyant-travel/finance@0.198.0
 
@@ -1069,7 +1069,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/quotes@0.132.1
   - @voyant-travel/db@0.118.3
   - @voyant-travel/hono@0.134.3
-  - @voyant-travel/storefront@0.199.0
+  - @voyant-travel/public-api@0.199.0
 
 ## 0.135.0
 
@@ -1093,7 +1093,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies
   - @voyant-travel/legal@0.196.0
   - @voyant-travel/quotes@0.132.0
-  - @voyant-travel/storefront@0.198.0
+  - @voyant-travel/public-api@0.198.0
   - @voyant-travel/action-ledger@0.112.0
   - @voyant-travel/finance@0.196.0
   - @voyant-travel/bookings@0.196.0
@@ -1110,7 +1110,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.195.0
   - @voyant-travel/finance@0.195.0
   - @voyant-travel/legal@0.195.0
-  - @voyant-travel/storefront@0.197.0
+  - @voyant-travel/public-api@0.197.0
   - @voyant-travel/quotes@0.131.40
 
 ## 0.134.1
@@ -1122,7 +1122,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.194.0
   - @voyant-travel/finance@0.194.0
   - @voyant-travel/legal@0.194.0
-  - @voyant-travel/storefront@0.196.0
+  - @voyant-travel/public-api@0.196.0
   - @voyant-travel/quotes@0.131.39
 
 ## 0.134.0
@@ -1130,7 +1130,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - @voyant-travel/legal@0.193.0
-- @voyant-travel/storefront@0.195.0
+- @voyant-travel/public-api@0.195.0
 - @voyant-travel/bookings@0.193.0
 - @voyant-travel/finance@0.193.0
 - @voyant-travel/quotes@0.131.38
@@ -1148,7 +1148,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.134.1
   - @voyant-travel/legal@0.192.1
   - @voyant-travel/quotes@0.131.37
-  - @voyant-travel/storefront@0.194.1
+  - @voyant-travel/public-api@0.194.1
 
 ## 0.133.2
 
@@ -1156,7 +1156,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - Updated dependencies [e68a705]
   - @voyant-travel/finance@0.192.0
-  - @voyant-travel/storefront@0.194.0
+  - @voyant-travel/public-api@0.194.0
   - @voyant-travel/bookings@0.192.0
   - @voyant-travel/legal@0.192.0
   - @voyant-travel/quotes@0.131.36
@@ -1168,7 +1168,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [f6aa3a1]
   - @voyant-travel/finance@0.191.0
   - @voyant-travel/legal@0.191.0
-  - @voyant-travel/storefront@0.193.0
+  - @voyant-travel/public-api@0.193.0
   - @voyant-travel/bookings@0.191.0
   - @voyant-travel/quotes@0.131.35
 
@@ -1196,7 +1196,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.134.0
   - @voyant-travel/finance@0.190.0
   - @voyant-travel/legal@0.190.0
-  - @voyant-travel/storefront@0.192.0
+  - @voyant-travel/public-api@0.192.0
   - @voyant-travel/action-ledger@0.111.13
   - @voyant-travel/quotes@0.131.34
   - @voyant-travel/types@0.109.9
@@ -1208,7 +1208,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.189.0
 - @voyant-travel/finance@0.189.0
 - @voyant-travel/legal@0.189.0
-- @voyant-travel/storefront@0.191.0
+- @voyant-travel/public-api@0.191.0
 - @voyant-travel/quotes@0.131.33
 
 ## 0.132.13
@@ -1222,7 +1222,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.188.0
   - @voyant-travel/legal@0.188.0
   - @voyant-travel/quotes@0.131.32
-  - @voyant-travel/storefront@0.190.0
+  - @voyant-travel/public-api@0.190.0
   - @voyant-travel/workflows@0.122.18
 
 ## 0.132.12
@@ -1232,7 +1232,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.187.0
 - @voyant-travel/finance@0.187.0
 - @voyant-travel/legal@0.187.0
-- @voyant-travel/storefront@0.189.0
+- @voyant-travel/public-api@0.189.0
 - @voyant-travel/quotes@0.131.31
 
 ## 0.132.11
@@ -1242,7 +1242,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.186.0
 - @voyant-travel/finance@0.186.0
 - @voyant-travel/legal@0.186.0
-- @voyant-travel/storefront@0.188.0
+- @voyant-travel/public-api@0.188.0
 - @voyant-travel/quotes@0.131.29
 
 ## 0.132.10
@@ -1252,7 +1252,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [e7e90bf]
   - @voyant-travel/finance@0.185.0
   - @voyant-travel/legal@0.185.0
-  - @voyant-travel/storefront@0.187.0
+  - @voyant-travel/public-api@0.187.0
   - @voyant-travel/quotes@0.131.28
   - @voyant-travel/bookings@0.185.0
 
@@ -1263,7 +1263,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.184.0
 - @voyant-travel/finance@0.184.0
 - @voyant-travel/legal@0.184.0
-- @voyant-travel/storefront@0.186.0
+- @voyant-travel/public-api@0.186.0
 - @voyant-travel/quotes@0.131.27
 
 ## 0.132.8
@@ -1271,7 +1271,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - Updated dependencies [8d370ef]
-  - @voyant-travel/storefront@0.185.0
+  - @voyant-travel/public-api@0.185.0
   - @voyant-travel/finance@0.183.0
   - @voyant-travel/bookings@0.183.0
   - @voyant-travel/legal@0.183.0
@@ -1284,7 +1284,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.182.2
 - @voyant-travel/finance@0.182.4
 - @voyant-travel/legal@0.182.4
-- @voyant-travel/storefront@0.184.2
+- @voyant-travel/public-api@0.184.2
 - @voyant-travel/workflows@0.122.16
 
 ## 0.132.6
@@ -1298,14 +1298,14 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.182.3
   - @voyant-travel/legal@0.182.3
   - @voyant-travel/quotes@0.131.25
-  - @voyant-travel/storefront@0.184.1
+  - @voyant-travel/public-api@0.184.1
   - @voyant-travel/workflows@0.122.15
 
 ## 0.132.5
 
 ### Patch Changes
 
-- @voyant-travel/storefront@0.184.0
+- @voyant-travel/public-api@0.184.0
 - @voyant-travel/bookings@0.182.0
 - @voyant-travel/finance@0.182.0
 - @voyant-travel/legal@0.182.0
@@ -1321,7 +1321,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.181.0
   - @voyant-travel/legal@0.181.0
   - @voyant-travel/quotes@0.131.21
-  - @voyant-travel/storefront@0.183.0
+  - @voyant-travel/public-api@0.183.0
 
 ## 0.132.3
 
@@ -1332,7 +1332,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/quotes@0.131.20
 - @voyant-travel/db@0.117.1
 - @voyant-travel/bookings@0.180.1
-- @voyant-travel/storefront@0.182.1
+- @voyant-travel/public-api@0.182.1
 - @voyant-travel/workflows@0.122.14
 
 ## 0.132.2
@@ -1340,7 +1340,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 ### Patch Changes
 
 - Updated dependencies [ecf1680]
-  - @voyant-travel/storefront@0.182.0
+  - @voyant-travel/public-api@0.182.0
   - @voyant-travel/legal@0.180.0
   - @voyant-travel/bookings@0.180.0
   - @voyant-travel/finance@0.180.0
@@ -1351,7 +1351,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 ### Patch Changes
 
-- @voyant-travel/storefront@0.181.0
+- @voyant-travel/public-api@0.181.0
 - @voyant-travel/bookings@0.179.0
 - @voyant-travel/finance@0.179.0
 - @voyant-travel/legal@0.179.0
@@ -1364,7 +1364,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.178.0
 - @voyant-travel/finance@0.178.0
 - @voyant-travel/legal@0.178.0
-- @voyant-travel/storefront@0.180.0
+- @voyant-travel/public-api@0.180.0
 - @voyant-travel/workflows@0.122.12
 - @voyant-travel/quotes@0.131.17
 
@@ -1380,7 +1380,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.131.2
   - @voyant-travel/legal@0.177.0
   - @voyant-travel/quotes@0.131.16
-  - @voyant-travel/storefront@0.179.0
+  - @voyant-travel/public-api@0.179.0
   - @voyant-travel/types@0.109.8
   - @voyant-travel/workflows@0.122.11
 
@@ -1390,7 +1390,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 
 - Updated dependencies [abc32b6]
   - @voyant-travel/db@0.116.0
-  - @voyant-travel/storefront@0.178.0
+  - @voyant-travel/public-api@0.178.0
   - @voyant-travel/action-ledger@0.111.8
   - @voyant-travel/bookings@0.176.0
   - @voyant-travel/finance@0.176.0
@@ -1409,7 +1409,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/core@0.130.0
   - @voyant-travel/db@0.115.0
   - @voyant-travel/hono@0.131.0
-  - @voyant-travel/storefront@0.177.0
+  - @voyant-travel/public-api@0.177.0
   - @voyant-travel/finance@0.175.0
   - @voyant-travel/legal@0.175.0
   - @voyant-travel/action-ledger@0.111.7
@@ -1430,7 +1430,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.130.1
   - @voyant-travel/legal@0.174.0
   - @voyant-travel/quotes@0.131.13
-  - @voyant-travel/storefront@0.176.0
+  - @voyant-travel/public-api@0.176.0
   - @voyant-travel/workflows@0.122.8
 
 ## 0.131.6
@@ -1440,7 +1440,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.173.0
 - @voyant-travel/finance@0.173.0
 - @voyant-travel/legal@0.173.0
-- @voyant-travel/storefront@0.175.0
+- @voyant-travel/public-api@0.175.0
 - @voyant-travel/quotes@0.131.12
 
 ## 0.131.5
@@ -1452,7 +1452,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/core@0.128.0
   - @voyant-travel/finance@0.172.0
   - @voyant-travel/hono@0.130.0
-  - @voyant-travel/storefront@0.174.0
+  - @voyant-travel/public-api@0.174.0
   - @voyant-travel/legal@0.172.0
   - @voyant-travel/action-ledger@0.111.5
   - @voyant-travel/db@0.114.14
@@ -1470,7 +1470,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.171.1
   - @voyant-travel/legal@0.171.1
   - @voyant-travel/quotes@0.131.10
-  - @voyant-travel/storefront@0.173.1
+  - @voyant-travel/public-api@0.173.1
   - @voyant-travel/workflows@0.122.6
 
 ## 0.131.3
@@ -1480,7 +1480,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [d2d7384]
   - @voyant-travel/finance@0.171.0
   - @voyant-travel/legal@0.171.0
-  - @voyant-travel/storefront@0.173.0
+  - @voyant-travel/public-api@0.173.0
   - @voyant-travel/bookings@0.171.0
   - @voyant-travel/quotes@0.131.9
 
@@ -1497,7 +1497,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.170.0
   - @voyant-travel/hono@0.128.6
   - @voyant-travel/quotes@0.131.8
-  - @voyant-travel/storefront@0.172.0
+  - @voyant-travel/public-api@0.172.0
   - @voyant-travel/workflows@0.122.5
 
 ## 0.131.1
@@ -1513,7 +1513,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.128.4
   - @voyant-travel/legal@0.169.1
   - @voyant-travel/quotes@0.131.7
-  - @voyant-travel/storefront@0.171.1
+  - @voyant-travel/public-api@0.171.1
   - @voyant-travel/workflows@0.122.4
 
 ## 0.131.0
@@ -1524,7 +1524,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.169.0
   - @voyant-travel/bookings@0.169.0
   - @voyant-travel/legal@0.169.0
-  - @voyant-travel/storefront@0.171.0
+  - @voyant-travel/public-api@0.171.0
   - @voyant-travel/quotes@0.131.6
 
 ## 0.130.8
@@ -1534,7 +1534,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [158c3a0]
   - @voyant-travel/finance@0.168.0
   - @voyant-travel/legal@0.168.0
-  - @voyant-travel/storefront@0.170.0
+  - @voyant-travel/public-api@0.170.0
   - @voyant-travel/quotes@0.131.5
   - @voyant-travel/bookings@0.168.0
 
@@ -1545,7 +1545,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [ca3713e]
   - @voyant-travel/finance@0.167.0
   - @voyant-travel/legal@0.167.0
-  - @voyant-travel/storefront@0.169.0
+  - @voyant-travel/public-api@0.169.0
   - @voyant-travel/quotes@0.131.4
   - @voyant-travel/bookings@0.167.0
 
@@ -1558,7 +1558,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [926ea47]
   - @voyant-travel/finance@0.166.0
   - @voyant-travel/legal@0.166.0
-  - @voyant-travel/storefront@0.168.0
+  - @voyant-travel/public-api@0.168.0
   - @voyant-travel/quotes@0.131.3
   - @voyant-travel/bookings@0.166.0
   - @voyant-travel/workflows@0.122.3
@@ -1570,7 +1570,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [d6a9973]
   - @voyant-travel/finance@0.165.0
   - @voyant-travel/legal@0.165.0
-  - @voyant-travel/storefront@0.167.0
+  - @voyant-travel/public-api@0.167.0
   - @voyant-travel/quotes@0.131.2
   - @voyant-travel/bookings@0.165.0
 
@@ -1581,7 +1581,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.164.0
 - @voyant-travel/finance@0.164.0
 - @voyant-travel/legal@0.164.0
-- @voyant-travel/storefront@0.166.0
+- @voyant-travel/public-api@0.166.0
 - @voyant-travel/quotes@0.131.1
 
 ## 0.130.3
@@ -1598,7 +1598,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.163.0
   - @voyant-travel/quotes@0.131.0
   - @voyant-travel/legal@0.163.0
-  - @voyant-travel/storefront@0.165.0
+  - @voyant-travel/public-api@0.165.0
   - @voyant-travel/action-ledger@0.111.1
   - @voyant-travel/db@0.114.9
   - @voyant-travel/hono@0.128.1
@@ -1643,7 +1643,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.128.0
   - @voyant-travel/legal@0.162.0
   - @voyant-travel/quotes@0.130.0
-  - @voyant-travel/storefront@0.164.0
+  - @voyant-travel/public-api@0.164.0
   - @voyant-travel/workflows@0.122.0
   - @voyant-travel/db@0.114.8
 
@@ -1659,7 +1659,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/action-ledger@0.109.1
   - @voyant-travel/bookings@0.161.0
   - @voyant-travel/legal@0.161.0
-  - @voyant-travel/storefront@0.163.0
+  - @voyant-travel/public-api@0.163.0
   - @voyant-travel/quotes@0.129.1
 
 ## 0.128.1
@@ -1688,7 +1688,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.160.0
   - @voyant-travel/quotes@0.129.0
   - @voyant-travel/legal@0.160.0
-  - @voyant-travel/storefront@0.162.0
+  - @voyant-travel/public-api@0.162.0
   - @voyant-travel/db@0.114.7
   - @voyant-travel/hono@0.127.1
   - @voyant-travel/workflows@0.121.0
@@ -1706,7 +1706,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/hono@0.127.0
   - @voyant-travel/bookings@0.159.0
   - @voyant-travel/finance@0.159.0
-  - @voyant-travel/storefront@0.161.0
+  - @voyant-travel/public-api@0.161.0
   - @voyant-travel/tools@0.2.2
   - @voyant-travel/db@0.114.6
   - @voyant-travel/legal@0.159.0
@@ -1730,7 +1730,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/db@0.114.5
   - @voyant-travel/finance@0.158.0
   - @voyant-travel/legal@0.158.0
-  - @voyant-travel/storefront@0.160.0
+  - @voyant-travel/public-api@0.160.0
   - @voyant-travel/types@0.109.2
   - @voyant-travel/workflows@0.120.3
 
@@ -1741,7 +1741,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - @voyant-travel/bookings@0.157.0
 - @voyant-travel/finance@0.157.0
 - @voyant-travel/legal@0.157.0
-- @voyant-travel/storefront@0.159.0
+- @voyant-travel/public-api@0.159.0
 
 ## 0.126.4
 
@@ -1758,7 +1758,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.156.1
   - @voyant-travel/hono@0.126.3
   - @voyant-travel/legal@0.156.1
-  - @voyant-travel/storefront@0.158.1
+  - @voyant-travel/public-api@0.158.1
   - @voyant-travel/tools@0.2.1
   - @voyant-travel/workflows@0.120.2
 
@@ -1769,7 +1769,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [bbe6396]
   - @voyant-travel/finance@0.156.0
   - @voyant-travel/bookings@0.156.0
-  - @voyant-travel/storefront@0.158.0
+  - @voyant-travel/public-api@0.158.0
   - @voyant-travel/legal@0.156.0
   - @voyant-travel/db@0.114.3
   - @voyant-travel/workflows@0.120.1
@@ -1788,7 +1788,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/finance@0.155.1
   - @voyant-travel/hono@0.126.2
   - @voyant-travel/legal@0.155.1
-  - @voyant-travel/storefront@0.157.1
+  - @voyant-travel/public-api@0.157.1
 
 ## 0.126.1
 
@@ -1798,7 +1798,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
 - Updated dependencies [3f6694b]
   - @voyant-travel/legal@0.155.0
   - @voyant-travel/core@0.121.0
-  - @voyant-travel/storefront@0.157.0
+  - @voyant-travel/public-api@0.157.0
   - @voyant-travel/bookings@0.155.0
   - @voyant-travel/db@0.114.1
   - @voyant-travel/finance@0.155.0
@@ -1818,7 +1818,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/legal@0.154.0
   - @voyant-travel/core@0.120.0
   - @voyant-travel/bookings@0.154.0
-  - @voyant-travel/storefront@0.156.0
+  - @voyant-travel/public-api@0.156.0
   - @voyant-travel/workflows@0.118.0
 
 ## 0.125.0
@@ -1877,7 +1877,7 @@ function`. The `storefront.verification.runtime` contribution handed the app's
   - @voyant-travel/bookings@0.153.0
   - @voyant-travel/finance@0.153.0
   - @voyant-travel/legal@0.153.0
-  - @voyant-travel/storefront@0.155.0
+  - @voyant-travel/public-api@0.155.0
   - @voyant-travel/db@0.113.0
   - @voyant-travel/core@0.119.0
   - @voyant-travel/tools@0.2.0
