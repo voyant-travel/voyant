@@ -70,8 +70,6 @@ describe("@voyant-travel/distribution package exports", () => {
     // (voyant#4624): it raised on a missing `storefronts` table, so after that
     // change it could only ever fail. Its subpath export must stay withdrawn.
     expect(packageJson.exports["./setup/storefront-channel-bindings"]).toBeUndefined()
-    expect(
-      packageJson.publishConfig.exports["./setup/storefront-channel-bindings"],
-    ).toBeUndefined()
+    expect(packageJson.publishConfig.exports["./setup/storefront-channel-bindings"]).toBeUndefined()
   })
 })
