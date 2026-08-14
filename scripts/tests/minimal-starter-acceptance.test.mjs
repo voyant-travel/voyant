@@ -146,7 +146,7 @@ test("packaged minimal starter serves project API and SSR routes", {
     assert.ok(
       graph.modules.some(
         (unit) =>
-          unit.localId === "storefront" &&
+          unit.localId === "public-api" &&
           unit.api?.some((api) => api.surface === "public" && api.mount === "/"),
       ),
     )
