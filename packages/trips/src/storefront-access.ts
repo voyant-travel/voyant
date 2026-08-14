@@ -1,3 +1,4 @@
+import { identifiedUserId } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { randomBytesHex, sha256Hex } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
@@ -175,8 +176,7 @@ export async function resolvePublicApiTripAccess(
 }
 
 function authenticatedUserId(context: PublicApiTripContext): string | null {
-  const userId = context.userId?.trim()
-  return !userId || userId === "anonymous-storefront" ? null : userId
+  return identifiedUserId(context.userId)
 }
 
 /**

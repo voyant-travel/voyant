@@ -1,3 +1,4 @@
+import { identifiedUserId } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { randomBytesHex, sha256Hex } from "@voyant-travel/hono"
 import type {
@@ -666,6 +667,5 @@ function optionalBinding(value: string | null | undefined): string | null {
 }
 
 function managedUserId(value: string | null | undefined): string | null {
-  const normalized = optionalBinding(value)
-  return normalized === "anonymous-storefront" ? null : normalized
+  return identifiedUserId(value)
 }

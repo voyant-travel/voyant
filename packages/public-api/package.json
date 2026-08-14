@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/public-api",
-  "version": "0.256.1",
+  "version": "0.257.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -97,7 +97,8 @@
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@voyant-travel/schema-kit": "workspace:^"
   },
   "peerDependencies": {
     "@voyant-travel/identity": "workspace:^",

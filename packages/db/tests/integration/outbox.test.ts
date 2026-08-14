@@ -7,6 +7,7 @@ import {
   completeOutboxEvent,
   createOutboxEventStore,
   drainOutbox,
+  EVENT_DEAD_LETTERED,
   failOutboxEvent,
   getBoundedOutboxStats,
   getOutboxStats,
@@ -31,8 +32,23 @@ if (TEST_DATABASE_URL) {
 
 describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   const db = createTestDb()
+  /**
+   * Whether this file created `event_outbox` rather than finding it.
+   *
+   * Standalone this suite runs against a bare database and cleans up after
+   * itself. In CI's `db-integration` lane it runs against a migrated one, where
+   * the table is real and every later test in the lane emits through it — so an
+   * unconditional `DROP TABLE` takes the outbox out from under them, which is
+   * exactly what happened when this file was first added to that lane. Drop
+   * only what we created.
+   */
+  let createdTable = false
 
   beforeAll(async () => {
+    const existing = await db.execute(
+      sql`SELECT to_regclass('public.event_outbox')::text AS "tableName"`,
+    )
+    createdTable = existing[0]?.tableName == null
     await db.execute(/* sql */ `
       CREATE TABLE IF NOT EXISTS "event_outbox" (
         "id" text PRIMARY KEY,
@@ -67,6 +83,7 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   })
 
   afterAll(async () => {
+    if (!createdTable) return
     await db.execute(/* sql */ `DROP TABLE IF EXISTS "event_outbox"`)
   })
 
@@ -175,6 +192,91 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   })
 
   describe("drainOutbox", () => {
+    it("announces a dead-lettered event through the bus surface the drain is given", async () => {
+      // voyant#4636: eight failed settlements of a captured card payment left a
+      // `failed` row and nothing else, so the only signal was the customer
+      // complaining. The announcement is delivered, not emitted, because the
+      // drain runtime supplies `deliver` alone — announcing through `emit`
+      // would have been a subscriber nothing ever calls.
+      const bus = createEventBus()
+      const announced = vi.fn()
+      bus.subscribe(EVENT_DEAD_LETTERED, announced)
+      const [row] = await insertOutboxEvents(db, [
+        { name: "payment.completed", data: { paymentSessionId: "pmss_1" } },
+      ])
+      if (!row) throw new Error("insert failed")
+      await db.execute(
+        // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+        sql`UPDATE ${eventOutboxTable} SET "attempts" = "max_attempts" - 1 WHERE ${eventOutboxTable.id} = ${row.id}`,
+      )
+      const failing = {
+        deliver: async () => ({ failed: 1, errors: ["settlement rejected"] }),
+      } as unknown as Parameters<typeof drainOutbox>[1]
+      // Deliver the announcement onto the real bus, the way the app's bus does.
+      const drainBus = {
+        deliver: async (envelope: Parameters<NonNullable<typeof bus.deliver>>[0]) =>
+          envelope.name === EVENT_DEAD_LETTERED
+            ? ((await bus.deliver?.(envelope)) ?? { failed: 0, errors: [] })
+            : ((await failing.deliver?.(envelope)) ?? { failed: 1, errors: [] }),
+      }
+
+      const result = await drainOutbox(db, drainBus)
+
+      expect(result).toMatchObject({ deadLettered: 1 })
+      expect(announced).toHaveBeenCalledOnce()
+      expect(announced.mock.calls[0]?.[0]).toMatchObject({
+        name: EVENT_DEAD_LETTERED,
+        data: {
+          outboxId: row.id,
+          name: "payment.completed",
+          error: "settlement rejected",
+          payload: { paymentSessionId: "pmss_1" },
+        },
+      })
+    })
+
+    it("dead-letters a permanent failure instead of spending the retry budget", async () => {
+      // voyant#4639: a misconfigured indexer failed identically on all eight
+      // attempts, and the last attempt's message is the one that survives in
+      // `last_error` — so the configuration fault was reported as a timeout.
+      const [row] = await insertOutboxEvents(db, [{ name: "product.content.changed", data: {} }])
+      if (!row) throw new Error("insert failed")
+      const bus = {
+        deliver: async () => ({
+          attempted: 1,
+          failed: 1,
+          timedOut: 0,
+          permanent: 1,
+          errors: ["vectorDimensions is not configured"],
+        }),
+      } as unknown as Parameters<typeof drainOutbox>[1]
+
+      const result = await drainOutbox(db, bus)
+
+      expect(result).toMatchObject({ claimed: 1, deadLettered: 1, retried: 0 })
+      const [stored] = await db
+        .select()
+        .from(eventOutboxTable)
+        .where(sql`${eventOutboxTable.id} = ${row.id}`)
+      expect(stored?.status).toBe("failed")
+      expect(stored?.attempts).toBe(1)
+      expect(stored?.lastError).toContain("vectorDimensions")
+    })
+
+    it("counts a delivery that reached no subscriber, rather than calling it handled", async () => {
+      // voyant#4640: an event nobody consumes produces no errors, so it is
+      // recorded exactly like one every subscriber handled.
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+      await insertOutboxEvents(db, [{ name: "nobody.listens", data: {} }])
+      const bus = createEventBus()
+
+      const result = await drainOutbox(db, bus)
+
+      expect(result).toMatchObject({ claimed: 1, delivered: 1, unconsumed: 1 })
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("has no subscriber"))
+      warnSpy.mockRestore()
+    })
+
     it("delivers claimed rows through the bus and completes them", async () => {
       const bus = createEventBus()
       const handler = vi.fn()
@@ -224,6 +326,33 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
       const stats = await getOutboxStats(db)
       expect(stats.pending).toBe(1)
       errorSpy.mockRestore()
+    })
+
+    // voyant#4634: a tenant outbox showed `booking.contract_document.requested`
+    // delivered, attempts 1, no error — while nothing in the repository
+    // subscribed to it. `Promise.all([])` resolves to `[]`, so "consumed by
+    // every subscriber" and "consumed by nobody" were the same recorded row.
+    it("names the events it delivered to nobody", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+      const bus = createEventBus()
+      bus.subscribe("heard", vi.fn())
+      await insertOutboxEvents(db, [
+        { name: "heard", data: {}, metadata: { eventId: "evt_heard" } },
+        { name: "unheard", data: {}, metadata: { eventId: "evt_unheard_1" } },
+        { name: "unheard", data: {}, metadata: { eventId: "evt_unheard_2" } },
+      ])
+
+      const result = await drainOutbox(db, bus)
+
+      // Still delivered — the point is that the count now says so out loud.
+      expect(result).toMatchObject({
+        claimed: 3,
+        delivered: 3,
+        unconsumed: 2,
+        unconsumedEventTypes: ["unheard"],
+      })
+      expect((await getOutboxStats(db)).delivered).toBe(3)
+      warnSpy.mockRestore()
     })
 
     it("returns an empty result when nothing is due", async () => {

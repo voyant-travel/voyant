@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/finance",
-  "version": "0.248.0",
+  "version": "0.249.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -71,7 +71,8 @@
     "hono": "catalog:",
     "rrule": "^2.8.1",
     "zod": "catalog:",
-    "@voyant-travel/tools": "workspace:^"
+    "@voyant-travel/tools": "workspace:^",
+    "@voyant-travel/schema-kit": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/webhook-delivery": "workspace:^",
