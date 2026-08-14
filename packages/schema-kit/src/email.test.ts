@@ -5,7 +5,7 @@ import { emailAddress, emailPattern } from "./email.js"
 
 /**
  * The load-bearing claim of voyant#4598's fix is that swapping zod's default
- * email pattern for a lookaround-free one does not weaken validation. Assert it
+ * email pattern for a lookaround-free one changes no field's verdict. Assert it
  * against zod's default rather than against a hand-written expectation, so the
  * comparison stays honest if zod changes either pattern.
  */
@@ -60,11 +60,35 @@ describe("emailAddress", () => {
     }
   })
 
-  it("additionally accepts three forms RFC 5322 permits and zod's default does not", () => {
-    for (const value of ['"quoted local"@x.co', "postmaster@[192.168.0.1]", "ünï@x.co"]) {
-      expect(zodDefault.safeParse(value).success, `${value} (zod default)`).toBe(false)
-      expect(emailAddress().safeParse(value).success, value).toBe(true)
+  // Parity is the whole claim, so assert it the way it was established: by
+  // differential comparison over generated input, not a curated list that can
+  // only contain cases someone already thought of. Seeded, so a failure is
+  // reproducible rather than a once-in-a-while red.
+  it("agrees with zod's default on every generated input", () => {
+    const alphabet = ["a", "Z", "9", "_", "'", "+", "-", ".", "@", "co", "..", "ü", '"', " "]
+    let seed = 1
+    const next = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      return seed / 2147483648
     }
+    const differences: string[] = []
+    for (let index = 0; index < 20_000; index += 1) {
+      let value = ""
+      const length = 1 + Math.floor(next() * 8)
+      for (let part = 0; part < length; part += 1) {
+        value += alphabet[Math.floor(next() * alphabet.length)]
+      }
+      if (zodDefault.safeParse(value).success !== emailAddress().safeParse(value).success) {
+        differences.push(value)
+      }
+    }
+    expect(differences).toEqual([])
+  })
+
+  // These patterns ship inside every advertised Tool schema, so length is a
+  // running cost charged to the model on every connection — see email.ts.
+  it("is shorter than the pattern it replaces", () => {
+    expect(emailPattern.source.length).toBeLessThan(z.regexes.email.source.length)
   })
 
   it("carries a caller-supplied error message", () => {

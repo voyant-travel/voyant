@@ -11,10 +11,9 @@ import {
 const ZOD_EMAIL =
   "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
 
-/** Zod's `rfc5322Email` alternative, which the workspace standardises on. */
-const RFC5322 =
-  '^(([^<>()\\[\\]\\\\.,;:\\s@"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@"]+)*)|(".+"))@' +
-  "((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$"
+/** The lookaround-free pattern the workspace standardises on (schema-kit). */
+const PORTABLE_EMAIL =
+  "^[A-Za-z0-9_'+-]+(\\.[A-Za-z0-9_'+-]+)*@([A-Za-z0-9][A-Za-z0-9-]*\\.)+[A-Za-z]{2,}$"
 
 test("recognises all four lookaround forms", () => {
   assert.equal(hasLookaround("(?=a)b"), true)
@@ -27,7 +26,7 @@ test("recognises all four lookaround forms", () => {
 test("does not confuse a non-capturing or named group for lookaround", () => {
   assert.equal(hasLookaround("(?:ab)+c"), false)
   assert.equal(hasLookaround("(?<year>[0-9]{4})"), false)
-  assert.equal(hasLookaround(RFC5322), false)
+  assert.equal(hasLookaround(PORTABLE_EMAIL), false)
   assert.equal(hasLookaround("^\\+[1-9]\\d{7,14}$"), false)
 })
 
@@ -78,7 +77,9 @@ test("passes a schema whose patterns are all RE2-safe", () => {
     findUnsupportedPatterns({
       type: "object",
       properties: {
-        email: { anyOf: [{ type: "string", format: "email", pattern: RFC5322 }, { type: "null" }] },
+        email: {
+          anyOf: [{ type: "string", format: "email", pattern: PORTABLE_EMAIL }, { type: "null" }],
+        },
         phone: { type: "string", pattern: "^\\+[1-9]\\d{7,14}$" },
         note: { type: "string" },
       },

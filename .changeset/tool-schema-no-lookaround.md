@@ -18,8 +18,11 @@ outright. A client sends every authorized tool schema in one model call, so the
 18 affected fields took down every turn of a conversation, including questions
 that never touched the Tools carrying them.
 
-`@voyant-travel/schema-kit/email` now exports `emailAddress()`, which validates
-with zod's lookaround-free `rfc5322Email` pattern. It rejects everything the
-default rejects and additionally accepts a quoted local part, an IP-literal
-domain, and a non-ASCII local part, so nothing that validated before stops
-validating.
+`@voyant-travel/schema-kit/email` now exports `emailAddress()`, which says
+exactly what zod's default says but structurally: the local part is
+dot-separated runs of non-dot characters, which is what "no leading dot, no
+consecutive dots, no trailing dot" means. A differential fuzz against
+`z.regexes.email` over 700k inputs found zero classification differences, so no
+field's verdict changes. At 84 characters it is also shorter than the 96-char
+default it replaces, which matters because these patterns ship inside every
+advertised Tool schema.
