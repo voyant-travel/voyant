@@ -6,7 +6,9 @@
     "",
     "A spec belongs here as soon as it is generated rather than hand-written.",
     "Adding one costs a few seconds of check time; leaving one out costs a",
-    "published contract that silently stops describing the deployment."
+    "published contract that silently stops describing the deployment.",
+    "",
+    "A generator here also stamps `x-voyant-key-kind` (voyant#4625), which reads the resolved deployment graph \u2014 so `verify:openapi-key-kind`, which generates that graph, runs BEFORE this check in the chain. Reordering them makes every generator fail with \"deployment-graph.generated.json is missing\"."
   ],
   "generators": [
     {
