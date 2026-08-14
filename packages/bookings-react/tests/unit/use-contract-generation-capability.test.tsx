@@ -14,7 +14,10 @@ import { useBookingContractGenerationCapability } from "../../src/hooks/use-cont
 function CapabilityProbe() {
   const capability = useBookingContractGenerationCapability()
   return (
-    <span data-available={String(capability.available)} data-resolving={String(capability.resolving)}>
+    <span
+      data-available={String(capability.available)}
+      data-resolving={String(capability.resolving)}
+    >
       probe
     </span>
   )
