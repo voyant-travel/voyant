@@ -302,6 +302,11 @@ describe("selected Operator graph runtime composition", () => {
       "customer.signal.created",
       "invoice.settled",
       "payment.completed",
+      // voyant#4645 added a staff alert for a stranded payment settlement, which
+      // subscribes to the outbox's own dead-letter event. It landed without this
+      // line because `operator#test` was a turbo cache hit on main and did not
+      // run; the first change to invalidate that key surfaced it.
+      "event.dead_lettered",
     ])
     // Confirmation priority is unchanged by the staff alerts: the reminder
     // subscriber for `booking.confirmed` still registers before any staff one,

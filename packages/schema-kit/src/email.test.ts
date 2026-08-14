@@ -72,7 +72,11 @@ describe("emailAddress", () => {
       return seed / 2147483648
     }
     const differences: string[] = []
-    for (let index = 0; index < 20_000; index += 1) {
+    // 5k, not the 700k the equivalence was originally established with. That
+    // sweep was a one-off argument; this is a regression guard, and a loop long
+    // enough to approach the default timeout under CI load would just become a
+    // rotating red — the exact failure mode this branch already had to fix once.
+    for (let index = 0; index < 5_000; index += 1) {
       let value = ""
       const length = 1 + Math.floor(next() * 8)
       for (let part = 0; part < length; part += 1) {

@@ -43,8 +43,20 @@ import {
  * roughly the old ~880-byte median, which is the regression worth catching. A
  * ceiling only a few bytes above the measurement would be a tripwire that fires on
  * routine wording changes, which trains people to raise it without reading.
+ *
+ * **Raised 3,800 -> 5,000 for voyant#4592.** That change gives every `tools/list`
+ * entry a positive `_meta` marker so a client can tell a server-owned tool from a
+ * registry Tool with broken metadata — the distinction whose absence made Max
+ * discard whole tenant catalogues. All five tier-0 entries now carry
+ * `serverToolMeta`, which is a deliberate ~85 bytes each: measured **4,155 bytes**,
+ * still 5 tools, still no domain tool eager (the per-tool breakdown in `diagnose`
+ * confirms it). Headroom stays at 845 — under the ~880 an eagerly-registered
+ * domain tool costs — so the tripwire this ratchet exists for is unchanged.
+ *
+ * It landed on main without this adjustment because `operator#test` was a turbo
+ * cache hit there and never ran.
  */
-const PAYLOAD_CEILING_BYTES = 3_800
+const PAYLOAD_CEILING_BYTES = 5_000
 
 /**
  * Ceiling for the AGGREGATE describe schema of the collapsed READ surface — the
