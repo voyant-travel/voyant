@@ -740,6 +740,33 @@ export function createBookingSessionModule(
     return resolved.status === "available" ? resolved.requirements : undefined
   }
 
+  /**
+   * A Session whose money is with a processor is frozen against anything that
+   * would release its Holds.
+   *
+   * Quoting, renewing, re-selecting and re-holding all tear the live Holds down
+   * so the shopper can start again — correct while they are shopping, and
+   * exactly wrong once they are paying. The Hold is the seat the payment is
+   * being collected for, and a storefront polling its "payment is confirming"
+   * screen is indistinguishable from a shopper still browsing: in voyant#4636
+   * that gave the seat back three seconds before the money landed, and the
+   * settlement that arrived after had nothing left to commit.
+   *
+   * Not a hazard for the shopper to route around — it resolves by itself the
+   * moment the payment does, in either direction.
+   */
+  async function rejectWhilePaymentInFlight(
+    session: BookingSessionInternalRecord,
+  ): Promise<BookingSessionOutcomeV1 | null> {
+    const inFlight = await options.ports.payments?.hasInFlight?.({ bookingSessionId: session.id })
+    return inFlight
+      ? {
+          kind: "rejected",
+          error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
+        }
+      : null
+  }
+
   function rejectRevision(
     expectedRevision: number,
     session: BookingSessionInternalRecord,
@@ -1027,6 +1054,8 @@ export function createBookingSessionModule(
             error: { kind: "renewal_not_allowed", reason: "absolute_lifetime_exceeded" },
           })
         }
+        const renewingWhilePaying = await rejectWhilePaymentInFlight(session)
+        if (renewingWhilePaying) return completeAndReturn(repository, claim.id, renewingWhilePaying)
 
         await releaseLiveHolds(repository, options.ports, session, access, at, tx)
         await supersedeActiveQuotes(repository, session.id)
@@ -1080,6 +1109,10 @@ export function createBookingSessionModule(
           if (rejection) return completeAndReturn(repository, claim.id, rejection)
           throw error
         }
+        const reselectingWhilePaying = await rejectWhilePaymentInFlight(session)
+        if (reselectingWhilePaying) {
+          return completeAndReturn(repository, claim.id, reselectingWhilePaying)
+        }
         await releaseLiveHolds(repository, options.ports, session, access, at, tx)
         session.statePayload = statePayload
         session.revision += 1
@@ -1117,18 +1150,8 @@ export function createBookingSessionModule(
         const revisionRejected = rejectRevision(input.expectedRevision, session)
         if (revisionRejected) return completeAndReturn(repository, claim.id, revisionRejected)
 
-        // Re-quoting is destructive — it releases the live Holds and supersedes
-        // the Quotes below — so it cannot run while a processor holds the
-        // shopper's money. A storefront polling its "payment is confirming"
-        // screen looks identical to a shopper still browsing, and letting it
-        // through gave the seat back seconds before the money landed
-        // (voyant#4636).
-        if (await options.ports.payments?.hasInFlight?.({ bookingSessionId: session.id })) {
-          return completeAndReturn(repository, claim.id, {
-            kind: "rejected",
-            error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
-          })
-        }
+        const quotingWhilePaying = await rejectWhilePaymentInFlight(session)
+        if (quotingWhilePaying) return completeAndReturn(repository, claim.id, quotingWhilePaying)
 
         await releaseLiveHolds(repository, options.ports, session, access, at, tx)
         await supersedeActiveQuotes(repository, session.id)
@@ -1193,6 +1216,9 @@ export function createBookingSessionModule(
         if (claim.status === "conflict") return idempotencyConflict()
         const revisionRejected = rejectRevision(input.expectedRevision, session)
         if (revisionRejected) return completeAndReturn(repository, claim.id, revisionRejected)
+
+        const holdingWhilePaying = await rejectWhilePaymentInFlight(session)
+        if (holdingWhilePaying) return completeAndReturn(repository, claim.id, holdingWhilePaying)
 
         const quote = await loadUsableQuote(repository, input.quoteId, session, at)
         if (quote === "expired") {

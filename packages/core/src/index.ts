@@ -70,7 +70,12 @@ export type {
   SubscribeOptions,
   Subscription,
 } from "./events.js"
-export { createEventBus, generateEventId } from "./events.js"
+export {
+  createEventBus,
+  generateEventId,
+  isPermanentSubscriberError,
+  PermanentSubscriberError,
+} from "./events.js"
 export { hooks } from "./hooks.js"
 export type {
   LegacyPathUsageRow,

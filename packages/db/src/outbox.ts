@@ -38,7 +38,19 @@ export interface DrainOutboxOptions {
 export interface DrainOutboxResult {
   claimed: number
   delivered: number
+  /**
+   * Rows delivered to nobody — no subscriber was registered for the event.
+   *
+   * Counted within `delivered`, because there is nothing to retry: another
+   * attempt cannot summon a subscriber. Counted separately because it is not
+   * the same thing as being handled, and reporting only `delivered` is how an
+   * event type nobody consumes keeps a clean record indefinitely
+   * (voyant#4640).
+   */
+  unconsumed: number
   retried: number
+  /** Failures that were a subscriber timeout rather than a throw. */
+  timedOut: number
   deadLettered: number
   batches: number
   durationMs: number
@@ -158,16 +170,22 @@ export async function failOutboxEvent(
   db: DrizzleClient,
   id: string,
   error: string,
+  options: { permanent?: boolean } = {},
 ): Promise<"pending" | "failed" | null> {
   // Truncate pathological error strings — this is a diagnostic, not a log sink.
   const lastError = error.length > 2000 ? `${error.slice(0, 2000)}…` : error
+  // A permanent failure skips the remaining attempts. They would fail
+  // identically, and the last one's message is the one that survives in
+  // `last_error` — which is how a configuration fault ends up reported as a
+  // timeout (voyant#4639).
+  const permanent = options.permanent === true
   const rows = (await (db as AnyDb).execute(sql`
     UPDATE ${eventOutboxTable}
     SET
       "last_error" = ${lastError},
-      "status" = CASE WHEN "attempts" >= "max_attempts" THEN 'failed' ELSE "status" END,
+      "status" = CASE WHEN ${permanent} OR "attempts" >= "max_attempts" THEN 'failed' ELSE "status" END,
       "next_attempt_at" = CASE
-        WHEN "attempts" >= "max_attempts" THEN "next_attempt_at"
+        WHEN ${permanent} OR "attempts" >= "max_attempts" THEN "next_attempt_at"
         ELSE now() + (
           least(${BACKOFF_BASE_MS} * power(2, "attempts"), ${BACKOFF_CAP_MS})
           * (0.8 + random() * 0.4)
@@ -272,7 +290,9 @@ export async function drainOutbox(
   const result: DrainOutboxResult = {
     claimed: 0,
     delivered: 0,
+    unconsumed: 0,
     retried: 0,
+    timedOut: 0,
     deadLettered: 0,
     batches: 0,
     durationMs: 0,
@@ -297,11 +317,17 @@ export async function drainOutbox(
       const envelope = outboxRowToEnvelope(row)
       let failedCount = 0
       let errors: string[] = []
+      let attempted = -1
+      let timedOutCount = 0
+      let permanentCount = 0
       try {
         if (bus.deliver) {
           const delivery = await bus.deliver(envelope)
           failedCount = delivery.failed
           errors = delivery.errors
+          attempted = delivery.attempted
+          timedOutCount = delivery.timedOut ?? 0
+          permanentCount = delivery.permanent ?? 0
         } else if (bus.emit) {
           // Third-party bus without failure reporting: emit is
           // fire-and-forget; count as success.
@@ -317,10 +343,17 @@ export async function drainOutbox(
       if (failedCount === 0) {
         await completeOutboxEvent(db, row.id)
         result.delivered += 1
+        if (attempted === 0) {
+          result.unconsumed += 1
+          console.warn(
+            `[outbox] "${envelope.name}" has no subscriber; delivered to nobody (${row.id})`,
+          )
+        }
         return
       }
+      result.timedOut += timedOutCount
       const error = errors.join("; ")
-      const status = await failOutboxEvent(db, row.id, error)
+      const status = await failOutboxEvent(db, row.id, error, { permanent: permanentCount > 0 })
       if (status !== "failed") {
         result.retried += 1
         return

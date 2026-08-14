@@ -219,6 +219,48 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
       })
     })
 
+    it("dead-letters a permanent failure instead of spending the retry budget", async () => {
+      // voyant#4639: a misconfigured indexer failed identically on all eight
+      // attempts, and the last attempt's message is the one that survives in
+      // `last_error` — so the configuration fault was reported as a timeout.
+      const [row] = await insertOutboxEvents(db, [{ name: "product.content.changed", data: {} }])
+      if (!row) throw new Error("insert failed")
+      const bus = {
+        deliver: async () => ({
+          attempted: 1,
+          failed: 1,
+          timedOut: 0,
+          permanent: 1,
+          errors: ["vectorDimensions is not configured"],
+        }),
+      } as unknown as Parameters<typeof drainOutbox>[1]
+
+      const result = await drainOutbox(db, bus)
+
+      expect(result).toMatchObject({ claimed: 1, deadLettered: 1, retried: 0 })
+      const [stored] = await db
+        .select()
+        .from(eventOutboxTable)
+        .where(sql`${eventOutboxTable.id} = ${row.id}`)
+      expect(stored?.status).toBe("failed")
+      expect(stored?.attempts).toBe(1)
+      expect(stored?.lastError).toContain("vectorDimensions")
+    })
+
+    it("counts a delivery that reached no subscriber, rather than calling it handled", async () => {
+      // voyant#4640: an event nobody consumes produces no errors, so it is
+      // recorded exactly like one every subscriber handled.
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+      await insertOutboxEvents(db, [{ name: "nobody.listens", data: {} }])
+      const bus = createEventBus()
+
+      const result = await drainOutbox(db, bus)
+
+      expect(result).toMatchObject({ claimed: 1, delivered: 1, unconsumed: 1 })
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("has no subscriber"))
+      warnSpy.mockRestore()
+    })
+
     it("delivers claimed rows through the bus and completes them", async () => {
       const bus = createEventBus()
       const handler = vi.fn()

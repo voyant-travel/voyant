@@ -301,16 +301,48 @@ describe("Booking Session v1 owned tracer", () => {
     const { session, quote, hold } = await createQuoteAndHold(harness)
     payment.inFlight = true
 
-    const requoted = await harness.module.quoteSession(
-      session.id,
-      { expectedRevision: session.revision, idempotencyKey: "requote_while_paying" },
-      ANONYMOUS_ACCESS,
-    )
+    const frozen = { kind: "payment_in_flight", nextAction: "await_payment_outcome" }
+    const revision = () => harness.repository.sessions.get(session.id)!.revision
 
-    expect(requoted).toEqual({
-      kind: "rejected",
-      error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
-    })
+    // Every door that releases the live Holds, not just the one the incident
+    // came through.
+    expect(
+      await harness.module.quoteSession(
+        session.id,
+        { expectedRevision: revision(), idempotencyKey: "requote_while_paying" },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.renewSession(
+        session.id,
+        { expectedRevision: revision(), extensionMs: 60_000, idempotencyKey: "renew_while_paying" },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.updateSession(
+        session.id,
+        {
+          expectedRevision: revision(),
+          selection: { departureSlotId: "slot_later" },
+          idempotencyKey: "reselect_while_paying",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.placeHold(
+        session.id,
+        {
+          expectedRevision: revision(),
+          quoteId: quote.id,
+          idempotencyKey: "rehold_while_paying",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+
     expect(harness.repository.quotes.get(quote.id)?.state).toBe("active")
     expect(harness.repository.holds.get(hold.id)?.state).toBe("active")
   })
