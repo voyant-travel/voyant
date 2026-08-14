@@ -291,6 +291,119 @@ describe("Booking Session v1 owned tracer", () => {
     ])
   })
 
+  it("refuses to re-quote a Session whose money is with a processor", async () => {
+    // voyant#4636, from the live rows: a shopper parked on the "payment is
+    // confirming" screen kept quoting — 31 Quotes over 20 minutes, every one
+    // superseding the last and releasing the Hold behind it. The seat was given
+    // back three seconds before the money landed.
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.inFlight = true
+
+    const frozen = { kind: "payment_in_flight", nextAction: "await_payment_outcome" }
+    const revision = () => harness.repository.sessions.get(session.id)!.revision
+
+    // Every door that releases the live Holds, not just the one the incident
+    // came through.
+    expect(
+      await harness.module.quoteSession(
+        session.id,
+        { expectedRevision: revision(), idempotencyKey: "requote_while_paying" },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.renewSession(
+        session.id,
+        { expectedRevision: revision(), extendBySeconds: 60, idempotencyKey: "renew_while_paying" },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.updateSession(
+        session.id,
+        {
+          expectedRevision: revision(),
+          selection: { departureSlotId: "slot_later" },
+          idempotencyKey: "reselect_while_paying",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+    expect(
+      await harness.module.placeHold(
+        session.id,
+        {
+          expectedRevision: revision(),
+          quoteId: quote.id,
+          idempotencyKey: "rehold_while_paying",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).toEqual({ kind: "rejected", error: frozen })
+
+    expect(harness.repository.quotes.get(quote.id)?.state).toBe("active")
+    expect(harness.repository.holds.get(hold.id)?.state).toBe("active")
+  })
+
+  it("settles the Quote the payment was collected for, not the Session's newest", async () => {
+    // The second guard, for the Quotes a shopper minted before the payment went
+    // in flight. Settlement took "the Session's one active Quote", so it read a
+    // Quote nobody had paid for and was refused `quote_failure` on every retry
+    // until the outbox gave up: money captured, no Booking.
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id }
+
+    // A Quote the shopper minted before the payment went in flight, which the
+    // guard above no longer prevents. Superseded directly rather than by
+    // re-quoting, because re-quoting also releases the Hold and this is about
+    // which Quote settlement picks.
+    harness.repository.quotes.get(quote.id)!.state = "superseded"
+    const session_ = harness.repository.sessions.get(session.id)!
+    session_.revision += 1
+
+    const settled = await harness.module.commitPaidSession({
+      bookingSessionId: session.id,
+      paymentSessionId: "payment_session_1",
+    })
+
+    expect(harness.inventory.bookingIds).toEqual([settled.bookingId])
+    expect(harness.repository.quotes.get(quote.id)?.state).toBe("consumed")
+    expect(payment.transfers).toEqual([
+      expect.objectContaining({
+        paymentSessionId: "payment_session_1",
+        bookingSessionId: session.id,
+        bookingId: settled.bookingId,
+      }),
+    ])
+  })
+
+  it("leaves the shopper's Hold alone when a settlement attempt is refused", async () => {
+    // The second half of voyant#4636: the refusal path released the live Holds,
+    // so the first failed attempt took away the seat the money was collected
+    // for and every retry after it failed for a second, self-inflicted reason.
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id }
+    // An expired Quote is the one thing settlement still refuses: it is a real
+    // failure to surface, not a race to absorb.
+    harness.repository.quotes.get(quote.id)!.state = "expired"
+
+    await expect(
+      harness.module.commitPaidSession({
+        bookingSessionId: session.id,
+        paymentSessionId: "payment_session_1",
+      }),
+    ).rejects.toThrow(/booking_session_settlement_commit_rejected/)
+
+    expect(harness.repository.holds.get(hold.id)?.state).toBe("active")
+    expect(harness.repository.sessions.get(session.id)?.state).toBe("active")
+  })
+
   it("commits a paid Session without the shopper capability and converges retries", async () => {
     const payment = createPaymentHarness()
     payment.established = true
@@ -2004,7 +2117,14 @@ function createPaymentHarness() {
   }> = []
   const expirations: Array<{ tx: unknown; bookingSessionId: string; at: Date }> = []
   const harness = {
-    established: false,
+    /**
+     * `true` for a payment that records nothing about what it was collected
+     * for — the pre-voyant#4636 shape, which settlement still supports by
+     * falling back to the Session's single active Quote. The object form is
+     * what production writes.
+     */
+    established: false as boolean | { quoteId: string; holdId: string },
+    inFlight: false,
     prepareCalls: 0,
     transfers,
     expirations,
@@ -2029,6 +2149,12 @@ function createPaymentHarness() {
           expiresAt: "2026-08-01T12:01:00.000Z",
         },
       }
+    },
+    async hasInFlight() {
+      return harness.inFlight
+    },
+    async describeEstablished() {
+      return typeof harness.established === "object" ? harness.established : null
     },
     async transferToBooking(input) {
       transfers.push(input)
@@ -2073,6 +2199,109 @@ function createBankTransferHarness() {
   }
   return harness
 }
+
+/**
+ * voyant#4625 §3 — confirmation, not new behaviour.
+ *
+ * Under the target model a publishable key may open, quote, hold and commit a
+ * Booking Session, because the key is never the authority: the session's own
+ * capability, its revision and its idempotency key are. These pin that, so a
+ * later change cannot quietly make the credential load-bearing again.
+ *
+ * Nothing in this suite presents a key of any kind. If any of it started
+ * depending on one, the model would have moved.
+ */
+describe("Booking Session v1 authority under a publishable key", () => {
+  it("refuses a session action without the session's own capability", async () => {
+    const harness = createHarness()
+    const created = await harness.module.createSession(
+      {
+        idempotencyKey: nextCreateKey("pk_authority_capability"),
+        target: { kind: "product", productId: "prod_owned_1" },
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+
+    await expect(
+      harness.module.resumeSession(created.session.id, {
+        actorKind: "anonymous",
+        ...STOREFRONT_ACCESS,
+      }),
+    ).resolves.toMatchObject({ kind: "rejected", error: { kind: "capability_required" } })
+  })
+
+  it("refuses a stale revision even with the right capability", async () => {
+    const harness = createHarness()
+    const created = await harness.module.createSession(
+      {
+        idempotencyKey: nextCreateKey("pk_authority_revision"),
+        target: { kind: "product", productId: "prod_owned_1" },
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+
+    await expect(
+      harness.module.quoteSession(
+        created.session.id,
+        {
+          expectedRevision: created.session.revision + 5,
+          idempotencyKey: "pk_authority_stale_revision",
+        },
+        ANONYMOUS_ACCESS,
+      ),
+    ).resolves.toMatchObject({ kind: "rejected" })
+  })
+
+  it("replays a repeated idempotency key instead of acting twice", async () => {
+    const harness = createHarness()
+    const created = await harness.module.createSession(
+      {
+        idempotencyKey: nextCreateKey("pk_authority_idempotency"),
+        target: { kind: "product", productId: "prod_owned_1" },
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+
+    const first = await harness.module.quoteSession(
+      created.session.id,
+      { expectedRevision: created.session.revision, idempotencyKey: "pk_authority_quote_once" },
+      ANONYMOUS_ACCESS,
+    )
+    const replay = await harness.module.quoteSession(
+      created.session.id,
+      { expectedRevision: created.session.revision, idempotencyKey: "pk_authority_quote_once" },
+      ANONYMOUS_ACCESS,
+    )
+
+    expect(first.kind).not.toBe("rejected")
+    expect(replay).toEqual(first)
+  })
+
+  it("pins the session to the storefront that opened it", async () => {
+    // Origin binding is a browser control, so the session carries its own
+    // storefront provenance rather than trusting the request's.
+    const harness = createHarness()
+    const created = await harness.module.createSession(
+      {
+        idempotencyKey: nextCreateKey("pk_authority_storefront"),
+        target: { kind: "product", productId: "prod_owned_1" },
+      },
+      ANONYMOUS_ACCESS,
+    )
+    if (created.kind !== "session_created") throw new Error("session not created")
+
+    await expect(
+      harness.module.resumeSession(created.session.id, {
+        actorKind: "anonymous",
+        capability: TEST_CAPABILITY,
+        storefront: { storefrontId: "sf_other", channelId: "chan_other" },
+      }),
+    ).resolves.toMatchObject({ kind: "rejected", error: { kind: "not_authorized" } })
+  })
+})
 
 function nextCreateKey(prefix: string): string {
   createCounter += 1

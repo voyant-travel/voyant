@@ -345,6 +345,16 @@ describe.skipIf(!DB_AVAILABLE)("booking-confirmed contract generation", () => {
     await eventBus.emit("booking.confirmed", payload, metadata)
     // Redelivery must replay the entry rather than append a second one.
     await eventBus.emit("booking.confirmed", payload, metadata)
+    // And so must a *fresh* confirmation of the same booking failing the same
+    // way — `overrideBookingStatus` re-emits `booking.confirmed` on a
+    // correction back to confirmed, with a new event id. That id must not
+    // reach the fingerprint: the key is booking-and-reason, so a fingerprint
+    // that moved under it would throw instead of replaying, and durable
+    // delivery would retry a legitimate confirmation into a dead letter.
+    await eventBus.emit("booking.confirmed", payload, {
+      ...metadata,
+      eventId: `evt_finance_booking_reconfirmed_${booking!.id}`,
+    })
 
     const ledgerRows = await db
       .select()

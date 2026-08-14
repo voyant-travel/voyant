@@ -1,11 +1,12 @@
 {
   "name": "@voyant-travel/schema-kit",
-  "version": "0.118.8",
+  "version": "0.118.9",
   "description": "Shared schema primitives for Voyant contract packages — TypeID validators and query-parameter coercion.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./email": "./src/email.ts",
     "./typeid": "./src/typeid/index.ts",
     "./query-params": "./src/query-params.ts",
     "./kms": "./src/kms.ts"
@@ -28,6 +29,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./email": {
+        "types": "./dist/email.d.ts",
+        "import": "./dist/email.js",
+        "default": "./dist/email.js"
       },
       "./typeid": {
         "types": "./dist/typeid/index.d.ts",

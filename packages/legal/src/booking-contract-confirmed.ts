@@ -268,9 +268,16 @@ const UNFULFILLED_BOOKING_CONTRACT_SUMMARIES: Record<UnfulfilledBookingContractR
  *
  * Keyed per booking AND per reason, so redelivery replays instead of appending,
  * while a later confirmation that fails differently still records. The
- * fingerprint deliberately excludes `missingPrerequisites`: that list can shift
- * between deliveries of the same reason, and a fingerprint that moved under a
- * stable key would make `appendEntry` throw rather than replay.
+ * fingerprint carries exactly what the key carries — booking and reason — and
+ * nothing that varies per delivery. `missingPrerequisites` can shift between
+ * deliveries of the same reason, and the source event id is a fresh value on
+ * every emission: `bookingsService.overrideBookingStatus` re-emits
+ * `booking.confirmed` when a booking is corrected back to confirmed — and
+ * durable redelivery is not the only replay — so a second confirmation
+ * would arrive under the same key with a moved fingerprint and make
+ * `appendEntry` throw instead of replaying — which in durable delivery is a
+ * retry loop ending in a dead letter, not an idempotent no-op. The event id
+ * still travels, on the entry's `correlationId`, where it does not key anything.
  */
 export async function recordUnfulfilledBookingContract(
   db: PostgresJsDatabase,
@@ -286,7 +293,7 @@ export async function recordUnfulfilledBookingContract(
   if (!booking) return { recorded: false }
 
   const sourceEventId = resolveSourceEventId(input.event)
-  const commandPayload = { bookingId, sourceEventId, reason: input.reason }
+  const commandPayload = { bookingId, reason: input.reason }
   const idempotencyKey = `booking-confirmed-unfulfilled:${bookingId}:${input.reason}`
   const idempotencyFingerprint = await buildActionApprovalCommandFingerprint({
     actionName: LEGAL_BOOKING_CONTRACT_CONFIRMED_ACTION_ID,

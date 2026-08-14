@@ -53,8 +53,10 @@ export type {
   VoyantAuthContext,
   VoyantCallerType,
   VoyantPermission,
+  VoyantStorefrontKeyKind,
   VoyantVariables,
 } from "./env.js"
+export { ANONYMOUS_STOREFRONT_USER_ID, identifiedUserId } from "./env.js"
 export type {
   DeliveryResult,
   EmitOptions,
@@ -69,7 +71,12 @@ export type {
   SubscribeOptions,
   Subscription,
 } from "./events.js"
-export { createEventBus, generateEventId } from "./events.js"
+export {
+  createEventBus,
+  generateEventId,
+  isPermanentSubscriberError,
+  PermanentSubscriberError,
+} from "./events.js"
 export { hooks } from "./hooks.js"
 export type {
   LegacyPathUsageRow,
@@ -205,3 +212,9 @@ export type {
   StepRunFn,
 } from "./saga.js"
 export { createSaga, SagaError, sagaStep } from "./saga.js"
+export {
+  classifyStorefrontKeyToken,
+  hashStorefrontKeyToken,
+  STOREFRONT_KEY_HEADER,
+  STOREFRONT_KEY_PREFIXES,
+} from "./storefront-key-kind.js"

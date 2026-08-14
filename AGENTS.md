@@ -35,10 +35,12 @@ checker when a rule is mechanical enough to enforce.
 
 - Module boundaries and what the package split is for:
   `docs/adr/0016-modules-as-components-of-one-deployable.md`
+- Which storefront key kind may reach a public route (and why origin binding is
+  not the boundary): `docs/architecture/storefront-key-capability-line.md`
 
 ## Architecture Checkers
 
-`verify:architecture` runs a chain of checks. Eight are declarative and take new
+`verify:architecture` runs a chain of checks. Nine are declarative and take new
 rules as data rather than code:
 
 | Check | Enforces | Where rules live |
@@ -51,6 +53,7 @@ rules as data rather than code:
 | `verify:supply-chain` | no tracked lockfile resolves a known-compromised release | `scripts/checks/supply-chain/compromised-packages.json` |
 | `verify:route-conformance` | a mounted route array matches the doc that describes it | `scripts/checks/routes/route-sets.json` |
 | `verify:openapi-drift` | a generated OpenAPI document matches the routes it came from | `scripts/checks/openapi/generated-specs.json` |
+| `verify:openapi-key-kind` | every public route states which storefront key kind may call it, and every published operation is stamped with it | `scripts/checks/openapi/secret-only-public-bundles.json` |
 
 `verify:symbol-policy` takes rules in two polarities. `absentFrom` is
 default-allow — it names the files a symbol may not appear in, and every new
@@ -58,6 +61,17 @@ file is permitted until someone remembers to add it. `onlyIn` is default-deny �
 it names the only paths (globs allowed) that may reference the symbol, so a new
 file anywhere else fails on its own. An authority wants `onlyIn`: it is the
 difference between guarding the meaning and guarding a list of filenames.
+
+Those match **identifiers** through the AST. A **sentinel** — a magic string
+that means something, like the `anonymous-storefront` principal — is a string
+literal, so none of them can see it, and it gets copied instead of imported.
+`literalsOnlyIn` is `onlyIn` for a literal's text: it pins the value to its one
+definition and fires on any other file that writes it, while ignoring the name
+in a comment or an identifier. Copies are not cosmetic. Three files had
+independently agreed that `anonymous-storefront` is not a person; a fourth
+handed it to a payment processor as a stable customer key, which pooled every
+guest checkout into one Stripe Customer
+([#4637](https://github.com/voyant-travel/voyant/issues/4637)).
 
 Three run as ratchets, holding a line rather than demanding it be clean today:
 `verify:table-privacy` (cross-module table reach-ins),
@@ -307,6 +321,11 @@ focused on product code, architecture docs, and quality checkers.
   deployment boundaries.
 - New package routes should use `parseJsonBody(...)` and `parseQuery(...)`
   instead of raw `c.req.json()` or manual `searchParams` parsing.
+- A new `/v1/public/*` route is reachable only with a SECRET storefront key
+  until its API bundle declares `publishable` (or `guardedIntake`, for routes
+  that capture person data with nothing challenging the submitter). Silence is a
+  denial, not an omission — `/v1/public/*` names the audience, not the trust
+  level.
 - Cross-package schema associations should go through link definitions unless
   documented as a narrow vertical-extension exception.
 - Keep routes thin. Routes validate input, resolve runtime services, call domain

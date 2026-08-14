@@ -627,6 +627,34 @@ export function clearUnblockedManualBookingError(
   return previous?.blocksSubmit ? null : previous
 }
 
+/**
+ * The documents this booking asks the server to produce, given what the
+ * deployment can actually produce.
+ *
+ * voyant#4634: `contractAvailable` is optimistic — the capability query answers
+ * after the form has already rendered, so the contract box can be ticked before
+ * the deployment says it has no customer contract template. Disabling the
+ * control at that point is not enough: the tick is still standing and the
+ * request would still carry `contractDocument: true`, which is the same silent
+ * drop this change exists to end. The selection is therefore resolved here,
+ * from the same value the checkbox renders.
+ */
+export function resolveManualBookingDocumentGeneration(input: {
+  generateProforma: boolean
+  generateInvoiceAndContract: boolean
+  contractAvailable: boolean
+}):
+  | { contractDocument: boolean; invoiceDocument: true; invoiceType: "proforma" | "invoice" }
+  | { contractDocument: false; invoiceDocument: false } {
+  if (input.generateProforma) {
+    return { contractDocument: false, invoiceDocument: true, invoiceType: "proforma" }
+  }
+  if (input.generateInvoiceAndContract && input.contractAvailable) {
+    return { contractDocument: true, invoiceDocument: true, invoiceType: "invoice" }
+  }
+  return { contractDocument: false, invoiceDocument: false }
+}
+
 export function ManualBookingCreateForm({
   defaultProductId,
   defaultSlotId,
@@ -684,6 +712,13 @@ export function ManualBookingCreateForm({
   // deployment can render one. It used to be offered unconditionally and drop
   // the contract in silence.
   const contractGeneration = useBookingContractGenerationCapability()
+  // The capability is optimistic while it resolves, so the box can be ticked
+  // before the deployment answers that it cannot honour it — and a `disabled`
+  // that arrives afterwards leaves the tick standing and still submits it.
+  // Derived rather than cleared in an effect so the checkbox and the request
+  // read the same value and cannot disagree for a render.
+  const generateInvoiceAndContractSelected =
+    generateInvoiceAndContract && contractGeneration.available
   const [notifyTraveler, setNotifyTraveler] = React.useState(true)
   const [contact, setContact] = React.useState({
     firstName: "",
@@ -1726,11 +1761,11 @@ export function ManualBookingCreateForm({
       paymentSchedules: paymentRows.length > 0 ? paymentRows : undefined,
       travelCreditRedemption,
       groupMembership,
-      documentGeneration: generateProforma
-        ? { contractDocument: false, invoiceDocument: true, invoiceType: "proforma" as const }
-        : generateInvoiceAndContract
-          ? { contractDocument: true, invoiceDocument: true, invoiceType: "invoice" as const }
-          : { contractDocument: false, invoiceDocument: false },
+      documentGeneration: resolveManualBookingDocumentGeneration({
+        generateProforma,
+        generateInvoiceAndContract,
+        contractAvailable: contractGeneration.available,
+      }),
       suppressNotifications: !notifyTraveler ? true : undefined,
       allowDuplicate: false,
       ...contactPayload,
@@ -2135,7 +2170,7 @@ export function ManualBookingCreateForm({
                   <div className="flex items-center gap-2 text-sm">
                     <Checkbox
                       id="manual-booking-generate-invoice-and-contract"
-                      checked={generateInvoiceAndContract}
+                      checked={generateInvoiceAndContractSelected}
                       disabled={!contractGeneration.available}
                       onCheckedChange={(value) => setGenerateInvoiceAndContract(value === true)}
                     />
