@@ -787,9 +787,6 @@
                         "id": {
                           "type": "string"
                         },
-                        "storefrontId": {
-                          "type": "string"
-                        },
                         "channelId": {
                           "type": "string"
                         },
@@ -836,7 +833,6 @@
                       },
                       "required": [
                         "id",
-                        "storefrontId",
                         "channelId",
                         "productId",
                         "departureId",
@@ -867,9 +863,6 @@
                         "id": {
                           "type": "string"
                         },
-                        "storefrontId": {
-                          "type": "string"
-                        },
                         "channelId": {
                           "type": "string"
                         },
@@ -916,7 +909,6 @@
                       },
                       "required": [
                         "id",
-                        "storefrontId",
                         "channelId",
                         "productId",
                         "departureId",

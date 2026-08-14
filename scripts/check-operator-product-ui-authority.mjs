@@ -97,7 +97,7 @@ const requiredTokens = new Map([
       "StorefrontMessagesProvider",
       "StorefrontScopeProvider",
       "StorefrontShell",
-      "createStorefrontPresentationContribution",
+      "createPublicApiPresentationContribution",
     ],
   ],
   ["packages/public-api-react/package.json", ['"./public-api": "./src/public-api/index.ts"']],
@@ -164,7 +164,7 @@ const standardFrontend = readFileSync(
   join(root, "packages/operator-standard/src/standard-frontend.tsx"),
   "utf8",
 )
-if (standardFrontend.includes("createStorefrontPresentationContribution")) {
+if (standardFrontend.includes("createPublicApiPresentationContribution")) {
   failures.push("operator-standard must consume the graph-selected Storefront presentation factory")
 }
 

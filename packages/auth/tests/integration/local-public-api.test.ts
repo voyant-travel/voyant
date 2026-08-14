@@ -131,13 +131,18 @@ describe.skipIf(!TEST_DATABASE_URL)("local public API adapter", () => {
       allowedOrigins: ["https://shop.example.com"],
     })
 
-    const resolved = await adapter.resolveApiKeyByOrigin(resolveContext, "https://shop.example.com")
-    expect(resolved).not.toBeNull()
+    const resolved = await adapter.resolveApiKeysByOrigin(
+      resolveContext,
+      "https://shop.example.com",
+    )
+    expect(resolved).toHaveLength(2)
   })
 
-  it("refuses to resolve an origin whose keys disagree on a channel", async () => {
-    // What keyless preflight needs is an unambiguous CHANNEL, so disagreement
-    // there is the thing that must fail closed — not sharing an origin.
+  it("returns every live key on an origin, leaving the channel test to the caller", async () => {
+    // Whether two keys on one origin are AMBIGUOUS depends on the channels they
+    // RESOLVE to, and only the caller holds the channel provider. `null` and an
+    // explicit Direct binding are the same channel, so deciding here would deny
+    // an ordinary setup.
     await adapter.issueApiKey(context, {
       kind: "publishable",
       allowedOrigins: ["https://shop.example.com"],
@@ -150,8 +155,8 @@ describe.skipIf(!TEST_DATABASE_URL)("local public API adapter", () => {
     })
 
     expect(
-      await adapter.resolveApiKeyByOrigin(resolveContext, "https://shop.example.com"),
-    ).toBeNull()
+      await adapter.resolveApiKeysByOrigin(resolveContext, "https://shop.example.com"),
+    ).toEqual([])
   })
 
   it("keeps a revoked key out of origin resolution", async () => {
@@ -159,8 +164,8 @@ describe.skipIf(!TEST_DATABASE_URL)("local public API adapter", () => {
     await adapter.revokeApiKey(context, issued.id)
 
     expect(
-      await adapter.resolveApiKeyByOrigin(resolveContext, "https://shop.example.com"),
-    ).toBeNull()
+      await adapter.resolveApiKeysByOrigin(resolveContext, "https://shop.example.com"),
+    ).toEqual([])
   })
 
   it("serves deployment customer-account settings, creating them on first read", async () => {

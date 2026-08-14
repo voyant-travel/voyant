@@ -832,8 +832,8 @@ describe("createOperatorAuthNodeRuntime customer dynamic CORS", () => {
   function corsProvider(): PublicApiRuntimeProvider {
     const provider: Partial<PublicApiRuntimeProvider> = {
       resolveApiKeyByToken: async (_context: unknown, token: string) => (token ? KEY : null),
-      resolveApiKeyByOrigin: async (_context: unknown, origin: string) =>
-        ["https://shop.example.com", "https://preview.example.com"].includes(origin) ? KEY : null,
+      resolveApiKeysByOrigin: async (_context: unknown, origin: string) =>
+        ["https://shop.example.com", "https://preview.example.com"].includes(origin) ? [KEY] : [],
       getCustomerAccountSettings: async () => SETTINGS,
       resolveProviderCredentials: async () => ({}),
     }

@@ -27,10 +27,10 @@ const [
 ])
 
 const packagePorts = {
-  storefront: ["storefrontOffersRuntimePort", "storefrontCustomerPortalRuntimePort"],
-  relationships: ["storefrontIntakeRuntimePort"],
-  notifications: ["storefrontVerificationRuntimePort"],
-  trips: ["storefrontPaymentLinkRuntimePort"],
+  storefront: ["publicApiOffersRuntimePort", "publicApiCustomerPortalRuntimePort"],
+  relationships: ["publicApiIntakeRuntimePort"],
+  notifications: ["publicApiVerificationRuntimePort"],
+  trips: ["publicApiPaymentLinkRuntimePort"],
   legal: ["legalRuntimePort", "legalContractDocumentRuntimePort"],
   inventory: ["inventoryRuntimePort", "inventoryBrochureRuntimePort"],
 }
@@ -50,8 +50,8 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
       violations.push(`deployment-resources.ts must not register or import ${port}`)
     }
     const ownershipToken =
-      packageName === "relationships" && port === "storefrontIntakeRuntimePort"
-        ? "[storefrontIntakeRuntimePortReference.id]"
+      packageName === "relationships" && port === "publicApiIntakeRuntimePort"
+        ? "[publicApiIntakeRuntimePortReference.id]"
         : `[${port}.id]`
     if (!contributors[packageName].includes(ownershipToken)) {
       violations.push(`${packageName} runtime contributor must own ${port}`)

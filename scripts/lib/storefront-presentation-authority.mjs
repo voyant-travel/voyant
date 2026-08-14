@@ -64,7 +64,7 @@ export function checkStorefrontPresentationAuthority({
   ]) {
     if (!hostAdapter.includes(token)) failures.push(`Storefront host adapter must contain ${token}`)
   }
-  if (hostAdapter.includes("createStorefrontPresentationContribution")) {
+  if (hostAdapter.includes("createPublicApiPresentationContribution")) {
     failures.push("Storefront host adapter must not directly select the package factory")
   }
   for (const token of ["z.object", "redirect(", "createFileRoute", "CustomerAccountPage"]) {
@@ -99,13 +99,13 @@ export function checkStorefrontPresentationAuthority({
     failures.push("Storefront intake authority must stay out of the starter")
   }
   if (
-    !relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]") &&
-    !relationshipsContributor.includes("[storefrontIntakeRuntimePortReference.id]")
+    !relationshipsContributor.includes("[publicApiIntakeRuntimePort.id]") &&
+    !relationshipsContributor.includes("[publicApiIntakeRuntimePortReference.id]")
   ) {
     failures.push("Relationships contributor must provide the Storefront intake port")
   }
   for (const token of [
-    "createStorefrontIntakePersistence",
+    "createPublicApiIntakePersistence",
     "relationshipsService.createPerson",
     "customerSignals",
     "requireStorefrontDb",
@@ -118,7 +118,7 @@ export function checkStorefrontPresentationAuthority({
     "presentations: [",
     'id: "@voyant-travel/public-api#presentation.customer"',
     'entry: "@voyant-travel/public-api-react/public-api/presentation-routes"',
-    'export: "createStorefrontPresentationContribution"',
+    'export: "createPublicApiPresentationContribution"',
   ]) {
     if (!graphDeclaration.includes(token)) {
       failures.push(`Storefront selected graph declaration must contain ${token}`)

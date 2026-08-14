@@ -313,7 +313,7 @@ export function createLocalPublicApiAdapter(options: {
       return toApiKeyDto(key)
     },
 
-    async resolveApiKeyByOrigin(context: PublicApiResolveContext, origin: string) {
+    async resolveApiKeysByOrigin(context: PublicApiResolveContext, origin: string) {
       // Preflight authorization is keyless, so it cannot select a single key up
       // front. Exact-origin entries are filtered in SQL via containment;
       // wildcard (`https://*.host`) declarations are matched in memory over the
@@ -339,18 +339,15 @@ export function createLocalPublicApiAdapter(options: {
         isPublicApiOriginAllowed(origin, row.allowedOrigins),
       )
       const byId = new Map([...exactMatches, ...wildcardMatches].map((row) => [row.id, row]))
-      const live = [...byId.values()]
+      // Oldest first, so a caller taking the head gets a stable answer. Several
+      // keys declaring one origin is the ORDINARY case now that the key is the
+      // unit — a site's publishable key and its BFF's secret key are two rows on
+      // the same origin. Whether that is AMBIGUOUS depends on the channels they
+      // resolve to, which only the caller can determine.
+      return [...byId.values()]
         .filter((row) => !row.revokedAt)
         .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
-      if (live.length === 0) return null
-      // Several keys declaring one origin is the ORDINARY case now that the key
-      // is the unit — a site's publishable key and its BFF's secret key are two
-      // rows on the same origin. What preflight actually needs is an
-      // unambiguous CHANNEL, so agreement on that is the test, not a ban on
-      // sharing an origin (which is what the retired storefront model enforced).
-      const channels = new Set(live.map((row) => row.channelId ?? null))
-      if (channels.size > 1) return null
-      return toApiKeyDto(live[0] as SelectPublicApiKey)
+        .map(toApiKeyDto)
     },
 
     async getCustomerAccountSettings(context) {

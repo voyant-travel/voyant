@@ -139,9 +139,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS "customer_account_credentials_provider_unique"
   ON "customer_account_credentials" ("provider");
 
 -- One credential bundle per provider now, so a deployment with two storefronts
--- configuring the same provider has to collapse. Oldest wins, matching the
--- settings tie-break above: both halves of the customer-auth configuration come
--- from the same storefront rather than being interleaved from two.
+-- configuring the same provider has to collapse.
+--
+-- The credential must come from the SAME storefront whose methods and policy won
+-- `customer_account_settings` above, or a deployment ends up advertising one
+-- storefront's enabled providers while holding another's OAuth client — social
+-- sign-in then fails against a client id the operator never associated with
+-- those settings. Ranking by credential age alone does not give that: the
+-- losing storefront's credential may well be the older row.
+--
+-- `IS NOT DISTINCT FROM` rather than `=`: with no storefronts at all the
+-- sub-select is NULL, `x = NULL` is NULL, and a DESC sort puts NULLs FIRST —
+-- the same trap the Direct-channel lookup hit in voyant#4633.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables
@@ -155,7 +164,12 @@ BEGIN
       c."created_at",
       c."updated_at"
     FROM "storefront_customer_auth_credentials" c
-    ORDER BY c."provider", c."created_at", c."id"
+    ORDER BY
+      c."provider",
+      (c."storefront_id" IS NOT DISTINCT FROM
+        (SELECT s."id" FROM "storefronts" s ORDER BY s."created_at", s."id" LIMIT 1)) DESC,
+      c."created_at",
+      c."id"
     ON CONFLICT ("provider") DO NOTHING;
   END IF;
 END $$;

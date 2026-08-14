@@ -133,15 +133,22 @@ export interface PublicApiRuntimeProvider {
     token: string,
   ): Promise<PublicApiKeyDto | null>
   /**
-   * Resolve a key that declares `origin` as an allowed browser origin (exact or
-   * `https://*.host` wildcard). Used to authorize keyless CORS preflight
-   * requests, which carry an `Origin` but no key. Refuses to answer ambiguously
-   * when two keys declare the same origin with different channels.
+   * Every live key that declares `origin` as an allowed browser origin (exact
+   * or `https://*.host` wildcard), oldest first. Used to authorize keyless CORS
+   * preflight, which carries an `Origin` but no key.
+   *
+   * Returns them ALL rather than picking one, because deciding whether the
+   * origin is ambiguous means comparing the channels they RESOLVE to, and only
+   * the caller holds the channel provider — `channels` belongs to
+   * `@voyant-travel/distribution` and this port to `@voyant-travel/auth`.
+   * Comparing the stored `channelId` here would deny a perfectly ordinary
+   * setup: `null` (implicit Direct) and an explicit Direct binding are the same
+   * channel, and so is a key whose named channel has gone away.
    */
-  resolveApiKeyByOrigin(
+  resolveApiKeysByOrigin(
     context: PublicApiResolveContext,
     origin: string,
-  ): Promise<PublicApiKeyDto | null>
+  ): Promise<PublicApiKeyDto[]>
   // customer accounts ----------------------------------------------------
   getCustomerAccountSettings(
     context: PublicApiRequestContext | PublicApiResolveContext,
@@ -220,7 +227,7 @@ const REQUIRED_METHODS = [
   "rotateApiKey",
   "revokeApiKey",
   "resolveApiKeyByToken",
-  "resolveApiKeyByOrigin",
+  "resolveApiKeysByOrigin",
   "getCustomerAccountSettings",
   "updateCustomerAccountSettings",
   "listProviderCredentials",

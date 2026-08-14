@@ -15,25 +15,25 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-storefront-authority-"))
   const files = {
     "packages/public-api/src/voyant.ts": `
-runtime: { entry: "@voyant-travel/public-api", export: "createStorefrontVoyantRuntime" },
+runtime: { entry: "@voyant-travel/public-api", export: "createPublicApiVoyantRuntime" },
 runtimePorts: [
-  requirePort(storefrontOffersRuntimePort),
-  requirePort(storefrontIntakeRuntimePort),
+  requirePort(publicApiOffersRuntimePort),
+  requirePort(publicApiIntakeRuntimePort),
 ],
 `,
     "packages/public-api/src/index.ts":
-      "export const createStorefrontVoyantRuntime = () => undefined\n",
+      "export const createPublicApiVoyantRuntime = () => undefined\n",
     "packages/runtime/src/deployment-resources.ts": "export const resources = {}\n",
     "packages/public-api/src/runtime-contributor.ts": `
-[storefrontOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()
-[storefrontCustomerPortalRuntimePort.id]: customerPortal
+[publicApiOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()
+[publicApiCustomerPortalRuntimePort.id]: customerPortal
 `,
     "packages/relationships/src/runtime-contributor.ts":
-      "[storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence()\n",
+      "[publicApiIntakeRuntimePortReference.id]: createPublicApiIntakePersistence()\n",
     "packages/notifications/src/runtime-contributor.ts":
-      "[storefrontVerificationRuntimePort.id]: verification\n",
+      "[publicApiVerificationRuntimePort.id]: verification\n",
     "packages/trips/src/runtime-contributor.ts":
-      "[storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions()\n",
+      "[publicApiPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions()\n",
     ...overrides,
   }
 
@@ -59,11 +59,11 @@ describe("check-public-api-subscriber-authority", () => {
   it("rejects a restored booking-intents runtime port", async () => {
     const root = await createFixture({
       "packages/public-api/src/voyant.ts": `
-runtime: { entry: "@voyant-travel/public-api", export: "createStorefrontVoyantRuntime" },
+runtime: { entry: "@voyant-travel/public-api", export: "createPublicApiVoyantRuntime" },
 runtimePorts: [
-  requirePort(storefrontOffersRuntimePort),
+  requirePort(publicApiOffersRuntimePort),
   requirePort(storefrontBookingIntentsRuntimePort),
-  requirePort(storefrontIntakeRuntimePort),
+  requirePort(publicApiIntakeRuntimePort),
 ],
 `,
     })

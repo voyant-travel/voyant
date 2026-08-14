@@ -57,7 +57,7 @@ for (const [name, source] of Object.entries({
 
 requireMatch(
   sources.manifest,
-  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/public-api["'],\s*export:\s*["']createStorefrontVoyantRuntime["']\s*\}[\s\S]*requirePort\(storefrontOffersRuntimePort\)[\s\S]*requirePort\(storefrontIntakeRuntimePort\)/,
+  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/public-api["'],\s*export:\s*["']createPublicApiVoyantRuntime["']\s*\}[\s\S]*requirePort\(publicApiOffersRuntimePort\)[\s\S]*requirePort\(publicApiIntakeRuntimePort\)/,
   "Storefront manifest must compose through its retained typed runtime ports",
 )
 rejectMatch(
@@ -67,22 +67,22 @@ rejectMatch(
 )
 requireMatch(
   sources.storefrontContributor,
-  /\[storefrontOffersRuntimePort\.id\]:\s*createCommerceStorefrontOfferResolvers[\s\S]*\[storefrontCustomerPortalRuntimePort\.id\]/,
+  /\[publicApiOffersRuntimePort\.id\]:\s*createCommerceStorefrontOfferResolvers[\s\S]*\[publicApiCustomerPortalRuntimePort\.id\]/,
   "Storefront contributor must retain offers and customer-portal projections",
 )
 requireMatch(
   sources.tripsContributor,
-  /\[storefrontPaymentLinkRuntimePort\.id\]:\s*createStandardPaymentLinkRouteOptions/,
+  /\[publicApiPaymentLinkRuntimePort\.id\]:\s*createStandardPaymentLinkRouteOptions/,
   "Trips contributor must own Storefront payment-link projection behavior",
 )
 requireMatch(
   sources.relationshipsContributor,
-  /\[storefrontIntakeRuntimePortReference\.id\]:\s*createStorefrontIntakePersistence/,
+  /\[publicApiIntakeRuntimePortReference\.id\]:\s*createPublicApiIntakePersistence/,
   "Relationships contributor must own Storefront intake persistence",
 )
 requireMatch(
   sources.notificationsContributor,
-  /\[storefrontVerificationRuntimePort\.id\]:\s*verification/,
+  /\[publicApiVerificationRuntimePort\.id\]:\s*verification/,
   "Notifications contributor must own Storefront verification providers",
 )
 rejectMatch(

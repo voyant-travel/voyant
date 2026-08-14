@@ -307,7 +307,7 @@ async function resolveKeyForChannel<Env>(
     if (resolved) return resolved
   }
   if (!origin) return null
-  return config.provider.resolveApiKeyByOrigin(context, origin)
+  return (await config.provider.resolveApiKeysByOrigin(context, origin))[0] ?? null
 }
 
 /**
@@ -441,10 +441,20 @@ export function createLocalPublicApiCorsOriginResolver<Env>(
         return channel?.channelStatus === "active" ? origin : null
       }
       // Keyless preflight: authorize purely by declared origin.
-      const key = await config.provider.resolveApiKeyByOrigin(context, origin)
-      if (!key || !config.resolveChannelForKey) return null
-      const channel = await config.resolveChannelForKey(context, key.channelId)
-      return channel?.channelStatus === "active" ? origin : null
+      const candidates = await config.provider.resolveApiKeysByOrigin(context, origin)
+      if (candidates.length === 0 || !config.resolveChannelForKey) return null
+      // Compare the channels these keys RESOLVE to, not their stored ids. A key
+      // with no channel and one explicitly bound to Direct are the same channel;
+      // so is a key whose named channel has gone away and fell back to Direct.
+      // Comparing raw ids would deny CORS for an ordinary two-key setup.
+      const resolved = new Set<string>()
+      for (const channelId of new Set(candidates.map((key) => key.channelId))) {
+        const channel = await config.resolveChannelForKey(context, channelId)
+        if (channel?.channelStatus !== "active") return null
+        resolved.add(channel.channelId)
+      }
+      // Only genuine disagreement about which channel to serve is ambiguous.
+      return resolved.size === 1 ? origin : null
     } finally {
       await dispose?.()
     }

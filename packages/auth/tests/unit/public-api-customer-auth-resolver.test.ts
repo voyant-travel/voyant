@@ -60,16 +60,16 @@ const ACTIVE_CHANNEL: ResolvedPublicApiChannel = {
 function fakeProvider(overrides?: {
   resolveApiKeyByToken?: () => Promise<PublicApiKeyDto | null>
   resolveProviderCredentials?: () => Promise<ResolvedCustomerAccountCredentials>
-  resolveApiKeyByOrigin?: (origin: string) => Promise<PublicApiKeyDto | null>
+  resolveApiKeysByOrigin?: (origin: string) => Promise<PublicApiKeyDto[]>
   getCustomerAccountSettings?: () => Promise<CustomerAccountSettingsDto>
 }): PublicApiRuntimeProvider {
   const provider: Partial<PublicApiRuntimeProvider> = {
     async resolveApiKeyByToken() {
       return overrides?.resolveApiKeyByToken?.() ?? Promise.resolve(KEY)
     },
-    async resolveApiKeyByOrigin(_context: unknown, origin: string) {
-      if (overrides?.resolveApiKeyByOrigin) return overrides.resolveApiKeyByOrigin(origin)
-      return isPublicApiOriginAllowed(origin, KEY.allowedOrigins) ? KEY : null
+    async resolveApiKeysByOrigin(_context: unknown, origin: string) {
+      if (overrides?.resolveApiKeysByOrigin) return overrides.resolveApiKeysByOrigin(origin)
+      return isPublicApiOriginAllowed(origin, KEY.allowedOrigins) ? [KEY] : []
     },
     async getCustomerAccountSettings() {
       return overrides?.getCustomerAccountSettings?.() ?? Promise.resolve(SETTINGS)
@@ -440,7 +440,7 @@ describe("withResolvedPublicApiChannel", () => {
     const unknownKey = makeAugmented({
       provider: fakeProvider({
         resolveApiKeyByToken: async () => null,
-        resolveApiKeyByOrigin: async () => null,
+        resolveApiKeysByOrigin: async () => [],
       }),
     })
     const noBinding = makeAugmented({ binding: async () => null })
