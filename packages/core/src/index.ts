@@ -55,6 +55,7 @@ export type {
   VoyantPermission,
   VoyantVariables,
 } from "./env.js"
+export { ANONYMOUS_STOREFRONT_USER_ID, identifiedUserId } from "./env.js"
 export type {
   DeliveryResult,
   EmitOptions,

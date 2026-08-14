@@ -122,6 +122,51 @@ export async function findEstablishedBookingSessionPayment(
   return session ?? null
 }
 
+/**
+ * The states in which a Booking Session's money is with a processor and the
+ * outcome is not yet known.
+ *
+ * `pending` is deliberately absent: a payment session exists from the moment
+ * the Commit asks for one, before the shopper has been handed anywhere, and
+ * treating that as in-flight would freeze a Session nobody has paid against.
+ * The rest all mean a processor is holding something of the shopper's —
+ * including `authorized`/`paid`, where it is settled and the Session is waiting
+ * to be committed.
+ */
+const IN_FLIGHT_BOOKING_SESSION_PAYMENT_STATES = [
+  "requires_redirect",
+  "processing",
+  "authorized",
+  "paid",
+] as const
+
+/**
+ * Whether this Booking Session has money with a processor right now.
+ *
+ * The Booking Session's Quote and Hold are what the shopper is being charged
+ * for, so anything that would tear them down has to know this first: while a
+ * payment is in flight the shopper is no longer shopping, and a re-quote that
+ * releases the Hold gives away the seat the money was collected for
+ * (voyant#4636).
+ */
+export async function hasInFlightBookingSessionPayment(
+  db: PostgresJsDatabase,
+  bookingSessionId: string,
+): Promise<boolean> {
+  const [session] = await db
+    .select({ id: paymentSessions.id })
+    .from(paymentSessions)
+    .where(
+      and(
+        eq(paymentSessions.targetType, "booking_session"),
+        eq(paymentSessions.targetId, bookingSessionId),
+        inArray(paymentSessions.status, [...IN_FLIGHT_BOOKING_SESSION_PAYMENT_STATES]),
+      ),
+    )
+    .limit(1)
+  return session !== undefined
+}
+
 /** Must run inside the root Booking transaction. */
 export async function transferBookingSessionPaymentToBooking(
   tx: PostgresJsDatabase,

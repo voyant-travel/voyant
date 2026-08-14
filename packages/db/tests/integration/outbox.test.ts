@@ -7,6 +7,7 @@ import {
   completeOutboxEvent,
   createOutboxEventStore,
   drainOutbox,
+  EVENT_DEAD_LETTERED,
   failOutboxEvent,
   getBoundedOutboxStats,
   getOutboxStats,
@@ -175,6 +176,49 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   })
 
   describe("drainOutbox", () => {
+    it("announces a dead-lettered event through the bus surface the drain is given", async () => {
+      // voyant#4636: eight failed settlements of a captured card payment left a
+      // `failed` row and nothing else, so the only signal was the customer
+      // complaining. The announcement is delivered, not emitted, because the
+      // drain runtime supplies `deliver` alone — announcing through `emit`
+      // would have been a subscriber nothing ever calls.
+      const bus = createEventBus()
+      const announced = vi.fn()
+      bus.subscribe(EVENT_DEAD_LETTERED, announced)
+      const [row] = await insertOutboxEvents(db, [
+        { name: "payment.completed", data: { paymentSessionId: "pmss_1" } },
+      ])
+      if (!row) throw new Error("insert failed")
+      await db.execute(
+        // agent-quality: raw-sql reviewed -- owner: db; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+        sql`UPDATE ${eventOutboxTable} SET "attempts" = "max_attempts" - 1 WHERE ${eventOutboxTable.id} = ${row.id}`,
+      )
+      const failing = {
+        deliver: async () => ({ failed: 1, errors: ["settlement rejected"] }),
+      } as unknown as Parameters<typeof drainOutbox>[1]
+      // Deliver the announcement onto the real bus, the way the app's bus does.
+      const drainBus = {
+        deliver: async (envelope: Parameters<NonNullable<typeof bus.deliver>>[0]) =>
+          envelope.name === EVENT_DEAD_LETTERED
+            ? ((await bus.deliver?.(envelope)) ?? { failed: 0, errors: [] })
+            : ((await failing.deliver?.(envelope)) ?? { failed: 1, errors: [] }),
+      }
+
+      const result = await drainOutbox(db, drainBus)
+
+      expect(result).toMatchObject({ deadLettered: 1 })
+      expect(announced).toHaveBeenCalledOnce()
+      expect(announced.mock.calls[0]?.[0]).toMatchObject({
+        name: EVENT_DEAD_LETTERED,
+        data: {
+          outboxId: row.id,
+          name: "payment.completed",
+          error: "settlement rejected",
+          payload: { paymentSessionId: "pmss_1" },
+        },
+      })
+    })
+
     it("delivers claimed rows through the bus and completes them", async () => {
       const bus = createEventBus()
       const handler = vi.fn()
